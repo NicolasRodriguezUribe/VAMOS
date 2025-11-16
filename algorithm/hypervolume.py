@@ -1,0 +1,109 @@
+"""
+Hypervolume utilities for low-dimensional objectives (2 or 3 objectives).
+The implementation focuses on clarity over asymptotic optimality and assumes
+minimization problems where every reference point dominates the solutions.
+"""
+from __future__ import annotations
+
+import numpy as np
+
+
+def hypervolume(points: np.ndarray, reference_point: np.ndarray) -> float:
+    points = np.asarray(points, dtype=float)
+    if points.ndim != 2:
+        raise ValueError("points must be a 2D array.")
+    if points.shape[0] == 0:
+        return 0.0
+    return _hypervolume_impl(points, reference_point)
+
+
+def hypervolume_contributions(points: np.ndarray, reference_point: np.ndarray) -> np.ndarray:
+    points = np.asarray(points, dtype=float)
+    if points.ndim != 2 or points.shape[0] == 0:
+        return np.zeros(points.shape[0], dtype=float)
+
+    ref = _validate_reference_point(points, reference_point)
+    if points.shape[1] == 2:
+        return _hypervolume_contributions_2d(points, ref)
+
+    return _hypervolume_contributions_generic(points, ref)
+
+
+def _hypervolume_impl(points: np.ndarray, reference_point: np.ndarray) -> float:
+    if points.shape[0] == 0:
+        return 0.0
+    ref = _validate_reference_point(points, reference_point)
+    n_obj = points.shape[1]
+    if n_obj == 1:
+        widths = np.maximum(ref[0] - points[:, 0], 0.0)
+        return np.max(widths)
+    if n_obj == 2:
+        return _hypervolume_2d(points, ref)
+    if n_obj == 3:
+        return _hypervolume_3d(points, ref)
+    raise ValueError("Hypervolume helper currently supports up to 3 objectives.")
+
+
+def _validate_reference_point(points: np.ndarray, reference_point: np.ndarray) -> np.ndarray:
+    ref = np.asarray(reference_point, dtype=float)
+    if ref.ndim != 1:
+        raise ValueError("reference_point must be a 1D array.")
+    if ref.shape[0] != points.shape[1]:
+        raise ValueError("reference_point dimensionality mismatch.")
+    if np.any(points > ref):
+        raise ValueError("All solutions must be dominated by the reference point.")
+    return ref
+
+
+def _hypervolume_2d(points: np.ndarray, ref: np.ndarray) -> float:
+    order = np.argsort(points[:, 0])
+    hv = 0.0
+    prev_f2 = ref[1]
+    for idx in reversed(order):
+        f1, f2 = points[idx]
+        width = max(ref[0] - f1, 0.0)
+        height = max(prev_f2 - f2, 0.0)
+        hv += width * height
+        prev_f2 = min(prev_f2, f2)
+    return hv
+
+
+def _hypervolume_3d(points: np.ndarray, ref: np.ndarray) -> float:
+    order = np.argsort(points[:, 2])
+    sorted_points = points[order]
+    hv = 0.0
+    prev_f3 = ref[2]
+    for end in range(sorted_points.shape[0] - 1, -1, -1):
+        f3 = sorted_points[end, 2]
+        height = max(prev_f3 - f3, 0.0)
+        if height <= 0.0:
+            continue
+        slice_points = sorted_points[: end + 1, :2]
+        slab = _hypervolume_2d(slice_points, ref[:2])
+        hv += slab * height
+        prev_f3 = f3
+    return hv
+
+
+def _hypervolume_contributions_2d(points: np.ndarray, ref: np.ndarray) -> np.ndarray:
+    order = np.argsort(points[:, 0])
+    contributions = np.zeros(points.shape[0], dtype=float)
+    prev_f2 = ref[1]
+    for pos in range(order.size - 1, -1, -1):
+        idx = order[pos]
+        f1, f2 = points[idx]
+        width = max(ref[0] - f1, 0.0)
+        height = max(prev_f2 - f2, 0.0)
+        contributions[idx] = width * height
+        prev_f2 = min(prev_f2, f2)
+    return contributions
+
+
+def _hypervolume_contributions_generic(points: np.ndarray, ref: np.ndarray) -> np.ndarray:
+    contributions = np.empty(points.shape[0], dtype=float)
+    hv_full = _hypervolume_impl(points, ref)
+    for i in range(points.shape[0]):
+        without_i = np.delete(points, i, axis=0)
+        hv_without = _hypervolume_impl(without_i, ref)
+        contributions[i] = hv_full - hv_without
+    return contributions
