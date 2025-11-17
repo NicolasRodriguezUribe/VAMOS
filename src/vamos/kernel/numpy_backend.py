@@ -1,5 +1,10 @@
-# kernel/numpy_backend.py
+from __future__ import annotations
+
+from typing import Iterable
+
 import numpy as np
+
+from .backend import KernelBackend
 
 def _fast_non_dominated_sort(F: np.ndarray):
     """
@@ -97,23 +102,24 @@ def _select_nsga2(fronts, crowding: np.ndarray, pop_size: int) -> np.ndarray:
     return np.array(selected, dtype=int)
 
 
-class NumPyKernel:
+class NumPyKernel(KernelBackend):
     """
     Backend with pure NumPy implementations of the NSGA-II kernels.
     """
 
-    # ---------- Ranking / crowding ----------
+    def capabilities(self) -> Iterable[str]:
+        return ("cpu",)
 
-    @staticmethod
-    def nsga2_ranking(F: np.ndarray):
+    def quality_indicators(self) -> Iterable[str]:
+        return ("hypervolume",)
+
+    def nsga2_ranking(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         fronts, ranks = _fast_non_dominated_sort(F)
         crowding = _compute_crowding(F, fronts)
         return ranks, crowding
 
-    # ---------- Tournament selection ----------
-
-    @staticmethod
     def tournament_selection(
+        self,
         ranks: np.ndarray,
         crowding: np.ndarray,
         pressure: int,
@@ -143,118 +149,124 @@ class NumPyKernel:
         row_idx = np.arange(n_parents)
         return candidates[row_idx, winner_cols]
 
-    # ---------- SBX (Simulated Binary Crossover) ----------
-
-    @staticmethod
     def sbx_crossover(
+        self,
         X_parents: np.ndarray,
         params: dict,
         rng: np.random.Generator,
         xl: float,
         xu: float,
     ) -> np.ndarray:
-        """
-        X_parents: shape (2 * n_pairs, D)
-        Returns offspring with the same shape.
-        """
-        eta = params["eta"]
-        prob = params["prob"]
-
+        eta = float(params.get("eta", 20.0))
+        prob = float(params.get("prob", 0.9))
         Np, D = X_parents.shape
-        assert Np % 2 == 0
-        n_pairs = Np // 2
-
-        if n_pairs == 0:
+        if Np == 0:
             return np.empty_like(X_parents)
-
+        assert Np % 2 == 0, "SBX expects an even number of parents."
+        n_pairs = Np // 2
         parents = X_parents.reshape(n_pairs, 2, D)
         offspring = parents.copy()
+        eps = 1.0e-14
+        pair_mask = rng.random(n_pairs) <= prob
+        if not np.any(pair_mask):
+            return offspring.reshape(Np, D)
+        var_mask = rng.random((n_pairs, D)) <= 0.5
+        diff_mask = np.abs(parents[:, 0, :] - parents[:, 1, :]) > eps
+        active_mask = pair_mask[:, None] & var_mask & diff_mask
+        idx_row, idx_col = np.nonzero(active_mask)
+        if idx_row.size == 0:
+            return offspring.reshape(Np, D)
+        x1 = parents[idx_row, 0, idx_col]
+        x2 = parents[idx_row, 1, idx_col]
+        y1 = np.minimum(x1, x2)
+        y2 = np.maximum(x1, x2)
+        delta = y2 - y1
+        xl_arr = np.full(idx_row.shape, xl, dtype=float)
+        xu_arr = np.full(idx_row.shape, xu, dtype=float)
+        rand = rng.random(idx_row.shape)
+        inv = 1.0 / (eta + 1.0)
 
-        if prob > 0.0:
-            cross_mask = rng.random(n_pairs) < prob
-            idx = np.flatnonzero(cross_mask)
-            if idx.size > 0:
-                u = rng.random((idx.size, D))
-                beta = np.empty_like(u)
-                lower = u <= 0.5
-                beta[lower] = (2.0 * u[lower]) ** (1.0 / (eta + 1.0))
-                beta[~lower] = (2.0 * (1.0 - u[~lower])) ** (-1.0 / (eta + 1.0))
+        beta = 1.0 + (2.0 * (y1 - xl_arr) / delta)
+        beta = np.maximum(beta, eps)
+        alpha = 2.0 - np.power(beta, -(eta + 1.0))
+        term = rand <= (1.0 / alpha)
+        betaq = np.empty_like(y1)
+        betaq[term] = np.power(rand[term] * alpha[term], inv)
+        betaq[~term] = np.power(1.0 / (2.0 - rand[~term] * alpha[~term]), inv)
+        c1 = 0.5 * ((y1 + y2) - betaq * delta)
 
-                p1 = parents[idx, 0]
-                p2 = parents[idx, 1]
-                child1 = 0.5 * ((1.0 + beta) * p1 + (1.0 - beta) * p2)
-                child2 = 0.5 * ((1.0 - beta) * p1 + (1.0 + beta) * p2)
+        beta = 1.0 + (2.0 * (xu_arr - y2) / delta)
+        beta = np.maximum(beta, eps)
+        alpha = 2.0 - np.power(beta, -(eta + 1.0))
+        term = rand <= (1.0 / alpha)
+        betaq[term] = np.power(rand[term] * alpha[term], inv)
+        betaq[~term] = np.power(1.0 / (2.0 - rand[~term] * alpha[~term]), inv)
+        c2 = 0.5 * ((y1 + y2) + betaq * delta)
 
-                offspring[idx, 0] = child1
-                offspring[idx, 1] = child2
+        c1 = np.clip(c1, xl, xu)
+        c2 = np.clip(c2, xl, xu)
 
-        np.clip(offspring, xl, xu, out=offspring)
+        swap_mask = rng.random(idx_row.shape) <= 0.5
+        first = np.where(swap_mask, c2, c1)
+        second = np.where(swap_mask, c1, c2)
+        offspring[idx_row, 0, idx_col] = first
+        offspring[idx_row, 1, idx_col] = second
         return offspring.reshape(Np, D)
 
-    # ---------- Polynomial mutation ----------
-
-    @staticmethod
     def polynomial_mutation(
+        self,
         X: np.ndarray,
         params: dict,
         rng: np.random.Generator,
         xl: float,
         xu: float,
     ) -> None:
-        """
-        Standard polynomial mutation, in-place.
-        Uses the same xl/xu bounds for every variable.
-        """
-        eta = params["eta"]
-        p_mut = params["prob"]
+        eta = float(params.get("eta", 20.0))
+        p_mut = float(params.get("prob", 0.1))
         N, D = X.shape
-
-        if p_mut <= 0.0:
+        if p_mut <= 0.0 or N == 0:
             return
-
-        mutation_mask = rng.random((N, D)) < p_mut
-        if not np.any(mutation_mask):
+        xl_arr = np.asarray(xl, dtype=float)
+        xu_arr = np.asarray(xu, dtype=float)
+        if xl_arr.ndim == 0:
+            xl_arr = np.full(D, xl_arr)
+        if xu_arr.ndim == 0:
+            xu_arr = np.full(D, xu_arr)
+        mask = rng.random((N, D)) <= p_mut
+        if not np.any(mask):
             return
-
-        y = X[mutation_mask]
-        yl = xl
-        yu = xu
-        if yl == yu:
-            return
-        delta = yu - yl
-
-        delta1 = (y - yl) / delta
-        delta2 = (yu - y) / delta
+        rows, cols = np.nonzero(mask)
+        yl = xl_arr[cols]
+        yu = xu_arr[cols]
+        span = yu - yl
+        y = X[rows, cols]
+        delta1 = (y - yl) / span
+        delta2 = (yu - y) / span
         rnd = rng.random(y.shape)
         mut_pow = 1.0 / (eta + 1.0)
         deltaq = np.empty_like(y)
-
         mask_lower = rnd <= 0.5
         if np.any(mask_lower):
             xy = 1.0 - delta1[mask_lower]
             val = 2.0 * rnd[mask_lower] + (1.0 - 2.0 * rnd[mask_lower]) * (xy ** (eta + 1.0))
             deltaq[mask_lower] = val ** mut_pow - 1.0
-
         mask_upper = ~mask_lower
         if np.any(mask_upper):
             xy = 1.0 - delta2[mask_upper]
             val = 2.0 * (1.0 - rnd[mask_upper]) + 2.0 * (rnd[mask_upper] - 0.5) * (xy ** (eta + 1.0))
             deltaq[mask_upper] = 1.0 - val ** mut_pow
+        y += deltaq * span
+        y = np.clip(y, yl, yu)
+        X[rows, cols] = y
 
-        y = y + deltaq * delta
-        np.clip(y, yl, yu, out=y)
-        X[mutation_mask] = y
-
-    # ---------- NSGA-II survival ----------
-
-    @staticmethod
     def nsga2_survival(
+        self,
         X: np.ndarray,
         F: np.ndarray,
         X_off: np.ndarray,
         F_off: np.ndarray,
         pop_size: int,
-    ):
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         NSGA-II elitism: merge parents + offspring, re-rank, and select.
         """
@@ -264,3 +276,8 @@ class NumPyKernel:
         crowding = _compute_crowding(F_comb, fronts)
         sel = _select_nsga2(fronts, crowding, pop_size)
         return X_comb[sel], F_comb[sel]
+
+    def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
+        from vamos.algorithm.hypervolume import hypervolume as hv_fn
+
+        return hv_fn(points, reference_point)

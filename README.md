@@ -1,106 +1,101 @@
 # VAMOS – Vectorized Architecture for Multiobjective Optimization Studies
 
-VAMOS is a lean research-oriented implementation of NSGA-II, MOEA/D, and SMS-EMOA tailored for experimentation with vectorized evolutionary kernels. The project focuses on keeping individuals in contiguous NumPy arrays (Structure-of-Arrays style) so that core operators can be swapped easily between backends such as pure NumPy, Numba-accelerated kernels, or the C-based [moocore](https://pypi.org/project/moocore/).
-
-## Goals
-
-- Provide fully vectorized NSGA-II, MOEA/D, and SMS-EMOA kernels for benchmarking and teaching.
-- Offer multiple backends so you can compare CPU-oriented implementations:
-  - `numpy`: pure NumPy operators, easy to understand and extend.
-  - `numba`: ranking/survival routines compiled with Numba for better CPU throughput.
-  - `moocore`: hybrid backend that delegates non-dominated sorting to moocore’s C routines.
-  - `moocore_v2`: moves additional survival logic (rank filtering + hypervolume tie-breaks) into moocore for maximum CPU efficiency.
-- Keep the code small and self-contained for experimentation with new mutation/crossover operators or problem definitions.
-
-## Project Layout
+VAMOS is a compact research playground for NSGA-II/III, MOEA/D, and SMS-EMOA with multiple vectorized backends (NumPy, Numba, and MooCore). The goal of this restructuring is to make the project easy to install, easy to navigate, and friendly for experimentation.
 
 ```
 .
-├── algorithm/
-│   ├── config.py           # Declarative configuration builders
-│   ├── nsgaii.py           # Vectorized NSGA-II evolutionary loop
-│   ├── moead.py            # Vectorized MOEA/D evolutionary loop
-│   ├── smsemoa.py          # SMS-EMOA implementation
-│   ├── weight_vectors.py   # Simplex-lattice weight utilities
-│   └── hypervolume.py      # Low-dimensional hypervolume helpers
-├── kernel/
-│   ├── numpy_backend.py    # Reference pure NumPy kernel implementations
-│   ├── numba_backend.py    # Numba-accelerated ranking/survival
-│   └── moocore_backend.py  # Backends that leverage moocore for ranking/survival
-├── problem/
-│   └── zdt1.py             # ZDT1 test problem
-├── results/                # Output directory (created automatically)
-└── main.py                 # CLI entry point
-`
-
-
-## Requirements
-
-- Python 3.12 (project uses a virtual environment under `.venv/`)
-- NumPy (installed in the virtual environment)
-- Optional dependencies:
-  - `numba` (for the Numba backend)
-  - `moocore` (for moocore-based backends)
-
-Install dependencies inside the provided venv, e.g.:
-
-```powershell
-.\.venv\Scripts\pip install numba moocore
+├─ build/          # generated weight files or misc artifacts
+├─ docs/           # place architecture notes or API docs here
+├─ notebooks/      # exploratory notebooks (not part of the package)
+├─ results/        # FUN.csv and metadata from CLI runs
+├─ src/
+│  └─ vamos/       # actual Python package (algorithms, kernels, CLI)
+├─ tests/          # pytest-based smoke/benchmark suites
+├─ pyproject.toml  # package + dependency metadata (setuptools backend)
+└─ README.md
 ```
 
-## Running VAMOS
-
-Use the CLI in `main.py`. The most common options:
+## Quick start (PowerShell)
 
 ```powershell
-# Run once with the default backend (numpy)
-.\.venv\Scripts\python.exe main.py
+# 1. Create and activate a virtual environment
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
-# Choose a backend explicitly
-.\.venv\Scripts\python.exe main.py --engine moocore_v2
+# 2. Install the package in editable mode (core dependencies only)
+pip install -e .
 
-# Switch algorithms (NSGA-II, MOEA/D, or SMS-EMOA)
-.\.venv\Scripts\python.exe main.py --algorithm moead --engine numpy
+# 3. Optional extras:
+#    - backends: numba + moocore
+#    - benchmarks: pymoo + jmetalpy + pygmo
+pip install -e .[backends]
+pip install -e .[benchmarks]
 
-# Run SMS-EMOA with the NumPy backend
-.\.venv\Scripts\python.exe main.py --algorithm smsemoa --engine numpy
+# 4. Run the CLI (default NSGA-II / NumPy backend / ZDT1)
+python -m vamos.main
 
-# Solve with every algorithm sequentially (per chosen backend/experiment)
-.\.venv\Scripts\python.exe main.py --algorithm both
-
-# Benchmark every backend sequentially
-.\.venv\Scripts\python.exe main.py --experiment backends
+# 5. Try other combinations
+python -m vamos.main --engine moocore_v2
+python -m vamos.main --algorithm moead --problem dtlz2 --n-obj 3
+python -m vamos.main --problem-set families  # ZDT1 + DTLZ2 + WFG4 (WFG requires pymoo)
+python -m vamos.main --include-external --external-problem-source vamos
+python -m vamos.main --experiment backends --include-external
 ```
 
-Configuration parameters (population size, max evaluations, number of variables, etc.) are defined at the top of `main.py`. The configuration builders in `algorithm/config.py` (`NSGAIIConfig`, `MOEADConfig`, and `SMSEMOAConfig`) make it easy to experiment with different crossover/mutation settings, decomposition neighborhoods, or SMS-EMOA reference-point setups.
+When installing in editable mode you also get the `vamos` console script, so
+after step 3 you can just run `vamos --experiment backends`.
 
-When running MOEA/D, decomposition weight vectors are loaded from `build/weights/*.csv`. If the requested file is missing, the CLI automatically generates a simplex-lattice design with enough vectors for the configured population size and writes it to disk for future runs.
+## Working with the code
 
-SMS-EMOA relies on low-dimensional hypervolume contributions (up to three objectives) together with an adaptive reference point. Override the `.reference_point()` builder options if your objective scales require a custom reference vector.
+### Package layout (`src/vamos`)
 
-## Output
+- `main.py`: CLI entry point and orchestration of experiments.
+- `algorithm/`: evolutionary cores and configuration builders.
+- `kernel/`: vectorized operator implementations (NumPy, Numba, MooCore).
+- `problem/`: benchmark definitions (ZDT, DTLZ, WFG, …).
+- `study/`: helper utilities for scripted experiments/diagnostics.
 
-Each run prints a detailed log:
+Because everything lives under `src/vamos`, imports stay clean (`from vamos.algorithm import ...`) and tools like pytest/ruff work without additional `PYTHONPATH` tweaks.
 
-- Problem metadata (decision variables, objectives, backend name)
-- Performance metrics (total time, evaluations per second, final population size)
-- Objective ranges and, for bi-objective problems, approximate front spread
+### Results
 
-Results are saved to `results/VAMOS_ZDT1/`:
+Every CLI run creates `results/<PROBLEM>/<ALGO>/<ENGINE>/seed_<N>/` containing:
 
-- `FUN.csv`: final objective values for each solution
-- `time.txt`: elapsed time in milliseconds
+- `FUN.csv` – final objective vectors
+- `time.txt` – elapsed time in ms
+- `metadata.json` – problem/back-end configuration
 
-When running `--experiment backends` an additional table summarises time, evaluations/sec, and spread for each backend.
+Summary tables show hypervolume values computed with a shared reference point.
 
-## Extending the Project
+### Tests
 
-- **New problem definitions**: add a module under `problem/`, implement `evaluate`, and plug it into `main.py`.
-- **Custom backends**: create a class with the same interface as `NumPyKernel` (methods for `nsga2_ranking`, `tournament_selection`, `sbx_crossover`, `polynomial_mutation`, `nsga2_survival`) and add a resolver branch in `_resolve_kernel`.
-- **Alternative operators**: adjust `kernel/numpy_backend.py` or implement them in a dedicated backend – the whole algorithm keeps individuals as NumPy arrays, so vectorized operations are straightforward.
+Add pytest modules under `tests/`. Pyproject already hooks setuptools to look at `src/`, so `pytest` automatically discovers the package.
 
-## License
+```powershell
+pip install -e .[dev]
+pytest
+```
 
-This project is distributed without an explicit license in the repository. Adapt or extend it according to your internal guidelines.
+## Optional backends and baselines
 
-Happy optimizing with VAMOS!
+| Feature            | Extra               |
+|--------------------|---------------------|
+| `--engine numba`   | `pip install -e .[backends]` |
+| `--engine moocore` | same as above (requires the `moocore` wheel) |
+| PyMOO baseline     | `pip install -e .[benchmarks]` |
+| jMetalPy baseline  | same as above |
+| PyGMO baseline     | install PyGMO separately (typically via conda) |
+
+External baselines use each library's native benchmark definitions by default. Pass
+`--external-problem-source vamos` to wrap the VAMOS problem implementations instead (currently
+available for ZDT1).
+
+Only the dependencies you install are loaded; missing libraries are skipped gracefully with a console warning.
+
+## Contributing / Extending
+
+- Create new problems under `src/vamos/problem/` and register them in `problem/registry.py`.
+- Write new kernels by subclassing `KernelBackend` in `src/vamos/kernel/backend.py` and add a branch in `_resolve_kernel`.
+- Use `docs/` for design notes and `notebooks/` for exploratory work—the `src/` package stays focused on installable code.
+
+Happy optimizing!

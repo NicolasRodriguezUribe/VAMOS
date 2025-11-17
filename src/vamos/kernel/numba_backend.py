@@ -9,6 +9,9 @@ except ImportError as exc:  # pragma: no cover - informative error when numba mi
         "Install it or switch to NumPyKernel."
     ) from exc
 
+from typing import Iterable
+
+from .backend import KernelBackend
 from .numpy_backend import NumPyKernel as _NumPyKernel
 
 
@@ -169,45 +172,74 @@ def _select_nsga2_indices(ranks: np.ndarray, crowding: np.ndarray, pop_size: int
     return selected
 
 
-class NumbaKernel:
+class NumbaKernel(KernelBackend):
     """
     Alternative backend with critical kernels (ranking/survival) compiled with Numba.
     Stochastic operators (selection, crossover, mutation) reuse the NumPy implementations.
     """
 
-    # ---------- Ranking / crowding ----------
+    def __init__(self):
+        self._numpy_ops = _NumPyKernel()
 
-    @staticmethod
-    def nsga2_ranking(F: np.ndarray):
+    def capabilities(self) -> Iterable[str]:
+        return ("numba",)
+
+    def quality_indicators(self) -> Iterable[str]:
+        return ("hypervolume",)
+
+    def nsga2_ranking(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         ranks = _fast_non_dominated_sort_ranks(F)
         crowding = _compute_crowding_numba(F, ranks)
         return ranks.astype(np.int64), crowding
 
-    # ---------- Tournament selection ----------
+    def tournament_selection(
+        self,
+        ranks: np.ndarray,
+        crowding: np.ndarray,
+        pressure: int,
+        rng: np.random.Generator,
+        n_parents: int,
+    ) -> np.ndarray:
+        return self._numpy_ops.tournament_selection(
+            ranks, crowding, pressure, rng, n_parents
+        )
 
-    tournament_selection = staticmethod(_NumPyKernel.tournament_selection)
+    def sbx_crossover(
+        self,
+        X_parents: np.ndarray,
+        params: dict,
+        rng: np.random.Generator,
+        xl: float,
+        xu: float,
+    ) -> np.ndarray:
+        return self._numpy_ops.sbx_crossover(X_parents, params, rng, xl, xu)
 
-    # ---------- SBX ----------
+    def polynomial_mutation(
+        self,
+        X: np.ndarray,
+        params: dict,
+        rng: np.random.Generator,
+        xl: float,
+        xu: float,
+    ) -> None:
+        self._numpy_ops.polynomial_mutation(X, params, rng, xl, xu)
 
-    sbx_crossover = staticmethod(_NumPyKernel.sbx_crossover)
-
-    # ---------- Polynomial mutation ----------
-
-    polynomial_mutation = staticmethod(_NumPyKernel.polynomial_mutation)
-
-    # ---------- Survival ----------
-
-    @staticmethod
     def nsga2_survival(
+        self,
         X: np.ndarray,
         F: np.ndarray,
         X_off: np.ndarray,
         F_off: np.ndarray,
         pop_size: int,
-    ):
+    ) -> tuple[np.ndarray, np.ndarray]:
         X_comb = np.vstack((X, X_off))
         F_comb = np.vstack((F, F_off))
         ranks = _fast_non_dominated_sort_ranks(F_comb)
         crowding = _compute_crowding_numba(F_comb, ranks)
         sel = _select_nsga2_indices(ranks, crowding, pop_size)
         return X_comb[sel], F_comb[sel]
+
+    def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
+        from vamos.algorithm.hypervolume import hypervolume as hv_fn
+
+        return hv_fn(points, reference_point)
