@@ -1,3 +1,36 @@
+Metadata-Version: 2.4
+Name: vamos
+Version: 0.1.0
+Summary: Vectorized Architecture for Multiobjective Optimization Studies
+Author-email: VAMOS Team <vamos@example.com>
+Maintainer-email: VAMOS Maintainers <vamos-maintainers@example.com>
+License: MIT
+Project-URL: Homepage, https://github.com/yourusername/vamos
+Project-URL: Documentation, https://vamos.readthedocs.io
+Project-URL: Repository, https://github.com/yourusername/vamos
+Project-URL: Changelog, https://github.com/yourusername/vamos/blob/main/CHANGELOG.md
+Project-URL: Issues, https://github.com/yourusername/vamos/issues
+Keywords: multiobjective optimization,evolutionary algorithms,NSGA-II,MOEA/D,SMS-EMOA,vectorized computation,numpy,numba
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Operating System :: OS Independent
+Classifier: Typing :: Typed
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=2.0.0
+Requires-Dist: numba>=0.62.1
+Requires-Dist: moocore>=0.1.9
+Requires-Dist: jmetalpy>=1.9.0
+Requires-Dist: pymoo>=0.6.1.5
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+
 # VAMOS – Vectorized Architecture for Multiobjective Optimization Studies
 
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
