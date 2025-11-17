@@ -306,8 +306,9 @@ def _make_metrics(
     F = np.asarray(F, dtype=float)
     evals_per_sec = evaluations / max(total_time_ms / 1000.0, 1e-9)
     spread = None
-    if F.shape[1] == 2:
-        spread = F[:, 0].max() - F[:, 0].min()
+    if F.ndim == 2 and F.shape[0] > 0:
+        ranges = F.max(axis=0) - F.min(axis=0)
+        spread = float(np.linalg.norm(ranges))
     return {
         "algorithm": algorithm_name,
         "engine": engine_name,
