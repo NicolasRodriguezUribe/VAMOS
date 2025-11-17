@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vamos"
+version = "0.1.0"
+description = "Vectorized Architecture for Multiobjective Optimization Studies"
+requires-python = ">=3.10"
+authors = [
+  { name = "VAMOS contributors" }
+]
+dependencies = [
+  "numpy>=1.23",
+  "scipy>=1.10",
+]
+readme = "README.md"
+
+[project.optional-dependencies]
+backends = [
+  "numba>=0.57",
+  "moocore>=0.4",
+]
+benchmarks = [
+  "pymoo>=0.6",
+  "jmetalpy>=1.5",
+  "pygmo>=2.19",
+]
+dev = [
+  "pytest>=7.0",
+  "black>=23.0",
+  "ruff>=0.1.5",
+]
+
+[project.scripts]
+vamos = "vamos.main:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

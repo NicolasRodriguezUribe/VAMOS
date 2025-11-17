@@ -1,5 +1,5 @@
 """
-Hypervolume utilities for low-dimensional objectives (2 or 3 objectives).
+Hypervolume utilities that work for two objectives up to many objectives.
 The implementation focuses on clarity over asymptotic optimality and assumes
 minimization problems where every reference point dominates the solutions.
 """
@@ -41,7 +41,7 @@ def _hypervolume_impl(points: np.ndarray, reference_point: np.ndarray) -> float:
         return _hypervolume_2d(points, ref)
     if n_obj == 3:
         return _hypervolume_3d(points, ref)
-    raise ValueError("Hypervolume helper currently supports up to 3 objectives.")
+    return _hypervolume_recursive(points, ref)
 
 
 def _validate_reference_point(points: np.ndarray, reference_point: np.ndarray) -> np.ndarray:
@@ -82,6 +82,33 @@ def _hypervolume_3d(points: np.ndarray, ref: np.ndarray) -> float:
         slab = _hypervolume_2d(slice_points, ref[:2])
         hv += slab * height
         prev_f3 = f3
+    return hv
+
+
+def _hypervolume_recursive(points: np.ndarray, ref: np.ndarray) -> float:
+    """
+    Recursive slicing algorithm that works for >= 4 objectives.
+    """
+    if points.size == 0:
+        return 0.0
+    n_obj = points.shape[1]
+    if n_obj == 1:
+        widths = np.maximum(ref[0] - points[:, 0], 0.0)
+        return np.max(widths) if widths.size else 0.0
+
+    order = np.argsort(points[:, n_obj - 1])
+    sorted_points = points[order]
+
+    hv = 0.0
+    bound = ref[n_obj - 1]
+    while sorted_points.shape[0] > 0:
+        current = sorted_points[-1, n_obj - 1]
+        height = bound - current
+        if height > 0.0:
+            reduced = sorted_points[:, : n_obj - 1]
+            hv += _hypervolume_recursive(reduced, ref[: n_obj - 1]) * height
+            bound = current
+        sorted_points = sorted_points[:-1]
     return hv
 
 
