@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import random
 import sys
 import time
 from datetime import datetime, timezone
@@ -121,6 +122,12 @@ def _parse_args():
             "For external baselines, choose whether to use each library's native benchmark "
             "implementation ('native') or wrap the VAMOS problem definition ('vamos')."
         ),
+    )
+    parser.add_argument(
+        "--max-evaluations",
+        type=int,
+        default=MAX_EVALUATIONS,
+        help="Maximum number of evaluations per run (default: %(default)s).",
     )
     return parser.parse_args()
 
@@ -620,7 +627,6 @@ def _run_pymoo_perm_nsga2(selection: ProblemSelection, *, use_native_problem: bo
         from pymoo.algorithms.moo.nsga2 import NSGA2
         from pymoo.core.problem import Problem as PymooProblem
         from pymoo.operators.sampling.rnd import PermutationRandomSampling
-        from pymoo.operators.crossover.pmx import PMX
         from pymoo.operators.mutation.inversion import InversionMutation
         from pymoo.optimize import minimize
     except ImportError as exc:  # pragma: no cover
@@ -647,10 +653,32 @@ def _run_pymoo_perm_nsga2(selection: ProblemSelection, *, use_native_problem: bo
 
     pymoo_problem = _VamosPymooPermutationProblem(problem)
     mutation_prob = min(1.0, 2.0 / max(1, problem.n_var))
+
+    def _make_pymoo_perm_crossover(probability: float):
+        try:
+            from pymoo.operators.crossover.pmx import PMX  # type: ignore
+
+            return PMX(prob=probability)
+        except ImportError:
+            try:
+                from pymoo.operators.crossover.ox import OrderCrossover
+            except ImportError as exc:
+                raise ImportError(
+                    "pymoo permutation crossover operators are unavailable; "
+                    "upgrade pymoo to a version that ships PMX or OX."
+                ) from exc
+
+            class _OrderCrossoverWrapper(OrderCrossover):
+                def __init__(self, prob):
+                    super().__init__(prob=prob)
+
+            return _OrderCrossoverWrapper(probability)
+
+    crossover = _make_pymoo_perm_crossover(probability=0.9)
     algorithm = NSGA2(
         pop_size=POPULATION_SIZE,
         sampling=PermutationRandomSampling(),
-        crossover=PMX(prob=0.9),
+        crossover=crossover,
         mutation=InversionMutation(prob=mutation_prob),
         eliminate_duplicates=True,
     )
@@ -678,43 +706,103 @@ def _run_jmetalpy_perm_nsga2(selection: ProblemSelection, *, use_native_problem:
         raise ValueError("jMetalPy permutation baseline requires a permutation-encoded problem.")
     _print_run_banner(problem, selection, "jMetalPy NSGA-II (perm)", "jmetalpy")
     try:
+        from jmetal.core.operator import Crossover, Mutation
         from jmetal.core.problem import PermutationProblem
         from jmetal.core.solution import PermutationSolution
         from jmetal.algorithm.multiobjective.nsgaii import NSGAII
-        from jmetal.operator.crossover import PMXCrossover
-        from jmetal.operator.mutation import SwapMutation
         from jmetal.util.termination_criterion import StoppingByEvaluations
     except ImportError as exc:  # pragma: no cover
         raise ImportError(
             "jmetalpy is not installed. Install it with 'pip install jmetalpy' to use this baseline."
         ) from exc
 
+    try:  # pragma: no cover - exercised indirectly when jmetalpy is installed
+        from jmetal.operator.mutation import PermutationSwapMutation as _SwapMutationCandidate
+    except ImportError:  # pragma: no cover
+        try:
+            from jmetal.operator.mutation import SwapMutation as _SwapMutationCandidate
+        except ImportError as exc:
+            raise ImportError(
+                "The installed jmetalpy version does not expose a permutation swap mutation "
+                "(requires PermutationSwapMutation>=1.9 or SwapMutation<=1.7)."
+            ) from exc
+
+    _SwapMutationOp = _patch_permutation_swap_mutation_cls(
+        _SwapMutationCandidate, PermutationSolution, Mutation
+    )
+
+    try:
+        from vamos.operators.permutation import order_crossover as _vamos_order_crossover
+    except ImportError as exc:  # pragma: no cover - defensive, should never happen
+        raise ImportError("VAMOS permutation operators are unavailable.") from exc
+
+    class _VamosOrderCrossover(Crossover):
+        def __init__(self, probability: float, seed: int):
+            super().__init__(probability=probability)
+            self._rng = np.random.default_rng(seed)
+
+        def execute(self, parents):
+            if len(parents) != 2:
+                raise Exception(f"Expected 2 parents, received {len(parents)}.")
+            parent_arrays = np.asarray(
+                [parents[0].variables, parents[1].variables], dtype=int
+            )
+            children_arrays = _vamos_order_crossover(
+                parent_arrays, self.probability, self._rng
+            )
+            offspring = [parents[0].__copy__(), parents[1].__copy__()]
+            for child_sol, arr in zip(offspring, children_arrays, strict=False):
+                child_sol.variables = arr.tolist()
+            return offspring
+
+        def get_number_of_parents(self) -> int:
+            return 2
+
+        def get_number_of_children(self) -> int:
+            return 2
+
+        def get_name(self) -> str:
+            return "Order crossover (VAMOS)"
+
     class _VamosJMetalPermutationProblem(PermutationProblem):
         def __init__(self, base_problem):
             super().__init__()
             self.base_problem = base_problem
-            self.number_of_variables = base_problem.n_var
-            self.number_of_objectives = base_problem.n_obj
-            self.number_of_constraints = 0
-            self.obj_directions = [self.MINIMIZE] * self.number_of_objectives
-            self.obj_labels = [f"f{i+1}" for i in range(self.number_of_objectives)]
+            self._n_var = int(base_problem.n_var)
+            self._n_obj = int(base_problem.n_obj)
+            self._n_con = 0
+            self._name = f"VAMOS-{base_problem.__class__.__name__}"
+            self.obj_directions = [self.MINIMIZE] * self._n_obj
+            self.obj_labels = [f"f{i+1}" for i in range(self._n_obj)]
+
+        def number_of_variables(self) -> int:
+            return self._n_var
+
+        def number_of_objectives(self) -> int:
+            return self._n_obj
+
+        def number_of_constraints(self) -> int:
+            return self._n_con
+
+        def name(self) -> str:
+            return self._name
 
         def evaluate(self, solution: PermutationSolution) -> PermutationSolution:
             perm = np.asarray(solution.variables, dtype=int)[np.newaxis, :]
-            F = np.empty((1, self.number_of_objectives))
+            F = np.empty((1, self._n_obj))
             self.base_problem.evaluate(perm, {"F": F})
             solution.objectives = F[0].tolist()
             return solution
 
         def create_solution(self) -> PermutationSolution:
-            sol = PermutationSolution(self.number_of_variables, self.number_of_objectives, self.number_of_constraints)
-            sol.variables = np.random.permutation(self.number_of_variables).tolist()
+            sol = PermutationSolution(self._n_var, self._n_obj, self._n_con)
+            sol.variables = np.random.permutation(self._n_var).tolist()
             return sol
 
     jm_problem = _VamosJMetalPermutationProblem(problem)
     mutation_prob = min(1.0, 2.0 / max(1, problem.n_var))
-    crossover = PMXCrossover(probability=0.9)
-    mutation = SwapMutation(probability=mutation_prob)
+    crossover = _VamosOrderCrossover(probability=0.9, seed=SEED)
+    mutation = _SwapMutationOp(probability=mutation_prob)
     algorithm = NSGAII(
         problem=jm_problem,
         population_size=POPULATION_SIZE,
@@ -727,10 +815,15 @@ def _run_jmetalpy_perm_nsga2(selection: ProblemSelection, *, use_native_problem:
     algorithm.run()
     end = time.perf_counter()
     total_time_ms = (end - start) * 1000.0
-    solutions = algorithm.get_result() if hasattr(algorithm, "get_result") else []
+    get_result_fn = getattr(algorithm, "result", None)
+    solutions = get_result_fn() if callable(get_result_fn) else []
     if isinstance(solutions, PermutationSolution):
         solutions = [solutions]
-    F = np.array([sol.objectives for sol in solutions], dtype=float) if solutions else np.empty((0, problem.n_obj))
+    rows = [sol.objectives for sol in solutions]
+    if rows:
+        F = np.array(rows, dtype=float)
+    else:
+        F = np.empty((0, problem.n_obj))
     metrics = _make_metrics("jmetalpy_perm_nsga2", "jmetalpy", total_time_ms, MAX_EVALUATIONS, F)
     _print_run_results(metrics)
     print("=" * 80)
@@ -944,6 +1037,49 @@ def _plot_pareto_front(results, selection: ProblemSelection):
     return plot_path
 
 
+def _patch_permutation_swap_mutation_cls(base_cls, permutation_solution_cls, mutation_base_cls):
+    """
+    Ensure the provided swap mutation actually updates solutions.
+    Some jMetalPy releases expose a swap operator that operates on copies
+    returned by `PermutationSolution.variables` without writing back,
+    which becomes a no-op. We detect this behaviour and inject a small
+    patched implementation that mutates the permutation and reassigns it.
+    """
+    try:
+        test_sol = permutation_solution_cls(5, 1)
+    except TypeError:
+        test_sol = permutation_solution_cls(5, 1, 0)
+    baseline_perm = list(range(5))
+    test_sol.variables = baseline_perm
+    try:
+        base_cls(probability=1.0).execute(test_sol)
+    except Exception:
+        # If the operator itself fails, fall back to patched version.
+        needs_patch = True
+    else:
+        needs_patch = test_sol.variables == baseline_perm
+
+    if not needs_patch:
+        return base_cls
+
+    class _PatchedPermutationSwapMutation(mutation_base_cls):
+        def __init__(self, probability: float):
+            super().__init__(probability=probability)
+
+        def execute(self, solution):
+            if random.random() <= self.probability:
+                perm = solution.variables
+                idx_a, idx_b = random.sample(range(len(perm)), 2)
+                perm[idx_a], perm[idx_b] = perm[idx_b], perm[idx_a]
+                solution.variables = perm
+            return solution
+
+        def get_name(self):
+            return "Permutation Swap mutation (patched)"
+
+    return _PatchedPermutationSwapMutation
+
+
 def _execute_problem_suite(args, problem_selection: ProblemSelection):
     engines = EXPERIMENT_BACKENDS if args.experiment == "backends" else (args.engine,)
     algorithms = list(ENABLED_ALGORITHMS) if args.algorithm == "both" else [args.algorithm]
@@ -1015,6 +1151,10 @@ def _execute_problem_suite(args, problem_selection: ProblemSelection):
 
 def main():
     args = _parse_args()
+    if args.max_evaluations <= 0:
+        raise ValueError("--max-evaluations must be a positive integer.")
+    global MAX_EVALUATIONS
+    MAX_EVALUATIONS = args.max_evaluations
     selections = _resolve_problem_selections(args)
     multiple = len(selections) > 1
     for idx, selection in enumerate(selections, start=1):
