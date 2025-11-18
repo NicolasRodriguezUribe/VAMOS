@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Tuple
 
 from .dtlz import DTLZ1Problem, DTLZ2Problem, DTLZ3Problem, DTLZ4Problem
+from .tsp import TSPProblem
 from .wfg import (
     WFG1Problem,
     WFG2Problem,
@@ -27,8 +28,9 @@ class ProblemSpec:
     default_n_var: int
     default_n_obj: int
     allow_n_obj_override: bool
-    description: str
     factory: ProblemFactory
+    description: str = ""
+    encoding: str = "continuous"
 
     def resolve_dimensions(
         self, *, n_var: Optional[int], n_obj: Optional[int]
@@ -74,6 +76,17 @@ def _zdt1_factory(n_var: int, _ignored: Optional[int] = None):
 
 def _dtlz_factory(cls, n_var: int, n_obj: Optional[int]):
     return cls(n_var=n_var, n_obj=n_obj if n_obj is not None else 3)
+
+
+def _tsp_factory(n_var: int, _ignored: Optional[int] = None):
+    return TSPProblem(n_cities=n_var)
+
+
+def _tsplib_tsp_factory(dataset: str):
+    def _factory(_n_var: int, _ignored: Optional[int] = None):
+        return TSPProblem(dataset=dataset)
+
+    return _factory
 
 
 PROBLEM_SPECS: Dict[str, ProblemSpec] = {
@@ -229,6 +242,66 @@ PROBLEM_SPECS: Dict[str, ProblemSpec] = {
             n_var=n_var,
             n_obj=n_obj if n_obj is not None else 3,
         ),
+    ),
+    "tsp6": ProblemSpec(
+        key="tsp6",
+        label="TSP (6 cities)",
+        default_n_var=6,
+        default_n_obj=2,
+        allow_n_obj_override=False,
+        encoding="permutation",
+        description="Toy traveling salesman instance with 6 cities (permutation encoding).",
+        factory=_tsp_factory,
+    ),
+    "kroa100": ProblemSpec(
+        key="kroa100",
+        label="TSPLIB KroA100",
+        default_n_var=100,
+        default_n_obj=2,
+        allow_n_obj_override=False,
+        encoding="permutation",
+        description="TSPLIB 100-city KroA instance (permutation encoding).",
+        factory=_tsplib_tsp_factory("kroA100"),
+    ),
+    "krob100": ProblemSpec(
+        key="krob100",
+        label="TSPLIB KroB100",
+        default_n_var=100,
+        default_n_obj=2,
+        allow_n_obj_override=False,
+        encoding="permutation",
+        description="TSPLIB 100-city KroB instance (permutation encoding).",
+        factory=_tsplib_tsp_factory("kroB100"),
+    ),
+    "kroc100": ProblemSpec(
+        key="kroc100",
+        label="TSPLIB KroC100",
+        default_n_var=100,
+        default_n_obj=2,
+        allow_n_obj_override=False,
+        encoding="permutation",
+        description="TSPLIB 100-city KroC instance (permutation encoding).",
+        factory=_tsplib_tsp_factory("kroC100"),
+    ),
+    "krod100": ProblemSpec(
+        key="krod100",
+        label="TSPLIB KroD100",
+        default_n_var=100,
+        default_n_obj=2,
+        allow_n_obj_override=False,
+        encoding="permutation",
+        description="TSPLIB 100-city KroD instance (permutation encoding).",
+        factory=_tsplib_tsp_factory("kroD100"),
+    ),
+    "kroe100": ProblemSpec(
+        key="kroe100",
+        label="TSPLIB KroE100",
+        default_n_var=100,
+        default_n_obj=2,
+        allow_n_obj_override=False,
+        encoding="permutation",
+        description="TSPLIB 100-city KroE instance (permutation encoding).",
+        factory=_tsplib_tsp_factory("kroE100"),
     ),
 }
 
