@@ -39,7 +39,10 @@ python -m vamos.main --engine moocore_v2
 python -m vamos.main --algorithm moead --problem dtlz2 --n-obj 3
 python -m vamos.main --problem-set families  # ZDT1 + DTLZ2 + WFG4 (WFG requires pymoo)
 python -m vamos.main --include-external --external-problem-source vamos
+python -m vamos.main --problem tsp6  # Toy permutation-based TSP instance
+python -m vamos.main --problem kroa100  # TSPLIB permutation benchmark (100 cities)
 python -m vamos.main --experiment backends --include-external
+python -m vamos.main --problem-set tsplib_kro100  # KroA-E100 sweep
 ```
 
 When installing in editable mode you also get the `vamos` console script, so
@@ -91,6 +94,10 @@ External baselines use each library's native benchmark definitions by default. P
 available for ZDT1).
 
 Only the dependencies you install are loaded; missing libraries are skipped gracefully with a console warning.
+
+### Permutation / discrete problems
+
+The framework now understands permutation encodings for NSGA-II. Besides the toy `tsp6` benchmark we vendor TSPLIB's KroA/B/C/D/E100 instances (`--problem kroa100`, etc.), each exposing the same bi-objective TSP (minimize tour length and maximum edge). When selecting permutation problems the CLI automatically switches NSGA-II to order crossover + swap mutation while keeping the rest of the workflow (kernels, diagnostics, plotting) unchanged.
 
 ## Contributing / Extending
 

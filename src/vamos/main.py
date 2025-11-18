@@ -47,7 +47,9 @@ PROBLEM_SET_PRESETS = {
         {"problem": "zdt1"},
         {"problem": "dtlz2"},
         {"problem": "wfg4"},
+        {"problem": "tsp6"},
     ),
+    "tsplib_kro100": tuple({"problem": key} for key in ("kroa100", "krob100", "kroc100", "krod100", "kroe100")),
     "all": tuple({"problem": name} for name in available_problem_names()),
 }
 
@@ -214,12 +216,24 @@ def _resolve_problem_selections(args) -> list[ProblemSelection]:
 
 def _build_algorithm(algorithm_name: str, engine_name: str, problem):
     kernel_backend = _resolve_kernel(engine_name)
+    encoding = getattr(problem, "encoding", "continuous")
+    if encoding == "permutation" and algorithm_name != "nsgaii":
+        raise ValueError(
+            f"Problem '{problem.__class__.__name__}' uses permutation encoding; "
+            f"currently only NSGA-II supports this representation."
+        )
     if algorithm_name == "nsgaii":
+        if encoding == "permutation":
+            crossover_cfg = ("ox", {"prob": 0.9})
+            mutation_cfg = ("swap", {"prob": "2/n"})
+        else:
+            crossover_cfg = ("sbx", {"prob": 0.9, "eta": 20.0})
+            mutation_cfg = ("pm", {"prob": "1/n", "eta": 20.0})
         cfg_builder = (
             NSGAIIConfig()
             .pop_size(POPULATION_SIZE)
-            .crossover("sbx", prob=0.9, eta=20.0)
-            .mutation("pm", prob="1/n", eta=20.0)
+            .crossover(crossover_cfg[0], **crossover_cfg[1])
+            .mutation(mutation_cfg[0], **mutation_cfg[1])
             .selection("tournament", pressure=2)
             .survival("nsga2")
             .engine(engine_name)
@@ -289,6 +303,9 @@ def _print_run_banner(
         print(f"Description: {problem_selection.spec.description}")
     print(f"Decision variables: {problem.n_var}")
     print(f"Objectives: {problem.n_obj}")
+    encoding = getattr(problem, "encoding", problem_selection.spec.encoding)
+    if encoding:
+        print(f"Encoding: {encoding}")
     print(f"Algorithm: {algorithm_label}")
     print(f"Backend: {backend_label}")
     print(f"Population size: {POPULATION_SIZE}")
@@ -359,6 +376,7 @@ def _build_run_metadata(
         "description": selection.spec.description,
         "n_var": selection.n_var,
         "n_obj": selection.n_obj,
+        "encoding": selection.spec.encoding,
     }
     backend_info = {
         "name": engine_name,
@@ -592,6 +610,133 @@ def _run_jmetalpy_nsga2(selection: ProblemSelection, *, use_native_problem: bool
     return metrics
 
 
+def _run_pymoo_perm_nsga2(selection: ProblemSelection, *, use_native_problem: bool):
+    problem = selection.instantiate()
+    encoding = getattr(problem, "encoding", "continuous")
+    if encoding != "permutation":
+        raise ValueError("PyMOO permutation baseline requires a permutation-encoded problem.")
+    _print_run_banner(problem, selection, "PyMOO NSGA-II (perm)", "pymoo")
+    try:
+        from pymoo.algorithms.moo.nsga2 import NSGA2
+        from pymoo.core.problem import Problem as PymooProblem
+        from pymoo.operators.sampling.rnd import PermutationRandomSampling
+        from pymoo.operators.crossover.pmx import PMX
+        from pymoo.operators.mutation.inversion import InversionMutation
+        from pymoo.optimize import minimize
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError(
+            "pymoo is not installed. Install it with 'pip install pymoo' to use this baseline."
+        ) from exc
+
+    class _VamosPymooPermutationProblem(PymooProblem):
+        def __init__(self, base_problem):
+            super().__init__(
+                n_var=base_problem.n_var,
+                n_obj=base_problem.n_obj,
+                xl=0,
+                xu=base_problem.n_var - 1,
+                elementwise_evaluation=False,
+            )
+            self.base_problem = base_problem
+
+        def _evaluate(self, X, out, *args, **kwargs):
+            perms = np.asarray(X, dtype=int)
+            F = np.empty((perms.shape[0], self.n_obj))
+            self.base_problem.evaluate(perms, {"F": F})
+            out["F"] = F
+
+    pymoo_problem = _VamosPymooPermutationProblem(problem)
+    mutation_prob = min(1.0, 2.0 / max(1, problem.n_var))
+    algorithm = NSGA2(
+        pop_size=POPULATION_SIZE,
+        sampling=PermutationRandomSampling(),
+        crossover=PMX(prob=0.9),
+        mutation=InversionMutation(prob=mutation_prob),
+        eliminate_duplicates=True,
+    )
+    start = time.perf_counter()
+    res = minimize(
+        pymoo_problem,
+        algorithm,
+        ("n_eval", MAX_EVALUATIONS),
+        seed=SEED,
+        verbose=False,
+    )
+    end = time.perf_counter()
+    total_time_ms = (end - start) * 1000.0
+    F = np.asarray(res.F, dtype=float)
+    metrics = _make_metrics("pymoo_perm_nsga2", "pymoo", total_time_ms, MAX_EVALUATIONS, F)
+    _print_run_results(metrics)
+    print("=" * 80)
+    return metrics
+
+
+def _run_jmetalpy_perm_nsga2(selection: ProblemSelection, *, use_native_problem: bool):
+    problem = selection.instantiate()
+    encoding = getattr(problem, "encoding", "continuous")
+    if encoding != "permutation":
+        raise ValueError("jMetalPy permutation baseline requires a permutation-encoded problem.")
+    _print_run_banner(problem, selection, "jMetalPy NSGA-II (perm)", "jmetalpy")
+    try:
+        from jmetal.core.problem import PermutationProblem
+        from jmetal.core.solution import PermutationSolution
+        from jmetal.algorithm.multiobjective.nsgaii import NSGAII
+        from jmetal.operator.crossover import PMXCrossover
+        from jmetal.operator.mutation import SwapMutation
+        from jmetal.util.termination_criterion import StoppingByEvaluations
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError(
+            "jmetalpy is not installed. Install it with 'pip install jmetalpy' to use this baseline."
+        ) from exc
+
+    class _VamosJMetalPermutationProblem(PermutationProblem):
+        def __init__(self, base_problem):
+            super().__init__()
+            self.base_problem = base_problem
+            self.number_of_variables = base_problem.n_var
+            self.number_of_objectives = base_problem.n_obj
+            self.number_of_constraints = 0
+            self.obj_directions = [self.MINIMIZE] * self.number_of_objectives
+            self.obj_labels = [f"f{i+1}" for i in range(self.number_of_objectives)]
+
+        def evaluate(self, solution: PermutationSolution) -> PermutationSolution:
+            perm = np.asarray(solution.variables, dtype=int)[np.newaxis, :]
+            F = np.empty((1, self.number_of_objectives))
+            self.base_problem.evaluate(perm, {"F": F})
+            solution.objectives = F[0].tolist()
+            return solution
+
+        def create_solution(self) -> PermutationSolution:
+            sol = PermutationSolution(self.number_of_variables, self.number_of_objectives, self.number_of_constraints)
+            sol.variables = np.random.permutation(self.number_of_variables).tolist()
+            return sol
+
+    jm_problem = _VamosJMetalPermutationProblem(problem)
+    mutation_prob = min(1.0, 2.0 / max(1, problem.n_var))
+    crossover = PMXCrossover(probability=0.9)
+    mutation = SwapMutation(probability=mutation_prob)
+    algorithm = NSGAII(
+        problem=jm_problem,
+        population_size=POPULATION_SIZE,
+        offspring_population_size=POPULATION_SIZE,
+        mutation=mutation,
+        crossover=crossover,
+        termination_criterion=StoppingByEvaluations(max_evaluations=MAX_EVALUATIONS),
+    )
+    start = time.perf_counter()
+    algorithm.run()
+    end = time.perf_counter()
+    total_time_ms = (end - start) * 1000.0
+    solutions = algorithm.get_result() if hasattr(algorithm, "get_result") else []
+    if isinstance(solutions, PermutationSolution):
+        solutions = [solutions]
+    F = np.array([sol.objectives for sol in solutions], dtype=float) if solutions else np.empty((0, problem.n_obj))
+    metrics = _make_metrics("jmetalpy_perm_nsga2", "jmetalpy", total_time_ms, MAX_EVALUATIONS, F)
+    _print_run_results(metrics)
+    print("=" * 80)
+    return metrics
+
+
 def _run_pygmo_nsga2(selection: ProblemSelection, *, use_native_problem: bool):
     if selection.spec.key != "zdt1":
         raise ValueError("PyGMO baseline currently supports only ZDT1.")
@@ -658,6 +803,8 @@ EXTERNAL_ALGORITHM_RUNNERS = {
     "pymoo_nsga2": _run_pymoo_nsga2,
     "jmetalpy_nsga2": _run_jmetalpy_nsga2,
     "pygmo_nsga2": _run_pygmo_nsga2,
+    "pymoo_perm_nsga2": _run_pymoo_perm_nsga2,
+    "jmetalpy_perm_nsga2": _run_jmetalpy_perm_nsga2,
 }
 
 
@@ -798,19 +945,9 @@ def _plot_pareto_front(results, selection: ProblemSelection):
 
 
 def _execute_problem_suite(args, problem_selection: ProblemSelection):
-    if args.experiment == "backends":
-        engines = EXPERIMENT_BACKENDS    
-    else:
-        engines = (args.engine,)
-    engines = EXPERIMENT_BACKENDS 
-    if args.algorithm == "both":
-        algorithms = list(ENABLED_ALGORITHMS)
-    else:
-        algorithms = [args.algorithm]
-    #algorithms = list(ENABLED_ALGORITHMS)
-    algorithms = ["nsgaii"]
+    engines = EXPERIMENT_BACKENDS if args.experiment == "backends" else (args.engine,)
+    algorithms = list(ENABLED_ALGORITHMS) if args.algorithm == "both" else [args.algorithm]
     include_external = args.include_external
-    include_external = True
     use_native_external_problem = args.external_problem_source == "native"
     if include_external and problem_selection.spec.key != "zdt1":
         print(
