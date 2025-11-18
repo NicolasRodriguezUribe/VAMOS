@@ -181,8 +181,16 @@ class NumPyKernel(KernelBackend):
         y1 = np.minimum(x1, x2)
         y2 = np.maximum(x1, x2)
         delta = y2 - y1
-        xl_arr = np.full(idx_row.shape, xl, dtype=float)
-        xu_arr = np.full(idx_row.shape, xu, dtype=float)
+        xl_vals = np.asarray(xl, dtype=float)
+        xu_vals = np.asarray(xu, dtype=float)
+        if xl_vals.ndim == 0:
+            xl_arr = np.full(idx_row.shape, xl_vals)
+        else:
+            xl_arr = xl_vals[idx_col]
+        if xu_vals.ndim == 0:
+            xu_arr = np.full(idx_row.shape, xu_vals)
+        else:
+            xu_arr = xu_vals[idx_col]
         rand = rng.random(idx_row.shape)
         inv = 1.0 / (eta + 1.0)
 
@@ -203,8 +211,8 @@ class NumPyKernel(KernelBackend):
         betaq[~term] = np.power(1.0 / (2.0 - rand[~term] * alpha[~term]), inv)
         c2 = 0.5 * ((y1 + y2) + betaq * delta)
 
-        c1 = np.clip(c1, xl, xu)
-        c2 = np.clip(c2, xl, xu)
+        c1 = np.clip(c1, xl_arr, xu_arr)
+        c2 = np.clip(c2, xl_arr, xu_arr)
 
         swap_mask = rng.random(idx_row.shape) <= 0.5
         first = np.where(swap_mask, c2, c1)
