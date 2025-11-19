@@ -34,26 +34,51 @@ class SBXCrossover(Crossover):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
     ) -> None:
         self.prob = float(prob_crossover)
         self.eta = float(eta)
         self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.workspace = workspace
+        self.allow_inplace = bool(allow_inplace)
+
+    def _rand(self, key: str, shape: tuple[int, ...], rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(shape)
+        buf = self.workspace.request(key, shape, np.float64)
+        rng.random(out=buf)
+        return buf
+
+    def _mask_pairs(self, n_pairs: int, rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(n_pairs) <= self.prob
+        probs = self.workspace.request("sbx_prob", (n_pairs,), np.float64)
+        rng.random(out=probs)
+        mask = self.workspace.request("sbx_mask", (n_pairs,), np.bool_)
+        np.less_equal(probs, self.prob, out=mask)
+        return mask
+
+    def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
+        if self.workspace is None:
+            return np.empty(shape, dtype=dtype)
+        return self.workspace.request(key, shape, dtype)
 
     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
         parents_arr = self._as_matings(parents, copy=False, name="parents")
-        offspring = parents_arr.copy()
+        offspring = parents_arr if self.allow_inplace else parents_arr.copy()
         n_pairs, _, _ = offspring.shape
         if n_pairs == 0:
             return offspring
         self._check_bounds_match(offspring[:, 0, :], self.lower)
 
-        apply_mask = rng.random(n_pairs) <= self.prob
-        if not np.any(apply_mask):
+        pair_mask = self._mask_pairs(n_pairs, rng)
+        idx = np.flatnonzero(pair_mask)
+        if idx.size == 0:
             return offspring
 
-        active = offspring[apply_mask]
-        parent1 = active[:, 0, :].copy()
-        parent2 = active[:, 1, :].copy()
+        parent1 = offspring[idx, 0, :]
+        parent2 = offspring[idx, 1, :]
         eps = 1.0e-14
 
         y1 = np.minimum(parent1, parent2)
@@ -65,8 +90,8 @@ class SBXCrossover(Crossover):
 
         xl = self.lower.reshape(1, -1)
         xu = self.upper.reshape(1, -1)
-        rand = rng.random(parent1.shape)
-        betaq = np.empty_like(parent1)
+        rand = self._rand("sbx_rand", parent1.shape, rng)
+        betaq = self._buffer("sbx_betaq", parent1.shape, parent1.dtype)
 
         beta_valid = 1.0 + (2.0 * (y1 - xl) / diff.clip(min=eps))
         beta_valid = np.maximum(beta_valid, eps)
@@ -87,15 +112,19 @@ class SBXCrossover(Crossover):
         betaq[~term] = np.power(1.0 / (2.0 - rand[~term] * alpha[~term]), inv_eta)
         c2 = 0.5 * ((y1 + y2) + betaq * diff)
 
-        c1 = np.clip(c1, self.lower, self.upper)
-        c2 = np.clip(c2, self.lower, self.upper)
-        swap = rng.random(parent1.shape) <= 0.5
-        child1 = np.where(swap, c2, c1)
-        child2 = np.where(swap, c1, c2)
+        np.clip(c1, self.lower, self.upper, out=c1)
+        np.clip(c2, self.lower, self.upper, out=c2)
+        swap = self._rand("sbx_swap", parent1.shape, rng)
+        if self.workspace is None:
+            swap_mask = swap <= 0.5
+        else:
+            swap_mask = self.workspace.request("sbx_swap_mask", parent1.shape, np.bool_)
+            np.less_equal(swap, 0.5, out=swap_mask)
+        child1 = np.where(swap_mask, c2, c1)
+        child2 = np.where(swap_mask, c1, c2)
 
-        active[:, 0, :] = child1
-        active[:, 1, :] = child2
-        offspring[apply_mask] = active
+        offspring[idx, 0, :] = child1
+        offspring[idx, 1, :] = child2
         return offspring
 
 
@@ -111,6 +140,7 @@ class BLXAlphaCrossover(Crossover):
         upper: ArrayLike,
         repair: str = "clip",
         workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
     ) -> None:
         self.alpha = float(alpha)
         self.prob = float(prob_crossover)
@@ -120,6 +150,7 @@ class BLXAlphaCrossover(Crossover):
             raise ValueError(f"Unsupported BLX repair strategy '{repair}'.")
         self.repair = normalized
         self.workspace = workspace
+        self.allow_inplace = bool(allow_inplace)
 
     def _rand(self, key: str, shape: tuple[int, ...], rng: np.random.Generator) -> np.ndarray:
         if self.workspace is None:
@@ -150,7 +181,7 @@ class BLXAlphaCrossover(Crossover):
 
     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
         parents_arr = self._as_matings(parents, copy=False, name="parents")
-        offspring = parents_arr.copy()
+        offspring = parents_arr if self.allow_inplace else parents_arr.copy()
         self._check_bounds_match(offspring[:, 0, :], self.lower)
         n_pairs = offspring.shape[0]
         if n_pairs == 0:

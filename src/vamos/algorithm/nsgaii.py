@@ -96,6 +96,7 @@ class NSGAII:
         term_type, term_val = termination
         hv_target = None
         hv_ref_point = None
+        hv_evaluator = None
         if term_type == "n_eval":
             max_eval = int(term_val)
         elif term_type == "hv":
@@ -104,8 +105,14 @@ class NSGAII:
             max_eval = int(term_val.get("max_evaluations", 0))
             if max_eval <= 0:
                 raise ValueError("HV-based termination requires a positive max_evaluations value.")
+            if self.kernel.supports_quality_indicator("hypervolume"):
+                hv_evaluator = self.kernel.hypervolume
+            else:
+                hv_evaluator = hypervolume
         else:
             raise ValueError("Unsupported termination criterion for NSGA-II.")
+        if hv_target is not None and hv_evaluator is None:
+            hv_evaluator = hypervolume
 
         rng = np.random.default_rng(seed)
         pop_size = int(self.cfg["pop_size"])
@@ -168,7 +175,7 @@ class NSGAII:
         repair_operator = self._build_repair_operator(encoding, repair_cfg)
         hv_reached = False
         if hv_target is not None:
-            current_hv = hypervolume(F, hv_ref_point)
+            current_hv = hv_evaluator(F, hv_ref_point)
             if current_hv >= hv_target:
                 hv_reached = True
 
@@ -178,7 +185,7 @@ class NSGAII:
                 self.kernel, ranks, crowding, pressure, rng, offspring_size
             )
             parent_idx = mating_pairs.reshape(-1)
-            X_parents = X[parent_idx]
+            X_parents = self._gather_parents(X, parent_idx, variation_workspace)
 
             X_off = self._produce_offspring(
                 X_parents,
@@ -207,7 +214,7 @@ class NSGAII:
                 elif archive_manager is not None:
                     archive_X, archive_F = archive_manager.update(X, F)
             if hv_target is not None:
-                current_hv = hypervolume(F, hv_ref_point)
+                current_hv = hv_evaluator(F, hv_ref_point)
                 if current_hv >= hv_target:
                     hv_reached = True
                     break
@@ -233,6 +240,19 @@ class NSGAII:
                 raise ValueError(f"Unsupported crossover '{crossover}' for continuous encoding.")
             if mutation not in {"pm", "non_uniform"}:
                 raise ValueError(f"Unsupported mutation '{mutation}' for continuous encoding.")
+
+    def _gather_parents(
+        self,
+        population: np.ndarray,
+        parent_idx: np.ndarray,
+        workspace: VariationWorkspace | None,
+    ) -> np.ndarray:
+        if workspace is None:
+            return population[parent_idx]
+        shape = (parent_idx.size, population.shape[1])
+        buffer = workspace.request("parent_buffer", shape, population.dtype)
+        np.take(population, parent_idx, axis=0, out=buffer)
+        return buffer
 
     def _produce_offspring(
         self,
@@ -277,7 +297,14 @@ class NSGAII:
         if method == "sbx":
             prob = float(params.get("prob", 0.9))
             eta = float(params.get("eta", 20.0))
-            return SBXCrossover(prob_crossover=prob, eta=eta, lower=xl, upper=xu)
+            return SBXCrossover(
+                prob_crossover=prob,
+                eta=eta,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+                allow_inplace=True,
+            )
         if method == "blx_alpha":
             prob = float(params.get("prob", 1.0))
             alpha = float(params.get("alpha", 0.5))
@@ -289,6 +316,7 @@ class NSGAII:
                 upper=xu,
                 repair=repair,
                 workspace=workspace,
+                allow_inplace=True,
             )
         return None
 
@@ -298,7 +326,13 @@ class NSGAII:
         if method == "pm":
             prob = float(params.get("prob", 0.1))
             eta = float(params.get("eta", 20.0))
-            return PolynomialMutation(prob_mutation=prob, eta=eta, lower=xl, upper=xu)
+            return PolynomialMutation(
+                prob_mutation=prob,
+                eta=eta,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+            )
         if method == "non_uniform":
             prob = float(params.get("prob", 0.1))
             perturb = float(params.get("perturbation", 0.5))
