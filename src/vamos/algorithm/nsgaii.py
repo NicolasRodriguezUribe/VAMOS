@@ -7,14 +7,12 @@ from vamos.operators.permutation import (
     random_permutation_population,
     swap_mutation,
 )
-from vamos.operators.continuous import (
-    blx_alpha_crossover,
-    non_uniform_mutation,
-    ContinuousVariationWorkspace,
-)
 from vamos.operators.real import (
     SBXCrossover,
     PolynomialMutation,
+    BLXAlphaCrossover,
+    NonUniformMutation,
+    VariationWorkspace,
     ClampRepair,
     ReflectRepair,
     ResampleRepair,
@@ -157,20 +155,18 @@ class NSGAII:
         mut_method, mut_params = self.cfg["mutation"]
         mut_params = _prepare_mutation_params(mut_params, encoding, n_var)
 
+        variation_workspace = VariationWorkspace() if encoding != "permutation" else None
+
         self._validate_operator_support(encoding, cross_method, mut_method)
         crossover_operator = self._build_crossover_operator(
-            encoding, cross_method, cross_params, xl, xu
+            encoding, cross_method, cross_params, xl, xu, variation_workspace
         )
         mutation_operator = self._build_mutation_operator(
-            encoding, mut_method, mut_params, xl, xu
+            encoding, mut_method, mut_params, xl, xu, variation_workspace
         )
         repair_cfg = self.cfg.get("repair")
         repair_operator = self._build_repair_operator(encoding, repair_cfg)
         hv_reached = False
-        variation_workspace = None
-        if encoding != "permutation":
-            variation_workspace = ContinuousVariationWorkspace()
-
         if hv_target is not None:
             current_hv = hypervolume(F, hv_ref_point)
             if current_hv >= hv_target:
@@ -197,7 +193,6 @@ class NSGAII:
                 crossover_operator,
                 mutation_operator,
                 repair_operator,
-                variation_workspace,
             )
 
             F_off = _evaluate_population(problem, X_off)
@@ -253,7 +248,6 @@ class NSGAII:
         crossover_operator,
         mutation_operator,
         repair_operator,
-        workspace,
     ) -> np.ndarray:
         if encoding == "permutation":
             cross_prob = float(cross_params.get("prob", 1.0))
@@ -262,51 +256,14 @@ class NSGAII:
             return offspring
 
         n_var = parents.shape[1]
-        if crossover == "sbx":
-            if crossover_operator is None:
-                raise ValueError("SBX crossover operator is not initialized.")
-            pairs = parents.reshape(-1, 2, n_var)
-            offspring = crossover_operator(pairs, rng).reshape(parents.shape)
-        elif crossover == "blx_alpha":
-            cross_prob = float(cross_params.get("prob", 1.0))
-            alpha = float(cross_params.get("alpha", 0.5))
-            repair = cross_params.get("repair")
-            kwargs = {"repair": repair} if repair else {}
-            offspring = blx_alpha_crossover(
-                parents,
-                cross_prob,
-                alpha,
-                rng,
-                xl,
-                xu,
-                workspace=workspace,
-                xl_vec=xl,
-                xu_vec=xu,
-                **kwargs,
-            )
-        else:  # pragma: no cover - guarded by validation
-            raise ValueError(f"Unknown crossover '{crossover}' for continuous encoding.")
+        if crossover_operator is None:
+            raise ValueError("Crossover operator is not initialized.")
+        pairs = parents.reshape(-1, 2, n_var)
+        offspring = crossover_operator(pairs, rng).reshape(parents.shape)
 
-        if mutation == "pm":
-            if mutation_operator is None:
-                raise ValueError("Polynomial mutation operator is not initialized.")
-            offspring = mutation_operator(offspring, rng)
-        elif mutation == "non_uniform":
-            perturb = float(mut_params.get("perturbation", 0.5))
-            prob = float(mut_params.get("prob", 0.1))
-            non_uniform_mutation(
-                offspring,
-                prob,
-                perturb,
-                rng,
-                xl,
-                xu,
-                workspace=workspace,
-                xl_vec=xl,
-                xu_vec=xu,
-            )
-        else:  # pragma: no cover - guarded by validation
-            raise ValueError(f"Unknown mutation '{mutation}' for continuous encoding.")
+        if mutation_operator is None:
+            raise ValueError("Mutation operator is not initialized.")
+        offspring = mutation_operator(offspring, rng)
 
         if repair_operator is not None and encoding != "permutation":
             flat = offspring.reshape(-1, offspring.shape[-1])
@@ -314,18 +271,44 @@ class NSGAII:
             offspring = repaired.reshape(offspring.shape)
         return offspring
 
-    def _build_crossover_operator(self, encoding, method, params, xl, xu):
-        if encoding != "permutation" and method == "sbx":
+    def _build_crossover_operator(self, encoding, method, params, xl, xu, workspace):
+        if encoding == "permutation":
+            return None
+        if method == "sbx":
             prob = float(params.get("prob", 0.9))
             eta = float(params.get("eta", 20.0))
             return SBXCrossover(prob_crossover=prob, eta=eta, lower=xl, upper=xu)
+        if method == "blx_alpha":
+            prob = float(params.get("prob", 1.0))
+            alpha = float(params.get("alpha", 0.5))
+            repair = params.get("repair", "clip")
+            return BLXAlphaCrossover(
+                alpha=alpha,
+                prob_crossover=prob,
+                lower=xl,
+                upper=xu,
+                repair=repair,
+                workspace=workspace,
+            )
         return None
 
-    def _build_mutation_operator(self, encoding, method, params, xl, xu):
-        if encoding != "permutation" and method == "pm":
+    def _build_mutation_operator(self, encoding, method, params, xl, xu, workspace):
+        if encoding == "permutation":
+            return None
+        if method == "pm":
             prob = float(params.get("prob", 0.1))
             eta = float(params.get("eta", 20.0))
             return PolynomialMutation(prob_mutation=prob, eta=eta, lower=xl, upper=xu)
+        if method == "non_uniform":
+            prob = float(params.get("prob", 0.1))
+            perturb = float(params.get("perturbation", 0.5))
+            return NonUniformMutation(
+                prob_mutation=prob,
+                perturbation=perturb,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+            )
         return None
 
     def _build_repair_operator(self, encoding, repair_cfg):

@@ -35,7 +35,7 @@
     "offspring_size": 100,
     "pop_size": 100,
     "repair": [
-      "random",
+      "clip",
       {}
     ],
     "selection": [
@@ -46,12 +46,13 @@
     ],
     "survival": "nsga2"
   },
-  "max_evaluations": 125000,
+  "max_evaluations": 25000,
   "metrics": {
-    "evals_per_sec": 4275.569570943677,
-    "evaluations": 125000,
-    "spread": 2.1327029678167104,
-    "time_ms": 29235.87089998182
+    "evals_per_sec": 46932.66852256686,
+    "evaluations": 25000,
+    "spread": 1.4414267883477152,
+    "termination": "max_evaluations",
+    "time_ms": 532.6779999304563
   },
   "operators": {
     "crossover": {
@@ -69,7 +70,7 @@
       }
     },
     "repair": {
-      "name": "random",
+      "name": "clip",
       "params": {}
     }
   },
@@ -80,9 +81,9 @@
     "key": "zdt1",
     "label": "ZDT1",
     "n_obj": 2,
-    "n_var": 2048
+    "n_var": 10
   },
   "seed": 42,
-  "timestamp": "2025-11-19T07:07:32.182604+00:00",
+  "timestamp": "2025-11-19T11:37:15.835859+00:00",
   "title": "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
 }

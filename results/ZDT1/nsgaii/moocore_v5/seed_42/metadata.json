@@ -4,13 +4,13 @@
     "fun": "FUN.csv",
     "time_ms": "time.txt"
   },
-  "backend": "moocore_v2",
+  "backend": "moocore_v5",
   "backend_info": {
     "capabilities": [
       "c_backend"
     ],
     "device": "cpu",
-    "name": "moocore_v2",
+    "name": "moocore_v5",
     "quality_indicators": [
       "hypervolume"
     ]
@@ -24,7 +24,7 @@
         "prob": 0.9
       }
     ],
-    "engine": "moocore_v2",
+    "engine": "moocore_v5",
     "mutation": [
       "pm",
       {
@@ -48,11 +48,11 @@
   },
   "max_evaluations": 25000,
   "metrics": {
-    "evals_per_sec": 247593.88283012147,
+    "evals_per_sec": 215257.63336343868,
     "evaluations": 25000,
-    "spread": 1.4209231537393057,
+    "spread": 1.4542881314764189,
     "termination": "max_evaluations",
-    "time_ms": 100.971799925901
+    "time_ms": 116.13989993929863
   },
   "operators": {
     "crossover": {
@@ -84,6 +84,6 @@
     "n_var": 10
   },
   "seed": 42,
-  "timestamp": "2025-11-19T11:53:11.785529+00:00",
+  "timestamp": "2025-11-19T11:37:16.746972+00:00",
   "title": "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
 }

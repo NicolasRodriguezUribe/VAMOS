@@ -40,6 +40,24 @@ def _check_nvars(n_vars: int, bounds: np.ndarray) -> None:
         raise ValueError("Bounds dimensionality does not match the individual size.")
 
 
+class VariationWorkspace:
+    """
+    Simple buffer registry that hands out reusable NumPy arrays keyed by name.
+    Operators can reuse temporary arrays across generations to avoid reallocations.
+    """
+
+    def __init__(self):
+        self._buffers: dict[str, np.ndarray] = {}
+
+    def request(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
+        dtype = np.dtype(dtype)
+        buf = self._buffers.get(key)
+        if buf is None or buf.shape != shape or buf.dtype != dtype:
+            buf = np.empty(shape, dtype=dtype)
+            self._buffers[key] = buf
+        return buf
+
+
 class Crossover(ABC):
     """Base class for real-coded crossover operators."""
 
@@ -205,7 +223,7 @@ class SBXCrossover(Crossover):
 
 
 class BLXAlphaCrossover(Crossover):
-    """Blend crossover (BLX-α)."""
+    """Blend crossover (BLX-α) with optional buffer reuse and repair strategies."""
 
     def __init__(
         self,
@@ -214,10 +232,44 @@ class BLXAlphaCrossover(Crossover):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        repair: str = "clip",
+        workspace: VariationWorkspace | None = None,
     ) -> None:
         self.alpha = float(alpha)
         self.prob = float(prob_crossover)
         self.lower, self.upper = _ensure_bounds(lower, upper)
+        normalized = (repair or "clip").lower()
+        if normalized not in {"clip", "random"}:
+            raise ValueError(f"Unsupported BLX repair strategy '{repair}'.")
+        self.repair = normalized
+        self.workspace = workspace
+
+    def _rand(self, key: str, shape: tuple[int, ...], rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(shape)
+        buf = self.workspace.request(key, shape, np.float64)
+        rng.random(out=buf)
+        return buf
+
+    def _sample_mask(self, n_pairs: int, rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(n_pairs) <= self.prob
+        probs = self.workspace.request("blx_prob", (n_pairs,), np.float64)
+        rng.random(out=probs)
+        mask = self.workspace.request("blx_mask", (n_pairs,), np.bool_)
+        np.less_equal(probs, self.prob, out=mask)
+        return mask
+
+    def _repair_random(self, values: np.ndarray, rng: np.random.Generator, key: str) -> None:
+        mask_low = values < self.lower
+        mask_high = values > self.upper
+        mask = mask_low | mask_high
+        if not np.any(mask):
+            return
+        span = self.upper - self.lower
+        rand = self._rand(key, values.shape, rng)
+        repaired = self.lower + rand * span
+        values[mask] = repaired[mask]
 
     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
         parents = np.asarray(parents, dtype=float)
@@ -229,7 +281,7 @@ class BLXAlphaCrossover(Crossover):
         if n_pairs == 0:
             return offspring
 
-        mask = rng.random(n_pairs) <= self.prob
+        mask = self._sample_mask(n_pairs, rng)
         if not np.any(mask):
             return offspring
 
@@ -241,13 +293,19 @@ class BLXAlphaCrossover(Crossover):
         span = hi - lo
         lower = lo - self.alpha * span
         upper = hi + self.alpha * span
-        rand = rng.random(lower.shape)
-        child1 = lower + rand * (upper - lower)
-        rand = rng.random(lower.shape)
-        child2 = lower + rand * (upper - lower)
+        width = upper - lower
+        child1 = lower + self._rand("blx_rand1", lower.shape, rng) * width
+        child2 = lower + self._rand("blx_rand2", lower.shape, rng) * width
 
-        active[:, 0, :] = np.clip(child1, self.lower, self.upper)
-        active[:, 1, :] = np.clip(child2, self.lower, self.upper)
+        if self.repair == "clip":
+            np.clip(child1, self.lower, self.upper, out=child1)
+            np.clip(child2, self.lower, self.upper, out=child2)
+        else:
+            self._repair_random(child1, rng, "blx_rand_repair1")
+            self._repair_random(child2, rng, "blx_rand_repair2")
+
+        active[:, 0, :] = child1
+        active[:, 1, :] = child2
         offspring[mask] = active
         return offspring
 
@@ -449,70 +507,68 @@ class UniformResetMutation(Mutation):
 
 
 class NonUniformMutation(Mutation):
-    """Non-uniform mutation with generation-dependent amplitude."""
+    """
+    Non-uniform mutation that samples perturbations biased toward the bounds
+    using the simplified formulation employed by our NSGA-II variant.
+    """
 
     def __init__(
         self,
         prob_mutation: float,
-        eta: float = 2.0,
+        perturbation: float = 0.5,
         *,
-        max_generations: int,
         lower: ArrayLike,
         upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
     ) -> None:
-        if max_generations <= 0:
-            raise ValueError("max_generations must be positive.")
-        self.prob = float(prob_mutation)
-        self.eta = float(eta)
-        self.max_generations = int(max_generations)
-        self.current_generation = 0
+        self.prob = float(np.clip(prob_mutation, 0.0, 1.0))
+        self.perturbation = max(float(perturbation), 1e-8)
         self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.span = self.upper - self.lower
+        self.workspace = workspace
 
-    def set_generation(self, generation: int) -> None:
-        """Update the current generation counter used for scaling mutations."""
-        if generation < 0:
-            raise ValueError("generation must be non-negative.")
-        self.current_generation = min(generation, self.max_generations)
+    def _rand(self, key: str, shape: tuple[int, ...], rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(shape)
+        buf = self.workspace.request(key, shape, np.float64)
+        rng.random(out=buf)
+        return buf
 
-    def _mutation_delta(self, x: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-        progress = self.current_generation / self.max_generations
-        b = (1.0 - progress) ** self.eta
-        r = rng.random(x.shape)
-        return 1.0 - np.power(r, b)
-
-    def mutate(
-        self,
-        x: ArrayLike,
-        generation: int,
-        rng: np.random.Generator,
-    ) -> ArrayLike:
-        """Mutate individuals at an explicit generation index."""
-        self.set_generation(generation)
-        return self(x, rng)
+    def _mask(self, shape: tuple[int, ...], rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(shape) <= self.prob
+        probs = self.workspace.request("nu_prob", shape, np.float64)
+        rng.random(out=probs)
+        mask = self.workspace.request("nu_mask", shape, np.bool_)
+        np.less_equal(probs, self.prob, out=mask)
+        return mask
 
     def __call__(self, offspring: ArrayLike, rng: np.random.Generator) -> ArrayLike:
         X = np.asarray(offspring, dtype=float).copy()
         if X.ndim != 2:
             raise ValueError("offspring must have shape (n_individuals, n_vars).")
         _check_nvars(X.shape[1], self.lower)
-        mask = rng.random(X.shape) <= self.prob
+        mask = self._mask(X.shape, rng)
         if not np.any(mask):
             return X
-        delta = self._mutation_delta(X, rng)
-        direction = rng.random(X.shape) <= 0.5
-        increase = direction & mask
-        decrease = (~direction) & mask
-        inc_rows, inc_cols = np.nonzero(increase)
-        if inc_rows.size > 0:
-            upper_vals = self.upper[inc_cols]
-            diff = upper_vals - X[inc_rows, inc_cols]
-            X[inc_rows, inc_cols] += delta[inc_rows, inc_cols] * diff
-        dec_rows, dec_cols = np.nonzero(decrease)
-        if dec_rows.size > 0:
-            lower_vals = self.lower[dec_cols]
-            diff = X[dec_rows, dec_cols] - lower_vals
-            X[dec_rows, dec_cols] -= delta[dec_rows, dec_cols] * diff
-        return _clip_population(X, self.lower, self.upper)
+
+        rand = self._rand("nu_rand", X.shape, rng)
+        np.power(rand, self.perturbation, out=rand)
+        delta = self.workspace.request("nu_delta", X.shape, np.float64) if self.workspace else np.empty(X.shape, dtype=float)
+        np.subtract(1.0, rand, out=delta)
+        delta *= self.span
+        direction_rand = self._rand("nu_direction", X.shape, rng)
+        direction = np.where(direction_rand <= 0.5, -1.0, 1.0)
+        update = delta * direction
+        if self.workspace is None:
+            X += np.where(mask, update, 0.0)
+        else:
+            buffered_update = self.workspace.request("nu_update", X.shape, np.float64)
+            buffered_update.fill(0.0)
+            buffered_update[mask] = update[mask]
+            X += buffered_update
+        np.clip(X, self.lower, self.upper, out=X)
+        return X
 
 
 class ClampRepair(Repair):
