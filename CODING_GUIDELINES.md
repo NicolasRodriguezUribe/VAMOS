@@ -30,6 +30,13 @@ These notes capture the conventions we rely on when extending VAMOS (Vectorized 
 - When adding equations or algorithm details, include references (paper name, section) to help future contributors.
 - All public-facing content (code, comments, docstrings, commit messages, notebooks) must be written in English; avoid multilingual snippets that could confuse future maintainers.
 
+## Future features & components
+- **Always write implementation code, tests, and documentation in English.** If a legacy snippet is in another language, translate it while touching the file.
+- **Research before building.** Prior to adding any operator, problem, kernel, or study tooling, review the reference implementations in jMetal, jMetalPy, and pymoo. If an equivalent feature exists, ensure our version covers the same capabilities (or document why it intentionally differs).
+- **Favor parity, then optimization.** First match the feature set and behaviour you observed in the reference libraries, including configuration flags and sensible defaults. Once the functionality is correct, profile the new code path (e.g., `pytest -k feature --durations=20`, `python -m cProfile`) and optimize hot spots via vectorization, backend hooks, or caching.
+- **Record the research outcome.** Capture short notes in the PR description or module docstring summarizing which library reference you followed and any deliberate deviations, so future contributors can trace the design decision quickly.
+- **Keep extensibility in mind.** Structure new components so future variants (e.g., alternative crossover strategies) can plug in via the existing registries without large refactors.
+
 ## Testing & benchmarking
 - Unit tests go under `tests/` and should focus on deterministic components (operator builders, kernel utilities, registries).
 - For stochastic algorithms, add property-based or statistical checks (distribution shape, constraint violations) rather than brittle exact matches.
