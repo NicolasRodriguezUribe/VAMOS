@@ -18,78 +18,72 @@
   "config": {
     "archive": null,
     "crossover": [
-      "blx_alpha",
+      "sbx",
       {
-        "alpha": 0.94,
-        "prob": 0.88
+        "eta": 20.0,
+        "prob": 0.9
       }
     ],
     "engine": "moocore",
     "mutation": [
-      "non_uniform",
+      "pm",
       {
-        "perturbation": 0.3,
-        "prob": 0.45
+        "eta": 20.0,
+        "prob": "1/n"
       }
     ],
-    "offspring_size": 14,
-    "pop_size": 56,
+    "offspring_size": 100,
+    "pop_size": 100,
     "repair": [
-      "round",
+      "clip",
       {}
     ],
     "selection": [
       "tournament",
       {
-        "pressure": 9
+        "pressure": 2
       }
     ],
     "survival": "nsga2"
   },
-  "max_evaluations": 12500500,
+  "max_evaluations": 25000,
   "metrics": {
-    "evals_per_sec": 5605.247166932922,
-    "evaluations": 12500502,
-    "hv_reference_front": "C:\\Users\\nicol\\Desktop\\VAMOS\\data\\reference_fronts\\ZDT1.csv",
-    "hv_reference_point": [
-      6.0,
-      6.0
-    ],
-    "hv_threshold_fraction": 0.95,
-    "spread": 1.9594546698148834,
+    "evals_per_sec": 219778.09440142088,
+    "evaluations": 25000,
+    "spread": 1.4414267883477152,
     "termination": "max_evaluations",
-    "time_ms": 2230142.8693000926
+    "time_ms": 113.7511000270024
   },
   "operators": {
     "crossover": {
-      "name": "blx_alpha",
+      "name": "sbx",
       "params": {
-        "alpha": 0.94,
-        "prob": 0.88
+        "eta": 20.0,
+        "prob": 0.9
       }
     },
     "mutation": {
-      "name": "non_uniform",
+      "name": "pm",
       "params": {
-        "perturbation": 0.3,
-        "prob": 0.45
+        "eta": 20.0,
+        "prob": "1/n"
       }
     },
     "repair": {
-      "name": "round",
+      "name": "clip",
       "params": {}
     }
   },
-  "population_size": 56,
+  "population_size": 100,
   "problem": {
     "description": "Classic bi-objective benchmark with a convex Pareto front.",
     "encoding": "continuous",
     "key": "zdt1",
     "label": "ZDT1",
     "n_obj": 2,
-    "n_var": 2048
+    "n_var": 10
   },
   "seed": 42,
-  "timestamp": "2025-11-19T09:04:44.401966+00:00",
+  "timestamp": "2025-11-19T11:37:16.325821+00:00",
   "title": "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
 }

@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 from pathlib import Path
+from shutil import copy2
 from typing import Iterable, List, Sequence
 
 import numpy as np
@@ -63,8 +64,15 @@ class StudyRunner:
     Executes batches of study tasks and emits structured summaries.
     """
 
-    def __init__(self, *, verbose: bool = True):
+    def __init__(
+        self,
+        *,
+        verbose: bool = True,
+        mirror_output_roots: Sequence[str | Path] | None = ("results",),
+    ):
         self.verbose = verbose
+        roots = mirror_output_roots or ()
+        self._mirror_roots = tuple(Path(root) for root in roots)
 
     def run(
         self,
@@ -91,6 +99,7 @@ class StudyRunner:
                 seed=task.seed,
                 selection_pressure=task.selection_pressure,
             )
+            self._mirror_artifacts(metrics)
             results.append(StudyResult(task=task, selection=selection, metrics=metrics))
 
         self._attach_hypervolume(results)
@@ -128,6 +137,34 @@ class StudyRunner:
         if self.verbose:
             print(f"[Study] CSV exported to {path}")
         return path
+
+    def _mirror_artifacts(self, metrics: dict) -> None:
+        if not self._mirror_roots:
+            return
+        output_dir = metrics.get("output_dir")
+        if not output_dir:
+            return
+        src_dir = Path(output_dir).resolve()
+        base_root = Path(vamos_main.OUTPUT_ROOT).resolve()
+        relative = None
+        try:
+            relative = src_dir.relative_to(base_root)
+        except ValueError:
+            relative = None
+
+        for root in self._mirror_roots:
+            target_root = Path(root).resolve()
+            if relative is not None:
+                dst = target_root / relative
+            else:
+                dst = target_root / src_dir.name
+            if dst.resolve() == src_dir:
+                continue
+            dst.mkdir(parents=True, exist_ok=True)
+            for name in ("FUN.csv", "ARCHIVE_FUN.csv", "time.txt", "metadata.json"):
+                src_file = src_dir / name
+                if src_file.exists():
+                    copy2(src_file, dst / name)
 
     @staticmethod
     def expand_tasks(

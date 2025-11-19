@@ -466,7 +466,6 @@ class MooCoreKernelV5(MooCoreKernelV4):
 
     def __init__(self):
         super().__init__()
-        self._tournament_impl = _tournament_winners_numba
         self._archive_manager: _IncrementalArchive | None = None
 
     def tournament_selection(
@@ -477,16 +476,9 @@ class MooCoreKernelV5(MooCoreKernelV4):
         rng: np.random.Generator,
         n_parents: int,
     ) -> np.ndarray:
-        if n_parents <= 0 or ranks.size == 0:
-            return np.empty(0, dtype=int)
-        if pressure <= 0:
-            raise ValueError("pressure must be a positive integer")
-        candidates = rng.integers(0, ranks.shape[0], size=(n_parents, pressure))
-        ranks_arr = np.ascontiguousarray(ranks, dtype=np.int64)
-        crowd_arr = np.ascontiguousarray(crowding, dtype=np.float64)
-        cand_arr = np.ascontiguousarray(candidates, dtype=np.int64)
-        winners = self._tournament_impl(ranks_arr, crowd_arr, cand_arr)
-        return winners.astype(int, copy=False)
+        return self._numpy_ops.tournament_selection(
+            ranks, crowding, pressure, rng, n_parents
+        )
 
     def update_archive(
         self,

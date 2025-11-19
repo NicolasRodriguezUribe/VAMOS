@@ -48,11 +48,11 @@
   },
   "max_evaluations": 25000,
   "metrics": {
-    "evals_per_sec": 246896.51085344,
+    "evals_per_sec": 238865.06615776263,
     "evaluations": 25000,
     "spread": 1.4667608536744545,
     "termination": "max_evaluations",
-    "time_ms": 101.25700000207871
+    "time_ms": 104.66159996576607
   },
   "operators": {
     "crossover": {
@@ -84,6 +84,6 @@
     "n_var": 10
   },
   "seed": 42,
-  "timestamp": "2025-11-19T10:04:30.010369+00:00",
+  "timestamp": "2025-11-19T11:53:11.564575+00:00",
   "title": "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
 }
