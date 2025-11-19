@@ -1,11 +1,31 @@
 """
-Hypervolume utilities that work for two objectives up to many objectives.
-The implementation focuses on clarity over asymptotic optimality and assumes
-minimization problems where every reference point dominates the solutions.
+Hypervolume utilities that prioritize fast native implementations (moocore, libhv)
+while keeping the previous NumPy/Numba routines as a fallback. All functions assume
+minimization problems where the reference point dominates the solutions.
 """
 from __future__ import annotations
 
 import numpy as np
+
+try:  # Prefer the MooCore C backend when available.
+    import moocore as _moocore  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    _moocore = None
+
+_LIBHV_MODULE = None
+_LIBHV_HV_FN = None
+_LIBHV_CLASS = None
+try:  # pragma: no cover - optional dependency
+    import libhv as _libhv_module  # type: ignore
+except ImportError:
+    _libhv_module = None
+else:
+    _LIBHV_HV_FN = getattr(_libhv_module, "hypervolume", None)
+    _LIBHV_CLASS = getattr(_libhv_module, "HyperVolume", None)
+    if _LIBHV_HV_FN is None and _LIBHV_CLASS is None:
+        _libhv_module = None
+    else:
+        _LIBHV_MODULE = _libhv_module
 
 
 def hypervolume(points: np.ndarray, reference_point: np.ndarray) -> float:
@@ -14,7 +34,14 @@ def hypervolume(points: np.ndarray, reference_point: np.ndarray) -> float:
         raise ValueError("points must be a 2D array.")
     if points.shape[0] == 0:
         return 0.0
-    return _hypervolume_impl(points, reference_point)
+
+    ref = _validate_reference_point(points, reference_point)
+    if _moocore is not None:
+        data = np.ascontiguousarray(points, dtype=np.float64)
+        return float(_moocore.hypervolume(data, ref))
+    if _LIBHV_MODULE is not None:
+        return float(_hypervolume_with_libhv(points, ref))
+    return _hypervolume_impl(points, ref)
 
 
 def hypervolume_contributions(points: np.ndarray, reference_point: np.ndarray) -> np.ndarray:
@@ -23,10 +50,28 @@ def hypervolume_contributions(points: np.ndarray, reference_point: np.ndarray) -
         return np.zeros(points.shape[0], dtype=float)
 
     ref = _validate_reference_point(points, reference_point)
+    if _moocore is not None:
+        data = np.ascontiguousarray(points, dtype=np.float64)
+        return np.asarray(_moocore.hv_contributions(data, ref), dtype=float)
     if points.shape[1] == 2:
         return _hypervolume_contributions_2d(points, ref)
 
     return _hypervolume_contributions_generic(points, ref)
+
+
+def _hypervolume_with_libhv(points: np.ndarray, ref: np.ndarray) -> float:
+    data = np.ascontiguousarray(points, dtype=np.float64)
+    ref_arr = np.asarray(ref, dtype=np.float64)
+    if _LIBHV_HV_FN is not None:
+        return _LIBHV_HV_FN(data, ref_arr)
+    hv_class = _LIBHV_CLASS
+    if hv_class is None:  # pragma: no cover - guarded by initialization
+        raise RuntimeError("libhv is imported without HyperVolume support.")
+    hv_obj = hv_class(ref_arr)
+    compute = getattr(hv_obj, "compute", None) or getattr(hv_obj, "compute_from_points", None)
+    if compute is None:
+        raise AttributeError("libhv.HyperVolume object lacks a compute method.")
+    return compute(data)
 
 
 def _hypervolume_impl(points: np.ndarray, reference_point: np.ndarray) -> float:

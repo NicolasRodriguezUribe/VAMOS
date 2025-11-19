@@ -23,6 +23,7 @@ class StudyTask:
     n_var: int | None = None
     n_obj: int | None = None
     seed: int = vamos_main.SEED
+    selection_pressure: int = 2
 
 
 @dataclass
@@ -84,7 +85,11 @@ class StudyRunner:
                 task.problem, n_var=task.n_var, n_obj=task.n_obj
             )
             metrics = vamos_main._run_single(
-                task.engine, task.algorithm, selection, seed=task.seed
+                task.engine,
+                task.algorithm,
+                selection,
+                seed=task.seed,
+                selection_pressure=task.selection_pressure,
             )
             results.append(StudyResult(task=task, selection=selection, metrics=metrics))
 
@@ -143,10 +148,12 @@ class StudyRunner:
                 problem = base.problem
                 n_var = base.n_var
                 n_obj = base.n_obj
+                sel_pressure = base.selection_pressure
             else:
                 problem = problem_entry["problem"]
                 n_var = problem_entry.get("n_var")
                 n_obj = problem_entry.get("n_obj")
+                sel_pressure = problem_entry.get("selection_pressure", 2)
             for algorithm in algorithms:
                 for engine in engines:
                     for seed in seeds:
@@ -158,6 +165,7 @@ class StudyRunner:
                                 n_var=n_var,
                                 n_obj=n_obj,
                                 seed=seed,
+                                selection_pressure=sel_pressure,
                             )
                         )
         return entries

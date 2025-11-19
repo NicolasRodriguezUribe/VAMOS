@@ -1,5 +1,7 @@
 import numpy as np
 
+from vamos.operators.real import SBXCrossover, PolynomialMutation
+
 from .weight_vectors import load_or_generate_weight_vectors
 
 
@@ -20,9 +22,14 @@ class NSGAIII:
 
         rng = np.random.default_rng(seed)
         pop_size = self.cfg["pop_size"]
-        xl, xu = problem.xl, problem.xu
+        xl = np.asarray(problem.xl, dtype=float)
+        xu = np.asarray(problem.xu, dtype=float)
         n_var = problem.n_var
         n_obj = problem.n_obj
+        if xl.ndim == 0:
+            xl = np.full(n_var, xl, dtype=float)
+        if xu.ndim == 0:
+            xu = np.full(n_var, xu, dtype=float)
 
         cross_method, cross_params = self.cfg["crossover"]
         assert cross_method == "sbx"
@@ -33,6 +40,24 @@ class NSGAIII:
         mut_params = dict(mut_params)
         if mut_params.get("prob") == "1/n":
             mut_params["prob"] = 1.0 / n_var
+
+        cross_prob = float(cross_params.get("prob", 0.9))
+        cross_eta = float(cross_params.get("eta", 20.0))
+        crossover_operator = SBXCrossover(
+            prob_crossover=cross_prob,
+            eta=cross_eta,
+            lower=xl,
+            upper=xu,
+        )
+
+        mut_prob = float(mut_params.get("prob", 1.0 / max(1, n_var)))
+        mut_eta = float(mut_params.get("eta", 20.0))
+        mutation_operator = PolynomialMutation(
+            prob_mutation=mut_prob,
+            eta=mut_eta,
+            lower=xl,
+            upper=xu,
+        )
 
         sel_method, sel_params = self.cfg["selection"]
         assert sel_method == "tournament"
@@ -59,9 +84,10 @@ class NSGAIII:
             parents_idx = self.kernel.tournament_selection(
                 ranks, crowd, pressure, rng, n_parents=2 * (pop_size // 2)
             )
-            X_parents = X[parents_idx]
-            X_off = self.kernel.sbx_crossover(X_parents, cross_params, rng, xl, xu)
-            self.kernel.polynomial_mutation(X_off, mut_params, rng, xl, xu)
+            X_parents = X[parents_idx].reshape(-1, 2, n_var)
+            offspring_pairs = crossover_operator(X_parents, rng)
+            X_off = offspring_pairs.reshape(-1, n_var)
+            X_off = mutation_operator(X_off, rng)
 
             F_off = np.empty((X_off.shape[0], n_obj))
             problem.evaluate(X_off, {"F": F_off})
