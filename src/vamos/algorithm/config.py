@@ -21,6 +21,9 @@ class NSGAIIConfigData(_SerializableConfig):
     selection: Tuple[str, Dict[str, Any]]
     survival: str
     engine: str
+    offspring_size: Optional[int] = None
+    repair: Optional[Tuple[str, Dict[str, Any]]] = None
+    archive: Optional[Dict[str, Any]] = None
 
 
 @dataclass(frozen=True)
@@ -83,6 +86,18 @@ class NSGAIIConfig:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
+    def offspring_size(self, value: int):
+        if value <= 0:
+            raise ValueError("offspring size must be positive.")
+        if value % 2 != 0:
+            raise ValueError("offspring size must be an even number.")
+        self._cfg["offspring_size"] = value
+        return self
+
+    def repair(self, method: str, **kwargs):
+        self._cfg["repair"] = (method, kwargs)
+        return self
+
     def selection(self, method: str, **kwargs):
         self._cfg["selection"] = (method, kwargs)
         return self
@@ -95,12 +110,19 @@ class NSGAIIConfig:
         self._cfg["engine"] = value
         return self
 
+    def external_archive(self, *, size: int):
+        if size <= 0:
+            raise ValueError("external archive size must be positive.")
+        self._cfg["external_archive"] = {"size": int(size)}
+        return self
+
     def fixed(self) -> NSGAIIConfigData:
         _require_fields(
             self._cfg,
             ("pop_size", "crossover", "mutation", "selection", "survival", "engine"),
             "NSGA-II",
         )
+        archive_cfg = self._cfg.get("external_archive")
         return NSGAIIConfigData(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
@@ -108,6 +130,9 @@ class NSGAIIConfig:
             selection=self._cfg["selection"],
             survival=self._cfg["survival"],
             engine=self._cfg["engine"],
+            offspring_size=self._cfg.get("offspring_size"),
+            repair=self._cfg.get("repair"),
+            archive=archive_cfg,
         )
 
 

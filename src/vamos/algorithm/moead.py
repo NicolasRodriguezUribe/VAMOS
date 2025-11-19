@@ -1,5 +1,7 @@
 import numpy as np
 
+from vamos.operators.real import SBXCrossover, PolynomialMutation
+
 from .weight_vectors import load_or_generate_weight_vectors
 
 
@@ -23,9 +25,14 @@ class MOEAD:
         if pop_size < 2:
             raise ValueError("MOEA/D requires pop_size >= 2.")
 
-        xl, xu = problem.xl, problem.xu
+        xl = np.asarray(problem.xl, dtype=float)
+        xu = np.asarray(problem.xu, dtype=float)
         n_var = problem.n_var
         n_obj = problem.n_obj
+        if xl.ndim == 0:
+            xl = np.full(n_var, xl, dtype=float)
+        if xu.ndim == 0:
+            xu = np.full(n_var, xu, dtype=float)
 
         weight_cfg = self.cfg.get("weight_vectors", {}) or {}
         weight_path = weight_cfg.get("path")
@@ -55,6 +62,24 @@ class MOEAD:
         if mut_params.get("prob") == "1/n":
             mut_params["prob"] = 1.0 / n_var
 
+        cross_prob = float(cross_params.get("prob", 0.9))
+        cross_eta = float(cross_params.get("eta", 20.0))
+        crossover_operator = SBXCrossover(
+            prob_crossover=cross_prob,
+            eta=cross_eta,
+            lower=xl,
+            upper=xu,
+        )
+
+        mut_prob = float(mut_params.get("prob", 1.0 / max(1, n_var)))
+        mut_eta = float(mut_params.get("eta", 20.0))
+        mutation_operator = PolynomialMutation(
+            prob_mutation=mut_prob,
+            eta=mut_eta,
+            lower=xl,
+            upper=xu,
+        )
+
         X = rng.uniform(xl, xu, size=(pop_size, n_var))
         F = np.empty((pop_size, n_obj))
         problem.evaluate(X, {"F": F})
@@ -77,12 +102,10 @@ class MOEAD:
                 parent_pairs[pos] = rng.choice(mating_pool, size=2, replace=False)
 
             parents_flat = parent_pairs.reshape(-1)
-            parents = X[parents_flat]
-            offspring = self.kernel.sbx_crossover(parents, cross_params, rng, xl, xu)
-            offspring = offspring.reshape(batch_size, 2, n_var)
+            parents = X[parents_flat].reshape(batch_size, 2, n_var)
+            offspring = crossover_operator(parents, rng)
             children = offspring[:, 0, :].copy()
-
-            self.kernel.polynomial_mutation(children, mut_params, rng, xl, xu)
+            children = mutation_operator(children, rng)
 
             F_child = np.empty((batch_size, n_obj))
             problem.evaluate(children, {"F": F_child})

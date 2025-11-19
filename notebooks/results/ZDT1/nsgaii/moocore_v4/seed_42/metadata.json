@@ -1,0 +1,95 @@
+{
+  "algorithm": "nsgaii",
+  "artifacts": {
+    "fun": "FUN.csv",
+    "time_ms": "time.txt"
+  },
+  "backend": "moocore_v4",
+  "backend_info": {
+    "capabilities": [
+      "c_backend"
+    ],
+    "device": "cpu",
+    "name": "moocore_v4",
+    "quality_indicators": [
+      "hypervolume"
+    ]
+  },
+  "config": {
+    "archive": null,
+    "crossover": [
+      "sbx",
+      {
+        "eta": 20.0,
+        "prob": 0.9
+      }
+    ],
+    "engine": "moocore_v4",
+    "mutation": [
+      "pm",
+      {
+        "eta": 20.0,
+        "prob": "1/n"
+      }
+    ],
+    "offspring_size": 100,
+    "pop_size": 100,
+    "repair": [
+      "random",
+      {}
+    ],
+    "selection": [
+      "tournament",
+      {
+        "pressure": 2
+      }
+    ],
+    "survival": "nsga2"
+  },
+  "max_evaluations": 12500500,
+  "metrics": {
+    "evals_per_sec": 2915.825329212797,
+    "evaluations": 688400,
+    "hv_reference_front": "C:\\Users\\nicol\\Desktop\\VAMOS\\data\\reference_fronts\\ZDT1.csv",
+    "hv_reference_point": [
+      6.0,
+      6.0
+    ],
+    "hv_threshold_fraction": 0.95,
+    "spread": 1.573886149464152,
+    "termination": "hv_threshold",
+    "time_ms": 236090.95960005652
+  },
+  "operators": {
+    "crossover": {
+      "name": "sbx",
+      "params": {
+        "eta": 20.0,
+        "prob": 0.9
+      }
+    },
+    "mutation": {
+      "name": "pm",
+      "params": {
+        "eta": 20.0,
+        "prob": "1/n"
+      }
+    },
+    "repair": {
+      "name": "random",
+      "params": {}
+    }
+  },
+  "population_size": 100,
+  "problem": {
+    "description": "Classic bi-objective benchmark with a convex Pareto front.",
+    "encoding": "continuous",
+    "key": "zdt1",
+    "label": "ZDT1",
+    "n_obj": 2,
+    "n_var": 2048
+  },
+  "seed": 42,
+  "timestamp": "2025-11-19T10:16:52.882151+00:00",
+  "title": "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
+}

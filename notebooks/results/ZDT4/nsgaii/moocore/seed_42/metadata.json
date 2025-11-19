@@ -1,0 +1,87 @@
+{
+  "algorithm": "nsgaii",
+  "artifacts": {
+    "fun": "FUN.csv",
+    "time_ms": "time.txt"
+  },
+  "backend": "moocore",
+  "backend_info": {
+    "capabilities": [
+      "c_backend"
+    ],
+    "device": "cpu",
+    "name": "moocore",
+    "quality_indicators": [
+      "hypervolume"
+    ]
+  },
+  "config": {
+    "archive": null,
+    "crossover": [
+      "sbx",
+      {
+        "eta": 20.0,
+        "prob": 0.9
+      }
+    ],
+    "engine": "moocore",
+    "mutation": [
+      "pm",
+      {
+        "eta": 20.0,
+        "prob": "1/n"
+      }
+    ],
+    "pop_size": 100,
+    "repair": [
+      "clip",
+      {}
+    ],
+    "selection": [
+      "tournament",
+      {
+        "pressure": 2
+      }
+    ],
+    "survival": "nsga2"
+  },
+  "max_evaluations": 25000,
+  "metrics": {
+    "evals_per_sec": 149406.0809814968,
+    "evaluations": 25000,
+    "spread": 5.2640093109829875,
+    "time_ms": 167.32919996138662
+  },
+  "operators": {
+    "crossover": {
+      "name": "sbx",
+      "params": {
+        "eta": 20.0,
+        "prob": 0.9
+      }
+    },
+    "mutation": {
+      "name": "pm",
+      "params": {
+        "eta": 20.0,
+        "prob": "1/n"
+      }
+    },
+    "repair": {
+      "name": "clip",
+      "params": {}
+    }
+  },
+  "population_size": 100,
+  "problem": {
+    "description": "ZDT benchmark with multimodal landscape and mixed bounds.",
+    "encoding": "continuous",
+    "key": "zdt4",
+    "label": "ZDT4",
+    "n_obj": 2,
+    "n_var": 10
+  },
+  "seed": 42,
+  "timestamp": "2025-11-19T00:10:03.774031+00:00",
+  "title": "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
+}

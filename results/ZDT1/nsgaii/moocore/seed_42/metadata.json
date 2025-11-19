@@ -1,0 +1,95 @@
+{
+  "algorithm": "nsgaii",
+  "artifacts": {
+    "fun": "FUN.csv",
+    "time_ms": "time.txt"
+  },
+  "backend": "moocore",
+  "backend_info": {
+    "capabilities": [
+      "c_backend"
+    ],
+    "device": "cpu",
+    "name": "moocore",
+    "quality_indicators": [
+      "hypervolume"
+    ]
+  },
+  "config": {
+    "archive": null,
+    "crossover": [
+      "blx_alpha",
+      {
+        "alpha": 0.94,
+        "prob": 0.88
+      }
+    ],
+    "engine": "moocore",
+    "mutation": [
+      "non_uniform",
+      {
+        "perturbation": 0.3,
+        "prob": 0.45
+      }
+    ],
+    "offspring_size": 14,
+    "pop_size": 56,
+    "repair": [
+      "round",
+      {}
+    ],
+    "selection": [
+      "tournament",
+      {
+        "pressure": 9
+      }
+    ],
+    "survival": "nsga2"
+  },
+  "max_evaluations": 12500500,
+  "metrics": {
+    "evals_per_sec": 5605.247166932922,
+    "evaluations": 12500502,
+    "hv_reference_front": "C:\\Users\\nicol\\Desktop\\VAMOS\\data\\reference_fronts\\ZDT1.csv",
+    "hv_reference_point": [
+      6.0,
+      6.0
+    ],
+    "hv_threshold_fraction": 0.95,
+    "spread": 1.9594546698148834,
+    "termination": "max_evaluations",
+    "time_ms": 2230142.8693000926
+  },
+  "operators": {
+    "crossover": {
+      "name": "blx_alpha",
+      "params": {
+        "alpha": 0.94,
+        "prob": 0.88
+      }
+    },
+    "mutation": {
+      "name": "non_uniform",
+      "params": {
+        "perturbation": 0.3,
+        "prob": 0.45
+      }
+    },
+    "repair": {
+      "name": "round",
+      "params": {}
+    }
+  },
+  "population_size": 56,
+  "problem": {
+    "description": "Classic bi-objective benchmark with a convex Pareto front.",
+    "encoding": "continuous",
+    "key": "zdt1",
+    "label": "ZDT1",
+    "n_obj": 2,
+    "n_var": 2048
+  },
+  "seed": 42,
+  "timestamp": "2025-11-19T09:04:44.401966+00:00",
+  "title": "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
+}

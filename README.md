@@ -45,6 +45,25 @@ python -m vamos.main --experiment backends --include-external
 python -m vamos.main --problem-set tsplib_kro100  # KroA-E100 sweep
 ```
 
+### NSGA-II variation flags
+
+Continuous NSGA-II runs now expose the crossover, mutation, and repair operators via CLI flags:
+
+- `--nsgaii-crossover {sbx,blx_alpha}` with optional `--nsgaii-crossover-prob`, `--nsgaii-crossover-eta`, or `--nsgaii-crossover-alpha`.
+- `--nsgaii-mutation {pm,non_uniform}` with optional `--nsgaii-mutation-prob`, `--nsgaii-mutation-eta`, and `--nsgaii-mutation-perturbation`.
+- `--nsgaii-repair {clip,reflect,resample,random,round,none}` to control how offspring are projected back into bounds (use `round` to snap to the nearest integer before clamping).
+- `--population-size` changes the working population for every internal algorithm; `--offspring-population-size` (even integer) controls how many solutions NSGA-II generates per generation so you can mimic settings like µ=56 / λ=14.
+- `--hv-threshold` (with an optional `--hv-reference-front`) lets NSGA-II stop automatically once the hypervolume reaches a given fraction of a reference Pareto front. Built-in fronts for ZDT1/2/3/4/6 live under `data/reference_fronts/`.
+
+A quick smoke test for the new BLX + non-uniform combination:
+
+```powershell
+python -m vamos.main --problem zdt1 --max-evaluations 2000 `
+  --nsgaii-crossover blx_alpha --nsgaii-crossover-alpha 0.35 --nsgaii-crossover-prob 0.85 `
+  --nsgaii-mutation non_uniform --nsgaii-mutation-perturbation 0.4 --nsgaii-mutation-prob 1/n `
+  --nsgaii-repair reflect
+```
+
 When installing in editable mode you also get the `vamos` console script, so
 after step 3 you can just run `vamos --experiment backends`.
 
