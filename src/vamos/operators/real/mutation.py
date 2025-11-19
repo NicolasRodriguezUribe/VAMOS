@@ -34,44 +34,79 @@ class PolynomialMutation(Mutation):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
     ) -> None:
         self.prob = float(prob_mutation)
         self.eta = float(eta)
         self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.span = self.upper - self.lower
+        self._span_safe = np.where(self.span == 0.0, 1.0, self.span)
+        self.workspace = workspace
+
+    def _mask(self, shape: tuple[int, ...], rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(shape) <= self.prob
+        probs = self.workspace.request("pm_prob", shape, np.float64)
+        rng.random(out=probs)
+        mask = self.workspace.request("pm_mask", shape, np.bool_)
+        np.less_equal(probs, self.prob, out=mask)
+        return mask
+
+    def _rand(self, key: str, shape: tuple[int, ...], rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(shape)
+        buf = self.workspace.request(key, shape, np.float64)
+        rng.random(out=buf)
+        return buf
+
+    def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
+        if self.workspace is None:
+            return np.empty(shape, dtype=dtype)
+        return self.workspace.request(key, shape, dtype)
 
     def __call__(self, offspring: ArrayLike, rng: np.random.Generator) -> ArrayLike:
-        X = self._as_population(offspring, name="offspring")
+        X = self._as_population(offspring, name="offspring", copy=False)
         n_ind, n_var = X.shape
         if n_ind == 0:
             return X
         self._check_bounds_match(X, self.lower)
-        mask = rng.random((n_ind, n_var)) <= self.prob
+        mask = self._mask((n_ind, n_var), rng)
         if not np.any(mask):
             return X
 
         yl = self.lower
         yu = self.upper
-        eta = self.eta
-        span = yu - yl
-        span_safe = np.where(span == 0.0, 1.0, span)
-        delta1 = (X - yl) / span_safe
-        delta2 = (yu - X) / span_safe
-        rnd = rng.random((n_ind, n_var))
-        mut_pow = 1.0 / (eta + 1.0)
-        deltaq = np.zeros_like(X)
-        idx_lower = mask & (rnd <= 0.5)
-        idx_upper = mask & ~idx_lower
+        rows, cols = np.nonzero(mask)
+        if rows.size == 0:
+            return X
+
+        values = self._buffer("pm_values", (rows.size,), X.dtype)
+        np.copyto(values, X[rows, cols])
+        span_vals = self.span[cols]
+        span_safe = self._span_safe[cols]
+        delta1 = (values - yl[cols]) / span_safe
+        delta2 = (yu[cols] - values) / span_safe
+        rnd = self._rand("pm_rand", (rows.size,), rng)
+        mut_pow = 1.0 / (self.eta + 1.0)
+        deltaq = self._buffer("pm_deltaq", (rows.size,), np.float64)
+        deltaq.fill(0.0)
+
+        idx_lower = rnd <= 0.5
+        idx_upper = ~idx_lower
         if np.any(idx_lower):
             xy = 1.0 - delta1[idx_lower]
-            val = 2.0 * rnd[idx_lower] + (1.0 - 2.0 * rnd[idx_lower]) * np.power(xy, eta + 1.0)
+            val = 2.0 * rnd[idx_lower] + (1.0 - 2.0 * rnd[idx_lower]) * np.power(xy, self.eta + 1.0)
             deltaq[idx_lower] = np.power(val, mut_pow) - 1.0
         if np.any(idx_upper):
             xy = 1.0 - delta2[idx_upper]
-            val = 2.0 * (1.0 - rnd[idx_upper]) + 2.0 * (rnd[idx_upper] - 0.5) * np.power(xy, eta + 1.0)
+            val = 2.0 * (1.0 - rnd[idx_upper]) + 2.0 * (rnd[idx_upper] - 0.5) * np.power(xy, self.eta + 1.0)
             deltaq[idx_upper] = 1.0 - np.power(val, mut_pow)
 
-        X += deltaq * span
-        return _clip_population(X, yl, yu)
+        np.multiply(deltaq, span_vals, out=deltaq, casting="unsafe")
+        np.add(values, deltaq, out=values, casting="unsafe")
+        np.clip(values, yl[cols], yu[cols], out=values)
+        X[rows, cols] = values
+        return X
 
 
 class GaussianMutation(Mutation):
