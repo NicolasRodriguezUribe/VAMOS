@@ -8,8 +8,9 @@ from typing import Iterable, List, Sequence
 
 import numpy as np
 
-from vamos import main as vamos_main
+from vamos.algorithm.hypervolume import hypervolume
 from vamos.problem.registry import ProblemSelection, make_problem_selection
+from vamos.runner import ExperimentConfig, compute_hv_reference, run_single
 
 
 @dataclass(frozen=True)
@@ -23,7 +24,7 @@ class StudyTask:
     problem: str
     n_var: int | None = None
     n_obj: int | None = None
-    seed: int = vamos_main.SEED
+    seed: int = ExperimentConfig().seed
     selection_pressure: int = 2
 
 
@@ -92,11 +93,12 @@ class StudyRunner:
             selection = make_problem_selection(
                 task.problem, n_var=task.n_var, n_obj=task.n_obj
             )
-            metrics = vamos_main._run_single(
+            task_config = ExperimentConfig(seed=task.seed)
+            metrics = run_single(
                 task.engine,
                 task.algorithm,
                 selection,
-                seed=task.seed,
+                task_config,
                 selection_pressure=task.selection_pressure,
             )
             self._mirror_artifacts(metrics)
@@ -109,7 +111,7 @@ class StudyRunner:
 
     def _attach_hypervolume(self, results: Iterable[StudyResult]) -> None:
         fronts = [res.metrics["F"] for res in results]
-        hv_ref_point = vamos_main._compute_hv_reference(fronts)
+        hv_ref_point = compute_hv_reference(fronts)
         for res in results:
             metrics = res.metrics
             backend = metrics.pop("_kernel_backend", None)
@@ -117,7 +119,7 @@ class StudyRunner:
                 hv_val = backend.hypervolume(metrics["F"], hv_ref_point)
                 hv_source = backend.__class__.__name__
             else:
-                hv_val = vamos_main.hypervolume(metrics["F"], hv_ref_point)
+                hv_val = hypervolume(metrics["F"], hv_ref_point)
                 hv_source = "global"
             metrics["hv"] = hv_val
             metrics["hv_source"] = hv_source
@@ -145,7 +147,7 @@ class StudyRunner:
         if not output_dir:
             return
         src_dir = Path(output_dir).resolve()
-        base_root = Path(vamos_main.OUTPUT_ROOT).resolve()
+        base_root = Path(ExperimentConfig().output_root).resolve()
         relative = None
         try:
             relative = src_dir.relative_to(base_root)
