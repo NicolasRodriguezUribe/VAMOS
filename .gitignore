@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+results/
+results_autonsga/
+notebooks/results/
+notebooks/results_autonsga/
+*.png

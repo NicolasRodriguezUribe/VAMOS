@@ -106,9 +106,10 @@ class NSGAIII:
 
         ideal = F.min(axis=0)
         shifted = F - ideal
-        denominator = np.max(shifted, axis=0)
-        denominator = np.where(denominator > 0, denominator, 1.0)
-        normalized = shifted / denominator
+        extreme_idx = self._identify_extremes(shifted)
+        intercepts = self._compute_intercepts(shifted, extreme_idx)
+        denom = np.where(intercepts > 0, intercepts, 1.0)
+        normalized = shifted / denom
 
         associations, distances = self._associate(normalized, ref_dirs_norm)
         niche_counts = np.zeros(ref_dirs_norm.shape[0], dtype=int)
@@ -130,6 +131,39 @@ class NSGAIII:
                 break
 
         return np.asarray(new_X), np.asarray(new_F)
+
+    @staticmethod
+    def _identify_extremes(shifted: np.ndarray) -> np.ndarray:
+        """Identify extreme points using ASF (Achievement Scalarization Function)."""
+        if shifted.size == 0:
+            return np.array([], dtype=int)
+        n_obj = shifted.shape[1]
+        extremes = np.empty(n_obj, dtype=int)
+        unit = np.eye(n_obj)
+        for i in range(n_obj):
+            weights = np.where(unit[i] == 0, 1e6, 1.0)
+            asf = (shifted * weights).max(axis=1)
+            extremes[i] = int(np.argmin(asf))
+        return extremes
+
+    @staticmethod
+    def _compute_intercepts(shifted: np.ndarray, extreme_idx: np.ndarray) -> np.ndarray:
+        """Compute intercepts from extreme points; fall back to axis-wise maxima."""
+        n_obj = shifted.shape[1]
+        if extreme_idx.size == 0:
+            return np.ones(n_obj, dtype=float)
+        extreme_pts = shifted[extreme_idx]
+        intercepts = np.zeros(n_obj, dtype=float)
+        try:
+            b = np.ones(n_obj)
+            plane = np.linalg.solve(extreme_pts, b)
+            intercepts = 1.0 / plane
+        except Exception:
+            intercepts = shifted.max(axis=0)
+        if np.any(~np.isfinite(intercepts)) or np.any(intercepts <= 1e-12):
+            intercepts = shifted.max(axis=0)
+        intercepts = np.where(intercepts > 0, intercepts, 1.0)
+        return intercepts
 
     @staticmethod
     def _associate(normalized_F, ref_dirs_norm):

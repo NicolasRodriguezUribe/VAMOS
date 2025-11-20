@@ -440,18 +440,36 @@ class _IncrementalArchive:
         self._F = self._F[selected]
 
     def update(self, pop_X: np.ndarray, pop_F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        for i in range(pop_X.shape[0]):
-            f = np.asarray(pop_F[i], dtype=float)
-            if self._is_dominated(f):
-                continue
-            dominating = self._dominates(self._F, f)
-            if dominating.any():
-                keep = ~dominating
-                self._X = self._X[keep]
-                self._F = self._F[keep]
-            self._X = np.vstack((self._X, np.asarray(pop_X[i], dtype=self._dtype)))
-            self._F = np.vstack((self._F, f))
-            self._trim()
+        """
+        Vectorized archive maintenance: merge, filter non-dominated, then trim.
+        Avoids per-individual Python loops and repeated vstack allocations.
+        """
+        if pop_X.size == 0:
+            return self._X, self._F
+
+        pop_X = np.asarray(pop_X, dtype=self._dtype, order="C")
+        pop_F = np.asarray(pop_F, dtype=float, order="C")
+
+        if self._X.size == 0:
+            X_comb = pop_X
+            F_comb = pop_F
+        else:
+            X_comb = np.vstack((self._X, pop_X))
+            F_comb = np.vstack((self._F, pop_F))
+
+        F_comb = np.asarray(F_comb, dtype=float, order="C")
+        nondom_mask = moocore.is_nondominated(F_comb)
+        X_nd = X_comb[nondom_mask]
+        F_nd = F_comb[nondom_mask]
+
+        if F_nd.shape[0] > self.capacity:
+            idx = np.arange(F_nd.shape[0], dtype=int)
+            selected = self.kernel._select_partial_front(F_nd, idx, self.capacity)
+            X_nd = X_nd[selected]
+            F_nd = F_nd[selected]
+
+        self._X = X_nd
+        self._F = F_nd
         return self._X, self._F
 
     def contents(self) -> tuple[np.ndarray, np.ndarray]:

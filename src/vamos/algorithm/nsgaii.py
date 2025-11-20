@@ -174,8 +174,9 @@ class NSGAII:
         repair_cfg = self.cfg.get("repair")
         repair_operator = self._build_repair_operator(encoding, repair_cfg)
         hv_reached = False
+        hv_points = lambda: archive_F if archive_F is not None and archive_F.size else F
         if hv_target is not None:
-            current_hv = hv_evaluator(F, hv_ref_point)
+            current_hv = hv_evaluator(hv_points(), hv_ref_point)
             if current_hv >= hv_target:
                 hv_reached = True
 
@@ -214,7 +215,7 @@ class NSGAII:
                 elif archive_manager is not None:
                     archive_X, archive_F = archive_manager.update(X, F)
             if hv_target is not None:
-                current_hv = hv_evaluator(F, hv_ref_point)
+                current_hv = hv_evaluator(hv_points(), hv_ref_point)
                 if current_hv >= hv_target:
                     hv_reached = True
                     break
