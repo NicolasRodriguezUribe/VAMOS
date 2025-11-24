@@ -1,5 +1,7 @@
 # VAMOS – Vectorized Architecture for Multiobjective Optimization Studies
 
+![VAMOS](VAMOS.jpeg)
+
 Minimal steps to run and explore:
 
 ```powershell
