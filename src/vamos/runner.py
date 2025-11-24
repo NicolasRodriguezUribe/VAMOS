@@ -35,10 +35,6 @@ EXPERIMENT_BACKENDS = (
     "numpy",
     "numba",
     "moocore",
-    "moocore_v2",
-    "moocore_v3",
-    "moocore_v4",
-    "moocore_v5",
 )
 
 PROBLEM_SET_PRESETS = {
@@ -205,15 +201,6 @@ def resolve_kernel(engine_name: str):
                 f"Original error: {exc}"
             ) from exc
         return MooCoreKernel()
-    if engine_name in {"moocore_v2", "moocore_v3", "moocore_v4", "moocore_v5"}:
-        try:
-            from vamos.kernel.moocore_backend import MooCoreKernelV2
-        except ImportError as exc:
-            raise SystemExit(
-                f"The '{engine_name}' backend requires the moocore dependency to be installed.\n"
-                f"Original error: {exc}"
-            ) from exc
-        return MooCoreKernelV2()
     raise ValueError(f"Unsupported kernel backend '{engine_name}'.")
 
 

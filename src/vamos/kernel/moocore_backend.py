@@ -17,7 +17,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 from vamos.algorithm.hypervolume import hypervolume as hv_fn
 from .backend import KernelBackend
-from .numpy_backend import NumPyKernel as _NumPyKernel, _compute_crowding, _select_nsga2
+from .numpy_backend import NumPyKernel as _NumPyKernel, _compute_crowding
 
 
 def _fronts_from_ranks(ranks: np.ndarray):
@@ -74,12 +74,22 @@ else:
 
 class MooCoreKernel(KernelBackend):
     """
-    Backend that delegates non-dominated sorting to moocore (C implementation).
-    The rest of the operators reuse the NumPy implementations.
+    Consolidated MooCore backend with buffered survival, adaptive HV/crowding,
+    optional numba tournament selection, and incremental archive maintenance.
     """
+
+    CROWDING_DIM_THRESHOLD = 3
+    HV_SIZE_THRESHOLD = 256
 
     def __init__(self):
         self._numpy_ops = _NumPyKernel()
+        self._X_buffer: np.ndarray | None = None
+        self._F_buffer: np.ndarray | None = None
+        self._keep_buffer: np.ndarray | None = None
+        self._X_output: np.ndarray | None = None
+        self._F_output: np.ndarray | None = None
+        self._archive_manager: _IncrementalArchive | None = None
+        self._stats = {"hv_calls": 0, "crowding_fallbacks": 0, "buffer_resizes": 0}
 
     def capabilities(self) -> Iterable[str]:
         return ("c_backend",)
@@ -101,9 +111,17 @@ class MooCoreKernel(KernelBackend):
         rng: np.random.Generator,
         n_parents: int,
     ) -> np.ndarray:
-        return self._numpy_ops.tournament_selection(
-            ranks, crowding, pressure, rng, n_parents
-        )
+        N = ranks.shape[0]
+        if pressure <= 0:
+            raise ValueError("pressure must be a positive integer")
+        if n_parents <= 0 or N == 0:
+            return np.empty(0, dtype=int)
+        candidates = rng.integers(0, N, size=(n_parents, pressure))
+        if njit is not None:
+            winners = _tournament_winners_numba(ranks, crowding, candidates)
+        else:
+            winners = _tournament_winners_numpy(ranks, crowding, candidates)
+        return winners
 
     def sbx_crossover(
         self,
@@ -125,88 +143,6 @@ class MooCoreKernel(KernelBackend):
     ) -> None:
         self._numpy_ops.polynomial_mutation(X, params, rng, xl, xu)
 
-    def nsga2_survival(
-        self,
-        X: np.ndarray,
-        F: np.ndarray,
-        X_off: np.ndarray,
-        F_off: np.ndarray,
-        pop_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        X_comb = np.vstack((X, X_off))
-        F_comb = np.vstack((F, F_off))
-        ranks = moocore.pareto_rank(np.asarray(F_comb, dtype=np.float64, order="C"))
-        fronts = _fronts_from_ranks(ranks)
-        crowding = _compute_crowding(F_comb, fronts)
-        sel = _select_nsga2(fronts, crowding, pop_size)
-        return X_comb[sel], F_comb[sel]
-
-    def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
-        return hv_fn(points, reference_point)
-
-
-class MooCoreKernelV2(MooCoreKernel):
-    """
-    Variant that leverages additional moocore helpers during survival
-    to reduce the NumPy workload.
-    """
-
-    def nsga2_survival(
-        self,
-        X: np.ndarray,
-        F: np.ndarray,
-        X_off: np.ndarray,
-        F_off: np.ndarray,
-        pop_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        X_comb = np.vstack((X, X_off))
-        F_comb = np.vstack((F, F_off))
-        F_comb = np.asarray(F_comb, dtype=np.float64, order="C")
-        ranks = moocore.pareto_rank(F_comb)
-
-        keep_idx = []
-        remaining = pop_size
-        current_rank = 0
-        while remaining > 0:
-            idx = np.flatnonzero(ranks == current_rank)
-            if idx.size == 0:
-                current_rank += 1
-                continue
-
-            front_mask = np.zeros(F_comb.shape[0], dtype=bool)
-            front_mask[idx] = True
-            nondom_mask = moocore.is_nondominated(F_comb[front_mask])
-            front_idx = idx[nondom_mask]
-
-            if front_idx.size <= remaining:
-                keep_idx.extend(front_idx.tolist())
-                remaining -= front_idx.size
-            else:
-                ref_point = np.max(F_comb, axis=0) + 1.0
-                hv_contrib = moocore.hv_contributions(F_comb[front_idx], ref=ref_point)
-                order = np.argsort(hv_contrib)[::-1]
-                keep_idx.extend(front_idx[order[:remaining]].tolist())
-                remaining = 0
-
-            current_rank += 1
-
-        keep = np.array(keep_idx[:pop_size], dtype=int)
-        return X_comb[keep], F_comb[keep]
-
-
-class MooCoreKernelV3(MooCoreKernel):
-    """
-    Ultra-optimized variant that keeps reusable buffers for combined populations
-    and outsources diversity decisions to MooCore whenever possible.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self._X_buffer: np.ndarray | None = None
-        self._F_buffer: np.ndarray | None = None
-        self._rank_buffer: np.ndarray | None = None
-        self._keep_buffer: np.ndarray | None = None
-
     def _ensure_buffers(self, total: int, n_var: int, n_obj: int, dtype) -> None:
         dtype = np.dtype(dtype)
         if (
@@ -222,8 +158,6 @@ class MooCoreKernelV3(MooCoreKernel):
             or self._F_buffer.shape[1] != n_obj
         ):
             self._F_buffer = np.empty((total, n_obj), dtype=np.float64, order="C")
-        if self._rank_buffer is None or self._rank_buffer.shape[0] < total:
-            self._rank_buffer = np.empty(total, dtype=np.int32)
 
     def _combine(self, X_a, F_a, X_b, F_b):
         n_a = X_a.shape[0]
@@ -249,81 +183,6 @@ class MooCoreKernelV3(MooCoreKernel):
         if self._keep_buffer is None or self._keep_buffer.shape[0] < size:
             self._keep_buffer = np.empty(size, dtype=np.int64)
         return self._keep_buffer[:size]
-
-    def _pick_diverse(self, F_comb: np.ndarray, front_idx: np.ndarray, remaining: int) -> np.ndarray:
-        front = F_comb[front_idx]
-        if remaining >= front.shape[0]:
-            return front_idx
-        ref_point = np.max(front, axis=0) + 1.0
-        hv_contrib = moocore.hv_contributions(front, ref=ref_point)
-        top_idx = np.argpartition(hv_contrib, -remaining)[-remaining:]
-        ordered = top_idx[np.argsort(hv_contrib[top_idx])[::-1]]
-        return front_idx[ordered]
-
-    def _survive(self, X_a, F_a, X_b, F_b, target_size: int) -> tuple[np.ndarray, np.ndarray]:
-        X_comb, F_comb, total = self._combine(X_a, F_a, X_b, F_b)
-        ranks = moocore.pareto_rank(F_comb)
-        keep = self._ensure_keep_buffer(target_size)
-        taken = 0
-        current_rank = 0
-        while taken < target_size:
-            front_idx = np.flatnonzero(ranks == current_rank)
-            if front_idx.size == 0:
-                current_rank += 1
-                continue
-            if taken + front_idx.size <= target_size:
-                keep[taken : taken + front_idx.size] = front_idx
-                taken += front_idx.size
-            else:
-                remaining = target_size - taken
-                selected = self._pick_diverse(F_comb, front_idx, remaining)
-                keep[taken : taken + selected.size] = selected
-                taken += selected.size
-            current_rank += 1
-        sel = np.array(keep[:target_size], dtype=int, copy=False)
-        return X_comb[sel].copy(), F_comb[sel].copy()
-
-    def nsga2_survival(
-        self,
-        X: np.ndarray,
-        F: np.ndarray,
-        X_off: np.ndarray,
-        F_off: np.ndarray,
-        pop_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        return self._survive(X, F, X_off, F_off, pop_size)
-
-    def update_archive(
-        self,
-        archive_X: np.ndarray | None,
-        archive_F: np.ndarray | None,
-        population_X: np.ndarray,
-        population_F: np.ndarray,
-        archive_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        if archive_size <= 0:
-            return archive_X, archive_F
-        if archive_X is None or archive_F is None or archive_X.size == 0:
-            empty_X = np.empty((0, population_X.shape[1]), dtype=population_X.dtype)
-            empty_F = np.empty((0, population_F.shape[1]), dtype=population_F.dtype)
-            archive_X, archive_F = empty_X, empty_F
-        return self._survive(archive_X, archive_F, population_X, population_F, archive_size)
-
-
-class MooCoreKernelV4(MooCoreKernelV3):
-    """
-    Further optimized variant introducing double buffers, rank-sorted fronts,
-    and a crowding fallback for large/high-dimensional fronts to limit HV calls.
-    """
-
-    CROWDING_DIM_THRESHOLD = 3
-    HV_SIZE_THRESHOLD = 256
-
-    def __init__(self):
-        super().__init__()
-        self._X_output: np.ndarray | None = None
-        self._F_output: np.ndarray | None = None
-        self._stats = {"hv_calls": 0, "crowding_fallbacks": 0, "buffer_resizes": 0}
 
     def _ensure_output_buffers(self, size: int, n_var: int, n_obj: int, dtype) -> None:
         dtype = np.dtype(dtype)
@@ -368,9 +227,7 @@ class MooCoreKernelV4(MooCoreKernelV3):
             order = np.argsort(hv_contrib)[::-1][:remaining]
         return front_idx[order]
 
-    def _survive(
-        self, X_a, F_a, X_b, F_b, target_size: int
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def _survive(self, X_a, F_a, X_b, F_b, target_size: int) -> tuple[np.ndarray, np.ndarray]:
         X_comb, F_comb, total = self._combine(X_a, F_a, X_b, F_b)
         ranks = moocore.pareto_rank(F_comb)
         order = np.argsort(ranks, kind="mergesort")
@@ -399,6 +256,45 @@ class MooCoreKernelV4(MooCoreKernelV3):
         np.copyto(self._F_output[:target_size], F_comb[sel])
         return self._X_output[:target_size], self._F_output[:target_size]
 
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        return self._survive(X, F, X_off, F_off, pop_size)
+
+    def update_archive(
+        self,
+        archive_X: np.ndarray | None,
+        archive_F: np.ndarray | None,
+        population_X: np.ndarray,
+        population_F: np.ndarray,
+        archive_size: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        if archive_size <= 0:
+            return archive_X, archive_F
+        if (
+            self._archive_manager is None
+            or self._archive_manager.capacity != archive_size
+            or self._archive_manager._X.shape[1] != population_X.shape[1]
+        ):
+            self._archive_manager = _IncrementalArchive(
+                self, archive_size, population_X.shape[1], population_F.shape[1], population_X.dtype
+            )
+            if archive_X is not None and archive_X.size:
+                self._archive_manager.bootstrap(archive_X, archive_F)
+        elif archive_X is not None and archive_X.size and self._archive_manager.is_empty():
+            self._archive_manager.bootstrap(archive_X, archive_F)
+
+        updated_X, updated_F = self._archive_manager.update(population_X, population_F)
+        return updated_X, updated_F
+
+    def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
+        return hv_fn(points, reference_point)
+
 
 class _IncrementalArchive:
     """
@@ -407,7 +303,7 @@ class _IncrementalArchive:
     diversity selector when capacity is exceeded.
     """
 
-    def __init__(self, kernel: MooCoreKernelV4, capacity: int, n_var: int, n_obj: int, dtype):
+    def __init__(self, kernel: MooCoreKernel, capacity: int, n_var: int, n_obj: int, dtype):
         self.kernel = kernel
         self.capacity = int(capacity)
         self._dtype = np.dtype(dtype)
@@ -427,9 +323,6 @@ class _IncrementalArchive:
         less_equal = candidates <= f
         strictly_less = candidates < f
         return np.all(less_equal, axis=1) & np.any(strictly_less, axis=1)
-
-    def _is_dominated(self, f: np.ndarray) -> bool:
-        return self._dominates(self._F, f).any()
 
     def _trim(self) -> None:
         if self._F.shape[0] <= self.capacity:
@@ -474,52 +367,3 @@ class _IncrementalArchive:
 
     def contents(self) -> tuple[np.ndarray, np.ndarray]:
         return self._X, self._F
-
-
-class MooCoreKernelV5(MooCoreKernelV4):
-    """
-    Experimental kernel that adds Numba-accelerated tournament selection
-    and an incremental archive manager on top of the V4 survival routines.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self._archive_manager: _IncrementalArchive | None = None
-
-    def tournament_selection(
-        self,
-        ranks: np.ndarray,
-        crowding: np.ndarray,
-        pressure: int,
-        rng: np.random.Generator,
-        n_parents: int,
-    ) -> np.ndarray:
-        return self._numpy_ops.tournament_selection(
-            ranks, crowding, pressure, rng, n_parents
-        )
-
-    def update_archive(
-        self,
-        archive_X: np.ndarray | None,
-        archive_F: np.ndarray | None,
-        population_X: np.ndarray,
-        population_F: np.ndarray,
-        archive_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        if archive_size <= 0:
-            return archive_X, archive_F
-        if (
-            self._archive_manager is None
-            or self._archive_manager.capacity != archive_size
-            or self._archive_manager._X.shape[1] != population_X.shape[1]
-        ):
-            self._archive_manager = _IncrementalArchive(
-                self, archive_size, population_X.shape[1], population_F.shape[1], population_X.dtype
-            )
-            if archive_X is not None and archive_X.size:
-                self._archive_manager.bootstrap(archive_X, archive_F)
-        elif archive_X is not None and archive_X.size and self._archive_manager.is_empty():
-            self._archive_manager.bootstrap(archive_X, archive_F)
-
-        updated_X, updated_F = self._archive_manager.update(population_X, population_F)
-        return updated_X, updated_F
