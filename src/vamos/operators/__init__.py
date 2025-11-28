@@ -1,7 +1,16 @@
 from .permutation import (
     order_crossover,
+    pmx_crossover,
+    cycle_crossover,
+    position_based_crossover,
+    edge_recombination_crossover,
     random_permutation_population,
     swap_mutation,
+    insert_mutation,
+    scramble_mutation,
+    inversion_mutation,
+    simple_inversion_mutation,
+    displacement_mutation,
 )
 from .real import (
     SBXCrossover,
@@ -21,8 +30,17 @@ from .real import (
 
 __all__ = [
     "order_crossover",
+    "pmx_crossover",
+    "cycle_crossover",
+    "position_based_crossover",
+    "edge_recombination_crossover",
     "random_permutation_population",
     "swap_mutation",
+    "insert_mutation",
+    "scramble_mutation",
+    "inversion_mutation",
+    "simple_inversion_mutation",
+    "displacement_mutation",
     "SBXCrossover",
     "BLXAlphaCrossover",
     "ArithmeticCrossover",
