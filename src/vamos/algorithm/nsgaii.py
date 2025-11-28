@@ -4,8 +4,17 @@ import numpy as np
 from vamos.algorithm.archive import CrowdingDistanceArchive
 from vamos.operators.permutation import (
     order_crossover,
+    pmx_crossover,
+    cycle_crossover,
+    position_based_crossover,
+    edge_recombination_crossover,
     random_permutation_population,
     swap_mutation,
+    insert_mutation,
+    scramble_mutation,
+    inversion_mutation,
+    simple_inversion_mutation,
+    displacement_mutation,
 )
 from vamos.operators.real import (
     SBXCrossover,
@@ -80,6 +89,32 @@ def _build_mating_pool(
     if parent_indices.size != parent_count:
         raise ValueError("Selection operator returned an unexpected number of parents.")
     return parent_indices.reshape(parent_count // 2, 2)
+
+
+_PERM_CROSSOVER = {
+    "ox": order_crossover,
+    "order": order_crossover,
+    "oxd": order_crossover,
+    "pmx": pmx_crossover,
+    "cycle": cycle_crossover,
+    "cx": cycle_crossover,
+    "position": position_based_crossover,
+    "position_based": position_based_crossover,
+    "pos": position_based_crossover,
+    "edge": edge_recombination_crossover,
+    "edge_recombination": edge_recombination_crossover,
+    "erx": edge_recombination_crossover,
+}
+
+_PERM_MUTATION = {
+    "swap": swap_mutation,
+    "insert": insert_mutation,
+    "scramble": scramble_mutation,
+    "inversion": inversion_mutation,
+    "simple_inversion": simple_inversion_mutation,
+    "simpleinv": simple_inversion_mutation,
+    "displacement": displacement_mutation,
+}
 
 
 class NSGAII:
@@ -157,9 +192,11 @@ class NSGAII:
         pressure = int(sel_params.get("pressure", 2))
 
         cross_method, cross_params = self.cfg["crossover"]
+        cross_method = cross_method.lower()
         cross_params = dict(cross_params)
 
         mut_method, mut_params = self.cfg["mutation"]
+        mut_method = mut_method.lower()
         mut_params = _prepare_mutation_params(mut_params, encoding, n_var)
 
         variation_workspace = VariationWorkspace() if encoding != "permutation" else None
@@ -232,9 +269,9 @@ class NSGAII:
     @staticmethod
     def _validate_operator_support(encoding: str, crossover: str, mutation: str) -> None:
         if encoding == "permutation":
-            if crossover not in {"ox", "order"}:
+            if crossover not in _PERM_CROSSOVER:
                 raise ValueError(f"Unsupported crossover '{crossover}' for permutation encoding.")
-            if mutation != "swap":
+            if mutation not in _PERM_MUTATION:
                 raise ValueError(f"Unsupported mutation '{mutation}' for permutation encoding.")
         else:
             if crossover not in {"sbx", "blx_alpha"}:
@@ -272,8 +309,10 @@ class NSGAII:
     ) -> np.ndarray:
         if encoding == "permutation":
             cross_prob = float(cross_params.get("prob", 1.0))
-            offspring = order_crossover(parents, cross_prob, rng)
-            swap_mutation(offspring, float(mut_params.get("prob", 0.0)), rng)
+            cross_fn = _PERM_CROSSOVER[crossover]
+            offspring = cross_fn(parents, cross_prob, rng)
+            mut_fn = _PERM_MUTATION[mutation]
+            mut_fn(offspring, float(mut_params.get("prob", 0.0)), rng)
             return offspring
 
         n_var = parents.shape[1]

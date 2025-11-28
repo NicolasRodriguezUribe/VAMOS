@@ -205,11 +205,27 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
     )
     parser.add_argument(
         "--nsgaii-crossover",
-        choices=("sbx", "blx_alpha"),
-        default="sbx",
+        choices=(
+            "sbx",
+            "blx_alpha",
+            "ox",
+            "order",
+            "pmx",
+            "cycle",
+            "cx",
+            "position",
+            "position_based",
+            "pos",
+            "edge",
+            "edge_recombination",
+            "erx",
+            "oxd",
+        ),
+        default=None,
         help=(
-            "Real-coded crossover operator for NSGA-II (continuous problems). "
-            "Ignored for permutation-encoded problems."
+            "Crossover operator for NSGA-II. Continuous problems support sbx/blx_alpha "
+            "(default: sbx); permutation problems support ox/pmx/cycle/position/edge "
+            "(default: ox)."
         ),
     )
     parser.add_argument(
@@ -228,18 +244,29 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
     )
     parser.add_argument(
         "--nsgaii-mutation",
-        choices=("pm", "non_uniform"),
-        default="pm",
+        choices=(
+            "pm",
+            "non_uniform",
+            "swap",
+            "insert",
+            "scramble",
+            "inversion",
+            "simple_inversion",
+            "simpleinv",
+            "displacement",
+        ),
+        default=None,
         help=(
-            "Real-coded mutation operator for NSGA-II (continuous problems). "
-            "Permutation problems still use swap mutation."
+            "Mutation operator for NSGA-II. Continuous problems support pm/non_uniform "
+            "(default: pm); permutation problems support swap/insert/scramble/"
+            "inversion/displacement (default: swap)."
         ),
     )
     parser.add_argument(
         "--nsgaii-mutation-prob",
         help=(
             "Mutation probability for NSGA-II. Accepts floats or expressions "
-            "like '1/n' (default: 1/n)."
+            "like '1/n' (defaults: 1/n for continuous, 2/n for permutation)."
         ),
     )
     parser.add_argument(

@@ -118,13 +118,47 @@ def build_hv_stop_config(hv_threshold: float | None, hv_reference_front: str | N
 
 
 def resolve_nsgaii_variation_config(encoding: str, overrides: dict | None):
-    if encoding == "permutation":
-        return ("ox", {"prob": 0.9}), ("swap", {"prob": "2/n"}), None
-
     overrides = overrides or {}
     cross_overrides = overrides.get("crossover") or {}
     mutation_overrides = overrides.get("mutation") or {}
     repair_choice = overrides.get("repair") or "clip"
+
+    if encoding == "permutation":
+        perm_crossovers = {
+            "ox",
+            "order",
+            "oxd",
+            "pmx",
+            "cycle",
+            "cx",
+            "position",
+            "position_based",
+            "pos",
+            "edge",
+            "edge_recombination",
+            "erx",
+        }
+        perm_mutations = {
+            "swap",
+            "insert",
+            "scramble",
+            "inversion",
+            "simple_inversion",
+            "simpleinv",
+            "displacement",
+        }
+        cross_method_candidate = (cross_overrides.get("method") or "").lower()
+        if cross_method_candidate and cross_method_candidate not in perm_crossovers:
+            raise ValueError(f"Unsupported NSGA-II crossover '{cross_method_candidate}' for permutation encoding.")
+        cross_method = cross_method_candidate or "ox"
+        cross_params: dict[str, float | str] = {"prob": cross_overrides.get("prob", 0.9)}
+
+        mutation_method_candidate = (mutation_overrides.get("method") or "").lower()
+        if mutation_method_candidate and mutation_method_candidate not in perm_mutations:
+            raise ValueError(f"Unsupported NSGA-II mutation '{mutation_method_candidate}' for permutation encoding.")
+        mutation_method = mutation_method_candidate or "swap"
+        mut_params: dict[str, float | str] = {"prob": mutation_overrides.get("prob", "2/n")}
+        return (cross_method, cross_params), (mutation_method, mut_params), None
 
     cross_method = (cross_overrides.get("method") or "sbx").lower()
     if cross_method not in {"sbx", "blx_alpha"}:
