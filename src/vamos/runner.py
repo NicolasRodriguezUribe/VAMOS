@@ -160,6 +160,67 @@ def resolve_nsgaii_variation_config(encoding: str, overrides: dict | None):
         mut_params: dict[str, float | str] = {"prob": mutation_overrides.get("prob", "2/n")}
         return (cross_method, cross_params), (mutation_method, mut_params), None
 
+    if encoding == "binary":
+        binary_crossovers = {
+            "one_point",
+            "single_point",
+            "1point",
+            "two_point",
+            "2point",
+            "uniform",
+        }
+        binary_mutations = {"bitflip", "bit_flip"}
+
+        cross_method_candidate = (cross_overrides.get("method") or "").lower()
+        if cross_method_candidate and cross_method_candidate not in binary_crossovers:
+            raise ValueError(f"Unsupported NSGA-II crossover '{cross_method_candidate}' for binary encoding.")
+        cross_method = cross_method_candidate or "uniform"
+        cross_params: dict[str, float | str] = {"prob": cross_overrides.get("prob", 0.9)}
+
+        mutation_method_candidate = (mutation_overrides.get("method") or "").lower()
+        if mutation_method_candidate and mutation_method_candidate not in binary_mutations:
+            raise ValueError(f"Unsupported NSGA-II mutation '{mutation_method_candidate}' for binary encoding.")
+        mutation_method = mutation_method_candidate or "bitflip"
+        mut_params: dict[str, float | str] = {"prob": mutation_overrides.get("prob", "1/n")}
+        return (cross_method, cross_params), (mutation_method, mut_params), None
+
+    if encoding == "integer":
+        int_crossovers = {"uniform", "blend", "arithmetic"}
+        int_mutations = {"reset", "random_reset", "creep"}
+
+        cross_method_candidate = (cross_overrides.get("method") or "").lower()
+        if cross_method_candidate and cross_method_candidate not in int_crossovers:
+            raise ValueError(f"Unsupported NSGA-II crossover '{cross_method_candidate}' for integer encoding.")
+        cross_method = cross_method_candidate or "uniform"
+        cross_params: dict[str, float | str] = {"prob": cross_overrides.get("prob", 0.9)}
+
+        mutation_method_candidate = (mutation_overrides.get("method") or "").lower()
+        if mutation_method_candidate and mutation_method_candidate not in int_mutations:
+            raise ValueError(f"Unsupported NSGA-II mutation '{mutation_method_candidate}' for integer encoding.")
+        mutation_method = mutation_method_candidate or "reset"
+        mut_params: dict[str, float | str] = {
+            "prob": mutation_overrides.get("prob", "1/n"),
+            "step": mutation_overrides.get("step", 1),
+        }
+        return (cross_method, cross_params), (mutation_method, mut_params), None
+
+    if encoding == "mixed":
+        mixed_crossovers = {"mixed", "uniform"}
+        mixed_mutations = {"mixed", "gaussian"}
+
+        cross_method_candidate = (cross_overrides.get("method") or "").lower()
+        if cross_method_candidate and cross_method_candidate not in mixed_crossovers:
+            raise ValueError(f"Unsupported NSGA-II crossover '{cross_method_candidate}' for mixed encoding.")
+        cross_method = cross_method_candidate or "mixed"
+        cross_params: dict[str, float | str] = {"prob": cross_overrides.get("prob", 0.9)}
+
+        mutation_method_candidate = (mutation_overrides.get("method") or "").lower()
+        if mutation_method_candidate and mutation_method_candidate not in mixed_mutations:
+            raise ValueError(f"Unsupported NSGA-II mutation '{mutation_method_candidate}' for mixed encoding.")
+        mutation_method = mutation_method_candidate or "mixed"
+        mut_params: dict[str, float | str] = {"prob": mutation_overrides.get("prob", "1/n")}
+        return (cross_method, cross_params), (mutation_method, mut_params), None
+
     cross_method = (cross_overrides.get("method") or "sbx").lower()
     if cross_method not in {"sbx", "blx_alpha"}:
         raise ValueError(f"Unsupported NSGA-II crossover '{cross_method}'.")
@@ -305,9 +366,9 @@ def _build_algorithm(
 ):
     kernel_backend = resolve_kernel(engine_name)
     encoding = getattr(problem, "encoding", "continuous")
-    if encoding == "permutation" and algorithm_name != "nsgaii":
+    if encoding in {"permutation", "binary", "integer", "mixed"} and algorithm_name != "nsgaii":
         raise ValueError(
-            f"Problem '{problem.__class__.__name__}' uses permutation encoding; "
+            f"Problem '{problem.__class__.__name__}' uses {encoding} encoding; "
             f"currently only NSGA-II supports this representation."
         )
     if algorithm_name == "nsgaii":

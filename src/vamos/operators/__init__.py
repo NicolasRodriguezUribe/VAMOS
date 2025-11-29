@@ -1,3 +1,18 @@
+from .binary import (
+    random_binary_population,
+    one_point_crossover,
+    two_point_crossover,
+    uniform_crossover,
+    bit_flip_mutation,
+)
+from .integer import (
+    random_integer_population,
+    uniform_integer_crossover,
+    arithmetic_integer_crossover,
+    random_reset_mutation,
+    creep_mutation,
+)
+from .mixed import mixed_initialize, mixed_crossover, mixed_mutation
 from .permutation import (
     order_crossover,
     pmx_crossover,
@@ -29,6 +44,19 @@ from .real import (
 )
 
 __all__ = [
+    "random_binary_population",
+    "one_point_crossover",
+    "two_point_crossover",
+    "uniform_crossover",
+    "bit_flip_mutation",
+    "random_integer_population",
+    "uniform_integer_crossover",
+    "arithmetic_integer_crossover",
+    "random_reset_mutation",
+    "creep_mutation",
+    "mixed_initialize",
+    "mixed_crossover",
+    "mixed_mutation",
     "order_crossover",
     "pmx_crossover",
     "cycle_crossover",

@@ -2,6 +2,21 @@
 import numpy as np
 
 from vamos.algorithm.archive import CrowdingDistanceArchive
+from vamos.operators.binary import (
+    random_binary_population,
+    one_point_crossover,
+    two_point_crossover,
+    uniform_crossover,
+    bit_flip_mutation,
+)
+from vamos.operators.integer import (
+    random_integer_population,
+    uniform_integer_crossover,
+    arithmetic_integer_crossover,
+    random_reset_mutation,
+    creep_mutation,
+)
+from vamos.operators.mixed import mixed_initialize, mixed_crossover, mixed_mutation
 from vamos.operators.permutation import (
     order_crossover,
     pmx_crossover,
@@ -47,11 +62,23 @@ def _initialize_population(
     xu,
     encoding: str,
     rng: np.random.Generator,
+    problem=None,
 ) -> np.ndarray:
     if pop_size <= 0:
         raise ValueError("pop_size must be positive.")
     if encoding == "permutation":
         return random_permutation_population(pop_size, n_var, rng)
+    if encoding == "binary":
+        return random_binary_population(pop_size, n_var, rng)
+    if encoding == "integer":
+        lower = np.asarray(xl, dtype=int).reshape(n_var)
+        upper = np.asarray(xu, dtype=int).reshape(n_var)
+        return random_integer_population(pop_size, n_var, lower, upper, rng)
+    if encoding == "mixed":
+        spec = getattr(problem, "mixed_spec", None) if problem is not None else None
+        if spec is None:
+            raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
+        return mixed_initialize(pop_size, n_var, spec, rng)
     return rng.uniform(xl, xu, size=(pop_size, n_var))
 
 
@@ -116,6 +143,42 @@ _PERM_MUTATION = {
     "displacement": displacement_mutation,
 }
 
+_BINARY_CROSSOVER = {
+    "one_point": one_point_crossover,
+    "single_point": one_point_crossover,
+    "1point": one_point_crossover,
+    "two_point": two_point_crossover,
+    "2point": two_point_crossover,
+    "uniform": uniform_crossover,
+}
+
+_BINARY_MUTATION = {
+    "bitflip": bit_flip_mutation,
+    "bit_flip": bit_flip_mutation,
+}
+
+_INT_CROSSOVER = {
+    "uniform": uniform_integer_crossover,
+    "blend": arithmetic_integer_crossover,
+    "arithmetic": arithmetic_integer_crossover,
+}
+
+_INT_MUTATION = {
+    "reset": random_reset_mutation,
+    "random_reset": random_reset_mutation,
+    "creep": creep_mutation,
+}
+
+_MIXED_CROSSOVER = {
+    "mixed": mixed_crossover,
+    "uniform": mixed_crossover,
+}
+
+_MIXED_MUTATION = {
+    "mixed": mixed_mutation,
+    "gaussian": mixed_mutation,
+}
+
 
 class NSGAII:
     """
@@ -158,16 +221,17 @@ class NSGAII:
             raise ValueError("offspring size must be even.")
         encoding = getattr(problem, "encoding", "continuous")
         n_var = problem.n_var
-        xl = np.asarray(problem.xl, dtype=float)
-        xu = np.asarray(problem.xu, dtype=float)
+        bounds_dtype = int if encoding == "integer" else float
+        xl = np.asarray(problem.xl, dtype=bounds_dtype)
+        xu = np.asarray(problem.xu, dtype=bounds_dtype)
         if xl.ndim == 0:
-            xl = np.full(n_var, xl, dtype=float)
+            xl = np.full(n_var, xl, dtype=bounds_dtype)
         if xu.ndim == 0:
-            xu = np.full(n_var, xu, dtype=float)
-        xl = np.ascontiguousarray(xl, dtype=float)
-        xu = np.ascontiguousarray(xu, dtype=float)
+            xu = np.full(n_var, xu, dtype=bounds_dtype)
+        xl = np.ascontiguousarray(xl, dtype=bounds_dtype)
+        xu = np.ascontiguousarray(xu, dtype=bounds_dtype)
 
-        X = _initialize_population(pop_size, n_var, xl, xu, encoding, rng)
+        X = _initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem)
         F = _evaluate_population(problem, X)
         n_eval = X.shape[0]
         archive_size = self._resolve_archive_size()
@@ -199,7 +263,11 @@ class NSGAII:
         mut_method = mut_method.lower()
         mut_params = _prepare_mutation_params(mut_params, encoding, n_var)
 
-        variation_workspace = VariationWorkspace() if encoding != "permutation" else None
+        variation_workspace = (
+            VariationWorkspace()
+            if encoding not in {"permutation", "binary", "integer"}
+            else None
+        )
 
         self._validate_operator_support(encoding, cross_method, mut_method)
         crossover_operator = self._build_crossover_operator(
@@ -273,6 +341,21 @@ class NSGAII:
                 raise ValueError(f"Unsupported crossover '{crossover}' for permutation encoding.")
             if mutation not in _PERM_MUTATION:
                 raise ValueError(f"Unsupported mutation '{mutation}' for permutation encoding.")
+        elif encoding == "binary":
+            if crossover not in _BINARY_CROSSOVER:
+                raise ValueError(f"Unsupported crossover '{crossover}' for binary encoding.")
+            if mutation not in _BINARY_MUTATION:
+                raise ValueError(f"Unsupported mutation '{mutation}' for binary encoding.")
+        elif encoding == "integer":
+            if crossover not in _INT_CROSSOVER:
+                raise ValueError(f"Unsupported crossover '{crossover}' for integer encoding.")
+            if mutation not in _INT_MUTATION:
+                raise ValueError(f"Unsupported mutation '{mutation}' for integer encoding.")
+        elif encoding == "mixed":
+            if crossover not in _MIXED_CROSSOVER:
+                raise ValueError(f"Unsupported crossover '{crossover}' for mixed encoding.")
+            if mutation not in _MIXED_MUTATION:
+                raise ValueError(f"Unsupported mutation '{mutation}' for mixed encoding.")
         else:
             if crossover not in {"sbx", "blx_alpha"}:
                 raise ValueError(f"Unsupported crossover '{crossover}' for continuous encoding.")
@@ -315,6 +398,38 @@ class NSGAII:
             mut_fn(offspring, float(mut_params.get("prob", 0.0)), rng)
             return offspring
 
+        if encoding == "binary":
+            cross_prob = float(cross_params.get("prob", 1.0))
+            cross_fn = _BINARY_CROSSOVER[crossover]
+            offspring = cross_fn(parents, cross_prob, rng)
+            mut_fn = _BINARY_MUTATION[mutation]
+            mut_fn(offspring, float(mut_params.get("prob", 0.0)), rng)
+            return offspring
+
+        if encoding == "integer":
+            cross_prob = float(cross_params.get("prob", 1.0))
+            cross_fn = _INT_CROSSOVER[crossover]
+            offspring = cross_fn(parents, cross_prob, rng)
+            mut_fn = _INT_MUTATION[mutation]
+            mut_prob = float(mut_params.get("prob", 0.0))
+            if mut_fn is creep_mutation:
+                step = int(mut_params.get("step", 1))
+                mut_fn(offspring, mut_prob, step, xl, xu, rng)
+            else:
+                mut_fn(offspring, mut_prob, xl, xu, rng)
+            return offspring
+
+        if encoding == "mixed":
+            spec = getattr(problem, "mixed_spec", None)
+            if spec is None:
+                raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
+            cross_prob = float(cross_params.get("prob", 1.0))
+            cross_fn = _MIXED_CROSSOVER[crossover]
+            offspring = cross_fn(parents, cross_prob, spec, rng)
+            mut_fn = _MIXED_MUTATION[mutation]
+            mut_fn(offspring, float(mut_params.get("prob", 0.0)), spec, rng)
+            return offspring
+
         n_var = parents.shape[1]
         if crossover_operator is None:
             raise ValueError("Crossover operator is not initialized.")
@@ -332,7 +447,7 @@ class NSGAII:
         return offspring
 
     def _build_crossover_operator(self, encoding, method, params, xl, xu, workspace):
-        if encoding == "permutation":
+        if encoding in {"permutation", "binary", "integer", "mixed"}:
             return None
         if method == "sbx":
             prob = float(params.get("prob", 0.9))
@@ -361,7 +476,7 @@ class NSGAII:
         return None
 
     def _build_mutation_operator(self, encoding, method, params, xl, xu, workspace):
-        if encoding == "permutation":
+        if encoding in {"permutation", "binary", "integer", "mixed"}:
             return None
         if method == "pm":
             prob = float(params.get("prob", 0.1))
@@ -386,7 +501,7 @@ class NSGAII:
         return None
 
     def _build_repair_operator(self, encoding, repair_cfg):
-        if encoding == "permutation" or not repair_cfg:
+        if encoding in {"permutation", "binary", "integer", "mixed"} or not repair_cfg:
             return None
         method, _ = repair_cfg
         normalized = method.lower()
