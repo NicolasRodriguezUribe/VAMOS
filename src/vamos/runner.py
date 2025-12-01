@@ -402,6 +402,7 @@ def _build_algorithm(
     config: ExperimentConfig,
     *,
     external_archive_size: int | None = None,
+    archive_type: str = "hypervolume",
     selection_pressure: int = 2,
     nsgaii_variation: dict | None = None,
     moead_variation: dict | None = None,
@@ -432,7 +433,7 @@ def _build_algorithm(
         if repair_cfg:
             cfg_builder = cfg_builder.repair(repair_cfg[0], **repair_cfg[1])
         if external_archive_size:
-            cfg_builder = cfg_builder.external_archive(size=external_archive_size)
+            cfg_builder = cfg_builder.external_archive(size=external_archive_size, archive_type=archive_type)
         cfg = cfg_builder.fixed()
         return NSGAII(cfg.to_dict(), kernel=kernel_backend), cfg
 
@@ -710,6 +711,7 @@ def run_single(
     config: ExperimentConfig,
     *,
     external_archive_size: int | None = None,
+    archive_type: str = "hypervolume",
     selection_pressure: int = 2,
     nsgaii_variation: dict | None = None,
     moead_variation: dict | None = None,
@@ -728,6 +730,7 @@ def run_single(
         problem,
         config,
         external_archive_size=external_archive_size,
+        archive_type=archive_type,
         selection_pressure=selection_pressure,
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
@@ -784,6 +787,8 @@ def run_single(
     if archive is not None:
         archive_fun_path = os.path.join(output_dir, "ARCHIVE_FUN.csv")
         np.savetxt(archive_fun_path, archive["F"], delimiter=",")
+        # Include archive in metrics so callers can access it
+        metrics["archive"] = archive
     time_path = os.path.join(output_dir, "time.txt")
     with open(time_path, "w", encoding="utf-8") as f:
         f.write(f"{total_time_ms:.2f}\n")

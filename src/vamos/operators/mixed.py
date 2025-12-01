@@ -38,8 +38,10 @@ def mixed_crossover(
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty_like(X_parents)
+    # Handle odd parent count by duplicating the last parent
     if Np % 2 != 0:
-        raise ValueError("Mixed crossover expects an even number of parents.")
+        X_parents = np.vstack([X_parents, X_parents[-1:]])
+        Np += 1
     pairs = X_parents.reshape(Np // 2, 2, D).copy()
     prob = float(np.clip(prob, 0.0, 1.0))
     if prob <= 0.0:

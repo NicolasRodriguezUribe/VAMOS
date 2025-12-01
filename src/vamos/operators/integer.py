@@ -39,8 +39,10 @@ def _as_pairs(X_parents: np.ndarray) -> tuple[np.ndarray, int]:
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty((0, 2, D), dtype=X_parents.dtype), D
+    # Handle odd parent count by duplicating the last parent
     if Np % 2 != 0:
-        raise ValueError("Integer crossover expects an even number of parents.")
+        X_parents = np.vstack([X_parents, X_parents[-1:]])
+        Np += 1
     return X_parents.reshape(Np // 2, 2, D).copy(), D
 
 

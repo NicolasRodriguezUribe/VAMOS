@@ -1,22 +1,14 @@
 import numpy as np
 
-from vamos.algorithm.archive import CrowdingArchive, _single_front_crowding
+from vamos.algorithm.archive import HypervolumeArchive, _single_front_crowding
 
 
-def _dom(a, b):
-    if np.all(a <= b) and np.any(a < b):
-        return 1
-    if np.all(b <= a) and np.any(b < a):
-        return -1
-    return 0
-
-
-def test_crowding_archive_trims_by_crowding():
-    archive = CrowdingArchive(capacity=2, dominance_fn=_dom, crowding_fn=_single_front_crowding)
-    archive.add(np.array([0.0, 0.0]), np.array([0.0, 1.0]))
-    archive.add(np.array([1.0, 1.0]), np.array([1.0, 0.0]))
-    archive.add(np.array([0.5, 0.5]), np.array([0.5, 0.5]))
-    X, F = archive.get_solutions()
-    assert F.shape[0] == 2
-    # Middle point should be trimmed (lowest crowding)
-    assert not np.any(np.all(F == np.array([0.5, 0.5]), axis=1))
+def test_hypervolume_archive_trims_by_contribution():
+    archive = HypervolumeArchive(capacity=2, n_var=2, n_obj=2, dtype=float)
+    X = np.array([[0.0, 0.0], [1.0, 1.0], [0.5, 0.5]])
+    F = np.array([[0.0, 1.0], [1.0, 0.0], [0.5, 0.5]])
+    archive.update(X, F)
+    result_X, result_F = archive.contents()
+    assert result_F.shape[0] == 2
+    # Middle point should be trimmed (lowest HV contribution)
+    assert not np.any(np.all(result_F == np.array([0.5, 0.5]), axis=1))

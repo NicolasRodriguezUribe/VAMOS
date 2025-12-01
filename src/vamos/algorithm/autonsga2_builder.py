@@ -9,7 +9,7 @@ from vamos.algorithm.nsgaii import NSGAII
 from vamos.kernel.numpy_backend import NumPyKernel
 from vamos.algorithm.population import resolve_bounds
 from vamos.algorithm.selection import RandomSelection, TournamentSelection
-from vamos.algorithm.archive import CrowdingArchive, _single_front_crowding
+from vamos.algorithm.archive import CrowdingDistanceArchive, _single_front_crowding
 from vamos.operators.real import (
     BLXAlphaCrossover,
     SBXCrossover,
@@ -44,8 +44,6 @@ def build_autonsga2(config: Dict[str, Any], problem, seed: int) -> NSGAII:
     rng = np.random.default_rng(seed)
     pop_size = int(config.get("population_size", 100))
     offspring_size = int(config.get("offspring_size", pop_size))
-    if offspring_size % 2 != 0:
-        offspring_size += 1  # ensure valid even offspring size for crossover
     n_var = getattr(problem, "n_var", None) or getattr(problem, "n_variables", None)
     if n_var is None:
         raise ValueError("Problem must define n_var.")

@@ -1,7 +1,7 @@
 # algorithm/nsgaii.py
 import numpy as np
 
-from vamos.algorithm.archive import CrowdingDistanceArchive, CrowdingArchive, _single_front_crowding
+from vamos.algorithm.archive import CrowdingDistanceArchive, HypervolumeArchive, _single_front_crowding
 from vamos.algorithm.population import evaluate_population, initialize_population, resolve_bounds
 from vamos.algorithm.termination import HVTracker
 from vamos.algorithm.variation import (
@@ -65,8 +65,6 @@ class NSGAII:
         offspring_size = int(self.cfg.get("offspring_size") or pop_size)
         if offspring_size <= 0:
             raise ValueError("offspring size must be positive.")
-        if offspring_size % 2 != 0:
-            raise ValueError("offspring size must be even.")
         encoding = getattr(problem, "encoding", "continuous")
         n_var = problem.n_var
         xl, xu = resolve_bounds(problem, encoding)
@@ -125,13 +123,17 @@ class NSGAII:
         hv_reached = hv_tracker.reached(hv_points()) if hv_tracker.enabled else False
 
         result_mode = self.cfg.get("result_mode", "population")
-        crowd_archive = None
+        result_archive = None
         if result_mode == "external_archive" and archive_size:
-            crowd_archive = CrowdingArchive(
-                archive_size,
-                dominance_fn=lambda a, b: 1 if np.all(a <= b) and np.any(a < b) else (-1 if np.all(b <= a) and np.any(b < a) else 0),
-                crowding_fn=_single_front_crowding,
-            )
+            archive_type = self.cfg.get("archive_type", "hypervolume")
+            if archive_type == "crowding":
+                result_archive = CrowdingDistanceArchive(
+                    archive_size, n_var, problem.n_obj, X.dtype
+                )
+            else:
+                result_archive = HypervolumeArchive(
+                    archive_size, n_var, problem.n_obj, X.dtype
+                )
 
         while n_eval < max_eval and not hv_reached:
             ranks, crowding = self.kernel.nsga2_ranking(F)
@@ -152,9 +154,8 @@ class NSGAII:
             n_eval += X_off.shape[0]
 
             X, F = self.kernel.nsga2_survival(X, F, X_off, F_off, pop_size)
-            if crowd_archive is not None:
-                for xx, ff in zip(X, F):
-                    crowd_archive.add(xx, ff)
+            if result_archive is not None:
+                result_archive.update(X, F)
             if archive_size:
                 if archive_via_kernel:
                     archive_X, archive_F = self.kernel.update_archive(
@@ -167,8 +168,8 @@ class NSGAII:
                 break
 
         result = {"X": X, "F": F, "evaluations": n_eval, "hv_reached": hv_reached}
-        if crowd_archive is not None:
-            arch_X, arch_F = crowd_archive.get_solutions()
+        if result_archive is not None:
+            arch_X, arch_F = result_archive.contents()
             result["archive"] = {"X": arch_X, "F": arch_F}
         elif archive_size:
             if archive_manager is not None:

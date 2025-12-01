@@ -246,7 +246,7 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
         "--offspring-population-size",
         type=int,
         help=(
-            "Number of offspring generated per NSGA-II generation (must be even). "
+            "Number of offspring generated per NSGA-II generation. "
             "Defaults to --population-size."
         ),
     )
@@ -368,8 +368,6 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
         args.offspring_population_size = args.population_size
     if args.offspring_population_size <= 0:
         parser.error("--offspring-population-size must be positive.")
-    if args.offspring_population_size % 2 != 0:
-        parser.error("--offspring-population-size must be an even integer.")
     if args.selection_pressure <= 0:
         parser.error("--selection-pressure must be a positive integer.")
     if args.external_archive_size is not None and args.external_archive_size <= 0:
@@ -530,7 +528,7 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         type=int,
         default=experiment_defaults.get("offspring_population_size"),
         help=(
-            "Number of offspring generated per NSGA-II generation (must be even). "
+            "Number of offspring generated per NSGA-II generation. "
             "Defaults to --population-size."
         ),
     )
@@ -778,8 +776,6 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         args.offspring_population_size = args.population_size
     if args.offspring_population_size <= 0:
         parser.error("--offspring-population-size must be positive.")
-    if args.offspring_population_size % 2 != 0:
-        parser.error("--offspring-population-size must be an even integer.")
     if args.selection_pressure <= 0:
         parser.error("--selection-pressure must be a positive integer.")
     if args.external_archive_size is not None and args.external_archive_size <= 0:
