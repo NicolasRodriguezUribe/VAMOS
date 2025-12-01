@@ -4,6 +4,7 @@ import json
 import os
 import time
 from dataclasses import dataclass
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
@@ -18,6 +19,7 @@ from vamos.algorithm.nsga3 import NSGAIII
 from vamos.algorithm.smsemoa import SMSEMOA
 from vamos.kernel.numpy_backend import NumPyKernel
 from vamos.problem.registry import ProblemSelection, available_problem_names, make_problem_selection
+from vamos.problem.types import ProblemProtocol, MixedProblemProtocol
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -304,6 +306,45 @@ def compute_hv_reference(fronts: list[np.ndarray]) -> np.ndarray:
     return stacked.max(axis=0) + HV_REFERENCE_OFFSET
 
 
+def _merge_variation_overrides(base: dict | None, override: dict | None) -> dict:
+    merged = deepcopy(base) if base else {}
+    if not override:
+        return merged
+    for key in ("crossover", "mutation"):
+        if key in override and isinstance(override[key], dict):
+            merged.setdefault(key, {})
+            for k, v in override[key].items():
+                if v is not None:
+                    merged[key][k] = v
+    if "repair" in override:
+        merged["repair"] = override["repair"]
+    return merged
+
+
+def _validate_problem(problem: ProblemProtocol) -> None:
+    if problem.n_var <= 0 or problem.n_obj <= 0:
+        raise ValueError("Problem must have positive n_var and n_obj.")
+    xl = np.asarray(problem.xl)
+    xu = np.asarray(problem.xu)
+    if xl.ndim > 1 or xu.ndim > 1:
+        raise ValueError("Problem bounds must be scalars or 1D arrays.")
+    if xl.ndim == 1 and xl.shape[0] != problem.n_var:
+        raise ValueError("Lower bounds length must match n_var.")
+    if xu.ndim == 1 and xu.shape[0] != problem.n_var:
+        raise ValueError("Upper bounds length must match n_var.")
+    if np.any(xl > xu):
+        raise ValueError("Lower bounds must not exceed upper bounds.")
+    encoding = getattr(problem, "encoding", "continuous")
+    if encoding == "mixed":
+        if not hasattr(problem, "mixed_spec"):
+            raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
+        spec = getattr(problem, "mixed_spec")
+        required = {"real_idx", "int_idx", "cat_idx", "real_lower", "real_upper", "int_lower", "int_upper", "cat_cardinality"}
+        missing = required - set(spec.keys())
+        if missing:
+            raise ValueError(f"mixed_spec missing required fields: {', '.join(sorted(missing))}")
+
+
 def problem_output_dir(selection: ProblemSelection, config: ExperimentConfig) -> str:
     safe = selection.spec.label.replace(" ", "_").upper()
     return os.path.join(config.output_root, f"{safe}")
@@ -363,10 +404,13 @@ def _build_algorithm(
     external_archive_size: int | None = None,
     selection_pressure: int = 2,
     nsgaii_variation: dict | None = None,
+    moead_variation: dict | None = None,
+    smsemoa_variation: dict | None = None,
+    nsga3_variation: dict | None = None,
 ):
     kernel_backend = resolve_kernel(engine_name)
     encoding = getattr(problem, "encoding", "continuous")
-    if encoding in {"permutation", "binary", "integer", "mixed"} and algorithm_name != "nsgaii":
+    if encoding in {"permutation", "mixed"} and algorithm_name != "nsgaii":
         raise ValueError(
             f"Problem '{problem.__class__.__name__}' uses {encoding} encoding; "
             f"currently only NSGA-II supports this representation."
@@ -396,14 +440,46 @@ def _build_algorithm(
         weight_path = _default_weight_path(
             problem.__class__.__name__, problem.n_obj, config.population_size
         )
+        mv = moead_variation or {}
+        if encoding == "binary":
+            cross_cfg = (mv.get("crossover", {}).get("method") or "uniform", {"prob": mv.get("crossover", {}).get("prob", 0.9)})
+            mut_cfg = (mv.get("mutation", {}).get("method") or "bitflip", {"prob": mv.get("mutation", {}).get("prob", "1/n")})
+        elif encoding == "integer":
+            cross_cfg = (mv.get("crossover", {}).get("method") or "uniform", {"prob": mv.get("crossover", {}).get("prob", 0.9)})
+            mut_cfg = (
+                mv.get("mutation", {}).get("method") or "reset",
+                {
+                    "prob": mv.get("mutation", {}).get("prob", "1/n"),
+                    "step": mv.get("mutation", {}).get("step", 1),
+                },
+            )
+        elif encoding in {"continuous", "real"}:
+            cross_cfg = (
+                mv.get("crossover", {}).get("method") or "sbx",
+                {
+                    "prob": mv.get("crossover", {}).get("prob", 0.9),
+                    "eta": mv.get("crossover", {}).get("eta", 20.0),
+                },
+            )
+            mut_cfg = (
+                mv.get("mutation", {}).get("method") or "pm",
+                {
+                    "prob": mv.get("mutation", {}).get("prob", "1/n"),
+                    "eta": mv.get("mutation", {}).get("eta", 20.0),
+                },
+            )
+        else:
+            raise ValueError(
+                f"Problem '{problem.__class__.__name__}' uses unsupported encoding '{encoding}' for MOEA/D."
+            )
         cfg_builder = (
             MOEADConfig()
             .pop_size(config.population_size)
             .neighbor_size(min(20, config.population_size))
             .delta(0.9)
             .replace_limit(2)
-            .crossover("sbx", prob=0.9, eta=20.0)
-            .mutation("pm", prob="1/n", eta=20.0)
+            .crossover(cross_cfg[0], **cross_cfg[1])
+            .mutation(mut_cfg[0], **mut_cfg[1])
             .aggregation("tchebycheff")
             .weight_vectors(path=weight_path)
             .engine(engine_name)
@@ -412,11 +488,43 @@ def _build_algorithm(
         return MOEAD(cfg.to_dict(), kernel=kernel_backend), cfg
 
     if algorithm_name == "smsemoa":
+        sv = smsemoa_variation or {}
+        if encoding == "binary":
+            cross_cfg = (sv.get("crossover", {}).get("method") or "uniform", {"prob": sv.get("crossover", {}).get("prob", 0.9)})
+            mut_cfg = (sv.get("mutation", {}).get("method") or "bitflip", {"prob": sv.get("mutation", {}).get("prob", "1/n")})
+        elif encoding == "integer":
+            cross_cfg = (sv.get("crossover", {}).get("method") or "uniform", {"prob": sv.get("crossover", {}).get("prob", 0.9)})
+            mut_cfg = (
+                sv.get("mutation", {}).get("method") or "reset",
+                {
+                    "prob": sv.get("mutation", {}).get("prob", "1/n"),
+                    "step": sv.get("mutation", {}).get("step", 1),
+                },
+            )
+        elif encoding in {"continuous", "real"}:
+            cross_cfg = (
+                sv.get("crossover", {}).get("method") or "sbx",
+                {
+                    "prob": sv.get("crossover", {}).get("prob", 0.9),
+                    "eta": sv.get("crossover", {}).get("eta", 20.0),
+                },
+            )
+            mut_cfg = (
+                sv.get("mutation", {}).get("method") or "pm",
+                {
+                    "prob": sv.get("mutation", {}).get("prob", "1/n"),
+                    "eta": sv.get("mutation", {}).get("eta", 20.0),
+                },
+            )
+        else:
+            raise ValueError(
+                f"Problem '{problem.__class__.__name__}' uses unsupported encoding '{encoding}' for SMSEMOA."
+            )
         cfg_builder = (
             SMSEMOAConfig()
             .pop_size(config.population_size)
-            .crossover("sbx", prob=0.9, eta=20.0)
-            .mutation("pm", prob="1/n", eta=20.0)
+            .crossover(cross_cfg[0], **cross_cfg[1])
+            .mutation(mut_cfg[0], **mut_cfg[1])
             .selection("tournament", pressure=selection_pressure)
             .reference_point(offset=0.1, adaptive=True)
             .engine(engine_name)
@@ -428,11 +536,43 @@ def _build_algorithm(
         ref_path = _default_weight_path(
             problem.__class__.__name__, problem.n_obj, config.population_size
         )
+        nv = nsga3_variation or {}
+        if encoding == "binary":
+            cross_cfg = (nv.get("crossover", {}).get("method") or "uniform", {"prob": nv.get("crossover", {}).get("prob", 0.9)})
+            mut_cfg = (nv.get("mutation", {}).get("method") or "bitflip", {"prob": nv.get("mutation", {}).get("prob", "1/n")})
+        elif encoding == "integer":
+            cross_cfg = (nv.get("crossover", {}).get("method") or "uniform", {"prob": nv.get("crossover", {}).get("prob", 0.9)})
+            mut_cfg = (
+                nv.get("mutation", {}).get("method") or "reset",
+                {
+                    "prob": nv.get("mutation", {}).get("prob", "1/n"),
+                    "step": nv.get("mutation", {}).get("step", 1),
+                },
+            )
+        elif encoding in {"continuous", "real"}:
+            cross_cfg = (
+                nv.get("crossover", {}).get("method") or "sbx",
+                {
+                    "prob": nv.get("crossover", {}).get("prob", 0.9),
+                    "eta": nv.get("crossover", {}).get("eta", 20.0),
+                },
+            )
+            mut_cfg = (
+                nv.get("mutation", {}).get("method") or "pm",
+                {
+                    "prob": nv.get("mutation", {}).get("prob", "1/n"),
+                    "eta": nv.get("mutation", {}).get("eta", 20.0),
+                },
+            )
+        else:
+            raise ValueError(
+                f"Problem '{problem.__class__.__name__}' uses unsupported encoding '{encoding}' for NSGA-III."
+            )
         cfg_builder = (
             NSGAIIIConfig()
             .pop_size(config.population_size)
-            .crossover("sbx", prob=0.9, eta=20.0)
-            .mutation("pm", prob="1/n", eta=20.0)
+            .crossover(cross_cfg[0], **cross_cfg[1])
+            .mutation(mut_cfg[0], **mut_cfg[1])
             .selection("tournament", pressure=selection_pressure)
             .reference_directions(path=ref_path)
             .engine(engine_name)
@@ -572,7 +712,12 @@ def run_single(
     external_archive_size: int | None = None,
     selection_pressure: int = 2,
     nsgaii_variation: dict | None = None,
+    moead_variation: dict | None = None,
+    smsemoa_variation: dict | None = None,
+    nsga3_variation: dict | None = None,
     hv_stop_config: dict | None = None,
+    config_source: str | None = None,
+    problem_override: dict | None = None,
 ):
     problem = selection.instantiate()
     display_algo = algorithm_name.upper()
@@ -585,6 +730,9 @@ def run_single(
         external_archive_size=external_archive_size,
         selection_pressure=selection_pressure,
         nsgaii_variation=nsgaii_variation,
+        moead_variation=moead_variation,
+        smsemoa_variation=smsemoa_variation,
+        nsga3_variation=nsga3_variation,
     )
     kernel_backend = algorithm.kernel
 
@@ -595,6 +743,8 @@ def run_single(
         hv_termination = dict(hv_stop_config)
         hv_termination["max_evaluations"] = config.max_evaluations
         termination = ("hv", hv_termination)
+
+    _validate_problem(problem)
 
     start = time.perf_counter()
     result = algorithm.run(problem, termination=termination, seed=config.seed)
@@ -647,11 +797,41 @@ def run_single(
         seed=config.seed,
         config=config,
     )
+    metadata["config_source"] = config_source
+    if problem_override:
+        metadata["problem_override"] = problem_override
+    if hv_stop_config:
+        metadata["hv_stop_config"] = hv_stop_config
     metadata["artifacts"] = {"fun": "FUN.csv", "time_ms": "time.txt"}
     if archive_fun_path:
         metadata["artifacts"]["archive_fun"] = os.path.basename(archive_fun_path)
+    resolved_cfg = {
+        "algorithm": algorithm_name,
+        "engine": engine_name,
+        "problem": selection.spec.key,
+        "n_var": selection.n_var,
+        "n_obj": selection.n_obj,
+        "encoding": getattr(problem, "encoding", "continuous"),
+        "population_size": config.population_size,
+        "offspring_population_size": config.offspring_size(),
+        "max_evaluations": config.max_evaluations,
+        "seed": config.seed,
+        "selection_pressure": selection_pressure,
+        "external_archive_size": external_archive_size,
+        "hv_threshold": hv_stop_config.get("threshold_fraction") if hv_stop_config else None,
+        "hv_reference_point": hv_stop_config.get("reference_point") if hv_stop_config else None,
+        "hv_reference_front": hv_stop_config.get("reference_front_path") if hv_stop_config else None,
+        "nsgaii_variation": nsgaii_variation,
+        "moead_variation": moead_variation,
+        "smsemoa_variation": smsemoa_variation,
+        "nsga3_variation": nsga3_variation,
+        "config_source": config_source,
+        "problem_override": problem_override,
+    }
     with open(os.path.join(output_dir, "metadata.json"), "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2, sort_keys=True)
+    with open(os.path.join(output_dir, "resolved_config.json"), "w", encoding="utf-8") as f:
+        json.dump(resolved_cfg, f, indent=2, sort_keys=True)
 
     print("\nResults stored in:", output_dir)
     print("=" * 80)
@@ -687,6 +867,8 @@ def execute_problem_suite(
     hv_stop_config: dict | None = None,
     nsgaii_variation: dict | None = None,
     include_external: bool = False,
+    config_source: str | None = None,
+    problem_override: dict | None = None,
 ):
     from vamos import external  # local import to keep runner decoupled
     from vamos import plotting
@@ -722,7 +904,12 @@ def execute_problem_suite(
                 external_archive_size=args.external_archive_size,
                 selection_pressure=args.selection_pressure,
                 nsgaii_variation=nsgaii_variation,
+                moead_variation=getattr(args, "moead_variation", None),
+                smsemoa_variation=getattr(args, "smsemoa_variation", None),
+                nsga3_variation=getattr(args, "nsga3_variation", None),
                 hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
+                config_source=config_source,
+                problem_override=problem_override,
             )
             results.append(metrics)
         for algorithm_name in optional_algorithms:
@@ -734,7 +921,12 @@ def execute_problem_suite(
                 external_archive_size=args.external_archive_size,
                 selection_pressure=args.selection_pressure,
                 nsgaii_variation=nsgaii_variation,
+                moead_variation=getattr(args, "moead_variation", None),
+                smsemoa_variation=getattr(args, "smsemoa_variation", None),
+                nsga3_variation=getattr(args, "nsga3_variation", None),
                 hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
+                config_source=config_source,
+                problem_override=problem_override,
             )
             results.append(metrics)
 
@@ -782,20 +974,66 @@ def execute_problem_suite(
 def run_from_args(args, config: ExperimentConfig):
     selections = resolve_problem_selections(args)
     multiple = len(selections) > 1
+    base_variation = getattr(args, "nsgaii_variation", None)
+    overrides = getattr(args, "problem_overrides", {}) or {}
+    config_source = getattr(args, "config_path", None)
+
     for idx, selection in enumerate(selections, start=1):
+        override = overrides.get(selection.spec.key, {}) or {}
+        effective_selection = selection
+        if override.get("n_var") is not None or override.get("n_obj") is not None:
+            effective_selection = make_problem_selection(
+                selection.spec.key,
+                n_var=override.get("n_var", selection.n_var),
+                n_obj=override.get("n_obj", selection.n_obj),
+            )
+        effective_config = ExperimentConfig(
+            title=override.get("title", config.title),
+            output_root=override.get("output_root", config.output_root),
+            population_size=override.get("population_size", config.population_size),
+            offspring_population_size=override.get(
+                "offspring_population_size", config.offspring_population_size
+            ),
+            max_evaluations=override.get("max_evaluations", config.max_evaluations),
+            seed=override.get("seed", config.seed),
+        )
+        effective_args = deepcopy(args)
+        for key in ("algorithm", "engine", "experiment", "include_external", "external_problem_source"):
+            if override.get(key) is not None:
+                setattr(effective_args, key, override[key])
+        effective_args.selection_pressure = override.get("selection_pressure", args.selection_pressure)
+        effective_args.external_archive_size = override.get("external_archive_size", args.external_archive_size)
+        effective_args.hv_threshold = override.get("hv_threshold", args.hv_threshold)
+        effective_args.hv_reference_front = override.get("hv_reference_front", args.hv_reference_front)
+        effective_args.n_var = override.get("n_var", args.n_var)
+        effective_args.n_obj = override.get("n_obj", args.n_obj)
+        effective_args.nsgaii_variation = _merge_variation_overrides(base_variation, override.get("nsgaii"))
+        effective_args.moead_variation = _merge_variation_overrides(getattr(args, "moead_variation", None), override.get("moead"))
+        effective_args.smsemoa_variation = _merge_variation_overrides(getattr(args, "smsemoa_variation", None), override.get("smsemoa"))
+        effective_args.nsga3_variation = _merge_variation_overrides(getattr(args, "nsga3_variation", None), override.get("nsga3"))
+        effective_args.effective_problem_override = override
+
         if multiple:
             print("\n" + "#" * 80)
-            print(f"Problem {idx}/{len(selections)}: {selection.spec.label} ({selection.spec.key})")
+            print(
+                f"Problem {idx}/{len(selections)}: {effective_selection.spec.label} "
+                f"({effective_selection.spec.key})"
+            )
             print("#" * 80 + "\n")
+
         hv_stop_config = None
-        if args.hv_threshold is not None:
-            hv_stop_config = build_hv_stop_config(args.hv_threshold, args.hv_reference_front, selection.spec.key)
-        nsgaii_variation = getattr(args, "nsgaii_variation", None)
+        if effective_args.hv_threshold is not None:
+            hv_stop_config = build_hv_stop_config(
+                effective_args.hv_threshold, effective_args.hv_reference_front, effective_selection.spec.key
+            )
+        nsgaii_variation = getattr(effective_args, "nsgaii_variation", None)
         execute_problem_suite(
-            args,
-            selection,
-            config,
+            effective_args,
+            effective_selection,
+            effective_config,
             hv_stop_config=hv_stop_config,
             nsgaii_variation=nsgaii_variation,
-            include_external=args.include_external,
+            include_external=effective_args.include_external,
+            config_source=config_source,
+            problem_override=override,
         )

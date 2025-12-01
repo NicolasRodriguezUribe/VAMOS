@@ -1,103 +1,14 @@
 # algorithm/nsgaii.py
 import numpy as np
 
-from vamos.algorithm.archive import CrowdingDistanceArchive
-from vamos.operators.binary import (
-    random_binary_population,
-    one_point_crossover,
-    two_point_crossover,
-    uniform_crossover,
-    bit_flip_mutation,
+from vamos.algorithm.archive import CrowdingDistanceArchive, CrowdingArchive, _single_front_crowding
+from vamos.algorithm.population import evaluate_population, initialize_population, resolve_bounds
+from vamos.algorithm.termination import HVTracker
+from vamos.algorithm.variation import (
+    VariationPipeline,
+    prepare_mutation_params,
 )
-from vamos.operators.integer import (
-    random_integer_population,
-    uniform_integer_crossover,
-    arithmetic_integer_crossover,
-    random_reset_mutation,
-    creep_mutation,
-)
-from vamos.operators.mixed import mixed_initialize, mixed_crossover, mixed_mutation
-from vamos.operators.permutation import (
-    order_crossover,
-    pmx_crossover,
-    cycle_crossover,
-    position_based_crossover,
-    edge_recombination_crossover,
-    random_permutation_population,
-    swap_mutation,
-    insert_mutation,
-    scramble_mutation,
-    inversion_mutation,
-    simple_inversion_mutation,
-    displacement_mutation,
-)
-from vamos.operators.real import (
-    SBXCrossover,
-    PolynomialMutation,
-    BLXAlphaCrossover,
-    NonUniformMutation,
-    VariationWorkspace,
-    ClampRepair,
-    ReflectRepair,
-    ResampleRepair,
-    RoundRepair,
-)
-from vamos.algorithm.hypervolume import hypervolume
-
-
-def _resolve_prob_expression(value, n_var: int, default: float) -> float:
-    if value is None:
-        return default
-    if isinstance(value, str) and value.endswith("/n"):
-        numerator = value[:-2]
-        num = float(numerator) if numerator else 1.0
-        return min(1.0, max(num, 0.0) / n_var)
-    return float(value)
-
-
-def _initialize_population(
-    pop_size: int,
-    n_var: int,
-    xl,
-    xu,
-    encoding: str,
-    rng: np.random.Generator,
-    problem=None,
-) -> np.ndarray:
-    if pop_size <= 0:
-        raise ValueError("pop_size must be positive.")
-    if encoding == "permutation":
-        return random_permutation_population(pop_size, n_var, rng)
-    if encoding == "binary":
-        return random_binary_population(pop_size, n_var, rng)
-    if encoding == "integer":
-        lower = np.asarray(xl, dtype=int).reshape(n_var)
-        upper = np.asarray(xu, dtype=int).reshape(n_var)
-        return random_integer_population(pop_size, n_var, lower, upper, rng)
-    if encoding == "mixed":
-        spec = getattr(problem, "mixed_spec", None) if problem is not None else None
-        if spec is None:
-            raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
-        return mixed_initialize(pop_size, n_var, spec, rng)
-    return rng.uniform(xl, xu, size=(pop_size, n_var))
-
-
-def _evaluate_population(problem, X: np.ndarray) -> np.ndarray:
-    F = np.empty((X.shape[0], problem.n_obj))
-    problem.evaluate(X, {"F": F})
-    return F
-
-
-def _prepare_mutation_params(mut_params: dict, encoding: str, n_var: int) -> dict:
-    params = dict(mut_params)
-    if "prob" in params:
-        params["prob"] = _resolve_prob_expression(params["prob"], n_var, params["prob"])
-    else:
-        if encoding == "permutation":
-            params["prob"] = min(1.0, 2.0 / max(1, n_var))
-        else:
-            params["prob"] = 1.0 / max(1, n_var)
-    return params
+from vamos.operators.real import VariationWorkspace
 
 
 def _build_mating_pool(
@@ -107,77 +18,23 @@ def _build_mating_pool(
     pressure: int,
     rng: np.random.Generator,
     parent_count: int,
+    group_size: int = 2,
+    selection_method: str = "tournament",
 ) -> np.ndarray:
-    if parent_count % 2 != 0:
-        raise ValueError("NSGA-II requires an even offspring size.")
-    parent_indices = kernel.tournament_selection(
-        ranks, crowding, pressure, rng, n_parents=parent_count
-    )
+    if parent_count <= 0:
+        raise ValueError("parent_count must be positive.")
+    if parent_count % group_size != 0:
+        raise ValueError("parent_count must be divisible by group_size.")
+    if selection_method == "random":
+        parent_indices = rng.integers(0, ranks.size, size=parent_count)
+    else:
+        parent_indices = kernel.tournament_selection(
+            ranks, crowding, pressure, rng, n_parents=parent_count
+        )
     if parent_indices.size != parent_count:
         raise ValueError("Selection operator returned an unexpected number of parents.")
-    return parent_indices.reshape(parent_count // 2, 2)
+    return parent_indices.reshape(parent_count // group_size, group_size)
 
-
-_PERM_CROSSOVER = {
-    "ox": order_crossover,
-    "order": order_crossover,
-    "oxd": order_crossover,
-    "pmx": pmx_crossover,
-    "cycle": cycle_crossover,
-    "cx": cycle_crossover,
-    "position": position_based_crossover,
-    "position_based": position_based_crossover,
-    "pos": position_based_crossover,
-    "edge": edge_recombination_crossover,
-    "edge_recombination": edge_recombination_crossover,
-    "erx": edge_recombination_crossover,
-}
-
-_PERM_MUTATION = {
-    "swap": swap_mutation,
-    "insert": insert_mutation,
-    "scramble": scramble_mutation,
-    "inversion": inversion_mutation,
-    "simple_inversion": simple_inversion_mutation,
-    "simpleinv": simple_inversion_mutation,
-    "displacement": displacement_mutation,
-}
-
-_BINARY_CROSSOVER = {
-    "one_point": one_point_crossover,
-    "single_point": one_point_crossover,
-    "1point": one_point_crossover,
-    "two_point": two_point_crossover,
-    "2point": two_point_crossover,
-    "uniform": uniform_crossover,
-}
-
-_BINARY_MUTATION = {
-    "bitflip": bit_flip_mutation,
-    "bit_flip": bit_flip_mutation,
-}
-
-_INT_CROSSOVER = {
-    "uniform": uniform_integer_crossover,
-    "blend": arithmetic_integer_crossover,
-    "arithmetic": arithmetic_integer_crossover,
-}
-
-_INT_MUTATION = {
-    "reset": random_reset_mutation,
-    "random_reset": random_reset_mutation,
-    "creep": creep_mutation,
-}
-
-_MIXED_CROSSOVER = {
-    "mixed": mixed_crossover,
-    "uniform": mixed_crossover,
-}
-
-_MIXED_MUTATION = {
-    "mixed": mixed_mutation,
-    "gaussian": mixed_mutation,
-}
 
 
 class NSGAII:
@@ -192,25 +49,16 @@ class NSGAII:
 
     def run(self, problem, termination, seed: int):
         term_type, term_val = termination
-        hv_target = None
-        hv_ref_point = None
-        hv_evaluator = None
+        hv_config = None
         if term_type == "n_eval":
             max_eval = int(term_val)
         elif term_type == "hv":
-            hv_target = float(term_val["target_value"])
-            hv_ref_point = np.asarray(term_val["reference_point"], dtype=float)
-            max_eval = int(term_val.get("max_evaluations", 0))
+            hv_config = dict(term_val)
+            max_eval = int(hv_config.get("max_evaluations", 0))
             if max_eval <= 0:
                 raise ValueError("HV-based termination requires a positive max_evaluations value.")
-            if self.kernel.supports_quality_indicator("hypervolume"):
-                hv_evaluator = self.kernel.hypervolume
-            else:
-                hv_evaluator = hypervolume
         else:
             raise ValueError("Unsupported termination criterion for NSGA-II.")
-        if hv_target is not None and hv_evaluator is None:
-            hv_evaluator = hypervolume
 
         rng = np.random.default_rng(seed)
         pop_size = int(self.cfg["pop_size"])
@@ -221,19 +69,13 @@ class NSGAII:
             raise ValueError("offspring size must be even.")
         encoding = getattr(problem, "encoding", "continuous")
         n_var = problem.n_var
-        bounds_dtype = int if encoding == "integer" else float
-        xl = np.asarray(problem.xl, dtype=bounds_dtype)
-        xu = np.asarray(problem.xu, dtype=bounds_dtype)
-        if xl.ndim == 0:
-            xl = np.full(n_var, xl, dtype=bounds_dtype)
-        if xu.ndim == 0:
-            xu = np.full(n_var, xu, dtype=bounds_dtype)
-        xl = np.ascontiguousarray(xl, dtype=bounds_dtype)
-        xu = np.ascontiguousarray(xu, dtype=bounds_dtype)
+        xl, xu = resolve_bounds(problem, encoding)
 
-        X = _initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem)
-        F = _evaluate_population(problem, X)
+        initializer_cfg = self.cfg.get("initializer")
+        X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
+        F = evaluate_population(problem, X)
         n_eval = X.shape[0]
+        hv_tracker = HVTracker(hv_config, self.kernel)
         archive_size = self._resolve_archive_size()
         archive_X = archive_F = None
         archive_manager = None
@@ -252,8 +94,9 @@ class NSGAII:
 
         sel_method, sel_params = self.cfg["selection"]
         if sel_method != "tournament":
-            raise ValueError(f"Unsupported selection method '{sel_method}'.")
-        pressure = int(sel_params.get("pressure", 2))
+            if sel_method != "random":
+                raise ValueError(f"Unsupported selection method '{sel_method}'.")
+        pressure = int(sel_params.get("pressure", 2)) if sel_method == "tournament" else 2
 
         cross_method, cross_params = self.cfg["crossover"]
         cross_method = cross_method.lower()
@@ -261,57 +104,57 @@ class NSGAII:
 
         mut_method, mut_params = self.cfg["mutation"]
         mut_method = mut_method.lower()
-        mut_params = _prepare_mutation_params(mut_params, encoding, n_var)
+        mut_factor = self.cfg.get("mutation_prob_factor")
+        mut_params = prepare_mutation_params(mut_params, encoding, n_var, prob_factor=mut_factor)
 
-        variation_workspace = (
-            VariationWorkspace()
-            if encoding not in {"permutation", "binary", "integer"}
-            else None
-        )
+        variation_workspace = VariationWorkspace()
 
-        self._validate_operator_support(encoding, cross_method, mut_method)
-        crossover_operator = self._build_crossover_operator(
-            encoding, cross_method, cross_params, xl, xu, variation_workspace
+        variation = VariationPipeline(
+            encoding=encoding,
+            cross_method=cross_method,
+            cross_params=cross_params,
+            mut_method=mut_method,
+            mut_params=mut_params,
+            xl=xl,
+            xu=xu,
+            workspace=variation_workspace,
+            repair_cfg=self.cfg.get("repair"),
+            problem=problem,
         )
-        mutation_operator = self._build_mutation_operator(
-            encoding, mut_method, mut_params, xl, xu, variation_workspace
-        )
-        repair_cfg = self.cfg.get("repair")
-        repair_operator = self._build_repair_operator(encoding, repair_cfg)
-        hv_reached = False
         hv_points = lambda: archive_F if archive_F is not None and archive_F.size else F
-        if hv_target is not None:
-            current_hv = hv_evaluator(hv_points(), hv_ref_point)
-            if current_hv >= hv_target:
-                hv_reached = True
+        hv_reached = hv_tracker.reached(hv_points()) if hv_tracker.enabled else False
+
+        result_mode = self.cfg.get("result_mode", "population")
+        crowd_archive = None
+        if result_mode == "external_archive" and archive_size:
+            crowd_archive = CrowdingArchive(
+                archive_size,
+                dominance_fn=lambda a, b: 1 if np.all(a <= b) and np.any(a < b) else (-1 if np.all(b <= a) and np.any(b < a) else 0),
+                crowding_fn=_single_front_crowding,
+            )
 
         while n_eval < max_eval and not hv_reached:
             ranks, crowding = self.kernel.nsga2_ranking(F)
+            parents_per_group = variation.parents_per_group
+            children_per_group = variation.children_per_group
+            parent_count = int(np.ceil(offspring_size / children_per_group) * parents_per_group)
             mating_pairs = _build_mating_pool(
-                self.kernel, ranks, crowding, pressure, rng, offspring_size
+                self.kernel, ranks, crowding, pressure, rng, parent_count, parents_per_group, sel_method
             )
             parent_idx = mating_pairs.reshape(-1)
-            X_parents = self._gather_parents(X, parent_idx, variation_workspace)
+            X_parents = variation.gather_parents(X, parent_idx)
 
-            X_off = self._produce_offspring(
-                X_parents,
-                encoding,
-                cross_method,
-                cross_params,
-                mut_method,
-                mut_params,
-                rng,
-                xl,
-                xu,
-                crossover_operator,
-                mutation_operator,
-                repair_operator,
-            )
+            X_off = variation.produce_offspring(X_parents, rng)
+            if X_off.shape[0] > offspring_size:
+                X_off = X_off[:offspring_size]
 
-            F_off = _evaluate_population(problem, X_off)
+            F_off = evaluate_population(problem, X_off)
             n_eval += X_off.shape[0]
 
             X, F = self.kernel.nsga2_survival(X, F, X_off, F_off, pop_size)
+            if crowd_archive is not None:
+                for xx, ff in zip(X, F):
+                    crowd_archive.add(xx, ff)
             if archive_size:
                 if archive_via_kernel:
                     archive_X, archive_F = self.kernel.update_archive(
@@ -319,14 +162,15 @@ class NSGAII:
                     )
                 elif archive_manager is not None:
                     archive_X, archive_F = archive_manager.update(X, F)
-            if hv_target is not None:
-                current_hv = hv_evaluator(hv_points(), hv_ref_point)
-                if current_hv >= hv_target:
-                    hv_reached = True
-                    break
+            if hv_tracker.enabled and hv_tracker.reached(hv_points()):
+                hv_reached = True
+                break
 
         result = {"X": X, "F": F, "evaluations": n_eval, "hv_reached": hv_reached}
-        if archive_size:
+        if crowd_archive is not None:
+            arch_X, arch_F = crowd_archive.get_solutions()
+            result["archive"] = {"X": arch_X, "F": arch_F}
+        elif archive_size:
             if archive_manager is not None:
                 final_X, final_F = archive_manager.contents()
                 result["archive"] = {"X": final_X, "F": final_F}
@@ -334,189 +178,8 @@ class NSGAII:
                 result["archive"] = {"X": archive_X, "F": archive_F}
         return result
 
-    @staticmethod
-    def _validate_operator_support(encoding: str, crossover: str, mutation: str) -> None:
-        if encoding == "permutation":
-            if crossover not in _PERM_CROSSOVER:
-                raise ValueError(f"Unsupported crossover '{crossover}' for permutation encoding.")
-            if mutation not in _PERM_MUTATION:
-                raise ValueError(f"Unsupported mutation '{mutation}' for permutation encoding.")
-        elif encoding == "binary":
-            if crossover not in _BINARY_CROSSOVER:
-                raise ValueError(f"Unsupported crossover '{crossover}' for binary encoding.")
-            if mutation not in _BINARY_MUTATION:
-                raise ValueError(f"Unsupported mutation '{mutation}' for binary encoding.")
-        elif encoding == "integer":
-            if crossover not in _INT_CROSSOVER:
-                raise ValueError(f"Unsupported crossover '{crossover}' for integer encoding.")
-            if mutation not in _INT_MUTATION:
-                raise ValueError(f"Unsupported mutation '{mutation}' for integer encoding.")
-        elif encoding == "mixed":
-            if crossover not in _MIXED_CROSSOVER:
-                raise ValueError(f"Unsupported crossover '{crossover}' for mixed encoding.")
-            if mutation not in _MIXED_MUTATION:
-                raise ValueError(f"Unsupported mutation '{mutation}' for mixed encoding.")
-        else:
-            if crossover not in {"sbx", "blx_alpha"}:
-                raise ValueError(f"Unsupported crossover '{crossover}' for continuous encoding.")
-            if mutation not in {"pm", "non_uniform"}:
-                raise ValueError(f"Unsupported mutation '{mutation}' for continuous encoding.")
-
-    def _gather_parents(
-        self,
-        population: np.ndarray,
-        parent_idx: np.ndarray,
-        workspace: VariationWorkspace | None,
-    ) -> np.ndarray:
-        if workspace is None:
-            return population[parent_idx]
-        shape = (parent_idx.size, population.shape[1])
-        buffer = workspace.request("parent_buffer", shape, population.dtype)
-        np.take(population, parent_idx, axis=0, out=buffer)
-        return buffer
-
-    def _produce_offspring(
-        self,
-        parents: np.ndarray,
-        encoding: str,
-        crossover: str,
-        cross_params: dict,
-        mutation: str,
-        mut_params: dict,
-        rng: np.random.Generator,
-        xl,
-        xu,
-        crossover_operator,
-        mutation_operator,
-        repair_operator,
-    ) -> np.ndarray:
-        if encoding == "permutation":
-            cross_prob = float(cross_params.get("prob", 1.0))
-            cross_fn = _PERM_CROSSOVER[crossover]
-            offspring = cross_fn(parents, cross_prob, rng)
-            mut_fn = _PERM_MUTATION[mutation]
-            mut_fn(offspring, float(mut_params.get("prob", 0.0)), rng)
-            return offspring
-
-        if encoding == "binary":
-            cross_prob = float(cross_params.get("prob", 1.0))
-            cross_fn = _BINARY_CROSSOVER[crossover]
-            offspring = cross_fn(parents, cross_prob, rng)
-            mut_fn = _BINARY_MUTATION[mutation]
-            mut_fn(offspring, float(mut_params.get("prob", 0.0)), rng)
-            return offspring
-
-        if encoding == "integer":
-            cross_prob = float(cross_params.get("prob", 1.0))
-            cross_fn = _INT_CROSSOVER[crossover]
-            offspring = cross_fn(parents, cross_prob, rng)
-            mut_fn = _INT_MUTATION[mutation]
-            mut_prob = float(mut_params.get("prob", 0.0))
-            if mut_fn is creep_mutation:
-                step = int(mut_params.get("step", 1))
-                mut_fn(offspring, mut_prob, step, xl, xu, rng)
-            else:
-                mut_fn(offspring, mut_prob, xl, xu, rng)
-            return offspring
-
-        if encoding == "mixed":
-            spec = getattr(problem, "mixed_spec", None)
-            if spec is None:
-                raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
-            cross_prob = float(cross_params.get("prob", 1.0))
-            cross_fn = _MIXED_CROSSOVER[crossover]
-            offspring = cross_fn(parents, cross_prob, spec, rng)
-            mut_fn = _MIXED_MUTATION[mutation]
-            mut_fn(offspring, float(mut_params.get("prob", 0.0)), spec, rng)
-            return offspring
-
-        n_var = parents.shape[1]
-        if crossover_operator is None:
-            raise ValueError("Crossover operator is not initialized.")
-        pairs = parents.reshape(-1, 2, n_var)
-        offspring = crossover_operator(pairs, rng).reshape(parents.shape)
-
-        if mutation_operator is None:
-            raise ValueError("Mutation operator is not initialized.")
-        offspring = mutation_operator(offspring, rng)
-
-        if repair_operator is not None and encoding != "permutation":
-            flat = offspring.reshape(-1, offspring.shape[-1])
-            repaired = repair_operator(flat, xl, xu, rng)
-            offspring = repaired.reshape(offspring.shape)
-        return offspring
-
-    def _build_crossover_operator(self, encoding, method, params, xl, xu, workspace):
-        if encoding in {"permutation", "binary", "integer", "mixed"}:
-            return None
-        if method == "sbx":
-            prob = float(params.get("prob", 0.9))
-            eta = float(params.get("eta", 20.0))
-            return SBXCrossover(
-                prob_crossover=prob,
-                eta=eta,
-                lower=xl,
-                upper=xu,
-                workspace=workspace,
-                allow_inplace=True,
-            )
-        if method == "blx_alpha":
-            prob = float(params.get("prob", 1.0))
-            alpha = float(params.get("alpha", 0.5))
-            repair = params.get("repair", "clip")
-            return BLXAlphaCrossover(
-                alpha=alpha,
-                prob_crossover=prob,
-                lower=xl,
-                upper=xu,
-                repair=repair,
-                workspace=workspace,
-                allow_inplace=True,
-            )
-        return None
-
-    def _build_mutation_operator(self, encoding, method, params, xl, xu, workspace):
-        if encoding in {"permutation", "binary", "integer", "mixed"}:
-            return None
-        if method == "pm":
-            prob = float(params.get("prob", 0.1))
-            eta = float(params.get("eta", 20.0))
-            return PolynomialMutation(
-                prob_mutation=prob,
-                eta=eta,
-                lower=xl,
-                upper=xu,
-                workspace=workspace,
-            )
-        if method == "non_uniform":
-            prob = float(params.get("prob", 0.1))
-            perturb = float(params.get("perturbation", 0.5))
-            return NonUniformMutation(
-                prob_mutation=prob,
-                perturbation=perturb,
-                lower=xl,
-                upper=xu,
-                workspace=workspace,
-            )
-        return None
-
-    def _build_repair_operator(self, encoding, repair_cfg):
-        if encoding in {"permutation", "binary", "integer", "mixed"} or not repair_cfg:
-            return None
-        method, _ = repair_cfg
-        normalized = method.lower()
-        if normalized in {"clip", "clamp"}:
-            return ClampRepair()
-        if normalized == "reflect":
-            return ReflectRepair()
-        if normalized in {"random", "resample"}:
-            return ResampleRepair()
-        if normalized == "round":
-            return RoundRepair()
-        raise ValueError(f"Unsupported repair strategy '{method}'.")
-
     def _resolve_archive_size(self) -> int | None:
-        archive_cfg = self.cfg.get("archive")
+        archive_cfg = self.cfg.get("archive") or self.cfg.get("external_archive")
         if not archive_cfg:
             return None
         size = int(archive_cfg.get("size", 0))

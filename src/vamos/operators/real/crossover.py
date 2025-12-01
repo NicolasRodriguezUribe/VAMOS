@@ -146,7 +146,9 @@ class BLXAlphaCrossover(Crossover):
         self.prob = float(prob_crossover)
         self.lower, self.upper = _ensure_bounds(lower, upper)
         normalized = (repair or "clip").lower()
-        if normalized not in {"clip", "random"}:
+        if normalized == "random":
+            normalized = "resample"
+        if normalized not in {"clip", "resample", "reflect", "round"}:
             raise ValueError(f"Unsupported BLX repair strategy '{repair}'.")
         self.repair = normalized
         self.workspace = workspace
@@ -179,6 +181,38 @@ class BLXAlphaCrossover(Crossover):
         repaired = self.lower + rand * span
         values[mask] = repaired[mask]
 
+    def _repair_reflect(self, values: np.ndarray) -> None:
+        n_vars = self.lower.shape[0]
+        for j in range(n_vars):
+            low = self.lower[j]
+            high = self.upper[j]
+            width = high - low
+            if width <= 0.0:
+                values[:, j] = low
+                continue
+            val = values[:, j] - low
+            period = 2.0 * width
+            val = np.mod(val, period)
+            over = val > width
+            val[over] = period - val[over]
+            values[:, j] = val + low
+
+    def _repair_round(self, values: np.ndarray) -> None:
+        np.rint(values, out=values)
+        np.clip(values, self.lower, self.upper, out=values)
+
+    def _apply_repair(self, child: np.ndarray, rng: np.random.Generator, key: str) -> None:
+        if self.repair == "clip":
+            np.clip(child, self.lower, self.upper, out=child)
+        elif self.repair == "resample":
+            self._repair_random(child, rng, key)
+        elif self.repair == "reflect":
+            self._repair_reflect(child)
+        elif self.repair == "round":
+            self._repair_round(child)
+        else:
+            raise ValueError(f"Unsupported BLX repair strategy '{self.repair}'.")
+
     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
         parents_arr = self._as_matings(parents, copy=False, name="parents")
         offspring = parents_arr if self.allow_inplace else parents_arr.copy()
@@ -203,12 +237,8 @@ class BLXAlphaCrossover(Crossover):
         child1 = lower + self._rand("blx_rand1", lower.shape, rng) * width
         child2 = lower + self._rand("blx_rand2", lower.shape, rng) * width
 
-        if self.repair == "clip":
-            np.clip(child1, self.lower, self.upper, out=child1)
-            np.clip(child2, self.lower, self.upper, out=child2)
-        else:
-            self._repair_random(child1, rng, "blx_rand_repair1")
-            self._repair_random(child2, rng, "blx_rand_repair2")
+        self._apply_repair(child1, rng, "blx_rand_repair1")
+        self._apply_repair(child2, rng, "blx_rand_repair2")
 
         active[:, 0, :] = child1
         active[:, 1, :] = child2
@@ -281,10 +311,132 @@ class DifferentialCrossover(Crossover):
         return _clip_population(trial, self.lower, self.upper)
 
 
+class PCXCrossover(Crossover):
+    """Parent-Centric Crossover (PCX) using 3-parent groups."""
+
+    def __init__(
+        self,
+        sigma_eta: float = 0.1,
+        sigma_zeta: float = 0.1,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+    ) -> None:
+        self.sigma_eta = float(sigma_eta)
+        self.sigma_zeta = float(sigma_zeta)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+
+    def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        groups = self._as_matings(parents, expected_parents=3, copy=False)
+        n_groups, _, n_vars = groups.shape
+        offspring = np.empty_like(groups)
+        for i in range(n_groups):
+            p = groups[i]
+            x0 = p[0]
+            others = p[1:]
+            centroid = np.mean(others, axis=0)
+            d = centroid - x0
+            diff = others - x0
+            if diff.shape[0] > 0:
+                # Orthonormal basis spanning parent directions (shape n_vars x k)
+                q, _ = np.linalg.qr(diff.T, mode="reduced")
+                basis = q  # shape (n_vars, k)
+            else:
+                basis = np.eye(n_vars)
+            avg_dist = np.mean(np.linalg.norm(diff, axis=1)) if diff.size else 0.0
+            for j in range(3):
+                noise = rng.normal(0.0, self.sigma_zeta * (avg_dist or 1.0), size=basis.shape[1])
+                z = basis @ noise
+                child = x0 + self.sigma_eta * d + z
+                offspring[i, j, :] = np.clip(child, self.lower, self.upper)
+        return offspring
+
+
+class UNDXCrossover(Crossover):
+    """Unimodal Normal Distribution Crossover (UNDX) for 3-parent groups."""
+
+    def __init__(
+        self,
+        sigma_xi: float = 0.5,
+        sigma_eta: float = 0.35,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+    ) -> None:
+        self.sigma_xi = float(sigma_xi)
+        self.sigma_eta = float(sigma_eta)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+
+    def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        groups = self._as_matings(parents, expected_parents=3, copy=False)
+        n_groups, _, n_vars = groups.shape
+        offspring = np.empty_like(groups)
+        for i in range(n_groups):
+            p1, p2, p3 = groups[i]
+            mid = 0.5 * (p1 + p2)
+            e = p2 - p1
+            norm_e = np.linalg.norm(e)
+            if norm_e <= 0.0:
+                e_unit = np.zeros_like(e)
+                norm_e = 1.0
+            else:
+                e_unit = e / norm_e
+            v = p3 - p1
+            proj = np.dot(v, e_unit)
+            ortho = v - proj * e_unit
+            norm_ortho = np.linalg.norm(ortho)
+            if norm_ortho <= 0.0:
+                # random orthogonal vector
+                rand_vec = rng.normal(0.0, 1.0, size=n_vars)
+                rand_vec -= np.dot(rand_vec, e_unit) * e_unit
+                norm_ortho = np.linalg.norm(rand_vec)
+                ortho = rand_vec if norm_ortho > 0 else e_unit
+                norm_ortho = np.linalg.norm(ortho) or 1.0
+            ortho_unit = ortho / norm_ortho
+            for j in range(3):
+                xi = rng.normal(0.0, self.sigma_xi * norm_e)
+                eta = rng.normal(0.0, self.sigma_eta * norm_e / np.sqrt(n_vars))
+                child = mid + xi * e_unit + eta * ortho_unit
+                offspring[i, j, :] = np.clip(child, self.lower, self.upper)
+        return offspring
+
+
+class SPXCrossover(Crossover):
+    """Simplex crossover (SPX) sampling inside the simplex spanned by parents."""
+
+    def __init__(
+        self,
+        epsilon: float = 0.5,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+    ) -> None:
+        self.epsilon = float(epsilon)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+
+    def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        groups = self._as_matings(parents, expected_parents=3, copy=False)
+        n_groups, k, _ = groups.shape
+        offspring = np.empty_like(groups)
+        for i in range(n_groups):
+            g = groups[i]
+            centroid = np.mean(g, axis=0)
+            for j in range(k):
+                weights = rng.random(k)
+                weights /= weights.sum()
+                point = np.sum(weights[:, None] * g, axis=0)
+                child = centroid + self.epsilon * (point - centroid)
+                offspring[i, j, :] = np.clip(child, self.lower, self.upper)
+        return offspring
+
+
 __all__ = [
     "ArithmeticCrossover",
     "BLXAlphaCrossover",
     "Crossover",
     "DifferentialCrossover",
+    "PCXCrossover",
+    "SPXCrossover",
     "SBXCrossover",
+    "UNDXCrossover",
 ]

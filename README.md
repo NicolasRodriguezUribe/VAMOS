@@ -25,9 +25,10 @@ pytest
 ## What’s inside
 
 - Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA with vectorized kernels (NumPy, Numba, MooCore).
-- Config + tuning: hierarchical `AlgorithmConfigSpace`, meta-level NSGA-II tuner, templates, multi-algorithm search.
+- Encodings: continuous, permutation, binary, integer, mixed.
+- Config + tuning: hierarchical `AlgorithmConfigSpace`, meta-level NSGA-II tuner, templates, multi-algorithm search. CLI/runner can read YAML/JSON specs (see below).
 - Analysis: constraint handling toolbox, objective reduction, MCDM helpers, visualization utilities, stats (Friedman/Wilcoxon/CD plots).
-- Problems: ZDT, DTLZ, WFG, TSP/TSPLIB.
+- Problems: ZDT, DTLZ, WFG, TSP/TSPLIB, binary (feature selection/knapsack/QUBO), integer (allocation/job assignment), mixed design.
 - CLI/runner: experiment orchestration, metrics, result CSVs/metadata under `results/`.
 - StudyRunner: batch problem × algorithm × seed sweeps.
 - Notebooks: exploratory examples under `notebooks/` (optional).
@@ -45,6 +46,40 @@ pytest
   - `from vamos.visualization import plot_pareto_front_2d`
   - `from vamos.mcdm import weighted_sum_scores`
   - `from vamos.stats import friedman_test, plot_critical_distance`
+
+## Config files (YAML/JSON)
+
+You can provide experiment defaults via `--config path/to/spec.yaml`. Example:
+
+```yaml
+defaults:
+  algorithm: moead
+  engine: numpy
+  population_size: 120
+  max_evaluations: 20000
+  hv_threshold: 0.8
+  moead:
+    crossover: {method: sbx, prob: 0.9, eta: 20}
+    mutation: {method: pm, prob: "1/n", eta: 20}
+problems:
+  bin_knapsack:
+    algorithm: nsgaii
+    n_var: 30
+    population_size: 150
+    nsgaii:
+      crossover: {method: uniform}
+      mutation: {method: bitflip, prob: "1/n"}
+```
+
+CLI flags override config values. Per-problem sections override defaults.
+
+## Performance toggle
+
+Enable optional Numba-accelerated variation for permutation/binary/integer encodings:
+
+```bash
+export VAMOS_USE_NUMBA_VARIATION=1  # set before running
+```
 
 ## Package layout (src/vamos)
 

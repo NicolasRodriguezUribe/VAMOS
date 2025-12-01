@@ -18,6 +18,54 @@ def _single_front_crowding(F: np.ndarray) -> np.ndarray:
     return _compute_crowding(F, fronts)
 
 
+class CrowdingArchive:
+    """
+    External archive that maintains a nondominated set with crowding truncation.
+    """
+
+    def __init__(self, capacity: int, dominance_fn, crowding_fn):
+        self.capacity = int(capacity)
+        if self.capacity <= 0:
+            raise ValueError("archive capacity must be positive.")
+        self._dom_fn = dominance_fn
+        self._crowd_fn = crowding_fn
+        self.X: list[np.ndarray] = []
+        self.F: list[np.ndarray] = []
+
+    def add(self, x, f) -> None:
+        f_arr = np.asarray(f, dtype=float).ravel()
+        x_arr = np.asarray(x, dtype=float).ravel()
+        keep_indices = []
+        dominated = False
+        for idx, f_existing in enumerate(self.F):
+            dom = self._dom_fn(f_arr, f_existing)
+            if dom == 1:
+                # New point dominates existing
+                continue
+            if dom == -1:
+                dominated = True
+                break
+            keep_indices.append(idx)
+        if dominated:
+            return
+        self.F = [self.F[i] for i in keep_indices]
+        self.X = [self.X[i] for i in keep_indices]
+        self.F.append(f_arr)
+        self.X.append(x_arr)
+        if len(self.F) > self.capacity:
+            self._trim()
+
+    def _trim(self) -> None:
+        F = np.vstack(self.F)
+        crowd = self._crowd_fn(F)
+        worst = int(np.argmin(crowd))
+        self.F.pop(worst)
+        self.X.pop(worst)
+
+    def get_solutions(self):
+        return np.vstack(self.X) if self.X else np.empty((0, 0)), np.vstack(self.F) if self.F else np.empty((0, 0))
+
+
 class CrowdingDistanceArchive:
     """
     External archive that keeps nondominated solutions and trims them using
@@ -129,3 +177,6 @@ class CrowdingDistanceArchive:
         self._X[: self.capacity] = active_X[order]
         self._F[: self.capacity] = active_F[order]
         self._size = self.capacity
+
+
+__all__ = ["CrowdingDistanceArchive", "CrowdingArchive", "_single_front_crowding"]
