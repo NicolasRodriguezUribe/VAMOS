@@ -92,8 +92,38 @@ export VAMOS_USE_NUMBA_VARIATION=1  # set before running
 - `mcdm.py`, `visualization.py`, `stats.py` – decision-making, plotting, post-hoc stats.
 - `runner.py`, `cli.py`, `study/` – CLI and study orchestration.
 
+## Dependencies
+
+### Core dependencies (always installed)
+- `numpy>=1.23`
+- `scipy>=1.10`
+
+### Optional extras
+
+Install with `pip install -e ".[extra1,extra2]"`:
+
+| Extra        | Packages                                      | Purpose                          |
+|--------------|-----------------------------------------------|----------------------------------|
+| `backends`   | `numba>=0.57`, `moocore>=0.4`                 | Accelerated backends             |
+| `benchmarks` | `pymoo>=0.6`, `jmetalpy>=1.5`, `pygmo>=2.19`  | Benchmark comparisons            |
+| `dev`        | `pytest>=7.0`, `black>=23.0`, `ruff>=0.1.5`   | Development & testing            |
+| `notebooks`  | `pandas>=1.5`, `matplotlib>=3.7`, `ipython>=8.10` | Jupyter notebook support     |
+
+### Quick install examples
+
+```powershell
+# Full install (all extras)
+pip install -e ".[backends,benchmarks,dev,notebooks]"
+
+# Minimal install for notebooks
+pip install -e ".[backends,notebooks]"
+
+# Just core + moocore backend
+pip install -e ".[backends]"
+```
+
 ## Notes
 
-- Dependencies are declared in `pyproject.toml`; extras `[backends]`, `[benchmarks]`, `[dev]` cover typical setups.
+- Dependencies are declared in `pyproject.toml`; extras `[backends]`, `[benchmarks]`, `[dev]`, `[notebooks]` cover typical setups.
 - Results live under `results/` by default (`FUN.csv`, `metadata.json`, etc.).
 - Tests are under `tests/` and follow AAA style. Run `pytest` after installing with `[dev]`.
