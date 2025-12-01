@@ -181,8 +181,10 @@ class NumPyKernel(KernelBackend):
         Np, D = X_parents.shape
         if Np == 0:
             return np.empty_like(X_parents)
+        # Handle odd parent count by duplicating the last parent
         if Np % 2 != 0:
-            raise ValueError("SBX crossover expects an even number of parents.")
+            X_parents = np.vstack([X_parents, X_parents[-1:]])
+            Np += 1
         operator = SBXCrossover(
             prob_crossover=float(params.get("prob", 0.9)),
             eta=float(params.get("eta", 20.0)),

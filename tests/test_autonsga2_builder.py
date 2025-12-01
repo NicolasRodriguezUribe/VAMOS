@@ -16,13 +16,13 @@ class _DummyProblem:
         out["F"][:] = np.stack([np.sum(np.square(X), axis=1), np.sum(X, axis=1)], axis=1)
 
 
-def test_autonsga2_builder_rounds_odd_offspring_size_up():
+def test_autonsga2_builder_accepts_odd_offspring_size():
     cfg = {"population_size": 51}  # offspring_size defaults to pop_size
     algo = build_autonsga2(cfg, _DummyProblem(), seed=0)
-    assert algo.cfg["offspring_size"] == 52
+    assert algo.cfg["offspring_size"] == 51  # odd values now allowed
 
 
-def test_autonsga2_builder_accepts_even_offspring_size():
+def test_autonsga2_builder_accepts_any_offspring_size():
     cfg = {"population_size": 60, "offspring_size": 70}
     algo = build_autonsga2(cfg, _DummyProblem(), seed=1)
     assert algo.cfg["offspring_size"] == 70

@@ -18,60 +18,23 @@ def _single_front_crowding(F: np.ndarray) -> np.ndarray:
     return _compute_crowding(F, fronts)
 
 
-class CrowdingArchive:
+def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
     """
-    External archive that maintains a nondominated set with crowding truncation.
+    Compute hypervolume contribution of each point.
+    Uses moocore if available, otherwise falls back to crowding distance.
     """
-
-    def __init__(self, capacity: int, dominance_fn, crowding_fn):
-        self.capacity = int(capacity)
-        if self.capacity <= 0:
-            raise ValueError("archive capacity must be positive.")
-        self._dom_fn = dominance_fn
-        self._crowd_fn = crowding_fn
-        self.X: list[np.ndarray] = []
-        self.F: list[np.ndarray] = []
-
-    def add(self, x, f) -> None:
-        f_arr = np.asarray(f, dtype=float).ravel()
-        x_arr = np.asarray(x, dtype=float).ravel()
-        keep_indices = []
-        dominated = False
-        for idx, f_existing in enumerate(self.F):
-            dom = self._dom_fn(f_arr, f_existing)
-            if dom == 1:
-                # New point dominates existing
-                continue
-            if dom == -1:
-                dominated = True
-                break
-            keep_indices.append(idx)
-        if dominated:
-            return
-        self.F = [self.F[i] for i in keep_indices]
-        self.X = [self.X[i] for i in keep_indices]
-        self.F.append(f_arr)
-        self.X.append(x_arr)
-        if len(self.F) > self.capacity:
-            self._trim()
-
-    def _trim(self) -> None:
-        F = np.vstack(self.F)
-        crowd = self._crowd_fn(F)
-        worst = int(np.argmin(crowd))
-        self.F.pop(worst)
-        self.X.pop(worst)
-
-    def get_solutions(self):
-        return np.vstack(self.X) if self.X else np.empty((0, 0)), np.vstack(self.F) if self.F else np.empty((0, 0))
+    if F.shape[0] == 0:
+        return np.empty(0, dtype=float)
+    if _moocore is not None:
+        return np.asarray(_moocore.hv_contributions(F, ref=ref), dtype=float)
+    # Fallback: use crowding distance as proxy (not ideal but functional)
+    return _single_front_crowding(F)
 
 
-class CrowdingDistanceArchive:
+class _BaseArchive:
     """
-    External archive that keeps nondominated solutions and trims them using
-    either hypervolume contributions (when MooCore is available) or classical
-    crowding distance. The archive stores solutions inside fixed buffers and
-    performs incremental updates to avoid repeated full re-sorts.
+    Base class for external archives that keep nondominated solutions.
+    Subclasses implement different pruning strategies via _get_indicator().
     """
 
     def __init__(self, capacity: int, n_var: int, n_obj: int, dtype):
@@ -144,12 +107,16 @@ class CrowdingDistanceArchive:
         return np.all(less_equal, axis=1) & np.any(strictly_less, axis=1)
 
     def _remove_dominated(self, f: np.ndarray) -> None:
+        """Remove existing solutions that are dominated by the new point f."""
         if self._size == 0:
             return
-        dominated = self._dominates(self._F[: self._size], f)
-        if not dominated.any():
+        existing = self._F[: self._size]
+        f_leq_existing = f <= existing
+        f_lt_existing = f < existing
+        dominated_by_f = np.all(f_leq_existing, axis=1) & np.any(f_lt_existing, axis=1)
+        if not dominated_by_f.any():
             return
-        keep_mask = ~dominated
+        keep_mask = ~dominated_by_f
         self._compress_in_place(keep_mask)
 
     def _compress_in_place(self, keep_mask: np.ndarray) -> None:
@@ -162,21 +129,52 @@ class CrowdingDistanceArchive:
                 write += 1
         self._size = write
 
+    def _get_indicator(self, F: np.ndarray) -> np.ndarray:
+        """Return indicator values for each solution. Higher = better (keep)."""
+        raise NotImplementedError
+
     def _trim_to_capacity(self) -> None:
+        """Remove solution with smallest indicator value."""
         if self._size <= self.capacity:
             return
         active_F = self._F[: self._size]
-        if _moocore is not None and active_F.size:
-            ref = np.max(active_F, axis=0) + 1.0
-            indicator = np.asarray(_moocore.hv_contributions(active_F, ref=ref), dtype=float)
-        else:
-            indicator = _single_front_crowding(active_F)
-        order = np.argsort(indicator)[::-1][: self.capacity]
-        active_X = self._X[: self._size]
-        active_F = self._F[: self._size]
-        self._X[: self.capacity] = active_X[order]
-        self._F[: self.capacity] = active_F[order]
-        self._size = self.capacity
+        indicator = self._get_indicator(active_F)
+        # Remove the solution with smallest indicator
+        worst_idx = int(np.argmin(indicator))
+        # Shift remaining solutions
+        if worst_idx < self._size - 1:
+            self._X[worst_idx : self._size - 1] = self._X[worst_idx + 1 : self._size]
+            self._F[worst_idx : self._size - 1] = self._F[worst_idx + 1 : self._size]
+        self._size -= 1
 
 
-__all__ = ["CrowdingDistanceArchive", "CrowdingArchive", "_single_front_crowding"]
+class CrowdingDistanceArchive(_BaseArchive):
+    """
+    External archive that keeps nondominated solutions and trims using
+    crowding distance. When capacity is exceeded, the solution with the
+    smallest crowding distance is removed (matching jMetal behavior).
+    """
+
+    def _get_indicator(self, F: np.ndarray) -> np.ndarray:
+        return _single_front_crowding(F)
+
+
+class HypervolumeArchive(_BaseArchive):
+    """
+    External archive that keeps nondominated solutions and trims using
+    hypervolume contributions. When capacity is exceeded, the solution
+    with the smallest hypervolume contribution is removed (SMS-EMOA style).
+    
+    The reference point is dynamically computed from the current archive.
+    """
+
+    def __init__(self, capacity: int, n_var: int, n_obj: int, dtype, ref_offset: float = 1.0):
+        super().__init__(capacity, n_var, n_obj, dtype)
+        self._ref_offset = float(ref_offset)
+
+    def _get_indicator(self, F: np.ndarray) -> np.ndarray:
+        ref = np.max(F, axis=0) + self._ref_offset
+        return _hv_contributions(F, ref)
+
+
+__all__ = ["HypervolumeArchive", "CrowdingDistanceArchive", "_single_front_crowding", "_hv_contributions"]

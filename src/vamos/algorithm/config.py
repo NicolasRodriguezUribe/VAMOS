@@ -27,6 +27,7 @@ class NSGAIIConfigData(_SerializableConfig):
     initializer: Optional[Dict[str, Any]] = None
     mutation_prob_factor: Optional[float] = None
     result_mode: Optional[str] = None
+    archive_type: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -92,8 +93,6 @@ class NSGAIIConfig:
     def offspring_size(self, value: int):
         if value <= 0:
             raise ValueError("offspring size must be positive.")
-        if value % 2 != 0:
-            raise ValueError("offspring size must be an even number.")
         self._cfg["offspring_size"] = value
         return self
 
@@ -125,10 +124,17 @@ class NSGAIIConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(self, *, size: int):
+    def external_archive(self, *, size: int, archive_type: str = "hypervolume"):
         if size <= 0:
             raise ValueError("external archive size must be positive.")
         self._cfg["external_archive"] = {"size": int(size)}
+        self._cfg["result_mode"] = "external_archive"
+        self._cfg["archive_type"] = archive_type
+        return self
+
+    def archive_type(self, value: str):
+        """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
+        self._cfg["archive_type"] = str(value)
         return self
 
     def archive(self, size: int):
@@ -162,6 +168,7 @@ class NSGAIIConfig:
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             result_mode=self._cfg.get("result_mode"),
+            archive_type=self._cfg.get("archive_type"),
         )
 
 
