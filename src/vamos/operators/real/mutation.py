@@ -14,6 +14,7 @@ from .utils import (
     _clip_population,
     _ensure_bounds,
 )
+from .repair import Repair, ClampRepair, ReflectRepair, ResampleRepair, RoundRepair
 
 
 class Mutation(RealOperator, ABC):
@@ -247,10 +248,130 @@ class NonUniformMutation(Mutation):
         return X
 
 
+class UniformMutation(Mutation):
+    """Uniform mutation with bounded perturbation scaled by variable range."""
+
+    def __init__(
+        self,
+        prob: float,
+        perturb: float,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        repair: Repair | None = None,
+        rng: np.random.Generator | None = None,
+    ):
+        self.prob = float(prob)
+        self.perturb = float(np.clip(perturb, 0.0, 1.0))
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.range = self.upper - self.lower
+        self.repair = repair
+        self.rng = rng
+
+    def __call__(self, offspring: ArrayLike, rng: np.random.Generator | None = None) -> ArrayLike:
+        arr = np.asarray(offspring, dtype=float)
+        squeeze = False
+        if arr.ndim == 1:
+            arr = arr.reshape(1, -1)
+            squeeze = True
+        X = self._as_population(arr, name="offspring", copy=False)
+        n_ind, n_var = X.shape
+        active_rng = rng or self.rng or np.random.default_rng()
+        mask = active_rng.random((n_ind, n_var)) <= self.prob
+        if not np.any(mask):
+            return X[0] if squeeze else X
+        delta = active_rng.uniform(-self.perturb, self.perturb, size=X.shape)
+        update = delta * self.range
+        X = X.copy()
+        X += np.where(mask, update, 0.0)
+        if self.repair is not None:
+            X = self.repair(X, self.lower, self.upper, active_rng)
+        else:
+            X = _clip_population(X, self.lower, self.upper)
+        return X[0] if squeeze else X
+
+
+class LinkedPolynomialMutation(Mutation):
+    """Polynomial mutation using a shared delta across all mutated variables."""
+
+    def __init__(
+        self,
+        prob: float,
+        eta: float,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        repair: Repair | None = None,
+        rng: np.random.Generator | None = None,
+    ):
+        self.prob = float(prob)
+        self.eta = float(eta)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.span = self.upper - self.lower
+        self.repair = repair
+        self.rng = rng
+
+    def __call__(self, offspring: ArrayLike, rng: np.random.Generator | None = None) -> ArrayLike:
+        arr = np.asarray(offspring, dtype=float)
+        squeeze = False
+        if arr.ndim == 1:
+            arr = arr.reshape(1, -1)
+            squeeze = True
+        X = self._as_population(arr, name="offspring", copy=False)
+        active_rng = rng or self.rng or np.random.default_rng()
+        n_ind, n_var = X.shape
+        mask = active_rng.random((n_ind, n_var)) <= self.prob
+        if not np.any(mask):
+            return X[0] if squeeze else X
+        u = active_rng.random()
+        if u < 0.5:
+            delta = (2.0 * u) ** (1.0 / (self.eta + 1.0)) - 1.0
+        else:
+            delta = 1.0 - (2.0 * (1.0 - u)) ** (1.0 / (self.eta + 1.0))
+        update = delta * self.span
+        X = X.copy()
+        X += np.where(mask, update, 0.0)
+        if self.repair is not None:
+            X = self.repair(X, self.lower, self.upper, active_rng)
+        else:
+            X = _clip_population(X, self.lower, self.upper)
+        return X[0] if squeeze else X
+
+
+class CauchyMutation(Mutation):
+    """Cauchy mutation with optional bounds clamping."""
+
+    def __init__(
+        self,
+        prob_mutation: float,
+        gamma: float = 0.1,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+    ) -> None:
+        self.prob = float(prob_mutation)
+        self.gamma = float(gamma)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+
+    def __call__(self, offspring: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        X = self._as_population(offspring, name="offspring", copy=False)
+        self._check_bounds_match(X, self.lower)
+        mask = rng.random(X.shape) <= self.prob
+        if not np.any(mask):
+            return X
+        noise = rng.standard_cauchy(size=X.shape) * self.gamma
+        X[mask] += noise[mask]
+        np.clip(X, self.lower, self.upper, out=X)
+        return X
+
+
 __all__ = [
+    "CauchyMutation",
     "GaussianMutation",
+    "LinkedPolynomialMutation",
     "Mutation",
     "NonUniformMutation",
     "PolynomialMutation",
+    "UniformMutation",
     "UniformResetMutation",
 ]

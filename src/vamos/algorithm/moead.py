@@ -1,14 +1,66 @@
 import numpy as np
 
-from vamos.operators.real import SBXCrossover, PolynomialMutation
+from vamos.operators.binary import (
+    random_binary_population,
+    one_point_crossover,
+    two_point_crossover,
+    uniform_crossover,
+    bit_flip_mutation,
+)
+from vamos.operators.integer import (
+    random_integer_population,
+    uniform_integer_crossover,
+    arithmetic_integer_crossover,
+    random_reset_mutation,
+    creep_mutation,
+)
+from vamos.operators.real import SBXCrossover, PolynomialMutation, VariationWorkspace
 
 from .weight_vectors import load_or_generate_weight_vectors
+
+
+def _resolve_prob_expression(value, n_var: int, default: float) -> float:
+    if value is None:
+        return default
+    if isinstance(value, str) and value.endswith("/n"):
+        numerator = value[:-2]
+        num = float(numerator) if numerator else 1.0
+        return min(1.0, max(num, 0.0) / n_var)
+    return float(value)
+
+
+_BINARY_CROSSOVER = {
+    "one_point": one_point_crossover,
+    "single_point": one_point_crossover,
+    "1point": one_point_crossover,
+    "two_point": two_point_crossover,
+    "2point": two_point_crossover,
+    "uniform": uniform_crossover,
+}
+
+_BINARY_MUTATION = {
+    "bitflip": bit_flip_mutation,
+    "bit_flip": bit_flip_mutation,
+}
+
+_INT_CROSSOVER = {
+    "uniform": uniform_integer_crossover,
+    "blend": arithmetic_integer_crossover,
+    "arithmetic": arithmetic_integer_crossover,
+}
+
+_INT_MUTATION = {
+    "reset": random_reset_mutation,
+    "random_reset": random_reset_mutation,
+    "creep": creep_mutation,
+}
 
 
 class MOEAD:
     """
     Simplified MOEA/D implementation that reuses the existing kernel operators
-    (SBX crossover + polynomial mutation) and focuses on the decomposition loop.
+    for real-coded problems and dedicated binary/integer operators for discrete encodings.
+    Focuses on the decomposition loop.
     """
 
     def __init__(self, config: dict, kernel):
@@ -25,14 +77,16 @@ class MOEAD:
         if pop_size < 2:
             raise ValueError("MOEA/D requires pop_size >= 2.")
 
-        xl = np.asarray(problem.xl, dtype=float)
-        xu = np.asarray(problem.xu, dtype=float)
+        encoding = getattr(problem, "encoding", "continuous")
+        bounds_dtype = int if encoding == "integer" else float
+        xl = np.asarray(problem.xl, dtype=bounds_dtype)
+        xu = np.asarray(problem.xu, dtype=bounds_dtype)
         n_var = problem.n_var
         n_obj = problem.n_obj
         if xl.ndim == 0:
-            xl = np.full(n_var, xl, dtype=float)
+            xl = np.full(n_var, xl, dtype=bounds_dtype)
         if xu.ndim == 0:
-            xu = np.full(n_var, xu, dtype=float)
+            xu = np.full(n_var, xu, dtype=bounds_dtype)
 
         weight_cfg = self.cfg.get("weight_vectors", {}) or {}
         weight_path = weight_cfg.get("path")
@@ -53,34 +107,73 @@ class MOEAD:
         replace_limit = max(1, int(self.cfg.get("replace_limit", 2)))
 
         cross_method, cross_params = self.cfg["crossover"]
-        assert cross_method == "sbx"
         cross_params = dict(cross_params)
 
         mut_method, mut_params = self.cfg["mutation"]
-        assert mut_method == "pm"
         mut_params = dict(mut_params)
         if mut_params.get("prob") == "1/n":
             mut_params["prob"] = 1.0 / n_var
 
-        cross_prob = float(cross_params.get("prob", 0.9))
-        cross_eta = float(cross_params.get("eta", 20.0))
-        crossover_operator = SBXCrossover(
-            prob_crossover=cross_prob,
-            eta=cross_eta,
-            lower=xl,
-            upper=xu,
-        )
+        # Build variation operators per encoding (all return mutated arrays).
+        if encoding == "binary":
+            if cross_method not in _BINARY_CROSSOVER:
+                raise ValueError(f"Unsupported MOEA/D crossover '{cross_method}' for binary encoding.")
+            if mut_method not in _BINARY_MUTATION:
+                raise ValueError(f"Unsupported MOEA/D mutation '{mut_method}' for binary encoding.")
+            cross_fn = _BINARY_CROSSOVER[cross_method]
+            cross_prob = float(cross_params.get("prob", 0.9))
+            mut_fn = _BINARY_MUTATION[mut_method]
+            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+            crossover = lambda parents: cross_fn(parents, cross_prob, rng)
+            mutation = lambda X_child: (mut_fn(X_child, mut_prob, rng) or X_child)
+        elif encoding == "integer":
+            if cross_method not in _INT_CROSSOVER:
+                raise ValueError(f"Unsupported MOEA/D crossover '{cross_method}' for integer encoding.")
+            if mut_method not in _INT_MUTATION:
+                raise ValueError(f"Unsupported MOEA/D mutation '{mut_method}' for integer encoding.")
+            cross_fn = _INT_CROSSOVER[cross_method]
+            cross_prob = float(cross_params.get("prob", 0.9))
+            mut_fn = _INT_MUTATION[mut_method]
+            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+            step = int(mut_params.get("step", 1))
+            crossover = lambda parents: cross_fn(parents, cross_prob, rng)
+            mutation = (
+                (lambda X_child: (mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child))
+                if mut_fn is creep_mutation
+                else (lambda X_child: (mut_fn(X_child, mut_prob, xl, xu, rng) or X_child))
+            )
+        elif encoding in {"continuous", "real"}:
+            cross_prob = float(cross_params.get("prob", 0.9))
+            cross_eta = float(cross_params.get("eta", 20.0))
+            workspace = VariationWorkspace()
+            crossover_operator = SBXCrossover(
+                prob_crossover=cross_prob,
+                eta=cross_eta,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+                allow_inplace=True,
+            )
+            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+            mut_eta = float(mut_params.get("eta", 20.0))
+            mutation_operator = PolynomialMutation(
+                prob_mutation=mut_prob,
+                eta=mut_eta,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+            )
+            crossover = lambda parents: crossover_operator(parents, rng)
+            mutation = lambda X_child: mutation_operator(X_child, rng)
+        else:
+            raise ValueError(f"MOEA/D does not support encoding '{encoding}'.")
 
-        mut_prob = float(mut_params.get("prob", 1.0 / max(1, n_var)))
-        mut_eta = float(mut_params.get("eta", 20.0))
-        mutation_operator = PolynomialMutation(
-            prob_mutation=mut_prob,
-            eta=mut_eta,
-            lower=xl,
-            upper=xu,
-        )
-
-        X = rng.uniform(xl, xu, size=(pop_size, n_var))
+        if encoding == "binary":
+            X = random_binary_population(pop_size, n_var, rng)
+        elif encoding == "integer":
+            X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
+        else:
+            X = rng.uniform(xl, xu, size=(pop_size, n_var))
         F = np.empty((pop_size, n_obj))
         problem.evaluate(X, {"F": F})
         n_eval = pop_size
@@ -103,9 +196,9 @@ class MOEAD:
 
             parents_flat = parent_pairs.reshape(-1)
             parents = X[parents_flat].reshape(batch_size, 2, n_var)
-            offspring = crossover_operator(parents, rng)
+            offspring = crossover(parents)
             children = offspring[:, 0, :].copy()
-            children = mutation_operator(children, rng)
+            children = mutation(children)
 
             F_child = np.empty((batch_size, n_obj))
             problem.evaluate(children, {"F": F_child})
@@ -141,10 +234,16 @@ class MOEAD:
     @staticmethod
     def _build_aggregator(name: str, params: dict):
         method = name.lower()
-        if method == "tchebycheff" or method == "tchebychef":
+        if method in {"tchebycheff", "tchebychef", "tschebyscheff"}:
             return MOEAD._tchebycheff
-        if method == "weighted_sum":
+        if method in {"weighted_sum", "weightedsum"}:
             return MOEAD._weighted_sum
+        if method in {"penaltyboundaryintersection", "penalty_boundary_intersection", "pbi"}:
+            theta = float(params.get("theta", 5.0))
+            return lambda fvals, weights, ideal: MOEAD._pbi(fvals, weights, ideal, theta)
+        if method in {"modifiedtchebycheff", "modified_tchebycheff"}:
+            rho = float(params.get("rho", 0.001))
+            return lambda fvals, weights, ideal: MOEAD._modified_tchebycheff(fvals, weights, ideal, rho)
         raise ValueError(f"Unsupported aggregation method '{name}'.")
 
     @staticmethod
@@ -156,6 +255,29 @@ class MOEAD:
     def _weighted_sum(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np.ndarray:
         shifted = fvals - ideal
         return np.sum(weights * shifted, axis=1)
+
+    @staticmethod
+    def _pbi(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, theta: float) -> np.ndarray:
+        """
+        Penalty boundary intersection (PBI).
+        """
+        diff = fvals - ideal
+        norm_w = np.linalg.norm(weights, axis=1, keepdims=True)
+        norm_w = np.where(norm_w > 0, norm_w, 1.0)
+        w_unit = weights / norm_w
+        d1 = np.abs(np.sum(diff * w_unit, axis=1))
+        proj = (d1[:, None]) * w_unit
+        d2 = np.linalg.norm(diff - proj, axis=1)
+        return d1 + theta * d2
+
+    @staticmethod
+    def _modified_tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, rho: float) -> np.ndarray:
+        """
+        Modified Tchebycheff: max component plus a weighted L1 term (scaled by rho).
+        """
+        diff = np.abs(fvals - ideal)
+        weighted = weights * diff
+        return np.max(weighted, axis=1) + rho * np.sum(weighted, axis=1)
 
     def _update_neighborhood(
         self,

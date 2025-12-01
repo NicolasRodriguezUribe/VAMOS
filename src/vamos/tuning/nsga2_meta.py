@@ -51,6 +51,7 @@ class MetaNSGAII:
         self.meta_eval_count = 0
         self.inner_run_count = 0
         self.start_time = None
+        self._seen_cache_keys: set[str] = set()
 
     def run(self) -> Tuple[np.ndarray, np.ndarray, dict]:
         self.start_time = time.perf_counter()
@@ -88,14 +89,20 @@ class MetaNSGAII:
         for vec in X:
             if self._budget_exhausted():
                 break
-            value = self.problem.evaluate(vec)
-            value_arr = np.asarray(value, dtype=float).ravel()
+            cache_key = self.problem.cache_key_for_vector(vec)
+            cached = self.problem.cached_objectives(cache_key)
+            if cached is not None:
+                value_arr = np.asarray(cached, dtype=float).ravel()
+            else:
+                value = self.problem.evaluate(vec)
+                value_arr = np.asarray(value, dtype=float).ravel()
+                self.meta_eval_count += 1
+                self.inner_run_count += getattr(self.problem, "last_inner_runs", 0)
             if value_arr.size == 0:
                 raise ValueError("Meta problem returned an empty objective array.")
             objs.append(value_arr)
             evaluated += 1
-            self.meta_eval_count += 1
-            self.inner_run_count += getattr(self.problem, "last_inner_runs", 0)
+            self._seen_cache_keys.add(cache_key)
         if not objs:
             return np.empty((0, 0), dtype=float), 0
         F = np.vstack(objs)

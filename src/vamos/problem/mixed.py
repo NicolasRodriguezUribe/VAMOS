@@ -67,6 +67,7 @@ class MixedDesignProblem:
             "int_upper": int_upper,
             "cat_cardinality": cat_cardinality,
         }
+        self._validate_mixed_spec(self.mixed_spec)
 
     def evaluate(self, X: np.ndarray, out: dict) -> None:
         if X.ndim != 2 or X.shape[1] != self.n_var:
@@ -103,6 +104,57 @@ class MixedDesignProblem:
             "n_int": self.n_int,
             "n_cat": self.n_cat,
         }
+
+    @staticmethod
+    def _validate_mixed_spec(spec: dict) -> None:
+        required = (
+            "real_idx",
+            "int_idx",
+            "cat_idx",
+            "real_lower",
+            "real_upper",
+            "int_lower",
+            "int_upper",
+            "cat_cardinality",
+        )
+        for key in required:
+            if key not in spec:
+                raise ValueError(f"mixed_spec missing required field '{key}'.")
+        real_idx = np.asarray(spec["real_idx"], dtype=int)
+        int_idx = np.asarray(spec["int_idx"], dtype=int)
+        cat_idx = np.asarray(spec["cat_idx"], dtype=int)
+        if real_idx.ndim != 1 or int_idx.ndim != 1 or cat_idx.ndim != 1:
+            raise ValueError("mixed_spec indices must be 1D arrays.")
+        all_idx = np.concatenate([real_idx, int_idx, cat_idx])
+        if np.unique(all_idx).size != all_idx.size:
+            raise ValueError("mixed_spec indices must be non-overlapping.")
+        if all_idx.size == 0:
+            raise ValueError("mixed_spec must contain at least one decision variable.")
+        if np.any(all_idx < 0):
+            raise ValueError("mixed_spec indices must be non-negative.")
+        max_idx = int(np.max(all_idx))
+        if max_idx + 1 != all_idx.size:
+            raise ValueError("mixed_spec indices must cover variables densely from 0..n_var-1.")
+        n_real = real_idx.size
+        n_int = int_idx.size
+        n_cat = cat_idx.size
+        real_lower = np.asarray(spec["real_lower"], dtype=float)
+        real_upper = np.asarray(spec["real_upper"], dtype=float)
+        if real_lower.shape[0] != n_real or real_upper.shape[0] != n_real:
+            raise ValueError("real_lower/real_upper lengths must match real_idx size.")
+        if np.any(real_lower > real_upper):
+            raise ValueError("real_lower must be <= real_upper elementwise.")
+        int_lower = np.asarray(spec["int_lower"], dtype=int)
+        int_upper = np.asarray(spec["int_upper"], dtype=int)
+        if int_lower.shape[0] != n_int or int_upper.shape[0] != n_int:
+            raise ValueError("int_lower/int_upper lengths must match int_idx size.")
+        if np.any(int_lower > int_upper):
+            raise ValueError("int_lower must be <= int_upper elementwise.")
+        cat_card = np.asarray(spec["cat_cardinality"], dtype=int)
+        if cat_card.shape[0] != n_cat:
+            raise ValueError("cat_cardinality length must match cat_idx size.")
+        if np.any(cat_card <= 0):
+            raise ValueError("cat_cardinality values must be positive.")
 
 
 __all__ = ["MixedDesignProblem"]

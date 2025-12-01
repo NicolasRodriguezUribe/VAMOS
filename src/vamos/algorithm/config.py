@@ -24,6 +24,9 @@ class NSGAIIConfigData(_SerializableConfig):
     offspring_size: Optional[int] = None
     repair: Optional[Tuple[str, Dict[str, Any]]] = None
     archive: Optional[Dict[str, Any]] = None
+    initializer: Optional[Dict[str, Any]] = None
+    mutation_prob_factor: Optional[float] = None
+    result_mode: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -110,10 +113,33 @@ class NSGAIIConfig:
         self._cfg["engine"] = value
         return self
 
+    def initializer(self, method: str, **kwargs):
+        self._cfg["initializer"] = {"type": method, **kwargs}
+        return self
+
+    def mutation_prob_factor(self, value: float):
+        self._cfg["mutation_prob_factor"] = float(value)
+        return self
+
+    def result_mode(self, value: str):
+        self._cfg["result_mode"] = str(value)
+        return self
+
     def external_archive(self, *, size: int):
         if size <= 0:
             raise ValueError("external archive size must be positive.")
         self._cfg["external_archive"] = {"size": int(size)}
+        return self
+
+    def archive(self, size: int):
+        """
+        Convenience alias to configure an external archive by size.
+        A size <= 0 disables the archive.
+        """
+        if size <= 0:
+            self._cfg["archive"] = {"size": 0}
+            return self
+        self._cfg["archive"] = {"size": int(size)}
         return self
 
     def fixed(self) -> NSGAIIConfigData:
@@ -122,7 +148,7 @@ class NSGAIIConfig:
             ("pop_size", "crossover", "mutation", "selection", "survival", "engine"),
             "NSGA-II",
         )
-        archive_cfg = self._cfg.get("external_archive")
+        archive_cfg = self._cfg.get("archive", self._cfg.get("external_archive"))
         return NSGAIIConfigData(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
@@ -133,6 +159,9 @@ class NSGAIIConfig:
             offspring_size=self._cfg.get("offspring_size"),
             repair=self._cfg.get("repair"),
             archive=archive_cfg,
+            initializer=self._cfg.get("initializer"),
+            mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
+            result_mode=self._cfg.get("result_mode"),
         )
 
 

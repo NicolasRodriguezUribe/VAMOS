@@ -1,6 +1,25 @@
 from __future__ import annotations
 
+import os
 import numpy as np
+
+_USE_NUMBA_VARIATION = os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
+_HAS_NUMBA = False
+if _USE_NUMBA_VARIATION:
+    try:
+        from numba import njit
+    except ImportError:
+        _HAS_NUMBA = False
+    else:
+        _HAS_NUMBA = True
+
+        @njit(cache=True)
+        def _random_reset_masked(X: np.ndarray, mask: np.ndarray, rand_vals: np.ndarray):
+            rows, cols = mask.shape
+            for i in range(rows):
+                for j in range(cols):
+                    if mask[i, j]:
+                        X[i, j] = rand_vals[i, j]
 
 
 def random_integer_population(
@@ -87,7 +106,10 @@ def random_reset_mutation(
     if not np.any(mask):
         return
     rand_vals = rng.integers(lower, upper + 1, size=X.shape, dtype=X.dtype)
-    X[mask] = rand_vals[mask]
+    if _HAS_NUMBA:
+        _random_reset_masked(X, mask, rand_vals)
+    else:
+        X[mask] = rand_vals[mask]
 
 
 def creep_mutation(

@@ -1,6 +1,27 @@
 from __future__ import annotations
 
+import os
 import numpy as np
+
+_USE_NUMBA_VARIATION = os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
+_HAS_NUMBA = False
+if _USE_NUMBA_VARIATION:
+    try:
+        from numba import njit
+    except ImportError:
+        _HAS_NUMBA = False
+    else:
+        _HAS_NUMBA = True
+
+        @njit(cache=True)
+        def _swap_rows_jit(X: np.ndarray, rows: np.ndarray, first: np.ndarray, second: np.ndarray):
+            for idx in range(rows.shape[0]):
+                r = rows[idx]
+                a = first[idx]
+                b = second[idx]
+                tmp = X[r, a]
+                X[r, a] = X[r, b]
+                X[r, b] = tmp
 
 
 def random_permutation_population(
@@ -126,9 +147,12 @@ def swap_mutation(
     _ensure_distinct_indices(idx_pairs, D, rng)
     first = idx_pairs[:, 0]
     second = idx_pairs[:, 1]
-    tmp = X[rows, first].copy()
-    X[rows, first] = X[rows, second]
-    X[rows, second] = tmp
+    if _HAS_NUMBA:
+        _swap_rows_jit(X, rows.astype(np.int64), first.astype(np.int64), second.astype(np.int64))
+    else:
+        tmp = X[rows, first].copy()
+        X[rows, first] = X[rows, second]
+        X[rows, second] = tmp
 
 
 def pmx_crossover(

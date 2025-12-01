@@ -1,6 +1,58 @@
 import numpy as np
 
+from vamos.operators.binary import (
+    random_binary_population,
+    one_point_crossover,
+    two_point_crossover,
+    uniform_crossover,
+    bit_flip_mutation,
+)
+from vamos.operators.integer import (
+    random_integer_population,
+    uniform_integer_crossover,
+    arithmetic_integer_crossover,
+    random_reset_mutation,
+    creep_mutation,
+)
+from vamos.operators.real import SBXCrossover, PolynomialMutation, VariationWorkspace
 from .hypervolume import hypervolume_contributions
+
+
+def _resolve_prob_expression(value, n_var: int, default: float) -> float:
+    if value is None:
+        return default
+    if isinstance(value, str) and value.endswith("/n"):
+        numerator = value[:-2]
+        num = float(numerator) if numerator else 1.0
+        return min(1.0, max(num, 0.0) / n_var)
+    return float(value)
+
+
+_BINARY_CROSSOVER = {
+    "one_point": one_point_crossover,
+    "single_point": one_point_crossover,
+    "1point": one_point_crossover,
+    "two_point": two_point_crossover,
+    "2point": two_point_crossover,
+    "uniform": uniform_crossover,
+}
+
+_BINARY_MUTATION = {
+    "bitflip": bit_flip_mutation,
+    "bit_flip": bit_flip_mutation,
+}
+
+_INT_CROSSOVER = {
+    "uniform": uniform_integer_crossover,
+    "blend": arithmetic_integer_crossover,
+    "arithmetic": arithmetic_integer_crossover,
+}
+
+_INT_MUTATION = {
+    "reset": random_reset_mutation,
+    "random_reset": random_reset_mutation,
+    "creep": creep_mutation,
+}
 
 
 class SMSEMOA:
@@ -20,15 +72,16 @@ class SMSEMOA:
         rng = np.random.default_rng(seed)
 
         pop_size = self.cfg["pop_size"]
-        xl, xu = problem.xl, problem.xu
+        encoding = getattr(problem, "encoding", "continuous")
+        bounds_dtype = int if encoding == "integer" else float
+        xl = np.asarray(problem.xl, dtype=bounds_dtype)
+        xu = np.asarray(problem.xu, dtype=bounds_dtype)
         n_var = problem.n_var
 
         cross_method, cross_params = self.cfg["crossover"]
-        assert cross_method == "sbx"
         cross_params = dict(cross_params)
 
         mut_method, mut_params = self.cfg["mutation"]
-        assert mut_method == "pm"
         mut_params = dict(mut_params)
         if mut_params.get("prob") == "1/n":
             mut_params["prob"] = 1.0 / n_var
@@ -39,8 +92,63 @@ class SMSEMOA:
 
         ref_cfg = self.cfg.get("reference_point", {}) or {}
 
-        # Initialization
-        X = rng.uniform(xl, xu, size=(pop_size, n_var))
+        # Build variation per encoding.
+        if encoding == "binary":
+            if cross_method not in _BINARY_CROSSOVER:
+                raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for binary encoding.")
+            if mut_method not in _BINARY_MUTATION:
+                raise ValueError(f"Unsupported SMSEMOA mutation '{mut_method}' for binary encoding.")
+            cross_fn = _BINARY_CROSSOVER[cross_method]
+            cross_prob = float(cross_params.get("prob", 0.9))
+            mut_fn = _BINARY_MUTATION[mut_method]
+            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+            crossover = lambda parents: cross_fn(parents, cross_prob, rng)
+            mutation = lambda X_child: (mut_fn(X_child, mut_prob, rng) or X_child)
+            X = random_binary_population(pop_size, n_var, rng)
+        elif encoding == "integer":
+            if cross_method not in _INT_CROSSOVER:
+                raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for integer encoding.")
+            if mut_method not in _INT_MUTATION:
+                raise ValueError(f"Unsupported SMSEMOA mutation '{mut_method}' for integer encoding.")
+            cross_fn = _INT_CROSSOVER[cross_method]
+            cross_prob = float(cross_params.get("prob", 0.9))
+            mut_fn = _INT_MUTATION[mut_method]
+            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+            step = int(mut_params.get("step", 1))
+            crossover = lambda parents: cross_fn(parents, cross_prob, rng)
+            mutation = (
+                (lambda X_child: (mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child))
+                if mut_fn is creep_mutation
+                else (lambda X_child: (mut_fn(X_child, mut_prob, xl, xu, rng) or X_child))
+            )
+            X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
+        elif encoding in {"continuous", "real"}:
+            cross_prob = float(cross_params.get("prob", 0.9))
+            cross_eta = float(cross_params.get("eta", 20.0))
+            workspace = VariationWorkspace()
+            sbx = SBXCrossover(
+                prob_crossover=cross_prob,
+                eta=cross_eta,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+                allow_inplace=True,
+            )
+            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+            mut_eta = float(mut_params.get("eta", 20.0))
+            pm = PolynomialMutation(
+                prob_mutation=mut_prob,
+                eta=mut_eta,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+            )
+            crossover = lambda parents: sbx(parents, rng)
+            mutation = lambda X_child: pm(X_child, rng)
+            X = rng.uniform(xl, xu, size=(pop_size, n_var))
+        else:
+            raise ValueError(f"SMSEMOA does not support encoding '{encoding}'.")
+
         F = np.empty((pop_size, problem.n_obj))
         problem.evaluate(X, {"F": F})
         n_eval = pop_size
@@ -53,9 +161,9 @@ class SMSEMOA:
                 ranks, crowd, pressure, rng, n_parents=2
             )
             parents = X[parents_idx]
-            offspring = self.kernel.sbx_crossover(parents, cross_params, rng, xl, xu)
+            offspring = crossover(parents)
             child = offspring[:1].copy()
-            self.kernel.polynomial_mutation(child, mut_params, rng, xl, xu)
+            child = mutation(child)
 
             F_child = np.empty((1, problem.n_obj))
             problem.evaluate(child, {"F": F_child})

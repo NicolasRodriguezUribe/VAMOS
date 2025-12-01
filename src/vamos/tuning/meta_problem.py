@@ -122,6 +122,16 @@ class MetaOptimizationProblem:
         self.cache[cache_key] = objectives
         return objectives
 
+    def cache_key_for_vector(self, x: np.ndarray) -> str:
+        """Return the cache key for a meta-vector without performing a full evaluate."""
+        config = self.config_space.decode_vector(x)
+        return self._make_cache_key(config)
+
+    def cached_objectives(self, cache_key: str):
+        """Return cached objectives for a cache key if present."""
+        cached = self.cache.get(cache_key)
+        return None if cached is None else cached.copy()
+
     def _scalar_quality(self, F: np.ndarray, problem_idx: int) -> float:
         if F.size == 0:
             return float("-inf")
