@@ -15,6 +15,8 @@ from vamos.operators.integer import (
     creep_mutation,
 )
 from vamos.operators.real import SBXCrossover, PolynomialMutation, VariationWorkspace
+from vamos.algorithm.population import evaluate_population_with_constraints
+from vamos.constraints.utils import compute_violation, is_feasible
 
 from .weight_vectors import load_or_generate_weight_vectors
 
@@ -76,6 +78,7 @@ class MOEAD:
         pop_size = self.cfg["pop_size"]
         if pop_size < 2:
             raise ValueError("MOEA/D requires pop_size >= 2.")
+        constraint_mode = self.cfg.get("constraint_mode", "feasibility")
 
         encoding = getattr(problem, "encoding", "continuous")
         bounds_dtype = int if encoding == "integer" else float
@@ -174,8 +177,7 @@ class MOEAD:
             X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
         else:
             X = rng.uniform(xl, xu, size=(pop_size, n_var))
-        F = np.empty((pop_size, n_obj))
-        problem.evaluate(X, {"F": F})
+        F, G = evaluate_population_with_constraints(problem, X)
         n_eval = pop_size
 
         ideal = F.min(axis=0)
@@ -200,8 +202,7 @@ class MOEAD:
             children = offspring[:, 0, :].copy()
             children = mutation(children)
 
-            F_child = np.empty((batch_size, n_obj))
-            problem.evaluate(children, {"F": F_child})
+            F_child, G_child = evaluate_population_with_constraints(problem, children)
             n_eval += batch_size
 
             for pos, i in enumerate(active):
@@ -213,17 +214,24 @@ class MOEAD:
                     idx=i,
                     child=child_vec,
                     child_f=child_f,
+                    child_g=G_child[pos] if G_child is not None else None,
                     X=X,
                     F=F,
+                    G=G,
                     weights=weights,
                     neighbors=neighbors,
                     ideal=ideal,
                     replace_limit=replace_limit,
                     aggregator=aggregator,
                     rng=rng,
+                    constraint_mode=constraint_mode,
+                    cv_penalty=compute_violation(G_child)[pos] if G_child is not None else 0.0,
                 )
 
-        return {"X": X, "F": F, "weights": weights}
+        result = {"X": X, "F": F, "weights": weights}
+        if G is not None:
+            result["G"] = G
+        return result
 
     @staticmethod
     def _compute_neighbors(weights: np.ndarray, neighbor_size: int) -> np.ndarray:
@@ -284,15 +292,22 @@ class MOEAD:
         idx: int,
         child: np.ndarray,
         child_f: np.ndarray,
+        child_g: np.ndarray | None,
         X: np.ndarray,
         F: np.ndarray,
+        G: np.ndarray | None,
         weights: np.ndarray,
         neighbors: np.ndarray,
         ideal: np.ndarray,
         replace_limit: int,
         aggregator,
         rng: np.random.Generator,
+        *,
+        constraint_mode: str = "feasibility",
+        cv_penalty: float = 0.0,
     ):
+        if constraint_mode == "none" or G is None or child_g is None:
+            constraint_mode = "none"
         neighbor_idx = neighbors[idx]
         if neighbor_idx.size == 0:
             return
@@ -301,15 +316,33 @@ class MOEAD:
         current_vals = aggregator(F[neighbor_idx], local_weights, ideal)
 
         child_vals = aggregator(child_f, local_weights, ideal)
+        if constraint_mode != "none":
+            child_cv = cv_penalty
+            current_cv = compute_violation(G[neighbor_idx]) if G is not None else np.zeros_like(current_vals)
+            # Prefer feasible over infeasible; add CV as penalty
+            feas_child = child_cv <= 0.0
+            feas_curr = current_cv <= 0.0
+            # mask where child is strictly better by feasibility rule
+            better_mask = np.zeros_like(current_vals, dtype=bool)
+            better_mask |= (~feas_curr & feas_child)
+            if feas_child:
+                better_mask |= (feas_curr & (child_vals < current_vals))
+            else:
+                better_mask |= (~feas_curr & (child_cv < current_cv))
+            if not np.any(better_mask):
+                return
+            candidates = neighbor_idx[better_mask]
+        else:
+            improved_mask = child_vals < current_vals
+            if not np.any(improved_mask):
+                return
+            candidates = neighbor_idx[improved_mask]
 
-        improved_mask = child_vals < current_vals
-        if not np.any(improved_mask):
-            return
-
-        candidates = neighbor_idx[improved_mask]
         if candidates.size > replace_limit:
             replace_idx = rng.choice(candidates.size, size=replace_limit, replace=False)
             candidates = candidates[replace_idx]
 
         X[candidates] = child
         F[candidates] = child_f
+        if G is not None and child_g is not None:
+            G[candidates] = child_g
