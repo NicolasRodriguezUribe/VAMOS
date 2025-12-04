@@ -6,6 +6,8 @@ from typing import Callable
 
 import numpy as np
 
+from .utils import compute_violation, is_feasible
+
 
 @dataclass
 class ConstraintInfo:
@@ -126,3 +128,17 @@ def get_constraint_strategy(name: str, **kwargs) -> ConstraintHandlingStrategy:
     if key == "epsilon":
         return EpsilonConstraintStrategy(**kwargs)
     raise ValueError(f"Unknown constraint strategy '{name}'.")
+
+
+__all__ = [
+    "ConstraintInfo",
+    "ConstraintHandlingStrategy",
+    "FeasibilityFirstStrategy",
+    "PenaltyCVStrategy",
+    "CVAsObjectiveStrategy",
+    "EpsilonConstraintStrategy",
+    "compute_constraint_info",
+    "compute_violation",
+    "is_feasible",
+    "get_constraint_strategy",
+]

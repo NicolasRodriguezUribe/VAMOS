@@ -17,6 +17,12 @@ from .algorithm.config import (
     NSGAIIIConfigData,
     SMSEMOAConfig,
     SMSEMOAConfigData,
+    SPEA2Config,
+    SPEA2ConfigData,
+    IBEAConfig,
+    IBEAConfigData,
+    SMPSOConfig,
+    SMPSOConfigData,
 )
 from .experiment_config import ExperimentConfig
 from .problem.registry import (
@@ -78,6 +84,12 @@ __all__ = [
     "SMSEMOAConfigData",
     "NSGAIIIConfig",
     "NSGAIIIConfigData",
+    "SPEA2Config",
+    "SPEA2ConfigData",
+    "IBEAConfig",
+    "IBEAConfigData",
+    "SMPSOConfig",
+    "SMPSOConfigData",
     # Problem registry
     "ProblemSpec",
     "ProblemSelection",

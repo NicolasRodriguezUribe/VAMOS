@@ -24,7 +24,7 @@ pytest
 
 ## What’s inside
 
-- Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA with vectorized kernels (NumPy, Numba, MooCore).
+- Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO with vectorized kernels (NumPy, Numba, MooCore).
 - Encodings: continuous, permutation, binary, integer, mixed.
 - Config + tuning: hierarchical `AlgorithmConfigSpace`, meta-level NSGA-II tuner, templates, multi-algorithm search. CLI/runner can read YAML/JSON specs (see below).
 - Analysis: constraint handling toolbox, objective reduction, MCDM helpers, visualization utilities, stats (Friedman/Wilcoxon/CD plots).
@@ -37,6 +37,7 @@ pytest
 
 - Run with different algorithms/problems:
   - `python -m vamos.main --algorithm moead --problem dtlz2 --n-obj 3`
+  - `python -m vamos.main --algorithm spea2 --problem zdt1 --max-evaluations 1000`
   - `python -m vamos.main --problem-set families`
   - `python -m vamos.main --problem tsp6`
 - Use hypervolume early-stop on NSGA-II:
@@ -74,9 +75,32 @@ problems:
     algorithm: nsgaii
     n_var: 30
     population_size: 150
-    nsgaii:
-      crossover: {method: uniform}
-      mutation: {method: bitflip, prob: "1/n"}
+  nsgaii:
+    crossover: {method: uniform}
+    mutation: {method: bitflip, prob: "1/n"}
+```
+
+Quick presets for the new algorithms:
+
+```yaml
+spea2:
+  pop_size: 80
+  archive_size: 80
+  crossover: {method: sbx, prob: 0.9, eta: 20}
+  mutation: {method: pm, prob: "1/n", eta: 20}
+ibea:
+  indicator: eps  # or hypervolume
+  kappa: 0.05
+  crossover: {method: sbx, prob: 0.9, eta: 20}
+  mutation: {method: pm, prob: "1/n", eta: 20}
+smpso:
+  pop_size: 80
+  archive_size: 80
+  inertia: 0.5
+  c1: 1.5
+  c2: 1.5
+  vmax_fraction: 0.5
+  mutation: {method: pm, prob: "1/n", eta: 20}
 ```
 
 CLI flags override config values. Per-problem sections override defaults.

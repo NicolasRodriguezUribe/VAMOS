@@ -302,6 +302,9 @@ def run_single(
     moead_variation: dict | None = None,
     smsemoa_variation: dict | None = None,
     nsga3_variation: dict | None = None,
+    spea2_variation: dict | None = None,
+    ibea_variation: dict | None = None,
+    smpso_variation: dict | None = None,
     hv_stop_config: dict | None = None,
     config_source: str | None = None,
     problem_override: dict | None = None,
@@ -313,6 +316,9 @@ def run_single(
     moead_variation = _normalize_variation_config(moead_variation)
     smsemoa_variation = _normalize_variation_config(smsemoa_variation)
     nsga3_variation = _normalize_variation_config(nsga3_variation)
+    spea2_variation = _normalize_variation_config(spea2_variation)
+    ibea_variation = _normalize_variation_config(ibea_variation)
+    smpso_variation = _normalize_variation_config(smpso_variation)
     algorithm, cfg_data = build_algorithm(
         algorithm_name,
         engine_name,
@@ -325,6 +331,9 @@ def run_single(
         moead_variation=moead_variation,
         smsemoa_variation=smsemoa_variation,
         nsga3_variation=nsga3_variation,
+        spea2_variation=spea2_variation,
+        ibea_variation=ibea_variation,
+        smpso_variation=smpso_variation,
     )
     kernel_backend = algorithm.kernel
 
@@ -448,6 +457,9 @@ def execute_problem_suite(
     *,
     hv_stop_config: dict | None = None,
     nsgaii_variation: dict | None = None,
+    spea2_variation: dict | None = None,
+    ibea_variation: dict | None = None,
+    smpso_variation: dict | None = None,
     include_external: bool = False,
     config_source: str | None = None,
     problem_override: dict | None = None,
@@ -489,6 +501,9 @@ def execute_problem_suite(
                 moead_variation=getattr(args, "moead_variation", None),
                 smsemoa_variation=getattr(args, "smsemoa_variation", None),
                 nsga3_variation=getattr(args, "nsga3_variation", None),
+                spea2_variation=getattr(args, "spea2_variation", None),
+                ibea_variation=getattr(args, "ibea_variation", None),
+                smpso_variation=getattr(args, "smpso_variation", None),
                 hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                 config_source=config_source,
                 problem_override=problem_override,
@@ -506,6 +521,9 @@ def execute_problem_suite(
                 moead_variation=getattr(args, "moead_variation", None),
                 smsemoa_variation=getattr(args, "smsemoa_variation", None),
                 nsga3_variation=getattr(args, "nsga3_variation", None),
+                spea2_variation=getattr(args, "spea2_variation", None),
+                ibea_variation=getattr(args, "ibea_variation", None),
+                smpso_variation=getattr(args, "smpso_variation", None),
                 hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                 config_source=config_source,
                 problem_override=problem_override,
@@ -593,6 +611,9 @@ def run_from_args(args, config: ExperimentConfig):
         effective_args.moead_variation = _merge_variation_overrides(getattr(args, "moead_variation", None), override.get("moead"))
         effective_args.smsemoa_variation = _merge_variation_overrides(getattr(args, "smsemoa_variation", None), override.get("smsemoa"))
         effective_args.nsga3_variation = _merge_variation_overrides(getattr(args, "nsga3_variation", None), override.get("nsga3"))
+        effective_args.spea2_variation = _merge_variation_overrides(getattr(args, "spea2_variation", None), override.get("spea2"))
+        effective_args.ibea_variation = _merge_variation_overrides(getattr(args, "ibea_variation", None), override.get("ibea"))
+        effective_args.smpso_variation = _merge_variation_overrides(getattr(args, "smpso_variation", None), override.get("smpso"))
         effective_args.effective_problem_override = override
 
         if multiple:
@@ -615,6 +636,9 @@ def run_from_args(args, config: ExperimentConfig):
             effective_config,
             hv_stop_config=hv_stop_config,
             nsgaii_variation=nsgaii_variation,
+            spea2_variation=effective_args.spea2_variation,
+            ibea_variation=effective_args.ibea_variation,
+            smpso_variation=effective_args.smpso_variation,
             include_external=effective_args.include_external,
             config_source=config_source,
             problem_override=override,

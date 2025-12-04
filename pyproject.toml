@@ -51,7 +51,7 @@ show_error_codes = true
 pretty = true
 exclude = ["build/", "dist/"]
 
-[tool.mypy.vamos.problem.*]
+[tool.mypy."vamos.problem.*"]
 strict = true
 
 [tool.mypy.vamos.algorithm.config]

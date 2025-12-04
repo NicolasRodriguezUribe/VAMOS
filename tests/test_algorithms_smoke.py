@@ -2,10 +2,20 @@
 
 import numpy as np
 
-from vamos.algorithm.config import MOEADConfig, NSGAIIConfig, SMSEMOAConfig
+from vamos.algorithm.config import (
+    MOEADConfig,
+    NSGAIIConfig,
+    SMSEMOAConfig,
+    SPEA2Config,
+    IBEAConfig,
+    SMPSOConfig,
+)
 from vamos.algorithm.moead import MOEAD
 from vamos.algorithm.nsgaii import NSGAII
 from vamos.algorithm.smsemoa import SMSEMOA
+from vamos.algorithm.spea2 import SPEA2
+from vamos.algorithm.ibea import IBEA
+from vamos.algorithm.smpso import SMPSO
 from vamos.kernel.numpy_backend import NumPyKernel
 from vamos.problem.tsp import TSPProblem
 from vamos.problem.zdt1 import ZDT1Problem
@@ -84,6 +94,70 @@ def test_moead_smoke_runs_without_weight_files():
     result = algorithm.run(problem, termination=("n_eval", pop_size + 4), seed=5)
 
     assert result["F"].shape == (pop_size, problem.n_obj)
+    assert np.isfinite(result["F"]).all()
+
+
+def test_spea2_smoke_runs_with_archive():
+    pop_size = 12
+    cfg = (
+        SPEA2Config()
+        .pop_size(pop_size)
+        .archive_size(pop_size)
+        .crossover("sbx", prob=0.9, eta=20.0)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .selection("tournament", pressure=2)
+        .engine("numpy")
+        .fixed()
+    )
+    algorithm = SPEA2(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT1Problem(n_var=6)
+
+    result = algorithm.run(problem, termination=("n_eval", pop_size + 12), seed=7)
+
+    assert result["F"].shape[0] == cfg.archive_size
+    assert result["F"].shape[1] == problem.n_obj
+    assert np.isfinite(result["F"]).all()
+
+
+def test_ibea_smoke_indicator_eps():
+    pop_size = 10
+    cfg = (
+        IBEAConfig()
+        .pop_size(pop_size)
+        .crossover("sbx", prob=0.9, eta=20.0)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .selection("tournament", pressure=2)
+        .indicator("eps")
+        .kappa(0.05)
+        .engine("numpy")
+        .fixed()
+    )
+    algorithm = IBEA(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT2Problem(n_var=6)
+
+    result = algorithm.run(problem, termination=("n_eval", pop_size + 10), seed=8)
+
+    assert result["F"].shape == (pop_size, problem.n_obj)
+    assert np.isfinite(result["F"]).all()
+
+
+def test_smpso_smoke_runs():
+    pop_size = 14
+    cfg = (
+        SMPSOConfig()
+        .pop_size(pop_size)
+        .archive_size(pop_size)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .engine("numpy")
+        .fixed()
+    )
+    algorithm = SMPSO(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT1Problem(n_var=5)
+
+    result = algorithm.run(problem, termination=("n_eval", pop_size * 2), seed=9)
+
+    assert result["F"].shape[0] > 0
+    assert result["F"].shape[1] == problem.n_obj
     assert np.isfinite(result["F"]).all()
 
 

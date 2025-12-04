@@ -67,6 +67,51 @@ class NSGAIIIConfigData(_SerializableConfig):
     engine: str
 
 
+@dataclass(frozen=True)
+class SPEA2ConfigData(_SerializableConfig):
+    pop_size: int
+    archive_size: int
+    crossover: Tuple[str, Dict[str, Any]]
+    mutation: Tuple[str, Dict[str, Any]]
+    selection: Tuple[str, Dict[str, Any]]
+    engine: str
+    k_neighbors: Optional[int] = None
+    repair: Optional[Tuple[str, Dict[str, Any]]] = None
+    initializer: Optional[Dict[str, Any]] = None
+    mutation_prob_factor: Optional[float] = None
+    constraint_mode: str = "feasibility"
+
+
+@dataclass(frozen=True)
+class IBEAConfigData(_SerializableConfig):
+    pop_size: int
+    crossover: Tuple[str, Dict[str, Any]]
+    mutation: Tuple[str, Dict[str, Any]]
+    selection: Tuple[str, Dict[str, Any]]
+    indicator: str
+    kappa: float
+    engine: str
+    repair: Optional[Tuple[str, Dict[str, Any]]] = None
+    initializer: Optional[Dict[str, Any]] = None
+    mutation_prob_factor: Optional[float] = None
+    constraint_mode: str = "feasibility"
+
+
+@dataclass(frozen=True)
+class SMPSOConfigData(_SerializableConfig):
+    pop_size: int
+    archive_size: int
+    mutation: Tuple[str, Dict[str, Any]]
+    engine: str
+    inertia: float = 0.5
+    c1: float = 1.5
+    c2: float = 1.5
+    vmax_fraction: float = 0.5
+    repair: Optional[Tuple[str, Dict[str, Any]]] = None
+    initializer: Optional[Dict[str, Any]] = None
+    constraint_mode: str = "feasibility"
+
+
 def _require_fields(cfg: Dict[str, Any], fields: Tuple[str, ...], name: str) -> None:
     missing = [field for field in fields if field not in cfg]
     if missing:
@@ -378,4 +423,224 @@ class NSGAIIIConfig:
             selection=self._cfg["selection"],
             reference_directions=ref_dirs,
             engine=self._cfg["engine"],
+        )
+
+
+class SPEA2Config:
+    """
+    Declarative configuration holder for SPEA2 settings.
+    Mirrors NSGA-II builder style to enable reuse of variation configs.
+    """
+
+    def __init__(self) -> None:
+        self._cfg: Dict[str, Any] = {}
+
+    def pop_size(self, value: int) -> "SPEA2Config":
+        self._cfg["pop_size"] = value
+        return self
+
+    def archive_size(self, value: int) -> "SPEA2Config":
+        self._cfg["archive_size"] = value
+        return self
+
+    def crossover(self, method: str, **kwargs) -> "SPEA2Config":
+        self._cfg["crossover"] = (method, kwargs)
+        return self
+
+    def mutation(self, method: str, **kwargs) -> "SPEA2Config":
+        self._cfg["mutation"] = (method, kwargs)
+        return self
+
+    def selection(self, method: str, **kwargs) -> "SPEA2Config":
+        self._cfg["selection"] = (method, kwargs)
+        return self
+
+    def engine(self, value: str) -> "SPEA2Config":
+        self._cfg["engine"] = value
+        return self
+
+    def k_neighbors(self, value: int) -> "SPEA2Config":
+        self._cfg["k_neighbors"] = value
+        return self
+
+    def repair(self, method: str, **kwargs) -> "SPEA2Config":
+        self._cfg["repair"] = (method, kwargs)
+        return self
+
+    def initializer(self, method: str, **kwargs) -> "SPEA2Config":
+        self._cfg["initializer"] = {"type": method, **kwargs}
+        return self
+
+    def mutation_prob_factor(self, value: float) -> "SPEA2Config":
+        self._cfg["mutation_prob_factor"] = float(value)
+        return self
+
+    def constraint_mode(self, value: str) -> "SPEA2Config":
+        self._cfg["constraint_mode"] = value
+        return self
+
+    def fixed(self) -> SPEA2ConfigData:
+        _require_fields(
+            self._cfg,
+            ("pop_size", "archive_size", "crossover", "mutation", "selection", "engine"),
+            "SPEA2",
+        )
+        return SPEA2ConfigData(
+            pop_size=self._cfg["pop_size"],
+            archive_size=self._cfg["archive_size"],
+            crossover=self._cfg["crossover"],
+            mutation=self._cfg["mutation"],
+            selection=self._cfg["selection"],
+            engine=self._cfg["engine"],
+            k_neighbors=self._cfg.get("k_neighbors"),
+            repair=self._cfg.get("repair"),
+            initializer=self._cfg.get("initializer"),
+            mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
+            constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
+        )
+
+
+class IBEAConfig:
+    """
+    Declarative configuration holder for IBEA settings.
+    """
+
+    def __init__(self) -> None:
+        self._cfg: Dict[str, Any] = {}
+
+    def pop_size(self, value: int) -> "IBEAConfig":
+        self._cfg["pop_size"] = value
+        return self
+
+    def crossover(self, method: str, **kwargs) -> "IBEAConfig":
+        self._cfg["crossover"] = (method, kwargs)
+        return self
+
+    def mutation(self, method: str, **kwargs) -> "IBEAConfig":
+        self._cfg["mutation"] = (method, kwargs)
+        return self
+
+    def selection(self, method: str, **kwargs) -> "IBEAConfig":
+        self._cfg["selection"] = (method, kwargs)
+        return self
+
+    def indicator(self, name: str) -> "IBEAConfig":
+        self._cfg["indicator"] = name
+        return self
+
+    def kappa(self, value: float) -> "IBEAConfig":
+        self._cfg["kappa"] = value
+        return self
+
+    def engine(self, value: str) -> "IBEAConfig":
+        self._cfg["engine"] = value
+        return self
+
+    def repair(self, method: str, **kwargs) -> "IBEAConfig":
+        self._cfg["repair"] = (method, kwargs)
+        return self
+
+    def initializer(self, method: str, **kwargs) -> "IBEAConfig":
+        self._cfg["initializer"] = {"type": method, **kwargs}
+        return self
+
+    def mutation_prob_factor(self, value: float) -> "IBEAConfig":
+        self._cfg["mutation_prob_factor"] = float(value)
+        return self
+
+    def constraint_mode(self, value: str) -> "IBEAConfig":
+        self._cfg["constraint_mode"] = value
+        return self
+
+    def fixed(self) -> IBEAConfigData:
+        _require_fields(
+            self._cfg,
+            ("pop_size", "crossover", "mutation", "selection", "indicator", "kappa", "engine"),
+            "IBEA",
+        )
+        return IBEAConfigData(
+            pop_size=self._cfg["pop_size"],
+            crossover=self._cfg["crossover"],
+            mutation=self._cfg["mutation"],
+            selection=self._cfg["selection"],
+            indicator=str(self._cfg["indicator"]),
+            kappa=float(self._cfg["kappa"]),
+            engine=self._cfg["engine"],
+            repair=self._cfg.get("repair"),
+            initializer=self._cfg.get("initializer"),
+            mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
+            constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
+        )
+
+
+class SMPSOConfig:
+    """
+    Declarative configuration holder for SMPSO settings.
+    """
+
+    def __init__(self) -> None:
+        self._cfg: Dict[str, Any] = {}
+
+    def pop_size(self, value: int) -> "SMPSOConfig":
+        self._cfg["pop_size"] = value
+        return self
+
+    def archive_size(self, value: int) -> "SMPSOConfig":
+        self._cfg["archive_size"] = value
+        return self
+
+    def mutation(self, method: str, **kwargs) -> "SMPSOConfig":
+        self._cfg["mutation"] = (method, kwargs)
+        return self
+
+    def engine(self, value: str) -> "SMPSOConfig":
+        self._cfg["engine"] = value
+        return self
+
+    def inertia(self, value: float) -> "SMPSOConfig":
+        self._cfg["inertia"] = value
+        return self
+
+    def c1(self, value: float) -> "SMPSOConfig":
+        self._cfg["c1"] = value
+        return self
+
+    def c2(self, value: float) -> "SMPSOConfig":
+        self._cfg["c2"] = value
+        return self
+
+    def vmax_fraction(self, value: float) -> "SMPSOConfig":
+        self._cfg["vmax_fraction"] = value
+        return self
+
+    def repair(self, method: str, **kwargs) -> "SMPSOConfig":
+        self._cfg["repair"] = (method, kwargs)
+        return self
+
+    def initializer(self, method: str, **kwargs) -> "SMPSOConfig":
+        self._cfg["initializer"] = {"type": method, **kwargs}
+        return self
+
+    def constraint_mode(self, value: str) -> "SMPSOConfig":
+        self._cfg["constraint_mode"] = value
+        return self
+
+    def fixed(self) -> SMPSOConfigData:
+        _require_fields(
+            self._cfg,
+            ("pop_size", "archive_size", "mutation", "engine"),
+            "SMPSO",
+        )
+        return SMPSOConfigData(
+            pop_size=self._cfg["pop_size"],
+            archive_size=self._cfg["archive_size"],
+            mutation=self._cfg["mutation"],
+            engine=self._cfg["engine"],
+            inertia=float(self._cfg.get("inertia", 0.5)),
+            c1=float(self._cfg.get("c1", 1.5)),
+            c2=float(self._cfg.get("c2", 1.5)),
+            vmax_fraction=float(self._cfg.get("vmax_fraction", 0.5)),
+            repair=self._cfg.get("repair"),
+            initializer=self._cfg.get("initializer"),
+            constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
         )

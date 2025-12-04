@@ -7,6 +7,9 @@ from vamos.algorithm.config import (
     MOEADConfig,
     SMSEMOAConfig,
     NSGAIIIConfig,
+    SPEA2Config,
+    IBEAConfig,
+    SMPSOConfig,
 )
 from vamos.algorithm.autonsga2_builder import build_autonsga2
 from vamos.algorithm.registry import resolve_algorithm
@@ -79,6 +82,9 @@ def build_algorithm(
     moead_variation: dict | None = None,
     smsemoa_variation: dict | None = None,
     nsga3_variation: dict | None = None,
+    spea2_variation: dict | None = None,
+    ibea_variation: dict | None = None,
+    smpso_variation: dict | None = None,
 ):
     """
     Factory to build the algorithm instance.
@@ -219,6 +225,91 @@ def build_algorithm(
 
         cfg_data = builder.fixed()
         algo_ctor = resolve_algorithm("nsga3")
+        return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+
+    elif algorithm_name == "spea2":
+        encoding = getattr(problem, "encoding", "real")
+        spea2_overrides = spea2_variation or {}
+        var_cfg = resolve_nsgaii_variation_config(encoding, spea2_overrides)
+        extra_cfg = {k: v for k, v in spea2_overrides.items() if k not in {"crossover", "mutation", "repair"}}
+        var_cfg.update(extra_cfg)
+
+        builder = SPEA2Config()
+        builder.pop_size(pop_size)
+        archive_override = var_cfg.get("archive_size")
+        builder.archive_size(int(archive_override) if archive_override is not None else (external_archive_size or pop_size))
+        builder.engine(engine_name)
+        if "k_neighbors" in var_cfg and var_cfg["k_neighbors"] is not None:
+            builder.k_neighbors(int(var_cfg["k_neighbors"]))
+
+        c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 0.9, "eta": 20.0}))
+        builder.crossover(c_name, **c_kwargs)
+
+        m_name, m_kwargs = var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
+        builder.mutation(m_name, **m_kwargs)
+
+        sel_name, sel_kwargs = var_cfg.get("selection", ("tournament", {"pressure": selection_pressure}))
+        builder.selection(sel_name, **sel_kwargs)
+
+        if "repair" in var_cfg:
+            r_name, r_kwargs = var_cfg["repair"]
+            builder.repair(r_name, **r_kwargs)
+
+        cfg_data = builder.fixed()
+        algo_ctor = resolve_algorithm("spea2")
+        return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+
+    elif algorithm_name == "ibea":
+        encoding = getattr(problem, "encoding", "real")
+        ibea_overrides = ibea_variation or {}
+        var_cfg = resolve_nsgaii_variation_config(encoding, ibea_overrides)
+        extra_cfg = {k: v for k, v in ibea_overrides.items() if k not in {"crossover", "mutation", "repair"}}
+        var_cfg.update(extra_cfg)
+
+        builder = IBEAConfig()
+        builder.pop_size(pop_size)
+        builder.engine(engine_name)
+        c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 0.9, "eta": 20.0}))
+        builder.crossover(c_name, **c_kwargs)
+        m_name, m_kwargs = var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
+        builder.mutation(m_name, **m_kwargs)
+        sel_name, sel_kwargs = var_cfg.get("selection", ("tournament", {"pressure": selection_pressure}))
+        builder.selection(sel_name, **sel_kwargs)
+        builder.indicator((var_cfg.get("indicator") or "eps"))
+        builder.kappa(float(var_cfg.get("kappa", 0.05)))
+        if "repair" in var_cfg:
+            r_name, r_kwargs = var_cfg["repair"]
+            builder.repair(r_name, **r_kwargs)
+        cfg_data = builder.fixed()
+        algo_ctor = resolve_algorithm("ibea")
+        return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+
+    elif algorithm_name == "smpso":
+        mut_cfg = _merge_variation_overrides(
+            {
+                "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
+            },
+            smpso_variation,
+        )
+        builder = SMPSOConfig()
+        builder.pop_size(pop_size)
+        builder.archive_size(pop_size if external_archive_size is None else external_archive_size)
+        builder.engine(engine_name)
+        m_name, m_kwargs = mut_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
+        builder.mutation(m_name, **m_kwargs)
+        if "inertia" in mut_cfg:
+            builder.inertia(float(mut_cfg["inertia"]))
+        if "c1" in mut_cfg:
+            builder.c1(float(mut_cfg["c1"]))
+        if "c2" in mut_cfg:
+            builder.c2(float(mut_cfg["c2"]))
+        if "vmax_fraction" in mut_cfg:
+            builder.vmax_fraction(float(mut_cfg["vmax_fraction"]))
+        if "repair" in mut_cfg:
+            r_name, r_kwargs = mut_cfg["repair"]
+            builder.repair(r_name, **r_kwargs)
+        cfg_data = builder.fixed()
+        algo_ctor = resolve_algorithm("smpso")
         return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
 
     else:
