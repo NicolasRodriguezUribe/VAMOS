@@ -1,3 +1,28 @@
+Metadata-Version: 2.4
+Name: vamos
+Version: 0.1.0
+Summary: Vectorized Architecture for Multiobjective Optimization Studies
+Author: VAMOS contributors
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.23
+Requires-Dist: scipy>=1.10
+Provides-Extra: backends
+Requires-Dist: numba>=0.57; extra == "backends"
+Requires-Dist: moocore>=0.4; extra == "backends"
+Provides-Extra: benchmarks
+Requires-Dist: pymoo>=0.6; extra == "benchmarks"
+Requires-Dist: jmetalpy>=1.5; extra == "benchmarks"
+Requires-Dist: pygmo>=2.19; extra == "benchmarks"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: black>=23.0; extra == "dev"
+Requires-Dist: ruff>=0.1.5; extra == "dev"
+Provides-Extra: notebooks
+Requires-Dist: pandas>=1.5; extra == "notebooks"
+Requires-Dist: matplotlib>=3.7; extra == "notebooks"
+Requires-Dist: ipython>=8.10; extra == "notebooks"
+
 # VAMOS – Vectorized Architecture for Multiobjective Optimization Studies
 
 ![VAMOS](VAMOS.jpeg)
@@ -46,14 +71,6 @@ pytest
   - `from vamos.visualization import plot_pareto_front_2d`
   - `from vamos.mcdm import weighted_sum_scores`
   - `from vamos.stats import friedman_test, plot_critical_distance`
-- Quick sanity check of your install:
-  - `python -m vamos.self_check`
-  - or `vamos-self-check`
-
-## Contributing
-
-- See `CONTRIBUTING.md` for how to add problems, algorithms, or backends.
-- Prefer adding type hints/docstrings on public APIs; keep performance-critical kernels unchanged unless benchmarked.
 
 ## Config files (YAML/JSON)
 

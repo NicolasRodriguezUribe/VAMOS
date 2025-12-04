@@ -1,24 +1,40 @@
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
-from typing import Any
+from typing import Any, Mapping, Tuple
 
 from vamos.algorithm.config import NSGAIIConfigData
 from vamos.algorithm.nsgaii import NSGAII
 from vamos.kernel.numpy_backend import NumPyKernel
-from vamos.runner import resolve_kernel
+from vamos.kernel.registry import resolve_kernel
+from vamos.problem.types import ProblemProtocol
 
 
 class OptimizationResult:
-    def __init__(self, payload: dict):
+    """Simple container returned by optimize()."""
+
+    def __init__(self, payload: Mapping[str, Any]):
         self.F = payload.get("F")
         self.X = payload.get("X")
-        self.data = payload
+        self.data = dict(payload)
 
 
-def optimize(problem, config: Any, termination, seed: int, engine: str = "numpy") -> OptimizationResult:
+def optimize(
+    problem: ProblemProtocol,
+    config: Any,
+    termination: Tuple[str, Any],
+    seed: int,
+    engine: str = "numpy",
+) -> OptimizationResult:
     """
     Run a single optimization for the provided problem/config pair.
+
+    Args:
+        problem: A problem implementing the ProblemProtocol (evaluate, xl/xu, n_var/n_obj).
+        config: Algorithm config dataclass/builder or mapping compatible with NSGA-II for now.
+        termination: Tuple describing termination criterion, e.g. ("n_eval", 1000).
+        seed: RNG seed used by the algorithm.
+        engine: Kernel backend name ("numpy", "numba", "moocore").
     """
     if hasattr(config, "to_dict"):
         cfg_dict = config.to_dict()

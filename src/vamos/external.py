@@ -7,6 +7,35 @@ import numpy as np
 from vamos.problem.registry import ProblemSelection
 
 
+class ExternalAlgorithmAdapter:
+    """
+    Thin adapter to standardize external baseline invocation.
+    """
+
+    def __init__(self, name: str, runner_fn):
+        self.name = name
+        self._runner_fn = runner_fn
+
+    def run(
+        self,
+        selection: ProblemSelection,
+        *,
+        use_native_problem: bool,
+        config,
+        make_metrics,
+        print_banner,
+        print_results,
+    ):
+        return self._runner_fn(
+            selection,
+            use_native_problem=use_native_problem,
+            config=config,
+            make_metrics=make_metrics,
+            print_banner=print_banner,
+            print_results=print_results,
+        )
+
+
 def _patch_permutation_swap_mutation_cls(base_cls, permutation_solution_cls, mutation_base_cls):
     """
     Ensure the provided swap mutation actually updates solutions.
@@ -519,6 +548,18 @@ EXTERNAL_ALGORITHM_RUNNERS = {
     "jmetalpy_perm_nsga2": _run_jmetalpy_perm_nsga2,
 }
 
+EXTERNAL_ALGORITHM_ADAPTERS = {
+    name: ExternalAlgorithmAdapter(name, fn) for name, fn in EXTERNAL_ALGORITHM_RUNNERS.items()
+}
+
+
+def resolve_external_algorithm(name: str) -> ExternalAlgorithmAdapter:
+    try:
+        return EXTERNAL_ALGORITHM_ADAPTERS[name]
+    except KeyError as exc:  # pragma: no cover - defensive guard
+        available = ", ".join(sorted(EXTERNAL_ALGORITHM_ADAPTERS))
+        raise ValueError(f"Unknown external algorithm '{name}'. Available: {available}") from exc
+
 
 def run_external(
     name: str,
@@ -530,9 +571,9 @@ def run_external(
     print_banner,
     print_results,
 ):
-    runner = EXTERNAL_ALGORITHM_RUNNERS[name]
+    adapter = resolve_external_algorithm(name)
     try:
-        return runner(
+        return adapter.run(
             selection,
             use_native_problem=use_native_problem,
             config=config,

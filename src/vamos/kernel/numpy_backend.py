@@ -1,3 +1,8 @@
+"""NumPy kernel backend.
+
+Performance-sensitive: keep operations vectorized and avoid Python loops where possible.
+Assumes F is float64 of shape (N, M), X is float64 of shape (N, n_var).
+"""
 from __future__ import annotations
 
 from typing import Iterable
@@ -11,6 +16,8 @@ from .backend import KernelBackend
 def _fast_non_dominated_sort(F: np.ndarray):
     """
     Classic O(N^2) fast non-dominated sort.
+    Args:
+        F: objective matrix (N, M), float64.
     Returns:
       - fronts: list of lists with indices per front (0, 1, ...)
       - rank: array with the front rank for each solution

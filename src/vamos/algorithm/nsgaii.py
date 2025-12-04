@@ -25,6 +25,7 @@ def _build_mating_pool(
         raise ValueError("parent_count must be positive.")
     if parent_count % group_size != 0:
         raise ValueError("parent_count must be divisible by group_size.")
+    assert ranks.shape == crowding.shape, "ranks and crowding must align"
     if selection_method == "random":
         parent_indices = rng.integers(0, ranks.size, size=parent_count)
     else:
@@ -72,6 +73,7 @@ class NSGAII:
         initializer_cfg = self.cfg.get("initializer")
         X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
         F = evaluate_population(problem, X)
+        assert X.shape[0] == F.shape[0], "Population and objectives must align"
         n_eval = X.shape[0]
         hv_tracker = HVTracker(hv_config, self.kernel)
         archive_size = self._resolve_archive_size()

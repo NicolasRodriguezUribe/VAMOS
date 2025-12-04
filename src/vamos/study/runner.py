@@ -9,8 +9,10 @@ from typing import Iterable, List, Sequence
 import numpy as np
 
 from vamos.algorithm.hypervolume import hypervolume
+from vamos.experiment_config import ExperimentConfig
+from vamos.hv_stop import compute_hv_reference
 from vamos.problem.registry import ProblemSelection, make_problem_selection
-from vamos.runner import ExperimentConfig, compute_hv_reference, run_single
+from vamos.runner import run_single
 
 
 @dataclass(frozen=True)
