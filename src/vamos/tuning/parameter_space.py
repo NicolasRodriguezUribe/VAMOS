@@ -170,7 +170,7 @@ class AlgorithmConfigSpace:
 
     @classmethod
     def from_template(cls, algorithm: str, template_name: str) -> "AlgorithmConfigSpace":
-        from vamos.algorithm.config import MOEADConfig, NSGAIIConfig, NSGAIIIConfig
+        from vamos.algorithm.config import MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SPEA2Config, IBEAConfig, SMPSOConfig
 
         template = template_name.lower()
         algo = algorithm.lower()
@@ -252,6 +252,79 @@ class AlgorithmConfigSpace:
             }
             fixed = {"engine": "numpy"}
             return cls(NSGAIIIConfig, params, fixed, template_name=template)
+
+        if algo == "spea2":
+            params = {
+                "pop_size": ParameterDefinition(Integer(50, 300)),
+                "archive_size": ParameterDefinition(Integer(50, 300)),
+                "crossover": ParameterDefinition(
+                    Categorical(["sbx"]),
+                    sub_parameters={
+                        "prob": ParameterDefinition(Double(0.7, 1.0)),
+                        "eta": ParameterDefinition(Double(5.0, 40.0)),
+                    },
+                ),
+                "mutation": ParameterDefinition(
+                    Categorical(["pm"]),
+                    sub_parameters={
+                        "prob": ParameterDefinition(Double(0.01, 0.5)),
+                        "eta": ParameterDefinition(Double(5.0, 40.0)),
+                    },
+                ),
+                "selection": ParameterDefinition(
+                    Categorical(["tournament"]),
+                    sub_parameters={"pressure": ParameterDefinition(CategoricalInteger([2, 3, 4]))},
+                ),
+                "k_neighbors": ParameterDefinition(Integer(1, 25)),
+            }
+            fixed = {"engine": "numpy"}
+            return cls(SPEA2Config, params, fixed, template_name=template)
+
+        if algo == "ibea":
+            params = {
+                "pop_size": ParameterDefinition(Integer(50, 300)),
+                "crossover": ParameterDefinition(
+                    Categorical(["sbx"]),
+                    sub_parameters={
+                        "prob": ParameterDefinition(Double(0.7, 1.0)),
+                        "eta": ParameterDefinition(Double(5.0, 40.0)),
+                    },
+                ),
+                "mutation": ParameterDefinition(
+                    Categorical(["pm"]),
+                    sub_parameters={
+                        "prob": ParameterDefinition(Double(0.01, 0.5)),
+                        "eta": ParameterDefinition(Double(5.0, 40.0)),
+                    },
+                ),
+                "selection": ParameterDefinition(
+                    Categorical(["tournament"]),
+                    sub_parameters={"pressure": ParameterDefinition(CategoricalInteger([2, 3, 4]))},
+                ),
+                "indicator": ParameterDefinition(Categorical(["eps", "hypervolume"])),
+                "kappa": ParameterDefinition(Double(0.01, 0.2)),
+            }
+            fixed = {"engine": "numpy"}
+            return cls(IBEAConfig, params, fixed, template_name=template)
+
+        if algo == "smpso":
+            params = {
+                "pop_size": ParameterDefinition(Integer(50, 300)),
+                "archive_size": ParameterDefinition(Integer(50, 300)),
+                "inertia": ParameterDefinition(Double(0.1, 0.9)),
+                "c1": ParameterDefinition(Double(0.5, 2.5)),
+                "c2": ParameterDefinition(Double(0.5, 2.5)),
+                "vmax_fraction": ParameterDefinition(Double(0.1, 1.0)),
+                "mutation": ParameterDefinition(
+                    Categorical(["pm"]),
+                    sub_parameters={
+                        "prob": ParameterDefinition(Double(0.01, 0.5)),
+                        "eta": ParameterDefinition(Double(5.0, 40.0)),
+                    },
+                ),
+            }
+            fixed = {"engine": "numpy"}
+            return cls(SMPSOConfig, params, fixed, template_name=template)
 
         raise ValueError(f"Unsupported template '{template_name}' for algorithm '{algorithm}'.")
 

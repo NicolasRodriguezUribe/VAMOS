@@ -21,6 +21,15 @@ from .racing import RacingTuner, ConfigState, EliteEntry
 from .sampler import Sampler, UniformSampler, ModelBasedSampler
 from .io import filter_active_config, history_to_dict, save_history_json, save_history_csv
 from .nsgaii import build_nsgaii_config_space
+from .bridge import (
+    build_spea2_config_space,
+    build_ibea_config_space,
+    build_smpso_config_space,
+    build_moead_config_space,
+    build_nsga3_config_space,
+    build_smsemoa_config_space,
+    config_from_assignment,
+)
 from .validation import (
     BenchmarkSuite,
     ConfigSpec,
@@ -201,4 +210,11 @@ __all__ = [
     "history_to_dict",
     "save_history_json",
     "save_history_csv",
+    "build_spea2_config_space",
+    "build_ibea_config_space",
+    "build_smpso_config_space",
+    "build_moead_config_space",
+    "build_nsga3_config_space",
+    "build_smsemoa_config_space",
+    "config_from_assignment",
 ]

@@ -551,4 +551,7 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         parser.error("--hv-reference-front requires --hv-threshold to be set.")
 
     args.nsgaii_variation = collect_nsgaii_variation_args(args)
+    args.spea2_variation = experiment_defaults.get("spea2", {})
+    args.ibea_variation = experiment_defaults.get("ibea", {})
+    args.smpso_variation = experiment_defaults.get("smpso", {})
     return args

@@ -59,3 +59,37 @@ def test_cli_with_config_file_creates_artifacts(monkeypatch, tmp_path):
     assert resolved["engine"] == "numpy"
     assert resolved["problem"] == "zdt1"
     assert resolved["seed"] == 5
+
+
+def test_cli_runs_spea2_from_config(monkeypatch, tmp_path):
+    output_root = tmp_path / "results"
+    config_file = tmp_path / "spea2_spec.json"
+    spec = {
+        "defaults": {
+            "algorithm": "spea2",
+            "engine": "numpy",
+            "population_size": 8,
+            "max_evaluations": 16,
+            "output_root": str(output_root),
+            "spea2": {"crossover": {"method": "sbx", "prob": 0.9, "eta": 15.0}},
+        },
+        "problems": {"zdt1": {"seed": 2}},
+    }
+    config_file.write_text(json.dumps(spec), encoding="utf-8")
+
+    monkeypatch.setenv("PYTHONHASHSEED", "0")
+    monkeypatch.setattr(runner.plotting, "plot_pareto_front", lambda *args, **kwargs: None)
+
+    argv = ["prog", "--config", str(config_file)]
+    monkeypatch.setattr(sys, "argv", argv)
+
+    from vamos.main import main
+
+    main()
+
+    run_dir = output_root / "ZDT1" / "spea2" / "numpy" / "seed_2"
+    fun_path = run_dir / "FUN.csv"
+    archive_path = run_dir / "ARCHIVE_FUN.csv"
+
+    assert fun_path.exists()
+    assert archive_path.exists()

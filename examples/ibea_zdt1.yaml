@@ -1,0 +1,13 @@
+defaults:
+  algorithm: ibea
+  engine: numpy
+  population_size: 40
+  max_evaluations: 200
+  ibea:
+    indicator: eps
+    kappa: 0.05
+    crossover: {method: sbx, prob: 0.9, eta: 20}
+    mutation: {method: pm, prob: "1/n", eta: 20}
+problems:
+  zdt1:
+    seed: 2

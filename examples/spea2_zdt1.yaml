@@ -1,0 +1,12 @@
+defaults:
+  algorithm: spea2
+  engine: numpy
+  population_size: 40
+  max_evaluations: 200
+  spea2:
+    archive_size: 40
+    crossover: {method: sbx, prob: 0.9, eta: 20}
+    mutation: {method: pm, prob: "1/n", eta: 20}
+problems:
+  zdt1:
+    seed: 1

@@ -1,0 +1,15 @@
+defaults:
+  algorithm: smpso
+  engine: numpy
+  population_size: 40
+  max_evaluations: 200
+  smpso:
+    archive_size: 40
+    inertia: 0.5
+    c1: 1.5
+    c2: 1.5
+    vmax_fraction: 0.5
+    mutation: {method: pm, prob: "1/n", eta: 20}
+problems:
+  zdt1:
+    seed: 3

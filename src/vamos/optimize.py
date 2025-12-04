@@ -3,8 +3,11 @@ from __future__ import annotations
 from dataclasses import asdict, is_dataclass
 from typing import Any, Mapping, Tuple
 
-from vamos.algorithm.config import NSGAIIConfigData
+from vamos.algorithm.config import NSGAIIConfigData, SPEA2ConfigData, IBEAConfigData, SMPSOConfigData
 from vamos.algorithm.nsgaii import NSGAII
+from vamos.algorithm.spea2 import SPEA2
+from vamos.algorithm.ibea import IBEA
+from vamos.algorithm.smpso import SMPSO
 from vamos.kernel.numpy_backend import NumPyKernel
 from vamos.kernel.registry import resolve_kernel
 from vamos.problem.types import ProblemProtocol
@@ -47,8 +50,14 @@ def optimize(
 
     if isinstance(config, NSGAIIConfigData) or cfg_dict.get("survival") == "nsga2":
         algorithm = NSGAII(cfg_dict, kernel=kernel)
+    elif isinstance(config, SPEA2ConfigData) or cfg_dict.get("k_neighbors") is not None:
+        algorithm = SPEA2(cfg_dict, kernel=kernel)
+    elif isinstance(config, IBEAConfigData) or cfg_dict.get("indicator") is not None:
+        algorithm = IBEA(cfg_dict, kernel=kernel)
+    elif isinstance(config, SMPSOConfigData) or any(key in cfg_dict for key in ("inertia", "c1", "c2")):
+        algorithm = SMPSO(cfg_dict, kernel=kernel)
     else:
-        raise ValueError("optimize() currently supports NSGA-II configurations only.")
+        raise ValueError("optimize() currently supports NSGA-II, SPEA2, IBEA, and SMPSO configurations.")
 
     result = algorithm.run(problem, termination=termination, seed=seed)
     return OptimizationResult(result)

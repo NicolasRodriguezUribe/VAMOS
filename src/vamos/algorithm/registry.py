@@ -13,6 +13,9 @@ from .nsgaii import NSGAII
 from .nsga3 import NSGAIII
 from .moead import MOEAD
 from .smsemoa import SMSEMOA
+from .spea2 import SPEA2
+from .ibea import IBEA
+from .smpso import SMPSO
 
 AlgorithmBuilder = Callable[[dict, object], object]
 
@@ -21,6 +24,9 @@ ALGORITHMS: Dict[str, AlgorithmBuilder] = {
     "nsga3": lambda cfg, kernel: NSGAIII(cfg, kernel=kernel),
     "moead": lambda cfg, kernel: MOEAD(cfg, kernel=kernel),
     "smsemoa": lambda cfg, kernel: SMSEMOA(cfg, kernel=kernel),
+    "spea2": lambda cfg, kernel: SPEA2(cfg, kernel=kernel),
+    "ibea": lambda cfg, kernel: IBEA(cfg, kernel=kernel),
+    "smpso": lambda cfg, kernel: SMPSO(cfg, kernel=kernel),
 }
 
 
