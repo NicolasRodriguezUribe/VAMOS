@@ -2,13 +2,19 @@
 import numpy as np
 
 from vamos.algorithm.archive import CrowdingDistanceArchive, HypervolumeArchive, _single_front_crowding
-from vamos.algorithm.population import evaluate_population, initialize_population, resolve_bounds
+from vamos.algorithm.population import (
+    evaluate_population,
+    evaluate_population_with_constraints,
+    initialize_population,
+    resolve_bounds,
+)
 from vamos.algorithm.termination import HVTracker
 from vamos.algorithm.variation import (
     VariationPipeline,
     prepare_mutation_params,
 )
 from vamos.operators.real import VariationWorkspace
+from vamos.constraints.utils import compute_violation, is_feasible
 
 
 def _build_mating_pool(
@@ -36,6 +42,41 @@ def _build_mating_pool(
         raise ValueError("Selection operator returned an unexpected number of parents.")
     return parent_indices.reshape(parent_count // group_size, group_size)
 
+
+def _feasible_nsga2_survival(kernel, X, F, G, X_off, F_off, G_off, pop_size):
+    """
+    Feasibility rule:
+      - Feasible dominate infeasible.
+      - Among feasible: standard NSGA-II rank/crowding.
+      - Among infeasible: lower sum violation wins.
+    """
+    X_comb = np.vstack([X, X_off])
+    F_comb = np.vstack([F, F_off])
+    G_comb = np.vstack([G, G_off]) if G is not None and G_off is not None else None
+    if G_comb is None:
+        X_sel, F_sel = kernel.nsga2_survival(X, F, X_off, F_off, pop_size)
+        return X_sel, F_sel, None
+
+    feas = is_feasible(G_comb)
+    cv = compute_violation(G_comb)
+    selected = []
+
+    if feas.any():
+        feas_idx = np.nonzero(feas)[0]
+        ranks, crowd = kernel.nsga2_ranking(F_comb[feas_idx])
+        # Order feasible by rank then crowding
+        order = np.lexsort((-crowd, ranks))
+        feas_ordered = feas_idx[order]
+        selected.extend(feas_ordered.tolist())
+
+    if len(selected) < pop_size:
+        infeas_idx = np.nonzero(~feas)[0]
+        if infeas_idx.size:
+            order_infeas = infeas_idx[np.argsort(cv[infeas_idx])]
+            selected.extend(order_infeas.tolist())
+
+    selected = selected[:pop_size]
+    return X_comb[selected], F_comb[selected], G_comb[selected]
 
 
 class NSGAII:
@@ -72,7 +113,12 @@ class NSGAII:
 
         initializer_cfg = self.cfg.get("initializer")
         X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
-        F = evaluate_population(problem, X)
+        constraint_mode = self.cfg.get("constraint_mode", "none")
+        if constraint_mode and constraint_mode != "none":
+            F, G = evaluate_population_with_constraints(problem, X)
+        else:
+            F = evaluate_population(problem, X)
+            G = None
         assert X.shape[0] == F.shape[0], "Population and objectives must align"
         n_eval = X.shape[0]
         hv_tracker = HVTracker(hv_config, self.kernel)
@@ -139,6 +185,20 @@ class NSGAII:
 
         while n_eval < max_eval and not hv_reached:
             ranks, crowding = self.kernel.nsga2_ranking(F)
+            if G is not None and constraint_mode != "none":
+                cv = compute_violation(G)
+                feas = is_feasible(G)
+                if feas.any():
+                    feas_idx = np.nonzero(feas)[0]
+                    feas_ranks, feas_crowd = self.kernel.nsga2_ranking(F[feas_idx])
+                    ranks = np.full(F.shape[0], feas_ranks.max(initial=0) + 1, dtype=int)
+                    crowding = np.zeros(F.shape[0], dtype=float)
+                    ranks[feas_idx] = feas_ranks
+                    crowding[feas_idx] = feas_crowd
+                    crowding[~feas] = -cv[~feas]
+                else:
+                    ranks = np.zeros(F.shape[0], dtype=int)
+                    crowding = -cv
             parents_per_group = variation.parents_per_group
             children_per_group = variation.children_per_group
             parent_count = int(np.ceil(offspring_size / children_per_group) * parents_per_group)
@@ -152,10 +212,20 @@ class NSGAII:
             if X_off.shape[0] > offspring_size:
                 X_off = X_off[:offspring_size]
 
-            F_off = evaluate_population(problem, X_off)
+            if G is not None and constraint_mode != "none":
+                F_off, G_off = evaluate_population_with_constraints(problem, X_off)
+            else:
+                F_off = evaluate_population(problem, X_off)
+                G_off = None
             n_eval += X_off.shape[0]
 
-            X, F = self.kernel.nsga2_survival(X, F, X_off, F_off, pop_size)
+            if G is None or constraint_mode == "none":
+                X, F = self.kernel.nsga2_survival(X, F, X_off, F_off, pop_size)
+                G = None
+            else:
+                X, F, G = _feasible_nsga2_survival(
+                    self.kernel, X, F, G, X_off, F_off, G_off, pop_size
+                )
             if result_archive is not None:
                 result_archive.update(X, F)
             if archive_size:
@@ -170,6 +240,8 @@ class NSGAII:
                 break
 
         result = {"X": X, "F": F, "evaluations": n_eval, "hv_reached": hv_reached}
+        if G is not None:
+            result["G"] = G
         if result_archive is not None:
             arch_X, arch_F = result_archive.contents()
             result["archive"] = {"X": arch_X, "F": arch_F}

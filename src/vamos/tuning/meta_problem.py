@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Iterable, List, Sequence
 import numpy as np
 
 from vamos.algorithm.hypervolume import hypervolume
+from vamos.analysis.objective_reduction import ObjectiveReductionSpec, reduce_objectives
 from vamos.tuning.parameter_space import AlgorithmConfigSpace
 
 
@@ -27,6 +28,7 @@ class MetaOptimizationProblem:
         engine: str,
         meta_rng: np.random.Generator,
         optimize_fn: Callable[..., Any] | None = None,
+        objective_reduction: ObjectiveReductionSpec | None = None,
         *,
         min_runs_per_problem: int | None = None,
         max_runs_per_problem: int | None = None,
@@ -50,6 +52,7 @@ class MetaOptimizationProblem:
         self.engine = engine
         self.meta_rng = meta_rng
         self._optimize = optimize_fn or self._import_optimize()
+        self.objective_reduction = objective_reduction
         self.min_runs_per_problem = int(min_runs_per_problem or 1)
         if self.min_runs_per_problem <= 0:
             raise ValueError("min_runs_per_problem must be positive.")
@@ -101,6 +104,16 @@ class MetaOptimizationProblem:
                 if F.ndim == 1:
                     F = F.reshape(-1, 1)
                 nd_F = self._filter_nondominated(F)
+                ref = self.ref_fronts[p_idx]
+                if self.objective_reduction is not None and nd_F.shape[1] > self.objective_reduction.target_dim:
+                    nd_F, selected = reduce_objectives(
+                        nd_F,
+                        target_dim=self.objective_reduction.target_dim,
+                        method=self.objective_reduction.method,
+                        mandatory_keep=self.objective_reduction.mandatory_keep,
+                    )
+                    if ref is not None:
+                        ref = ref[:, selected]
                 quality = self._scalar_quality(nd_F, p_idx)
                 run_scores.append(quality)
                 run_times.append(elapsed)

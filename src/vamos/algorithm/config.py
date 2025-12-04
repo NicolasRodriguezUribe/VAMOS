@@ -30,6 +30,7 @@ class NSGAIIConfigData(_SerializableConfig):
     mutation_prob_factor: Optional[float] = None
     result_mode: Optional[str] = None
     archive_type: Optional[str] = None
+    constraint_mode: str = "feasibility"
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,7 @@ class MOEADConfigData(_SerializableConfig):
     aggregation: Tuple[str, Dict[str, Any]]
     weight_vectors: Dict[str, Optional[int | str]] | None
     engine: str
+    constraint_mode: str = "feasibility"
 
 
 @dataclass(frozen=True)
@@ -151,6 +153,13 @@ class NSGAIIConfig:
         self._cfg["archive"] = {"size": int(size)}
         return self
 
+    def constraint_mode(self, value: str) -> "NSGAIIConfig":
+        """
+        Set constraint handling mode: 'feasibility' or 'none'/'penalty'.
+        """
+        self._cfg["constraint_mode"] = value
+        return self
+
     def fixed(self) -> NSGAIIConfigData:
         _require_fields(
             self._cfg,
@@ -172,6 +181,7 @@ class NSGAIIConfig:
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             result_mode=self._cfg.get("result_mode"),
             archive_type=self._cfg.get("archive_type"),
+            constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
         )
 
 
@@ -222,6 +232,13 @@ class MOEADConfig:
         self._cfg["engine"] = value
         return self
 
+    def constraint_mode(self, value: str) -> "MOEADConfig":
+        """
+        Set constraint handling mode: 'feasibility' or 'penalty'.
+        """
+        self._cfg["constraint_mode"] = value
+        return self
+
     def fixed(self) -> MOEADConfigData:
         _require_fields(
             self._cfg,
@@ -247,6 +264,7 @@ class MOEADConfig:
             aggregation=self._cfg["aggregation"],
             weight_vectors=self._cfg.get("weight_vectors"),
             engine=self._cfg["engine"],
+            constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
         )
 
 
