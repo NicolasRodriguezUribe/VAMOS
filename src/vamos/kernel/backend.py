@@ -10,6 +10,7 @@ class KernelBackend(ABC):
     """
     Interface for all kernel backends used by the evolutionary algorithms.
     Backends implement heavy numeric primitives on vectorized populations.
+    Performance-sensitive: implementations should be vectorized/SoA and avoid Python loops.
     """
 
     # -------- Computation device / capability metadata --------

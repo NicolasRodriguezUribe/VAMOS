@@ -37,6 +37,7 @@ ProblemFactory = Callable[[int, Optional[int]], object]
 
 @dataclass(frozen=True)
 class ProblemSpec:
+    """Metadata and factory for a benchmark problem."""
     key: str
     label: str
     default_n_var: int
@@ -73,6 +74,7 @@ class ProblemSpec:
 
 @dataclass(frozen=True)
 class ProblemSelection:
+    """Concrete problem instance choice with resolved dimensions."""
     spec: ProblemSpec
     n_var: int
     n_obj: int

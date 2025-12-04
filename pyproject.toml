@@ -39,6 +39,23 @@ notebooks = [
 
 [project.scripts]
 vamos = "vamos.main:main"
+vamos-self-check = "vamos.self_check:main"
+
+[tool.mypy]
+python_version = "3.11"
+plugins = []
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+show_error_codes = true
+pretty = true
+exclude = ["build/", "dist/"]
+
+[tool.mypy.vamos.problem.*]
+strict = true
+
+[tool.mypy.vamos.algorithm.config]
+strict = true
 
 [tool.setuptools]
 package-dir = {"" = "src"}

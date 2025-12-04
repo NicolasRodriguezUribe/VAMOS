@@ -1,0 +1,61 @@
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from vamos import runner
+
+
+def test_cli_with_config_file_creates_artifacts(monkeypatch, tmp_path):
+    output_root = tmp_path / "results"
+    config_file = tmp_path / "spec.json"
+    # Minimal config file exercising algorithm/engine/output_root overrides
+    spec = {
+        "defaults": {
+            "algorithm": "nsgaii",
+            "engine": "numpy",
+            "population_size": 10,
+            "max_evaluations": 30,
+            "output_root": str(output_root),
+            "nsgaii": {"crossover": {"method": "sbx", "prob": 0.9, "eta": 15.0}},
+        },
+        "problems": {"zdt1": {"seed": 5}},
+    }
+    config_file.write_text(json.dumps(spec), encoding="utf-8")
+
+    monkeypatch.setenv("VAMOS_OUTPUT_ROOT", str(output_root))
+    monkeypatch.setenv("PYTHONHASHSEED", "0")
+    # Avoid plotting during tests
+    monkeypatch.setattr(runner.plotting, "plot_pareto_front", lambda *args, **kwargs: None)
+
+    argv = ["prog", "--config", str(config_file)]
+    monkeypatch.setattr(sys, "argv", argv)
+
+    from vamos.main import main
+
+    main()
+
+    run_dir = output_root / "ZDT1" / "nsgaii" / "numpy" / "seed_5"
+    fun_path = run_dir / "FUN.csv"
+    meta_path = run_dir / "metadata.json"
+    resolved_path = run_dir / "resolved_config.json"
+
+    assert fun_path.exists(), "FUN.csv not created"
+    assert meta_path.exists(), "metadata.json not created"
+    assert resolved_path.exists(), "resolved_config.json not created"
+
+    fun = np.loadtxt(fun_path, delimiter=",")
+    assert fun.shape[0] > 0
+
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    resolved = json.loads(resolved_path.read_text(encoding="utf-8"))
+    assert meta["algorithm"] == "nsgaii"
+    assert meta["backend"] == "numpy"
+    assert meta["seed"] == 5
+    assert meta["problem"]["key"] == "zdt1"
+    assert resolved["algorithm"] == "nsgaii"
+    assert resolved["engine"] == "numpy"
+    assert resolved["problem"] == "zdt1"
+    assert resolved["seed"] == 5

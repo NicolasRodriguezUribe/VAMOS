@@ -6,6 +6,8 @@ from typing import Any, Dict, Optional, Tuple
 
 
 class _SerializableConfig:
+    """Mixin to serialize dataclass configs."""
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
@@ -73,58 +75,59 @@ def _require_fields(cfg: Dict[str, Any], fields: Tuple[str, ...], name: str) -> 
 class NSGAIIConfig:
     """
     Declarative configuration holder for NSGA-II.
+    Provides a fluent builder that yields an immutable NSGAIIConfigData.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
 
-    def pop_size(self, value: int):
+    def pop_size(self, value: int) -> "NSGAIIConfig":
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs):
+    def crossover(self, method: str, **kwargs) -> "NSGAIIConfig":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs):
+    def mutation(self, method: str, **kwargs) -> "NSGAIIConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def offspring_size(self, value: int):
+    def offspring_size(self, value: int) -> "NSGAIIConfig":
         if value <= 0:
             raise ValueError("offspring size must be positive.")
         self._cfg["offspring_size"] = value
         return self
 
-    def repair(self, method: str, **kwargs):
+    def repair(self, method: str, **kwargs) -> "NSGAIIConfig":
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs):
+    def selection(self, method: str, **kwargs) -> "NSGAIIConfig":
         self._cfg["selection"] = (method, kwargs)
         return self
 
-    def survival(self, method: str):
+    def survival(self, method: str) -> "NSGAIIConfig":
         self._cfg["survival"] = method
         return self
 
-    def engine(self, value: str):
+    def engine(self, value: str) -> "NSGAIIConfig":
         self._cfg["engine"] = value
         return self
 
-    def initializer(self, method: str, **kwargs):
+    def initializer(self, method: str, **kwargs) -> "NSGAIIConfig":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def mutation_prob_factor(self, value: float):
+    def mutation_prob_factor(self, value: float) -> "NSGAIIConfig":
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def result_mode(self, value: str):
+    def result_mode(self, value: str) -> "NSGAIIConfig":
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(self, *, size: int, archive_type: str = "hypervolume"):
+    def external_archive(self, *, size: int, archive_type: str = "hypervolume") -> "NSGAIIConfig":
         if size <= 0:
             raise ValueError("external archive size must be positive.")
         self._cfg["external_archive"] = {"size": int(size)}
@@ -132,12 +135,12 @@ class NSGAIIConfig:
         self._cfg["archive_type"] = archive_type
         return self
 
-    def archive_type(self, value: str):
+    def archive_type(self, value: str) -> "NSGAIIConfig":
         """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
         self._cfg["archive_type"] = str(value)
         return self
 
-    def archive(self, size: int):
+    def archive(self, size: int) -> "NSGAIIConfig":
         """
         Convenience alias to configure an external archive by size.
         A size <= 0 disables the archive.
@@ -178,44 +181,44 @@ class MOEADConfig:
     Mirrors NSGA-II builder style so both algorithms can share patterns.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
 
-    def pop_size(self, value: int):
+    def pop_size(self, value: int) -> "MOEADConfig":
         self._cfg["pop_size"] = value
         return self
 
-    def neighbor_size(self, value: int):
+    def neighbor_size(self, value: int) -> "MOEADConfig":
         self._cfg["neighbor_size"] = value
         return self
 
-    def delta(self, value: float):
+    def delta(self, value: float) -> "MOEADConfig":
         self._cfg["delta"] = value
         return self
 
-    def replace_limit(self, value: int):
+    def replace_limit(self, value: int) -> "MOEADConfig":
         self._cfg["replace_limit"] = value
         return self
 
-    def crossover(self, method: str, **kwargs):
+    def crossover(self, method: str, **kwargs) -> "MOEADConfig":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs):
+    def mutation(self, method: str, **kwargs) -> "MOEADConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def aggregation(self, method: str, **kwargs):
+    def aggregation(self, method: str, **kwargs) -> "MOEADConfig":
         self._cfg["aggregation"] = (method, kwargs)
         return self
 
     def weight_vectors(
         self, *, path: Optional[str] = None, divisions: Optional[int] = None
-    ):
+    ) -> "MOEADConfig":
         self._cfg["weight_vectors"] = {"path": path, "divisions": divisions}
         return self
 
-    def engine(self, value: str):
+    def engine(self, value: str) -> "MOEADConfig":
         self._cfg["engine"] = value
         return self
 
@@ -252,22 +255,22 @@ class SMSEMOAConfig:
     Declarative configuration holder for SMS-EMOA settings.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
 
-    def pop_size(self, value: int):
+    def pop_size(self, value: int) -> "SMSEMOAConfig":
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs):
+    def crossover(self, method: str, **kwargs) -> "SMSEMOAConfig":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs):
+    def mutation(self, method: str, **kwargs) -> "SMSEMOAConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs):
+    def selection(self, method: str, **kwargs) -> "SMSEMOAConfig":
         self._cfg["selection"] = (method, kwargs)
         return self
 
@@ -277,7 +280,7 @@ class SMSEMOAConfig:
         vector=None,
         offset: float = 0.1,
         adaptive: bool = True,
-    ):
+    ) -> "SMSEMOAConfig":
         self._cfg["reference_point"] = {
             "vector": vector,
             "offset": offset,
@@ -285,7 +288,7 @@ class SMSEMOAConfig:
         }
         return self
 
-    def engine(self, value: str):
+    def engine(self, value: str) -> "SMSEMOAConfig":
         self._cfg["engine"] = value
         return self
 
@@ -311,22 +314,22 @@ class NSGAIIIConfig:
     Declarative configuration holder for NSGA-III settings.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
 
-    def pop_size(self, value: int):
+    def pop_size(self, value: int) -> "NSGAIIIConfig":
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs):
+    def crossover(self, method: str, **kwargs) -> "NSGAIIIConfig":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs):
+    def mutation(self, method: str, **kwargs) -> "NSGAIIIConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs):
+    def selection(self, method: str, **kwargs) -> "NSGAIIIConfig":
         self._cfg["selection"] = (method, kwargs)
         return self
 
@@ -335,11 +338,11 @@ class NSGAIIIConfig:
         *,
         path: Optional[str] = None,
         divisions: Optional[int] = None,
-    ):
+    ) -> "NSGAIIIConfig":
         self._cfg["reference_directions"] = {"path": path, "divisions": divisions}
         return self
 
-    def engine(self, value: str):
+    def engine(self, value: str) -> "NSGAIIIConfig":
         self._cfg["engine"] = value
         return self
 
