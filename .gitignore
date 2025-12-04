@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+*.egg-info/
 results/
 results_autonsga/
 notebooks/results/
