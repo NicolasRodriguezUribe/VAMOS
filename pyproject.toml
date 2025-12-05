@@ -30,6 +30,7 @@ dev = [
   "pytest>=7.0",
   "black>=23.0",
   "ruff>=0.1.5",
+  "pandas>=1.5",
 ]
 notebooks = [
   "pandas>=1.5",
@@ -48,6 +49,7 @@ examples = [
 [project.scripts]
 vamos = "vamos.main:main"
 vamos-self-check = "vamos.self_check:main"
+vamos-benchmark = "vamos.benchmark.cli:main"
 
 [tool.mypy]
 python_version = "3.11"
