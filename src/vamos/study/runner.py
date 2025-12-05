@@ -13,6 +13,8 @@ from vamos.experiment_config import ExperimentConfig
 from vamos.hv_stop import compute_hv_reference
 from vamos.problem.registry import ProblemSelection, make_problem_selection
 from vamos.runner import run_single
+from vamos.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
+from vamos.kernel.numpy_backend import _fast_non_dominated_sort
 
 
 @dataclass(frozen=True)
@@ -41,7 +43,7 @@ class StudyResult:
         hv_ref_str = (
             " ".join(f"{val:.6f}" for val in hv_ref) if isinstance(hv_ref, np.ndarray) else ""
         )
-        return {
+        row = {
             "problem": self.selection.spec.key,
             "problem_label": self.selection.spec.label,
             "n_var": self.selection.n_var,
@@ -60,6 +62,9 @@ class StudyResult:
             "backend_capabilities": ",".join(self.metrics.get("backend_capabilities", [])),
             "output_dir": self.metrics.get("output_dir"),
         }
+        for name, value in (self.metrics.get("indicator_values") or {}).items():
+            row[f"indicator_{name}"] = value
+        return row
 
 
 class StudyRunner:
@@ -72,10 +77,12 @@ class StudyRunner:
         *,
         verbose: bool = True,
         mirror_output_roots: Sequence[str | Path] | None = ("results",),
+        indicators: Sequence[str] | None = ("hv",),
     ):
         self.verbose = verbose
         roots = mirror_output_roots or ()
         self._mirror_roots = tuple(Path(root) for root in roots)
+        self.indicators = tuple(indicators or ())
 
     def run(
         self,
@@ -107,6 +114,7 @@ class StudyRunner:
             results.append(StudyResult(task=task, selection=selection, metrics=metrics))
 
         self._attach_hypervolume(results)
+        self._attach_indicators(results)
         if export_csv_path is not None:
             self.export_csv(results, export_csv_path)
         return results
@@ -127,13 +135,59 @@ class StudyRunner:
             metrics["hv_source"] = hv_source
             metrics["hv_reference"] = hv_ref_point
 
+    @staticmethod
+    def _nondominated_union(fronts: list[np.ndarray]) -> np.ndarray:
+        if not fronts:
+            return np.empty((0, 0))
+        F = np.vstack(fronts)
+        if F.size == 0:
+            return F
+        fronts_idx, _ = _fast_non_dominated_sort(F)
+        if not fronts_idx:
+            return F
+        first = fronts_idx[0]
+        return F[first] if first else F
+
+    def _attach_indicators(self, results: Iterable[StudyResult]) -> None:
+        if not self.indicators:
+            return
+        if not has_moocore():
+            if self.verbose:
+                print("[Study] MooCore not available; skipping indicator computation.")
+            return
+        fronts = [res.metrics["F"] for res in results]
+        ref_front = self._nondominated_union(fronts)
+        hv_ref_point = compute_hv_reference(fronts)
+        for res in results:
+            vals = {}
+            for name in self.indicators:
+                try:
+                    if name in {"hv", "hypervolume"}:
+                        indicator = HVIndicator(reference_point=hv_ref_point)
+                        vals[name] = indicator.compute(res.metrics["F"]).value
+                    elif name in {"igd", "igd+", "igd_plus", "epsilon_additive", "epsilon_mult", "avg_hausdorff"}:
+                        indicator = get_indicator(name, reference_front=ref_front)
+                        vals[name] = indicator.compute(res.metrics["F"]).value
+                    else:
+                        indicator = get_indicator(name)
+                        vals[name] = indicator.compute(res.metrics["F"]).value
+                except Exception as exc:
+                    if self.verbose:
+                        print(f"[Study] indicator '{name}' failed: {exc}")
+                    vals[name] = None
+            res.metrics["indicator_values"] = vals
+
     def export_csv(self, results: Iterable[StudyResult], path: str | Path) -> Path:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         rows = [res.to_row() for res in results]
         if not rows:
             return path
-        fieldnames = list(rows[0].keys())
+        fieldnames: list[str] = []
+        for row in rows:
+            for key in row.keys():
+                if key not in fieldnames:
+                    fieldnames.append(key)
         with path.open("w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=fieldnames)
             writer.writeheader()
