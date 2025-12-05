@@ -11,6 +11,7 @@ from vamos.algorithm.variation import (
 from vamos.operators.real import VariationWorkspace
 from vamos.constraints.utils import compute_violation, is_feasible
 from vamos.eval.backends import SerialEvalBackend
+from vamos.live_viz import LiveVisualization, NoOpLiveVisualization
 
 
 def _build_mating_pool(
@@ -85,7 +86,7 @@ class NSGAII:
         self.cfg = config
         self.kernel = kernel
 
-    def run(self, problem, termination, seed: int, eval_backend=None):
+    def run(self, problem, termination, seed: int, eval_backend=None, live_viz: LiveVisualization | None = None):
         term_type, term_val = termination
         hv_config = None
         if term_type == "n_eval":
@@ -100,6 +101,7 @@ class NSGAII:
 
         if eval_backend is None:
             eval_backend = SerialEvalBackend()
+        live_cb = live_viz or NoOpLiveVisualization()
         rng = np.random.default_rng(seed)
         pop_size = int(self.cfg["pop_size"])
         offspring_size = int(self.cfg.get("offspring_size") or pop_size)
@@ -117,6 +119,7 @@ class NSGAII:
         G = eval_result.G if constraint_mode != "none" else None
         assert X.shape[0] == F.shape[0], "Population and objectives must align"
         n_eval = X.shape[0]
+        live_cb.on_start(problem=problem, algorithm=self, config=self.cfg)
         hv_tracker = HVTracker(hv_config, self.kernel)
         archive_size = self._resolve_archive_size()
         archive_X = archive_F = None
@@ -202,6 +205,8 @@ class NSGAII:
             else self._state["F"]
         )
         hv_reached = hv_tracker.enabled and hv_tracker.reached(self._state["hv_points_fn"]())
+        generation = 0
+        live_cb.on_generation(generation, F=self._state["F"])
 
         while n_eval < max_eval and not hv_reached:
             X_off = self.ask()
@@ -217,6 +222,13 @@ class NSGAII:
             if hv_tracker.enabled and hv_tracker.reached(hv_points_fn()):
                 hv_reached = True
                 break
+            generation += 1
+            try:
+                ranks, _ = self.kernel.nsga2_ranking(F)
+                nd_mask = ranks == ranks.min(initial=0)
+                live_cb.on_generation(generation, F=F[nd_mask])
+            except Exception:
+                live_cb.on_generation(generation, F=F)
 
         result = {"X": self._state["X"], "F": self._state["F"], "evaluations": n_eval, "hv_reached": hv_reached}
         if G is not None:
@@ -234,6 +246,7 @@ class NSGAII:
                 result["archive"] = {"X": final_X, "F": final_F}
             elif archive_via_kernel:
                 result["archive"] = {"X": archive_X, "F": archive_F}
+        live_cb.on_end(final_F=self._state["F"])
         return result
 
     def _selection_metrics(self, F: np.ndarray, G: np.ndarray | None, constraint_mode: str):

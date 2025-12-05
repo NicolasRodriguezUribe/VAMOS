@@ -214,6 +214,24 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         help="Number of workers for multiprocessing evaluation backend.",
     )
     parser.add_argument(
+        "--live-viz",
+        action="store_true",
+        default=bool(experiment_defaults.get("live_viz", False)),
+        help="Enable live/streaming Pareto visualization (matplotlib interactive).",
+    )
+    parser.add_argument(
+        "--live-viz-interval",
+        type=int,
+        default=experiment_defaults.get("live_viz_interval", 5),
+        help="Generations between live visualization updates.",
+    )
+    parser.add_argument(
+        "--live-viz-max-points",
+        type=int,
+        default=experiment_defaults.get("live_viz_max_points", 1000),
+        help="Maximum points to plot in live visualization (subsampled if larger).",
+    )
+    parser.add_argument(
         "--problem",
         choices=available_problem_names(),
         default=_spec_default("problem", DEFAULT_PROBLEM),
@@ -550,6 +568,8 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         parser.error("--max-evaluations must be a positive integer.")
     if args.n_workers is not None and args.n_workers <= 0:
         parser.error("--n-workers must be positive if provided.")
+    if args.live_viz_interval is not None and args.live_viz_interval <= 0:
+        parser.error("--live-viz-interval must be positive.")
     if args.hv_threshold is not None:
         if not (0.0 < args.hv_threshold < 1.0):
             parser.error("--hv-threshold must be in the (0, 1) range.")

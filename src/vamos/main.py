@@ -26,6 +26,9 @@ def main():
         seed=args.seed,
         eval_backend=args.eval_backend,
         n_workers=args.n_workers,
+        live_viz=args.live_viz,
+        live_viz_interval=args.live_viz_interval,
+        live_viz_max_points=args.live_viz_max_points,
     )
     run_from_args(args, config)
 
