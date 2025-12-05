@@ -1,0 +1,17 @@
+import numpy as np
+
+from vamos.constraints.dsl import constraint_model, build_constraint_evaluator
+
+
+def test_constraint_evaluator_matches_manual():
+    with constraint_model(n_vars=2) as cm:
+        x1, x2 = cm.vars("x1", "x2")
+        cm.add(x1 + x2 <= 1)
+        cm.add(x1 * x1 + x2 >= 0)
+    evaluator = build_constraint_evaluator(cm)
+    X = np.array([[0.5, 0.4], [0.8, 0.5]])
+    violations = evaluator(X)
+    # First point feasible for both
+    assert np.allclose(violations[0], [0.0, 0.0])
+    # Second point violates first constraint: 0.8+0.5-1 = 0.3
+    assert violations[1, 0] > 0
