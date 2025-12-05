@@ -29,6 +29,8 @@ class ExperimentConfig:
     offspring_population_size: int | None = None
     max_evaluations: int = 25000
     seed: int = 42
+    eval_backend: str = "serial"
+    n_workers: int | None = None
 
     def offspring_size(self) -> int:
         if self.offspring_population_size is not None:

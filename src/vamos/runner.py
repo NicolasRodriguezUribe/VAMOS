@@ -33,6 +33,7 @@ from vamos.problem.resolver import resolve_problem_selections, ProblemSelection
 from vamos.algorithm.factory import build_algorithm, _merge_variation_overrides
 from vamos.kernel.registry import resolve_kernel
 from vamos.hv_stop import build_hv_stop_config, compute_hv_reference
+from vamos.eval.backends import resolve_eval_backend
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -319,6 +320,7 @@ def run_single(
     spea2_variation = _normalize_variation_config(spea2_variation)
     ibea_variation = _normalize_variation_config(ibea_variation)
     smpso_variation = _normalize_variation_config(smpso_variation)
+    eval_backend = resolve_eval_backend(getattr(config, "eval_backend", "serial"), n_workers=getattr(config, "n_workers", None))
     algorithm, cfg_data = build_algorithm(
         algorithm_name,
         engine_name,
@@ -347,7 +349,13 @@ def run_single(
 
     _validate_problem(problem)
 
-    exec_result = execute_algorithm(algorithm, problem, termination=termination, seed=config.seed)
+    exec_result = execute_algorithm(
+        algorithm,
+        problem,
+        termination=termination,
+        seed=config.seed,
+        eval_backend=eval_backend,
+    )
     payload = exec_result.payload
     total_time_ms = exec_result.elapsed_ms
     F = payload["F"]
@@ -361,6 +369,8 @@ def run_single(
         algorithm_name, engine_name, total_time_ms, actual_evaluations, F
     )
     metrics["termination"] = termination_reason
+    metrics["eval_backend"] = getattr(config, "eval_backend", "serial")
+    metrics["n_workers"] = getattr(config, "n_workers", None)
     if hv_enabled and hv_stop_config:
         metrics["hv_threshold_fraction"] = hv_stop_config.get("threshold_fraction")
         metrics["hv_reference_point"] = hv_stop_config.get("reference_point")
@@ -596,6 +606,8 @@ def run_from_args(args, config: ExperimentConfig):
             ),
             max_evaluations=override.get("max_evaluations", config.max_evaluations),
             seed=override.get("seed", config.seed),
+            eval_backend=override.get("eval_backend", getattr(config, "eval_backend", "serial")),
+            n_workers=override.get("n_workers", getattr(config, "n_workers", None)),
         )
         effective_args = deepcopy(args)
         for key in ("algorithm", "engine", "experiment", "include_external", "external_problem_source"):
@@ -607,6 +619,8 @@ def run_from_args(args, config: ExperimentConfig):
         effective_args.hv_reference_front = override.get("hv_reference_front", args.hv_reference_front)
         effective_args.n_var = override.get("n_var", args.n_var)
         effective_args.n_obj = override.get("n_obj", args.n_obj)
+        effective_args.eval_backend = override.get("eval_backend", args.eval_backend)
+        effective_args.n_workers = override.get("n_workers", args.n_workers)
         effective_args.nsgaii_variation = _merge_variation_overrides(base_variation, override.get("nsgaii"))
         effective_args.moead_variation = _merge_variation_overrides(getattr(args, "moead_variation", None), override.get("moead"))
         effective_args.smsemoa_variation = _merge_variation_overrides(getattr(args, "smsemoa_variation", None), override.get("smsemoa"))

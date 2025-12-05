@@ -161,6 +161,30 @@ def test_smpso_smoke_runs():
     assert np.isfinite(result["F"]).all()
 
 
+def test_nsgaii_with_multiprocessing_eval_backend():
+    pop_size = 10
+    cfg = (
+        NSGAIIConfig()
+        .pop_size(pop_size)
+        .offspring_size(pop_size)
+        .crossover("sbx", prob=0.9, eta=15.0)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .selection("tournament", pressure=2)
+        .survival("nsga2")
+        .engine("numpy")
+        .fixed()
+    )
+    algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT1Problem(n_var=6)
+    from vamos.eval.backends import MultiprocessingEvalBackend
+
+    eval_backend = MultiprocessingEvalBackend(n_workers=2)
+    result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=10, eval_backend=eval_backend)
+
+    assert result["F"].shape == (pop_size, problem.n_obj)
+    assert np.isfinite(result["F"]).all()
+
+
 def test_nsgaii_permutation_smoke():
     pop_size = 8
     cfg = (

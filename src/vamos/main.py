@@ -24,6 +24,8 @@ def main():
         offspring_population_size=args.offspring_population_size,
         max_evaluations=args.max_evaluations,
         seed=args.seed,
+        eval_backend=args.eval_backend,
+        n_workers=args.n_workers,
     )
     run_from_args(args, config)
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from typing import Any
+import inspect
 
 
 @dataclass
@@ -18,9 +19,14 @@ class ExecutionResult:
     elapsed_ms: float
 
 
-def execute_algorithm(algorithm, problem, termination, seed: int) -> ExecutionResult:
+def execute_algorithm(algorithm, problem, termination, seed: int, eval_backend=None) -> ExecutionResult:
     start = time.perf_counter()
-    result = algorithm.run(problem, termination=termination, seed=seed)
+    run_fn = getattr(algorithm, "run")
+    sig = inspect.signature(run_fn)
+    if "eval_backend" in sig.parameters:
+        result = run_fn(problem, termination=termination, seed=seed, eval_backend=eval_backend)
+    else:
+        result = run_fn(problem, termination=termination, seed=seed)
     end = time.perf_counter()
     return ExecutionResult(payload=result, elapsed_ms=(end - start) * 1000.0)
 
