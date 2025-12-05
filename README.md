@@ -28,7 +28,7 @@ pytest
 - Encodings: continuous, permutation, binary, integer, mixed.
 - Config + tuning: hierarchical `AlgorithmConfigSpace`, meta-level NSGA-II tuner, templates, multi-algorithm search. CLI/runner can read YAML/JSON specs (see below).
 - Analysis: constraint handling toolbox, objective reduction, MCDM helpers, visualization utilities, stats (Friedman/Wilcoxon/CD plots).
-- Problems: ZDT, DTLZ, WFG, TSP/TSPLIB, binary (feature selection/knapsack/QUBO), integer (allocation/job assignment), mixed design.
+- Problems: ZDT, DTLZ, WFG, LZ09 (pymoo-backed), CEC2009 UF/CF (pymoo-backed), TSP/TSPLIB, binary (feature selection/knapsack/QUBO), integer (allocation/job assignment), mixed design, welded beam and real-data examples (SVM tuning, feature selection).
 - CLI/runner: experiment orchestration, metrics, result CSVs/metadata under `results/`.
 - StudyRunner: batch problem × algorithm × seed sweeps.
 - Notebooks: exploratory examples under `notebooks/` (optional).
@@ -50,6 +50,11 @@ pytest
 - Quick sanity check of your install:
   - `python -m vamos.self_check`
   - or `vamos-self-check`
+
+### Examples
+
+- End-to-end scripts in `examples/`: `hyperparam_tuning.py`, `feature_selection.py`, `engineering_design.py`.
+- Enable optional deps with `pip install -e ".[examples]"` to run scikit-learn based examples and plots.
 
 ## Contributing
 
@@ -139,7 +144,8 @@ Install with `pip install -e ".[extra1,extra2]"`:
 | `backends`   | `numba>=0.57`, `moocore>=0.4`                 | Accelerated backends             |
 | `benchmarks` | `pymoo>=0.6`, `jmetalpy>=1.5`, `pygmo>=2.19`  | Benchmark comparisons            |
 | `dev`        | `pytest>=7.0`, `black>=23.0`, `ruff>=0.1.5`   | Development & testing            |
-| `notebooks`  | `pandas>=1.5`, `matplotlib>=3.7`, `ipython>=8.10` | Jupyter notebook support     |
+| `notebooks`  | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `ipython>=8.10`, `scikit-learn>=1.3` | Jupyter notebook support     |
+| `examples`   | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `scikit-learn>=1.3` | Run the real-data examples   |
 
 ### Quick install examples
 
@@ -153,6 +159,15 @@ pip install -e ".[backends,notebooks]"
 # Just core + moocore backend
 pip install -e ".[backends]"
 ```
+
+## Additional benchmarks & examples
+
+- New benchmark families: LZ09 (F1–F9, built-in) and CEC2009 UF1–UF3 + CF1 (fallback implementations shipped; will use pymoo if installed).
+- Real-world problems: mixed hyperparameter tuning (`ml_tuning`), welded beam design (`welded_beam`), and binary feature selection (`fs_real`) are registered and usable via CLI or `optimize()`.
+- Example scripts under `examples/` (run with `pip install -e ".[examples]"`):
+  - `python examples/hyperparam_tuning_pipeline.py`
+  - `python examples/engineering_design_pipeline.py`
+  - `python examples/feature_selection_qubo.py`
 
 ## Notes
 
