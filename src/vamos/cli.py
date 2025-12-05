@@ -202,6 +202,18 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         help="Kernel backend to use (default: numpy).",
     )
     parser.add_argument(
+        "--eval-backend",
+        choices=("serial", "multiprocessing"),
+        default=_spec_default("eval_backend", "serial"),
+        help="Evaluation backend to use (default: serial).",
+    )
+    parser.add_argument(
+        "--n-workers",
+        type=int,
+        default=experiment_defaults.get("n_workers"),
+        help="Number of workers for multiprocessing evaluation backend.",
+    )
+    parser.add_argument(
         "--problem",
         choices=available_problem_names(),
         default=_spec_default("problem", DEFAULT_PROBLEM),
@@ -536,6 +548,8 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         parser.error("--external-archive-size must be a positive integer.")
     if args.max_evaluations <= 0:
         parser.error("--max-evaluations must be a positive integer.")
+    if args.n_workers is not None and args.n_workers <= 0:
+        parser.error("--n-workers must be positive if provided.")
     if args.hv_threshold is not None:
         if not (0.0 < args.hv_threshold < 1.0):
             parser.error("--hv-threshold must be in the (0, 1) range.")

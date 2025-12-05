@@ -11,6 +11,7 @@ from vamos.algorithm.smpso import SMPSO
 from vamos.kernel.numpy_backend import NumPyKernel
 from vamos.kernel.registry import resolve_kernel
 from vamos.problem.types import ProblemProtocol
+from vamos.eval.backends import resolve_eval_backend
 
 
 class OptimizationResult:
@@ -28,6 +29,7 @@ def optimize(
     termination: Tuple[str, Any],
     seed: int,
     engine: str = "numpy",
+    eval_backend=None,
 ) -> OptimizationResult:
     """
     Run a single optimization for the provided problem/config pair.
@@ -48,6 +50,12 @@ def optimize(
     effective_engine = engine or cfg_dict.get("engine", "numpy")
     kernel = resolve_kernel(effective_engine) if effective_engine != "numpy" else NumPyKernel()
 
+    if eval_backend is not None:
+        backend = eval_backend
+    else:
+        backend_name = cfg_dict["eval_backend"] if isinstance(cfg_dict, dict) and "eval_backend" in cfg_dict else "serial"
+        backend = resolve_eval_backend(backend_name)
+
     if isinstance(config, NSGAIIConfigData) or cfg_dict.get("survival") == "nsga2":
         algorithm = NSGAII(cfg_dict, kernel=kernel)
     elif isinstance(config, SPEA2ConfigData) or cfg_dict.get("k_neighbors") is not None:
@@ -59,5 +67,11 @@ def optimize(
     else:
         raise ValueError("optimize() currently supports NSGA-II, SPEA2, IBEA, and SMPSO configurations.")
 
-    result = algorithm.run(problem, termination=termination, seed=seed)
+    run_fn = getattr(algorithm, "run")
+    import inspect
+
+    if "eval_backend" in inspect.signature(run_fn).parameters:
+        result = run_fn(problem, termination=termination, seed=seed, eval_backend=backend)
+    else:
+        result = run_fn(problem, termination=termination, seed=seed)
     return OptimizationResult(result)
