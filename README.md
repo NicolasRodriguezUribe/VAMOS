@@ -169,6 +169,7 @@ pip install -e ".[backends]"
   - `python examples/engineering_design_pipeline.py`
   - `python examples/feature_selection_qubo.py`
 - Paper-ready benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/` runs predefined suites, writes raw runs + summary CSVs + LaTeX-ready tables and plots under `report/`.
+- Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
 
 ## Notes
 
