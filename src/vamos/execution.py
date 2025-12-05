@@ -19,14 +19,16 @@ class ExecutionResult:
     elapsed_ms: float
 
 
-def execute_algorithm(algorithm, problem, termination, seed: int, eval_backend=None) -> ExecutionResult:
+def execute_algorithm(algorithm, problem, termination, seed: int, eval_backend=None, live_viz=None) -> ExecutionResult:
     start = time.perf_counter()
     run_fn = getattr(algorithm, "run")
     sig = inspect.signature(run_fn)
+    kwargs = {"problem": problem, "termination": termination, "seed": seed}
     if "eval_backend" in sig.parameters:
-        result = run_fn(problem, termination=termination, seed=seed, eval_backend=eval_backend)
-    else:
-        result = run_fn(problem, termination=termination, seed=seed)
+        kwargs["eval_backend"] = eval_backend
+    if "live_viz" in sig.parameters:
+        kwargs["live_viz"] = live_viz
+    result = run_fn(**kwargs)
     end = time.perf_counter()
     return ExecutionResult(payload=result, elapsed_ms=(end - start) * 1000.0)
 

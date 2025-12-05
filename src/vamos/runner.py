@@ -321,6 +321,17 @@ def run_single(
     ibea_variation = _normalize_variation_config(ibea_variation)
     smpso_variation = _normalize_variation_config(smpso_variation)
     eval_backend = resolve_eval_backend(getattr(config, "eval_backend", "serial"), n_workers=getattr(config, "n_workers", None))
+    live_viz = None
+    output_dir = run_output_dir(selection, algorithm_name, engine_name, config.seed, config)
+    if getattr(config, "live_viz", False):
+        from vamos.live_viz import LiveParetoPlot
+
+        live_viz = LiveParetoPlot(
+            update_interval=getattr(config, "live_viz_interval", 5),
+            max_points=getattr(config, "live_viz_max_points", 1000),
+            save_final_path=os.path.join(output_dir, "live_pareto.png"),
+            title=f"{selection.spec.label} (live)",
+        )
     algorithm, cfg_data = build_algorithm(
         algorithm_name,
         engine_name,
@@ -349,12 +360,14 @@ def run_single(
 
     _validate_problem(problem)
 
+    ensure_dir(output_dir)
     exec_result = execute_algorithm(
         algorithm,
         problem,
         termination=termination,
         seed=config.seed,
         eval_backend=eval_backend,
+        live_viz=live_viz,
     )
     payload = exec_result.payload
     total_time_ms = exec_result.elapsed_ms
@@ -384,9 +397,7 @@ def run_single(
         metrics["backend_device"] = "external"
         metrics["backend_capabilities"] = []
     _print_run_results(metrics)
-    output_dir = run_output_dir(selection, algorithm_name, engine_name, config.seed, config)
     metrics["output_dir"] = output_dir
-    ensure_dir(output_dir)
     artifacts = write_population(output_dir, F, archive)
     if archive is not None:
         metrics["archive"] = archive
@@ -608,6 +619,9 @@ def run_from_args(args, config: ExperimentConfig):
             seed=override.get("seed", config.seed),
             eval_backend=override.get("eval_backend", getattr(config, "eval_backend", "serial")),
             n_workers=override.get("n_workers", getattr(config, "n_workers", None)),
+            live_viz=override.get("live_viz", getattr(config, "live_viz", False)),
+            live_viz_interval=override.get("live_viz_interval", getattr(config, "live_viz_interval", 5)),
+            live_viz_max_points=override.get("live_viz_max_points", getattr(config, "live_viz_max_points", 1000)),
         )
         effective_args = deepcopy(args)
         for key in ("algorithm", "engine", "experiment", "include_external", "external_problem_source"):
@@ -621,6 +635,9 @@ def run_from_args(args, config: ExperimentConfig):
         effective_args.n_obj = override.get("n_obj", args.n_obj)
         effective_args.eval_backend = override.get("eval_backend", args.eval_backend)
         effective_args.n_workers = override.get("n_workers", args.n_workers)
+        effective_args.live_viz = override.get("live_viz", args.live_viz)
+        effective_args.live_viz_interval = override.get("live_viz_interval", args.live_viz_interval)
+        effective_args.live_viz_max_points = override.get("live_viz_max_points", args.live_viz_max_points)
         effective_args.nsgaii_variation = _merge_variation_overrides(base_variation, override.get("nsgaii"))
         effective_args.moead_variation = _merge_variation_overrides(getattr(args, "moead_variation", None), override.get("moead"))
         effective_args.smsemoa_variation = _merge_variation_overrides(getattr(args, "smsemoa_variation", None), override.get("smsemoa"))

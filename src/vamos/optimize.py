@@ -30,6 +30,7 @@ def optimize(
     seed: int,
     engine: str = "numpy",
     eval_backend=None,
+    live_viz=None,
 ) -> OptimizationResult:
     """
     Run a single optimization for the provided problem/config pair.
@@ -70,8 +71,11 @@ def optimize(
     run_fn = getattr(algorithm, "run")
     import inspect
 
-    if "eval_backend" in inspect.signature(run_fn).parameters:
-        result = run_fn(problem, termination=termination, seed=seed, eval_backend=backend)
-    else:
-        result = run_fn(problem, termination=termination, seed=seed)
+    sig = inspect.signature(run_fn)
+    kwargs = {"problem": problem, "termination": termination, "seed": seed}
+    if "eval_backend" in sig.parameters:
+        kwargs["eval_backend"] = backend
+    if "live_viz" in sig.parameters:
+        kwargs["live_viz"] = live_viz
+    result = run_fn(**kwargs)
     return OptimizationResult(result)

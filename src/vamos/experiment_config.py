@@ -31,6 +31,9 @@ class ExperimentConfig:
     seed: int = 42
     eval_backend: str = "serial"
     n_workers: int | None = None
+    live_viz: bool = False
+    live_viz_interval: int = 5
+    live_viz_max_points: int = 1000
 
     def offspring_size(self) -> int:
         if self.offspring_population_size is not None:
