@@ -168,6 +168,7 @@ pip install -e ".[backends]"
   - `python examples/hyperparam_tuning_pipeline.py`
   - `python examples/engineering_design_pipeline.py`
   - `python examples/feature_selection_qubo.py`
+- Paper-ready benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/` runs predefined suites, writes raw runs + summary CSVs + LaTeX-ready tables and plots under `report/`.
 
 ## Notes
 

@@ -4,7 +4,7 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import copy2
-from typing import Iterable, List, Sequence
+from typing import Iterable, List, Sequence, Any, Dict
 
 import numpy as np
 
@@ -30,6 +30,7 @@ class StudyTask:
     n_obj: int | None = None
     seed: int = ExperimentConfig().seed
     selection_pressure: int = 2
+    config_overrides: Dict[str, Any] | None = None
 
 
 @dataclass
@@ -102,7 +103,10 @@ class StudyRunner:
             selection = make_problem_selection(
                 task.problem, n_var=task.n_var, n_obj=task.n_obj
             )
-            task_config = ExperimentConfig(seed=task.seed)
+            cfg_kwargs = {"seed": task.seed}
+            if task.config_overrides:
+                cfg_kwargs.update(task.config_overrides)
+            task_config = ExperimentConfig(**cfg_kwargs)
             metrics = run_single(
                 task.engine,
                 task.algorithm,
