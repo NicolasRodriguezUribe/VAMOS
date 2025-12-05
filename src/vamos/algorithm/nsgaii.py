@@ -12,6 +12,8 @@ from vamos.operators.real import VariationWorkspace
 from vamos.constraints.utils import compute_violation, is_feasible
 from vamos.eval.backends import SerialEvalBackend
 from vamos.live_viz import LiveVisualization, NoOpLiveVisualization
+from vamos.hyperheuristics.operator_selector import make_operator_selector, compute_reward
+from vamos.hyperheuristics.indicator import IndicatorEvaluator
 
 
 def _build_mating_pool(
@@ -154,18 +156,58 @@ class NSGAII:
 
         variation_workspace = VariationWorkspace()
 
-        variation = VariationPipeline(
-            encoding=encoding,
-            cross_method=cross_method,
-            cross_params=cross_params,
-            mut_method=mut_method,
-            mut_params=mut_params,
-            xl=xl,
-            xu=xu,
-            workspace=variation_workspace,
-            repair_cfg=self.cfg.get("repair"),
-            problem=problem,
-        )
+        # Build operator pool (default is the configured crossover/mutation, optionally extended via adaptive_operators)
+        operator_pool = []
+        op_configs = self.cfg.get("adaptive_operators", {}).get("operator_pool")
+        if op_configs:
+            for entry in op_configs:
+                c_method, c_params = entry.get("crossover", (cross_method, cross_params))
+                m_method, m_params = entry.get("mutation", (mut_method, mut_params))
+                m_params = prepare_mutation_params(m_params, encoding, n_var, prob_factor=mut_factor)
+                operator_pool.append(
+                    VariationPipeline(
+                        encoding=encoding,
+                        cross_method=c_method,
+                        cross_params=c_params,
+                        mut_method=m_method,
+                        mut_params=m_params,
+                        xl=xl,
+                        xu=xu,
+                        workspace=variation_workspace,
+                        repair_cfg=self.cfg.get("repair"),
+                        problem=problem,
+                    )
+                )
+        if not operator_pool:
+            operator_pool.append(
+                VariationPipeline(
+                    encoding=encoding,
+                    cross_method=cross_method,
+                    cross_params=cross_params,
+                    mut_method=mut_method,
+                    mut_params=mut_params,
+                    xl=xl,
+                    xu=xu,
+                    workspace=variation_workspace,
+                    repair_cfg=self.cfg.get("repair"),
+                    problem=problem,
+                )
+            )
+        selector_cfg = self.cfg.get("adaptive_operators", {})
+        adaptive_enabled = bool(selector_cfg.get("enabled", False)) and len(operator_pool) > 1
+        op_selector = None
+        indicator_eval = None
+        if adaptive_enabled:
+            method = selector_cfg.get("method", "epsilon_greedy")
+            op_selector = make_operator_selector(
+                method,
+                len(operator_pool),
+                epsilon=selector_cfg.get("epsilon", 0.1),
+                c=selector_cfg.get("c", 1.0),
+            )
+            indicator = selector_cfg.get("indicator", "hv")
+            indicator_mode = selector_cfg.get("mode", "maximize")
+            indicator_eval = IndicatorEvaluator(indicator, reference_point=None, mode=indicator_mode)
         result_mode = self.cfg.get("result_mode", "population")
         result_archive = None
         if result_mode == "external_archive" and archive_size:
@@ -185,7 +227,11 @@ class NSGAII:
             "F": F,
             "G": G,
             "rng": rng,
-            "variation": variation,
+            "variation": operator_pool[0],
+            "operator_pool": operator_pool,
+            "op_selector": op_selector,
+            "indicator_eval": indicator_eval,
+            "last_operator_idx": 0,
             "offspring_size": offspring_size,
             "sel_method": sel_method,
             "pressure": pressure,
@@ -272,6 +318,10 @@ class NSGAII:
         if not hasattr(self, "_state"):
             raise RuntimeError("ask() called before initialization.")
         st = self._state
+        if st.get("op_selector") is not None:
+            idx = st["op_selector"].select_operator()
+            st["variation"] = st["operator_pool"][idx]
+            st["last_operator_idx"] = idx
         ranks, crowding = self._selection_metrics(st["F"], st["G"], st["constraint_mode"])
         parents_per_group = st["variation"].parents_per_group
         children_per_group = st["variation"].children_per_group
@@ -305,6 +355,13 @@ class NSGAII:
         F_off = eval_result.F
         G_off = eval_result.G if st["constraint_mode"] != "none" else None
 
+        hv_before = None
+        if st.get("indicator_eval") is not None:
+            try:
+                hv_before = st["indicator_eval"].compute(st["hv_points_fn"]())
+            except Exception:
+                hv_before = None
+
         if st["G"] is None or st["constraint_mode"] == "none":
             st["X"], st["F"] = self.kernel.nsga2_survival(st["X"], st["F"], X_off, F_off, pop_size)
             st["G"] = None
@@ -325,6 +382,13 @@ class NSGAII:
         hv_tracker = st["hv_tracker"]
         hv_points = st["hv_points_fn"]
         hv_reached = hv_tracker.enabled and hv_tracker.reached(hv_points())
+        if st.get("op_selector") is not None and hv_before is not None:
+            try:
+                hv_after = st["indicator_eval"].compute(hv_points())
+                reward = compute_reward(hv_before, hv_after, st["indicator_eval"].mode)
+                st["op_selector"].update(st.get("last_operator_idx", 0), reward)
+            except Exception:
+                pass
         return hv_reached
 
     def _resolve_archive_size(self) -> int | None:
