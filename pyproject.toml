@@ -50,12 +50,16 @@ studio = [
   "plotly>=5.18",
   "pandas>=1.5"
 ]
+autodiff = [
+  "jax>=0.4"
+]
 
 [project.scripts]
 vamos = "vamos.main:main"
 vamos-self-check = "vamos.self_check:main"
 vamos-benchmark = "vamos.benchmark.cli:main"
 vamos-studio = "vamos.studio.app:main"
+vamos-zoo = "vamos.zoo.cli:main"
 
 [tool.mypy]
 python_version = "3.11"
