@@ -171,6 +171,13 @@ pip install -e ".[backends]"
 - Paper-ready benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/` runs predefined suites, writes raw runs + summary CSVs + LaTeX-ready tables and plots under `report/`.
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
 - Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based ε-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.hyperheuristics`.
+- Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `02_tuning_and_metaoptimization.ipynb`).
+
+## Testing & QA
+
+- Core tests: `pytest`
+- Full optional stack (after `pip install -e ".[dev,backends,benchmarks,studio,analytics,autodiff,notebooks]"`): `pytest -m "not slow"`
+- Examples/notebooks: set `VAMOS_RUN_NOTEBOOK_TESTS=1` then `pytest -m "examples"`
 
 ## Notes
 
