@@ -46,6 +46,16 @@ def run_self_check(verbose: bool = False) -> List[CheckResult]:
             msg = result.detail or ""
             print(f"[self-check] {result.name}: {status} {msg}")
 
+    # Binary and mixed smoke on NumPy only
+    for name, label in (("bin_knapsack", "binary"), ("mixed_design", "mixed")):
+        selection = make_problem_selection(name)
+        cfg = ExperimentConfig(population_size=8, offspring_population_size=8, max_evaluations=20, seed=2)
+        try:
+            run_single("numpy", "nsgaii", selection, cfg, selection_pressure=2)
+            checks.append(CheckResult(name=f"{name}", status="ok"))
+        except Exception as exc:  # pragma: no cover - quick smoke only
+            checks.append(CheckResult(name=f"{name}", status="failed", detail=str(exc)))
+
     numpy_ok = next((c for c in checks if c.name == "nsgaii-numpy"), None)
     if numpy_ok is None or numpy_ok.status != "ok":
         detail = numpy_ok.detail if numpy_ok else "NumPy check missing"
