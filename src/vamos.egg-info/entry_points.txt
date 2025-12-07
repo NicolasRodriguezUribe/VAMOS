@@ -1,6 +1,0 @@
-[console_scripts]
-vamos = vamos.main:main
-vamos-benchmark = vamos.benchmark.cli:main
-vamos-self-check = vamos.self_check:main
-vamos-studio = vamos.studio.app:main
-vamos-zoo = vamos.zoo.cli:main
