@@ -158,13 +158,28 @@ def summarize_benchmark(
     for r in report.results:
         scores_by_label.setdefault(r.config_label, []).append(r.score)
 
+    # Compute average rank across runs to break ties fairly.
+    rank_accum: Dict[str, List[int]] = {label: [] for label in scores_by_label}
+    # group results by (instance, seed) to rank within each scenario
+    grouped: Dict[Tuple[str, int], List[RunResult]] = {}
+    for r in report.results:
+        grouped.setdefault((r.instance_name, r.seed), []).append(r)
+    for runs in grouped.values():
+        # sort by score
+        runs_sorted = sorted(runs, key=lambda rr: rr.score, reverse=maximize)
+        for idx, rr in enumerate(runs_sorted, start=1):
+            rank_accum[rr.config_label].append(idx)
+
     summaries: List[ConfigSummary] = []
+    avg_rank_map: Dict[str, float] = {}
     for label, scores in scores_by_label.items():
         arr = np.asarray(scores, dtype=float)
         mean = float(arr.mean()) if arr.size > 0 else float("nan")
         std = float(arr.std(ddof=1)) if arr.size > 1 else 0.0
         min_score = float(arr.min()) if arr.size > 0 else float("nan")
         max_score = float(arr.max()) if arr.size > 0 else float("nan")
+        avg_rank = float(np.mean(rank_accum.get(label, [np.inf])))
+        avg_rank_map[label] = avg_rank
         summaries.append(
             ConfigSummary(
                 label=label,
@@ -176,18 +191,28 @@ def summarize_benchmark(
                 rank=-1,
             )
         )
+        summaries[-1].avg_rank = avg_rank  # type: ignore[attr-defined]
 
     if not summaries:
         return []
 
-    if maximize:
-        order = np.argsort([-s.mean_score for s in summaries])
-    else:
-        order = np.argsort([s.mean_score for s in summaries])
+    def _sort_key(summary: ConfigSummary) -> Tuple[float, float, float]:
+        avg_rank = avg_rank_map.get(summary.label, np.inf)
+        best_score = summary.max_score
+        mean_score = summary.mean_score
+        if not np.isfinite(best_score):
+            best_score = -np.inf if maximize else np.inf
+        if not np.isfinite(mean_score):
+            mean_score = -np.inf if maximize else np.inf
+        if maximize:
+            return (avg_rank, -best_score, -mean_score)
+        return (avg_rank, best_score, mean_score)
+
+    order = sorted(range(len(summaries)), key=lambda idx: _sort_key(summaries[idx]))
 
     ranked_summaries: List[ConfigSummary] = []
-    for rank_idx, s_idx in enumerate(order, start=1):
-        s = summaries[int(s_idx)]
+    for rank_idx, idx in enumerate(order, start=1):
+        s = summaries[int(idx)]
         s.rank = rank_idx
         ranked_summaries.append(s)
 

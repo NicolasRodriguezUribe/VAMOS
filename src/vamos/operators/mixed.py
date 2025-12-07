@@ -9,14 +9,14 @@ def mixed_initialize(pop_size: int, n_var: int, spec: dict, rng: np.random.Gener
     """
     if pop_size <= 0 or n_var <= 0:
         raise ValueError("pop_size and n_var must be positive.")
-    real_idx = np.asarray(spec.get("real_idx") or [], dtype=int)
-    int_idx = np.asarray(spec.get("int_idx") or [], dtype=int)
-    cat_idx = np.asarray(spec.get("cat_idx") or [], dtype=int)
-    real_lower = np.asarray(spec.get("real_lower") or [], dtype=float)
-    real_upper = np.asarray(spec.get("real_upper") or [], dtype=float)
-    int_lower = np.asarray(spec.get("int_lower") or [], dtype=int)
-    int_upper = np.asarray(spec.get("int_upper") or [], dtype=int)
-    cat_cardinality = np.asarray(spec.get("cat_cardinality") or [], dtype=int)
+    real_idx = np.asarray(spec.get("real_idx") if spec.get("real_idx") is not None else [], dtype=int)
+    int_idx = np.asarray(spec.get("int_idx") if spec.get("int_idx") is not None else [], dtype=int)
+    cat_idx = np.asarray(spec.get("cat_idx") if spec.get("cat_idx") is not None else [], dtype=int)
+    real_lower = np.asarray(spec.get("real_lower") if spec.get("real_lower") is not None else [], dtype=float)
+    real_upper = np.asarray(spec.get("real_upper") if spec.get("real_upper") is not None else [], dtype=float)
+    int_lower = np.asarray(spec.get("int_lower") if spec.get("int_lower") is not None else [], dtype=int)
+    int_upper = np.asarray(spec.get("int_upper") if spec.get("int_upper") is not None else [], dtype=int)
+    cat_cardinality = np.asarray(spec.get("cat_cardinality") if spec.get("cat_cardinality") is not None else [], dtype=int)
 
     X = np.zeros((pop_size, n_var), dtype=float)
     if real_idx.size:
@@ -47,9 +47,9 @@ def mixed_crossover(
     if prob <= 0.0:
         return pairs.reshape(Np, D)
 
-    real_idx = np.asarray(spec.get("real_idx") or [], dtype=int)
-    int_idx = np.asarray(spec.get("int_idx") or [], dtype=int)
-    cat_idx = np.asarray(spec.get("cat_idx") or [], dtype=int)
+    real_idx = np.asarray(spec.get("real_idx") if spec.get("real_idx") is not None else [], dtype=int)
+    int_idx = np.asarray(spec.get("int_idx") if spec.get("int_idx") is not None else [], dtype=int)
+    cat_idx = np.asarray(spec.get("cat_idx") if spec.get("cat_idx") is not None else [], dtype=int)
 
     active = rng.random(pairs.shape[0]) <= prob
     act_idx = np.flatnonzero(active)
@@ -88,14 +88,14 @@ def mixed_mutation(
     if prob <= 0.0:
         return
 
-    real_idx = np.asarray(spec.get("real_idx") or [], dtype=int)
-    int_idx = np.asarray(spec.get("int_idx") or [], dtype=int)
-    cat_idx = np.asarray(spec.get("cat_idx") or [], dtype=int)
-    real_lower = np.asarray(spec.get("real_lower") or [], dtype=float)
-    real_upper = np.asarray(spec.get("real_upper") or [], dtype=float)
-    int_lower = np.asarray(spec.get("int_lower") or [], dtype=int)
-    int_upper = np.asarray(spec.get("int_upper") or [], dtype=int)
-    cat_cardinality = np.asarray(spec.get("cat_cardinality") or [], dtype=int)
+    real_idx = np.asarray(spec.get("real_idx") if spec.get("real_idx") is not None else [], dtype=int)
+    int_idx = np.asarray(spec.get("int_idx") if spec.get("int_idx") is not None else [], dtype=int)
+    cat_idx = np.asarray(spec.get("cat_idx") if spec.get("cat_idx") is not None else [], dtype=int)
+    real_lower = np.asarray(spec.get("real_lower") if spec.get("real_lower") is not None else [], dtype=float)
+    real_upper = np.asarray(spec.get("real_upper") if spec.get("real_upper") is not None else [], dtype=float)
+    int_lower = np.asarray(spec.get("int_lower") if spec.get("int_lower") is not None else [], dtype=int)
+    int_upper = np.asarray(spec.get("int_upper") if spec.get("int_upper") is not None else [], dtype=int)
+    cat_cardinality = np.asarray(spec.get("cat_cardinality") if spec.get("cat_cardinality") is not None else [], dtype=int)
 
     if real_idx.size:
         span = np.maximum(real_upper - real_lower, 1e-6)

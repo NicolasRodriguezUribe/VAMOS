@@ -36,6 +36,8 @@ def random_integer_population(
 
 
 def _as_pairs(X_parents: np.ndarray) -> tuple[np.ndarray, int]:
+    if X_parents.ndim == 3 and X_parents.shape[1] == 2:
+        return X_parents, X_parents.shape[2]
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty((0, 2, D), dtype=X_parents.dtype), D

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from copy import deepcopy
-import json
 from pathlib import Path
 from typing import Iterable
 
@@ -12,9 +11,7 @@ from vamos import plotting
 from vamos.algorithm.hypervolume import hypervolume
 from vamos.execution import execute_algorithm
 from vamos.problem.registry import make_problem_selection
-from vamos.problem.types import ProblemProtocol, MixedProblemProtocol
-from vamos.io_utils import write_population, write_metadata, write_timing, ensure_dir
-from vamos.metadata import build_run_metadata
+from vamos.io_utils import ensure_dir
 from vamos.experiment_config import (
     ExperimentConfig,
     TITLE,
@@ -31,117 +28,20 @@ from vamos.algorithm.factory import build_algorithm
 from vamos.config.variation import merge_variation_overrides, normalize_variation_config
 from vamos.hv_stop import build_hv_stop_config, compute_hv_reference
 from vamos.eval.backends import resolve_eval_backend
+from vamos.runner_output import (
+    build_metrics,
+    persist_run_outputs,
+    print_run_banner,
+    print_run_results,
+)
+from vamos.runner_utils import validate_problem, problem_output_dir, run_output_dir
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-def _validate_problem(problem: ProblemProtocol) -> None:
-    if problem.n_var <= 0 or problem.n_obj <= 0:
-        raise ValueError("Problem must have positive n_var and n_obj.")
-    xl = np.asarray(problem.xl)
-    xu = np.asarray(problem.xu)
-    if xl.ndim > 1 or xu.ndim > 1:
-        raise ValueError("Problem bounds must be scalars or 1D arrays.")
-    if xl.ndim == 1 and xl.shape[0] != problem.n_var:
-        raise ValueError("Lower bounds length must match n_var.")
-    if xu.ndim == 1 and xu.shape[0] != problem.n_var:
-        raise ValueError("Upper bounds length must match n_var.")
-    if np.any(xl > xu):
-        raise ValueError("Lower bounds must not exceed upper bounds.")
-    encoding = getattr(problem, "encoding", "continuous")
-    if encoding == "mixed":
-        if not hasattr(problem, "mixed_spec"):
-            raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
-        spec = getattr(problem, "mixed_spec")
-        required = {"real_idx", "int_idx", "cat_idx", "real_lower", "real_upper", "int_lower", "int_upper", "cat_cardinality"}
-        missing = required - set(spec.keys())
-        if missing:
-            raise ValueError(f"mixed_spec missing required fields: {', '.join(sorted(missing))}")
-
-
-def problem_output_dir(selection: ProblemSelection, config: ExperimentConfig) -> str:
-    safe = selection.spec.label.replace(" ", "_").upper()
-    return os.path.join(config.output_root, f"{safe}")
-
-
-def run_output_dir(
-    selection: ProblemSelection, algorithm_name: str, engine_name: str, seed: int, config: ExperimentConfig
-) -> str:
-    base = problem_output_dir(selection, config)
-    return os.path.join(
-        base,
-        algorithm_name.lower(),
-        engine_name.lower(),
-        f"seed_{seed}",
-    )
-
-
-
-
 
 def _default_weight_path(problem_name: str, n_obj: int, pop_size: int) -> str:
     filename = f"{problem_name}_nobj{n_obj}_pop{pop_size}.csv"
     return str(PROJECT_ROOT / "build" / "weights" / filename)
 
-
-
-
-
-def _print_run_banner(
-    problem, problem_selection: ProblemSelection, algorithm_label: str, backend_label: str, config: ExperimentConfig
-):
-    print("=" * 80)
-    print(config.title)
-    print("=" * 80)
-    print(f"Problem: {problem_selection.spec.label}")
-    if problem_selection.spec.description:
-        print(f"Description: {problem_selection.spec.description}")
-    print(f"Decision variables: {problem.n_var}")
-    print(f"Objectives: {problem.n_obj}")
-    encoding = getattr(problem, "encoding", problem_selection.spec.encoding)
-    if encoding:
-        print(f"Encoding: {encoding}")
-    print(f"Algorithm: {algorithm_label}")
-    print(f"Backend: {backend_label}")
-    print(f"Population size: {config.population_size}")
-    print(f"Offspring population size: {config.offspring_size()}")
-    print(f"Max evaluations: {config.max_evaluations}")
-    print("-" * 80)
-
-
-def _make_metrics(
-    algorithm_name: str,
-    engine_name: str,
-    total_time_ms: float,
-    evaluations: int,
-    F: np.ndarray,
-):
-    spread = None
-    if F.size and F.shape[1] >= 1:
-        spread = np.ptp(F[:, 0])
-    evals_per_sec = evaluations / max(1e-9, total_time_ms / 1000.0)
-    return {
-        "algorithm": algorithm_name,
-        "engine": engine_name,
-        "time_ms": total_time_ms,
-        "evaluations": evaluations,
-        "evals_per_sec": evals_per_sec,
-        "spread": spread,
-        "F": F,
-    }
-
-
-def _print_run_results(metrics: dict):
-    algo = metrics["algorithm"]
-    time_ms = metrics["time_ms"]
-    evals = metrics["evaluations"]
-    hv_info = ""
-    hv = metrics.get("hv")
-    if hv is not None:
-        hv_info = f" | HV: {hv:.6f}"
-    print(f"{algo} -> Time: {time_ms:.2f} ms | Eval/s: {metrics['evals_per_sec']:.1f}{hv_info}")
-    spread = metrics.get("spread")
-    if spread is not None:
-        print(f"Objective 1 spread: {spread:.6f}")
 
 
 def run_single(
@@ -168,7 +68,7 @@ def run_single(
 ):
     problem = selection.instantiate()
     display_algo = algorithm_name.upper()
-    _print_run_banner(problem, selection, display_algo, engine_name, config)
+    print_run_banner(problem, selection, display_algo, engine_name, config)
     nsgaii_variation = normalize_variation_config(nsgaii_variation)
     moead_variation = normalize_variation_config(moead_variation)
     smsemoa_variation = normalize_variation_config(smsemoa_variation)
@@ -233,7 +133,7 @@ def run_single(
         hv_termination["max_evaluations"] = config.max_evaluations
         termination = ("hv", hv_termination)
 
-    _validate_problem(problem)
+    validate_problem(problem)
 
     ensure_dir(output_dir)
     exec_result = execute_algorithm(
@@ -253,7 +153,7 @@ def run_single(
     if hv_enabled and payload.get("hv_reached"):
         termination_reason = "hv_threshold"
 
-    metrics = _make_metrics(
+    metrics = build_metrics(
         algorithm_name, engine_name, total_time_ms, actual_evaluations, F
     )
     metrics["termination"] = termination_reason
@@ -271,82 +171,32 @@ def run_single(
     else:
         metrics["backend_device"] = "external"
         metrics["backend_capabilities"] = []
-    _print_run_results(metrics)
+    print_run_results(metrics)
     metrics["output_dir"] = output_dir
-    artifacts = write_population(
-        output_dir,
-        F,
-        archive,
-        X=payload.get("X"),
-        G=payload.get("G"),
-    )
-    if payload.get("genealogy"):
-        genealogy_path = Path(output_dir) / "genealogy.json"
-        genealogy_path.write_text(json.dumps(payload["genealogy"], indent=2), encoding="utf-8")
-        artifacts["genealogy"] = genealogy_path.name
-    if autodiff_info is not None:
-        autodiff_path = Path(output_dir) / "autodiff_constraints.json"
-        autodiff_path.write_text(json.dumps(autodiff_info, indent=2), encoding="utf-8")
-        artifacts["autodiff_constraints"] = autodiff_path.name
-    if archive is not None:
-        metrics["archive"] = archive
-    write_timing(output_dir, total_time_ms)
-    metadata = build_run_metadata(
-        selection,
-        algorithm_name,
-        engine_name,
-        cfg_data,
-        metrics,
-        kernel_backend=kernel_backend,
-        seed=config.seed,
+    persist_run_outputs(
+        output_dir=output_dir,
+        selection=selection,
+        algorithm_name=algorithm_name,
+        engine_name=engine_name,
+        cfg_data=cfg_data,
+        metrics=metrics,
+        payload=payload,
+        total_time_ms=total_time_ms,
+        hv_stop_config=hv_stop_config,
+        config_source=config_source,
+        selection_pressure=selection_pressure,
+        external_archive_size=external_archive_size,
+        encoding=getattr(problem, "encoding", getattr(selection.spec, "encoding", "continuous")),
+        problem_override=problem_override,
+        autodiff_info=autodiff_info,
         config=config,
+        kernel_backend=kernel_backend,
         project_root=PROJECT_ROOT,
+        nsgaii_variation=nsgaii_variation,
+        moead_variation=moead_variation,
+        smsemoa_variation=smsemoa_variation,
+        nsga3_variation=nsga3_variation,
     )
-    metadata["config_source"] = config_source
-    if problem_override:
-        metadata["problem_override"] = problem_override
-    if hv_stop_config:
-        metadata["hv_stop_config"] = hv_stop_config
-    if payload.get("genealogy"):
-        metadata["genealogy"] = payload["genealogy"]
-    if autodiff_info is not None:
-        metadata["autodiff_constraints"] = autodiff_info
-    artifact_entries = {
-        "fun": artifacts.get("fun"),
-        "x": artifacts.get("x"),
-        "g": artifacts.get("g"),
-        "archive_fun": artifacts.get("archive_fun"),
-        "archive_x": artifacts.get("archive_x"),
-        "archive_g": artifacts.get("archive_g"),
-        "genealogy": artifacts.get("genealogy"),
-        "autodiff_constraints": artifacts.get("autodiff_constraints"),
-        "time_ms": "time.txt",
-    }
-    metadata["artifacts"] = {k: v for k, v in artifact_entries.items() if v is not None}
-    resolved_cfg = {
-        "algorithm": algorithm_name,
-        "engine": engine_name,
-        "problem": selection.spec.key,
-        "n_var": selection.n_var,
-        "n_obj": selection.n_obj,
-        "encoding": getattr(problem, "encoding", "continuous"),
-        "population_size": config.population_size,
-        "offspring_population_size": config.offspring_size(),
-        "max_evaluations": config.max_evaluations,
-        "seed": config.seed,
-        "selection_pressure": selection_pressure,
-        "external_archive_size": external_archive_size,
-        "hv_threshold": hv_stop_config.get("threshold_fraction") if hv_stop_config else None,
-        "hv_reference_point": hv_stop_config.get("reference_point") if hv_stop_config else None,
-        "hv_reference_front": hv_stop_config.get("reference_front_path") if hv_stop_config else None,
-        "nsgaii_variation": nsgaii_variation,
-        "moead_variation": moead_variation,
-        "smsemoa_variation": smsemoa_variation,
-        "nsga3_variation": nsga3_variation,
-        "config_source": config_source,
-        "problem_override": problem_override,
-    }
-    write_metadata(output_dir, metadata, resolved_cfg)
 
     print("\nResults stored in:", output_dir)
     print("=" * 80)
@@ -467,7 +317,7 @@ def execute_problem_suite(
             use_native_problem=use_native_external_problem,
             config=config,
             make_metrics=_make_metrics,
-            print_banner=lambda problem, selection, label, backend: _print_run_banner(
+            print_banner=lambda problem, selection, label, backend: print_run_banner(
                 problem, selection, label, backend, config
             ),
             print_results=_print_run_results,

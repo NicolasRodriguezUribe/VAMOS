@@ -19,9 +19,20 @@ def tuning_result_to_dataframe(tuning_result: Any, param_names: Sequence[str] | 
 
     Expected keys/attributes: unit_vectors (X), objectives (F), assignments/configs (optional).
     """
-    X = getattr(tuning_result, "unit_vectors", None) or getattr(tuning_result, "X_nd", None) or tuning_result[0]
-    F = getattr(tuning_result, "objectives", None) or getattr(tuning_result, "F_nd", None) or tuning_result[1]
-    assignments = getattr(tuning_result, "assignments", None) or getattr(tuning_result, "configs", None) or []
+    X_attr = getattr(tuning_result, "unit_vectors", None)
+    if X_attr is None:
+        X_attr = getattr(tuning_result, "X_nd", None)
+    X = X_attr if X_attr is not None else tuning_result[0]
+
+    F_attr = getattr(tuning_result, "objectives", None)
+    if F_attr is None:
+        F_attr = getattr(tuning_result, "F_nd", None)
+    F = F_attr if F_attr is not None else tuning_result[1]
+
+    assignments = getattr(tuning_result, "assignments", None)
+    if assignments is None:
+        assignments = getattr(tuning_result, "configs", None)
+    assignments = assignments or []
     X = np.asarray(X)
     F = np.asarray(F)
     if param_names is None:
@@ -113,6 +124,7 @@ def summarize_by_algorithm(df: pd.DataFrame) -> pd.DataFrame:
     """
     Mean/std summary grouped by problem and algorithm.
     """
-    grouped = df.groupby(["problem", "algorithm"]).agg(["mean", "std"])
+    numeric_cols = df.select_dtypes(include=["number"]).columns
+    grouped = df.groupby(["problem", "algorithm"])[numeric_cols].agg(["mean", "std"])
     grouped.columns = ["_".join(col).rstrip("_") for col in grouped.columns]
     return grouped.reset_index()

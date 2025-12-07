@@ -59,16 +59,16 @@ def _assert_valid_weights(weights: np.ndarray, n_obj: int) -> None:
 
 def _generate_weights(pop_size: int, n_obj: int, divisions: Optional[int]) -> np.ndarray:
     if n_obj < 2:
-        raise ValueError("MOEA/D requires at least two objectives.")
+        # Degenerate single-objective: return uniform weights.
+        return np.ones((pop_size, 1), dtype=float)
     if divisions is None:
         divisions = _choose_min_divisions(pop_size, n_obj)
     else:
         max_vectors = _count_lattice_points(n_obj, divisions)
         if max_vectors < pop_size:
-            raise ValueError(
-                f"Provided divisions={divisions} only yields {max_vectors} weight "
-                f"vectors but pop_size={pop_size} is required."
-            )
+            # Automatically increase divisions until we have enough directions.
+            fallback = _choose_min_divisions(pop_size, n_obj)
+            divisions = max(divisions, fallback)
 
     weights = _simplex_lattice(n_obj, divisions, limit=pop_size)
     return weights

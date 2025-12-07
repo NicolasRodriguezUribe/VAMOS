@@ -34,7 +34,13 @@ def random_binary_population(pop_size: int, n_var: int, rng: np.random.Generator
 def _as_pairs(X_parents: np.ndarray) -> tuple[np.ndarray, int]:
     """
     Validate parent array and reshape into mating pairs.
+    Accepts either (n_parents, n_var) or already-paired (n_pairs, 2, n_var).
     """
+    if X_parents.ndim == 3 and X_parents.shape[1] == 2:
+        pairs = X_parents
+        D = X_parents.shape[2]
+        return pairs, D
+
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty((0, 2, D), dtype=X_parents.dtype), D
@@ -127,6 +133,39 @@ def uniform_crossover(X_parents: np.ndarray, prob: float, rng: np.random.Generat
     return pairs.reshape(X_parents.shape)
 
 
+def hux_crossover(X_parents: np.ndarray, prob: float, rng: np.random.Generator) -> np.ndarray:
+    """
+    Half-uniform crossover (HUX) for bitstrings.
+    Swaps half of the differing bits between each parent pair.
+    """
+    pairs, D = _as_pairs(X_parents)
+    if pairs.size == 0:
+        return pairs.reshape(X_parents.shape)
+    prob = float(np.clip(prob, 0.0, 1.0))
+    if prob <= 0.0:
+        return pairs.reshape(X_parents.shape)
+
+    active = rng.random(pairs.shape[0]) <= prob
+    idx = np.flatnonzero(active)
+    if idx.size == 0:
+        return pairs.reshape(X_parents.shape)
+
+    for row in idx:
+        p1, p2 = pairs[row, 0], pairs[row, 1]
+        diff_mask = p1 != p2
+        if not np.any(diff_mask):
+            continue
+        diff_idx = np.flatnonzero(diff_mask)
+        swap_count = max(1, diff_idx.size // 2)
+        chosen = rng.choice(diff_idx, size=swap_count, replace=False)
+        child1 = p1.copy()
+        child2 = p2.copy()
+        child1[chosen] = p2[chosen]
+        child2[chosen] = p1[chosen]
+        pairs[row, 0], pairs[row, 1] = child1, child2
+    return pairs.reshape(X_parents.shape)
+
+
 def bit_flip_mutation(X: np.ndarray, prob: float, rng: np.random.Generator) -> None:
     """
     Per-bit mutation that flips each bit with probability `prob`.
@@ -148,5 +187,6 @@ __all__ = [
     "one_point_crossover",
     "two_point_crossover",
     "uniform_crossover",
+    "hux_crossover",
     "bit_flip_mutation",
 ]

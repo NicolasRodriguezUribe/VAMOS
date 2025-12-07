@@ -19,7 +19,7 @@ def main():
     args = parse_args(default_config)
     config = ExperimentConfig(
         title=default_config.title,
-        output_root=default_config.output_root,
+        output_root=args.output_root,
         population_size=args.population_size,
         offspring_population_size=args.offspring_population_size,
         max_evaluations=args.max_evaluations,
