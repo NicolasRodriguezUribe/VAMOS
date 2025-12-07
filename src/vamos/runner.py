@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from copy import deepcopy
-from datetime import datetime
+import json
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
 import numpy as np
 
@@ -15,9 +14,7 @@ from vamos.execution import execute_algorithm
 from vamos.problem.registry import make_problem_selection
 from vamos.problem.types import ProblemProtocol, MixedProblemProtocol
 from vamos.io_utils import write_population, write_metadata, write_timing, ensure_dir
-from vamos.version import __version__
-
-# New imports
+from vamos.metadata import build_run_metadata
 from vamos.experiment_config import (
     ExperimentConfig,
     TITLE,
@@ -30,49 +27,12 @@ from vamos.experiment_config import (
     EXPERIMENT_BACKENDS,
 )
 from vamos.problem.resolver import resolve_problem_selections, ProblemSelection
-from vamos.algorithm.factory import build_algorithm, _merge_variation_overrides
-from vamos.kernel.registry import resolve_kernel
+from vamos.algorithm.factory import build_algorithm
+from vamos.config.variation import merge_variation_overrides, normalize_variation_config
 from vamos.hv_stop import build_hv_stop_config, compute_hv_reference
 from vamos.eval.backends import resolve_eval_backend
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-
-def _git_revision() -> Optional[str]:
-    """
-    Return current git commit hash if available, otherwise None.
-    Safe to call in packaged installations without git.
-    """
-    try:
-        rev = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, stderr=subprocess.DEVNULL
-        )
-    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-        return None
-    return rev.decode().strip() or None
-
-
-def serialize_operator_tuple(op_tuple):
-    if not op_tuple:
-        return None
-    name, params = op_tuple
-    return {"name": name, "params": params}
-
-
-def collect_operator_metadata(cfg_data) -> dict:
-    if cfg_data is None:
-        return {}
-    payload = {}
-    for key in ("crossover", "mutation", "repair"):
-        value = getattr(cfg_data, key, None)
-        formatted = serialize_operator_tuple(value)
-        if formatted:
-            payload[key] = formatted
-    return payload
-
-
-
-
 
 def _validate_problem(problem: ProblemProtocol) -> None:
     if problem.n_var <= 0 or problem.n_obj <= 0:
@@ -184,112 +144,6 @@ def _print_run_results(metrics: dict):
         print(f"Objective 1 spread: {spread:.6f}")
 
 
-def _build_run_metadata(
-    selection: ProblemSelection,
-    algorithm_name: str,
-    engine_name: str,
-    cfg_data,
-    metrics: dict,
-    *,
-    kernel_backend,
-    seed: int,
-    config: ExperimentConfig,
-):
-    timestamp = datetime.utcnow().isoformat()
-    problem = selection.instantiate()
-    problem_info = {
-        "label": selection.spec.label,
-        "key": selection.spec.key,
-        "n_var": selection.n_var,
-        "n_obj": selection.n_obj,
-        "encoding": getattr(problem, "encoding", "continuous"),
-    }
-    try:
-        problem_info["description"] = selection.spec.description
-    except Exception:
-        pass
-
-    kernel_caps = sorted(set(kernel_backend.capabilities())) if kernel_backend else []
-    kernel_info = {
-        "name": kernel_backend.__class__.__name__ if kernel_backend else "external",
-        "device": kernel_backend.device() if kernel_backend else "external",
-        "capabilities": kernel_caps,
-    }
-    operator_payload = collect_operator_metadata(cfg_data)
-    config_payload = cfg_data.to_dict() if hasattr(cfg_data, "to_dict") else None
-    metric_payload = {
-        "time_ms": metrics["time_ms"],
-        "evaluations": metrics["evaluations"],
-        "evals_per_sec": metrics["evals_per_sec"],
-        "spread": metrics["spread"],
-        "termination": metrics.get("termination"),
-    }
-    if metrics.get("hv_threshold_fraction") is not None:
-        metric_payload["hv_threshold_fraction"] = metrics.get("hv_threshold_fraction")
-        metric_payload["hv_reference_point"] = metrics.get("hv_reference_point")
-        metric_payload["hv_reference_front"] = metrics.get("hv_reference_front")
-    metadata = {
-        "title": config.title,
-        "timestamp": timestamp,
-        "algorithm": algorithm_name,
-        "backend": engine_name,
-        "backend_info": kernel_info,
-        "seed": seed,
-        "population_size": config.population_size,
-        "max_evaluations": config.max_evaluations,
-        "vamos_version": __version__,
-        "git_revision": _git_revision(),
-        "problem": problem_info,
-        "config": config_payload,
-        "metrics": metric_payload,
-    }
-    if operator_payload:
-        metadata["operators"] = operator_payload
-    return metadata
-
-
-def _normalize_operator_tuple(spec) -> tuple[str, dict] | None:
-    """
-    Accepts operator specs coming from CLI/config (tuple, dict, or string) and
-    normalizes them to (name, params) tuples expected by the factory.
-    """
-    if spec is None:
-        return None
-    if isinstance(spec, tuple):
-        return spec
-    if isinstance(spec, str):
-        return (spec, {})
-    if isinstance(spec, dict):
-        method = spec.get("method") or spec.get("name")
-        if not method:
-            return None
-        params = {k: v for k, v in spec.items() if k not in {"method", "name"} and v is not None}
-        return (method, params)
-    return None
-
-
-def _normalize_variation_config(raw: dict | None) -> dict | None:
-    """
-    Normalize variation configuration received from CLI/config-file parsing into
-    the tuples expected by build_algorithm().
-    """
-    if not raw:
-        return None
-    normalized: dict = {}
-    known_op_keys = {"crossover", "mutation", "selection", "repair", "aggregation"}
-    for key in known_op_keys:
-        op = _normalize_operator_tuple(raw.get(key))
-        if op:
-            normalized[key] = op
-    # Preserve any additional keys (e.g., algorithm-specific knobs) that are not None.
-    for key, value in raw.items():
-        if key in normalized or key in known_op_keys:
-            continue
-        if value is not None:
-            normalized[key] = value
-    return normalized or None
-
-
 def run_single(
     engine_name: str,
     algorithm_name: str,
@@ -309,17 +163,37 @@ def run_single(
     hv_stop_config: dict | None = None,
     config_source: str | None = None,
     problem_override: dict | None = None,
+    track_genealogy: bool = False,
+    autodiff_constraints: bool = False,
 ):
     problem = selection.instantiate()
     display_algo = algorithm_name.upper()
     _print_run_banner(problem, selection, display_algo, engine_name, config)
-    nsgaii_variation = _normalize_variation_config(nsgaii_variation)
-    moead_variation = _normalize_variation_config(moead_variation)
-    smsemoa_variation = _normalize_variation_config(smsemoa_variation)
-    nsga3_variation = _normalize_variation_config(nsga3_variation)
-    spea2_variation = _normalize_variation_config(spea2_variation)
-    ibea_variation = _normalize_variation_config(ibea_variation)
-    smpso_variation = _normalize_variation_config(smpso_variation)
+    nsgaii_variation = normalize_variation_config(nsgaii_variation)
+    moead_variation = normalize_variation_config(moead_variation)
+    smsemoa_variation = normalize_variation_config(smsemoa_variation)
+    nsga3_variation = normalize_variation_config(nsga3_variation)
+    spea2_variation = normalize_variation_config(spea2_variation)
+    ibea_variation = normalize_variation_config(ibea_variation)
+    smpso_variation = normalize_variation_config(smpso_variation)
+    autodiff_info = None
+    if autodiff_constraints:
+        autodiff_info = {"status": "unavailable"}
+        try:
+            from vamos.constraints.autodiff import build_jax_constraint_functions
+            cm = getattr(problem, "constraint_model", None)
+            if callable(cm):
+                cm = cm()
+            if cm is not None:
+                fun, jac = build_jax_constraint_functions(cm)
+                autodiff_info = {
+                    "status": "ok",
+                    "n_constraints": len(getattr(cm, "constraints", []) or []),
+                }
+            else:
+                autodiff_info = {"status": "no_constraint_model"}
+        except Exception as exc:
+            autodiff_info = {"status": "error", "message": str(exc)}
     eval_backend = resolve_eval_backend(getattr(config, "eval_backend", "serial"), n_workers=getattr(config, "n_workers", None))
     live_viz = None
     output_dir = run_output_dir(selection, algorithm_name, engine_name, config.seed, config)
@@ -347,6 +221,7 @@ def run_single(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        track_genealogy=track_genealogy,
     )
     kernel_backend = algorithm.kernel
 
@@ -398,11 +273,25 @@ def run_single(
         metrics["backend_capabilities"] = []
     _print_run_results(metrics)
     metrics["output_dir"] = output_dir
-    artifacts = write_population(output_dir, F, archive)
+    artifacts = write_population(
+        output_dir,
+        F,
+        archive,
+        X=payload.get("X"),
+        G=payload.get("G"),
+    )
+    if payload.get("genealogy"):
+        genealogy_path = Path(output_dir) / "genealogy.json"
+        genealogy_path.write_text(json.dumps(payload["genealogy"], indent=2), encoding="utf-8")
+        artifacts["genealogy"] = genealogy_path.name
+    if autodiff_info is not None:
+        autodiff_path = Path(output_dir) / "autodiff_constraints.json"
+        autodiff_path.write_text(json.dumps(autodiff_info, indent=2), encoding="utf-8")
+        artifacts["autodiff_constraints"] = autodiff_path.name
     if archive is not None:
         metrics["archive"] = archive
     write_timing(output_dir, total_time_ms)
-    metadata = _build_run_metadata(
+    metadata = build_run_metadata(
         selection,
         algorithm_name,
         engine_name,
@@ -411,15 +300,29 @@ def run_single(
         kernel_backend=kernel_backend,
         seed=config.seed,
         config=config,
+        project_root=PROJECT_ROOT,
     )
     metadata["config_source"] = config_source
     if problem_override:
         metadata["problem_override"] = problem_override
     if hv_stop_config:
         metadata["hv_stop_config"] = hv_stop_config
-    metadata["artifacts"] = {"fun": artifacts.get("fun"), "time_ms": "time.txt"}
-    if "archive_fun" in artifacts:
-        metadata["artifacts"]["archive_fun"] = artifacts["archive_fun"]
+    if payload.get("genealogy"):
+        metadata["genealogy"] = payload["genealogy"]
+    if autodiff_info is not None:
+        metadata["autodiff_constraints"] = autodiff_info
+    artifact_entries = {
+        "fun": artifacts.get("fun"),
+        "x": artifacts.get("x"),
+        "g": artifacts.get("g"),
+        "archive_fun": artifacts.get("archive_fun"),
+        "archive_x": artifacts.get("archive_x"),
+        "archive_g": artifacts.get("archive_g"),
+        "genealogy": artifacts.get("genealogy"),
+        "autodiff_constraints": artifacts.get("autodiff_constraints"),
+        "time_ms": "time.txt",
+    }
+    metadata["artifacts"] = {k: v for k, v in artifact_entries.items() if v is not None}
     resolved_cfg = {
         "algorithm": algorithm_name,
         "engine": engine_name,
@@ -484,6 +387,8 @@ def execute_problem_suite(
     include_external: bool = False,
     config_source: str | None = None,
     problem_override: dict | None = None,
+    track_genealogy: bool = False,
+    autodiff_constraints: bool = False,
 ):
     from vamos import external  # local import to keep runner decoupled
     from vamos import plotting
@@ -528,6 +433,8 @@ def execute_problem_suite(
                 hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                 config_source=config_source,
                 problem_override=problem_override,
+                track_genealogy=getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii",
+                autodiff_constraints=getattr(args, "autodiff_constraints", False),
             )
             results.append(metrics)
         for algorithm_name in optional_algorithms:
@@ -548,6 +455,8 @@ def execute_problem_suite(
                 hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                 config_source=config_source,
                 problem_override=problem_override,
+                track_genealogy=getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii",
+                autodiff_constraints=getattr(args, "autodiff_constraints", False),
             )
             results.append(metrics)
 
@@ -638,13 +547,15 @@ def run_from_args(args, config: ExperimentConfig):
         effective_args.live_viz = override.get("live_viz", args.live_viz)
         effective_args.live_viz_interval = override.get("live_viz_interval", args.live_viz_interval)
         effective_args.live_viz_max_points = override.get("live_viz_max_points", args.live_viz_max_points)
-        effective_args.nsgaii_variation = _merge_variation_overrides(base_variation, override.get("nsgaii"))
-        effective_args.moead_variation = _merge_variation_overrides(getattr(args, "moead_variation", None), override.get("moead"))
-        effective_args.smsemoa_variation = _merge_variation_overrides(getattr(args, "smsemoa_variation", None), override.get("smsemoa"))
-        effective_args.nsga3_variation = _merge_variation_overrides(getattr(args, "nsga3_variation", None), override.get("nsga3"))
-        effective_args.spea2_variation = _merge_variation_overrides(getattr(args, "spea2_variation", None), override.get("spea2"))
-        effective_args.ibea_variation = _merge_variation_overrides(getattr(args, "ibea_variation", None), override.get("ibea"))
-        effective_args.smpso_variation = _merge_variation_overrides(getattr(args, "smpso_variation", None), override.get("smpso"))
+        effective_args.track_genealogy = override.get("track_genealogy", getattr(args, "track_genealogy", False))
+        effective_args.autodiff_constraints = override.get("autodiff_constraints", getattr(args, "autodiff_constraints", False))
+        effective_args.nsgaii_variation = merge_variation_overrides(base_variation, override.get("nsgaii"))
+        effective_args.moead_variation = merge_variation_overrides(getattr(args, "moead_variation", None), override.get("moead"))
+        effective_args.smsemoa_variation = merge_variation_overrides(getattr(args, "smsemoa_variation", None), override.get("smsemoa"))
+        effective_args.nsga3_variation = merge_variation_overrides(getattr(args, "nsga3_variation", None), override.get("nsga3"))
+        effective_args.spea2_variation = merge_variation_overrides(getattr(args, "spea2_variation", None), override.get("spea2"))
+        effective_args.ibea_variation = merge_variation_overrides(getattr(args, "ibea_variation", None), override.get("ibea"))
+        effective_args.smpso_variation = merge_variation_overrides(getattr(args, "smpso_variation", None), override.get("smpso"))
         effective_args.effective_problem_override = override
 
         if multiple:
@@ -673,4 +584,6 @@ def run_from_args(args, config: ExperimentConfig):
             include_external=effective_args.include_external,
             config_source=config_source,
             problem_override=override,
+            track_genealogy=effective_args.track_genealogy,
+            autodiff_constraints=effective_args.autodiff_constraints,
         )

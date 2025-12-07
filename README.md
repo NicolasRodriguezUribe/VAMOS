@@ -1,4 +1,4 @@
-# VAMOS – Vectorized Architecture for Multiobjective Optimization Studies
+# VAMOS - Vectorized Architecture for Multiobjective Optimization Studies
 
 ![VAMOS](VAMOS.jpeg)
 
@@ -22,7 +22,7 @@ python -m vamos.main --engine moocore --problem zdt1 --max-evaluations 2000
 pytest
 ```
 
-## What’s inside
+## What's inside
 
 - Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO with vectorized kernels (NumPy, Numba, MooCore).
 - Encodings: continuous, permutation, binary, integer, mixed.
@@ -30,7 +30,7 @@ pytest
 - Analysis: constraint handling toolbox, objective reduction, MCDM helpers, visualization utilities, stats (Friedman/Wilcoxon/CD plots).
 - Problems: ZDT, DTLZ, WFG, LZ09 (pymoo-backed), CEC2009 UF/CF (pymoo-backed), TSP/TSPLIB, binary (feature selection/knapsack/QUBO), integer (allocation/job assignment), mixed design, welded beam and real-data examples (SVM tuning, feature selection).
 - CLI/runner: experiment orchestration, metrics, result CSVs/metadata under `results/`.
-- StudyRunner: batch problem × algorithm × seed sweeps.
+- StudyRunner: batch problem x algorithm x seed sweeps.
 - Notebooks: exploratory examples under `notebooks/` (optional).
 
 ## Common commands
@@ -38,8 +38,8 @@ pytest
 - Run with different algorithms/problems:
   - `python -m vamos.main --algorithm moead --problem dtlz2 --n-obj 3`
   - `python -m vamos.main --algorithm spea2 --problem zdt1 --max-evaluations 1000`
-  - `python -m vamos.main --problem-set families`
-  - `python -m vamos.main --problem tsp6`
+- `python -m vamos.main --problem-set families`
+- `python -m vamos.main --problem tsp6`
 - Use hypervolume early-stop on NSGA-II:
   - `python -m vamos.main --hv-threshold 0.5 --hv-reference-front data/reference_fronts/ZDT1.csv`
 - Run tuning (outer NSGA-II over hyperparameters) via code (see `vamos.tuning`).
@@ -50,6 +50,11 @@ pytest
 - Quick sanity check of your install:
   - `python -m vamos.self_check`
   - or `vamos-self-check`
+
+## Documentation
+
+- Browse the docs under `docs/` (MkDocs). Key pages cover CLI/config, algorithms/backends, problems, constraint DSL/autodiff, and extension guides.
+- Build locally: `mkdocs serve` (or `py -m mkdocs serve`) after installing the `docs` extra with `pip install -e ".[docs]"`.
 
 ### Examples
 
@@ -120,14 +125,14 @@ export VAMOS_USE_NUMBA_VARIATION=1  # set before running
 
 ## Package layout (src/vamos)
 
-- `algorithm/` – evolutionary cores and config builders.
-- `kernel/` – NumPy/Numba/MooCore kernels.
-- `problem/` – benchmark problems and registry.
-- `tuning/` – meta-optimizer (outer NSGA-II), config spaces, pipelines.
-- `constraints.py` – feasibility/penalty strategies.
-- `objective_reduction.py` – correlation/angle/hybrid reducers.
-- `mcdm.py`, `visualization.py`, `stats.py` – decision-making, plotting, post-hoc stats.
-- `runner.py`, `cli.py`, `study/` – CLI and study orchestration.
+- `algorithm/` - evolutionary cores and config builders.
+- `kernel/` - NumPy/Numba/MooCore kernels.
+- `problem/` - benchmark problems and registry.
+- `tuning/` - meta-optimizer (outer NSGA-II), config spaces, pipelines.
+- `constraints.py` - feasibility/penalty strategies.
+- `objective_reduction.py` - correlation/angle/hybrid reducers.
+- `mcdm.py`, `visualization.py`, `stats.py` - decision-making, plotting, post-hoc stats.
+- `runner.py`, `cli.py`, `study/` - CLI and study orchestration.
 
 ## Dependencies
 
@@ -162,7 +167,7 @@ pip install -e ".[backends]"
 
 ## Additional benchmarks & examples
 
-- New benchmark families: LZ09 (F1–F9, built-in) and CEC2009 UF1–UF3 + CF1 (fallback implementations shipped; will use pymoo if installed).
+- New benchmark families: LZ09 (F1-F9, built-in) and CEC2009 UF1-UF3 + CF1 (fallback implementations shipped; will use pymoo if installed).
 - Real-world problems: mixed hyperparameter tuning (`ml_tuning`), welded beam design (`welded_beam`), and binary feature selection (`fs_real`) are registered and usable via CLI or `optimize()`.
 - Example scripts under `examples/` (run with `pip install -e ".[examples]"`):
   - `python examples/hyperparam_tuning_pipeline.py`
@@ -170,7 +175,7 @@ pip install -e ".[backends]"
   - `python examples/feature_selection_qubo.py`
 - Paper-ready benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/` runs predefined suites, writes raw runs + summary CSVs + LaTeX-ready tables and plots under `report/`.
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
-- Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based ε-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.hyperheuristics`.
+- Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.hyperheuristics`.
 - Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `02_tuning_and_metaoptimization.ipynb`).
 
 ## Testing & QA
