@@ -1,37 +1,19 @@
 ﻿from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
-try:  # pragma: no cover - optional heavy dep
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-except Exception:  # pragma: no cover - allow headless environments
-    matplotlib = None
-    plt = None
-
 from vamos.benchmark.runner import BenchmarkResult
-from vamos.stats import friedman_test, pairwise_wilcoxon, plot_critical_distance
-
-
-def _ensure_dir(path: Path) -> Path:
-    path.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def _import_pandas():
-    try:
-        import pandas as pd  # type: ignore
-    except ImportError as exc:  # pragma: no cover - optional dependency
-        raise ImportError(
-            "Benchmark reporting requires pandas. Install via 'pip install pandas' or the "
-            "'notebooks'/'examples' extras."
-        ) from exc
-    return pd
+from vamos.stats import friedman_test, pairwise_wilcoxon
+from vamos.benchmark.report_utils import (
+    ensure_dir,
+    import_pandas,
+    higher_is_better,
+    format_cell,
+    dump_stats_summary,
+)
+from vamos.benchmark.report_plots import generate_plots
 
 
 @dataclass
@@ -47,21 +29,14 @@ class BenchmarkReport:
     def __init__(self, result: BenchmarkResult, config: BenchmarkReportConfig, output_dir: Path):
         self.result = result
         self.config = config
-        self.output_dir = _ensure_dir(output_dir)
+        self.output_dir = ensure_dir(output_dir)
         self._tidy = None
         self._stats_cache: Dict[str, Any] | None = None
-
-    @staticmethod
-    def _higher_is_better(metric: str) -> bool:
-        m = metric.lower()
-        if m in {"igd", "igd+", "igd_plus", "epsilon", "epsilon_additive", "epsilon_mult"}:
-            return False
-        return True
 
     def aggregate_metrics(self):
         if self._tidy is not None:
             return self._tidy
-        pd = _import_pandas()
+        pd = import_pandas()
         summary_path = self.result.summary_path
         if summary_path is None or not summary_path.exists():
             raise FileNotFoundError("Summary CSV not found for benchmark reporting.")
@@ -99,7 +74,7 @@ class BenchmarkReport:
     def compute_statistics(self) -> Dict[str, Any]:
         if self._stats_cache is not None:
             return self._stats_cache
-        pd = _import_pandas()
+        pd = import_pandas()
         tidy = self.aggregate_metrics()
         stats: Dict[str, Any] = {}
         for metric in self.config.metrics:
@@ -114,34 +89,21 @@ class BenchmarkReport:
                 scores = pivot_mean.values
                 # Friedman requires at least 3 algorithms; skip when not applicable.
                 if scores.shape[1] >= 3:
-                    fried = friedman_test(scores, higher_is_better=self._higher_is_better(metric))
+                    fried = friedman_test(scores, higher_is_better=higher_is_better(metric))
                     wilc = pairwise_wilcoxon(
                         scores,
                         list(pivot_mean.columns),
-                        higher_is_better=self._higher_is_better(metric),
+                        higher_is_better=higher_is_better(metric),
                         alpha=self.config.alpha,
                     )
             stats[metric] = {"grouped": grouped, "pivot_mean": pivot_mean, "friedman": fried, "wilcoxon": wilc}
         self._stats_cache = stats
-        # Persist quick summary
-        summary_path = self.output_dir / "statistics.json"
-        serializable = {}
-        for metric, payload in stats.items():
-            fried = payload.get("friedman")
-            serializable[metric] = {
-                "friedman": {
-                    "statistic": getattr(fried, "statistic", None),
-                    "p_value": getattr(fried, "p_value", None),
-                }
-                if fried
-                else None
-            }
-        summary_path.write_text(json.dumps(serializable, indent=2), encoding="utf-8")
+        dump_stats_summary(stats, self.output_dir / "statistics.json")
         return stats
 
     def _best_algorithms(self, mean_table, metric: str) -> Dict[str, str]:
         best: Dict[str, str] = {}
-        higher = self._higher_is_better(metric)
+        higher = higher_is_better(metric)
         for problem in mean_table.index:
             row = mean_table.loc[problem]
             if higher:
@@ -150,17 +112,6 @@ class BenchmarkReport:
                 best_alg = row.idxmin()
             best[problem] = best_alg
         return best
-
-    def _format_cell(self, mean: float, std: float, is_best: bool, marker: str) -> str:
-        fmt = self.config.latex_float_format
-        if fmt.startswith("%"):
-            fmt = fmt.lstrip("%")
-        cell = f"{mean:{fmt}} +/- {std:{fmt}}"
-        if is_best:
-            cell = f"\\textbf{{{cell}}}"
-        if marker:
-            cell = f"{cell}$^{{{marker}}}$"
-        return cell
 
     def _per_problem_markers(self, dfm, problem: str, best_alg: str, metric: str) -> Dict[str, str]:
         markers: Dict[str, str] = {}
@@ -184,7 +135,7 @@ class BenchmarkReport:
             except ValueError:
                 continue
             if p < self.config.alpha:
-                higher = self._higher_is_better(metric)
+                higher = higher_is_better(metric)
                 best_mean = best_values.mean()
                 other_mean = other.mean()
                 if (higher and other_mean > best_mean) or ((not higher) and other_mean < best_mean):
@@ -194,10 +145,10 @@ class BenchmarkReport:
         return markers
 
     def generate_latex_tables(self) -> Dict[str, Path]:
-        pd = _import_pandas()
+        pd = import_pandas()
         tidy = self.aggregate_metrics()
         stats = self.compute_statistics()
-        tables_dir = _ensure_dir(self.output_dir / "tables")
+        tables_dir = ensure_dir(self.output_dir / "tables")
         created: Dict[str, Path] = {}
         for metric in self.config.metrics:
             dfm = tidy[tidy["metric"] == metric]
@@ -218,7 +169,7 @@ class BenchmarkReport:
                     std = std_table.loc[problem, alg]
                     is_best = alg == best_map[problem]
                     marker = markers.get(alg, "")
-                    row_cells[alg] = self._format_cell(mean, std, is_best, marker)
+                    row_cells[alg] = format_cell(self.config.latex_float_format, mean, std, is_best, marker)
                 rows.append(row_cells)
             table_df = pd.DataFrame(rows)
             latex_path = tables_dir / f"{self.result.suite.name}_{metric}.tex"
@@ -242,52 +193,10 @@ class BenchmarkReport:
         return created
 
     def generate_plots(self) -> Dict[str, List[Path]]:
-        if plt is None:
-            return {}
         tidy = self.aggregate_metrics()
         stats = self.compute_statistics()
-        plots_dir = _ensure_dir(self.output_dir / "plots")
-        created: Dict[str, List[Path]] = {}
-        for metric in self.config.metrics:
-            metric_paths: List[Path] = []
-            payload = stats.get(metric, {})
-            fried = payload.get("friedman")
-            if fried and getattr(fried, "p_value", 1.0) is not None and fried.p_value < self.config.alpha:
-                pivot_mean = payload.get("pivot_mean")
-                if pivot_mean is not None:
-                    fig, ax = plt.subplots()
-                    plot_critical_distance(
-                        avg_ranks=fried.avg_ranks,
-                        algo_names=list(pivot_mean.columns),
-                        alpha=self.config.alpha,
-                        n_problems=pivot_mean.shape[0],
-                        higher_is_better=self._higher_is_better(metric),
-                        ax=ax,
-                        show=False,
-                    )
-                    cd_path = plots_dir / f"cd_{metric}.pdf"
-                    fig.tight_layout()
-                    fig.savefig(cd_path)
-                    plt.close(fig)
-                    metric_paths.append(cd_path)
-            dfm = tidy[tidy["metric"] == metric]
-            problems = sorted(dfm["problem"].unique())
-            for problem in problems:
-                subset = dfm[dfm["problem"] == problem]
-                fig, ax = plt.subplots()
-                data = [subset[subset["algorithm"] == alg]["value"].dropna().values for alg in subset["algorithm"].unique()]
-                labels = list(subset["algorithm"].unique())
-                ax.boxplot(data, labels=labels, patch_artist=True)
-                ax.set_title(f"{metric} | {problem}")
-                ax.set_ylabel(metric)
-                fig.tight_layout()
-                path = plots_dir / f"boxplot_{metric}_{problem}.pdf"
-                fig.savefig(path)
-                plt.close(fig)
-                metric_paths.append(path)
-            if metric_paths:
-                created[metric] = metric_paths
-        return created
+        plots_dir = ensure_dir(self.output_dir / "plots")
+        return generate_plots(tidy, stats, self.config.metrics, self.config.alpha, self.result.suite.name, plots_dir, higher_is_better)
 
 
 
