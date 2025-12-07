@@ -57,6 +57,9 @@ studio = [
 autodiff = [
   "jax>=0.4"
 ]
+docs = [
+  "mkdocs>=1.6"
+]
 
 [project.scripts]
 vamos = "vamos.main:main"

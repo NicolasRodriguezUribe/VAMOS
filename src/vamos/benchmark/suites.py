@@ -111,6 +111,54 @@ def _init_default_suites() -> None:
         )
     )
 
+    perm_experiments = [
+        BenchmarkExperiment("tsp6", {"n_var": 6}, evaluation_budget=5000),
+        BenchmarkExperiment("kroa100", {"n_var": 100}, evaluation_budget=40000),
+        BenchmarkExperiment("krob100", {"n_var": 100}, evaluation_budget=40000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="Permutation_TSP",
+            experiments=perm_experiments,
+            default_algorithms=["nsgaii", "spea2"],
+            default_metrics=["hv", "igd_plus", "epsilon_additive"],
+            description="Permutation-encoded TSP/TSPLIB problems.",
+            default_seeds=list(range(3)),
+        )
+    )
+
+    discrete_experiments = [
+        BenchmarkExperiment("bin_knapsack", {"n_var": 50}, evaluation_budget=20000),
+        BenchmarkExperiment("bin_qubo", {"n_var": 30}, evaluation_budget=15000),
+        BenchmarkExperiment("int_jobs", {"n_var": 30}, evaluation_budget=20000),
+        BenchmarkExperiment("int_alloc", {"n_var": 20}, evaluation_budget=15000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="Discrete_BIN_INT",
+            experiments=discrete_experiments,
+            default_algorithms=["nsgaii", "moead", "spea2"],
+            default_metrics=["hv", "igd_plus", "epsilon_additive"],
+            description="Binary/integer benchmarks exercising non-continuous operators.",
+            default_seeds=list(range(3)),
+        )
+    )
+
+    mixed_experiments = [
+        BenchmarkExperiment("mixed_design", {"n_var": 9}, evaluation_budget=15000),
+        BenchmarkExperiment("welded_beam", {}, evaluation_budget=20000),
+        BenchmarkExperiment("ml_tuning", {}, evaluation_budget=10000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="Mixed_real",
+            experiments=mixed_experiments,
+            default_algorithms=["nsgaii"],
+            default_metrics=["hv", "igd_plus", "epsilon_additive"],
+            description="Mixed and real-world examples (requires examples/notebooks extras for some problems).",
+            default_seeds=list(range(3)),
+        )
+    )
+
 
 _init_default_suites()
-

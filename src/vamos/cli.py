@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import argparse
-import json
-from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
+from vamos.config.loader import load_experiment_spec
 from vamos.problem.registry import available_problem_names
 from vamos.experiment_config import (
     DEFAULT_ALGORITHM,
@@ -52,24 +51,6 @@ def _parse_positive_float(parser, flag: str, raw, *, allow_zero: bool):
         if value <= 0.0:
             parser.error(f"{flag} must be positive.")
     return value
-
-
-def _load_experiment_spec(path: str) -> Dict[str, Any]:
-    spec_path = Path(path).expanduser().resolve()
-    if not spec_path.exists():
-        raise FileNotFoundError(f"Config file '{spec_path}' does not exist.")
-    suffix = spec_path.suffix.lower()
-    if suffix in {".yaml", ".yml"}:
-        try:
-            import yaml  # type: ignore
-        except ImportError as exc:  # pragma: no cover - optional dependency
-            raise ImportError(
-                "YAML config requested but PyYAML is not installed. Install with 'pip install pyyaml'."
-            ) from exc
-        with spec_path.open("r", encoding="utf-8") as fh:
-            return yaml.safe_load(fh) or {}
-    with spec_path.open("r", encoding="utf-8") as fh:
-        return json.load(fh)
 
 
 def _normalize_operator_args(parser, args):
@@ -166,7 +147,7 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
     smsemoa_defaults: dict[str, Any] = {}
     nsga3_defaults: dict[str, Any] = {}
     if pre_args.config:
-        spec = _load_experiment_spec(pre_args.config)
+        spec = load_experiment_spec(pre_args.config)
         problem_overrides = spec.get("problems", {}) or {}
         experiment_defaults = spec.get("defaults", {}) or {k: v for k, v in spec.items() if k != "problems"}
         nsgaii_defaults = experiment_defaults.get("nsgaii", {}) or {}
@@ -230,6 +211,18 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         type=int,
         default=experiment_defaults.get("live_viz_max_points", 1000),
         help="Maximum points to plot in live visualization (subsampled if larger).",
+    )
+    parser.add_argument(
+        "--track-genealogy",
+        action="store_true",
+        default=bool(experiment_defaults.get("track_genealogy", False)),
+        help="Record genealogy/operator stats during NSGA-II runs and save them to results.",
+    )
+    parser.add_argument(
+        "--autodiff-constraints",
+        action="store_true",
+        default=bool(experiment_defaults.get("autodiff_constraints", False)),
+        help="Attempt to build JAX-based constraint evaluators when a ConstraintModel is available.",
     )
     parser.add_argument(
         "--problem",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from vamos.algorithm.config import (
     NSGAIIConfig,
@@ -14,60 +14,8 @@ from vamos.algorithm.config import (
 from vamos.algorithm.autonsga2_builder import build_autonsga2
 from vamos.algorithm.registry import resolve_algorithm
 from vamos.experiment_config import ExperimentConfig
+from vamos.config.variation import merge_variation_overrides, resolve_nsgaii_variation_config
 from vamos.kernel.registry import resolve_kernel
-
-def resolve_nsgaii_variation_config(encoding: str, overrides: dict | None) -> dict:
-    """
-    Return a default variation config for NSGA-II based on encoding,
-    optionally merging user overrides.
-    """
-    base = {}
-    if encoding == "real":
-        base = {
-            "crossover": ("sbx", {"prob": 0.9, "eta": 20.0}),
-            "mutation": ("pm", {"prob": 0.1, "eta": 20.0}),  # prob adjusted later usually
-        }
-    elif encoding == "binary":
-        base = {
-            "crossover": ("hux", {"prob": 0.9}),
-            "mutation": ("bitflip", {"prob": 0.1}),
-        }
-    elif encoding == "integer":
-        base = {
-            "crossover": ("sbx", {"prob": 0.9, "eta": 20.0}), # Integer SBX often used
-            "mutation": ("pm", {"prob": 0.1, "eta": 20.0}),
-        }
-    elif encoding == "permutation":
-        base = {
-            "crossover": ("ox", {"prob": 0.9}),
-            "mutation": ("swap", {"prob": 0.1}),
-        }
-    else:
-        # Fallback
-        base = {
-            "crossover": ("sbx", {"prob": 0.9, "eta": 20.0}),
-            "mutation": ("pm", {"prob": 0.1, "eta": 20.0}),
-        }
-
-    if overrides:
-        # Simple merge: overrides replace base keys
-        # For tuples like ("sbx", {...}), we replace the whole tuple if present
-        if "crossover" in overrides:
-            base["crossover"] = overrides["crossover"]
-        if "mutation" in overrides:
-            base["mutation"] = overrides["mutation"]
-        if "repair" in overrides:
-            base["repair"] = overrides["repair"]
-
-    return base
-
-def _merge_variation_overrides(base: dict | None, override: dict | None) -> dict:
-    if base is None:
-        base = {}
-    if override is None:
-        return base
-    # Shallow merge
-    return {**base, **override}
 
 def build_algorithm(
     algorithm_name: str,
@@ -85,6 +33,7 @@ def build_algorithm(
     spea2_variation: dict | None = None,
     ibea_variation: dict | None = None,
     smpso_variation: dict | None = None,
+    track_genealogy: bool = False,
 ):
     """
     Factory to build the algorithm instance.
@@ -131,6 +80,8 @@ def build_algorithm(
 
         if external_archive_size:
             builder.external_archive(size=external_archive_size, archive_type=archive_type)
+        if track_genealogy:
+            builder.track_genealogy(True)
 
         cfg_data = builder.fixed()
         algo_ctor = resolve_algorithm("nsgaii")
@@ -138,7 +89,7 @@ def build_algorithm(
 
     elif algorithm_name == "moead":
         # MOEA/D defaults
-        var_cfg = _merge_variation_overrides(
+        var_cfg = merge_variation_overrides(
             {
                 "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
                 "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
@@ -171,7 +122,7 @@ def build_algorithm(
         return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
 
     elif algorithm_name == "smsemoa":
-        var_cfg = _merge_variation_overrides(
+        var_cfg = merge_variation_overrides(
             {
                 "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
                 "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
@@ -198,7 +149,7 @@ def build_algorithm(
         return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
 
     elif algorithm_name == "nsga3":
-        var_cfg = _merge_variation_overrides(
+        var_cfg = merge_variation_overrides(
             {
                 "crossover": ("sbx", {"prob": 1.0, "eta": 30.0}), # NSGA-III often uses higher eta
                 "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
@@ -285,7 +236,7 @@ def build_algorithm(
         return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
 
     elif algorithm_name == "smpso":
-        mut_cfg = _merge_variation_overrides(
+        mut_cfg = merge_variation_overrides(
             {
                 "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
             },

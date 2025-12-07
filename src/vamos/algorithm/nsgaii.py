@@ -14,6 +14,7 @@ from vamos.eval.backends import SerialEvalBackend
 from vamos.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.hyperheuristics.operator_selector import make_operator_selector, compute_reward
 from vamos.hyperheuristics.indicator import IndicatorEvaluator
+from vamos.analytics.genealogy import GenealogyTracker, get_lineage
 
 
 def _build_mating_pool(
@@ -78,6 +79,73 @@ def _feasible_nsga2_survival(kernel, X, F, G, X_off, F_off, G_off, pop_size):
     return X_comb[selected], F_comb[selected], G_comb[selected]
 
 
+def _match_ids(new_X: np.ndarray, combined_X: np.ndarray, combined_ids: np.ndarray) -> np.ndarray:
+    """
+    Map surviving rows in new_X back to their ids from combined_X/combined_ids.
+    Uses an isclose match; falls back to -1 when no match is found.
+    """
+    new_ids = np.full(new_X.shape[0], -1, dtype=int)
+    for i, row in enumerate(new_X):
+        matches = np.where(np.all(np.isclose(combined_X, row, atol=1e-8), axis=1))[0]
+        if matches.size:
+            new_ids[i] = combined_ids[matches[0]]
+    return new_ids
+
+
+def _operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:
+    final_ancestors = set()
+    for fid in final_ids:
+        for rec in get_lineage(tracker, fid):
+            final_ancestors.add(rec.individual_id)
+    totals = {}
+    finals = {}
+    for rec in tracker.records.values():
+        if rec.operator_name is None:
+            continue
+        op = rec.operator_name
+        totals[op] = totals.get(op, 0) + 1
+        if rec.individual_id in final_ancestors:
+            finals[op] = finals.get(op, 0) + 1
+    rows = []
+    for op, cnt in totals.items():
+        good = finals.get(op, 0)
+        rows.append(
+            {
+                "operator": op,
+                "total_uses": cnt,
+                "uses_in_final_lineages": good,
+                "ratio": (good / cnt) if cnt else 0.0,
+            }
+        )
+    return rows
+
+
+def _generation_contributions(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:
+    final_ancestors = set()
+    for fid in final_ids:
+        for rec in get_lineage(tracker, fid):
+            final_ancestors.add(rec.individual_id)
+    gen_totals = {}
+    gen_final = {}
+    for rec in tracker.records.values():
+        gen_totals[rec.generation] = gen_totals.get(rec.generation, 0) + 1
+        if rec.individual_id in final_ancestors:
+            gen_final[rec.generation] = gen_final.get(rec.generation, 0) + 1
+    rows = []
+    for gen in sorted(gen_totals.keys()):
+        tot = gen_totals.get(gen, 0)
+        fin = gen_final.get(gen, 0)
+        rows.append(
+            {
+                "generation": gen,
+                "total": tot,
+                "final_lineage": fin,
+                "ratio": (fin / tot) if tot else 0.0,
+            }
+        )
+    return rows
+
+
 class NSGAII:
     """
     Vectorized/SOA-style NSGA-II evolutionary core.
@@ -138,6 +206,19 @@ class NSGAII:
                     archive_size, n_var, problem.n_obj, X.dtype
                 )
                 archive_X, archive_F = archive_manager.update(X, F)
+
+        track_genealogy = bool(self.cfg.get("track_genealogy", False))
+        genealogy_tracker = GenealogyTracker() if track_genealogy else None
+        ids = np.arange(pop_size, dtype=int) if track_genealogy else None
+        if genealogy_tracker is not None:
+            for i in range(pop_size):
+                genealogy_tracker.new_individual(
+                    generation=0,
+                    parents=[],
+                    operator_name=None,
+                    algorithm_name="nsgaii",
+                    fitness=F[i] if F is not None and i < F.shape[0] else None,
+                )
 
         sel_method, sel_params = self.cfg["selection"]
         if sel_method != "tournament":
@@ -244,6 +325,10 @@ class NSGAII:
             "archive_via_kernel": archive_via_kernel,
             "result_archive": result_archive,
             "hv_tracker": hv_tracker,
+            "track_genealogy": track_genealogy,
+            "genealogy_tracker": genealogy_tracker,
+            "ids": ids,
+            "generation": 0,
         }
         self._state["hv_points_fn"] = lambda: (
             self._state["archive_F"]
@@ -255,6 +340,7 @@ class NSGAII:
         live_cb.on_generation(generation, F=self._state["F"])
 
         while n_eval < max_eval and not hv_reached:
+            self._state["generation"] = generation
             X_off = self.ask()
             eval_off = eval_backend.evaluate(X_off, problem)
             hv_reached = self.tell(eval_off, pop_size)
@@ -269,6 +355,7 @@ class NSGAII:
                 hv_reached = True
                 break
             generation += 1
+            self._state["generation"] = generation
             try:
                 ranks, _ = self.kernel.nsga2_ranking(F)
                 nd_mask = ranks == ranks.min(initial=0)
@@ -293,6 +380,19 @@ class NSGAII:
             elif archive_via_kernel:
                 result["archive"] = {"X": archive_X, "F": archive_F}
         live_cb.on_end(final_F=self._state["F"])
+        if track_genealogy and genealogy_tracker is not None:
+            try:
+                ranks, _ = self.kernel.nsga2_ranking(self._state["F"])
+                nd_mask = ranks == ranks.min(initial=0)
+                final_ids = self._state.get("ids")
+                final_front_ids = final_ids[nd_mask] if final_ids is not None else []
+                genealogy_tracker.mark_final_front(list(final_front_ids))
+                result["genealogy"] = {
+                    "operator_stats": _operator_success_stats(genealogy_tracker, list(final_front_ids)),
+                    "generation_contributions": _generation_contributions(genealogy_tracker, list(final_front_ids)),
+                }
+            except Exception:
+                pass
         return result
 
     def _selection_metrics(self, F: np.ndarray, G: np.ndarray | None, constraint_mode: str):
@@ -342,6 +442,25 @@ class NSGAII:
         if X_off.shape[0] > st["offspring_size"]:
             X_off = X_off[: st["offspring_size"]]
         st["pending_offspring"] = X_off
+        if st.get("track_genealogy") and st.get("genealogy_tracker") is not None:
+            operator_name = f"{st['variation'].cross_method}+{st['variation'].mut_method}"
+            group_size = st["variation"].parents_per_group
+            children_per_group = st["variation"].children_per_group
+            parent_groups = parent_idx.reshape(-1, group_size)
+            child_ids = []
+            gen = st.get("generation", 0) + 1
+            for parents in parent_groups:
+                parent_ids = st["ids"][parents] if st.get("ids") is not None else []
+                for _ in range(children_per_group):
+                    child_ids.append(
+                        st["genealogy_tracker"].new_individual(
+                            generation=gen,
+                            parents=list(parent_ids),
+                            operator_name=operator_name,
+                            algorithm_name="nsgaii",
+                        )
+                    )
+            st["pending_offspring_ids"] = np.asarray(child_ids[: X_off.shape[0]], dtype=int)
         return X_off
 
     def tell(self, eval_result, pop_size: int) -> bool:
@@ -362,13 +481,29 @@ class NSGAII:
             except Exception:
                 hv_before = None
 
-        if st["G"] is None or st["constraint_mode"] == "none":
-            st["X"], st["F"] = self.kernel.nsga2_survival(st["X"], st["F"], X_off, F_off, pop_size)
-            st["G"] = None
+        combined_X = np.vstack([st["X"], X_off])
+        combined_F = np.vstack([st["F"], F_off])
+        combined_G = None
+        if st["G"] is not None and G_off is not None and st["constraint_mode"] != "none":
+            combined_G = np.vstack([st["G"], G_off])
+        combined_ids = None
+        if st.get("track_genealogy"):
+            combined_ids = np.concatenate(
+                [st.get("ids") or np.array([], dtype=int), st.get("pending_offspring_ids") or np.array([], dtype=int)]
+            )
+
+        if combined_G is None or st["constraint_mode"] == "none":
+            new_X, new_F = self.kernel.nsga2_survival(st["X"], st["F"], X_off, F_off, pop_size)
+            new_G = None
         else:
-            st["X"], st["F"], st["G"] = _feasible_nsga2_survival(
+            new_X, new_F, new_G = _feasible_nsga2_survival(
                 self.kernel, st["X"], st["F"], st["G"], X_off, F_off, G_off, pop_size
             )
+
+        if combined_ids is not None:
+            st["ids"] = _match_ids(new_X, combined_X, combined_ids)
+
+        st["X"], st["F"], st["G"] = new_X, new_F, new_G
         if st["result_archive"] is not None:
             st["result_archive"].update(st["X"], st["F"])
         archive_size = st["archive_size"]
@@ -389,6 +524,7 @@ class NSGAII:
                 st["op_selector"].update(st.get("last_operator_idx", 0), reward)
             except Exception:
                 pass
+        st.pop("pending_offspring_ids", None)
         return hv_reached
 
     def _resolve_archive_size(self) -> int | None:

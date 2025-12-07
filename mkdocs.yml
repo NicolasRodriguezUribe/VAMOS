@@ -1,0 +1,13 @@
+site_name: VAMOS Docs
+site_description: Vectorized Architecture for Multiobjective Optimization Studies
+repo_url: https://example.com/  # update when repository URL is available
+theme:
+  name: mkdocs
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - CLI & Config: cli.md
+  - Algorithms & Backends: algorithms.md
+  - Problems: problems.md
+  - Constraints & Autodiff: constraints.md
+  - Extending VAMOS: extending.md

@@ -13,7 +13,6 @@ from .meta_problem import MetaOptimizationProblem
 from .nsga2_meta import MetaNSGAII
 from .pipeline import TuningPipeline, compute_hyperparameter_importance
 from .tuner import NSGAIITuner
-from .param_space import ParamSpace, Real, Int, Categorical, Condition
 from .tuning_task import TuningTask, EvalContext, Instance
 from .random_search_tuner import RandomSearchTuner, TrialResult
 from .scenario import Scenario
@@ -157,11 +156,6 @@ __all__ = [
     "NSGAIITuner",
     "tune",
     "build_nsgaii_config_space",
-    "ParamSpace",
-    "Real",
-    "Int",
-    "Categorical",
-    "Condition",
     "TuningTask",
     "EvalContext",
     "Instance",

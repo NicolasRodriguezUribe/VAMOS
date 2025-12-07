@@ -31,6 +31,7 @@ class NSGAIIConfigData(_SerializableConfig):
     result_mode: Optional[str] = None
     archive_type: Optional[str] = None
     constraint_mode: str = "feasibility"
+    track_genealogy: bool = False
 
 
 @dataclass(frozen=True)
@@ -205,6 +206,10 @@ class NSGAIIConfig:
         self._cfg["constraint_mode"] = value
         return self
 
+    def track_genealogy(self, enabled: bool = True) -> "NSGAIIConfig":
+        self._cfg["track_genealogy"] = bool(enabled)
+        return self
+
     def fixed(self) -> NSGAIIConfigData:
         _require_fields(
             self._cfg,
@@ -227,6 +232,7 @@ class NSGAIIConfig:
             result_mode=self._cfg.get("result_mode"),
             archive_type=self._cfg.get("archive_type"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
+            track_genealogy=bool(self._cfg.get("track_genealogy", False)),
         )
 
 

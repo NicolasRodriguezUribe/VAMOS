@@ -6,3 +6,9 @@ results_autonsga/
 notebooks/results/
 notebooks/results_autonsga/
 *.png
+site/
+build/lib.win-amd64-cpython-312/
+build/temp.win-amd64-cpython-312/
+tmp_libhv/
+tmp_pyhv/
+.pytest_cache/

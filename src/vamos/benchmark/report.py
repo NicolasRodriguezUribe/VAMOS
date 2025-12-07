@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from dataclasses import dataclass
@@ -150,7 +150,7 @@ class BenchmarkReport:
         return best
 
     def _format_cell(self, mean: float, std: float, is_best: bool, marker: str) -> str:
-        cell = f"{mean:{self.config.latex_float_format}} ± {std:{self.config.latex_float_format}}"
+        cell = f"{mean:{self.config.latex_float_format}} +/- {std:{self.config.latex_float_format}}"
         if is_best:
             cell = f"\\textbf{{{cell}}}"
         if marker:
@@ -283,3 +283,6 @@ class BenchmarkReport:
             if metric_paths:
                 created[metric] = metric_paths
         return created
+
+
+

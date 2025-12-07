@@ -26,6 +26,7 @@ These notes capture the conventions we rely on when extending VAMOS (Vectorized 
 
 ## Documentation and comments
 - Keep README high level. Use `CODING_GUIDELINES.md` (this file) for developer-specific rules and `docs/` for deeper design discussions.
+- Update `docs/` when adding or changing user-facing behaviour (CLI flags, configs, algorithms, problems). Use `mkdocs serve` to preview.
 - Write short, purposeful comments only where intent is not obvious. Prefer descriptive names over verbose comments.
 - When adding equations or algorithm details, include references (paper name, section) to help future contributors.
 - All public-facing content (code, comments, docstrings, commit messages, notebooks) must be written in English; avoid multilingual snippets that could confuse future maintainers.

@@ -1,9 +1,8 @@
 """
-Objective reduction utilities for many-objective analysis.
+Thin facade over the core objective reduction utilities.
 
-This wraps the core reducer (``vamos.objective_reduction``) with a small façade
-for post-hoc workflows and optional use in meta-optimization. It does not alter
-core algorithm kernels; reduction is always optional.
+This module exists to preserve the analysis-facing API while delegating all
+logic to ``vamos.objective_reduction``.
 """
 from __future__ import annotations
 
@@ -12,10 +11,16 @@ from typing import Iterable, List, Tuple
 
 import numpy as np
 
+from vamos.objective_reduction import (
+    ObjectiveReductionConfig,
+    ObjectiveReducer as _CoreObjectiveReducer,
+    reduce_objectives as _core_reduce_objectives,
+)
+
 
 @dataclass(frozen=True)
 class ObjectiveReductionSpec:
-    """Configuration for optional objective reduction."""
+    """Configuration wrapper used by analysis/meta-optimization code paths."""
 
     target_dim: int
     method: str = "correlation"
@@ -24,14 +29,10 @@ class ObjectiveReductionSpec:
 
 class ObjectiveReducer:
     """
-    Thin façade around the core ObjectiveReducer to reduce objectives from F.
+    Shim around the core ObjectiveReducer to keep the analysis API stable.
     """
 
     def __init__(self, method: str = "correlation") -> None:
-        """
-        Args:
-            method: One of {"correlation", "angle", "hybrid"}.
-        """
         self.method = method
 
     def reduce(
@@ -41,16 +42,13 @@ class ObjectiveReducer:
         *,
         mandatory_keep: Iterable[int] | None = None,
     ) -> List[int]:
-        from vamos.objective_reduction import reduce_objectives as _reduce_objectives
-
-        keep = tuple(mandatory_keep or ())
-        _, selected = _reduce_objectives(
+        _, selected = _core_reduce_objectives(
             F,
             target_dim=target_dim,
             method=self.method,
-            keep_mandatory=keep,
+            keep_mandatory=tuple(mandatory_keep or ()),
         )
-        return list(selected.tolist() if hasattr(selected, "tolist") else selected)
+        return selected.tolist() if hasattr(selected, "tolist") else list(selected)
 
 
 def reduce_objectives(
@@ -60,9 +58,16 @@ def reduce_objectives(
     mandatory_keep: Iterable[int] | None = None,
 ) -> tuple[np.ndarray, List[int]]:
     """
-    Convenience: reduce F to target_dim objectives.
-    Returns (F_reduced, selected_indices).
+    Convenience wrapper delegating to the core implementation.
     """
-    reducer = ObjectiveReducer(method=method)
-    selected = reducer.reduce(F, target_dim, mandatory_keep=mandatory_keep)
-    return F[:, selected], selected
+    reduced, selected = _core_reduce_objectives(
+        F,
+        target_dim=target_dim,
+        method=method,
+        keep_mandatory=tuple(mandatory_keep or ()),
+    )
+    selected_list = selected.tolist() if hasattr(selected, "tolist") else list(selected)
+    return reduced, selected_list
+
+
+__all__ = ["ObjectiveReductionSpec", "ObjectiveReducer", "reduce_objectives", "ObjectiveReductionConfig"]
