@@ -133,12 +133,18 @@ class NSGAIIConfig:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs) -> "NSGAIIConfig":
-        self._cfg["crossover"] = (method, kwargs)
+    def crossover(self, method: str | tuple, params: dict | None = None, **kwargs) -> "NSGAIIConfig":
+        if isinstance(method, tuple) and params is None and not kwargs:
+            method, params = method
+        cfg_kwargs = params or kwargs
+        self._cfg["crossover"] = (method, cfg_kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs) -> "NSGAIIConfig":
-        self._cfg["mutation"] = (method, kwargs)
+    def mutation(self, method: str | tuple, params: dict | None = None, **kwargs) -> "NSGAIIConfig":
+        if isinstance(method, tuple) and params is None and not kwargs:
+            method, params = method
+        cfg_kwargs = params or kwargs
+        self._cfg["mutation"] = (method, cfg_kwargs)
         return self
 
     def offspring_size(self, value: int) -> "NSGAIIConfig":

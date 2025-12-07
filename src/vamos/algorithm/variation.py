@@ -6,6 +6,7 @@ from vamos.operators.binary import (
     one_point_crossover,
     two_point_crossover,
     uniform_crossover,
+    hux_crossover,
     bit_flip_mutation,
 )
 from vamos.operators.integer import (
@@ -107,6 +108,7 @@ _BINARY_CROSSOVER = {
     "two_point": two_point_crossover,
     "2point": two_point_crossover,
     "uniform": uniform_crossover,
+    "hux": hux_crossover,
 }
 
 _BINARY_MUTATION = {

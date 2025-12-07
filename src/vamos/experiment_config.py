@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # Constants moved from runner.py
@@ -24,7 +24,9 @@ EXPERIMENT_BACKENDS = (
 @dataclass
 class ExperimentConfig:
     title: str = TITLE
-    output_root: str = os.environ.get("VAMOS_OUTPUT_ROOT", "results")
+    # Capture the environment at instantiation time so test fixtures that tweak
+    # VAMOS_OUTPUT_ROOT take effect even if the module was imported earlier.
+    output_root: str = field(default_factory=lambda: os.environ.get("VAMOS_OUTPUT_ROOT", "results"))
     population_size: int = 100
     offspring_population_size: int | None = None
     max_evaluations: int = 25000

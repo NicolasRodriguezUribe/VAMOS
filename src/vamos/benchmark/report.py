@@ -112,13 +112,15 @@ class BenchmarkReport:
             wilc = []
             if pivot_mean.shape[1] > 1 and pivot_mean.shape[0] > 1:
                 scores = pivot_mean.values
-                fried = friedman_test(scores, higher_is_better=self._higher_is_better(metric))
-                wilc = pairwise_wilcoxon(
-                    scores,
-                    list(pivot_mean.columns),
-                    higher_is_better=self._higher_is_better(metric),
-                    alpha=self.config.alpha,
-                )
+                # Friedman requires at least 3 algorithms; skip when not applicable.
+                if scores.shape[1] >= 3:
+                    fried = friedman_test(scores, higher_is_better=self._higher_is_better(metric))
+                    wilc = pairwise_wilcoxon(
+                        scores,
+                        list(pivot_mean.columns),
+                        higher_is_better=self._higher_is_better(metric),
+                        alpha=self.config.alpha,
+                    )
             stats[metric] = {"grouped": grouped, "pivot_mean": pivot_mean, "friedman": fried, "wilcoxon": wilc}
         self._stats_cache = stats
         # Persist quick summary
@@ -150,7 +152,10 @@ class BenchmarkReport:
         return best
 
     def _format_cell(self, mean: float, std: float, is_best: bool, marker: str) -> str:
-        cell = f"{mean:{self.config.latex_float_format}} +/- {std:{self.config.latex_float_format}}"
+        fmt = self.config.latex_float_format
+        if fmt.startswith("%"):
+            fmt = fmt.lstrip("%")
+        cell = f"{mean:{fmt}} +/- {std:{fmt}}"
         if is_best:
             cell = f"\\textbf{{{cell}}}"
         if marker:

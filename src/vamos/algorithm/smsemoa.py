@@ -77,6 +77,10 @@ class SMSEMOA:
         xl = np.asarray(problem.xl, dtype=bounds_dtype)
         xu = np.asarray(problem.xu, dtype=bounds_dtype)
         n_var = problem.n_var
+        if xl.ndim == 0:
+            xl = np.full(n_var, xl, dtype=bounds_dtype)
+        if xu.ndim == 0:
+            xu = np.full(n_var, xu, dtype=bounds_dtype)
 
         cross_method, cross_params = self.cfg["crossover"]
         cross_params = dict(cross_params)
@@ -161,9 +165,11 @@ class SMSEMOA:
                 ranks, crowd, pressure, rng, n_parents=2
             )
             parents = X[parents_idx]
+            if parents.ndim == 2:
+                parents = parents.reshape(1, 2, n_var)
             offspring = crossover(parents)
-            child = offspring[:1].copy()
-            child = mutation(child)
+            child_vec = offspring.reshape(-1, n_var)[0:1]  # first child as (1, n_var)
+            child = mutation(child_vec)
 
             F_child = np.empty((1, problem.n_obj))
             problem.evaluate(child, {"F": F_child})

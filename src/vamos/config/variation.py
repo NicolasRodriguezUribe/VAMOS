@@ -57,12 +57,17 @@ def resolve_nsgaii_variation_config(encoding: str, overrides: dict | None) -> Di
     elif encoding == "binary":
         base = {
             "crossover": ("hux", {"prob": 0.9}),
-            "mutation": ("bitflip", {"prob": 0.1}),
+            "mutation": ("bitflip", {"prob": "1/n"}),
         }
     elif encoding == "integer":
         base = {
-            "crossover": ("sbx", {"prob": 0.9, "eta": 20.0}),
-            "mutation": ("pm", {"prob": 0.1, "eta": 20.0}),
+            "crossover": ("uniform", {"prob": 0.9}),
+            "mutation": ("reset", {"prob": "1/n"}),
+        }
+    elif encoding == "mixed":
+        base = {
+            "crossover": ("mixed", {"prob": 0.9}),
+            "mutation": ("mixed", {"prob": "1/n"}),
         }
     elif encoding == "permutation":
         base = {

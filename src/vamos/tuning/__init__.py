@@ -13,6 +13,7 @@ from .meta_problem import MetaOptimizationProblem
 from .nsga2_meta import MetaNSGAII
 from .pipeline import TuningPipeline, compute_hyperparameter_importance
 from .tuner import NSGAIITuner
+from .param_space import ParamSpace, Real, Int, Categorical as LegacyCategorical, Condition
 from .tuning_task import TuningTask, EvalContext, Instance
 from .random_search_tuner import RandomSearchTuner, TrialResult
 from .scenario import Scenario
@@ -69,6 +70,7 @@ from .spec import (
     build_experiment_from_spec,
     run_experiment_from_file,
 )
+from . import pit, evolver
 import numpy as _np
 from pathlib import Path as _Path
 import json as _json
@@ -149,6 +151,11 @@ __all__ = [
     "Double",
     "Integer",
     "ParameterDefinition",
+    "ParamSpace",
+    "Real",
+    "Int",
+    "LegacyCategorical",
+    "Condition",
     "MetaOptimizationProblem",
     "MetaNSGAII",
     "TuningPipeline",
@@ -204,6 +211,8 @@ __all__ = [
     "history_to_dict",
     "save_history_json",
     "save_history_csv",
+    "pit",
+    "evolver",
     "build_spea2_config_space",
     "build_ibea_config_space",
     "build_smpso_config_space",

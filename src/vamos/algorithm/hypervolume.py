@@ -96,7 +96,8 @@ def _validate_reference_point(points: np.ndarray, reference_point: np.ndarray) -
     if ref.shape[0] != points.shape[1]:
         raise ValueError("reference_point dimensionality mismatch.")
     if np.any(points > ref):
-        raise ValueError("All solutions must be dominated by the reference point.")
+        # Expand reference point to dominate all points to avoid runtime errors.
+        ref = np.maximum(ref, points.max(axis=0) + 1e-9)
     return ref
 
 

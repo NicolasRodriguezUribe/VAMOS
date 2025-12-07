@@ -112,9 +112,9 @@ class ObjectiveReducer:
             corr = (centered.T @ centered) / (centered.shape[0] * denom[np.newaxis, :] * denom[:, np.newaxis])
             np.clip(corr, -1.0, 1.0, out=corr)
             np.fill_diagonal(corr, 0.0)
-            abs_corr = np.abs(corr)
-            max_idx = np.unravel_index(np.argmax(abs_corr), abs_corr.shape)
-            max_val = abs_corr[max_idx]
+            # Consider positive correlation only; negative correlation is treated as diverse.
+            max_idx = np.unravel_index(np.argmax(corr), corr.shape)
+            max_val = corr[max_idx]
             if max_val < threshold:
                 break
             i_local, j_local = max_idx

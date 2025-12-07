@@ -66,47 +66,42 @@ class PolynomialMutation(Mutation):
         return self.workspace.request(key, shape, dtype)
 
     def __call__(self, offspring: ArrayLike, rng: np.random.Generator) -> ArrayLike:
-        X = self._as_population(offspring, name="offspring", copy=False)
+        X = self._as_population(offspring, name="offspring")
         n_ind, n_var = X.shape
         if n_ind == 0:
             return X
         self._check_bounds_match(X, self.lower)
-        mask = self._mask((n_ind, n_var), rng)
+
+        # Draw full random grids to keep RNG consumption aligned with regression fixtures:
+        # first grid for activation mask, second grid for delta sampling.
+        rnd_mask = rng.random(X.shape)
+        rnd_delta = rng.random(X.shape)
+        mask = rnd_mask <= self.prob
         if not np.any(mask):
             return X
 
-        yl = self.lower
-        yu = self.upper
-        rows, cols = np.nonzero(mask)
-        if rows.size == 0:
-            return X
-
-        values = self._buffer("pm_values", (rows.size,), X.dtype)
-        np.copyto(values, X[rows, cols])
-        span_vals = self.span[cols]
-        span_safe = self._span_safe[cols]
-        delta1 = (values - yl[cols]) / span_safe
-        delta2 = (yu[cols] - values) / span_safe
-        rnd = self._rand("pm_rand", (rows.size,), rng)
         mut_pow = 1.0 / (self.eta + 1.0)
-        deltaq = self._buffer("pm_deltaq", (rows.size,), np.float64)
-        deltaq.fill(0.0)
-
-        idx_lower = rnd <= 0.5
-        idx_upper = ~idx_lower
-        if np.any(idx_lower):
-            xy = 1.0 - delta1[idx_lower]
-            val = 2.0 * rnd[idx_lower] + (1.0 - 2.0 * rnd[idx_lower]) * np.power(xy, self.eta + 1.0)
-            deltaq[idx_lower] = np.power(val, mut_pow) - 1.0
-        if np.any(idx_upper):
-            xy = 1.0 - delta2[idx_upper]
-            val = 2.0 * (1.0 - rnd[idx_upper]) + 2.0 * (rnd[idx_upper] - 0.5) * np.power(xy, self.eta + 1.0)
-            deltaq[idx_upper] = 1.0 - np.power(val, mut_pow)
-
-        np.multiply(deltaq, span_vals, out=deltaq, casting="unsafe")
-        np.add(values, deltaq, out=values, casting="unsafe")
-        np.clip(values, yl[cols], yu[cols], out=values)
-        X[rows, cols] = values
+        rows, cols = np.nonzero(mask)
+        for i, j in zip(rows, cols):
+            y = X[i, j]
+            yl = self.lower[j]
+            yu = self.upper[j]
+            if yu <= yl:
+                continue
+            delta1 = (y - yl) / (yu - yl)
+            delta2 = (yu - y) / (yu - yl)
+            rnd = rnd_delta[i, j]
+            if rnd <= 0.5:
+                xy = 1.0 - delta1
+                val = 2.0 * rnd + (1.0 - 2.0 * rnd) * (xy ** (self.eta + 1.0))
+                deltaq = val ** mut_pow - 1.0
+            else:
+                xy = 1.0 - delta2
+                val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (self.eta + 1.0))
+                deltaq = 1.0 - val ** mut_pow
+            y += deltaq * (yu - yl)
+            y = min(max(y, yl), yu)
+            X[i, j] = y
         return X
 
 
@@ -274,7 +269,7 @@ class UniformMutation(Mutation):
         if arr.ndim == 1:
             arr = arr.reshape(1, -1)
             squeeze = True
-        X = self._as_population(arr, name="offspring", copy=False)
+        X = self._as_population(arr, name="offspring")
         n_ind, n_var = X.shape
         active_rng = rng or self.rng or np.random.default_rng()
         mask = active_rng.random((n_ind, n_var)) <= self.prob
@@ -317,7 +312,7 @@ class LinkedPolynomialMutation(Mutation):
         if arr.ndim == 1:
             arr = arr.reshape(1, -1)
             squeeze = True
-        X = self._as_population(arr, name="offspring", copy=False)
+        X = self._as_population(arr, name="offspring")
         active_rng = rng or self.rng or np.random.default_rng()
         n_ind, n_var = X.shape
         mask = active_rng.random((n_ind, n_var)) <= self.prob
@@ -354,7 +349,7 @@ class CauchyMutation(Mutation):
         self.lower, self.upper = _ensure_bounds(lower, upper)
 
     def __call__(self, offspring: ArrayLike, rng: np.random.Generator) -> ArrayLike:
-        X = self._as_population(offspring, name="offspring", copy=False)
+        X = self._as_population(offspring, name="offspring")
         self._check_bounds_match(X, self.lower)
         mask = rng.random(X.shape) <= self.prob
         if not np.any(mask):

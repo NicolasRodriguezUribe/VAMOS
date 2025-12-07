@@ -1,0 +1,23 @@
+{
+  "algorithm": "nsgaii",
+  "config_source": null,
+  "encoding": "continuous",
+  "engine": "numpy",
+  "external_archive_size": null,
+  "hv_reference_front": null,
+  "hv_reference_point": null,
+  "hv_threshold": null,
+  "max_evaluations": 10,
+  "moead_variation": null,
+  "n_obj": 2,
+  "n_var": 30,
+  "nsga3_variation": null,
+  "nsgaii_variation": null,
+  "offspring_population_size": 6,
+  "population_size": 6,
+  "problem": "zdt1",
+  "problem_override": {},
+  "seed": 1,
+  "selection_pressure": 2,
+  "smsemoa_variation": null
+}
