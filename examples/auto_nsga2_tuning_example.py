@@ -5,9 +5,9 @@ import numpy as np
 from vamos.algorithm.autonsga2_builder import build_autonsga2
 from vamos.metrics.hv_zdt import compute_normalized_hv
 from vamos.problem.registry import make_problem_selection
-from vamos.tuning.param_space import ParamSpace, Real, Int, Categorical, Condition
-from vamos.tuning.random_search_tuner import RandomSearchTuner
-from vamos.tuning.tuning_task import TuningTask, Instance, EvalContext
+from vamos.tuning.core.param_space import ParamSpace, Real, Int, Categorical, Condition
+from vamos.tuning.racing.random_search_tuner import RandomSearchTuner
+from vamos.tuning.core.tuning_task import TuningTask, Instance, EvalContext
 
 
 def _build_problem(name: str, n_var: int, **kwargs):

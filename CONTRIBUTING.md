@@ -27,8 +27,8 @@ Thank you for considering a contribution! This project is organized to make addi
 ## Tuning package layout
 - Shared/core utilities (parameter spaces, samplers, validation, experiment/spec plumbing) live under `src/vamos/tuning/core/`.
 - Meta-optimization / evolutionary tuning lives under `src/vamos/tuning/evolver/` (e.g., `MetaOptimizationProblem`, `NSGAIITuner`, pipelines).
-- Racing-style tuning (racing loop, random search, bridge utilities) lives under `src/vamos/tuning/racing/` with `pit` kept as a legacy shim.
-- Legacy imports under `vamos.tuning.*` still work via shims but new code should prefer the canonical subpackages above.
+- Racing-style tuning (racing loop, random search, bridge utilities) lives under `src/vamos/tuning/racing/`.
+- Deprecated shim modules under the old `vamos.tuning.*` paths have been removed; always import from the canonical subpackages (`core`, `evolver`, `racing`).
 
 ## Self-check
 - After changes, run `python -m vamos.diagnostics.self_check` or `vamos-self-check` for a quick sanity check.

@@ -78,12 +78,6 @@ from .core.spec import (
     build_experiment_from_spec,
     run_experiment_from_file,
 )
-import warnings as _warnings
-
-with _warnings.catch_warnings():
-    _warnings.simplefilter("ignore", DeprecationWarning)
-    from . import pit
-
 from . import evolver
 
 
@@ -222,7 +216,6 @@ __all__ = [
     "history_to_dict",
     "save_history_json",
     "save_history_csv",
-    "pit",
     "evolver",
     "build_spea2_config_space",
     "build_ibea_config_space",
