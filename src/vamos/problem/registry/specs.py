@@ -3,22 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Tuple
 
-from .dtlz import DTLZ1Problem, DTLZ2Problem, DTLZ3Problem, DTLZ4Problem
-from .binary import (
-    BinaryFeatureSelectionProblem,
-    BinaryKnapsackProblem,
-    BinaryQUBOProblem,
-)
-from .integer import (
-    IntegerJobAssignmentProblem,
-    IntegerResourceAllocationProblem,
-)
-from .mixed import MixedDesignProblem
-from .real_world.engineering import WeldedBeamDesignProblem
-from .real_world.feature_selection import FeatureSelectionProblem
-from .real_world.hyperparam import HyperparameterTuningProblem
-from .tsp import TSPProblem
-from .lz import (
+from ..dtlz import DTLZ1Problem, DTLZ2Problem, DTLZ3Problem, DTLZ4Problem
+from ..binary import BinaryFeatureSelectionProblem, BinaryKnapsackProblem, BinaryQUBOProblem
+from ..integer import IntegerJobAssignmentProblem, IntegerResourceAllocationProblem
+from ..mixed import MixedDesignProblem
+from ..real_world.engineering import WeldedBeamDesignProblem
+from ..real_world.feature_selection import FeatureSelectionProblem
+from ..real_world.hyperparam import HyperparameterTuningProblem
+from ..tsp import TSPProblem
+from ..lz import (
     LZ09F1Problem,
     LZ09F2Problem,
     LZ09F3Problem,
@@ -29,13 +22,8 @@ from .lz import (
     LZ09F8Problem,
     LZ09F9Problem,
 )
-from .cec import (
-    CEC2009CF1Problem,
-    CEC2009UF1Problem,
-    CEC2009UF2Problem,
-    CEC2009UF3Problem,
-)
-from .wfg import (
+from ..cec import CEC2009CF1Problem, CEC2009UF1Problem, CEC2009UF2Problem, CEC2009UF3Problem
+from ..wfg import (
     WFG1Problem,
     WFG2Problem,
     WFG3Problem,
@@ -46,11 +34,11 @@ from .wfg import (
     WFG8Problem,
     WFG9Problem,
 )
-from .zdt1 import ZDT1Problem
-from .zdt2 import ZDT2Problem
-from .zdt3 import ZDT3Problem
-from .zdt4 import ZDT4Problem
-from .zdt6 import ZDT6Problem
+from ..zdt1 import ZDT1Problem
+from ..zdt2 import ZDT2Problem
+from ..zdt3 import ZDT3Problem
+from ..zdt4 import ZDT4Problem
+from ..zdt6 import ZDT6Problem
 
 ProblemFactory = Callable[[int, Optional[int]], object]
 
@@ -58,6 +46,7 @@ ProblemFactory = Callable[[int, Optional[int]], object]
 @dataclass(frozen=True)
 class ProblemSpec:
     """Metadata and factory for a benchmark problem."""
+
     key: str
     label: str
     default_n_var: int
@@ -67,9 +56,7 @@ class ProblemSpec:
     description: str = ""
     encoding: str = "continuous"
 
-    def resolve_dimensions(
-        self, *, n_var: Optional[int], n_obj: Optional[int]
-    ) -> Tuple[int, int]:
+    def resolve_dimensions(self, *, n_var: Optional[int], n_obj: Optional[int]) -> Tuple[int, int]:
         """
         Apply default dimensions and enforce override rules.
         """
@@ -90,20 +77,6 @@ class ProblemSpec:
                 )
 
         return actual_n_var, actual_n_obj
-
-
-@dataclass(frozen=True)
-class ProblemSelection:
-    """Concrete problem instance choice with resolved dimensions."""
-    spec: ProblemSpec
-    n_var: int
-    n_obj: int
-
-    def instantiate(self):
-        """
-        Create a new problem instance with the resolved dimensions.
-        """
-        return self.spec.factory(self.n_var, self.n_obj)
 
 
 def _zdt1_factory(n_var: int, _ignored: Optional[int] = None):
@@ -589,13 +562,4 @@ def available_problem_names() -> Tuple[str, ...]:
     return tuple(PROBLEM_SPECS.keys())
 
 
-def make_problem_selection(
-    key: str, *, n_var: Optional[int] = None, n_obj: Optional[int] = None
-) -> ProblemSelection:
-    try:
-        spec = PROBLEM_SPECS[key]
-    except KeyError as exc:
-        raise KeyError(f"Unknown problem '{key}'.") from exc
-
-    actual_n_var, actual_n_obj = spec.resolve_dimensions(n_var=n_var, n_obj=n_obj)
-    return ProblemSelection(spec=spec, n_var=actual_n_var, n_obj=actual_n_obj)
+__all__ = ["ProblemSpec", "ProblemFactory", "PROBLEM_SPECS", "available_problem_names"]
