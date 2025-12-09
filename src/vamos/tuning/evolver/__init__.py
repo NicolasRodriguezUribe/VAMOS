@@ -19,9 +19,14 @@ from ..parameters import (
     BooleanParam,
     ConditionalBlock,
 )
-from ..nsga2_meta import MetaNSGAII
-from ..pipeline import TuningPipeline, compute_hyperparameter_importance
-from ..tuner import NSGAIITuner
+from ..meta import (
+    MetaNSGAII,
+    NSGAIITuner,
+    TuningPipeline,
+    compute_hyperparameter_importance,
+    build_nsgaii_config_space,
+    MetaOptimizationProblem,
+)
 from ..bridge import (
     build_spea2_config_space,
     build_ibea_config_space,
@@ -31,7 +36,6 @@ from ..bridge import (
     build_smsemoa_config_space,
     config_from_assignment,
 )
-from ..meta_problem import MetaOptimizationProblem
 from ..validation import (
     BenchmarkSuite,
     ConfigSpec,
@@ -45,7 +49,6 @@ from ..validation import (
     summarize_benchmark_per_instance,
     select_significantly_worse_configs,
 )
-from ..nsgaii import build_nsgaii_config_space
 
 __all__ = [
     "AlgorithmConfigSpace",

@@ -9,10 +9,14 @@ from .parameter_space import (
     Integer,
     ParameterDefinition,
 )
-from .meta_problem import MetaOptimizationProblem
-from .nsga2_meta import MetaNSGAII
-from .pipeline import TuningPipeline, compute_hyperparameter_importance
-from .tuner import NSGAIITuner
+from .meta import (
+    MetaOptimizationProblem,
+    MetaNSGAII,
+    NSGAIITuner,
+    TuningPipeline,
+    compute_hyperparameter_importance,
+    build_nsgaii_config_space,
+)
 from .param_space import ParamSpace, Real, Int, Categorical as LegacyCategorical, Condition
 from .tuning_task import TuningTask, EvalContext, Instance
 from .random_search_tuner import RandomSearchTuner, TrialResult
@@ -20,7 +24,6 @@ from .scenario import Scenario
 from .racing import RacingTuner, ConfigState, EliteEntry
 from .sampler import Sampler, UniformSampler, ModelBasedSampler
 from .io import filter_active_config, history_to_dict, save_history_json, save_history_csv
-from .nsgaii import build_nsgaii_config_space
 from .bridge import (
     build_spea2_config_space,
     build_ibea_config_space,

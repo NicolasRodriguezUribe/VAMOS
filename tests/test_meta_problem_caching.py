@@ -1,7 +1,7 @@
 import numpy as np
 
 from vamos.algorithm.config import NSGAIIConfig
-from vamos.tuning.meta_problem import MetaOptimizationProblem
+from vamos.tuning.meta import MetaOptimizationProblem
 from vamos.tuning.parameter_space import AlgorithmConfigSpace, Categorical, Double, Integer, ParameterDefinition
 
 
