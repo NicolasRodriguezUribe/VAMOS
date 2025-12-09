@@ -1,7 +1,7 @@
 import numpy as np
 
 from vamos.algorithm.config import NSGAIIConfig
-from vamos.tuning.tuner import NSGAIITuner
+from vamos.tuning.meta import NSGAIITuner
 from vamos.tuning.parameter_space import AlgorithmConfigSpace, Categorical, Integer, ParameterDefinition
 
 
