@@ -9,7 +9,7 @@ Requires the optional ``examples`` extras (scikit-learn, matplotlib).
 import numpy as np
 
 from vamos.algorithm.config import NSGAIIConfig
-from vamos.optimize import optimize
+from vamos.core.optimize import optimize
 from vamos.problem.real_world.hyperparam import HyperparameterTuningProblem
 
 

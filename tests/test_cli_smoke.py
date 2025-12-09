@@ -9,7 +9,7 @@ def _run_cmd(cmd):
 
 
 def test_self_check_module_smoke():
-    proc = _run_cmd(f"{sys.executable} -m vamos.self_check")
+    proc = _run_cmd(f"{sys.executable} -m vamos.diagnostics.self_check")
     assert proc.returncode == 0, proc.stderr.decode()
 
 

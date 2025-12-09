@@ -3,7 +3,7 @@
 Main runner
 -----------
 
-`python -m vamos.main` (or `vamos`) key flags:
+`python -m vamos.cli.main` (or `vamos`) key flags:
 
 - `--algorithm`: nsgaii, moead, smsemoa, nsga3, spea2, ibea, smpso, both, or external baselines (pymoo_nsga2, jmetalpy_nsga2, pygmo_nsga2)
 - `--engine`: numpy | numba | moocore

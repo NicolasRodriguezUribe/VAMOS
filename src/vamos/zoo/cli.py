@@ -5,8 +5,8 @@ from pathlib import Path
 
 from vamos.problem.registry_info import list_problems, get_problem_info
 from vamos.problem.registry import make_problem_selection
-from vamos.runner import run_single
-from vamos.experiment_config import ExperimentConfig
+from vamos.core.runner import run_single
+from vamos.core.experiment_config import ExperimentConfig
 
 
 def _list_cmd(args):

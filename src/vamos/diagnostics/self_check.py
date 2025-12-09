@@ -9,9 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List
 
-from vamos.experiment_config import ExperimentConfig
+from vamos.core.experiment_config import ExperimentConfig
 from vamos.problem.registry import make_problem_selection
-from vamos.runner import run_single
+from vamos.core.runner import run_single
 
 
 @dataclass
@@ -64,7 +64,7 @@ def run_self_check(verbose: bool = False) -> List[CheckResult]:
 
 
 def main():
-    """Entry-point for `python -m vamos.self_check`."""
+    """Entry-point for `python -m vamos.diagnostics.self_check`."""
     checks = run_self_check(verbose=True)
     failed = [c for c in checks if c.status == "failed"]
     skipped = [c for c in checks if c.status == "skipped"]

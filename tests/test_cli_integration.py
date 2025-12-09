@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from vamos import runner
+from vamos.core import runner
 
 
 def test_cli_runs_and_writes_artifacts(monkeypatch, tmp_path):
@@ -37,7 +37,7 @@ def test_cli_runs_and_writes_artifacts(monkeypatch, tmp_path):
     monkeypatch.setenv("PYTHONHASHSEED", "0")
     monkeypatch.setattr(sys, "argv", argv)
 
-    from vamos.main import main
+    from vamos.cli.main import main
 
     main()
 

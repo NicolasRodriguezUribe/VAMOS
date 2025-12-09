@@ -4,7 +4,7 @@ import numpy as np
 from vamos.algorithm.config import NSGAIIConfig
 from vamos.algorithm.nsgaii import NSGAII
 from vamos.kernel.numpy_backend import NumPyKernel
-from vamos.live_viz import LiveVisualization, LiveParetoPlot
+from vamos.visualization.live_viz import LiveVisualization, LiveParetoPlot
 
 
 class DummyProblem:

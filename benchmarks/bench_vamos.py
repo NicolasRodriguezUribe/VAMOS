@@ -12,7 +12,7 @@ from typing import Callable
 import numpy as np
 
 from vamos.algorithm.factory import build_algorithm
-from vamos.experiment_config import ExperimentConfig
+from vamos.core.experiment_config import ExperimentConfig
 from vamos.problem.registry import make_problem_selection
 
 

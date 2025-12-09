@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from vamos import cli
-from vamos import runner
+from vamos.core import runner
 from vamos.problem.tsp import TSPProblem
 from vamos.study.runner import StudyRunner, StudyTask
 

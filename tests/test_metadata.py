@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-from vamos.metadata import build_run_metadata
+from vamos.core.metadata import build_run_metadata
 
 
 class DummyProblem:

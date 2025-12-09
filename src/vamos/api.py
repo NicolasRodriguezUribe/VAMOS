@@ -7,7 +7,7 @@ should be imported explicitly from their modules instead of via the package root
 """
 from __future__ import annotations
 
-from .optimize import OptimizationResult, optimize
+from .core.optimize import OptimizationResult, optimize
 from .algorithm.config import (
     MOEADConfig,
     MOEADConfigData,
@@ -24,18 +24,14 @@ from .algorithm.config import (
     SMPSOConfig,
     SMPSOConfigData,
 )
-from .experiment_config import ExperimentConfig
+from .core.experiment_config import ExperimentConfig
 from .problem.registry import (
     ProblemSelection,
     ProblemSpec,
     available_problem_names,
     make_problem_selection,
 )
-from .objective_reduction import (
-    ObjectiveReductionConfig,
-    ObjectiveReducer,
-    reduce_objectives,
-)
+from .analysis.core_objective_reduction import ObjectiveReductionConfig, ObjectiveReducer, reduce_objectives
 from .constraints import (
     ConstraintInfo,
     ConstraintHandlingStrategy,
@@ -52,14 +48,14 @@ from .visualization import (
     plot_parallel_coordinates,
     plot_hv_convergence,
 )
-from .mcdm import (
+from .analysis.mcdm import (
     MCDMResult,
     weighted_sum_scores,
     tchebycheff_scores,
     reference_point_scores,
     knee_point_scores,
 )
-from .stats import (
+from .analysis.stats import (
     FriedmanResult,
     WilcoxonResult,
     compute_ranks,
@@ -67,7 +63,7 @@ from .stats import (
     pairwise_wilcoxon,
     plot_critical_distance,
 )
-from .self_check import run_self_check
+from .diagnostics.self_check import run_self_check
 
 __all__ = [
     # Optimization facade

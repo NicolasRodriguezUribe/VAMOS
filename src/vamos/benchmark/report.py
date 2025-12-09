@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from vamos.benchmark.runner import BenchmarkResult
-from vamos.stats import friedman_test, pairwise_wilcoxon
+from vamos.analysis.stats import friedman_test, pairwise_wilcoxon
 from vamos.benchmark.report_utils import (
     ensure_dir,
     import_pandas,

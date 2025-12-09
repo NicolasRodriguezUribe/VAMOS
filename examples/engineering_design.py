@@ -9,7 +9,7 @@ Demonstrates constraints and mixed decision variables.
 import numpy as np
 
 from vamos.algorithm.config import NSGAIIConfig
-from vamos.optimize import optimize
+from vamos.core.optimize import optimize
 from vamos.problem.real_world.engineering import WeldedBeamDesignProblem
 
 

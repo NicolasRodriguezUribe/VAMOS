@@ -3,15 +3,16 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Allow running via `python src/vamos/main.py` without installing the package.
+# Allow running via `python src/vamos/cli/main.py` without installing the package.
 module_path = Path(__file__).resolve()
-project_root = module_path.parents[2]
+project_root = module_path.parents[3]
 if __package__ is None or __package__ == "":
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
 from vamos.cli import parse_args
-from vamos.runner import ExperimentConfig, run_from_args
+from vamos.core.experiment_config import ExperimentConfig
+from vamos.core.runner import run_from_args
 
 
 def main():

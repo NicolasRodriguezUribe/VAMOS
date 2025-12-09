@@ -9,7 +9,7 @@ import numpy as np
 
 from vamos.algorithm.hypervolume import hypervolume
 from vamos.problem.resolver import resolve_reference_front_path
-from vamos.experiment_config import HV_REFERENCE_OFFSET
+from vamos.core.experiment_config import HV_REFERENCE_OFFSET
 
 
 def build_hv_stop_config(hv_threshold: float | None, hv_reference_front: str | None, problem_key: str):

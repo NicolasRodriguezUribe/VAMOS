@@ -9,10 +9,10 @@ from typing import Iterable, List, Sequence, Any, Dict
 import numpy as np
 
 from vamos.algorithm.hypervolume import hypervolume
-from vamos.experiment_config import ExperimentConfig
-from vamos.hv_stop import compute_hv_reference
+from vamos.core.experiment_config import ExperimentConfig
+from vamos.core.hv_stop import compute_hv_reference
 from vamos.problem.registry import ProblemSelection, make_problem_selection
-from vamos.runner import run_single
+from vamos.core.runner import run_single
 from vamos.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
 from vamos.kernel.numpy_backend import _fast_non_dominated_sort
 

@@ -13,10 +13,10 @@ python -m venv .venv
 pip install -e ".[backends,benchmarks,dev]"
 
 # 3) Run a quick NSGA-II smoke on ZDT1 (NumPy backend)
-python -m vamos.main --problem zdt1 --max-evaluations 2000
+python -m vamos.cli.main --problem zdt1 --max-evaluations 2000
 
 # 4) Try the MooCore backend
-python -m vamos.main --engine moocore --problem zdt1 --max-evaluations 2000
+python -m vamos.cli.main --engine moocore --problem zdt1 --max-evaluations 2000
 
 # 5) Run tests
 pytest
@@ -36,19 +36,19 @@ pytest
 ## Common commands
 
 - Run with different algorithms/problems:
-  - `python -m vamos.main --algorithm moead --problem dtlz2 --n-obj 3`
-  - `python -m vamos.main --algorithm spea2 --problem zdt1 --max-evaluations 1000`
-- `python -m vamos.main --problem-set families`
-- `python -m vamos.main --problem tsp6`
+  - `python -m vamos.cli.main --algorithm moead --problem dtlz2 --n-obj 3`
+  - `python -m vamos.cli.main --algorithm spea2 --problem zdt1 --max-evaluations 1000`
+- `python -m vamos.cli.main --problem-set families`
+- `python -m vamos.cli.main --problem tsp6`
 - Use hypervolume early-stop on NSGA-II:
-  - `python -m vamos.main --hv-threshold 0.5 --hv-reference-front data/reference_fronts/ZDT1.csv`
+  - `python -m vamos.cli.main --hv-threshold 0.5 --hv-reference-front data/reference_fronts/ZDT1.csv`
 - Run tuning (outer NSGA-II over hyperparameters) via code (see `vamos.tuning`).
 - Visualize or post-hoc analyze:
   - `from vamos.visualization import plot_pareto_front_2d`
-  - `from vamos.mcdm import weighted_sum_scores`
-  - `from vamos.stats import friedman_test, plot_critical_distance`
+  - `from vamos.analysis.mcdm import weighted_sum_scores`
+  - `from vamos.analysis.stats import friedman_test, plot_critical_distance`
 - Quick sanity check of your install:
-  - `python -m vamos.self_check`
+  - `python -m vamos.diagnostics.self_check`
   - or `vamos-self-check`
 
 ## Documentation

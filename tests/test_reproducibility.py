@@ -1,7 +1,7 @@
 import numpy as np
 
 from vamos.algorithm.config import NSGAIIConfig
-from vamos.optimize import optimize
+from vamos.core.optimize import optimize
 from vamos.problem.zdt1 import ZDT1Problem
 
 
