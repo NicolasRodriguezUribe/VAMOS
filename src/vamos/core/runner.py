@@ -7,12 +7,12 @@ from typing import Iterable
 
 import numpy as np
 
-from vamos import plotting
+from vamos.visualization import plotting
 from vamos.algorithm.hypervolume import hypervolume
-from vamos.execution import execute_algorithm
+from vamos.core.execution import execute_algorithm
 from vamos.problem.registry import make_problem_selection
-from vamos.io_utils import ensure_dir
-from vamos.experiment_config import (
+from vamos.core.io_utils import ensure_dir
+from vamos.core.experiment_config import (
     ExperimentConfig,
     TITLE,
     DEFAULT_ALGORITHM,
@@ -26,17 +26,17 @@ from vamos.experiment_config import (
 from vamos.problem.resolver import resolve_problem_selections, ProblemSelection
 from vamos.algorithm.factory import build_algorithm
 from vamos.config.variation import merge_variation_overrides, normalize_variation_config
-from vamos.hv_stop import build_hv_stop_config, compute_hv_reference
+from vamos.core.hv_stop import build_hv_stop_config, compute_hv_reference
 from vamos.eval.backends import resolve_eval_backend
-from vamos.runner_output import (
+from vamos.core.runner_output import (
     build_metrics,
     persist_run_outputs,
     print_run_banner,
     print_run_results,
 )
-from vamos.runner_utils import validate_problem, problem_output_dir, run_output_dir
+from vamos.core.runner_utils import validate_problem, problem_output_dir, run_output_dir
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 def _default_weight_path(problem_name: str, n_obj: int, pop_size: int) -> str:
     filename = f"{problem_name}_nobj{n_obj}_pop{pop_size}.csv"
@@ -98,7 +98,7 @@ def run_single(
     live_viz = None
     output_dir = run_output_dir(selection, algorithm_name, engine_name, config.seed, config)
     if getattr(config, "live_viz", False):
-        from vamos.live_viz import LiveParetoPlot
+        from vamos.visualization.live_viz import LiveParetoPlot
 
         live_viz = LiveParetoPlot(
             update_interval=getattr(config, "live_viz_interval", 5),
@@ -240,8 +240,8 @@ def execute_problem_suite(
     track_genealogy: bool = False,
     autodiff_constraints: bool = False,
 ):
-    from vamos import external  # local import to keep runner decoupled
-    from vamos import plotting
+    from vamos.core import external  # local import to keep runner decoupled
+    from vamos.visualization import plotting
 
     engines: Iterable[str] = EXPERIMENT_BACKENDS if args.experiment == "backends" else (args.engine,)
     algorithms = list(ENABLED_ALGORITHMS) if args.algorithm == "both" else [args.algorithm]

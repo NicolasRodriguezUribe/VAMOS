@@ -2,7 +2,7 @@
 Thin facade over the core objective reduction utilities.
 
 This module exists to preserve the analysis-facing API while delegating all
-logic to ``vamos.objective_reduction``.
+logic to ``vamos.analysis.core_objective_reduction``.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Iterable, List, Tuple
 
 import numpy as np
 
-from vamos.objective_reduction import (
+from .core_objective_reduction import (
     ObjectiveReductionConfig,
     ObjectiveReducer as _CoreObjectiveReducer,
     reduce_objectives as _core_reduce_objectives,

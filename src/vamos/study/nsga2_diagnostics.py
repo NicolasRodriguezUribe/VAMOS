@@ -19,7 +19,12 @@ from vamos.algorithm.config import NSGAIIConfig
 from vamos.algorithm.nsgaii import NSGAII
 from vamos.kernel.numpy_backend import NumPyKernel
 from vamos.problem.zdt1 import ZDT1Problem
-from vamos.main import MAX_EVALUATIONS, POPULATION_SIZE, SEED
+from vamos.core.experiment_config import ExperimentConfig
+
+_DEFAULT_CONFIG = ExperimentConfig()
+POPULATION_SIZE = _DEFAULT_CONFIG.population_size
+MAX_EVALUATIONS = _DEFAULT_CONFIG.max_evaluations
+SEED = _DEFAULT_CONFIG.seed
 
 
 DIAG_ROOT = Path(__file__).resolve().parent / "diagnostics"

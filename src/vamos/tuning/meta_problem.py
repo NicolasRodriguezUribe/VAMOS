@@ -223,7 +223,7 @@ class MetaOptimizationProblem:
     @staticmethod
     def _import_optimize() -> Callable[..., Any]:
         try:
-            from vamos import optimize  # type: ignore
+            from vamos.core import optimize  # type: ignore
         except Exception as exc:
-            raise ImportError("MetaOptimizationProblem requires 'vamos.optimize'.") from exc
+            raise ImportError("MetaOptimizationProblem requires 'vamos.core.optimize'.") from exc
         return optimize

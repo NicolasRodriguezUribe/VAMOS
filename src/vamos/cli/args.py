@@ -8,7 +8,7 @@ from typing import Any
 
 from vamos.config.loader import load_experiment_spec
 from vamos.problem.registry import available_problem_names
-from vamos.experiment_config import (
+from vamos.core.experiment_config import (
     DEFAULT_ALGORITHM,
     DEFAULT_ENGINE,
     DEFAULT_PROBLEM,

@@ -3,7 +3,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-from vamos.stats import (
+from vamos.analysis.stats import (
     FriedmanResult,
     compute_ranks,
     friedman_test,

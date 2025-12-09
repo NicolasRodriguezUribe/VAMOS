@@ -10,7 +10,7 @@ import numpy as np
 
 from vamos.problem.types import ProblemProtocol, MixedProblemProtocol
 from vamos.problem.resolver import ProblemSelection
-from vamos.experiment_config import ExperimentConfig
+from vamos.core.experiment_config import ExperimentConfig
 
 
 def validate_problem(problem: ProblemProtocol) -> None:

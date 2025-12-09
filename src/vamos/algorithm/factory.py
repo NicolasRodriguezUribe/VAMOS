@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from vamos.experiment_config import ExperimentConfig
+from vamos.core.experiment_config import ExperimentConfig
 from vamos.kernel.registry import resolve_kernel
 from vamos.algorithm.builders import (
     build_nsgaii_algorithm,

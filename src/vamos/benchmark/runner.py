@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Sequence
 
 from vamos.benchmark.suites import BenchmarkSuite, BenchmarkExperiment
-from vamos.experiment_config import DEFAULT_ENGINE
+from vamos.core.experiment_config import DEFAULT_ENGINE
 from vamos.study.runner import StudyRunner, StudyTask, StudyResult
 
 

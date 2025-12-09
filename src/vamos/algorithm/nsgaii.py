@@ -18,7 +18,7 @@ from vamos.algorithm.nsgaii_helpers import (
 from vamos.operators.real import VariationWorkspace
 from vamos.constraints.utils import compute_violation, is_feasible
 from vamos.eval.backends import SerialEvalBackend
-from vamos.live_viz import LiveVisualization, NoOpLiveVisualization
+from vamos.visualization.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.hyperheuristics.operator_selector import make_operator_selector, compute_reward
 from vamos.hyperheuristics.indicator import IndicatorEvaluator
 from vamos.analytics.genealogy import GenealogyTracker, get_lineage

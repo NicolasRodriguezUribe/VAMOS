@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Protocol, Sequence
 
 import numpy as np
 
-from vamos.mcdm import weighted_sum_scores, tchebycheff_scores, knee_point_scores, reference_point_scores
+from vamos.analysis.mcdm import weighted_sum_scores, tchebycheff_scores, knee_point_scores, reference_point_scores
 from vamos.studio.data import FrontRecord, normalize_objectives
 
 
@@ -112,4 +112,3 @@ def filter_by_objective_ranges(
         if hi is not None:
             mask &= F[:, idx] <= hi
     return np.nonzero(mask)[0]
-

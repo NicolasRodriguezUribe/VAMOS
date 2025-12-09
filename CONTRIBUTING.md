@@ -25,5 +25,5 @@ Thank you for considering a contribution! This project is organized to make addi
 - New orchestration/config/registry code should be mypy-friendly; see `pyproject.toml` for incremental typing settings.
 
 ## Self-check
-- After changes, run `python -m vamos.self_check` or `vamos-self-check` for a quick sanity check.
+- After changes, run `python -m vamos.diagnostics.self_check` or `vamos-self-check` for a quick sanity check.
 - CI-friendly tests live under `tests/`; keep populations/evaluation budgets small for speed.

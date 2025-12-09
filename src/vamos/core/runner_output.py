@@ -9,8 +9,8 @@ from typing import Any
 
 import numpy as np
 
-from vamos.io_utils import write_population, write_metadata, write_timing, ensure_dir
-from vamos.metadata import build_run_metadata
+from vamos.core.io_utils import write_population, write_metadata, write_timing, ensure_dir
+from vamos.core.metadata import build_run_metadata
 
 
 def print_run_banner(problem, problem_selection, algorithm_label: str, backend_label: str, config) -> None:

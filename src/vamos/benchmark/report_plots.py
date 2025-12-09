@@ -15,7 +15,7 @@ except Exception:  # pragma: no cover
     matplotlib = None
     plt = None
 
-from vamos.stats import plot_critical_distance
+from vamos.analysis.stats import plot_critical_distance
 
 
 def generate_plots(tidy, stats: Dict[str, dict], metrics: List[str], alpha: float, suite_name: str, output_dir: Path, higher_is_better) -> Dict[str, List[Path]]:
@@ -53,7 +53,7 @@ def generate_plots(tidy, stats: Dict[str, dict], metrics: List[str], alpha: floa
             fig, ax = plt.subplots()
             data = [subset[subset["algorithm"] == alg]["value"].dropna().values for alg in subset["algorithm"].unique()]
             labels = list(subset["algorithm"].unique())
-            ax.boxplot(data, labels=labels, patch_artist=True)
+            ax.boxplot(data, tick_labels=labels, patch_artist=True)
             ax.set_title(f"{metric} | {problem}")
             ax.set_ylabel(metric)
             fig.tight_layout()

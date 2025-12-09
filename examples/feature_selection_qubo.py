@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos.algorithm.config import NSGAIIConfig
-from vamos.optimize import optimize
+from vamos.core.optimize import optimize
 from vamos.problem.real_world.feature_selection import FeatureSelectionProblem
 from vamos.visualization import plot_pareto_front_2d
 
