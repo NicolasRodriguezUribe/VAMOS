@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from vamos.algorithm.config import NSGAIIConfig
-from vamos.tuning.parameter_space import (
+from vamos.tuning.core.parameter_space import (
     AlgorithmConfigSpace,
     Categorical,
     CategoricalInteger,

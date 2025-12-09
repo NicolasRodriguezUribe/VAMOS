@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.tuning.parameter_space import AlgorithmConfigSpace
+from vamos.tuning.core.parameter_space import AlgorithmConfigSpace
 
 from .meta_problem import MetaOptimizationProblem
 from .nsga2_meta import MetaNSGAII

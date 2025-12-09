@@ -1,6 +1,11 @@
 """Auto-tuning utilities for VAMOS."""
 
-from .parameter_space import (
+import json as _json
+from pathlib import Path as _Path
+
+import numpy as _np
+
+from .core.parameter_space import (
     AlgorithmConfigSpace,
     Boolean,
     Categorical,
@@ -9,7 +14,7 @@ from .parameter_space import (
     Integer,
     ParameterDefinition,
 )
-from .meta import (
+from .evolver import (
     MetaOptimizationProblem,
     MetaNSGAII,
     NSGAIITuner,
@@ -17,14 +22,14 @@ from .meta import (
     compute_hyperparameter_importance,
     build_nsgaii_config_space,
 )
-from .param_space import ParamSpace, Real, Int, Categorical as LegacyCategorical, Condition
-from .tuning_task import TuningTask, EvalContext, Instance
-from .random_search_tuner import RandomSearchTuner, TrialResult
-from .scenario import Scenario
+from .core.param_space import ParamSpace, Real, Int, Categorical as LegacyCategorical, Condition
+from .core.tuning_task import TuningTask, EvalContext, Instance
+from .racing.random_search_tuner import RandomSearchTuner, TrialResult
+from .core.scenario import Scenario
 from .racing import RacingTuner, ConfigState, EliteEntry
-from .sampler import Sampler, UniformSampler, ModelBasedSampler
-from .io import filter_active_config, history_to_dict, save_history_json, save_history_csv
-from .bridge import (
+from .core.sampler import Sampler, UniformSampler, ModelBasedSampler
+from .core.io import filter_active_config, history_to_dict, save_history_json, save_history_csv
+from .racing.bridge import (
     build_spea2_config_space,
     build_ibea_config_space,
     build_smpso_config_space,
@@ -33,7 +38,7 @@ from .bridge import (
     build_smsemoa_config_space,
     config_from_assignment,
 )
-from .validation import (
+from .core.validation import (
     BenchmarkSuite,
     ConfigSpec,
     RunResult as BenchmarkRunResult,
@@ -46,14 +51,14 @@ from .validation import (
     summarize_benchmark_per_instance,
     select_significantly_worse_configs,
 )
-from .experiment import (
+from .core.experiment import (
     TunerKind,
     ExperimentResult,
     TuningExperiment,
     create_random_experiment,
     create_racing_experiment,
 )
-from .history import (
+from .core.history import (
     TrialRecord as HistoryTrialRecord,
     load_history_json,
     load_histories_from_directory,
@@ -61,7 +66,7 @@ from .history import (
     make_config_specs_from_trials,
     load_top_k_as_config_specs,
 )
-from .spec import (
+from .core.spec import (
     SamplerSpec,
     RandomTunerSpec,
     RacingTunerSpec,
@@ -73,10 +78,13 @@ from .spec import (
     build_experiment_from_spec,
     run_experiment_from_file,
 )
-from . import pit, evolver
-import numpy as _np
-from pathlib import Path as _Path
-import json as _json
+import warnings as _warnings
+
+with _warnings.catch_warnings():
+    _warnings.simplefilter("ignore", DeprecationWarning)
+    from . import pit
+
+from . import evolver
 
 
 def _config_to_serializable(cfg):

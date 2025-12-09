@@ -1,6 +1,6 @@
 """Evolver (meta-optimization) pipeline using hierarchical config spaces."""
 
-from ..parameter_space import (
+from ..core.parameter_space import (
     AlgorithmConfigSpace,
     Boolean,
     Categorical,
@@ -9,8 +9,8 @@ from ..parameter_space import (
     Integer,
     ParameterDefinition,
 )
-from ..config_space import AlgorithmConfigSpace as LegacyAlgorithmConfigSpace
-from ..parameters import (
+from ..core.config_space import AlgorithmConfigSpace as LegacyAlgorithmConfigSpace
+from ..core.parameters import (
     BaseParam,
     CategoricalIntegerParam,
     CategoricalParam,
@@ -19,15 +19,12 @@ from ..parameters import (
     BooleanParam,
     ConditionalBlock,
 )
-from ..meta import (
-    MetaNSGAII,
-    NSGAIITuner,
-    TuningPipeline,
-    compute_hyperparameter_importance,
-    build_nsgaii_config_space,
-    MetaOptimizationProblem,
-)
-from ..bridge import (
+from .meta_problem import MetaOptimizationProblem
+from .nsga2_meta import MetaNSGAII
+from .nsgaii import build_nsgaii_config_space
+from .pipeline import TuningPipeline, compute_hyperparameter_importance
+from .tuner import NSGAIITuner
+from ..racing.bridge import (
     build_spea2_config_space,
     build_ibea_config_space,
     build_smpso_config_space,
@@ -36,7 +33,7 @@ from ..bridge import (
     build_smsemoa_config_space,
     config_from_assignment,
 )
-from ..validation import (
+from ..core.validation import (
     BenchmarkSuite,
     ConfigSpec,
     RunResult as BenchmarkRunResult,

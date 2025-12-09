@@ -1,68 +1,12 @@
-from __future__ import annotations
+"""Deprecated shim for vamos.tuning.tuning_task."""
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Sequence
+from warnings import warn
 
-import numpy as np
+warn(
+    "Importing 'vamos.tuning.tuning_task' is deprecated; use 'vamos.tuning.core.tuning_task' instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
+from .core.tuning_task import *  # noqa: F401,F403
 
-@dataclass
-class Instance:
-    """
-    Represents a single problem instance used during tuning.
-    """
-
-    name: str
-    n_var: int
-    kwargs: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class EvalContext:
-    """Information passed to the evaluation function."""
-
-    instance: Instance
-    seed: int
-    budget: int
-
-
-@dataclass
-class TuningTask:
-    """
-    Describes a tuning task for VAMOS:
-      - parameter space
-      - set of instances
-      - seeds
-      - budget per run
-      - how to aggregate scores across (instance, seed).
-    """
-
-    name: str
-    param_space: "ParamSpace"
-    instances: Sequence[Instance]
-    seeds: Sequence[int]
-    budget_per_run: int
-    maximize: bool = True
-    aggregator: Callable[[List[float]], float] = np.mean
-
-    def eval_config(
-        self,
-        config: Dict[str, Any],
-        eval_fn: Callable[[Dict[str, Any], EvalContext], float],
-    ) -> float:
-        """
-        Evaluate a configuration across all (instance, seed) combinations
-        and aggregate the scores into a single scalar.
-        """
-        scores: List[float] = []
-        for inst in self.instances:
-            for seed in self.seeds:
-                ctx = EvalContext(instance=inst, seed=seed, budget=self.budget_per_run)
-                score = float(eval_fn(config, ctx))
-                scores.append(score)
-        if not scores:
-            raise RuntimeError("No scores computed for configuration")
-        return float(self.aggregator(scores))
-
-
-__all__ = ["TuningTask", "EvalContext", "Instance"]

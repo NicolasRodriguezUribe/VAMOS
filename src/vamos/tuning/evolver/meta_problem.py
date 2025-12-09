@@ -8,7 +8,7 @@ import numpy as np
 
 from vamos.algorithm.hypervolume import hypervolume
 from vamos.analysis.objective_reduction import ObjectiveReductionSpec, reduce_objectives
-from vamos.tuning.parameter_space import AlgorithmConfigSpace
+from vamos.tuning.core.parameter_space import AlgorithmConfigSpace
 
 
 class MetaOptimizationProblem:

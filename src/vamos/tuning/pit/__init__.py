@@ -1,9 +1,13 @@
-"""Racing/ParamSpace-based tuning pipeline (pit stop).
+"""Deprecated pit package for ParamSpace-based tuning."""
 
-Kept minimal to avoid circular imports; downstream code should import the
-modules they need directly (sampler, racing, etc.).
-"""
+from warnings import warn
 
-from .param_space import ParamSpace, Real, Int, Categorical, Condition
+warn(
+    "Importing 'vamos.tuning.pit' is deprecated; use 'vamos.tuning.core.param_space' instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from vamos.tuning.core.param_space import ParamSpace, Real, Int, Categorical, Condition
 
 __all__ = ["ParamSpace", "Real", "Int", "Categorical", "Condition"]

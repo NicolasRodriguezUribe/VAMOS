@@ -1,14 +1,14 @@
 import numpy as np
 
-from vamos.tuning.parameters import (
+from vamos.tuning.core.parameters import (
     BooleanParam,
     CategoricalIntegerParam,
     CategoricalParam,
     FloatParam,
     IntegerParam,
 )
-from vamos.tuning.config_space import AlgorithmConfigSpace
-from vamos.tuning.bridge import (
+from vamos.tuning.core.config_space import AlgorithmConfigSpace
+from vamos.tuning.racing.bridge import (
     build_nsgaii_config_space,
     config_from_assignment,
 )

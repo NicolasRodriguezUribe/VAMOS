@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
-from ..param_space import ParamSpace, Real, Int, Categorical
-from ..sampler import Sampler
+from ..core.param_space import ParamSpace, Real, Int, Categorical
+from ..core.sampler import Sampler
 from .state import ConfigState, EliteEntry
 from .elimination import compute_aggregated_scores
 
