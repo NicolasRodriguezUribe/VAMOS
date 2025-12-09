@@ -1,7 +1,7 @@
 import numpy as np
 
 from vamos.algorithm.config import MOEADConfig, MOEADConfigData, NSGAIIConfig, NSGAIIConfigData
-from vamos.tuning.parameter_space import AlgorithmConfigSpace, Categorical, Double, Integer, ParameterDefinition
+from vamos.tuning.core.parameter_space import AlgorithmConfigSpace, Categorical, Double, Integer, ParameterDefinition
 
 
 def _nsgaii_space():

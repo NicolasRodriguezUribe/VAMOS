@@ -24,6 +24,12 @@ Thank you for considering a contribution! This project is organized to make addi
 - Performance-critical loops (kernels, variation) should remain lightweight; avoid refactors that change behavior without explicit benchmarks.
 - New orchestration/config/registry code should be mypy-friendly; see `pyproject.toml` for incremental typing settings.
 
+## Tuning package layout
+- Shared/core utilities (parameter spaces, samplers, validation, experiment/spec plumbing) live under `src/vamos/tuning/core/`.
+- Meta-optimization / evolutionary tuning lives under `src/vamos/tuning/evolver/` (e.g., `MetaOptimizationProblem`, `NSGAIITuner`, pipelines).
+- Racing-style tuning (racing loop, random search, bridge utilities) lives under `src/vamos/tuning/racing/` with `pit` kept as a legacy shim.
+- Legacy imports under `vamos.tuning.*` still work via shims but new code should prefer the canonical subpackages above.
+
 ## Self-check
 - After changes, run `python -m vamos.diagnostics.self_check` or `vamos-self-check` for a quick sanity check.
 - CI-friendly tests live under `tests/`; keep populations/evaluation budgets small for speed.

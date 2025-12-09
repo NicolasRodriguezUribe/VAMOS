@@ -7,9 +7,9 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from .spec import run_experiment_from_file, load_experiment_spec, build_experiment_from_spec
-from .tuning_task import TuningTask, EvalContext
-from .experiment import ExperimentResult
+from .core.spec import run_experiment_from_file, load_experiment_spec, build_experiment_from_spec
+from .core.tuning_task import TuningTask, EvalContext
+from .core.experiment import ExperimentResult
 
 
 def _load_callable(target: str) -> Callable[..., Any]:

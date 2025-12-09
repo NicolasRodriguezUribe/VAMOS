@@ -5,26 +5,26 @@ from typing import Any, Dict, List
 import numpy as np
 import pytest
 
-from vamos.tuning.param_space import ParamSpace, Real
-from vamos.tuning.tuning_task import TuningTask, Instance, EvalContext
-from vamos.tuning.random_search_tuner import RandomSearchTuner
+from vamos.tuning.core.param_space import ParamSpace, Real
+from vamos.tuning.core.tuning_task import TuningTask, Instance, EvalContext
+from vamos.tuning.racing.random_search_tuner import RandomSearchTuner
 from vamos.tuning.racing import RacingTuner
-from vamos.tuning.scenario import Scenario
-from vamos.tuning.sampler import UniformSampler, ModelBasedSampler
-from vamos.tuning.validation import (
+from vamos.tuning.core.scenario import Scenario
+from vamos.tuning.core.sampler import UniformSampler, ModelBasedSampler
+from vamos.tuning.core.validation import (
     BenchmarkSuite,
     ConfigSpec,
     run_benchmark_suite,
     summarize_benchmark,
 )
-from vamos.tuning.history import (
+from vamos.tuning.core.history import (
     load_history_json,
     select_top_k_trials,
     make_config_specs_from_trials,
     load_top_k_as_config_specs,
     TrialRecord,
 )
-from vamos.tuning.spec import ExperimentSpec, build_experiment_from_spec
+from vamos.tuning.core.spec import ExperimentSpec, build_experiment_from_spec
 
 
 @pytest.fixture

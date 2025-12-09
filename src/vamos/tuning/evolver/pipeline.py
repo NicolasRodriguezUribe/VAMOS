@@ -8,7 +8,7 @@ import numpy as np
 
 from vamos.algorithm.config import MOEADConfigData, NSGAIIConfigData, NSGAIIIConfigData, SMSEMOAConfigData
 from vamos.study.runner import StudyRunner, StudyTask
-from vamos.tuning.parameter_space import AlgorithmConfigSpace
+from vamos.tuning.core.parameter_space import AlgorithmConfigSpace
 
 from .nsga2_meta import MetaNSGAII
 from .tuner import NSGAIITuner
