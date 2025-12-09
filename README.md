@@ -51,6 +51,10 @@ pytest
   - `python -m vamos.diagnostics.self_check`
   - or `vamos-self-check`
 
+## Migration note
+
+- Deprecated tuning shim modules (e.g., `vamos.tuning.param_space`, `vamos.tuning.parameter_space`, `vamos.tuning.random_search_tuner`, `vamos.tuning.meta`, etc.) have been removed. Import directly from the canonical subpackages: `vamos.tuning.core.*`, `vamos.tuning.evolver.*`, and `vamos.tuning.racing.*`.
+
 ## Documentation
 
 - Browse the docs under `docs/` (MkDocs). Key pages cover CLI/config, algorithms/backends, problems, constraint DSL/autodiff, and extension guides.
