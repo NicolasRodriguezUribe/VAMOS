@@ -7,7 +7,7 @@ should be imported explicitly from their modules instead of via the package root
 """
 from __future__ import annotations
 
-from .core.optimize import OptimizationResult, optimize
+from .core.optimize import OptimizationResult, optimize, OptimizeConfig
 from .algorithm.config import (
     MOEADConfig,
     MOEADConfigData,
@@ -68,6 +68,7 @@ from .diagnostics.self_check import run_self_check
 __all__ = [
     # Optimization facade
     "optimize",
+    "OptimizeConfig",
     "OptimizationResult",
     # Experiment config
     "ExperimentConfig",
