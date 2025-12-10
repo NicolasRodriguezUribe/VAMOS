@@ -78,6 +78,7 @@ warn_unused_configs = true
 show_error_codes = true
 pretty = true
 exclude = ["build/", "dist/"]
+ignore_missing_imports = false
 
 [tool.mypy."vamos.problem.*"]
 strict = true
@@ -96,6 +97,18 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = "vamos.kernel.registry"
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+  "moocore",
+  "libhv",
+  "numba",
+  "pymoo.*",
+  "jmetalpy.*",
+  "pygmo.*",
+  "streamlit",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
