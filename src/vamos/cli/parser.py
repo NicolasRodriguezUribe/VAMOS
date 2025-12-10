@@ -18,7 +18,7 @@ from vamos.core.experiment_config import (
     EXPERIMENT_BACKENDS,
     ExperimentConfig,
 )
-from vamos.problem.resolver import PROBLEM_SET_PRESETS, REFERENCE_FRONT_PATHS
+from vamos.problem.resolver import PROBLEM_SET_PRESETS, resolve_reference_front_path
 from .common import (
     _parse_probability_arg,
     _parse_positive_float,
@@ -470,7 +470,7 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         if not (0.0 < args.hv_threshold < 1.0):
             parser.error("--hv-threshold must be in the (0, 1) range.")
         if not args.hv_reference_front:
-            default_front = REFERENCE_FRONT_PATHS.get(args.problem.lower())
+            default_front = resolve_reference_front_path(args.problem.lower(), None)
             if default_front is None:
                 parser.error(
                     "--hv-reference-front is required for the selected problem "
