@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+"""
+Canonical tuning configuration space for VAMOS.
+
+AlgorithmConfigSpace is the recommended abstraction going forward. Legacy ParamSpace
+remains available in param_space.py for backward compatibility but will be removed
+in a future release.
+"""
+
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, Mapping, Sequence
 

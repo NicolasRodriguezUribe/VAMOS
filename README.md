@@ -119,6 +119,12 @@ smpso:
 
 CLI flags override config values. Per-problem sections override defaults.
 
+## Tuning API
+
+- Canonical tuning abstraction: `AlgorithmConfigSpace` (see `vamos.tuning.AlgorithmConfigSpace` or `vamos.tuning.core.parameter_space`).
+- Use `NSGAIITuner` with an `AlgorithmConfigSpace` to search algorithm hyperparameters (example: `examples/auto_nsga2_tuning_example.py`).
+- Legacy `ParamSpace` remains for compatibility but is deprecated and will be removed in a future release.
+
 ## Performance toggle
 
 Enable optional Numba-accelerated variation for permutation/binary/integer encodings:
@@ -137,6 +143,37 @@ export VAMOS_USE_NUMBA_VARIATION=1  # set before running
 - `objective_reduction.py` - correlation/angle/hybrid reducers.
 - `mcdm.py`, `visualization.py`, `stats.py` - decision-making, plotting, post-hoc stats.
 - `runner.py`, `cli.py`, `study/` - CLI and study orchestration.
+
+## Programmatic optimize()
+
+```python
+from vamos.core.optimize import optimize, OptimizeConfig
+from vamos.problem.registry import make_problem_selection
+from vamos.algorithm.config import NSGAIIConfig
+
+problem = make_problem_selection("zdt1").instantiate()
+algo_cfg = (
+    NSGAIIConfig()
+    .pop_size(20)
+    .offspring_size(20)
+    .crossover("sbx", prob=0.9, eta=20.0)
+    .mutation("pm", prob="1/n", eta=20.0)
+    .selection("tournament", pressure=2)
+    .survival("nsga2")
+    .engine("numpy")
+    .fixed()
+)
+result = optimize(
+    OptimizeConfig(
+        problem=problem,
+        algorithm="nsgaii",
+        algorithm_config=algo_cfg,
+        termination=("n_eval", 200),
+        seed=0,
+    )
+)
+print(result.F.shape, result.X.shape)
+```
 
 ## Dependencies
 
