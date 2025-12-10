@@ -11,6 +11,7 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Callable, Dict
 
+from .backend import KernelBackend
 from .numpy_backend import NumPyKernel
 
 
@@ -36,14 +37,14 @@ def _load_moocore():
         ) from exc
 
 
-KERNELS: Dict[str, Callable[[], object]] = {
+KERNELS: Dict[str, Callable[[], KernelBackend]] = {
     "numpy": NumPyKernel,
     "numba": _load_numba,
     "moocore": _load_moocore,
 }
 
 
-def resolve_kernel(name: str):
+def resolve_kernel(name: str) -> KernelBackend:
     key = name.lower()
     try:
         factory = KERNELS[key]

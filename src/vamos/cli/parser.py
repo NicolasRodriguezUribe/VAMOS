@@ -28,6 +28,28 @@ from .common import (
 )
 
 
+def _load_spec_defaults(config_path: str | None) -> tuple[dict, dict, dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """
+    Load YAML/JSON spec if provided and return defaults per algorithm and problems.
+    """
+    spec = {}
+    problem_overrides: dict = {}
+    experiment_defaults: dict[str, Any] = {}
+    nsgaii_defaults: dict[str, Any] = {}
+    moead_defaults: dict[str, Any] = {}
+    smsemoa_defaults: dict[str, Any] = {}
+    nsga3_defaults: dict[str, Any] = {}
+    if config_path:
+        spec = load_experiment_spec(config_path)
+        problem_overrides = spec.get("problems", {}) or {}
+        experiment_defaults = spec.get("defaults", {}) or {k: v for k, v in spec.items() if k != "problems"}
+        nsgaii_defaults = experiment_defaults.get("nsgaii", {}) or {}
+        moead_defaults = experiment_defaults.get("moead", {}) or {}
+        smsemoa_defaults = experiment_defaults.get("smsemoa", {}) or {}
+        nsga3_defaults = experiment_defaults.get("nsga3", {}) or {}
+    return spec, problem_overrides, experiment_defaults, nsgaii_defaults, moead_defaults, smsemoa_defaults, nsga3_defaults
+
+
 # Config-file aware parser (overrides the legacy definition above).
 def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type: ignore[override]
     pre_parser = argparse.ArgumentParser(add_help=False)
@@ -37,21 +59,15 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
     )
     pre_args, remaining = pre_parser.parse_known_args()
 
-    spec = {}
-    problem_overrides = {}
-    experiment_defaults: dict[str, Any] = {}
-    nsgaii_defaults: dict[str, Any] = {}
-    moead_defaults: dict[str, Any] = {}
-    smsemoa_defaults: dict[str, Any] = {}
-    nsga3_defaults: dict[str, Any] = {}
-    if pre_args.config:
-        spec = load_experiment_spec(pre_args.config)
-        problem_overrides = spec.get("problems", {}) or {}
-        experiment_defaults = spec.get("defaults", {}) or {k: v for k, v in spec.items() if k != "problems"}
-        nsgaii_defaults = experiment_defaults.get("nsgaii", {}) or {}
-        moead_defaults = experiment_defaults.get("moead", {}) or {}
-        smsemoa_defaults = experiment_defaults.get("smsemoa", {}) or {}
-        nsga3_defaults = experiment_defaults.get("nsga3", {}) or {}
+    (
+        spec,
+        problem_overrides,
+        experiment_defaults,
+        nsgaii_defaults,
+        moead_defaults,
+        smsemoa_defaults,
+        nsga3_defaults,
+    ) = _load_spec_defaults(pre_args.config)
 
     def _spec_default(key: str, fallback):
         return experiment_defaults.get(key, fallback)

@@ -11,3 +11,7 @@ nav:
   - Problems: problems.md
   - Constraints & Autodiff: constraints.md
   - Extending VAMOS: extending.md
+  - Developer Guides:
+    - Add a Problem: dev/add_problem.md
+    - Add an Algorithm: dev/add_algorithm.md
+    - Add a Backend: dev/add_backend.md

@@ -3,13 +3,13 @@ from __future__ import annotations
 import inspect
 import warnings
 from dataclasses import asdict, dataclass, is_dataclass
-from typing import Any, Mapping, Tuple
+from typing import Any, Callable, Mapping, Tuple, Optional
 
-from vamos.algorithm.registry import resolve_algorithm, ALGORITHMS
+from vamos.algorithm.registry import resolve_algorithm, ALGORITHMS, AlgorithmLike
 from vamos.kernel.numpy_backend import NumPyKernel
 from vamos.kernel.registry import resolve_kernel
 from vamos.problem.types import ProblemProtocol
-from vamos.eval.backends import resolve_eval_backend
+from vamos.eval.backends import resolve_eval_backend, EvaluationBackend
 
 
 class OptimizationResult:
@@ -32,7 +32,7 @@ class OptimizeConfig:
     termination: Tuple[str, Any]
     seed: int
     engine: str = "numpy"
-    eval_backend: Any = None  # name or backend instance
+    eval_backend: EvaluationBackend | str | None = None  # name or backend instance
     live_viz: Any = None
 
 
@@ -72,8 +72,8 @@ def _available_algorithms() -> str:
 
 def optimize(
     config_or_problem: OptimizeConfig | ProblemProtocol,
-    *legacy_args,
-    **legacy_kwargs,
+    *legacy_args: Any,
+    **legacy_kwargs: Any,
 ) -> OptimizationResult:
     """
     Run a single optimization for the provided problem/config pair.
