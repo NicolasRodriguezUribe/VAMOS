@@ -19,6 +19,16 @@ Thank you for considering a contribution! This project is organized to make addi
 - Register it in `src/vamos/kernel/registry.py` with a unique engine name.
 - Add a backend-marked smoke test (`@pytest.mark.<engine>`) that runs a small NSGA-II job; use `pytest.importorskip` to skip when the dependency is missing.
 
+## Continuous Integration
+- CI (GitHub Actions) runs `ruff`, `black --check`, and `pytest -m "not slow"` on Python 3.10–3.12 with full extras installed.
+- A minimal-install job installs the core package only and runs smoke tests to ensure optional dependencies are lazy.
+- A wheel build job checks that packaged data (reference fronts, weights) are present.
+- Before opening a PR, run the same locally:
+  - `pip install -e ".[dev,backends,benchmarks,notebooks,studio,autodiff]"`
+  - `ruff check .`
+  - `black --check .`
+  - `pytest -m "not slow"`
+
 ## Coding style and typing
 - The project uses a `src/` layout and prefers type hints on public-facing functions/classes.
 - Performance-critical loops (kernels, variation) should remain lightweight; avoid refactors that change behavior without explicit benchmarks.
