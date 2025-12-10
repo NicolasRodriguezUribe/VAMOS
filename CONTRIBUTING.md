@@ -31,6 +31,7 @@ Thank you for considering a contribution! This project is organized to make addi
   - `ruff check .`
   - `black --check .`
   - `pytest -m "not slow"`
+- Mypy: type hints are required on new public APIs. Run `mypy src/vamos/core src/vamos/algorithm src/vamos/kernel` when touching those areas.
 
 ## Coding style and typing
 - The project uses a `src/` layout and prefers type hints on public-facing functions/classes.

@@ -27,6 +27,8 @@ jobs:
         run: ruff check .
       - name: Format check (black)
         run: black --check .
+      - name: Type check (mypy)
+        run: mypy src/vamos/core src/vamos/algorithm src/vamos/kernel
       - name: Run tests
         run: pytest -m "not slow"
 
