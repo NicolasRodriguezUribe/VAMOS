@@ -1,6 +1,6 @@
+import pytest
 import numpy as np
-import matplotlib
-
+matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 
 from vamos.visualization import (

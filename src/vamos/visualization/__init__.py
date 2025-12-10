@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 
-def _get_ax(ax: plt.Axes | None, projection: str | None = None) -> plt.Axes:
+def _require_matplotlib():
+    try:
+        import matplotlib.pyplot as plt  # type: ignore
+        return plt
+    except ImportError as exc:
+        raise ImportError(
+            "Visualization requires matplotlib. Install with `pip install vamos[notebooks]` "
+            "or `pip install matplotlib`."
+        ) from exc
+
+
+def _get_ax(ax, projection: str | None = None):
+    plt = _require_matplotlib()
     if ax is not None:
         return ax
     fig = plt.figure()
@@ -20,7 +30,8 @@ def plot_pareto_front_2d(
     labels: tuple[str, str] | None = None,
     title: str | None = None,
     show: bool = False,
-) -> plt.Axes:
+) -> object:
+    plt = _require_matplotlib()
     F = np.asarray(F, dtype=float)
     if F.ndim != 2 or F.shape[1] != 2:
         raise ValueError("F must have shape (n_points, 2) for 2D Pareto plot.")
@@ -44,7 +55,8 @@ def plot_pareto_front_3d(
     labels: tuple[str, str, str] | None = None,
     title: str | None = None,
     show: bool = False,
-) -> plt.Axes:
+) -> object:
+    plt = _require_matplotlib()
     F = np.asarray(F, dtype=float)
     if F.ndim != 2 or F.shape[1] != 3:
         raise ValueError("F must have shape (n_points, 3) for 3D Pareto plot.")
@@ -70,7 +82,8 @@ def plot_parallel_coordinates(
     ax: plt.Axes | None = None,
     title: str | None = None,
     show: bool = False,
-) -> plt.Axes:
+) -> object:
+    plt = _require_matplotlib()
     F = np.asarray(F, dtype=float)
     if F.ndim != 2:
         raise ValueError("F must be 2-dimensional for parallel coordinates.")
@@ -101,7 +114,8 @@ def plot_hv_convergence(
     label: str | None = None,
     title: str | None = "Hypervolume convergence",
     show: bool = False,
-) -> plt.Axes:
+) -> object:
+    plt = _require_matplotlib()
     evals = np.asarray(evals, dtype=float)
     hv_values = np.asarray(hv_values, dtype=float)
     if evals.shape != hv_values.shape:

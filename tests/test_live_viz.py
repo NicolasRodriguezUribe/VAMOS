@@ -1,5 +1,8 @@
 import os
+import pytest
 import numpy as np
+
+pytest.importorskip("matplotlib")
 
 from vamos.algorithm.config import NSGAIIConfig
 from vamos.algorithm.nsgaii import NSGAII

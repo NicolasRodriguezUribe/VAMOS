@@ -156,6 +156,10 @@ Install with `pip install -e ".[extra1,extra2]"`:
 | `notebooks`  | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `ipython>=8.10`, `scikit-learn>=1.3` | Jupyter notebook support     |
 | `examples`   | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `scikit-learn>=1.3` | Run the real-data examples   |
 
+- Minimal install note: `import vamos` and `import vamos.api` work without optional extras.
+  Backends (`numba`, `moocore`) and plotting (`matplotlib`) are only required when you use
+  those features; install the relevant extras to enable them.
+
 ### Quick install examples
 
 ```powershell
@@ -181,6 +185,7 @@ pip install -e ".[backends]"
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
 - Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.hyperheuristics`.
 - Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `02_tuning_and_metaoptimization.ipynb`).
+- Built-in reference fronts and default weight vectors ship inside the package under `vamos.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
 
 ## Testing & QA
 
