@@ -85,6 +85,18 @@ strict = true
 [tool.mypy.vamos.algorithm.config]
 strict = true
 
+[[tool.mypy.overrides]]
+module = "vamos.core.optimize"
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "vamos.algorithm.registry"
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "vamos.kernel.registry"
+disallow_untyped_defs = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [

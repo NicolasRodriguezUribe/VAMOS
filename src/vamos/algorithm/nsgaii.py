@@ -42,6 +42,89 @@ class NSGAII:
         self.kernel = kernel
 
     def run(self, problem, termination, seed: int, eval_backend=None, live_viz: LiveVisualization | None = None):
+        (
+            live_cb,
+            eval_backend,
+            max_eval,
+            n_eval,
+            hv_tracker,
+            hv_reached,
+            track_genealogy,
+            genealogy_tracker,
+        ) = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        result_archive = self._state.get("result_archive")
+        archive_size = self._state.get("archive_size")
+        archive_manager = self._state.get("archive_manager")
+        archive_via_kernel = self._state.get("archive_via_kernel", False)
+        archive_X = self._state.get("archive_X")
+        archive_F = self._state.get("archive_F")
+        constraint_mode = self._state["constraint_mode"]
+        sel_method = self._state["sel_method"]
+        pressure = self._state["pressure"]
+        pop_size = self._state["pop_size"]
+        X = self._state["X"]
+        F = self._state["F"]
+        G = self._state["G"]
+        generation = 0
+        live_cb.on_generation(generation, F=self._state["F"])
+
+        while n_eval < max_eval and not hv_reached:
+            self._state["generation"] = generation
+            X_off = self.ask()
+            eval_off = eval_backend.evaluate(X_off, problem)
+            hv_reached = self.tell(eval_off, pop_size)
+            n_eval += X_off.shape[0]
+            X = self._state["X"]
+            F = self._state["F"]
+            G = self._state["G"]
+            archive_X = self._state.get("archive_X")
+            archive_F = self._state.get("archive_F")
+            hv_points_fn = self._state["hv_points_fn"]
+            if hv_tracker.enabled and hv_tracker.reached(hv_points_fn()):
+                hv_reached = True
+                break
+            generation += 1
+            self._state["generation"] = generation
+            try:
+                ranks, _ = self.kernel.nsga2_ranking(F)
+                nd_mask = ranks == ranks.min(initial=0)
+                live_cb.on_generation(generation, F=F[nd_mask])
+            except Exception:
+                live_cb.on_generation(generation, F=F)
+
+        result = {"X": self._state["X"], "F": self._state["F"], "evaluations": n_eval, "hv_reached": hv_reached}
+        if G is not None:
+            result["G"] = self._state["G"]
+        if result_archive is not None:
+            arch_X, arch_F = result_archive.contents()
+            result["archive"] = {"X": arch_X, "F": arch_F}
+        elif archive_size:
+            archive_manager = self._state.get("archive_manager")
+            archive_via_kernel = self._state.get("archive_via_kernel", False)
+            archive_X = self._state.get("archive_X")
+            archive_F = self._state.get("archive_F")
+            if archive_manager is not None:
+                final_X, final_F = archive_manager.contents()
+                result["archive"] = {"X": final_X, "F": final_F}
+            elif archive_via_kernel:
+                result["archive"] = {"X": archive_X, "F": archive_F}
+        live_cb.on_end(final_F=self._state["F"])
+        if track_genealogy and genealogy_tracker is not None:
+            try:
+                ranks, _ = self.kernel.nsga2_ranking(self._state["F"])
+                nd_mask = ranks == ranks.min(initial=0)
+                final_ids = self._state.get("ids")
+                final_front_ids = final_ids[nd_mask] if final_ids is not None else []
+                genealogy_tracker.mark_final_front(list(final_front_ids))
+                result["genealogy"] = {
+                    "operator_stats": operator_success_stats(genealogy_tracker, list(final_front_ids)),
+                    "generation_contributions": generation_contributions(genealogy_tracker, list(final_front_ids)),
+                }
+            except Exception:
+                pass
+        return result
+
+    def _initialize_run(self, problem, termination, seed, eval_backend, live_viz):
         term_type, term_val = termination
         hv_config = None
         if term_type == "n_eval":
@@ -121,8 +204,83 @@ class NSGAII:
         mut_params = prepare_mutation_params(mut_params, encoding, n_var, prob_factor=mut_factor)
 
         variation_workspace = VariationWorkspace()
+        operator_pool, op_selector, indicator_eval = self._build_operator_pool(
+            encoding,
+            cross_method,
+            cross_params,
+            mut_method,
+            mut_params,
+            n_var,
+            xl,
+            xu,
+            variation_workspace,
+            problem,
+            mut_factor,
+        )
+        result_mode = self.cfg.get("result_mode", "population")
+        result_archive = None
+        if result_mode == "external_archive" and archive_size:
+            archive_type = self.cfg.get("archive_type", "hypervolume")
+            if archive_type == "crowding":
+                result_archive = CrowdingDistanceArchive(
+                    archive_size, n_var, problem.n_obj, X.dtype
+                )
+            else:
+                result_archive = HypervolumeArchive(
+                    archive_size, n_var, problem.n_obj, X.dtype
+                )
 
-        # Build operator pool (default is the configured crossover/mutation, optionally extended via adaptive_operators)
+        self._state = {
+            "X": X,
+            "F": F,
+            "G": G,
+            "rng": rng,
+            "variation": operator_pool[0],
+            "operator_pool": operator_pool,
+            "op_selector": op_selector,
+            "indicator_eval": indicator_eval,
+            "last_operator_idx": 0,
+            "offspring_size": offspring_size,
+            "sel_method": sel_method,
+            "pressure": pressure,
+            "constraint_mode": constraint_mode,
+            "pop_size": pop_size,
+            "archive_size": archive_size,
+            "archive_X": archive_X,
+            "archive_F": archive_F,
+            "archive_manager": archive_manager,
+            "archive_via_kernel": archive_via_kernel,
+            "result_archive": result_archive,
+            "hv_tracker": hv_tracker,
+            "track_genealogy": track_genealogy,
+            "genealogy_tracker": genealogy_tracker,
+            "ids": ids,
+            "generation": 0,
+            "variation_workspace": variation_workspace,
+            "result_mode": result_mode,
+        }
+        self._state["hv_points_fn"] = lambda: (
+            self._state["archive_F"]
+            if self._state.get("archive_F") is not None and self._state["archive_F"].size
+            else self._state["F"]
+        )
+        hv_reached = hv_tracker.enabled and hv_tracker.reached(self._state["hv_points_fn"]())
+        return live_cb, eval_backend, max_eval, n_eval, hv_tracker, hv_reached, track_genealogy, genealogy_tracker
+
+    def _build_operator_pool(
+        self,
+        encoding,
+        cross_method,
+        cross_params,
+        mut_method,
+        mut_params,
+        n_var,
+        xl,
+        xu,
+        variation_workspace,
+        problem,
+        mut_factor,
+    ):
         operator_pool = []
         op_configs = self.cfg.get("adaptive_operators", {}).get("operator_pool")
         if op_configs:
@@ -174,111 +332,7 @@ class NSGAII:
             indicator = selector_cfg.get("indicator", "hv")
             indicator_mode = selector_cfg.get("mode", "maximize")
             indicator_eval = IndicatorEvaluator(indicator, reference_point=None, mode=indicator_mode)
-        result_mode = self.cfg.get("result_mode", "population")
-        result_archive = None
-        if result_mode == "external_archive" and archive_size:
-            archive_type = self.cfg.get("archive_type", "hypervolume")
-            if archive_type == "crowding":
-                result_archive = CrowdingDistanceArchive(
-                    archive_size, n_var, problem.n_obj, X.dtype
-                )
-            else:
-                result_archive = HypervolumeArchive(
-                    archive_size, n_var, problem.n_obj, X.dtype
-                )
-
-        # Initialize ask/tell state
-        self._state = {
-            "X": X,
-            "F": F,
-            "G": G,
-            "rng": rng,
-            "variation": operator_pool[0],
-            "operator_pool": operator_pool,
-            "op_selector": op_selector,
-            "indicator_eval": indicator_eval,
-            "last_operator_idx": 0,
-            "offspring_size": offspring_size,
-            "sel_method": sel_method,
-            "pressure": pressure,
-            "constraint_mode": constraint_mode,
-            "pop_size": pop_size,
-            "archive_size": archive_size,
-            "archive_X": archive_X,
-            "archive_F": archive_F,
-            "archive_manager": archive_manager,
-            "archive_via_kernel": archive_via_kernel,
-            "result_archive": result_archive,
-            "hv_tracker": hv_tracker,
-            "track_genealogy": track_genealogy,
-            "genealogy_tracker": genealogy_tracker,
-            "ids": ids,
-            "generation": 0,
-        }
-        self._state["hv_points_fn"] = lambda: (
-            self._state["archive_F"]
-            if self._state.get("archive_F") is not None and self._state["archive_F"].size
-            else self._state["F"]
-        )
-        hv_reached = hv_tracker.enabled and hv_tracker.reached(self._state["hv_points_fn"]())
-        generation = 0
-        live_cb.on_generation(generation, F=self._state["F"])
-
-        while n_eval < max_eval and not hv_reached:
-            self._state["generation"] = generation
-            X_off = self.ask()
-            eval_off = eval_backend.evaluate(X_off, problem)
-            hv_reached = self.tell(eval_off, pop_size)
-            n_eval += X_off.shape[0]
-            X = self._state["X"]
-            F = self._state["F"]
-            G = self._state["G"]
-            archive_X = self._state.get("archive_X")
-            archive_F = self._state.get("archive_F")
-            hv_points_fn = self._state["hv_points_fn"]
-            if hv_tracker.enabled and hv_tracker.reached(hv_points_fn()):
-                hv_reached = True
-                break
-            generation += 1
-            self._state["generation"] = generation
-            try:
-                ranks, _ = self.kernel.nsga2_ranking(F)
-                nd_mask = ranks == ranks.min(initial=0)
-                live_cb.on_generation(generation, F=F[nd_mask])
-            except Exception:
-                live_cb.on_generation(generation, F=F)
-
-        result = {"X": self._state["X"], "F": self._state["F"], "evaluations": n_eval, "hv_reached": hv_reached}
-        if G is not None:
-            result["G"] = self._state["G"]
-        if result_archive is not None:
-            arch_X, arch_F = result_archive.contents()
-            result["archive"] = {"X": arch_X, "F": arch_F}
-        elif archive_size:
-            archive_manager = self._state.get("archive_manager")
-            archive_via_kernel = self._state.get("archive_via_kernel", False)
-            archive_X = self._state.get("archive_X")
-            archive_F = self._state.get("archive_F")
-            if archive_manager is not None:
-                final_X, final_F = archive_manager.contents()
-                result["archive"] = {"X": final_X, "F": final_F}
-            elif archive_via_kernel:
-                result["archive"] = {"X": archive_X, "F": archive_F}
-        live_cb.on_end(final_F=self._state["F"])
-        if track_genealogy and genealogy_tracker is not None:
-            try:
-                ranks, _ = self.kernel.nsga2_ranking(self._state["F"])
-                nd_mask = ranks == ranks.min(initial=0)
-                final_ids = self._state.get("ids")
-                final_front_ids = final_ids[nd_mask] if final_ids is not None else []
-                genealogy_tracker.mark_final_front(list(final_front_ids))
-                result["genealogy"] = {
-                    "operator_stats": operator_success_stats(genealogy_tracker, list(final_front_ids)),
-                    "generation_contributions": generation_contributions(genealogy_tracker, list(final_front_ids)),
-                }
-            except Exception:
-                pass
-        return result
+        return operator_pool, op_selector, indicator_eval
 
     def _selection_metrics(self, F: np.ndarray, G: np.ndarray | None, constraint_mode: str):
         ranks, crowding = self.kernel.nsga2_ranking(F)
