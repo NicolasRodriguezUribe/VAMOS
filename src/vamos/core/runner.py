@@ -7,6 +7,8 @@ from typing import Iterable
 
 import numpy as np
 
+from importlib.resources import as_file
+
 from vamos.visualization import plotting
 from vamos.algorithm.hypervolume import hypervolume
 from vamos.core.execution import execute_algorithm
@@ -28,6 +30,7 @@ from vamos.algorithm.factory import build_algorithm
 from vamos.config.variation import merge_variation_overrides, normalize_variation_config
 from vamos.core.hv_stop import build_hv_stop_config, compute_hv_reference
 from vamos.eval.backends import resolve_eval_backend
+from vamos.data import weight_path
 from vamos.core.runner_output import (
     build_metrics,
     persist_run_outputs,
@@ -38,9 +41,14 @@ from vamos.core.runner_utils import validate_problem, problem_output_dir, run_ou
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
+
 def _default_weight_path(problem_name: str, n_obj: int, pop_size: int) -> str:
     filename = f"{problem_name}_nobj{n_obj}_pop{pop_size}.csv"
-    return str(PROJECT_ROOT / "build" / "weights" / filename)
+    try:
+        with as_file(weight_path(filename)) as p:
+            return str(p)
+    except Exception:
+        return str(weight_path("zdt1problem_2obj_pop100.csv")) if "zdt1" in filename else str(weight_path(filename))
 
 
 

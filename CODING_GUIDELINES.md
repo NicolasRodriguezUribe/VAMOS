@@ -18,6 +18,7 @@ These notes capture the conventions we rely on when extending VAMOS (Vectorized 
 - When dealing with randomness, use `numpy.random.Generator` instances passed through call stacks (`np.random.default_rng(seed)`) instead of global RNGs.
 - Raise `ValueError`/`TypeError` for invalid configuration instead of silent fallbacks. Validate dictionary-based configs early (e.g., `_prepare_mutation_params`).
 - Prefer vectorized NumPy kernels or dedicated backend hooks over Python loops. If Numba/MooCore features are required, gate them via the backend registry and document any limitations.
+- Keep new public APIs fully typed; prefer Protocols for shared contracts (Problem, KernelBackend, Algorithm). Run `mypy src/vamos/core src/vamos/algorithm src/vamos/kernel` when touching those areas.
 
 ## Project structure hints
 - Algorithms live in `src/vamos/algorithm/`; kernels go under `src/vamos/kernel/`; benchmark definitions stay in `src/vamos/problem/`. Keep module-level docstrings describing the problem, algorithm, or kernel.

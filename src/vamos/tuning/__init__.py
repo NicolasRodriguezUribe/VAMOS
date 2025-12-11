@@ -1,4 +1,9 @@
-"""Auto-tuning utilities for VAMOS."""
+"""Auto-tuning utilities for VAMOS.
+
+AlgorithmConfigSpace is the canonical tuning abstraction.
+Legacy ParamSpace remains available for backward compatibility but will be removed
+in a future release.
+"""
 
 import json as _json
 from pathlib import Path as _Path
@@ -22,7 +27,12 @@ from .evolver import (
     compute_hyperparameter_importance,
     build_nsgaii_config_space,
 )
-from .core.param_space import ParamSpace, Real, Int, Categorical as LegacyCategorical, Condition
+from .core.param_space import ParamSpace as LegacyParamSpace, Real as LegacyReal, Int as LegacyInt, Categorical as LegacyCategorical, Condition
+
+# Backward-compatible alias; deprecated.
+ParamSpace = LegacyParamSpace
+Real = LegacyReal
+Int = LegacyInt
 from .core.tuning_task import TuningTask, EvalContext, Instance
 from .racing.random_search_tuner import RandomSearchTuner, TrialResult
 from .core.scenario import Scenario
@@ -156,9 +166,13 @@ __all__ = [
     "Double",
     "Integer",
     "ParameterDefinition",
+    # Legacy ParamSpace (deprecated)
     "ParamSpace",
     "Real",
     "Int",
+    "LegacyParamSpace",
+    "LegacyReal",
+    "LegacyInt",
     "LegacyCategorical",
     "Condition",
     "MetaOptimizationProblem",

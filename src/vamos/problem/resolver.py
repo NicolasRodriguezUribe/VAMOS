@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Iterable, Sequence
 
+from importlib.resources import as_file
+
+from vamos.data import reference_front_path
 from vamos.problem.registry import (
     ProblemSelection,
     available_problem_names,
     make_problem_selection,
 )
-
-# Constants moved from runner.py
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 
 # Preset names map to problem keys defined in the registry.
 PROBLEM_SET_PRESETS: dict[str, Sequence[str]] = {
@@ -25,26 +24,17 @@ PROBLEM_SET_PRESETS: dict[str, Sequence[str]] = {
     "real_world": ("ml_tuning", "welded_beam", "fs_real"),
 }
 
-REFERENCE_FRONT_PATHS = {
-    "zdt1": PROJECT_ROOT / "data/reference_fronts/ZDT1.csv",
-    "zdt2": PROJECT_ROOT / "data/reference_fronts/ZDT2.csv",
-    "zdt3": PROJECT_ROOT / "data/reference_fronts/ZDT3.csv",
-    "zdt4": PROJECT_ROOT / "data/reference_fronts/ZDT4.csv",
-    "zdt6": PROJECT_ROOT / "data/reference_fronts/ZDT6.csv",
-}
-
-
 def resolve_reference_front_path(problem_key: str, explicit_path: str | None) -> str | None:
     """
     Return a path to a reference front, using an explicit override when provided.
     """
     if explicit_path:
         return explicit_path
-    if problem_key in REFERENCE_FRONT_PATHS:
-        p = REFERENCE_FRONT_PATHS[problem_key]
-        if p.exists():
+    try:
+        with as_file(reference_front_path(problem_key)) as p:
             return str(p)
-    return None
+    except Exception:
+        return None
 
 
 def _validate_problem_name(name: str) -> None:

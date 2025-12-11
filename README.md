@@ -148,6 +148,12 @@ smpso:
 
 CLI flags override config values. Per-problem sections override defaults.
 
+## Tuning API
+
+- Canonical tuning abstraction: `AlgorithmConfigSpace` (see `vamos.tuning.AlgorithmConfigSpace` or `vamos.tuning.core.parameter_space`).
+- Use `NSGAIITuner` with an `AlgorithmConfigSpace` to search algorithm hyperparameters (example: `examples/auto_nsga2_tuning_example.py`).
+- Legacy `ParamSpace` remains for compatibility but is deprecated and will be removed in a future release.
+
 ## Performance toggle
 
 Enable optional Numba-accelerated variation for permutation/binary/integer encodings:
@@ -167,6 +173,37 @@ export VAMOS_USE_NUMBA_VARIATION=1  # set before running
 - `mcdm.py`, `visualization.py`, `stats.py` - decision-making, plotting, post-hoc stats.
 - `runner.py`, `cli.py`, `study/` - CLI and study orchestration.
 
+## Programmatic optimize()
+
+```python
+from vamos.core.optimize import optimize, OptimizeConfig
+from vamos.problem.registry import make_problem_selection
+from vamos.algorithm.config import NSGAIIConfig
+
+problem = make_problem_selection("zdt1").instantiate()
+algo_cfg = (
+    NSGAIIConfig()
+    .pop_size(20)
+    .offspring_size(20)
+    .crossover("sbx", prob=0.9, eta=20.0)
+    .mutation("pm", prob="1/n", eta=20.0)
+    .selection("tournament", pressure=2)
+    .survival("nsga2")
+    .engine("numpy")
+    .fixed()
+)
+result = optimize(
+    OptimizeConfig(
+        problem=problem,
+        algorithm="nsgaii",
+        algorithm_config=algo_cfg,
+        termination=("n_eval", 200),
+        seed=0,
+    )
+)
+print(result.F.shape, result.X.shape)
+```
+
 ## Dependencies
 
 ### Core dependencies (always installed)
@@ -184,6 +221,10 @@ Install with `pip install -e ".[extra1,extra2]"`:
 | `dev`        | `pytest>=7.0`, `black>=23.0`, `ruff>=0.1.5`   | Development & testing            |
 | `notebooks`  | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `ipython>=8.10`, `scikit-learn>=1.3` | Jupyter notebook support     |
 | `examples`   | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `scikit-learn>=1.3` | Run the real-data examples   |
+
+- Minimal install note: `import vamos` and `import vamos.api` work without optional extras.
+  Backends (`numba`, `moocore`) and plotting (`matplotlib`) are only required when you use
+  those features; install the relevant extras to enable them.
 
 ### Quick install examples
 
@@ -210,6 +251,7 @@ pip install -e ".[backends]"
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
 - Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.hyperheuristics`.
 - Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `02_tuning_and_metaoptimization.ipynb`).
+- Built-in reference fronts and default weight vectors ship inside the package under `vamos.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
 
 ## Testing & QA
 

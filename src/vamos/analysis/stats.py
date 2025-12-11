@@ -3,9 +3,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence, List
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats as spstats
+
+
+def _require_matplotlib():
+    try:
+        import matplotlib.pyplot as plt  # type: ignore
+        return plt
+    except ImportError as exc:
+        raise ImportError(
+            "Statistics plotting requires matplotlib. Install with `pip install vamos[notebooks]` "
+            "or `pip install matplotlib`."
+        ) from exc
 
 
 @dataclass
@@ -91,10 +101,11 @@ def plot_critical_distance(
     higher_is_better: bool = True,
     ax: plt.Axes | None = None,
     show: bool = False,
-) -> plt.Axes:
+) -> object:
     """
     Plot a simple critical distance diagram using Nemenyi CD if n_problems provided.
     """
+    plt = _require_matplotlib()
     avg_ranks = np.asarray(avg_ranks, dtype=float)
     if avg_ranks.ndim != 1:
         raise ValueError("avg_ranks must be 1-dimensional.")
