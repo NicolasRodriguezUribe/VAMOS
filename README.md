@@ -22,6 +22,25 @@ python -m vamos.cli.main --engine moocore --problem zdt1 --max-evaluations 2000
 pytest
 ```
 
+### Developer quickstart
+
+If you plan to modify VAMOS (humans or AI assistants):
+
+1. Create and activate a virtual environment.
+2. Install with dev + backends + benchmarks:
+   ```powershell
+   pip install -e ".[backends,benchmarks,dev]"
+   ```
+3. Run a quick self-check and smoke tests:
+   ```powershell
+   python -m vamos.diagnostics.self_check
+   pytest -m "not slow"
+   ```
+4. Optionally enable notebooks and examples:
+   ```powershell
+   pip install -e ".[notebooks,examples]"
+   ```
+
 ## What's inside
 
 - Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO with vectorized kernels (NumPy, Numba, MooCore).
@@ -69,6 +88,16 @@ pytest
 
 - See `CONTRIBUTING.md` for how to add problems, algorithms, or backends.
 - Prefer adding type hints/docstrings on public APIs; keep performance-critical kernels unchanged unless benchmarked.
+
+### Using AI coding assistants
+
+If you use AI coding assistants (such as GitHub Copilot, Code LLMs, or ChatGPT-style tools) when working on VAMOS, please read:
+
+- `AGENTS.md` - high-level guidelines on project structure, coding conventions, performance and dependency rules.
+- `AGENTS_tasks.md` - a task playbook with common, well-scoped changes (new operators, problems, studies, tuning setups, etc.).
+- `AGENTS_codex_prompts.md` - ready-to-paste prompts tailored for this repository.
+
+These documents describe how assistants are expected to interact with the codebase and help keep contributions consistent, efficient and easy to review.
 
 ## Config files (YAML/JSON)
 
