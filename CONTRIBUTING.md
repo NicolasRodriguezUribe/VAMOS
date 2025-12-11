@@ -33,3 +33,16 @@ Thank you for considering a contribution! This project is organized to make addi
 ## Self-check
 - After changes, run `python -m vamos.diagnostics.self_check` or `vamos-self-check` for a quick sanity check.
 - CI-friendly tests live under `tests/`; keep populations/evaluation budgets small for speed.
+
+### Before opening a pull request (human or AI-assisted)
+
+1. Ensure you can run `pytest` locally (or at least the relevant subset).
+2. Run a small CLI smoke test, for example:
+   ```powershell
+   python -m vamos.cli.main --problem zdt1 --max-evaluations 1000
+   ```
+3. If you touched tuning, StudyRunner, or benchmarking:
+   - Run the smallest relevant `vamos-benchmark` suite.
+4. If you added docs or notebooks:
+   - Build docs locally (`mkdocs serve`) or open the notebook and run all cells.
+5. For guidance on assistant-specific workflows, see `README.md`, `AGENTS.md`, and `AGENTS_tasks.md`.
