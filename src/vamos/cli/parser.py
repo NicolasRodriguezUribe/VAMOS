@@ -18,7 +18,7 @@ from vamos.core.experiment_config import (
     EXPERIMENT_BACKENDS,
     ExperimentConfig,
 )
-from vamos.problem.resolver import PROBLEM_SET_PRESETS, REFERENCE_FRONT_PATHS
+from vamos.problem.resolver import PROBLEM_SET_PRESETS, resolve_reference_front_path
 from .common import (
     _parse_probability_arg,
     _parse_positive_float,
@@ -26,6 +26,28 @@ from .common import (
     collect_nsgaii_variation_args,
     _collect_generic_variation,
 )
+
+
+def _load_spec_defaults(config_path: str | None) -> tuple[dict, dict, dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """
+    Load YAML/JSON spec if provided and return defaults per algorithm and problems.
+    """
+    spec = {}
+    problem_overrides: dict = {}
+    experiment_defaults: dict[str, Any] = {}
+    nsgaii_defaults: dict[str, Any] = {}
+    moead_defaults: dict[str, Any] = {}
+    smsemoa_defaults: dict[str, Any] = {}
+    nsga3_defaults: dict[str, Any] = {}
+    if config_path:
+        spec = load_experiment_spec(config_path)
+        problem_overrides = spec.get("problems", {}) or {}
+        experiment_defaults = spec.get("defaults", {}) or {k: v for k, v in spec.items() if k != "problems"}
+        nsgaii_defaults = experiment_defaults.get("nsgaii", {}) or {}
+        moead_defaults = experiment_defaults.get("moead", {}) or {}
+        smsemoa_defaults = experiment_defaults.get("smsemoa", {}) or {}
+        nsga3_defaults = experiment_defaults.get("nsga3", {}) or {}
+    return spec, problem_overrides, experiment_defaults, nsgaii_defaults, moead_defaults, smsemoa_defaults, nsga3_defaults
 
 
 # Config-file aware parser (overrides the legacy definition above).
@@ -37,21 +59,15 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
     )
     pre_args, remaining = pre_parser.parse_known_args()
 
-    spec = {}
-    problem_overrides = {}
-    experiment_defaults: dict[str, Any] = {}
-    nsgaii_defaults: dict[str, Any] = {}
-    moead_defaults: dict[str, Any] = {}
-    smsemoa_defaults: dict[str, Any] = {}
-    nsga3_defaults: dict[str, Any] = {}
-    if pre_args.config:
-        spec = load_experiment_spec(pre_args.config)
-        problem_overrides = spec.get("problems", {}) or {}
-        experiment_defaults = spec.get("defaults", {}) or {k: v for k, v in spec.items() if k != "problems"}
-        nsgaii_defaults = experiment_defaults.get("nsgaii", {}) or {}
-        moead_defaults = experiment_defaults.get("moead", {}) or {}
-        smsemoa_defaults = experiment_defaults.get("smsemoa", {}) or {}
-        nsga3_defaults = experiment_defaults.get("nsga3", {}) or {}
+    (
+        spec,
+        problem_overrides,
+        experiment_defaults,
+        nsgaii_defaults,
+        moead_defaults,
+        smsemoa_defaults,
+        nsga3_defaults,
+    ) = _load_spec_defaults(pre_args.config)
 
     def _spec_default(key: str, fallback):
         return experiment_defaults.get(key, fallback)
@@ -470,7 +486,7 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         if not (0.0 < args.hv_threshold < 1.0):
             parser.error("--hv-threshold must be in the (0, 1) range.")
         if not args.hv_reference_front:
-            default_front = REFERENCE_FRONT_PATHS.get(args.problem.lower())
+            default_front = resolve_reference_front_path(args.problem.lower(), None)
             if default_front is None:
                 parser.error(
                     "--hv-reference-front is required for the selected problem "

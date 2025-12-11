@@ -1,6 +1,15 @@
-"""Shared/core utilities for VAMOS tuning."""
+"""Shared/core utilities for VAMOS tuning.
 
-from .param_space import ParamSpace, Real, Int, Categorical, Condition
+AlgorithmConfigSpace (parameter_space.py) is the canonical tuning abstraction.
+ParamSpace is kept for legacy compatibility and will be removed in a future release.
+"""
+
+from .param_space import ParamSpace as LegacyParamSpace, Real as LegacyReal, Int as LegacyInt, Categorical as LegacyCategorical, Condition
+
+# Backward-compatible alias; deprecated.
+ParamSpace = LegacyParamSpace
+Real = LegacyReal
+Int = LegacyInt
 from .parameter_space import (
     AlgorithmConfigSpace,
     Boolean,
@@ -49,17 +58,22 @@ from .validation import (
 from .stats import build_score_matrix, select_configs_by_paired_test, _z_critical
 
 __all__ = [
-    "ParamSpace",
-    "Real",
-    "Int",
-    "Categorical",
-    "Condition",
+    # Canonical tuning space
     "AlgorithmConfigSpace",
     "CategoricalInteger",
     "Double",
     "Integer",
     "Boolean",
     "ParameterDefinition",
+    # Legacy ParamSpace (deprecated)
+    "ParamSpace",
+    "Real",
+    "Int",
+    "LegacyParamSpace",
+    "LegacyReal",
+    "LegacyInt",
+    "LegacyCategorical",
+    "Condition",
     "LegacyAlgorithmConfigSpace",
     "BaseParam",
     "CategoricalParam",
