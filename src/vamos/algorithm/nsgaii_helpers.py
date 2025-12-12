@@ -75,11 +75,11 @@ def feasible_nsga2_survival(kernel, X, F, G, X_off, F_off, G_off, pop_size):
 def match_ids(new_X: np.ndarray, combined_X: np.ndarray, combined_ids: np.ndarray) -> np.ndarray:
     """
     Map surviving rows in new_X back to their ids from combined_X/combined_ids.
-    Uses an isclose match; falls back to -1 when no match is found.
+    Uses an exact row match; falls back to -1 when no match is found.
     """
     new_ids = np.full(new_X.shape[0], -1, dtype=int)
     for i, row in enumerate(new_X):
-        matches = np.where(np.all(np.isclose(combined_X, row, atol=1e-8), axis=1))[0]
+        matches = np.where(np.all(combined_X == row, axis=1))[0]
         if matches.size:
             new_ids[i] = combined_ids[matches[0]]
     return new_ids

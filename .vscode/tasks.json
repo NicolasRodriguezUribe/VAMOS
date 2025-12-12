@@ -1,0 +1,78 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Test: Run All",
+            "type": "shell",
+            "command": "pytest",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": "$python"
+        },
+        {
+            "label": "Test: Skip Slow",
+            "type": "shell",
+            "command": "pytest -m \"not slow\"",
+            "group": "test",
+            "problemMatcher": "$python"
+        },
+        {
+            "label": "Test: Current File",
+            "type": "shell",
+            "command": "pytest ${file}",
+            "group": "test",
+            "problemMatcher": "$python"
+        },
+        {
+            "label": "Lint: Ruff Check",
+            "type": "shell",
+            "command": "ruff check src tests",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint: Ruff Fix",
+            "type": "shell",
+            "command": "ruff check --fix src tests",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Format: Black",
+            "type": "shell",
+            "command": "black src tests",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Pre-commit: All Checks",
+            "type": "shell",
+            "command": "black src tests && ruff check src tests && pytest -m \"not slow\"",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Diagnostics: Self Check",
+            "type": "shell",
+            "command": "python -m vamos.diagnostics.self_check",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run: CLI Smoke Test",
+            "type": "shell",
+            "command": "python -m vamos.cli.main --problem zdt1 --max-evaluations 2000",
+            "problemMatcher": []
+        },
+        {
+            "label": "Benchmark: ZDT Small",
+            "type": "shell",
+            "command": "vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -102,16 +102,14 @@ def _validate_reference_point(points: np.ndarray, reference_point: np.ndarray) -
 
 
 def _hypervolume_2d(points: np.ndarray, ref: np.ndarray) -> float:
-    order = np.argsort(points[:, 0])
-    hv = 0.0
-    prev_f2 = ref[1]
-    for idx in reversed(order):
-        f1, f2 = points[idx]
-        width = max(ref[0] - f1, 0.0)
-        height = max(prev_f2 - f2, 0.0)
-        hv += width * height
-        prev_f2 = min(prev_f2, f2)
-    return hv
+    if points.shape[0] == 0:
+        return 0.0
+    order = np.argsort(points[:, 0], kind="mergesort")
+    sorted_points = points[order]
+    widths = np.maximum(ref[0] - sorted_points[:, 0], 0.0)
+    prev_f2 = np.minimum.accumulate(np.concatenate(([ref[1]], sorted_points[:-1, 1])))
+    heights = np.maximum(prev_f2 - sorted_points[:, 1], 0.0)
+    return float(np.sum(widths * heights))
 
 
 def _hypervolume_3d(points: np.ndarray, ref: np.ndarray) -> float:
@@ -159,16 +157,30 @@ def _hypervolume_recursive(points: np.ndarray, ref: np.ndarray) -> float:
 
 
 def _hypervolume_contributions_2d(points: np.ndarray, ref: np.ndarray) -> np.ndarray:
-    order = np.argsort(points[:, 0])
-    contributions = np.zeros(points.shape[0], dtype=float)
-    prev_f2 = ref[1]
-    for pos in range(order.size - 1, -1, -1):
-        idx = order[pos]
-        f1, f2 = points[idx]
-        width = max(ref[0] - f1, 0.0)
-        height = max(prev_f2 - f2, 0.0)
-        contributions[idx] = width * height
-        prev_f2 = min(prev_f2, f2)
+    if points.shape[0] == 0:
+        return np.empty(0, dtype=float)
+
+    unique_points, inverse, counts = np.unique(points, axis=0, return_inverse=True, return_counts=True)
+    unique_contribs = np.zeros(unique_points.shape[0], dtype=float)
+
+    if unique_points.shape[0]:
+        order = np.lexsort((unique_points[:, 1], unique_points[:, 0]))
+        sorted_points = unique_points[order]
+
+        prev_min = np.concatenate(([np.inf], np.minimum.accumulate(sorted_points[:-1, 1])))
+        nd_sorted = sorted_points[:, 1] < prev_min
+        nd_order = order[nd_sorted]
+        if nd_order.size:
+            nd_points = unique_points[nd_order]
+            x = nd_points[:, 0]
+            y = nd_points[:, 1]
+            x_next = np.concatenate((x[1:], [ref[0]]))
+            y_prev = np.concatenate(([ref[1]], y[:-1]))
+            nd_contrib = np.maximum(x_next - x, 0.0) * np.maximum(y_prev - y, 0.0)
+            unique_contribs[nd_order] = nd_contrib
+
+    contributions = unique_contribs[inverse]
+    contributions[counts[inverse] > 1] = 0.0
     return contributions
 
 

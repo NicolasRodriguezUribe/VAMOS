@@ -151,7 +151,7 @@ class NSGAII:
 
         initializer_cfg = self.cfg.get("initializer")
         X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
-        constraint_mode = self.cfg.get("constraint_mode", "none")
+        constraint_mode = self.cfg.get("constraint_mode", "feasibility")
         eval_result = eval_backend.evaluate(X, problem)
         F = eval_result.F
         G = eval_result.G if constraint_mode != "none" else None
@@ -427,9 +427,13 @@ class NSGAII:
             combined_G = np.vstack([st["G"], G_off])
         combined_ids = None
         if st.get("track_genealogy"):
-            combined_ids = np.concatenate(
-                [st.get("ids") or np.array([], dtype=int), st.get("pending_offspring_ids") or np.array([], dtype=int)]
-            )
+            current_ids = st.get("ids")
+            if current_ids is None:
+                current_ids = np.array([], dtype=int)
+            pending_ids = st.get("pending_offspring_ids")
+            if pending_ids is None:
+                pending_ids = np.array([], dtype=int)
+            combined_ids = np.concatenate([current_ids, pending_ids])
 
         if combined_G is None or st["constraint_mode"] == "none":
             new_X, new_F = self.kernel.nsga2_survival(st["X"], st["F"], X_off, F_off, pop_size)
