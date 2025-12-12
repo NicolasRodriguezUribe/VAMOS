@@ -1,0 +1,104 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CLI: ZDT1 NSGA-II",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "vamos.cli.main",
+            "args": [
+                "--problem",
+                "zdt1",
+                "--algorithm",
+                "nsgaii",
+                "--max-evaluations",
+                "2000"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "CLI: Custom Config",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "vamos.cli.main",
+            "args": [
+                "--config",
+                "${input:configFile}"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Test: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}",
+                "-v"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Test: Current Function",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}::${input:testName}",
+                "-v"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Example: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Benchmark CLI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "vamos.benchmark.cli",
+            "args": [
+                "--suite",
+                "ZDT_small",
+                "--algorithms",
+                "nsgaii",
+                "--output",
+                "report/"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Studio",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "vamos.studio.app",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "configFile",
+            "type": "promptString",
+            "description": "Path to YAML config file",
+            "default": "examples/ibea_zdt1.yaml"
+        },
+        {
+            "id": "testName",
+            "type": "promptString",
+            "description": "Test function name",
+            "default": "test_"
+        }
+    ]
+}
