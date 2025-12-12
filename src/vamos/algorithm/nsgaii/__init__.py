@@ -1,11 +1,15 @@
-# algorithm/nsgaii.py
+# algorithm/nsgaii/__init__.py
 """
-Backward-compatibility shim for NSGA-II.
+NSGA-II algorithm package.
 
-The implementation has moved to vamos.algorithm.nsgaii/ package.
-This module re-exports the public API for backward compatibility.
+This package contains the NSGA-II implementation split into focused modules:
+- core: Main NSGAII class with run/ask/tell interface
+- setup: Initialization and configuration helpers
+- state: NSGAIIState dataclass for algorithm state management
+- operators: Operator pool building and adaptive selection
+- helpers: Mating pool, survival selection, and utility functions
 """
-from vamos.algorithm.nsgaii import NSGAII
+from vamos.algorithm.nsgaii.core import NSGAII
 from vamos.algorithm.nsgaii.helpers import (
     build_mating_pool,
     feasible_nsga2_survival,
@@ -14,12 +18,10 @@ from vamos.algorithm.nsgaii.helpers import (
     generation_contributions,
 )
 
-# Legacy aliases (underscore-prefixed)
+# Legacy aliases (underscore-prefixed for backward compat)
 _build_mating_pool = build_mating_pool
 _feasible_nsga2_survival = feasible_nsga2_survival
 _match_ids = match_ids
-_operator_success_stats = operator_success_stats
-_generation_contributions = generation_contributions
 
 __all__ = [
     "NSGAII",
@@ -31,6 +33,4 @@ __all__ = [
     "_build_mating_pool",
     "_feasible_nsga2_survival",
     "_match_ids",
-    "_operator_success_stats",
-    "_generation_contributions",
 ]

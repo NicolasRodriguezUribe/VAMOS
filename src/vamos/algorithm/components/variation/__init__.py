@@ -1,11 +1,13 @@
-# algorithm/variation.py
+# algorithm/components/variation/__init__.py
 """
-Backward-compatibility shim for variation module.
+Variation operators and pipelines.
 
-The implementation has moved to vamos.algorithm.components.variation.
-This module re-exports the public API for backward compatibility.
+This subpackage contains:
+- pipeline: VariationPipeline class for combining crossover + mutation
+- helpers: Low-level variation utilities and operator dispatch
+- core: High-level variation API and parameter preparation
 """
-from vamos.algorithm.components.variation import (
+from vamos.algorithm.components.variation.core import (
     VariationPipeline,
     prepare_mutation_params,
 )
@@ -21,16 +23,6 @@ from vamos.algorithm.components.variation.helpers import (
     MIXED_CROSSOVER,
     MIXED_MUTATION,
 )
-
-# Legacy aliases
-_PERM_CROSSOVER = PERM_CROSSOVER
-_PERM_MUTATION = PERM_MUTATION
-_BINARY_CROSSOVER = BINARY_CROSSOVER
-_BINARY_MUTATION = BINARY_MUTATION
-_INT_CROSSOVER = INT_CROSSOVER
-_INT_MUTATION = INT_MUTATION
-_MIXED_CROSSOVER = MIXED_CROSSOVER
-_MIXED_MUTATION = MIXED_MUTATION
 
 __all__ = [
     "VariationPipeline",
