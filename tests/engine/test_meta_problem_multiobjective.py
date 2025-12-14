@@ -43,7 +43,7 @@ def test_meta_problem_returns_three_objectives():
     problem = _TinyProblem()
     vector = np.full(space.dim(), 0.5)
 
-    def _stub_optimize(problem, config, termination, seed, engine):
+    def _stub_optimize(cfg):
         F = np.array([[1.0, 1.0]], dtype=float)
         return _DummyResult(F)
 

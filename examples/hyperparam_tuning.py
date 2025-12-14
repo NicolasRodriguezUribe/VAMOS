@@ -9,7 +9,7 @@ Requires the optional ``examples`` extras (scikit-learn, matplotlib).
 import numpy as np
 
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import optimize
+from vamos.foundation.core.optimize import OptimizeConfig, optimize
 from vamos.foundation.problem.real_world.hyperparam import HyperparameterTuningProblem
 
 
@@ -25,8 +25,17 @@ def main():
         .engine("numpy")
         .fixed()
     )
-    result = optimize(problem, cfg, termination=("n_eval", 60), seed=1)
-    F = result.F if isinstance(result, dict) else result.F
+    result = optimize(
+        OptimizeConfig(
+            problem=problem,
+            algorithm="nsgaii",
+            algorithm_config=cfg,
+            termination=("n_eval", 60),
+            seed=1,
+            engine="numpy",
+        )
+    )
+    F = result.F
     try:
         import matplotlib.pyplot as plt
 

@@ -8,7 +8,7 @@ from typing import Iterable, List, Sequence, Any, Dict
 
 import numpy as np
 
-from vamos.engine.algorithm.hypervolume import hypervolume
+from vamos.engine.algorithm.components.hypervolume import hypervolume
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.problem.registry import ProblemSelection, make_problem_selection

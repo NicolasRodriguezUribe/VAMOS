@@ -16,7 +16,6 @@ from vamos.engine.algorithm.components.archive import (
     HypervolumeArchive,
     _single_front_crowding,
 )
-from vamos.engine.algorithm.components.hypervolume import hypervolume
 from vamos.engine.algorithm.components.population import (
     evaluate_population_with_constraints,
     initialize_population,
@@ -30,8 +29,6 @@ __all__ = [
     "CrowdingDistanceArchive",
     "HypervolumeArchive",
     "_single_front_crowding",
-    # hypervolume
-    "hypervolume",
     # population
     "evaluate_population_with_constraints",
     "initialize_population",

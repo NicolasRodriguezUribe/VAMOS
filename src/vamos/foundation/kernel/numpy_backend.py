@@ -240,6 +240,6 @@ class NumPyKernel(KernelBackend):
         return X_comb[sel], F_comb[sel]
 
     def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
-        from vamos.engine.algorithm.hypervolume import hypervolume as hv_fn
+        from vamos.engine.algorithm.components.hypervolume import hypervolume as hv_fn
 
         return hv_fn(points, reference_point)

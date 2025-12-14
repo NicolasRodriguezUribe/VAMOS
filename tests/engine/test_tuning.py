@@ -88,9 +88,9 @@ def test_meta_problem_aggregates_runs_with_medians():
     pop_size = space.decode_vector(fixed_x).pop_size
     calls = []
 
-    def _stub_optimize(problem, config, termination, seed, engine):
-        calls.append((problem.name, seed, termination))
-        value = problem.base + 0.01 * config.pop_size + (seed % 5) * 0.001
+    def _stub_optimize(cfg):
+        calls.append((cfg.problem.name, cfg.seed, cfg.termination))
+        value = cfg.problem.base + 0.01 * cfg.algorithm_config.pop_size + (cfg.seed % 5) * 0.001
         F = np.array([[value, value + 0.5]], dtype=float)
         return _DummyResult(F)
 
@@ -134,8 +134,8 @@ def test_meta_nsga2_runs_and_returns_nondominated_set():
     space = _make_nsgaii_space()
     problem = _ToyProblem("only", 1.5)
 
-    def _stub_optimize(problem, config, termination, seed, engine):
-        value = problem.base + 0.01 * config.pop_size + (seed % 3) * 0.001
+    def _stub_optimize(cfg):
+        value = cfg.problem.base + 0.01 * cfg.algorithm_config.pop_size + (cfg.seed % 3) * 0.001
         F = np.array([[value, value + 0.2]], dtype=float)
         return _DummyResult(F)
 

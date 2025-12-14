@@ -9,7 +9,6 @@ from ..core.parameter_space import (
     Integer,
     ParameterDefinition,
 )
-from ..core.config_space import AlgorithmConfigSpace as LegacyAlgorithmConfigSpace
 from ..core.parameters import (
     BaseParam,
     CategoricalIntegerParam,
@@ -49,7 +48,6 @@ from ..core.validation import (
 
 __all__ = [
     "AlgorithmConfigSpace",
-    "LegacyAlgorithmConfigSpace",
     "Boolean",
     "Categorical",
     "CategoricalInteger",

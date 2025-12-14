@@ -28,7 +28,7 @@ def test_meta_problem_caches_repeated_configs():
     vector = np.full(space.dim(), 0.5)
     calls = {"count": 0}
 
-    def _stub_optimize(problem, config, termination, seed, engine):
+    def _stub_optimize(cfg):
         calls["count"] += 1
         F = np.array([[1.0, 1.0]], dtype=float)
         return _DummyResult(F)

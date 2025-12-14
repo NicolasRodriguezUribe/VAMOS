@@ -15,10 +15,10 @@ from vamos.engine.operators.integer import (
     creep_mutation,
 )
 from vamos.engine.operators.real import SBXCrossover, PolynomialMutation, VariationWorkspace
-from vamos.engine.algorithm.population import evaluate_population_with_constraints
+from vamos.engine.algorithm.components.population import evaluate_population_with_constraints
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
 
-from .weight_vectors import load_or_generate_weight_vectors
+from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 
 
 def _resolve_prob_expression(value, n_var: int, default: float) -> float:

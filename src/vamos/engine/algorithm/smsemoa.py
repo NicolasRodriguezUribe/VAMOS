@@ -15,7 +15,7 @@ from vamos.engine.operators.integer import (
     creep_mutation,
 )
 from vamos.engine.operators.real import SBXCrossover, PolynomialMutation, VariationWorkspace
-from .hypervolume import hypervolume_contributions
+from vamos.engine.algorithm.components.hypervolume import hypervolume_contributions
 
 
 def _resolve_prob_expression(value, n_var: int, default: float) -> float:

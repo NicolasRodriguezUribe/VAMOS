@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.algorithm.hypervolume import hypervolume
+from vamos.engine.algorithm.components.hypervolume import hypervolume
 
 try:
     from vamos.foundation.metrics.moocore_indicators import get_indicator
@@ -36,4 +36,3 @@ class IndicatorEvaluator:
         if self._indicator is not None:
             return float(self._indicator.compute(F).value)
         raise ValueError(f"Unsupported indicator '{self.name}'.")
-

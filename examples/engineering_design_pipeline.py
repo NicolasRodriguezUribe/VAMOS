@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import optimize
+from vamos.foundation.core.optimize import OptimizeConfig, optimize
 from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
 from vamos.ux.visualization import plot_pareto_front_2d
 
@@ -33,7 +33,16 @@ def build_config(pop_size: int = 30) -> dict:
 def main(seed: int = 11) -> None:
     problem = WeldedBeamDesignProblem()
     cfg = build_config(pop_size=24)
-    result = optimize(problem, cfg, termination=("n_eval", 200), seed=seed)
+    result = optimize(
+        OptimizeConfig(
+            problem=problem,
+            algorithm="nsgaii",
+            algorithm_config=cfg,
+            termination=("n_eval", 200),
+            seed=seed,
+            engine="numpy",
+        )
+    )
     F = result.F
     G = result.data.get("G")
     print(f"Collected {F.shape[0]} design candidates.")

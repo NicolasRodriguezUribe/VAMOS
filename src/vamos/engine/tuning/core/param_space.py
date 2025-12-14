@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
-import warnings
 
 import numpy as np
 
@@ -73,13 +72,6 @@ class ParamSpace:
 
     params: Dict[str, Any] = field(default_factory=dict)
     conditions: List[Condition] = field(default_factory=list)
-
-    def __post_init__(self):
-        warnings.warn(
-            "ParamSpace is deprecated; use AlgorithmConfigSpace from tuning.core.parameter_space instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
 
     def sample(self, rng: Optional[np.random.Generator] = None) -> Dict[str, Any]:
         """

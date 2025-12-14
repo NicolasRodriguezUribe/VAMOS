@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.algorithm.archive import CrowdingDistanceArchive, _single_front_crowding
-from vamos.engine.algorithm.population import (
+from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, _single_front_crowding
+from vamos.engine.algorithm.components.population import (
     evaluate_population,
     evaluate_population_with_constraints,
     initialize_population,
     resolve_bounds,
 )
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
-from vamos.engine.algorithm.variation import prepare_mutation_params
+from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.engine.operators.real import PolynomialMutation, VariationWorkspace, ClampRepair, ReflectRepair, ResampleRepair, RoundRepair
 
 

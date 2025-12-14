@@ -15,7 +15,6 @@ from typing import Any
 import numpy as np
 
 from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
-from vamos.engine.algorithm.nsgaii.operators import build_operator_pool
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
 from vamos.ux.analytics.genealogy import GenealogyTracker
 from vamos.foundation.eval.backends import EvaluationBackend
@@ -276,7 +275,6 @@ def resolve_archive_size(cfg: dict[str, Any]) -> int | None:
     return size if size > 0 else None
 
 
-# Re-export build_operator_pool for backward compatibility
 __all__ = [
     "parse_termination",
     "setup_population",
@@ -284,7 +282,6 @@ __all__ = [
     "setup_genealogy",
     "setup_selection",
     "setup_result_archive",
-    "build_operator_pool",
     "resolve_archive_size",
     "DEFAULT_TOURNAMENT_PRESSURE",
 ]

@@ -16,7 +16,7 @@ from vamos.engine.operators.integer import (
 )
 from vamos.engine.operators.real import SBXCrossover, PolynomialMutation, VariationWorkspace
 
-from .weight_vectors import load_or_generate_weight_vectors
+from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 
 
 def _resolve_prob_expression(value, n_var: int, default: float) -> float:

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from vamos.ux.analysis.objective_reduction import ObjectiveReducer
+from vamos.ux.analysis.core_objective_reduction import reduce_objectives
 
 
 def tuning_result_to_dataframe(tuning_result: Any, param_names: Sequence[str] | None = None) -> pd.DataFrame:
@@ -74,9 +74,7 @@ def plot_reduced_front(F: np.ndarray, labels: Sequence[str] | None = None, targe
     """
     Reduce a front to 2D/3D and plot it.
     """
-    reducer = ObjectiveReducer(method=method)
-    selected = reducer.reduce(F, target_dim=target_dim)
-    F_red = F[:, selected]
+    F_red, _selected = reduce_objectives(F, method=method, target_dim=target_dim)
     labels = labels or [f"f{i}" for i in range(F_red.shape[1])]
     if F_red.shape[1] == 2:
         plt.figure()

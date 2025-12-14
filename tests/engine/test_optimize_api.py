@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pytest
 
@@ -78,11 +76,10 @@ def test_optimize_unknown_algorithm_errors():
         optimize(cfg)
 
 
-def test_optimize_legacy_signature_warns_and_infers():
+def test_optimize_rejects_legacy_signature():
     problem = ZDT1Problem(n_var=4)
     cfg = _nsgaii_cfg()
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always", DeprecationWarning)
-        result = optimize(problem, cfg, ("n_eval", 6), 3)
-    assert isinstance(result, OptimizationResult)
-    assert any(isinstance(w.message, DeprecationWarning) for w in caught)
+    with pytest.raises(TypeError, match="OptimizeConfig"):
+        optimize(problem)  # type: ignore[arg-type]
+    with pytest.raises(TypeError):
+        optimize(problem, cfg, ("n_eval", 6), 3)  # type: ignore[arg-type]

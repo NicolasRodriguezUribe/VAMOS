@@ -1,8 +1,8 @@
 """Auto-tuning utilities for VAMOS.
 
-AlgorithmConfigSpace is the canonical tuning abstraction.
-Legacy ParamSpace remains available for backward compatibility but will be removed
-in a future release.
+This package contains both:
+- Evolver/meta-optimization utilities (`AlgorithmConfigSpace`, `NSGAIITuner`, etc.)
+- Random/racing tuning utilities (`ParamSpace`, `RandomSearchTuner`, `RacingTuner`, etc.)
 """
 
 import json as _json
@@ -12,11 +12,6 @@ import numpy as _np
 
 from .core.parameter_space import (
     AlgorithmConfigSpace,
-    Boolean,
-    Categorical,
-    CategoricalInteger,
-    Double,
-    Integer,
     ParameterDefinition,
 )
 from .evolver import (
@@ -27,12 +22,7 @@ from .evolver import (
     compute_hyperparameter_importance,
     build_nsgaii_config_space,
 )
-from .core.param_space import ParamSpace as LegacyParamSpace, Real as LegacyReal, Int as LegacyInt, Categorical as LegacyCategorical, Condition
-
-# Backward-compatible alias; deprecated.
-ParamSpace = LegacyParamSpace
-Real = LegacyReal
-Int = LegacyInt
+from .core.param_space import ParamSpace, Real, Int, Categorical, Condition
 from .core.tuning_task import TuningTask, EvalContext, Instance
 from .racing.random_search_tuner import RandomSearchTuner, TrialResult
 from .core.scenario import Scenario
@@ -160,20 +150,12 @@ def tune(
 
 __all__ = [
     "AlgorithmConfigSpace",
-    "Boolean",
-    "Categorical",
-    "CategoricalInteger",
-    "Double",
-    "Integer",
     "ParameterDefinition",
-    # Legacy ParamSpace (deprecated)
+    # Random/racing tuning spaces
     "ParamSpace",
     "Real",
     "Int",
-    "LegacyParamSpace",
-    "LegacyReal",
-    "LegacyInt",
-    "LegacyCategorical",
+    "Categorical",
     "Condition",
     "MetaOptimizationProblem",
     "MetaNSGAII",

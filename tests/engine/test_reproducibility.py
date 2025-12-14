@@ -1,7 +1,7 @@
 import numpy as np
 
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import optimize
+from vamos.foundation.core.optimize import OptimizeConfig, optimize
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
@@ -18,6 +18,14 @@ def test_optimize_reproducible_with_seed():
         .engine("numpy")
         .fixed()
     )
-    res1 = optimize(problem, cfg, termination=("n_eval", 30), seed=42, engine="numpy")
-    res2 = optimize(problem, cfg, termination=("n_eval", 30), seed=42, engine="numpy")
+    run_cfg = OptimizeConfig(
+        problem=problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 30),
+        seed=42,
+        engine="numpy",
+    )
+    res1 = optimize(run_cfg)
+    res2 = optimize(run_cfg)
     assert np.array_equal(res1.F, res2.F)

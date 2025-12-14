@@ -42,7 +42,7 @@ offspring = crossover(X, bounds, rng, workspace=ws)
 2. Follow vectorized pattern — no Python loops over individuals
 3. Use `rng` parameter, never global random state
 4. Add to `__init__.py` exports
-5. Register in `vamos.engine.algorithm.variation` operator lookup
+5. Register in `vamos.engine.algorithm.components.variation` operator lookup
 6. Add unit tests in `tests/operators/`
 
 ## Key Files

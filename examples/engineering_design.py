@@ -9,7 +9,7 @@ Demonstrates constraints and mixed decision variables.
 import numpy as np
 
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import optimize
+from vamos.foundation.core.optimize import OptimizeConfig, optimize
 from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
 
 
@@ -26,8 +26,17 @@ def main():
         .constraint_mode("feasibility")
         .fixed()
     )
-    result = optimize(problem, cfg, termination=("n_eval", 100), seed=3)
-    F = result.F if isinstance(result, dict) else result.F
+    result = optimize(
+        OptimizeConfig(
+            problem=problem,
+            algorithm="nsgaii",
+            algorithm_config=cfg,
+            termination=("n_eval", 100),
+            seed=3,
+            engine="numpy",
+        )
+    )
+    F = result.F
     try:
         import matplotlib.pyplot as plt
 

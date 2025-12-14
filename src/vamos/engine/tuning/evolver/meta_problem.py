@@ -6,8 +6,9 @@ from typing import Any, Callable, Dict, Iterable, List, Sequence
 
 import numpy as np
 
-from vamos.engine.algorithm.hypervolume import hypervolume
-from vamos.ux.analysis.objective_reduction import ObjectiveReductionSpec, reduce_objectives
+from vamos.engine.algorithm.components.hypervolume import hypervolume
+from vamos.foundation.core.optimize import OptimizeConfig
+from vamos.ux.analysis.core_objective_reduction import ObjectiveReductionConfig, reduce_objectives
 from vamos.engine.tuning.core.parameter_space import AlgorithmConfigSpace
 
 
@@ -28,7 +29,7 @@ class MetaOptimizationProblem:
         engine: str,
         meta_rng: np.random.Generator,
         optimize_fn: Callable[..., Any] | None = None,
-        objective_reduction: ObjectiveReductionSpec | None = None,
+        objective_reduction: ObjectiveReductionConfig | None = None,
         *,
         min_runs_per_problem: int | None = None,
         max_runs_per_problem: int | None = None,
@@ -85,6 +86,7 @@ class MetaOptimizationProblem:
         per_problem_time: List[float] = []
         per_problem_robust: List[float] = []
         termination = ("n_eval", self.max_evals_per_problem)
+        algo = self._infer_algorithm_id(config)
 
         for p_idx, problem in enumerate(self.problems):
             run_scores: List[float] = []
@@ -95,7 +97,14 @@ class MetaOptimizationProblem:
                 run_seed = int(self.meta_rng.integers(0, 2**32 - 1))
                 start_run = time.perf_counter()
                 result = self._optimize(
-                    problem, config, termination=termination, seed=run_seed, engine=self.engine
+                    OptimizeConfig(
+                        problem=problem,
+                        algorithm=algo,
+                        algorithm_config=config,
+                        termination=termination,
+                        seed=run_seed,
+                        engine=self.engine,
+                    )
                 )
                 elapsed = time.perf_counter() - start_run
                 self.last_inner_runs += 1
@@ -105,15 +114,23 @@ class MetaOptimizationProblem:
                     F = F.reshape(-1, 1)
                 nd_F = self._filter_nondominated(F)
                 ref = self.ref_fronts[p_idx]
-                if self.objective_reduction is not None and nd_F.shape[1] > self.objective_reduction.target_dim:
-                    nd_F, selected = reduce_objectives(
-                        nd_F,
-                        target_dim=self.objective_reduction.target_dim,
-                        method=self.objective_reduction.method,
-                        mandatory_keep=self.objective_reduction.mandatory_keep,
-                    )
-                    if ref is not None:
-                        ref = ref[:, selected]
+                if self.objective_reduction is not None:
+                    target_dim = self.objective_reduction.target_dim
+                    if target_dim is None:
+                        raise ValueError(
+                            "objective_reduction.target_dim must be set when objective reduction is enabled."
+                        )
+                    if nd_F.shape[1] > target_dim:
+                        nd_F, selected = reduce_objectives(
+                            nd_F,
+                            method=self.objective_reduction.method,
+                            target_dim=target_dim,
+                            corr_threshold=self.objective_reduction.corr_threshold,
+                            angle_threshold_deg=self.objective_reduction.angle_threshold_deg,
+                            keep_mandatory=self.objective_reduction.keep_mandatory,
+                        )
+                        if ref is not None:
+                            ref = ref[:, selected]
                 quality = self._scalar_quality(nd_F, p_idx)
                 run_scores.append(quality)
                 run_times.append(elapsed)
@@ -221,9 +238,32 @@ class MetaOptimizationProblem:
         return {"hits": self.cache_hits, "misses": self.cache_misses}
 
     @staticmethod
-    def _import_optimize() -> Callable[..., Any]:
+    def _infer_algorithm_id(config: Any) -> str:
+        by_type = {
+            "NSGAIIConfigData": "nsgaii",
+            "NSGAIIIConfigData": "nsga3",
+            "MOEADConfigData": "moead",
+            "SMSEMOAConfigData": "smsemoa",
+            "SPEA2ConfigData": "spea2",
+            "IBEAConfigData": "ibea",
+            "SMPSOConfigData": "smpso",
+        }
+        algo = by_type.get(type(config).__name__)
+        if algo:
+            return algo
+        if isinstance(config, dict):
+            algo_dict = str(config.get("algorithm", "")).lower()
+            if algo_dict:
+                return algo_dict
+        raise ValueError(
+            "Unable to infer inner algorithm id from config; "
+            "expected an engine.algorithm.config.*ConfigData instance."
+        )
+
+    @staticmethod
+    def _import_optimize() -> Callable[[OptimizeConfig], Any]:
         try:
-            from vamos.foundation.core import optimize  # type: ignore
+            from vamos.foundation.core.optimize import optimize
         except Exception as exc:
             raise ImportError("MetaOptimizationProblem requires 'vamos.foundation.core.optimize'.") from exc
         return optimize
