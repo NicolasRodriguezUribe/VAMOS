@@ -7,9 +7,9 @@ import numpy as np
 from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.engine.algorithm.nsgaii import NSGAII
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
-from vamos.engine.algorithm.population import resolve_bounds
-from vamos.engine.algorithm.selection import RandomSelection, TournamentSelection
-from vamos.engine.algorithm.archive import CrowdingDistanceArchive, _single_front_crowding
+from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, _single_front_crowding
+from vamos.engine.algorithm.components.population import resolve_bounds
+from vamos.engine.algorithm.components.selection import RandomSelection, TournamentSelection
 from vamos.engine.operators.real import (
     BLXAlphaCrossover,
     SBXCrossover,

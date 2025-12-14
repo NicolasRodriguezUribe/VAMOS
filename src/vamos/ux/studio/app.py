@@ -47,9 +47,8 @@ def _build_decision_views(fronts, weights, reference_point, method):
 def _run_focused_optimization(problem: str, reference_point: np.ndarray, algo: str, budget: int):
     # Minimal focused re-run leveraging optimize(); uses reference point to bias ranking via Tchebycheff scores post-hoc.
     from vamos.foundation.problem.registry import make_problem_selection
-    from vamos.foundation.core.optimize import optimize
+    from vamos.foundation.core.optimize import OptimizeConfig, optimize
     from vamos.engine.algorithm.config import NSGAIIConfig
-    from vamos.foundation.core.experiment_config import ExperimentConfig
 
     selection = make_problem_selection(problem)
     cfg = (
@@ -64,9 +63,15 @@ def _run_focused_optimization(problem: str, reference_point: np.ndarray, algo: s
         .result_mode("population")
         .fixed()
     ).to_dict()
-    # Override budget
-    exp_cfg = ExperimentConfig(max_evaluations=budget)
-    result = optimize(selection.instantiate(), cfg, termination=("n_eval", budget), seed=0, engine="numpy")
+    run_cfg = OptimizeConfig(
+        problem=selection.instantiate(),
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", budget),
+        seed=0,
+        engine="numpy",
+    )
+    result = optimize(run_cfg)
     F = result.F
     # Re-rank by distance to reference point
     from vamos.ux.analysis.mcdm import reference_point_scores

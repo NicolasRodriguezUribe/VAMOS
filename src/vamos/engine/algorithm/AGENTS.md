@@ -1,56 +1,43 @@
-# Algorithm Module
+# Algorithm package (engine layer)
 
-This directory contains the evolutionary algorithm cores for VAMOS.
+This directory contains VAMOS's algorithm implementations plus shared algorithm
+building blocks used across multiple algorithms.
 
-## Architecture
+## Structure
 
-All algorithms follow the **ask-tell** pattern with array-based populations:
-- `ask()` → returns offspring decision variables `X_off` (N × D array)
-- `tell(eval_result)` → updates internal state with evaluated offspring
+- `components/`: reusable components
+  - `archive.py`: external archives (crowding distance, hypervolume)
+  - `population.py`: population initialization and evaluation helpers
+  - `selection.py`: parent selection strategies
+  - `termination.py`: termination criteria / trackers (e.g. `HVTracker`)
+  - `hypervolume.py`: hypervolume utilities (with backend fallbacks)
+  - `weight_vectors.py`: weight vectors (NSGA-III / MOEA-D)
+  - `variation/`: variation pipelines (crossover + mutation wiring)
+- `nsgaii/`: NSGA-II reference implementation split into focused modules
+  - `core.py`, `setup.py`, `state.py`, `operators.py`, `helpers.py`
+- Algorithm modules: `moead.py`, `nsga3.py`, `smsemoa.py`, `spea2.py`, `ibea.py`,
+  `smpso.py`
+- Config/registry: `config.py`, `registry.py`, `factory.py`, `builders.py`,
+  `autonsga2_builder.py`
 
-Populations are **never** per-individual objects. Use arrays:
-- `X` — decision variables (pop_size × n_var)
-- `F` — objective values (pop_size × n_obj)
-- `G` — constraint violations (pop_size × n_constraints), optional
+## Conventions
 
-## Adding a New Algorithm
+- Prefer an ask/tell-style loop and keep all hot paths vectorized (NumPy/Numba).
+- Populations are arrays, not per-individual objects:
+  - `X`: `(pop_size, n_var)` decision variables
+  - `F`: `(pop_size, n_obj)` objective values
+  - `G`: `(pop_size, n_constraints)` constraint violations (optional)
 
-1. Create `new_algo.py` implementing the class with `__init__(config, kernel)` and `run(problem, termination, seed, ...)`
-2. Add config dataclass + builder in [config.py](config.py) following the fluent pattern
-3. Register in [registry.py](registry.py): `ALGORITHMS["new_algo"] = lambda cfg, kernel: NewAlgo(cfg, kernel)`
-4. Add smoke test in `tests/test_algorithms_smoke.py`
+## Adding a new algorithm
 
-## Key Files
+1. Implement `my_algo.py` (or a subpackage if it grows).
+2. Add config dataclass + builder in `config.py`.
+3. Register in `registry.py` with a stable lowercase algorithm id.
+4. Add tests under `tests/engine/` (mark fast ones with `@pytest.mark.smoke`).
 
-| File | Purpose |
-|------|---------|
-| `nsgaii.py` | NSGA-II core (reference implementation) |
-| `config.py` | Config dataclasses + fluent builders |
-| `registry.py` | Algorithm name → builder mapping |
-| `variation.py` | VariationPipeline for crossover/mutation |
-| `archive.py` | HypervolumeArchive, CrowdingDistanceArchive |
-| `selection.py` | Tournament, random selection |
+## Notes
 
-## Config Builder Pattern
+- Do not add compatibility shims at this level; reuse `components/*` instead.
+- Delegate expensive operations to kernels (`problem.evaluate`, `kernel.*`) or to
+  shared utilities in `components/`.
 
-```python
-from vamos.engine.algorithm.config import NSGAIIConfig
-
-cfg = (NSGAIIConfig()
-    .pop_size(100)
-    .crossover("sbx", prob=0.9, eta=20.0)
-    .mutation("pm", prob="1/n", eta=20.0)
-    .selection("tournament", pressure=2)
-    .survival("nsga2")
-    .engine("numpy")
-    .fixed())  # Returns immutable NSGAIIConfigData
-```
-
-## Kernel Dependency
-
-Algorithms delegate heavy operations to `self.kernel`:
-- `kernel.fast_non_dominated_sort(F)` → ranks, crowding
-- `kernel.hypervolume(F, ref)` → HV indicator
-- `kernel.nsga2_ranking(F)` → combined rank + crowding
-
-Never implement sorting/HV in algorithm code directly.

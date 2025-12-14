@@ -3,7 +3,6 @@ import warnings
 import numpy as np
 
 from vamos.engine.tuning import AlgorithmConfigSpace
-from vamos.engine.tuning.core.parameter_space import Integer, Double, Categorical, ParameterDefinition
 from vamos.engine.tuning import ParamSpace
 
 
@@ -15,8 +14,8 @@ def test_algorithm_config_space_exposed():
     assert hasattr(cfg, "pop_size")
 
 
-def test_param_space_emits_deprecation_warning():
+def test_param_space_does_not_emit_deprecation_warning():
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always", DeprecationWarning)
         _ = ParamSpace(params={})
-    assert any(isinstance(w.message, DeprecationWarning) for w in caught)
+    assert not any(isinstance(w.message, DeprecationWarning) for w in caught)

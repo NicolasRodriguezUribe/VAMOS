@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import warnings
 from dataclasses import asdict, dataclass, is_dataclass
 from typing import Any, Callable, Mapping, Tuple, Optional
 
@@ -44,93 +43,26 @@ def _normalize_cfg(cfg: Any) -> dict[str, Any]:
     return dict(cfg)
 
 
-def _infer_algorithm_name(cfg_dict: Mapping[str, Any]) -> str:
-    """
-    Legacy heuristic to infer algorithm name when not provided.
-    Kept for backward compatibility; emits deprecation warnings upstream.
-    """
-    if "survival" in cfg_dict or cfg_dict.get("algorithm", "").lower() == "nsgaii":
-        return "nsgaii"
-    if "neighbor_size" in cfg_dict or "aggregation" in cfg_dict:
-        return "moead"
-    if "reference_point" in cfg_dict and "selection" in cfg_dict:
-        return "smsemoa"
-    if "reference_directions" in cfg_dict:
-        return "nsga3"
-    if "archive_size" in cfg_dict and "k_neighbors" in cfg_dict:
-        return "spea2"
-    if "indicator" in cfg_dict:
-        return "ibea"
-    if any(k in cfg_dict for k in ("inertia", "c1", "c2", "vmax_fraction")):
-        return "smpso"
-    return ""
-
-
 def _available_algorithms() -> str:
     return ", ".join(sorted(ALGORITHMS.keys()))
 
 
 def optimize(
-    config_or_problem: OptimizeConfig | ProblemProtocol,
-    *legacy_args: Any,
-    **legacy_kwargs: Any,
+    config: OptimizeConfig,
 ) -> OptimizationResult:
     """
     Run a single optimization for the provided problem/config pair.
-
-    Preferred usage: pass an OptimizeConfig with explicit algorithm and kernel.
-    Legacy usage (optimize(problem, config, termination, seed, ...)) is still
-    supported but emits a DeprecationWarning.
     """
-    if isinstance(config_or_problem, OptimizeConfig):
-        cfg = config_or_problem
-    else:
-        legacy_config = legacy_args[0] if len(legacy_args) >= 1 else legacy_kwargs.get("config")
-        legacy_termination = legacy_args[1] if len(legacy_args) >= 2 else legacy_kwargs.get("termination")
-        legacy_seed = legacy_args[2] if len(legacy_args) >= 3 else legacy_kwargs.get("seed")
-        if legacy_config is None or legacy_termination is None or legacy_seed is None:
-            raise TypeError(
-                "optimize() legacy signature requires problem, config, termination, seed. "
-                "Prefer OptimizeConfig(problem=..., algorithm=..., ...)."
-            )
-        warnings.warn(
-            "optimize(problem, config, termination, seed, ...) is deprecated; "
-            "use OptimizeConfig with explicit algorithm instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        problem = config_or_problem
-        config = legacy_config
-        termination = legacy_termination
-        seed = legacy_seed
-        engine = legacy_kwargs.get("engine", "numpy")
-        eval_backend = legacy_kwargs.get("eval_backend", None)
-        live_viz = legacy_kwargs.get("live_viz", None)
-        algorithm = legacy_kwargs.get("algorithm", None)
-        cfg = OptimizeConfig(
-            problem=problem,
-            algorithm=algorithm or "",
-            algorithm_config=config,
-            termination=termination,
-            seed=seed,
-            engine=engine,
-            eval_backend=eval_backend,
-            live_viz=live_viz,
-        )
+    if not isinstance(config, OptimizeConfig):
+        raise TypeError("optimize() expects an OptimizeConfig instance.")
+    cfg = config
 
     cfg_dict = _normalize_cfg(cfg.algorithm_config)
     algorithm_name = (cfg.algorithm or "").lower()
     if not algorithm_name:
-        algorithm_name = _infer_algorithm_name(cfg_dict)
-        if not algorithm_name:
-            raise ValueError(
-                "algorithm must be specified in OptimizeConfig. "
-                f"Available algorithms: {_available_algorithms()}"
-            )
-        warnings.warn(
-            f"Inferred algorithm '{algorithm_name}' from config; please set OptimizeConfig.algorithm explicitly.",
-            DeprecationWarning,
-            stacklevel=2,
+        raise ValueError(
+            "OptimizeConfig.algorithm must be specified. "
+            f"Available algorithms: {_available_algorithms()}"
         )
     if algorithm_name not in ALGORITHMS:
         raise ValueError(f"Unknown algorithm '{algorithm_name}'. Available: {_available_algorithms()}")

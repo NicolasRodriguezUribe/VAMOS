@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-import vamos.engine.algorithm.hypervolume as hv
+import vamos.engine.algorithm.components.hypervolume as hv
 
 
 def test_hypervolume_impl_2d_matches_known_value():
@@ -33,4 +33,3 @@ def test_hypervolume_contributions_2d_matches_bruteforce():
         dtype=float,
     )
     assert hv._hypervolume_contributions_2d(points, ref) == pytest.approx(expected)
-

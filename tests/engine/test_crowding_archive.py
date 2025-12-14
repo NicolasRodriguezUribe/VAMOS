@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.engine.algorithm.archive import HypervolumeArchive, _single_front_crowding
+from vamos.engine.algorithm.components.archive import HypervolumeArchive, _single_front_crowding
 
 
 def test_hypervolume_archive_trims_by_contribution():

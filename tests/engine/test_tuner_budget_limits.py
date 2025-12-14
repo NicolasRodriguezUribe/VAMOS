@@ -29,7 +29,7 @@ def test_tuner_respects_budget_limits():
     ref_fronts = [None]
     counters = {"runs": 0}
 
-    def _stub_optimize(problem, config, termination, seed, engine):
+    def _stub_optimize(cfg):
         counters["runs"] += 1
         F = np.array([[1.0, 1.0]], dtype=float)
         return _DummyResult(F)

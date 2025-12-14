@@ -10,7 +10,7 @@ import numpy as np
 from importlib.resources import as_file
 
 from vamos.ux.visualization import plotting
-from vamos.engine.algorithm.hypervolume import hypervolume
+from vamos.engine.algorithm.components.hypervolume import hypervolume
 from vamos.foundation.core.execution import execute_algorithm
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.core.io_utils import ensure_dir

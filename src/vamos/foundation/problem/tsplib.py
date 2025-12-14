@@ -17,7 +17,7 @@ _FILE_NAME_MAP = {
 
 def _data_dir() -> Path:
     here = Path(__file__).resolve()
-    project_root = here.parents[3]
+    project_root = here.parents[4]
     return project_root / "data" / "tsplib"
 
 

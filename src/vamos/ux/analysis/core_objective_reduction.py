@@ -121,9 +121,7 @@ class ObjectiveReducer:
             i_global = remaining[i_local]
             j_global = remaining[j_local]
             if i_global in keep_mand and j_global in keep_mand:
-                abs_corr[i_local, j_local] = 0.0
-                abs_corr[j_local, i_local] = 0.0
-                continue
+                break
             drop = self._choose_drop(i_global, j_global, stds, keep_mand)
             remaining.remove(drop)
             if len(remaining) <= 1:

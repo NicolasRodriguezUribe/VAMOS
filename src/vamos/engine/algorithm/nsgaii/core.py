@@ -24,9 +24,9 @@ from vamos.engine.algorithm.nsgaii.setup import (
     setup_genealogy,
     setup_selection,
     setup_result_archive,
-    build_operator_pool,
     resolve_archive_size,
 )
+from vamos.engine.algorithm.nsgaii.operators import build_operator_pool
 from vamos.engine.algorithm.nsgaii.state import (
     NSGAIIState,
     build_result,
@@ -50,13 +50,6 @@ from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 
 _logger = logging.getLogger(__name__)
-
-# Backward-compat aliases for modules still importing the old private helpers
-_build_mating_pool = build_mating_pool
-_feasible_nsga2_survival = feasible_nsga2_survival
-_match_ids = match_ids
-_operator_success_stats = operator_success_stats
-_generation_contributions = generation_contributions
 
 
 class NSGAII:
@@ -199,9 +192,6 @@ class NSGAII:
             hv_tracker=hv_tracker,
             track_genealogy=track_genealogy, genealogy_tracker=genealogy_tracker, ids=ids,
         )
-        # Legacy dict interface for backward compat
-        self._state = self._st.__dict__
-
         return live_cb, eval_backend, max_eval, n_eval, hv_tracker
 
     def ask(self) -> np.ndarray:

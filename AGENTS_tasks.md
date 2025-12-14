@@ -64,7 +64,7 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 - Extend the configuration space with ranges/types (continuous/categorical) and sensible defaults.
 - Wire parameters into algorithm construction so tuning outputs actually change behaviour.
 - Keep reproducibility (seeding) intact.
-- Update examples/tests to cover the new parameters and ensure backward compatibility.
+- Update examples/tests to cover the new parameters.
 
 **Avoid**: Silent default changes without documentation.
 

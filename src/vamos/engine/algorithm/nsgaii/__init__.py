@@ -18,11 +18,6 @@ from vamos.engine.algorithm.nsgaii.helpers import (
     generation_contributions,
 )
 
-# Legacy aliases (underscore-prefixed for backward compat)
-_build_mating_pool = build_mating_pool
-_feasible_nsga2_survival = feasible_nsga2_survival
-_match_ids = match_ids
-
 __all__ = [
     "NSGAII",
     "build_mating_pool",
@@ -30,7 +25,4 @@ __all__ = [
     "match_ids",
     "operator_success_stats",
     "generation_contributions",
-    "_build_mating_pool",
-    "_feasible_nsga2_survival",
-    "_match_ids",
 ]

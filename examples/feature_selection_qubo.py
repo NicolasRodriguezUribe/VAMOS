@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import optimize
+from vamos.foundation.core.optimize import OptimizeConfig, optimize
 from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
 from vamos.ux.visualization import plot_pareto_front_2d
 
@@ -44,7 +44,16 @@ def main(seed: int = 5) -> None:
         return
 
     cfg = build_config(pop_size=28)
-    result = optimize(problem, cfg, termination=("n_eval", 180), seed=seed)
+    result = optimize(
+        OptimizeConfig(
+            problem=problem,
+            algorithm="nsgaii",
+            algorithm_config=cfg,
+            termination=("n_eval", 180),
+            seed=seed,
+            engine="numpy",
+        )
+    )
     F = result.F
     X = result.X
     print(f"Evaluated {F.shape[0]} subsets.")

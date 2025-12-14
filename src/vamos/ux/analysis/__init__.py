@@ -1,5 +1,5 @@
 """Analysis utilities (objective reduction, post-hoc helpers)."""
 
-from .objective_reduction import ObjectiveReducer, ObjectiveReductionSpec, ObjectiveReductionConfig, reduce_objectives
+from .core_objective_reduction import ObjectiveReductionConfig, ObjectiveReducer, reduce_objectives
 
-__all__ = ["ObjectiveReducer", "ObjectiveReductionSpec", "ObjectiveReductionConfig", "reduce_objectives"]
+__all__ = ["ObjectiveReductionConfig", "ObjectiveReducer", "reduce_objectives"]

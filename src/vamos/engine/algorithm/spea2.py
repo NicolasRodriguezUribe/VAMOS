@@ -3,14 +3,14 @@ from __future__ import annotations
 import math
 import numpy as np
 
-from vamos.engine.algorithm.nsgaii import _build_mating_pool
-from vamos.engine.algorithm.population import (
+from vamos.engine.algorithm.components.population import (
     evaluate_population,
     evaluate_population_with_constraints,
     initialize_population,
     resolve_bounds,
 )
-from vamos.engine.algorithm.variation import VariationPipeline, prepare_mutation_params
+from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
+from vamos.engine.algorithm.nsgaii.helpers import build_mating_pool
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
 from vamos.engine.operators.real import VariationWorkspace
 
@@ -178,7 +178,7 @@ class SPEA2:
             parents_per_group = variation.parents_per_group
             children_per_group = variation.children_per_group
             parent_count = int(np.ceil(offspring_size / children_per_group) * parents_per_group)
-            mating_pairs = _build_mating_pool(
+            mating_pairs = build_mating_pool(
                 self.kernel, ranks, crowding, pressure, rng, parent_count, parents_per_group, sel_method
             )
             parent_idx = mating_pairs.reshape(-1)

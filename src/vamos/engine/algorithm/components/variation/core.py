@@ -1,5 +1,8 @@
 """
-Backwards-compatible facade for variation helpers/pipeline.
+High-level variation utilities.
+
+This module provides a small, explicit re-export surface over the variation
+subpackage (pipeline + helper registries).
 """
 from __future__ import annotations
 
@@ -18,27 +21,17 @@ from vamos.engine.algorithm.components.variation.helpers import (
     MIXED_MUTATION,
 )
 
-# Aliases to ease imports that referenced module-level registries
-_PERM_CROSSOVER = PERM_CROSSOVER
-_PERM_MUTATION = PERM_MUTATION
-_BINARY_CROSSOVER = BINARY_CROSSOVER
-_BINARY_MUTATION = BINARY_MUTATION
-_INT_CROSSOVER = INT_CROSSOVER
-_INT_MUTATION = INT_MUTATION
-_MIXED_CROSSOVER = MIXED_CROSSOVER
-_MIXED_MUTATION = MIXED_MUTATION
-
 __all__ = [
     "VariationPipeline",
     "prepare_mutation_params",
     "validate_operator_support",
     "resolve_prob_expression",
-    "_PERM_CROSSOVER",
-    "_PERM_MUTATION",
-    "_BINARY_CROSSOVER",
-    "_BINARY_MUTATION",
-    "_INT_CROSSOVER",
-    "_INT_MUTATION",
-    "_MIXED_CROSSOVER",
-    "_MIXED_MUTATION",
+    "PERM_CROSSOVER",
+    "PERM_MUTATION",
+    "BINARY_CROSSOVER",
+    "BINARY_MUTATION",
+    "INT_CROSSOVER",
+    "INT_MUTATION",
+    "MIXED_CROSSOVER",
+    "MIXED_MUTATION",
 ]
