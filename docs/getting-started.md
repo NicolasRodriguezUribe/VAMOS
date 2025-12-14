@@ -21,14 +21,14 @@ Useful extras:
 Smoke tests
 -----------
 
-- Core check: `python -m vamos.diagnostics.self_check` or `vamos-self-check`
-- Quick NSGA-II run: `python -m vamos.cli.main --problem zdt1 --max-evaluations 2000`
+- Core check: `python -m vamos.experiment.diagnostics.self_check` or `vamos-self-check`
+- Quick NSGA-II run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
 - Full test suite (core): `pytest`
 - With extras installed: `pytest -m "not slow"`
 
 Benchmarks and studies
 ----------------------
 
-- Compare backends: `python -m vamos.cli.main --experiment backends --problem zdt1`
+- Compare backends: `python -m vamos.experiment.cli.main --experiment backends --problem zdt1`
 - Run a predefined suite: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/`
-- Batch problem x algorithm x seed sweeps: `python -m vamos.study.runner --suite families`
+- Batch problem x algorithm x seed sweeps: `python -m vamos.experiment.study.runner --suite families`

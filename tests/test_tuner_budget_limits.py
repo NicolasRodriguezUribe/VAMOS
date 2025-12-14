@@ -1,8 +1,8 @@
 import numpy as np
 
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.tuning.evolver import NSGAIITuner
-from vamos.tuning.core.parameter_space import AlgorithmConfigSpace, Categorical, Integer, ParameterDefinition
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.tuning.evolver import NSGAIITuner
+from vamos.engine.tuning.core.parameter_space import AlgorithmConfigSpace, Categorical, Integer, ParameterDefinition
 
 
 class _DummyResult:

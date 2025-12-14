@@ -11,9 +11,9 @@ from typing import Callable
 
 import numpy as np
 
-from vamos.algorithm.factory import build_algorithm
-from vamos.core.experiment_config import ExperimentConfig
-from vamos.problem.registry import make_problem_selection
+from vamos.engine.algorithm.factory import build_algorithm
+from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.problem.registry import make_problem_selection
 
 
 def _timeit(fn: Callable[[], None], repeat: int = 3) -> float:

@@ -1,4 +1,4 @@
-from vamos.diagnostics import self_check
+from vamos.experiment.diagnostics import self_check
 
 
 def test_self_check_runs_numpy_only():

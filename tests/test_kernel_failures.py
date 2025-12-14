@@ -3,7 +3,7 @@ import types
 
 import pytest
 
-from vamos.kernel.registry import resolve_kernel
+from vamos.foundation.kernel.registry import resolve_kernel
 
 
 def test_unknown_kernel_errors():
@@ -17,7 +17,7 @@ def test_numba_missing_dependency(monkeypatch):
             raise ImportError("forced-missing-numba")
         return importlib.import_module(name, package=None)
 
-    monkeypatch.setattr("vamos.kernel.registry.import_module", fake_import)
+    monkeypatch.setattr("vamos.foundation.kernel.registry.import_module", fake_import)
     with pytest.raises(ImportError, match="requires the \\[backends\\] extra"):
         resolve_kernel("numba")
 
@@ -28,6 +28,6 @@ def test_moocore_missing_dependency(monkeypatch):
             raise ImportError("forced-missing-moocore")
         return importlib.import_module(name, package=None)
 
-    monkeypatch.setattr("vamos.kernel.registry.import_module", fake_import)
+    monkeypatch.setattr("vamos.foundation.kernel.registry.import_module", fake_import)
     with pytest.raises(ImportError, match="requires the \\[backends\\] extra"):
         resolve_kernel("moocore")

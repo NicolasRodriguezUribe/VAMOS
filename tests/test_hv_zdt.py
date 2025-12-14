@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.metrics.hv_zdt import compute_normalized_hv
+from vamos.foundation.metrics.hv_zdt import compute_normalized_hv
 
 
 def test_normalized_hv_handles_points_above_default_reference():

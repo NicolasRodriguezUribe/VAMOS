@@ -1,2 +1,2 @@
 @echo off
-py -m vamos.benchmark.cli %*
+py -m vamos.experiment.benchmark.cli %*

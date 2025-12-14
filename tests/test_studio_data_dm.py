@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from vamos.studio.data import RunRecord, build_fronts, normalize_objectives
-from vamos.studio.dm import build_decision_view, rank_by_score, feasible_indices, filter_by_objective_ranges
-from vamos.studio.export import export_solutions_to_json, export_solutions_to_csv
+from vamos.ux.studio.data import RunRecord, build_fronts, normalize_objectives
+from vamos.ux.studio.dm import build_decision_view, rank_by_score, feasible_indices, filter_by_objective_ranges
+from vamos.ux.studio.export import export_solutions_to_json, export_solutions_to_csv
 
 
 def test_build_fronts_and_decision_view(tmp_path: Path):
@@ -28,7 +28,7 @@ def test_build_fronts_and_decision_view(tmp_path: Path):
 
 
 def test_export_helpers(tmp_path: Path):
-    from vamos.studio.data import FrontRecord
+    from vamos.ux.studio.data import FrontRecord
 
     front = FrontRecord(
         problem_name="prob",

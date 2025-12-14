@@ -2,9 +2,9 @@ import warnings
 
 import numpy as np
 
-from vamos.tuning import AlgorithmConfigSpace
-from vamos.tuning.core.parameter_space import Integer, Double, Categorical, ParameterDefinition
-from vamos.tuning import ParamSpace
+from vamos.engine.tuning import AlgorithmConfigSpace
+from vamos.engine.tuning.core.parameter_space import Integer, Double, Categorical, ParameterDefinition
+from vamos.engine.tuning import ParamSpace
 
 
 def test_algorithm_config_space_exposed():

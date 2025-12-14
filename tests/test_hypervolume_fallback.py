@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-import vamos.algorithm.hypervolume as hv
+import vamos.engine.algorithm.hypervolume as hv
 
 
 def test_hypervolume_impl_2d_matches_known_value():

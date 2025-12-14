@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from vamos.core import runner
+from vamos.foundation.core import runner
 
 
 def test_cli_with_config_file_creates_artifacts(monkeypatch, tmp_path):
@@ -33,7 +33,7 @@ def test_cli_with_config_file_creates_artifacts(monkeypatch, tmp_path):
     argv = ["prog", "--config", str(config_file)]
     monkeypatch.setattr(sys, "argv", argv)
 
-    from vamos.cli.main import main
+    from vamos.experiment.cli.main import main
 
     main()
 
@@ -83,7 +83,7 @@ def test_cli_runs_spea2_from_config(monkeypatch, tmp_path):
     argv = ["prog", "--config", str(config_file)]
     monkeypatch.setattr(sys, "argv", argv)
 
-    from vamos.cli.main import main
+    from vamos.experiment.cli.main import main
 
     main()
 

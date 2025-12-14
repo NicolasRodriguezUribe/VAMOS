@@ -3,7 +3,7 @@ import numpy as np
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 
-from vamos.analysis.stats import (
+from vamos.ux.analysis.stats import (
     FriedmanResult,
     compute_ranks,
     friedman_test,

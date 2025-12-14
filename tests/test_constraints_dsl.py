@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.constraints.dsl import constraint_model, build_constraint_evaluator
+from vamos.foundation.constraints.dsl import constraint_model, build_constraint_evaluator
 
 
 def test_constraint_evaluator_matches_manual():

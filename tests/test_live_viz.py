@@ -4,10 +4,10 @@ import numpy as np
 
 pytest.importorskip("matplotlib")
 
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.algorithm.nsgaii import NSGAII
-from vamos.kernel.numpy_backend import NumPyKernel
-from vamos.visualization.live_viz import LiveVisualization, LiveParetoPlot
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.ux.visualization.live_viz import LiveVisualization, LiveParetoPlot
 
 
 class DummyProblem:

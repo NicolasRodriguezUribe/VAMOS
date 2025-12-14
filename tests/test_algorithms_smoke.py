@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from vamos.algorithm.config import (
+from vamos.engine.algorithm.config import (
     MOEADConfig,
     NSGAIIConfig,
     SMSEMOAConfig,
@@ -10,16 +10,16 @@ from vamos.algorithm.config import (
     IBEAConfig,
     SMPSOConfig,
 )
-from vamos.algorithm.moead import MOEAD
-from vamos.algorithm.nsgaii import NSGAII
-from vamos.algorithm.smsemoa import SMSEMOA
-from vamos.algorithm.spea2 import SPEA2
-from vamos.algorithm.ibea import IBEA
-from vamos.algorithm.smpso import SMPSO
-from vamos.kernel.numpy_backend import NumPyKernel
-from vamos.problem.tsp import TSPProblem
-from vamos.problem.zdt1 import ZDT1Problem
-from vamos.problem.zdt2 import ZDT2Problem
+from vamos.engine.algorithm.moead import MOEAD
+from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.engine.algorithm.smsemoa import SMSEMOA
+from vamos.engine.algorithm.spea2 import SPEA2
+from vamos.engine.algorithm.ibea import IBEA
+from vamos.engine.algorithm.smpso import SMPSO
+from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.problem.tsp import TSPProblem
+from vamos.foundation.problem.zdt1 import ZDT1Problem
+from vamos.foundation.problem.zdt2 import ZDT2Problem
 
 
 def test_nsgaii_hv_termination_hits_target():
@@ -176,7 +176,7 @@ def test_nsgaii_with_multiprocessing_eval_backend():
     )
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=6)
-    from vamos.eval.backends import MultiprocessingEvalBackend
+    from vamos.foundation.eval.backends import MultiprocessingEvalBackend
 
     eval_backend = MultiprocessingEvalBackend(n_workers=2)
     result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=10, eval_backend=eval_backend)

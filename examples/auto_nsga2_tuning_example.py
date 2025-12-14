@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.problem.registry import make_problem_selection
-from vamos.tuning.core.parameter_space import AlgorithmConfigSpace
-from vamos.tuning.evolver.tuner import NSGAIITuner
+from vamos.foundation.problem.registry import make_problem_selection
+from vamos.engine.tuning.core.parameter_space import AlgorithmConfigSpace
+from vamos.engine.tuning.evolver.tuner import NSGAIITuner
 
 
 def _build_problem(name: str, n_var: int, **kwargs):

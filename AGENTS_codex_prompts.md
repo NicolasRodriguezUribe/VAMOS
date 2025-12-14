@@ -5,6 +5,7 @@ Ready-to-paste prompts for AI coding agents (e.g., Code, Copilot, GPT) working o
 Assumptions:
 - `AGENTS.md` and `AGENTS_tasks.md` are in the repo root.
 - The agent can read project files before writing code.
+- User-facing imports should prefer the public facades: `vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`. Layered imports (`vamos.foundation.*`, `vamos.engine.*`, `vamos.experiment.*`, `vamos.ux.*`) are for deeper changes.
 
 ---
 
@@ -25,11 +26,12 @@ Assumptions:
 **Prompt 1 - Minimal ZDT1 baseline + smoke test**
 
 > You are in the VAMOS repo. You have read `AGENTS.md` and `AGENTS_tasks.md`.  
-> Goal: create a minimal ZDT1 baseline using NSGA-II via `python -m vamos.cli.main` plus a pytest smoke test.  
+> Goal: create a minimal ZDT1 baseline using NSGA-II via `python -m vamos.experiment.cli.main` plus a pytest smoke test.  
 > Tasks:  
-> - Locate ZDT1 under `src/vamos/problem/` and NSGA-II under `src/vamos/algorithm/`.  
-> - Add a tiny example (script or notebook-style module) under `examples/` or `notebooks/` that runs `python -m vamos.cli.main --problem zdt1 --max-evaluations <small>` (and optionally `--engine moocore`). Keep budgets CI-friendly.  
+> - Locate ZDT1 under `src/vamos/foundation/problem/` and NSGA-II under `src/vamos/engine/algorithm/`.  
+> - Add a tiny example (script or notebook-style module) under `examples/` or `notebooks/` that runs `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations <small>` (and optionally `--engine moocore`). Keep budgets CI-friendly.  
 > - Add a smoke test (e.g., `tests/study/test_zdt1_baseline.py`) asserting the final front is non-empty and finite.  
+> - For user-facing snippets, prefer `from vamos.api import optimize`, `from vamos.algorithms import NSGAIIConfig`, and `from vamos.problems import ZDT1`.  
 > Follow all dependency/style rules; show diffs/new files and how to run the example/test.
 
 ---
@@ -41,7 +43,7 @@ Assumptions:
 > You are in the VAMOS repo. Rules from `AGENTS.md` / `AGENTS_tasks.md` apply.  
 > Goal: implement a hypervolume-based external archive and make it selectable in an algorithm (e.g., NSGA-II) without changing defaults.  
 > Tasks:  
-> - Find archive abstractions and hypervolume helpers (e.g., under `src/vamos/eval/`, `metrics/`, `algorithm/`, or kernels/backends).  
+> - Find archive abstractions and hypervolume helpers (e.g., under `src/vamos/foundation/eval/`, `metrics/`, `algorithm/`, or kernels/backends).  
 > - Implement `HypervolumeContributionArchive` (capacity handling, `add`/`extend`) with graceful fallback if hypervolume backends are missing.  
 > - Add an algorithm config flag (e.g., `archive_type: none|crowding|hypervolume`) keeping current defaults unchanged.  
 > - Add unit tests for the archive and a tiny ZDT1 smoke run using `archive_type="hypervolume"`.  
@@ -56,7 +58,7 @@ Assumptions:
 > You are in the VAMOS repo and will follow `AGENTS.md` / `AGENTS_tasks.md`.  
 > Goal: extend the AutoNSGA-II (or equivalent) tuning space with new parameters (e.g., `mutation_rate`, `crossover_eta`, `archive_type`).  
 > Tasks:  
-> - Locate search space definitions under `src/vamos/tuning/core/` (and related `tuning/racing/` logic) plus algorithm config binding under `src/vamos/algorithm/`.  
+> - Locate search space definitions under `src/vamos/engine/tuning/core/` (and related `tuning/racing/` logic) plus algorithm config binding under `src/vamos/engine/algorithm/`.  
 > - Add ranges/types with sensible defaults; ensure parameters are passed into algorithm construction.  
 > - Keep seeding/reproducibility intact.  
 > - Update examples/tests so each new parameter is exercised on a tiny ZDT1 setup.  
@@ -69,7 +71,7 @@ Assumptions:
 **Prompt 4 - Implement a real-coded crossover/mutation**
 
 > You are in the VAMOS repo. Follow `AGENTS.md` and `AGENTS_tasks.md`.  
-> Goal: add a new real-coded operator `<Name>` under `src/vamos/operators/real/`.  
+> Goal: add a new real-coded operator `<Name>` under `src/vamos/engine/operators/real/`.  
 > Tasks:  
 > - Use existing operators (SBX, BLX-alpha, polynomial mutation) as patterns.  
 > - Implement vectorized behaviour with bounds handling; keep it stateless aside from parameters.  
@@ -86,8 +88,8 @@ Assumptions:
 > You are in the VAMOS repo. Rules from `AGENTS.md` / `AGENTS_tasks.md` apply.  
 > Goal: add a new problem `<ProblemName>` that fits the Problem API and registry.  
 > Tasks:  
-> - Implement the problem under `src/vamos/problem/benchmark/` or `real_world/` with dimension, bounds, objectives, constraints, and `evaluate` / `evaluate_population`.  
-> - Register it so `python -m vamos.cli.main --problem <id>` works.  
+> - Implement the problem under `src/vamos/foundation/problem/benchmark/` or `real_world/` with dimension, bounds, objectives, constraints, and `evaluate` / `evaluate_population`.  
+> - Register it so `python -m vamos.experiment.cli.main --problem <id>` works.  
 > - Add tests for shapes/finite outputs (and reference points if applicable).  
 > - Add an example snippet or tiny script showing NSGA-II on the new problem with a small budget.  
 > Output code/tests/registry diffs and a brief description.
@@ -101,8 +103,8 @@ Assumptions:
 > You are in the VAMOS repo. Follow `AGENTS.md` / `AGENTS_tasks.md`.  
 > Goal: define a study (problem x algorithm x seeds) with CLI wiring.  
 > Tasks:  
-> - Use `src/vamos/study/`, `src/vamos/core/runner.py`, and CLI entry points to set up a study runnable via `python -m vamos.cli.main --config path.yaml` or a new flag.  
-> - Implement looping over seeds/problems/algorithms; write outputs to `results/` or `target/<name>/` (fronts, metadata, traces).  
+> - Use `src/vamos/experiment/study/`, the central orchestration in `src/vamos/experiment/runner.py`, and CLI entry points to set up a study runnable via `python -m vamos.experiment.cli.main --config path.yaml` or a new flag.  
+> - Implement looping over seeds/problems/algorithms; write outputs to the standard layout under `results/` (`<PROBLEM>/<algorithm>/<engine>/seed_<seed>/`).  
 > - Add a smoke test with tiny budgets that asserts expected output files exist.  
 > - Document example CLI usage.  
 > Provide diffs/new files and test instructions.
@@ -116,8 +118,8 @@ Assumptions:
 > You are in the VAMOS repo. Rules apply.  
 > Goal: enhance run metadata and add a helper to load/aggregate it without breaking consumers.  
 > Tasks:  
-> - Update metadata/IO under `src/vamos/core/metadata/` and `core/io/` with additive fields (e.g., backend, git commit if available) and safe defaults.  
-> - Add a loader/aggregator under `analysis/` or `analytics/` (DataFrame if pandas is already an installed extra).  
+> - Update metadata/IO under `src/vamos/foundation/core/metadata/` and `core/io/` with additive fields (e.g., backend, git commit if available) and safe defaults.  
+> - Keep outputs in the standard layout (`<output_root>/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/`). Add a loader/aggregator under `src/vamos/ux/analysis/` or `src/vamos/ux/analytics/` (DataFrame if pandas is already an installed extra) that reads this schema (see `vamos.ux.analysis.results`).  
 > - Add tests for round-trip metadata and the loader using a synthetic minimal study directory.  
 > Provide diffs/new files and a usage snippet.
 
@@ -130,7 +132,7 @@ Assumptions:
 > You are in the VAMOS repo. Follow the rules.  
 > Goal: extend `vamos-benchmark` with a new or updated suite.  
 > Tasks:  
-> - Locate suite/problem/algorithm definitions under `src/vamos/benchmark/` and any reference fronts.  
+> - Locate suite/problem/algorithm definitions under `src/vamos/experiment/benchmark/` and any reference fronts.  
 > - Add or adjust a suite (problems, budgets, algorithms) keeping output schema (raw runs, summary CSVs, LaTeX/plots) compatible.  
 > - Add a smoke test (tiny budgets) that runs `vamos-benchmark --suite <suite> --algorithms ... --output report/`.  
 > - Document the new invocation in a short note or example.  
@@ -143,9 +145,9 @@ Assumptions:
 **Prompt 9 - Enhance `vamos-self-check`**
 
 > You are in the VAMOS repo. Follow the rules.  
-> Goal: improve diagnostics (`vamos.diagnostics.self_check` / `vamos-self-check`) to validate installs/backends quickly.  
+> Goal: improve diagnostics (`vamos.experiment.diagnostics.self_check` / `vamos-self-check`) to validate installs/backends quickly.  
 > Tasks:  
-> - Inspect existing diagnostics under `src/vamos/diagnostics/`.  
+> - Inspect existing diagnostics under `src/vamos/experiment/diagnostics/`.  
 > - Add fast checks (e.g., optional backend availability, tiny ZDT1 run) guarded so missing extras produce clear messages.  
 > - Keep runtime short; ensure defaults still pass in minimal installs.  
 > - Add/update tests for the new checks.  
@@ -160,7 +162,7 @@ Assumptions:
 > You are in the VAMOS repo. Rules apply.  
 > Goal: extend the Studio (`vamos-studio`) experience (e.g., add a new panel or preference scoring helper) while keeping defaults intact.  
 > Tasks:  
-> - Locate Studio code (e.g., `src/vamos/studio/`) and how it reads study data from `results/`.  
+> - Locate Studio code (e.g., `src/vamos/ux/studio/`) and how it reads study data from `results/`.  
 > - Add the new feature (panel/helper) with clear defaults; guard optional deps required by the `studio` extra.  
 > - Provide a minimal example dataset or instructions so `vamos-studio --study-dir results` exercises the feature.  
 > - Add tests or a lightweight integration check if feasible.  

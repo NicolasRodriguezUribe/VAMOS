@@ -63,11 +63,11 @@ docs = [
 ]
 
 [project.scripts]
-vamos = "vamos.cli.main:main"
-vamos-self-check = "vamos.diagnostics.self_check:main"
-vamos-benchmark = "vamos.benchmark.cli:main"
-vamos-studio = "vamos.studio.app:main"
-vamos-zoo = "vamos.zoo.cli:main"
+vamos = "vamos.experiment.cli.main:main"
+vamos-self-check = "vamos.experiment.diagnostics.self_check:main"
+vamos-benchmark = "vamos.experiment.benchmark.cli:main"
+vamos-studio = "vamos.ux.studio.app:main"
+vamos-zoo = "vamos.experiment.zoo.cli:main"
 
 [tool.mypy]
 python_version = "3.11"
@@ -80,22 +80,22 @@ pretty = true
 exclude = ["build/", "dist/"]
 ignore_missing_imports = false
 
-[tool.mypy."vamos.problem.*"]
+[tool.mypy."vamos.foundation.problem.*"]
 strict = true
 
-[tool.mypy.vamos.algorithm.config]
+[tool.mypy.vamos.engine.algorithm.config]
 strict = true
 
 [[tool.mypy.overrides]]
-module = "vamos.core.optimize"
+module = "vamos.foundation.core.optimize"
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = "vamos.algorithm.registry"
+module = "vamos.engine.algorithm.registry"
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = "vamos.kernel.registry"
+module = "vamos.foundation.kernel.registry"
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
@@ -129,4 +129,4 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-"vamos.data" = ["reference_fronts/*.csv", "weights/*.csv"]
+"vamos.foundation.data" = ["reference_fronts/*.csv", "weights/*.csv"]

@@ -1,7 +1,7 @@
 import numpy as np
 
-from vamos.tuning.core.parameter_space import AlgorithmConfigSpace, Categorical, Integer, ParameterDefinition
-from vamos.tuning.evolver import TuningPipeline, compute_hyperparameter_importance
+from vamos.engine.tuning.core.parameter_space import AlgorithmConfigSpace, Categorical, Integer, ParameterDefinition
+from vamos.engine.tuning.evolver import TuningPipeline, compute_hyperparameter_importance
 
 
 class _DummyConfig:

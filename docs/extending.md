@@ -3,20 +3,20 @@
 Algorithms
 ----------
 
-- Add new classes under `src/vamos/algorithm/`, register in `algorithm/registry.py`, and expose defaults in `algorithm/config.py`/`ExperimentConfig` if needed.
+- Add new classes under `src/vamos/engine/algorithm/`, register in `algorithm/registry.py`, and expose defaults in `algorithm/config.py`/`ExperimentConfig` if needed.
 - Use existing kernels where possible; follow existing patterns for `run()` returning `{"X": ..., "F": ..., "archive": ...}`.
 - Add smoke tests under `tests/` (see `test_algorithms_smoke.py`).
 
 Operators and kernels
 ---------------------
 
-- Operators live in `src/vamos/operators/` (real, permutation, binary, integer, mixed). Add new operators with RNG-friendly vectorized implementations and register in `variation.py`.
-- Kernels live in `src/vamos/kernel/`; register new backends in `kernel/registry.py` and mirror the NumPy API.
+- Operators live in `src/vamos/engine/operators/` (real, permutation, binary, integer, mixed). Add new operators with RNG-friendly vectorized implementations and register in `variation.py`.
+- Kernels live in `src/vamos/foundation/kernel/`; register new backends in `kernel/registry.py` and mirror the NumPy API.
 
 Problems
 --------
 
-- Add problem classes under `src/vamos/problem/` and register in `problem/registry.py` with defaults, encoding, and description.
+- Add problem classes under `src/vamos/foundation/problem/` and register in `problem/registry.py` with defaults, encoding, and description.
 - Ensure `evaluate(X, out)` fills `out["F"]` (and `out["G"]` if constrained) in vectorized form.
 
 Config and CLI

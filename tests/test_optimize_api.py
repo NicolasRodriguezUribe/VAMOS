@@ -3,9 +3,9 @@ import warnings
 import numpy as np
 import pytest
 
-from vamos.algorithm.config import NSGAIIConfig, MOEADConfig
-from vamos.core.optimize import OptimizeConfig, OptimizationResult, optimize
-from vamos.problem.zdt1 import ZDT1Problem
+from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
+from vamos.foundation.core.optimize import OptimizeConfig, OptimizationResult, optimize
+from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
 def _nsgaii_cfg():

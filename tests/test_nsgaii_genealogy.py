@@ -1,7 +1,7 @@
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.algorithm.nsgaii import NSGAII
-from vamos.kernel.numpy_backend import NumPyKernel
-from vamos.problem.zdt1 import ZDT1Problem
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
 def test_nsgaii_track_genealogy_runs_and_returns_stats():

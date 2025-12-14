@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
 
-from vamos.algorithm.nsga3 import NSGAIII
-from vamos.algorithm.config import NSGAIIIConfig
-from vamos.kernel.numpy_backend import NumPyKernel
-from vamos.problem.dtlz import DTLZ2Problem
-from vamos.problem.zdt1 import ZDT1Problem
+from vamos.engine.algorithm.nsga3 import NSGAIII
+from vamos.engine.algorithm.config import NSGAIIIConfig
+from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.problem.dtlz import DTLZ2Problem
+from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
 def _make_config(pop_size=11, prob="1/n"):

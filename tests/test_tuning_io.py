@@ -1,8 +1,8 @@
 import numpy as np
 
-from vamos.tuning.core.io import filter_active_config, history_to_dict
-from vamos.tuning.core.param_space import ParamSpace, Categorical, Real, Condition
-from vamos.tuning.racing.random_search_tuner import TrialResult
+from vamos.engine.tuning.core.io import filter_active_config, history_to_dict
+from vamos.engine.tuning.core.param_space import ParamSpace, Categorical, Real, Condition
+from vamos.engine.tuning.racing.random_search_tuner import TrialResult
 
 
 def test_filter_active_config_drops_inactive_operator_params():

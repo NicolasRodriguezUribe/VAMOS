@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from vamos.metrics import moocore_indicators as mi
+from vamos.foundation.metrics import moocore_indicators as mi
 
 
 @pytest.mark.skipif(not mi.has_moocore(), reason="MooCore not installed")

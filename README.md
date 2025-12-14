@@ -13,10 +13,10 @@ python -m venv .venv
 pip install -e ".[backends,benchmarks,dev]"
 
 # 3) Run a quick NSGA-II smoke on ZDT1 (NumPy backend)
-python -m vamos.cli.main --problem zdt1 --max-evaluations 2000
+python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000
 
 # 4) Try the MooCore backend
-python -m vamos.cli.main --engine moocore --problem zdt1 --max-evaluations 2000
+python -m vamos.experiment.cli.main --engine moocore --problem zdt1 --max-evaluations 2000
 
 # 5) Run tests
 pytest
@@ -33,7 +33,7 @@ If you plan to modify VAMOS (humans or AI assistants):
    ```
 3. Run a quick self-check and smoke tests:
    ```powershell
-   python -m vamos.diagnostics.self_check
+   python -m vamos.experiment.diagnostics.self_check
    pytest -m "not slow"
    ```
 4. Optionally enable notebooks and examples:
@@ -55,29 +55,70 @@ If you plan to modify VAMOS (humans or AI assistants):
 ## Common commands
 
 - Run with different algorithms/problems:
-  - `python -m vamos.cli.main --algorithm moead --problem dtlz2 --n-obj 3`
-  - `python -m vamos.cli.main --algorithm spea2 --problem zdt1 --max-evaluations 1000`
-- `python -m vamos.cli.main --problem-set families`
-- `python -m vamos.cli.main --problem tsp6`
+  - `python -m vamos.experiment.cli.main --algorithm moead --problem dtlz2 --n-obj 3`
+  - `python -m vamos.experiment.cli.main --algorithm spea2 --problem zdt1 --max-evaluations 1000`
+- `python -m vamos.experiment.cli.main --problem-set families`
+- `python -m vamos.experiment.cli.main --problem tsp6`
 - Use hypervolume early-stop on NSGA-II:
-  - `python -m vamos.cli.main --hv-threshold 0.5 --hv-reference-front data/reference_fronts/ZDT1.csv`
+  - `python -m vamos.experiment.cli.main --hv-threshold 0.5 --hv-reference-front data/reference_fronts/ZDT1.csv`
 - Run tuning (outer NSGA-II over hyperparameters) via code (see `vamos.tuning`).
 - Visualize or post-hoc analyze:
-  - `from vamos.visualization import plot_pareto_front_2d`
-  - `from vamos.analysis.mcdm import weighted_sum_scores`
-  - `from vamos.analysis.stats import friedman_test, plot_critical_distance`
+  - `from vamos.plotting import plot_pareto_front_2d`
+  - `from vamos.mcdm import weighted_sum_scores`
+  - `from vamos.stats import friedman_test, plot_critical_distance`
 - Quick sanity check of your install:
-  - `python -m vamos.diagnostics.self_check`
+  - `python -m vamos.experiment.diagnostics.self_check`
   - or `vamos-self-check`
 
 ## Migration note
 
-- Deprecated tuning shim modules (e.g., `vamos.tuning.param_space`, `vamos.tuning.parameter_space`, `vamos.tuning.random_search_tuner`, `vamos.tuning.meta`, etc.) have been removed. Import directly from the canonical subpackages: `vamos.tuning.core.*`, `vamos.tuning.evolver.*`, and `vamos.tuning.racing.*`.
+- Deprecated tuning shim modules (e.g., `vamos.engine.tuning.param_space`, `vamos.engine.tuning.parameter_space`, `vamos.engine.tuning.random_search_tuner`, `vamos.engine.tuning.meta`, etc.) have been removed. Import directly from the canonical subpackages (`vamos.engine.tuning.*`) or use the facade `vamos.tuning`.
 
 ## Documentation
 
 - Browse the docs under `docs/` (MkDocs). Key pages cover CLI/config, algorithms/backends, problems, constraint DSL/autodiff, and extension guides.
 - Build locally: `mkdocs serve` (or `py -m mkdocs serve`) after installing the `docs` extra with `pip install -e ".[docs]"`.
+
+### Imports overview
+
+- Typical user-facing imports:
+  - `from vamos.api import optimize, ExperimentConfig`
+  - `from vamos.algorithms import NSGAIIConfig, available_algorithms`
+  - `from vamos.problems import ZDT1, make_problem_selection`
+- `from vamos.plotting import plot_pareto_front_2d`
+- `from vamos.mcdm import weighted_sum_scores`
+- `from vamos.stats import friedman_test`
+- Advanced/extension work:
+  - Layered packages are stable entrypoints for contributors: `vamos.foundation.*` (core types/kernels/problems), `vamos.engine.*` (algorithms/operators/tuning), `vamos.experiment.*` (CLI/studies/benchmarks/diagnostics), `vamos.ux.*` (analysis/visualization/studio).
+
+## Results layout & analysis
+
+- Standard layout under `results/` (unless `VAMOS_OUTPUT_ROOT` or `--output-root` is set):
+
+  ```
+  results/
+    <PROBLEM_LABEL>/
+      <algorithm>/
+        <engine>/
+          seed_<seed>/
+            FUN.csv               # objective values
+            X.csv (optional)      # decision variables
+            G.csv (optional)      # constraints
+            ARCHIVE_*.csv (opt.)  # external archive snapshots
+            metadata.json         # run metadata (problem, algorithm, backend, seed, metrics)
+            resolved_config.json  # resolved configuration
+            time.txt              # wall-clock time in ms
+  ```
+
+- Basic loading helpers:
+
+  ```python
+  from vamos.ux.analysis.results import discover_runs, load_run_data, aggregate_results
+
+  runs = discover_runs("results")
+  first = load_run_data(runs[0])
+  table = aggregate_results(runs)  # pandas DataFrame if pandas is installed, else list of dicts
+  ```
 
 ### Examples
 
@@ -150,7 +191,7 @@ CLI flags override config values. Per-problem sections override defaults.
 
 ## Tuning API
 
-- Canonical tuning abstraction: `AlgorithmConfigSpace` (see `vamos.tuning.AlgorithmConfigSpace` or `vamos.tuning.core.parameter_space`).
+- Canonical tuning abstraction: `AlgorithmConfigSpace` (see `vamos.tuning.AlgorithmConfigSpace` or `vamos.engine.tuning.core.parameter_space`).
 - Use `NSGAIITuner` with an `AlgorithmConfigSpace` to search algorithm hyperparameters (example: `examples/auto_nsga2_tuning_example.py`).
 - Legacy `ParamSpace` remains for compatibility but is deprecated and will be removed in a future release.
 
@@ -176,9 +217,9 @@ export VAMOS_USE_NUMBA_VARIATION=1  # set before running
 ## Programmatic optimize()
 
 ```python
-from vamos.core.optimize import optimize, OptimizeConfig
-from vamos.problem.registry import make_problem_selection
-from vamos.algorithm.config import NSGAIIConfig
+from vamos.foundation.core.optimize import optimize, OptimizeConfig
+from vamos.foundation.problem.registry import make_problem_selection
+from vamos.engine.algorithm.config import NSGAIIConfig
 
 problem = make_problem_selection("zdt1").instantiate()
 algo_cfg = (
@@ -222,7 +263,7 @@ Install with `pip install -e ".[extra1,extra2]"`:
 | `notebooks`  | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `ipython>=8.10`, `scikit-learn>=1.3` | Jupyter notebook support     |
 | `examples`   | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `scikit-learn>=1.3` | Run the real-data examples   |
 
-- Minimal install note: `import vamos` and `import vamos.api` work without optional extras.
+- Minimal install note: `import vamos` and `import vamos.foundation.core.api` work without optional extras.
   Backends (`numba`, `moocore`) and plotting (`matplotlib`) are only required when you use
   those features; install the relevant extras to enable them.
 
@@ -249,9 +290,9 @@ pip install -e ".[backends]"
   - `python examples/feature_selection_qubo.py`
 - Paper-ready benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/` runs predefined suites, writes raw runs + summary CSVs + LaTeX-ready tables and plots under `report/`.
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
-- Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.hyperheuristics`.
+- Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.engine.hyperheuristics`.
 - Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `02_tuning_and_metaoptimization.ipynb`).
-- Built-in reference fronts and default weight vectors ship inside the package under `vamos.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
+- Built-in reference fronts and default weight vectors ship inside the package under `vamos.foundation.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
 
 ## Testing & QA
 

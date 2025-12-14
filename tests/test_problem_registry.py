@@ -1,6 +1,6 @@
 import pytest
 
-from vamos.problem.registry import make_problem_selection, available_problem_names
+from vamos.foundation.problem.registry import make_problem_selection, available_problem_names
 
 
 def test_problem_selection_defaults_and_encoding():

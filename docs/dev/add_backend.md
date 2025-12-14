@@ -4,12 +4,12 @@ Kernel backends implement performance-critical primitives. Follow this template 
 
 ## Required interface
 
-Implement `KernelBackend` methods in `src/vamos/kernel/backend.py`:
+Implement `KernelBackend` methods in `src/vamos/foundation/kernel/backend.py`:
 
 ```python
 from __future__ import annotations
 import numpy as np
-from vamos.kernel.backend import KernelBackend
+from vamos.foundation.kernel.backend import KernelBackend
 
 class MyBackend(KernelBackend):
     def nsga2_ranking(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -30,7 +30,7 @@ class MyBackend(KernelBackend):
 
 ## Registration
 
-Register the backend in `src/vamos/kernel/registry.py`:
+Register the backend in `src/vamos/foundation/kernel/registry.py`:
 
 ```python
 from importlib import import_module
@@ -47,10 +47,10 @@ Add a backend-marked smoke test (skip if dependency missing):
 
 ```python
 import pytest
-from vamos.kernel.registry import resolve_kernel
-from vamos.problem.zdt1 import ZDT1Problem
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.algorithm.nsgaii import NSGAII
+from vamos.foundation.kernel.registry import resolve_kernel
+from vamos.foundation.problem.zdt1 import ZDT1Problem
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.algorithm.nsgaii import NSGAII
 
 @pytest.mark.mybackend
 def test_mybackend_smoke():

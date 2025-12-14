@@ -1,12 +1,12 @@
 import numpy as np
 
-from vamos.algorithm.moead import MOEAD
-from vamos.algorithm.smsemoa import SMSEMOA
-from vamos.algorithm.nsga3 import NSGAIII
-from vamos.algorithm.config import MOEADConfig, SMSEMOAConfig, NSGAIIIConfig
-from vamos.kernel.numpy_backend import NumPyKernel
-from vamos.problem.binary import BinaryKnapsackProblem
-from vamos.problem.integer import IntegerResourceAllocationProblem
+from vamos.engine.algorithm.moead import MOEAD
+from vamos.engine.algorithm.smsemoa import SMSEMOA
+from vamos.engine.algorithm.nsga3 import NSGAIII
+from vamos.engine.algorithm.config import MOEADConfig, SMSEMOAConfig, NSGAIIIConfig
+from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.problem.binary import BinaryKnapsackProblem
+from vamos.foundation.problem.integer import IntegerResourceAllocationProblem
 
 
 def _run_moead(problem, cross, mut, pop_size=12, n_eval=60):
