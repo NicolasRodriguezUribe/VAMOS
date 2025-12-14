@@ -19,7 +19,8 @@ readme = "README.md"
 [project.optional-dependencies]
 backends = [
   "numba>=0.57",
-  "moocore>=0.4",
+  # NOTE: moocore>=0.4 does not exist on PyPI; latest releases are 0.1.x.
+  "moocore>=0.1.10,<1.0",
 ]
 benchmarks = [
   "pymoo>=0.6",
