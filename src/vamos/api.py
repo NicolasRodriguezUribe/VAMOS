@@ -1,128 +1,44 @@
 """
-Public-facing API surface for VAMOS.
+User-facing API surface for VAMOS.
 
-This module re-exports stable entrypoints intended for library consumers.
-Internal/experimental modules (runner, CLI helpers, tuning pipelines, etc.)
-should be imported explicitly from their modules instead of via the package root.
+This module exposes the small set of stable entrypoints most users need:
+- Programmatic optimization via `optimize` / `OptimizeConfig`.
+- Experiment configuration via `ExperimentConfig`.
+- Problem selection helpers.
+- Basic diagnostics and objective reduction helpers.
+
+For lower-level control, import from the layered packages:
+`vamos.foundation.*`, `vamos.engine.*`, `vamos.experiment.*`, `vamos.ux.*`.
 """
 from __future__ import annotations
 
-from .core.optimize import OptimizationResult, optimize, OptimizeConfig
-from .algorithm.config import (
-    MOEADConfig,
-    MOEADConfigData,
-    NSGAIIConfig,
-    NSGAIIConfigData,
-    NSGAIIIConfig,
-    NSGAIIIConfigData,
-    SMSEMOAConfig,
-    SMSEMOAConfigData,
-    SPEA2Config,
-    SPEA2ConfigData,
-    IBEAConfig,
-    IBEAConfigData,
-    SMPSOConfig,
-    SMPSOConfigData,
-)
-from .core.experiment_config import ExperimentConfig
-from .problem.registry import (
+from vamos.experiment.diagnostics.self_check import run_self_check
+from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.core.optimize import OptimizeConfig, OptimizationResult, optimize
+from vamos.foundation.problem.registry import (
     ProblemSelection,
     ProblemSpec,
     available_problem_names,
     make_problem_selection,
 )
-from .analysis.core_objective_reduction import ObjectiveReductionConfig, ObjectiveReducer, reduce_objectives
-from .constraints import (
-    ConstraintInfo,
-    ConstraintHandlingStrategy,
-    FeasibilityFirstStrategy,
-    PenaltyCVStrategy,
-    CVAsObjectiveStrategy,
-    EpsilonConstraintStrategy,
-    compute_constraint_info,
-    get_constraint_strategy,
+from vamos.ux.analysis.core_objective_reduction import (
+    ObjectiveReductionConfig,
+    ObjectiveReducer,
+    reduce_objectives,
 )
-from .visualization import (
-    plot_pareto_front_2d,
-    plot_pareto_front_3d,
-    plot_parallel_coordinates,
-    plot_hv_convergence,
-)
-from .analysis.mcdm import (
-    MCDMResult,
-    weighted_sum_scores,
-    tchebycheff_scores,
-    reference_point_scores,
-    knee_point_scores,
-)
-from .analysis.stats import (
-    FriedmanResult,
-    WilcoxonResult,
-    compute_ranks,
-    friedman_test,
-    pairwise_wilcoxon,
-    plot_critical_distance,
-)
-from .diagnostics.self_check import run_self_check
 
 __all__ = [
-    # Optimization facade
     "optimize",
     "OptimizeConfig",
     "OptimizationResult",
-    # Experiment config
     "ExperimentConfig",
-    # Algorithm configs
-    "NSGAIIConfig",
-    "NSGAIIConfigData",
-    "MOEADConfig",
-    "MOEADConfigData",
-    "SMSEMOAConfig",
-    "SMSEMOAConfigData",
-    "NSGAIIIConfig",
-    "NSGAIIIConfigData",
-    "SPEA2Config",
-    "SPEA2ConfigData",
-    "IBEAConfig",
-    "IBEAConfigData",
-    "SMPSOConfig",
-    "SMPSOConfigData",
-    # Problem registry
-    "ProblemSpec",
     "ProblemSelection",
+    "ProblemSpec",
     "available_problem_names",
     "make_problem_selection",
-    # Objective reduction
     "ObjectiveReductionConfig",
     "ObjectiveReducer",
     "reduce_objectives",
-    # Constraints
-    "ConstraintInfo",
-    "ConstraintHandlingStrategy",
-    "FeasibilityFirstStrategy",
-    "PenaltyCVStrategy",
-    "CVAsObjectiveStrategy",
-    "EpsilonConstraintStrategy",
-    "compute_constraint_info",
-    "get_constraint_strategy",
-    # Visualization helpers
-    "plot_pareto_front_2d",
-    "plot_pareto_front_3d",
-    "plot_parallel_coordinates",
-    "plot_hv_convergence",
-    # Self-check
     "run_self_check",
-    # MCDM
-    "MCDMResult",
-    "weighted_sum_scores",
-    "tchebycheff_scores",
-    "reference_point_scores",
-    "knee_point_scores",
-    # Stats
-    "FriedmanResult",
-    "WilcoxonResult",
-    "compute_ranks",
-    "friedman_test",
-    "pairwise_wilcoxon",
-    "plot_critical_distance",
 ]
+

@@ -1,11 +1,11 @@
 import numpy as np
 
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.algorithm.nsgaii import NSGAII
-from vamos.kernel.numpy_backend import NumPyKernel
-from vamos.problem.binary import BinaryKnapsackProblem
-from vamos.problem.integer import IntegerResourceAllocationProblem
-from vamos.problem.mixed import MixedDesignProblem
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.problem.binary import BinaryKnapsackProblem
+from vamos.foundation.problem.integer import IntegerResourceAllocationProblem
+from vamos.foundation.problem.mixed import MixedDesignProblem
 
 
 def _run_nsga2(problem, crossover, mutation, pop_size=10, n_eval=40):

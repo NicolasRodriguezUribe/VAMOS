@@ -8,9 +8,9 @@ Requires the optional ``examples`` extras (scikit-learn, matplotlib).
 
 import numpy as np
 
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.core.optimize import optimize
-from vamos.problem.real_world.feature_selection import FeatureSelectionProblem
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.foundation.core.optimize import optimize
+from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
 
 
 def main():

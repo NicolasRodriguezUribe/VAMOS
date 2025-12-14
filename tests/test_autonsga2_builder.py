@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.algorithm.autonsga2_builder import build_autonsga2
+from vamos.engine.algorithm.autonsga2_builder import build_autonsga2
 
 
 class _DummyProblem:

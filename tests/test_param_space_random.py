@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.tuning.core.param_space import ParamSpace, Real, Int, Categorical, Condition
+from vamos.engine.tuning.core.param_space import ParamSpace, Real, Int, Categorical, Condition
 
 
 def test_param_space_sample_and_validate_with_conditions():

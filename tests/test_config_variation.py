@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vamos.config.variation import (
+from vamos.engine.config.variation import (
     merge_variation_overrides,
     normalize_operator_tuple,
     normalize_variation_config,

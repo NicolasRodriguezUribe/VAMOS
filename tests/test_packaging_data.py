@@ -1,8 +1,8 @@
 from importlib import resources
 
-from vamos.data import reference_front_path, weight_path
-from vamos.core.hv_stop import build_hv_stop_config
-from vamos.core.runner import _default_weight_path
+from vamos.foundation.data import reference_front_path, weight_path
+from vamos.foundation.core.hv_stop import build_hv_stop_config
+from vamos.foundation.core.runner import _default_weight_path
 
 
 def test_reference_front_packaged_and_accessible():
@@ -25,4 +25,4 @@ def test_hv_stop_uses_packaged_reference_front():
     assert cfg is not None
     ref_path = cfg["reference_front_path"]
     assert "ZDT1" in ref_path.upper()
-    assert resources.files("vamos.data.reference_fronts").joinpath("ZDT1.csv").is_file()
+    assert resources.files("vamos.foundation.data.reference_fronts").joinpath("ZDT1.csv").is_file()

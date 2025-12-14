@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.analysis.objective_reduction import reduce_objectives, ObjectiveReducer
+from vamos.ux.analysis.objective_reduction import reduce_objectives, ObjectiveReducer
 
 
 def test_correlation_reduction_removes_duplicates():

@@ -4,7 +4,7 @@ This template shows the minimal pieces required to add a benchmark/problem to VA
 
 ## Steps
 
-1) Implement the problem class under `src/vamos/problem/your_family.py`:
+1) Implement the problem class under `src/vamos/foundation/problem/your_family.py`:
 
 ```python
 from __future__ import annotations
@@ -26,7 +26,7 @@ class MyProblem:
         out["F"] = np.stack([f1, f2], axis=1)
 ```
 
-2) Register it in `src/vamos/problem/registry/specs.py`:
+2) Register it in `src/vamos/foundation/problem/registry/specs.py`:
 
 ```python
 from .specs import ProblemSpec
@@ -48,7 +48,7 @@ PROBLEM_SPECS["my_problem"] = ProblemSpec(
 
 ```python
 def test_my_problem_smoke():
-    from vamos.problem.registry import make_problem_selection
+    from vamos.foundation.problem.registry import make_problem_selection
     selection = make_problem_selection("my_problem", n_var=2)
     problem = selection.instantiate()
     import numpy as np
@@ -58,4 +58,4 @@ def test_my_problem_smoke():
     assert "F" in out and out["F"].shape == (4, problem.n_obj)
 ```
 
-4) If the problem needs reference data (fronts, weight files), add them under `src/vamos/data/` and update packaging rules.
+4) If the problem needs reference data (fronts, weight files), add them under `src/vamos/foundation/data/` and update packaging rules.

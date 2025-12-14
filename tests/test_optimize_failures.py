@@ -1,7 +1,7 @@
 import pytest
 
-from vamos.core.optimize import OptimizeConfig, optimize
-from vamos.problem.zdt1 import ZDT1Problem
+from vamos.foundation.core.optimize import OptimizeConfig, optimize
+from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
 def test_unknown_algorithm_name_errors():

@@ -3,7 +3,7 @@
 Constraint handling strategies
 ------------------------------
 
-Available strategies (see `vamos.constraints`):
+Available strategies (see `vamos.foundation.constraints`):
 - `feasibility_first`: feasible dominates infeasible; aggregates objectives (sum/max/none).
 - `penalty_cv`: adds lambda * constraint violation to aggregated objectives.
 - `cv_as_objective`: ranks by violation with small objective tie-break.
@@ -16,7 +16,7 @@ Build constraints symbolically, then evaluate on populations.
 
 ```python
 import numpy as np
-from vamos.constraints.dsl import constraint_model, build_constraint_evaluator
+from vamos.foundation.constraints.dsl import constraint_model, build_constraint_evaluator
 
 # Example: x0 + x1 <= 1 and x0 >= 0
 with constraint_model(n_vars=2) as cm:
@@ -35,7 +35,7 @@ Autodiff (JAX)
 Install `pip install -e ".[autodiff]"` to enable JAX-backed functions.
 
 ```python
-from vamos.constraints.autodiff import build_jax_constraint_functions
+from vamos.foundation.constraints.autodiff import build_jax_constraint_functions
 
 fun, jac = build_jax_constraint_functions(cm)
 vals = fun(X)        # same shape as G above

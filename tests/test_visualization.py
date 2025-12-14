@@ -3,7 +3,7 @@ import numpy as np
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 
-from vamos.visualization import (
+from vamos.ux.visualization import (
     plot_hv_convergence,
     plot_parallel_coordinates,
     plot_pareto_front_2d,

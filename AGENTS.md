@@ -16,7 +16,7 @@ This file explains how to set up the environment, how the project is structured,
 - Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO with vectorized kernels (NumPy, Numba, MooCore).
 - Encodings: continuous, permutation, binary, integer, mixed; operators are vectorized and workspace-aware.
 - Problems: ZDT, DTLZ, WFG, LZ09, CEC2009 UF/CF (pymoo-backed), TSP/TSPLIB, feature selection/knapsack/QUBO, allocation/job assignment, welded beam, ML/real-data examples.
-- Tooling and orchestration: CLI (`python -m vamos.cli.main`), StudyRunner (problem x algorithm x seed sweeps), config-driven runs (YAML/JSON), diagnostics (`vamos-self-check`), benchmarking (`vamos-benchmark`), Studio (`vamos-studio`) for interactive decision-making, visualization/MCDM/stats utilities, and hypervolume early-stop options.
+- Tooling and orchestration: CLI (`python -m vamos.experiment.cli.main`), StudyRunner (problem x algorithm x seed sweeps), config-driven runs (YAML/JSON), diagnostics (`vamos-self-check`), benchmarking (`vamos-benchmark`), Studio (`vamos-studio`) for interactive decision-making, visualization/MCDM/stats utilities, and hypervolume early-stop options.
 - Output lives under `results/` by default (fronts, metadata).
 
 ---
@@ -39,29 +39,41 @@ This file explains how to set up the environment, how the project is structured,
 - Extras you may need: `backends`, `benchmarks`, `dev`, `notebooks`, `examples`, `docs`, `studio`, `analytics`, `autodiff` (see README for commands such as `pip install -e ".[backends,benchmarks,dev,notebooks]"`).
 
 - Useful commands:
-  - Quick run: `python -m vamos.cli.main --problem zdt1 --max-evaluations 2000`
-  - MooCore backend: `python -m vamos.cli.main --engine moocore --problem zdt1 --max-evaluations 2000`
+  - Quick run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
+  - MooCore backend: `python -m vamos.experiment.cli.main --engine moocore --problem zdt1 --max-evaluations 2000`
   - Benchmark suite: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/`
-  - Diagnostics: `python -m vamos.diagnostics.self_check` or `vamos-self-check`
+  - Diagnostics: `python -m vamos.experiment.diagnostics.self_check` or `vamos-self-check`
   - Tests: `pytest` (full optional stack: `pytest -m "not slow"` after installing the relevant extras)
   - Numba variation toggle: `VAMOS_USE_NUMBA_VARIATION=1`
+  - Library imports: prefer the root facades (`vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`); contributor work can use layered packages directly.
 
 ---
 
-## 3. Repository layout (aligns with README)
+## 3. Architecture & layers
+
+- `foundation`: base abstractions, constraints, eval/metrics, kernels/backends, problem definitions/registries, packaged data, and version helpers.
+- `engine`: evolutionary/search machinery — algorithms, operators, hyperheuristics, tuning pipelines, and algorithm configs.
+- `experiment`: orchestration and entry points — CLI, StudyRunner, benchmark suites, diagnostics, and zoo presets.
+- `ux`: user-facing analysis/visualization (including MCDM/stats) and Studio surfaces.
+- The `vamos` package root re-exports a curated public API (see `vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`); use these for user-facing examples.
+- Standard results layout under `results/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`. All experiment runners (CLI/benchmark/zoo) must write to this schema; UX helpers (`vamos.ux.analysis.results`) read it.
+- Dependency rules:
+  - `ux` may depend on `experiment`, `engine`, `foundation`.
+  - `experiment` may depend on `engine`, `foundation`.
+  - `engine` may depend on `foundation`.
+  - `foundation` should stay free of upward dependencies; keep cross-layer facades minimal and documented.
+- Place new code in the correct layer and keep imports aligned with these directions.
+- Only re-export stable, well-documented constructs from the root package; extension work should live in the layered modules.
+
+---
+
+## 4. Repository layout (aligns with README)
 
 - `src/vamos/`
-  - `algorithm/` - evolutionary cores and config builders (NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, etc.).
-  - `kernel/` - NumPy/Numba/MooCore kernels, hypervolume helpers.
-  - `problem/` - benchmark and real-world problems plus registry.
-  - `operators/` - variation/repair operators by encoding (real, binary, permutation, integer, mixed).
-  - `tuning/` - meta-optimizer (outer NSGA-II), config spaces, pipelines.
-  - `study/` - study definitions and runners (batch problem x algorithm x seed sweeps).
-  - `constraints.py` - feasibility/penalty strategies.
-  - `objective_reduction.py` - correlation/angle/hybrid reducers.
-  - `mcdm.py`, `visualization.py`, `stats.py` - decision-making, plotting, post-hoc stats.
-  - `runner.py`, `cli.py` (or `cli/`) - CLI and study orchestration entry points.
-  - Additional subpackages you may see: `analysis/`, `analytics/`, `diagnostics/`, `hyperheuristics/`, `benchmark/`, `studio/`.
+  - `foundation/` - core orchestration utilities, constraints, eval/metrics, kernel backends, problems/registries, shared data, version helpers.
+  - `engine/` - algorithms, operators, hyperheuristics, tuning stacks, variation/config helpers.
+  - `experiment/` - CLI entrypoints, study runner, benchmark/reporting, diagnostics, zoo presets.
+  - `ux/` - analysis/MCDM/stats helpers, visualization, Studio.
 - `tests/` - pytest suite (operators, algorithms, CLI/study integration, examples/notebooks when enabled).
 - `examples/`, `notebooks/` - runnable examples and exploratory notebooks.
 - Results and reports default to `results/` (fronts, metadata, CSVs).
@@ -70,7 +82,7 @@ Prefer following this structure instead of guessing new locations.
 
 ---
 
-## 4. Coding conventions
+## 5. Coding conventions
 
 - Match existing style per module; add type hints and explicit imports.
 - Keep vectorization and workspace usage; avoid Python loops in hot paths.
@@ -80,7 +92,7 @@ Prefer following this structure instead of guessing new locations.
 
 ---
 
-## 5. Dependency and performance contract
+## 6. Dependency and performance contract
 
 - Do NOT add new heavy dependencies (large ML frameworks, extra plotting stacks, etc.) unless strictly necessary and clearly justified.
 - Prefer existing extras (`backends`, `benchmarks`, `notebooks`, `examples`, `studio`, etc.) instead of inventing new ones.
@@ -92,7 +104,7 @@ Prefer following this structure instead of guessing new locations.
 
 ---
 
-## 6. Style and linting
+## 7. Style and linting
 
 The preferred toolchain is:
 
@@ -114,7 +126,7 @@ Use `pre-commit` hooks if configured in the repo.
 
 ---
 
-## 7. Testing and QA
+## 8. Testing and QA
 
 - Run `pytest` after changes; for broad coverage with extras, use `pytest -m "not slow"` (per README guidance).
 - If you touch core algorithms/operators/kernels, add or update smoke tests (small budgets) and invariant checks.
@@ -122,7 +134,7 @@ Use `pre-commit` hooks if configured in the repo.
 
 ---
 
-## 8. Workflow for AI coding agents
+## 9. Workflow for AI coding agents
 
 1. Load context: read this file, `README.md`, `AGENTS_tasks.md`, and any relevant docs/examples.
 2. Plan minimal, focused changes; avoid wide refactors unless requested.
@@ -132,13 +144,13 @@ Use `pre-commit` hooks if configured in the repo.
 
 ---
 
-## 9. Common tasks
+## 10. Common tasks
 
 - See `AGENTS_tasks.md` for task-specific playbooks (operators, problems, tuning, studies, benchmarking, diagnostics).
 
 ---
 
-## 10. Non-goals and artifacts
+## 11. Non-goals and artifacts
 
 - Do not rewrite the architecture or remove vectorization/workspaces in critical paths.
 - Do not commit large generated artifacts (plots, `.npz`, etc.) under `src/`; keep outputs under `results/`/`report/`/`target/`.

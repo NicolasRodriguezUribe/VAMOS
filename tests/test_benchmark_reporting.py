@@ -4,9 +4,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from vamos.benchmark.suites import get_benchmark_suite, list_benchmark_suites
-from vamos.benchmark.runner import BenchmarkResult
-from vamos.benchmark.report import BenchmarkReport, BenchmarkReportConfig
+from vamos.experiment.benchmark.suites import get_benchmark_suite, list_benchmark_suites
+from vamos.experiment.benchmark.runner import BenchmarkResult
+from vamos.experiment.benchmark.report import BenchmarkReport, BenchmarkReportConfig
 
 
 def test_suite_registry_contains_defaults():

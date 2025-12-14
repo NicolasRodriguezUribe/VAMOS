@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.hyperheuristics.operator_selector import (
+from vamos.engine.hyperheuristics.operator_selector import (
     EpsilonGreedyOperatorSelector,
     UCBOperatorSelector,
     compute_reward,

@@ -4,7 +4,7 @@ import pandas as pd
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 
-from vamos.analysis.tuning_viz import (
+from vamos.ux.analysis.tuning_viz import (
     tuning_result_to_dataframe,
     plot_tuning_scatter,
     plot_objective_tradeoff,

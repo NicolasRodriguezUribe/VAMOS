@@ -3,7 +3,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from vamos.operators.real import (
+from vamos.engine.operators.real import (
     ArithmeticCrossover,
     BLXAlphaCrossover,
     DifferentialCrossover,

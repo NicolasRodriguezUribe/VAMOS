@@ -2,6 +2,13 @@
 
 These notes capture the conventions we rely on when extending VAMOS (Vectorized Architecture for Multiobjective Optimization Studies). Please follow them for any code, notebooks, or documentation that will live in the repository.
 
+## Architecture & layers
+- `foundation`: base abstractions, constraints, eval/metrics utilities, kernel backends, problems/registries, packaged data, and version helpers.
+- `engine`: search machinery — algorithms, operators, hyperheuristics, tuning pipelines, and algorithm configs.
+- `experiment`: orchestration — CLI entrypoints, StudyRunner, benchmark/reporting code, diagnostics, and zoo presets.
+- `ux`: user-facing analysis/analytics, visualization, Studio, and MCDM/stats helpers.
+- Dependency rules: `ux` → `experiment`/`engine`/`foundation`; `experiment` → `engine`/`foundation`; `engine` → `foundation`; keep `foundation` free of upward dependencies and place cross-layer facades intentionally.
+
 ## Development workflow
 - Target Python **3.10+** (match `pyproject.toml`) and keep contributions inside `src/vamos` to preserve the single import root.
 - Use feature branches, keep commits logically scoped, and prefer descriptive commit messages (`algo: clarify NSGA-II init`). Commit titles and descriptions must be written in English and briefly summarize the change so pushes remain self-documenting.
@@ -18,10 +25,14 @@ These notes capture the conventions we rely on when extending VAMOS (Vectorized 
 - When dealing with randomness, use `numpy.random.Generator` instances passed through call stacks (`np.random.default_rng(seed)`) instead of global RNGs.
 - Raise `ValueError`/`TypeError` for invalid configuration instead of silent fallbacks. Validate dictionary-based configs early (e.g., `_prepare_mutation_params`).
 - Prefer vectorized NumPy kernels or dedicated backend hooks over Python loops. If Numba/MooCore features are required, gate them via the backend registry and document any limitations.
-- Keep new public APIs fully typed; prefer Protocols for shared contracts (Problem, KernelBackend, Algorithm). Run `mypy src/vamos/core src/vamos/algorithm src/vamos/kernel` when touching those areas.
+- Keep new public APIs fully typed; prefer Protocols for shared contracts (Problem, KernelBackend, Algorithm). Run `mypy src/vamos/foundation/core src/vamos/engine/algorithm src/vamos/foundation/kernel` when touching those areas.
 
 ## Project structure hints
-- Algorithms live in `src/vamos/algorithm/`; kernels go under `src/vamos/kernel/`; benchmark definitions stay in `src/vamos/problem/`. Keep module-level docstrings describing the problem, algorithm, or kernel.
+- `src/vamos/foundation/` hosts core primitives, constraints, eval/metrics, kernels, problem definitions/registries, packaged data, and version helpers.
+- `src/vamos/engine/` hosts algorithms, operators, hyperheuristics, tuning, and algorithm config utilities.
+- `src/vamos/experiment/` hosts CLI/study runners, benchmark/reporting utilities, diagnostics, and the experiment zoo.
+- `src/vamos/ux/` hosts analysis/MCDM/stats utilities, visualization helpers, and Studio.
+- Keep module-level docstrings describing the problem, algorithm, or kernel where appropriate.
 - Use `docs/` for architecture/design notes, `results/` for generated experiment artefacts, and `tests/` for pytest modules mirroring the `src` layout.
 - For configuration-style modules (e.g., problem registries), expose typed dictionaries or dataclasses so downstream scripts can rely on structured data.
 

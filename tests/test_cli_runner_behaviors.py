@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 
 from vamos import cli
-from vamos.core import runner
-from vamos.problem.tsp import TSPProblem
-from vamos.study.runner import StudyRunner, StudyTask
+from vamos.foundation.core import runner
+from vamos.foundation.problem.tsp import TSPProblem
+from vamos.experiment.study.runner import StudyRunner, StudyTask
 
 
 def test_cli_hv_threshold_requires_reference_for_non_zdt(monkeypatch):
@@ -71,7 +71,7 @@ def test_study_runner_mirrors_outputs(monkeypatch, tmp_path):
             "output_dir": str(out_dir),
         }
 
-    monkeypatch.setattr("vamos.study.runner.run_single", fake_run_single)
+    monkeypatch.setattr("vamos.experiment.study.runner.run_single", fake_run_single)
 
     tasks = [
         StudyTask(

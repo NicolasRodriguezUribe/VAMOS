@@ -3,7 +3,7 @@
 Main runner
 -----------
 
-`python -m vamos.cli.main` (or `vamos`) key flags:
+`python -m vamos.experiment.cli.main` (or `vamos`) key flags:
 
 - `--algorithm`: nsgaii, moead, smsemoa, nsga3, spea2, ibea, smpso, both, or external baselines (pymoo_nsga2, jmetalpy_nsga2, pygmo_nsga2)
 - `--engine`: numpy | numba | moocore
@@ -50,6 +50,6 @@ Other CLIs
 ----------
 
 - Benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/`
-- Tuning/meta-optimization: `python -m vamos.tuning.cli --help`
-- Study runner: `python -m vamos.study.runner --help`
+- Tuning/meta-optimization: `python -m vamos.engine.tuning.cli --help`
+- Study runner: `python -m vamos.experiment.study.runner --help`
 - Studio (interactive, needs `studio` extra): `vamos-studio --study-dir results`

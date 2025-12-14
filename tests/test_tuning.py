@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.tuning.evolver import MetaOptimizationProblem, MetaNSGAII
-from vamos.tuning.core.parameter_space import (
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.tuning.evolver import MetaOptimizationProblem, MetaNSGAII
+from vamos.engine.tuning.core.parameter_space import (
     AlgorithmConfigSpace,
     Boolean,
     Categorical,

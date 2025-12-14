@@ -13,7 +13,7 @@ Quick start:
 python -m venv .venv
 source .venv/bin/activate  # or .\.venv\Scripts\Activate.ps1 on Windows
 pip install -e ".[backends,benchmarks,dev]"
-python -m vamos.cli.main --problem zdt1 --max-evaluations 2000
+python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000
 ```
 
 Docs roadmap:

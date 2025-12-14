@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.eval.backends import SerialEvalBackend, MultiprocessingEvalBackend
+from vamos.foundation.eval.backends import SerialEvalBackend, MultiprocessingEvalBackend
 
 
 class DummyProblem:

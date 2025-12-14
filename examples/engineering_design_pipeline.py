@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.core.optimize import optimize
-from vamos.problem.real_world.engineering import WeldedBeamDesignProblem
-from vamos.visualization import plot_pareto_front_2d
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.foundation.core.optimize import optimize
+from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
+from vamos.ux.visualization import plot_pareto_front_2d
 
 
 def build_config(pop_size: int = 30) -> dict:

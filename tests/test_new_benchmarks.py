@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from vamos.problem.lz import LZ09F1Problem, LZ09F6Problem
-from vamos.problem.cec import CEC2009UF1Problem, CEC2009CF1Problem
-from vamos.problem.real_world.engineering import WeldedBeamDesignProblem
+from vamos.foundation.problem.lz import LZ09F1Problem, LZ09F6Problem
+from vamos.foundation.problem.cec import CEC2009UF1Problem, CEC2009CF1Problem
+from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
 
 
 def _sample(problem, n: int = 4) -> np.ndarray:

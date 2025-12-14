@@ -4,19 +4,21 @@ Task playbook for AI coding agents working on **VAMOS**
 
 This document complements `AGENTS.md`. It defines concrete, common tasks and what an AI agent should do (and avoid) for each one. This playbook assumes you have already read `README.md` and `AGENTS.md`. It focuses on concrete, well-scoped tasks that can be safely delegated to humans or AI coding agents.
 
+User-facing imports should go through the root facades (`vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`). Contributor work can target the layered packages (`foundation`, `engine`, `experiment`, `ux`) directly. All experiment outputs should follow the standard layout: `<output_root>/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`.
+
 ### Task index
 
 | Task ID | What it does                                 | Useful commands / entry points                      |
 |--------:|---------------------------------------------|-----------------------------------------------------|
-| T1      | Baseline run on ZDT1                        | `python -m vamos.cli.main --problem zdt1 ...`       |
-| T2      | Add/modify external archive                 | `python -m vamos.cli.main --hv-threshold ...`       |
-| T3      | Extend AutoNSGA-II / config space           | `python -m vamos.cli.main --config path.yaml`       |
-| T4      | New real-coded operator                     | `python -m vamos.cli.main` on continuous problems   |
-| T5      | New benchmark problem                       | `python -m vamos.cli.main --problem <id> ...`       |
-| T6      | Create study / experiment pipeline          | StudyRunner / `python -m vamos.cli.main --config`   |
-| T7      | Improve logging/metadata + analysis helpers | Outputs under `results/`; analysis/visualization    |
+| T1      | Baseline run on ZDT1                        | `python -m vamos.experiment.cli.main --problem zdt1 ...`       |
+| T2      | Add/modify external archive                 | `python -m vamos.experiment.cli.main --hv-threshold ...`       |
+| T3      | Extend AutoNSGA-II / config space           | `python -m vamos.experiment.cli.main --config path.yaml`       |
+| T4      | New real-coded operator                     | `python -m vamos.experiment.cli.main` on continuous problems   |
+| T5      | New benchmark problem                       | `python -m vamos.experiment.cli.main --problem <id> ...`       |
+| T6      | Create study / experiment pipeline          | StudyRunner/central runner / `python -m vamos.experiment.cli.main --config`   |
+| T7      | Improve logging/metadata + analysis helpers | Outputs under standard results layout; UX loaders    |
 | T8      | Add to benchmarking CLI                     | `vamos-benchmark --suite ... --output ...`          |
-| T9      | Extend diagnostics / self-check             | `python -m vamos.diagnostics.self_check`            |
+| T9      | Extend diagnostics / self-check             | `python -m vamos.experiment.diagnostics.self_check`            |
 
 ---
 
@@ -24,10 +26,10 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 **Goal**: Verify installation and core algorithms end-to-end using a tiny NSGA-II run on ZDT1.
 
-**Context**: `README.md` quickstart; `src/vamos/problem/` for ZDT problems; `src/vamos/algorithm/` for NSGA-II; CLI under `vamos.cli.main`.
+**Context**: `README.md` quickstart; `src/vamos/foundation/problem/` for ZDT problems; `src/vamos/engine/algorithm/` for NSGA-II; CLI under `vamos.experiment.cli.main`.
 
 **Steps**
-- Use the CLI: `python -m vamos.cli.main --problem zdt1 --max-evaluations 2000` (or lower for CI).
+- Use the CLI: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000` (or lower for CI).
 - Optionally switch engine/backends: `--engine moocore` after installing `[backends]`.
 - If adding a smoke test, keep budgets tiny (few generations/population) and assert non-empty finite fronts.
 
@@ -39,7 +41,7 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 **Goal**: Implement or adjust an external archive (crowding/hypervolume) and integrate it without breaking defaults.
 
-**Context**: Archive utilities in `src/vamos` (e.g., `eval/`, `metrics/`, or `algorithm/` hooks); hypervolume helpers in kernels/backends; algorithm configs that accept archive choices.
+**Context**: Archive utilities in `src/vamos/foundation/eval/`, `src/vamos/foundation/metrics/`, or `src/vamos/engine/algorithm/` hooks; hypervolume helpers in kernels/backends; algorithm configs that accept archive choices.
 
 **Steps**
 - Locate archive abstraction and existing implementations (capacity, `add`/`extend` behaviour).
@@ -55,7 +57,7 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 **Goal**: Add new tunable parameters (e.g., mutation rate, archive type) to AutoNSGA-II or tuning spaces.
 
-**Context**: `src/vamos/tuning/core/` and `tuning/racing/` for search spaces; `src/vamos/algorithm/` config bindings; examples/notebooks under `examples/` or `notebooks/`.
+**Context**: `src/vamos/engine/tuning/core/` and `tuning/racing/` for search spaces; `src/vamos/engine/algorithm/` config bindings; examples/notebooks under `examples/` or `notebooks/`.
 
 **Steps**
 - Extend the configuration space with ranges/types (continuous/categorical) and sensible defaults.
@@ -71,7 +73,7 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 **Goal**: Introduce a new crossover/mutation operator for continuous variables.
 
-**Context**: `src/vamos/operators/real/`; operator registries/factories used by algorithms and tuning; tests under `tests/operators/real/`.
+**Context**: `src/vamos/engine/operators/real/`; operator registries/factories used by algorithms and tuning; tests under `tests/operators/real/`.
 
 **Steps**
 - Use an existing operator (e.g., SBX, BLX-alpha, polynomial mutation) as a template.
@@ -87,13 +89,13 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 **Goal**: Implement and register a new optimization problem compatible with existing algorithms.
 
-**Context**: `src/vamos/problem/` (benchmark and real_world subpackages and registry); CLI expects registered names.
+**Context**: `src/vamos/foundation/problem/` (benchmark and real_world subpackages and registry); CLI expects registered names.
 
 **Steps**
 - Define dimension, bounds, objectives, constraints; implement `evaluate` / `evaluate_population`.
-- Register the problem with a canonical ID so `python -m vamos.cli.main --problem <id>` works.
+- Register the problem with a canonical ID so `python -m vamos.experiment.cli.main --problem <id>` works.
 - Add tests for shapes/finite outputs and any reference points.
-- Add a small example snippet or script showing NSGA-II on the new problem with a tiny budget.
+- Add a small example snippet or script showing NSGA-II on the new problem with a tiny budget (user-facing imports via `vamos.problems` / `vamos.algorithms` / `vamos.api`).
 
 **Avoid**: Long-running evaluations without documenting the cost.
 
@@ -103,12 +105,12 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 **Goal**: Define a reproducible study (problem x algorithm x seeds) wired to the CLI/study runner.
 
-**Context**: `src/vamos/study/`, `src/vamos/core/runner.py`, `src/vamos/cli/`; config-driven runs via `--config path.yaml`.
+**Context**: `src/vamos/experiment/study/`, central orchestration in `src/vamos/experiment/runner.py`, and CLI under `src/vamos/experiment/cli/`; config-driven runs via `--config path.yaml`.
 
 **Steps**
 - Define study configuration (problems, algorithms, budgets, seeds, output directory).
-- Loop over seeds/problems/algorithms using the existing runner/optimize APIs; write outputs under `results/` or `target/`.
-- Expose a CLI flag/subcommand (e.g., via `vamos.cli.main`) to launch the study.
+- Loop over seeds/problems/algorithms using the central runner/study runner; write outputs under the standard layout in `results/` (or configured output_root).
+- Expose a CLI flag/subcommand (e.g., via `vamos.experiment.cli.main`) to launch the study.
 - Add a small smoke test that checks outputs (front files/metadata) are created.
 
 **Avoid**: Hardcoded absolute paths or embedding heavy analytics in the core loop.
@@ -119,11 +121,12 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 **Goal**: Enhance metadata/results handling and add helpers without breaking consumers.
 
-**Context**: `src/vamos/core/metadata/`, `src/vamos/core/io/`, analysis/visualization helpers under `analysis/` or `analytics/`.
+**Context**: `src/vamos/foundation/core/metadata/`, `src/vamos/foundation/core/io/`, user-facing helpers under `src/vamos/ux/analysis/`, `src/vamos/ux/analytics/`, or `src/vamos/ux/visualization/`.
 
 **Steps**
 - Add additive metadata fields (e.g., backend, git commit if available) with safe defaults.
-- Provide loaders/aggregators (DataFrame if pandas already present via extras).
+- Keep writing to the standard layout (`<output_root>/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/`).
+- Provide loaders/aggregators (DataFrame if pandas already present via extras) that read this schema (see `vamos.ux.analysis.results`).
 - Update tests to cover new metadata fields and helper functions.
 
 **Avoid**: Schema-breaking changes or large binary blobs in metadata.
@@ -134,7 +137,7 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 **Goal**: Extend benchmark suites or algorithms used by `vamos-benchmark`.
 
-**Context**: Benchmark definitions under `src/vamos/benchmark/` (suites, reference fronts, reporting); CLI entry `vamos-benchmark`.
+**Context**: Benchmark definitions under `src/vamos/experiment/benchmark/` (suites, reference fronts, reporting); CLI entry `vamos-benchmark`.
 
 **Steps**
 - Locate suite definitions (e.g., `ZDT_small`); add new problems/algorithms with sensible budgets.
@@ -148,9 +151,9 @@ This document complements `AGENTS.md`. It defines concrete, common tasks and wha
 
 ## 9. Extend diagnostics / self-check tooling
 
-**Goal**: Improve `vamos-self-check` / `vamos.diagnostics.self_check` to validate installs and basic runs.
+**Goal**: Improve `vamos-self-check` / `vamos.experiment.diagnostics.self_check` to validate installs and basic runs.
 
-**Context**: `src/vamos/diagnostics/` (or similar module); CLI entry `vamos-self-check`.
+**Context**: `src/vamos/experiment/diagnostics/` (or similar module); CLI entry `vamos-self-check`.
 
 **Steps**
 - Identify existing checks (deps, minimal algorithm runs).
