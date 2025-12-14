@@ -1,10 +1,13 @@
 from pathlib import Path
 
+import pytest
+
 from vamos.experiment.runner import run_experiment
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.ux.analysis.results import aggregate_results, discover_runs, load_run_data
 
 
+@pytest.mark.smoke
 def test_discover_and_load_results(tmp_path):
     cfg = ExperimentConfig(output_root=str(tmp_path), population_size=6, max_evaluations=20, seed=2)
     run_experiment(
@@ -28,4 +31,3 @@ def test_discover_and_load_results(tmp_path):
         assert any(rec.get("algorithm") == "nsgaii" for rec in agg)
     else:
         assert "algorithm" in agg.columns
-

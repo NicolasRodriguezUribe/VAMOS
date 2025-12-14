@@ -4,6 +4,8 @@ from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.core.runner import run_single
 
+pytestmark = pytest.mark.backends
+
 
 @pytest.mark.numba
 def test_numba_backend_smoke(monkeypatch):

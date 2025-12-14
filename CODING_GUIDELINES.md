@@ -55,6 +55,12 @@ These notes capture the conventions we rely on when extending VAMOS (Vectorized 
 - For stochastic algorithms, add property-based or statistical checks (distribution shape, constraint violations) rather than brittle exact matches.
 - Reproduce any new benchmark/regression input data via scripts stored under `data/` or `notebooks/`. If results are stored in `results/`, ensure metadata describes the configuration so runs are comparable.
 
+### Test layout and markers
+- Tests mirror the layered architecture: `tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, with `tests/integration` for cross-layer coverage.
+- Markers: `smoke` (fast, critical), `slow` (long runs), `backends` (optional backends like numba/moocore), `notebooks` (notebook-dependent), `examples` (example scripts), `cli`, `numba`, `moocore`, `studio`, `autodiff`.
+- Quick check: `pytest -m "smoke"`; full: `pytest` or targeted markers as needed.
+- Place new tests in the appropriate layer and tag backend- or notebook-dependent cases to keep default runs fast.
+
 ## Tooling checklist (pre-PR)
 1. `pip install -e .[dev]`
 2. `ruff check src tests`
