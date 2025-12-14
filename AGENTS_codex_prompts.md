@@ -170,7 +170,21 @@ Assumptions:
 
 ---
 
-## 11. QA/self-review prompt
+## 11. Align tests and markers
+
+**Prompt 11 - Add/adjust tests with markers**
+
+> You are in the VAMOS repo. Follow the rules.  
+> Goal: add or adjust tests while keeping the layered layout and markers consistent.  
+> Tasks:  
+> - Place new tests under the appropriate layer folder (`tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, or `tests/integration`).  
+> - Apply markers: `smoke` for fast critical checks, `slow` for heavy runs, `backends` (or `numba`/`moocore`) for optional backends, `notebooks`/`examples` when relevant.  
+> - Update `pyproject.toml` markers if new ones are introduced and mention any CI invocation changes (e.g., `pytest -m "smoke"`).  
+> - Provide diffs and commands for running the relevant subsets.  
+
+---
+
+## 12. QA/self-review prompt
 
 > You have just modified several files in the VAMOS repository.
 >

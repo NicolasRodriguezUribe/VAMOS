@@ -3,6 +3,8 @@ import pytest
 
 from vamos.foundation.metrics import moocore_indicators as mi
 
+pytestmark = pytest.mark.backends
+
 
 @pytest.mark.skipif(not mi.has_moocore(), reason="MooCore not installed")
 def test_hv_wrapper_matches_moocore():

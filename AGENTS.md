@@ -65,6 +65,11 @@ This file explains how to set up the environment, how the project is structured,
 - Place new code in the correct layer and keep imports aligned with these directions.
 - Only re-export stable, well-documented constructs from the root package; extension work should live in the layered modules.
 
+### Tests and markers
+- Tests are organized by layer: `tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, with `tests/integration` for cross-layer scenarios.
+- Markers: `smoke` (fast critical), `slow` (long), `backends` (optional backends), `notebooks`, `examples`, plus `cli`/`numba`/`moocore`/`studio`/`autodiff` where applicable.
+- Default quick run: `pytest -m "smoke"`. Tag backend/notebook-heavy tests appropriately to keep smoke runs fast.
+
 ---
 
 ## 4. Repository layout (aligns with README)

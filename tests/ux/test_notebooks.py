@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.notebooks
+
 
 def _iter_notebooks():
     nb_dir = Path("notebooks")
