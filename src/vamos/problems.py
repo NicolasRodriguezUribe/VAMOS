@@ -22,20 +22,39 @@ from vamos.foundation.problem.zdt3 import ZDT3Problem as ZDT3
 from vamos.foundation.problem.zdt4 import ZDT4Problem as ZDT4
 from vamos.foundation.problem.zdt6 import ZDT6Problem as ZDT6
 
+# Real-world / application problems
+from vamos.foundation.problem.real_world.feature_selection import (
+    FeatureSelectionProblem,
+)
+from vamos.foundation.problem.real_world.hyperparam import (
+    HyperparameterTuningProblem,
+)
+from vamos.foundation.problem.real_world.engineering import (
+    WeldedBeamDesignProblem,
+)
+
 # Convenience alias for users expecting a simple accessor name.
 get_problem_names = available_problem_names
 
 __all__ = [
+    # ZDT family
     "ZDT1",
     "ZDT2",
     "ZDT3",
     "ZDT4",
     "ZDT6",
+    # DTLZ family
     "DTLZ1",
     "DTLZ2",
     "DTLZ3",
     "DTLZ4",
+    # WFG family
     "WFG1",
+    # Real-world problems
+    "FeatureSelectionProblem",
+    "HyperparameterTuningProblem",
+    "WeldedBeamDesignProblem",
+    # Registry helpers
     "ProblemSpec",
     "ProblemSelection",
     "available_problem_names",

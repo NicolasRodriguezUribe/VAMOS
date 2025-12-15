@@ -1,16 +1,19 @@
-from __future__ import annotations
-
 """
 Mixed-encoding welded beam design example.
 
 Demonstrates constraints and mixed decision variables.
+
+Usage:
+    python examples/engineering_design.py
+
+Requirements:
+    pip install -e ".[examples]"  # matplotlib (optional)
 """
+from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import OptimizeConfig, optimize
-from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
+from vamos import NSGAIIConfig, OptimizeConfig, WeldedBeamDesignProblem, optimize
 
 
 def main():

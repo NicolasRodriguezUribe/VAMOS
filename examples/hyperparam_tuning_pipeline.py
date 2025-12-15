@@ -1,17 +1,23 @@
 """
 End-to-end example: multi-objective hyperparameter tuning on a real dataset.
 
-Requirements: install with `pip install -e ".[examples]"` to pull scikit-learn/matplotlib.
-"""
+Usage:
+    python examples/hyperparam_tuning_pipeline.py
 
+Requirements:
+    pip install -e ".[examples]"  # scikit-learn, matplotlib
+"""
 from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import OptimizeConfig, optimize
-from vamos.foundation.problem.real_world.hyperparam import HyperparameterTuningProblem
-from vamos.ux.visualization import plot_pareto_front_2d
+from vamos import (
+    HyperparameterTuningProblem,
+    NSGAIIConfig,
+    OptimizeConfig,
+    optimize,
+    plot_pareto_front_2d,
+)
 
 
 def build_config(pop_size: int = 24) -> dict:
@@ -33,8 +39,8 @@ def build_config(pop_size: int = 24) -> dict:
 def main(seed: int = 17) -> None:
     try:
         problem = HyperparameterTuningProblem(dataset="breast_cancer")
-    except ImportError as exc:  # pragma: no cover - run-time guard when sklearn is missing
-        print("Install extras with `pip install -e \".[examples]\"` to run this example.")
+    except ImportError as exc:  # pragma: no cover
+        print('Install extras: pip install -e ".[examples]"')
         print(exc)
         return
 

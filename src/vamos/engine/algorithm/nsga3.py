@@ -1,32 +1,74 @@
+"""NSGA-III: Non-dominated Sorting Genetic Algorithm III.
+
+This module implements NSGA-III, designed for many-objective optimization
+(problems with 3+ objectives). It uses reference points to maintain diversity
+across the Pareto front and employs a niching mechanism for survival selection.
+
+Key Features:
+    - Reference-point based diversity preservation
+    - Das-Dennis simplex-lattice reference point generation
+    - Support for continuous, binary, and integer encodings
+    - Scalable to many-objective problems (>3 objectives)
+    - Ask/tell interface for flexible execution
+    - HV-based early termination
+    - Live visualization callbacks
+    - External archive support
+
+References:
+    K. Deb and H. Jain, "An Evolutionary Many-Objective Optimization Algorithm
+    Using Reference-Point-Based Nondominated Sorting Approach, Part I: Solving
+    Problems With Box Constraints," IEEE Trans. Evolutionary Computation,
+    vol. 18, no. 4, 2014.
+
+Example:
+    >>> from vamos import optimize, NSGA3Config, DTLZ1
+    >>> result = optimize(
+    ...     problem=DTLZ1(n_var=7, n_obj=3),
+    ...     algorithm="nsga3",
+    ...     algorithm_config=NSGA3Config().pop_size(92).fixed(),
+    ...     termination=("n_eval", 20000),
+    ... )
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 
+from vamos.engine.algorithm.components.base import (
+    get_eval_backend,
+    get_live_viz,
+    parse_termination,
+    resolve_archive_size,
+    setup_archive,
+    setup_hv_tracker,
+)
+from vamos.engine.algorithm.components.utils import resolve_bounds_array, resolve_prob_expression
+from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
+from vamos.engine.algorithm.nsga3_state import NSGA3State, build_nsga3_result
 from vamos.engine.operators.binary import (
-    random_binary_population,
+    bit_flip_mutation,
     one_point_crossover,
+    random_binary_population,
     two_point_crossover,
     uniform_crossover,
-    bit_flip_mutation,
 )
 from vamos.engine.operators.integer import (
-    random_integer_population,
-    uniform_integer_crossover,
     arithmetic_integer_crossover,
-    random_reset_mutation,
     creep_mutation,
+    random_integer_population,
+    random_reset_mutation,
+    uniform_integer_crossover,
 )
-from vamos.engine.operators.real import SBXCrossover, PolynomialMutation, VariationWorkspace
+from vamos.engine.operators.real import PolynomialMutation, SBXCrossover, VariationWorkspace
+from vamos.foundation.constraints.utils import compute_violation, is_feasible
 
-from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
-
-
-def _resolve_prob_expression(value, n_var: int, default: float) -> float:
-    if value is None:
-        return default
-    if isinstance(value, str) and value.endswith("/n"):
-        numerator = value[:-2]
-        num = float(numerator) if numerator else 1.0
-        return min(1.0, max(num, 0.0) / n_var)
-    return float(value)
+if TYPE_CHECKING:
+    from vamos.foundation.eval.backends import EvaluationBackend
+    from vamos.foundation.kernel.backend import KernelBackend
+    from vamos.foundation.problem.types import ProblemProtocol
+    from vamos.ux.visualization.live_viz import LiveVisualization
 
 
 _BINARY_CROSSOVER = {
@@ -57,99 +99,174 @@ _INT_MUTATION = {
 
 
 class NSGAIII:
-    """
-    Simplified NSGA-III implementation that reuses the existing vectorized kernels
-    for variation while performing NSGA-III niching during survival. Supports
-    binary/integer encodings with dedicated operators.
+    """Non-dominated Sorting Genetic Algorithm III for many-objective optimization.
+
+    NSGA-III uses reference points for diversity maintenance, making it suitable
+    for problems with 3 or more objectives where crowding distance is less effective.
+    Reference points guide the search toward a well-distributed Pareto front.
+
+    Parameters
+    ----------
+    config : dict
+        Algorithm configuration with keys:
+        - pop_size (int): Population size (should align with reference points)
+        - crossover (tuple): Crossover operator config
+        - mutation (tuple): Mutation operator config
+        - reference_directions (dict, optional): Reference point configuration
+        - selection (tuple, optional): Parent selection config
+        - external_archive_size (int, optional): Size of external archive
+        - archive_type (str, optional): Archive type ("hypervolume" or "crowding")
+        - hv_threshold (float, optional): HV threshold for early termination
+    kernel : KernelBackend
+        Backend for vectorized operations.
+
+    Examples
+    --------
+    Basic usage:
+
+    >>> from vamos import NSGA3Config
+    >>> config = NSGA3Config().pop_size(92).divisions(12).fixed()
+    >>> nsga3 = NSGAIII(config, kernel)
+    >>> result = nsga3.run(problem, ("n_eval", 20000), seed=42)
+
+    Ask/tell interface:
+
+    >>> nsga3 = NSGAIII(config, kernel)
+    >>> nsga3.initialize(problem, ("n_eval", 20000), seed=42)
+    >>> while not nsga3.should_terminate():
+    ...     X = nsga3.ask()
+    ...     F = evaluate(X)
+    ...     nsga3.tell(X, F)
+    >>> result = nsga3.result()
     """
 
-    def __init__(self, config: dict, kernel):
+    def __init__(self, config: dict, kernel: "KernelBackend"):
         self.cfg = config
         self.kernel = kernel
+        self._st: NSGA3State | None = None
+        self._live_cb: "LiveVisualization | None" = None
+        self._eval_backend: "EvaluationBackend | None" = None
+        self._max_eval: int = 0
+        self._hv_tracker: Any = None
+        self._problem: "ProblemProtocol | None" = None
 
-    def run(self, problem, termination, seed: int):
-        term_type, term_val = termination
-        assert term_type == "n_eval", "Only termination=('n_eval', N) is supported."
-        max_eval = term_val
+    # -------------------------------------------------------------------------
+    # Main run method (batch mode)
+    # -------------------------------------------------------------------------
+
+    def run(
+        self,
+        problem: "ProblemProtocol",
+        termination: tuple[str, Any],
+        seed: int,
+        eval_backend: "EvaluationBackend | None" = None,
+        live_viz: "LiveVisualization | None" = None,
+    ) -> dict[str, Any]:
+        """Run NSGA-III optimization loop.
+
+        Parameters
+        ----------
+        problem : ProblemProtocol
+            Problem to optimize.
+        termination : tuple
+            Termination criterion, e.g., ("n_eval", 10000).
+        seed : int
+            Random seed for reproducibility.
+        eval_backend : EvaluationBackend, optional
+            Evaluation backend for parallel evaluation.
+        live_viz : LiveVisualization, optional
+            Live visualization callback.
+
+        Returns
+        -------
+        dict
+            Result dictionary with X, F, G, reference_directions, archive data.
+        """
+        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(
+            problem, termination, seed, eval_backend, live_viz
+        )
+        self._problem = problem
+
+        st = self._st
+        if st is None:
+            raise RuntimeError("State not initialized")
+
+        hv_reached = False
+        while st.n_eval < max_eval:
+            # Generate and evaluate offspring
+            X_off = self._generate_offspring(st)
+
+            # Evaluate using backend or directly
+            F_off, G_off = self._evaluate_offspring(
+                problem, X_off, eval_backend, st.constraint_mode
+            )
+            st.n_eval += X_off.shape[0]
+
+            # NSGA-III survival selection
+            st.X, st.F, st.G = self._nsga3_survival(
+                st.X, st.F, st.G, X_off, F_off, G_off,
+                st.pop_size, st.ref_dirs_norm, st.rng
+            )
+
+            st.generation += 1
+
+            # Update archive
+            if st.archive_manager is not None:
+                st.archive_manager.update(st.X, st.F)
+                st.archive_X, st.archive_F = st.archive_manager.get_archive()
+
+            # Live callback
+            live_cb.on_generation(st.generation, F=st.F)
+
+            # Check HV threshold
+            if hv_tracker is not None:
+                hv_tracker.update(st.F)
+                if hv_tracker.reached_threshold():
+                    hv_reached = True
+                    break
+
+        live_cb.on_end(final_F=st.F)
+        return build_nsga3_result(st, hv_reached)
+
+    # -------------------------------------------------------------------------
+    # Initialization helpers
+    # -------------------------------------------------------------------------
+
+    def _initialize_run(
+        self,
+        problem: "ProblemProtocol",
+        termination: tuple[str, Any],
+        seed: int,
+        eval_backend: "EvaluationBackend | None" = None,
+        live_viz: "LiveVisualization | None" = None,
+    ) -> tuple[Any, Any, int, Any]:
+        """Initialize the algorithm run."""
+        max_eval, hv_config = parse_termination(termination, self.cfg)
+
+        live_cb = get_live_viz(live_viz)
+        eval_backend = get_eval_backend(eval_backend)
+
+        # Setup HV tracker if configured
+        hv_tracker = None
+        if hv_config is not None:
+            hv_tracker = setup_hv_tracker(hv_config, problem.n_obj)
 
         rng = np.random.default_rng(seed)
         pop_size = self.cfg["pop_size"]
         encoding = getattr(problem, "encoding", "continuous")
-        bounds_dtype = int if encoding == "integer" else float
-        xl = np.asarray(problem.xl, dtype=bounds_dtype)
-        xu = np.asarray(problem.xu, dtype=bounds_dtype)
+        xl, xu = resolve_bounds_array(problem, encoding)
         n_var = problem.n_var
         n_obj = problem.n_obj
-        if xl.ndim == 0:
-            xl = np.full(n_var, xl, dtype=bounds_dtype)
-        if xu.ndim == 0:
-            xu = np.full(n_var, xu, dtype=bounds_dtype)
+        constraint_mode = self.cfg.get("constraint_mode", "penalty")
 
-        cross_method, cross_params = self.cfg["crossover"]
-        cross_params = dict(cross_params)
+        # Build variation operators
+        crossover_fn, mutation_fn = self._build_variation(encoding, n_var, xl, xu, rng)
 
-        mut_method, mut_params = self.cfg["mutation"]
-        mut_params = dict(mut_params)
-        if mut_params.get("prob") == "1/n":
-            mut_params["prob"] = 1.0 / n_var
-
-        if encoding == "binary":
-            if cross_method not in _BINARY_CROSSOVER:
-                raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for binary encoding.")
-            if mut_method not in _BINARY_MUTATION:
-                raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for binary encoding.")
-            cross_fn = _BINARY_CROSSOVER[cross_method]
-            cross_prob = float(cross_params.get("prob", 0.9))
-            mut_fn = _BINARY_MUTATION[mut_method]
-            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
-            crossover = lambda parents: cross_fn(parents, cross_prob, rng)
-            mutation = lambda X_child: (mut_fn(X_child, mut_prob, rng) or X_child)
-        elif encoding == "integer":
-            if cross_method not in _INT_CROSSOVER:
-                raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for integer encoding.")
-            if mut_method not in _INT_MUTATION:
-                raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for integer encoding.")
-            cross_fn = _INT_CROSSOVER[cross_method]
-            cross_prob = float(cross_params.get("prob", 0.9))
-            mut_fn = _INT_MUTATION[mut_method]
-            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
-            step = int(mut_params.get("step", 1))
-            crossover = lambda parents: cross_fn(parents, cross_prob, rng)
-            mutation = (
-                (lambda X_child: (mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child))
-                if mut_fn is creep_mutation
-                else (lambda X_child: (mut_fn(X_child, mut_prob, xl, xu, rng) or X_child))
-            )
-        elif encoding in {"continuous", "real"}:
-            cross_prob = float(cross_params.get("prob", 0.9))
-            cross_eta = float(cross_params.get("eta", 20.0))
-            workspace = VariationWorkspace()
-            sbx = SBXCrossover(
-                prob_crossover=cross_prob,
-                eta=cross_eta,
-                lower=xl,
-                upper=xu,
-                workspace=workspace,
-                allow_inplace=True,
-            )
-            mut_prob = _resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
-            mut_eta = float(mut_params.get("eta", 20.0))
-            pm = PolynomialMutation(
-                prob_mutation=mut_prob,
-                eta=mut_eta,
-                lower=xl,
-                upper=xu,
-                workspace=workspace,
-            )
-            crossover = lambda parents: sbx(parents, rng)
-            mutation = lambda X_child: pm(X_child, rng)
-        else:
-            raise ValueError(f"NSGA-III does not support encoding '{encoding}'.")
-
+        # Selection pressure
         sel_method, sel_params = self.cfg["selection"]
-        assert sel_method == "tournament"
-        pressure = sel_params.get("pressure", 2)
+        pressure = sel_params.get("pressure", 2) if sel_method == "tournament" else 2
 
+        # Load reference directions
         dir_cfg = self.cfg.get("reference_directions", {}) or {}
         ref_dirs = load_or_generate_weight_vectors(
             pop_size, n_obj, path=dir_cfg.get("path"), divisions=dir_cfg.get("divisions")
@@ -161,43 +278,268 @@ class NSGAIII:
         ref_dirs_norm = ref_dirs / np.linalg.norm(ref_dirs, axis=1, keepdims=True)
         ref_dirs_norm[np.isnan(ref_dirs_norm)] = 0.0
 
+        # Initialize population
+        X, F, G = self._initialize_population(
+            encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode
+        )
+        n_eval = pop_size
+
+        # Setup external archive
+        archive_size = resolve_archive_size(self.cfg) or 0
+        archive_manager = None
+        archive_X: np.ndarray | None = None
+        archive_F: np.ndarray | None = None
+
+        if archive_size > 0:
+            archive_type = self.cfg.get("archive_type", "hypervolume")
+            archive_manager, archive_X, archive_F = setup_archive(
+                kernel=self.kernel,
+                X=X,
+                F=F,
+                n_var=n_var,
+                n_obj=n_obj,
+                dtype=X.dtype,
+                archive_size=archive_size,
+                archive_type=archive_type,
+            )
+
+        live_cb.on_start(problem=problem, algorithm=self, config=self.cfg)
+
+        # Create state
+        self._st = NSGA3State(
+            X=X,
+            F=F,
+            G=G,
+            rng=rng,
+            pop_size=pop_size,
+            offspring_size=pop_size,
+            constraint_mode=constraint_mode,
+            n_eval=n_eval,
+            # NSGA-III specific
+            ref_dirs=ref_dirs,
+            ref_dirs_norm=ref_dirs_norm,
+            pressure=pressure,
+            crossover_fn=crossover_fn,
+            mutation_fn=mutation_fn,
+            # Archive
+            archive_size=archive_size,
+            archive_X=archive_X,
+            archive_F=archive_F,
+            archive_manager=archive_manager,
+            # Termination
+            hv_tracker=hv_tracker,
+        )
+
+        return live_cb, eval_backend, max_eval, hv_tracker
+
+    def _initialize_population(
+        self,
+        encoding: str,
+        pop_size: int,
+        n_var: int,
+        xl: np.ndarray,
+        xu: np.ndarray,
+        rng: np.random.Generator,
+        problem: "ProblemProtocol",
+        constraint_mode: str,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        """Initialize population based on encoding."""
         if encoding == "binary":
             X = random_binary_population(pop_size, n_var, rng)
         elif encoding == "integer":
             X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
         else:
             X = rng.uniform(xl, xu, size=(pop_size, n_var))
-        F = np.empty((pop_size, n_obj))
-        problem.evaluate(X, {"F": F})
-        n_eval = pop_size
 
-        while n_eval < max_eval:
-            ranks, crowd = self.kernel.nsga2_ranking(F)
-            parents_idx = self.kernel.tournament_selection(
-                ranks, crowd, pressure, rng, n_parents=2 * (pop_size // 2)
+        F, G = self._evaluate_population_with_constraints(problem, X)
+        if constraint_mode == "none":
+            G = None
+        return X, F, G
+
+    def _evaluate_population_with_constraints(
+        self,
+        problem: "ProblemProtocol",
+        X: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """Evaluate population and compute constraints if present."""
+        n_obj = problem.n_obj
+        n_con = getattr(problem, "n_con", 0) or 0
+
+        F = np.empty((X.shape[0], n_obj), dtype=np.float64)
+
+        if n_con > 0:
+            G = np.empty((X.shape[0], n_con), dtype=np.float64)
+            problem.evaluate(X, {"F": F, "G": G})
+        else:
+            problem.evaluate(X, {"F": F})
+            G = None
+
+        return F, G
+
+    def _build_variation(
+        self,
+        encoding: str,
+        n_var: int,
+        xl: np.ndarray,
+        xu: np.ndarray,
+        rng: np.random.Generator,
+    ) -> tuple[Any, Any]:
+        """Build crossover and mutation operators for the encoding."""
+        # Unpack crossover config
+        cross_cfg = self.cfg.get("crossover", ("sbx", {}))
+        if isinstance(cross_cfg, tuple):
+            cross_method, cross_params = cross_cfg
+            cross_params = dict(cross_params) if cross_params else {}
+        else:
+            cross_method = "sbx"
+            cross_params = cross_cfg or {}
+
+        # Unpack mutation config
+        mut_cfg = self.cfg.get("mutation", ("pm", {}))
+        if isinstance(mut_cfg, tuple):
+            mut_method, mut_params = mut_cfg
+            mut_params = dict(mut_params) if mut_params else {}
+        else:
+            mut_method = "pm"
+            mut_params = mut_cfg or {}
+
+        if mut_params.get("prob") == "1/n":
+            mut_params["prob"] = 1.0 / n_var
+
+        if encoding == "binary":
+            if cross_method not in _BINARY_CROSSOVER:
+                raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for binary encoding.")
+            if mut_method not in _BINARY_MUTATION:
+                raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for binary encoding.")
+
+            cross_fn = _BINARY_CROSSOVER[cross_method]
+            cross_prob = float(cross_params.get("prob", 0.9))
+            mut_fn = _BINARY_MUTATION[mut_method]
+            mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+
+            crossover = lambda parents, rng=rng: cross_fn(parents, cross_prob, rng)
+            mutation = lambda X_child, rng=rng: (mut_fn(X_child, mut_prob, rng) or X_child)
+
+        elif encoding == "integer":
+            if cross_method not in _INT_CROSSOVER:
+                raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for integer encoding.")
+            if mut_method not in _INT_MUTATION:
+                raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for integer encoding.")
+
+            cross_fn = _INT_CROSSOVER[cross_method]
+            cross_prob = float(cross_params.get("prob", 0.9))
+            mut_fn = _INT_MUTATION[mut_method]
+            mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+            step = int(mut_params.get("step", 1))
+
+            crossover = lambda parents, rng=rng: cross_fn(parents, cross_prob, rng)
+            if mut_fn is creep_mutation:
+                mutation = lambda X_child, rng=rng: (mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child)
+            else:
+                mutation = lambda X_child, rng=rng: (mut_fn(X_child, mut_prob, xl, xu, rng) or X_child)
+
+        elif encoding in {"continuous", "real"}:
+            cross_prob = float(cross_params.get("prob", 0.9))
+            cross_eta = float(cross_params.get("eta", 20.0))
+            workspace = VariationWorkspace()
+
+            sbx = SBXCrossover(
+                prob_crossover=cross_prob,
+                eta=cross_eta,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+                allow_inplace=True,
             )
-            X_parents = X[parents_idx].reshape(-1, 2, n_var)
-            offspring_pairs = crossover(X_parents)
-            X_off = offspring_pairs.reshape(-1, n_var)
-            X_off = mutation(X_off)
 
-            F_off = np.empty((X_off.shape[0], n_obj))
-            problem.evaluate(X_off, {"F": F_off})
-            n_eval += X_off.shape[0]
+            mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+            mut_eta = float(mut_params.get("eta", 20.0))
+            pm = PolynomialMutation(
+                prob_mutation=mut_prob,
+                eta=mut_eta,
+                lower=xl,
+                upper=xu,
+                workspace=workspace,
+            )
 
-            X = np.vstack([X, X_off])
-            F = np.vstack([F, F_off])
-            X, F = self._nsga3_survival(X, F, pop_size, ref_dirs_norm, rng)
+            crossover = lambda parents, rng=rng: sbx(parents, rng)
+            mutation = lambda X_child, rng=rng: pm(X_child, rng)
 
-        return {"X": X, "F": F, "reference_directions": ref_dirs}
+        else:
+            raise ValueError(f"NSGA-III does not support encoding '{encoding}'.")
 
-    def _nsga3_survival(self, X, F, pop_size, ref_dirs_norm, rng):
-        fronts = self._fast_non_dominated_sort(F)
+        return crossover, mutation
+
+    # -------------------------------------------------------------------------
+    # Generation logic
+    # -------------------------------------------------------------------------
+
+    def _generate_offspring(self, st: NSGA3State) -> np.ndarray:
+        """Generate offspring using tournament selection and variation."""
+        n_var = st.X.shape[1]
+        n_parents = 2 * (st.pop_size // 2)
+
+        ranks, crowd = self.kernel.nsga2_ranking(st.F)
+        parents_idx = self.kernel.tournament_selection(
+            ranks, crowd, st.pressure, st.rng, n_parents=n_parents
+        )
+
+        X_parents = st.X[parents_idx].reshape(-1, 2, n_var)
+        offspring_pairs = st.crossover_fn(X_parents)
+        X_off = offspring_pairs.reshape(-1, n_var)
+        X_off = st.mutation_fn(X_off)
+
+        return X_off
+
+    def _evaluate_offspring(
+        self,
+        problem: "ProblemProtocol",
+        X: np.ndarray,
+        eval_backend: "EvaluationBackend",
+        constraint_mode: str,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """Evaluate offspring and compute constraints."""
+        n_obj = problem.n_obj
+        n_con = getattr(problem, "n_con", 0) or 0
+
+        F = np.empty((X.shape[0], n_obj), dtype=np.float64)
+
+        if n_con > 0:
+            G = np.empty((X.shape[0], n_con), dtype=np.float64)
+            problem.evaluate(X, {"F": F, "G": G})
+        else:
+            problem.evaluate(X, {"F": F})
+            G = None
+
+        if constraint_mode == "none":
+            G = None
+
+        return F, G
+
+    def _nsga3_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        G: np.ndarray | None,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        G_off: np.ndarray | None,
+        pop_size: int,
+        ref_dirs_norm: np.ndarray,
+        rng: np.random.Generator,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        """Perform NSGA-III survival selection with niching."""
+        X_all = np.vstack([X, X_off])
+        F_all = np.vstack([F, F_off])
+        G_all = np.vstack([G, G_off]) if G is not None and G_off is not None else None
+
+        fronts = self._fast_non_dominated_sort(F_all)
         new_X = []
         new_F = []
+        new_G = [] if G_all is not None else None
 
-        ideal = F.min(axis=0)
-        shifted = F - ideal
+        ideal = F_all.min(axis=0)
+        shifted = F_all - ideal
         extreme_idx = self._identify_extremes(shifted)
         intercepts = self._compute_intercepts(shifted, extreme_idx)
         denom = np.where(intercepts > 0, intercepts, 1.0)
@@ -209,8 +551,10 @@ class NSGAIII:
         for front in fronts:
             front = np.asarray(front, dtype=int)
             if len(new_X) + front.size <= pop_size:
-                new_X.extend(X[front])
-                new_F.extend(F[front])
+                new_X.extend(X_all[front])
+                new_F.extend(F_all[front])
+                if new_G is not None:
+                    new_G.extend(G_all[front])
                 for idx in front:
                     niche_counts[associations[idx]] += 1
             else:
@@ -218,11 +562,17 @@ class NSGAIII:
                 selected_idx = self._niche_selection(
                     front, remaining, niche_counts, associations, distances, rng
                 )
-                new_X.extend(X[selected_idx])
-                new_F.extend(F[selected_idx])
+                new_X.extend(X_all[selected_idx])
+                new_F.extend(F_all[selected_idx])
+                if new_G is not None:
+                    new_G.extend(G_all[selected_idx])
                 break
 
-        return np.asarray(new_X), np.asarray(new_F)
+        return (
+            np.asarray(new_X),
+            np.asarray(new_F),
+            np.asarray(new_G) if new_G is not None else None,
+        )
 
     @staticmethod
     def _identify_extremes(shifted: np.ndarray) -> np.ndarray:
@@ -259,6 +609,7 @@ class NSGAIII:
 
     @staticmethod
     def _associate(normalized_F, ref_dirs_norm):
+        """Associate solutions with reference directions."""
         norms = np.linalg.norm(normalized_F, axis=1, keepdims=True)
         norms = np.where(norms > 0, norms, 1e-12)
         normalized_vectors = normalized_F / norms
@@ -272,6 +623,7 @@ class NSGAIII:
     def _niche_selection(
         self, front, n_remaining, niche_counts, associations, distances, rng
     ):
+        """Perform niche-based selection from critical front."""
         selected = []
         pool = front.tolist()
         while len(selected) < n_remaining and pool:
@@ -297,6 +649,7 @@ class NSGAIII:
 
     @staticmethod
     def _fast_non_dominated_sort(F):
+        """Fast non-dominated sorting."""
         n = F.shape[0]
         S = [[] for _ in range(n)]
         domination_count = np.zeros(n, dtype=int)
@@ -329,3 +682,117 @@ class NSGAIII:
 
         fronts.pop()  # remove last empty front
         return fronts
+
+    # -------------------------------------------------------------------------
+    # Ask/Tell Interface
+    # -------------------------------------------------------------------------
+
+    def initialize(
+        self,
+        problem: "ProblemProtocol",
+        termination: tuple[str, Any],
+        seed: int,
+        eval_backend: "EvaluationBackend | None" = None,
+        live_viz: "LiveVisualization | None" = None,
+    ) -> None:
+        """Initialize algorithm for ask/tell loop."""
+        self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = (
+            self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        )
+        self._problem = problem
+        if self._st is not None:
+            self._st.pending_offspring = None
+
+    def ask(self) -> np.ndarray:
+        """Generate offspring for evaluation.
+
+        Returns
+        -------
+        np.ndarray
+            Offspring decision vectors to evaluate.
+        """
+        if self._st is None:
+            raise RuntimeError("Algorithm not initialized. Call initialize() first.")
+        if self._st.pending_offspring is not None:
+            raise RuntimeError("Previous offspring not yet consumed by tell().")
+
+        offspring = self._generate_offspring(self._st)
+        self._st.pending_offspring = offspring
+        return offspring.copy()
+
+    def tell(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        G: np.ndarray | None = None,
+    ) -> None:
+        """Receive evaluated offspring and update population.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Evaluated decision vectors.
+        F : np.ndarray
+            Objective values.
+        G : np.ndarray, optional
+            Constraint values.
+        """
+        if self._st is None:
+            raise RuntimeError("Algorithm not initialized. Call initialize() first.")
+        if self._st.pending_offspring is None:
+            raise RuntimeError("No pending offspring. Call ask() first.")
+
+        st = self._st
+        st.pending_offspring = None
+
+        # NSGA-III survival selection
+        st.X, st.F, st.G = self._nsga3_survival(
+            st.X, st.F, st.G, X, F, G,
+            st.pop_size, st.ref_dirs_norm, st.rng
+        )
+
+        st.n_eval += X.shape[0]
+        st.generation += 1
+
+        # Update archive
+        if st.archive_manager is not None:
+            st.archive_manager.update(st.X, st.F)
+            st.archive_X, st.archive_F = st.archive_manager.get_archive()
+
+        # Live callback
+        if self._live_cb is not None:
+            self._live_cb.on_generation(st.generation, F=st.F)
+
+        # Check HV tracker
+        if st.hv_tracker is not None:
+            st.hv_tracker.update(st.F)
+
+    def should_terminate(self) -> bool:
+        """Check if termination criterion is met."""
+        if self._st is None:
+            return True
+        if self._st.n_eval >= self._max_eval:
+            return True
+        if self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold():
+            return True
+        return False
+
+    def result(self) -> dict[str, Any]:
+        """Get current result."""
+        if self._st is None:
+            raise RuntimeError("Algorithm not initialized.")
+
+        hv_reached = (
+            self._st.hv_tracker is not None
+            and self._st.hv_tracker.reached_threshold()
+        )
+
+        if self._live_cb is not None:
+            self._live_cb.on_end(final_F=self._st.F)
+
+        return build_nsga3_result(self._st, hv_reached)
+
+    @property
+    def state(self) -> NSGA3State | None:
+        """Access current algorithm state."""
+        return self._st

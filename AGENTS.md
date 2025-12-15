@@ -13,11 +13,36 @@ This file explains how to set up the environment, how the project is structured,
 ## 1. What VAMOS is
 
 - Research-grade, vectorized multi-objective optimization framework in Python (Python 3.10+).
+- **User-friendly by design**: Clean public API at `from vamos import ...` for end users; layered internals for contributors.
 - Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO with vectorized kernels (NumPy, Numba, MooCore).
 - Encodings: continuous, permutation, binary, integer, mixed; operators are vectorized and workspace-aware.
 - Problems: ZDT, DTLZ, WFG, LZ09, CEC2009 UF/CF (pymoo-backed), TSP/TSPLIB, feature selection/knapsack/QUBO, allocation/job assignment, welded beam, ML/real-data examples.
 - Tooling and orchestration: CLI (`python -m vamos.experiment.cli.main`), StudyRunner (problem x algorithm x seed sweeps), config-driven runs (YAML/JSON), diagnostics (`vamos-self-check`), benchmarking (`vamos-benchmark`), Studio (`vamos-studio`) for interactive decision-making, visualization/MCDM/stats utilities, and hypervolume early-stop options.
 - Output lives under `results/` by default (fronts, metadata).
+
+### User-Friendliness Principles
+
+VAMOS prioritizes ease of use:
+
+1. **Clean public API**: Users import from `vamos` directly, not deep internal paths:
+   ```python
+   # GOOD - user-friendly
+   from vamos import optimize, NSGAIIConfig, ZDT1, plot_pareto_front_2d
+   
+   # AVOID - internal paths (for contributors only)
+   from vamos.engine.algorithm.config import NSGAIIConfig
+   ```
+
+2. **Sensible defaults**: Algorithms work out-of-the-box with reasonable settings.
+
+3. **Fluent configuration**: Builder pattern for algorithm configs:
+   ```python
+   cfg = NSGAIIConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+   ```
+
+4. **Consistent patterns**: All algorithms follow the same `optimize()` workflow.
+
+5. **Clear error messages**: Validate early with helpful suggestions.
 
 ---
 
@@ -45,7 +70,16 @@ This file explains how to set up the environment, how the project is structured,
   - Diagnostics: `python -m vamos.experiment.diagnostics.self_check` or `vamos-self-check`
   - Tests: `pytest` (full optional stack: `pytest -m "not slow"` after installing the relevant extras)
   - Numba variation toggle: `VAMOS_USE_NUMBA_VARIATION=1`
-  - Library imports: prefer the root facades (`vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`); contributor work can use layered packages directly.
+  - **Library imports (user-facing)**: Always prefer the clean public API:
+    ```python
+    from vamos import optimize, NSGAIIConfig, ZDT1, make_problem_selection
+    from vamos import plot_pareto_front_2d, weighted_sum_scores, friedman_test
+    ```
+  - **Library imports (contributors)**: Layered packages for internal work:
+    ```python
+    from vamos.engine.algorithm.nsgaii import NSGAII
+    from vamos.foundation.problem.registry import PROBLEM_SPECS
+    ```
 
 ---
 

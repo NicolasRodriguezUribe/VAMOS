@@ -1,4 +1,4 @@
-# algorithm/nsgaii/operators.py
+# algorithm/nsgaii_operators.py
 """
 Operator pool building and adaptive operator selection for NSGA-II.
 

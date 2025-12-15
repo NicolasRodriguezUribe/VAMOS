@@ -1,17 +1,21 @@
 """
 Mixed-encoding engineering design example (welded beam surrogate).
 
-Requirements: `pip install -e ".[examples]"` for plotting.
-"""
+Usage:
+    python examples/engineering_design_pipeline.py
 
+Requirements:
+    pip install -e ".[examples]"  # matplotlib
+"""
 from __future__ import annotations
 
-import numpy as np
-
-from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import OptimizeConfig, optimize
-from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
-from vamos.ux.visualization import plot_pareto_front_2d
+from vamos import (
+    NSGAIIConfig,
+    OptimizeConfig,
+    WeldedBeamDesignProblem,
+    optimize,
+    plot_pareto_front_2d,
+)
 
 
 def build_config(pop_size: int = 30) -> dict:

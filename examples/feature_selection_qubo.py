@@ -1,17 +1,23 @@
 """
 Binary feature selection / QUBO-style pipeline on a real dataset.
 
-Requirements: `pip install -e ".[examples]"` for scikit-learn + plotting.
-"""
+Usage:
+    python examples/feature_selection_qubo.py
 
+Requirements:
+    pip install -e ".[examples]"  # scikit-learn, matplotlib
+"""
 from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import OptimizeConfig, optimize
-from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
-from vamos.ux.visualization import plot_pareto_front_2d
+from vamos import (
+    FeatureSelectionProblem,
+    NSGAIIConfig,
+    OptimizeConfig,
+    optimize,
+    plot_pareto_front_2d,
+)
 
 
 def build_config(pop_size: int = 30) -> dict:
@@ -38,8 +44,8 @@ def summarize_solution(X: np.ndarray) -> str:
 def main(seed: int = 5) -> None:
     try:
         problem = FeatureSelectionProblem(dataset="breast_cancer")
-    except ImportError as exc:  # pragma: no cover - run-time guard when sklearn missing
-        print("Install extras with `pip install -e \".[examples]\"` to run this example.")
+    except ImportError as exc:  # pragma: no cover
+        print('Install extras: pip install -e ".[examples]"')
         print(exc)
         return
 
@@ -62,8 +68,10 @@ def main(seed: int = 5) -> None:
     if X is not None:
         best_accuracy_idx = int(np.argmin(F[:, 0]))
         sparsest_idx = int(np.argmin(F[:, 1]))
-        print("Lowest error subset:", summarize_solution(X[best_accuracy_idx]), "obj:", F[best_accuracy_idx])
-        print("Smallest subset:", summarize_solution(X[sparsest_idx]), "obj:", F[sparsest_idx])
+        best_sol = summarize_solution(X[best_accuracy_idx])
+        sparse_sol = summarize_solution(X[sparsest_idx])
+        print(f"Lowest error subset: {best_sol}, obj: {F[best_accuracy_idx]}")
+        print(f"Smallest subset: {sparse_sol}, obj: {F[sparsest_idx]}")
 
     try:
         import matplotlib.pyplot as plt

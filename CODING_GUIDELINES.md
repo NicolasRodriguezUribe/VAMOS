@@ -2,6 +2,31 @@
 
 These notes capture the conventions we rely on when extending VAMOS (Vectorized Architecture for Multiobjective Optimization Studies). Please follow them for any code, notebooks, or documentation that will live in the repository.
 
+## User-Friendliness Principles
+
+VAMOS is designed to be **user-friendly first**. Every design decision should consider the end-user experience:
+
+1. **Clean public API**: Export stable symbols from `vamos` root. Users should write:
+   ```python
+   from vamos import optimize, NSGAIIConfig, ZDT1, plot_pareto_front_2d
+   ```
+   Not internal paths like `from vamos.engine.algorithm.config import NSGAIIConfig`.
+
+2. **Sensible defaults**: New features should work out-of-the-box. Require minimal configuration for basic use cases.
+
+3. **Consistent patterns**: Follow existing API conventions (builder pattern for configs, `optimize()` for running, etc.).
+
+4. **Clear errors**: Raise helpful exceptions with suggestions, not cryptic tracebacks.
+
+5. **Documentation**: Every public API needs docstrings and examples.
+
+### When Adding New Features
+
+- Export user-facing symbols in `vamos/__init__.py` and domain modules (`vamos/problems.py`, etc.)
+- Keep internal implementation in layered packages (`foundation`, `engine`, `experiment`, `ux`)
+- Write examples using only the public API to verify usability
+- Test that imports from `vamos` work before merging
+
 ## Architecture & layers
 - `foundation`: base abstractions, constraints, eval/metrics utilities, kernel backends, problems/registries, packaged data, and version helpers.
 - `engine`: search machinery — algorithms, operators, hyperheuristics, tuning pipelines, and algorithm configs.

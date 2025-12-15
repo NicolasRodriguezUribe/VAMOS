@@ -1,16 +1,17 @@
-from __future__ import annotations
-
 """
 End-to-end hyperparameter tuning example using the built-in SVM problem.
 
-Requires the optional ``examples`` extras (scikit-learn, matplotlib).
+Usage:
+    python examples/hyperparam_tuning.py
+
+Requirements:
+    pip install -e ".[examples]"  # scikit-learn, matplotlib
 """
+from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import OptimizeConfig, optimize
-from vamos.foundation.problem.real_world.hyperparam import HyperparameterTuningProblem
+from vamos import HyperparameterTuningProblem, NSGAIIConfig, OptimizeConfig, optimize
 
 
 def main():

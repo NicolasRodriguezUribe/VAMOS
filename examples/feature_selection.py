@@ -1,16 +1,17 @@
-from __future__ import annotations
-
 """
 Binary feature-selection example on a small classification dataset.
 
-Requires the optional ``examples`` extras (scikit-learn, matplotlib).
+Usage:
+    python examples/feature_selection.py
+
+Requirements:
+    pip install -e ".[examples]"  # scikit-learn, matplotlib
 """
+from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.core.optimize import OptimizeConfig, optimize
-from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
+from vamos import FeatureSelectionProblem, NSGAIIConfig, OptimizeConfig, optimize
 
 
 def main():
