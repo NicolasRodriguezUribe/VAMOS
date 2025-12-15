@@ -2,6 +2,25 @@
 
 > Vectorized Architecture for Multiobjective Optimization Studies - Python 3.10+
 
+## User-Friendliness First
+
+VAMOS prioritizes **user-friendly APIs**. Always prefer the clean public interface:
+
+```python
+# ✅ PREFERRED - Clean public API
+from vamos import (
+    optimize, OptimizeConfig, NSGAIIConfig,
+    ZDT1, make_problem_selection,
+    FeatureSelectionProblem, HyperparameterTuningProblem,
+    plot_pareto_front_2d, weighted_sum_scores,
+    AlgorithmConfigSpace, NSGAIITuner,
+)
+
+# ❌ AVOID - Internal paths (for contributors only)
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
+```
+
 ## Architecture Overview
 
 VAMOS is a research-grade multi-objective optimization framework with **vectorized kernels**. Core data flow:
@@ -17,14 +36,21 @@ Algorithms use **array-based populations** (X=decision vars, F=objectives, G=con
 
 ### Problem Creation
 ```python
-from vamos.problem.registry import make_problem_selection
+# User-friendly public API
+from vamos import make_problem_selection, ZDT1, FeatureSelectionProblem
+
+# Via registry
 selection = make_problem_selection("zdt1", n_var=30)
 problem = selection.instantiate()
+
+# Direct instantiation
+problem = ZDT1(n_var=30)
+problem = FeatureSelectionProblem(dataset="breast_cancer")
 ```
 
 ### Algorithm Configuration (Builder Pattern)
 ```python
-from vamos.algorithm.config import NSGAIIConfig
+from vamos import NSGAIIConfig
 cfg = (NSGAIIConfig()
     .pop_size(100)
     .crossover("sbx", prob=0.9, eta=20.0)
@@ -35,8 +61,22 @@ cfg = (NSGAIIConfig()
 
 ### Running Experiments
 ```python
-from vamos.core.runner import run_single, ExperimentConfig
-from vamos.core.optimize import optimize, OptimizeConfig
+from vamos import optimize, OptimizeConfig, NSGAIIConfig, make_problem_selection
+
+selection = make_problem_selection("zdt1", n_var=30)
+problem = selection.instantiate()
+
+cfg = NSGAIIConfig().pop_size(100).fixed()
+result = optimize(
+    OptimizeConfig(
+        problem=problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 10000),
+        seed=42,
+    )
+)
+print(f"Found {result.F.shape[0]} solutions")
 ```
 
 ### External Archives
@@ -57,7 +97,7 @@ run_single(
 ### Tuning / AutoNSGA-II
 Meta-optimization over algorithm hyperparameters:
 ```python
-from vamos.tuning import AlgorithmConfigSpace, NSGAIITuner
+from vamos import AlgorithmConfigSpace, NSGAIITuner, make_problem_selection
 
 space = AlgorithmConfigSpace()
 space.add_float("crossover_prob", 0.7, 1.0)

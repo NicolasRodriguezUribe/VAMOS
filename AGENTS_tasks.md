@@ -4,6 +4,30 @@ Task playbook for AI coding agents working on **VAMOS**
 
 This document complements `AGENTS.md`. It defines concrete, common tasks and what an AI agent should do (and avoid) for each one. This playbook assumes you have already read `README.md` and `AGENTS.md`. It focuses on concrete, well-scoped tasks that can be safely delegated to humans or AI coding agents.
 
+## User-Friendliness First
+
+VAMOS is designed to be **user-friendly**. When writing code, examples, or documentation:
+
+- **Always use the public API** for user-facing code: `from vamos import ...`
+- **Avoid exposing internal paths** to end users (reserve `vamos.engine.*`, `vamos.foundation.*` for contributors)
+- **Prefer sensible defaults** so basic usage requires minimal configuration
+- **Write clear error messages** that guide users to solutions
+
+### Import Pattern Summary
+
+```python
+# USER-FACING CODE (examples, notebooks, scripts)
+from vamos import (
+    optimize, OptimizeConfig, NSGAIIConfig,
+    ZDT1, make_problem_selection,
+    plot_pareto_front_2d, weighted_sum_scores,
+)
+
+# CONTRIBUTOR CODE (internal modules, tests)
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.foundation.problem.registry import PROBLEM_SPECS
+```
+
 User-facing imports should go through the root facades (`vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`). Contributor work can target the layered packages (`foundation`, `engine`, `experiment`, `ux`) directly. All experiment outputs should follow the standard layout: `<output_root>/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`.
 Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, and `tests/integration` for cross-layer checks. Markers: `smoke`, `slow`, `backends`, `notebooks`, `examples`, `cli`, `numba`, `moocore`, `studio`, `autodiff`. Use `pytest -m "smoke"` for quick verification.
 

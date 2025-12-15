@@ -25,7 +25,7 @@ from vamos.engine.algorithm.config import (
 )
 from vamos.engine.algorithm.moead import MOEAD
 from vamos.engine.algorithm.nsga3 import NSGAIII
-from vamos.engine.algorithm.nsgaii.core import NSGAII
+from vamos.engine.algorithm.nsgaii import NSGAII
 from vamos.engine.algorithm.registry import ALGORITHMS, resolve_algorithm
 from vamos.engine.algorithm.smpso import SMPSO
 from vamos.engine.algorithm.smsemoa import SMSEMOA
@@ -63,4 +63,3 @@ __all__ = [
     "available_algorithms",
     "resolve_algorithm",
 ]
-

@@ -1,4 +1,4 @@
-# algorithm/nsgaii/core.py
+# algorithm/nsgaii_core.py
 """
 NSGA-II evolutionary algorithm core.
 
@@ -17,7 +17,7 @@ import numpy as np
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
-from vamos.engine.algorithm.nsgaii.setup import (
+from vamos.engine.algorithm.nsgaii_setup import (
     parse_termination,
     setup_population,
     setup_archive,
@@ -26,8 +26,8 @@ from vamos.engine.algorithm.nsgaii.setup import (
     setup_result_archive,
     resolve_archive_size,
 )
-from vamos.engine.algorithm.nsgaii.operators import build_operator_pool
-from vamos.engine.algorithm.nsgaii.state import (
+from vamos.engine.algorithm.nsgaii_operators import build_operator_pool
+from vamos.engine.algorithm.nsgaii_state import (
     NSGAIIState,
     build_result,
     finalize_genealogy,
@@ -35,12 +35,10 @@ from vamos.engine.algorithm.nsgaii.state import (
     track_offspring_genealogy,
     update_archives,
 )
-from vamos.engine.algorithm.nsgaii.helpers import (
+from vamos.engine.algorithm.nsgaii_helpers import (
     build_mating_pool,
     feasible_nsga2_survival,
     match_ids,
-    operator_success_stats,
-    generation_contributions,
 )
 from vamos.engine.operators.real import VariationWorkspace
 from vamos.foundation.eval.backends import SerialEvalBackend, EvaluationBackend

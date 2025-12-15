@@ -1,4 +1,4 @@
-# algorithm/nsgaii/state.py
+# algorithm/nsgaii_state.py
 """
 State container and result building for NSGA-II.
 
@@ -165,7 +165,7 @@ def finalize_genealogy(
         Kernel for ranking computation.
     """
     # Import here to avoid circular imports
-    from vamos.engine.algorithm.nsgaii.helpers import operator_success_stats, generation_contributions
+    from vamos.engine.algorithm.nsgaii_helpers import operator_success_stats, generation_contributions
 
     if not state.track_genealogy or state.genealogy_tracker is None:
         return

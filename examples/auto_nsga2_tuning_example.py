@@ -1,10 +1,17 @@
+"""
+AutoNSGA-II tuning example: meta-optimization over NSGA-II hyperparameters.
+
+Usage:
+    python examples/auto_nsga2_tuning_example.py
+
+Requirements:
+    pip install -e "."  # core install is sufficient
+"""
 from __future__ import annotations
 
 import numpy as np
 
-from vamos.foundation.problem.registry import make_problem_selection
-from vamos.engine.tuning.core.parameter_space import AlgorithmConfigSpace
-from vamos.engine.tuning.evolver.tuner import NSGAIITuner
+from vamos import AlgorithmConfigSpace, NSGAIITuner, make_problem_selection
 
 
 def _build_problem(name: str, n_var: int, **kwargs):

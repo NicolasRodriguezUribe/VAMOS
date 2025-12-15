@@ -13,8 +13,8 @@ building blocks used across multiple algorithms.
   - `hypervolume.py`: hypervolume utilities (with backend fallbacks)
   - `weight_vectors.py`: weight vectors (NSGA-III / MOEA-D)
   - `variation/`: variation pipelines (crossover + mutation wiring)
-- `nsgaii/`: NSGA-II reference implementation split into focused modules
-  - `core.py`, `setup.py`, `state.py`, `operators.py`, `helpers.py`
+- `nsgaii.py`: NSGA-II module (implementation split across `nsgaii_*.py` files)
+  - `nsgaii_core.py`, `nsgaii_setup.py`, `nsgaii_state.py`, `nsgaii_operators.py`, `nsgaii_helpers.py`
 - Algorithm modules: `moead.py`, `nsga3.py`, `smsemoa.py`, `spea2.py`, `ibea.py`,
   `smpso.py`
 - Config/registry: `config.py`, `registry.py`, `factory.py`, `builders.py`,
@@ -40,4 +40,3 @@ building blocks used across multiple algorithms.
 - Do not add compatibility shims at this level; reuse `components/*` instead.
 - Delegate expensive operations to kernels (`problem.evaluate`, `kernel.*`) or to
   shared utilities in `components/`.
-

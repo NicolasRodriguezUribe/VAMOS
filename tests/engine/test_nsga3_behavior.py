@@ -82,7 +82,12 @@ def test_directional_diversity_preserved():
     n_obj = F.shape[1]
     ref_dirs = np.eye(n_obj)
     ref_dirs_norm = ref_dirs / np.linalg.norm(ref_dirs, axis=1, keepdims=True)
-    X_sel, F_sel = alg._nsga3_survival(X, F, cfg["pop_size"], ref_dirs_norm, rng)
+    # New signature: X, F, G, X_off, F_off, G_off, pop_size, ref_dirs_norm, rng
+    # Simulate with empty offspring arrays for survival test
+    X_sel, F_sel, _ = alg._nsga3_survival(
+        X, F, None, np.empty((0, X.shape[1])), np.empty((0, F.shape[1])), None,
+        cfg["pop_size"], ref_dirs_norm, rng
+    )
     # Expect at least one solution per principal direction
     associations, _ = alg._associate(F_sel - F_sel.min(axis=0), ref_dirs_norm)
     assert set(associations) == set(range(n_obj))

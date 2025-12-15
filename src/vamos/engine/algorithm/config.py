@@ -124,10 +124,142 @@ class NSGAIIConfig:
     """
     Declarative configuration holder for NSGA-II.
     Provides a fluent builder that yields an immutable NSGAIIConfigData.
+
+    Examples:
+        # Fluent builder
+        cfg = NSGAIIConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+
+        # Quick default configuration
+        cfg = NSGAIIConfig.default()
+
+        # From dictionary
+        cfg = NSGAIIConfig.from_dict({"pop_size": 100, "crossover": ("sbx", {"prob": 0.9})})
     """
 
     def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
+
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 100,
+        n_var: int | None = None,
+        engine: str = "numpy",
+    ) -> "NSGAIIConfigData":
+        """
+        Create a default NSGA-II configuration with sensible defaults.
+
+        Args:
+            pop_size: Population size (default: 100)
+            n_var: Number of variables (used for mutation prob = 1/n_var)
+            engine: Backend engine (default: "numpy")
+
+        Returns:
+            Frozen NSGAIIConfigData ready to use
+        """
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        return (
+            cls()
+            .pop_size(pop_size)
+            .crossover("sbx", prob=0.9, eta=20.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
+            .selection("tournament")
+            .survival("rank_crowding")
+            .engine(engine)
+            .fixed()
+        )
+
+    @classmethod
+    def from_dict(cls, config: Dict[str, Any]) -> "NSGAIIConfigData":
+        """
+        Create configuration from a dictionary.
+
+        Args:
+            config: Dictionary with configuration keys:
+                - pop_size (required): Population size
+                - crossover: Tuple of (method, params) or dict with method and params
+                - mutation: Tuple of (method, params) or dict with method and params
+                - selection: Tuple of (method, params) or just method string
+                - survival: Survival method string
+                - engine: Backend engine string
+
+        Returns:
+            Frozen NSGAIIConfigData
+
+        Examples:
+            cfg = NSGAIIConfig.from_dict({
+                "pop_size": 100,
+                "crossover": ("sbx", {"prob": 0.9, "eta": 20}),
+                "mutation": ("pm", {"prob": 0.1, "eta": 20}),
+                "selection": "tournament",
+                "survival": "rank_crowding",
+                "engine": "numpy"
+            })
+        """
+        builder = cls()
+
+        if "pop_size" in config:
+            builder.pop_size(config["pop_size"])
+
+        # Handle crossover
+        if "crossover" in config:
+            cx = config["crossover"]
+            if isinstance(cx, tuple):
+                builder.crossover(cx[0], **cx[1])
+            elif isinstance(cx, dict):
+                method = cx.pop("method", cx.pop("type", "sbx"))
+                builder.crossover(method, **cx)
+            else:
+                builder.crossover(cx)
+
+        # Handle mutation
+        if "mutation" in config:
+            mut = config["mutation"]
+            if isinstance(mut, tuple):
+                builder.mutation(mut[0], **mut[1])
+            elif isinstance(mut, dict):
+                method = mut.pop("method", mut.pop("type", "pm"))
+                builder.mutation(method, **mut)
+            else:
+                builder.mutation(mut)
+
+        # Handle selection
+        if "selection" in config:
+            sel = config["selection"]
+            if isinstance(sel, tuple):
+                builder.selection(sel[0], **sel[1])
+            elif isinstance(sel, dict):
+                method = sel.pop("method", sel.pop("type", "tournament"))
+                builder.selection(method, **sel)
+            else:
+                builder.selection(sel)
+
+        # Simple string fields
+        if "survival" in config:
+            builder.survival(config["survival"])
+        if "engine" in config:
+            builder.engine(config["engine"])
+
+        # Optional fields
+        if "offspring_size" in config:
+            builder.offspring_size(config["offspring_size"])
+        if "repair" in config:
+            rep = config["repair"]
+            if isinstance(rep, tuple):
+                builder.repair(rep[0], **rep[1])
+            elif isinstance(rep, dict):
+                method = rep.pop("method", rep.pop("type", "bounds"))
+                builder.repair(method, **rep)
+        if "archive" in config:
+            builder.archive(config["archive"])
+        if "archive_type" in config:
+            builder.archive_type(config["archive_type"])
+        if "constraint_mode" in config:
+            builder.constraint_mode(config["constraint_mode"])
+        if "track_genealogy" in config:
+            builder.track_genealogy(config["track_genealogy"])
+
+        return builder.fixed()
 
     def pop_size(self, value: int) -> "NSGAIIConfig":
         self._cfg["pop_size"] = value
@@ -246,10 +378,114 @@ class MOEADConfig:
     """
     Declarative configuration holder for MOEA/D settings.
     Mirrors NSGA-II builder style so both algorithms can share patterns.
+
+    Examples:
+        # Fluent builder
+        cfg = MOEADConfig().pop_size(100).neighbor_size(20).fixed()
+
+        # Quick default configuration
+        cfg = MOEADConfig.default()
+
+        # From dictionary
+        cfg = MOEADConfig.from_dict({"pop_size": 100, "neighbor_size": 20})
     """
 
     def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
+
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 100,
+        n_var: int | None = None,
+        engine: str = "numpy",
+    ) -> "MOEADConfigData":
+        """
+        Create a default MOEA/D configuration with sensible defaults.
+
+        Args:
+            pop_size: Population size (default: 100)
+            n_var: Number of variables (used for mutation prob = 1/n_var)
+            engine: Backend engine (default: "numpy")
+
+        Returns:
+            Frozen MOEADConfigData ready to use
+        """
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        return (
+            cls()
+            .pop_size(pop_size)
+            .neighbor_size(20)
+            .delta(0.9)
+            .replace_limit(2)
+            .crossover("sbx", prob=0.9, eta=20.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
+            .aggregation("tchebycheff")
+            .engine(engine)
+            .fixed()
+        )
+
+    @classmethod
+    def from_dict(cls, config: Dict[str, Any]) -> "MOEADConfigData":
+        """
+        Create configuration from a dictionary.
+
+        Args:
+            config: Dictionary with configuration keys
+
+        Returns:
+            Frozen MOEADConfigData
+        """
+        builder = cls()
+
+        if "pop_size" in config:
+            builder.pop_size(config["pop_size"])
+        if "neighbor_size" in config:
+            builder.neighbor_size(config["neighbor_size"])
+        if "delta" in config:
+            builder.delta(config["delta"])
+        if "replace_limit" in config:
+            builder.replace_limit(config["replace_limit"])
+
+        # Handle crossover
+        if "crossover" in config:
+            cx = config["crossover"]
+            if isinstance(cx, tuple):
+                builder.crossover(cx[0], **cx[1])
+            elif isinstance(cx, dict):
+                method = cx.pop("method", cx.pop("type", "sbx"))
+                builder.crossover(method, **cx)
+            else:
+                builder.crossover(cx)
+
+        # Handle mutation
+        if "mutation" in config:
+            mut = config["mutation"]
+            if isinstance(mut, tuple):
+                builder.mutation(mut[0], **mut[1])
+            elif isinstance(mut, dict):
+                method = mut.pop("method", mut.pop("type", "pm"))
+                builder.mutation(method, **mut)
+            else:
+                builder.mutation(mut)
+
+        # Handle aggregation
+        if "aggregation" in config:
+            agg = config["aggregation"]
+            if isinstance(agg, tuple):
+                builder.aggregation(agg[0], **agg[1])
+            elif isinstance(agg, dict):
+                method = agg.pop("method", agg.pop("type", "tchebycheff"))
+                builder.aggregation(method, **agg)
+            else:
+                builder.aggregation(agg)
+
+        if "engine" in config:
+            builder.engine(config["engine"])
+        if "constraint_mode" in config:
+            builder.constraint_mode(config["constraint_mode"])
+
+        return builder.fixed()
 
     def pop_size(self, value: int) -> "MOEADConfig":
         self._cfg["pop_size"] = value
@@ -328,10 +564,34 @@ class MOEADConfig:
 class SMSEMOAConfig:
     """
     Declarative configuration holder for SMS-EMOA settings.
+
+    Examples:
+        cfg = SMSEMOAConfig.default()
+        cfg = SMSEMOAConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
     """
 
     def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
+
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 100,
+        n_var: int | None = None,
+        engine: str = "numpy",
+    ) -> "SMSEMOAConfigData":
+        """Create a default SMS-EMOA configuration."""
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        return (
+            cls()
+            .pop_size(pop_size)
+            .crossover("sbx", prob=0.9, eta=20.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
+            .selection("tournament")  # SMS-EMOA requires tournament selection
+            .reference_point(adaptive=True)
+            .engine(engine)
+            .fixed()
+        )
 
     def pop_size(self, value: int) -> "SMSEMOAConfig":
         self._cfg["pop_size"] = value
@@ -387,10 +647,45 @@ class SMSEMOAConfig:
 class NSGAIIIConfig:
     """
     Declarative configuration holder for NSGA-III settings.
+
+    Examples:
+        cfg = NSGAIIIConfig.default(n_obj=3)
+        cfg = NSGAIIIConfig().pop_size(92).crossover("sbx", prob=0.9).fixed()
     """
 
     def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
+
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 92,
+        n_var: int | None = None,
+        n_obj: int = 3,
+        engine: str = "numpy",
+    ) -> "NSGAIIIConfigData":
+        """
+        Create a default NSGA-III configuration.
+
+        Args:
+            pop_size: Population size (default: 92, matches 3-obj reference dirs)
+            n_var: Number of variables (for mutation prob)
+            n_obj: Number of objectives (for reference directions)
+            engine: Backend engine
+        """
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        # divisions for Das-Dennis: choose based on n_obj
+        divisions = 12 if n_obj == 3 else 6
+        return (
+            cls()
+            .pop_size(pop_size)
+            .crossover("sbx", prob=0.9, eta=20.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
+            .selection("random")
+            .reference_directions(divisions=divisions)
+            .engine(engine)
+            .fixed()
+        )
 
     def pop_size(self, value: int) -> "NSGAIIIConfig":
         self._cfg["pop_size"] = value
@@ -442,10 +737,34 @@ class SPEA2Config:
     """
     Declarative configuration holder for SPEA2 settings.
     Mirrors NSGA-II builder style to enable reuse of variation configs.
+
+    Examples:
+        cfg = SPEA2Config.default()
+        cfg = SPEA2Config().pop_size(100).archive_size(100).fixed()
     """
 
     def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
+
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 100,
+        n_var: int | None = None,
+        engine: str = "numpy",
+    ) -> "SPEA2ConfigData":
+        """Create a default SPEA2 configuration."""
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        return (
+            cls()
+            .pop_size(pop_size)
+            .archive_size(pop_size)
+            .crossover("sbx", prob=0.9, eta=20.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
+            .selection("tournament")
+            .engine(engine)
+            .fixed()
+        )
 
     def pop_size(self, value: int) -> "SPEA2Config":
         self._cfg["pop_size"] = value

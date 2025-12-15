@@ -1,6 +1,6 @@
 """
 Support functions for the NSGA-II evolutionary loop.
-Separated to keep nsgaii.py focused on the class orchestration.
+Separated to keep the main algorithm class focused on orchestration.
 """
 from __future__ import annotations
 

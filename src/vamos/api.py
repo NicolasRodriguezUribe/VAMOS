@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from vamos.experiment.diagnostics.self_check import run_self_check
 from vamos.foundation.core.experiment_config import ExperimentConfig
-from vamos.foundation.core.optimize import OptimizeConfig, OptimizationResult, optimize
+from vamos.foundation.core.optimize import OptimizeConfig, OptimizationResult, optimize, run_optimization
 from vamos.foundation.problem.registry import (
     ProblemSelection,
     ProblemSpec,
@@ -29,6 +29,7 @@ from vamos.ux.analysis.core_objective_reduction import (
 
 __all__ = [
     "optimize",
+    "run_optimization",
     "OptimizeConfig",
     "OptimizationResult",
     "ExperimentConfig",

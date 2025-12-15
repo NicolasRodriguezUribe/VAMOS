@@ -15,6 +15,7 @@ from .api import (
     available_problem_names,
     make_problem_selection,
     optimize,
+    run_optimization,
     run_self_check,
     reduce_objectives,
 )
@@ -56,8 +57,11 @@ from .problems import (
     DTLZ2,
     DTLZ3,
     DTLZ4,
+    FeatureSelectionProblem,
+    HyperparameterTuningProblem,
     ProblemSelection,
     ProblemSpec,
+    WeldedBeamDesignProblem,
     WFG1,
     ZDT1,
     ZDT2,
@@ -98,9 +102,65 @@ from .tuning import (
     summarize_benchmark,
 )
 
+# Quick-start API for one-liner experiments
+from .quick import (
+    QuickResult,
+    run,
+    run_moead,
+    run_nsgaii,
+    run_nsga3,
+    run_smsemoa,
+    run_spea2,
+)
+
+# Exception hierarchy
+from .exceptions import (
+    VAMOSError,
+    ConfigurationError,
+    InvalidAlgorithmError,
+    InvalidEngineError,
+    InvalidOperatorError,
+    MissingConfigError,
+    ProblemError,
+    InvalidProblemError,
+    ProblemDimensionError,
+    BoundsError,
+    OptimizationError,
+    ConvergenceError,
+    EvaluationError,
+    ConstraintViolationError,
+    DataError,
+    ResultsNotFoundError,
+    InvalidResultsError,
+    DependencyError,
+    BackendNotAvailableError,
+)
+
+# Experiment context manager
+from .experiment_context import (
+    Experiment,
+    experiment,
+    RunRecord,
+    ExperimentSummary,
+)
+
 __all__ = [
+    # Quick-start API (one-liners)
+    "run",
+    "run_nsgaii",
+    "run_moead",
+    "run_spea2",
+    "run_smsemoa",
+    "run_nsga3",
+    "QuickResult",
+    # Experiment context
+    "Experiment",
+    "experiment",
+    "RunRecord",
+    "ExperimentSummary",
     # Optimization
     "optimize",
+    "run_optimization",
     "OptimizeConfig",
     "OptimizationResult",
     "ExperimentConfig",
@@ -108,7 +168,7 @@ __all__ = [
     "ObjectiveReducer",
     "reduce_objectives",
     "run_self_check",
-    # Problems
+    # Problems - benchmark
     "ProblemSpec",
     "ProblemSelection",
     "available_problem_names",
@@ -124,6 +184,10 @@ __all__ = [
     "DTLZ3",
     "DTLZ4",
     "WFG1",
+    # Problems - real-world
+    "FeatureSelectionProblem",
+    "HyperparameterTuningProblem",
+    "WeldedBeamDesignProblem",
     # Algorithms
     "NSGAII",
     "NSGAIIConfig",
@@ -188,4 +252,24 @@ __all__ = [
     "friedman_test",
     "pairwise_wilcoxon",
     "plot_critical_distance",
+    # Exceptions
+    "VAMOSError",
+    "ConfigurationError",
+    "InvalidAlgorithmError",
+    "InvalidEngineError",
+    "InvalidOperatorError",
+    "MissingConfigError",
+    "ProblemError",
+    "InvalidProblemError",
+    "ProblemDimensionError",
+    "BoundsError",
+    "OptimizationError",
+    "ConvergenceError",
+    "EvaluationError",
+    "ConstraintViolationError",
+    "DataError",
+    "ResultsNotFoundError",
+    "InvalidResultsError",
+    "DependencyError",
+    "BackendNotAvailableError",
 ]
