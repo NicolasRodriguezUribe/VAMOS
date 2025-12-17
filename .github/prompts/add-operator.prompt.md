@@ -7,7 +7,7 @@ Add a new `{OPERATOR_TYPE}` operator named `{OPERATOR_NAME}` for `{ENCODING}` en
 
 ## Steps
 
-1. **Create operator file** in `src/vamos/operators/{encoding}/`
+1. **Create operator file** in `src/vamos/engine/operators/{encoding}/`
    - Use existing operator as template (e.g., `sbx.py` for crossover, `polynomial_mutation.py` for mutation)
    - Implement vectorized `__call__(self, X, bounds, rng)` method
    - Return array of same shape as input
@@ -18,18 +18,18 @@ Add a new `{OPERATOR_TYPE}` operator named `{OPERATOR_NAME}` for `{ENCODING}` en
    ```
 
 3. **Wire into variation pipeline**
-   - Add to `src/vamos/algorithm/variation.py` operator lookup
-   - Add to `src/vamos/config/variation.py` if config-driven
+   - Add to `src/vamos/engine/algorithm/variation.py` operator lookup
+   - Add to `src/vamos/engine/algorithm/config/variation.py` if config-driven
 
 4. **Add tests**
-   - `tests/operators/{encoding}/test_{operator_name}.py`
+   - `tests/engine/operators/{encoding}/test_{operator_name}.py`
    - Test shapes, bounds respect, determinism with seed
 
 ## Template
 
 ```python
 import numpy as np
-from vamos.operators.real import VariationWorkspace
+from vamos.engine.operators.real import VariationWorkspace
 
 class {OperatorClass}:
     def __init__(self, prob: float = 0.9, **params):

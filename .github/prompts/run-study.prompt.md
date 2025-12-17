@@ -35,12 +35,12 @@ Run a benchmark comparing `{ALGORITHMS}` on `{PROBLEMS}` with `{N_SEEDS}` indepe
 
 2. **Run via CLI**
    ```bash
-   python -m vamos.cli.main --config studies/{study_name}.yaml
+   python -m vamos.experiment.cli.main --config studies/{study_name}.yaml
    ```
 
 3. **Or use StudyRunner programmatically**
    ```python
-   from vamos.study.runner import StudyRunner, StudyTask
+   from vamos.experiment.study.runner import StudyRunner, StudyTask
    
    tasks = [
        StudyTask(problem="zdt1", algorithm="nsgaii", seed=s, max_evals=25000)

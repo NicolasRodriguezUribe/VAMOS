@@ -18,7 +18,7 @@ def test_notebooks_execute_smoke(tmp_path):
     if not os.environ.get("VAMOS_RUN_NOTEBOOK_TESTS"):
         pytest.skip("Set VAMOS_RUN_NOTEBOOK_TESTS=1 to execute notebook smoke tests.")
     nbformat = pytest.importorskip("nbformat")
-    nbconvert = pytest.importorskip("nbconvert")
+    pytest.importorskip("nbconvert")  # Ensure nbconvert is available
     from nbconvert.preprocessors import ExecutePreprocessor
 
     for nb_path in _iter_notebooks():

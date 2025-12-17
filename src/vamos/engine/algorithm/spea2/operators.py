@@ -84,8 +84,11 @@ def build_variation_operators(
         workspace=workspace,
     )
 
-    crossover_fn = lambda parents, rng=rng: crossover_operator(parents, rng)
-    mutation_fn = lambda X_child, rng=rng: mutation_operator(X_child, rng)
+    def crossover_fn(parents, rng=rng):
+        return crossover_operator(parents, rng)
+
+    def mutation_fn(X_child, rng=rng):
+        return mutation_operator(X_child, rng)
 
     return crossover_fn, mutation_fn
 

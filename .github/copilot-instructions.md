@@ -25,10 +25,10 @@ from vamos.foundation.problem.real_world.feature_selection import FeatureSelecti
 
 VAMOS is a research-grade multi-objective optimization framework with **vectorized kernels**. Core data flow:
 
-1. **Problem** (`vamos.problem.registry`) → defines bounds, objectives, constraints
-2. **Algorithm** (`vamos.algorithm/`) → NSGAII, MOEAD, SMSEMOA, SPEA2, IBEA, SMPSO, NSGA3
-3. **Kernel** (`vamos.kernel/`) → NumPy, Numba, or MooCore backends for fast operations
-4. **Runner** (`vamos.core.runner`) → orchestrates experiments, writes to `results/`
+1. **Problem** (`vamos.foundation.problem.registry`) → defines bounds, objectives, constraints
+2. **Algorithm** (`vamos.engine.algorithm/`) → NSGAII, MOEAD, SMSEMOA, SPEA2, IBEA, SMPSO, NSGA3
+3. **Kernel** (`vamos.foundation.kernel/`) → NumPy, Numba, or MooCore backends for fast operations
+4. **Runner** (`vamos.foundation.core.runner`) → orchestrates experiments, writes to `results/`
 
 Algorithms use **array-based populations** (X=decision vars, F=objectives, G=constraints) — never per-individual object instances.
 
@@ -123,13 +123,13 @@ python -m venv .venv; .\.venv\Scripts\Activate.ps1
 pip install -e ".[backends,benchmarks,dev]"
 
 # Verify installation
-python -m vamos.diagnostics.self_check
+python -m vamos.experiment.diagnostics.self_check
 
 # Run tests (skip slow)
 pytest -m "not slow"
 
 # Quick smoke test
-python -m vamos.cli.main --problem zdt1 --max-evaluations 2000
+python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000
 
 # Format/lint before commit
 black src tests; ruff check src tests
@@ -139,21 +139,21 @@ black src tests; ruff check src tests
 
 | Path | Purpose |
 |------|---------|
-| [src/vamos/algorithm/](../src/vamos/algorithm/) | Algorithm cores + config builders (nsgaii.py, config.py) |
-| [src/vamos/kernel/](../src/vamos/kernel/) | Backend kernels (numpy_backend.py, numba_backend.py) |
-| [src/vamos/operators/](../src/vamos/operators/) | Variation operators by encoding (real/, binary.py, permutation.py) |
-| [src/vamos/problem/registry/](../src/vamos/problem/registry/) | Problem specs + `make_problem_selection()` |
-| [src/vamos/core/](../src/vamos/core/) | Runner, optimize API, metadata, I/O utilities |
-| [src/vamos/tuning/](../src/vamos/tuning/) | Meta-optimizer, config spaces, AutoNSGA-II |
+| [src/vamos/engine/algorithm/](../src/vamos/engine/algorithm/) | Algorithm cores + config builders (nsgaii.py, config.py) |
+| [src/vamos/foundation/kernel/](../src/vamos/foundation/kernel/) | Backend kernels (numpy_backend.py, numba_backend.py) |
+| [src/vamos/engine/operators/](../src/vamos/engine/operators/) | Variation operators by encoding (real/, binary.py, permutation.py) |
+| [src/vamos/foundation/problem/registry/](../src/vamos/foundation/problem/registry/) | Problem specs + `make_problem_selection()` |
+| [src/vamos/foundation/core/](../src/vamos/foundation/core/) | Runner, optimize API, metadata, I/O utilities |
+| [src/vamos/engine/tuning/](../src/vamos/engine/tuning/) | Racing tuner, config spaces, ParamSpace |
 | [tests/](../tests/) | pytest suite mirroring src layout |
 
 ## Adding New Components
 
-**New operator**: Copy template from [operators/real/](../src/vamos/operators/real/), implement vectorized `__call__`, register in `__init__.py`
+**New operator**: Copy template from [engine/operators/real/](../src/vamos/engine/operators/real/), implement vectorized `__call__`, register in `__init__.py`
 
-**New problem**: Define in [problem/](../src/vamos/problem/), implement `evaluate(X) → F` or `evaluate_population`, register in `PROBLEM_SPECS`
+**New problem**: Define in [foundation/problem/](../src/vamos/foundation/problem/), implement `evaluate(X) → F` or `evaluate_population`, register in `PROBLEM_SPECS`
 
-**New algorithm config**: Add dataclass in [algorithm/config.py](../src/vamos/algorithm/config.py), create builder class with fluent API
+**New algorithm config**: Add dataclass in [engine/algorithm/config/](../src/vamos/engine/algorithm/config/), create builder class with fluent API
 
 ## Testing Guidelines
 

@@ -8,8 +8,8 @@ Add a new problem named `{PROBLEM_NAME}` with `{N_OBJ}` objectives and `{ENCODIN
 ## Steps
 
 1. **Create problem file** in appropriate location:
-   - Benchmark: `src/vamos/problem/{problem_name}.py`
-   - Real-world: `src/vamos/problem/real_world/{problem_name}.py`
+   - Benchmark: `src/vamos/foundation/problem/benchmark/{problem_name}.py`
+   - Real-world: `src/vamos/foundation/problem/real_world/{problem_name}.py`
 
 2. **Implement ProblemProtocol**
    ```python
@@ -26,7 +26,7 @@ Add a new problem named `{PROBLEM_NAME}` with `{N_OBJ}` objectives and `{ENCODIN
    ```
 
 3. **Register in specs**
-   Add to `src/vamos/problem/registry/specs.py`:
+   Add to `src/vamos/foundation/problem/registry/specs.py`:
    ```python
    ProblemSpec(
        key="{problem_key}",

@@ -133,8 +133,11 @@ def _build_binary_operators(
     mut_fn = BINARY_MUTATION[mut_method]
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
 
-    crossover = lambda parents, rng=rng: cross_fn(parents, cross_prob, rng)
-    mutation = lambda X_child, rng=rng: mut_fn(X_child, mut_prob, rng) or X_child
+    def crossover(parents, rng=rng):
+        return cross_fn(parents, cross_prob, rng)
+
+    def mutation(X_child, rng=rng):
+        return mut_fn(X_child, mut_prob, rng) or X_child
 
     return crossover, mutation
 
@@ -161,11 +164,15 @@ def _build_integer_operators(
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     step = int(mut_params.get("step", 1))
 
-    crossover = lambda parents, rng=rng: cross_fn(parents, cross_prob, rng)
+    def crossover(parents, rng=rng):
+        return cross_fn(parents, cross_prob, rng)
+
     if mut_fn is creep_mutation:
-        mutation = lambda X_child, rng=rng: mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child
+        def mutation(X_child, rng=rng):
+            return mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child
     else:
-        mutation = lambda X_child, rng=rng: mut_fn(X_child, mut_prob, xl, xu, rng) or X_child
+        def mutation(X_child, rng=rng):
+            return mut_fn(X_child, mut_prob, xl, xu, rng) or X_child
 
     return crossover, mutation
 
@@ -202,8 +209,11 @@ def _build_continuous_operators(
         workspace=workspace,
     )
 
-    crossover = lambda parents, rng=rng: crossover_operator(parents, rng)
-    mutation = lambda X_child, rng=rng: mutation_operator(X_child, rng)
+    def crossover(parents, rng=rng):
+        return crossover_operator(parents, rng)
+
+    def mutation(X_child, rng=rng):
+        return mutation_operator(X_child, rng)
 
     return crossover, mutation
 

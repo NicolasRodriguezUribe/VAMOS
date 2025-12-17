@@ -50,6 +50,5 @@ Other CLIs
 ----------
 
 - Benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/`
-- Tuning/meta-optimization: `python -m vamos.engine.tuning.cli --help`
 - Study runner: `python -m vamos.experiment.study.runner --help`
 - Studio (interactive, needs `studio` extra): `vamos-studio --study-dir results`
