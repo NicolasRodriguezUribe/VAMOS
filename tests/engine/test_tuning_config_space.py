@@ -1,11 +1,10 @@
 import numpy as np
 
-from vamos.engine.tuning.racing.parameters import (
-    BooleanParam,
-    CategoricalIntegerParam,
-    CategoricalParam,
-    FloatParam,
-    IntegerParam,
+from vamos.engine.tuning.racing.param_space import (
+    Boolean,
+    Categorical,
+    Int,
+    Real,
 )
 from vamos.engine.tuning.racing.config_space import AlgorithmConfigSpace
 from vamos.engine.tuning.racing.bridge import (
@@ -16,11 +15,11 @@ from vamos.engine.tuning.racing.bridge import (
 
 def test_param_round_trip_sampling():
     rng = np.random.default_rng(0)
-    cat = CategoricalParam("color", ["red", "blue", "green"])
-    intval = IntegerParam("k", 1, 9)
-    floatval = FloatParam("p", 0.1, 0.9)
-    boolp = BooleanParam("flag")
-    cati = CategoricalIntegerParam("size", [16, 32, 64])
+    cat = Categorical("color", ["red", "blue", "green"])
+    intval = Int("k", 1, 9)
+    floatval = Real("p", 0.1, 0.9)
+    boolp = Boolean("flag")
+    cati = Categorical("size", [16, 32, 64])
 
     assignment = {
         "color": cat.sample(rng),
@@ -45,7 +44,7 @@ def test_param_round_trip_sampling():
 
 def test_algorithm_config_space_round_trip():
     rng = np.random.default_rng(1)
-    params = [CategoricalParam("a", ["x", "y"]), IntegerParam("b", 1, 3)]
+    params = [Categorical("a", ["x", "y"]), Int("b", 1, 3)]
     space = AlgorithmConfigSpace("toy", params, [])
     assignment = space.sample(rng)
     vec = space.to_unit_vector(assignment)

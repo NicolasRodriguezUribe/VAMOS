@@ -7,9 +7,9 @@ from vamos.engine.tuning.racing.random_search_tuner import TrialResult
 def test_filter_active_config_drops_inactive_operator_params():
     param_space = ParamSpace(
         params={
-            "crossover.type": Categorical(["sbx", "pcx"]),
-            "crossover.sbx_eta": Real(1.0, 5.0),
-            "crossover.pcx_sigma_eta": Real(0.1, 1.0),
+            "crossover.type": Categorical("crossover.type", ["sbx", "pcx"]),
+            "crossover.sbx_eta": Real("crossover.sbx_eta", 1.0, 5.0),
+            "crossover.pcx_sigma_eta": Real("crossover.pcx_sigma_eta", 0.1, 1.0),
         },
         conditions=[
             Condition("crossover.sbx_eta", "cfg['crossover.type'] == 'sbx'"),
@@ -31,9 +31,9 @@ def test_filter_active_config_drops_inactive_operator_params():
 def test_history_to_dict_filters_and_optionally_keeps_raw():
     param_space = ParamSpace(
         params={
-            "mutation.type": Categorical(["gaussian", "cauchy"]),
-            "mutation.gaussian_sigma": Real(0.01, 1.0),
-            "mutation.cauchy_gamma": Real(0.01, 1.0),
+            "mutation.type": Categorical("mutation.type", ["gaussian", "cauchy"]),
+            "mutation.gaussian_sigma": Real("mutation.gaussian_sigma", 0.01, 1.0),
+            "mutation.cauchy_gamma": Real("mutation.cauchy_gamma", 0.01, 1.0),
         },
         conditions=[
             Condition("mutation.gaussian_sigma", "cfg['mutation.type'] == 'gaussian'"),

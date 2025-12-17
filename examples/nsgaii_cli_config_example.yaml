@@ -1,0 +1,35 @@
+# Example config for the CLI:
+#   python -m vamos.experiment.cli.main --config examples/nsgaii_cli_config_example.yaml
+#
+# Values under `defaults` apply to every problem unless overridden below.
+defaults:
+  algorithm: nsgaii
+  engine: numpy
+  population_size: 80
+  offspring_population_size: 80
+  max_evaluations: 8000
+  seed: 11
+  nsgaii:
+    # Variation operators for real-encoded problems
+    crossover: {method: sbx, prob: 0.9, eta: 20}
+    mutation: {method: pm, prob: "1/n", eta: 20}
+    selection: {method: tournament, pressure: 2}
+    survival: nsga2
+
+problems:
+  zdt1:
+    # Inherit defaults; uncomment to override per-problem settings.
+    # n_var: 30
+    # max_evaluations: 12000
+
+  kroa100:
+    # Permutation-encoded TSPLIB TSP with a tailored budget and operators.
+    algorithm: nsgaii
+    population_size: 120
+    offspring_population_size: 120
+    max_evaluations: 15000
+    nsgaii:
+      crossover: {method: ox}              # order crossover for permutations
+      mutation: {method: swap, prob: "2/n"}
+      selection: {method: tournament, pressure: 2}
+      survival: nsga2

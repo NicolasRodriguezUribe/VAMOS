@@ -22,7 +22,7 @@ def main():
         NSGAIIConfig()
         .pop_size(20)
         .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("polynomial", eta=20.0)
+        .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .survival("nsga2")
         .engine("numpy")

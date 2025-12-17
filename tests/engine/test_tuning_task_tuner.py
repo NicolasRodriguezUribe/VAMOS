@@ -6,7 +6,7 @@ from vamos.engine.tuning.racing.random_search_tuner import RandomSearchTuner
 
 
 def test_tuning_task_eval_config_aggregates_scores():
-    space = ParamSpace(params={"x": Real(0.0, 1.0)})
+    space = ParamSpace(params={"x": Real("x", 0.0, 1.0)})
     task = TuningTask(
         name="demo",
         param_space=space,
@@ -26,7 +26,7 @@ def test_tuning_task_eval_config_aggregates_scores():
 
 
 def test_random_search_tuner_tracks_best():
-    space = ParamSpace(params={"x": Real(0.0, 1.0)})
+    space = ParamSpace(params={"x": Real("x", 0.0, 1.0)})
     task = TuningTask(
         name="demo",
         param_space=space,

@@ -17,127 +17,127 @@ from vamos.engine.algorithm.config import (
     SMPSOConfig,
 )
 from .config_space import AlgorithmConfigSpace
-from .parameters import (
-    CategoricalParam,
+from .param_space import (
+    Real,
+    Int,
+    Categorical,
     ConditionalBlock,
-    FloatParam,
-    IntegerParam,
 )
 
 
 def build_nsgaii_config_space() -> AlgorithmConfigSpace:
     params = [
-        IntegerParam("pop_size", 20, 200, log=True),
-        IntegerParam("offspring_size", 20, 200, log=True),
-        CategoricalParam("engine", ["numpy", "numba", "moocore"]),
-        CategoricalParam("crossover", ["sbx", "blx_alpha"]),
-        FloatParam("crossover_prob", 0.6, 0.95),
-        CategoricalParam("mutation", ["pm", "non_uniform"]),
-        FloatParam("mutation_prob", 0.01, 0.5),
-        FloatParam("mutation_eta", 5.0, 40.0),
-        CategoricalParam("selection", ["tournament"]),
-        IntegerParam("selection_pressure", 2, 4),
+        Int("pop_size", 20, 200, log=True),
+        Int("offspring_size", 20, 200, log=True),
+        Categorical("engine", ["numpy", "numba", "moocore"]),
+        Categorical("crossover", ["sbx", "blx_alpha"]),
+        Real("crossover_prob", 0.6, 0.95),
+        Categorical("mutation", ["pm", "non_uniform"]),
+        Real("mutation_prob", 0.01, 0.5),
+        Real("mutation_eta", 5.0, 40.0),
+        Categorical("selection", ["tournament"]),
+        Int("selection_pressure", 2, 4),
     ]
     conditionals = [
-        ConditionalBlock("crossover", "sbx", [FloatParam("crossover_eta", 5.0, 40.0)]),
-        ConditionalBlock("crossover", "blx_alpha", [FloatParam("crossover_alpha", 0.1, 0.8)]),
+        ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
+        ConditionalBlock("crossover", "blx_alpha", [Real("crossover_alpha", 0.1, 0.8)]),
     ]
     return AlgorithmConfigSpace("nsgaii", params, conditionals)
 
 
 def build_moead_config_space() -> AlgorithmConfigSpace:
     params = [
-        IntegerParam("pop_size", 20, 200, log=True),
-        CategoricalParam("engine", ["numpy", "numba", "moocore"]),
-        IntegerParam("neighbor_size", 5, 40, log=False),
-        FloatParam("delta", 0.5, 0.95),
-        IntegerParam("replace_limit", 1, 5),
-        CategoricalParam("crossover", ["sbx"]),
-        FloatParam("crossover_prob", 0.6, 1.0),
-        FloatParam("crossover_eta", 10.0, 40.0),
-        CategoricalParam("mutation", ["pm"]),
-        FloatParam("mutation_prob", 0.01, 0.5),
-        FloatParam("mutation_eta", 5.0, 40.0),
-        CategoricalParam("aggregation", ["tchebycheff", "weighted_sum"]),
+        Int("pop_size", 20, 200, log=True),
+        Categorical("engine", ["numpy", "numba", "moocore"]),
+        Int("neighbor_size", 5, 40),
+        Real("delta", 0.5, 0.95),
+        Int("replace_limit", 1, 5),
+        Categorical("crossover", ["sbx"]),
+        Real("crossover_prob", 0.6, 1.0),
+        Real("crossover_eta", 10.0, 40.0),
+        Categorical("mutation", ["pm"]),
+        Real("mutation_prob", 0.01, 0.5),
+        Real("mutation_eta", 5.0, 40.0),
+        Categorical("aggregation", ["tchebycheff", "weighted_sum"]),
     ]
     return AlgorithmConfigSpace("moead", params, [])
 
 
 def build_nsgaiii_config_space() -> AlgorithmConfigSpace:
     params = [
-        IntegerParam("pop_size", 20, 200, log=True),
-        CategoricalParam("engine", ["numpy", "numba", "moocore"]),
-        CategoricalParam("crossover", ["sbx"]),
-        FloatParam("crossover_prob", 0.6, 1.0),
-        FloatParam("crossover_eta", 20.0, 40.0),
-        CategoricalParam("mutation", ["pm"]),
-        FloatParam("mutation_prob", 0.01, 0.5),
-        FloatParam("mutation_eta", 5.0, 40.0),
-        IntegerParam("selection_pressure", 2, 4),
+        Int("pop_size", 20, 200, log=True),
+        Categorical("engine", ["numpy", "numba", "moocore"]),
+        Categorical("crossover", ["sbx"]),
+        Real("crossover_prob", 0.6, 1.0),
+        Real("crossover_eta", 20.0, 40.0),
+        Categorical("mutation", ["pm"]),
+        Real("mutation_prob", 0.01, 0.5),
+        Real("mutation_eta", 5.0, 40.0),
+        Int("selection_pressure", 2, 4),
     ]
     return AlgorithmConfigSpace("nsgaiii", params, [])
 
 
 def build_smsemoa_config_space() -> AlgorithmConfigSpace:
     params = [
-        IntegerParam("pop_size", 20, 200, log=True),
-        CategoricalParam("engine", ["numpy", "numba", "moocore"]),
-        CategoricalParam("crossover", ["sbx"]),
-        FloatParam("crossover_prob", 0.6, 1.0),
-        FloatParam("crossover_eta", 10.0, 40.0),
-        CategoricalParam("mutation", ["pm"]),
-        FloatParam("mutation_prob", 0.01, 0.5),
-        FloatParam("mutation_eta", 5.0, 40.0),
-        IntegerParam("selection_pressure", 2, 4),
+        Int("pop_size", 20, 200, log=True),
+        Categorical("engine", ["numpy", "numba", "moocore"]),
+        Categorical("crossover", ["sbx"]),
+        Real("crossover_prob", 0.6, 1.0),
+        Real("crossover_eta", 10.0, 40.0),
+        Categorical("mutation", ["pm"]),
+        Real("mutation_prob", 0.01, 0.5),
+        Real("mutation_eta", 5.0, 40.0),
+        Int("selection_pressure", 2, 4),
     ]
     return AlgorithmConfigSpace("smsemoa", params, [])
 
 
 def build_spea2_config_space() -> AlgorithmConfigSpace:
     params = [
-        IntegerParam("pop_size", 20, 200, log=True),
-        IntegerParam("archive_size", 20, 200, log=True),
-        CategoricalParam("engine", ["numpy", "numba", "moocore"]),
-        CategoricalParam("crossover", ["sbx"]),
-        FloatParam("crossover_prob", 0.6, 0.95),
-        FloatParam("crossover_eta", 10.0, 40.0),
-        CategoricalParam("mutation", ["pm"]),
-        FloatParam("mutation_prob", 0.01, 0.5),
-        FloatParam("mutation_eta", 5.0, 40.0),
-        IntegerParam("selection_pressure", 2, 4),
-        IntegerParam("k_neighbors", 1, 25),
+        Int("pop_size", 20, 200, log=True),
+        Int("archive_size", 20, 200, log=True),
+        Categorical("engine", ["numpy", "numba", "moocore"]),
+        Categorical("crossover", ["sbx"]),
+        Real("crossover_prob", 0.6, 0.95),
+        Real("crossover_eta", 10.0, 40.0),
+        Categorical("mutation", ["pm"]),
+        Real("mutation_prob", 0.01, 0.5),
+        Real("mutation_eta", 5.0, 40.0),
+        Int("selection_pressure", 2, 4),
+        Int("k_neighbors", 1, 25),
     ]
     return AlgorithmConfigSpace("spea2", params, [])
 
 
 def build_ibea_config_space() -> AlgorithmConfigSpace:
     params = [
-        IntegerParam("pop_size", 20, 200, log=True),
-        CategoricalParam("engine", ["numpy", "numba", "moocore"]),
-        CategoricalParam("crossover", ["sbx"]),
-        FloatParam("crossover_prob", 0.6, 0.95),
-        FloatParam("crossover_eta", 10.0, 40.0),
-        CategoricalParam("mutation", ["pm"]),
-        FloatParam("mutation_prob", 0.01, 0.5),
-        FloatParam("mutation_eta", 5.0, 40.0),
-        IntegerParam("selection_pressure", 2, 4),
-        CategoricalParam("indicator", ["eps", "hypervolume"]),
-        FloatParam("kappa", 0.01, 0.2),
+        Int("pop_size", 20, 200, log=True),
+        Categorical("engine", ["numpy", "numba", "moocore"]),
+        Categorical("crossover", ["sbx"]),
+        Real("crossover_prob", 0.6, 0.95),
+        Real("crossover_eta", 10.0, 40.0),
+        Categorical("mutation", ["pm"]),
+        Real("mutation_prob", 0.01, 0.5),
+        Real("mutation_eta", 5.0, 40.0),
+        Int("selection_pressure", 2, 4),
+        Categorical("indicator", ["eps", "hypervolume"]),
+        Real("kappa", 0.01, 0.2),
     ]
     return AlgorithmConfigSpace("ibea", params, [])
 
 
 def build_smpso_config_space() -> AlgorithmConfigSpace:
     params = [
-        IntegerParam("pop_size", 20, 200, log=True),
-        IntegerParam("archive_size", 20, 200, log=True),
-        CategoricalParam("engine", ["numpy", "numba", "moocore"]),
-        FloatParam("inertia", 0.1, 0.9),
-        FloatParam("c1", 0.5, 2.5),
-        FloatParam("c2", 0.5, 2.5),
-        FloatParam("vmax_fraction", 0.1, 1.0),
-        FloatParam("mutation_prob", 0.01, 0.5),
-        FloatParam("mutation_eta", 5.0, 40.0),
+        Int("pop_size", 20, 200, log=True),
+        Int("archive_size", 20, 200, log=True),
+        Categorical("engine", ["numpy", "numba", "moocore"]),
+        Real("inertia", 0.1, 0.9),
+        Real("c1", 0.5, 2.5),
+        Real("c2", 0.5, 2.5),
+        Real("vmax_fraction", 0.1, 1.0),
+        Real("mutation_prob", 0.01, 0.5),
+        Real("mutation_eta", 5.0, 40.0),
     ]
     return AlgorithmConfigSpace("smpso", params, [])
 
