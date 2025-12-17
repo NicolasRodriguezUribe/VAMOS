@@ -70,10 +70,6 @@ If you plan to modify VAMOS (humans or AI assistants):
   - `python -m vamos.experiment.diagnostics.self_check`
   - or `vamos-self-check`
 
-## Migration note
-
-- Deprecated tuning shim modules (e.g., `vamos.engine.tuning.param_space`, `vamos.engine.tuning.parameter_space`, `vamos.engine.tuning.random_search_tuner`, `vamos.engine.tuning.meta`, etc.) have been removed. Import directly from the canonical subpackages (`vamos.engine.tuning.*`) or use the facade `vamos.tuning`.
-
 ## Documentation
 
 - Browse the docs under `docs/` (MkDocs). Key pages cover CLI/config, algorithms/backends, problems, constraint DSL/autodiff, and extension guides.
@@ -194,7 +190,7 @@ CLI flags override config values. Per-problem sections override defaults.
 - Use `ParamSpace` to define hyperparameter search spaces
 - Use `RandomSearchTuner` / `RacingTuner` for tuning (racing-style, irace-inspired)
 - Config space builders: `build_nsgaii_config_space()`, `build_moead_config_space()`, etc.
-- See [tuning_v1.ipynb](notebooks/tuning_v1.ipynb) for examples.
+- See `tests/engine/test_tuning_task_tuner.py` for usage examples.
 
 ## Performance toggle
 
@@ -206,21 +202,19 @@ export VAMOS_USE_NUMBA_VARIATION=1  # set before running
 
 ## Package layout (src/vamos)
 
-- `algorithm/` - evolutionary cores and config builders.
-- `kernel/` - NumPy/Numba/MooCore kernels.
-- `problem/` - benchmark problems and registry.
-- `tuning/` - meta-optimizer (outer NSGA-II), config spaces, pipelines.
-- `constraints.py` - feasibility/penalty strategies.
-- `objective_reduction.py` - correlation/angle/hybrid reducers.
-- `mcdm.py`, `visualization.py`, `stats.py` - decision-making, plotting, post-hoc stats.
-- `runner.py`, `cli.py`, `study/` - CLI and study orchestration.
+- `foundation/` - core abstractions, constraints, eval/metrics, kernel backends, problems/registries, packaged data.
+- `engine/` - algorithms, operators, hyperheuristics, tuning pipelines, algorithm configs.
+- `experiment/` - CLI entrypoints, StudyRunner, benchmark/reporting, diagnostics.
+- `ux/` - analysis/MCDM/stats utilities, visualization helpers, Studio.
+- Root facades: `api.py`, `algorithms.py`, `problems.py`, `plotting.py`, `mcdm.py`, `stats.py`, `tuning.py`.
 
 ## Programmatic optimize()
 
 ```python
-from vamos.foundation.core.optimize import optimize, OptimizeConfig
-from vamos.foundation.problem.registry import make_problem_selection
-from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos import (
+    optimize, OptimizeConfig, NSGAIIConfig,
+    make_problem_selection,
+)
 
 problem = make_problem_selection("zdt1").instantiate()
 algo_cfg = (
@@ -292,7 +286,7 @@ pip install -e ".[backends]"
 - Paper-ready benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/` runs predefined suites, writes raw runs + summary CSVs + LaTeX-ready tables and plots under `report/`.
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
 - Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.engine.hyperheuristics`.
-- Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `02_tuning_and_metaoptimization.ipynb`).
+- Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `03_user_friendly_api.ipynb`).
 - Built-in reference fronts and default weight vectors ship inside the package under `vamos.foundation.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
 
 ## Testing & QA

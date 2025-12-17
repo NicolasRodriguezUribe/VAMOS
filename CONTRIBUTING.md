@@ -39,10 +39,8 @@ Thank you for considering a contribution! This project is organized to make addi
 - New orchestration/config/registry code should be mypy-friendly; see `pyproject.toml` for incremental typing settings.
 
 ## Tuning package layout
-- Shared/core utilities (parameter spaces, samplers, validation, experiment/spec plumbing, meta-optimization) live under `src/vamos/engine/tuning/core/`.
-- Key meta-optimization files: `meta_problem.py`, `meta_nsgaii.py`, `nsgaii_tuner.py`, `tuning_pipeline.py`.
-- Racing-style tuning (racing loop, random search, bridge utilities) lives under `src/vamos/engine/tuning/racing/`.
-- Import from the canonical subpackages (`core`, `racing`) or directly from `vamos.engine.tuning`.
+- All tuning utilities (parameter spaces, samplers, racing loop, random search) live under `src/vamos/engine/tuning/racing/`.
+- Import from `vamos.engine.tuning` or use the user-friendly facade `vamos.tuning`.
 
 ## Self-check
 - After changes, run `python -m vamos.experiment.diagnostics.self_check` or `vamos-self-check` for a quick sanity check.
