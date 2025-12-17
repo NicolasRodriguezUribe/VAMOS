@@ -98,6 +98,7 @@ from .tuning import (
     build_smpso_config_space,
     build_smsemoa_config_space,
     build_spea2_config_space,
+    config_from_assignment,
 )
 
 # Quick-start API for one-liner experiments
@@ -113,7 +114,6 @@ from .quick import (
 
 # Exception hierarchy
 from .exceptions import (
-    VAMOSError,
     ConfigurationError,
     InvalidAlgorithmError,
     InvalidEngineError,
@@ -228,6 +228,7 @@ __all__ = [
     "build_moead_config_space",
     "build_smsemoa_config_space",
     "build_spea2_config_space",
+    "config_from_assignment",
     "build_ibea_config_space",
     "build_smpso_config_space",
     # Plotting

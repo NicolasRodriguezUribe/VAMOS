@@ -14,7 +14,9 @@ All types support:
 """
 from __future__ import annotations
 
+import ast
 import math
+import operator
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -29,6 +31,12 @@ class Real:
     low: float
     high: float
     log: bool = False
+
+    def __post_init__(self) -> None:
+        if self.high < self.low:
+            raise ValueError(f"Real param '{self.name}' has high < low ({self.high} < {self.low}).")
+        if self.log and (self.low <= 0 or self.high <= 0):
+            raise ValueError(f"Real param '{self.name}' with log=True requires low/high > 0.")
 
     def sample(self, rng: np.random.Generator) -> float:
         if self.log:
@@ -61,6 +69,12 @@ class Int:
     low: int
     high: int
     log: bool = False
+
+    def __post_init__(self) -> None:
+        if self.high < self.low:
+            raise ValueError(f"Int param '{self.name}' has high < low ({self.high} < {self.low}).")
+        if self.log and (self.low <= 0 or self.high <= 0):
+            raise ValueError(f"Int param '{self.name}' with log=True requires low/high > 0.")
 
     def sample(self, rng: np.random.Generator) -> int:
         if self.log:
@@ -130,6 +144,8 @@ class Condition:
     """
     Simple condition: a parameter is considered active only when
     `expr` evaluates to True given the current config.
+
+    Expressions are parsed safely (no function calls/attribute access).
     """
 
     param_name: str
@@ -170,15 +186,15 @@ class ParamSpace:
     def sample(self, rng: Optional[np.random.Generator] = None) -> Dict[str, Any]:
         """Sample a configuration from the space."""
         rng = np.random.default_rng() if rng is None else rng
-        return {name: spec.sample(rng) for name, spec in self.params.items()}
+        full_cfg = {name: spec.sample(rng) for name, spec in self.params.items()}
+        return {name: value for name, value in full_cfg.items() if self.is_active(name, full_cfg)}
 
     def is_active(self, param_name: str, config: Dict[str, Any]) -> bool:
         """Check if param is active given config and conditions."""
         relevant = [c for c in self.conditions if c.param_name == param_name]
         if not relevant:
             return True
-        cfg = config
-        return all(bool(eval(c.expr, {}, {"cfg": cfg})) for c in relevant)
+        return all(_safe_eval_condition(c.expr, config) for c in relevant)
 
     def validate(self, config: Dict[str, Any]) -> None:
         """Validate that all active params are present and within bounds."""
@@ -212,6 +228,71 @@ IntegerParam = Int
 CategoricalParam = Categorical
 BooleanParam = Boolean
 CategoricalIntegerParam = Categorical
+
+
+_CMP_OPS = {
+    ast.Eq: operator.eq,
+    ast.NotEq: operator.ne,
+    ast.Lt: operator.lt,
+    ast.LtE: operator.le,
+    ast.Gt: operator.gt,
+    ast.GtE: operator.ge,
+    ast.In: lambda a, b: a in b,
+    ast.NotIn: lambda a, b: a not in b,
+}
+
+
+def _safe_eval_condition(expr: str, cfg: Dict[str, Any]) -> bool:
+    """
+    Evaluate a condition expression against cfg using a restricted AST (no calls/attrs).
+    """
+    try:
+        tree = ast.parse(expr, mode="eval")
+    except SyntaxError as exc:  # pragma: no cover - validated upstream
+        raise ValueError(f"Invalid condition syntax: {expr}") from exc
+
+    def _eval(node: ast.AST) -> Any:
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        if isinstance(node, ast.BoolOp):
+            values = [_eval(v) for v in node.values]
+            if isinstance(node.op, ast.And):
+                return all(values)
+            if isinstance(node.op, ast.Or):
+                return any(values)
+            raise ValueError(f"Unsupported boolean operator in: {expr}")
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            return not _eval(node.operand)
+        if isinstance(node, ast.Compare):
+            left = _eval(node.left)
+            for op_node, comparator in zip(node.ops, node.comparators):
+                rhs = _eval(comparator)
+                op_fn = _CMP_OPS.get(type(op_node))
+                if op_fn is None:
+                    raise ValueError(f"Unsupported comparison in: {expr}")
+                if not op_fn(left, rhs):
+                    return False
+                left = rhs
+            return True
+        if isinstance(node, ast.Name):
+            if node.id != "cfg":
+                raise ValueError(f"Only 'cfg' is allowed in conditions (got '{node.id}').")
+            return cfg
+        if isinstance(node, ast.Constant):
+            return node.value
+        if isinstance(node, ast.Subscript):
+            base = _eval(node.value)
+            key = _eval(node.slice)
+            try:
+                return base[key]
+            except Exception as exc:
+                raise ValueError(f"Failed to access cfg[{key!r}] in condition: {expr}") from exc
+        raise ValueError(f"Unsupported expression element in condition: {expr}")
+
+    result = _eval(tree)
+    if not isinstance(result, bool):
+        raise ValueError(f"Condition must evaluate to bool, got {result!r} for: {expr}")
+    return result
 
 
 __all__ = [
