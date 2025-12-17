@@ -64,7 +64,7 @@ def run_single(
     nsgaii_variation: dict | None = None,
     moead_variation: dict | None = None,
     smsemoa_variation: dict | None = None,
-    nsga3_variation: dict | None = None,
+    nsgaiii_variation: dict | None = None,
     spea2_variation: dict | None = None,
     ibea_variation: dict | None = None,
     smpso_variation: dict | None = None,
@@ -80,7 +80,7 @@ def run_single(
     nsgaii_variation = normalize_variation_config(nsgaii_variation)
     moead_variation = normalize_variation_config(moead_variation)
     smsemoa_variation = normalize_variation_config(smsemoa_variation)
-    nsga3_variation = normalize_variation_config(nsga3_variation)
+    nsgaiii_variation = normalize_variation_config(nsgaiii_variation)
     spea2_variation = normalize_variation_config(spea2_variation)
     ibea_variation = normalize_variation_config(ibea_variation)
     smpso_variation = normalize_variation_config(smpso_variation)
@@ -125,7 +125,7 @@ def run_single(
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
         smsemoa_variation=smsemoa_variation,
-        nsga3_variation=nsga3_variation,
+        nsgaiii_variation=nsgaiii_variation,
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
@@ -203,7 +203,7 @@ def run_single(
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
         smsemoa_variation=smsemoa_variation,
-        nsga3_variation=nsga3_variation,
+        nsgaiii_variation=nsgaiii_variation,
     )
 
     print("\nResults stored in:", output_dir)
@@ -284,7 +284,7 @@ def execute_problem_suite(
                 nsgaii_variation=nsgaii_variation,
                 moead_variation=getattr(args, "moead_variation", None),
                 smsemoa_variation=getattr(args, "smsemoa_variation", None),
-                nsga3_variation=getattr(args, "nsga3_variation", None),
+                nsgaiii_variation=getattr(args, "nsgaiii_variation", None),
                 spea2_variation=getattr(args, "spea2_variation", None),
                 ibea_variation=getattr(args, "ibea_variation", None),
                 smpso_variation=getattr(args, "smpso_variation", None),
@@ -306,7 +306,7 @@ def execute_problem_suite(
                 nsgaii_variation=nsgaii_variation,
                 moead_variation=getattr(args, "moead_variation", None),
                 smsemoa_variation=getattr(args, "smsemoa_variation", None),
-                nsga3_variation=getattr(args, "nsga3_variation", None),
+                nsgaiii_variation=getattr(args, "nsgaiii_variation", None),
                 spea2_variation=getattr(args, "spea2_variation", None),
                 ibea_variation=getattr(args, "ibea_variation", None),
                 smpso_variation=getattr(args, "smpso_variation", None),
@@ -410,7 +410,7 @@ def run_from_args(args, config: ExperimentConfig):
         effective_args.nsgaii_variation = merge_variation_overrides(base_variation, override.get("nsgaii"))
         effective_args.moead_variation = merge_variation_overrides(getattr(args, "moead_variation", None), override.get("moead"))
         effective_args.smsemoa_variation = merge_variation_overrides(getattr(args, "smsemoa_variation", None), override.get("smsemoa"))
-        effective_args.nsga3_variation = merge_variation_overrides(getattr(args, "nsga3_variation", None), override.get("nsga3"))
+        effective_args.nsgaiii_variation = merge_variation_overrides(getattr(args, "nsgaiii_variation", None), override.get("nsgaiii"))
         effective_args.spea2_variation = merge_variation_overrides(getattr(args, "spea2_variation", None), override.get("spea2"))
         effective_args.ibea_variation = merge_variation_overrides(getattr(args, "ibea_variation", None), override.get("ibea"))
         effective_args.smpso_variation = merge_variation_overrides(getattr(args, "smpso_variation", None), override.get("smpso"))

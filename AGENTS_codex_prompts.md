@@ -16,7 +16,7 @@ from vamos import (
     ZDT1, make_problem_selection,
     FeatureSelectionProblem, HyperparameterTuningProblem,
     plot_pareto_front_2d, weighted_sum_scores,
-    AlgorithmConfigSpace, NSGAIITuner,
+    ParamSpace, RandomSearchTuner, RacingTuner,
 )
 
 # INTERNAL/CONTRIBUTOR CODE ONLY

@@ -313,7 +313,7 @@ def run_optimization(
 
     Args:
         problem: Problem instance to optimize
-        algorithm: Algorithm name ('nsgaii', 'moead', 'spea2', 'smsemoa', 'nsga3')
+        algorithm: Algorithm name ('nsgaii', 'moead', 'spea2', 'smsemoa', 'nsgaiii')
         max_evaluations: Maximum function evaluations
         pop_size: Population size
         engine: Backend engine ('numpy', 'numba', 'moocore')
@@ -351,14 +351,14 @@ def run_optimization(
         algo_config = SPEA2Config.default(pop_size=pop_size, n_var=n_var, engine=engine)
     elif algorithm == "smsemoa":
         algo_config = SMSEMOAConfig.default(pop_size=pop_size, n_var=n_var, engine=engine)
-    elif algorithm == "nsga3":
+    elif algorithm == "nsgaiii":
         n_obj = getattr(problem, "n_obj", 3)
         algo_config = NSGAIIIConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj, engine=engine)
     else:
         from vamos.exceptions import InvalidAlgorithmError
         raise InvalidAlgorithmError(
             algorithm,
-            available=["nsgaii", "moead", "spea2", "smsemoa", "nsga3"],
+            available=["nsgaii", "moead", "spea2", "smsemoa", "nsgaiii"],
         )
 
     config = OptimizeConfig(

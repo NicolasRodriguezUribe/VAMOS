@@ -10,7 +10,7 @@ DEFAULT_ALGORITHM = "nsgaii"
 DEFAULT_ENGINE = "numpy"
 DEFAULT_PROBLEM = "zdt1"
 
-ENABLED_ALGORITHMS = ("nsgaii", "moead", "smsemoa", "nsga3", "spea2", "ibea", "smpso")
+ENABLED_ALGORITHMS = ("nsgaii", "moead", "smsemoa", "nsgaiii", "spea2", "ibea", "smpso")
 OPTIONAL_ALGORITHMS: tuple[str, ...] = ()
 EXTERNAL_ALGORITHM_NAMES = ("pymoo_nsga2", "jmetalpy_nsga2", "pygmo_nsga2")
 HV_REFERENCE_OFFSET = 0.1

@@ -5,11 +5,11 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from ..core.scenario import Scenario
-from ..core.tuning_task import TuningTask, Instance, EvalContext
+from .scenario import Scenario
+from .tuning_task import TuningTask, Instance, EvalContext
 from .random_search_tuner import TrialResult
-from ..core.param_space import ParamSpace
-from ..core.sampler import Sampler, UniformSampler, ModelBasedSampler
+from .param_space import ParamSpace
+from .sampler import Sampler, UniformSampler, ModelBasedSampler
 from .state import ConfigState, EliteEntry
 from .schedule import build_schedule
 from .elimination import aggregate_rows, compute_aggregated_scores, eliminate_configs, update_elite_archive

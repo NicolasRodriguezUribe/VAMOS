@@ -82,7 +82,7 @@ def _init_default_suites() -> None:
         BenchmarkSuite(
             name="DTLZ_medium",
             experiments=dtlz_experiments,
-            default_algorithms=["nsgaii", "moead", "nsga3"],
+            default_algorithms=["nsgaii", "moead", "nsgaiii"],
             default_metrics=["hv", "igd_plus", "epsilon_additive"],
             description="DTLZ1-4 at 3 objectives with medium budgets.",
             default_seeds=list(range(5)),
@@ -104,7 +104,7 @@ def _init_default_suites() -> None:
         BenchmarkSuite(
             name="WFG_heavy",
             experiments=wfg_experiments,
-            default_algorithms=["nsgaii", "moead", "nsga3"],
+            default_algorithms=["nsgaii", "moead", "nsgaiii"],
             default_metrics=["hv", "igd_plus", "epsilon_additive"],
             description="Full WFG suite (requires pymoo) with larger budgets.",
             default_seeds=list(range(5)),

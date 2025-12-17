@@ -117,7 +117,7 @@ from vamos import make_problem_selection, available_problem_names
 from vamos import FeatureSelectionProblem, HyperparameterTuningProblem, WeldedBeamDesignProblem
 
 # Tuning
-from vamos import AlgorithmConfigSpace, NSGAIITuner, RandomSearchTuner
+from vamos import ParamSpace, RandomSearchTuner, RacingTuner
 
 # Visualization
 from vamos import plot_pareto_front_2d, plot_pareto_front_3d, plot_hv_convergence

@@ -99,7 +99,7 @@ def persist_run_outputs(
     nsgaii_variation: dict | None = None,
     moead_variation: dict | None = None,
     smsemoa_variation: dict | None = None,
-    nsga3_variation: dict | None = None,
+    nsgaiii_variation: dict | None = None,
 ) -> tuple[dict, dict, dict]:
     artifacts = write_population(
         output_dir,
@@ -172,7 +172,7 @@ def persist_run_outputs(
         "nsgaii_variation": nsgaii_variation,
         "moead_variation": moead_variation,
         "smsemoa_variation": smsemoa_variation,
-        "nsga3_variation": nsga3_variation,
+        "nsgaiii_variation": nsgaiii_variation,
         "config_source": config_source,
         "problem_override": problem_override,
     }

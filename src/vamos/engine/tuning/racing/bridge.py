@@ -16,8 +16,8 @@ from vamos.engine.algorithm.config import (
     IBEAConfig,
     SMPSOConfig,
 )
-from vamos.engine.tuning.core.config_space import AlgorithmConfigSpace
-from vamos.engine.tuning.core.parameters import (
+from .config_space import AlgorithmConfigSpace
+from .parameters import (
     BooleanParam,
     CategoricalIntegerParam,
     CategoricalParam,
@@ -65,7 +65,7 @@ def build_moead_config_space() -> AlgorithmConfigSpace:
     return AlgorithmConfigSpace("moead", params, [])
 
 
-def build_nsga3_config_space() -> AlgorithmConfigSpace:
+def build_nsgaiii_config_space() -> AlgorithmConfigSpace:
     params = [
         IntegerParam("pop_size", 20, 200, log=True),
         CategoricalParam("engine", ["numpy", "numba", "moocore"]),
@@ -77,7 +77,7 @@ def build_nsga3_config_space() -> AlgorithmConfigSpace:
         FloatParam("mutation_eta", 5.0, 40.0),
         IntegerParam("selection_pressure", 2, 4),
     ]
-    return AlgorithmConfigSpace("nsga3", params, [])
+    return AlgorithmConfigSpace("nsgaiii", params, [])
 
 
 def build_smsemoa_config_space() -> AlgorithmConfigSpace:
@@ -188,7 +188,7 @@ def config_from_assignment(algorithm_name: str, assignment: Dict[str, Any]):
         )
         builder.aggregation(str(assignment["aggregation"]))
         return builder.fixed()
-    if algo == "nsga3":
+    if algo == "nsgaiii":
         builder = NSGAIIIConfig()
         builder.pop_size(int(assignment["pop_size"]))
         builder.engine(str(assignment.get("engine", "numpy")))

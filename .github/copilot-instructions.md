@@ -13,7 +13,7 @@ from vamos import (
     ZDT1, make_problem_selection,
     FeatureSelectionProblem, HyperparameterTuningProblem,
     plot_pareto_front_2d, weighted_sum_scores,
-    AlgorithmConfigSpace, NSGAIITuner,
+    ParamSpace, RandomSearchTuner, RacingTuner,
 )
 
 # ❌ AVOID - Internal paths (for contributors only)
@@ -94,18 +94,18 @@ run_single(
 - `HypervolumeArchive`: SMS-EMOA style pruning by HV contribution
 - `CrowdingDistanceArchive`: jMetal style pruning by crowding distance
 
-### Tuning / AutoNSGA-II
-Meta-optimization over algorithm hyperparameters:
+### Racing-Style Tuning
+Hyperparameter tuning with racing (irace-inspired):
 ```python
-from vamos import AlgorithmConfigSpace, NSGAIITuner, make_problem_selection
+from vamos import ParamSpace, Real, Int, Categorical, RandomSearchTuner, RacingTuner
 
-space = AlgorithmConfigSpace()
-space.add_float("crossover_prob", 0.7, 1.0)
-space.add_categorical("crossover", ["sbx", "blx_alpha"])
-tuner = NSGAIITuner(space, problem, budget=10000)
-best_config = tuner.run()
+space = ParamSpace(params={
+    "crossover_prob": Real(0.7, 1.0),
+    "pop_size": Int(50, 200),
+    "crossover": Categorical(["sbx", "blx_alpha"]),
+})
+# Use RandomSearchTuner or RacingTuner with TuningTask
 ```
-See [examples/auto_nsga2_tuning_example.py](../examples/auto_nsga2_tuning_example.py) for full usage.
 
 ## Key Conventions
 

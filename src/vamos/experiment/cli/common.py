@@ -69,11 +69,11 @@ def _normalize_operator_args(parser, args):
     args.smsemoa_crossover_prob = _parse_probability_arg(
         parser, "--smsemoa-crossover-prob", getattr(args, "smsemoa_crossover_prob", None), allow_expression=False
     )
-    args.nsga3_mutation_prob = _parse_probability_arg(
-        parser, "--nsga3-mutation-prob", getattr(args, "nsga3_mutation_prob", None), allow_expression=True
+    args.nsgaiii_mutation_prob = _parse_probability_arg(
+        parser, "--nsga3-mutation-prob", getattr(args, "nsgaiii_mutation_prob", None), allow_expression=True
     )
-    args.nsga3_crossover_prob = _parse_probability_arg(
-        parser, "--nsga3-crossover-prob", getattr(args, "nsga3_crossover_prob", None), allow_expression=False
+    args.nsgaiii_crossover_prob = _parse_probability_arg(
+        parser, "--nsga3-crossover-prob", getattr(args, "nsgaiii_crossover_prob", None), allow_expression=False
     )
 
 

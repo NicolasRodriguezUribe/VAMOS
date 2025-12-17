@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from vamos.engine.tuning.core.tuning_task import TuningTask, EvalContext
-from vamos.engine.tuning.core.sampler import Sampler, UniformSampler
+from .tuning_task import TuningTask, EvalContext
+from .sampler import Sampler, UniformSampler
 
 
 @dataclass

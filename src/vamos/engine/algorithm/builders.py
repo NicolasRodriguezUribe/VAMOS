@@ -14,7 +14,6 @@ from vamos.engine.algorithm.config import (
     IBEAConfig,
     SMPSOConfig,
 )
-from vamos.engine.algorithm.autonsga2_builder import build_autonsga2
 from vamos.engine.algorithm.registry import resolve_algorithm
 from vamos.engine.config.variation import merge_variation_overrides, resolve_nsgaii_variation_config
 
@@ -140,13 +139,13 @@ def build_smsemoa_algorithm(
     return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
 
 
-def build_nsga3_algorithm(
+def build_nsgaiii_algorithm(
     *,
     kernel,
     engine_name: str,
     problem,
     pop_size: int,
-    nsga3_variation: dict | None,
+    nsgaiii_variation: dict | None,
     selection_pressure: int,
 ) -> Tuple[Any, Any]:
     var_cfg = merge_variation_overrides(
@@ -155,7 +154,7 @@ def build_nsga3_algorithm(
             "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
             "selection": ("tournament", {"pressure": selection_pressure}),
         },
-        nsga3_variation,
+        nsgaiii_variation,
     )
 
     builder = NSGAIIIConfig()
@@ -172,7 +171,7 @@ def build_nsga3_algorithm(
     builder.selection(s_name, **s_kwargs)
 
     cfg_data = builder.fixed()
-    algo_ctor = resolve_algorithm("nsga3")
+    algo_ctor = resolve_algorithm("nsgaiii")
     return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
 
 
@@ -293,9 +292,8 @@ __all__ = [
     "build_nsgaii_algorithm",
     "build_moead_algorithm",
     "build_smsemoa_algorithm",
-    "build_nsga3_algorithm",
+    "build_nsgaiii_algorithm",
     "build_spea2_algorithm",
     "build_ibea_algorithm",
     "build_smpso_algorithm",
-    "build_autonsga2",
 ]
