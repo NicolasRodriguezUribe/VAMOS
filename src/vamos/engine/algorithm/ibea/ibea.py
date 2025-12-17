@@ -1,0 +1,355 @@
+# algorithm/ibea/core.py
+"""
+IBEA evolutionary algorithm core.
+
+This module contains the main IBEA class with the evolutionary loop (run/ask/tell).
+- Setup logic: setup.py
+- Operator building: operators.py
+- State and results: state.py
+- Helper functions: helpers.py
+
+References:
+    E. Zitzler and S. Künzli, "Indicator-Based Selection in Multiobjective
+    Search," in Proc. PPSN VIII, 2004, pp. 832-842.
+"""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+import numpy as np
+
+from vamos.engine.algorithm.components.base import (
+    finalize_genealogy,
+    track_offspring_genealogy,
+)
+from vamos.engine.algorithm.components.population import (
+    evaluate_population,
+    evaluate_population_with_constraints,
+)
+from vamos.engine.algorithm.nsgaii.helpers import build_mating_pool
+
+from .helpers import combine_constraints, environmental_selection
+from .initialization import initialize_ibea_run
+from .state import IBEAState, build_ibea_result
+
+if TYPE_CHECKING:
+    from vamos.foundation.eval.backends import EvaluationBackend
+    from vamos.foundation.kernel.backend import KernelBackend
+    from vamos.foundation.problem.types import ProblemProtocol
+    from vamos.ux.visualization.live_viz import LiveVisualization
+
+
+class IBEA:
+    """Indicator-Based Evolutionary Algorithm.
+
+    IBEA uses quality indicators (epsilon or hypervolume) to compute fitness
+    from pairwise comparisons. Solutions are selected based on their contribution
+    to the indicator value, promoting both convergence and diversity.
+
+    Parameters
+    ----------
+    config : dict
+        Algorithm configuration with keys:
+        - pop_size (int): Population size
+        - crossover (tuple): Crossover operator config
+        - mutation (tuple): Mutation operator config
+        - indicator (str, optional): "epsilon" (default) or "hypervolume"
+        - kappa (float, optional): Scaling factor (default: 0.05)
+        - constraint_mode (str, optional): "none" or "penalty"
+    kernel : KernelBackend
+        Backend for vectorized operations.
+
+    Examples
+    --------
+    >>> from vamos import IBEAConfig
+    >>> config = IBEAConfig().pop_size(100).indicator("epsilon").kappa(0.05).fixed()
+    >>> ibea = IBEA(config, kernel)
+    >>> result = ibea.run(problem, ("n_eval", 10000), seed=42)
+
+    Ask/tell interface:
+    >>> ibea.initialize(problem, ("n_eval", 10000), seed=42)
+    >>> while not ibea.should_terminate():
+    ...     X = ibea.ask()
+    ...     F = evaluate(X)
+    ...     ibea.tell(X, F)
+    >>> result = ibea.result()
+    """
+
+    def __init__(self, config: dict, kernel: "KernelBackend"):
+        self.cfg = config
+        self.kernel = kernel
+        self._st: IBEAState | None = None
+        self._live_cb: "LiveVisualization | None" = None
+        self._eval_backend: "EvaluationBackend | None" = None
+        self._max_eval: int = 0
+        self._hv_tracker: Any = None
+        self._problem: "ProblemProtocol | None" = None
+
+    # -------------------------------------------------------------------------
+    # Main run method (batch mode)
+    # -------------------------------------------------------------------------
+
+    def run(
+        self,
+        problem: "ProblemProtocol",
+        termination: tuple[str, Any],
+        seed: int,
+        eval_backend: "EvaluationBackend | None" = None,
+        live_viz: "LiveVisualization | None" = None,
+    ) -> dict[str, Any]:
+        """Run IBEA optimization loop.
+
+        Parameters
+        ----------
+        problem : ProblemProtocol
+            Problem to optimize.
+        termination : tuple
+            Termination criterion, e.g., ("n_eval", 10000).
+        seed : int
+            Random seed for reproducibility.
+        eval_backend : EvaluationBackend, optional
+            Evaluation backend for parallel evaluation.
+        live_viz : LiveVisualization, optional
+            Live visualization callback.
+
+        Returns
+        -------
+        dict
+            Result dictionary with X, F, G, archive data.
+        """
+        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(
+            problem, termination, seed, eval_backend, live_viz
+        )
+        self._problem = problem
+
+        st = self._st
+        if st is None:
+            raise RuntimeError("State not initialized")
+
+        hv_reached = False
+        while st.n_eval < max_eval:
+            # Generate offspring
+            X_off = self._generate_offspring(st)
+
+            # Evaluate offspring
+            F_off, G_off = self._evaluate_offspring(
+                problem, X_off, eval_backend, st.constraint_mode
+            )
+            st.n_eval += X_off.shape[0]
+
+            # Environmental selection
+            X_comb = np.vstack([st.X, X_off])
+            F_comb = np.vstack([st.F, F_off])
+            G_comb = combine_constraints(st.G, G_off)
+
+            st.X, st.F, st.G, st.fitness = environmental_selection(
+                X_comb, F_comb, G_comb, st.pop_size, st.indicator, st.kappa
+            )
+
+            st.generation += 1
+
+            # Update archive
+            if st.archive_manager is not None:
+                st.archive_manager.update(st.X, st.F)
+                st.archive_X, st.archive_F = st.archive_manager.get_archive()
+
+            # Live callback
+            live_cb.on_generation(st.generation, F=st.F)
+
+            # Check HV threshold
+            if hv_tracker is not None:
+                hv_tracker.update(st.F)
+                if hv_tracker.reached_threshold():
+                    hv_reached = True
+                    break
+
+        live_cb.on_end(final_F=st.F)
+        result = build_ibea_result(st, hv_reached)
+        finalize_genealogy(result, st, self.kernel)
+        return result
+
+    def _initialize_run(
+        self,
+        problem: "ProblemProtocol",
+        termination: tuple[str, Any],
+        seed: int,
+        eval_backend: "EvaluationBackend | None" = None,
+        live_viz: "LiveVisualization | None" = None,
+    ) -> tuple[Any, Any, int, Any]:
+        """Initialize the algorithm run."""
+        self._st, live_cb, eval_backend, max_eval, hv_tracker = initialize_ibea_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        )
+        self._live_cb = live_cb
+        self._eval_backend = eval_backend
+        self._max_eval = max_eval
+        self._hv_tracker = hv_tracker
+        return live_cb, eval_backend, max_eval, hv_tracker
+
+    def _generate_offspring(self, st: IBEAState) -> np.ndarray:
+        """Generate offspring using tournament selection and variation."""
+        ranks = np.argsort(np.argsort(st.fitness))
+        crowd = np.zeros_like(st.fitness, dtype=float)
+        parents_per_group = st.variation.parents_per_group
+        children_per_group = st.variation.children_per_group
+        parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
+
+        sel_method, _ = self.cfg["selection"]
+        mating_pairs = build_mating_pool(
+            self.kernel, ranks, crowd, st.pressure, st.rng, parent_count, parents_per_group, sel_method
+        )
+        parent_idx = mating_pairs.reshape(-1)
+        X_parents = st.variation.gather_parents(st.X, parent_idx)
+        X_off = st.variation.produce_offspring(X_parents, st.rng)
+        if X_off.shape[0] > st.offspring_size:
+            X_off = X_off[:st.offspring_size]
+
+        # Track genealogy
+        track_offspring_genealogy(st, parent_idx, X_off.shape[0], "sbx+pm", "ibea")
+
+        return X_off
+
+    def _evaluate_offspring(
+        self,
+        problem: "ProblemProtocol",
+        X: np.ndarray,
+        eval_backend: "EvaluationBackend",
+        constraint_mode: str,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """Evaluate offspring and compute constraints."""
+        if constraint_mode and constraint_mode != "none":
+            F, G = evaluate_population_with_constraints(problem, X)
+        else:
+            F = evaluate_population(problem, X)
+            G = None
+        return F, G
+
+    # -------------------------------------------------------------------------
+    # Ask/Tell Interface
+    # -------------------------------------------------------------------------
+
+    def initialize(
+        self,
+        problem: "ProblemProtocol",
+        termination: tuple[str, Any],
+        seed: int,
+        eval_backend: "EvaluationBackend | None" = None,
+        live_viz: "LiveVisualization | None" = None,
+    ) -> None:
+        """Initialize algorithm for ask/tell loop."""
+        self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = (
+            self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        )
+        self._problem = problem
+        if self._st is not None:
+            self._st.pending_offspring = None
+
+    def ask(self) -> np.ndarray:
+        """Generate offspring for evaluation.
+
+        Returns
+        -------
+        np.ndarray
+            Offspring decision vectors to evaluate.
+
+        Raises
+        ------
+        RuntimeError
+            If not initialized or previous offspring not consumed.
+        """
+        if self._st is None:
+            raise RuntimeError("Algorithm not initialized. Call initialize() first.")
+        if self._st.pending_offspring is not None:
+            raise RuntimeError("Previous offspring not yet consumed by tell().")
+
+        offspring = self._generate_offspring(self._st)
+        self._st.pending_offspring = offspring
+        return offspring.copy()
+
+    def tell(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        G: np.ndarray | None = None,
+    ) -> None:
+        """Receive evaluated offspring and update population.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Evaluated decision vectors.
+        F : np.ndarray
+            Objective values.
+        G : np.ndarray, optional
+            Constraint values.
+
+        Raises
+        ------
+        RuntimeError
+            If not initialized or no pending offspring.
+        """
+        if self._st is None:
+            raise RuntimeError("Algorithm not initialized. Call initialize() first.")
+        if self._st.pending_offspring is None:
+            raise RuntimeError("No pending offspring. Call ask() first.")
+
+        st = self._st
+        st.pending_offspring = None
+
+        # Environmental selection
+        X_comb = np.vstack([st.X, X])
+        F_comb = np.vstack([st.F, F])
+        G_comb = combine_constraints(st.G, G)
+
+        st.X, st.F, st.G, st.fitness = environmental_selection(
+            X_comb, F_comb, G_comb, st.pop_size, st.indicator, st.kappa
+        )
+
+        st.n_eval += X.shape[0]
+        st.generation += 1
+
+        # Update archive
+        if st.archive_manager is not None:
+            st.archive_manager.update(st.X, st.F)
+            st.archive_X, st.archive_F = st.archive_manager.get_archive()
+
+        # Live callback
+        if self._live_cb is not None:
+            self._live_cb.on_generation(st.generation, F=st.F)
+
+        # Check HV tracker
+        if st.hv_tracker is not None:
+            st.hv_tracker.update(st.F)
+
+    def should_terminate(self) -> bool:
+        """Check if termination criterion is met."""
+        if self._st is None:
+            return True
+        if self._st.n_eval >= self._max_eval:
+            return True
+        if self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold():
+            return True
+        return False
+
+    def result(self) -> dict[str, Any]:
+        """Get current result."""
+        if self._st is None:
+            raise RuntimeError("Algorithm not initialized.")
+
+        hv_reached = (
+            self._st.hv_tracker is not None
+            and self._st.hv_tracker.reached_threshold()
+        )
+
+        if self._live_cb is not None:
+            self._live_cb.on_end(final_F=self._st.F)
+
+        return build_ibea_result(self._st, hv_reached)
+
+    @property
+    def state(self) -> IBEAState | None:
+        """Access current algorithm state."""
+        return self._st
+
+
+__all__ = ["IBEA"]

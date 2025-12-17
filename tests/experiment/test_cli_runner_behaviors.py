@@ -71,7 +71,9 @@ def test_study_runner_mirrors_outputs(monkeypatch, tmp_path):
             "output_dir": str(out_dir),
         }
 
-    monkeypatch.setattr("vamos.experiment.study.runner.run_single", fake_run_single)
+    # Import module explicitly to avoid shadowing by vamos.experiment function
+    from vamos.experiment.study import runner as study_runner_module
+    monkeypatch.setattr(study_runner_module, "run_single", fake_run_single)
 
     tasks = [
         StudyTask(

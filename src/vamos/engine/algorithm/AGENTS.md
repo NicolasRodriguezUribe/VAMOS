@@ -13,12 +13,11 @@ building blocks used across multiple algorithms.
   - `hypervolume.py`: hypervolume utilities (with backend fallbacks)
   - `weight_vectors.py`: weight vectors (NSGA-III / MOEA-D)
   - `variation/`: variation pipelines (crossover + mutation wiring)
-- `nsgaii.py`: NSGA-II module (implementation split across `nsgaii_*.py` files)
-  - `nsgaii_core.py`, `nsgaii_setup.py`, `nsgaii_state.py`, `nsgaii_operators.py`, `nsgaii_helpers.py`
-- Algorithm modules: `moead.py`, `nsga3.py`, `smsemoa.py`, `spea2.py`, `ibea.py`,
-  `smpso.py`
-- Config/registry: `config.py`, `registry.py`, `factory.py`, `builders.py`,
-  `autonsga2_builder.py`
+- Algorithm subfolders: `nsgaii/`, `moead/`, `spea2/`, `ibea/`, `smsemoa/`, `smpso/`, `nsgaiii/`
+  - Each contains: `__init__.py`, `{algorithm}.py`, `initialization.py`, `helpers.py`, `operators.py`, `state.py`
+- Config subfolder: `config/`
+  - `base.py`, `nsgaii.py`, `moead.py`, `spea2.py`, `ibea.py`, `smsemoa.py`, `smpso.py`, `nsgaiii.py`
+- Registry/factory: `registry.py`, `factory.py`, `builders.py`
 
 ## Conventions
 

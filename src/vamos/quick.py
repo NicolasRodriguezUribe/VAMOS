@@ -585,7 +585,7 @@ def run_smsemoa(
     )
 
 
-def run_nsga3(
+def run_nsgaiii(
     problem: str | ProblemProtocol,
     *,
     max_evaluations: int = 10000,
@@ -641,7 +641,7 @@ def run_nsga3(
     result = optimize(
         OptimizeConfig(
             problem=prob,
-            algorithm="nsga3",
+            algorithm="nsgaiii",
             algorithm_config=cfg.to_dict(),
             termination=("n_eval", max_evaluations),
             seed=seed,
@@ -653,7 +653,7 @@ def run_nsga3(
         F=result.F,
         X=result.X,
         problem=prob,
-        algorithm="nsga3",
+        algorithm="nsgaiii",
         n_evaluations=max_evaluations,
         seed=seed,
         _raw=result.data,
@@ -661,7 +661,7 @@ def run_nsga3(
 
 
 AlgorithmName = Literal[
-    "nsgaii", "moead", "spea2", "smsemoa", "nsga3", "ibea", "smpso"
+    "nsgaii", "moead", "spea2", "smsemoa", "nsgaiii", "ibea", "smpso"
 ]
 
 
@@ -703,7 +703,7 @@ def run(
         "moead": run_moead,
         "spea2": run_spea2,
         "smsemoa": run_smsemoa,
-        "nsga3": run_nsga3,
+        "nsgaiii": run_nsgaiii,
     }
 
     if algo_lower not in dispatch:
@@ -729,5 +729,5 @@ __all__ = [
     "run_moead",
     "run_spea2",
     "run_smsemoa",
-    "run_nsga3",
+    "run_nsgaiii",
 ]

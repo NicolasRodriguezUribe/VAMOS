@@ -191,9 +191,10 @@ CLI flags override config values. Per-problem sections override defaults.
 
 ## Tuning API
 
-- Canonical tuning abstraction: `AlgorithmConfigSpace` (see `vamos.tuning.AlgorithmConfigSpace` or `vamos.engine.tuning.core.parameter_space`).
-- Use `NSGAIITuner` with an `AlgorithmConfigSpace` to search algorithm hyperparameters (example: `examples/auto_nsga2_tuning_example.py`).
-- For random/racing tuning, use `ParamSpace` with `RandomSearchTuner` / `RacingTuner` (see `notebooks/autonsga2_tuning.ipynb`).
+- Use `ParamSpace` to define hyperparameter search spaces
+- Use `RandomSearchTuner` / `RacingTuner` for tuning (racing-style, irace-inspired)
+- Config space builders: `build_nsgaii_config_space()`, `build_moead_config_space()`, etc.
+- See [tuning_v1.ipynb](notebooks/tuning_v1.ipynb) for examples.
 
 ## Performance toggle
 

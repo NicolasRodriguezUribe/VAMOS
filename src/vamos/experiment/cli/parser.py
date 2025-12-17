@@ -38,7 +38,7 @@ def _load_spec_defaults(config_path: str | None) -> tuple[dict, dict, dict[str, 
     nsgaii_defaults: dict[str, Any] = {}
     moead_defaults: dict[str, Any] = {}
     smsemoa_defaults: dict[str, Any] = {}
-    nsga3_defaults: dict[str, Any] = {}
+    nsgaiii_defaults: dict[str, Any] = {}
     if config_path:
         spec = load_experiment_spec(config_path)
         problem_overrides = spec.get("problems", {}) or {}
@@ -46,8 +46,8 @@ def _load_spec_defaults(config_path: str | None) -> tuple[dict, dict, dict[str, 
         nsgaii_defaults = experiment_defaults.get("nsgaii", {}) or {}
         moead_defaults = experiment_defaults.get("moead", {}) or {}
         smsemoa_defaults = experiment_defaults.get("smsemoa", {}) or {}
-        nsga3_defaults = experiment_defaults.get("nsga3", {}) or {}
-    return spec, problem_overrides, experiment_defaults, nsgaii_defaults, moead_defaults, smsemoa_defaults, nsga3_defaults
+        nsgaiii_defaults = experiment_defaults.get("nsgaiii", {}) or {}
+    return spec, problem_overrides, experiment_defaults, nsgaii_defaults, moead_defaults, smsemoa_defaults, nsgaiii_defaults
 
 
 # Config-file aware parser (overrides the legacy definition above).
@@ -66,7 +66,7 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
         nsgaii_defaults,
         moead_defaults,
         smsemoa_defaults,
-        nsga3_defaults,
+        nsgaiii_defaults,
     ) = _load_spec_defaults(pre_args.config)
 
     def _spec_default(key: str, fallback):
@@ -411,41 +411,41 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type:
     parser.add_argument(
         "--nsga3-crossover",
         choices=("sbx", "uniform"),
-        default=(nsga3_defaults.get("crossover", {}) or {}).get("method"),
+        default=(nsgaiii_defaults.get("crossover", {}) or {}).get("method"),
         help="Crossover method for NSGA-III (sbx for real, uniform for binary/integer).",
     )
     parser.add_argument(
         "--nsga3-crossover-prob",
-        default=(nsga3_defaults.get("crossover", {}) or {}).get("prob"),
+        default=(nsgaiii_defaults.get("crossover", {}) or {}).get("prob"),
         help="Crossover probability for NSGA-III.",
     )
     parser.add_argument(
         "--nsga3-crossover-eta",
         type=float,
-        default=(nsga3_defaults.get("crossover", {}) or {}).get("eta"),
+        default=(nsgaiii_defaults.get("crossover", {}) or {}).get("eta"),
         help="SBX eta for NSGA-III (real encoding).",
     )
     parser.add_argument(
         "--nsga3-mutation",
         choices=("pm", "bitflip", "reset"),
-        default=(nsga3_defaults.get("mutation", {}) or {}).get("method"),
+        default=(nsgaiii_defaults.get("mutation", {}) or {}).get("method"),
         help="Mutation method for NSGA-III (pm for real, bitflip for binary, reset for integer).",
     )
     parser.add_argument(
         "--nsga3-mutation-prob",
-        default=(nsga3_defaults.get("mutation", {}) or {}).get("prob"),
+        default=(nsgaiii_defaults.get("mutation", {}) or {}).get("prob"),
         help="Mutation probability for NSGA-III (allow expressions like 1/n).",
     )
     parser.add_argument(
         "--nsga3-mutation-eta",
         type=float,
-        default=(nsga3_defaults.get("mutation", {}) or {}).get("eta"),
+        default=(nsgaiii_defaults.get("mutation", {}) or {}).get("eta"),
         help="Polynomial mutation eta for NSGA-III (real encoding).",
     )
     parser.add_argument(
         "--nsga3-mutation-step",
         type=int,
-        default=(nsga3_defaults.get("mutation", {}) or {}).get("step"),
+        default=(nsgaiii_defaults.get("mutation", {}) or {}).get("step"),
         help="Integer creep step for NSGA-III (integer encoding).",
     )
     parser.add_argument(

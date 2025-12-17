@@ -31,9 +31,18 @@ from vamos.engine.algorithm.nsgaii import NSGAII
 from vamos.engine.algorithm.moead import MOEAD
 from vamos.engine.algorithm.spea2 import SPEA2
 from vamos.engine.algorithm.smsemoa import SMSEMOA
-from vamos.engine.algorithm.nsga3 import NSGAIII
+from vamos.engine.algorithm.nsgaiii import NSGAIII
 from vamos.engine.algorithm.ibea import IBEA
 from vamos.engine.algorithm.smpso import SMPSO
+
+# Re-export for backwards compatibility (subfolders)
+from vamos.engine.algorithm.nsgaii import (
+    build_mating_pool,
+    feasible_nsga2_survival,
+    match_ids,
+    operator_success_stats,
+    generation_contributions,
+)
 
 from vamos.engine.algorithm.components.protocol import (
     AlgorithmProtocol,

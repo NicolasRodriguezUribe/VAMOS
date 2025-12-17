@@ -2,7 +2,7 @@ import numpy as np
 
 from vamos.engine.algorithm.moead import MOEAD
 from vamos.engine.algorithm.smsemoa import SMSEMOA
-from vamos.engine.algorithm.nsga3 import NSGAIII
+from vamos.engine.algorithm.nsgaiii import NSGAIII
 from vamos.engine.algorithm.config import MOEADConfig, SMSEMOAConfig, NSGAIIIConfig
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.binary import BinaryKnapsackProblem
@@ -43,7 +43,7 @@ def _run_smsemoa(problem, cross, mut, pop_size=10, n_eval=40):
     assert np.isfinite(res["F"]).all()
 
 
-def _run_nsga3(problem, cross, mut, pop_size=12, n_eval=60):
+def _run_nsgaiii(problem, cross, mut, pop_size=12, n_eval=60):
     cfg = (
         NSGAIIIConfig()
         .pop_size(pop_size)
@@ -77,9 +77,9 @@ def test_smsemoa_binary_and_integer():
     )
 
 
-def test_nsga3_binary_and_integer():
-    _run_nsga3(BinaryKnapsackProblem(n_var=8), ("uniform", {"prob": 0.9}), ("bitflip", {"prob": "1/n"}))
-    _run_nsga3(
+def test_nsgaiii_binary_and_integer():
+    _run_nsgaiii(BinaryKnapsackProblem(n_var=8), ("uniform", {"prob": 0.9}), ("bitflip", {"prob": "1/n"}))
+    _run_nsgaiii(
         IntegerResourceAllocationProblem(n_var=6, max_per_task=4),
         ("uniform", {"prob": 0.9}),
         ("reset", {"prob": "1/n", "step": 1}),

@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
-from ..core.stats import build_score_matrix, select_configs_by_paired_test
+from .stats import build_score_matrix, select_configs_by_paired_test
 from .state import ConfigState, EliteEntry
 
 

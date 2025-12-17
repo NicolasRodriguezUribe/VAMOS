@@ -13,7 +13,7 @@ from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 
 from .nsgaii import NSGAII
-from .nsga3 import NSGAIII
+from .nsgaiii import NSGAIII
 from .moead import MOEAD
 from .smsemoa import SMSEMOA
 from .spea2 import SPEA2
@@ -37,7 +37,7 @@ AlgorithmBuilder = Callable[[dict, KernelBackend], AlgorithmLike]
 
 ALGORITHMS: Dict[str, AlgorithmBuilder] = {
     "nsgaii": lambda cfg, kernel: NSGAII(cfg, kernel=kernel),
-    "nsga3": lambda cfg, kernel: NSGAIII(cfg, kernel=kernel),
+    "nsgaiii": lambda cfg, kernel: NSGAIII(cfg, kernel=kernel),
     "moead": lambda cfg, kernel: MOEAD(cfg, kernel=kernel),
     "smsemoa": lambda cfg, kernel: SMSEMOA(cfg, kernel=kernel),
     "spea2": lambda cfg, kernel: SPEA2(cfg, kernel=kernel),

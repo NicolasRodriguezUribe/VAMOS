@@ -1,7 +1,7 @@
 import numpy as np
 
-from vamos.engine.tuning.core.io import filter_active_config, history_to_dict
-from vamos.engine.tuning.core.param_space import ParamSpace, Categorical, Real, Condition
+from vamos.engine.tuning.racing.io import filter_active_config, history_to_dict
+from vamos.engine.tuning.racing.param_space import ParamSpace, Categorical, Real, Condition
 from vamos.engine.tuning.racing.random_search_tuner import TrialResult
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 
-from vamos.engine.tuning.core.param_space import ParamSpace, Real
-from vamos.engine.tuning.core.tuning_task import TuningTask, Instance, EvalContext
+from vamos.engine.tuning.racing.param_space import ParamSpace, Real
+from vamos.engine.tuning.racing.tuning_task import TuningTask, Instance, EvalContext
 from vamos.engine.tuning.racing.random_search_tuner import RandomSearchTuner
 
 

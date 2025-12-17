@@ -36,7 +36,7 @@ class TestQuickAPIImports:
             run,
             run_moead,
             run_nsgaii,
-            run_nsga3,
+            run_nsgaiii,
             run_smsemoa,
             run_spea2,
         )
@@ -46,7 +46,7 @@ class TestQuickAPIImports:
         assert callable(run_moead)
         assert callable(run_spea2)
         assert callable(run_smsemoa)
-        assert callable(run_nsga3)
+        assert callable(run_nsgaiii)
         assert QuickResult is not None
 
 
@@ -172,11 +172,11 @@ class TestQuickAPIAlgorithms:
         assert len(result) > 0
         assert np.isfinite(result.F).all()
 
-    def test_run_nsga3_3obj(self):
-        """run_nsga3 should work for 3-objective problems."""
-        from vamos import run_nsga3
+    def test_run_nsgaiii_3obj(self):
+        """run_nsgaiii should work for 3-objective problems."""
+        from vamos import run_nsgaiii
 
-        result = run_nsga3(
+        result = run_nsgaiii(
             "dtlz2",
             n_var=10,
             n_obj=3,

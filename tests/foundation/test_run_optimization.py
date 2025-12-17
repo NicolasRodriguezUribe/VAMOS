@@ -57,9 +57,10 @@ class TestRunOptimization:
     def test_run_invalid_algorithm(self):
         """run_optimization() with invalid algorithm should raise."""
         from vamos import run_optimization, ZDT1
+        from vamos.exceptions import InvalidAlgorithmError
 
         problem = ZDT1(n_var=10)
-        with pytest.raises(ValueError, match="Unknown algorithm"):
+        with pytest.raises(InvalidAlgorithmError, match="Unknown algorithm"):
             run_optimization(problem, "invalid_algo", max_evaluations=100)
 
     @pytest.mark.smoke

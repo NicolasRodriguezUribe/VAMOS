@@ -8,7 +8,7 @@ from vamos.engine.algorithm.builders import (
     build_nsgaii_algorithm,
     build_moead_algorithm,
     build_smsemoa_algorithm,
-    build_nsga3_algorithm,
+    build_nsgaiii_algorithm,
     build_spea2_algorithm,
     build_ibea_algorithm,
     build_smpso_algorithm,
@@ -26,7 +26,7 @@ def build_algorithm(
     nsgaii_variation: dict | None = None,
     moead_variation: dict | None = None,
     smsemoa_variation: dict | None = None,
-    nsga3_variation: dict | None = None,
+    nsgaiii_variation: dict | None = None,
     spea2_variation: dict | None = None,
     ibea_variation: dict | None = None,
     smpso_variation: dict | None = None,
@@ -72,13 +72,13 @@ def build_algorithm(
             smsemoa_variation=smsemoa_variation,
         )
 
-    elif algorithm_name == "nsga3":
-        return build_nsga3_algorithm(
+    elif algorithm_name == "nsgaiii":
+        return build_nsgaiii_algorithm(
             kernel=kernel,
             engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
-            nsga3_variation=nsga3_variation,
+            nsgaiii_variation=nsgaiii_variation,
             selection_pressure=selection_pressure,
         )
 
