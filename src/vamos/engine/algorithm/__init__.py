@@ -67,5 +67,11 @@ __all__ = [
     "SelectionMethod",
     "SurvivalMethod",
     "ConstraintMode",
+    # NSGA-II utilities
+    "build_mating_pool",
+    "feasible_nsga2_survival",
+    "match_ids",
+    "operator_success_stats",
+    "generation_contributions",
 ]
 

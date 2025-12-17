@@ -6,7 +6,7 @@ from __future__ import annotations
 import subprocess
 from datetime import datetime, UTC
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from vamos.foundation.version import __version__
 

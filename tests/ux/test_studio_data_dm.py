@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from vamos.ux.studio.data import RunRecord, build_fronts, normalize_objectives
 from vamos.ux.studio.dm import build_decision_view, rank_by_score, feasible_indices, filter_by_objective_ranges

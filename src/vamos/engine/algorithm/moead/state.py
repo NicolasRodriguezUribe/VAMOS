@@ -15,9 +15,7 @@ import numpy as np
 from vamos.engine.algorithm.components.base import AlgorithmState
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
-    from vamos.engine.algorithm.components.termination import HVTracker
-    from vamos.ux.analytics.genealogy import GenealogyTracker
+    pass
 
 
 @dataclass

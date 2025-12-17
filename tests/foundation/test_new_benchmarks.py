@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from vamos.foundation.problem.lz import LZ09F1Problem, LZ09F6Problem
 from vamos.foundation.problem.cec import CEC2009UF1Problem, CEC2009CF1Problem

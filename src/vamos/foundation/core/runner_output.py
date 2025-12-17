@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 
-from vamos.foundation.core.io_utils import write_population, write_metadata, write_timing, ensure_dir
+from vamos.foundation.core.io_utils import write_population, write_metadata, write_timing
 from vamos.foundation.core.metadata import build_run_metadata
 
 
@@ -65,7 +65,7 @@ def build_metrics(
 def print_run_results(metrics: dict) -> None:
     algo = metrics["algorithm"]
     time_ms = metrics["time_ms"]
-    evals = metrics["evaluations"]
+    # evaluations are included in the evals_per_sec calculation
     hv_info = ""
     hv = metrics.get("hv")
     if hv is not None:

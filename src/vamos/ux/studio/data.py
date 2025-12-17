@@ -59,7 +59,7 @@ def load_run_from_directory(run_dir: Path) -> RunRecord:
     problem_name = metadata.get("problem", {}).get("key") or metadata.get("problem_key")
     algorithm_name = metadata.get("algorithm")
     seed = metadata.get("seed", -1)
-    experiment_id = run_dir.name
+    # experiment_id = run_dir.name  # Available for future use
     parts = list(run_dir.parts)
     if problem_name is None and len(parts) >= 3:
         problem_name = parts[-3]

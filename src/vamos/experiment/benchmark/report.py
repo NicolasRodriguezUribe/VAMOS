@@ -74,7 +74,7 @@ class BenchmarkReport:
     def compute_statistics(self) -> Dict[str, Any]:
         if self._stats_cache is not None:
             return self._stats_cache
-        pd = import_pandas()
+        import_pandas()  # Ensure pandas is available
         tidy = self.aggregate_metrics()
         stats: Dict[str, Any] = {}
         for metric in self.config.metrics:
@@ -147,7 +147,7 @@ class BenchmarkReport:
     def generate_latex_tables(self) -> Dict[str, Path]:
         pd = import_pandas()
         tidy = self.aggregate_metrics()
-        stats = self.compute_statistics()
+        _ = self.compute_statistics()  # Populate cache for later use
         tables_dir = ensure_dir(self.output_dir / "tables")
         created: Dict[str, Path] = {}
         for metric in self.config.metrics:

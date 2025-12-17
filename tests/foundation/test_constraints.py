@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from vamos.foundation.constraints import (
-    ConstraintInfo,
     CVAsObjectiveStrategy,
     EpsilonConstraintStrategy,
     FeasibilityFirstStrategy,

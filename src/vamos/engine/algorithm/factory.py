@@ -38,7 +38,7 @@ def build_algorithm(
     kernel = resolve_kernel(engine_name)
     pop_size = config.population_size
     offspring_size = config.offspring_size()
-    seed = config.seed
+    # Note: seed is available via config.seed but algorithms handle their own RNG
 
     if algorithm_name == "nsgaii":
         return build_nsgaii_algorithm(

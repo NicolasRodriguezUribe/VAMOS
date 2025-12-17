@@ -4,11 +4,10 @@ Helper utilities shared by runner components.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 import numpy as np
 
-from vamos.foundation.problem.types import ProblemProtocol, MixedProblemProtocol
+from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.problem.resolver import ProblemSelection
 from vamos.foundation.core.experiment_config import ExperimentConfig
 

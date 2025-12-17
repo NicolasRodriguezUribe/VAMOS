@@ -83,7 +83,7 @@ def knee_point_scores(F: np.ndarray) -> MCDMResult:
     vec /= norm
     diffs = sorted_F - p_start
     proj = diffs @ vec
-    proj_point = np.outer(proj, vec) + p_start
+    # proj_point = np.outer(proj, vec) + p_start  # projection onto the line (debug)
     distances = np.linalg.norm(diffs - (proj[:, None] * vec), axis=1)
     best_local_idx = int(np.argmax(distances))
     best_global_idx = int(order[best_local_idx])

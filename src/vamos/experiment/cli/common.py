@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 
 
 def _parse_probability_arg(parser, flag: str, raw, *, allow_expression: bool):

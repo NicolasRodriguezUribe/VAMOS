@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from vamos.engine.algorithm.nsgaiii import NSGAIII, associate, nsgaiii_survival
 from vamos.engine.algorithm.config import NSGAIIIConfig

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 from vamos.foundation.problem.registry_info import list_problems, get_problem_info
-from vamos.foundation.problem.registry import make_problem_selection
 from vamos.experiment.runner import run_experiment
 from vamos.foundation.core.experiment_config import ExperimentConfig
 

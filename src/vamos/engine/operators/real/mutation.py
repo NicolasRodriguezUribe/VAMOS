@@ -14,7 +14,7 @@ from .utils import (
     _clip_population,
     _ensure_bounds,
 )
-from .repair import Repair, ClampRepair, ReflectRepair, ResampleRepair, RoundRepair
+from .repair import Repair
 
 
 class Mutation(RealOperator, ABC):

@@ -7,7 +7,7 @@ try:  # pragma: no cover - optional dependency
 except ImportError:  # pragma: no cover - optional dependency
     _moocore = None
 
-from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort, _compute_crowding
+from vamos.foundation.kernel.numpy_backend import _compute_crowding
 
 
 def _single_front_crowding(F: np.ndarray) -> np.ndarray:

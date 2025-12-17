@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from pathlib import Path
 
 # Constants moved from runner.py
 TITLE = "VAMOS Experiment Runner"

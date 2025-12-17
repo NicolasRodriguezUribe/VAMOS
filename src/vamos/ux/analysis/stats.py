@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence, List
+from typing import Sequence, List, TYPE_CHECKING
 
 import numpy as np
 from scipy import stats as spstats
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
 
 
 def _require_matplotlib():
@@ -99,7 +102,7 @@ def plot_critical_distance(
     alpha: float = 0.05,
     n_problems: int | None = None,
     higher_is_better: bool = True,
-    ax: plt.Axes | None = None,
+    ax: Axes | None = None,
     show: bool = False,
 ) -> object:
     """

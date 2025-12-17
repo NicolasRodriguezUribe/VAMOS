@@ -17,21 +17,17 @@ By using this shared infrastructure, all algorithms gain consistent features:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, Protocol, runtime_checkable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
 from vamos.engine.algorithm.components.population import (
-    evaluate_population,
-    evaluate_population_with_constraints,
     initialize_population,
     resolve_bounds,
 )
 from vamos.engine.algorithm.components.termination import HVTracker
-from vamos.engine.algorithm.components.variation import VariationPipeline
-from vamos.engine.operators.real import VariationWorkspace
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 
 if TYPE_CHECKING:

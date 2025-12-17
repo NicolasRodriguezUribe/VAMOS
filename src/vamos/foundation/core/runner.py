@@ -16,10 +16,6 @@ from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.core.experiment_config import (
     ExperimentConfig,
-    TITLE,
-    DEFAULT_ALGORITHM,
-    DEFAULT_ENGINE,
-    DEFAULT_PROBLEM,
     ENABLED_ALGORITHMS,
     OPTIONAL_ALGORITHMS,
     EXTERNAL_ALGORITHM_NAMES,
@@ -37,7 +33,7 @@ from vamos.foundation.core.runner_output import (
     print_run_banner,
     print_run_results,
 )
-from vamos.foundation.core.runner_utils import validate_problem, problem_output_dir, run_output_dir
+from vamos.foundation.core.runner_utils import validate_problem, run_output_dir
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
@@ -155,7 +151,7 @@ def run_single(
     payload = exec_result.payload
     total_time_ms = exec_result.elapsed_ms
     F = payload["F"]
-    archive = payload.get("archive")
+    # archive = payload.get("archive")  # Reserved for future archive export
     actual_evaluations = int(payload.get("evaluations", config.max_evaluations))
     termination_reason = "max_evaluations"
     if hv_enabled and payload.get("hv_reached"):
@@ -249,7 +245,6 @@ def execute_problem_suite(
     autodiff_constraints: bool = False,
 ):
     from vamos.foundation.core import external  # local import to keep runner decoupled
-    from vamos.ux.visualization import plotting
 
     engines: Iterable[str] = EXPERIMENT_BACKENDS if args.experiment == "backends" else (args.engine,)
     algorithms = list(ENABLED_ALGORITHMS) if args.algorithm == "both" else [args.algorithm]
@@ -324,11 +319,11 @@ def execute_problem_suite(
             problem_selection,
             use_native_problem=use_native_external_problem,
             config=config,
-            make_metrics=_make_metrics,
+            make_metrics=build_metrics,
             print_banner=lambda problem, selection, label, backend: print_run_banner(
                 problem, selection, label, backend, config
             ),
-            print_results=_print_run_results,
+            print_results=print_run_results,
         )
         if metrics is not None:
             results.append(metrics)

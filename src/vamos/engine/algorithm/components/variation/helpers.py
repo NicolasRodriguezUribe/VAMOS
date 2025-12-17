@@ -3,7 +3,6 @@ Shared helpers and operator registries for variation pipelines.
 """
 from __future__ import annotations
 
-import numpy as np
 
 from vamos.engine.operators.binary import (
     one_point_crossover,
