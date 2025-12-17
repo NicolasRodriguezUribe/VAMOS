@@ -18,8 +18,6 @@ from vamos.engine.algorithm.config import (
 )
 from .config_space import AlgorithmConfigSpace
 from .parameters import (
-    BooleanParam,
-    CategoricalIntegerParam,
     CategoricalParam,
     ConditionalBlock,
     FloatParam,

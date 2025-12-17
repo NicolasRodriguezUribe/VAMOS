@@ -82,8 +82,8 @@ def main(argv: list[str] | None = None) -> None:
         config=BenchmarkReportConfig(metrics=list(metrics)),
         output_dir=report_output,
     )
-    tidy = report.aggregate_metrics()
-    stats = report.compute_statistics()
+    _ = report.aggregate_metrics()  # Writes tidy CSV
+    _ = report.compute_statistics()  # Populates internal cache
     tables = report.generate_latex_tables()
     plots = report.generate_plots()
 

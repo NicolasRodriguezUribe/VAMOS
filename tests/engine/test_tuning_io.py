@@ -1,4 +1,3 @@
-import numpy as np
 
 from vamos.engine.tuning.racing.io import filter_active_config, history_to_dict
 from vamos.engine.tuning.racing.param_space import ParamSpace, Categorical, Real, Condition

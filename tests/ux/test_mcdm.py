@@ -1,7 +1,6 @@
 import numpy as np
 
 from vamos.ux.analysis.mcdm import (
-    MCDMResult,
     knee_point_scores,
     reference_point_scores,
     tchebycheff_scores,

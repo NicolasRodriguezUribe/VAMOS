@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
 
 
 def _require_matplotlib():
@@ -26,7 +31,7 @@ def _get_ax(ax, projection: str | None = None):
 
 def plot_pareto_front_2d(
     F: np.ndarray,
-    ax: plt.Axes | None = None,
+    ax: Axes | None = None,
     labels: tuple[str, str] | None = None,
     title: str | None = None,
     show: bool = False,
@@ -51,7 +56,7 @@ def plot_pareto_front_2d(
 
 def plot_pareto_front_3d(
     F: np.ndarray,
-    ax: plt.Axes | None = None,
+    ax: Axes | None = None,
     labels: tuple[str, str, str] | None = None,
     title: str | None = None,
     show: bool = False,
@@ -79,7 +84,7 @@ def plot_pareto_front_3d(
 def plot_parallel_coordinates(
     F: np.ndarray,
     labels: list[str] | None = None,
-    ax: plt.Axes | None = None,
+    ax: Axes | None = None,
     title: str | None = None,
     show: bool = False,
 ) -> object:
@@ -110,7 +115,7 @@ def plot_parallel_coordinates(
 def plot_hv_convergence(
     evals: np.ndarray,
     hv_values: np.ndarray,
-    ax: plt.Axes | None = None,
+    ax: Axes | None = None,
     label: str | None = None,
     title: str | None = "Hypervolume convergence",
     show: bool = False,

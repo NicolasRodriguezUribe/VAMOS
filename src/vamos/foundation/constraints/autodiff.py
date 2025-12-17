@@ -16,15 +16,15 @@ def _import_jax():
     return jax, jnp
 
 
-def _expr_to_jax(expr: Expr, x):
+def _expr_to_jax(expr: Expr, x, jnp):
     op = expr.op
     if op == "const":
         return jnp.array(expr.args[0])
     if op == "var":
         var: Var = expr.args[0]
         return x[var.index]
-    a = _expr_to_jax(expr.args[0], x)
-    b = _expr_to_jax(expr.args[1], x)
+    a = _expr_to_jax(expr.args[0], x, jnp)
+    b = _expr_to_jax(expr.args[1], x, jnp)
     if op == "add":
         return a + b
     if op == "sub":
@@ -38,9 +38,9 @@ def _expr_to_jax(expr: Expr, x):
     raise ValueError(f"Unsupported op {op}")
 
 
-def _constraint_to_jax(c: Constraint, x):
-    lhs = _expr_to_jax(c.lhs, x)
-    rhs = _expr_to_jax(c.rhs, x)
+def _constraint_to_jax(c: Constraint, x, jnp):
+    lhs = _expr_to_jax(c.lhs, x, jnp)
+    rhs = _expr_to_jax(c.rhs, x, jnp)
     if c.sense == "<=":
         return jnp.maximum(lhs - rhs, 0.0)
     if c.sense == ">=":
@@ -57,7 +57,7 @@ def build_jax_constraint_functions(cm: ConstraintModel) -> Tuple[Callable, Calla
     constraints = list(cm.constraints)
 
     def single(x):
-        return jnp.stack([_constraint_to_jax(c, x) for c in constraints])
+        return jnp.stack([_constraint_to_jax(c, x, jnp) for c in constraints])
 
     jac_single = jax.jacrev(single)
     batched_fun = jax.vmap(single)

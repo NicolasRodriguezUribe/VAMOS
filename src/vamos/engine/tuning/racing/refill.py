@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import numpy as np
 
 from .param_space import ParamSpace, Real, Int, Categorical
 from .sampler import Sampler
 from .state import ConfigState, EliteEntry
-from .elimination import compute_aggregated_scores
 
 
 def make_neighbor_config(base_config: Dict[str, Any], param_space: ParamSpace, rng: np.random.Generator) -> Dict[str, Any]:

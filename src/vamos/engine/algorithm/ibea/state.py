@@ -6,7 +6,7 @@ This module provides the state dataclass for IBEA's ask/tell interface.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 

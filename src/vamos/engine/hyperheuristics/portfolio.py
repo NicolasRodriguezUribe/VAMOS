@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Protocol
+from typing import List, Protocol
 
 import numpy as np
 

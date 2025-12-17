@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -12,7 +11,7 @@ from .param_space import ParamSpace
 from .sampler import Sampler, UniformSampler, ModelBasedSampler
 from .state import ConfigState, EliteEntry
 from .schedule import build_schedule
-from .elimination import aggregate_rows, compute_aggregated_scores, eliminate_configs, update_elite_archive
+from .elimination import eliminate_configs, update_elite_archive
 from .refill import refill_population
 
 

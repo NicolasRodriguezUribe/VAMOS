@@ -7,7 +7,7 @@ Intended for quick sanity checks; not a benchmark.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import List
 
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection

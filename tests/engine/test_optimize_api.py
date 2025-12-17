@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 
 from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig

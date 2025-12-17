@@ -169,13 +169,8 @@ class TestAPIConsistency:
         from vamos import (
             run_optimization,
             optimize,
-            OptimizeConfig,
-            OptimizationResult,
             NSGAIIConfig,
             MOEADConfig,
-            SPEA2Config,
-            SMSEMOAConfig,
-            NSGAIIIConfig,
         )
 
         # Just verify imports work

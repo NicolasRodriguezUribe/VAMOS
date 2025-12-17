@@ -1,7 +1,6 @@
 """Tests for genealogy tracking across all algorithms."""
 
 import pytest
-import numpy as np
 
 from vamos.engine.algorithm.config import (
     MOEADConfig,

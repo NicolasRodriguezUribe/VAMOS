@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import List, Sequence, Tuple
 
-from .state import ConfigState
 
 
 def build_schedule(

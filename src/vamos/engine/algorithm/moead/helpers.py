@@ -7,7 +7,7 @@ This module contains neighborhood update logic and scalarization functions
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
