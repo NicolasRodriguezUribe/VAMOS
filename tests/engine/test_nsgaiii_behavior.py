@@ -48,7 +48,6 @@ def test_reference_directions_truncate_when_excess():
 
 
 def test_association_handles_degenerate_front():
-    cfg = _make_config(pop_size=6)
     # Force a degenerate front: all identical objective vectors
     F = np.full((6, 2), 1.0)
     ref_dirs = np.array([[1.0, 0.0], [0.0, 1.0], [0.5, 0.5]])

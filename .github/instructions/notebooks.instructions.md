@@ -29,8 +29,13 @@ if (ROOT / "src").exists() and str(ROOT / "src") not in sys.path:
 
 import numpy as np
 import matplotlib.pyplot as plt
-from vamos.problem.registry import make_problem_selection
-from vamos.core.runner import run_single, ExperimentConfig
+
+# User-friendly public API
+from vamos import (
+    optimize, OptimizeConfig, NSGAIIConfig,
+    make_problem_selection,
+    plot_pareto_front_2d,
+)
 ```
 
 ## Visualization
@@ -46,5 +51,16 @@ Keep evaluation budgets small for fast iteration:
 ## Seeds
 Always set seeds for reproducibility:
 ```python
-cfg = ExperimentConfig(population_size=100, max_evaluations=5000, seed=42)
+from vamos import OptimizeConfig, NSGAIIConfig
+
+cfg = NSGAIIConfig().pop_size(100).fixed()
+result = optimize(
+    OptimizeConfig(
+        problem=problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 5000),
+        seed=42,
+    )
+)
 ```

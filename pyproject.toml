@@ -134,3 +134,18 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "vamos.foundation.data" = ["reference_fronts/*.csv", "weights/*.csv"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E402",  # Module level import not at top - intentional for sys.path and matplotlib backend
+    "E741",  # Ambiguous variable name 'l' - used in WFG problems (standard math notation)
+    "E501",  # Line too long - handled by black formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]  # Tests often need matplotlib.use() before imports

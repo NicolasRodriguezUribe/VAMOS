@@ -164,7 +164,7 @@ class HypervolumeArchive(_BaseArchive):
     External archive that keeps nondominated solutions and trims using
     hypervolume contributions. When capacity is exceeded, the solution
     with the smallest hypervolume contribution is removed (SMS-EMOA style).
-    
+
     The reference point is dynamically computed from the current archive.
     """
 

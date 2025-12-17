@@ -82,7 +82,7 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 
 **Goal**: Add new tunable parameters (e.g., mutation rate, archive type) to AutoNSGA-II or tuning spaces.
 
-**Context**: `src/vamos/engine/tuning/core/` and `tuning/racing/` for search spaces; `src/vamos/engine/algorithm/` config bindings; examples/notebooks under `examples/` or `notebooks/`.
+**Context**: `src/vamos/engine/tuning/racing/` for search spaces and racing tuners; `src/vamos/engine/algorithm/` config bindings; examples/notebooks under `examples/` or `notebooks/`.
 
 **Steps**
 - Extend the configuration space with ranges/types (continuous/categorical) and sensible defaults.

@@ -75,7 +75,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 > You are in the VAMOS repo and will follow `AGENTS.md` / `AGENTS_tasks.md`.  
 > Goal: extend the AutoNSGA-II (or equivalent) tuning space with new parameters (e.g., `mutation_rate`, `crossover_eta`, `archive_type`).  
 > Tasks:  
-> - Locate search space definitions under `src/vamos/engine/tuning/core/` (and related `tuning/racing/` logic) plus algorithm config binding under `src/vamos/engine/algorithm/`.  
+> - Locate search space definitions under `src/vamos/engine/tuning/racing/` plus algorithm config binding under `src/vamos/engine/algorithm/`.  
 > - Add ranges/types with sensible defaults; ensure parameters are passed into algorithm construction.  
 > - Keep seeding/reproducibility intact.  
 > - Update examples/tests so each new parameter is exercised on a tiny ZDT1 setup.  

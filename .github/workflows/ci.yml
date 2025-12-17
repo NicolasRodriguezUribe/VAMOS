@@ -28,7 +28,7 @@ jobs:
       - name: Format check (black)
         run: black --check .
       - name: Type check (mypy)
-        run: mypy src/vamos/core src/vamos/algorithm src/vamos/kernel
+        run: mypy src/vamos/foundation/core src/vamos/engine/algorithm src/vamos/foundation/kernel
       - name: Run tests
         run: pytest -m "not slow"
 
@@ -49,7 +49,7 @@ jobs:
           python -m pip install -U pip
           python -m pip install . pytest
       - name: Run minimal smoke tests
-        run: python -m pytest tests/test_minimal_imports.py tests/test_packaging_data.py
+        run: python -m pytest tests/integration/test_minimal_imports.py tests/foundation/test_packaging_data.py
 
   build-wheel:
     runs-on: ubuntu-latest

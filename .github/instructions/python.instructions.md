@@ -21,8 +21,14 @@ description: Python coding standards for VAMOS
 
 ## Common Imports
 ```python
-from vamos.problem.registry import make_problem_selection
-from vamos.algorithm.config import NSGAIIConfig
-from vamos.core.runner import run_single, ExperimentConfig
-from vamos.core.optimize import optimize, OptimizeConfig
+# User-facing (examples, notebooks)
+from vamos import optimize, OptimizeConfig, NSGAIIConfig
+from vamos import make_problem_selection, ZDT1
+from vamos import plot_pareto_front_2d, weighted_sum_scores
+
+# Contributor (internal modules)
+from vamos.foundation.problem.registry import make_problem_selection
+from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.foundation.core.runner import run_single, ExperimentConfig
+from vamos.foundation.core.optimize import optimize, OptimizeConfig
 ```
