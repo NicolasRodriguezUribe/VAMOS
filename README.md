@@ -118,7 +118,8 @@ If you plan to modify VAMOS (humans or AI assistants):
 
 ### Examples
 
-- End-to-end scripts in `examples/`: `hyperparam_tuning.py`, `feature_selection.py`, `engineering_design.py`.
+- Quickstarts in `examples/`: `quickstart.py` (ZDT1), `feature_selection.py`, `hyperparam_tuning.py`, `engineering_design.py`.
+- New specialized demos: `tsp_tsplib_nsga2.py` (permutation TSP via TSPLIB), `welded_beam_constraints.py` (constraints), `custom_problem_definition.py` (inline problem), `archive_usage_nsga2.py` (external archive), `racing_tuner_nsgaii.py` (irace-style tuning), `nsgaii_cli_config_example.yaml` (CLI config).
 - Enable optional deps with `pip install -e ".[examples]"` to run scikit-learn based examples and plots.
 
 ## Contributing

@@ -1,17 +1,26 @@
 """Auto-tuning utilities for VAMOS.
 
-This package contains racing-style tuning utilities:
-- ParamSpace, RandomSearchTuner, RacingTuner, etc.
-- Config space builders for each algorithm
+Parameter types use signature: ParamType(name, ...)
+- Real(name, low, high, log=False)
+- Int(name, low, high, log=False)
+- Categorical(name, choices)
+- Boolean(name)
+
+Also provides RandomSearchTuner, RacingTuner, AlgorithmConfigSpace,
+and config space builders for each algorithm.
 """
 
 from .racing import (
-    # Parameter space
+    # Parameter types
     ParamSpace,
     Real,
     Int,
     Categorical,
+    Boolean,
     Condition,
+    ConditionalBlock,
+    ParamType,
+    BaseParam,
     # Samplers
     Sampler,
     UniformSampler,
@@ -24,13 +33,6 @@ from .racing import (
     Scenario,
     # Config space
     AlgorithmConfigSpace,
-    BaseParam,
-    BooleanParam,
-    CategoricalIntegerParam,
-    CategoricalParam,
-    ConditionalBlock,
-    FloatParam,
-    IntegerParam,
     # Tuners
     RandomSearchTuner,
     RacingTuner,
@@ -55,12 +57,16 @@ from .racing import (
 
 
 __all__ = [
-    # Parameter space
+    # Parameter types
     "ParamSpace",
     "Real",
     "Int",
     "Categorical",
+    "Boolean",
     "Condition",
+    "ConditionalBlock",
+    "ParamType",
+    "BaseParam",
     # Samplers
     "Sampler",
     "UniformSampler",
@@ -73,13 +79,6 @@ __all__ = [
     "Scenario",
     # Config space
     "AlgorithmConfigSpace",
-    "BaseParam",
-    "BooleanParam",
-    "CategoricalIntegerParam",
-    "CategoricalParam",
-    "ConditionalBlock",
-    "FloatParam",
-    "IntegerParam",
     # Tuners
     "RandomSearchTuner",
     "RacingTuner",

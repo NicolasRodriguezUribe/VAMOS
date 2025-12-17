@@ -1,22 +1,29 @@
-"""Racing tuner package."""
+"""Racing tuner package with unified parameter types."""
 
 from .state import ConfigState, EliteEntry
 from .core import RacingTuner
 from .random_search_tuner import RandomSearchTuner, TrialResult
-from .param_space import ParamSpace, Real, Int, Categorical, Condition
+from .param_space import (
+    ParamSpace,
+    Real,
+    Int,
+    Categorical,
+    Boolean,
+    Condition,
+    ConditionalBlock,
+    ParamType,
+    # Aliases
+    FloatParam,
+    IntegerParam,
+    CategoricalParam,
+    BooleanParam,
+    CategoricalIntegerParam,
+)
+from .parameters import BaseParam
 from .sampler import Sampler, UniformSampler, ModelBasedSampler
 from .tuning_task import TuningTask, EvalContext, Instance
 from .scenario import Scenario
 from .config_space import AlgorithmConfigSpace
-from .parameters import (
-    BaseParam,
-    BooleanParam,
-    CategoricalIntegerParam,
-    CategoricalParam,
-    ConditionalBlock,
-    FloatParam,
-    IntegerParam,
-)
 from .io import filter_active_config, history_to_dict, save_history_json, save_history_csv
 from .bridge import (
     build_spea2_config_space,
@@ -30,35 +37,46 @@ from .bridge import (
 )
 
 __all__ = [
+    # State
     "ConfigState",
     "EliteEntry",
+    # Tuners
     "RacingTuner",
     "RandomSearchTuner",
     "TrialResult",
+    # Parameter types
     "ParamSpace",
     "Real",
     "Int",
     "Categorical",
+    "Boolean",
     "Condition",
+    "ConditionalBlock",
+    "ParamType",
+    # Aliases
+    "FloatParam",
+    "IntegerParam",
+    "CategoricalParam",
+    "BooleanParam",
+    "CategoricalIntegerParam",
+    "BaseParam",
+    # Samplers
     "Sampler",
     "UniformSampler",
     "ModelBasedSampler",
+    # Task/Scenario
     "TuningTask",
     "EvalContext",
     "Instance",
     "Scenario",
+    # Config space
     "AlgorithmConfigSpace",
-    "BaseParam",
-    "BooleanParam",
-    "CategoricalIntegerParam",
-    "CategoricalParam",
-    "ConditionalBlock",
-    "FloatParam",
-    "IntegerParam",
+    # I/O
     "filter_active_config",
     "history_to_dict",
     "save_history_json",
     "save_history_csv",
+    # Config space builders
     "build_spea2_config_space",
     "build_ibea_config_space",
     "build_smpso_config_space",

@@ -20,7 +20,7 @@ def main():
         NSGAIIConfig()
         .pop_size(16)
         .crossover("uniform", prob=0.9)
-        .mutation("bit_flip", prob="1/n")
+        .mutation("bitflip", prob="1/n")
         .selection("tournament", pressure=2)
         .survival("nsga2")
         .engine("numpy")
