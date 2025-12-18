@@ -89,6 +89,7 @@ def build_result(
     state: NSGAIIState,
     n_eval: int,
     hv_reached: bool,
+    kernel: Any = None,
 ) -> dict[str, Any]:
     """Build the result dictionary from algorithm state.
 
@@ -100,20 +101,40 @@ def build_result(
         Total number of evaluations.
     hv_reached : bool
         Whether HV threshold was reached.
+    kernel : KernelBackend, optional
+        Kernel for computing non-dominated ranking. If provided, result
+        will contain only non-dominated solutions.
 
     Returns
     -------
     dict[str, Any]
-        Result dictionary with X, F, evaluations, and optional archive.
+        Result dictionary with X, F, evaluations, population, and optional archive.
+        X and F contain only non-dominated solutions when kernel is provided.
+        Full population is always available in 'population' key.
     """
+    # Filter to non-dominated solutions only
+    if kernel is not None:
+        try:
+            ranks, _ = kernel.nsga2_ranking(state.F)
+            nd_mask = ranks == ranks.min(initial=0)
+            result_X = state.X[nd_mask]
+            result_F = state.F[nd_mask]
+            result_G = state.G[nd_mask] if state.G is not None else None
+        except (ValueError, IndexError) as exc:
+            _logger.warning("Failed to filter non-dominated solutions: %s", exc)
+            result_X, result_F, result_G = state.X, state.F, state.G
+    else:
+        result_X, result_F, result_G = state.X, state.F, state.G
+
     result: dict[str, Any] = {
-        "X": state.X,
-        "F": state.F,
+        "X": result_X,
+        "F": result_F,
         "evaluations": n_eval,
         "hv_reached": hv_reached,
+        "population": {"X": state.X, "F": state.F},  # Full population always available
     }
-    if state.G is not None:
-        result["G"] = state.G
+    if result_G is not None:
+        result["G"] = result_G
 
     # Add archive contents
     if state.result_archive is not None:
