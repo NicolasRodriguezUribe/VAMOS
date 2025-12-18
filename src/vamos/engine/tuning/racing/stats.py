@@ -13,7 +13,8 @@ def build_score_matrix(
     configs: Sequence["ConfigState"],
 ) -> Tuple[np.ndarray, List[int]]:
     """
-    Build a score matrix from the given configs.
+    Build a score matrix from the given configs, trimmed to the minimum history
+    length across alive configs.
 
     Returns:
         scores: np.ndarray of shape (n_configs, n_blocks)
@@ -69,10 +70,26 @@ def _z_critical(alpha: float) -> float:
     return float(norm.ppf(1.0 - alpha / 2.0))
 
 
+def _t_critical(alpha: float, df: int) -> float:
+    """
+    Two-sided critical t-value for the given alpha and degrees of freedom.
+
+    Falls back to z critical when scipy is unavailable.
+    """
+    try:
+        from scipy.stats import t  # type: ignore
+    except Exception:
+        return _z_critical(alpha)
+
+    return float(t.ppf(1.0 - alpha / 2.0, df))
+
+
 def select_configs_by_paired_test(
     scores: np.ndarray,
     maximize: bool,
     alpha: float,
+    *,
+    aggregator=None,
 ) -> np.ndarray:
     """
     Given a score matrix of shape (n_configs, n_blocks), perform paired tests
@@ -88,10 +105,14 @@ def select_configs_by_paired_test(
     if n_configs <= 1 or n_blocks <= 1:
         return keep
 
-    agg_scores = scores.mean(axis=1)
+    if aggregator is None:
+        agg_scores = scores.mean(axis=1)
+    else:
+        agg_scores = np.asarray([float(aggregator(row.tolist())) for row in scores], dtype=float)
+
     best_idx = int(np.argmax(agg_scores)) if maximize else int(np.argmin(agg_scores))
     best_scores = scores[best_idx, :]
-    z_crit = _z_critical(alpha)
+    crit = _t_critical(alpha, df=n_blocks - 1)
 
     for i in range(n_configs):
         if i == best_idx:
@@ -109,7 +130,7 @@ def select_configs_by_paired_test(
             continue
 
         t_stat = mean_diff / (sd_diff / math.sqrt(n_blocks))
-        if t_stat > z_crit:
+        if t_stat > crit:
             keep[i] = False
 
     return keep
@@ -118,5 +139,6 @@ def select_configs_by_paired_test(
 __all__ = [
     "build_score_matrix",
     "_z_critical",
+    "_t_critical",
     "select_configs_by_paired_test",
 ]

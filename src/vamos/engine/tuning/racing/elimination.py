@@ -9,27 +9,26 @@ from .stats import build_score_matrix, select_configs_by_paired_test
 from .state import ConfigState, EliteEntry
 
 
-def aggregate_rows(task, scores: np.ndarray) -> np.ndarray:
-    """Apply task aggregator row-wise to a score matrix."""
-    return np.asarray([float(task.aggregator(row.tolist())) for row in scores], dtype=float)
-
-
 def compute_aggregated_scores(configs: List[ConfigState], task) -> Tuple[List[int], np.ndarray]:
     """
     Compute aggregated scores for all alive configs that have at least one score.
     """
-    scores, alive_indices = build_score_matrix(configs)
-    if scores.size == 0 or len(alive_indices) == 0:
+    alive_indices: List[int] = []
+    agg_values: List[float] = []
+    for idx, state in enumerate(configs):
+        if not state.alive or not state.scores:
+            continue
+        alive_indices.append(idx)
+        agg_values.append(float(task.aggregator(state.scores)))
+    if not agg_values:
         return [], np.array([], dtype=float)
-
-    agg_values = aggregate_rows(task, scores)
     return alive_indices, np.asarray(agg_values, dtype=float)
 
 
 def rank_based_elimination(
     configs: List[ConfigState],
-    scores: np.ndarray,
     alive_indices: List[int],
+    agg_scores: np.ndarray,
     *,
     task,
     scenario,
@@ -38,7 +37,6 @@ def rank_based_elimination(
     if n_alive <= 1:
         return False
 
-    agg_scores = aggregate_rows(task, scores)
     order = np.argsort(-agg_scores if task.maximize else agg_scores)
 
     target_keep = max(
@@ -59,8 +57,8 @@ def rank_based_elimination(
 
 def force_keep_top_k(
     configs: List[ConfigState],
-    scores: np.ndarray,
     alive_indices: List[int],
+    agg_scores: np.ndarray,
     *,
     task,
     k: int,
@@ -70,7 +68,6 @@ def force_keep_top_k(
     if n_alive <= k:
         return False
 
-    agg_scores = aggregate_rows(task, scores)
     order = np.argsort(-agg_scores if task.maximize else agg_scores)
     keep_rows = set(int(idx) for idx in order[:k])
 
@@ -87,33 +84,48 @@ def eliminate_configs(configs: List[ConfigState], *, task, scenario) -> bool:
     """
     Eliminate configurations based on the current scores.
     """
-    scores, alive_indices = build_score_matrix(configs)
-    if scores.size == 0 or len(alive_indices) <= 1:
+    alive_indices, agg_scores = compute_aggregated_scores(configs, task)
+    if agg_scores.size == 0 or len(alive_indices) <= 1:
         return False
 
-    _, n_blocks = scores.shape
+    lengths = [len(configs[idx].scores) for idx in alive_indices]
+    min_len = min(lengths)
+    max_len = max(lengths)
 
-    if (
-        not scenario.use_statistical_tests
-        or n_blocks < scenario.min_blocks_before_elimination
-    ):
+    use_stat_tests = (
+        scenario.use_statistical_tests
+        and min_len >= scenario.min_blocks_before_elimination
+        and min_len > 1
+    )
+
+    if not use_stat_tests:
         return rank_based_elimination(
             configs,
-            scores,
             alive_indices,
+            agg_scores,
             task=task,
             scenario=scenario,
         )
 
+    if min_len != max_len:
+        return rank_based_elimination(
+            configs,
+            alive_indices,
+            agg_scores,
+            task=task,
+            scenario=scenario,
+        )
+
+    scores, aligned_indices = build_score_matrix(configs)
     keep_mask = select_configs_by_paired_test(
         scores=scores,
         maximize=task.maximize,
         alpha=scenario.alpha,
+        aggregator=task.aggregator,
     )
 
     num_keep = int(keep_mask.sum())
     if num_keep <= 0:
-        agg_scores = aggregate_rows(task, scores)
         best_idx = int(np.argmax(agg_scores)) if task.maximize else int(np.argmin(agg_scores))
         keep_mask[best_idx] = True
         num_keep = 1
@@ -121,14 +133,14 @@ def eliminate_configs(configs: List[ConfigState], *, task, scenario) -> bool:
     if num_keep < scenario.min_survivors:
         return force_keep_top_k(
             configs,
-            scores,
-            alive_indices,
+            aligned_indices,
+            agg_scores,
             task=task,
             k=scenario.min_survivors,
         )
 
     eliminated_any = False
-    for row_idx, cfg_idx in enumerate(alive_indices):
+    for row_idx, cfg_idx in enumerate(aligned_indices):
         if not keep_mask[row_idx]:
             if configs[cfg_idx].alive:
                 configs[cfg_idx].alive = False
@@ -185,7 +197,6 @@ def update_elite_archive(
 
 
 __all__ = [
-    "aggregate_rows",
     "compute_aggregated_scores",
     "eliminate_configs",
     "rank_based_elimination",

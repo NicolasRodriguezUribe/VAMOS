@@ -109,10 +109,12 @@ class RacingTuner:
         num_experiments = 0
 
         for inst_idx, seed_idx in schedule:
-            if self._num_alive(configs) == 0:
+            if self.scenario.max_stages is not None and self._stage_index >= self.scenario.max_stages:
+                if verbose_flag:
+                    print("[racing] Reached maximum number of stages.")
                 break
 
-            if self.scenario.max_stages is not None and self._stage_index >= self.scenario.max_stages:
+            if self._num_alive(configs) == 0:
                 break
 
             stage_alive = self._num_alive(configs)
@@ -130,15 +132,9 @@ class RacingTuner:
             stage_eval_count = self._count_new_experiments(configs)
             num_experiments += stage_eval_count
 
-            if num_experiments >= self.scenario.max_experiments:
-                if verbose_flag:
-                    print("[racing] Reached maximum experiment budget.")
-                break
-
             eliminated_any = eliminate_configs(configs, task=self.task, scenario=self.scenario)
 
             if eliminated_any:
-                self._stage_index += 1
                 self._elite_archive = update_elite_archive(
                     configs,
                     task=self.task,
@@ -160,14 +156,19 @@ class RacingTuner:
                     survivor_configs = [c.config for c in configs if c.alive]
                     self.sampler.update(survivor_configs)
 
-            if self._num_alive(configs) <= self.scenario.min_survivors:
+            reached_budget = num_experiments >= self.scenario.max_experiments
+            reached_min_survivors = self._num_alive(configs) <= self.scenario.min_survivors
+
+            self._stage_index += 1
+
+            if reached_budget:
                 if verbose_flag:
-                    print("[racing] Reached minimum survivors, stopping early.")
+                    print("[racing] Reached maximum experiment budget.")
                 break
 
-            if self.scenario.max_stages is not None and self._stage_index >= self.scenario.max_stages:
+            if reached_min_survivors:
                 if verbose_flag:
-                    print("[racing] Reached maximum number of stages.")
+                    print("[racing] Reached minimum survivors, stopping early.")
                 break
 
         best_state, history = self._finalize_results(configs)
