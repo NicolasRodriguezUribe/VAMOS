@@ -164,7 +164,7 @@ class IBEA:
                     break
 
         live_cb.on_end(final_F=st.F)
-        result = build_ibea_result(st, hv_reached)
+        result = build_ibea_result(st, hv_reached, kernel=self.kernel)
         finalize_genealogy(result, st, self.kernel)
         return result
 
@@ -344,7 +344,7 @@ class IBEA:
         if self._live_cb is not None:
             self._live_cb.on_end(final_F=self._st.F)
 
-        return build_ibea_result(self._st, hv_reached)
+        return build_ibea_result(self._st, hv_reached, kernel=self.kernel)
 
     @property
     def state(self) -> IBEAState | None:

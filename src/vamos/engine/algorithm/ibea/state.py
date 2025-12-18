@@ -44,6 +44,7 @@ class IBEAState(AlgorithmState):
 def build_ibea_result(
     state: IBEAState,
     hv_reached: bool = False,
+    kernel: Any = None,
 ) -> dict[str, Any]:
     """Build IBEA result dictionary from state.
 
@@ -53,20 +54,42 @@ def build_ibea_result(
         Current algorithm state.
     hv_reached : bool, optional
         Whether HV threshold was reached for early termination.
+    kernel : KernelBackend, optional
+        Kernel for computing non-dominated ranking. If provided, result
+        will contain only non-dominated solutions.
 
     Returns
     -------
     dict
-        Result dictionary with X, F, G, archive data, and metadata.
+        Result dictionary with X, F, G, population, archive data, and metadata.
+        X and F contain only non-dominated solutions when kernel is provided.
     """
+    # Filter to non-dominated solutions only
+    if kernel is not None:
+        try:
+            ranks, _ = kernel.nsga2_ranking(state.F)
+            nd_mask = ranks == ranks.min(initial=0)
+            result_X = state.X[nd_mask].copy()
+            result_F = state.F[nd_mask].copy()
+            result_G = state.G[nd_mask].copy() if state.G is not None else None
+        except (ValueError, IndexError):
+            result_X = state.X.copy()
+            result_F = state.F.copy()
+            result_G = state.G.copy() if state.G is not None else None
+    else:
+        result_X = state.X.copy()
+        result_F = state.F.copy()
+        result_G = state.G.copy() if state.G is not None else None
+
     result = {
-        "X": state.X.copy(),
-        "F": state.F.copy(),
-        "G": state.G.copy() if state.G is not None else None,
+        "X": result_X,
+        "F": result_F,
+        "G": result_G,
         "evaluations": state.n_eval,
         "n_eval": state.n_eval,
         "generation": state.generation,
         "hv_converged": hv_reached,
+        "population": {"X": state.X.copy(), "F": state.F.copy()},
     }
 
     # Include archive if present

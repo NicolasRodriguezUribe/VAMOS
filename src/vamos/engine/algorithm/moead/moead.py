@@ -145,7 +145,7 @@ class MOEAD:
             st.generation = generation
             notify_generation(live_cb, self.kernel, generation, st.F)
 
-        result = build_moead_result(st, hv_reached)
+        result = build_moead_result(st, hv_reached, kernel=self.kernel)
         finalize_genealogy(result, st, self.kernel)
         live_cb.on_end(final_F=st.F)
         return result

@@ -75,6 +75,7 @@ class MOEADState(AlgorithmState):
 def build_moead_result(
     state: MOEADState,
     hv_reached: bool = False,
+    kernel: Any = None,
 ) -> dict[str, Any]:
     """
     Build the result dictionary from MOEA/D state.
@@ -85,22 +86,40 @@ def build_moead_result(
         Current algorithm state.
     hv_reached : bool
         Whether HV threshold was reached.
+    kernel : KernelBackend, optional
+        Kernel for computing non-dominated ranking. If provided, result
+        will contain only non-dominated solutions.
 
     Returns
     -------
     dict[str, Any]
-        Result dictionary with X, F, weights, evaluations, and optional archive.
+        Result dictionary with X, F, weights, evaluations, population, and optional archive.
+        X and F contain only non-dominated solutions when kernel is provided.
     """
+    # Filter to non-dominated solutions only
+    if kernel is not None:
+        try:
+            ranks, _ = kernel.nsga2_ranking(state.F)
+            nd_mask = ranks == ranks.min(initial=0)
+            result_X = state.X[nd_mask]
+            result_F = state.F[nd_mask]
+            result_G = state.G[nd_mask] if state.G is not None else None
+        except (ValueError, IndexError):
+            result_X, result_F, result_G = state.X, state.F, state.G
+    else:
+        result_X, result_F, result_G = state.X, state.F, state.G
+
     result: dict[str, Any] = {
-        "X": state.X,
-        "F": state.F,
+        "X": result_X,
+        "F": result_F,
         "weights": state.weights,
         "evaluations": state.n_eval,
         "hv_reached": hv_reached,
+        "population": {"X": state.X, "F": state.F},
     }
 
-    if state.G is not None:
-        result["G"] = state.G
+    if result_G is not None:
+        result["G"] = result_G
 
     # Add archive contents
     if state.archive_manager is not None:

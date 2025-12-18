@@ -175,7 +175,7 @@ class NSGAIII:
                     break
 
         live_cb.on_end(final_F=st.F)
-        result = build_nsgaiii_result(st, hv_reached)
+        result = build_nsgaiii_result(st, hv_reached, kernel=self.kernel)
         finalize_genealogy(result, st, self.kernel)
         return result
 
@@ -378,7 +378,7 @@ class NSGAIII:
         if self._live_cb is not None:
             self._live_cb.on_end(final_F=self._st.F)
 
-        result = build_nsgaiii_result(self._st, hv_reached)
+        result = build_nsgaiii_result(self._st, hv_reached, kernel=self.kernel)
         finalize_genealogy(result, self._st, self.kernel)
         return result
 

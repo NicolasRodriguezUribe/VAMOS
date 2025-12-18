@@ -49,7 +49,11 @@ def test_nsgaii_hv_termination_hits_target():
     result = algorithm.run(problem, termination=hv_term, seed=3)
 
     assert result["hv_reached"] is True
-    assert result["F"].shape == (pop_size, problem.n_obj)
+    # Result contains only non-dominated solutions (may be <= pop_size)
+    assert result["F"].shape[0] <= pop_size
+    assert result["F"].shape[1] == problem.n_obj
+    # Full population still available
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)
 
 
 def test_smsemoa_smoke_runs_with_small_population():
@@ -69,8 +73,12 @@ def test_smsemoa_smoke_runs_with_small_population():
 
     result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=4)
 
-    assert result["F"].shape == (pop_size, problem.n_obj)
+    # Result contains only non-dominated solutions (may be <= pop_size)
+    assert result["F"].shape[0] <= pop_size
+    assert result["F"].shape[1] == problem.n_obj
     assert np.isfinite(result["F"]).all()
+    # Full population still available
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)
 
 
 def test_moead_smoke_runs_without_weight_files():
@@ -93,8 +101,12 @@ def test_moead_smoke_runs_without_weight_files():
 
     result = algorithm.run(problem, termination=("n_eval", pop_size + 4), seed=5)
 
-    assert result["F"].shape == (pop_size, problem.n_obj)
+    # Result contains only non-dominated solutions (may be <= pop_size)
+    assert result["F"].shape[0] <= pop_size
+    assert result["F"].shape[1] == problem.n_obj
     assert np.isfinite(result["F"]).all()
+    # Full population still available
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)
 
 
 def test_spea2_smoke_runs_with_archive():
@@ -137,8 +149,12 @@ def test_ibea_smoke_indicator_eps():
 
     result = algorithm.run(problem, termination=("n_eval", pop_size + 10), seed=8)
 
-    assert result["F"].shape == (pop_size, problem.n_obj)
+    # Result contains only non-dominated solutions (may be <= pop_size)
+    assert result["F"].shape[0] <= pop_size
+    assert result["F"].shape[1] == problem.n_obj
     assert np.isfinite(result["F"]).all()
+    # Full population still available
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)
 
 
 def test_smpso_smoke_runs():
@@ -181,8 +197,12 @@ def test_nsgaii_with_multiprocessing_eval_backend():
     eval_backend = MultiprocessingEvalBackend(n_workers=2)
     result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=10, eval_backend=eval_backend)
 
-    assert result["F"].shape == (pop_size, problem.n_obj)
+    # Result contains only non-dominated solutions (may be <= pop_size)
+    assert result["F"].shape[0] <= pop_size
+    assert result["F"].shape[1] == problem.n_obj
     assert np.isfinite(result["F"]).all()
+    # Full population still available
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)
 
 
 def test_nsgaii_permutation_smoke():
@@ -204,8 +224,13 @@ def test_nsgaii_permutation_smoke():
     result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=6)
 
     X = result["X"]
-    assert X.shape == (pop_size, problem.n_var)
+    # Result contains only non-dominated solutions (may be <= pop_size)
+    assert X.shape[0] <= pop_size
+    assert X.shape[1] == problem.n_var
     # Every individual should remain a valid permutation.
     expected = np.arange(problem.n_var)
     assert all(np.array_equal(np.sort(row), expected) for row in X)
-    assert result["F"].shape == (pop_size, problem.n_obj)
+    assert result["F"].shape[0] <= pop_size
+    assert result["F"].shape[1] == problem.n_obj
+    # Full population still available
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)

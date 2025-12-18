@@ -95,7 +95,7 @@ class NSGAII:
             st.generation = generation
             self._notify_generation(live_cb, generation, st.F)
 
-        result = build_result(st, n_eval, hv_reached)
+        result = build_result(st, n_eval, hv_reached, kernel=self.kernel)
         live_cb.on_end(final_F=st.F)
         finalize_genealogy(result, st, self.kernel)
         return result
