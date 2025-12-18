@@ -193,9 +193,15 @@ class ModelBasedSampler:
                 continue
 
             tmp = self.param_space.sample(rng)
-            cfg[name] = tmp[name]
+            if name in tmp:
+                cfg[name] = tmp[name]
 
-        return cfg
+        active_cfg = {name: value for name, value in cfg.items() if self.param_space.is_active(name, cfg)}
+        try:
+            self.param_space.validate(active_cfg)
+        except ValueError:
+            return self.param_space.sample(rng)
+        return active_cfg
 
 
 __all__ = ["Sampler", "UniformSampler", "ModelBasedSampler"]
