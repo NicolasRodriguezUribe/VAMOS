@@ -37,7 +37,12 @@ class DTLZ1Problem(DTLZBase):
                 idx = self.n_obj - i - 1
                 f *= (1.0 - X[:, idx])
             F[:, i] = f
-        out["F"] = 0.5 * (1.0 + g[:, None]) * F
+
+        F_res = 0.5 * (1.0 + g[:, None]) * F
+        if "F" in out and out["F"] is not None:
+            out["F"][:] = F_res
+        else:
+            out["F"] = F_res
 
 
 class DTLZ2Problem(DTLZBase):
@@ -55,7 +60,12 @@ class DTLZ2Problem(DTLZBase):
                 idx = self.n_obj - i - 1
                 f *= np.sin(X[:, idx] * np.pi / 2.0)
             F[:, i] = f
-        out["F"] = (1.0 + g[:, None]) * F
+
+        F_res = (1.0 + g[:, None]) * F
+        if "F" in out and out["F"] is not None:
+            out["F"][:] = F_res
+        else:
+            out["F"] = F_res
 
 
 class DTLZ3Problem(DTLZBase):
@@ -80,7 +90,12 @@ class DTLZ3Problem(DTLZBase):
                 idx = self.n_obj - i - 1
                 f *= np.sin(X[:, idx] * np.pi / 2.0)
             F[:, i] = f
-        out["F"] = (1.0 + g[:, None]) * F
+
+        F_res = (1.0 + g[:, None]) * F
+        if "F" in out and out["F"] is not None:
+            out["F"][:] = F_res
+        else:
+            out["F"] = F_res
 
 
 class DTLZ4Problem(DTLZBase):
@@ -100,4 +115,9 @@ class DTLZ4Problem(DTLZBase):
                 idx = self.n_obj - i - 1
                 f *= np.sin((X[:, idx] ** alpha) * np.pi / 2.0)
             F[:, i] = f
-        out["F"] = (1.0 + g[:, None]) * F
+
+        F_res = (1.0 + g[:, None]) * F
+        if "F" in out and out["F"] is not None:
+            out["F"][:] = F_res
+        else:
+            out["F"] = F_res

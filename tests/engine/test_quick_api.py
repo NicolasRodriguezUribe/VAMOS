@@ -188,6 +188,7 @@ class TestQuickAPIAlgorithms:
         assert len(result) > 0
         assert result.F.shape[1] == 3  # 3 objectives
         assert np.isfinite(result.F).all()
+        assert np.ptp(result.F, axis=0).max() > 1e-3  # avoid collapsed/constant fronts
 
     def test_run_generic_function(self):
         """run() should dispatch to correct algorithm."""

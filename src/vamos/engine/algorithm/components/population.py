@@ -59,9 +59,9 @@ def initialize_population(
 
 
 def evaluate_population(problem, X: np.ndarray) -> np.ndarray:
-    F = np.empty((X.shape[0], problem.n_obj))
-    problem.evaluate(X, {"F": F})
-    return F
+    out = {"F": np.empty((X.shape[0], problem.n_obj))}
+    problem.evaluate(X, out)
+    return out["F"]
 
 
 def evaluate_population_with_constraints(problem, X: np.ndarray) -> tuple[np.ndarray, np.ndarray | None]:

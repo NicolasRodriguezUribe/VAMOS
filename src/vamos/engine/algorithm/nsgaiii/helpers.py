@@ -330,13 +330,12 @@ def evaluate_population_with_constraints(
     n_obj = problem.n_obj
     n_con = getattr(problem, "n_con", 0) or 0
 
-    F = np.empty((X.shape[0], n_obj), dtype=np.float64)
-
+    out: dict[str, np.ndarray] = {"F": np.empty((X.shape[0], n_obj), dtype=np.float64)}
     if n_con > 0:
-        G = np.empty((X.shape[0], n_con), dtype=np.float64)
-        problem.evaluate(X, {"F": F, "G": G})
-    else:
-        problem.evaluate(X, {"F": F})
-        G = None
+        out["G"] = np.empty((X.shape[0], n_con), dtype=np.float64)
 
-    return F, G
+    # Some problems write into preallocated arrays (out["F"][:]=...),
+    # while others replace out["F"] entirely (out["F"]=...). Always read back
+    # from the out dict to support both.
+    problem.evaluate(X, out)
+    return out["F"], out.get("G")
