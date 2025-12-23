@@ -8,13 +8,7 @@ version = "0.1.0"
 description = "Vectorized Architecture for Multiobjective Optimization Studies"
 requires-python = ">=3.10"
 authors = [
-  { name = "Nicolás R. Uribe", email = "nicolas.rodriguez@urjc.es" },
-  { name = "Alberto Herrán", email = "alberto.herran@urjc.es" },
-  { name = "Antonio J. Nebro", email = "ajnebro@uma.es" },
-  { name = "J. Manuel Colmenar", email = "josemanuel.colmenar@urjc.es" },
-]
-maintainers = [
-  { name = "Alberto Herrán", email = "alberto.herran@urjc.es" }
+  { name = "VAMOS contributors" }
 ]
 dependencies = [
   "numpy>=1.23",
@@ -35,6 +29,8 @@ benchmarks = [
 ]
 dev = [
   "pytest>=7.0",
+  "pytest-cov>=4.1",
+  "mypy>=1.8",
   "black>=23.0",
   "ruff>=0.1.5",
   "pandas>=1.5",

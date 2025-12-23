@@ -25,6 +25,7 @@ def test_nsga2_with_adaptive_operator_selector_runs():
         "selection": ("tournament", {"pressure": 2}),
         "survival": "nsga2",
         "engine": "numpy",
+        "result_mode": "population",
         "adaptive_operators": {
             "enabled": True,
             "method": "ucb",

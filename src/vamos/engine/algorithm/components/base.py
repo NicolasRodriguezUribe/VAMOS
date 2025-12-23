@@ -96,6 +96,7 @@ class AlgorithmState:
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
     archive_manager: CrowdingDistanceArchive | HypervolumeArchive | None = None
+    result_mode: str = "non_dominated"
 
     # Termination
     hv_tracker: HVTracker | None = None

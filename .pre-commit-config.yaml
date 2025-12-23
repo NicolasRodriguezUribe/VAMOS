@@ -31,4 +31,4 @@ repos:
       - id: mypy
         additional_dependencies: [numpy>=1.23]
         args: [--ignore-missing-imports]
-        files: ^src/vamos/(core|algorithm|kernel)/
+        files: ^src/vamos/(foundation/core|engine/algorithm|foundation/kernel)/

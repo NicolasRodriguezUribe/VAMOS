@@ -15,6 +15,7 @@ def _nsgaii_cfg():
         .selection("tournament", pressure=2)
         .survival("nsga2")
         .engine("numpy")
+        .result_mode("population")
         .fixed()
     )
 

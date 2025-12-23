@@ -170,7 +170,7 @@ class NSGAII:
             n_var, xl, xu, variation_workspace, problem, mut_factor,
         )
 
-        result_mode = self.cfg.get("result_mode", "population")
+        result_mode = self.cfg.get("result_mode", "non_dominated")
         archive_type = self.cfg.get("archive_type", "hypervolume")
         result_archive = setup_result_archive(
             result_mode, archive_type, archive_size, n_var, problem.n_obj, X.dtype

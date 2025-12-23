@@ -35,6 +35,7 @@ def _make_nsgaii(cfg_mode: str):
         .survival("nsga2")
         .engine("numpy")
         .constraint_mode(cfg_mode)
+        .result_mode("population")
         .fixed()
     )
     return NSGAII(cfg.to_dict(), kernel=NumPyKernel())

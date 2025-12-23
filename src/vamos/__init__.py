@@ -122,6 +122,7 @@ from .quick import (
 
 # Exception hierarchy
 from .exceptions import (
+    VAMOSError,
     ConfigurationError,
     InvalidAlgorithmError,
     InvalidEngineError,

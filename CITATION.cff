@@ -1,24 +1,9 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Rodriguez Uribe"
+  given-names: "Nicolas"
 title: "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
 version: 0.1.0
 date-released: 2024-12-23
 url: "https://github.com/NicolasRodriguezUribe/VAMOS"
-authors:
-  - family-names: "Rodriguez Uribe"
-    given-names: "Nicolás"
-    email: "nicolas.rodriguez@urjc.es"
-    affiliation: "URJC"
-  - family-names: "Herrán"
-    given-names: "Alberto"
-    email: "alberto.herran@urjc.es"
-    affiliation: "URJC"
-    contact: true
-  - family-names: "Nebro"
-    given-names: "Antonio J."
-    email: "ajnebro@uma.es"
-    affiliation: "LCC, ITIS"
-  - family-names: "Colmenar"
-    given-names: "J. Manuel"
-    email: "josemanuel.colmenar@urjc.es"
-    affiliation: "URJC"
