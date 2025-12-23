@@ -15,7 +15,17 @@ from vamos.foundation.problem.registry import (
     available_problem_names,
     make_problem_selection,
 )
-from vamos.foundation.problem.wfg import WFG1Problem as WFG1
+from vamos.foundation.problem.wfg import (
+    WFG1Problem as WFG1,
+    WFG2Problem as WFG2,
+    WFG3Problem as WFG3,
+    WFG4Problem as WFG4,
+    WFG5Problem as WFG5,
+    WFG6Problem as WFG6,
+    WFG7Problem as WFG7,
+    WFG8Problem as WFG8,
+    WFG9Problem as WFG9,
+)
 from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 from vamos.foundation.problem.zdt2 import ZDT2Problem as ZDT2
 from vamos.foundation.problem.zdt3 import ZDT3Problem as ZDT3
@@ -50,6 +60,14 @@ __all__ = [
     "DTLZ4",
     # WFG family
     "WFG1",
+    "WFG2",
+    "WFG3",
+    "WFG4",
+    "WFG5",
+    "WFG6",
+    "WFG7",
+    "WFG8",
+    "WFG9",
     # Real-world problems
     "FeatureSelectionProblem",
     "HyperparameterTuningProblem",

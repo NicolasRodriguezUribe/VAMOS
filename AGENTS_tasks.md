@@ -29,6 +29,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 ```
 
 User-facing imports should go through the root facades (`vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`). Contributor work can target the layered packages (`foundation`, `engine`, `experiment`, `ux`) directly. All experiment outputs should follow the standard layout: `<output_root>/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`.
+When working on the paper benchmarking notebook (`notebooks/11_paper_benchmarking.ipynb`), keep the SAES-style critical distance plot toggle (`CD_STYLE`) intact.
 Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, and `tests/integration` for cross-layer checks. Markers: `smoke`, `slow`, `backends`, `notebooks`, `examples`, `cli`, `numba`, `moocore`, `studio`, `autodiff`. Use `pytest -m "smoke"` for quick verification.
 
 ### Task index
