@@ -37,7 +37,16 @@ VAMOS prioritizes ease of use:
 
 3. **Fluent configuration**: Builder pattern for algorithm configs:
    ```python
-   cfg = NSGAIIConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+   cfg = (
+       NSGAIIConfig()
+       .pop_size(100)
+       .crossover("sbx", prob=0.9, eta=20.0)
+       .mutation("pm", prob="1/n", eta=20.0)
+       .selection("tournament", pressure=2)
+       .survival("nsga2")
+       .engine("numpy")
+       .fixed()
+   )
    ```
 
 4. **Consistent patterns**: All algorithms follow the same `optimize()` workflow.
@@ -61,7 +70,7 @@ VAMOS prioritizes ease of use:
   pip install -e ".[backends,benchmarks,dev]"
   ```
 
-- Extras you may need: `backends`, `benchmarks`, `dev`, `notebooks`, `examples`, `docs`, `studio`, `analytics`, `autodiff` (see README for commands such as `pip install -e ".[backends,benchmarks,dev,notebooks]"`).
+- Extras you may need: `backends`, `benchmarks`, `dev`, `notebooks`, `examples`, `docs`, `studio`, `analytics`, `autodiff` (see README for commands such as `pip install -e ".[backends,benchmarks,dev,notebooks]"`). The `examples` extra pulls in scikit-learn for real-world notebooks (feature selection, hyperparameter tuning).
 
 - Useful commands:
   - Quick run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`

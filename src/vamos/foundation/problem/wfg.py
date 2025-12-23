@@ -38,9 +38,9 @@ class _BaseWFG:
         self.xu = 1.0
 
     def evaluate(self, X: np.ndarray, out: dict):
-        F = np.empty((X.shape[0], self.n_obj))
-        self._problem._evaluate(X, out={"F": F})
-        out["F"] = F
+        tmp: dict = {}
+        self._problem._evaluate(X, out=tmp)
+        out["F"] = tmp.get("F", out.get("F"))
 
 
 class WFG1Problem(_BaseWFG):
