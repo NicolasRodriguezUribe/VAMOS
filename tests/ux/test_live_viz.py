@@ -50,6 +50,7 @@ def test_live_viz_callbacks_invoked(monkeypatch, tmp_path):
         .selection("tournament", pressure=2)
         .survival("nsga2")
         .engine("numpy")
+        .result_mode("population")
         .fixed()
     )
     algo = NSGAII(cfg.to_dict(), kernel=NumPyKernel())

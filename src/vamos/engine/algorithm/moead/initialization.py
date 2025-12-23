@@ -163,6 +163,7 @@ def initialize_moead_run(
         track_genealogy=track_genealogy,
         genealogy_tracker=genealogy_tracker,
         ids=ids,
+        result_mode=cfg.get("result_mode", "non_dominated"),
     )
 
     return state, live_cb, eval_backend, max_eval, hv_tracker

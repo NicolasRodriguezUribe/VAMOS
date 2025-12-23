@@ -24,6 +24,9 @@ class MOEADConfigData(_SerializableConfig):
     initializer: Optional[Dict[str, Any]] = None
     mutation_prob_factor: Optional[float] = None
     track_genealogy: bool = False
+    result_mode: Optional[str] = None
+    archive_type: Optional[str] = None
+    archive: Optional[Dict[str, Any]] = None
 
 
 class MOEADConfig:
@@ -178,6 +181,34 @@ class MOEADConfig:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
+    def result_mode(self, value: str) -> "MOEADConfig":
+        self._cfg["result_mode"] = str(value)
+        return self
+
+    def external_archive(self, *, size: int, archive_type: str = "hypervolume") -> "MOEADConfig":
+        if size <= 0:
+            raise ValueError("external archive size must be positive.")
+        self._cfg["external_archive"] = {"size": int(size)}
+        self._cfg["result_mode"] = "external_archive"
+        self._cfg["archive_type"] = archive_type
+        return self
+
+    def archive_type(self, value: str) -> "MOEADConfig":
+        """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
+        self._cfg["archive_type"] = str(value)
+        return self
+
+    def archive(self, size: int) -> "MOEADConfig":
+        """
+        Convenience alias to configure an external archive by size.
+        A size <= 0 disables the archive.
+        """
+        if size <= 0:
+            self._cfg["archive"] = {"size": 0}
+            return self
+        self._cfg["archive"] = {"size": int(size)}
+        return self
+
     def fixed(self) -> MOEADConfigData:
         _require_fields(
             self._cfg,
@@ -208,4 +239,7 @@ class MOEADConfig:
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
+            result_mode=self._cfg.get("result_mode"),
+            archive_type=self._cfg.get("archive_type"),
+            archive=self._cfg.get("archive", self._cfg.get("external_archive")),
         )

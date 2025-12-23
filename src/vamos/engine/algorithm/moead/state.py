@@ -96,8 +96,14 @@ def build_moead_result(
         Result dictionary with X, F, weights, evaluations, population, and optional archive.
         X and F contain only non-dominated solutions when kernel is provided.
     """
-    # Filter to non-dominated solutions only
-    if kernel is not None:
+    mode = getattr(state, "result_mode", "population")
+    should_filter = (
+        kernel is not None
+        and mode is not None
+        and mode != "population"
+    )
+
+    if should_filter:
         try:
             ranks, _ = kernel.nsga2_ranking(state.F)
             nd_mask = ranks == ranks.min(initial=0)
