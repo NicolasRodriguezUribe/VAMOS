@@ -124,6 +124,7 @@ VAMOS prioritizes ease of use:
   - `ux/` - analysis/MCDM/stats helpers, visualization, Studio.
 - `tests/` - pytest suite (operators, algorithms, CLI/study integration, examples/notebooks when enabled).
 - `examples/`, `notebooks/` - runnable examples and exploratory notebooks.
+- `notebooks/11_paper_benchmarking.ipynb` includes SAES-style critical distance plots (toggle with `CD_STYLE`).
 - Results and reports default to `results/` (fronts, metadata, CSVs).
 
 Prefer following this structure instead of guessing new locations.

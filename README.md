@@ -289,6 +289,7 @@ pip install -e ".[backends]"
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
 - Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.engine.hyperheuristics`.
 - Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `03_user_friendly_api.ipynb`).
+- Paper benchmarking notebook: `notebooks/11_paper_benchmarking.ipynb` includes SAES-style critical distance plots (`CD_STYLE="saes"`), with a fallback to the simpler plot (`CD_STYLE="simple"`).
 - Built-in reference fronts and default weight vectors ship inside the package under `vamos.foundation.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
 
 ## Testing & QA
