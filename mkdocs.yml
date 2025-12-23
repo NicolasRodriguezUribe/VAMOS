@@ -10,6 +10,8 @@ nav:
   - Algorithms & Backends: algorithms.md
   - Problems: problems.md
   - Constraints & Autodiff: constraints.md
+  - Analysis & Viz: analysis.md
+  - VAMOS Studio: studio.md
   - Extending VAMOS: extending.md
   - Developer Guides:
     - Add a Problem: dev/add_problem.md

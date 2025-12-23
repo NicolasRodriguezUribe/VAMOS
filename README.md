@@ -296,6 +296,12 @@ pip install -e ".[backends]"
 
 - Core tests: `pytest`
 - Full optional stack (after `pip install -e ".[dev,backends,benchmarks,studio,analytics,autodiff,notebooks]"`): `pytest -m "not slow"`
+- Built-in reference fronts and default weight vectors ship inside the package under `vamos.foundation.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
+
+## Testing & QA
+
+- Core tests: `pytest`
+- Full optional stack (after `pip install -e ".[dev,backends,benchmarks,studio,analytics,autodiff,notebooks]"`): `pytest -m "not slow"`
 - Examples/notebooks: set `VAMOS_RUN_NOTEBOOK_TESTS=1` then `pytest -m "examples"`
 
 ## Notes
@@ -303,3 +309,25 @@ pip install -e ".[backends]"
 - Dependencies are declared in `pyproject.toml`; extras `[backends]`, `[benchmarks]`, `[dev]`, `[notebooks]` cover typical setups.
 - Results live under `results/` by default (`FUN.csv`, `metadata.json`, etc.).
 - Tests are under `tests/` and follow AAA style. Run `pytest` after installing with `[dev]`.
+
+## Authors
+
+- **Nicolás R. Uribe** ([URJC](https://www.urjc.es/)) - `nicolas.rodriguez@urjc.es`
+- **Alberto Herrán** ([URJC](https://www.urjc.es/)) - `alberto.herran@urjc.es` (Corresponding)
+- **Antonio J. Nebro** ([LCC](http://lcc.uma.es/), [ITIS](http://itis.uma.es/)) - `ajnebro@uma.es`
+- **J. Manuel Colmenar** ([URJC](https://www.urjc.es/)) - `josemanuel.colmenar@urjc.es`
+
+## Citation
+
+If you use VAMOS in your research, please cite it using the metadata in `CITATION.cff` or:
+
+```bibtex
+@misc{vamos2024,
+  author = {Rodriguez Uribe, Nicolás and Herrán, Alberto and Nebro, Antonio J. and Colmenar, J. Manuel},
+  title = {VAMOS: Vectorized Architecture for Multiobjective Optimization Studies},
+  year = {2024},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/NicolasRodriguezUribe/VAMOS}}
+}
+```
