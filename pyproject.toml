@@ -8,7 +8,13 @@ version = "0.1.0"
 description = "Vectorized Architecture for Multiobjective Optimization Studies"
 requires-python = ">=3.10"
 authors = [
-  { name = "VAMOS contributors" }
+  { name = "Nicolás R. Uribe", email = "nicolas.rodriguez@urjc.es" },
+  { name = "Alberto Herrán", email = "alberto.herran@urjc.es" },
+  { name = "Antonio J. Nebro", email = "ajnebro@uma.es" },
+  { name = "J. Manuel Colmenar", email = "josemanuel.colmenar@urjc.es" },
+]
+maintainers = [
+  { name = "Alberto Herrán", email = "alberto.herran@urjc.es" }
 ]
 dependencies = [
   "numpy>=1.23",
@@ -69,6 +75,7 @@ vamos-self-check = "vamos.experiment.diagnostics.self_check:main"
 vamos-benchmark = "vamos.experiment.benchmark.cli:main"
 vamos-studio = "vamos.ux.studio.app:main"
 vamos-zoo = "vamos.experiment.zoo.cli:main"
+vamos-tune = "vamos.engine.tuning.cli:main"
 
 [tool.mypy]
 python_version = "3.11"
