@@ -39,7 +39,7 @@ from vamos import (
 ```
 
 ## Visualization
-- Use `vamos.visualization.plot_pareto_front_2d()` for 2D fronts
+- Use `plot_pareto_front_2d()` from `vamos` for 2D fronts
 - Keep figures self-contained with titles and labels
 - Save figures to `results/` if needed for reports
 
@@ -53,7 +53,14 @@ Always set seeds for reproducibility:
 ```python
 from vamos import OptimizeConfig, NSGAIIConfig
 
-cfg = NSGAIIConfig().pop_size(100).fixed()
+cfg = (NSGAIIConfig()
+    .pop_size(100)
+    .crossover("sbx", prob=0.9, eta=20.0)
+    .mutation("pm", prob="1/n", eta=20.0)
+    .selection("tournament", pressure=2)
+    .survival("nsga2")
+    .engine("numpy")
+    .fixed())
 result = optimize(
     OptimizeConfig(
         problem=problem,

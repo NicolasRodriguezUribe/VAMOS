@@ -40,6 +40,7 @@ If you plan to modify VAMOS (humans or AI assistants):
    ```powershell
    pip install -e ".[notebooks,examples]"
    ```
+   - Real-world notebooks (e.g., `05_real_world_problems.ipynb`) need scikit-learn (install via `examples` or `notebooks` extras).
 
 ## What's inside
 
@@ -267,7 +268,7 @@ Install with `pip install -e ".[extra1,extra2]"`:
 
 ```powershell
 # Full install (all extras)
-pip install -e ".[backends,benchmarks,dev,notebooks]"
+pip install -e ".[backends,benchmarks,dev,notebooks,examples,studio,autodiff,docs]"
 
 # Minimal install for notebooks
 pip install -e ".[backends,notebooks]"

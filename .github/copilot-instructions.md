@@ -55,6 +55,8 @@ cfg = (NSGAIIConfig()
     .pop_size(100)
     .crossover("sbx", prob=0.9, eta=20.0)
     .mutation("pm", prob="1/n", eta=20.0)
+    .selection("tournament", pressure=2)
+    .survival("nsga2")
     .engine("numpy")
     .fixed())
 ```
@@ -66,7 +68,14 @@ from vamos import optimize, OptimizeConfig, NSGAIIConfig, make_problem_selection
 selection = make_problem_selection("zdt1", n_var=30)
 problem = selection.instantiate()
 
-cfg = NSGAIIConfig().pop_size(100).fixed()
+cfg = (NSGAIIConfig()
+    .pop_size(100)
+    .crossover("sbx", prob=0.9, eta=20.0)
+    .mutation("pm", prob="1/n", eta=20.0)
+    .selection("tournament", pressure=2)
+    .survival("nsga2")
+    .engine("numpy")
+    .fixed())
 result = optimize(
     OptimizeConfig(
         problem=problem,
