@@ -112,7 +112,54 @@ def select_configs_by_paired_test(
 
     best_idx = int(np.argmax(agg_scores)) if maximize else int(np.argmin(agg_scores))
     best_scores = scores[best_idx, :]
-    crit = _t_critical(alpha, df=n_blocks - 1)
+def _get_p_value(t_stat: float, df: int) -> float:
+    """
+    Two-sided p-value for a given t-statistic and degrees of freedom.
+    """
+    try:
+        from scipy.stats import t  # type: ignore
+        # Survival function (1 - cdf) for the absolute t-stat * 2 for two-sided
+        return float(t.sf(abs(t_stat), df) * 2)
+    except Exception:
+        # Fallback to Normal distribution if scipy is missing
+        from math import erf, sqrt
+        # z-test p-value
+        # 1 - erf(z / sqrt(2)) is 2 * (1 - Phi(z)) for one-sided?
+        # standard normal cdf Phi(z) = 0.5 * (1 + erf(z/sqrt(2)))
+        # p = 2 * (1 - Phi(|z|)) = 2 * (1 - 0.5 * (1 + erf(|z|/sqrt(2))))
+        #   = 2 * 0.5 * (1 - erf(|z|/sqrt(2))) = 1 - erf(|z|/sqrt(2))
+        return 1.0 - erf(abs(t_stat) / sqrt(2.0))
+
+
+def select_configs_by_paired_test(
+    scores: np.ndarray,
+    maximize: bool,
+    alpha: float,
+    *,
+    aggregator=None,
+) -> np.ndarray:
+    """
+    Perform pairwise t-tests against the best configuration with Holm-Bonferroni correction.
+
+    Returns:
+        keep: boolean array where True means the config is kept (not eliminated).
+    """
+    n_configs, n_blocks = scores.shape
+    keep = np.ones(n_configs, dtype=bool)
+
+    if n_configs <= 1 or n_blocks <= 1:
+        return keep
+
+    if aggregator is None:
+        agg_scores = scores.mean(axis=1)
+    else:
+        agg_scores = np.asarray([float(aggregator(row.tolist())) for row in scores], dtype=float)
+
+    best_idx = int(np.argmax(agg_scores)) if maximize else int(np.argmin(agg_scores))
+    best_scores = scores[best_idx, :]
+    
+    # Store tuples of (p_value, config_index)
+    comparisons = []
 
     for i in range(n_configs):
         if i == best_idx:
@@ -122,16 +169,50 @@ def select_configs_by_paired_test(
         diffs = best_scores - cfg_scores if maximize else cfg_scores - best_scores
 
         mean_diff = float(diffs.mean())
+        
+        # If mean difference is negative, the candidate is actually *better* (or equal) 
+        # than our chosen 'best' in this sample (could happen if aggregator != mean).
+        # In that case, we definitely keep it.
+        # Even if aggregator == mean, float precision might cause slight mismatches, 
+        # but generally mean_diff >= 0 if i != best_idx for mean aggregator.
+        # If mean_diff <= 0, we treat it as "not significantly worse".
+        if mean_diff <= 0:
+            continue
+
         sd_diff = float(diffs.std(ddof=1)) if n_blocks > 1 else 0.0
 
         if sd_diff <= 1e-12:
-            if mean_diff > 0.0:
-                keep[i] = False
+            # Deterministically worse
+            # p-value ~ 0
+            comparisons.append((0.0, i))
             continue
 
         t_stat = mean_diff / (sd_diff / math.sqrt(n_blocks))
-        if t_stat > crit:
-            keep[i] = False
+        p_val = _get_p_value(t_stat, df=n_blocks - 1)
+        comparisons.append((p_val, i))
+
+    if not comparisons:
+        return keep
+
+    # Holm-Bonferroni Step-Down Procedure
+    # 1. Sort p-values from smallest to largest
+    comparisons.sort(key=lambda x: x[0])
+    
+    m = len(comparisons)  # Total number of hypotheses (candidates vs best)
+    
+    for k, (p_val, idx) in enumerate(comparisons):
+        # Rank k is 0-based here, so it corresponds to k=1..m in literature
+        # Adjusted alpha = alpha / (m - k)
+        adj_alpha = alpha / (m - k)
+        
+        if p_val < adj_alpha:
+            # Reject H0 -> Significantly worse -> Eliminate
+            keep[idx] = False
+        else:
+            # Fail to reject H0 -> Stop eliminating
+            # Since p-values are sorted, all subsequent p-values are larger
+            # and denominators (m-k) are smaller, so they will also pass.
+            break
 
     return keep
 

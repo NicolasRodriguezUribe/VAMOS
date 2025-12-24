@@ -14,88 +14,90 @@ from vamos.engine.tuning import (
     TuningTask,
     Instance,
     EvalContext,
+    # Builders
     build_nsgaii_config_space,
     build_moead_config_space,
+    build_nsgaiii_config_space,
+    build_spea2_config_space,
+    build_ibea_config_space,
+    build_smpso_config_space,
+    build_smsemoa_config_space,
+    # Bridge
     config_from_assignment,
 )
-from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
+
+BUILDERS = {
+    "nsgaii": build_nsgaii_config_space,
+    "moead": build_moead_config_space,
+    "nsgaiii": build_nsgaiii_config_space,
+    "spea2": build_spea2_config_space,
+    "ibea": build_ibea_config_space,
+    "smpso": build_smpso_config_space,
+    "smsemoa": build_smsemoa_config_space,
+}
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="VAMOS Tuning CLI (vamos-tune)")
     parser.add_argument("--problem", type=str, required=True, help="Problem ID (e.g., zdt1)")
-    parser.add_argument("--algorithm", type=str, default="nsgaii", choices=["nsgaii", "moead"], help="Algorithm to tune")
+    parser.add_argument("--algorithm", type=str, default="nsgaii", choices=list(BUILDERS.keys()), help="Algorithm to tune")
     parser.add_argument("--n-var", type=int, default=30, help="Number of variables")
     parser.add_argument("--n-obj", type=int, default=2, help="Number of objectives")
     parser.add_argument("--budget", type=int, default=5000, help="Max evaluations per run")
     parser.add_argument("--tune-budget", type=int, default=20000, help="Total tuning budget (evaluations)")
     parser.add_argument("--seed", type=int, default=1, help="Random seed")
     parser.add_argument("--pop-size", type=int, default=100, help="Fixed population size (if not tuning it)")
+    parser.add_argument("--n-jobs", type=int, default=1, help="Number of parallel jobs (-1 for all cores)")
+    parser.add_argument("--ref-point", type=str, default=None, help="Reference point for HV (comma-separated, e.g. '1.1,1.1')")
     return parser.parse_args()
 
 
-def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str, fixed_pop_size: int):
+def make_evaluator(
+    problem_key: str, 
+    n_var: int, 
+    n_obj: int, 
+    algorithm_name: str, 
+    fixed_pop_size: int,
+    ref_point_str: str | None
+):
     """
     Creates an evaluation function that runs the algorithm and returns the Hypervolume.
     """
-    # Pre-select problem to avoid overhead in the loop, though resolving happens inside run_single usually
-    # But here we just capture the specs
-    
-    def eval_fn(config_dict: Dict[str, Any], ctx: EvalContext) -> float:
-        # 1. Convert flat config dict to Algorithm Config object
-        # Note: The tuning module's spaces usually map to flat dicts. We need to reconstruct the Config object.
-        # For simplicity in this CLI, we assume the config space builder keys match the Config expects or we map them.
-        
-        # We need a robust way to map the tuned parameters to the config class
-        # This depends on how build_nsgaii_config_space sets up parameter names.
-        # Assuming they are prefixed or match arguments.
-        
+    # Parse reference point once
+    if ref_point_str:
         try:
-             # Basic mapping for NSGA-II:
-            if algorithm_name == "nsgaii":
-                # We start with a default config
-                cfg = NSGAIIConfig().engine("numpy") # Use numpy for tuning speed/reliability default
-                
-                # Update with tuned values
-                # Example: if config_dict has 'crossover.prob', we set it.
-                # The generic way is using config_from_assignment if available or manual mapping
-                # checking what build_nsgaii_config_space produces.
-                # For now, let's assume a direct mapping or simple manual one for common params
-                
-                 # Manual mapping for common AutoNSGA-II params if they exist in config_dict
-                if "pop_size" in config_dict:
-                    cfg.pop_size(int(config_dict["pop_size"]))
-                else:
-                    cfg.pop_size(fixed_pop_size)
-                    
-                if "crossover_prob" in config_dict:
-                    cfg.crossover("sbx", prob=config_dict["crossover_prob"], eta=config_dict.get("crossover_eta", 20.0))
-                
-                if "mutation_prob" in config_dict:
-                     cfg.mutation("pm", prob=config_dict["mutation_prob"], eta=config_dict.get("mutation_eta", 20.0))
-                     
-            elif algorithm_name == "moead":
-                 cfg = MOEADConfig().engine("numpy")
-                 if "pop_size" in config_dict:
-                    cfg.pop_size(int(config_dict["pop_size"]))
-                 else:
-                    cfg.pop_size(fixed_pop_size)
+            ref_point = np.array([float(x.strip()) for x in ref_point_str.split(",")])
+            if len(ref_point) != n_obj:
+                print(f"Warning: Reference point length ({len(ref_point)}) does not match n_obj ({n_obj}).")
+        except ValueError:
+            print("Error parsing --ref-point. Using default.")
+            ref_point = np.array([1.1] * n_obj)
+    else:
+        # Default fallback
+        ref_point = np.array([1.1] * n_obj)
+
+    def eval_fn(config_dict: Dict[str, Any], ctx: EvalContext) -> float:
+        try:
+            # 1. Prepare Configuration
+            # Merge fixed params if missing in tuning config
+            start_config = dict(config_dict)
+            if "pop_size" not in start_config:
+                 start_config["pop_size"] = fixed_pop_size
+            
+            # Use the unified bridge to build the AlgorithmConfig object
+            cfg = config_from_assignment(algorithm_name, start_config)
             
             # 2. Run the algorithm
-            # We use a fresh seed for the run from the context
-            run_seed = ctx.seed
-            
             selection = make_problem_selection(problem_key, n_var=n_var, n_obj=n_obj)
             
-            # Prepare ExperimentConfig just for the run limits
             exp_cfg = ExperimentConfig(
                 population_size=cfg.population_size, 
                 max_evaluations=ctx.budget, 
-                seed=run_seed
+                seed=ctx.seed
             )
             
             result = run_single(
-                engine="numpy",
+                engine="numpy", # Defaulting to numpy for stability in tuning
                 algorithm=algorithm_name,
                 problem_selection=selection,
                 experiment_config=exp_cfg,
@@ -104,11 +106,6 @@ def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str
             )
             
             # 3. Compute metric (Hypervolume)
-            # We need a reference point. For ZDT1 (2 objectives), typical is [1.1, 1.1] or similar
-            # Ideally this comes from the problem registry or we approximate it.
-            # For this MVP CLI, we use a fixed ref point common for normalized ZDT/DTLZ
-            ref_point = np.array([1.1] * n_obj)
-            
             if result.F is None or len(result.F) == 0:
                 return 0.0
                 
@@ -116,7 +113,9 @@ def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str
             return hv
             
         except Exception as e:
-            print(f"Eval failed: {e}")
+            # In tuning, we often want to absorb errors and return bad score
+            # to keep the racer alive.
+            print(f"Eval failed for {algorithm_name}: {e}")
             return 0.0
 
     return eval_fn
@@ -126,34 +125,31 @@ def main():
     args = parse_args()
     
     # 1. Define Parameter Space
-    if args.algorithm == "nsgaii":
-        param_space = build_nsgaii_config_space() 
-        # Note: build_nsgaii_config_space might need to be checked for what it returns.
-        # If it's empty or basic, we might need to add params here manually if the builder is simple.
-        # Assuming it returns a populated ParamSpace.
-    elif args.algorithm == "moead":
-        param_space = build_moead_config_space()
-    else:
+    builder = BUILDERS.get(args.algorithm)
+    if not builder:
         raise ValueError(f"Unknown algorithm {args.algorithm}")
+    
+    param_space = builder()
 
     print(f"Tuning {args.algorithm} on {args.problem} (Budget: {args.tune_budget})")
+    print(f"Parallel Jobs: {args.n_jobs}")
     
     # 2. Setup Scenario and Task
     scenario = Scenario(
         max_experiments=args.tune_budget,
-        initial_budget_per_run=args.budget, # Fixed budget per run for now, essentially
-        use_adaptive_budget=False, # Simplify for MVP
-        verbose=True
+        initial_budget_per_run=args.budget,
+        use_adaptive_budget=False,
+        verbose=True,
+        n_jobs=args.n_jobs
     )
     
-    # We treat the problem as a single instance for now, but tuning usually generalizes over instances.
-    # Here we define one "instance" which is just the problem key
+    # Instance definition
     instances = [Instance(name=args.problem, n_var=args.n_var, kwargs={})]
     
-    # Seeds for the tuner to use for runs
-    seeds = [args.seed + i for i in range(100)] # ample seeds
+    # Seeds
+    seeds = [args.seed + i for i in range(100)]
     
-    # Aggregator: Mean hypervolume
+    # Aggregator: Mean
     aggregator = lambda scores: np.mean(scores)
     
     task = TuningTask(
@@ -163,7 +159,7 @@ def main():
         seeds=seeds,
         aggregator=aggregator,
         budget_per_run=args.budget,
-        maximize=True, # Hypervolume is maximization
+        maximize=True, # HV is maximization
     )
     
     # 3. Run Tuner
@@ -174,7 +170,8 @@ def main():
         args.n_var, 
         args.n_obj, 
         args.algorithm, 
-        args.pop_size
+        args.pop_size,
+        args.ref_point
     )
     
     best_config, history = tuner.run(eval_fn)
@@ -184,7 +181,6 @@ def main():
     for k, v in best_config.items():
         print(f"  {k}: {v}")
     
-    # Optional: rerun best
     print("\nUse these parameters in your scripts or CLI using --config!")
 
 if __name__ == "__main__":

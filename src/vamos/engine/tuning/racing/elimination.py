@@ -117,6 +117,27 @@ def eliminate_configs(configs: List[ConfigState], *, task, scenario) -> bool:
         )
 
     scores, aligned_indices = build_score_matrix(configs)
+
+    # --- Friedman Test Pre-Check ---
+    # Only if we have enough samples to be meaningful (e.g. at least 3 blocks, at least 3 configs)
+    if len(aligned_indices) >= 3 and scores.shape[1] >= 3:
+        try:
+            from scipy.stats import friedmanchisquare
+            # friedmanchisquare takes arguments as *samples
+            # each sample is an array of measurements for one subject (here config)
+            # We must pass rows of the score matrix
+            stat, p_friedman = friedmanchisquare(*[scores[i, :] for i in range(scores.shape[0])])
+            
+            # If p-value is high, we cannot reject the null hypothesis that all configs are equivalent.
+            # Thus, we should NOT eliminate anyone yet.
+            if p_friedman > scenario.alpha:
+                return False
+        except ImportError:
+            pass  # no scipy, skip pre-check
+        except ValueError:
+            pass  # can happen if all numbers are identical
+    # -------------------------------
+
     keep_mask = select_configs_by_paired_test(
         scores=scores,
         maximize=task.maximize,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Protocol, Sequence
 
+import math
 import numpy as np
 
 from .param_space import ParamSpace, Real, Int, Categorical
@@ -74,7 +75,7 @@ class ModelBasedSampler:
 
     _cat_models: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     _real_models: Dict[str, Dict[str, float]] = field(default_factory=dict)
-    _int_models: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    _int_models: Dict[str, Dict[str, float]] = field(default_factory=dict)
 
     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:
         """
@@ -131,34 +132,54 @@ class ModelBasedSampler:
                 }
 
             elif isinstance(spec, Real):
-                v_min = float(min(values))
-                v_max = float(max(values))
-                orig_low = spec.low
-                orig_high = spec.high
+                arr = np.array(values, dtype=float)
+                is_log = spec.log
+                if is_log:
+                    # For log params, we model the distribution in log-space
+                    # Values are guaranteed > 0 by ParamSpace validation
+                    arr = np.log(arr)
 
-                padding = 0.05 * (orig_high - orig_low)
-                low = max(orig_low, v_min - padding)
-                high = min(orig_high, v_max + padding)
+                mean = float(np.mean(arr))
+                std = float(np.std(arr))
+                # Ensure non-zero std for sampling
+                if std < 1e-9:
+                    if is_log:
+                        # 10% of the log-range
+                        log_range = math.log(spec.high) - math.log(spec.low)
+                        std = 0.1 * log_range
+                    else:
+                        std = 0.1 * (spec.high - spec.low)
 
-                if low > high:
-                    low, high = high, low
-
-                self._real_models[name] = {"low": low, "high": high}
+                self._real_models[name] = {
+                    "mean": mean,
+                    "std": std,
+                    "low": spec.low,
+                    "high": spec.high,
+                    "log": is_log,
+                }
 
             elif isinstance(spec, Int):
-                v_min = int(min(values))
-                v_max = int(max(values))
-                orig_low = spec.low
-                orig_high = spec.high
+                arr = np.array(values, dtype=float)
+                is_log = spec.log
+                if is_log:
+                    arr = np.log(arr)
 
-                padding = max(1, int(round(0.05 * (orig_high - orig_low))))
-                low = max(orig_low, v_min - padding)
-                high = min(orig_high, v_max + padding)
+                mean = float(np.mean(arr))
+                std = float(np.std(arr))
+                if std < 1e-9:
+                    if is_log:
+                        log_range = math.log(spec.high) - math.log(spec.low)
+                        std = max(0.1, 0.1 * log_range)
+                    else:
+                        std = max(1.0, 0.1 * (spec.high - spec.low))
 
-                if low > high:
-                    low, high = high, low
-
-                self._int_models[name] = {"low": low, "high": high}
+                self._int_models[name] = {
+                    "mean": mean,
+                    "std": std,
+                    "low": spec.low,
+                    "high": spec.high,
+                    "log": is_log,
+                }
 
     def sample(self, rng: np.random.Generator) -> Dict[str, Any]:
         """
@@ -184,12 +205,22 @@ class ModelBasedSampler:
 
             if isinstance(spec, Real) and name in self._real_models:
                 m = self._real_models[name]
-                cfg[name] = float(rng.uniform(m["low"], m["high"]))
+                # Sample from Normal(mean, std), clipped to bounds
+                val = rng.normal(m["mean"], m["std"])
+                if m.get("log", False):
+                    val = math.exp(val)
+                val = max(float(m["low"]), min(float(m["high"]), val))
+                cfg[name] = val
                 continue
 
             if isinstance(spec, Int) and name in self._int_models:
                 m = self._int_models[name]
-                cfg[name] = int(rng.integers(m["low"], m["high"] + 1))
+                val = rng.normal(m["mean"], m["std"])
+                if m.get("log", False):
+                    val = math.exp(val)
+                val = int(round(val))
+                val = max(int(m["low"]), min(int(m["high"]), val))
+                cfg[name] = val
                 continue
 
             tmp = self.param_space.sample(rng)
