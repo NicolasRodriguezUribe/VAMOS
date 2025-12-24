@@ -19,7 +19,7 @@ from .api import (
     run_self_check,
     reduce_objectives,
 )
-from .algorithms import (
+from .engine.algorithms_registry import (
     IBEA,
     IBEAConfig,
     IBEAConfigData,
@@ -44,15 +44,15 @@ from .algorithms import (
     available_algorithms,
     resolve_algorithm,
 )
-from .mcdm import (
+from .ux.mcdm import (
     MCDMResult,
     knee_point_scores,
     reference_point_scores,
     tchebycheff_scores,
     weighted_sum_scores,
 )
-from .plotting import plot_hv_convergence, plot_parallel_coordinates, plot_pareto_front_2d, plot_pareto_front_3d
-from .problems import (
+from .ux.plotting import plot_hv_convergence, plot_parallel_coordinates, plot_pareto_front_2d, plot_pareto_front_3d
+from .foundation.problems_registry import (
     DTLZ1,
     DTLZ2,
     DTLZ3,
@@ -78,7 +78,7 @@ from .problems import (
     ZDT6,
     get_problem_names,
 )
-from .stats import (
+from .ux.stats import (
     FriedmanResult,
     WilcoxonResult,
     compute_ranks,
@@ -86,7 +86,7 @@ from .stats import (
     pairwise_wilcoxon,
     plot_critical_distance,
 )
-from .tuning import (
+from .engine.tuning.api import (
     AlgorithmConfigSpace,
     RandomSearchTuner,
     RacingTuner,
@@ -110,7 +110,7 @@ from .tuning import (
 )
 
 # Quick-start API for one-liner experiments
-from .quick import (
+from .experiment.quick import (
     QuickResult,
     run,
     run_moead,
@@ -121,7 +121,7 @@ from .quick import (
 )
 
 # Exception hierarchy
-from .exceptions import (
+from .foundation.exceptions import (
     VAMOSError,
     ConfigurationError,
     InvalidAlgorithmError,
@@ -144,7 +144,7 @@ from .exceptions import (
 )
 
 # Experiment context manager
-from .experiment_context import (
+from .experiment.context import (
     Experiment,
     experiment,
     RunRecord,

@@ -1,6 +1,6 @@
 # VAMOS - Vectorized Architecture for Multiobjective Optimization Studies
 
-![VAMOS](VAMOS.jpeg)
+![VAMOS](docs/assets/VAMOS.jpeg)
 
 Minimal steps to run and explore:
 
@@ -132,9 +132,9 @@ If you plan to modify VAMOS (humans or AI assistants):
 
 If you use AI coding assistants (such as GitHub Copilot, Code LLMs, or ChatGPT-style tools) when working on VAMOS, please read:
 
-- `AGENTS.md` - high-level guidelines on project structure, coding conventions, performance and dependency rules.
-- `AGENTS_tasks.md` - a task playbook with common, well-scoped changes (new operators, problems, studies, tuning setups, etc.).
-- `AGENTS_codex_prompts.md` - ready-to-paste prompts tailored for this repository.
+- `.agent/docs/AGENTS.md` - high-level guidelines on project structure, coding conventions, performance and dependency rules.
+- `.agent/docs/AGENTS_tasks.md` - a task playbook with common, well-scoped changes (new operators, problems, studies, tuning setups, etc.).
+- `.agent/docs/AGENTS_codex_prompts.md` - ready-to-paste prompts tailored for this repository.
 
 These documents describe how assistants are expected to interact with the codebase and help keep contributions consistent, efficient and easy to review.
 
@@ -204,11 +204,11 @@ export VAMOS_USE_NUMBA_VARIATION=1  # set before running
 
 ## Package layout (src/vamos)
 
-- `foundation/` - core abstractions, constraints, eval/metrics, kernel backends, problems/registries, packaged data.
+- `foundation/` - core abstractions, constraints, eval/metrics, kernel backends, problems/registries, shared data, version helpers. Includes `exceptions.py`.
 - `engine/` - algorithms, operators, hyperheuristics, tuning pipelines, algorithm configs.
-- `experiment/` - CLI entrypoints, StudyRunner, benchmark/reporting, diagnostics.
+- `experiment/` - CLI entrypoints, StudyRunner, benchmark/reporting, diagnostics. Includes `experiment_context.py` and `quick.py`.
 - `ux/` - analysis/MCDM/stats utilities, visualization helpers, Studio.
-- Root facades: `api.py`, `algorithms.py`, `problems.py`, `plotting.py`, `mcdm.py`, `stats.py`, `tuning.py`.
+- Root facades: `api.py` (others like `algorithms`, `problems` are now internal, exposed via `__init__.py`).
 
 ## Programmatic optimize()
 
