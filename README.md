@@ -51,7 +51,8 @@ If you plan to modify VAMOS (humans or AI assistants):
 - Problems: ZDT, DTLZ, WFG, LZ09 (pymoo-backed), CEC2009 UF/CF (pymoo-backed), TSP/TSPLIB, binary (feature selection/knapsack/QUBO), integer (allocation/job assignment), mixed design, welded beam and real-data examples (SVM tuning, feature selection).
 - CLI/runner: experiment orchestration, metrics, result CSVs/metadata under `results/`.
 - StudyRunner: batch problem x algorithm x seed sweeps.
-- Notebooks: exploratory examples under `notebooks/` (optional).
+- StudyRunner: batch problem x algorithm x seed sweeps.
+- Notebooks: extensive examples under `notebooks/` covering benchmarks (ZDT/DTLZ/WFG), tuning (Racing/Programmatic), landscape analysis, scaling, and dynamics.
 
 ## Common commands
 
@@ -62,10 +63,11 @@ If you plan to modify VAMOS (humans or AI assistants):
 - `python -m vamos.experiment.cli.main --problem tsp6`
 - Use hypervolume early-stop on NSGA-II:
   - `python -m vamos.experiment.cli.main --hv-threshold 0.5 --hv-reference-front data/reference_fronts/ZDT1.csv`
-- Run tuning (outer NSGA-II over hyperparameters) via code (see `vamos.tuning`).
+- Run auto-tuning (Racing) via CLI:
+  - `vamos-tune --algorithm nsgaii --problem zdt1 --budget 5000 --n-jobs 4`
 - Visualize or post-hoc analyze:
   - `from vamos.plotting import plot_pareto_front_2d`
-  - `from vamos.mcdm import weighted_sum_scores`
+  - `from vamos.mcdm import weighted_sum_scores, topsis_scores`
   - `from vamos.stats import friedman_test, plot_critical_distance`
 - Quick sanity check of your install:
   - `python -m vamos.experiment.diagnostics.self_check`

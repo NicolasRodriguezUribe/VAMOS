@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Protocol, Sequence
 
 import numpy as np
 
-from vamos.ux.analysis.mcdm import weighted_sum_scores, tchebycheff_scores, knee_point_scores, reference_point_scores
+from vamos.ux.analysis.mcdm import weighted_sum_scores, tchebycheff_scores, knee_point_scores, reference_point_scores, topsis_scores
 from vamos.ux.studio.data import FrontRecord, normalize_objectives
 
 
@@ -46,6 +46,8 @@ def compute_mcdm_scores(
         elif method == "reference":
             if reference_point is not None:
                 scores[method] = reference_point_scores(F, reference_point).scores
+        elif method == "topsis":
+             scores[method] = topsis_scores(F, weights).scores
         else:
             continue
     return scores

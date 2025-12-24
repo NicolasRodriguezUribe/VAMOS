@@ -45,6 +45,7 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 | T7      | Improve logging/metadata + analysis helpers | Outputs under standard results layout; UX loaders    |
 | T8      | Add to benchmarking CLI                     | `vamos-benchmark --suite ... --output ...`          |
 | T9      | Extend diagnostics / self-check             | `python -m vamos.experiment.diagnostics.self_check`            |
+| T10     | Create Interactive Tools / Studio           | `vamos-studio` / Streamlit / Dash                   |
 
 ---
 
@@ -188,6 +189,23 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 - Add/update tests for the new diagnostics paths.
 
 **Avoid**: Lengthy computations or mandatory heavy extras.
+
+---
+
+## 10. Create Interactive Tools / Studio
+
+**Goal**: Build or enhance interactive dashboards (e.g., Streamlit, Dash) for results exploration and real-time monitoring.
+
+**Context**: `src/vamos/ux/studio/` (or similar); `vamos-studio` CLI entry point.
+
+**Steps**
+- Choose a framework (Streamlit is recommended for rapid prototyping).
+- Create a dashboard that loads `results/` (using `vamos.ux.analysis.results`).
+- Implement visualizations: Pareto front scatter plots, parallel coordinates, metrics over time.
+- (Advanced) Connect to a live running optimization via a file watcher or socket.
+- Expose via `vamos-studio --study-dir <path>`.
+
+**Avoid**: Mixing UI code with core algorithms (keep strictly separate in `vamos.ux`).
 
 ---
 
