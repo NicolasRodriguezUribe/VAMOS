@@ -14,7 +14,7 @@ Useful extras:
 - `backends`: numba and moocore kernels
 - `benchmarks`: pymoo, jmetalpy, pygmo baselines
 - `dev`: pytest, ruff, black, nbformat/nbconvert for notebook checks
-- `notebooks` / `examples`: plotting and scikit-learn deps
+- `notebooks` / `examples`: plotting and scikit-learn deps (interactive explorer also needs plotly + ipywidgets, included in `notebooks`)
 - `studio`: streamlit + plotly dashboard
 - `autodiff`: JAX for constraint autodiff helpers
 

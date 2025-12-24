@@ -1,17 +1,53 @@
 site_name: VAMOS Docs
 site_description: Vectorized Architecture for Multiobjective Optimization Studies
-repo_url: https://example.com/  # update when repository URL is available
+repo_url: https://github.com/google-deepmind/vamos/
+repo_name: google-deepmind/vamos
 theme:
-  name: mkdocs
+  name: material
+  palette: 
+    - scheme: default
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - CLI & Config: cli.md
   - Algorithms & Backends: algorithms.md
+  - Hyperparameter Tuning: tuning.md
+  - API Reference: api_reference.md
   - Problems: problems.md
   - Constraints & Autodiff: constraints.md
   - Analysis & Viz: analysis.md
   - VAMOS Studio: studio.md
+  - Cookbook: cookbook.md
   - Extending VAMOS: extending.md
   - Developer Guides:
     - Add a Problem: dev/add_problem.md

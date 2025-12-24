@@ -159,7 +159,7 @@ class SMSEMOAConfig:
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
-            result_mode=self._cfg.get("result_mode"),
+            result_mode=self._cfg.get("result_mode", "non_dominated"),
             archive_type=self._cfg.get("archive_type"),
             archive=self._cfg.get("archive", self._cfg.get("external_archive")),
         )

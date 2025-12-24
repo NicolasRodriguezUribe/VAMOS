@@ -70,7 +70,7 @@ VAMOS prioritizes ease of use:
   pip install -e ".[backends,benchmarks,dev]"
   ```
 
-- Extras you may need: `backends`, `benchmarks`, `dev`, `notebooks`, `examples`, `docs`, `studio`, `analytics`, `autodiff` (see README for commands such as `pip install -e ".[backends,benchmarks,dev,notebooks]"`). The `examples` extra pulls in scikit-learn for real-world notebooks (feature selection, hyperparameter tuning).
+- Extras you may need: `backends`, `benchmarks`, `dev`, `notebooks`, `examples`, `docs`, `studio`, `analytics`, `autodiff` (see README for commands such as `pip install -e ".[backends,benchmarks,dev,notebooks]"`). The `examples` extra pulls in scikit-learn for real-world notebooks (feature selection, hyperparameter tuning). The interactive Pareto explorer notebook needs plotly + ipywidgets (included in `notebooks`).
 
 - Useful commands:
   - Quick run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
