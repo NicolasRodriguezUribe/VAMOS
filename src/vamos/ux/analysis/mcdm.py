@@ -90,3 +90,54 @@ def knee_point_scores(F: np.ndarray) -> MCDMResult:
     scores = np.empty(F.shape[0], dtype=float)
     scores[order] = -distances  # more negative is better knee
     return MCDMResult(scores=scores, best_index=best_global_idx, best_point=F[best_global_idx].copy())
+
+
+def topsis_scores(F: np.ndarray, weights: np.ndarray) -> MCDMResult:
+    """
+    Calculate TOPSIS scores (closeness coefficient to ideal solution).
+    Scores are relative closeness C_i = S_minus / (S_plus + S_minus).
+    For MCDMResult compatibility where 'lower score is better' is often assumed,
+    we return 1 - C_i as the score (so minimizing score maximizes closeness).
+    BUT wait, existing methods return different things.
+      - weighted_sum: weighted sum (minimize)
+      - tchebycheff: max deviation (minimize)
+      - reference_point: distance (minimize)
+      - knee_point: negative distance (minimize)
+    
+    So consistently, we want to MINIMIZE the returned 'scores'.
+    TOPSIS 'C' is in [0, 1], where 1 is best.
+    So we will return scores = 1.0 - C.
+    """
+    F = _validate_front(F)
+    w = _validate_weights(weights, F.shape[1])
+    
+    # 1. Vector Normalization
+    norm = np.linalg.norm(F, axis=0)
+    # Handle zero norm (constant objective 0)
+    norm = np.where(norm == 0, 1.0, norm)
+    F_norm = F / norm
+    
+    # 2. Weighted Normalized Decision Matrix
+    V = F_norm * w
+    
+    # 3. Determine Ideal (Min) and Anti-Ideal (Max) for minimization problems
+    # VAMOS assumes minimization convention for F
+    A_best = np.min(V, axis=0)
+    A_worst = np.max(V, axis=0)
+    
+    # 4. Calculate Separation Measures
+    S_plus = np.linalg.norm(V - A_best, axis=1)
+    S_minus = np.linalg.norm(V - A_worst, axis=1)
+    
+    # 5. Calculate Relative Closeness
+    denom = S_plus + S_minus
+    # Handle division by zero (if point coincides with both ideal and anti-ideal? Impossible unless F is single point)
+    denom = np.where(denom == 0, 1e-10, denom)
+    
+    C = S_minus / denom
+    
+    # We want to maximize C, so we minimize (1 - C)
+    scores = 1.0 - C
+    best_idx = int(np.argmin(scores))
+    
+    return MCDMResult(scores=scores, best_index=best_idx, best_point=F[best_idx].copy())

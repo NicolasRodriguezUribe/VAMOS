@@ -55,6 +55,14 @@ def load_run_from_directory(run_dir: Path) -> RunRecord:
     metadata: Dict[str, Any] = {}
     if metadata_path.exists():
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    
+    config_path = run_dir / "resolved_config.json"
+    if config_path.exists():
+        try:
+            metadata["config"] = json.loads(config_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     # Heuristics to determine problem/algorithm/seed when metadata is absent
     problem_name = metadata.get("problem", {}).get("key") or metadata.get("problem_key")
     algorithm_name = metadata.get("algorithm")
@@ -136,7 +144,10 @@ def build_fronts(
                 points_F=F,
                 points_X=X,
                 constraints=constraints,
-                extra={"seeds": [r.seed for r in records]},
+                extra={
+                    "seeds": [r.seed for r in records],
+                    "config": records[0].metadata.get("config") if records else None
+                },
             )
         )
     return fronts
