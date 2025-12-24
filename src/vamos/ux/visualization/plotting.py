@@ -5,6 +5,8 @@ from datetime import datetime
 
 import numpy as np
 
+from vamos.foundation.core.optimize import pareto_filter
+
 
 def _non_dominated_mask(points: np.ndarray) -> np.ndarray:
     points = np.asarray(points, dtype=float)
@@ -35,7 +37,10 @@ def plot_pareto_front(results, selection, *, output_root: str, title: str):
         algo = res.get("algorithm", "unknown").upper()
         engine = res.get("engine")
         label = f"{algo} ({engine})" if engine else algo
-        plot_entries.append((label, np.asarray(F, dtype=float)))
+        filtered = pareto_filter(F)
+        if filtered is None or filtered.size == 0:
+            continue
+        plot_entries.append((label, np.asarray(filtered, dtype=float)))
     if not plot_entries:
         return None
     n_obj = plot_entries[0][1].shape[1]

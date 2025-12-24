@@ -22,6 +22,7 @@ class SPEA2ConfigData(_SerializableConfig):
     mutation_prob_factor: Optional[float] = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
+    result_mode: Optional[str] = None
 
 
 class SPEA2Config:
@@ -104,6 +105,10 @@ class SPEA2Config:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
+    def result_mode(self, value: str) -> "SPEA2Config":
+        self._cfg["result_mode"] = str(value)
+        return self
+
     def fixed(self) -> SPEA2ConfigData:
         _require_fields(
             self._cfg,
@@ -123,4 +128,5 @@ class SPEA2Config:
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
+            result_mode=self._cfg.get("result_mode", "non_dominated"),
         )

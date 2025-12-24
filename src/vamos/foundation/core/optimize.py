@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import asdict, dataclass, is_dataclass
-from typing import Any, Mapping, Tuple
+from typing import Any, Literal, Mapping, Tuple, overload
 
 import numpy as np
 
@@ -11,6 +11,57 @@ from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.eval.backends import resolve_eval_backend, EvaluationBackend
+
+
+@overload
+def pareto_filter(
+    F: np.ndarray | None, *, return_indices: Literal[False] = False
+) -> np.ndarray | None:
+    ...
+
+
+@overload
+def pareto_filter(
+    F: np.ndarray | None, *, return_indices: Literal[True]
+) -> tuple[np.ndarray, np.ndarray]:
+    ...
+
+
+def pareto_filter(
+    F: np.ndarray | None, *, return_indices: bool = False
+) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
+    """
+    Return the non-dominated subset of points (first Pareto front).
+
+    Args:
+        F: Objective values array (n_solutions, n_objectives) or None.
+        return_indices: When True, also return indices of the front in F.
+
+    Returns:
+        Front array, or (front, indices) when return_indices is True.
+    """
+    if F is None:
+        if return_indices:
+            return np.empty((0, 0)), np.array([], dtype=int)
+        return None
+    F = np.asarray(F)
+    if F.size == 0 or F.ndim < 2:
+        if return_indices:
+            n = int(F.shape[0]) if F.ndim > 0 else 0
+            idx = np.arange(n, dtype=int)
+            return F, idx
+        return F
+    from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
+
+    fronts, _ = _fast_non_dominated_sort(F)
+    if not fronts or not fronts[0]:
+        if return_indices:
+            idx = np.arange(int(F.shape[0]), dtype=int)
+            return F, idx
+        return F
+    idx = np.asarray(fronts[0], dtype=int)
+    front = F[idx]
+    return (front, idx) if return_indices else front
 
 
 class OptimizationResult:
@@ -60,6 +111,29 @@ class OptimizationResult:
             for i in range(self.n_objectives):
                 print(f"  f{i+1}: [{self.F[:, i].min():.6f}, {self.F[:, i].max():.6f}]")
 
+    @overload
+    def front(
+        self, *, return_indices: Literal[False] = False
+    ) -> np.ndarray | None:
+        ...
+
+    @overload
+    def front(
+        self, *, return_indices: Literal[True]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def front(
+        self, *, return_indices: bool = False
+    ) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
+        """
+        Return non-dominated solutions (first Pareto front).
+
+        Args:
+            return_indices: When True, also return indices of the front in F.
+        """
+        return pareto_filter(self.F, return_indices=return_indices)
+
     def plot(self, show: bool = True, **kwargs: Any) -> Any:
         """
         Plot the Pareto front (2D or 3D).
@@ -83,20 +157,21 @@ class OptimizationResult:
                 "Install with: pip install matplotlib"
             ) from exc
 
-        if self.F is None or len(self.F) == 0:
+        F_plot = self.front()
+        if F_plot is None or len(F_plot) == 0:
             raise ValueError("No solutions to plot")
 
         n_obj = self.n_objectives
         if n_obj == 2:
             fig, ax = plt.subplots()
-            ax.scatter(self.F[:, 0], self.F[:, 1], **kwargs)
+            ax.scatter(F_plot[:, 0], F_plot[:, 1], **kwargs)
             ax.set_xlabel("f1")
             ax.set_ylabel("f2")
             ax.set_title("Pareto Front")
         elif n_obj == 3:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
-            ax.scatter(self.F[:, 0], self.F[:, 1], self.F[:, 2], **kwargs)
+            ax.scatter(F_plot[:, 0], F_plot[:, 1], F_plot[:, 2], **kwargs)
             ax.set_xlabel("f1")
             ax.set_ylabel("f2")
             ax.set_zlabel("f3")
@@ -373,4 +448,4 @@ def run_optimization(
     return optimize(config)
 
 
-__all__ = ["OptimizeConfig", "optimize", "OptimizationResult", "run_optimization"]
+__all__ = ["OptimizeConfig", "optimize", "OptimizationResult", "pareto_filter", "run_optimization"]

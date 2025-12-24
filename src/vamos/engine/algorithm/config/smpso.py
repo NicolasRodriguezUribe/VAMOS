@@ -22,6 +22,7 @@ class SMPSOConfigData(_SerializableConfig):
     initializer: Optional[Dict[str, Any]] = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
+    result_mode: Optional[str] = None
 
 
 class SMPSOConfig:
@@ -78,6 +79,10 @@ class SMPSOConfig:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
+    def result_mode(self, value: str) -> "SMPSOConfig":
+        self._cfg["result_mode"] = str(value)
+        return self
+
     def fixed(self) -> SMPSOConfigData:
         _require_fields(
             self._cfg,
@@ -97,4 +102,5 @@ class SMPSOConfig:
             initializer=self._cfg.get("initializer"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
+            result_mode=self._cfg.get("result_mode", "non_dominated"),
         )

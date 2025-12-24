@@ -41,6 +41,7 @@ If you plan to modify VAMOS (humans or AI assistants):
    pip install -e ".[notebooks,examples]"
    ```
    - Real-world notebooks (e.g., `05_real_world_problems.ipynb`) need scikit-learn (install via `examples` or `notebooks` extras).
+   - Interactive Pareto explorer (`20_interactive_pareto_explorer.ipynb`) needs plotly + ipywidgets (included in the `notebooks` extra).
 
 ## What's inside
 
@@ -259,7 +260,7 @@ Install with `pip install -e ".[extra1,extra2]"`:
 | `backends`   | `numba>=0.57`, `moocore>=0.4`                 | Accelerated backends             |
 | `benchmarks` | `pymoo>=0.6`, `jmetalpy>=1.5`, `pygmo>=2.19`  | Benchmark comparisons            |
 | `dev`        | `pytest>=7.0`, `black>=23.0`, `ruff>=0.1.5`   | Development & testing            |
-| `notebooks`  | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `ipython>=8.10`, `scikit-learn>=1.3` | Jupyter notebook support     |
+| `notebooks`  | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `ipython>=8.10`, `scikit-learn>=1.3`, `plotly>=5.18`, `ipywidgets>=8.1` | Jupyter notebook support     |
 | `examples`   | `pandas>=1.5`, `matplotlib>=3.7`, `seaborn>=0.12`, `scikit-learn>=1.3` | Run the real-data examples   |
 
 - Minimal install note: `import vamos` and `import vamos.foundation.core.api` work without optional extras.
@@ -290,7 +291,7 @@ pip install -e ".[backends]"
 - Paper-ready benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/` runs predefined suites, writes raw runs + summary CSVs + LaTeX-ready tables and plots under `report/`.
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
 - Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.engine.hyperheuristics`.
-- Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `03_user_friendly_api.ipynb`).
+- Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `03_user_friendly_api.ipynb`). The interactive Pareto explorer (`20_interactive_pareto_explorer.ipynb`) requires plotly + ipywidgets.
 - Paper benchmarking notebook: `notebooks/11_paper_benchmarking.ipynb` includes SAES-style critical distance plots (`CD_STYLE="saes"`), with a fallback to the simpler plot (`CD_STYLE="simple"`).
 - Built-in reference fronts and default weight vectors ship inside the package under `vamos.foundation.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
 

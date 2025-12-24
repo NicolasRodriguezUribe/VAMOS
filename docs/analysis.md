@@ -23,6 +23,22 @@ f_stat, p_value, rankings, avg_ranks = friedman_test(results)
 p_values, reject = pairwise_wilcoxon(results)
 ```
 
+## Landscape Analysis
+
+Understanding problem difficulty often requires analyzing the fitness landscape.
+
+```python
+from vamos.analysis.landscape import perform_random_walk, compute_autocorrelation
+
+# Perform a random walk on the problem instance
+f_values = perform_random_walk(problem, n_steps=1000)
+
+# Compute autocorrelation (measure of rugosity)
+corr = compute_autocorrelation(f_values, lag=1)
+print(f"Lag-1 Autocorrelation: {corr:.2f}")
+# Closer to 1.0 = smooth; Closer to 0.0 (or negative) = rugged
+```
+
 ## Visualization
 
 Helper functions in `vamos.ux.analysis.plotting` (and `vamos.plotting`) simplify common tasks.
@@ -54,7 +70,7 @@ plot_pareto_front_2d(F, title="ZDT1 Result", filename="front.png")
 Select specific solutions from a Pareto front using `vamos.mcdm`.
 
 - **Weighted Sum**: `weighted_sum_scores(F, weights)`
-- **Topsis**: `topsis_scores(F, weights)`
+- **TOPSIS**: `topsis_scores(F, weights)`
 - **Knee Point**: Find the "knee" of the curve.
 
 ```python

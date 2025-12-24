@@ -21,6 +21,7 @@ class NSGAIIIConfigData(_SerializableConfig):
     initializer: Optional[Dict[str, Any]] = None
     mutation_prob_factor: Optional[float] = None
     track_genealogy: bool = False
+    result_mode: Optional[str] = None
 
 
 class NSGAIIIConfig:
@@ -114,6 +115,10 @@ class NSGAIIIConfig:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
+    def result_mode(self, value: str) -> "NSGAIIIConfig":
+        self._cfg["result_mode"] = str(value)
+        return self
+
     def fixed(self) -> NSGAIIIConfigData:
         _require_fields(
             self._cfg,
@@ -133,4 +138,5 @@ class NSGAIIIConfig:
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
+            result_mode=self._cfg.get("result_mode", "non_dominated"),
         )

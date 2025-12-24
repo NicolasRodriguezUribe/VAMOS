@@ -262,7 +262,7 @@ class NSGAIIConfig:
             archive=archive_cfg,
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
-            result_mode=self._cfg.get("result_mode"),
+            result_mode=self._cfg.get("result_mode", "non_dominated"),
             archive_type=self._cfg.get("archive_type"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
