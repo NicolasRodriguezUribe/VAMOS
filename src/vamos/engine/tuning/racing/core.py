@@ -15,6 +15,17 @@ from .elimination import eliminate_configs, update_elite_archive
 from .refill import refill_population
 
 
+from joblib import Parallel, delayed
+
+def _eval_worker(
+    eval_fn: Callable[[Dict[str, Any], EvalContext], float],
+    config: Dict[str, Any],
+    ctx: EvalContext
+) -> float:
+    """Helper worker for parallel evaluation."""
+    return float(eval_fn(config, ctx))
+
+
 class RacingTuner:
     """
     Irace-inspired racing tuner for algorithm configuration.
@@ -33,6 +44,7 @@ class RacingTuner:
         seed: int = 0,
         max_initial_configs: int = 20,
         sampler: Optional[Sampler] = None,
+        initial_configs: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
         self.task = task
         self.scenario = scenario
@@ -40,7 +52,10 @@ class RacingTuner:
         self.max_initial_configs = max_initial_configs
         self._stage_index: int = 0
         self._elite_archive: List[EliteEntry] = []
-        self._next_config_id: int = self.max_initial_configs
+        self._next_config_id: int = 0  # Re-indexed below
+
+        # Injection of default/user configurations
+        self.initial_configs_payload = initial_configs or []
 
         self.param_space: ParamSpace = task.param_space
         self.instances: Sequence[Instance] = list(task.instances)
@@ -63,10 +78,23 @@ class RacingTuner:
     def _sample_initial_configs(self) -> List[ConfigState]:
         """Sample the initial population of configurations."""
         configs: List[ConfigState] = []
-        for config_id in range(self.max_initial_configs):
-            cfg = self.sampler.sample(self.rng)
-            state = ConfigState(config_id=config_id, config=cfg, alive=True)
+        config_id_counter = 0
+
+        # 1. Add injected configs
+        for user_cfg in self.initial_configs_payload:
+            state = ConfigState(config_id=config_id_counter, config=user_cfg, alive=True)
             configs.append(state)
+            config_id_counter += 1
+
+        # 2. Sample remainder
+        needed = max(0, self.max_initial_configs - len(configs))
+        for _ in range(needed):
+            cfg = self.sampler.sample(self.rng)
+            state = ConfigState(config_id=config_id_counter, config=cfg, alive=True)
+            configs.append(state)
+            config_id_counter += 1
+        
+        self._next_config_id = config_id_counter
         return configs
 
     def _current_budget(self) -> int:
@@ -192,12 +220,32 @@ class RacingTuner:
         seed = self.seeds[seed_idx]
         budget = self._current_budget()
 
-        for state in configs:
+        # Identify jobs to run
+        tasks = []
+        indices = []
+        for idx, state in enumerate(configs):
             if not state.alive:
                 continue
             ctx = EvalContext(instance=instance, seed=seed, budget=budget)
-            score = float(eval_fn(state.config, ctx))
-            state.scores.append(score)
+            tasks.append((state.config, ctx))
+            indices.append(idx)
+        
+        if not tasks:
+            return
+
+        if self.scenario.n_jobs == 1:
+            # Sequential execution (avoid overhead)
+            for i, (cfg, ctx) in enumerate(tasks):
+                score = float(eval_fn(cfg, ctx))
+                configs[indices[i]].scores.append(score)
+        else:
+            # Parallel execution with joblib
+            results = Parallel(n_jobs=self.scenario.n_jobs)(
+                delayed(_eval_worker)(eval_fn, cfg, ctx) for cfg, ctx in tasks
+            )
+            
+            for i, score in enumerate(results):
+                configs[indices[i]].scores.append(score)
 
     def _count_new_experiments(self, configs: List[ConfigState]) -> int:
         """Count how many alive configs were evaluated in the last stage."""

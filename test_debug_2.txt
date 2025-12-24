@@ -1,0 +1,10 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\nicor\Desktop\VAMOS
+configfile: pyproject.toml
+plugins: cov-7.0.0
+collected 3 items
+
+tests\engine\test_advanced_stats.py ...                                  [100%]
+
+============================== 3 passed in 0.80s ==============================

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
+import math
 
 import numpy as np
 
@@ -26,21 +27,46 @@ def make_neighbor_config(base_config: Dict[str, Any], param_space: ParamSpace, r
         if isinstance(spec, Real):
             low = spec.low
             high = spec.high
-            range_width = high - low
-            if range_width <= 0:
-                cfg[name] = float(current_value)
-                continue
-            sigma = 0.1 * range_width
-            new_val = float(current_value) + float(rng.normal(0.0, sigma))
+            
+            if spec.log:
+                log_low = math.log(low)
+                log_high = math.log(high)
+                log_range = log_high - log_low
+                sigma = 0.1 * log_range
+                
+                # Perturb in log-space
+                cur_log = math.log(float(current_value))
+                new_log = cur_log + float(rng.normal(0.0, sigma))
+                new_val = math.exp(new_log)
+            else:
+                range_width = high - low
+                if range_width <= 0:
+                    cfg[name] = float(current_value)
+                    continue
+                sigma = 0.1 * range_width
+                new_val = float(current_value) + float(rng.normal(0.0, sigma))
+            
             new_val = max(low, min(high, new_val))
             cfg[name] = new_val
         elif isinstance(spec, Int):
             low = spec.low
             high = spec.high
-            range_width = max(1, high - low)
-            step = max(1, int(round(0.1 * range_width)))
-            delta = int(rng.integers(-step, step + 1))
-            new_val = int(current_value) + delta
+            
+            if spec.log:
+                log_low = math.log(low)
+                log_high = math.log(high)
+                log_range = log_high - log_low
+                sigma = max(0.1, 0.1 * log_range) # ensure some variance
+                
+                cur_log = math.log(float(current_value))
+                new_log = cur_log + float(rng.normal(0.0, sigma))
+                new_val = int(round(math.exp(new_log)))
+            else:
+                range_width = max(1, high - low)
+                step = max(1, int(round(0.1 * range_width)))
+                delta = int(rng.integers(-step, step + 1))
+                new_val = int(current_value) + delta
+            
             new_val = max(low, min(high, new_val))
             cfg[name] = new_val
         elif isinstance(spec, Categorical):
