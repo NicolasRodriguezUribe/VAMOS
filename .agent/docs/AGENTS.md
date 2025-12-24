@@ -6,7 +6,7 @@
 
 Guidance for AI coding agents (Codex, GPT, Copilot, etc.) working on the **VAMOS** codebase (Vectorized Architecture for Multiobjective Optimization Studies).
 
-This file explains how to set up the environment, how the project is structured, and what conventions to follow when changing code. README.md is the source of truth for capabilities and commands; this document translates that into expectations for contributors and AI agents.
+This file explains how to set up the environment, how the project is structured, and what conventions to follow when changing code. `../../README.md` is the source of truth for capabilities and commands; this document translates that into expectations for contributors and AI agents.
 
 ---
 
@@ -118,10 +118,11 @@ VAMOS prioritizes ease of use:
 ## 4. Repository layout (aligns with README)
 
 - `src/vamos/`
-  - `foundation/` - core orchestration utilities, constraints, eval/metrics, kernel backends, problems/registries, shared data, version helpers.
+  - `foundation/` - core abstractions, constraints, eval/metrics, kernel backends, problems/registries, shared data, version helpers. Includes `exceptions.py`.
   - `engine/` - algorithms, operators, hyperheuristics, tuning stacks, variation/config helpers.
-  - `experiment/` - CLI entrypoints, study runner, benchmark/reporting, diagnostics, zoo presets.
+  - `experiment/` - CLI entrypoints, study runner, benchmark/reporting, diagnostics, zoo presets. Includes `experiment_context.py` and `quick.py`.
   - `ux/` - analysis/MCDM/stats helpers, visualization, Studio.
+  - `api.py` - Root facade. Other facades (`algorithms`, `problems`) are now internal.
 - `tests/` - pytest suite (operators, algorithms, CLI/study integration, examples/notebooks when enabled).
 - `examples/`, `notebooks/` - runnable examples and exploratory notebooks.
 - `notebooks/11_paper_benchmarking.ipynb` includes SAES-style critical distance plots (toggle with `CD_STYLE`).
@@ -185,7 +186,7 @@ Use `pre-commit` hooks if configured in the repo.
 
 ## 9. Workflow for AI coding agents
 
-1. Load context: read this file, `README.md`, `AGENTS_tasks.md`, and any relevant docs/examples.
+1. Load context: read this file, `../../README.md`, `AGENTS_tasks.md`, and any relevant docs/examples.
 2. Plan minimal, focused changes; avoid wide refactors unless requested.
 3. Respect dependency boundaries and performance constraints.
 4. Document non-obvious decisions; keep defaults stable unless justified.

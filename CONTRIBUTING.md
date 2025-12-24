@@ -4,7 +4,7 @@ Thank you for considering a contribution! This project is organized to make addi
 
 ## Adding a new problem
 - Put the implementation under `src/vamos/foundation/problem/` (one file per problem family).
-- Expose the class via the registry in `src/vamos/foundation/problem/registry.py` by adding a `ProblemSpec` entry (set sensible defaults for `n_var`, `n_obj`, `encoding`, and whether `n_obj` is overridable).
+- Expose the class via the registry in `src/vamos/foundation/problems_registry.py` by adding a `ProblemSpec` entry (set sensible defaults for `n_var`, `n_obj`, `encoding`, and whether `n_obj` is overridable).
 - Add a short docstring to the problem class describing the landscape and encoding.
 - Add a small smoke test in `tests/` to validate instantiation and `evaluate` shape.
 - See `docs/dev/add_problem.md` for a step-by-step template.
@@ -12,7 +12,7 @@ Thank you for considering a contribution! This project is organized to make addi
 ## Adding a new algorithm
 - Implement the vectorized core under `src/vamos/engine/algorithm/`.
 - Create a config dataclass/builder in `src/vamos/engine/algorithm/config.py` to keep construction declarative and serializable.
-- Register the algorithm in `src/vamos/engine/algorithm/registry.py` so orchestration layers and the CLI can resolve it by name.
+- Register the algorithm in `src/vamos/engine/algorithms_registry.py` so orchestration layers and the CLI can resolve it by name.
 - Add a minimal smoke test (tiny population/evaluation budget) to catch wiring issues.
 - See `docs/dev/add_algorithm.md` for a template and checklist.
 
@@ -57,4 +57,4 @@ Thank you for considering a contribution! This project is organized to make addi
    - Run the smallest relevant `vamos-benchmark` suite.
 4. If you added docs or notebooks:
    - Build docs locally (`mkdocs serve`) or open the notebook and run all cells.
-5. For guidance on assistant-specific workflows, see `README.md`, `AGENTS.md`, and `AGENTS_tasks.md`.
+5. For guidance on assistant-specific workflows, see `.agent/docs/AGENTS.md`, `.agent/docs/AGENTS_tasks.md`, and `README.md`.
