@@ -259,19 +259,33 @@ def _build_nsgaii_config(
     mutation_prob: str | float,
     mutation_eta: float,
     engine: str,
+    selection_pressure: int = 2,
+    archive_size: int | None = None,
+    constraint_mode: str = "feasibility",
+    track_genealogy: bool = False,
+    offspring_size: int | None = None,
+    result_mode: str = "non_dominated",
+    archive_type: str = "hypervolume",
 ) -> dict[str, Any]:
-    """Build NSGA-II config dict with sensible defaults."""
+    """Build NSGA-II config dict with all available parameters."""
     cfg = (
         NSGAIIConfig()
         .pop_size(pop_size)
         .crossover(crossover, prob=crossover_prob, eta=crossover_eta)
         .mutation(mutation, prob=mutation_prob, eta=mutation_eta)
-        .selection("tournament", pressure=2)
+        .selection("tournament", pressure=selection_pressure)
         .survival("nsga2")
         .engine(engine)
-        .fixed()
+        .constraint_mode(constraint_mode)
+        .track_genealogy(track_genealogy)
+        .result_mode(result_mode)
+        .archive_type(archive_type)
     )
-    return cfg.to_dict()
+    if offspring_size is not None:
+        cfg = cfg.offspring_size(offspring_size)
+    if archive_size is not None and archive_size > 0:
+        cfg = cfg.external_archive(size=archive_size, archive_type=archive_type)
+    return cfg.fixed().to_dict()
 
 
 def run_nsgaii(
@@ -289,10 +303,21 @@ def run_nsgaii(
     mutation_prob: str | float = "1/n",
     mutation_eta: float = 20.0,
     engine: str = "numpy",
+    # Advanced parameters with sensible defaults
+    selection_pressure: int = 2,
+    archive_size: int | None = None,
+    constraint_mode: str = "feasibility",
+    track_genealogy: bool = False,
+    offspring_size: int | None = None,
+    result_mode: str = "non_dominated",
+    archive_type: str = "hypervolume",
     **problem_kwargs: Any,
 ) -> QuickResult:
     """
-    Run NSGA-II optimization with minimal configuration.
+    Run NSGA-II optimization with full configurability.
+
+    This is the single, unified API for NSGA-II. All parameters have sensible
+    defaults, but everything is overridable for advanced use cases.
 
     Args:
         problem: Problem name (e.g., 'zdt1', 'dtlz2') or Problem instance
@@ -308,16 +333,33 @@ def run_nsgaii(
         mutation_prob: Mutation probability ('1/n' or float)
         mutation_eta: Mutation distribution index
         engine: Computation backend ('numpy', 'numba', 'moocore')
+        selection_pressure: Tournament selection pressure (default: 2)
+        archive_size: External archive size (None = no archive)
+        constraint_mode: How to handle constraints ('feasibility', 'penalty', 'none')
+        track_genealogy: Whether to track parent-child relationships
+        offspring_size: Number of offspring per generation (default: pop_size)
+        result_mode: What to return ('non_dominated', 'population', 'external_archive')
+        archive_type: Archive pruning strategy ('hypervolume', 'crowding')
         **problem_kwargs: Additional problem-specific parameters
 
     Returns:
         QuickResult with Pareto front and convenience methods
 
-    Example:
-        >>> from vamos.quick import run_nsgaii
-        >>> result = run_nsgaii("zdt1", max_evaluations=5000)
-        >>> result.summary()
-        >>> result.plot()
+    Examples:
+        # Minimal usage - all defaults
+        >>> result = run_nsgaii("zdt1")
+
+        # Basic customization
+        >>> result = run_nsgaii("zdt1", max_evaluations=20000, pop_size=200)
+
+        # Advanced configuration - same function!
+        >>> result = run_nsgaii(
+        ...     "zdt1",
+        ...     selection_pressure=4,
+        ...     archive_size=100,
+        ...     crossover_prob=0.95,
+        ...     track_genealogy=True,
+        ... )
     """
     prob = _resolve_problem(problem, n_var=n_var, n_obj=n_obj, **problem_kwargs)
     cfg = _build_nsgaii_config(
@@ -329,6 +371,13 @@ def run_nsgaii(
         mutation_prob=mutation_prob,
         mutation_eta=mutation_eta,
         engine=engine,
+        selection_pressure=selection_pressure,
+        archive_size=archive_size,
+        constraint_mode=constraint_mode,
+        track_genealogy=track_genealogy,
+        offspring_size=offspring_size,
+        result_mode=result_mode,
+        archive_type=archive_type,
     )
 
     result = optimize(
@@ -372,10 +421,19 @@ def run_moead(
     delta: float = 0.9,
     replace_limit: int = 2,
     aggregation: str = "tchebycheff",
+    # Advanced parameters with sensible defaults
+    constraint_mode: str = "feasibility",
+    track_genealogy: bool = False,
+    archive_size: int | None = None,
+    result_mode: str = "non_dominated",
+    archive_type: str = "hypervolume",
     **problem_kwargs: Any,
 ) -> QuickResult:
     """
-    Run MOEA/D optimization with minimal configuration.
+    Run MOEA/D optimization with full configurability.
+
+    This is the single, unified API for MOEA/D. All parameters have sensible
+    defaults, but everything is overridable for advanced use cases.
 
     Args:
         problem: Problem name or Problem instance
@@ -395,10 +453,25 @@ def run_moead(
         delta: Probability of selecting from neighborhood vs population
         replace_limit: Maximum number of solutions to replace per iteration
         aggregation: Aggregation function ('tchebycheff', 'weighted_sum', 'pbi')
+        constraint_mode: How to handle constraints ('feasibility', 'penalty', 'none')
+        track_genealogy: Whether to track parent-child relationships
+        archive_size: External archive size (None = no archive)
+        result_mode: What to return ('non_dominated', 'population', 'external_archive')
+        archive_type: Archive pruning strategy ('hypervolume', 'crowding')
         **problem_kwargs: Problem-specific parameters
 
     Returns:
         QuickResult with Pareto front and convenience methods
+
+    Examples:
+        # Minimal usage - all defaults
+        >>> result = run_moead("zdt1")
+
+        # Basic customization
+        >>> result = run_moead("zdt1", aggregation="pbi", neighbor_size=30)
+
+        # Advanced configuration - same function!
+        >>> result = run_moead("zdt1", archive_size=100, track_genealogy=True)
     """
     prob = _resolve_problem(problem, n_var=n_var, n_obj=n_obj, **problem_kwargs)
 
@@ -412,8 +485,14 @@ def run_moead(
         .mutation(mutation, prob=mutation_prob, eta=mutation_eta)
         .aggregation(aggregation)
         .engine(engine)
-        .fixed()
+        .constraint_mode(constraint_mode)
+        .track_genealogy(track_genealogy)
+        .result_mode(result_mode)
+        .archive_type(archive_type)
     )
+    if archive_size is not None and archive_size > 0:
+        cfg = cfg.external_archive(size=archive_size, archive_type=archive_type)
+    cfg = cfg.fixed()
 
     result = optimize(
         OptimizeConfig(
@@ -452,10 +531,19 @@ def run_spea2(
     mutation_prob: str | float = "1/n",
     mutation_eta: float = 20.0,
     engine: str = "numpy",
+    # Advanced parameters with sensible defaults
+    selection_pressure: int = 2,
+    k_neighbors: int | None = None,
+    constraint_mode: str = "feasibility",
+    track_genealogy: bool = False,
+    result_mode: str = "non_dominated",
     **problem_kwargs: Any,
 ) -> QuickResult:
     """
-    Run SPEA2 optimization with minimal configuration.
+    Run SPEA2 optimization with full configurability.
+
+    This is the single, unified API for SPEA2. All parameters have sensible
+    defaults, but everything is overridable for advanced use cases.
 
     Args:
         problem: Problem name or Problem instance
@@ -472,10 +560,25 @@ def run_spea2(
         mutation_prob: Mutation probability
         mutation_eta: Mutation distribution index
         engine: Computation backend
+        selection_pressure: Tournament selection pressure (default: 2)
+        k_neighbors: Number of neighbors for density estimation (None = sqrt(pop))
+        constraint_mode: How to handle constraints ('feasibility', 'penalty', 'none')
+        track_genealogy: Whether to track parent-child relationships
+        result_mode: What to return ('non_dominated', 'population')
         **problem_kwargs: Problem-specific parameters
 
     Returns:
         QuickResult with Pareto front and convenience methods
+
+    Examples:
+        # Minimal usage - all defaults
+        >>> result = run_spea2("zdt1")
+
+        # Basic customization
+        >>> result = run_spea2("zdt1", archive_size=200)
+
+        # Advanced configuration - same function!
+        >>> result = run_spea2("zdt1", selection_pressure=4, track_genealogy=True)
     """
     prob = _resolve_problem(problem, n_var=n_var, n_obj=n_obj, **problem_kwargs)
 
@@ -485,10 +588,15 @@ def run_spea2(
         .archive_size(archive_size or pop_size)
         .crossover(crossover, prob=crossover_prob, eta=crossover_eta)
         .mutation(mutation, prob=mutation_prob, eta=mutation_eta)
-        .selection("tournament", pressure=2)
+        .selection("tournament", pressure=selection_pressure)
         .engine(engine)
-        .fixed()
+        .constraint_mode(constraint_mode)
+        .track_genealogy(track_genealogy)
+        .result_mode(result_mode)
     )
+    if k_neighbors is not None:
+        cfg = cfg.k_neighbors(k_neighbors)
+    cfg = cfg.fixed()
 
     result = optimize(
         OptimizeConfig(
@@ -527,10 +635,22 @@ def run_smsemoa(
     mutation_prob: str | float = "1/n",
     mutation_eta: float = 20.0,
     engine: str = "numpy",
+    # Advanced parameters with sensible defaults
+    selection_pressure: int = 2,
+    ref_point_offset: float = 0.1,
+    ref_point_adaptive: bool = True,
+    constraint_mode: str = "feasibility",
+    track_genealogy: bool = False,
+    archive_size: int | None = None,
+    result_mode: str = "non_dominated",
+    archive_type: str = "hypervolume",
     **problem_kwargs: Any,
 ) -> QuickResult:
     """
-    Run SMS-EMOA optimization with minimal configuration.
+    Run SMS-EMOA optimization with full configurability.
+
+    This is the single, unified API for SMS-EMOA. All parameters have sensible
+    defaults, but everything is overridable for advanced use cases.
 
     Args:
         problem: Problem name or Problem instance
@@ -546,10 +666,28 @@ def run_smsemoa(
         mutation_prob: Mutation probability
         mutation_eta: Mutation distribution index
         engine: Computation backend
+        selection_pressure: Tournament selection pressure (default: 2)
+        ref_point_offset: Offset for adaptive reference point (default: 0.1)
+        ref_point_adaptive: Whether to use adaptive reference point (default: True)
+        constraint_mode: How to handle constraints ('feasibility', 'penalty', 'none')
+        track_genealogy: Whether to track parent-child relationships
+        archive_size: External archive size (None = no archive)
+        result_mode: What to return ('non_dominated', 'population', 'external_archive')
+        archive_type: Archive pruning strategy ('hypervolume', 'crowding')
         **problem_kwargs: Problem-specific parameters
 
     Returns:
         QuickResult with Pareto front and convenience methods
+
+    Examples:
+        # Minimal usage - all defaults
+        >>> result = run_smsemoa("zdt1")
+
+        # Basic customization
+        >>> result = run_smsemoa("zdt1", pop_size=50)
+
+        # Advanced configuration - same function!
+        >>> result = run_smsemoa("zdt1", archive_size=100, ref_point_offset=0.2)
     """
     prob = _resolve_problem(problem, n_var=n_var, n_obj=n_obj, **problem_kwargs)
 
@@ -558,10 +696,17 @@ def run_smsemoa(
         .pop_size(pop_size)
         .crossover(crossover, prob=crossover_prob, eta=crossover_eta)
         .mutation(mutation, prob=mutation_prob, eta=mutation_eta)
-        .selection("tournament", pressure=2)
+        .selection("tournament", pressure=selection_pressure)
+        .reference_point(offset=ref_point_offset, adaptive=ref_point_adaptive)
         .engine(engine)
-        .fixed()
+        .constraint_mode(constraint_mode)
+        .track_genealogy(track_genealogy)
+        .result_mode(result_mode)
+        .archive_type(archive_type)
     )
+    if archive_size is not None and archive_size > 0:
+        cfg = cfg.external_archive(size=archive_size, archive_type=archive_type)
+    cfg = cfg.fixed()
 
     result = optimize(
         OptimizeConfig(
@@ -600,11 +745,19 @@ def run_nsgaiii(
     mutation_prob: str | float = "1/n",
     mutation_eta: float = 20.0,
     engine: str = "numpy",
+    # Advanced parameters with sensible defaults
+    selection_pressure: int = 2,
+    ref_divisions: int | None = None,
+    constraint_mode: str = "feasibility",
+    track_genealogy: bool = False,
+    result_mode: str = "non_dominated",
     **problem_kwargs: Any,
 ) -> QuickResult:
     """
-    Run NSGA-III optimization with minimal configuration.
+    Run NSGA-III optimization with full configurability.
 
+    This is the single, unified API for NSGA-III. All parameters have sensible
+    defaults, but everything is overridable for advanced use cases.
     Recommended for many-objective optimization (3+ objectives).
 
     Args:
@@ -621,10 +774,25 @@ def run_nsgaiii(
         mutation_prob: Mutation probability
         mutation_eta: Mutation distribution index
         engine: Computation backend
+        selection_pressure: Tournament selection pressure (default: 2)
+        ref_divisions: Number of divisions for reference directions (auto if None)
+        constraint_mode: How to handle constraints ('feasibility', 'penalty', 'none')
+        track_genealogy: Whether to track parent-child relationships
+        result_mode: What to return ('non_dominated', 'population')
         **problem_kwargs: Problem-specific parameters
 
     Returns:
         QuickResult with Pareto front and convenience methods
+
+    Examples:
+        # Minimal usage - all defaults
+        >>> result = run_nsgaiii("dtlz2", n_obj=3)
+
+        # Basic customization
+        >>> result = run_nsgaiii("dtlz2", n_obj=3, ref_divisions=12)
+
+        # Advanced configuration - same function!
+        >>> result = run_nsgaiii("dtlz2", n_obj=5, selection_pressure=4, track_genealogy=True)
     """
     prob = _resolve_problem(problem, n_var=n_var, n_obj=n_obj, **problem_kwargs)
 
@@ -633,10 +801,15 @@ def run_nsgaiii(
         .pop_size(pop_size)
         .crossover(crossover, prob=crossover_prob, eta=crossover_eta)
         .mutation(mutation, prob=mutation_prob, eta=mutation_eta)
-        .selection("tournament", pressure=2)
+        .selection("tournament", pressure=selection_pressure)
         .engine(engine)
-        .fixed()
+        .constraint_mode(constraint_mode)
+        .track_genealogy(track_genealogy)
+        .result_mode(result_mode)
     )
+    if ref_divisions is not None:
+        cfg = cfg.reference_directions(divisions=ref_divisions)
+    cfg = cfg.fixed()
 
     result = optimize(
         OptimizeConfig(

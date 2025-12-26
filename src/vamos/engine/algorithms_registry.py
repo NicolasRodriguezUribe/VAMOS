@@ -33,9 +33,88 @@ from vamos.engine.algorithm.spea2 import SPEA2
 from vamos.engine.algorithm.ibea import IBEA
 
 
+from vamos.engine.algorithm.components.variation.helpers import (
+    PERM_CROSSOVER,
+    PERM_MUTATION,
+    BINARY_CROSSOVER,
+    BINARY_MUTATION,
+    INT_CROSSOVER,
+    INT_MUTATION,
+    MIXED_CROSSOVER,
+    MIXED_MUTATION,
+)
+
+# Canonical real-valued operators supported by variation pipeline
+REAL_CROSSOVER = {
+    "sbx",
+    "blx_alpha",
+    "arithmetic",
+    "pcx",
+    "undx",
+    "spx",
+}
+REAL_MUTATION = {
+    "pm",
+    "non_uniform",
+    "gaussian",
+    "uniform_reset",
+    "cauchy",
+    "uniform",
+    "linked_polynomial",
+}
+
+
 def available_algorithms() -> Tuple[str, ...]:
     """Return the canonical algorithm identifiers supported by the engine."""
     return tuple(sorted(ALGORITHMS))
+
+
+def available_crossover_methods(encoding: str = "real") -> Tuple[str, ...]:
+    """
+    Return the available crossover method identifiers for a given encoding.
+
+    Args:
+        encoding: Variable encoding type ("real", "binary", "permutation", "integer", "mixed").
+
+    Returns:
+        Tuple of supported crossover method strings.
+    """
+    encoding = encoding.lower()
+    if encoding == "real":
+        return tuple(sorted(REAL_CROSSOVER))
+    if encoding == "binary":
+        return tuple(sorted(BINARY_CROSSOVER.keys()))
+    if encoding == "permutation":
+        return tuple(sorted(PERM_CROSSOVER.keys()))
+    if encoding == "integer":
+        return tuple(sorted(INT_CROSSOVER.keys()))
+    if encoding == "mixed":
+        return tuple(sorted(MIXED_CROSSOVER.keys()))
+    return ()
+
+
+def available_mutation_methods(encoding: str = "real") -> Tuple[str, ...]:
+    """
+    Return the available mutation method identifiers for a given encoding.
+
+    Args:
+        encoding: Variable encoding type ("real", "binary", "permutation", "integer", "mixed").
+
+    Returns:
+        Tuple of supported mutation method strings.
+    """
+    encoding = encoding.lower()
+    if encoding == "real":
+        return tuple(sorted(REAL_MUTATION))
+    if encoding == "binary":
+        return tuple(sorted(BINARY_MUTATION.keys()))
+    if encoding == "permutation":
+        return tuple(sorted(PERM_MUTATION.keys()))
+    if encoding == "integer":
+        return tuple(sorted(INT_MUTATION.keys()))
+    if encoding == "mixed":
+        return tuple(sorted(MIXED_MUTATION.keys()))
+    return ()
 
 
 __all__ = [
@@ -61,5 +140,7 @@ __all__ = [
     "SMPSOConfig",
     "SMPSOConfigData",
     "available_algorithms",
+    "available_crossover_methods",
+    "available_mutation_methods",
     "resolve_algorithm",
 ]
