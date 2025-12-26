@@ -30,6 +30,9 @@ class StudyTask:
     n_obj: int | None = None
     seed: int = ExperimentConfig().seed
     selection_pressure: int = 2
+    external_archive_size: int | None = None
+    archive_type: str = "hypervolume"
+    nsgaii_variation: Dict[str, Any] | None = None
     config_overrides: Dict[str, Any] | None = None
 
 
@@ -112,7 +115,10 @@ class StudyRunner:
                 task.algorithm,
                 selection,
                 task_config,
+                external_archive_size=task.external_archive_size,
+                archive_type=task.archive_type,
                 selection_pressure=task.selection_pressure,
+                nsgaii_variation=task.nsgaii_variation,
             )
             self._mirror_artifacts(metrics)
             results.append(StudyResult(task=task, selection=selection, metrics=metrics))
@@ -248,11 +254,17 @@ class StudyRunner:
                 n_var = base.n_var
                 n_obj = base.n_obj
                 sel_pressure = base.selection_pressure
+                external_archive_size = base.external_archive_size
+                archive_type = base.archive_type
+                nsgaii_variation = base.nsgaii_variation
             else:
                 problem = problem_entry["problem"]
                 n_var = problem_entry.get("n_var")
                 n_obj = problem_entry.get("n_obj")
                 sel_pressure = problem_entry.get("selection_pressure", 2)
+                external_archive_size = problem_entry.get("external_archive_size")
+                archive_type = problem_entry.get("archive_type", "hypervolume")
+                nsgaii_variation = problem_entry.get("nsgaii_variation")
             for algorithm in algorithms:
                 for engine in engines:
                     for seed in seeds:
@@ -265,6 +277,9 @@ class StudyRunner:
                                 n_obj=n_obj,
                                 seed=seed,
                                 selection_pressure=sel_pressure,
+                                external_archive_size=external_archive_size,
+                                archive_type=archive_type,
+                                nsgaii_variation=nsgaii_variation,
                             )
                         )
         return entries

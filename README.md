@@ -79,6 +79,12 @@ If you plan to modify VAMOS (humans or AI assistants):
 - Browse the docs under `docs/` (MkDocs). Key pages cover CLI/config, algorithms/backends, problems, constraint DSL/autodiff, and extension guides.
 - Build locally: `mkdocs serve` (or `py -m mkdocs serve`) after installing the `docs` extra with `pip install -e ".[docs]"`.
 
+### API tiers
+
+- Quick wrappers: `run_nsgaii`, `run_moead`, `run` for one-liner usage with defaults.
+- Core engine: `optimize` + `OptimizeConfig` + algorithm configs (`NSGAIIConfig`, etc.) for full control, pipelines, and algorithms without quick wrappers.
+- CLI/config: `python -m vamos.experiment.cli.main` or `--config spec.yaml` uses the same core engine for reproducible runs.
+
 ### Imports overview
 
 - Typical user-facing imports:
