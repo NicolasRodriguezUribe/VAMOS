@@ -25,6 +25,33 @@ def _has_pandas() -> bool:
     except ImportError:
         return False
 
+"""Tests for vamos.quick API - one-liner experiment convenience functions."""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+
+def _has_matplotlib() -> bool:
+    """Check if matplotlib is available."""
+    try:
+        import matplotlib  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
+def _has_pandas() -> bool:
+    """Check if pandas is available."""
+    try:
+        import pandas  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
 
 class TestQuickAPIImports:
     """Test that quick API is correctly exported from vamos root."""
@@ -33,7 +60,6 @@ class TestQuickAPIImports:
         """All quick functions should be importable from vamos."""
         from vamos import (
             QuickResult,
-            run,
             run_moead,
             run_nsgaii,
             run_nsgaiii,
@@ -41,7 +67,6 @@ class TestQuickAPIImports:
             run_spea2,
         )
 
-        assert callable(run)
         assert callable(run_nsgaii)
         assert callable(run_moead)
         assert callable(run_spea2)
@@ -190,23 +215,6 @@ class TestQuickAPIAlgorithms:
         assert np.isfinite(result.F).all()
         assert np.ptp(result.F, axis=0).max() > 1e-3  # avoid collapsed/constant fronts
 
-    def test_run_generic_function(self):
-        """run() should dispatch to correct algorithm."""
-        from vamos import run
-
-        # Test each algorithm via run()
-        for algo in ["nsgaii", "moead", "spea2", "smsemoa"]:
-            result = run(
-                "zdt1",
-                algo,
-                max_evaluations=100,
-                pop_size=10,
-                seed=42,
-            )
-            assert len(result) > 0
-            assert result.algorithm == algo
-
-
 class TestQuickAPISmoke:
     """Fast smoke tests for quick API."""
 
@@ -215,13 +223,6 @@ class TestQuickAPISmoke:
         from vamos import run_nsgaii
 
         result = run_nsgaii("zdt1", max_evaluations=50, pop_size=10)
-        assert len(result) > 0
-
-    def test_minimal_run_dispatch(self):
-        """run() should work with minimal args."""
-        from vamos import run
-
-        result = run("zdt1", "nsgaii", max_evaluations=50, pop_size=10)
         assert len(result) > 0
 
 

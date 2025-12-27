@@ -109,7 +109,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 > - Register it so `python -m vamos.experiment.cli.main --problem <id>` works.  
 > - Add tests for shapes/finite outputs (and reference points if applicable).  
 > - Add an example snippet or tiny script showing NSGA-II on the new problem with a small budget.  
-> - If editing the paper benchmarking notebook (`notebooks/11_paper_benchmarking.ipynb`), keep the SAES-style critical distance plot toggle (`CD_STYLE`) intact.  
+> - If editing the paper benchmarking notebook (`notebooks/90_paper_benchmarking.ipynb`), keep the SAES-style critical distance plot toggle (`CD_STYLE`) intact.  
 > Output code/tests/registry diffs and a brief description.
 
 ---

@@ -113,7 +113,6 @@ from .engine.tuning.api import (
 # Quick-start API for one-liner experiments
 from .experiment.quick import (
     QuickResult,
-    run,
     run_moead,
     run_nsgaii,
     run_nsgaiii,
@@ -154,7 +153,6 @@ from .experiment.context import (
 
 __all__ = [
     # Quick-start API (one-liners)
-    "run",
     "run_nsgaii",
     "run_moead",
     "run_spea2",
