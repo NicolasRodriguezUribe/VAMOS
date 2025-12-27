@@ -26,9 +26,44 @@ Smoke tests
 - Full test suite (core): `pytest`
 - With extras installed: `pytest -m "not slow"`
 
+Python API
+----------
+
+**1. One-liner (Quick API):**
+
+```python
+from vamos.experiment.quick import run_nsgaii
+
+result = run_nsgaii(
+    "zdt1",
+    max_evaluations=10000,
+    pop_size=100,
+    seed=42
+)
+print(result.summary())
+```
+
+**2. Full Control (Optimize API):**
+
+```python
+from vamos import optimize, NSGAIIConfig
+
+config = (
+    NSGAIIConfig()
+    .problem("zdt1")
+    .parameters(pop_size=100, seed=42)
+    .term_evaluations(10000)
+    .crossover("sbx", 0.9, 20.0)
+    .mutation("pm", "1/n", 20.0)
+    .fixed()
+)
+result = optimize(config)
+```
+
 Benchmarks and studies
 ----------------------
 
 - Compare backends: `python -m vamos.experiment.cli.main --experiment backends --problem zdt1`
 - Run a predefined suite: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/`
 - Batch problem x algorithm x seed sweeps: `python -m vamos.experiment.study.runner --suite families`
+

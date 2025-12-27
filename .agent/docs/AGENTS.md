@@ -125,7 +125,7 @@ VAMOS prioritizes ease of use:
   - `api.py` - Root facade. Other facades (`algorithms`, `problems`) are now internal.
 - `tests/` - pytest suite (operators, algorithms, CLI/study integration, examples/notebooks when enabled).
 - `examples/`, `notebooks/` - runnable examples and exploratory notebooks.
-- `notebooks/11_paper_benchmarking.ipynb` includes SAES-style critical distance plots (toggle with `CD_STYLE`).
+- `notebooks/90_paper_benchmarking.ipynb` includes SAES-style critical distance plots (toggle with `CD_STYLE`).
 - Results and reports default to `results/` (fronts, metadata, CSVs).
 
 Prefer following this structure instead of guessing new locations.

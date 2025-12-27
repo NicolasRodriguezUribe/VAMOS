@@ -40,8 +40,8 @@ If you plan to modify VAMOS (humans or AI assistants):
    ```powershell
    pip install -e ".[notebooks,examples]"
    ```
-   - Real-world notebooks (e.g., `05_real_world_problems.ipynb`) need scikit-learn (install via `examples` or `notebooks` extras).
-   - Interactive Pareto explorer (`20_interactive_pareto_explorer.ipynb`) needs plotly + ipywidgets (included in the `notebooks` extra).
+   - Real-world notebooks (e.g., `notebooks/intermediate/12_real_world_problems.ipynb`) need scikit-learn (install via `examples` or `notebooks` extras).
+   - Interactive Pareto explorer (`notebooks/intermediate/16_interactive_explorer.ipynb`) needs plotly + ipywidgets (included in the `notebooks` extra).
 
 ## What's inside
 
@@ -53,7 +53,7 @@ If you plan to modify VAMOS (humans or AI assistants):
 - CLI/runner: experiment orchestration, metrics, result CSVs/metadata under `results/`.
 - StudyRunner: batch problem x algorithm x seed sweeps.
 - StudyRunner: batch problem x algorithm x seed sweeps.
-- Notebooks: extensive examples under `notebooks/` covering benchmarks (ZDT/DTLZ/WFG), tuning (Racing/Programmatic), landscape analysis, scaling, and dynamics.
+- Notebooks: extensive examples under `notebooks/basic/`, `notebooks/intermediate/` and `notebooks/advanced/` covering benchmarks, tuning, and research.
 
 ## Common commands
 
@@ -81,7 +81,7 @@ If you plan to modify VAMOS (humans or AI assistants):
 
 ### API tiers
 
-- Quick wrappers: `run_nsgaii`, `run_moead`, `run` for one-liner usage with defaults.
+- Quick wrappers: `run_nsgaii`, `run_moead`, `run_spea2`, etc. for one-liner usage with defaults.
 - Core engine: `optimize` + `OptimizeConfig` + algorithm configs (`NSGAIIConfig`, etc.) for full control, pipelines, and algorithms without quick wrappers.
 - CLI/config: `python -m vamos.experiment.cli.main` or `--config spec.yaml` uses the same core engine for reproducible runs.
 
@@ -297,15 +297,10 @@ pip install -e ".[backends]"
 - Paper-ready benchmarking: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/` runs predefined suites, writes raw runs + summary CSVs + LaTeX-ready tables and plots under `report/`.
 - Interactive decision-making: install `pip install -e ".[studio]"` and run `vamos-studio --study-dir results` to explore fronts, rank with preferences, inspect solutions, export, and trigger focused follow-up runs.
 - Adaptive hyper-heuristics: NSGA-II can enable online operator portfolios (bandit-based epsilon-greedy/UCB) via `adaptive_operators` in the config; portfolio utilities live under `vamos.engine.hyperheuristics`.
-- Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`00_quickstart_vamos.ipynb`, `01_benchmarks_and_metrics.ipynb`, `03_user_friendly_api.ipynb`). The interactive Pareto explorer (`20_interactive_pareto_explorer.ipynb`) requires plotly + ipywidgets.
-- Paper benchmarking notebook: `notebooks/11_paper_benchmarking.ipynb` includes SAES-style critical distance plots (`CD_STYLE="saes"`), with a fallback to the simpler plot (`CD_STYLE="simple"`).
+- Notebooks & examples: install `pip install -e ".[notebooks]"` and open the notebooks folder for runnable quickstarts (`notebooks/basic/01_quickstart.ipynb`, `notebooks/basic/04_advanced_configuration.ipynb`). The interactive Pareto explorer (`notebooks/intermediate/16_interactive_explorer.ipynb`) requires plotly + ipywidgets.
+- Paper benchmarking notebook: `notebooks/advanced/30_paper_benchmarking.ipynb` includes SAES-style critical distance plots (`CD_STYLE="saes"`), with a fallback to the simpler plot (`CD_STYLE="simple"`).
 - Built-in reference fronts and default weight vectors ship inside the package under `vamos.foundation.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
 
-## Testing & QA
-
-- Core tests: `pytest`
-- Full optional stack (after `pip install -e ".[dev,backends,benchmarks,studio,analytics,autodiff,notebooks]"`): `pytest -m "not slow"`
-- Built-in reference fronts and default weight vectors ship inside the package under `vamos.foundation.data`; they remain available when installed from a wheel (used by HV thresholds and MOEA/D weights).
 
 ## Testing & QA
 

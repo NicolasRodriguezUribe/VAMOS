@@ -838,66 +838,9 @@ AlgorithmName = Literal[
 ]
 
 
-def run(
-    problem: str | ProblemProtocol,
-    algorithm: AlgorithmName = "nsgaii",
-    *,
-    max_evaluations: int = 10000,
-    pop_size: int = 100,
-    seed: int = 42,
-    **kwargs: Any,
-) -> QuickResult:
-    """
-    Run any supported algorithm with minimal configuration.
-
-    This is the most flexible quick-start function. For algorithm-specific
-    options, use the dedicated run_nsgaii(), run_moead(), etc. functions.
-
-    Args:
-        problem: Problem name (e.g., 'zdt1', 'dtlz2') or Problem instance
-        algorithm: Algorithm to use
-        max_evaluations: Maximum function evaluations
-        pop_size: Population size
-        seed: Random seed
-        **kwargs: Additional algorithm/problem-specific parameters
-
-    Returns:
-        QuickResult with Pareto front and convenience methods
-
-    Example:
-        >>> from vamos.quick import run
-        >>> result = run("zdt1", "nsgaii", max_evaluations=5000)
-        >>> result.summary()
-    """
-    algo_lower = algorithm.lower()
-
-    dispatch = {
-        "nsgaii": run_nsgaii,
-        "moead": run_moead,
-        "spea2": run_spea2,
-        "smsemoa": run_smsemoa,
-        "nsgaiii": run_nsgaiii,
-    }
-
-    if algo_lower not in dispatch:
-        available = ", ".join(sorted(dispatch.keys()))
-        raise ValueError(
-            f"Unknown algorithm '{algorithm}'. Available: {available}. "
-            "For IBEA/SMPSO, use the full vamos.optimize() API."
-        )
-
-    return dispatch[algo_lower](
-        problem,
-        max_evaluations=max_evaluations,
-        pop_size=pop_size,
-        seed=seed,
-        **kwargs,
-    )
-
 
 __all__ = [
     "QuickResult",
-    "run",
     "run_nsgaii",
     "run_moead",
     "run_spea2",
