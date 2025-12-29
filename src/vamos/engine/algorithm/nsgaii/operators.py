@@ -128,8 +128,9 @@ def _build_variation_pipelines(
         List of configured variation pipelines.
     """
     operator_pool: list[VariationPipeline] = []
+    aos_cfg = cfg.get("adaptive_operator_selection") or {}
     op_configs = (
-        cfg.get("adaptive_operator_selection", {}).get("operator_pool")
+        aos_cfg.get("operator_pool")
         or cfg.get("adaptive_operators", {}).get("operator_pool")
     )
 

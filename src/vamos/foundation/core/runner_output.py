@@ -9,6 +9,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.adaptation.aos.logging import write_aos_summary, write_aos_trace
 from vamos.foundation.core.io_utils import write_population, write_metadata, write_timing
 from vamos.foundation.core.metadata import build_run_metadata
 
@@ -119,6 +120,17 @@ def persist_run_outputs(
     if payload.get("archive") is not None:
         metrics["archive"] = payload["archive"]
 
+    aos_payload = payload.get("aos") or {}
+    trace_rows = aos_payload.get("trace_rows")
+    summary_rows = aos_payload.get("summary")
+    if trace_rows and summary_rows:
+        trace_path = Path(output_dir) / "aos_trace.csv"
+        summary_path = Path(output_dir) / "aos_summary.csv"
+        write_aos_trace(trace_path, trace_rows)
+        write_aos_summary(summary_path, summary_rows)
+        artifacts["aos_trace"] = trace_path.name
+        artifacts["aos_summary"] = summary_path.name
+
     write_timing(output_dir, total_time_ms)
     metadata = build_run_metadata(
         selection,
@@ -149,6 +161,8 @@ def persist_run_outputs(
         "archive_g": artifacts.get("archive_g"),
         "genealogy": artifacts.get("genealogy"),
         "autodiff_constraints": artifacts.get("autodiff_constraints"),
+        "aos_trace": artifacts.get("aos_trace"),
+        "aos_summary": artifacts.get("aos_summary"),
         "time_ms": "time.txt",
     }
     metadata["artifacts"] = {k: v for k, v in artifact_entries.items() if v is not None}
@@ -176,6 +190,9 @@ def persist_run_outputs(
         "config_source": config_source,
         "problem_override": problem_override,
     }
+    aos_config = getattr(cfg_data, "adaptive_operator_selection", None)
+    if aos_config is not None:
+        resolved_cfg["adaptive_operator_selection"] = aos_config
     write_metadata(output_dir, metadata, resolved_cfg)
     return artifacts, metadata, resolved_cfg
 
