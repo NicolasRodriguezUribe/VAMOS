@@ -11,6 +11,13 @@ Algorithms (internal)
 - IBEA: epsilon or hypervolume indicator variants.
 - SMPSO: real-coded, archive support.
 
+Enable AOS
+----------
+
+Adaptive Operator Selection (AOS) is an opt-in layer for NSGA-II. See
+`docs/paper/aos-method.md` for the contract and
+`examples/configs/nsgaii_aos_min.yml` for a runnable example.
+
 Optional baselines (install extras)
 -----------------------------------
 
