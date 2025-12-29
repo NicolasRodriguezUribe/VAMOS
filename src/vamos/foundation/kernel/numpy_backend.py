@@ -228,7 +228,8 @@ class NumPyKernel(KernelBackend):
         X_off: np.ndarray,
         F_off: np.ndarray,
         pop_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
+        return_indices: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         NSGA-II elitism: merge parents + offspring, re-rank, and select.
         """
@@ -237,6 +238,8 @@ class NumPyKernel(KernelBackend):
         fronts, _ = _fast_non_dominated_sort(F_comb)
         crowding = _compute_crowding(F_comb, fronts)
         sel = _select_nsga2(fronts, crowding, pop_size)
+        if return_indices:
+            return X_comb[sel], F_comb[sel], sel
         return X_comb[sel], F_comb[sel]
 
     def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:

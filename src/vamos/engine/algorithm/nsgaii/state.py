@@ -18,6 +18,7 @@ from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.ux.analytics.genealogy import GenealogyTracker
 from vamos.engine.operators.real import VariationWorkspace
+from vamos.adaptation.aos.controller import AOSController
 
 _logger = logging.getLogger(__name__)
 
@@ -70,6 +71,14 @@ class NSGAIIState:
 
     # Generation tracking
     generation: int = 0
+
+    # Adaptive operator selection (AOS)
+    aos_controller: AOSController | None = None
+    aos_trace_rows: list[dict[str, Any]] = field(default_factory=list)
+    aos_last_op_id: str | None = None
+    aos_last_op_name: str | None = None
+    aos_last_batch_size: int | None = None
+    aos_step: int | None = None
 
     # Pending offspring (from ask)
     pending_offspring: np.ndarray | None = None
@@ -151,6 +160,24 @@ def build_result(
         archive_contents = get_archive_contents(state)
         if archive_contents is not None:
             result["archive"] = archive_contents
+
+    if state.aos_controller is not None:
+        summary_rows = []
+        for row in state.aos_controller.summary_rows():
+            summary_rows.append(
+                {
+                    "op_id": row.op_id,
+                    "op_name": row.op_name,
+                    "pulls": row.pulls,
+                    "mean_reward": row.mean_reward,
+                    "total_reward": row.total_reward,
+                    "usage_fraction": row.usage_fraction,
+                }
+            )
+        result["aos"] = {
+            "trace_rows": list(state.aos_trace_rows),
+            "summary": summary_rows,
+        }
 
     return result
 

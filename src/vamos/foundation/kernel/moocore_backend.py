@@ -227,7 +227,15 @@ class MooCoreKernel(KernelBackend):
             order = np.argsort(hv_contrib)[::-1][:remaining]
         return front_idx[order]
 
-    def _survive(self, X_a, F_a, X_b, F_b, target_size: int) -> tuple[np.ndarray, np.ndarray]:
+    def _survive(
+        self,
+        X_a,
+        F_a,
+        X_b,
+        F_b,
+        target_size: int,
+        return_indices: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
         X_comb, F_comb, total = self._combine(X_a, F_a, X_b, F_b)
         ranks = moocore.pareto_rank(F_comb)
         order = np.argsort(ranks, kind="mergesort")
@@ -248,12 +256,14 @@ class MooCoreKernel(KernelBackend):
                 selected = self._select_partial_front(F_comb, front_idx, remaining)
                 keep[taken : taken + selected.size] = selected
                 taken += selected.size
-        sel = keep[:target_size]
+        sel = keep[:target_size].copy()
         n_var = X_comb.shape[1]
         n_obj = F_comb.shape[1]
         self._ensure_output_buffers(target_size, n_var, n_obj, X_comb.dtype)
         np.copyto(self._X_output[:target_size], X_comb[sel])
         np.copyto(self._F_output[:target_size], F_comb[sel])
+        if return_indices:
+            return self._X_output[:target_size], self._F_output[:target_size], sel
         return self._X_output[:target_size], self._F_output[:target_size]
 
     def nsga2_survival(
@@ -263,8 +273,9 @@ class MooCoreKernel(KernelBackend):
         X_off: np.ndarray,
         F_off: np.ndarray,
         pop_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        return self._survive(X, F, X_off, F_off, pop_size)
+        return_indices: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return self._survive(X, F, X_off, F_off, pop_size, return_indices=return_indices)
 
     def update_archive(
         self,
