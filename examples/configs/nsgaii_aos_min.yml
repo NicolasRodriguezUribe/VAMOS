@@ -1,0 +1,33 @@
+# Minimal NSGA-II AOS example for the CLI:
+#   .\.venv\Scripts\python.exe -m vamos.experiment.cli.main --config examples/configs/nsgaii_aos_min.yml
+defaults:
+  algorithm: nsgaii
+  engine: numpy
+  problem: zdt1
+  output_root: results/aos_example
+  population_size: 20
+  offspring_population_size: 20
+  max_evaluations: 60
+  seed: 7
+  selection_pressure: 2
+  nsgaii:
+    crossover: {method: sbx, prob: 0.9, eta: 20}
+    mutation: {method: pm, prob: "1/n", eta: 20}
+    selection: {method: tournament, pressure: 2}
+    survival: nsga2
+
+problems:
+  zdt1:
+    nsgaii:
+      adaptive_operator_selection:
+        enabled: true
+        policy: eps_greedy
+        reward_scope: survival
+        exploration: 0.2
+        min_usage: 1
+        rng_seed: 0
+        operator_pool:
+          - crossover: [sbx, {prob: 0.9, eta: 20}]
+            mutation: [pm, {prob: "1/n", eta: 20}]
+          - crossover: [blx_alpha, {prob: 0.9, alpha: 0.5}]
+            mutation: [gaussian, {prob: "1/n", sigma: 0.1}]

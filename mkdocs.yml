@@ -41,6 +41,7 @@ nav:
   - Getting Started: getting-started.md
   - CLI & Config: cli.md
   - Algorithms & Backends: algorithms.md
+  - AOS Method: paper/aos-method.md
   - Hyperparameter Tuning: tuning.md
   - API Reference: api_reference.md
   - Problems: problems.md
