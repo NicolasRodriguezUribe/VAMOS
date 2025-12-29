@@ -231,12 +231,15 @@ class NumbaKernel(KernelBackend):
         X_off: np.ndarray,
         F_off: np.ndarray,
         pop_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
+        return_indices: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
         X_comb = np.vstack((X, X_off))
         F_comb = np.vstack((F, F_off))
         ranks = _fast_non_dominated_sort_ranks(F_comb)
         crowding = _compute_crowding_numba(F_comb, ranks)
         sel = _select_nsga2_indices(ranks, crowding, pop_size)
+        if return_indices:
+            return X_comb[sel], F_comb[sel], sel
         return X_comb[sel], F_comb[sel]
 
     def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:

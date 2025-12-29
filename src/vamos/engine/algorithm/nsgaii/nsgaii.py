@@ -165,7 +165,7 @@ class NSGAII:
         mut_params = prepare_mutation_params(mut_params, encoding, n_var, prob_factor=mut_factor)
 
         variation_workspace = VariationWorkspace()
-        operator_pool, op_selector, indicator_eval = build_operator_pool(
+        operator_pool, op_selector, indicator_eval, aos_controller = build_operator_pool(
             self.cfg, encoding, cross_method, cross_params, mut_method, mut_params,
             n_var, xl, xu, variation_workspace, problem, mut_factor,
         )
@@ -189,6 +189,7 @@ class NSGAII:
             result_archive=result_archive, result_mode=result_mode,
             hv_tracker=hv_tracker,
             track_genealogy=track_genealogy, genealogy_tracker=genealogy_tracker, ids=ids,
+            aos_controller=aos_controller,
         )
         return live_cb, eval_backend, max_eval, n_eval, hv_tracker
 
@@ -198,7 +199,17 @@ class NSGAII:
         if st is None:
             raise RuntimeError("ask() called before initialization.")
 
-        if st.op_selector is not None:
+        if st.aos_controller is not None:
+            st.aos_controller.start_generation(st.generation)
+            arm = st.aos_controller.select_arm(mating_id=0, batch_size=st.offspring_size)
+            idx = st.aos_controller.portfolio.index_of(arm.op_id)
+            st.variation = st.operator_pool[idx]
+            st.last_operator_idx = idx
+            st.aos_last_op_id = arm.op_id
+            st.aos_last_op_name = arm.name
+            st.aos_last_batch_size = st.offspring_size
+            st.aos_step = st.generation
+        elif st.op_selector is not None:
             idx = st.op_selector.select_operator()
             st.variation = st.operator_pool[idx]
             st.last_operator_idx = idx
@@ -220,6 +231,10 @@ class NSGAII:
             X_off = X_off[:st.offspring_size]
         st.pending_offspring = X_off
 
+        if st.aos_controller is not None and st.aos_last_op_id is not None:
+            st.aos_last_batch_size = X_off.shape[0]
+            st.aos_controller.observe_offspring(st.aos_last_op_id, X_off.shape[0])
+
         track_offspring_genealogy(st, parent_idx, X_off.shape[0])
         return X_off
 
@@ -237,19 +252,33 @@ class NSGAII:
         F_off = eval_result.F
         G_off = eval_result.G if st.constraint_mode != "none" else None
         hv_before = self._compute_hv_before(st)
+        aos_enabled = st.aos_controller is not None
 
         # Combine IDs for genealogy
         combined_X = np.vstack([st.X, X_off])
         combined_ids = self._combine_ids(st)
+        parent_count = st.X.shape[0]
+        offspring_count = X_off.shape[0]
+        selected_idx = None
 
         # Survival selection
         if st.G is None or G_off is None or st.constraint_mode == "none":
-            new_X, new_F = self.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size)
+            if aos_enabled:
+                new_X, new_F, selected_idx = self.kernel.nsga2_survival(
+                    st.X, st.F, X_off, F_off, pop_size, return_indices=True
+                )
+            else:
+                new_X, new_F = self.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size)
             new_G = None
         else:
-            new_X, new_F, new_G = feasible_nsga2_survival(
-                self.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size
-            )
+            if aos_enabled:
+                new_X, new_F, new_G, selected_idx = feasible_nsga2_survival(
+                    self.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size, return_indices=True
+                )
+            else:
+                new_X, new_F, new_G = feasible_nsga2_survival(
+                    self.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size
+                )
 
         if combined_ids is not None:
             st.ids = match_ids(new_X, combined_X, combined_ids)
@@ -257,15 +286,46 @@ class NSGAII:
         st.X, st.F, st.G = new_X, new_F, new_G
         st.pending_offspring_ids = None
 
+        if aos_enabled and selected_idx is not None and st.aos_last_op_id is not None:
+            try:
+                ranks, _ = self.kernel.nsga2_ranking(st.F)
+                nd_mask = ranks == ranks.min(initial=0)
+            except (ValueError, IndexError) as exc:
+                _logger.debug("Failed to compute ND mask for AOS: %s", exc)
+                nd_mask = np.zeros(st.F.shape[0], dtype=bool)
+            is_offspring = selected_idx >= parent_count
+            n_survivors = int(np.sum(is_offspring))
+            n_nd_insertions = int(np.sum(is_offspring & nd_mask))
+            st.aos_controller.observe_survivors(st.aos_last_op_id, n_survivors)
+            st.aos_controller.observe_nd_insertions(st.aos_last_op_id, n_nd_insertions)
+            trace_rows = st.aos_controller.finalize_generation(st.aos_step or 0)
+            for row in trace_rows:
+                st.aos_trace_rows.append(
+                    {
+                        "step": row.step,
+                        "mating_id": row.mating_id,
+                        "op_id": row.op_id,
+                        "op_name": row.op_name,
+                        "reward": row.reward,
+                        "reward_survival": row.reward_survival,
+                        "reward_nd_insertions": row.reward_nd_insertions,
+                        "reward_hv_delta": row.reward_hv_delta,
+                        "batch_size": row.batch_size,
+                    }
+                )
+
         update_archives(st, self.kernel)
 
         hv_reached = st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points_fn())
-        self._update_operator_selector(st, hv_before)
+        if not aos_enabled:
+            self._update_operator_selector(st, hv_before)
 
         return hv_reached
 
     def _compute_hv_before(self, st: NSGAIIState) -> float | None:
         """Compute HV before survival for adaptive operator selection."""
+        if st.aos_controller is not None:
+            return None
         if st.indicator_eval is None:
             return None
         try:

@@ -56,6 +56,9 @@ def build_nsgaii_algorithm(
         r_name, r_kwargs = var_cfg["repair"]
         builder.repair(r_name, **r_kwargs)
 
+    if "adaptive_operator_selection" in var_cfg:
+        builder.adaptive_operator_selection(var_cfg["adaptive_operator_selection"])
+
     if external_archive_size:
         builder.external_archive(size=external_archive_size, archive_type=archive_type)
     if track_genealogy:

@@ -93,9 +93,11 @@ class KernelBackend(ABC):
         X_off: np.ndarray,
         F_off: np.ndarray,
         pop_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
+        return_indices: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Perform NSGA-II elitist replacement returning new (X, F).
+        When return_indices is True, also return selected indices in the combined population.
         """
 
     # -------- Quality indicator hooks --------

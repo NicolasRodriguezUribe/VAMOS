@@ -25,6 +25,7 @@ class NSGAIIConfigData(_SerializableConfig):
     archive_type: Optional[str] = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
+    adaptive_operator_selection: Optional[Dict[str, Any]] = None
 
 
 class NSGAIIConfig:
@@ -155,6 +156,8 @@ class NSGAIIConfig:
             builder.constraint_mode(config["constraint_mode"])
         if "track_genealogy" in config:
             builder.track_genealogy(config["track_genealogy"])
+        if "adaptive_operator_selection" in config:
+            builder.adaptive_operator_selection(config["adaptive_operator_selection"])
 
         return builder.fixed()
 
@@ -243,6 +246,13 @@ class NSGAIIConfig:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
+    def adaptive_operator_selection(self, config: Dict[str, Any] | None) -> "NSGAIIConfig":
+        if config is None:
+            self._cfg["adaptive_operator_selection"] = None
+        else:
+            self._cfg["adaptive_operator_selection"] = dict(config)
+        return self
+
     def fixed(self) -> NSGAIIConfigData:
         _require_fields(
             self._cfg,
@@ -266,4 +276,5 @@ class NSGAIIConfig:
             archive_type=self._cfg.get("archive_type"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
+            adaptive_operator_selection=self._cfg.get("adaptive_operator_selection"),
         )

@@ -36,7 +36,17 @@ def build_mating_pool(
     return parent_indices.reshape(parent_count // group_size, group_size)
 
 
-def feasible_nsga2_survival(kernel, X, F, G, X_off, F_off, G_off, pop_size):
+def feasible_nsga2_survival(
+    kernel,
+    X,
+    F,
+    G,
+    X_off,
+    F_off,
+    G_off,
+    pop_size,
+    return_indices: bool = False,
+):
     """
     Feasibility rule:
       - Feasible dominate infeasible.
@@ -47,6 +57,9 @@ def feasible_nsga2_survival(kernel, X, F, G, X_off, F_off, G_off, pop_size):
     F_comb = np.vstack([F, F_off])
     G_comb = np.vstack([G, G_off]) if G is not None and G_off is not None else None
     if G_comb is None:
+        if return_indices:
+            X_sel, F_sel, sel = kernel.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=True)
+            return X_sel, F_sel, None, sel
         X_sel, F_sel = kernel.nsga2_survival(X, F, X_off, F_off, pop_size)
         return X_sel, F_sel, None
 
@@ -69,6 +82,8 @@ def feasible_nsga2_survival(kernel, X, F, G, X_off, F_off, G_off, pop_size):
             selected.extend(order_infeas.tolist())
 
     selected = selected[:pop_size]
+    if return_indices:
+        return X_comb[selected], F_comb[selected], G_comb[selected], np.asarray(selected, dtype=int)
     return X_comb[selected], F_comb[selected], G_comb[selected]
 
 
