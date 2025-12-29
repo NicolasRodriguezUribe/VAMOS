@@ -1,5 +1,6 @@
 from vamos import (
     NSGAIIConfig,
+    ZDT1,
     available_algorithms,
     available_problem_names,
     friedman_test,
@@ -7,7 +8,6 @@ from vamos import (
     plot_pareto_front_2d,
     weighted_sum_scores,
 )
-from vamos.problems import ZDT1
 
 
 def test_public_api_symbols_exist():

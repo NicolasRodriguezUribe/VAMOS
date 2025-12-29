@@ -25,33 +25,6 @@ def _has_pandas() -> bool:
     except ImportError:
         return False
 
-"""Tests for vamos.quick API - one-liner experiment convenience functions."""
-
-from __future__ import annotations
-
-import numpy as np
-import pytest
-
-
-def _has_matplotlib() -> bool:
-    """Check if matplotlib is available."""
-    try:
-        import matplotlib  # noqa: F401
-
-        return True
-    except ImportError:
-        return False
-
-
-def _has_pandas() -> bool:
-    """Check if pandas is available."""
-    try:
-        import pandas  # noqa: F401
-
-        return True
-    except ImportError:
-        return False
-
 
 class TestQuickAPIImports:
     """Test that quick API is correctly exported from vamos root."""

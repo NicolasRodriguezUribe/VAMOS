@@ -92,7 +92,7 @@ class TestRunOptimization:
         )
 
         # Results should differ (not exactly equal)
-        assert not np.allclose(result1.F, result2.F)
+        assert result1.F.shape != result2.F.shape or not np.allclose(result1.F, result2.F)
 
 
 class TestUnifiedBackendParameter:
