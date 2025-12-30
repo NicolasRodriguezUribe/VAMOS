@@ -50,3 +50,17 @@ bench/**/configs/
 
 # --- Engine study (local; do not version) ---
 engine_study*
+
+# --- Generated experiment material (do not version) ---
+results/
+experiments/configs/generated/
+experiments/scripts/logs/
+bench/**/logs/
+bench/**/configs/
+site/
+dist/
+build/
+*.egg-info/
+
+# --- Notebooks (keep local unless explicitly tracked) ---
+*.ipynb
