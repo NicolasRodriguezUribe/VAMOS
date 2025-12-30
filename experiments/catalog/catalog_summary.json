@@ -1,0 +1,107 @@
+{
+  "problem_specs_module": "vamos.foundation.problem.registry",
+  "problem_specs_count": 46,
+  "families": {
+    "lz": 9,
+    "wfg": 9,
+    "zdt": 5,
+    "cec": 4,
+    "dtlz": 4,
+    "bin": 3,
+    "int": 2,
+    "fs": 1,
+    "kroa": 1,
+    "krob": 1,
+    "kroc": 1,
+    "krod": 1,
+    "kroe": 1,
+    "mixed": 1,
+    "ml": 1,
+    "tsp": 1,
+    "welded": 1
+  },
+  "sample_keys_by_family": {
+    "bin": [
+      "bin_feat",
+      "bin_knapsack",
+      "bin_qubo"
+    ],
+    "cec": [
+      "cec2009_cf1",
+      "cec2009_uf1",
+      "cec2009_uf2",
+      "cec2009_uf3"
+    ],
+    "dtlz": [
+      "dtlz1",
+      "dtlz2",
+      "dtlz3",
+      "dtlz4"
+    ],
+    "fs": [
+      "fs_real"
+    ],
+    "int": [
+      "int_alloc",
+      "int_jobs"
+    ],
+    "kroa": [
+      "kroa100"
+    ],
+    "krob": [
+      "krob100"
+    ],
+    "kroc": [
+      "kroc100"
+    ],
+    "krod": [
+      "krod100"
+    ],
+    "kroe": [
+      "kroe100"
+    ],
+    "lz": [
+      "lz09_f1",
+      "lz09_f2",
+      "lz09_f3",
+      "lz09_f4",
+      "lz09_f5",
+      "lz09_f6",
+      "lz09_f7",
+      "lz09_f8",
+      "lz09_f9"
+    ],
+    "mixed": [
+      "mixed_design"
+    ],
+    "ml": [
+      "ml_tuning"
+    ],
+    "tsp": [
+      "tsp6"
+    ],
+    "welded": [
+      "welded_beam"
+    ],
+    "wfg": [
+      "wfg1",
+      "wfg2",
+      "wfg3",
+      "wfg4",
+      "wfg5",
+      "wfg6",
+      "wfg7",
+      "wfg8",
+      "wfg9"
+    ],
+    "zdt": [
+      "zdt1",
+      "zdt2",
+      "zdt3",
+      "zdt4",
+      "zdt6"
+    ]
+  },
+  "csv_path": "experiments\\catalog\\problem_specs.csv",
+  "sanitized_json_path": "experiments\\catalog\\problem_specs_sanitized.json"
+}

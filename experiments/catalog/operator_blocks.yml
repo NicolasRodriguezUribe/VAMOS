@@ -1,0 +1,41 @@
+real:
+  crossover:
+    method: sbx
+    prob: 0.9
+    eta: 20
+  mutation:
+    method: pm
+    prob: 1/n
+    eta: 20
+  selection:
+    method: tournament
+    pressure: 2
+  repair: null
+bin:
+  crossover: null
+  mutation: null
+  selection:
+    method: tournament
+    pressure: 2
+  repair: null
+int:
+  crossover: null
+  mutation: null
+  selection:
+    method: tournament
+    pressure: 2
+  repair: null
+perm:
+  crossover: null
+  mutation: null
+  selection:
+    method: tournament
+    pressure: 2
+  repair: null
+mixed:
+  crossover: null
+  mutation: null
+  selection:
+    method: tournament
+    pressure: 2
+  repair: null

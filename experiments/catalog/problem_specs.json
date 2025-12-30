@@ -1,0 +1,462 @@
+{
+  "zdt1": {
+    "key": "zdt1",
+    "label": "ZDT1",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "_zdt1_factory",
+    "description": "Classic bi-objective benchmark with a convex Pareto front.",
+    "encoding": "continuous"
+  },
+  "zdt2": {
+    "key": "zdt2",
+    "label": "ZDT2",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "ZDT variant with a concave Pareto front.",
+    "encoding": "continuous"
+  },
+  "zdt3": {
+    "key": "zdt3",
+    "label": "ZDT3",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "ZDT benchmark with a disconnected Pareto front.",
+    "encoding": "continuous"
+  },
+  "zdt4": {
+    "key": "zdt4",
+    "label": "ZDT4",
+    "default_n_var": 10,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "ZDT benchmark with multimodal landscape and mixed bounds.",
+    "encoding": "continuous"
+  },
+  "zdt6": {
+    "key": "zdt6",
+    "label": "ZDT6",
+    "default_n_var": 10,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "ZDT benchmark with non-uniform density over the Pareto set.",
+    "encoding": "continuous"
+  },
+  "dtlz1": {
+    "key": "dtlz1",
+    "label": "DTLZ1",
+    "default_n_var": 7,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "DTLZ1 with configurable objectives (defaults to 3).",
+    "encoding": "continuous"
+  },
+  "dtlz2": {
+    "key": "dtlz2",
+    "label": "DTLZ2",
+    "default_n_var": 12,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "DTLZ2 with configurable objectives (defaults to 3).",
+    "encoding": "continuous"
+  },
+  "dtlz3": {
+    "key": "dtlz3",
+    "label": "DTLZ3",
+    "default_n_var": 12,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "DTLZ3 with configurable objectives (defaults to 3).",
+    "encoding": "continuous"
+  },
+  "dtlz4": {
+    "key": "dtlz4",
+    "label": "DTLZ4",
+    "default_n_var": 12,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "DTLZ4 with configurable objectives (defaults to 3).",
+    "encoding": "continuous"
+  },
+  "lz09_f1": {
+    "key": "lz09_f1",
+    "label": "LZ09 F1",
+    "default_n_var": 10,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F1 benchmark.",
+    "encoding": "continuous"
+  },
+  "lz09_f2": {
+    "key": "lz09_f2",
+    "label": "LZ09 F2",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F2 benchmark.",
+    "encoding": "continuous"
+  },
+  "lz09_f3": {
+    "key": "lz09_f3",
+    "label": "LZ09 F3",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F3 benchmark.",
+    "encoding": "continuous"
+  },
+  "lz09_f4": {
+    "key": "lz09_f4",
+    "label": "LZ09 F4",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F4 benchmark.",
+    "encoding": "continuous"
+  },
+  "lz09_f5": {
+    "key": "lz09_f5",
+    "label": "LZ09 F5",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F5 benchmark.",
+    "encoding": "continuous"
+  },
+  "lz09_f6": {
+    "key": "lz09_f6",
+    "label": "LZ09 F6",
+    "default_n_var": 10,
+    "default_n_obj": 3,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F6 benchmark (tri-objective).",
+    "encoding": "continuous"
+  },
+  "lz09_f7": {
+    "key": "lz09_f7",
+    "label": "LZ09 F7",
+    "default_n_var": 10,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F7 benchmark.",
+    "encoding": "continuous"
+  },
+  "lz09_f8": {
+    "key": "lz09_f8",
+    "label": "LZ09 F8",
+    "default_n_var": 10,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F8 benchmark.",
+    "encoding": "continuous"
+  },
+  "lz09_f9": {
+    "key": "lz09_f9",
+    "label": "LZ09 F9",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Li & Zhang LZ09 F9 benchmark.",
+    "encoding": "continuous"
+  },
+  "cec2009_uf1": {
+    "key": "cec2009_uf1",
+    "label": "CEC2009 UF1",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "CEC2009 unconstrained function UF1.",
+    "encoding": "continuous"
+  },
+  "cec2009_uf2": {
+    "key": "cec2009_uf2",
+    "label": "CEC2009 UF2",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "CEC2009 unconstrained function UF2.",
+    "encoding": "continuous"
+  },
+  "cec2009_uf3": {
+    "key": "cec2009_uf3",
+    "label": "CEC2009 UF3",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "CEC2009 unconstrained function UF3.",
+    "encoding": "continuous"
+  },
+  "cec2009_cf1": {
+    "key": "cec2009_cf1",
+    "label": "CEC2009 CF1",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "CEC2009 constrained function CF1.",
+    "encoding": "continuous"
+  },
+  "wfg1": {
+    "key": "wfg1",
+    "label": "WFG1",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG1 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "wfg2": {
+    "key": "wfg2",
+    "label": "WFG2",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG2 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "wfg3": {
+    "key": "wfg3",
+    "label": "WFG3",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG3 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "wfg4": {
+    "key": "wfg4",
+    "label": "WFG4",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG4 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "wfg5": {
+    "key": "wfg5",
+    "label": "WFG5",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG5 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "wfg6": {
+    "key": "wfg6",
+    "label": "WFG6",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG6 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "wfg7": {
+    "key": "wfg7",
+    "label": "WFG7",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG7 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "wfg8": {
+    "key": "wfg8",
+    "label": "WFG8",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG8 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "wfg9": {
+    "key": "wfg9",
+    "label": "WFG9",
+    "default_n_var": 24,
+    "default_n_obj": 3,
+    "allow_n_obj_override": true,
+    "factory": "<lambda>",
+    "description": "WFG9 benchmarking problem (requires pymoo).",
+    "encoding": "continuous"
+  },
+  "tsp6": {
+    "key": "tsp6",
+    "label": "TSP (6 cities)",
+    "default_n_var": 6,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "_tsp_factory",
+    "description": "Toy traveling salesman instance with 6 cities (permutation encoding).",
+    "encoding": "permutation"
+  },
+  "kroa100": {
+    "key": "kroa100",
+    "label": "TSPLIB KroA100",
+    "default_n_var": 100,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "_factory",
+    "description": "TSPLIB 100-city KroA instance (permutation encoding).",
+    "encoding": "permutation"
+  },
+  "krob100": {
+    "key": "krob100",
+    "label": "TSPLIB KroB100",
+    "default_n_var": 100,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "_factory",
+    "description": "TSPLIB 100-city KroB instance (permutation encoding).",
+    "encoding": "permutation"
+  },
+  "kroc100": {
+    "key": "kroc100",
+    "label": "TSPLIB KroC100",
+    "default_n_var": 100,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "_factory",
+    "description": "TSPLIB 100-city KroC instance (permutation encoding).",
+    "encoding": "permutation"
+  },
+  "krod100": {
+    "key": "krod100",
+    "label": "TSPLIB KroD100",
+    "default_n_var": 100,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "_factory",
+    "description": "TSPLIB 100-city KroD instance (permutation encoding).",
+    "encoding": "permutation"
+  },
+  "kroe100": {
+    "key": "kroe100",
+    "label": "TSPLIB KroE100",
+    "default_n_var": 100,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "_factory",
+    "description": "TSPLIB 100-city KroE instance (permutation encoding).",
+    "encoding": "permutation"
+  },
+  "bin_feat": {
+    "key": "bin_feat",
+    "label": "Binary Feature Selection",
+    "default_n_var": 50,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Synthetic feature-selection style binary benchmark.",
+    "encoding": "binary"
+  },
+  "bin_knapsack": {
+    "key": "bin_knapsack",
+    "label": "Binary Knapsack",
+    "default_n_var": 50,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Knapsack-like binary benchmark trading value vs capacity deviation.",
+    "encoding": "binary"
+  },
+  "bin_qubo": {
+    "key": "bin_qubo",
+    "label": "Binary QUBO",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Quadratic unconstrained binary optimization surrogate.",
+    "encoding": "binary"
+  },
+  "int_alloc": {
+    "key": "int_alloc",
+    "label": "Integer Resource Allocation",
+    "default_n_var": 20,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Resource allocation with integer budgets and diminishing returns.",
+    "encoding": "integer"
+  },
+  "int_jobs": {
+    "key": "int_jobs",
+    "label": "Integer Job Assignment",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Assign job types to positions with mismatch and diversity objectives.",
+    "encoding": "integer"
+  },
+  "mixed_design": {
+    "key": "mixed_design",
+    "label": "Mixed Design",
+    "default_n_var": 9,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Mixed real/integer/categorical benchmark.",
+    "encoding": "mixed"
+  },
+  "ml_tuning": {
+    "key": "ml_tuning",
+    "label": "ML Hyperparameter Tuning",
+    "default_n_var": 4,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "SVM hyperparameter tuning on a small dataset (requires scikit-learn).",
+    "encoding": "mixed"
+  },
+  "welded_beam": {
+    "key": "welded_beam",
+    "label": "Welded Beam Design",
+    "default_n_var": 6,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Classic welded-beam design with mixed variables and constraints.",
+    "encoding": "mixed"
+  },
+  "fs_real": {
+    "key": "fs_real",
+    "label": "Feature Selection (real data)",
+    "default_n_var": 30,
+    "default_n_obj": 2,
+    "allow_n_obj_override": false,
+    "factory": "<lambda>",
+    "description": "Binary feature selection on a real dataset (requires scikit-learn).",
+    "encoding": "binary"
+  }
+}

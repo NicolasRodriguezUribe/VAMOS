@@ -1,0 +1,69 @@
+\section{Engine differentiation: smoke sanity check}
+
+Table~\ref{tab:engine-smoke} reports a minimal end-to-end sanity check where the same NSGA-II configuration
+is executed under three engines. This is not intended as a performance claim; it validates that the run
+artifact contract is stable across engines and that basic timing/outputs are collected consistently.
+
+\begin{table}[h]
+\centering
+\caption{Smoke run summary across engines (single seed).}
+\label{tab:engine-smoke}
+\input{../tables/engine_smoke_table.tex}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{../figures/engine_smoke_runtime.png}
+\caption{Smoke run runtime (median per engine).}
+\label{fig:engine-smoke-runtime}
+\end{figure}
+
+\subsection{Pilot engine study (multi-seed)}
+
+We extend the smoke sanity check to a small multi-seed pilot over two benchmark problems and three engines.
+We report median runtime and interquartile range (IQR) across seeds, and speedup relative to NumPy.
+
+\begin{table}[h]
+\centering
+\caption{Pilot summary: median runtime, IQR, and speedup vs. NumPy.}
+\label{tab:engine-pilot}
+\input{../tables/engine_pilot_summary.tex}
+\end{table}
+
+\noindent
+Figures \ref{fig:engine-pilot-runtime}--\ref{fig:engine-pilot-speedup} show per-problem runtime and speedup.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.90\linewidth]{../figures/engine_pilot_runtime__ZDT1__nsgaii__zdt1.png}
+\includegraphics[width=0.90\linewidth]{../figures/engine_pilot_runtime__DTLZ2__nsgaii__dtlz2.png}
+\caption{Pilot runtime by engine (median over seeds).}
+\label{fig:engine-pilot-runtime}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.90\linewidth]{../figures/engine_pilot_speedup__ZDT1__nsgaii__zdt1.png}
+\includegraphics[width=0.90\linewidth]{../figures/engine_pilot_speedup__DTLZ2__nsgaii__dtlz2.png}
+\caption{Pilot speedup vs NumPy (median runtime).}
+\label{fig:engine-pilot-speedup}
+\end{figure}
+
+\subsection{Validation slice (continuous full campaign)}
+
+Before launching the full campaign, we executed a small slice (6 runs) to validate that the generated
+configurations run end-to-end, produce stable artifacts, and can be collected into tidy tables.
+
+\begin{table}[h]
+\centering
+\caption{Validation slice runs (6).}
+\label{tab:engine-full-slice}
+\input{../tables/engine_full_continuous_slice.tex}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\linewidth]{../figures/engine_full_continuous_slice_runtime.png}
+\caption{Validation slice runtime over seeds.}
+\label{fig:engine-full-slice-rt}
+\end{figure}

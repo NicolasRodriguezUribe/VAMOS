@@ -1,17 +1,52 @@
+# --- Python ---
 __pycache__/
-**/__pycache__/
-.venv/
-.idea/
 *.pyc
-*.egg-info/
+*.pyo
+*.pyd
+.venv/
+.uv/
+.env
+.ipynb_checkpoints/
+
+# --- VAMOS outputs ---
 results/
-results_autonsga/
-notebooks/results/
-notebooks/results_autonsga/
-*.png
+bench/smoke/logs/
+bench/**/logs/
+bench/**/__pycache__/
+
+# --- Artifacts policy ---
+# Keep tidy CSVs versionable (small + essential for paper), ignore derived plots/tables by default
+artifacts/plots/
+artifacts/tables/
+
+# Optional: if you want ALL artifacts ignored, uncomment:
+# artifacts/
+
+# --- OS/IDE ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Docs / build outputs ---
 site/
-build/lib.win-amd64-cpython-312/
-build/temp.win-amd64-cpython-312/
-tmp_libhv/
-tmp_pyhv/
-.pytest_cache/
+build/
+dist/
+
+# --- Packaging ---
+*.egg-info/
+
+# --- Tidy data: ignore large run outputs, keep small checked-in samples ---
+artifacts/tidy/
+!experiments/sample_outputs/
+
+# --- Generated experiment material (do not version) ---
+experiments/configs/generated/
+experiments/scripts/logs/
+bench/**/configs/
+
+# --- Notebooks (keep local unless explicitly tracked) ---
+*.ipynb
+
+# --- Engine study (local; do not version) ---
+engine_study*
