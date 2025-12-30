@@ -1,0 +1,647 @@
+[
+  {
+    "module": "vamos.foundation.problem.registry.selection",
+    "attr": "PROBLEM_SPECS",
+    "summary": {
+      "n_keys": 46,
+      "sample_keys": [
+        "bin_feat",
+        "bin_knapsack",
+        "bin_qubo",
+        "cec2009_cf1",
+        "cec2009_uf1",
+        "cec2009_uf2",
+        "cec2009_uf3",
+        "dtlz1",
+        "dtlz2",
+        "dtlz3",
+        "dtlz4",
+        "fs_real",
+        "int_alloc",
+        "int_jobs",
+        "kroa100",
+        "krob100",
+        "kroc100",
+        "krod100",
+        "kroe100",
+        "lz09_f1",
+        "lz09_f2",
+        "lz09_f3",
+        "lz09_f4",
+        "lz09_f5",
+        "lz09_f6",
+        "lz09_f7",
+        "lz09_f8",
+        "lz09_f9",
+        "mixed_design",
+        "ml_tuning",
+        "tsp6",
+        "welded_beam",
+        "wfg1",
+        "wfg2",
+        "wfg3",
+        "wfg4",
+        "wfg5",
+        "wfg6",
+        "wfg7",
+        "wfg8",
+        "wfg9",
+        "zdt1",
+        "zdt2",
+        "zdt3",
+        "zdt4",
+        "zdt6"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation",
+    "attr": "PERM_CROSSOVER",
+    "summary": {
+      "n_keys": 12,
+      "sample_keys": [
+        "cx",
+        "cycle",
+        "edge",
+        "edge_recombination",
+        "erx",
+        "order",
+        "ox",
+        "oxd",
+        "pmx",
+        "pos",
+        "position",
+        "position_based"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.core",
+    "attr": "PERM_CROSSOVER",
+    "summary": {
+      "n_keys": 12,
+      "sample_keys": [
+        "cx",
+        "cycle",
+        "edge",
+        "edge_recombination",
+        "erx",
+        "order",
+        "ox",
+        "oxd",
+        "pmx",
+        "pos",
+        "position",
+        "position_based"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.helpers",
+    "attr": "PERM_CROSSOVER",
+    "summary": {
+      "n_keys": 12,
+      "sample_keys": [
+        "cx",
+        "cycle",
+        "edge",
+        "edge_recombination",
+        "erx",
+        "order",
+        "ox",
+        "oxd",
+        "pmx",
+        "pos",
+        "position",
+        "position_based"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.pipeline",
+    "attr": "PERM_CROSSOVER",
+    "summary": {
+      "n_keys": 12,
+      "sample_keys": [
+        "cx",
+        "cycle",
+        "edge",
+        "edge_recombination",
+        "erx",
+        "order",
+        "ox",
+        "oxd",
+        "pmx",
+        "pos",
+        "position",
+        "position_based"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation",
+    "attr": "BINARY_CROSSOVER",
+    "summary": {
+      "n_keys": 7,
+      "sample_keys": [
+        "1point",
+        "2point",
+        "hux",
+        "one_point",
+        "single_point",
+        "two_point",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation",
+    "attr": "PERM_MUTATION",
+    "summary": {
+      "n_keys": 7,
+      "sample_keys": [
+        "displacement",
+        "insert",
+        "inversion",
+        "scramble",
+        "simple_inversion",
+        "simpleinv",
+        "swap"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.core",
+    "attr": "BINARY_CROSSOVER",
+    "summary": {
+      "n_keys": 7,
+      "sample_keys": [
+        "1point",
+        "2point",
+        "hux",
+        "one_point",
+        "single_point",
+        "two_point",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.core",
+    "attr": "PERM_MUTATION",
+    "summary": {
+      "n_keys": 7,
+      "sample_keys": [
+        "displacement",
+        "insert",
+        "inversion",
+        "scramble",
+        "simple_inversion",
+        "simpleinv",
+        "swap"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.helpers",
+    "attr": "BINARY_CROSSOVER",
+    "summary": {
+      "n_keys": 7,
+      "sample_keys": [
+        "1point",
+        "2point",
+        "hux",
+        "one_point",
+        "single_point",
+        "two_point",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.helpers",
+    "attr": "PERM_MUTATION",
+    "summary": {
+      "n_keys": 7,
+      "sample_keys": [
+        "displacement",
+        "insert",
+        "inversion",
+        "scramble",
+        "simple_inversion",
+        "simpleinv",
+        "swap"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.pipeline",
+    "attr": "BINARY_CROSSOVER",
+    "summary": {
+      "n_keys": 7,
+      "sample_keys": [
+        "1point",
+        "2point",
+        "hux",
+        "one_point",
+        "single_point",
+        "two_point",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.pipeline",
+    "attr": "PERM_MUTATION",
+    "summary": {
+      "n_keys": 7,
+      "sample_keys": [
+        "displacement",
+        "insert",
+        "inversion",
+        "scramble",
+        "simple_inversion",
+        "simpleinv",
+        "swap"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.moead.operators",
+    "attr": "BINARY_CROSSOVER",
+    "summary": {
+      "n_keys": 6,
+      "sample_keys": [
+        "1point",
+        "2point",
+        "one_point",
+        "single_point",
+        "two_point",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.nsgaiii.operators",
+    "attr": "BINARY_CROSSOVER",
+    "summary": {
+      "n_keys": 6,
+      "sample_keys": [
+        "1point",
+        "2point",
+        "one_point",
+        "single_point",
+        "two_point",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.smsemoa.operators",
+    "attr": "BINARY_CROSSOVER",
+    "summary": {
+      "n_keys": 6,
+      "sample_keys": [
+        "1point",
+        "2point",
+        "one_point",
+        "single_point",
+        "two_point",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation",
+    "attr": "INT_CROSSOVER",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "arithmetic",
+        "blend",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation",
+    "attr": "INT_MUTATION",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "creep",
+        "random_reset",
+        "reset"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.core",
+    "attr": "INT_CROSSOVER",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "arithmetic",
+        "blend",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.core",
+    "attr": "INT_MUTATION",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "creep",
+        "random_reset",
+        "reset"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.helpers",
+    "attr": "INT_CROSSOVER",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "arithmetic",
+        "blend",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.helpers",
+    "attr": "INT_MUTATION",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "creep",
+        "random_reset",
+        "reset"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.pipeline",
+    "attr": "INT_CROSSOVER",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "arithmetic",
+        "blend",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.pipeline",
+    "attr": "INT_MUTATION",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "creep",
+        "random_reset",
+        "reset"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.moead.operators",
+    "attr": "INT_CROSSOVER",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "arithmetic",
+        "blend",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.moead.operators",
+    "attr": "INT_MUTATION",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "creep",
+        "random_reset",
+        "reset"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.nsgaiii.operators",
+    "attr": "INT_CROSSOVER",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "arithmetic",
+        "blend",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.nsgaiii.operators",
+    "attr": "INT_MUTATION",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "creep",
+        "random_reset",
+        "reset"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.smsemoa.operators",
+    "attr": "INT_CROSSOVER",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "arithmetic",
+        "blend",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.smsemoa.operators",
+    "attr": "INT_MUTATION",
+    "summary": {
+      "n_keys": 3,
+      "sample_keys": [
+        "creep",
+        "random_reset",
+        "reset"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation",
+    "attr": "BINARY_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "bit_flip",
+        "bitflip"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation",
+    "attr": "MIXED_CROSSOVER",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "mixed",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation",
+    "attr": "MIXED_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "gaussian",
+        "mixed"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.core",
+    "attr": "BINARY_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "bit_flip",
+        "bitflip"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.core",
+    "attr": "MIXED_CROSSOVER",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "mixed",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.core",
+    "attr": "MIXED_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "gaussian",
+        "mixed"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.helpers",
+    "attr": "BINARY_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "bit_flip",
+        "bitflip"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.helpers",
+    "attr": "MIXED_CROSSOVER",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "mixed",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.helpers",
+    "attr": "MIXED_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "gaussian",
+        "mixed"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.pipeline",
+    "attr": "BINARY_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "bit_flip",
+        "bitflip"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.pipeline",
+    "attr": "MIXED_CROSSOVER",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "mixed",
+        "uniform"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.components.variation.pipeline",
+    "attr": "MIXED_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "gaussian",
+        "mixed"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.moead.operators",
+    "attr": "BINARY_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "bit_flip",
+        "bitflip"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.nsgaiii.operators",
+    "attr": "BINARY_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "bit_flip",
+        "bitflip"
+      ]
+    }
+  },
+  {
+    "module": "vamos.engine.algorithm.smsemoa.operators",
+    "attr": "BINARY_MUTATION",
+    "summary": {
+      "n_keys": 2,
+      "sample_keys": [
+        "bit_flip",
+        "bitflip"
+      ]
+    }
+  }
+]

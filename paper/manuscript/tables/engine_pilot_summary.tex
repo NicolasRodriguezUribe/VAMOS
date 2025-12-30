@@ -1,0 +1,12 @@
+\begin{tabular}{l l l l l r r r r r r r r}
+\toprule
+suite & algo & problem & engine & seeds & evals & pop & m & rt$_{50}$ & rt$_{25}$ & rt$_{75}$ & spd & front$_{50}$ \\
+\midrule
+DTLZ2 & nsgaii & {'description': 'DTLZ2 with configurable objectives (defaults to 3).', 'encoding': 'continuous', 'key': 'dtlz2', 'label': 'DTLZ2', 'n_obj': 3, 'n_var': 12} & moocore & 7,13 & 12000 & 240 & 3 & 508.1 & 503.4 & 512.8 & 2.544 & 240 \\
+DTLZ2 & nsgaii & {'description': 'DTLZ2 with configurable objectives (defaults to 3).', 'encoding': 'continuous', 'key': 'dtlz2', 'label': 'DTLZ2', 'n_obj': 3, 'n_var': 12} & numba & 7,13 & 12000 & 240 & 3 & 491.7 & 478.9 & 504.5 & 2.629 & 240 \\
+DTLZ2 & nsgaii & {'description': 'DTLZ2 with configurable objectives (defaults to 3).', 'encoding': 'continuous', 'key': 'dtlz2', 'label': 'DTLZ2', 'n_obj': 3, 'n_var': 12} & numpy & 7,13 & 12000 & 240 & 3 & 1292 & 1288 & 1297 & 1 & 240 \\
+ZDT1 & nsgaii & {'description': 'Classic bi-objective benchmark with a convex Pareto front.', 'encoding': 'continuous', 'key': 'zdt1', 'label': 'ZDT1', 'n_obj': 2, 'n_var': 30} & moocore & 7,13 & 8000 & 128 & 2 & 413.9 & 406.4 & 421.5 & 1.391 & 128 \\
+ZDT1 & nsgaii & {'description': 'Classic bi-objective benchmark with a convex Pareto front.', 'encoding': 'continuous', 'key': 'zdt1', 'label': 'ZDT1', 'n_obj': 2, 'n_var': 30} & numba & 7,13 & 8000 & 128 & 2 & 505.9 & 484.8 & 527.1 & 1.138 & 128 \\
+ZDT1 & nsgaii & {'description': 'Classic bi-objective benchmark with a convex Pareto front.', 'encoding': 'continuous', 'key': 'zdt1', 'label': 'ZDT1', 'n_obj': 2, 'n_var': 30} & numpy & 7,13 & 8000 & 128 & 2 & 575.6 & 574.3 & 576.9 & 1 & 125 \\
+\bottomrule
+\end{tabular}

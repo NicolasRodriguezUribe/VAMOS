@@ -1,0 +1,261 @@
+{
+  "counts_by_family": {
+    "lz": 9,
+    "wfg": 9,
+    "zdt": 5,
+    "cec": 4,
+    "dtlz": 4,
+    "bin": 3,
+    "int": 2,
+    "fs": 1,
+    "kroa": 1,
+    "krob": 1,
+    "kroc": 1,
+    "krod": 1,
+    "kroe": 1,
+    "mixed": 1,
+    "ml": 1,
+    "tsp": 1,
+    "welded": 1
+  },
+  "counts_by_domain": {
+    "real": 33,
+    "unknown": 5,
+    "bin": 3,
+    "int": 2,
+    "perm": 2,
+    "mixed": 1
+  },
+  "problems": [
+    {
+      "problem_key": "bin_feat",
+      "family": "bin",
+      "domain": "bin"
+    },
+    {
+      "problem_key": "bin_knapsack",
+      "family": "bin",
+      "domain": "bin"
+    },
+    {
+      "problem_key": "bin_qubo",
+      "family": "bin",
+      "domain": "bin"
+    },
+    {
+      "problem_key": "cec2009_cf1",
+      "family": "cec",
+      "domain": "real"
+    },
+    {
+      "problem_key": "cec2009_uf1",
+      "family": "cec",
+      "domain": "real"
+    },
+    {
+      "problem_key": "cec2009_uf2",
+      "family": "cec",
+      "domain": "real"
+    },
+    {
+      "problem_key": "cec2009_uf3",
+      "family": "cec",
+      "domain": "real"
+    },
+    {
+      "problem_key": "dtlz1",
+      "family": "dtlz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "dtlz2",
+      "family": "dtlz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "dtlz3",
+      "family": "dtlz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "dtlz4",
+      "family": "dtlz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "fs_real",
+      "family": "fs",
+      "domain": "perm"
+    },
+    {
+      "problem_key": "int_alloc",
+      "family": "int",
+      "domain": "int"
+    },
+    {
+      "problem_key": "int_jobs",
+      "family": "int",
+      "domain": "int"
+    },
+    {
+      "problem_key": "kroa100",
+      "family": "kroa",
+      "domain": "unknown"
+    },
+    {
+      "problem_key": "krob100",
+      "family": "krob",
+      "domain": "unknown"
+    },
+    {
+      "problem_key": "kroc100",
+      "family": "kroc",
+      "domain": "unknown"
+    },
+    {
+      "problem_key": "krod100",
+      "family": "krod",
+      "domain": "unknown"
+    },
+    {
+      "problem_key": "kroe100",
+      "family": "kroe",
+      "domain": "unknown"
+    },
+    {
+      "problem_key": "lz09_f1",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "lz09_f2",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "lz09_f3",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "lz09_f4",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "lz09_f5",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "lz09_f6",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "lz09_f7",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "lz09_f8",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "lz09_f9",
+      "family": "lz",
+      "domain": "real"
+    },
+    {
+      "problem_key": "mixed_design",
+      "family": "mixed",
+      "domain": "mixed"
+    },
+    {
+      "problem_key": "ml_tuning",
+      "family": "ml",
+      "domain": "real"
+    },
+    {
+      "problem_key": "tsp6",
+      "family": "tsp",
+      "domain": "perm"
+    },
+    {
+      "problem_key": "welded_beam",
+      "family": "welded",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg1",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg2",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg3",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg4",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg5",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg6",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg7",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg8",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "wfg9",
+      "family": "wfg",
+      "domain": "real"
+    },
+    {
+      "problem_key": "zdt1",
+      "family": "zdt",
+      "domain": "real"
+    },
+    {
+      "problem_key": "zdt2",
+      "family": "zdt",
+      "domain": "real"
+    },
+    {
+      "problem_key": "zdt3",
+      "family": "zdt",
+      "domain": "real"
+    },
+    {
+      "problem_key": "zdt4",
+      "family": "zdt",
+      "domain": "real"
+    },
+    {
+      "problem_key": "zdt6",
+      "family": "zdt",
+      "domain": "real"
+    }
+  ]
+}
