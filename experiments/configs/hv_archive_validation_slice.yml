@@ -1,0 +1,42 @@
+defaults:
+  algorithm: nsgaii
+  engine: numpy
+  problem: zdt1
+  output_root: results/hv_archive_slice
+  population_size: 64
+  offspring_population_size: 64
+  max_evaluations: 1200
+  seed: 1
+  selection_pressure: 2
+  nsgaii:
+    crossover: {method: sbx, prob: 0.9, eta: 20}
+    mutation: {method: pm, prob: '1/n', eta: 20}
+    selection: {method: tournament, pressure: 2}
+    survival: nsga2
+
+problems:
+  zdt1:
+    nsgaii:
+      adaptive_operator_selection:
+        enabled: false
+
+stopping:
+  hv_convergence:
+    enabled: true
+    every_k: 200
+    window: 5
+    patience: 2
+    epsilon: 1e-4
+    epsilon_mode: rel
+    statistic: median
+    min_points: 8
+    confidence: null
+    ref_point: [2.0, 2.0]
+
+archive:
+  bounded:
+    enabled: true
+    archive_type: size_cap
+    size_cap: 120
+    nondominated_only: true
+    prune_policy: crowding

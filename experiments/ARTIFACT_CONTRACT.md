@@ -64,3 +64,32 @@ Figures and tables generated from tidy data must be written to:
 A later sync step may copy/link those into:
 - paper/manuscript/figures/
 - paper/manuscript/tables/
+
+## Stopping + Archive artifacts (HV-based)
+
+When enabled, runs MUST emit:
+See `docs/experiment/stopping_and_archive.md` for config details.
+
+### hv_trace.csv
+Path: results/<campaign>/<suite>/<algo>/<engine>/seed_<seed>/hv_trace.csv
+
+Columns (minimum):
+- evals
+- hv
+- hv_delta
+- stop_flag
+- reason
+
+### archive_stats.csv
+Path: results/<campaign>/<suite>/<algo>/<engine>/seed_<seed>/archive_stats.csv
+
+Columns (minimum):
+- evals
+- archive_size
+- inserted
+- pruned
+- prune_reason
+
+### metadata.json additions (minimum)
+- stopping: {enabled, monitor_type, params, triggered, evals_stop, reason}
+- archive:  {enabled, archive_type, params, final_size, total_inserted, total_pruned}

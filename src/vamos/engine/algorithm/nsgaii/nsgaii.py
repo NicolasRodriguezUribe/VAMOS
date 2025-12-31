@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.engine.algorithm.components.base import live_should_stop
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
@@ -77,38 +78,39 @@ class NSGAII:
         assert st is not None, "State not initialized"
 
         generation = 0
-        live_cb.on_generation(generation, F=st.F)
+        stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
         hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn())
 
-        while n_eval < max_eval and not hv_reached:
+        while n_eval < max_eval and not hv_reached and not stop_requested:
             st.generation = generation
             X_off = self.ask()
             eval_off = eval_backend.evaluate(X_off, problem)
             hv_reached = self.tell(eval_off, st.pop_size)
             n_eval += X_off.shape[0]
 
-            if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
-                hv_reached = True
-                break
-
             generation += 1
             st.generation = generation
-            self._notify_generation(live_cb, generation, st.F)
+            stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
+            if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
+                hv_reached = True
 
         result = build_result(st, n_eval, hv_reached, kernel=self.kernel)
         live_cb.on_end(final_F=st.F)
         finalize_genealogy(result, st, self.kernel)
         return result
 
-    def _notify_generation(self, live_cb: LiveVisualization, generation: int, F: np.ndarray) -> None:
+    def _notify_generation(self, live_cb: LiveVisualization, generation: int, F: np.ndarray, evals: int | None = None) -> bool:
         """Notify live visualization of generation progress."""
         try:
             ranks, _ = self.kernel.nsga2_ranking(F)
             nd_mask = ranks == ranks.min(initial=0)
-            live_cb.on_generation(generation, F=F[nd_mask])
+            stats = {"evals": int(evals)} if evals is not None else None
+            live_cb.on_generation(generation, F=F[nd_mask], stats=stats)
         except (ValueError, IndexError) as exc:
             _logger.debug("Failed to compute non-dominated front for viz: %s", exc)
-            live_cb.on_generation(generation, F=F)
+            stats = {"evals": int(evals)} if evals is not None else None
+            live_cb.on_generation(generation, F=F, stats=stats)
+        return live_should_stop(live_cb)
 
     def _initialize_run(
         self,

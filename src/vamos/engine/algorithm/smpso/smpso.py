@@ -17,6 +17,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.base import (
     finalize_genealogy,
+    live_should_stop,
     notify_generation,
     track_offspring_genealogy,
 )
@@ -126,11 +127,12 @@ class SMPSO:
 
         st = self._st
         live_cb.on_start(problem=problem, algorithm=self, config=self.cfg)
-        live_cb.on_generation(0, F=st.hv_points())
+        live_cb.on_generation(0, F=st.hv_points(), stats={"evals": st.n_eval})
+        stop_requested = live_should_stop(live_cb)
 
         hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points())
 
-        while st.n_eval < max_eval and not hv_reached:
+        while st.n_eval < max_eval and not hv_reached and not stop_requested:
             X_off = self.ask()
             eval_result = eval_backend.evaluate(X_off, problem)
             hv_reached = self.tell(eval_result, problem)
@@ -139,7 +141,7 @@ class SMPSO:
                 hv_reached = True
                 break
 
-            notify_generation(live_cb, self.kernel, st.generation, st.hv_points())
+            stop_requested = notify_generation(live_cb, self.kernel, st.generation, st.hv_points(), stats={"evals": st.n_eval})
 
         result = build_smpso_result(st, hv_reached)
         finalize_genealogy(result, st, self.kernel)

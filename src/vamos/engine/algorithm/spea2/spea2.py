@@ -21,6 +21,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.base import (
     finalize_genealogy,
+    live_should_stop,
     notify_generation,
     track_offspring_genealogy,
     update_archive,
@@ -119,10 +120,11 @@ class SPEA2:
         assert st is not None, "State not initialized"
 
         generation = 0
-        live_cb.on_generation(generation, F=st.env_F)
+        live_cb.on_generation(generation, F=st.env_F, stats={"evals": st.n_eval})
+        stop_requested = live_should_stop(live_cb)
         hv_reached = hv_tracker.enabled and hv_tracker.reached(st.env_F)
 
-        while st.n_eval < max_eval and not hv_reached:
+        while st.n_eval < max_eval and not hv_reached and not stop_requested:
             st.generation = generation
             X_off = self.ask()
 
@@ -136,7 +138,7 @@ class SPEA2:
 
             generation += 1
             st.generation = generation
-            notify_generation(live_cb, self.kernel, generation, st.env_F)
+            stop_requested = notify_generation(live_cb, self.kernel, generation, st.env_F, stats={"evals": st.n_eval})
 
         result = build_spea2_result(st, hv_reached)
         finalize_genealogy(result, st, self.kernel)

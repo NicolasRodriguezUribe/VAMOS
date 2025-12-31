@@ -20,6 +20,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.base import (
     finalize_genealogy,
+    live_should_stop,
     track_offspring_genealogy,
 )
 from vamos.engine.algorithm.components.population import (
@@ -127,7 +128,8 @@ class IBEA:
             raise RuntimeError("State not initialized")
 
         hv_reached = False
-        while st.n_eval < max_eval:
+        stop_requested = False
+        while st.n_eval < max_eval and not stop_requested:
             # Generate offspring
             X_off = self._generate_offspring(st)
 
@@ -154,7 +156,8 @@ class IBEA:
                 st.archive_X, st.archive_F = st.archive_manager.get_archive()
 
             # Live callback
-            live_cb.on_generation(st.generation, F=st.F)
+            live_cb.on_generation(st.generation, F=st.F, stats={"evals": st.n_eval})
+            stop_requested = live_should_stop(live_cb)
 
             # Check HV threshold
             if hv_tracker is not None:

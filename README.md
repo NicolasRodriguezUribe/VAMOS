@@ -77,6 +77,7 @@ If you plan to modify VAMOS (humans or AI assistants):
 ## Documentation
 
 - Browse the docs under `docs/` (MkDocs). Key pages cover CLI/config, algorithms/backends, problems, constraint DSL/autodiff, and extension guides.
+- Experiment methods: `docs/experiment/stopping_and_archive.md` (artifact contract in `experiments/ARTIFACT_CONTRACT.md`).
 - Build locally: `mkdocs serve` (or `py -m mkdocs serve`) after installing the `docs` extra with `pip install -e ".[docs]"`.
 
 ### API tiers

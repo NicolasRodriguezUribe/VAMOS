@@ -21,6 +21,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.base import (
     finalize_genealogy,
+    live_should_stop,
     notify_generation,
     track_offspring_genealogy,
     update_archive,
@@ -128,10 +129,11 @@ class MOEAD:
         assert st is not None, "State not initialized"
 
         generation = 0
-        live_cb.on_generation(generation, F=st.F)
+        live_cb.on_generation(generation, F=st.F, stats={"evals": st.n_eval})
+        stop_requested = live_should_stop(live_cb)
         hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points())
 
-        while st.n_eval < max_eval and not hv_reached:
+        while st.n_eval < max_eval and not hv_reached and not stop_requested:
             st.generation = generation
             X_off = self.ask()
             eval_result = eval_backend.evaluate(X_off, problem)
@@ -143,7 +145,7 @@ class MOEAD:
 
             generation += 1
             st.generation = generation
-            notify_generation(live_cb, self.kernel, generation, st.F)
+            stop_requested = notify_generation(live_cb, self.kernel, generation, st.F, stats={"evals": st.n_eval})
 
         result = build_moead_result(st, hv_reached, kernel=self.kernel)
         finalize_genealogy(result, st, self.kernel)
