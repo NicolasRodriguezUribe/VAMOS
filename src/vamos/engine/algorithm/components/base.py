@@ -375,7 +375,8 @@ def notify_generation(
     kernel: "KernelBackend",
     generation: int,
     F: np.ndarray,
-) -> None:
+    stats: dict[str, Any] | None = None,
+) -> bool:
     """
     Notify live visualization of generation progress.
 
@@ -389,14 +390,32 @@ def notify_generation(
         Current generation number.
     F : np.ndarray
         Current population objectives.
+    stats : dict[str, Any] | None
+        Optional metrics payload (e.g., evaluation counts).
+
+    Returns
+    -------
+    bool
+        True if the callback requests stopping.
     """
     try:
         ranks, _ = kernel.nsga2_ranking(F)
         nd_mask = ranks == ranks.min(initial=0)
-        live_cb.on_generation(generation, F=F[nd_mask])
+        live_cb.on_generation(generation, F=F[nd_mask], stats=stats)
     except (ValueError, IndexError) as exc:
         _logger.debug("Failed to compute non-dominated front for viz: %s", exc)
-        live_cb.on_generation(generation, F=F)
+        live_cb.on_generation(generation, F=F, stats=stats)
+    return live_should_stop(live_cb)
+
+
+def live_should_stop(live_cb: "LiveVisualization") -> bool:
+    should_stop = getattr(live_cb, "should_stop", None)
+    if not callable(should_stop):
+        return False
+    try:
+        return bool(should_stop())
+    except Exception:
+        return False
 
 
 # =============================================================================
@@ -665,6 +684,7 @@ __all__ = [
     "setup_hv_tracker",
     "get_live_viz",
     "notify_generation",
+    "live_should_stop",
     "get_eval_backend",
     # Genealogy
     "setup_genealogy",

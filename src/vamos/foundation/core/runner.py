@@ -23,6 +23,7 @@ from vamos.foundation.core.experiment_config import (
 )
 from vamos.foundation.problem.resolver import resolve_problem_selections, ProblemSelection
 from vamos.engine.algorithm.factory import build_algorithm
+from vamos.engine.config.loader import load_experiment_spec
 from vamos.engine.config.variation import merge_variation_overrides, normalize_variation_config
 from vamos.foundation.core.hv_stop import build_hv_stop_config, compute_hv_reference
 from vamos.foundation.eval.backends import resolve_eval_backend
@@ -34,6 +35,8 @@ from vamos.foundation.core.runner_output import (
     print_run_results,
 )
 from vamos.foundation.core.runner_utils import validate_problem, run_output_dir
+from vamos.hooks import CompositeLiveVisualization, HookManager, HookManagerConfig
+from vamos.hooks.config_parse import parse_stopping_archive
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
@@ -66,6 +69,7 @@ def run_single(
     smpso_variation: dict | None = None,
     hv_stop_config: dict | None = None,
     config_source: str | None = None,
+    config_spec: dict | None = None,
     problem_override: dict | None = None,
     track_genealogy: bool = False,
     autodiff_constraints: bool = False,
@@ -110,6 +114,27 @@ def run_single(
             save_final_path=os.path.join(output_dir, "live_pareto.png"),
             title=f"{selection.spec.label} (live)",
         )
+    hook_mgr = None
+    if isinstance(config_spec, dict):
+        try:
+            hook_cfg = parse_stopping_archive(config_spec, problem_key=selection.spec.key)
+            if hook_cfg.get("stopping_enabled") or hook_cfg.get("archive_enabled"):
+                hook_mgr = HookManager(
+                    out_dir=Path(output_dir),
+                    cfg=HookManagerConfig(
+                        stopping_enabled=hook_cfg["stopping_enabled"],
+                        stop_cfg=hook_cfg["stop_cfg"],
+                        archive_enabled=hook_cfg["archive_enabled"],
+                        archive_cfg=hook_cfg["archive_cfg"],
+                        hv_ref_point=hook_cfg.get("hv_ref_point"),
+                    ),
+                )
+                if live_viz is None:
+                    live_viz = hook_mgr
+                else:
+                    live_viz = CompositeLiveVisualization([hook_mgr, live_viz])
+        except Exception:
+            hook_mgr = None
     algorithm, cfg_data = build_algorithm(
         algorithm_name,
         engine_name,
@@ -154,6 +179,8 @@ def run_single(
     # archive = payload.get("archive")  # Reserved for future archive export
     actual_evaluations = int(payload.get("evaluations", config.max_evaluations))
     termination_reason = "max_evaluations"
+    if hook_mgr is not None and hook_mgr.should_stop():
+        termination_reason = "hv_convergence"
     if hv_enabled and payload.get("hv_reached"):
         termination_reason = "hv_threshold"
 
@@ -200,6 +227,7 @@ def run_single(
         moead_variation=moead_variation,
         smsemoa_variation=smsemoa_variation,
         nsgaiii_variation=nsgaiii_variation,
+        hook_mgr=hook_mgr,
     )
 
     print("\nResults stored in:", output_dir)
@@ -240,6 +268,7 @@ def execute_problem_suite(
     smpso_variation: dict | None = None,
     include_external: bool = False,
     config_source: str | None = None,
+    config_spec: dict | None = None,
     problem_override: dict | None = None,
     track_genealogy: bool = False,
     autodiff_constraints: bool = False,
@@ -285,6 +314,7 @@ def execute_problem_suite(
                 smpso_variation=getattr(args, "smpso_variation", None),
                 hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                 config_source=config_source,
+                config_spec=config_spec,
                 problem_override=problem_override,
                 track_genealogy=getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii",
                 autodiff_constraints=getattr(args, "autodiff_constraints", False),
@@ -307,6 +337,7 @@ def execute_problem_suite(
                 smpso_variation=getattr(args, "smpso_variation", None),
                 hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                 config_source=config_source,
+                config_spec=config_spec,
                 problem_override=problem_override,
                 track_genealogy=getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii",
                 autodiff_constraints=getattr(args, "autodiff_constraints", False),
@@ -360,6 +391,12 @@ def run_from_args(args, config: ExperimentConfig):
     base_variation = getattr(args, "nsgaii_variation", None)
     overrides = getattr(args, "problem_overrides", {}) or {}
     config_source = getattr(args, "config_path", None)
+    config_spec = None
+    if config_source:
+        try:
+            config_spec = load_experiment_spec(config_source)
+        except Exception:
+            config_spec = None
 
     for idx, selection in enumerate(selections, start=1):
         override = overrides.get(selection.spec.key, {}) or {}
@@ -436,6 +473,7 @@ def run_from_args(args, config: ExperimentConfig):
             smpso_variation=effective_args.smpso_variation,
             include_external=effective_args.include_external,
             config_source=config_source,
+            config_spec=config_spec,
             problem_override=override,
             track_genealogy=effective_args.track_genealogy,
             autodiff_constraints=effective_args.autodiff_constraints,

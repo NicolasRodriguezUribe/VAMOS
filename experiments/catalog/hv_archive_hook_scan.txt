@@ -1,0 +1,153 @@
+Repo: C:\Users\nicor\Desktop\VAMOS
+Src: C:\Users\nicor\Desktop\VAMOS\src\vamos
+
+Total hits: 1350
+
+Top files by hits:
+    77  src\vamos\engine\algorithm\components\base.py
+    53  src\vamos\engine\algorithm\nsgaii\initialization.py
+    51  src\vamos\foundation\core\runner.py
+    49  src\vamos\engine\algorithm\nsgaii\state.py
+    48  src\vamos\engine\algorithm\components\hypervolume.py
+    44  src\vamos\engine\algorithm\nsgaii\nsgaii.py
+    40  src\vamos\experiment\quick.py
+    36  src\vamos\engine\algorithm\smsemoa\smsemoa.py
+    36  src\vamos\engine\algorithm\spea2\spea2.py
+    35  src\vamos\experiment\study\runner.py
+    35  src\vamos\foundation\kernel\moocore_backend.py
+    34  src\vamos\engine\algorithm\smpso\smpso.py
+    33  src\vamos\archive\bounded_archive.py
+    33  src\vamos\monitoring\hv_convergence.py
+    32  src\vamos\engine\algorithm\ibea\ibea.py
+    32  src\vamos\engine\algorithm\nsgaiii\nsgaiii.py
+    29  src\vamos\engine\algorithm\spea2\initialization.py
+    27  src\vamos\engine\algorithm\ibea\initialization.py
+    27  src\vamos\engine\algorithm\nsgaiii\initialization.py
+    27  src\vamos\engine\algorithm\smsemoa\initialization.py
+    26  src\vamos\foundation\core\runner_output.py
+    25  src\vamos\foundation\metrics\moocore_indicators.py
+    22  src\vamos\engine\algorithm\config\nsgaii.py
+    22  src\vamos\engine\algorithm\moead\initialization.py
+    21  src\vamos\engine\algorithm\spea2\state.py
+
+First matches (up to 120):
+src\vamos\engine\algorithm\components\base.py:6: - Shared setup functions for population, archives, termination, visualization
+src\vamos\engine\algorithm\components\base.py:10: - HV-based termination
+src\vamos\engine\algorithm\components\base.py:12: - External archives
+src\vamos\engine\algorithm\components\base.py:25: from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
+src\vamos\engine\algorithm\components\base.py:30: from vamos.engine.algorithm.components.termination import HVTracker
+src\vamos\engine\algorithm\components\base.py:94: # Archive (optional)
+src\vamos\engine\algorithm\components\base.py:95: archive_size: int | None = None
+src\vamos\engine\algorithm\components\base.py:96: archive_X: np.ndarray | None = None
+src\vamos\engine\algorithm\nsgaii\initialization.py:6: archives, and genealogy tracking. These are extracted from the main NSGAII class
+src\vamos\engine\algorithm\nsgaii\initialization.py:17: from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
+src\vamos\engine\algorithm\nsgaii\initialization.py:29: """Parse termination criterion and return (max_eval, hv_config).
+src\vamos\engine\algorithm\nsgaii\initialization.py:36: - "hv": value is a dict with hypervolume config
+src\vamos\engine\algorithm\nsgaii\initialization.py:41: (max_evaluations, hv_config or None)
+src\vamos\engine\algorithm\nsgaii\initialization.py:46: If termination type is unsupported or HV config is invalid.
+src\vamos\engine\algorithm\nsgaii\initialization.py:49: hv_config = None
+src\vamos\engine\algorithm\nsgaii\initialization.py:52: elif term_type == "hv":
+src\vamos\foundation\core\runner.py:13: from vamos.engine.algorithm.components.hypervolume import hypervolume
+src\vamos\foundation\core\runner.py:27: from vamos.foundation.core.hv_stop import build_hv_stop_config, compute_hv_reference
+src\vamos\foundation\core\runner.py:57: external_archive_size: int | None = None,
+src\vamos\foundation\core\runner.py:58: archive_type: str = "hypervolume",
+src\vamos\foundation\core\runner.py:67: hv_stop_config: dict | None = None,
+src\vamos\foundation\core\runner.py:118: external_archive_size=external_archive_size,
+src\vamos\foundation\core\runner.py:119: archive_type=archive_type,
+src\vamos\foundation\core\runner.py:132: hv_termination = None
+src\vamos\engine\algorithm\nsgaii\state.py:16: from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
+src\vamos\engine\algorithm\nsgaii\state.py:18: from vamos.engine.algorithm.components.termination import HVTracker
+src\vamos\engine\algorithm\nsgaii\state.py:55: # Archive
+src\vamos\engine\algorithm\nsgaii\state.py:56: archive_size: int | None = None
+src\vamos\engine\algorithm\nsgaii\state.py:57: archive_X: np.ndarray | None = None
+src\vamos\engine\algorithm\nsgaii\state.py:58: archive_F: np.ndarray | None = None
+src\vamos\engine\algorithm\nsgaii\state.py:59: archive_manager: CrowdingDistanceArchive | None = None
+src\vamos\engine\algorithm\nsgaii\state.py:60: archive_via_kernel: bool = False
+src\vamos\engine\algorithm\components\hypervolume.py:2: Hypervolume utilities that prioritize fast native implementations (moocore, libhv)
+src\vamos\engine\algorithm\components\hypervolume.py:15: _LIBHV_MODULE = None
+src\vamos\engine\algorithm\components\hypervolume.py:16: _LIBHV_HV_FN = None
+src\vamos\engine\algorithm\components\hypervolume.py:17: _LIBHV_CLASS = None
+src\vamos\engine\algorithm\components\hypervolume.py:19: import libhv as _libhv_module  # type: ignore
+src\vamos\engine\algorithm\components\hypervolume.py:21: _libhv_module = None
+src\vamos\engine\algorithm\components\hypervolume.py:23: _LIBHV_HV_FN = getattr(_libhv_module, "hypervolume", None)
+src\vamos\engine\algorithm\components\hypervolume.py:24: _LIBHV_CLASS = getattr(_libhv_module, "HyperVolume", None)
+src\vamos\engine\algorithm\nsgaii\nsgaii.py:18: from vamos.engine.algorithm.components.termination import HVTracker
+src\vamos\engine\algorithm\nsgaii\nsgaii.py:23: setup_archive,
+src\vamos\engine\algorithm\nsgaii\nsgaii.py:26: setup_result_archive,
+src\vamos\engine\algorithm\nsgaii\nsgaii.py:27: resolve_archive_size,
+src\vamos\engine\algorithm\nsgaii\nsgaii.py:36: update_archives,
+src\vamos\engine\algorithm\nsgaii\nsgaii.py:73: live_cb, eval_backend, max_eval, n_eval, hv_tracker = self._initialize_run(
+src\vamos\engine\algorithm\nsgaii\nsgaii.py:81: hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn())
+src\vamos\engine\algorithm\nsgaii\nsgaii.py:83: while n_eval < max_eval and not hv_reached:
+src\vamos\experiment\quick.py:89: # Compute hypervolume if possible
+src\vamos\experiment\quick.py:91: from vamos.foundation.metrics.hypervolume import compute_hypervolume
+src\vamos\experiment\quick.py:94: hv = compute_hypervolume(self.F, ref_point)
+src\vamos\experiment\quick.py:95: print(f"\nHypervolume (auto ref): {hv:.6f}")
+src\vamos\experiment\quick.py:229: with open(out_dir / "metadata.json", "w") as f:
+src\vamos\experiment\quick.py:263: archive_size: int | None = None,
+src\vamos\experiment\quick.py:268: archive_type: str = "hypervolume",
+src\vamos\experiment\quick.py:282: .archive_type(archive_type)
+src\vamos\engine\algorithm\smsemoa\smsemoa.py:4: hypervolume contribution for survival selection.
+src\vamos\engine\algorithm\smsemoa\smsemoa.py:41: SMS-EMOA uses hypervolume contribution for survival selection, removing
+src\vamos\engine\algorithm\smsemoa\smsemoa.py:42: solutions that contribute least to the hypervolume indicator each generation.
+src\vamos\engine\algorithm\smsemoa\smsemoa.py:54: - external_archive_size (int, optional): Size of external archive
+src\vamos\engine\algorithm\smsemoa\smsemoa.py:55: - archive_type (str, optional): Archive type ("hypervolume" or "crowding")
+src\vamos\engine\algorithm\smsemoa\smsemoa.py:56: - hv_threshold (float, optional): HV threshold for early termination
+src\vamos\engine\algorithm\smsemoa\smsemoa.py:57: - hv_ref_point (list, optional): Reference point for HV computation
+src\vamos\engine\algorithm\smsemoa\smsemoa.py:88: self._hv_tracker: Any = None
+src\vamos\engine\algorithm\spea2\spea2.py:26: update_archive,
+src\vamos\engine\algorithm\spea2\spea2.py:45: Enhanced implementation with ask/tell interface, HV termination,
+src\vamos\engine\algorithm\spea2\spea2.py:53: - archive_size (int, optional): Internal archive size (default: pop_size)
+src\vamos\engine\algorithm\spea2\spea2.py:64: >>> config = SPEA2Config().pop_size(100).archive_size(100).fixed()
+src\vamos\engine\algorithm\spea2\spea2.py:84: self._hv_tracker = None
+src\vamos\engine\algorithm\spea2\spea2.py:102: Termination criterion: ("n_eval", N) or ("hv", {...}).
+src\vamos\engine\algorithm\spea2\spea2.py:113: Result dictionary with X, F, evaluations, and archive.
+src\vamos\engine\algorithm\spea2\spea2.py:115: live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(
+src\vamos\experiment\study\runner.py:11: from vamos.engine.algorithm.components.hypervolume import hypervolume
+src\vamos\experiment\study\runner.py:13: from vamos.foundation.core.hv_stop import compute_hv_reference
+src\vamos\experiment\study\runner.py:16: from vamos.foundation.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
+src\vamos\experiment\study\runner.py:33: external_archive_size: int | None = None
+src\vamos\experiment\study\runner.py:34: archive_type: str = "hypervolume"
+src\vamos\experiment\study\runner.py:46: hv_ref = self.metrics.get("hv_reference")
+src\vamos\experiment\study\runner.py:47: hv_ref_str = (
+src\vamos\experiment\study\runner.py:48: " ".join(f"{val:.6f}" for val in hv_ref) if isinstance(hv_ref, np.ndarray) else ""
+src\vamos\foundation\kernel\moocore_backend.py:18: from vamos.engine.algorithm.components.hypervolume import hypervolume as hv_fn
+src\vamos\foundation\kernel\moocore_backend.py:77: Consolidated MooCore backend with buffered survival, adaptive HV/crowding,
+src\vamos\foundation\kernel\moocore_backend.py:78: optional numba tournament selection, and incremental archive maintenance.
+src\vamos\foundation\kernel\moocore_backend.py:82: HV_SIZE_THRESHOLD = 256
+src\vamos\foundation\kernel\moocore_backend.py:91: self._archive_manager: _IncrementalArchive | None = None
+src\vamos\foundation\kernel\moocore_backend.py:92: self._stats = {"hv_calls": 0, "crowding_fallbacks": 0, "buffer_resizes": 0}
+src\vamos\foundation\kernel\moocore_backend.py:98: return ("hypervolume",)
+src\vamos\foundation\kernel\moocore_backend.py:217: or front_idx.size > self.HV_SIZE_THRESHOLD
+src\vamos\engine\algorithm\smpso\smpso.py:47: - archive_size (int): leaders archive capacity
+src\vamos\engine\algorithm\smpso\smpso.py:54: Backend for vectorized kernels (ranking, HV, etc.).
+src\vamos\engine\algorithm\smpso\smpso.py:61: >>> config = SMPSOConfig().pop_size(100).archive_size(100).fixed()
+src\vamos\engine\algorithm\smpso\smpso.py:83: self._hv_tracker: Any = None
+src\vamos\engine\algorithm\smpso\smpso.py:116: Result dictionary with X, F, archive data.
+src\vamos\engine\algorithm\smpso\smpso.py:118: self._st, live_cb, eval_backend, max_eval, hv_tracker = initialize_smpso_run(
+src\vamos\engine\algorithm\smpso\smpso.py:124: self._hv_tracker = hv_tracker
+src\vamos\engine\algorithm\smpso\smpso.py:129: live_cb.on_generation(0, F=st.hv_points())
+src\vamos\archive\bounded_archive.py:7: ArchiveType = Literal["size_cap", "epsilon_grid", "hvc_prune", "hybrid"]
+src\vamos\archive\bounded_archive.py:8: PrunePolicy = Literal["crowding", "hv_contrib", "random", "mc_hv_contrib"]
+src\vamos\archive\bounded_archive.py:12: class BoundedArchiveConfig:
+src\vamos\archive\bounded_archive.py:14: archive_type: ArchiveType = "size_cap"
+src\vamos\archive\bounded_archive.py:21: # HV contribution pruning
+src\vamos\archive\bounded_archive.py:22: hv_ref_point: Optional[List[float]] = None
+src\vamos\archive\bounded_archive.py:23: hv_samples: int = 20000  # for Monte Carlo contributions (m>2 fallback)
+src\vamos\archive\bounded_archive.py:28: class ArchiveUpdate:
+src\vamos\monitoring\hv_convergence.py:13: class HVConvergenceConfig:
+src\vamos\monitoring\hv_convergence.py:27: class HVDecision:
+src\vamos\monitoring\hv_convergence.py:31: hv: float
+src\vamos\monitoring\hv_convergence.py:32: hv_delta: Optional[float]
+src\vamos\monitoring\hv_convergence.py:36: class HVConvergenceMonitor:
+src\vamos\monitoring\hv_convergence.py:38: Algorithm-agnostic monitor: you feed (evals, hv) samples; it returns stop decisions.
+src\vamos\monitoring\hv_convergence.py:39: Logging is done by caller using `trace_rows()`.
+src\vamos\monitoring\hv_convergence.py:41: def __init__(self, cfg: HVConvergenceConfig):
+src\vamos\engine\algorithm\ibea\ibea.py:45: IBEA uses quality indicators (epsilon or hypervolume) to compute fitness
+src\vamos\engine\algorithm\ibea\ibea.py:56: - indicator (str, optional): "epsilon" (default) or "hypervolume"
+src\vamos\engine\algorithm\ibea\ibea.py:85: self._hv_tracker: Any = None
+src\vamos\engine\algorithm\ibea\ibea.py:118: Result dictionary with X, F, G, archive data.
+src\vamos\engine\algorithm\ibea\ibea.py:120: live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(
+src\vamos\engine\algorithm\ibea\ibea.py:129: hv_reached = False
+src\vamos\engine\algorithm\ibea\ibea.py:151: # Update archive
+src\vamos\engine\algorithm\ibea\ibea.py:152: if st.archive_manager is not None:

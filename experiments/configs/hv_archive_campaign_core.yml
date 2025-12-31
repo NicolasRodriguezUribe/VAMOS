@@ -1,0 +1,112 @@
+campaign: hv_archive_campaign_core
+output_root: results/hv_archive_campaign_core
+inputs:
+  problem_catalog: experiments/catalog/problem_catalog_enriched.json
+  algo_config_keys: experiments/catalog/algo_config_keys.json
+  operator_blocks: experiments/catalog/operator_blocks.yml
+common:
+  track_genealogy: false
+matrix:
+  engines:
+  - numpy
+  - numba
+  - moocore
+  algorithms:
+  - nsgaii
+  - moead
+  - smsemoa
+  - spea2
+  - ibea
+  - nsgaiii
+  - smpso
+  seed_rule:
+    start: 1
+    count: 10
+    step: 1
+  budget:
+    population_size: 200
+    offspring_size: 200
+    max_evaluations: 40000
+  problems:
+  - zdt1
+  - zdt2
+  - zdt3
+  - dtlz1
+  - dtlz2
+  - wfg1
+  - wfg2
+  - lz09_f1
+  - cec2009_cf1
+  domain_operator_block:
+    real: real
+variants:
+- name: baseline
+  patch:
+    stopping:
+      hv_convergence:
+        enabled: false
+    archive:
+      bounded:
+        enabled: false
+- name: archive_sizecap
+  patch:
+    stopping:
+      hv_convergence:
+        enabled: false
+    archive:
+      bounded:
+        enabled: true
+        archive_type: size_cap
+        size_cap: 400
+        nondominated_only: true
+        prune_policy: crowding
+- name: archive_epsgrid
+  patch:
+    stopping:
+      hv_convergence:
+        enabled: false
+    archive:
+      bounded:
+        enabled: true
+        archive_type: epsilon_grid
+        size_cap: 400
+        epsilon: 0.01
+        nondominated_only: true
+- name: stop_only
+  patch:
+    stopping:
+      hv_convergence:
+        enabled: true
+        every_k: 200
+        window: 10
+        patience: 5
+        epsilon: 0.0001
+        epsilon_mode: rel
+        statistic: median
+        min_points: 25
+        confidence: null
+        ref_point: auto
+    archive:
+      bounded:
+        enabled: false
+- name: stop_plus_archive
+  patch:
+    stopping:
+      hv_convergence:
+        enabled: true
+        every_k: 200
+        window: 10
+        patience: 5
+        epsilon: 0.0001
+        epsilon_mode: rel
+        statistic: median
+        min_points: 25
+        confidence: null
+        ref_point: auto
+    archive:
+      bounded:
+        enabled: true
+        archive_type: size_cap
+        size_cap: 400
+        nondominated_only: true
+        prune_policy: crowding

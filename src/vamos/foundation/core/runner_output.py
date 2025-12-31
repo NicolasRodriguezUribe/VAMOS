@@ -12,6 +12,7 @@ import numpy as np
 from vamos.adaptation.aos.logging import write_aos_summary, write_aos_trace
 from vamos.foundation.core.io_utils import write_population, write_metadata, write_timing
 from vamos.foundation.core.metadata import build_run_metadata
+from vamos.hooks import HookManager
 
 
 def print_run_banner(problem, problem_selection, algorithm_label: str, backend_label: str, config) -> None:
@@ -101,6 +102,7 @@ def persist_run_outputs(
     moead_variation: dict | None = None,
     smsemoa_variation: dict | None = None,
     nsgaiii_variation: dict | None = None,
+    hook_mgr: HookManager | None = None,
 ) -> tuple[dict, dict, dict]:
     artifacts = write_population(
         output_dir,
@@ -148,6 +150,13 @@ def persist_run_outputs(
         metadata["problem_override"] = problem_override
     if hv_stop_config:
         metadata["hv_stop_config"] = hv_stop_config
+    if hook_mgr is not None:
+        try:
+            hook_payload = hook_mgr.metadata_payload()
+            if isinstance(hook_payload, dict):
+                metadata.update(hook_payload)
+        except Exception:
+            pass
     if payload.get("genealogy"):
         metadata["genealogy"] = payload["genealogy"]
     if autodiff_info is not None:
@@ -165,6 +174,12 @@ def persist_run_outputs(
         "aos_summary": artifacts.get("aos_summary"),
         "time_ms": "time.txt",
     }
+    hv_trace = Path(output_dir) / "hv_trace.csv"
+    if hv_trace.exists():
+        artifact_entries["hv_trace"] = hv_trace.name
+    archive_stats = Path(output_dir) / "archive_stats.csv"
+    if archive_stats.exists():
+        artifact_entries["archive_stats"] = archive_stats.name
     metadata["artifacts"] = {k: v for k, v in artifact_entries.items() if v is not None}
 
     resolved_cfg = {
