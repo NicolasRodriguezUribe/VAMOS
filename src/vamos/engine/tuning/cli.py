@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.core.experiment_config import ExperimentConfig
-from vamos.foundation.core.runner import run_single
+from vamos.experiment.runner import run_single
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
 
 from vamos.engine.tuning import (

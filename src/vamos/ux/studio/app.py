@@ -47,7 +47,7 @@ def _build_decision_views(fronts, weights, reference_point, method):
 def _run_focused_optimization(problem: str, reference_point: np.ndarray, algo: str, budget: int):
     # Minimal focused re-run leveraging optimize(); uses reference point to bias ranking via Tchebycheff scores post-hoc.
     from vamos.foundation.problem.registry import make_problem_selection
-    from vamos.foundation.core.optimize import OptimizeConfig, optimize
+    from vamos.experiment.optimize import OptimizeConfig, optimize
     from vamos.engine.algorithm.config import NSGAIIConfig
 
     selection = make_problem_selection(problem)
@@ -99,7 +99,7 @@ class DynamicsCallback:
 
 def _run_with_history(problem_name: str, config: dict, budget: int):
     from vamos.foundation.problem.registry import make_problem_selection
-    from vamos.foundation.core.optimize import OptimizeConfig, optimize
+    from vamos.experiment.optimize import OptimizeConfig, optimize
     
     # Instantiate problem
     selection = make_problem_selection(problem_name)

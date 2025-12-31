@@ -8,7 +8,6 @@ This package contains building blocks used across multiple algorithms:
 - population: Population initialization and evaluation
 - selection: Parent selection strategies
 - termination: Termination criteria and trackers
-- hypervolume: Hypervolume calculation utilities
 - weight_vectors: Weight vector generation for decomposition
 - variation: Variation operators and pipelines (subpackage)
 - protocol: Algorithm interface definitions and enums
@@ -33,7 +32,6 @@ from vamos.engine.algorithm.components.base import (
     build_result,
 )
 from vamos.engine.algorithm.components.population import (
-    evaluate_population_with_constraints,
     initialize_population,
     resolve_bounds,
 )
@@ -79,7 +77,6 @@ __all__ = [
     "HypervolumeArchive",
     "_single_front_crowding",
     # population
-    "evaluate_population_with_constraints",
     "initialize_population",
     "resolve_bounds",
     # selection

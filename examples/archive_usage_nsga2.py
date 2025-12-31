@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos import NSGAIIConfig, OptimizeConfig, ZDT1, optimize
+from vamos import OptimizeConfig, ZDT1, optimize
+from vamos.engine.api import NSGAIIConfig
 
 
 def build_config(archive_type: str = "hypervolume") -> NSGAIIConfig:

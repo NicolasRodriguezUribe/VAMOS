@@ -16,8 +16,8 @@ import numpy as np
 from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
 from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.algorithm.components.termination import HVTracker
-from vamos.ux.analytics.genealogy import GenealogyTracker
-from vamos.engine.operators.real import VariationWorkspace
+from vamos.hooks.genealogy import GenealogyTracker
+from vamos.operators.real import VariationWorkspace
 from vamos.adaptation.aos.controller import AOSController
 
 _logger = logging.getLogger(__name__)

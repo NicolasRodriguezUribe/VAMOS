@@ -28,8 +28,8 @@ from vamos.engine.algorithm.components.weight_vectors import load_or_generate_we
 from .helpers import evaluate_population_with_constraints
 from .operators import build_variation_operators
 from .state import NSGAIIIState
-from vamos.engine.operators.binary import random_binary_population
-from vamos.engine.operators.integer import random_integer_population
+from vamos.operators.binary import random_binary_population
+from vamos.operators.integer import random_integer_population
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.base import EvaluationBackend, LiveVisualization

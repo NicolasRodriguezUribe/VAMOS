@@ -13,11 +13,11 @@ import numpy as np
 
 from vamos import (
     FeatureSelectionProblem,
-    NSGAIIConfig,
     OptimizeConfig,
     optimize,
     plot_pareto_front_2d,
 )
+from vamos.engine.api import NSGAIIConfig
 
 
 def build_config(pop_size: int = 30) -> dict:

@@ -12,7 +12,6 @@ from __future__ import annotations
 import numpy as np
 
 from vamos import (
-    NSGAIIConfig,
     OptimizeConfig,
     ParamSpace,
     RacingTuner,
@@ -22,6 +21,7 @@ from vamos import (
     ZDT1,
     optimize,
 )
+from vamos.engine.api import NSGAIIConfig
 from vamos.tuning import Real, Int
 
 

@@ -49,7 +49,7 @@ Add a backend-marked smoke test (skip if dependency missing):
 import pytest
 from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
-from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.api import NSGAIIConfig
 from vamos.engine.algorithm.nsgaii import NSGAII
 
 @pytest.mark.mybackend

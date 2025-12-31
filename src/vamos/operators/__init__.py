@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from .binary import (
     random_binary_population,
     one_point_crossover,
     two_point_crossover,
     uniform_crossover,
+    hux_crossover,
     bit_flip_mutation,
 )
 from .integer import (
@@ -28,14 +31,14 @@ from .permutation import (
     displacement_mutation,
 )
 from .real import (
-    SBXCrossover,
-    BLXAlphaCrossover,
     ArithmeticCrossover,
+    BLXAlphaCrossover,
     DifferentialCrossover,
-    PolynomialMutation,
     GaussianMutation,
-    UniformResetMutation,
     NonUniformMutation,
+    PolynomialMutation,
+    SBXCrossover,
+    UniformResetMutation,
     VariationWorkspace,
     ClampRepair,
     ReflectRepair,
@@ -48,6 +51,7 @@ __all__ = [
     "one_point_crossover",
     "two_point_crossover",
     "uniform_crossover",
+    "hux_crossover",
     "bit_flip_mutation",
     "random_integer_population",
     "uniform_integer_crossover",
@@ -69,14 +73,14 @@ __all__ = [
     "inversion_mutation",
     "simple_inversion_mutation",
     "displacement_mutation",
-    "SBXCrossover",
-    "BLXAlphaCrossover",
     "ArithmeticCrossover",
+    "BLXAlphaCrossover",
     "DifferentialCrossover",
-    "PolynomialMutation",
     "GaussianMutation",
-    "UniformResetMutation",
     "NonUniformMutation",
+    "PolynomialMutation",
+    "SBXCrossover",
+    "UniformResetMutation",
     "VariationWorkspace",
     "ClampRepair",
     "ReflectRepair",

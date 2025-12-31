@@ -50,81 +50,6 @@ def _ensure_distinct_indices(idx: np.ndarray, upper: int, rng: np.random.Generat
         same = idx[:, 0] == idx[:, 1]
 
 
-def order_crossover(
-    X_parents: np.ndarray,
-    prob: float,
-    rng: np.random.Generator,
-) -> np.ndarray:
-    """
-    Batched order crossover (OX) for permutation-encoded chromosomes.
-    """
-    Np, D = X_parents.shape
-    if Np == 0:
-        return np.empty_like(X_parents)
-    # Handle odd parent count by duplicating the last parent
-    if Np % 2 != 0:
-        X_parents = np.vstack([X_parents, X_parents[-1:]])
-        Np += 1
-    prob = float(np.clip(prob, 0.0, 1.0))
-    parents = X_parents.reshape(Np // 2, 2, D).copy()
-    if prob <= 0.0:
-        return parents.reshape(Np, D)
-
-    n_pairs = parents.shape[0]
-    mask = rng.random(n_pairs) <= prob
-    active_idx = np.flatnonzero(mask)
-    if active_idx.size == 0:
-        return parents.reshape(Np, D)
-
-    cuts = rng.integers(0, D, size=(active_idx.size, 2))
-    _ensure_distinct_indices(cuts, D, rng)
-    cut_low = np.minimum(cuts[:, 0], cuts[:, 1])
-    cut_high = np.maximum(cuts[:, 0], cuts[:, 1])
-
-    for row, pair_idx in enumerate(active_idx):
-        lo = int(cut_low[row])
-        hi = int(cut_high[row])
-        lo, hi = _ensure_valid_segment(length=D, lo=lo, hi=hi)
-
-        p1, p2 = parents[pair_idx, 0], parents[pair_idx, 1]
-        child1 = parents[pair_idx, 0].copy()
-        child2 = parents[pair_idx, 1].copy()
-        _order_crossover_into(p1, p2, child1, lo, hi)
-        _order_crossover_into(p2, p1, child2, lo, hi)
-        parents[pair_idx, 0], parents[pair_idx, 1] = child1, child2
-
-    return parents.reshape(Np, D)
-
-
-def _order_crossover_into(
-    donor: np.ndarray,
-    filler: np.ndarray,
-    out: np.ndarray,
-    cut1: int,
-    cut2: int,
-) -> None:
-    """
-    Helper that writes the OX child into `out` using donor/filler parents.
-    """
-    cut1 = int(cut1)
-    cut2 = int(cut2)
-    if cut1 == cut2:
-        cut2 = cut1 + 1
-    n = donor.size
-    cut2 = min(cut2, n)
-    out.fill(-1)
-    out[cut1:cut2] = donor[cut1:cut2]
-    # Track used genes to filter filler parent.
-    used = np.zeros(n, dtype=bool)
-    rows = donor[cut1:cut2]
-    if rows.size:
-        used[rows] = True
-
-    filtered = filler[~used[filler]]
-    fill_positions = np.concatenate([np.arange(cut2, n), np.arange(0, cut1)])
-    out[fill_positions] = filtered
-
-
 def swap_mutation(
     X: np.ndarray,
     prob: float,
@@ -202,6 +127,52 @@ def edge_recombination_crossover(
     return _pairwise_crossover(X_parents, prob, rng, _edge_recombination_children)
 
 
+def order_crossover(
+    X_parents: np.ndarray,
+    prob: float,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """
+    Batched order crossover (OX) for permutation-encoded chromosomes.
+    """
+    Np, D = X_parents.shape
+    if Np == 0:
+        return np.empty_like(X_parents)
+    # Handle odd parent count by duplicating the last parent
+    if Np % 2 != 0:
+        X_parents = np.vstack([X_parents, X_parents[-1:]])
+        Np += 1
+    prob = float(np.clip(prob, 0.0, 1.0))
+    parents = X_parents.reshape(Np // 2, 2, D).copy()
+    if prob <= 0.0:
+        return parents.reshape(Np, D)
+
+    n_pairs = parents.shape[0]
+    mask = rng.random(n_pairs) <= prob
+    active_idx = np.flatnonzero(mask)
+    if active_idx.size == 0:
+        return parents.reshape(Np, D)
+
+    cuts = rng.integers(0, D, size=(active_idx.size, 2))
+    _ensure_distinct_indices(cuts, D, rng)
+    cut_low = np.minimum(cuts[:, 0], cuts[:, 1])
+    cut_high = np.maximum(cuts[:, 0], cuts[:, 1])
+
+    for row, pair_idx in enumerate(active_idx):
+        lo = int(cut_low[row])
+        hi = int(cut_high[row])
+        lo, hi = _ensure_valid_segment(length=D, lo=lo, hi=hi)
+
+        p1, p2 = parents[pair_idx, 0], parents[pair_idx, 1]
+        child1 = parents[pair_idx, 0].copy()
+        child2 = parents[pair_idx, 1].copy()
+        _order_crossover_into(p1, p2, child1, lo, hi)
+        _order_crossover_into(p2, p1, child2, lo, hi)
+        parents[pair_idx, 0], parents[pair_idx, 1] = child1, child2
+
+    return parents.reshape(Np, D)
+
+
 def insert_mutation(
     X: np.ndarray,
     prob: float,
@@ -268,6 +239,35 @@ def _ensure_valid_segment(length: int, lo: int, hi: int) -> tuple[int, int]:
     if hi > length:
         hi = length
     return lo, hi
+
+
+def _order_crossover_into(
+    donor: np.ndarray,
+    filler: np.ndarray,
+    out: np.ndarray,
+    cut1: int,
+    cut2: int,
+) -> None:
+    """
+    Helper that writes the OX child into `out` using donor/filler parents.
+    """
+    cut1 = int(cut1)
+    cut2 = int(cut2)
+    if cut1 == cut2:
+        cut2 = cut1 + 1
+    n = donor.size
+    cut2 = min(cut2, n)
+    out.fill(-1)
+    out[cut1:cut2] = donor[cut1:cut2]
+    # Track used genes to filter filler parent.
+    used = np.zeros(n, dtype=bool)
+    rows = donor[cut1:cut2]
+    if rows.size:
+        used[rows] = True
+
+    filtered = filler[~used[filler]]
+    fill_positions = np.concatenate([np.arange(cut2, n), np.arange(0, cut1)])
+    out[fill_positions] = filtered
 
 
 def _pairwise_crossover(

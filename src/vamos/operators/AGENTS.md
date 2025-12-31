@@ -30,7 +30,7 @@ def __call__(
 
 For memory efficiency, operators reuse pre-allocated arrays:
 ```python
-from vamos.engine.operators.real import VariationWorkspace
+from vamos.operators.real import VariationWorkspace
 
 ws = VariationWorkspace(pop_size=100, n_var=30)
 offspring = crossover(X, bounds, rng, workspace=ws)

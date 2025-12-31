@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.algorithm.components.hypervolume import hypervolume
+from vamos.foundation.metrics.hypervolume import hypervolume
 
 
 class HVTracker:

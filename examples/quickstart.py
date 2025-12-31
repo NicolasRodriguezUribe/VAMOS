@@ -12,7 +12,8 @@ Requirements:
 """
 from __future__ import annotations
 
-from vamos import optimize, OptimizeConfig, NSGAIIConfig, ZDT1
+from vamos import optimize, OptimizeConfig, ZDT1
+from vamos.engine.api import NSGAIIConfig
 
 
 def main():

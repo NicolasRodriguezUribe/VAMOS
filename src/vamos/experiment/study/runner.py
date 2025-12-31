@@ -8,11 +8,11 @@ from typing import Iterable, List, Sequence, Any, Dict
 
 import numpy as np
 
-from vamos.engine.algorithm.components.hypervolume import hypervolume
+from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.problem.registry import ProblemSelection, make_problem_selection
-from vamos.foundation.core.runner import run_single
+from vamos.experiment.runner import run_single
 from vamos.foundation.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
 from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
 

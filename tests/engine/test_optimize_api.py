@@ -1,7 +1,7 @@
 import pytest
 
 from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
-from vamos.foundation.core.optimize import OptimizeConfig, OptimizationResult, optimize
+from vamos.experiment.optimize import OptimizeConfig, OptimizationResult, optimize
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 

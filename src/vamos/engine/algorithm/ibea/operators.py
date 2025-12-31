@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
-from vamos.engine.operators.real import VariationWorkspace
+from vamos.operators.real import VariationWorkspace
 
 if TYPE_CHECKING:
     from vamos.foundation.problem.types import ProblemProtocol

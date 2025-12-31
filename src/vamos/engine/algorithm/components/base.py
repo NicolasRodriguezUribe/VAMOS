@@ -33,8 +33,8 @@ from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 if TYPE_CHECKING:
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-    from vamos.ux.analytics.genealogy import GenealogyTracker
-    from vamos.ux.visualization.live_viz import LiveVisualization
+    from vamos.hooks.genealogy import GenealogyTracker
+    from vamos.hooks.live_viz import LiveVisualization
 
 _logger = logging.getLogger(__name__)
 
@@ -365,7 +365,7 @@ def get_live_viz(
     LiveVisualization
         The callback or a no-op implementation.
     """
-    from vamos.ux.visualization.live_viz import NoOpLiveVisualization
+    from vamos.hooks.live_viz import NoOpLiveVisualization
 
     return live_viz or NoOpLiveVisualization()
 
@@ -526,9 +526,9 @@ def setup_genealogy(
     if not track_genealogy:
         return None, None
 
-    from vamos.ux.analytics.genealogy import GenealogyTracker
+    from vamos.hooks.genealogy import DefaultGenealogyTracker
 
-    genealogy_tracker = GenealogyTracker()
+    genealogy_tracker = DefaultGenealogyTracker()
     ids = np.arange(pop_size, dtype=int)
     for i in range(pop_size):
         genealogy_tracker.new_individual(

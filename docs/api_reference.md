@@ -6,7 +6,7 @@ This reference is automatically generated from the docstrings in the source code
 
 The main entrypoints for running optimizations in VAMOS.
 
-::: vamos.foundation.core.optimize
+::: vamos.experiment.optimize
     options:
       show_root_heading: true
       show_source: true

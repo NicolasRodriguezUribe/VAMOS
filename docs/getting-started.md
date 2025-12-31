@@ -46,7 +46,8 @@ print(result.summary())
 **2. Full Control (Optimize API):**
 
 ```python
-from vamos import optimize, NSGAIIConfig
+from vamos import optimize
+from vamos.engine.api import NSGAIIConfig
 
 config = (
     NSGAIIConfig()

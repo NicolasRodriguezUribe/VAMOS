@@ -90,8 +90,8 @@ If you plan to modify VAMOS (humans or AI assistants):
 
 - Typical user-facing imports:
   - `from vamos.api import optimize, ExperimentConfig`
-  - `from vamos.algorithms import NSGAIIConfig, available_algorithms`
-  - `from vamos.problems import ZDT1, make_problem_selection`
+  - `from vamos.engine.api import NSGAIIConfig`
+  - `from vamos import available_algorithms, ZDT1, make_problem_selection`
 - `from vamos.plotting import plot_pareto_front_2d`
 - `from vamos.mcdm import weighted_sum_scores`
 - `from vamos.stats import friedman_test`
@@ -224,9 +224,10 @@ export VAMOS_USE_NUMBA_VARIATION=1  # set before running
 
 ```python
 from vamos import (
-    optimize, OptimizeConfig, NSGAIIConfig,
+    optimize, OptimizeConfig,
     make_problem_selection,
 )
+from vamos.engine.api import NSGAIIConfig
 
 problem = make_problem_selection("zdt1").instantiate()
 algo_cfg = (

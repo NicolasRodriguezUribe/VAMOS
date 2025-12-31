@@ -3,11 +3,11 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from vamos.engine.operators.real import (
+from vamos.operators.real import SBXCrossover
+from vamos.operators.real import (
     ArithmeticCrossover,
     BLXAlphaCrossover,
     DifferentialCrossover,
-    SBXCrossover,
 )
 
 PARENTS = np.array(

@@ -4,21 +4,21 @@ Shared helpers and operator registries for variation pipelines.
 from __future__ import annotations
 
 
-from vamos.engine.operators.binary import (
+from vamos.operators.binary import (
     one_point_crossover,
     two_point_crossover,
     uniform_crossover,
     hux_crossover,
     bit_flip_mutation,
 )
-from vamos.engine.operators.integer import (
+from vamos.operators.integer import (
     uniform_integer_crossover,
     arithmetic_integer_crossover,
     random_reset_mutation,
     creep_mutation,
 )
-from vamos.engine.operators.permutation import (
-    order_crossover,
+from vamos.operators.permutation import order_crossover
+from vamos.operators.permutation import (
     pmx_crossover,
     cycle_crossover,
     position_based_crossover,
@@ -30,7 +30,7 @@ from vamos.engine.operators.permutation import (
     simple_inversion_mutation,
     displacement_mutation,
 )
-from vamos.engine.operators.mixed import mixed_crossover, mixed_mutation
+from vamos.operators.mixed import mixed_crossover, mixed_mutation
 
 
 def resolve_prob_expression(value, n_var: int, default: float) -> float:

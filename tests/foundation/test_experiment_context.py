@@ -164,7 +164,8 @@ class TestExperimentFunction:
     @pytest.mark.smoke
     def test_experiment_function(self):
         """experiment() function should work like Experiment class."""
-        from vamos import experiment, ZDT1
+        from vamos import ZDT1
+        from vamos.experiment import experiment
 
         with experiment("test", verbose=False) as exp:
             result = exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
