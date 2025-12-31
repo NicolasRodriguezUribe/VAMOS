@@ -7,7 +7,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
-from vamos.ux.analytics.genealogy import GenealogyTracker, get_lineage
+from vamos.hooks.genealogy import GenealogyTracker, get_lineage
 
 
 def build_mating_pool(

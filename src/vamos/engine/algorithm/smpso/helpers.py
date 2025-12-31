@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.operators.real import (
+from vamos.operators.real import (
     ClampRepair,
     ReflectRepair,
     ResampleRepair,

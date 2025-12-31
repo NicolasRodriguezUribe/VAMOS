@@ -9,7 +9,7 @@ from typing import Iterable
 
 import numpy as np
 
-from vamos.engine.operators.real import SBXCrossover, PolynomialMutation
+from vamos.operators.real import SBXCrossover, PolynomialMutation
 
 from .backend import KernelBackend
 
@@ -243,6 +243,6 @@ class NumPyKernel(KernelBackend):
         return X_comb[sel], F_comb[sel]
 
     def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
-        from vamos.engine.algorithm.components.hypervolume import hypervolume as hv_fn
+        from vamos.foundation.metrics.hypervolume import hypervolume as hv_fn
 
         return hv_fn(points, reference_point)

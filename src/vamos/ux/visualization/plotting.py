@@ -5,7 +5,7 @@ from datetime import datetime
 
 import numpy as np
 
-from vamos.foundation.core.optimize import pareto_filter
+from vamos.experiment.optimize import pareto_filter
 
 
 def _non_dominated_mask(points: np.ndarray) -> np.ndarray:

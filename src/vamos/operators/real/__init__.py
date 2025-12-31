@@ -1,24 +1,26 @@
 """Real-valued evolutionary operators."""
 
+from __future__ import annotations
+
 from .crossover import (
     ArithmeticCrossover,
     BLXAlphaCrossover,
     Crossover,
     DifferentialCrossover,
     PCXCrossover,
-    SPXCrossover,
     SBXCrossover,
+    SPXCrossover,
     UNDXCrossover,
 )
 from .initialize import LatinHypercubeInitializer, ScatterSearchInitializer
 from .mutation import (
     CauchyMutation,
     GaussianMutation,
+    LinkedPolynomialMutation,
     Mutation,
     NonUniformMutation,
     PolynomialMutation,
     UniformMutation,
-    LinkedPolynomialMutation,
     UniformResetMutation,
 )
 from .repair import ClampRepair, ReflectRepair, Repair, ResampleRepair, RoundRepair
@@ -50,9 +52,9 @@ __all__ = [
     "ReflectRepair",
     "Repair",
     "ResampleRepair",
+    "SBXCrossover",
     "SPXCrossover",
     "RoundRepair",
-    "SBXCrossover",
     "ScatterSearchInitializer",
     "UniformMutation",
     "UniformResetMutation",

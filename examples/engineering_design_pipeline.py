@@ -10,12 +10,12 @@ Requirements:
 from __future__ import annotations
 
 from vamos import (
-    NSGAIIConfig,
     OptimizeConfig,
     WeldedBeamDesignProblem,
     optimize,
     plot_pareto_front_2d,
 )
+from vamos.engine.api import NSGAIIConfig
 
 
 def build_config(pop_size: int = 30) -> dict:

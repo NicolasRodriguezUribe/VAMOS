@@ -16,7 +16,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
-from vamos.ux.analytics.genealogy import GenealogyTracker
+from vamos.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
 from vamos.foundation.eval.backends import EvaluationBackend
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
@@ -171,7 +171,7 @@ def setup_genealogy(
     if not track_genealogy:
         return None, None
 
-    genealogy_tracker = GenealogyTracker()
+    genealogy_tracker = DefaultGenealogyTracker()
     ids = np.arange(pop_size, dtype=int)
     for i in range(pop_size):
         genealogy_tracker.new_individual(

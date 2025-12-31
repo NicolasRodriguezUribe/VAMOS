@@ -2,7 +2,7 @@ from importlib import resources
 
 from vamos.foundation.data import reference_front_path, weight_path
 from vamos.foundation.core.hv_stop import build_hv_stop_config
-from vamos.foundation.core.runner import _default_weight_path
+from vamos.experiment.runner import _default_weight_path
 
 
 def test_reference_front_packaged_and_accessible():

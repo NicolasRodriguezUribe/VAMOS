@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from vamos.engine.algorithm.components.hypervolume import hypervolume_contributions
+from vamos.foundation.metrics.hypervolume import hypervolume_contributions
 
 if TYPE_CHECKING:
     from .state import SMSEMOAState

@@ -15,7 +15,7 @@ try:  # Optional JIT acceleration for tournament selection
 except ImportError:  # pragma: no cover - optional dependency
     njit = None
 
-from vamos.engine.algorithm.components.hypervolume import hypervolume as hv_fn
+from vamos.foundation.metrics.hypervolume import hypervolume as hv_fn
 from .backend import KernelBackend
 from .numpy_backend import NumPyKernel as _NumPyKernel, _compute_crowding
 

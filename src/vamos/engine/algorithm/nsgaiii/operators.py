@@ -11,23 +11,20 @@ from typing import Callable
 import numpy as np
 
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
-from vamos.engine.operators.binary import (
+from vamos.operators.binary import (
     bit_flip_mutation,
     one_point_crossover,
     two_point_crossover,
     uniform_crossover,
 )
-from vamos.engine.operators.integer import (
+from vamos.operators.integer import (
     arithmetic_integer_crossover,
     creep_mutation,
     random_reset_mutation,
     uniform_integer_crossover,
 )
-from vamos.engine.operators.real import (
-    PolynomialMutation,
-    SBXCrossover,
-    VariationWorkspace,
-)
+from vamos.operators.real import PolynomialMutation, SBXCrossover
+from vamos.operators.real import VariationWorkspace
 
 
 __all__ = [

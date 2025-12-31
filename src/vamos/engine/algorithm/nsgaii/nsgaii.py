@@ -41,9 +41,9 @@ from .helpers import (
     feasible_nsga2_survival,
     match_ids,
 )
-from vamos.engine.operators.real import VariationWorkspace
+from vamos.operators.real import VariationWorkspace
 from vamos.foundation.eval.backends import SerialEvalBackend, EvaluationBackend
-from vamos.ux.visualization.live_viz import LiveVisualization, NoOpLiveVisualization
+from vamos.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.engine.hyperheuristics.operator_selector import compute_reward
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol

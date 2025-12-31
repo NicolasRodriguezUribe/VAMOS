@@ -12,8 +12,6 @@ import numpy as np
 
 from vamos import (
     Int,
-    NSGAIIConfig,
-    NSGAIIConfigData,
     OptimizeConfig,
     ParamSpace,
     RacingTuner,
@@ -24,6 +22,7 @@ from vamos import (
     ZDT1,
     optimize,
 )
+from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
 
 
 def build_param_space() -> ParamSpace:

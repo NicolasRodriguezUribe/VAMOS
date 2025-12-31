@@ -31,7 +31,7 @@ class TestOptimizationResultBasics:
 
     def test_result_len(self):
         """Result should support len()."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F, "X": None})
@@ -40,7 +40,7 @@ class TestOptimizationResultBasics:
 
     def test_result_repr(self):
         """Result should have informative repr."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         result = OptimizationResult({"F": F})
@@ -51,7 +51,7 @@ class TestOptimizationResultBasics:
 
     def test_n_objectives(self):
         """n_objectives property should work."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9, 0.5], [0.5, 0.5, 0.5]])
         result = OptimizationResult({"F": F})
@@ -64,7 +64,7 @@ class TestOptimizationResultSummary:
 
     def test_summary_runs(self, capsys):
         """summary() should print without error."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
@@ -81,7 +81,7 @@ class TestOptimizationResultBest:
 
     def test_best_knee(self):
         """best('knee') should return a solution."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         X = np.array([[1, 2], [3, 4], [5, 6]])
@@ -96,7 +96,7 @@ class TestOptimizationResultBest:
 
     def test_best_min_f1(self):
         """best('min_f1') should return min first objective."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
@@ -108,7 +108,7 @@ class TestOptimizationResultBest:
 
     def test_best_min_f2(self):
         """best('min_f2') should return min second objective."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
@@ -120,7 +120,7 @@ class TestOptimizationResultBest:
 
     def test_best_balanced(self):
         """best('balanced') should return a solution."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
@@ -132,7 +132,7 @@ class TestOptimizationResultBest:
 
     def test_best_invalid_method(self):
         """best() with invalid method should raise."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         result = OptimizationResult({"F": F})
@@ -147,7 +147,7 @@ class TestOptimizationResultPlot:
     @pytest.mark.skipif(not _has_matplotlib(), reason="matplotlib not installed")
     def test_plot_2d(self):
         """plot() should work for 2D fronts."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
@@ -158,7 +158,7 @@ class TestOptimizationResultPlot:
     @pytest.mark.skipif(not _has_matplotlib(), reason="matplotlib not installed")
     def test_plot_3d(self):
         """plot() should work for 3D fronts."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.8, 0.1], [0.5, 0.3, 0.2], [0.8, 0.1, 0.1]])
         result = OptimizationResult({"F": F})
@@ -178,7 +178,7 @@ class TestOptimizationResultDataFrame:
     @pytest.mark.skipif(not _has_pandas(), reason="pandas not installed")
     def test_to_dataframe_basic(self):
         """to_dataframe() should create valid DataFrame."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         X = np.array([[1, 2], [3, 4], [5, 6]])
@@ -195,7 +195,7 @@ class TestOptimizationResultDataFrame:
     @pytest.mark.skipif(not _has_pandas(), reason="pandas not installed")
     def test_to_dataframe_no_x(self):
         """to_dataframe() should work without X."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         result = OptimizationResult({"F": F})
@@ -212,7 +212,7 @@ class TestOptimizationResultSave:
 
     def test_save_creates_files(self, tmp_path):
         """save() should create expected files."""
-        from vamos.foundation.core.optimize import OptimizationResult
+        from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         X = np.array([[1, 2], [3, 4]])

@@ -179,6 +179,32 @@ def scan_runs(results_root: Path) -> List[Dict[str, Any]]:
     return runs
 
 
+def load_ref_points(path: Optional[str]) -> Dict[str, np.ndarray]:
+    """
+    Load frozen reference points mapping: { "<problem_key>": [r1, r2, ...] }.
+    Returns empty dict if path is None.
+    """
+    if not path:
+        return {}
+    ref_path = Path(path).resolve()
+    if not ref_path.exists():
+        raise FileNotFoundError(f"--ref-points file not found: {ref_path}")
+    data = json.loads(ref_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("--ref-points must be a JSON object mapping problem -> ref vector.")
+    out: Dict[str, np.ndarray] = {}
+    for key, value in data.items():
+        try:
+            out[str(key)] = np.asarray(value, dtype=float)
+        except Exception as exc:
+            raise ValueError(f"Invalid ref point for problem '{key}': {value}") from exc
+        if out[str(key)].ndim != 1:
+            raise ValueError(
+                f"Ref point for problem '{key}' must be 1D list/array. Got shape {out[str(key)].shape}"
+            )
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results-root", required=True)
@@ -186,6 +212,11 @@ def main() -> int:
     ap.add_argument("--sample-out", required=True)
     ap.add_argument("--mc-samples", type=int, default=20000)
     ap.add_argument("--rng-seed", type=int, default=0)
+    ap.add_argument(
+        "--ref-points",
+        default=None,
+        help="Optional JSON mapping problem_key -> reference point vector. If provided, HV uses these frozen ref points.",
+    )
     ap.add_argument("--max-runs", type=int, default=0)
     args = ap.parse_args()
 
@@ -198,6 +229,8 @@ def main() -> int:
     runs = scan_runs(results_root)
     if args.max_runs and len(runs) > args.max_runs:
         runs = runs[: args.max_runs]
+
+    frozen_ref = load_ref_points(args.ref_points)
 
     print("results_root:", results_root)
     print("runs_found:", len(runs))
@@ -218,10 +251,21 @@ def main() -> int:
 
     for prob, Fs in by_problem.items():
         allF = np.vstack(Fs)
+        m = allF.shape[1]
         lo = np.min(allF, axis=0)
         mx = np.max(allF, axis=0)
         margin = 0.05 * np.maximum(mx - lo, 1e-12)
-        ref = mx + margin + 1e-9
+        if prob in frozen_ref:
+            ref = frozen_ref[prob].astype(float, copy=False)
+            if ref.shape[0] != m:
+                raise ValueError(
+                    f"Frozen ref point dimension mismatch for problem '{prob}': "
+                    f"expected {m}, got {ref.shape[0]} (ref={ref.tolist()})"
+                )
+            ref_source = "frozen"
+        else:
+            ref = mx + margin + 1e-9
+            ref_source = "observed_max_margin"
         hv_ref[prob] = ref
         hv_lo[prob] = lo
 
@@ -231,11 +275,21 @@ def main() -> int:
         refset_ultimate[prob] = R
 
         problem_stats[prob] = {
-            "n_obj": int(allF.shape[1]),
+            "n_obj": int(m),
             "ref": ref.tolist(),
+            "ref_source": ref_source,
             "lo": lo.tolist(),
             "refset_size": int(R.shape[0]),
         }
+
+    if frozen_ref:
+        missing = sorted(set(frozen_ref.keys()) - set(problem_stats.keys()))
+        if missing:
+            print(
+                "WARNING: ref-points provided for problems not present in scanned runs:",
+                missing[:10],
+                "(+more)" if len(missing) > 10 else "",
+            )
 
     rng = np.random.default_rng(int(args.rng_seed))
 

@@ -2,7 +2,7 @@ import pytest
 
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.foundation.core.runner import run_single
+from vamos.experiment.runner import run_single
 
 pytestmark = pytest.mark.backends
 

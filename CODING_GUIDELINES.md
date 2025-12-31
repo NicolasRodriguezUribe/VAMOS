@@ -8,7 +8,8 @@ VAMOS is designed to be **user-friendly first**. Every design decision should co
 
 1. **Clean public API**: Export stable symbols from `vamos` root. Users should write:
    ```python
-   from vamos import optimize, NSGAIIConfig, ZDT1, plot_pareto_front_2d
+   from vamos import optimize, ZDT1, plot_pareto_front_2d
+   from vamos.engine.api import NSGAIIConfig
    ```
    Not internal paths like `from vamos.engine.algorithm.config import NSGAIIConfig`.
 

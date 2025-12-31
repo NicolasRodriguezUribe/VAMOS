@@ -3,10 +3,10 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from vamos.engine.operators.real import (
+from vamos.operators.real import PolynomialMutation
+from vamos.operators.real import (
     GaussianMutation,
     NonUniformMutation,
-    PolynomialMutation,
     UniformResetMutation,
     VariationWorkspace,
 )

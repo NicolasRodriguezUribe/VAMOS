@@ -20,13 +20,11 @@ from vamos.engine.algorithm.components.base import (
     setup_genealogy,
     setup_hv_tracker,
 )
-from vamos.engine.algorithm.components.population import (
-    evaluate_population_with_constraints,
-)
+from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
-from vamos.engine.operators.binary import random_binary_population
-from vamos.engine.operators.integer import random_integer_population
+from vamos.operators.binary import random_binary_population
+from vamos.operators.integer import random_integer_population
 
 from .helpers import build_aggregator, compute_neighbors
 from .operators import build_variation_operators
@@ -37,7 +35,7 @@ if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-    from vamos.ux.visualization.live_viz import LiveVisualization
+from vamos.hooks.live_viz import LiveVisualization
 
 
 def initialize_moead_run(

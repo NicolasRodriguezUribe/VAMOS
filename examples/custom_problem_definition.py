@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos import NSGAIIConfig, OptimizeConfig, optimize, plot_pareto_front_2d
+from vamos import OptimizeConfig, optimize, plot_pareto_front_2d
+from vamos.engine.api import NSGAIIConfig
 
 
 class CustomBiObjectiveProblem:

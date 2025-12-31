@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator
 
 if TYPE_CHECKING:
-    from vamos.foundation.core.optimize import OptimizationResult
+    from vamos.experiment.optimize import OptimizationResult
 
 
 @dataclass
@@ -163,7 +163,7 @@ class Experiment:
         Returns:
             OptimizationResult with Pareto front
         """
-        from vamos.foundation.core.optimize import run_optimization
+        from vamos.experiment.optimize import run_optimization
 
         if not self._active:
             raise RuntimeError(
@@ -329,7 +329,8 @@ def experiment(
     Equivalent to `with Experiment(...) as exp:` but as a function.
 
     Example:
-        from vamos import experiment, ZDT1
+        from vamos import ZDT1
+        from vamos.experiment import experiment
 
         with experiment("study", output_dir="results") as exp:
             exp.optimize(ZDT1(n_var=30), "nsgaii")

@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 
-from vamos.foundation.core import runner
+from vamos.experiment import runner as experiment_runner
 
 
 def test_cli_with_config_file_creates_artifacts(monkeypatch, tmp_path):
@@ -26,7 +26,7 @@ def test_cli_with_config_file_creates_artifacts(monkeypatch, tmp_path):
     monkeypatch.setenv("VAMOS_OUTPUT_ROOT", str(output_root))
     monkeypatch.setenv("PYTHONHASHSEED", "0")
     # Avoid plotting during tests
-    monkeypatch.setattr(runner.plotting, "plot_pareto_front", lambda *args, **kwargs: None)
+    monkeypatch.setattr(experiment_runner.plotting, "plot_pareto_front", lambda *args, **kwargs: None)
 
     argv = ["prog", "--config", str(config_file)]
     monkeypatch.setattr(sys, "argv", argv)
@@ -76,7 +76,7 @@ def test_cli_runs_spea2_from_config(monkeypatch, tmp_path):
     config_file.write_text(json.dumps(spec), encoding="utf-8")
 
     monkeypatch.setenv("PYTHONHASHSEED", "0")
-    monkeypatch.setattr(runner.plotting, "plot_pareto_front", lambda *args, **kwargs: None)
+    monkeypatch.setattr(experiment_runner.plotting, "plot_pareto_front", lambda *args, **kwargs: None)
 
     argv = ["prog", "--config", str(config_file)]
     monkeypatch.setattr(sys, "argv", argv)

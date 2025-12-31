@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos import HyperparameterTuningProblem, NSGAIIConfig, OptimizeConfig, optimize
+from vamos import HyperparameterTuningProblem, OptimizeConfig, optimize
+from vamos.engine.api import NSGAIIConfig
 
 
 def main():

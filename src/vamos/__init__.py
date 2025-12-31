@@ -146,7 +146,6 @@ from .foundation.exceptions import (
 # Experiment context manager
 from .experiment.context import (
     Experiment,
-    experiment,
     RunRecord,
     ExperimentSummary,
 )
@@ -161,7 +160,6 @@ __all__ = [
     "QuickResult",
     # Experiment context
     "Experiment",
-    "experiment",
     "RunRecord",
     "ExperimentSummary",
     # Optimization

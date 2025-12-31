@@ -11,7 +11,8 @@ from typing import Any, Callable
 
 import numpy as np
 
-from vamos.engine.operators.real import PolynomialMutation, SBXCrossover, VariationWorkspace
+from vamos.operators.real import PolynomialMutation, SBXCrossover
+from vamos.operators.real import VariationWorkspace
 
 
 def build_variation_operators(

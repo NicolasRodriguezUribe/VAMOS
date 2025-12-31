@@ -11,7 +11,7 @@ from typing import List
 
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.foundation.core.runner import run_single
+from vamos.experiment.runner import run_single
 
 
 @dataclass

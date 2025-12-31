@@ -5,13 +5,12 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.engine.operators.real import (
+from vamos.operators.real import PolynomialMutation, SBXCrossover
+from vamos.operators.real import (
     ArithmeticCrossover,
     PCXCrossover,
     SPXCrossover,
     UNDXCrossover,
-    SBXCrossover,
-    PolynomialMutation,
     BLXAlphaCrossover,
     CauchyMutation,
     GaussianMutation,
@@ -36,7 +35,7 @@ from vamos.engine.algorithm.components.variation.helpers import (
     MIXED_MUTATION,
     validate_operator_support,
 )
-from vamos.engine.operators.integer import creep_mutation
+from vamos.operators.integer import creep_mutation
 
 
 class VariationPipeline:

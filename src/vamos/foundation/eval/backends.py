@@ -7,7 +7,7 @@ from typing import Optional
 
 import numpy as np
 
-from vamos.engine.algorithm.components.population import evaluate_population_with_constraints
+from vamos.foundation.eval.population import evaluate_population_with_constraints
 from . import EvaluationBackend, EvaluationResult
 
 

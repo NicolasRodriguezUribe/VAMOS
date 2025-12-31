@@ -30,8 +30,8 @@ from .helpers import (
 )
 from .operators import build_variation_operators
 from .state import SMSEMOAState
-from vamos.engine.operators.binary import random_binary_population
-from vamos.engine.operators.integer import random_integer_population
+from vamos.operators.binary import random_binary_population
+from vamos.operators.integer import random_integer_population
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.base import EvaluationBackend, LiveVisualization

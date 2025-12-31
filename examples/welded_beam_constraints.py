@@ -14,11 +14,11 @@ from __future__ import annotations
 import numpy as np
 
 from vamos import (
-    NSGAIIConfig,
     OptimizeConfig,
     WeldedBeamDesignProblem,
     optimize,
 )
+from vamos.engine.api import NSGAIIConfig
 
 
 def main() -> None:

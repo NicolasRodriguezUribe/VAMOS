@@ -5,8 +5,10 @@ import pytest
 
 def test_import_vamos_minimal():
     pkg = importlib.import_module("vamos")
-    api = importlib.import_module("vamos.foundation.core.api")
+    api = importlib.import_module("vamos.api")
     assert hasattr(api, "optimize")
+    foundation_api = importlib.import_module("vamos.foundation.core.api")
+    assert foundation_api is not None
     assert pkg is not None
 
 

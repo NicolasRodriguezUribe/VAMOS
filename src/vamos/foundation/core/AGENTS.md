@@ -6,8 +6,8 @@ This directory contains the foundational infrastructure for VAMOS.
 
 | File | Purpose |
 |------|---------|
-| `runner.py` | `run_single()` — main experiment execution |
-| `optimize.py` | `optimize()` — programmatic API |
+| `../experiment/runner.py` | `run_single()` - main experiment execution |
+| `../experiment/optimize.py` | `optimize()` - programmatic API |
 | `experiment_config.py` | `ExperimentConfig` dataclass |
 | `execution.py` | Algorithm execution loop |
 | `hv_stop.py` | Hypervolume early stopping |
@@ -35,7 +35,7 @@ run_single(engine, algorithm, selection, config, ...)
 ## ExperimentConfig
 
 ```python
-from vamos.foundation.core.runner import ExperimentConfig
+from vamos.foundation.core.experiment_config import ExperimentConfig
 
 cfg = ExperimentConfig(
     population_size=100,
@@ -49,7 +49,7 @@ cfg = ExperimentConfig(
 
 Higher-level API with config objects:
 ```python
-from vamos.foundation.core.optimize import optimize, OptimizeConfig
+from vamos.experiment.optimize import optimize, OptimizeConfig
 
 result = optimize(OptimizeConfig(
     problem=problem,

@@ -3,7 +3,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from vamos.engine.operators.real import ClampRepair, ReflectRepair, ResampleRepair, RoundRepair
+from vamos.operators.real import ClampRepair, ReflectRepair, ResampleRepair, RoundRepair
 
 VIOLATING = np.array(
     [

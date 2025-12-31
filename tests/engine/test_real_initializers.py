@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.engine.operators.real.initialize import LatinHypercubeInitializer, ScatterSearchInitializer
+from vamos.operators.real.initialize import LatinHypercubeInitializer, ScatterSearchInitializer
 
 
 def test_latin_hypercube_initializer_bounds_and_shape():
