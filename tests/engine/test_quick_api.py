@@ -5,6 +5,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from vamos.experiment.quick import QuickResult, run_moead, run_nsgaii, run_nsgaiii, run_smsemoa, run_spea2
+
 
 def _has_matplotlib() -> bool:
     """Check if matplotlib is available."""
@@ -27,19 +29,10 @@ def _has_pandas() -> bool:
 
 
 class TestQuickAPIImports:
-    """Test that quick API is correctly exported from vamos root."""
+    """Test that quick API is correctly exported from the experiment package."""
 
     def test_import_quick_functions(self):
-        """All quick functions should be importable from vamos."""
-        from vamos import (
-            QuickResult,
-            run_moead,
-            run_nsgaii,
-            run_nsgaiii,
-            run_smsemoa,
-            run_spea2,
-        )
-
+        """All quick functions should be importable from vamos.experiment.quick."""
         assert callable(run_nsgaii)
         assert callable(run_moead)
         assert callable(run_spea2)
@@ -53,8 +46,6 @@ class TestQuickResultBasics:
 
     def test_quick_result_from_nsgaii(self):
         """QuickResult should have expected attributes after run."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii("zdt1", max_evaluations=100, pop_size=10, seed=42)
 
         assert len(result) > 0  # has solutions
@@ -64,8 +55,6 @@ class TestQuickResultBasics:
 
     def test_quick_result_repr(self):
         """QuickResult repr should be informative."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii("zdt1", max_evaluations=100, pop_size=10)
         rep = repr(result)
 
@@ -76,8 +65,6 @@ class TestQuickResultBasics:
 
     def test_quick_result_to_dict(self):
         """QuickResult should serialize to dict via best()."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii("zdt1", max_evaluations=100, pop_size=10)
         best = result.best("knee")  # Returns dict
 
@@ -87,8 +74,6 @@ class TestQuickResultBasics:
 
     def test_quick_result_best(self):
         """Best solutions should be returned correctly."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii("zdt1", max_evaluations=100, pop_size=10)
 
         # Best using different methods
@@ -112,8 +97,6 @@ class TestQuickAPIAlgorithms:
 
     def test_run_nsgaii(self):
         """run_nsgaii should complete and return valid results."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii(
             "zdt1",
             n_var=10,
@@ -127,8 +110,6 @@ class TestQuickAPIAlgorithms:
 
     def test_run_moead(self):
         """run_moead should complete and return valid results."""
-        from vamos import run_moead
-
         result = run_moead(
             "zdt1",
             n_var=10,
@@ -142,8 +123,6 @@ class TestQuickAPIAlgorithms:
 
     def test_run_spea2(self):
         """run_spea2 should complete and return valid results."""
-        from vamos import run_spea2
-
         result = run_spea2(
             "zdt1",
             n_var=10,
@@ -157,8 +136,6 @@ class TestQuickAPIAlgorithms:
 
     def test_run_smsemoa(self):
         """run_smsemoa should complete and return valid results."""
-        from vamos import run_smsemoa
-
         result = run_smsemoa(
             "zdt1",
             n_var=10,
@@ -172,8 +149,6 @@ class TestQuickAPIAlgorithms:
 
     def test_run_nsgaiii_3obj(self):
         """run_nsgaiii should work for 3-objective problems."""
-        from vamos import run_nsgaiii
-
         result = run_nsgaiii(
             "dtlz2",
             n_var=10,
@@ -188,13 +163,12 @@ class TestQuickAPIAlgorithms:
         assert np.isfinite(result.F).all()
         assert np.ptp(result.F, axis=0).max() > 1e-3  # avoid collapsed/constant fronts
 
+
 class TestQuickAPISmoke:
     """Fast smoke tests for quick API."""
 
     def test_minimal_nsgaii(self):
         """Minimal NSGAII run should succeed."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii("zdt1", max_evaluations=50, pop_size=10)
         assert len(result) > 0
 
@@ -204,8 +178,6 @@ class TestQuickResultMethods:
 
     def test_summary_runs(self):
         """summary() should print without error."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii("zdt1", max_evaluations=100, pop_size=10)
         # Should not raise
         result.summary()
@@ -216,8 +188,6 @@ class TestQuickResultMethods:
     )
     def test_plot_runs(self):
         """plot() should work when matplotlib is available."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii("zdt1", max_evaluations=100, pop_size=10)
         ax = result.plot(show=False)
         assert ax is not None
@@ -228,8 +198,6 @@ class TestQuickResultMethods:
     )
     def test_to_dataframe_runs(self):
         """to_dataframe() should work when pandas is available."""
-        from vamos import run_nsgaii
-
         result = run_nsgaii("zdt1", max_evaluations=100, pop_size=10)
         df = result.to_dataframe()
         assert len(df) == len(result)

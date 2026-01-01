@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from vamos.foundation.problem.protocol import ProblemProtocol
+    from vamos.foundation.problem.types import ProblemProtocol
 
 
 __all__ = [
@@ -42,7 +42,7 @@ def fast_non_dominated_sort(F: np.ndarray) -> list[list[int]]:
         List of fronts, where each front is a list of indices.
     """
     n = F.shape[0]
-    S = [[] for _ in range(n)]
+    S: list[list[int]] = [[] for _ in range(n)]
     domination_count = np.zeros(n, dtype=int)
     ranks = np.zeros(n, dtype=int)
     fronts: list[list[int]] = [[]]
@@ -292,9 +292,7 @@ def nsgaiii_survival(
                 niche_counts[associations[idx]] += 1
         else:
             remaining = pop_size - len(survivor_indices)
-            selected_idx = niche_selection(
-                front_arr, remaining, niche_counts, associations, distances, rng
-            )
+            selected_idx = niche_selection(front_arr, remaining, niche_counts, associations, distances, rng)
             survivor_indices.extend(selected_idx.tolist())
             if new_G is not None and G_all is not None:
                 new_G.extend(G_all[selected_idx])

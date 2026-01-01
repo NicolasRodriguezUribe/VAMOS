@@ -38,9 +38,7 @@ class LZ09Problem:
         dim = dim + 1
         xy = 2.0 * (x - 0.5)
         if self.ltype == 21:
-            beta = xy - np.power(
-                t1, 0.5 * (self.n_var + 3.0 * dim - 8.0) / (self.n_var - 2.0)
-            )
+            beta = xy - np.power(t1, 0.5 * (self.n_var + 3.0 * dim - 8.0) / (self.n_var - 2.0))
         elif self.ltype == 22:
             theta = 6.0 * np.pi * t1 + dim * np.pi / self.n_var
             beta = xy - np.sin(theta)

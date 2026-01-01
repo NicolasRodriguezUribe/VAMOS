@@ -1,6 +1,7 @@
 """
 Multi-criteria decision-making helpers for post-processing fronts.
 """
+
 from __future__ import annotations
 
 from vamos.ux.analysis.mcdm import (
@@ -18,4 +19,3 @@ __all__ = [
     "reference_point_scores",
     "knee_point_scores",
 ]
-

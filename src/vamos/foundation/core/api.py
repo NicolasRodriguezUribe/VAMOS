@@ -5,6 +5,7 @@ This module re-exports stable entrypoints intended for library consumers.
 Internal/experimental modules (runner, CLI helpers, tuning pipelines, etc.)
 should be imported explicitly from their modules instead of via the package root.
 """
+
 from __future__ import annotations
 
 from vamos.foundation.constraints import (

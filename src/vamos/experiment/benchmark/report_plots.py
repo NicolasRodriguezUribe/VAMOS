@@ -1,6 +1,7 @@
 """
 Plot helpers for benchmark reporting.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,7 +19,9 @@ except Exception:  # pragma: no cover
 from vamos.ux.analysis.stats import plot_critical_distance
 
 
-def generate_plots(tidy, stats: Dict[str, dict], metrics: List[str], alpha: float, suite_name: str, output_dir: Path, higher_is_better) -> Dict[str, List[Path]]:
+def generate_plots(
+    tidy, stats: Dict[str, dict], metrics: List[str], alpha: float, suite_name: str, output_dir: Path, higher_is_better
+) -> Dict[str, List[Path]]:
     if plt is None:
         return {}
     plots_dir = Path(output_dir)

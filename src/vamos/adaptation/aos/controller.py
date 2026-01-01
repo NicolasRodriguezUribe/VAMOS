@@ -1,10 +1,10 @@
 """
 Controller for coordinating AOS policies and tracking rewards.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 from .config import AdaptiveOperatorSelectionConfig
 from .policies import OperatorBanditPolicy

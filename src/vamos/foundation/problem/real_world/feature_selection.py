@@ -25,10 +25,7 @@ class FeatureSelectionProblem:
             from sklearn.model_selection import train_test_split
             from sklearn.preprocessing import StandardScaler
         except ImportError as exc:  # pragma: no cover - exercised when sklearn missing
-            raise ImportError(
-                "FeatureSelectionProblem requires scikit-learn. "
-                "Install the 'examples' extras to enable it."
-            ) from exc
+            raise ImportError("FeatureSelectionProblem requires scikit-learn. Install the 'examples' extras to enable it.") from exc
 
         if dataset == "breast_cancer":
             data = datasets.load_breast_cancer()

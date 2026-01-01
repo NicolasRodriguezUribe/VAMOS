@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from vamos.operators.binary import random_binary_population
@@ -9,7 +11,7 @@ from vamos.operators.permutation import random_permutation_population
 from vamos.operators.real import LatinHypercubeInitializer, ScatterSearchInitializer
 
 
-def resolve_bounds(problem, encoding: str) -> tuple[np.ndarray, np.ndarray]:
+def resolve_bounds(problem: Any, encoding: str) -> tuple[np.ndarray, np.ndarray]:
     bounds_dtype = int if encoding == "integer" else float
     xl = np.asarray(problem.xl, dtype=bounds_dtype)
     xu = np.asarray(problem.xu, dtype=bounds_dtype)
@@ -30,8 +32,8 @@ def initialize_population(
     xu: np.ndarray,
     encoding: str,
     rng: np.random.Generator,
-    problem=None,
-    initializer=None,
+    problem: Any | None = None,
+    initializer: Any | None = None,
 ) -> np.ndarray:
     if pop_size <= 0:
         raise ValueError("pop_size must be positive.")
@@ -58,7 +60,7 @@ def initialize_population(
     return rng.uniform(xl, xu, size=(pop_size, n_var))
 
 
-def evaluate_population(problem, X: np.ndarray) -> np.ndarray:
+def evaluate_population(problem: Any, X: np.ndarray) -> np.ndarray:
     out = {"F": np.empty((X.shape[0], problem.n_obj))}
     problem.evaluate(X, out)
     return out["F"]

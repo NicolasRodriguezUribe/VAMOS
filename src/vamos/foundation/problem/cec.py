@@ -11,18 +11,10 @@ from typing import Any, Callable
 
 import numpy as np
 
-try:  # pragma: no cover - only executed when pymoo is available
-    from pymoo.problems.multi.cec2009 import (
-        CEC2009_CF1,
-        CEC2009_UF1,
-        CEC2009_UF2,
-        CEC2009_UF3,
-    )
-except ImportError:  # pragma: no cover
-    CEC2009_CF1 = None
-    CEC2009_UF1 = None
-    CEC2009_UF2 = None
-    CEC2009_UF3 = None
+CEC2009_CF1 = None
+CEC2009_UF1 = None
+CEC2009_UF2 = None
+CEC2009_UF3 = None
 
 from .cec2009 import CEC2009_CF1 as _FallbackCF1
 from .cec2009 import CEC2009_UF1 as _FallbackUF1
@@ -30,18 +22,35 @@ from .cec2009 import CEC2009_UF2 as _FallbackUF2
 from .cec2009 import CEC2009_UF3 as _FallbackUF3
 
 
+def _load_pymoo() -> None:
+    global CEC2009_CF1, CEC2009_UF1, CEC2009_UF2, CEC2009_UF3
+    if CEC2009_UF1 is not None:
+        return
+    try:  # pragma: no cover - only executed when pymoo is available
+        from pymoo.problems.multi.cec2009 import (
+            CEC2009_CF1 as _CEC2009_CF1,
+            CEC2009_UF1 as _CEC2009_UF1,
+            CEC2009_UF2 as _CEC2009_UF2,
+            CEC2009_UF3 as _CEC2009_UF3,
+        )
+    except ImportError:  # pragma: no cover
+        return
+    CEC2009_CF1 = _CEC2009_CF1
+    CEC2009_UF1 = _CEC2009_UF1
+    CEC2009_UF2 = _CEC2009_UF2
+    CEC2009_UF3 = _CEC2009_UF3
+
+
 def _require_pymoo() -> None:
     if CEC2009_UF1 is None and _FallbackUF1 is None:
-        raise ImportError(
-            "CEC benchmark wrappers require either the optional 'pymoo' dependency "
-            "or the built-in fallback implementations."
-        )
+        raise ImportError("CEC benchmark wrappers require either the optional 'pymoo' dependency or the built-in fallback implementations.")
 
 
 class _BaseCEC2009:
     """Thin wrapper around pymoo's CEC2009 implementations."""
 
     def __init__(self, cls: Callable[..., Any] | None, fallback_cls: Callable[..., Any], n_var: int = 30):
+        _load_pymoo()
         _require_pymoo()
         if cls is not None:
             self._problem = cls(n_var=n_var)
@@ -68,21 +77,25 @@ class _BaseCEC2009:
 
 class CEC2009UF1Problem(_BaseCEC2009):
     def __init__(self, n_var: int = 30):
+        _load_pymoo()
         super().__init__(CEC2009_UF1, _FallbackUF1, n_var=n_var)
 
 
 class CEC2009UF2Problem(_BaseCEC2009):
     def __init__(self, n_var: int = 30):
+        _load_pymoo()
         super().__init__(CEC2009_UF2, _FallbackUF2, n_var=n_var)
 
 
 class CEC2009UF3Problem(_BaseCEC2009):
     def __init__(self, n_var: int = 30):
+        _load_pymoo()
         super().__init__(CEC2009_UF3, _FallbackUF3, n_var=n_var)
 
 
 class CEC2009CF1Problem(_BaseCEC2009):
     def __init__(self, n_var: int = 30):
+        _load_pymoo()
         super().__init__(CEC2009_CF1, _FallbackCF1, n_var=n_var)
 
 

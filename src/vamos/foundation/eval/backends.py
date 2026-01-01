@@ -53,10 +53,7 @@ class MultiprocessingEvalBackend(EvaluationBackend):
         G_parts: list[tuple[int, Optional[np.ndarray]]] = []
 
         with ProcessPoolExecutor(max_workers=self.n_workers) as ex:
-            future_map = {
-                ex.submit(_eval_chunk, problem, X[start:end]): (start, end)
-                for start, end in slices
-            }
+            future_map = {ex.submit(_eval_chunk, problem, X[start:end]): (start, end) for start, end in slices}
             for fut in as_completed(future_map):
                 start, end = future_map[fut]
                 F_chunk, G_chunk = fut.result()

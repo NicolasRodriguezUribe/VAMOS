@@ -1,6 +1,7 @@
 """
 Helpers to discover and load experiment results following the standard layout.
 """
+
 from __future__ import annotations
 
 import json
@@ -147,4 +148,3 @@ def aggregate_results(runs: Iterable[RunInfo]):
 
 
 __all__ = ["RunInfo", "RunData", "discover_runs", "load_run_data", "aggregate_results"]
-

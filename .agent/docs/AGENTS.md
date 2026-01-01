@@ -1,5 +1,10 @@
 # AGENTS.md
 
+## Architecture Health (must-read)
+- Follow `docs/dev/architecture_health.md` before adding new modules, APIs, or dependencies.
+- PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
+
+
 > For a user-facing overview of VAMOS (features, install, CLI examples), see `README.md`.
 > For contributor workflows and concrete tasks, see `AGENTS_tasks.md`.
 > For ready-to-paste prompts for code assistants, see `AGENTS_codex_prompts.md`.

@@ -2,6 +2,10 @@
 
 This directory contains benchmark and real-world optimization problems for VAMOS.
 
+## Architecture Health (must-read)
+- Follow `docs/dev/architecture_health.md` before adding new modules, APIs, or dependencies.
+- PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
+
 ## Problem Protocol
 
 All problems must implement:
@@ -22,7 +26,8 @@ Optional: `n_constraints`, `evaluate_constraints(X) → G`
 ## Adding a New Problem
 
 1. Create `new_problem.py` with class implementing `ProblemProtocol`
-2. Register in [registry/specs.py](registry/specs.py):
+2. Register in the appropriate family module under `registry/families/`:
+   See [registry/AGENTS.md](registry/AGENTS.md) for the canonical workflow.
 ```python
 ProblemSpec(
     key="new_problem",
@@ -34,7 +39,7 @@ ProblemSpec(
     encoding="continuous",  # or "binary", "permutation", "integer", "mixed"
 )
 ```
-3. Add to `PROBLEM_SPECS` dict in the same file
+3. Add to the `SPECS` dict in that family module (the aggregator will pick it up)
 4. Add test in `tests/test_new_benchmarks.py`
 
 ## Directory Structure
@@ -52,6 +57,7 @@ ProblemSpec(
 | `mixed.py` | Mixed-variable design |
 | `real_world/` | Engineering design, ML tuning |
 | `registry/` | ProblemSpec definitions + selection API |
+| `registry/families/` | Family-specific spec modules (canonical) |
 
 ## Using Problems
 

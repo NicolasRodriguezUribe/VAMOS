@@ -5,7 +5,8 @@ Provides a clean way to run experiments with automatic resource management,
 timing, and result collection.
 
 Example:
-    from vamos import Experiment, ZDT1
+    from vamos.experiment import Experiment
+    from vamos.foundation.problems_registry import ZDT1
 
     with Experiment("my_study", output_dir="results") as exp:
         result = exp.optimize(ZDT1(n_var=30), "nsgaii", max_evaluations=5000)
@@ -16,6 +17,7 @@ Example:
 
 from __future__ import annotations
 
+import logging
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -24,6 +26,8 @@ from typing import TYPE_CHECKING, Any, Iterator
 
 if TYPE_CHECKING:
     from vamos.experiment.optimize import OptimizationResult
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -58,10 +62,7 @@ class ExperimentSummary:
             "Runs:",
         ]
         for i, run in enumerate(self.runs, 1):
-            lines.append(
-                f"  {i}. {run.algorithm} on {run.problem_name}: "
-                f"{run.n_solutions} solutions, {run.elapsed_seconds:.2f}s"
-            )
+            lines.append(f"  {i}. {run.algorithm} on {run.problem_name}: {run.n_solutions} solutions, {run.elapsed_seconds:.2f}s")
         return "\n".join(lines)
 
 
@@ -118,7 +119,7 @@ class Experiment:
         self._active = True
         self._start_time = time.perf_counter()
         if self.verbose:
-            print(f"Starting experiment: {self.name}")
+            logger.info("Starting experiment: %s", self.name)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -128,7 +129,12 @@ class Experiment:
 
         if self.verbose:
             elapsed = self._end_time - (self._start_time or self._end_time)
-            print(f"Experiment '{self.name}' completed: {len(self._runs)} runs in {elapsed:.2f}s")
+            logger.info(
+                "Experiment '%s' completed: %s runs in %.2fs",
+                self.name,
+                len(self._runs),
+                elapsed,
+            )
 
         # Don't suppress exceptions
         return None
@@ -166,9 +172,7 @@ class Experiment:
         from vamos.experiment.optimize import run_optimization
 
         if not self._active:
-            raise RuntimeError(
-                "Experiment not active. Use 'with Experiment(...) as exp:' context."
-            )
+            raise RuntimeError("Experiment not active. Use 'with Experiment(...) as exp:' context.")
 
         # Determine seed
         if seed is None:
@@ -181,7 +185,7 @@ class Experiment:
         run_name = name or f"{algorithm}_{problem_name}_{self._run_counter}"
 
         if self.verbose:
-            print(f"  Running: {algorithm} on {problem_name}...", end=" ", flush=True)
+            logger.info("Running: %s on %s...", algorithm, problem_name)
 
         # Time the run
         start = time.perf_counter()
@@ -197,7 +201,7 @@ class Experiment:
         elapsed = time.perf_counter() - start
 
         if self.verbose:
-            print(f"{result.F.shape[0]} solutions in {elapsed:.2f}s")
+            logger.info("%s solutions in %.2fs", result.F.shape[0], elapsed)
 
         # Record the run
         record = RunRecord(
@@ -298,6 +302,7 @@ class Experiment:
             import pandas as pd
         except ImportError:
             from vamos.exceptions import DependencyError
+
             raise DependencyError("pandas", "to_dataframe()", "pip install pandas")
 
         data = []
@@ -329,8 +334,8 @@ def experiment(
     Equivalent to `with Experiment(...) as exp:` but as a function.
 
     Example:
-        from vamos import ZDT1
         from vamos.experiment import experiment
+        from vamos.foundation.problems_registry import ZDT1
 
         with experiment("study", output_dir="results") as exp:
             exp.optimize(ZDT1(n_var=30), "nsgaii")

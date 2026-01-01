@@ -12,6 +12,7 @@ All types support:
 - to_unit(value) - map to [0, 1] space for optimization
 - from_unit(value) - map from [0, 1] space back to parameter value
 """
+
 from __future__ import annotations
 
 import ast
@@ -207,19 +208,13 @@ class ParamSpace:
             value = config[name]
             if isinstance(spec, Real):
                 if not (spec.low <= value <= spec.high):
-                    raise ValueError(
-                        f"Real param '{name}'={value} out of [{spec.low}, {spec.high}]"
-                    )
+                    raise ValueError(f"Real param '{name}'={value} out of [{spec.low}, {spec.high}]")
             elif isinstance(spec, Int):
                 if not (spec.low <= value <= spec.high):
-                    raise ValueError(
-                        f"Int param '{name}'={value} out of [{spec.low}, {spec.high}]"
-                    )
+                    raise ValueError(f"Int param '{name}'={value} out of [{spec.low}, {spec.high}]")
             elif isinstance(spec, Categorical):
                 if value not in spec.choices:
-                    raise ValueError(
-                        f"Categorical param '{name}'={value} not in {spec.choices}"
-                    )
+                    raise ValueError(f"Categorical param '{name}'={value} not in {spec.choices}")
 
 
 # Aliases

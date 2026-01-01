@@ -4,11 +4,16 @@ from __future__ import annotations
 
 import pytest
 
+from vamos.experiment import Experiment, ExperimentSummary, RunRecord, experiment
+from vamos.experiment.optimize import OptimizationResult
+from vamos.foundation.problems_registry import ZDT1
+
 
 def _has_pandas() -> bool:
     """Check if pandas is available."""
     try:
         import pandas  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -20,8 +25,6 @@ class TestExperimentBasics:
     @pytest.mark.smoke
     def test_experiment_context_manager(self):
         """Experiment should work as context manager."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             result = exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
 
@@ -32,8 +35,6 @@ class TestExperimentBasics:
     @pytest.mark.smoke
     def test_experiment_multiple_runs(self):
         """Experiment should track multiple runs."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
             exp.optimize(ZDT1(n_var=10), "spea2", max_evaluations=500, pop_size=20)
@@ -43,8 +44,6 @@ class TestExperimentBasics:
 
     def test_experiment_run_records(self):
         """Run records should contain metadata."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
 
@@ -60,8 +59,6 @@ class TestExperimentSummary:
 
     def test_summary_basic(self):
         """summary() should return ExperimentSummary."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
 
@@ -72,8 +69,6 @@ class TestExperimentSummary:
 
     def test_summary_str(self):
         """Summary should have nice string representation."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
 
@@ -88,8 +83,6 @@ class TestExperimentResults:
 
     def test_results_property(self):
         """results property should return OptimizationResult list."""
-        from vamos import Experiment, OptimizationResult, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
 
@@ -99,8 +92,6 @@ class TestExperimentResults:
 
     def test_best_run(self):
         """best_run() should return best by metric."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=1000, pop_size=20)
@@ -112,8 +103,6 @@ class TestExperimentResults:
 
     def test_compare(self):
         """compare() should return comparison dict."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
 
@@ -130,8 +119,6 @@ class TestExperimentDataFrame:
     @pytest.mark.skipif(not _has_pandas(), reason="pandas not installed")
     def test_to_dataframe(self):
         """to_dataframe() should create valid DataFrame."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
             exp.optimize(ZDT1(n_var=10), "spea2", max_evaluations=500, pop_size=20)
@@ -148,8 +135,6 @@ class TestExperimentSave:
 
     def test_save_to_output_dir(self, tmp_path):
         """Results should be saved to output_dir."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", output_dir=tmp_path, verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20, save=True)
 
@@ -164,9 +149,6 @@ class TestExperimentFunction:
     @pytest.mark.smoke
     def test_experiment_function(self):
         """experiment() function should work like Experiment class."""
-        from vamos import ZDT1
-        from vamos.experiment import experiment
-
         with experiment("test", verbose=False) as exp:
             result = exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
 
@@ -179,16 +161,12 @@ class TestExperimentErrors:
 
     def test_optimize_outside_context(self):
         """optimize() should raise if not in context."""
-        from vamos import Experiment, ZDT1
-
         exp = Experiment("test", verbose=False)
         with pytest.raises(RuntimeError, match="not active"):
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=100)
 
     def test_best_run_invalid_metric(self):
         """best_run() with invalid metric should raise."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
 
@@ -201,8 +179,6 @@ class TestExperimentSeeding:
 
     def test_auto_increment_seed(self):
         """Seeds should auto-increment for reproducibility."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", seed=100, verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20)
@@ -212,8 +188,6 @@ class TestExperimentSeeding:
 
     def test_custom_seed(self):
         """Custom seed should override auto-increment."""
-        from vamos import Experiment, ZDT1
-
         with Experiment("test", seed=100, verbose=False) as exp:
             exp.optimize(ZDT1(n_var=10), "nsgaii", max_evaluations=500, pop_size=20, seed=999)
 
@@ -221,12 +195,10 @@ class TestExperimentSeeding:
 
 
 class TestExperimentImports:
-    """Test imports from vamos."""
+    """Test imports from the experiment facade."""
 
     def test_all_exports_available(self):
         """All experiment exports should be importable."""
-        from vamos import Experiment, experiment, RunRecord, ExperimentSummary
-
         assert Experiment is not None
         assert experiment is not None
         assert RunRecord is not None

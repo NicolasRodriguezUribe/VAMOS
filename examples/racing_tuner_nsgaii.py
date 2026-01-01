@@ -10,18 +10,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos import (
-    Int,
-    OptimizeConfig,
-    ParamSpace,
-    RacingTuner,
-    Real,
-    Scenario,
-    TuningTask,
-    Instance,
-    ZDT1,
-    optimize,
-)
+from vamos.api import OptimizeConfig, optimize
+from vamos.engine.tuning.api import Int, Instance, ParamSpace, RacingTuner, Real, Scenario, TuningTask
+from vamos.foundation.problems_registry import ZDT1
 from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
 
 

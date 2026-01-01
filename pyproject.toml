@@ -31,9 +31,11 @@ benchmarks = [
 dev = [
   "pytest>=7.0",
   "pytest-cov>=4.1",
-  "mypy>=1.8",
+  "mypy>=1.9",
   "black>=23.0",
-  "ruff>=0.1.5",
+  "ruff>=0.6",
+  "build>=1.2",
+  "wheel>=0.40",
   "pandas>=1.5",
   "nbformat>=5.9",
   "nbconvert>=7.10",
@@ -90,11 +92,14 @@ show_error_codes = true
 pretty = true
 exclude = ["build/", "dist/"]
 ignore_missing_imports = false
+mypy_path = ["src"]
 
-[tool.mypy."vamos.foundation.problem.*"]
+[[tool.mypy.overrides]]
+module = "vamos.foundation.problem.*"
 strict = true
 
-[tool.mypy.vamos.engine.algorithm.config]
+[[tool.mypy.overrides]]
+module = "vamos.engine.algorithm.config"
 strict = true
 
 [[tool.mypy.overrides]]
@@ -115,6 +120,7 @@ module = [
   "libhv",
   "numba",
   "pymoo.*",
+  "jmetal.*",
   "jmetalpy.*",
   "pygmo.*",
   "streamlit",
@@ -143,11 +149,15 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
+"vamos" = ["py.typed"]
 "vamos.foundation.data" = ["reference_fronts/*.csv", "weights/*.csv"]
 
 [tool.ruff]
 line-length = 140
 target-version = "py310"
+
+[tool.ruff.format]
+line-ending = "auto"
 
 [tool.ruff.lint]
 select = ["E", "F", "W"]

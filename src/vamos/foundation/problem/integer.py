@@ -79,9 +79,7 @@ class IntegerJobAssignmentProblem:
         mismatch_cost = mismatch @ self.mismatch_penalty
 
         # Diversity: penalize dominance of a single job type.
-        counts = np.stack(
-            [(X_int == t).sum(axis=1) for t in range(self.n_job_types)], axis=1
-        )
+        counts = np.stack([(X_int == t).sum(axis=1) for t in range(self.n_job_types)], axis=1)
         max_share = counts.max(axis=1) / float(self.n_var)
         diversity_penalty = max_share
 

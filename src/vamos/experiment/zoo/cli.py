@@ -1,29 +1,53 @@
 from __future__ import annotations
 
 import argparse
+import logging
 
 from vamos.foundation.problem.registry_info import list_problems, get_problem_info
 from vamos.experiment.runner import run_experiment
 from vamos.foundation.core.experiment_config import ExperimentConfig
+
+logger = logging.getLogger(__name__)
+
+
+def _configure_cli_logging(level: int = logging.INFO) -> None:
+    root = logging.getLogger()
+    if root.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    root.addHandler(handler)
+    root.setLevel(level)
 
 
 def _list_cmd(args):
     infos = list_problems()
     for info in sorted(infos, key=lambda x: x.name):
         cats = ",".join(info.categories)
-        print(f"{info.name:15} | {cats:12} | n_var={info.default_n_variables} n_obj={info.default_n_objectives} | {info.description}")
+        logger.info(
+            "%-15s | %-12s | n_var=%s n_obj=%s | %s",
+            info.name,
+            cats,
+            info.default_n_variables,
+            info.default_n_objectives,
+            info.description,
+        )
 
 
 def _info_cmd(args):
     info = get_problem_info(args.name)
     if info is None:
-        print(f"Problem '{args.name}' not found.")
+        logger.warning("Problem '%s' not found.", args.name)
         return
-    print(f"Name: {info.name}")
-    print(f"Description: {info.description}")
-    print(f"Categories: {', '.join(info.categories)}")
-    print(f"Defaults: n_var={info.default_n_variables}, n_obj={info.default_n_objectives}")
-    print(f"Tags: {', '.join(info.tags)}")
+    logger.info("Name: %s", info.name)
+    logger.info("Description: %s", info.description)
+    logger.info("Categories: %s", ", ".join(info.categories))
+    logger.info(
+        "Defaults: n_var=%s, n_obj=%s",
+        info.default_n_variables,
+        info.default_n_objectives,
+    )
+    logger.info("Tags: %s", ", ".join(info.tags))
 
 
 def _run_cmd(args):
@@ -40,7 +64,7 @@ def _run_cmd(args):
         config=config,
         selection_pressure=2,
     )
-    print(f"Run finished. HV: {metrics.get('hv')}, output: {metrics.get('output_dir')}")
+    logger.info("Run finished. HV: %s, output: %s", metrics.get("hv"), metrics.get("output_dir"))
 
 
 def build_parser():
@@ -64,6 +88,7 @@ def build_parser():
 
 
 def main(argv=None):
+    _configure_cli_logging()
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.cmd is None:

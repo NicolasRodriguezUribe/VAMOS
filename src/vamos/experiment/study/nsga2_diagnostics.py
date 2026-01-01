@@ -6,10 +6,12 @@ generation and compare the internal behaviour against external references
 such as PyMOO.  Run it directly to dump the collected data under
 ``study/diagnostics`` for further inspection (e.g., plotting in notebooks).
 """
+
 from __future__ import annotations
 
 import argparse
 import json
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -21,6 +23,7 @@ from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
+logger = logging.getLogger(__name__)
 _DEFAULT_CONFIG = ExperimentConfig()
 POPULATION_SIZE = _DEFAULT_CONFIG.population_size
 MAX_EVALUATIONS = _DEFAULT_CONFIG.max_evaluations
@@ -65,9 +68,7 @@ def _prepare_params(cfg_dict: dict, n_var: int) -> Tuple[dict, dict, int]:
     return cross_params, mut_params, pressure
 
 
-def _initialize_population(
-    rng: np.random.Generator, problem, pop_size: int
-) -> Tuple[np.ndarray, np.ndarray]:
+def _initialize_population(rng: np.random.Generator, problem, pop_size: int) -> Tuple[np.ndarray, np.ndarray]:
     X = rng.uniform(problem.xl, problem.xu, size=(pop_size, problem.n_var))
     F = np.empty((pop_size, problem.n_obj))
     problem.evaluate(X, {"F": F})
@@ -129,16 +130,10 @@ def _evolution_loop(
 
         ranks, crowd = algorithm.kernel.nsga2_ranking(F)
         n_pairs = pop_size // 2
-        parents_idx = algorithm.kernel.tournament_selection(
-            ranks, crowd, pressure, rng, n_parents=2 * n_pairs
-        )
+        parents_idx = algorithm.kernel.tournament_selection(ranks, crowd, pressure, rng, n_parents=2 * n_pairs)
         X_parents = X[parents_idx]
-        X_off = algorithm.kernel.sbx_crossover(
-            X_parents, cross_params, rng, problem.xl, problem.xu
-        )
-        algorithm.kernel.polynomial_mutation(
-            X_off, mut_params, rng, problem.xl, problem.xu
-        )
+        X_off = algorithm.kernel.sbx_crossover(X_parents, cross_params, rng, problem.xl, problem.xu)
+        algorithm.kernel.polynomial_mutation(X_off, mut_params, rng, problem.xl, problem.xu)
 
         F_off = np.empty((X_off.shape[0], problem.n_obj))
         problem.evaluate(X_off, {"F": F_off})
@@ -237,9 +232,7 @@ def compare_with_pymoo(seed: int, n_var: int, max_eval: int) -> Optional[Dict]:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Diagnostics for the internal NSGA-II implementation."
-    )
+    parser = argparse.ArgumentParser(description="Diagnostics for the internal NSGA-II implementation.")
     parser.add_argument("--seed", type=int, default=SEED, help="Random seed.")
     parser.add_argument(
         "--max-eval",
@@ -262,26 +255,20 @@ def main():
 
     output_dir = _ensure_diag_dir()
     progress = run_progress_diagnostic(args.seed, args.max_eval, args.n_var)
-    progress_path = (
-        output_dir
-        / f"nsga2_progress_seed{args.seed}_eval{args.max_eval}_nvar{args.n_var}.json"
-    )
+    progress_path = output_dir / f"nsga2_progress_seed{args.seed}_eval{args.max_eval}_nvar{args.n_var}.json"
     with open(progress_path, "w", encoding="utf-8") as fh:
         json.dump(progress, fh, indent=2)
-    print(f"Saved internal progress stats to {progress_path}")
+    logger.info("Saved internal progress stats to %s", progress_path)
 
     if not args.skip_pymoo:
         compare = compare_with_pymoo(args.seed, args.n_var, args.max_eval)
         if compare is None:
-            print("pymoo is not installed; skipping external comparison.")
+            logger.info("pymoo is not installed; skipping external comparison.")
         else:
-            compare_path = (
-                output_dir
-                / f"nsga2_pymoo_compare_seed{args.seed}_eval{args.max_eval}_nvar{args.n_var}.json"
-            )
+            compare_path = output_dir / f"nsga2_pymoo_compare_seed{args.seed}_eval{args.max_eval}_nvar{args.n_var}.json"
             with open(compare_path, "w", encoding="utf-8") as fh:
                 json.dump(compare, fh, indent=2)
-            print(f"Saved PyMOO comparison stats to {compare_path}")
+            logger.info("Saved PyMOO comparison stats to %s", compare_path)
 
 
 if __name__ == "__main__":

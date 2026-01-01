@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 
-
 def _parse_probability_arg(parser, flag: str, raw, *, allow_expression: bool):
     if raw is None:
         return None
@@ -41,18 +40,10 @@ def _normalize_operator_args(parser, args):
     args.nsgaii_crossover_prob = _parse_probability_arg(
         parser, "--nsgaii-crossover-prob", args.nsgaii_crossover_prob, allow_expression=False
     )
-    args.nsgaii_crossover_eta = _parse_positive_float(
-        parser, "--nsgaii-crossover-eta", args.nsgaii_crossover_eta, allow_zero=False
-    )
-    args.nsgaii_crossover_alpha = _parse_positive_float(
-        parser, "--nsgaii-crossover-alpha", args.nsgaii_crossover_alpha, allow_zero=True
-    )
-    args.nsgaii_mutation_prob = _parse_probability_arg(
-        parser, "--nsgaii-mutation-prob", args.nsgaii_mutation_prob, allow_expression=True
-    )
-    args.nsgaii_mutation_eta = _parse_positive_float(
-        parser, "--nsgaii-mutation-eta", args.nsgaii_mutation_eta, allow_zero=False
-    )
+    args.nsgaii_crossover_eta = _parse_positive_float(parser, "--nsgaii-crossover-eta", args.nsgaii_crossover_eta, allow_zero=False)
+    args.nsgaii_crossover_alpha = _parse_positive_float(parser, "--nsgaii-crossover-alpha", args.nsgaii_crossover_alpha, allow_zero=True)
+    args.nsgaii_mutation_prob = _parse_probability_arg(parser, "--nsgaii-mutation-prob", args.nsgaii_mutation_prob, allow_expression=True)
+    args.nsgaii_mutation_eta = _parse_positive_float(parser, "--nsgaii-mutation-eta", args.nsgaii_mutation_eta, allow_zero=False)
     args.nsgaii_mutation_perturbation = _parse_positive_float(
         parser, "--nsgaii-mutation-perturbation", args.nsgaii_mutation_perturbation, allow_zero=False
     )

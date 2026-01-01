@@ -152,15 +152,7 @@ class TestGenealogyTracking:
 
     def test_smpso_genealogy_tracking(self, small_problem, kernel):
         """Test SMPSO with genealogy tracking enabled."""
-        cfg = (
-            SMPSOConfig()
-            .pop_size(10)
-            .archive_size(10)
-            .mutation("pm", prob="1/n", eta=20.0)
-            .engine("numpy")
-            .track_genealogy(True)
-            .fixed()
-        )
+        cfg = SMPSOConfig().pop_size(10).archive_size(10).mutation("pm", prob="1/n", eta=20.0).engine("numpy").track_genealogy(True).fixed()
         alg = SMPSO(cfg.to_dict(), kernel)
         result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
 

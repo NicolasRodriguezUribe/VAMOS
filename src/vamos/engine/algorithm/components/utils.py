@@ -134,10 +134,7 @@ def validate_termination(
     """
     term_type, term_val = termination
     if term_type not in supported_types:
-        raise ValueError(
-            f"Unsupported termination type '{term_type}'. "
-            f"Supported: {', '.join(supported_types)}"
-        )
+        raise ValueError(f"Unsupported termination type '{term_type}'. Supported: {', '.join(supported_types)}")
     return term_type, term_val
 
 

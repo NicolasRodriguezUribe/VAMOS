@@ -43,8 +43,8 @@ def pareto_nondominated_mask(F: np.ndarray) -> np.ndarray:
     if n == 0:
         return np.zeros((0,), dtype=bool)
     # dominates(a,b) if all(a<=b) and any(a<b)
-    le = (F[:, None, :] <= F[None, :, :])
-    lt = (F[:, None, :] <  F[None, :, :])
+    le = F[:, None, :] <= F[None, :, :]
+    lt = F[:, None, :] < F[None, :, :]
     dom = np.all(le, axis=2) & np.any(lt, axis=2)
     dominated = np.any(dom, axis=0)
     return ~dominated
@@ -119,6 +119,7 @@ class BoundedArchive:
     Stores (X,F) pairs optionally; pruning is objective-space driven.
     Minimization assumed.
     """
+
     def __init__(self, cfg: BoundedArchiveConfig):
         if cfg.size_cap <= 0:
             raise ValueError("size_cap must be > 0")

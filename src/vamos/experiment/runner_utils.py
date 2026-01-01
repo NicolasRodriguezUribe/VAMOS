@@ -1,6 +1,7 @@
 """
 Helper utilities shared by runner components.
 """
+
 from __future__ import annotations
 
 import os
@@ -43,9 +44,7 @@ def problem_output_dir(selection: ProblemSelection, config: ExperimentConfig) ->
     return os.path.join(config.output_root, f"{safe}")
 
 
-def run_output_dir(
-    selection: ProblemSelection, algorithm_name: str, engine_name: str, seed: int, config: ExperimentConfig
-) -> str:
+def run_output_dir(selection: ProblemSelection, algorithm_name: str, engine_name: str, seed: int, config: ExperimentConfig) -> str:
     base = problem_output_dir(selection, config)
     return os.path.join(
         base,

@@ -10,7 +10,9 @@ from vamos.experiment.runner import run_single
 
 def test_metadata_and_resolved_config_are_consistent(tmp_path):
     selection = make_problem_selection("zdt1", n_var=6)
-    cfg = ExperimentConfig(population_size=6, offspring_population_size=6, max_evaluations=20, seed=7, output_root=str(tmp_path / "results"))
+    cfg = ExperimentConfig(
+        population_size=6, offspring_population_size=6, max_evaluations=20, seed=7, output_root=str(tmp_path / "results")
+    )
     metrics = run_single("numpy", "nsgaii", selection, cfg)
     out_dir = Path(metrics["output_dir"])
     meta = json.loads((out_dir / "metadata.json").read_text(encoding="utf-8"))

@@ -21,8 +21,7 @@ def load_or_generate_weight_vectors(
         _assert_valid_weights(weights, n_obj)
         if weights.shape[0] < pop_size:
             raise ValueError(
-                f"Weight file '{path}' contains {weights.shape[0]} vectors "
-                f"but pop_size={pop_size} requires at least that many."
+                f"Weight file '{path}' contains {weights.shape[0]} vectors but pop_size={pop_size} requires at least that many."
             )
         return weights[:pop_size]
 
@@ -45,10 +44,7 @@ def _assert_valid_weights(weights: np.ndarray, n_obj: int) -> None:
     if weights.ndim != 2:
         raise ValueError("Weight matrix must be 2D.")
     if weights.shape[1] != n_obj:
-        raise ValueError(
-            f"Expected weight vectors with {n_obj} columns, "
-            f"got {weights.shape[1]}."
-        )
+        raise ValueError(f"Expected weight vectors with {n_obj} columns, got {weights.shape[1]}.")
     if np.any(weights < 0.0):
         raise ValueError("Weight vectors must be non-negative.")
     rows_sum = weights.sum(axis=1)

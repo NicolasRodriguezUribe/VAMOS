@@ -1,6 +1,7 @@
 """
 Shared helpers for variation/default handling across CLI, runner, and factories.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict

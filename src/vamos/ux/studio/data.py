@@ -55,7 +55,7 @@ def load_run_from_directory(run_dir: Path) -> RunRecord:
     metadata: Dict[str, Any] = {}
     if metadata_path.exists():
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    
+
     config_path = run_dir / "resolved_config.json"
     if config_path.exists():
         try:
@@ -124,9 +124,13 @@ def build_fronts(
     for run in runs:
         if problem_filter and run.problem_name != problem_filter:
             continue
-        key = (run.problem_name, run.algorithm_name) if merge_seeds else (
-            f"{run.problem_name}_seed{run.seed}",
-            run.algorithm_name,
+        key = (
+            (run.problem_name, run.algorithm_name)
+            if merge_seeds
+            else (
+                f"{run.problem_name}_seed{run.seed}",
+                run.algorithm_name,
+            )
         )
         grouped.setdefault(key, []).append(run)
 
@@ -144,10 +148,7 @@ def build_fronts(
                 points_F=F,
                 points_X=X,
                 constraints=constraints,
-                extra={
-                    "seeds": [r.seed for r in records],
-                    "config": records[0].metadata.get("config") if records else None
-                },
+                extra={"seeds": [r.seed for r in records], "config": records[0].metadata.get("config") if records else None},
             )
         )
     return fronts
@@ -159,4 +160,3 @@ def normalize_objectives(F: np.ndarray) -> np.ndarray:
     maxs = F.max(axis=0)
     span = np.where(maxs - mins == 0, 1.0, maxs - mins)
     return (F - mins) / span
-

@@ -92,11 +92,7 @@ def eliminate_configs(configs: List[ConfigState], *, task, scenario) -> bool:
     min_len = min(lengths)
     max_len = max(lengths)
 
-    use_stat_tests = (
-        scenario.use_statistical_tests
-        and min_len >= scenario.min_blocks_before_elimination
-        and min_len > 1
-    )
+    use_stat_tests = scenario.use_statistical_tests and min_len >= scenario.min_blocks_before_elimination and min_len > 1
 
     if not use_stat_tests:
         return rank_based_elimination(
@@ -123,11 +119,12 @@ def eliminate_configs(configs: List[ConfigState], *, task, scenario) -> bool:
     if len(aligned_indices) >= 3 and scores.shape[1] >= 3:
         try:
             from scipy.stats import friedmanchisquare
+
             # friedmanchisquare takes arguments as *samples
             # each sample is an array of measurements for one subject (here config)
             # We must pass rows of the score matrix
             stat, p_friedman = friedmanchisquare(*[scores[i, :] for i in range(scores.shape[0])])
-            
+
             # If p-value is high, we cannot reject the null hypothesis that all configs are equivalent.
             # Thus, we should NOT eliminate anyone yet.
             if p_friedman > scenario.alpha:

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import AlgorithmState
+from vamos.engine.algorithm.components.state import AlgorithmState
 
 if TYPE_CHECKING:
     pass
@@ -97,11 +97,7 @@ def build_moead_result(
         X and F contain only non-dominated solutions when kernel is provided.
     """
     mode = getattr(state, "result_mode", "population")
-    should_filter = (
-        kernel is not None
-        and mode is not None
-        and mode != "population"
-    )
+    should_filter = kernel is not None and mode is not None and mode != "population"
 
     if should_filter:
         try:

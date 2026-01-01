@@ -3,6 +3,7 @@ Execution helpers for running a single algorithm instance.
 
 This keeps the algorithm run loop isolated from persistence/plotting concerns.
 """
+
 from __future__ import annotations
 
 import time

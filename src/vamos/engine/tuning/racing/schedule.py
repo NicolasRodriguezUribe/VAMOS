@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import List, Sequence, Tuple
 
 
-
 def build_schedule(
     instances: Sequence,
     seeds: Sequence[int],

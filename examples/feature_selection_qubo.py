@@ -11,12 +11,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos import (
-    FeatureSelectionProblem,
-    OptimizeConfig,
-    optimize,
-    plot_pareto_front_2d,
-)
+from vamos.api import OptimizeConfig, optimize
+from vamos.foundation.problems_registry import FeatureSelectionProblem
+from vamos.ux.api import plot_pareto_front_2d
 from vamos.engine.api import NSGAIIConfig
 
 

@@ -4,6 +4,7 @@ High-level variation utilities.
 This module provides a small, explicit re-export surface over the variation
 subpackage (pipeline + helper registries).
 """
+
 from __future__ import annotations
 
 from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline

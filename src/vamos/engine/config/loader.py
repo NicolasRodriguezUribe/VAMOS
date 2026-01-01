@@ -1,6 +1,7 @@
 """
 Config loading utilities shared by CLI and programmatic entrypoints.
 """
+
 from __future__ import annotations
 
 import json
@@ -20,9 +21,7 @@ def load_experiment_spec(path: str) -> Dict[str, Any]:
         try:
             import yaml  # type: ignore
         except ImportError as exc:  # pragma: no cover - optional dependency
-            raise ImportError(
-                "YAML config requested but PyYAML is not installed. Install with 'pip install pyyaml'."
-            ) from exc
+            raise ImportError("YAML config requested but PyYAML is not installed. Install with 'pip install pyyaml'.") from exc
         with spec_path.open("r", encoding="utf-8") as fh:
             return yaml.safe_load(fh) or {}
     with spec_path.open("r", encoding="utf-8") as fh:

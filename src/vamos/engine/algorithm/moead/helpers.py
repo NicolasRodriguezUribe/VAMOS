@@ -5,6 +5,7 @@ Support functions for MOEA/D.
 This module contains neighborhood update logic and scalarization functions
 (aggregation methods) for decomposition-based optimization.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 # =============================================================================
 # Aggregation / Scalarization Functions
 # =============================================================================
+
 
 def tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np.ndarray:
     """Tchebycheff aggregation: max(w * |f - z*|).
@@ -92,9 +94,7 @@ def pbi(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, theta: float 
     return d1 + theta * d2
 
 
-def modified_tchebycheff(
-    fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, rho: float = 0.001
-) -> np.ndarray:
+def modified_tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, rho: float = 0.001) -> np.ndarray:
     """Modified Tchebycheff: max component plus weighted L1 term.
 
     Parameters
@@ -156,6 +156,7 @@ def build_aggregator(name: str, params: dict) -> Callable:
 # =============================================================================
 # Neighborhood Management
 # =============================================================================
+
 
 def compute_neighbors(weights: np.ndarray, neighbor_size: int) -> np.ndarray:
     """Compute neighborhood indices based on weight vector distances.
@@ -225,11 +226,11 @@ def update_neighborhood(
         feas_curr = current_cv <= 0.0
 
         better_mask = np.zeros_like(current_vals, dtype=bool)
-        better_mask |= (~feas_curr & feas_child)
+        better_mask |= ~feas_curr & feas_child
         if feas_child:
-            better_mask |= (feas_curr & (child_vals < current_vals))
+            better_mask |= feas_curr & (child_vals < current_vals)
         else:
-            better_mask |= (~feas_curr & (child_cv < current_cv))
+            better_mask |= ~feas_curr & (child_cv < current_cv)
 
         if not np.any(better_mask):
             return

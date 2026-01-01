@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import AlgorithmState
+from vamos.engine.algorithm.components.state import AlgorithmState
 
 
 @dataclass

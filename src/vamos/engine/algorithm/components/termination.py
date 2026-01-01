@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from vamos.foundation.metrics.hypervolume import hypervolume
@@ -26,4 +28,46 @@ class HVTracker:
         return hv_val >= self.target
 
 
-__all__ = ["HVTracker"]
+def parse_termination(
+    termination: tuple[str, Any],
+    algorithm_name: str = "algorithm",
+) -> tuple[int, dict[str, Any] | None]:
+    """
+    Parse termination criterion and return (max_eval, hv_config).
+
+    Parameters
+    ----------
+    termination : tuple[str, Any]
+        Termination criterion as (type, value). Supported types:
+        - "n_eval": value is the max number of evaluations
+        - "hv": value is a dict with hypervolume config
+    algorithm_name : str
+        Algorithm name for error messages.
+
+    Returns
+    -------
+    tuple[int, dict[str, Any] | None]
+        (max_evaluations, hv_config or None)
+
+    Raises
+    ------
+    ValueError
+        If termination type is unsupported or HV config is invalid.
+    """
+    term_type, term_val = termination
+    hv_config = None
+
+    if term_type == "n_eval":
+        max_eval = int(term_val)
+    elif term_type == "hv":
+        hv_config = dict(term_val)
+        max_eval = int(hv_config.get("max_evaluations", 0))
+        if max_eval <= 0:
+            raise ValueError(f"HV-based termination for {algorithm_name} requires a positive max_evaluations value.")
+    else:
+        raise ValueError(f"Unsupported termination criterion '{term_type}' for {algorithm_name}.")
+
+    return max_eval, hv_config
+
+
+__all__ = ["HVTracker", "parse_termination"]

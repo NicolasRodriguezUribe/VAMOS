@@ -10,7 +10,7 @@ class TestVAMOSError:
 
     def test_basic_error(self):
         """VAMOSError should work with just a message."""
-        from vamos import VAMOSError
+        from vamos.foundation.exceptions import VAMOSError
 
         err = VAMOSError("Something went wrong")
         assert "Something went wrong" in str(err)
@@ -19,7 +19,7 @@ class TestVAMOSError:
 
     def test_error_with_suggestion(self):
         """VAMOSError should include suggestion in message."""
-        from vamos import VAMOSError
+        from vamos.foundation.exceptions import VAMOSError
 
         err = VAMOSError("Something went wrong", suggestion="Try this instead")
         assert "Something went wrong" in str(err)
@@ -28,7 +28,7 @@ class TestVAMOSError:
 
     def test_error_with_details(self):
         """VAMOSError should store details."""
-        from vamos import VAMOSError
+        from vamos.foundation.exceptions import VAMOSError
 
         err = VAMOSError("Error", details={"key": "value"})
         assert err.details == {"key": "value"}
@@ -39,7 +39,7 @@ class TestConfigurationErrors:
 
     def test_invalid_algorithm_error(self):
         """InvalidAlgorithmError should list available algorithms."""
-        from vamos import InvalidAlgorithmError
+        from vamos.foundation.exceptions import InvalidAlgorithmError
 
         err = InvalidAlgorithmError("unknown_algo")
         assert "unknown_algo" in str(err)
@@ -47,7 +47,7 @@ class TestConfigurationErrors:
 
     def test_invalid_algorithm_error_custom_available(self):
         """InvalidAlgorithmError should accept custom available list."""
-        from vamos import InvalidAlgorithmError
+        from vamos.foundation.exceptions import InvalidAlgorithmError
 
         err = InvalidAlgorithmError("bad", available=["algo1", "algo2"])
         assert "algo1" in str(err)
@@ -55,7 +55,7 @@ class TestConfigurationErrors:
 
     def test_invalid_engine_error(self):
         """InvalidEngineError should suggest installation."""
-        from vamos import InvalidEngineError
+        from vamos.foundation.exceptions import InvalidEngineError
 
         err = InvalidEngineError("bad_engine")
         assert "bad_engine" in str(err)
@@ -63,7 +63,7 @@ class TestConfigurationErrors:
 
     def test_invalid_operator_error(self):
         """InvalidOperatorError should describe operator type."""
-        from vamos import InvalidOperatorError
+        from vamos.foundation.exceptions import InvalidOperatorError
 
         err = InvalidOperatorError("crossover", "bad_cx", available=["sbx", "blx"])
         assert "crossover" in str(err)
@@ -72,7 +72,7 @@ class TestConfigurationErrors:
 
     def test_missing_config_error(self):
         """MissingConfigError should suggest fix."""
-        from vamos import MissingConfigError
+        from vamos.foundation.exceptions import MissingConfigError
 
         err = MissingConfigError("pop_size", config_class="NSGAIIConfig")
         assert "pop_size" in str(err)
@@ -84,7 +84,7 @@ class TestProblemErrors:
 
     def test_invalid_problem_error(self):
         """InvalidProblemError should suggest available_problem_names()."""
-        from vamos import InvalidProblemError
+        from vamos.foundation.exceptions import InvalidProblemError
 
         err = InvalidProblemError("unknown_problem")
         assert "unknown_problem" in str(err)
@@ -92,14 +92,14 @@ class TestProblemErrors:
 
     def test_invalid_problem_error_with_examples(self):
         """InvalidProblemError should show example problems."""
-        from vamos import InvalidProblemError
+        from vamos.foundation.exceptions import InvalidProblemError
 
         err = InvalidProblemError("bad", available=["zdt1", "zdt2", "dtlz1"])
         assert "zdt1" in str(err)
 
     def test_problem_dimension_error(self):
         """ProblemDimensionError should include dimension info."""
-        from vamos import ProblemDimensionError
+        from vamos.foundation.exceptions import ProblemDimensionError
 
         err = ProblemDimensionError("Invalid dimensions", n_var=10, n_obj=2)
         assert "Invalid dimensions" in str(err)
@@ -108,7 +108,7 @@ class TestProblemErrors:
 
     def test_bounds_error(self):
         """BoundsError should suggest checking bounds."""
-        from vamos import BoundsError
+        from vamos.foundation.exceptions import BoundsError
 
         err = BoundsError("Lower bound exceeds upper bound")
         assert "Lower bound" in str(err)
@@ -120,7 +120,7 @@ class TestOptimizationErrors:
 
     def test_convergence_error(self):
         """ConvergenceError should suggest increasing evaluations."""
-        from vamos import ConvergenceError
+        from vamos.foundation.exceptions import ConvergenceError
 
         err = ConvergenceError("Failed to converge", evaluations=1000)
         assert "converge" in str(err)
@@ -129,7 +129,7 @@ class TestOptimizationErrors:
 
     def test_evaluation_error(self):
         """EvaluationError should suggest checking evaluate function."""
-        from vamos import EvaluationError
+        from vamos.foundation.exceptions import EvaluationError
 
         err = EvaluationError("NaN in objectives")
         assert "NaN" in str(err)
@@ -137,7 +137,7 @@ class TestOptimizationErrors:
 
     def test_constraint_violation_error(self):
         """ConstraintViolationError should suggest checking constraints."""
-        from vamos import ConstraintViolationError
+        from vamos.foundation.exceptions import ConstraintViolationError
 
         err = ConstraintViolationError("All solutions infeasible")
         assert "infeasible" in str(err)
@@ -149,7 +149,7 @@ class TestDataErrors:
 
     def test_results_not_found_error(self):
         """ResultsNotFoundError should include path."""
-        from vamos import ResultsNotFoundError
+        from vamos.foundation.exceptions import ResultsNotFoundError
 
         err = ResultsNotFoundError("/path/to/results")
         assert "/path/to/results" in str(err)
@@ -157,7 +157,7 @@ class TestDataErrors:
 
     def test_invalid_results_error(self):
         """InvalidResultsError should suggest re-running."""
-        from vamos import InvalidResultsError
+        from vamos.foundation.exceptions import InvalidResultsError
 
         err = InvalidResultsError("Corrupted data", path="/some/path")
         assert "Corrupted" in str(err)
@@ -169,7 +169,7 @@ class TestDependencyErrors:
 
     def test_dependency_error(self):
         """DependencyError should suggest installation command."""
-        from vamos import DependencyError
+        from vamos.foundation.exceptions import DependencyError
 
         err = DependencyError("pandas", "to_dataframe()", "pip install pandas")
         assert "pandas" in str(err)
@@ -178,7 +178,7 @@ class TestDependencyErrors:
 
     def test_backend_not_available_error(self):
         """BackendNotAvailableError should suggest vamos[backends]."""
-        from vamos import BackendNotAvailableError
+        from vamos.foundation.exceptions import BackendNotAvailableError
 
         err = BackendNotAvailableError("numba")
         assert "numba" in str(err)
@@ -190,7 +190,7 @@ class TestExceptionHierarchy:
 
     def test_all_inherit_from_vamos_error(self):
         """All custom exceptions should inherit from VAMOSError."""
-        from vamos import (
+        from vamos.foundation.exceptions import (
             VAMOSError,
             ConfigurationError,
             InvalidAlgorithmError,
@@ -209,7 +209,7 @@ class TestExceptionHierarchy:
 
     def test_catch_all_vamos_errors(self):
         """Should be able to catch all VAMOS errors with VAMOSError."""
-        from vamos import VAMOSError, InvalidAlgorithmError
+        from vamos.foundation.exceptions import VAMOSError, InvalidAlgorithmError
 
         with pytest.raises(VAMOSError):
             raise InvalidAlgorithmError("test")
@@ -221,7 +221,9 @@ class TestExceptionUsage:
     @pytest.mark.smoke
     def test_run_optimization_invalid_algorithm(self):
         """run_optimization() should raise InvalidAlgorithmError."""
-        from vamos import run_optimization, InvalidAlgorithmError, ZDT1
+        from vamos.api import run_optimization
+        from vamos.foundation.exceptions import InvalidAlgorithmError
+        from vamos.foundation.problems_registry import ZDT1
 
         problem = ZDT1(n_var=10)
         with pytest.raises(InvalidAlgorithmError) as exc_info:
@@ -232,8 +234,8 @@ class TestExceptionUsage:
 
     @pytest.mark.smoke
     def test_all_exceptions_importable(self):
-        """All exceptions should be importable from vamos."""
-        from vamos import (
+        """All exceptions should be importable from foundation.exceptions."""
+        from vamos.foundation.exceptions import (
             VAMOSError,
             ConfigurationError,
             InvalidAlgorithmError,
@@ -256,24 +258,26 @@ class TestExceptionUsage:
         )
 
         # Just verify all are not None
-        assert all([
-            VAMOSError,
-            ConfigurationError,
-            InvalidAlgorithmError,
-            InvalidEngineError,
-            InvalidOperatorError,
-            MissingConfigError,
-            ProblemError,
-            InvalidProblemError,
-            ProblemDimensionError,
-            BoundsError,
-            OptimizationError,
-            ConvergenceError,
-            EvaluationError,
-            ConstraintViolationError,
-            DataError,
-            ResultsNotFoundError,
-            InvalidResultsError,
-            DependencyError,
-            BackendNotAvailableError,
-        ])
+        assert all(
+            [
+                VAMOSError,
+                ConfigurationError,
+                InvalidAlgorithmError,
+                InvalidEngineError,
+                InvalidOperatorError,
+                MissingConfigError,
+                ProblemError,
+                InvalidProblemError,
+                ProblemDimensionError,
+                BoundsError,
+                OptimizationError,
+                ConvergenceError,
+                EvaluationError,
+                ConstraintViolationError,
+                DataError,
+                ResultsNotFoundError,
+                InvalidResultsError,
+                DependencyError,
+                BackendNotAvailableError,
+            ]
+        )

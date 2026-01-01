@@ -14,15 +14,11 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
-    get_eval_backend,
-    get_live_viz,
-    parse_termination,
-    resolve_archive_size,
-    setup_archive,
-    setup_genealogy,
-    setup_hv_tracker,
-)
+from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
+from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 from .helpers import evaluate_population_with_constraints
@@ -32,9 +28,10 @@ from vamos.operators.binary import random_binary_population
 from vamos.operators.integer import random_integer_population
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.base import EvaluationBackend, LiveVisualization
+    from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.protocols import KernelBackend
-    from vamos.foundation.problem.protocol import ProblemProtocol
+    from vamos.foundation.problem.types import ProblemProtocol
+    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = [
@@ -95,9 +92,7 @@ def initialize_nsgaiii_run(
     constraint_mode = config.get("constraint_mode", "penalty")
 
     # Build variation operators
-    crossover_fn, mutation_fn = build_variation_operators(
-        config, encoding, n_var, xl, xu, rng
-    )
+    crossover_fn, mutation_fn = build_variation_operators(config, encoding, n_var, xl, xu, rng)
 
     # Selection pressure
     sel_method, sel_params = config["selection"]
@@ -105,9 +100,7 @@ def initialize_nsgaiii_run(
 
     # Load reference directions
     dir_cfg = config.get("reference_directions", {}) or {}
-    ref_dirs = load_or_generate_weight_vectors(
-        pop_size, n_obj, path=dir_cfg.get("path"), divisions=dir_cfg.get("divisions")
-    )
+    ref_dirs = load_or_generate_weight_vectors(pop_size, n_obj, path=dir_cfg.get("path"), divisions=dir_cfg.get("divisions"))
     if ref_dirs.shape[0] > pop_size:
         ref_dirs = ref_dirs[:pop_size]
 
@@ -116,9 +109,7 @@ def initialize_nsgaiii_run(
     ref_dirs_norm[np.isnan(ref_dirs_norm)] = 0.0
 
     # Initialize population
-    X, F, G = initialize_population(
-        encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode
-    )
+    X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
     n_eval = pop_size
 
     # Setup genealogy tracking
@@ -215,9 +206,7 @@ def initialize_population(
     if encoding == "binary":
         X = random_binary_population(pop_size, n_var, rng)
     elif encoding == "integer":
-        X = random_integer_population(
-            pop_size, n_var, xl.astype(int), xu.astype(int), rng
-        )
+        X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
     else:
         X = rng.uniform(xl, xu, size=(pop_size, n_var))
 

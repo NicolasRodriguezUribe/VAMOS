@@ -1,14 +1,14 @@
-# kernel/moocore_backend.py
-from typing import Iterable
+from __future__ import annotations
+
+from typing import Any, Iterable, TYPE_CHECKING, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 try:
     import moocore
 except ImportError as exc:  # pragma: no cover
-    raise ImportError(
-        "MooCoreKernel requires the 'moocore' dependency. Install it or switch to a different backend."
-    ) from exc
+    raise ImportError("MooCoreKernel requires the 'moocore' dependency. Install it or switch to a different backend.") from exc
 
 try:  # Optional JIT acceleration for tournament selection
     from numba import njit
@@ -20,14 +20,22 @@ from .backend import KernelBackend
 from .numpy_backend import NumPyKernel as _NumPyKernel, _compute_crowding
 
 
-def _fronts_from_ranks(ranks: np.ndarray):
+FloatArray = NDArray[np.floating[Any]]
+IntArray = NDArray[np.integer[Any]]
+
+
+def _fronts_from_ranks(ranks: IntArray) -> list[list[int]]:
     if ranks.size == 0:
         return []
     unique_ranks = np.unique(ranks)
     return [np.flatnonzero(ranks == r).tolist() for r in unique_ranks]
 
 
-def _tournament_winners_numpy(ranks: np.ndarray, crowding: np.ndarray, candidates: np.ndarray) -> np.ndarray:
+def _tournament_winners_numpy(
+    ranks: IntArray,
+    crowding: FloatArray,
+    candidates: IntArray,
+) -> IntArray:
     n_rows = candidates.shape[0]
     winners = np.empty(n_rows, dtype=np.int64)
     for i in range(n_rows):
@@ -46,29 +54,42 @@ def _tournament_winners_numpy(ranks: np.ndarray, crowding: np.ndarray, candidate
 
 
 if njit is not None:  # pragma: no cover - optional speed-up
+    if TYPE_CHECKING:
 
-    @njit(cache=True)
-    def _tournament_winners_numba(ranks, crowding, candidates):
-        n_rows = candidates.shape[0]
-        n_cols = candidates.shape[1]
-        winners = np.empty(n_rows, dtype=np.int64)
-        for i in range(n_rows):
-            best_idx = candidates[i, 0]
-            best_rank = ranks[best_idx]
-            best_crowd = crowding[best_idx]
-            for j in range(1, n_cols):
-                idx = candidates[i, j]
-                r = ranks[idx]
-                if r < best_rank or (r == best_rank and crowding[idx] > best_crowd):
-                    best_rank = r
-                    best_crowd = crowding[idx]
-                    best_idx = idx
-            winners[i] = best_idx
-        return winners
+        def _tournament_winners_numba(
+            ranks: IntArray,
+            crowding: FloatArray,
+            candidates: IntArray,
+        ) -> IntArray: ...
+
+    else:
+
+        @njit(cache=True)
+        def _tournament_winners_numba(
+            ranks: IntArray,
+            crowding: FloatArray,
+            candidates: IntArray,
+        ) -> IntArray:
+            n_rows = candidates.shape[0]
+            n_cols = candidates.shape[1]
+            winners = np.empty(n_rows, dtype=np.int64)
+            for i in range(n_rows):
+                best_idx = candidates[i, 0]
+                best_rank = ranks[best_idx]
+                best_crowd = crowding[best_idx]
+                for j in range(1, n_cols):
+                    idx = candidates[i, j]
+                    r = ranks[idx]
+                    if r < best_rank or (r == best_rank and crowding[idx] > best_crowd):
+                        best_rank = r
+                        best_crowd = crowding[idx]
+                        best_idx = idx
+                winners[i] = best_idx
+            return winners
 
 else:
 
-    def _tournament_winners_numba(ranks, crowding, candidates):
+    def _tournament_winners_numba(ranks: IntArray, crowding: FloatArray, candidates: IntArray) -> IntArray:
         return _tournament_winners_numpy(ranks, crowding, candidates)
 
 
@@ -81,15 +102,19 @@ class MooCoreKernel(KernelBackend):
     CROWDING_DIM_THRESHOLD = 3
     HV_SIZE_THRESHOLD = 256
 
-    def __init__(self):
-        self._numpy_ops = _NumPyKernel()
+    def __init__(self) -> None:
+        self._numpy_ops = cast(Any, _NumPyKernel)()
         self._X_buffer: np.ndarray | None = None
         self._F_buffer: np.ndarray | None = None
         self._keep_buffer: np.ndarray | None = None
         self._X_output: np.ndarray | None = None
         self._F_output: np.ndarray | None = None
         self._archive_manager: _IncrementalArchive | None = None
-        self._stats = {"hv_calls": 0, "crowding_fallbacks": 0, "buffer_resizes": 0}
+        self._stats: dict[str, int] = {
+            "hv_calls": 0,
+            "crowding_fallbacks": 0,
+            "buffer_resizes": 0,
+        }
 
     def capabilities(self) -> Iterable[str]:
         return ("c_backend",)
@@ -98,7 +123,10 @@ class MooCoreKernel(KernelBackend):
         return ("hypervolume",)
 
     def nsga2_ranking(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        ranks = moocore.pareto_rank(np.asarray(F, dtype=np.float64, order="C"))
+        ranks = cast(
+            np.ndarray,
+            moocore.pareto_rank(np.asarray(F, dtype=np.float64, order="C")),
+        )
         fronts = _fronts_from_ranks(ranks)
         crowding = _compute_crowding(F, fronts)
         return ranks, crowding
@@ -126,40 +154,37 @@ class MooCoreKernel(KernelBackend):
     def sbx_crossover(
         self,
         X_parents: np.ndarray,
-        params: dict,
+        params: dict[str, Any],
         rng: np.random.Generator,
         xl: float,
         xu: float,
     ) -> np.ndarray:
-        return self._numpy_ops.sbx_crossover(X_parents, params, rng, xl, xu)
+        return cast(np.ndarray, self._numpy_ops.sbx_crossover(X_parents, params, rng, xl, xu))
 
     def polynomial_mutation(
         self,
         X: np.ndarray,
-        params: dict,
+        params: dict[str, Any],
         rng: np.random.Generator,
         xl: float,
         xu: float,
     ) -> None:
         self._numpy_ops.polynomial_mutation(X, params, rng, xl, xu)
 
-    def _ensure_buffers(self, total: int, n_var: int, n_obj: int, dtype) -> None:
+    def _ensure_buffers(self, total: int, n_var: int, n_obj: int, dtype: Any) -> None:
         dtype = np.dtype(dtype)
-        if (
-            self._X_buffer is None
-            or self._X_buffer.shape[0] < total
-            or self._X_buffer.shape[1] != n_var
-            or self._X_buffer.dtype != dtype
-        ):
+        if self._X_buffer is None or self._X_buffer.shape[0] < total or self._X_buffer.shape[1] != n_var or self._X_buffer.dtype != dtype:
             self._X_buffer = np.empty((total, n_var), dtype=dtype, order="C")
-        if (
-            self._F_buffer is None
-            or self._F_buffer.shape[0] < total
-            or self._F_buffer.shape[1] != n_obj
-        ):
+        if self._F_buffer is None or self._F_buffer.shape[0] < total or self._F_buffer.shape[1] != n_obj:
             self._F_buffer = np.empty((total, n_obj), dtype=np.float64, order="C")
 
-    def _combine(self, X_a, F_a, X_b, F_b):
+    def _combine(
+        self,
+        X_a: np.ndarray,
+        F_a: np.ndarray,
+        X_b: np.ndarray,
+        F_b: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, int]:
         n_a = X_a.shape[0]
         n_b = X_b.shape[0]
         total = n_a + n_b
@@ -169,6 +194,8 @@ class MooCoreKernel(KernelBackend):
         n_obj = F_a.shape[1] if F_a.size else F_b.shape[1]
         dtype = X_a.dtype if n_a > 0 else X_b.dtype
         self._ensure_buffers(total, n_var, n_obj, dtype)
+        assert self._X_buffer is not None
+        assert self._F_buffer is not None
         X_view = self._X_buffer[:total]
         F_view = self._F_buffer[:total]
         if n_a > 0:
@@ -179,26 +206,17 @@ class MooCoreKernel(KernelBackend):
             np.copyto(F_view[n_a:], F_b, casting="unsafe")
         return X_view, F_view, total
 
-    def _ensure_keep_buffer(self, size: int) -> np.ndarray:
+    def _ensure_keep_buffer(self, size: int) -> IntArray:
         if self._keep_buffer is None or self._keep_buffer.shape[0] < size:
             self._keep_buffer = np.empty(size, dtype=np.int64)
         return self._keep_buffer[:size]
 
-    def _ensure_output_buffers(self, size: int, n_var: int, n_obj: int, dtype) -> None:
+    def _ensure_output_buffers(self, size: int, n_var: int, n_obj: int, dtype: Any) -> None:
         dtype = np.dtype(dtype)
-        if (
-            self._X_output is None
-            or self._X_output.shape[0] < size
-            or self._X_output.shape[1] != n_var
-            or self._X_output.dtype != dtype
-        ):
+        if self._X_output is None or self._X_output.shape[0] < size or self._X_output.shape[1] != n_var or self._X_output.dtype != dtype:
             self._X_output = np.empty((size, n_var), dtype=dtype, order="C")
             self._stats["buffer_resizes"] += 1
-        if (
-            self._F_output is None
-            or self._F_output.shape[0] < size
-            or self._F_output.shape[1] != n_obj
-        ):
+        if self._F_output is None or self._F_output.shape[0] < size or self._F_output.shape[1] != n_obj:
             self._F_output = np.empty((size, n_obj), dtype=np.float64, order="C")
 
     @staticmethod
@@ -206,16 +224,11 @@ class MooCoreKernel(KernelBackend):
         if front.shape[0] == 0:
             return np.empty(0, dtype=float)
         fronts = [list(range(front.shape[0]))]
-        return _compute_crowding(front, fronts)
+        return cast(np.ndarray, _compute_crowding(front, fronts))
 
-    def _select_partial_front(
-        self, F_comb: np.ndarray, front_idx: np.ndarray, remaining: int
-    ) -> np.ndarray:
+    def _select_partial_front(self, F_comb: np.ndarray, front_idx: np.ndarray, remaining: int) -> np.ndarray:
         front = F_comb[front_idx]
-        use_crowding = (
-            front.shape[1] > self.CROWDING_DIM_THRESHOLD
-            or front_idx.size > self.HV_SIZE_THRESHOLD
-        )
+        use_crowding = front.shape[1] > self.CROWDING_DIM_THRESHOLD or front_idx.size > self.HV_SIZE_THRESHOLD
         if use_crowding:
             self._stats["crowding_fallbacks"] += 1
             crowded = self._crowding_single(front)
@@ -223,21 +236,24 @@ class MooCoreKernel(KernelBackend):
         else:
             self._stats["hv_calls"] += 1
             ref_point = np.max(front, axis=0) + 1.0
-            hv_contrib = moocore.hv_contributions(front, ref=ref_point)
+            hv_contrib = cast(
+                np.ndarray,
+                moocore.hv_contributions(front, ref=ref_point),
+            )
             order = np.argsort(hv_contrib)[::-1][:remaining]
         return front_idx[order]
 
     def _survive(
         self,
-        X_a,
-        F_a,
-        X_b,
-        F_b,
+        X_a: np.ndarray,
+        F_a: np.ndarray,
+        X_b: np.ndarray,
+        F_b: np.ndarray,
         target_size: int,
         return_indices: bool = False,
     ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
         X_comb, F_comb, total = self._combine(X_a, F_a, X_b, F_b)
-        ranks = moocore.pareto_rank(F_comb)
+        ranks = cast(np.ndarray, moocore.pareto_rank(F_comb))
         order = np.argsort(ranks, kind="mergesort")
         keep = self._ensure_keep_buffer(target_size)
         taken = 0
@@ -260,6 +276,8 @@ class MooCoreKernel(KernelBackend):
         n_var = X_comb.shape[1]
         n_obj = F_comb.shape[1]
         self._ensure_output_buffers(target_size, n_var, n_obj, X_comb.dtype)
+        assert self._X_output is not None
+        assert self._F_output is not None
         np.copyto(self._X_output[:target_size], X_comb[sel])
         np.copyto(self._F_output[:target_size], F_comb[sel])
         if return_indices:
@@ -284,7 +302,7 @@ class MooCoreKernel(KernelBackend):
         population_X: np.ndarray,
         population_F: np.ndarray,
         archive_size: int,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
         if archive_size <= 0:
             return archive_X, archive_F
         if (
@@ -296,8 +314,10 @@ class MooCoreKernel(KernelBackend):
                 self, archive_size, population_X.shape[1], population_F.shape[1], population_X.dtype
             )
             if archive_X is not None and archive_X.size:
+                assert archive_F is not None
                 self._archive_manager.bootstrap(archive_X, archive_F)
         elif archive_X is not None and archive_X.size and self._archive_manager.is_empty():
+            assert archive_F is not None
             self._archive_manager.bootstrap(archive_X, archive_F)
 
         updated_X, updated_F = self._archive_manager.update(population_X, population_F)
@@ -314,7 +334,14 @@ class _IncrementalArchive:
     diversity selector when capacity is exceeded.
     """
 
-    def __init__(self, kernel: MooCoreKernel, capacity: int, n_var: int, n_obj: int, dtype):
+    def __init__(
+        self,
+        kernel: MooCoreKernel,
+        capacity: int,
+        n_var: int,
+        n_obj: int,
+        dtype: Any,
+    ) -> None:
         self.kernel = kernel
         self.capacity = int(capacity)
         self._dtype = np.dtype(dtype)
@@ -333,7 +360,8 @@ class _IncrementalArchive:
             return np.zeros(0, dtype=bool)
         less_equal = candidates <= f
         strictly_less = candidates < f
-        return np.all(less_equal, axis=1) & np.any(strictly_less, axis=1)
+        dominates = np.all(less_equal, axis=1) & np.any(strictly_less, axis=1)
+        return cast(np.ndarray, dominates)
 
     def _trim(self) -> None:
         if self._F.shape[0] <= self.capacity:
@@ -362,7 +390,7 @@ class _IncrementalArchive:
             F_comb = np.vstack((self._F, pop_F))
 
         F_comb = np.asarray(F_comb, dtype=float, order="C")
-        nondom_mask = moocore.is_nondominated(F_comb)
+        nondom_mask = cast(np.ndarray, moocore.is_nondominated(F_comb))
         X_nd = X_comb[nondom_mask]
         F_nd = F_comb[nondom_mask]
 

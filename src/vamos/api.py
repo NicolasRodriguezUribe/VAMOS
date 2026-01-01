@@ -10,6 +10,7 @@ This module exposes the small set of stable entrypoints most users need:
 For lower-level control, import from the layered packages:
 `vamos.foundation.*`, `vamos.engine.*`, `vamos.experiment.*`, `vamos.ux.*`.
 """
+
 from __future__ import annotations
 
 from vamos.experiment.diagnostics.self_check import run_self_check
@@ -49,4 +50,3 @@ __all__ = [
     "reduce_objectives",
     "run_self_check",
 ]
-

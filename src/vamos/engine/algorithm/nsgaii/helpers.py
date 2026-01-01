@@ -2,6 +2,7 @@
 Support functions for the NSGA-II evolutionary loop.
 Separated to keep the main algorithm class focused on orchestration.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -28,9 +29,7 @@ def build_mating_pool(
     if selection_method == "random":
         parent_indices = rng.integers(0, ranks.size, size=parent_count)
     else:
-        parent_indices = kernel.tournament_selection(
-            ranks, crowding, pressure, rng, n_parents=parent_count
-        )
+        parent_indices = kernel.tournament_selection(ranks, crowding, pressure, rng, n_parents=parent_count)
     if parent_indices.size != parent_count:
         raise ValueError("Selection operator returned an unexpected number of parents.")
     return parent_indices.reshape(parent_count // group_size, group_size)

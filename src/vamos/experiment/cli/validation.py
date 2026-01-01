@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import argparse
 
-from typing import Any
-
 from vamos.foundation.problem.resolver import resolve_reference_front_path
 
 from .common import _normalize_operator_args, collect_nsgaii_variation_args
@@ -46,10 +44,7 @@ def finalize_args(
         if not args.hv_reference_front:
             default_front = resolve_reference_front_path(args.problem.lower(), None)
             if default_front is None:
-                parser.error(
-                    "--hv-reference-front is required for the selected problem "
-                    "because no default reference front is available."
-                )
+                parser.error("--hv-reference-front is required for the selected problem because no default reference front is available.")
             args.hv_reference_front = str(default_front)
     elif args.hv_reference_front:
         parser.error("--hv-reference-front requires --hv-threshold to be set.")

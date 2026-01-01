@@ -3,6 +3,7 @@ Public plotting namespace.
 
 Re-exports plotting helpers from vamos.ux.plotting.
 """
+
 from __future__ import annotations
 
 from .ux import plotting as _plotting

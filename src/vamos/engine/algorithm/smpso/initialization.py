@@ -14,13 +14,10 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive
-from vamos.engine.algorithm.components.base import (
-    get_eval_backend,
-    get_live_viz,
-    parse_termination,
-    setup_genealogy,
-    setup_hv_tracker,
-)
+from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
+from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
@@ -32,9 +29,10 @@ from .operators import (
 from .state import SMPSOState
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.base import EvaluationBackend, LiveVisualization
+    from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.protocols import KernelBackend
-    from vamos.foundation.problem.protocol import ProblemProtocol
+    from vamos.foundation.problem.types import ProblemProtocol
+    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = [
@@ -101,9 +99,7 @@ def initialize_smpso_run(
 
     # Initialize population
     initializer_cfg = config.get("initializer")
-    X = initialize_population(
-        pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg
-    )
+    X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
 
     # Evaluate initial population
     eval_init = eval_backend.evaluate(X, problem)

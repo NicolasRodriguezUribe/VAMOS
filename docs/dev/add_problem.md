@@ -1,6 +1,7 @@
 # Adding a new problem
 
 This template shows the minimal pieces required to add a benchmark/problem to VAMOS.
+For the canonical registry workflow, see `src/vamos/foundation/problem/registry/AGENTS.md`.
 
 ## Steps
 
@@ -26,13 +27,14 @@ class MyProblem:
         out["F"] = np.stack([f1, f2], axis=1)
 ```
 
-2) Register it in `src/vamos/foundation/problem/registry/specs.py`:
+2) Register it in the appropriate family module under
+`src/vamos/foundation/problem/registry/families/`:
 
 ```python
-from .specs import ProblemSpec
-from ..my_family import MyProblem
+from ..common import ProblemSpec
+from ...my_family import MyProblem
 
-PROBLEM_SPECS["my_problem"] = ProblemSpec(
+SPECS["my_problem"] = ProblemSpec(
     key="my_problem",
     label="My Problem",
     default_n_var=2,

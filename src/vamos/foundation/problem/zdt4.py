@@ -23,9 +23,7 @@ class ZDT4Problem:
         f1 = X[:, 0]
         if self.n_var > 1:
             x_tail = X[:, 1:]
-            g = 1.0 + 10.0 * (self.n_var - 1) + np.sum(
-                x_tail**2 - 10.0 * np.cos(4.0 * np.pi * x_tail), axis=1
-            )
+            g = 1.0 + 10.0 * (self.n_var - 1) + np.sum(x_tail**2 - 10.0 * np.cos(4.0 * np.pi * x_tail), axis=1)
         else:
             g = np.ones(X.shape[0])
         ratio = np.divide(f1, g, out=np.zeros_like(f1), where=g != 0.0)

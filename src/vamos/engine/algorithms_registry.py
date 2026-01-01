@@ -3,6 +3,7 @@ Convenience access to built-in multi-objective algorithms and their configs.
 
 For advanced customization, drop down to `vamos.engine.algorithm.*`.
 """
+
 from __future__ import annotations
 
 from typing import Tuple

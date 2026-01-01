@@ -122,4 +122,3 @@ def compute_generation_contributions(tracker: GenealogyTracker):
             }
         )
     return pd.DataFrame(rows)
-

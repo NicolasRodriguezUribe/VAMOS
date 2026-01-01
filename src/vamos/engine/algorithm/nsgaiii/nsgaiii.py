@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
+from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     track_offspring_genealogy,
@@ -29,9 +29,10 @@ from .initialization import initialize_nsgaiii_run
 from .state import NSGAIIIState, build_nsgaiii_result
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.base import EvaluationBackend, LiveVisualization
+    from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.protocols import KernelBackend
-    from vamos.foundation.problem.protocol import ProblemProtocol
+    from vamos.foundation.problem.types import ProblemProtocol
+    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = ["NSGAIII"]
@@ -63,7 +64,7 @@ class NSGAIII:
     --------
     Basic usage:
 
-    >>> from vamos import NSGA3Config
+    >>> from vamos.engine.api import NSGAIIIConfig
     >>> config = NSGA3Config().pop_size(92).divisions(12).fixed()
     >>> nsga3 = NSGAIII(config, kernel)
     >>> result = nsga3.run(problem, ("n_eval", 20000), seed=42)
@@ -140,9 +141,7 @@ class NSGAIII:
             X_off = self._generate_offspring(st)
 
             # Evaluate offspring
-            F_off, G_off = self._evaluate_offspring(
-                problem, X_off, eval_backend, st.constraint_mode
-            )
+            F_off, G_off = self._evaluate_offspring(problem, X_off, eval_backend, st.constraint_mode)
             st.n_eval += X_off.shape[0]
 
             # Combine ids for genealogy if tracking
@@ -192,9 +191,7 @@ class NSGAIII:
         n_parents = 2 * (st.pop_size // 2)
 
         ranks, crowd = self.kernel.nsga2_ranking(st.F)
-        parents_idx = self.kernel.tournament_selection(
-            ranks, crowd, st.pressure, st.rng, n_parents=n_parents
-        )
+        parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=n_parents)
 
         X_parents = st.X[parents_idx].reshape(-1, 2, n_var)
         offspring_pairs = st.crossover_fn(X_parents)
@@ -248,10 +245,8 @@ class NSGAIII:
         live_viz : LiveVisualization, optional
             Live visualization callback.
         """
-        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = (
-            initialize_nsgaiii_run(
-                self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
-            )
+        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = initialize_nsgaiii_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
         )
         self._problem = problem
         if self._st is not None:
@@ -317,9 +312,7 @@ class NSGAIII:
             ids_combined = np.concatenate([st.ids, st.pending_offspring_ids])
 
         # NSGA-III survival selection
-        st.X, st.F, st.G, survivor_indices = nsgaiii_survival(
-            st.X, st.F, st.G, X, F, G, st.pop_size, st.ref_dirs_norm, st.rng
-        )
+        st.X, st.F, st.G, survivor_indices = nsgaiii_survival(st.X, st.F, st.G, X, F, G, st.pop_size, st.ref_dirs_norm, st.rng)
 
         # Update ids based on survival selection
         if ids_combined is not None:
@@ -373,10 +366,7 @@ class NSGAIII:
         if self._st is None:
             raise RuntimeError("Algorithm not initialized.")
 
-        hv_reached = (
-            self._st.hv_tracker is not None
-            and self._st.hv_tracker.reached_threshold()
-        )
+        hv_reached = self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold()
 
         if self._live_cb is not None:
             self._live_cb.on_end(final_F=self._st.F)

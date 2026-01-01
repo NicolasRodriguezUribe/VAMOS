@@ -1,13 +1,8 @@
-from vamos import (
-    NSGAIIConfig,
-    ZDT1,
-    available_algorithms,
-    available_problem_names,
-    friedman_test,
-    optimize,
-    plot_pareto_front_2d,
-    weighted_sum_scores,
-)
+from vamos.api import available_problem_names, optimize
+from vamos.engine.algorithms_registry import available_algorithms
+from vamos.engine.api import NSGAIIConfig
+from vamos.foundation.problems_registry import ZDT1
+from vamos.ux.api import friedman_test, plot_pareto_front_2d, weighted_sum_scores
 
 
 def test_public_api_symbols_exist():
@@ -22,4 +17,3 @@ def test_public_api_symbols_exist():
 def test_available_helpers_return_values():
     assert "nsgaii" in available_algorithms()
     assert "zdt1" in available_problem_names()
-

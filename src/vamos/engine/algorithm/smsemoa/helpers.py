@@ -17,7 +17,7 @@ from vamos.foundation.metrics.hypervolume import hypervolume_contributions
 if TYPE_CHECKING:
     from .state import SMSEMOAState
     from vamos.foundation.kernel.protocols import KernelBackend
-    from vamos.foundation.problem.protocol import ProblemProtocol
+    from vamos.foundation.problem.types import ProblemProtocol
 
 
 __all__ = [
@@ -117,11 +117,7 @@ def survival_selection(
     # Combine population with child
     X_comb = np.vstack([st.X, X_child])
     F_comb = np.vstack([st.F, F_child])
-    G_comb = (
-        np.vstack([st.G, G_child])
-        if st.G is not None and G_child is not None
-        else None
-    )
+    G_comb = np.vstack([st.G, G_child]) if st.G is not None and G_child is not None else None
 
     # Combine ids if genealogy is enabled
     ids_comb = None

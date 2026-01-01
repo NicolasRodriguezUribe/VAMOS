@@ -34,7 +34,7 @@ def _expr_to_jax(expr: Expr, x, jnp):
     if op == "div":
         return a / b
     if op == "pow":
-        return a ** b
+        return a**b
     raise ValueError(f"Unsupported op {op}")
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -17,11 +18,10 @@ from .refill import refill_population
 
 from joblib import Parallel, delayed
 
-def _eval_worker(
-    eval_fn: Callable[[Dict[str, Any], EvalContext], float],
-    config: Dict[str, Any],
-    ctx: EvalContext
-) -> float:
+logger = logging.getLogger(__name__)
+
+
+def _eval_worker(eval_fn: Callable[[Dict[str, Any], EvalContext], float], config: Dict[str, Any], ctx: EvalContext) -> float:
     """Helper worker for parallel evaluation."""
     return float(eval_fn(config, ctx))
 
@@ -93,7 +93,7 @@ class RacingTuner:
             state = ConfigState(config_id=config_id_counter, config=cfg, alive=True)
             configs.append(state)
             config_id_counter += 1
-        
+
         self._next_config_id = config_id_counter
         return configs
 
@@ -106,7 +106,7 @@ class RacingTuner:
             if self.scenario.initial_budget_per_run is not None:
                 base_budget = self.scenario.initial_budget_per_run
 
-            budget = int(round(base_budget * (self.scenario.budget_growth_factor ** self._stage_index)))
+            budget = int(round(base_budget * (self.scenario.budget_growth_factor**self._stage_index)))
 
             if self.scenario.max_budget_per_run is not None:
                 budget = min(budget, self.scenario.max_budget_per_run)
@@ -139,7 +139,7 @@ class RacingTuner:
         for inst_idx, seed_idx in schedule:
             if self.scenario.max_stages is not None and self._stage_index >= self.scenario.max_stages:
                 if verbose_flag:
-                    print("[racing] Reached maximum number of stages.")
+                    logger.info("[racing] Reached maximum number of stages.")
                 break
 
             if self._num_alive(configs) == 0:
@@ -148,12 +148,16 @@ class RacingTuner:
             stage_alive = self._num_alive(configs)
             if num_experiments + stage_alive > self.scenario.max_experiments:
                 if verbose_flag:
-                    print("[racing] Experiment budget exhausted before next stage.")
+                    logger.info("[racing] Experiment budget exhausted before next stage.")
                 break
 
             if verbose_flag:
-                print(
-                    f"[racing] Stage {self._stage_index}: instance {inst_idx}, seed idx {seed_idx}, alive={stage_alive}"
+                logger.info(
+                    "[racing] Stage %s: instance %s, seed idx %s, alive=%s",
+                    self._stage_index,
+                    inst_idx,
+                    seed_idx,
+                    stage_alive,
                 )
 
             self._run_stage(configs, inst_idx, seed_idx, eval_fn)
@@ -191,12 +195,12 @@ class RacingTuner:
 
             if reached_budget:
                 if verbose_flag:
-                    print("[racing] Reached maximum experiment budget.")
+                    logger.info("[racing] Reached maximum experiment budget.")
                 break
 
             if reached_min_survivors:
                 if verbose_flag:
-                    print("[racing] Reached minimum survivors, stopping early.")
+                    logger.info("[racing] Reached minimum survivors, stopping early.")
                 break
 
         best_state, history = self._finalize_results(configs)
@@ -204,7 +208,11 @@ class RacingTuner:
             raise RuntimeError("RacingTuner finished without a valid configuration.")
 
         if verbose_flag and best_state.score is not None:
-            print(f"[racing] Best score={best_state.score:.6f} after stage {self._stage_index}.")
+            logger.info(
+                "[racing] Best score=%.6f after stage %s.",
+                best_state.score,
+                self._stage_index,
+            )
 
         return best_state.config, history
 
@@ -229,7 +237,7 @@ class RacingTuner:
             ctx = EvalContext(instance=instance, seed=seed, budget=budget)
             tasks.append((state.config, ctx))
             indices.append(idx)
-        
+
         if not tasks:
             return
 
@@ -240,10 +248,8 @@ class RacingTuner:
                 configs[indices[i]].scores.append(score)
         else:
             # Parallel execution with joblib
-            results = Parallel(n_jobs=self.scenario.n_jobs)(
-                delayed(_eval_worker)(eval_fn, cfg, ctx) for cfg, ctx in tasks
-            )
-            
+            results = Parallel(n_jobs=self.scenario.n_jobs)(delayed(_eval_worker)(eval_fn, cfg, ctx) for cfg, ctx in tasks)
+
             for i, score in enumerate(results):
                 configs[indices[i]].scores.append(score)
 

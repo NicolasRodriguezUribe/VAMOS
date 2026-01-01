@@ -1,9 +1,10 @@
 """
 Bridge from sampled hyperparameters to concrete algorithm configs.
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -142,10 +143,11 @@ def build_smpso_config_space() -> AlgorithmConfigSpace:
     return AlgorithmConfigSpace("smpso", params, [])
 
 
-def config_from_assignment(algorithm_name: str, assignment: Dict[str, Any]):
+def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> Any:
     """
     Build a concrete algorithm config dataclass from a sampled assignment.
     """
+    builder: Any
     algo = algorithm_name.lower()
     if algo == "nsgaii":
         builder = NSGAIIConfig()

@@ -25,10 +25,26 @@ jobs:
           python -m pip install -e ".[dev,backends,benchmarks,notebooks,studio,autodiff,docs]"
       - name: Lint (ruff)
         run: ruff check .
-      - name: Format check (black)
-        run: black --check .
       - name: Type check (mypy)
         run: mypy src/vamos/foundation/core src/vamos/engine/algorithm src/vamos/foundation/kernel
+      - name: Architecture health checks
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pytest -q \
+            tests/architecture/test_layer_boundaries.py \
+            tests/test_monolith_guard.py \
+            tests/test_public_api_guard.py \
+            tests/test_import_time_smoke.py \
+            tests/test_optional_deps_policy.py \
+            tests/test_logging_policy.py \
+            tests/test_no_prints_in_library.py \
+            tests/test_no_deprecation_shims.py \
+            tests/test_agents_health_link.py \
+            tests/architecture/test_ruff_gate.py \
+            tests/architecture/test_ruff_format_gate.py \
+            tests/architecture/test_mypy_error_budget.py \
+            tests/architecture/test_build_smoke.py \
+            tests/architecture/test_py_typed_present.py
       - name: Run tests
         run: pytest -m "not slow" --cov=src/vamos --cov-report=term-missing
       - name: Build docs

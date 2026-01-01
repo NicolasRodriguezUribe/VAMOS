@@ -107,6 +107,4 @@ class KernelBackend(ABC):
         Optional hypervolume implementation. Backends that override this method
         should also list "hypervolume" in quality_indicators().
         """
-        raise NotImplementedError(
-            f"Backend '{self.__class__.__name__}' does not support hypervolume."
-        )
+        raise NotImplementedError(f"Backend '{self.__class__.__name__}' does not support hypervolume.")

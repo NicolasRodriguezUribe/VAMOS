@@ -17,11 +17,11 @@ class Var:
 
 
 class Expr:
-    def __init__(self, op: str, args: Sequence[object]):
+    def __init__(self, op: str, args: Sequence[object]) -> None:
         self.op = op
-        self.args = list(args)
+        self.args: list[object] = list(args)
 
-    def _coerce(self, other):
+    def _coerce(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         if isinstance(other, (int, float, np.ndarray)):
             return Expr("const", [float(other)])
         if isinstance(other, Var):
@@ -30,40 +30,40 @@ class Expr:
             return other
         raise TypeError(f"Unsupported operand type {type(other)}")
 
-    def __add__(self, other):
+    def __add__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         return Expr("add", [self, self._coerce(other)])
 
-    def __radd__(self, other):
+    def __radd__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         return self._coerce(other).__add__(self)
 
-    def __sub__(self, other):
+    def __sub__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         return Expr("sub", [self, self._coerce(other)])
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         return self._coerce(other).__sub__(self)
 
-    def __mul__(self, other):
+    def __mul__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         return Expr("mul", [self, self._coerce(other)])
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         return self._coerce(other).__mul__(self)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         return Expr("div", [self, self._coerce(other)])
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         return self._coerce(other).__div__(self)
 
-    def __pow__(self, power, modulo=None):
+    def __pow__(self, power: Expr | Var | float | int | np.ndarray, modulo: object | None = None) -> Expr:
         return Expr("pow", [self, self._coerce(power)])
 
-    def __le__(self, other):
+    def __le__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:
         return Constraint(lhs=self, rhs=self._coerce(other), sense="<=")
 
-    def __ge__(self, other):
+    def __ge__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:
         return Constraint(lhs=self, rhs=self._coerce(other), sense=">=")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:
         return Constraint(lhs=self, rhs=self._coerce(other), sense="==")  # type: ignore[override]
 
 
@@ -75,14 +75,14 @@ class Constraint:
 
 
 class ConstraintModel:
-    def __init__(self, n_vars: int):
+    def __init__(self, n_vars: int) -> None:
         self.n_vars = n_vars
         self.vars_list: list[Var] = []
         self.constraints: list[Constraint] = []
 
     def vars(self, *names: str) -> tuple[Expr, ...]:
         start = len(self.vars_list)
-        created = []
+        created: list[Expr] = []
         for i, name in enumerate(names):
             idx = start + i
             if idx >= self.n_vars:

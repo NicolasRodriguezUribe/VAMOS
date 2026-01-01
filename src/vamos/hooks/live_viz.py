@@ -8,8 +8,7 @@ import numpy as np
 class LiveVisualization(Protocol):
     """Callback interface for live/streaming visualization."""
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
-        ...
+    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None: ...
 
     def on_generation(
         self,
@@ -17,15 +16,13 @@ class LiveVisualization(Protocol):
         F: Optional[np.ndarray] = None,
         X: Optional[np.ndarray] = None,
         stats: Optional[dict[str, Any]] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def on_end(
         self,
         final_F: Optional[np.ndarray] = None,
         final_stats: Optional[dict[str, Any]] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class NoOpLiveVisualization:

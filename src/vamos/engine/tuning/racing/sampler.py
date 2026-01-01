@@ -187,9 +187,7 @@ class ModelBasedSampler:
         marginal exploitation. If insufficient model data exist, falls back to
         uniform sampling.
         """
-        if rng.random() < self.exploration_prob or (
-            not self._cat_models and not self._real_models and not self._int_models
-        ):
+        if rng.random() < self.exploration_prob or (not self._cat_models and not self._real_models and not self._int_models):
             return self.param_space.sample(rng)
 
         cfg: Dict[str, Any] = {}

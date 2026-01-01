@@ -12,7 +12,8 @@ Requirements:
 """
 from __future__ import annotations
 
-from vamos import optimize, OptimizeConfig, ZDT1
+from vamos.api import OptimizeConfig, optimize
+from vamos.foundation.problems_registry import ZDT1
 from vamos.engine.api import NSGAIIConfig
 
 

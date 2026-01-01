@@ -151,9 +151,7 @@ class MOEADConfig:
         self._cfg["aggregation"] = (method, kwargs)
         return self
 
-    def weight_vectors(
-        self, *, path: Optional[str] = None, divisions: Optional[int] = None
-    ) -> "MOEADConfig":
+    def weight_vectors(self, *, path: Optional[str] = None, divisions: Optional[int] = None) -> "MOEADConfig":
         self._cfg["weight_vectors"] = {"path": path, "divisions": divisions}
         return self
 
