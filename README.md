@@ -138,6 +138,11 @@ If you plan to modify VAMOS (humans or AI assistants):
 - See `CONTRIBUTING.md` for how to add problems, algorithms, or backends.
 - Prefer adding type hints/docstrings on public APIs; keep performance-critical kernels unchanged unless benchmarked.
 
+### Local developer workflow
+
+- Optional: install pre-commit (`pip install pre-commit`) and run `pre-commit install`.
+- Run `pre-commit run --all-files` before pushing changes.
+
 ### Using AI coding assistants
 
 If you use AI coding assistants (such as GitHub Copilot, Code LLMs, or ChatGPT-style tools) when working on VAMOS, please read:
@@ -309,6 +314,10 @@ pip install -e ".[backends]"
 - Core tests: `pytest`
 - Full optional stack (after `pip install -e ".[dev,backends,benchmarks,studio,analytics,autodiff,notebooks]"`): `pytest -m "not slow"`
 - Examples/notebooks: set `VAMOS_RUN_NOTEBOOK_TESTS=1` then `pytest -m "examples"`
+- Architecture health checks (see `docs/dev/architecture_health.md`):
+  - `pytest -q tests/architecture/test_layer_boundaries.py`
+  - `pytest -q tests/test_monolith_guard.py`
+  - `pytest -q`
 
 ## Notes
 

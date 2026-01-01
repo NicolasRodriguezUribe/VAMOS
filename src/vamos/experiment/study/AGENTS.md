@@ -1,5 +1,10 @@
 # Study Module
 
+## Architecture Health (must-read)
+- Follow `docs/dev/architecture_health.md` before adding new modules, APIs, or dependencies.
+- PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
+
+
 This directory contains batch experiment orchestration for VAMOS.
 
 ## Purpose

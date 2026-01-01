@@ -8,6 +8,7 @@ to keep the core algorithm focused on the evolutionary loop.
 
 Operator pool building has been moved to operators.py.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -92,9 +93,7 @@ def setup_population(
     encoding = getattr(problem, "encoding", "continuous")
     n_var = problem.n_var
     xl, xu = resolve_bounds(problem, encoding)
-    X = initialize_population(
-        pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg
-    )
+    X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
     eval_result = eval_backend.evaluate(X, problem)
     F = eval_result.F
     G = eval_result.G if constraint_mode != "none" else None
@@ -209,11 +208,7 @@ def setup_selection(
     """
     if sel_method not in ("tournament", "random"):
         raise ValueError(f"Unsupported selection method '{sel_method}'.")
-    pressure = (
-        int(sel_params.get("pressure", DEFAULT_TOURNAMENT_PRESSURE))
-        if sel_method == "tournament"
-        else DEFAULT_TOURNAMENT_PRESSURE
-    )
+    pressure = int(sel_params.get("pressure", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
     return sel_method, pressure
 
 

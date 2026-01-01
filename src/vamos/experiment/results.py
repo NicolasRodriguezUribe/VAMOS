@@ -11,6 +11,7 @@ Standard layout (relative to `output_root`, defaults to `results/`):
         resolved_config.json
         time.txt
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -38,4 +39,3 @@ def standard_run_dir(
 ) -> Path:
     base = Path(output_root)
     return base / str(problem_label).upper() / algorithm.lower() / engine.lower() / f"seed_{seed}"
-

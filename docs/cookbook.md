@@ -8,9 +8,9 @@ Define a problem by inheriting from `Problem`:
 
 ```python
 import numpy as np
-from vamos import Problem
+from vamos.foundation.problem.types import ProblemProtocol
 
-class MyProblem(Problem):
+class MyProblem(ProblemProtocol):
     def __init__(self):
         super().__init__(n_var=2, n_obj=2, n_constr=0, xl=0.0, xu=1.0)
     
@@ -72,7 +72,7 @@ Run multiple algorithms and plot their fronts together.
 
 ```python
 import matplotlib.pyplot as plt
-from vamos import run_optimization
+from vamos.api import run_optimization
 
 res_nsga2 = run_optimization(problem, "nsgaii")
 res_moead = run_optimization(problem, "moead")

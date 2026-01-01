@@ -54,3 +54,4 @@ nav:
     - Add a Problem: dev/add_problem.md
     - Add an Algorithm: dev/add_algorithm.md
     - Add a Backend: dev/add_backend.md
+    - Architecture Health: dev/architecture_health.md

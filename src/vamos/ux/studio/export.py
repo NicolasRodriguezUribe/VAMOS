@@ -49,4 +49,3 @@ def export_solutions_to_csv(view: DecisionView, indices: List[int], path: Path) 
         for row in rows:
             writer.writerow({k: json.dumps(row.get(k)) if isinstance(row.get(k), (list, dict)) else row.get(k) for k in field_list})
     return path
-

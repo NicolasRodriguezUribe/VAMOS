@@ -10,8 +10,7 @@ from vamos.ux.studio.data import FrontRecord, normalize_objectives
 
 
 class SolutionDecoder(Protocol):
-    def decode(self, x: np.ndarray) -> Dict[str, Any]:
-        ...
+    def decode(self, x: np.ndarray) -> Dict[str, Any]: ...
 
 
 def default_decoder(var: np.ndarray) -> Dict[str, Any]:
@@ -47,7 +46,7 @@ def compute_mcdm_scores(
             if reference_point is not None:
                 scores[method] = reference_point_scores(F, reference_point).scores
         elif method == "topsis":
-             scores[method] = topsis_scores(F, weights).scores
+            scores[method] = topsis_scores(F, weights).scores
         else:
             continue
     return scores
@@ -101,9 +100,7 @@ def feasible_indices(view: DecisionView, max_violation: float = 0.0) -> np.ndarr
     return np.nonzero(violations <= max_violation)[0]
 
 
-def filter_by_objective_ranges(
-    view: DecisionView, ranges: Sequence[tuple[float | None, float | None]]
-) -> np.ndarray:
+def filter_by_objective_ranges(view: DecisionView, ranges: Sequence[tuple[float | None, float | None]]) -> np.ndarray:
     F = view.front.points_F
     if len(ranges) != F.shape[1]:
         raise ValueError("ranges length must equal number of objectives.")

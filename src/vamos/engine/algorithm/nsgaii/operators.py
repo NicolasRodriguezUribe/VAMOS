@@ -5,6 +5,7 @@ Operator pool building and adaptive operator selection for NSGA-II.
 This module handles the construction of variation pipelines and optional
 adaptive operator selection mechanisms.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -71,8 +72,18 @@ def build_operator_pool(
         (operator_pool, operator_selector, indicator_evaluator, aos_controller)
     """
     operator_pool = _build_variation_pipelines(
-        cfg, encoding, cross_method, cross_params, mut_method, mut_params,
-        n_var, xl, xu, variation_workspace, problem, mut_factor,
+        cfg,
+        encoding,
+        cross_method,
+        cross_params,
+        mut_method,
+        mut_params,
+        n_var,
+        xl,
+        xu,
+        variation_workspace,
+        problem,
+        mut_factor,
     )
     op_selector, indicator_eval = _setup_adaptive_selection(cfg, len(operator_pool))
     aos_controller = _setup_aos_controller(cfg, operator_pool)
@@ -129,10 +140,7 @@ def _build_variation_pipelines(
     """
     operator_pool: list[VariationPipeline] = []
     aos_cfg = cfg.get("adaptive_operator_selection") or {}
-    op_configs = (
-        aos_cfg.get("operator_pool")
-        or cfg.get("adaptive_operators", {}).get("operator_pool")
-    )
+    op_configs = aos_cfg.get("operator_pool") or cfg.get("adaptive_operators", {}).get("operator_pool")
 
     if op_configs:
         for entry in op_configs:
@@ -141,8 +149,16 @@ def _build_variation_pipelines(
             m_params = prepare_mutation_params(m_params, encoding, n_var, prob_factor=mut_factor)
             operator_pool.append(
                 _create_variation_pipeline(
-                    encoding, c_method, c_params, m_method, m_params,
-                    xl, xu, variation_workspace, cfg.get("repair"), problem,
+                    encoding,
+                    c_method,
+                    c_params,
+                    m_method,
+                    m_params,
+                    xl,
+                    xu,
+                    variation_workspace,
+                    cfg.get("repair"),
+                    problem,
                 )
             )
 
@@ -150,8 +166,16 @@ def _build_variation_pipelines(
     if not operator_pool:
         operator_pool.append(
             _create_variation_pipeline(
-                encoding, cross_method, cross_params, mut_method, mut_params,
-                xl, xu, variation_workspace, cfg.get("repair"), problem,
+                encoding,
+                cross_method,
+                cross_params,
+                mut_method,
+                mut_params,
+                xl,
+                xu,
+                variation_workspace,
+                cfg.get("repair"),
+                problem,
             )
         )
 

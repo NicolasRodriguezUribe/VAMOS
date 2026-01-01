@@ -182,8 +182,8 @@ class Scenario:
             raise ValueError("max_budget_per_run must be > 0 when provided")
         if self.budget_growth_factor < 1.0:
             raise ValueError("budget_growth_factor must be >= 1.0")
-        if not (0.0 <= self.elite_fraction <= 1.0): # Fixed typo in range check (0, 1] vs [0, 1] ? Original was (0, 1]. Assuming > 0
-             pass # keeping original check below
+        if not (0.0 <= self.elite_fraction <= 1.0):  # Fixed typo in range check (0, 1] vs [0, 1] ? Original was (0, 1]. Assuming > 0
+            pass  # keeping original check below
         if not (0.0 < self.elite_fraction <= 1.0):
             raise ValueError("elite_fraction must be in (0, 1]")
         if not (0.0 <= self.neighbor_fraction <= 1.0):

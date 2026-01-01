@@ -22,9 +22,7 @@ if _USE_NUMBA_VARIATION:
                         X[i, j] = rand_vals[i, j]
 
 
-def random_integer_population(
-    pop_size: int, n_var: int, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator
-) -> np.ndarray:
+def random_integer_population(pop_size: int, n_var: int, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     """
     Generate integer-valued individuals within inclusive [lower, upper].
     """
@@ -48,9 +46,7 @@ def _as_pairs(X_parents: np.ndarray) -> tuple[np.ndarray, int]:
     return X_parents.reshape(Np // 2, 2, D).copy(), D
 
 
-def uniform_integer_crossover(
-    X_parents: np.ndarray, prob: float, rng: np.random.Generator
-) -> np.ndarray:
+def uniform_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.random.Generator) -> np.ndarray:
     """
     Per-gene uniform crossover for integer vectors.
     """
@@ -71,9 +67,7 @@ def uniform_integer_crossover(
     return pairs.reshape(X_parents.shape)
 
 
-def arithmetic_integer_crossover(
-    X_parents: np.ndarray, prob: float, rng: np.random.Generator
-) -> np.ndarray:
+def arithmetic_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.random.Generator) -> np.ndarray:
     """
     Integer arithmetic crossover: average parents and round.
     """
@@ -93,9 +87,7 @@ def arithmetic_integer_crossover(
     return pairs.reshape(X_parents.shape)
 
 
-def random_reset_mutation(
-    X: np.ndarray, prob: float, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator
-) -> None:
+def random_reset_mutation(X: np.ndarray, prob: float, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator) -> None:
     """
     Per-gene random reset to any value within bounds.
     """
@@ -116,9 +108,7 @@ def random_reset_mutation(
         X[mask] = rand_vals[mask]
 
 
-def creep_mutation(
-    X: np.ndarray, prob: float, step: int, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator
-) -> None:
+def creep_mutation(X: np.ndarray, prob: float, step: int, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator) -> None:
     """
     Small integer step mutation (+/- step).
     """

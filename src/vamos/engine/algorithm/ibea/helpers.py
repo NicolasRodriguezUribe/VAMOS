@@ -8,6 +8,7 @@ This module contains the core IBEA selection functions:
 - Environmental selection
 - Constraint handling
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -189,9 +190,7 @@ def environmental_selection(
     return X, F, G, fitness
 
 
-def combine_constraints(
-    G: np.ndarray | None, G_off: np.ndarray | None
-) -> np.ndarray | None:
+def combine_constraints(G: np.ndarray | None, G_off: np.ndarray | None) -> np.ndarray | None:
     """Combine parent and offspring constraints.
 
     Parameters

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 from dataclasses import asdict, dataclass, is_dataclass
 from typing import Any, Literal, Mapping, Tuple, overload
 
@@ -12,24 +13,18 @@ from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.eval.backends import resolve_eval_backend, EvaluationBackend
 
-
-@overload
-def pareto_filter(
-    F: np.ndarray | None, *, return_indices: Literal[False] = False
-) -> np.ndarray | None:
-    ...
+logger = logging.getLogger(__name__)
 
 
 @overload
-def pareto_filter(
-    F: np.ndarray | None, *, return_indices: Literal[True]
-) -> tuple[np.ndarray, np.ndarray]:
-    ...
+def pareto_filter(F: np.ndarray | None, *, return_indices: Literal[False] = False) -> np.ndarray | None: ...
 
 
-def pareto_filter(
-    F: np.ndarray | None, *, return_indices: bool = False
-) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
+@overload
+def pareto_filter(F: np.ndarray | None, *, return_indices: Literal[True]) -> tuple[np.ndarray, np.ndarray]: ...
+
+
+def pareto_filter(F: np.ndarray | None, *, return_indices: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
     """
     Return the non-dominated subset of points (first Pareto front).
 
@@ -102,30 +97,27 @@ class OptimizationResult:
 
     def summary(self) -> None:
         """Print a summary of the optimization result."""
-        print("=== Optimization Result ===")
-        print(f"Solutions: {len(self)}")
-        print(f"Objectives: {self.n_objectives}")
+        logger.info("=== Optimization Result ===")
+        logger.info("Solutions: %s", len(self))
+        logger.info("Objectives: %s", self.n_objectives)
 
         if self.F is not None and len(self.F) > 0:
-            print("\nObjective ranges:")
+            logger.info("Objective ranges:")
             for i in range(self.n_objectives):
-                print(f"  f{i+1}: [{self.F[:, i].min():.6f}, {self.F[:, i].max():.6f}]")
+                logger.info(
+                    "  f%s: [%.6f, %.6f]",
+                    i + 1,
+                    self.F[:, i].min(),
+                    self.F[:, i].max(),
+                )
 
     @overload
-    def front(
-        self, *, return_indices: Literal[False] = False
-    ) -> np.ndarray | None:
-        ...
+    def front(self, *, return_indices: Literal[False] = False) -> np.ndarray | None: ...
 
     @overload
-    def front(
-        self, *, return_indices: Literal[True]
-    ) -> tuple[np.ndarray, np.ndarray]:
-        ...
+    def front(self, *, return_indices: Literal[True]) -> tuple[np.ndarray, np.ndarray]: ...
 
-    def front(
-        self, *, return_indices: bool = False
-    ) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
+    def front(self, *, return_indices: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
         """
         Return non-dominated solutions (first Pareto front).
 
@@ -152,10 +144,7 @@ class OptimizationResult:
         try:
             import matplotlib.pyplot as plt
         except ImportError as exc:
-            raise ImportError(
-                "matplotlib is required for plotting. "
-                "Install with: pip install matplotlib"
-            ) from exc
+            raise ImportError("matplotlib is required for plotting. Install with: pip install matplotlib") from exc
 
         F_plot = self.front()
         if F_plot is None or len(F_plot) == 0:
@@ -177,9 +166,7 @@ class OptimizationResult:
             ax.set_zlabel("f3")
             ax.set_title("Pareto Front")
         else:
-            raise ValueError(
-                f"Cannot plot {n_obj} objectives. Use to_dataframe() for analysis."
-            )
+            raise ValueError(f"Cannot plot {n_obj} objectives. Use to_dataframe() for analysis.")
 
         if show:
             plt.show()
@@ -212,9 +199,7 @@ class OptimizationResult:
             F_norm = (self.F - self.F.min(axis=0)) / (np.ptp(self.F, axis=0) + 1e-12)
             idx = int(np.argmin(F_norm.max(axis=1)))
         else:
-            raise ValueError(
-                f"Unknown method '{method}'. Use: knee, min_f1, min_f2, balanced"
-            )
+            raise ValueError(f"Unknown method '{method}'. Use: knee, min_f1, min_f2, balanced")
 
         return {
             "X": self.X[idx] if self.X is not None else None,
@@ -236,21 +221,18 @@ class OptimizationResult:
         try:
             import pandas as pd
         except ImportError as exc:
-            raise ImportError(
-                "pandas is required for to_dataframe(). "
-                "Install with: pip install pandas"
-            ) from exc
+            raise ImportError("pandas is required for to_dataframe(). Install with: pip install pandas") from exc
 
         if self.F is None or len(self.F) == 0:
             return pd.DataFrame()
 
         n_obj = self.n_objectives
-        data = {f"f{i+1}": self.F[:, i] for i in range(n_obj)}
+        data = {f"f{i + 1}": self.F[:, i] for i in range(n_obj)}
 
         if self.X is not None:
             n_var = self.X.shape[1]
             for i in range(n_var):
-                data[f"x{i+1}"] = self.X[:, i]
+                data[f"x{i + 1}"] = self.X[:, i]
 
         return pd.DataFrame(data)
 
@@ -279,7 +261,8 @@ class OptimizationResult:
         with open(out_dir / "metadata.json", "w") as f:
             json.dump(metadata, f, indent=2)
 
-        print(f"Results saved to {out_dir}")
+        logger.info("Results saved to %s", out_dir)
+
 
 @dataclass
 class OptimizeConfig:
@@ -339,10 +322,7 @@ def optimize(
     cfg_dict = _normalize_cfg(cfg.algorithm_config)
     algorithm_name = (cfg.algorithm or "").lower()
     if not algorithm_name:
-        raise ValueError(
-            "OptimizeConfig.algorithm must be specified. "
-            f"Available algorithms: {_available_algorithms()}"
-        )
+        raise ValueError(f"OptimizeConfig.algorithm must be specified. Available algorithms: {_available_algorithms()}")
     if algorithm_name not in ALGORITHMS:
         raise ValueError(f"Unknown algorithm '{algorithm_name}'. Available: {_available_algorithms()}")
 
@@ -399,7 +379,8 @@ def run_optimization(
         OptimizationResult with Pareto front and helper methods
 
     Examples:
-        from vamos import run_optimization, ZDT1
+        from vamos.api import run_optimization
+        from vamos.foundation.problems_registry import ZDT1
 
         problem = ZDT1(n_var=30)
         result = run_optimization(problem, "nsgaii", max_evaluations=5000)
@@ -431,6 +412,7 @@ def run_optimization(
         algo_config = NSGAIIIConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj, engine=engine)
     else:
         from vamos.exceptions import InvalidAlgorithmError
+
         raise InvalidAlgorithmError(
             algorithm,
             available=["nsgaii", "moead", "spea2", "smsemoa", "nsgaiii"],

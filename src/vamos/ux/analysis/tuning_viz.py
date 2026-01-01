@@ -2,6 +2,7 @@
 Notebook-friendly helpers for inspecting tuning results and fronts.
 Uses only NumPy/Pandas/Matplotlib.
 """
+
 from __future__ import annotations
 
 from typing import Any, Iterable, Sequence

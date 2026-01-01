@@ -5,6 +5,7 @@ Maps algorithm names to builder callables so orchestration code avoids
 hard-coded conditionals. Builders are expected to accept (config_dict, kernel)
 and return an initialized algorithm instance.
 """
+
 from __future__ import annotations
 
 from typing import Callable, Dict, Mapping, Any, Protocol
@@ -29,8 +30,7 @@ class AlgorithmLike(Protocol):
         seed: int,
         eval_backend: Any | None = None,
         live_viz: Any | None = None,
-    ) -> Mapping[str, Any]:
-        ...
+    ) -> Mapping[str, Any]: ...
 
 
 AlgorithmBuilder = Callable[[dict, KernelBackend], AlgorithmLike]

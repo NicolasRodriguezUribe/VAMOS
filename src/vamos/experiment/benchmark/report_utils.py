@@ -1,6 +1,7 @@
 """
 Shared helpers for benchmark reporting (IO, stats, formatting).
 """
+
 from __future__ import annotations
 
 import json
@@ -18,8 +19,7 @@ def import_pandas():
         import pandas as pd  # type: ignore
     except ImportError as exc:  # pragma: no cover - optional dependency
         raise ImportError(
-            "Benchmark reporting requires pandas. Install via 'pip install pandas' or the "
-            "'notebooks'/'examples' extras."
+            "Benchmark reporting requires pandas. Install via 'pip install pandas' or the 'notebooks'/'examples' extras."
         ) from exc
     return pd
 

@@ -4,12 +4,12 @@ VAMOS provides powerful tools for tuning algorithm hyperparameters, from simple 
 
 ## Programmatic Tuning
 
-For full control, you can use the `vamos.tuning` module directly in your scripts.
+For full control, you can use the `vamos.engine.tuning.api` module directly in your scripts.
 
 ### Basic Random Search
 
 ```python
-from vamos.tuning import ParamSpace, RandomSearchTuner, TuningTask
+from vamos.engine.tuning.api import ParamSpace, RandomSearchTuner, TuningTask
 
 # 1. Define the parameter space
 space = ParamSpace()
@@ -38,7 +38,7 @@ best_config = tuner.tune()
 The `RacingTuner` is more efficient for stochastic algorithms. It evaluates configurations on multiple problem instances (or seeds) and discards poor performers early (statistical racing).
 
 ```python
-from vamos.tuning import RacingTuner
+from vamos.engine.tuning.api import RacingTuner
 
 tuner = RacingTuner(
     task,

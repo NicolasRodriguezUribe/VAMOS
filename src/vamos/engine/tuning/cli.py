@@ -1,7 +1,8 @@
 import argparse
-import sys
+import logging
+from typing import Any, Dict
+
 import numpy as np
-from typing import Dict, Any
 
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.core.experiment_config import ExperimentConfig
@@ -36,6 +37,18 @@ BUILDERS = {
     "smsemoa": build_smsemoa_config_space,
 }
 
+logger = logging.getLogger(__name__)
+
+
+def _configure_cli_logging(level: int = logging.INFO) -> None:
+    root = logging.getLogger()
+    if root.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    root.addHandler(handler)
+    root.setLevel(level)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="VAMOS Tuning CLI (vamos-tune)")
@@ -52,14 +65,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def make_evaluator(
-    problem_key: str, 
-    n_var: int, 
-    n_obj: int, 
-    algorithm_name: str, 
-    fixed_pop_size: int,
-    ref_point_str: str | None
-):
+def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str, fixed_pop_size: int, ref_point_str: str | None):
     """
     Creates an evaluation function that runs the algorithm and returns the Hypervolume.
     """
@@ -68,9 +74,13 @@ def make_evaluator(
         try:
             ref_point = np.array([float(x.strip()) for x in ref_point_str.split(",")])
             if len(ref_point) != n_obj:
-                print(f"Warning: Reference point length ({len(ref_point)}) does not match n_obj ({n_obj}).")
+                logger.warning(
+                    "Reference point length (%s) does not match n_obj (%s).",
+                    len(ref_point),
+                    n_obj,
+                )
         except ValueError:
-            print("Error parsing --ref-point. Using default.")
+            logger.warning("Error parsing --ref-point. Using default.")
             ref_point = np.array([1.1] * n_obj)
     else:
         # Default fallback
@@ -82,76 +92,72 @@ def make_evaluator(
             # Merge fixed params if missing in tuning config
             start_config = dict(config_dict)
             if "pop_size" not in start_config:
-                 start_config["pop_size"] = fixed_pop_size
-            
+                start_config["pop_size"] = fixed_pop_size
+
             # Use the unified bridge to build the AlgorithmConfig object
             cfg = config_from_assignment(algorithm_name, start_config)
-            
+
             # 2. Run the algorithm
             selection = make_problem_selection(problem_key, n_var=n_var, n_obj=n_obj)
-            
-            exp_cfg = ExperimentConfig(
-                population_size=cfg.population_size, 
-                max_evaluations=ctx.budget, 
-                seed=ctx.seed
-            )
-            
+
+            exp_cfg = ExperimentConfig(population_size=cfg.population_size, max_evaluations=ctx.budget, seed=ctx.seed)
+
             result = run_single(
-                engine="numpy", # Defaulting to numpy for stability in tuning
+                engine="numpy",  # Defaulting to numpy for stability in tuning
                 algorithm=algorithm_name,
                 problem_selection=selection,
                 experiment_config=exp_cfg,
                 algorithm_config=cfg,
-                verbose=False
+                verbose=False,
             )
-            
+
             # 3. Compute metric (Hypervolume)
             if result.F is None or len(result.F) == 0:
                 return 0.0
-                
+
             hv = compute_hypervolume(result.F, ref_point)
             return hv
-            
+
         except Exception as e:
             # In tuning, we often want to absorb errors and return bad score
             # to keep the racer alive.
-            print(f"Eval failed for {algorithm_name}: {e}")
+            logger.warning("Eval failed for %s: %s", algorithm_name, e)
             return 0.0
 
     return eval_fn
 
 
 def main():
+    _configure_cli_logging()
     args = parse_args()
-    
+
     # 1. Define Parameter Space
     builder = BUILDERS.get(args.algorithm)
     if not builder:
         raise ValueError(f"Unknown algorithm {args.algorithm}")
-    
+
     param_space = builder()
 
-    print(f"Tuning {args.algorithm} on {args.problem} (Budget: {args.tune_budget})")
-    print(f"Parallel Jobs: {args.n_jobs}")
-    
+    logger.info("Tuning %s on %s (Budget: %s)", args.algorithm, args.problem, args.tune_budget)
+    logger.info("Parallel Jobs: %s", args.n_jobs)
+
     # 2. Setup Scenario and Task
     scenario = Scenario(
-        max_experiments=args.tune_budget,
-        initial_budget_per_run=args.budget,
-        use_adaptive_budget=False,
-        verbose=True,
-        n_jobs=args.n_jobs
+        max_experiments=args.tune_budget, initial_budget_per_run=args.budget, use_adaptive_budget=False, verbose=True, n_jobs=args.n_jobs
     )
-    
+
     # Instance definition
     instances = [Instance(name=args.problem, n_var=args.n_var, kwargs={})]
-    
+
     # Seeds
     seeds = [args.seed + i for i in range(100)]
-    
+
     # Aggregator: Mean
-    aggregator = lambda scores: np.mean(scores)
-    
+    def _mean(scores: list[float]) -> float:
+        return float(np.mean(scores))
+
+    aggregator = _mean
+
     task = TuningTask(
         name=f"tune_{args.problem}_{args.algorithm}",
         param_space=param_space,
@@ -159,29 +165,23 @@ def main():
         seeds=seeds,
         aggregator=aggregator,
         budget_per_run=args.budget,
-        maximize=True, # HV is maximization
+        maximize=True,  # HV is maximization
     )
-    
+
     # 3. Run Tuner
     tuner = RacingTuner(task=task, scenario=scenario, seed=args.seed)
-    
-    eval_fn = make_evaluator(
-        args.problem, 
-        args.n_var, 
-        args.n_obj, 
-        args.algorithm, 
-        args.pop_size,
-        args.ref_point
-    )
-    
+
+    eval_fn = make_evaluator(args.problem, args.n_var, args.n_obj, args.algorithm, args.pop_size, args.ref_point)
+
     best_config, history = tuner.run(eval_fn)
-    
-    print("\n--- Tuning Complete ---")
-    print("Best Configuration Found:")
+
+    logger.info("--- Tuning Complete ---")
+    logger.info("Best Configuration Found:")
     for k, v in best_config.items():
-        print(f"  {k}: {v}")
-    
-    print("\nUse these parameters in your scripts or CLI using --config!")
+        logger.info("  %s: %s", k, v)
+
+    logger.info("Use these parameters in your scripts or CLI using --config!")
+
 
 if __name__ == "__main__":
     main()

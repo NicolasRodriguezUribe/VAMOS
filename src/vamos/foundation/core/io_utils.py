@@ -1,6 +1,7 @@
 """
 Persistence helpers for VAMOS run artifacts.
 """
+
 from __future__ import annotations
 
 import json

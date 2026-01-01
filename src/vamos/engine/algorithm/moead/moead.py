@@ -12,6 +12,7 @@ References:
     Q. Zhang and H. Li, "MOEA/D: A Multiobjective Evolutionary Algorithm Based on
     Decomposition," IEEE Trans. Evolutionary Computation, vol. 11, no. 6, 2007.
 """
+
 from __future__ import annotations
 
 import logging
@@ -19,12 +20,12 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
+from vamos.engine.algorithm.components.archives import update_archive
+from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     notify_generation,
     track_offspring_genealogy,
-    update_archive,
 )
 from vamos.foundation.constraints.utils import compute_violation
 
@@ -75,7 +76,7 @@ class MOEAD:
 
     Examples
     --------
-    >>> from vamos import MOEADConfig
+    >>> from vamos.engine.api import MOEADConfig
     >>> config = MOEADConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
     >>> moead = MOEAD(config, kernel)
     >>> result = moead.run(problem, ("n_eval", 10000), seed=42)
@@ -122,9 +123,7 @@ class MOEAD:
         dict[str, Any]
             Result dictionary with X, F, weights, evaluations, and optional archive.
         """
-        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(
-            problem, termination, seed, eval_backend, live_viz
-        )
+        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
         st = self._st
         assert st is not None, "State not initialized"
 

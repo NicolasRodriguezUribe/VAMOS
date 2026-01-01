@@ -35,7 +35,4 @@ def plot_quick_front(
             labels=labels,
             show=show,
         )
-    raise ValueError(
-        f"Cannot plot {n_obj}-objective front directly. "
-        "Use parallel coordinates or reduce objectives first."
-    )
+    raise ValueError(f"Cannot plot {n_obj}-objective front directly. Use parallel coordinates or reduce objectives first.")

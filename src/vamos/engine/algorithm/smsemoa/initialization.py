@@ -14,15 +14,11 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
-    get_eval_backend,
-    get_live_viz,
-    parse_termination,
-    resolve_archive_size,
-    setup_archive,
-    setup_genealogy,
-    setup_hv_tracker,
-)
+from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
+from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from .helpers import (
     evaluate_population_with_constraints,
@@ -34,9 +30,10 @@ from vamos.operators.binary import random_binary_population
 from vamos.operators.integer import random_integer_population
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.base import EvaluationBackend, LiveVisualization
+    from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.protocols import KernelBackend
-    from vamos.foundation.problem.protocol import ProblemProtocol
+    from vamos.foundation.problem.types import ProblemProtocol
+    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = [
@@ -97,9 +94,7 @@ def initialize_smsemoa_run(
     constraint_mode = config.get("constraint_mode", "penalty")
 
     # Build variation operators
-    crossover_fn, mutation_fn = build_variation_operators(
-        config, encoding, n_var, xl, xu, rng
-    )
+    crossover_fn, mutation_fn = build_variation_operators(config, encoding, n_var, xl, xu, rng)
 
     # Selection pressure
     sel_method, sel_params = config["selection"]
@@ -109,9 +104,7 @@ def initialize_smsemoa_run(
     ref_cfg = config.get("reference_point", {}) or {}
 
     # Initialize population
-    X, F, G = initialize_population(
-        encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode
-    )
+    X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
     n_eval = pop_size
 
     # Setup genealogy tracking

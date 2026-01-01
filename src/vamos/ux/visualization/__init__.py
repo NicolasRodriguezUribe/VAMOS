@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 def _require_matplotlib():
     try:
         import matplotlib.pyplot as plt  # type: ignore
+
         return plt
     except ImportError as exc:
         raise ImportError(
-            "Visualization requires matplotlib. Install with `pip install vamos[notebooks]` "
-            "or `pip install matplotlib`."
+            "Visualization requires matplotlib. Install with `pip install vamos[notebooks]` or `pip install matplotlib`."
         ) from exc
 
 

@@ -2,12 +2,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict
 
 from vamos.experiment.benchmark.report import BenchmarkReport, BenchmarkReportConfig
 from vamos.experiment.benchmark.runner import BenchmarkResult, run_benchmark_suite
 from vamos.experiment.benchmark.suites import get_benchmark_suite
+
+logger = logging.getLogger(__name__)
+
+
+def _configure_cli_logging(level: int = logging.INFO) -> None:
+    root = logging.getLogger()
+    if root.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    root.addHandler(handler)
+    root.setLevel(level)
 
 
 def _load_config(path: str | None) -> Dict[str, Any]:
@@ -40,13 +53,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    _configure_cli_logging()
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 
     from vamos.experiment.benchmark.suites import list_benchmark_suites
 
     if args.list or not args.suite:
-        print("Available benchmark suites:", ", ".join(list_benchmark_suites()))
+        logger.info("Available benchmark suites: %s", ", ".join(list_benchmark_suites()))
         return
 
     suite = get_benchmark_suite(args.suite)
@@ -87,13 +101,13 @@ def main(argv: list[str] | None = None) -> None:
     tables = report.generate_latex_tables()
     plots = report.generate_plots()
 
-    print(f"[Benchmark] Suite '{suite.name}' completed.")
-    print(f"[Benchmark] Summary CSV: {result.summary_path}")
-    print(f"[Benchmark] Tidy metrics: {report_output / 'metrics_tidy.csv'}")
+    logger.info("[Benchmark] Suite '%s' completed.", suite.name)
+    logger.info("[Benchmark] Summary CSV: %s", result.summary_path)
+    logger.info("[Benchmark] Tidy metrics: %s", report_output / "metrics_tidy.csv")
     if tables:
-        print(f"[Benchmark] LaTeX tables in {report_output / 'tables'}")
+        logger.info("[Benchmark] LaTeX tables in %s", report_output / "tables")
     if plots:
-        print(f"[Benchmark] Plots in {report_output / 'plots'}")
+        logger.info("[Benchmark] Plots in %s", report_output / "plots")
 
 
 if __name__ == "__main__":

@@ -16,7 +16,9 @@ Operators and kernels
 Problems
 --------
 
-- Add problem classes under `src/vamos/foundation/problem/` and register in `problem/registry.py` with defaults, encoding, and description.
+- Add problem classes under `src/vamos/foundation/problem/`.
+- Register specs in `src/vamos/foundation/problem/registry/families/<family>.py` (not in `specs.py`).
+  See `src/vamos/foundation/problem/registry/AGENTS.md` for the canonical workflow.
 - Ensure `evaluate(X, out)` fills `out["F"]` (and `out["G"]` if constrained) in vectorized form.
 
 Config and CLI

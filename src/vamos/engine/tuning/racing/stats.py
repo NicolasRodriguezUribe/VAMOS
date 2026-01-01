@@ -84,45 +84,19 @@ def _t_critical(alpha: float, df: int) -> float:
     return float(t.ppf(1.0 - alpha / 2.0, df))
 
 
-def select_configs_by_paired_test(
-    scores: np.ndarray,
-    maximize: bool,
-    alpha: float,
-    *,
-    aggregator=None,
-) -> np.ndarray:
-    """
-    Given a score matrix of shape (n_configs, n_blocks), perform paired tests
-    against the current best configuration and decide which configs to keep.
-
-    Returns:
-        keep: boolean array of length n_configs where True means the config is
-        NOT significantly worse than the best configuration.
-    """
-    n_configs, n_blocks = scores.shape
-    keep = np.ones(n_configs, dtype=bool)
-
-    if n_configs <= 1 or n_blocks <= 1:
-        return keep
-
-    if aggregator is None:
-        agg_scores = scores.mean(axis=1)
-    else:
-        agg_scores = np.asarray([float(aggregator(row.tolist())) for row in scores], dtype=float)
-
-    best_idx = int(np.argmax(agg_scores)) if maximize else int(np.argmin(agg_scores))
-    best_scores = scores[best_idx, :]
 def _get_p_value(t_stat: float, df: int) -> float:
     """
     Two-sided p-value for a given t-statistic and degrees of freedom.
     """
     try:
         from scipy.stats import t  # type: ignore
+
         # Survival function (1 - cdf) for the absolute t-stat * 2 for two-sided
         return float(t.sf(abs(t_stat), df) * 2)
     except Exception:
         # Fallback to Normal distribution if scipy is missing
         from math import erf, sqrt
+
         # z-test p-value
         # 1 - erf(z / sqrt(2)) is 2 * (1 - Phi(z)) for one-sided?
         # standard normal cdf Phi(z) = 0.5 * (1 + erf(z/sqrt(2)))
@@ -157,7 +131,7 @@ def select_configs_by_paired_test(
 
     best_idx = int(np.argmax(agg_scores)) if maximize else int(np.argmin(agg_scores))
     best_scores = scores[best_idx, :]
-    
+
     # Store tuples of (p_value, config_index)
     comparisons = []
 
@@ -169,11 +143,11 @@ def select_configs_by_paired_test(
         diffs = best_scores - cfg_scores if maximize else cfg_scores - best_scores
 
         mean_diff = float(diffs.mean())
-        
-        # If mean difference is negative, the candidate is actually *better* (or equal) 
+
+        # If mean difference is negative, the candidate is actually *better* (or equal)
         # than our chosen 'best' in this sample (could happen if aggregator != mean).
         # In that case, we definitely keep it.
-        # Even if aggregator == mean, float precision might cause slight mismatches, 
+        # Even if aggregator == mean, float precision might cause slight mismatches,
         # but generally mean_diff >= 0 if i != best_idx for mean aggregator.
         # If mean_diff <= 0, we treat it as "not significantly worse".
         if mean_diff <= 0:
@@ -197,14 +171,14 @@ def select_configs_by_paired_test(
     # Holm-Bonferroni Step-Down Procedure
     # 1. Sort p-values from smallest to largest
     comparisons.sort(key=lambda x: x[0])
-    
+
     m = len(comparisons)  # Total number of hypotheses (candidates vs best)
-    
+
     for k, (p_val, idx) in enumerate(comparisons):
         # Rank k is 0-based here, so it corresponds to k=1..m in literature
         # Adjusted alpha = alpha / (m - k)
         adj_alpha = alpha / (m - k)
-        
+
         if p_val < adj_alpha:
             # Reject H0 -> Significantly worse -> Eliminate
             keep[idx] = False

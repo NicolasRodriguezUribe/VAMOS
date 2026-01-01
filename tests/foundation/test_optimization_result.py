@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import numpy as np
 import pytest
 
@@ -62,18 +63,18 @@ class TestOptimizationResultBasics:
 class TestOptimizationResultSummary:
     """Test summary() method."""
 
-    def test_summary_runs(self, capsys):
-        """summary() should print without error."""
+    def test_summary_runs(self, caplog):
+        """summary() should log without error."""
         from vamos.experiment.optimize import OptimizationResult
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
 
+        caplog.set_level(logging.INFO, logger="vamos.experiment.optimize")
         result.summary()
-        captured = capsys.readouterr()
-        assert "Optimization Result" in captured.out
-        assert "3" in captured.out  # solutions
-        assert "2" in captured.out  # objectives
+        assert "Optimization Result" in caplog.text
+        assert "Solutions: 3" in caplog.text
+        assert "Objectives: 2" in caplog.text
 
 
 class TestOptimizationResultBest:

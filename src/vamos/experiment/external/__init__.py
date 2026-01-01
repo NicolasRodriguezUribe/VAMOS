@@ -2,7 +2,7 @@
 External baseline adapters and dispatch.
 """
 
-from .base import (
+from .registry import (
     ExternalAlgorithmAdapter,
     EXTERNAL_ALGORITHM_ADAPTERS,
     EXTERNAL_ALGORITHM_RUNNERS,

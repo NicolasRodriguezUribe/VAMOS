@@ -1,6 +1,7 @@
 """
 Hypervolume utilities for orchestration layers.
 """
+
 from __future__ import annotations
 
 from typing import Iterable
@@ -20,15 +21,10 @@ def build_hv_stop_config(hv_threshold: float | None, hv_reference_front: str | N
         return None
     front_path = resolve_reference_front_path(problem_key, hv_reference_front)
     if front_path is None:
-        raise ValueError(
-            f"No reference front found for problem '{problem_key}'. "
-            "Provide --hv-reference-front or add a built-in front."
-        )
+        raise ValueError(f"No reference front found for problem '{problem_key}'. Provide --hv-reference-front or add a built-in front.")
     reference_front = np.loadtxt(front_path, delimiter=",")
     if reference_front.ndim != 2 or reference_front.shape[1] < 2:
-        raise ValueError(
-            f"Reference front '{front_path}' must be a 2D array with at least two objectives."
-        )
+        raise ValueError(f"Reference front '{front_path}' must be a 2D array with at least two objectives.")
     max_vals = reference_front.max(axis=0)
     margin = np.maximum(0.1 * np.maximum(np.abs(max_vals), 1.0), 5.0)
     if problem_key.lower() == "zdt6":
@@ -36,9 +32,7 @@ def build_hv_stop_config(hv_threshold: float | None, hv_reference_front: str | N
     ref_point = max_vals + margin
     hv_full = hypervolume(reference_front, ref_point)
     if hv_full <= 0.0:
-        raise ValueError(
-            f"Reference front '{front_path}' produced a non-positive hypervolume; check the data."
-        )
+        raise ValueError(f"Reference front '{front_path}' produced a non-positive hypervolume; check the data.")
     threshold_fraction = float(hv_threshold)
     return {
         "target_value": hv_full * threshold_fraction,

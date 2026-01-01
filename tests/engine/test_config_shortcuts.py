@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from vamos.engine.api import MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SMSEMOAConfig, SPEA2Config
 
 
 class TestNSGAIIConfigShortcuts:
@@ -9,8 +10,6 @@ class TestNSGAIIConfigShortcuts:
 
     def test_default_creates_valid_config(self):
         """default() should create a valid frozen config."""
-        from vamos import NSGAIIConfig
-
         cfg = NSGAIIConfig.default()
 
         assert cfg.pop_size == 100
@@ -22,23 +21,17 @@ class TestNSGAIIConfigShortcuts:
 
     def test_default_with_custom_pop_size(self):
         """default() should accept custom pop_size."""
-        from vamos import NSGAIIConfig
-
         cfg = NSGAIIConfig.default(pop_size=50)
         assert cfg.pop_size == 50
 
     def test_default_with_n_var(self):
         """default() should set mutation prob based on n_var."""
-        from vamos import NSGAIIConfig
-
         cfg = NSGAIIConfig.default(n_var=30)
         # mutation prob should be ~1/30 = 0.033
         assert abs(cfg.mutation[1]["prob"] - 1 / 30) < 0.001
 
     def test_from_dict_basic(self):
         """from_dict() should create config from dictionary."""
-        from vamos import NSGAIIConfig
-
         cfg = NSGAIIConfig.from_dict(
             {
                 "pop_size": 50,
@@ -56,8 +49,6 @@ class TestNSGAIIConfigShortcuts:
 
     def test_from_dict_with_dict_operators(self):
         """from_dict() should handle dict-style operator configs."""
-        from vamos import NSGAIIConfig
-
         cfg = NSGAIIConfig.from_dict(
             {
                 "pop_size": 100,
@@ -78,8 +69,6 @@ class TestMOEADConfigShortcuts:
 
     def test_default_creates_valid_config(self):
         """default() should create a valid frozen config."""
-        from vamos import MOEADConfig
-
         cfg = MOEADConfig.default()
 
         assert cfg.pop_size == 100
@@ -90,8 +79,6 @@ class TestMOEADConfigShortcuts:
 
     def test_from_dict_basic(self):
         """from_dict() should create config from dictionary."""
-        from vamos import MOEADConfig
-
         cfg = MOEADConfig.from_dict(
             {
                 "pop_size": 50,
@@ -115,8 +102,6 @@ class TestSPEA2ConfigShortcuts:
 
     def test_default_creates_valid_config(self):
         """default() should create a valid frozen config."""
-        from vamos import SPEA2Config
-
         cfg = SPEA2Config.default()
 
         assert cfg.pop_size == 100
@@ -130,8 +115,6 @@ class TestSMSEMOAConfigShortcuts:
 
     def test_default_creates_valid_config(self):
         """default() should create a valid frozen config."""
-        from vamos import SMSEMOAConfig
-
         cfg = SMSEMOAConfig.default()
 
         assert cfg.pop_size == 100
@@ -144,8 +127,6 @@ class TestNSGAIIIConfigShortcuts:
 
     def test_default_creates_valid_config(self):
         """default() should create a valid frozen config."""
-        from vamos import NSGAIIIConfig
-
         cfg = NSGAIIIConfig.default()
 
         assert cfg.pop_size == 92

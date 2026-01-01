@@ -14,6 +14,7 @@ from vamos.engine.algorithm.builders import (
     build_smpso_algorithm,
 )
 
+
 def build_algorithm(
     algorithm_name: str,
     engine_name: str,

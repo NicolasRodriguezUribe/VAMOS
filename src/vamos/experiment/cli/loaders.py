@@ -19,9 +19,7 @@ def load_spec_defaults(config_path: str | None) -> SpecDefaults:
     if config_path:
         spec = load_experiment_spec(config_path)
         problem_overrides = spec.get("problems", {}) or {}
-        experiment_defaults = spec.get("defaults", {}) or {
-            k: v for k, v in spec.items() if k != "problems"
-        }
+        experiment_defaults = spec.get("defaults", {}) or {k: v for k, v in spec.items() if k != "problems"}
         nsgaii_defaults = experiment_defaults.get("nsgaii", {}) or {}
         moead_defaults = experiment_defaults.get("moead", {}) or {}
         smsemoa_defaults = experiment_defaults.get("smsemoa", {}) or {}

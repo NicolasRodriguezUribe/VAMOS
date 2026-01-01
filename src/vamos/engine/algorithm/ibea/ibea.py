@@ -12,13 +12,14 @@ References:
     E. Zitzler and S. Künzli, "Indicator-Based Selection in Multiobjective
     Search," in Proc. PPSN VIII, 2004, pp. 832-842.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
+from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     track_offspring_genealogy,
@@ -60,7 +61,7 @@ class IBEA:
 
     Examples
     --------
-    >>> from vamos import IBEAConfig
+    >>> from vamos.engine.api import IBEAConfig
     >>> config = IBEAConfig().pop_size(100).indicator("epsilon").kappa(0.05).fixed()
     >>> ibea = IBEA(config, kernel)
     >>> result = ibea.run(problem, ("n_eval", 10000), seed=42)
@@ -116,9 +117,7 @@ class IBEA:
         dict
             Result dictionary with X, F, G, archive data.
         """
-        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(
-            problem, termination, seed, eval_backend, live_viz
-        )
+        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
         self._problem = problem
 
         st = self._st
@@ -132,9 +131,7 @@ class IBEA:
             X_off = self._generate_offspring(st)
 
             # Evaluate offspring
-            F_off, G_off = self._evaluate_offspring(
-                problem, X_off, eval_backend, st.constraint_mode
-            )
+            F_off, G_off = self._evaluate_offspring(problem, X_off, eval_backend, st.constraint_mode)
             st.n_eval += X_off.shape[0]
 
             # Environmental selection
@@ -142,9 +139,7 @@ class IBEA:
             F_comb = np.vstack([st.F, F_off])
             G_comb = combine_constraints(st.G, G_off)
 
-            st.X, st.F, st.G, st.fitness = environmental_selection(
-                X_comb, F_comb, G_comb, st.pop_size, st.indicator, st.kappa
-            )
+            st.X, st.F, st.G, st.fitness = environmental_selection(X_comb, F_comb, G_comb, st.pop_size, st.indicator, st.kappa)
 
             st.generation += 1
 
@@ -196,14 +191,12 @@ class IBEA:
         parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
 
         sel_method, _ = self.cfg["selection"]
-        mating_pairs = build_mating_pool(
-            self.kernel, ranks, crowd, st.pressure, st.rng, parent_count, parents_per_group, sel_method
-        )
+        mating_pairs = build_mating_pool(self.kernel, ranks, crowd, st.pressure, st.rng, parent_count, parents_per_group, sel_method)
         parent_idx = mating_pairs.reshape(-1)
         X_parents = st.variation.gather_parents(st.X, parent_idx)
         X_off = st.variation.produce_offspring(X_parents, st.rng)
         if X_off.shape[0] > st.offspring_size:
-            X_off = X_off[:st.offspring_size]
+            X_off = X_off[: st.offspring_size]
 
         # Track genealogy
         track_offspring_genealogy(st, parent_idx, X_off.shape[0], "sbx+pm", "ibea")
@@ -238,8 +231,8 @@ class IBEA:
         live_viz: "LiveVisualization | None" = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop."""
-        self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = (
-            self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = self._initialize_run(
+            problem, termination, seed, eval_backend, live_viz
         )
         self._problem = problem
         if self._st is not None:
@@ -302,9 +295,7 @@ class IBEA:
         F_comb = np.vstack([st.F, F])
         G_comb = combine_constraints(st.G, G)
 
-        st.X, st.F, st.G, st.fitness = environmental_selection(
-            X_comb, F_comb, G_comb, st.pop_size, st.indicator, st.kappa
-        )
+        st.X, st.F, st.G, st.fitness = environmental_selection(X_comb, F_comb, G_comb, st.pop_size, st.indicator, st.kappa)
 
         st.n_eval += X.shape[0]
         st.generation += 1
@@ -337,10 +328,7 @@ class IBEA:
         if self._st is None:
             raise RuntimeError("Algorithm not initialized.")
 
-        hv_reached = (
-            self._st.hv_tracker is not None
-            and self._st.hv_tracker.reached_threshold()
-        )
+        hv_reached = self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold()
 
         if self._live_cb is not None:
             self._live_cb.on_end(final_F=self._st.F)

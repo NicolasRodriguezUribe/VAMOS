@@ -5,21 +5,18 @@ Setup and initialization helpers for IBEA.
 This module contains functions for parsing configuration, initializing populations,
 and setting up archives and trackers.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
-    get_eval_backend,
-    get_live_viz,
-    parse_termination,
-    resolve_archive_size,
-    setup_archive,
-    setup_genealogy,
-    setup_hv_tracker,
-)
+from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
+from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.engine.algorithm.components.population import (
     evaluate_population,
@@ -115,10 +112,7 @@ def initialize_ibea_run(
     kappa = float(cfg.get("kappa", 0.05))
 
     # Compute initial fitness
-    _, _, _, fitness = environmental_selection(
-        X.copy(), F.copy(), G.copy() if G is not None else None,
-        pop_size, indicator, kappa
-    )
+    _, _, _, fitness = environmental_selection(X.copy(), F.copy(), G.copy() if G is not None else None, pop_size, indicator, kappa)
 
     # Setup external archive
     archive_size = resolve_archive_size(cfg) or 0

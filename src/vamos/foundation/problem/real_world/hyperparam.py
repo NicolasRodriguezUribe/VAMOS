@@ -36,10 +36,7 @@ class HyperparameterTuningProblem:
             from sklearn.preprocessing import StandardScaler
             from sklearn.svm import SVC
         except ImportError as exc:  # pragma: no cover - exercised only when sklearn is missing
-            raise ImportError(
-                "HyperparameterTuningProblem requires scikit-learn. "
-                "Install the 'examples' extras to enable it."
-            ) from exc
+            raise ImportError("HyperparameterTuningProblem requires scikit-learn. Install the 'examples' extras to enable it.") from exc
 
         if dataset == "breast_cancer":
             data = datasets.load_breast_cancer()

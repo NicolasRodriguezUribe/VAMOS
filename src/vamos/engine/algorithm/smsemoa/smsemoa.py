@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
+from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     track_offspring_genealogy,
@@ -28,9 +28,10 @@ from .initialization import initialize_smsemoa_run
 from .state import SMSEMOAState, build_smsemoa_result
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.base import EvaluationBackend, LiveVisualization
+    from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.protocols import KernelBackend
-    from vamos.foundation.problem.protocol import ProblemProtocol
+    from vamos.foundation.problem.types import ProblemProtocol
+    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = ["SMSEMOA"]
@@ -63,7 +64,7 @@ class SMSEMOA:
     --------
     Basic usage:
 
-    >>> from vamos import SMSEMOAConfig
+    >>> from vamos.engine.api import SMSEMOAConfig
     >>> config = SMSEMOAConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
     >>> smsemoa = SMSEMOA(config, kernel)
     >>> result = smsemoa.run(problem, ("n_eval", 10000), seed=42)
@@ -140,9 +141,7 @@ class SMSEMOA:
             X_child = self._generate_offspring(st)
 
             # Evaluate using backend or directly
-            F_child, G_child = self._evaluate_offspring(
-                problem, X_child, eval_backend, st.constraint_mode
-            )
+            F_child, G_child = self._evaluate_offspring(problem, X_child, eval_backend, st.constraint_mode)
             st.n_eval += X_child.shape[0]
 
             # Survival selection (one child at a time for SMS-EMOA)
@@ -186,9 +185,7 @@ class SMSEMOA:
         """Generate offspring using tournament selection and variation."""
         # Tournament selection for parent indices
         ranks, crowd = self.kernel.nsga2_ranking(st.F)
-        parents_idx = self.kernel.tournament_selection(
-            ranks, crowd, st.pressure, st.rng, n_parents=2
-        )
+        parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=2)
 
         parents = st.X[parents_idx]
         if parents.ndim == 2:
@@ -251,10 +248,8 @@ class SMSEMOA:
         live_viz : LiveVisualization, optional
             Live visualization callback.
         """
-        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = (
-            initialize_smsemoa_run(
-                self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
-            )
+        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = initialize_smsemoa_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
         )
         self._problem = problem
         if self._st is not None:
@@ -367,10 +362,7 @@ class SMSEMOA:
         if self._st is None:
             raise RuntimeError("Algorithm not initialized.")
 
-        hv_reached = (
-            self._st.hv_tracker is not None
-            and self._st.hv_tracker.reached_threshold()
-        )
+        hv_reached = self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold()
 
         if self._live_cb is not None:
             self._live_cb.on_end(final_F=self._st.F)

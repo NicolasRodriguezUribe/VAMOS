@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import os
 from datetime import datetime
 
 import numpy as np
 
 from vamos.experiment.optimize import pareto_filter
+
+logger = logging.getLogger(__name__)
 
 
 def _non_dominated_mask(points: np.ndarray) -> np.ndarray:
@@ -45,12 +48,15 @@ def plot_pareto_front(results, selection, *, output_root: str, title: str):
         return None
     n_obj = plot_entries[0][1].shape[1]
     if n_obj < 2:
-        print("Pareto visualization requires at least two objectives; skipping plot.")
+        logger.warning("Pareto visualization requires at least two objectives; skipping plot.")
         return None
     try:
         import matplotlib.pyplot as plt
     except ImportError as exc:
-        print(f"matplotlib is required for plotting the Pareto front (skipping plot: {exc}).")
+        logger.warning(
+            "matplotlib is required for plotting the Pareto front (skipping plot: %s).",
+            exc,
+        )
         return None
 
     dims = 3 if n_obj >= 3 else 2
@@ -68,9 +74,7 @@ def plot_pareto_front(results, selection, *, output_root: str, title: str):
         coords = values[:, :dims]
         color = cmap(idx)
         if dims == 3:
-            ax.scatter(
-                coords[:, 0], coords[:, 1], coords[:, 2], label=label, s=22, alpha=0.7, color=color
-            )
+            ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2], label=label, s=22, alpha=0.7, color=color)
         else:
             ax.scatter(coords[:, 0], coords[:, 1], label=label, s=35, alpha=0.8, color=color)
 
@@ -112,5 +116,5 @@ def plot_pareto_front(results, selection, *, output_root: str, title: str):
     plot_path = os.path.join(_problem_output_dir(selection, output_root), filename)
     fig.savefig(plot_path, dpi=200)
     plt.close(fig)
-    print(f"Pareto front plot saved to: {plot_path}")
+    logger.info("Pareto front plot saved to: %s", plot_path)
     return plot_path

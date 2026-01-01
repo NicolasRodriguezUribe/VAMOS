@@ -141,9 +141,7 @@ class ObjectiveReducer:
             return i
         return max(i, j)
 
-    def _truncate_to_target_dim(
-        self, F: np.ndarray, remaining: List[int], keep_mand: set[int], target_dim: int
-    ) -> List[int]:
+    def _truncate_to_target_dim(self, F: np.ndarray, remaining: List[int], keep_mand: set[int], target_dim: int) -> List[int]:
         if target_dim >= len(remaining):
             return remaining
         mandatory = [idx for idx in remaining if idx in keep_mand]
@@ -205,9 +203,7 @@ class ObjectiveReducer:
             selected.append(best_idx)
         return sorted(selected)
 
-    def _min_angle_to_set(
-        self, cand: int, selected: List[int], normalized_vectors: dict[int, np.ndarray]
-    ) -> float:
+    def _min_angle_to_set(self, cand: int, selected: List[int], normalized_vectors: dict[int, np.ndarray]) -> float:
         angles = []
         v_cand = normalized_vectors[cand]
         for sel in selected:

@@ -18,7 +18,7 @@ class HVConvergenceConfig:
     epsilon_mode: EpsilonMode = "rel"
     statistic: Statistic = "median"
     min_points: int = 25
-    confidence: Optional[float] = None   # e.g., 0.95
+    confidence: Optional[float] = None  # e.g., 0.95
     bootstrap_samples: int = 300
     rng_seed: int = 0
 
@@ -38,6 +38,7 @@ class HVConvergenceMonitor:
     Algorithm-agnostic monitor: you feed (evals, hv) samples; it returns stop decisions.
     Logging is done by caller using `trace_rows()`.
     """
+
     def __init__(self, cfg: HVConvergenceConfig):
         if cfg.every_k <= 0:
             raise ValueError("every_k must be > 0")
@@ -133,11 +134,13 @@ class HVConvergenceMonitor:
             delta = None
             if i >= self.cfg.window:
                 delta = self._hv[i] - self._hv[i - self.cfg.window]
-            rows.append({
-                "evals": self._evals[i],
-                "hv": self._hv[i],
-                "hv_delta": delta,
-            })
+            rows.append(
+                {
+                    "evals": self._evals[i],
+                    "hv": self._hv[i],
+                    "hv_delta": delta,
+                }
+            )
         return rows
 
     # ---- internals ----

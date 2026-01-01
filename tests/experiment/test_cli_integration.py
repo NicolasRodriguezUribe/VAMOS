@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 
-from vamos.experiment import runner as experiment_runner
+from vamos.ux.visualization import plotting
 
 
 def test_cli_runs_and_writes_artifacts(monkeypatch, tmp_path):
@@ -14,7 +14,7 @@ def test_cli_runs_and_writes_artifacts(monkeypatch, tmp_path):
     monkeypatch.setenv("VAMOS_OUTPUT_ROOT", str(output_root))
     monkeypatch.setenv("MPLBACKEND", "Agg")
     # Skip plotting in this fast-path integration check.
-    monkeypatch.setattr(experiment_runner.plotting, "plot_pareto_front", lambda *args, **kwargs: None)
+    monkeypatch.setattr(plotting, "plot_pareto_front", lambda *args, **kwargs: None)
 
     argv = [
         "prog",

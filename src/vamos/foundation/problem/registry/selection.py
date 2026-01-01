@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .specs import ProblemSpec, PROBLEM_SPECS
+from typing import cast
+
+from ..types import ProblemProtocol
 
 
 @dataclass(frozen=True)
@@ -14,9 +17,9 @@ class ProblemSelection:
     n_var: int
     n_obj: int
 
-    def instantiate(self):
+    def instantiate(self) -> ProblemProtocol:
         """Create a new problem instance with the resolved dimensions."""
-        return self.spec.factory(self.n_var, self.n_obj)
+        return cast(ProblemProtocol, self.spec.factory(self.n_var, self.n_obj))
 
 
 def make_problem_selection(key: str, *, n_var: Optional[int] = None, n_obj: Optional[int] = None) -> ProblemSelection:

@@ -11,8 +11,7 @@ import numpy as np
 class LiveVisualization(Protocol):
     """Callback interface for live/streaming visualization."""
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
-        ...
+    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None: ...
 
     def on_generation(
         self,
@@ -20,15 +19,13 @@ class LiveVisualization(Protocol):
         F: Optional[np.ndarray] = None,
         X: Optional[np.ndarray] = None,
         stats: Optional[dict[str, Any]] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def on_end(
         self,
         final_F: Optional[np.ndarray] = None,
         final_stats: Optional[dict[str, Any]] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class NoOpLiveVisualization:
@@ -57,6 +54,7 @@ class NoOpLiveVisualization:
 def _safe_matplotlib(interactive_backend: str | None = None):
     try:
         import matplotlib
+
         if interactive_backend:
             try:
                 matplotlib.use(interactive_backend, force=True)
@@ -66,6 +64,7 @@ def _safe_matplotlib(interactive_backend: str | None = None):
         if "agg" in backend and interactive_backend is None:
             pass
         import matplotlib.pyplot as plt
+
         return plt
     except Exception:
         return None
@@ -88,12 +87,15 @@ class LiveParetoPlot:
     last_update: int = field(default=-1, init=False)
     dims: int = field(default=2, init=False)
     plt: Any = field(default=None, init=False)
+    _interactive: bool = field(default=False, init=False)
 
     def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
         self.plt = _safe_matplotlib(self.interactive_backend)
         if self.plt is None:
             return
         self.plt.ion()
+        backend_name = str(self.plt.get_backend()).lower()
+        self._interactive = not any(token in backend_name for token in ("agg", "inline", "pdf", "svg", "ps", "cairo"))
         if problem is not None and getattr(problem, "n_obj", 2) >= 3:
             self.dims = 3
         self.figure = self.plt.figure(figsize=(6, 5))
@@ -107,6 +109,19 @@ class LiveParetoPlot:
         self.axes.set_title(self.title)
         self.figure.tight_layout()
         self.figure.canvas.draw_idle()
+
+    def _tick(self) -> None:
+        if self.figure is None:
+            return
+        self.figure.canvas.draw_idle()
+        flush = getattr(self.figure.canvas, "flush_events", None)
+        if callable(flush):
+            try:
+                flush()
+            except Exception:
+                pass
+        if self._interactive:
+            self.plt.pause(0.01)
 
     def _maybe_subsample(self, F: np.ndarray) -> np.ndarray:
         if F.shape[0] <= self.max_points:
@@ -145,8 +160,7 @@ class LiveParetoPlot:
                 self.scatter.set_data(coords[:, 0], coords[:, 1])
         if stats and "hv" in stats:
             self.axes.set_title(f"{self.title} | HV={stats['hv']:.4f}")
-        self.figure.canvas.draw_idle()
-        self.plt.pause(0.01)
+        self._tick()
 
     def on_end(
         self,
@@ -178,16 +192,32 @@ class LiveTuningPlot:
     figure: Any = field(default=None, init=False)
     axes: Any = field(default=None, init=False)
     last_update: int = field(default=-1, init=False)
+    _interactive: bool = field(default=False, init=False)
 
     def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
         self.plt = _safe_matplotlib(self.interactive_backend)
         if self.plt is None:
             return
         self.plt.ion()
+        backend_name = str(self.plt.get_backend()).lower()
+        self._interactive = not any(token in backend_name for token in ("agg", "inline", "pdf", "svg", "ps", "cairo"))
         self.figure, self.axes = self.plt.subplots(figsize=(6, 4))
         self.axes.set_xlabel(self.x_param)
         self.axes.set_ylabel(self.y_metric)
         self.figure.tight_layout()
+
+    def _tick(self) -> None:
+        if self.figure is None:
+            return
+        self.figure.canvas.draw_idle()
+        flush = getattr(self.figure.canvas, "flush_events", None)
+        if callable(flush):
+            try:
+                flush()
+            except Exception:
+                pass
+        if self._interactive:
+            self.plt.pause(0.01)
 
     def on_generation(
         self,
@@ -210,8 +240,7 @@ class LiveTuningPlot:
         self.axes.set_xlabel(self.x_param)
         self.axes.set_ylabel(self.y_metric)
         self.axes.scatter(x_vals, y_vals, c=colors if colors is not None else "tab:blue", s=25, alpha=0.8)
-        self.figure.canvas.draw_idle()
-        self.plt.pause(0.01)
+        self._tick()
 
     def on_end(
         self,

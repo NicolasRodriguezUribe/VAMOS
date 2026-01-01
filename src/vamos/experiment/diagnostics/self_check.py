@@ -4,14 +4,28 @@ Lightweight self-check to verify a VAMOS installation.
 Runs tiny NSGA-II jobs on ZDT1 across available backends and reports results.
 Intended for quick sanity checks; not a benchmark.
 """
+
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import List
 
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.experiment.runner import run_single
+
+logger = logging.getLogger(__name__)
+
+
+def _configure_cli_logging(level: int = logging.INFO) -> None:
+    root = logging.getLogger()
+    if root.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    root.addHandler(handler)
+    root.setLevel(level)
 
 
 @dataclass
@@ -44,7 +58,7 @@ def run_self_check(verbose: bool = False) -> List[CheckResult]:
         if verbose:
             status = result.status.upper()
             msg = result.detail or ""
-            print(f"[self-check] {result.name}: {status} {msg}")
+            logger.info("[self-check] %s: %s %s", result.name, status, msg)
 
     # Binary and mixed smoke on NumPy only
     for name, label in (("bin_knapsack", "binary"), ("mixed_design", "mixed")):
@@ -65,14 +79,15 @@ def run_self_check(verbose: bool = False) -> List[CheckResult]:
 
 def main():
     """Entry-point for `python -m vamos.experiment.diagnostics.self_check`."""
+    _configure_cli_logging()
     checks = run_self_check(verbose=True)
     failed = [c for c in checks if c.status == "failed"]
     skipped = [c for c in checks if c.status == "skipped"]
     if failed:
         raise SystemExit(1)
     if skipped:
-        print(f"[self-check] Skipped: {', '.join(c.name for c in skipped)}")
-    print("[self-check] Completed.")
+        logger.info("[self-check] Skipped: %s", ", ".join(c.name for c in skipped))
+    logger.info("[self-check] Completed.")
 
 
 if __name__ == "__main__":

@@ -31,11 +31,9 @@ class GenealogyTracker(Protocol):
         operator_name: str | None,
         algorithm_name: str | None,
         fitness: Optional[np.ndarray] = None,
-    ) -> IndividualID:
-        ...
+    ) -> IndividualID: ...
 
-    def mark_final_front(self, ids: List[IndividualID]) -> None:
-        ...
+    def mark_final_front(self, ids: List[IndividualID]) -> None: ...
 
 
 @dataclass

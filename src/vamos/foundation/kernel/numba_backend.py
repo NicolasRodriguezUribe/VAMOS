@@ -4,10 +4,7 @@ import numpy as np
 try:
     from numba import njit
 except ImportError as exc:  # pragma: no cover - informative error when numba missing
-    raise ImportError(
-        "NumbaKernel requires the 'numba' package. "
-        "Install it or switch to NumPyKernel."
-    ) from exc
+    raise ImportError("NumbaKernel requires the 'numba' package. Install it or switch to NumPyKernel.") from exc
 
 from typing import Iterable
 
@@ -200,9 +197,7 @@ class NumbaKernel(KernelBackend):
         rng: np.random.Generator,
         n_parents: int,
     ) -> np.ndarray:
-        return self._numpy_ops.tournament_selection(
-            ranks, crowding, pressure, rng, n_parents
-        )
+        return self._numpy_ops.tournament_selection(ranks, crowding, pressure, rng, n_parents)
 
     def sbx_crossover(
         self,

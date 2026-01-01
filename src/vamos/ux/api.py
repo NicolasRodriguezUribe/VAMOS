@@ -1,6 +1,7 @@
 """
 UX/analysis utilities; not required for core optimization runtime.
 """
+
 from __future__ import annotations
 
 from vamos.ux.analysis.core_objective_reduction import (

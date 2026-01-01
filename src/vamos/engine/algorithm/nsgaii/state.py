@@ -5,6 +5,7 @@ State container and result building for NSGA-II.
 This module provides the NSGAIIState dataclass and result-building functions,
 keeping the main algorithm file focused on the evolutionary loop.
 """
+
 from __future__ import annotations
 
 import logging
@@ -123,11 +124,7 @@ def build_result(
     """
     # Filter to non-dominated solutions only (if requested)
     mode = getattr(state, "result_mode", "population")
-    should_filter = (
-        kernel is not None
-        and mode is not None
-        and mode != "population"
-    )
+    should_filter = kernel is not None and mode is not None and mode != "population"
 
     if should_filter:
         try:
@@ -336,8 +333,6 @@ def update_archives(state: NSGAIIState, kernel: Any) -> None:
 
     if state.archive_size:
         if state.archive_via_kernel:
-            state.archive_X, state.archive_F = kernel.update_archive(
-                state.archive_X, state.archive_F, state.X, state.F, state.archive_size
-            )
+            state.archive_X, state.archive_F = kernel.update_archive(state.archive_X, state.archive_F, state.X, state.F, state.archive_size)
         elif state.archive_manager is not None:
             state.archive_X, state.archive_F = state.archive_manager.update(state.X, state.F)

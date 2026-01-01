@@ -1,6 +1,7 @@
 """
 CSV writers for AOS trace and summary data.
 """
+
 from __future__ import annotations
 
 import csv

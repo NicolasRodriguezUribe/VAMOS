@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -14,8 +15,21 @@ from vamos.experiment.cli import parse_args
 from vamos.experiment.runner import run_experiments_from_args
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
+logger = logging.getLogger(__name__)
+
+
+def _configure_cli_logging(level: int = logging.INFO) -> None:
+    root = logging.getLogger()
+    if root.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    root.addHandler(handler)
+    root.setLevel(level)
+
 
 def main():
+    _configure_cli_logging()
     default_config = ExperimentConfig()
     args = parse_args(default_config)
     config = ExperimentConfig(

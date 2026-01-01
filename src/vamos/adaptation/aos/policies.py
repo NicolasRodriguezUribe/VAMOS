@@ -1,6 +1,7 @@
 """
 Bandit policies for adaptive operator selection.
 """
+
 from __future__ import annotations
 
 import math

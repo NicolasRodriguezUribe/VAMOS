@@ -5,6 +5,7 @@ Operator building for SPEA2.
 This module handles the construction of variation operators (crossover and mutation)
 for different encodings.
 """
+
 from __future__ import annotations
 
 from typing import Any, Callable

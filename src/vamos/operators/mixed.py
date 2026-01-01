@@ -29,9 +29,7 @@ def mixed_initialize(pop_size: int, n_var: int, spec: dict, rng: np.random.Gener
     return X
 
 
-def mixed_crossover(
-    X_parents: np.ndarray, prob: float, spec: dict, rng: np.random.Generator
-) -> np.ndarray:
+def mixed_crossover(X_parents: np.ndarray, prob: float, spec: dict, rng: np.random.Generator) -> np.ndarray:
     """
     Simple mixed crossover: arithmetic mean for real vars, uniform swap for int/cat.
     """
@@ -76,9 +74,7 @@ def mixed_crossover(
     return pairs.reshape(Np, D)
 
 
-def mixed_mutation(
-    X: np.ndarray, prob: float, spec: dict, rng: np.random.Generator
-) -> None:
+def mixed_mutation(X: np.ndarray, prob: float, spec: dict, rng: np.random.Generator) -> None:
     """
     Mixed mutation: Gaussian perturb for real, random reset for int/cat.
     """

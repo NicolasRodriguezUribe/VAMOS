@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import csv
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import copy2
-from typing import Iterable, List, Sequence, Any, Dict
+from typing import Callable, Iterable, List, Sequence, Any, Dict
 
 import numpy as np
 
@@ -12,9 +13,10 @@ from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.problem.registry import ProblemSelection, make_problem_selection
-from vamos.experiment.runner import run_single
 from vamos.foundation.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
 from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -44,9 +46,7 @@ class StudyResult:
 
     def to_row(self) -> dict:
         hv_ref = self.metrics.get("hv_reference")
-        hv_ref_str = (
-            " ".join(f"{val:.6f}" for val in hv_ref) if isinstance(hv_ref, np.ndarray) else ""
-        )
+        hv_ref_str = " ".join(f"{val:.6f}" for val in hv_ref) if isinstance(hv_ref, np.ndarray) else ""
         row = {
             "problem": self.selection.spec.key,
             "problem_label": self.selection.spec.label,
@@ -93,24 +93,30 @@ class StudyRunner:
         tasks: Sequence[StudyTask],
         *,
         export_csv_path: str | Path | None = None,
+        run_single_fn: Callable[..., dict] | None = None,
     ) -> List[StudyResult]:
         if not tasks:
             return []
+        if run_single_fn is None:
+            raise ValueError("run_single_fn is required to execute StudyRunner tasks.")
         results: List[StudyResult] = []
         for idx, task in enumerate(tasks, start=1):
             if self.verbose:
-                print(
-                    f"[Study] ({idx}/{len(tasks)}) "
-                    f"{task.algorithm} | {task.engine} | {task.problem} | seed={task.seed}"
+                logger.info(
+                    "[Study] (%s/%s) %s | %s | %s | seed=%s",
+                    idx,
+                    len(tasks),
+                    task.algorithm,
+                    task.engine,
+                    task.problem,
+                    task.seed,
                 )
-            selection = make_problem_selection(
-                task.problem, n_var=task.n_var, n_obj=task.n_obj
-            )
+            selection = make_problem_selection(task.problem, n_var=task.n_var, n_obj=task.n_obj)
             cfg_kwargs = {"seed": task.seed}
             if task.config_overrides:
                 cfg_kwargs.update(task.config_overrides)
             task_config = ExperimentConfig(**cfg_kwargs)
-            metrics = run_single(
+            metrics = run_single_fn(
                 task.engine,
                 task.algorithm,
                 selection,
@@ -163,7 +169,7 @@ class StudyRunner:
             return
         if not has_moocore():
             if self.verbose:
-                print("[Study] MooCore not available; skipping indicator computation.")
+                logger.info("[Study] MooCore not available; skipping indicator computation.")
             return
         fronts = [res.metrics["F"] for res in results]
         ref_front = self._nondominated_union(fronts)
@@ -183,7 +189,7 @@ class StudyRunner:
                         vals[name] = indicator.compute(res.metrics["F"]).value
                 except Exception as exc:
                     if self.verbose:
-                        print(f"[Study] indicator '{name}' failed: {exc}")
+                        logger.warning("[Study] indicator '%s' failed: %s", name, exc)
                     vals[name] = None
             res.metrics["indicator_values"] = vals
 
@@ -203,7 +209,7 @@ class StudyRunner:
             writer.writeheader()
             writer.writerows(rows)
         if self.verbose:
-            print(f"[Study] CSV exported to {path}")
+            logger.info("[Study] CSV exported to %s", path)
         return path
 
     def _mirror_artifacts(self, metrics: dict) -> None:

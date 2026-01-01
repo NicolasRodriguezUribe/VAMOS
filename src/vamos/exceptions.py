@@ -3,6 +3,7 @@ Public exceptions namespace.
 
 Re-exports the canonical exception classes from vamos.foundation.exceptions.
 """
+
 from __future__ import annotations
 
 from .foundation import exceptions as _exceptions

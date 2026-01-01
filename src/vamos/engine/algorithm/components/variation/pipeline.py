@@ -1,7 +1,10 @@
 """
 VariationPipeline class leveraging shared registries/helpers.
 """
+
 from __future__ import annotations
+
+from typing import Any, cast
 
 import numpy as np
 
@@ -48,15 +51,15 @@ class VariationPipeline:
         *,
         encoding: str,
         cross_method: str,
-        cross_params: dict,
+        cross_params: dict[str, Any],
         mut_method: str,
-        mut_params: dict,
+        mut_params: dict[str, Any],
         xl: np.ndarray,
         xu: np.ndarray,
         workspace: VariationWorkspace | None,
-        repair_cfg=None,
-        problem=None,
-    ):
+        repair_cfg: tuple[str, dict[str, Any]] | None = None,
+        problem: Any | None = None,
+    ) -> None:
         self.encoding = encoding
         self.cross_method = cross_method
         self.cross_params = cross_params
@@ -70,13 +73,13 @@ class VariationPipeline:
         self.parents_per_group = self._parents_required(cross_method)
         self.children_per_group = self.parents_per_group
         validate_operator_support(encoding, cross_method, mut_method)
-        self.crossover_op = self._build_crossover_operator()
-        self.mutation_op = self._build_mutation_operator()
-        self.repair_op = self._build_repair_operator()
+        self.crossover_op: Any = self._build_crossover_operator()
+        self.mutation_op: Any = self._build_mutation_operator()
+        self.repair_op: Any = self._build_repair_operator()
 
     def gather_parents(self, population: np.ndarray, parent_idx: np.ndarray) -> np.ndarray:
         if self.workspace is None:
-            return population[parent_idx]
+            return cast(np.ndarray, population[parent_idx])
         shape = (parent_idx.size, population.shape[1])
         buffer = self.workspace.request("parent_buffer", shape, population.dtype)
         np.take(population, parent_idx, axis=0, out=buffer)
@@ -90,25 +93,25 @@ class VariationPipeline:
         group_size = self.parents_per_group
         if encoding == "permutation":
             cross_prob = float(cross_params.get("prob", 1.0))
-            cross_fn = PERM_CROSSOVER[self.cross_method]
-            offspring = cross_fn(parents, cross_prob, rng)
-            mut_fn = PERM_MUTATION[self.mut_method]
+            cross_fn = cast(Any, PERM_CROSSOVER[self.cross_method])
+            offspring = cast(np.ndarray, cross_fn(parents, cross_prob, rng))
+            mut_fn = cast(Any, PERM_MUTATION[self.mut_method])
             mut_fn(offspring, float(mut_params.get("prob", 0.0)), rng)
             return offspring
 
         if encoding == "binary":
             cross_prob = float(cross_params.get("prob", 1.0))
-            cross_fn = BINARY_CROSSOVER[self.cross_method]
-            offspring = cross_fn(parents, cross_prob, rng)
-            mut_fn = BINARY_MUTATION[self.mut_method]
+            cross_fn = cast(Any, BINARY_CROSSOVER[self.cross_method])
+            offspring = cast(np.ndarray, cross_fn(parents, cross_prob, rng))
+            mut_fn = cast(Any, BINARY_MUTATION[self.mut_method])
             mut_fn(offspring, float(mut_params.get("prob", 0.0)), rng)
             return offspring
 
         if encoding == "integer":
             cross_prob = float(cross_params.get("prob", 1.0))
-            cross_fn = INT_CROSSOVER[self.cross_method]
-            offspring = cross_fn(parents, cross_prob, rng)
-            mut_fn = INT_MUTATION[self.mut_method]
+            cross_fn = cast(Any, INT_CROSSOVER[self.cross_method])
+            offspring = cast(np.ndarray, cross_fn(parents, cross_prob, rng))
+            mut_fn = cast(Any, INT_MUTATION[self.mut_method])
             mut_prob = float(mut_params.get("prob", 0.0))
             if mut_fn is creep_mutation:
                 step = int(mut_params.get("step", 1))
@@ -122,9 +125,9 @@ class VariationPipeline:
             if spec is None:
                 raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
             cross_prob = float(cross_params.get("prob", 1.0))
-            cross_fn = MIXED_CROSSOVER[self.cross_method]
-            offspring = cross_fn(parents, cross_prob, spec, rng)
-            mut_fn = MIXED_MUTATION[self.mut_method]
+            cross_fn = cast(Any, MIXED_CROSSOVER[self.cross_method])
+            offspring = cast(np.ndarray, cross_fn(parents, cross_prob, spec, rng))
+            mut_fn = cast(Any, MIXED_MUTATION[self.mut_method])
             mut_fn(offspring, float(mut_params.get("prob", 0.0)), spec, rng)
             return offspring
 
@@ -138,22 +141,22 @@ class VariationPipeline:
             return parents
         if group_size == 2:
             pairs = parents.reshape(-1, 2, n_var)
-            offspring = self.crossover_op(pairs, rng).reshape(parents.shape)
+            offspring = cast(np.ndarray, self.crossover_op(pairs, rng)).reshape(parents.shape)
         else:
             groups = parents.reshape(-1, group_size, n_var)
-            offspring = self.crossover_op(groups, rng).reshape(parents.shape)
+            offspring = cast(np.ndarray, self.crossover_op(groups, rng)).reshape(parents.shape)
 
         if self.mutation_op is None:
             raise ValueError("Mutation operator is not initialized.")
-        offspring = self.mutation_op(offspring, rng)
+        offspring = cast(np.ndarray, self.mutation_op(offspring, rng))
 
         if self.repair_op is not None:
             flat = offspring.reshape(-1, offspring.shape[-1])
-            repaired = self.repair_op(flat, xl, xu, rng)
+            repaired = cast(np.ndarray, self.repair_op(flat, xl, xu, rng))
             offspring = repaired.reshape(offspring.shape)
         return offspring
 
-    def _build_crossover_operator(self):
+    def _build_crossover_operator(self) -> Any | None:
         encoding = self.encoding
         method = self.cross_method
         params = self.cross_params
@@ -215,7 +218,7 @@ class VariationPipeline:
             )
         return None
 
-    def _build_mutation_operator(self):
+    def _build_mutation_operator(self) -> Any | None:
         encoding = self.encoding
         method = self.mut_method
         params = self.mut_params
@@ -265,7 +268,7 @@ class VariationPipeline:
             return LinkedPolynomialMutation(prob=prob, eta=eta, lower=xl, upper=xu, repair=None)
         return None
 
-    def _build_repair_operator(self):
+    def _build_repair_operator(self) -> Any | None:
         encoding = self.encoding
         if encoding in {"permutation", "binary", "integer", "mixed"}:
             return None

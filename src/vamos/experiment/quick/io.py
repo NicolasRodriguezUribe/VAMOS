@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from vamos.foundation.problem.types import ProblemProtocol
+
+logger = logging.getLogger(__name__)
 
 
 def save_quick_result(
@@ -38,4 +41,4 @@ def save_quick_result(
     with open(out_dir / "metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)
 
-    print(f"Results saved to {out_dir}")
+    logger.info("Results saved to %s", out_dir)

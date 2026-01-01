@@ -80,4 +80,3 @@ def compute_reward(old_value: float, new_value: float, mode: str = "maximize") -
     if mode == "maximize":
         return new_value - old_value
     return old_value - new_value
-

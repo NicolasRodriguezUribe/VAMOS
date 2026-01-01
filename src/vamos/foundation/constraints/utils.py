@@ -1,6 +1,7 @@
 """
 Utility helpers for constraint handling.
 """
+
 from __future__ import annotations
 
 import numpy as np

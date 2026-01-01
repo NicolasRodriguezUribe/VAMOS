@@ -4,6 +4,7 @@ Operator building for IBEA.
 
 This module handles the construction of variation pipelines.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -53,9 +54,7 @@ def build_variation_pipeline(
 
     mut_method, mut_params = cfg["mutation"]
     mut_method = mut_method.lower()
-    mut_params = prepare_mutation_params(
-        mut_params, encoding, n_var, prob_factor=cfg.get("mutation_prob_factor")
-    )
+    mut_params = prepare_mutation_params(mut_params, encoding, n_var, prob_factor=cfg.get("mutation_prob_factor"))
 
     variation_workspace = VariationWorkspace()
     variation = VariationPipeline(

@@ -7,6 +7,7 @@ This module contains the main NSGAII class with the evolutionary loop (run/ask/t
 - State and results: state.py
 - Helper functions: helpers.py
 """
+
 from __future__ import annotations
 
 import logging
@@ -14,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import live_should_stop
+from vamos.engine.algorithm.components.hooks import live_should_stop
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
@@ -71,9 +72,7 @@ class NSGAII:
         live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
         """Run the NSGA-II algorithm."""
-        live_cb, eval_backend, max_eval, n_eval, hv_tracker = self._initialize_run(
-            problem, termination, seed, eval_backend, live_viz
-        )
+        live_cb, eval_backend, max_eval, n_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
         st = self._st
         assert st is not None, "State not initialized"
 
@@ -135,9 +134,7 @@ class NSGAII:
 
         constraint_mode = self.cfg.get("constraint_mode", "feasibility")
         initializer_cfg = self.cfg.get("initializer")
-        X, F, G, n_eval = setup_population(
-            problem, eval_backend, rng, pop_size, constraint_mode, initializer_cfg
-        )
+        X, F, G, n_eval = setup_population(problem, eval_backend, rng, pop_size, constraint_mode, initializer_cfg)
 
         encoding = getattr(problem, "encoding", "continuous")
         n_var = problem.n_var
@@ -168,29 +165,50 @@ class NSGAII:
 
         variation_workspace = VariationWorkspace()
         operator_pool, op_selector, indicator_eval, aos_controller = build_operator_pool(
-            self.cfg, encoding, cross_method, cross_params, mut_method, mut_params,
-            n_var, xl, xu, variation_workspace, problem, mut_factor,
+            self.cfg,
+            encoding,
+            cross_method,
+            cross_params,
+            mut_method,
+            mut_params,
+            n_var,
+            xl,
+            xu,
+            variation_workspace,
+            problem,
+            mut_factor,
         )
 
         result_mode = self.cfg.get("result_mode", "non_dominated")
         archive_type = self.cfg.get("archive_type", "hypervolume")
-        result_archive = setup_result_archive(
-            result_mode, archive_type, archive_size, n_var, problem.n_obj, X.dtype
-        )
+        result_archive = setup_result_archive(result_mode, archive_type, archive_size, n_var, problem.n_obj, X.dtype)
 
         self._st = NSGAIIState(
-            X=X, F=F, G=G, rng=rng,
-            variation=operator_pool[0], operator_pool=operator_pool,
+            X=X,
+            F=F,
+            G=G,
+            rng=rng,
+            variation=operator_pool[0],
+            operator_pool=operator_pool,
             variation_workspace=variation_workspace,
-            op_selector=op_selector, indicator_eval=indicator_eval,
-            sel_method=sel_method, pressure=pressure,
-            pop_size=pop_size, offspring_size=offspring_size,
+            op_selector=op_selector,
+            indicator_eval=indicator_eval,
+            sel_method=sel_method,
+            pressure=pressure,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
             constraint_mode=constraint_mode,
-            archive_size=archive_size, archive_X=archive_X, archive_F=archive_F,
-            archive_manager=archive_manager, archive_via_kernel=archive_via_kernel,
-            result_archive=result_archive, result_mode=result_mode,
+            archive_size=archive_size,
+            archive_X=archive_X,
+            archive_F=archive_F,
+            archive_manager=archive_manager,
+            archive_via_kernel=archive_via_kernel,
+            result_archive=result_archive,
+            result_mode=result_mode,
             hv_tracker=hv_tracker,
-            track_genealogy=track_genealogy, genealogy_tracker=genealogy_tracker, ids=ids,
+            track_genealogy=track_genealogy,
+            genealogy_tracker=genealogy_tracker,
+            ids=ids,
             aos_controller=aos_controller,
         )
         return live_cb, eval_backend, max_eval, n_eval, hv_tracker
@@ -222,15 +240,21 @@ class NSGAII:
         parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
 
         mating_pairs = build_mating_pool(
-            self.kernel, ranks, crowding, st.pressure, st.rng,
-            parent_count, parents_per_group, st.sel_method,
+            self.kernel,
+            ranks,
+            crowding,
+            st.pressure,
+            st.rng,
+            parent_count,
+            parents_per_group,
+            st.sel_method,
         )
         parent_idx = mating_pairs.reshape(-1)
         X_parents = st.variation.gather_parents(st.X, parent_idx)
         X_off = st.variation.produce_offspring(X_parents, st.rng)
 
         if X_off.shape[0] > st.offspring_size:
-            X_off = X_off[:st.offspring_size]
+            X_off = X_off[: st.offspring_size]
         st.pending_offspring = X_off
 
         if st.aos_controller is not None and st.aos_last_op_id is not None:
@@ -260,15 +284,12 @@ class NSGAII:
         combined_X = np.vstack([st.X, X_off])
         combined_ids = self._combine_ids(st)
         parent_count = st.X.shape[0]
-        offspring_count = X_off.shape[0]
         selected_idx = None
 
         # Survival selection
         if st.G is None or G_off is None or st.constraint_mode == "none":
             if aos_enabled:
-                new_X, new_F, selected_idx = self.kernel.nsga2_survival(
-                    st.X, st.F, X_off, F_off, pop_size, return_indices=True
-                )
+                new_X, new_F, selected_idx = self.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size, return_indices=True)
             else:
                 new_X, new_F = self.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size)
             new_G = None
@@ -278,9 +299,7 @@ class NSGAII:
                     self.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size, return_indices=True
                 )
             else:
-                new_X, new_F, new_G = feasible_nsga2_survival(
-                    self.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size
-                )
+                new_X, new_F, new_G = feasible_nsga2_survival(self.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size)
 
         if combined_ids is not None:
             st.ids = match_ids(new_X, combined_X, combined_ids)

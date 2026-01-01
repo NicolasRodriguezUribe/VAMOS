@@ -159,14 +159,7 @@ def test_ibea_smoke_indicator_eps():
 
 def test_smpso_smoke_runs():
     pop_size = 14
-    cfg = (
-        SMPSOConfig()
-        .pop_size(pop_size)
-        .archive_size(pop_size)
-        .mutation("pm", prob="1/n", eta=20.0)
-        .engine("numpy")
-        .fixed()
-    )
+    cfg = SMPSOConfig().pop_size(pop_size).archive_size(pop_size).mutation("pm", prob="1/n", eta=20.0).engine("numpy").fixed()
     algorithm = SMPSO(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=5)
 

@@ -3,6 +3,7 @@ Plotting helpers exposed for end users.
 
 Thin wrappers around `vamos.ux.visualization` for quick Pareto/front plots.
 """
+
 from __future__ import annotations
 
 from vamos.ux.visualization import (
@@ -18,4 +19,3 @@ __all__ = [
     "plot_parallel_coordinates",
     "plot_hv_convergence",
 ]
-

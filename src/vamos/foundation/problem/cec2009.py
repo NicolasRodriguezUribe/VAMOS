@@ -71,9 +71,7 @@ class CEC2009_UF2(_CEC2009UFBase):
         x0 = X[:, 0]
         rest = X[:, 1:]
         j, even_mask, odd_mask = self._split_even_odd()
-        base = 0.3 * x0[:, None] * (
-            x0[:, None] * np.cos(24.0 * np.pi * x0[:, None] + 4.0 * j * np.pi / self.n_var) + 2.0
-        )
+        base = 0.3 * x0[:, None] * (x0[:, None] * np.cos(24.0 * np.pi * x0[:, None] + 4.0 * j * np.pi / self.n_var) + 2.0)
         angles = 6.0 * np.pi * x0[:, None] + j * np.pi / self.n_var
         sin_term = np.sin(angles)
         cos_term = np.cos(angles)

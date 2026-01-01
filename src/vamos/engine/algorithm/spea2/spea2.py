@@ -12,6 +12,7 @@ References:
     E. Zitzler, M. Laumanns, and L. Thiele, "SPEA2: Improving the Strength
     Pareto Evolutionary Algorithm," TIK-Report 103, ETH Zurich, 2001.
 """
+
 from __future__ import annotations
 
 import logging
@@ -19,12 +20,12 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
+from vamos.engine.algorithm.components.archives import update_archive
+from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     notify_generation,
     track_offspring_genealogy,
-    update_archive,
 )
 
 from .helpers import environmental_selection
@@ -61,7 +62,7 @@ class SPEA2:
 
     Examples
     --------
-    >>> from vamos import SPEA2Config
+    >>> from vamos.engine.api import SPEA2Config
     >>> config = SPEA2Config().pop_size(100).archive_size(100).fixed()
     >>> spea2 = SPEA2(config, kernel)
     >>> result = spea2.run(problem, ("n_eval", 10000), seed=42)
@@ -113,9 +114,7 @@ class SPEA2:
         dict[str, Any]
             Result dictionary with X, F, evaluations, and archive.
         """
-        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(
-            problem, termination, seed, eval_backend, live_viz
-        )
+        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
         st = self._st
         assert st is not None, "State not initialized"
 
@@ -176,8 +175,8 @@ class SPEA2:
         live_viz: "LiveVisualization | None" = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop."""
-        self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = (
-            self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = self._initialize_run(
+            problem, termination, seed, eval_backend, live_viz
         )
         self._problem = problem
         if self._st is not None:
@@ -284,9 +283,7 @@ class SPEA2:
             else:
                 G_union = G
         elif st.env_G is not None:
-            G_union = np.vstack(
-                [st.env_G, np.zeros((len(F), st.env_G.shape[1]))]
-            )
+            G_union = np.vstack([st.env_G, np.zeros((len(F), st.env_G.shape[1]))])
         else:
             G_union = None
 
@@ -336,11 +333,7 @@ class SPEA2:
         if self._st is None:
             raise RuntimeError("Call initialize() and run before result()")
 
-        hv_reached = (
-            self._hv_tracker is not None
-            and self._hv_tracker.enabled
-            and self._hv_tracker.reached(self._st.env_F)
-        )
+        hv_reached = self._hv_tracker is not None and self._hv_tracker.enabled and self._hv_tracker.reached(self._st.env_F)
         return build_spea2_result(self._st, hv_reached)
 
 

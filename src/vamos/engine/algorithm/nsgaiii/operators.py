@@ -129,13 +129,9 @@ def build_variation_operators(
         mut_params["prob"] = 1.0 / n_var
 
     if encoding == "binary":
-        return _build_binary_operators(
-            cross_method, cross_params, mut_method, mut_params, n_var, rng
-        )
+        return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif encoding == "integer":
-        return _build_integer_operators(
-            cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng
-        )
+        return _build_integer_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
     elif encoding in {"continuous", "real"}:
         return _build_real_operators(cross_params, mut_params, n_var, xl, xu, rng)
     else:
@@ -152,20 +148,14 @@ def _build_binary_operators(
 ) -> tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]]:
     """Build binary encoding operators."""
     if cross_method not in BINARY_CROSSOVER:
-        raise ValueError(
-            f"Unsupported NSGA-III crossover '{cross_method}' for binary encoding."
-        )
+        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for binary encoding.")
     if mut_method not in BINARY_MUTATION:
-        raise ValueError(
-            f"Unsupported NSGA-III mutation '{mut_method}' for binary encoding."
-        )
+        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for binary encoding.")
 
     cross_fn = BINARY_CROSSOVER[cross_method]
     cross_prob = float(cross_params.get("prob", 0.9))
     mut_fn = BINARY_MUTATION[mut_method]
-    mut_prob = resolve_prob_expression(
-        mut_params.get("prob"), n_var, 1.0 / max(1, n_var)
-    )
+    mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
 
     def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
         return cross_fn(parents, cross_prob, _rng)
@@ -189,20 +179,14 @@ def _build_integer_operators(
 ) -> tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]]:
     """Build integer encoding operators."""
     if cross_method not in INT_CROSSOVER:
-        raise ValueError(
-            f"Unsupported NSGA-III crossover '{cross_method}' for integer encoding."
-        )
+        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for integer encoding.")
     if mut_method not in INT_MUTATION:
-        raise ValueError(
-            f"Unsupported NSGA-III mutation '{mut_method}' for integer encoding."
-        )
+        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for integer encoding.")
 
     cross_fn = INT_CROSSOVER[cross_method]
     cross_prob = float(cross_params.get("prob", 0.9))
     mut_fn = INT_MUTATION[mut_method]
-    mut_prob = resolve_prob_expression(
-        mut_params.get("prob"), n_var, 1.0 / max(1, n_var)
-    )
+    mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     step = int(mut_params.get("step", 1))
 
     def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
@@ -210,17 +194,13 @@ def _build_integer_operators(
 
     if mut_fn is creep_mutation:
 
-        def mutation(
-            X_child: np.ndarray, _rng: np.random.Generator = rng
-        ) -> np.ndarray:
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
             result = mut_fn(X_child, mut_prob, step, xl, xu, _rng)
             return result if result is not None else X_child
 
     else:
 
-        def mutation(
-            X_child: np.ndarray, _rng: np.random.Generator = rng
-        ) -> np.ndarray:
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
             result = mut_fn(X_child, mut_prob, xl, xu, _rng)
             return result if result is not None else X_child
 
@@ -249,9 +229,7 @@ def _build_real_operators(
         allow_inplace=True,
     )
 
-    mut_prob = resolve_prob_expression(
-        mut_params.get("prob"), n_var, 1.0 / max(1, n_var)
-    )
+    mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     mut_eta = float(mut_params.get("eta", 20.0))
     pm = PolynomialMutation(
         prob_mutation=mut_prob,

@@ -13,24 +13,29 @@ This package contains building blocks used across multiple algorithms:
 - protocol: Algorithm interface definitions and enums
 - utils: Shared utility functions
 """
+
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
     _single_front_crowding,
 )
-from vamos.engine.algorithm.components.base import (
-    AlgorithmState,
-    parse_termination,
-    setup_initial_population,
+from vamos.engine.algorithm.components.archives import (
+    resolve_archive_size,
     setup_archive,
     update_archive,
-    resolve_archive_size,
-    setup_hv_tracker,
+)
+from vamos.engine.algorithm.components.hooks import (
     get_live_viz,
     notify_generation,
-    get_eval_backend,
-    build_result,
 )
+from vamos.engine.algorithm.components.lifecycle import (
+    get_eval_backend,
+    setup_initial_population,
+)
+from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.results import build_result
+from vamos.engine.algorithm.components.state import AlgorithmState
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,

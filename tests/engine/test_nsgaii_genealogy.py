@@ -25,4 +25,3 @@ def test_nsgaii_track_genealogy_runs_and_returns_stats():
     assert genealogy is not None
     assert "operator_stats" in genealogy
     assert "generation_contributions" in genealogy
-

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -197,6 +197,3 @@ class BenchmarkReport:
         stats = self.compute_statistics()
         plots_dir = ensure_dir(self.output_dir / "plots")
         return generate_plots(tidy, stats, self.config.metrics, self.config.alpha, self.result.suite.name, plots_dir, higher_is_better)
-
-
-

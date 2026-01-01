@@ -20,6 +20,7 @@ EXPERIMENT_BACKENDS = (
     "moocore",
 )
 
+
 @dataclass
 class ExperimentConfig:
     title: str = TITLE

@@ -43,10 +43,7 @@ def test_nsgaii_result_contains_only_nondominated():
             # Check if solution j dominates solution i
             # j dominates i if j <= i in all objectives and j < i in at least one
             dominates = np.all(F[j] <= F[i]) and np.any(F[j] < F[i])
-            assert not dominates, (
-                f"Solution {i} is dominated by solution {j}. "
-                f"F[{i}]={F[i]}, F[{j}]={F[j]}"
-            )
+            assert not dominates, f"Solution {i} is dominated by solution {j}. F[{i}]={F[i]}, F[{j}]={F[j]}"
 
 
 def test_nsgaii_population_key_contains_full_population():

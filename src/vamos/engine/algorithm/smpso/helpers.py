@@ -139,12 +139,7 @@ def update_personal_bests(
     constraint_mode : str
         Constraint handling mode.
     """
-    if (
-        constraint_mode
-        and constraint_mode != "none"
-        and G is not None
-        and pbest_G is not None
-    ):
+    if constraint_mode and constraint_mode != "none" and G is not None and pbest_G is not None:
         feas_new = is_feasible(G)
         feas_old = is_feasible(pbest_G)
         cv_new = compute_violation(G)

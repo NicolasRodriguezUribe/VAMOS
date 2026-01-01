@@ -8,6 +8,7 @@ This module contains the core SPEA2 selection functions:
 - Environmental selection
 - Distance-based truncation
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -20,9 +21,7 @@ if TYPE_CHECKING:
     pass
 
 
-def dominance_matrix(
-    F: np.ndarray, G: np.ndarray | None, constraint_mode: str
-) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
+def dominance_matrix(F: np.ndarray, G: np.ndarray | None, constraint_mode: str) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
     """Compute dominance matrix with optional feasibility-aware handling.
 
     Parameters
@@ -73,9 +72,7 @@ def dominance_matrix(
     return dom, feas, cv
 
 
-def spea2_fitness(
-    F: np.ndarray, dom: np.ndarray, k: int | None = None
-) -> tuple[np.ndarray, np.ndarray]:
+def spea2_fitness(F: np.ndarray, dom: np.ndarray, k: int | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Compute SPEA2 fitness and distance matrix.
 
     SPEA2 fitness consists of:
@@ -222,9 +219,7 @@ def environmental_selection(
     return X[selected], F[selected], G[selected] if G is not None else None
 
 
-def compute_selection_metrics(
-    F: np.ndarray, G: np.ndarray | None, constraint_mode: str, kernel
-) -> tuple[np.ndarray, np.ndarray]:
+def compute_selection_metrics(F: np.ndarray, G: np.ndarray | None, constraint_mode: str, kernel) -> tuple[np.ndarray, np.ndarray]:
     """Compute selection metrics for mating selection.
 
     Parameters

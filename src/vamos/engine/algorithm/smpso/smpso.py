@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
+from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     notify_generation,
@@ -29,9 +29,10 @@ from .initialization import initialize_smpso_run
 from .state import SMPSOState, build_smpso_result
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.base import EvaluationBackend, LiveVisualization
+    from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.protocols import KernelBackend
-    from vamos.foundation.problem.protocol import ProblemProtocol
+    from vamos.foundation.problem.types import ProblemProtocol
+    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = ["SMPSO"]
@@ -58,7 +59,7 @@ class SMPSO:
     --------
     Basic usage:
 
-    >>> from vamos import SMPSOConfig
+    >>> from vamos.engine.api import SMPSOConfig
     >>> config = SMPSOConfig().pop_size(100).archive_size(100).fixed()
     >>> smpso = SMPSO(config, kernel)
     >>> result = smpso.run(problem, ("n_eval", 10000), seed=42)
@@ -175,10 +176,8 @@ class SMPSO:
         live_viz : LiveVisualization, optional
             Live visualization callback.
         """
-        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = (
-            initialize_smpso_run(
-                self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
-            )
+        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = initialize_smpso_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
         )
         self._problem = problem
         if self._st is not None and self._live_cb is not None:
@@ -202,9 +201,7 @@ class SMPSO:
             If algorithm not initialized or previous offspring not consumed.
         """
         if self._st is None:
-            raise RuntimeError(
-                "SMPSO is not initialized. Call run() or initialize() first."
-            )
+            raise RuntimeError("SMPSO is not initialized. Call run() or initialize() first.")
         st = self._st
         if st.pending_offspring is not None:
             raise RuntimeError("Previous offspring not yet consumed by tell().")
@@ -356,11 +353,7 @@ class SMPSO:
         """
         if self._st is None:
             raise RuntimeError("SMPSO is not initialized.")
-        hv_reached = (
-            self._st.hv_tracker is not None
-            and self._st.hv_tracker.enabled
-            and self._st.hv_tracker.reached(self._st.hv_points())
-        )
+        hv_reached = self._st.hv_tracker is not None and self._st.hv_tracker.enabled and self._st.hv_tracker.reached(self._st.hv_points())
         result = build_smpso_result(self._st, hv_reached)
         finalize_genealogy(result, self._st, self.kernel)
         return result

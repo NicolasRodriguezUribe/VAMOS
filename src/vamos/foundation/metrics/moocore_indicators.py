@@ -7,6 +7,7 @@ import numpy as np
 
 try:  # pragma: no cover - optional dependency
     import moocore as _moocore  # type: ignore
+
     _MC = _moocore._moocore
 except Exception:  # pragma: no cover - optional dependency
     _moocore = None
@@ -32,8 +33,7 @@ class QualityIndicator(Protocol):
         reference_front: Optional[np.ndarray] = None,
         maximise: bool | Sequence[bool] | None = None,
         **kwargs: Any,
-    ) -> IndicatorResult:
-        ...
+    ) -> IndicatorResult: ...
 
 
 def _require_moocore() -> None:

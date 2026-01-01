@@ -74,4 +74,3 @@ __all__ = [
     "operator_success_stats",
     "generation_contributions",
 ]
-

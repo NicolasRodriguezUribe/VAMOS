@@ -21,10 +21,11 @@ class DTLZ1Problem(DTLZBase):
 
     def _evaluate(self, X: np.ndarray, out: dict):
         g = 100.0 * (
-            self.n_var - self.n_obj + 1
+            self.n_var
+            - self.n_obj
+            + 1
             + np.sum(
-                (X[:, self.n_obj - 1 :] - 0.5) ** 2
-                - np.cos(20 * np.pi * (X[:, self.n_obj - 1 :] - 0.5)),
+                (X[:, self.n_obj - 1 :] - 0.5) ** 2 - np.cos(20 * np.pi * (X[:, self.n_obj - 1 :] - 0.5)),
                 axis=1,
             )
         )
@@ -35,7 +36,7 @@ class DTLZ1Problem(DTLZBase):
                 f *= X[:, j]
             if i > 0:
                 idx = self.n_obj - i - 1
-                f *= (1.0 - X[:, idx])
+                f *= 1.0 - X[:, idx]
             F[:, i] = f
 
         F_res = 0.5 * (1.0 + g[:, None]) * F
@@ -74,10 +75,11 @@ class DTLZ3Problem(DTLZBase):
 
     def _evaluate(self, X: np.ndarray, out: dict):
         g = 100.0 * (
-            self.n_var - self.n_obj + 1
+            self.n_var
+            - self.n_obj
+            + 1
             + np.sum(
-                (X[:, self.n_obj - 1 :] - 0.5) ** 2
-                - np.cos(20 * np.pi * (X[:, self.n_obj - 1 :] - 0.5)),
+                (X[:, self.n_obj - 1 :] - 0.5) ** 2 - np.cos(20 * np.pi * (X[:, self.n_obj - 1 :] - 0.5)),
                 axis=1,
             )
         )

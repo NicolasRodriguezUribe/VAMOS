@@ -7,6 +7,7 @@ All types use signature: ParamType(name, ...)
 - Categorical/CategoricalParam(name, choices)
 - Boolean/BooleanParam(name)
 """
+
 from __future__ import annotations
 
 from typing import Any, Protocol

@@ -6,6 +6,7 @@ orchestration layers can resolve kernels without hard-coding if/elif chains.
 Backends that rely on optional dependencies (numba, moocore) are lazy-loaded so
 `import vamos` remains safe on a minimal install.
 """
+
 from __future__ import annotations
 
 from importlib import import_module
@@ -21,8 +22,7 @@ def _load_numba():
         return module.NumbaKernel()
     except ImportError as exc:
         raise ImportError(
-            "Kernel 'numba' requires the [backends] extra (numba>=0.57). "
-            "Install with `pip install -e \".[backends]\"`."
+            "Kernel 'numba' requires the [backends] extra (numba>=0.57). Install with `pip install -e \".[backends]\"`."
         ) from exc
 
 
@@ -32,8 +32,7 @@ def _load_moocore():
         return module.MooCoreKernel()
     except ImportError as exc:
         raise ImportError(
-            "Kernel 'moocore' requires the [backends] extra (moocore>=0.4). "
-            "Install with `pip install -e \".[backends]\"`."
+            "Kernel 'moocore' requires the [backends] extra (moocore>=0.4). Install with `pip install -e \".[backends]\"`."
         ) from exc
 
 

@@ -12,8 +12,7 @@ class ProblemProtocol(Protocol):
     xu: float | int | np.ndarray
     encoding: str
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
-        ...
+    def evaluate(self, X: np.ndarray, out: dict) -> None: ...
 
 
 class MixedProblemProtocol(ProblemProtocol, Protocol):

@@ -1,6 +1,7 @@
 """
 Helpers for building run metadata and operator summaries.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -17,9 +18,7 @@ def git_revision(project_root: Path) -> Optional[str]:
     Safe to call in packaged installations without git.
     """
     try:
-        rev = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=project_root, stderr=subprocess.DEVNULL
-        )
+        rev = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=project_root, stderr=subprocess.DEVNULL)
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return None
     return rev.decode().strip() or None

@@ -5,21 +5,18 @@ Setup and initialization helpers for MOEA/D.
 This module contains functions for parsing configuration, initializing populations,
 weight vectors, neighborhoods, and other setup tasks.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
-    get_eval_backend,
-    get_live_viz,
-    parse_termination,
-    resolve_archive_size,
-    setup_archive,
-    setup_genealogy,
-    setup_hv_tracker,
-)
+from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
+from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
@@ -88,15 +85,14 @@ def initialize_moead_run(
     n_obj = problem.n_obj
 
     # Initialize population
-    X, F, G = initialize_population(
-        encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode
-    )
+    X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
     n_eval = pop_size
 
     # Setup weight vectors and neighborhoods
     weight_cfg = cfg.get("weight_vectors", {}) or {}
     weights = load_or_generate_weight_vectors(
-        pop_size, n_obj,
+        pop_size,
+        n_obj,
         path=weight_cfg.get("path"),
         divisions=weight_cfg.get("divisions"),
     )
@@ -111,16 +107,12 @@ def initialize_moead_run(
     aggregator = build_aggregator(agg_method, agg_params)
 
     # Build variation operators
-    crossover_fn, mutation_fn = build_variation_operators(
-        cfg, encoding, n_var, xl, xu, rng
-    )
+    crossover_fn, mutation_fn = build_variation_operators(cfg, encoding, n_var, xl, xu, rng)
 
     # Setup archive
     archive_size = resolve_archive_size(cfg)
     archive_type = cfg.get("archive_type", "crowding")
-    archive_X, archive_F, archive_manager = setup_archive(
-        kernel, X, F, n_var, n_obj, X.dtype, archive_size, archive_type
-    )
+    archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, archive_size, archive_type)
 
     # Setup HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)
@@ -133,7 +125,10 @@ def initialize_moead_run(
 
     # Create state
     state = MOEADState(
-        X=X, F=F, G=G, rng=rng,
+        X=X,
+        F=F,
+        G=G,
+        rng=rng,
         pop_size=pop_size,
         offspring_size=pop_size,
         constraint_mode=constraint_mode,

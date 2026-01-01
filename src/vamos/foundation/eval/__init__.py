@@ -17,8 +17,7 @@ class EvaluationResult:
 class EvaluationBackend(Protocol):
     """Protocol for evaluation backends."""
 
-    def evaluate(self, X: np.ndarray, problem) -> EvaluationResult:
-        ...
+    def evaluate(self, X: np.ndarray, problem) -> EvaluationResult: ...
 
     def close(self) -> None:  # pragma: no cover - optional for async backends
         """Clean up any resources (executors, pools)."""

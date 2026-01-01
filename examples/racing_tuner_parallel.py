@@ -11,18 +11,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos import (
-    OptimizeConfig,
-    ParamSpace,
-    RacingTuner,
-    Scenario,
-    TuningTask,
-    Instance,
-    ZDT1,
-    optimize,
-)
+from vamos.api import OptimizeConfig, optimize
 from vamos.engine.api import NSGAIIConfig
-from vamos.tuning import Real, Int
+from vamos.engine.tuning.api import Instance, Int, ParamSpace, RacingTuner, Real, Scenario, TuningTask
+from vamos.foundation.problems_registry import ZDT1
 
 
 def evaluate_config(config: dict, ctx) -> float:

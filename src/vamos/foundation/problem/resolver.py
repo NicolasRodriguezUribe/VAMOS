@@ -24,6 +24,7 @@ PROBLEM_SET_PRESETS: dict[str, Sequence[str]] = {
     "real_world": ("ml_tuning", "welded_beam", "fs_real"),
 }
 
+
 def resolve_reference_front_path(problem_key: str, explicit_path: str | None) -> str | None:
     """
     Return a path to a reference front, using an explicit override when provided.

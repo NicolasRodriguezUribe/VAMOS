@@ -1,8 +1,10 @@
 """
 Output/banners/artifact wiring for runner.
 """
+
 from __future__ import annotations
 
+import logging
 import json
 from pathlib import Path
 from typing import Any
@@ -14,32 +16,34 @@ from vamos.foundation.core.io_utils import write_population, write_metadata, wri
 from vamos.foundation.core.metadata import build_run_metadata
 from vamos.hooks import HookManager
 
+logger = logging.getLogger(__name__)
+
 
 def print_run_banner(problem, problem_selection, algorithm_label: str, backend_label: str, config) -> None:
     spec = getattr(problem_selection, "spec", None)
     label = getattr(spec, "label", None) or getattr(spec, "key", "unknown")
     description = getattr(spec, "description", None) or ""
-    print("=" * 80)
-    print(config.title)
-    print("=" * 80)
-    print(f"Problem: {label}")
+    logger.info("%s", "=" * 80)
+    logger.info("%s", config.title)
+    logger.info("%s", "=" * 80)
+    logger.info("Problem: %s", label)
     if description:
-        print(f"Description: {description}")
-    print(f"Decision variables: {problem.n_var}")
-    print(f"Objectives: {problem.n_obj}")
+        logger.info("Description: %s", description)
+    logger.info("Decision variables: %s", problem.n_var)
+    logger.info("Objectives: %s", problem.n_obj)
     encoding = getattr(problem, "encoding", None)
     if encoding is None:
         encoding = getattr(spec, "encoding", None)
     if encoding is None:
         encoding = "continuous"
     if encoding:
-        print(f"Encoding: {encoding}")
-    print(f"Algorithm: {algorithm_label}")
-    print(f"Backend: {backend_label}")
-    print(f"Population size: {config.population_size}")
-    print(f"Offspring population size: {config.offspring_size()}")
-    print(f"Max evaluations: {config.max_evaluations}")
-    print("-" * 80)
+        logger.info("Encoding: %s", encoding)
+    logger.info("Algorithm: %s", algorithm_label)
+    logger.info("Backend: %s", backend_label)
+    logger.info("Population size: %s", config.population_size)
+    logger.info("Offspring population size: %s", config.offspring_size())
+    logger.info("Max evaluations: %s", config.max_evaluations)
+    logger.info("%s", "-" * 80)
 
 
 def build_metrics(
@@ -72,10 +76,16 @@ def print_run_results(metrics: dict) -> None:
     hv = metrics.get("hv")
     if hv is not None:
         hv_info = f" | HV: {hv:.6f}"
-    print(f"{algo} -> Time: {time_ms:.2f} ms | Eval/s: {metrics['evals_per_sec']:.1f}{hv_info}")
+    logger.info(
+        "%s -> Time: %.2f ms | Eval/s: %.1f%s",
+        algo,
+        time_ms,
+        metrics["evals_per_sec"],
+        hv_info,
+    )
     spread = metrics.get("spread")
     if spread is not None:
-        print(f"Objective 1 spread: {spread:.6f}")
+        logger.info("Objective 1 spread: %.6f", spread)
 
 
 def persist_run_outputs(

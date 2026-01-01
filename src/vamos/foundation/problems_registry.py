@@ -3,6 +3,7 @@ Convenient access to benchmark problems and registry helpers.
 
 For the full catalog or custom problems, import from `vamos.foundation.problem`.
 """
+
 from __future__ import annotations
 
 from vamos.foundation.problem.dtlz import DTLZ1Problem as DTLZ1

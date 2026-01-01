@@ -1,6 +1,7 @@
 """
 Engine-level API: algorithm configs and engine utilities.
 """
+
 from __future__ import annotations
 
 from vamos.engine.algorithm.config import (

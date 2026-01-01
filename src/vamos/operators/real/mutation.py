@@ -94,11 +94,11 @@ class PolynomialMutation(Mutation):
             if rnd <= 0.5:
                 xy = 1.0 - delta1
                 val = 2.0 * rnd + (1.0 - 2.0 * rnd) * (xy ** (self.eta + 1.0))
-                deltaq = val ** mut_pow - 1.0
+                deltaq = val**mut_pow - 1.0
             else:
                 xy = 1.0 - delta2
                 val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (self.eta + 1.0))
-                deltaq = 1.0 - val ** mut_pow
+                deltaq = 1.0 - val**mut_pow
             y += deltaq * (yu - yl)
             y = min(max(y, yl), yu)
             X[i, j] = y
@@ -222,11 +222,7 @@ class NonUniformMutation(Mutation):
 
         rand = self._rand("nu_rand", X.shape, rng)
         np.power(rand, self.perturbation, out=rand)
-        delta = (
-            self.workspace.request("nu_delta", X.shape, np.float64)
-            if self.workspace
-            else np.empty(X.shape, dtype=float)
-        )
+        delta = self.workspace.request("nu_delta", X.shape, np.float64) if self.workspace else np.empty(X.shape, dtype=float)
         np.subtract(1.0, rand, out=delta)
         delta *= self.span
         direction_rand = self._rand("nu_direction", X.shape, rng)

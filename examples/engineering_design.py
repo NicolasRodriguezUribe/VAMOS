@@ -13,7 +13,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos import OptimizeConfig, WeldedBeamDesignProblem, optimize
+from vamos.api import OptimizeConfig, optimize
+from vamos.foundation.problems_registry import WeldedBeamDesignProblem
 from vamos.engine.api import NSGAIIConfig
 
 

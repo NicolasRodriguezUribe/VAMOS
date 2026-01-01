@@ -17,9 +17,9 @@ def reference_front_path(name: str) -> Path:
         lower = name.lower()
         alt = resources.files(__name__) / "reference_fronts" / f"{lower}.csv"
         if alt.is_file():
-            return Path(alt)
+            return Path(str(alt))
         raise ValueError(f"Unknown reference front '{name}'.")
-    return Path(path)
+    return Path(str(path))
 
 
 def weight_path(filename: str) -> Path:
@@ -29,7 +29,7 @@ def weight_path(filename: str) -> Path:
     path = resources.files(__name__) / "weights" / filename
     if not path.is_file():
         raise ValueError(f"Unknown weights file '{filename}'.")
-    return Path(path)
+    return Path(str(path))
 
 
 __all__ = ["reference_front_path", "weight_path"]

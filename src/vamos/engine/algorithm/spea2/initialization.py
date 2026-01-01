@@ -5,21 +5,18 @@ Setup and initialization helpers for SPEA2.
 This module contains functions for parsing configuration, initializing populations,
 and setting up archives and trackers.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.base import (
-    get_eval_backend,
-    get_live_viz,
-    parse_termination,
-    resolve_archive_size,
-    setup_archive,
-    setup_genealogy,
-    setup_hv_tracker,
-)
+from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
+from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.engine.algorithm.components.population import (
     evaluate_population,
@@ -91,9 +88,7 @@ def initialize_spea2_run(
 
     # Initialize population
     initializer_cfg = cfg.get("initializer")
-    X = initialize_population(
-        pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg
-    )
+    X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
 
     if constraint_mode and constraint_mode != "none":
         F, G = evaluate_population_with_constraints(problem, X)
@@ -103,16 +98,12 @@ def initialize_spea2_run(
     n_eval = pop_size
 
     # Environmental selection for initial internal archive
-    env_X, env_F, env_G = environmental_selection(
-        X, F, G, env_archive_size, k_neighbors, constraint_mode
-    )
+    env_X, env_F, env_G = environmental_selection(X, F, G, env_archive_size, k_neighbors, constraint_mode)
 
     # Setup external archive (optional, separate from internal)
     ext_archive_size = resolve_archive_size(cfg)
     archive_type = cfg.get("archive_type", "crowding")
-    archive_X, archive_F, archive_manager = setup_archive(
-        kernel, env_X, env_F, n_var, n_obj, X.dtype, ext_archive_size, archive_type
-    )
+    archive_X, archive_F, archive_manager = setup_archive(kernel, env_X, env_F, n_var, n_obj, X.dtype, ext_archive_size, archive_type)
 
     # Setup HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)
@@ -122,9 +113,7 @@ def initialize_spea2_run(
     genealogy_tracker, ids = setup_genealogy(pop_size, F, track_genealogy, "spea2")
 
     # Build variation operators
-    crossover_fn, mutation_fn = build_variation_operators(
-        cfg, encoding, n_var, xl, xu, rng
-    )
+    crossover_fn, mutation_fn = build_variation_operators(cfg, encoding, n_var, xl, xu, rng)
 
     live_cb.on_start(problem=problem, algorithm=None, config=cfg)
 

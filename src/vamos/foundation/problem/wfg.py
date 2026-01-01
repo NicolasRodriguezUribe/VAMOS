@@ -6,19 +6,26 @@ instantiate any of these classes.
 
 import numpy as np
 
-try:
-    from pymoo.problems import get_problem as _get_wfg_problem
-except ImportError:  # pragma: no cover
-    _get_wfg_problem = None
+_GET_WFG_PROBLEM = None
+
+
+def _load_wfg_problem():
+    global _GET_WFG_PROBLEM
+    if _GET_WFG_PROBLEM is not None:
+        return _GET_WFG_PROBLEM
+    try:
+        from pymoo.problems import get_problem as _get_wfg_problem
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError(
+            "WFG problem classes require the 'pymoo' dependency. Install it with `pip install pymoo` to enable these benchmarks."
+        ) from exc
+    _GET_WFG_PROBLEM = _get_wfg_problem
+    return _GET_WFG_PROBLEM
 
 
 class _BaseWFG:
     def __init__(self, name: str, n_var: int, n_obj: int, k: int | None = None, l: int | None = None):
-        if _get_wfg_problem is None:
-            raise ImportError(
-                "WFG problem classes require the 'pymoo' dependency. Install it with "
-                "`pip install pymoo` to enable these benchmarks."
-            )
+        get_wfg_problem = _load_wfg_problem()
         if k is None:
             k = 2 * (n_obj - 1)
         if k % (n_obj - 1) != 0:
@@ -28,7 +35,7 @@ class _BaseWFG:
         if k + l != n_var:
             raise ValueError("n_var must equal k + l in WFG problems.")
 
-        self._problem = _get_wfg_problem(name, n_var=n_var, n_obj=n_obj, k=k, l=l)
+        self._problem = get_wfg_problem(name, n_var=n_var, n_obj=n_obj, k=k, l=l)
         self.n_var = self._problem.n_var
         self.n_obj = self._problem.n_obj
         self.k = k

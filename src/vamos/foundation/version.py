@@ -1,6 +1,7 @@
 """
 Version helpers for VAMOS.
 """
+
 from __future__ import annotations
 
 from importlib import metadata as importlib_metadata

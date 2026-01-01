@@ -5,6 +5,7 @@ Operator building for MOEA/D.
 This module handles the construction of variation operators (crossover and mutation)
 for different encodings (continuous, binary, integer).
 """
+
 from __future__ import annotations
 
 from typing import Any, Callable
@@ -100,17 +101,11 @@ def build_variation_operators(
         mut_params["prob"] = 1.0 / n_var
 
     if encoding == "binary":
-        return _build_binary_operators(
-            cross_method, cross_params, mut_method, mut_params, n_var, rng
-        )
+        return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif encoding == "integer":
-        return _build_integer_operators(
-            cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng
-        )
+        return _build_integer_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
     elif encoding in {"continuous", "real"}:
-        return _build_continuous_operators(
-            cross_params, mut_params, n_var, xl, xu, rng
-        )
+        return _build_continuous_operators(cross_params, mut_params, n_var, xl, xu, rng)
     else:
         raise ValueError(f"MOEA/D does not support encoding '{encoding}'.")
 
@@ -169,9 +164,11 @@ def _build_integer_operators(
         return cross_fn(parents, cross_prob, rng)
 
     if mut_fn is creep_mutation:
+
         def mutation(X_child, rng=rng):
             return mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child
     else:
+
         def mutation(X_child, rng=rng):
             return mut_fn(X_child, mut_prob, xl, xu, rng) or X_child
 
