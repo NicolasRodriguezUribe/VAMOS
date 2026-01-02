@@ -16,7 +16,9 @@ from vamos.foundation.problem.registry import ProblemSelection, make_problem_sel
 from vamos.foundation.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
 from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -102,7 +104,7 @@ class StudyRunner:
         results: List[StudyResult] = []
         for idx, task in enumerate(tasks, start=1):
             if self.verbose:
-                logger.info(
+                _logger().info(
                     "[Study] (%s/%s) %s | %s | %s | seed=%s",
                     idx,
                     len(tasks),
@@ -169,7 +171,7 @@ class StudyRunner:
             return
         if not has_moocore():
             if self.verbose:
-                logger.info("[Study] MooCore not available; skipping indicator computation.")
+                _logger().info("[Study] MooCore not available; skipping indicator computation.")
             return
         fronts = [res.metrics["F"] for res in results]
         ref_front = self._nondominated_union(fronts)
@@ -189,7 +191,7 @@ class StudyRunner:
                         vals[name] = indicator.compute(res.metrics["F"]).value
                 except Exception as exc:
                     if self.verbose:
-                        logger.warning("[Study] indicator '%s' failed: %s", name, exc)
+                        _logger().warning("[Study] indicator '%s' failed: %s", name, exc)
                     vals[name] = None
             res.metrics["indicator_values"] = vals
 
@@ -209,7 +211,7 @@ class StudyRunner:
             writer.writeheader()
             writer.writerows(rows)
         if self.verbose:
-            logger.info("[Study] CSV exported to %s", path)
+            _logger().info("[Study] CSV exported to %s", path)
         return path
 
     def _mirror_artifacts(self, metrics: dict) -> None:

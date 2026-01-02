@@ -15,7 +15,9 @@ from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.experiment.runner import run_single
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _configure_cli_logging(level: int = logging.INFO) -> None:
@@ -58,7 +60,7 @@ def run_self_check(verbose: bool = False) -> List[CheckResult]:
         if verbose:
             status = result.status.upper()
             msg = result.detail or ""
-            logger.info("[self-check] %s: %s %s", result.name, status, msg)
+            _logger().info("[self-check] %s: %s %s", result.name, status, msg)
 
     # Binary and mixed smoke on NumPy only
     for name, label in (("bin_knapsack", "binary"), ("mixed_design", "mixed")):
@@ -86,8 +88,8 @@ def main():
     if failed:
         raise SystemExit(1)
     if skipped:
-        logger.info("[self-check] Skipped: %s", ", ".join(c.name for c in skipped))
-    logger.info("[self-check] Completed.")
+        _logger().info("[self-check] Skipped: %s", ", ".join(c.name for c in skipped))
+    _logger().info("[self-check] Completed.")
 
 
 if __name__ == "__main__":

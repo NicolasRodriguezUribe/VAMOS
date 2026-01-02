@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from .specs import ProblemSpec, PROBLEM_SPECS
+from .specs import ProblemSpec, get_problem_specs
 from typing import cast
 
 from ..types import ProblemProtocol
@@ -23,8 +23,9 @@ class ProblemSelection:
 
 
 def make_problem_selection(key: str, *, n_var: Optional[int] = None, n_obj: Optional[int] = None) -> ProblemSelection:
+    specs = get_problem_specs()
     try:
-        spec = PROBLEM_SPECS[key]
+        spec = specs[key]
     except KeyError as exc:
         raise KeyError(f"Unknown problem '{key}'.") from exc
 

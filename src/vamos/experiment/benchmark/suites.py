@@ -42,7 +42,14 @@ def _register_suite(suite: BenchmarkSuite) -> None:
     _SUITES[suite.name] = suite
 
 
+def _ensure_default_suites() -> None:
+    if _SUITES:
+        return
+    _init_default_suites()
+
+
 def get_benchmark_suite(name: str) -> BenchmarkSuite:
+    _ensure_default_suites()
     try:
         return _SUITES[name]
     except KeyError as exc:  # pragma: no cover - defensive
@@ -50,6 +57,7 @@ def get_benchmark_suite(name: str) -> BenchmarkSuite:
 
 
 def list_benchmark_suites() -> List[str]:
+    _ensure_default_suites()
     return sorted(_SUITES.keys())
 
 
@@ -159,6 +167,3 @@ def _init_default_suites() -> None:
             default_seeds=list(range(3)),
         )
     )
-
-
-_init_default_suites()

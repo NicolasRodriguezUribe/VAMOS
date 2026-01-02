@@ -1,25 +1,41 @@
 from __future__ import annotations
 
-import os
 import numpy as np
 
-_USE_NUMBA_VARIATION = os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
-_HAS_NUMBA = False
-if _USE_NUMBA_VARIATION:
+_BIT_FLIP_MASKED_JIT = None
+
+
+def _use_numba_variation() -> bool:
+    import os
+
+    return os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
+
+
+def _get_bit_flip_masked():
+    global _BIT_FLIP_MASKED_JIT
+    if _BIT_FLIP_MASKED_JIT is False:
+        return None
+    if _BIT_FLIP_MASKED_JIT is not None:
+        return _BIT_FLIP_MASKED_JIT
+    if not _use_numba_variation():
+        _BIT_FLIP_MASKED_JIT = False
+        return None
     try:
         from numba import njit
     except ImportError:
-        _HAS_NUMBA = False
-    else:
-        _HAS_NUMBA = True
+        _BIT_FLIP_MASKED_JIT = False
+        return None
 
-        @njit(cache=True)
-        def _bit_flip_masked(X: np.ndarray, mask: np.ndarray):
-            rows, cols = mask.shape
-            for i in range(rows):
-                for j in range(cols):
-                    if mask[i, j]:
-                        X[i, j] = 1 - X[i, j]
+    @njit(cache=True)
+    def _bit_flip_masked(X: np.ndarray, mask: np.ndarray):
+        rows, cols = mask.shape
+        for i in range(rows):
+            for j in range(cols):
+                if mask[i, j]:
+                    X[i, j] = 1 - X[i, j]
+
+    _BIT_FLIP_MASKED_JIT = _bit_flip_masked
+    return _BIT_FLIP_MASKED_JIT
 
 
 def random_binary_population(pop_size: int, n_var: int, rng: np.random.Generator) -> np.ndarray:
@@ -176,8 +192,9 @@ def bit_flip_mutation(X: np.ndarray, prob: float, rng: np.random.Generator) -> N
     if prob <= 0.0:
         return
     mask = rng.random(X.shape) <= prob
-    if _HAS_NUMBA:
-        _bit_flip_masked(X, mask)
+    jit_fn = _get_bit_flip_masked()
+    if jit_fn is not None:
+        jit_fn(X, mask)
     else:
         X[mask] = 1 - X[mask]
 

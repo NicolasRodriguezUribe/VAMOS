@@ -21,7 +21,9 @@ from vamos.hooks.genealogy import GenealogyTracker
 from vamos.operators.real import VariationWorkspace
 from vamos.adaptation.aos.controller import AOSController
 
-_logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 @dataclass
@@ -134,7 +136,7 @@ def build_result(
             result_F = state.F[nd_mask]
             result_G = state.G[nd_mask] if state.G is not None else None
         except (ValueError, IndexError) as exc:
-            _logger.warning("Failed to filter non-dominated solutions: %s", exc)
+            _logger().warning("Failed to filter non-dominated solutions: %s", exc)
             result_X, result_F, result_G = state.X, state.F, state.G
     else:
         result_X, result_F, result_G = state.X, state.F, state.G
@@ -231,7 +233,7 @@ def finalize_genealogy(
             "generation_contributions": generation_contributions(state.genealogy_tracker, list(final_front_ids)),
         }
     except (ValueError, IndexError, AttributeError) as exc:
-        _logger.warning("Failed to compute genealogy stats: %s", exc)
+        _logger().warning("Failed to compute genealogy stats: %s", exc)
 
 
 def compute_selection_metrics(

@@ -9,7 +9,7 @@ from datetime import datetime, UTC
 from pathlib import Path
 from typing import Optional
 
-from vamos.foundation.version import __version__
+from vamos.foundation.version import get_version
 
 
 def git_revision(project_root: Path) -> Optional[str]:
@@ -100,7 +100,7 @@ def build_run_metadata(
         "seed": seed,
         "population_size": config.population_size,
         "max_evaluations": config.max_evaluations,
-        "vamos_version": __version__,
+        "vamos_version": get_version(),
         "git_revision": git_revision(project_root),
         "problem": problem_info,
         "config": config_payload,

@@ -4,19 +4,6 @@ import logging
 import sys
 from pathlib import Path
 
-# Allow running via `python src/vamos/cli/main.py` without installing the package.
-module_path = Path(__file__).resolve()
-project_root = module_path.parents[3]
-if __package__ is None or __package__ == "":
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
-
-from vamos.experiment.cli import parse_args
-from vamos.experiment.runner import run_experiments_from_args
-from vamos.foundation.core.experiment_config import ExperimentConfig
-
-logger = logging.getLogger(__name__)
-
 
 def _configure_cli_logging(level: int = logging.INFO) -> None:
     root = logging.getLogger()
@@ -28,7 +15,22 @@ def _configure_cli_logging(level: int = logging.INFO) -> None:
     root.setLevel(level)
 
 
+def _ensure_project_root_on_path() -> None:
+    # Allow running via `python src/vamos/cli/main.py` without installing the package.
+    module_path = Path(__file__).resolve()
+    project_root = module_path.parents[3]
+    if __package__ is None or __package__ == "":
+        project_root_str = str(project_root)
+        if project_root_str not in sys.path:
+            sys.path.insert(0, project_root_str)
+
+
 def main():
+    _ensure_project_root_on_path()
+    from vamos.experiment.cli import parse_args
+    from vamos.experiment.runner import run_experiments_from_args
+    from vamos.foundation.core.experiment_config import ExperimentConfig
+
     _configure_cli_logging()
     default_config = ExperimentConfig()
     args = parse_args(default_config)

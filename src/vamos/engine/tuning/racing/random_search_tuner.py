@@ -9,7 +9,9 @@ import numpy as np
 from .tuning_task import TuningTask, EvalContext
 from .sampler import Sampler, UniformSampler
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 @dataclass
@@ -53,14 +55,14 @@ class RandomSearchTuner:
                 self.task.param_space.validate(config)
             except ValueError as e:
                 if verbose:
-                    logger.info("[trial %s] invalid config skipped: %s", trial_id, e)
+                    _logger().info("[trial %s] invalid config skipped: %s", trial_id, e)
                 continue
 
             score = self.task.eval_config(config, eval_fn)
 
             if verbose:
                 direction = "max" if self.task.maximize else "min"
-                logger.info("[trial %s] %s score=%.6f", trial_id, direction, score)
+                _logger().info("[trial %s] %s score=%.6f", trial_id, direction, score)
 
             trial = TrialResult(trial_id=trial_id, config=config, score=score)
             history.append(trial)
@@ -80,7 +82,7 @@ class RandomSearchTuner:
             raise RuntimeError("Tuner finished without a valid configuration")
 
         if verbose:
-            logger.info("[tuner] Best score=%.6f", best_score)
+            _logger().info("[tuner] Best score=%.6f", best_score)
 
         return best_config, history
 

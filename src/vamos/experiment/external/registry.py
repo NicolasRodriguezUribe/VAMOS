@@ -8,7 +8,11 @@ from .jmetalpy import _run_jmetalpy_nsga2, _run_jmetalpy_perm_nsga2
 from .pymoo import _run_pymoo_nsga2, _run_pymoo_perm_nsga2
 from .pygmo import _run_pygmo_nsga2
 
-logger = logging.getLogger(__name__)
+_EXTERNAL_ALGORITHM_ADAPTERS = None
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 class ExternalAlgorithmAdapter:
@@ -48,14 +52,20 @@ EXTERNAL_ALGORITHM_RUNNERS = {
     "jmetalpy_perm_nsga2": _run_jmetalpy_perm_nsga2,
 }
 
-EXTERNAL_ALGORITHM_ADAPTERS = {name: ExternalAlgorithmAdapter(name, fn) for name, fn in EXTERNAL_ALGORITHM_RUNNERS.items()}
+
+def _get_external_algorithm_adapters() -> dict[str, ExternalAlgorithmAdapter]:
+    global _EXTERNAL_ALGORITHM_ADAPTERS
+    if _EXTERNAL_ALGORITHM_ADAPTERS is None:
+        _EXTERNAL_ALGORITHM_ADAPTERS = {name: ExternalAlgorithmAdapter(name, fn) for name, fn in EXTERNAL_ALGORITHM_RUNNERS.items()}
+    return _EXTERNAL_ALGORITHM_ADAPTERS
 
 
 def resolve_external_algorithm(name: str) -> ExternalAlgorithmAdapter:
+    adapters = _get_external_algorithm_adapters()
     try:
-        return EXTERNAL_ALGORITHM_ADAPTERS[name]
+        return adapters[name]
     except KeyError as exc:  # pragma: no cover - defensive guard
-        available = ", ".join(sorted(EXTERNAL_ALGORITHM_ADAPTERS))
+        available = ", ".join(sorted(adapters))
         raise ValueError(f"Unknown external algorithm '{name}'. Available: {available}") from exc
 
 
@@ -80,6 +90,6 @@ def run_external(
             print_results=print_results,
         )
     except ImportError as exc:
-        logger.warning("Skipping %s: %s", name, exc)
-        logger.info("%s", "=" * 80)
+        _logger().warning("Skipping %s: %s", name, exc)
+        _logger().info("%s", "=" * 80)
         return None

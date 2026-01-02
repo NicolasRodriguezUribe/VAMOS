@@ -70,25 +70,46 @@ def compute_hypervolume(F: np.ndarray, ref_point: Sequence[float]) -> float:
 
 
 # General hypervolume utilities (moocore/libhv fallback).
-try:  # Prefer the MooCore C backend when available.
-    import moocore as _moocore  # type: ignore
-except ImportError:  # pragma: no cover - optional dependency
-    _moocore = None
-
+_MOOCORE = None
 _LIBHV_MODULE = None
 _LIBHV_HV_FN = None
 _LIBHV_CLASS = None
-try:  # pragma: no cover - optional dependency
-    import libhv as _libhv_module  # type: ignore
-except ImportError:
-    _libhv_module = None
-else:
-    _LIBHV_HV_FN = getattr(_libhv_module, "hypervolume", None)
-    _LIBHV_CLASS = getattr(_libhv_module, "HyperVolume", None)
-    if _LIBHV_HV_FN is None and _LIBHV_CLASS is None:
-        _libhv_module = None
-    else:
-        _LIBHV_MODULE = _libhv_module
+_OPTIONAL_LOADED = False
+
+
+def _load_optional_backends() -> None:
+    global _MOOCORE, _LIBHV_MODULE, _LIBHV_HV_FN, _LIBHV_CLASS, _OPTIONAL_LOADED
+    if _OPTIONAL_LOADED:
+        return
+    _OPTIONAL_LOADED = True
+    try:  # Prefer the MooCore C backend when available.
+        import moocore as moocore_module  # type: ignore
+    except ImportError:  # pragma: no cover - optional dependency
+        moocore_module = None
+    _MOOCORE = moocore_module
+
+    try:  # pragma: no cover - optional dependency
+        import libhv as libhv_module  # type: ignore
+    except ImportError:
+        libhv_module = None
+
+    if libhv_module is None:
+        _LIBHV_MODULE = None
+        _LIBHV_HV_FN = None
+        _LIBHV_CLASS = None
+        return
+
+    hv_fn = getattr(libhv_module, "hypervolume", None)
+    hv_cls = getattr(libhv_module, "HyperVolume", None)
+    if hv_fn is None and hv_cls is None:
+        _LIBHV_MODULE = None
+        _LIBHV_HV_FN = None
+        _LIBHV_CLASS = None
+        return
+
+    _LIBHV_MODULE = libhv_module
+    _LIBHV_HV_FN = hv_fn
+    _LIBHV_CLASS = hv_cls
 
 
 def hypervolume(points: np.ndarray, reference_point: np.ndarray) -> float:
@@ -99,9 +120,10 @@ def hypervolume(points: np.ndarray, reference_point: np.ndarray) -> float:
         return 0.0
 
     ref = _validate_reference_point(points, reference_point)
-    if _moocore is not None:
+    _load_optional_backends()
+    if _MOOCORE is not None:
         data = np.ascontiguousarray(points, dtype=np.float64)
-        return float(_moocore.hypervolume(data, ref))
+        return float(_MOOCORE.hypervolume(data, ref))
     if _LIBHV_MODULE is not None:
         return float(_hypervolume_with_libhv(points, ref))
     return _hypervolume_impl(points, ref)
@@ -113,9 +135,10 @@ def hypervolume_contributions(points: np.ndarray, reference_point: np.ndarray) -
         return np.zeros(points.shape[0], dtype=float)
 
     ref = _validate_reference_point(points, reference_point)
-    if _moocore is not None:
+    _load_optional_backends()
+    if _MOOCORE is not None:
         data = np.ascontiguousarray(points, dtype=np.float64)
-        return np.asarray(_moocore.hv_contributions(data, ref), dtype=float)
+        return np.asarray(_MOOCORE.hv_contributions(data, ref), dtype=float)
     if points.shape[1] == 2:
         return _hypervolume_contributions_2d(points, ref)
 

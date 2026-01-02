@@ -1,0 +1,11 @@
+# Default owners for repository
+* @vamos-maintainers
+
+# Core library
+/src/vamos/ @vamos-maintainers
+
+# Architecture and health gates
+/tests/architecture/ @vamos-maintainers
+
+# Documentation
+/docs/ @vamos-maintainers

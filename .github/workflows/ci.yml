@@ -34,12 +34,16 @@ jobs:
             tests/architecture/test_layer_boundaries.py \
             tests/test_monolith_guard.py \
             tests/test_public_api_guard.py \
+            tests/architecture/test_public_api_snapshot.py \
             tests/test_import_time_smoke.py \
+            tests/architecture/test_no_import_time_side_effects.py \
+            tests/architecture/test_dependency_policy.py \
             tests/test_optional_deps_policy.py \
             tests/test_logging_policy.py \
             tests/test_no_prints_in_library.py \
             tests/test_no_deprecation_shims.py \
             tests/test_agents_health_link.py \
+            tests/architecture/test_report_retention_policy.py \
             tests/architecture/test_ruff_gate.py \
             tests/architecture/test_ruff_format_gate.py \
             tests/architecture/test_mypy_error_budget.py \

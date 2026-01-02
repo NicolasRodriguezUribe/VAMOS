@@ -10,44 +10,53 @@ def _dtlz_factory(cls, n_var: int, n_obj: Optional[int]):
     return cls(n_var=n_var, n_obj=n_obj if n_obj is not None else 3)
 
 
-SPECS = {
-    "dtlz1": ProblemSpec(
-        key="dtlz1",
-        label="DTLZ1",
-        default_n_var=7,
-        default_n_obj=3,
-        allow_n_obj_override=True,
-        description="DTLZ1 with configurable objectives (defaults to 3).",
-        factory=lambda n_var, n_obj: _dtlz_factory(DTLZ1Problem, n_var, n_obj),
-    ),
-    "dtlz2": ProblemSpec(
-        key="dtlz2",
-        label="DTLZ2",
-        default_n_var=12,
-        default_n_obj=3,
-        allow_n_obj_override=True,
-        description="DTLZ2 with configurable objectives (defaults to 3).",
-        factory=lambda n_var, n_obj: _dtlz_factory(DTLZ2Problem, n_var, n_obj),
-    ),
-    "dtlz3": ProblemSpec(
-        key="dtlz3",
-        label="DTLZ3",
-        default_n_var=12,
-        default_n_obj=3,
-        allow_n_obj_override=True,
-        description="DTLZ3 with configurable objectives (defaults to 3).",
-        factory=lambda n_var, n_obj: _dtlz_factory(DTLZ3Problem, n_var, n_obj),
-    ),
-    "dtlz4": ProblemSpec(
-        key="dtlz4",
-        label="DTLZ4",
-        default_n_var=12,
-        default_n_obj=3,
-        allow_n_obj_override=True,
-        description="DTLZ4 with configurable objectives (defaults to 3).",
-        factory=lambda n_var, n_obj: _dtlz_factory(DTLZ4Problem, n_var, n_obj),
-    ),
-}
+SPECS: dict[str, ProblemSpec] = {}
 
 
-__all__ = ["SPECS"]
+def get_specs() -> dict[str, ProblemSpec]:
+    if SPECS:
+        return SPECS
+    SPECS.update(
+        {
+            "dtlz1": ProblemSpec(
+                key="dtlz1",
+                label="DTLZ1",
+                default_n_var=7,
+                default_n_obj=3,
+                allow_n_obj_override=True,
+                description="DTLZ1 with configurable objectives (defaults to 3).",
+                factory=lambda n_var, n_obj: _dtlz_factory(DTLZ1Problem, n_var, n_obj),
+            ),
+            "dtlz2": ProblemSpec(
+                key="dtlz2",
+                label="DTLZ2",
+                default_n_var=12,
+                default_n_obj=3,
+                allow_n_obj_override=True,
+                description="DTLZ2 with configurable objectives (defaults to 3).",
+                factory=lambda n_var, n_obj: _dtlz_factory(DTLZ2Problem, n_var, n_obj),
+            ),
+            "dtlz3": ProblemSpec(
+                key="dtlz3",
+                label="DTLZ3",
+                default_n_var=12,
+                default_n_obj=3,
+                allow_n_obj_override=True,
+                description="DTLZ3 with configurable objectives (defaults to 3).",
+                factory=lambda n_var, n_obj: _dtlz_factory(DTLZ3Problem, n_var, n_obj),
+            ),
+            "dtlz4": ProblemSpec(
+                key="dtlz4",
+                label="DTLZ4",
+                default_n_var=12,
+                default_n_obj=3,
+                allow_n_obj_override=True,
+                description="DTLZ4 with configurable objectives (defaults to 3).",
+                factory=lambda n_var, n_obj: _dtlz_factory(DTLZ4Problem, n_var, n_obj),
+            ),
+        }
+    )
+    return SPECS
+
+
+__all__ = ["SPECS", "get_specs"]

@@ -38,9 +38,15 @@ from vamos.hooks import (
 )
 from vamos.hooks.config_parse import parse_stopping_archive
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
-logger = logging.getLogger(__name__)
+def _project_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
+
 Metrics = dict[str, Any]
 VariationConfig = dict[str, Any]
 
@@ -200,7 +206,7 @@ def run_single(
         autodiff_info=autodiff_info,
         config=config,
         kernel_backend=kernel_backend,
-        project_root=PROJECT_ROOT,
+        project_root=_project_root(),
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
         smsemoa_variation=smsemoa_variation,
@@ -208,29 +214,29 @@ def run_single(
         hook_mgr=hook_mgr,
     )
 
-    logger.info("Results stored in: %s", output_dir)
-    logger.info("%s", "=" * 80)
+    _logger().info("Results stored in: %s", output_dir)
+    _logger().info("%s", "=" * 80)
 
     return metrics
 
 
 def _print_summary(results: Iterable[Metrics], hv_ref_point: np.ndarray) -> None:
-    logger.info("Experiment summary")
-    logger.info("%s", "-" * 80)
+    _logger().info("Experiment summary")
+    _logger().info("%s", "-" * 80)
     header = f"{'Algo':<12} {'Backend':<10} {'Time (ms)':>12} {'Eval/s':>12} {'HV':>12} {'Spread f1':>12}"
-    logger.info("%s", header)
-    logger.info("%s", "-" * len(header))
+    _logger().info("%s", header)
+    _logger().info("%s", "-" * len(header))
     for res in results:
         spread = res["spread"]
         spread_txt = f"{spread:.6f}" if spread is not None else "-"
         hv_txt = f"{res['hv']:.6f}" if res.get("hv") is not None else "-"
-        logger.info(
+        _logger().info(
             "%s",
             f"{res['algorithm']:<12} {res['engine']:<10} {res['time_ms']:>12.2f} "
             f"{res['evals_per_sec']:>12.1f} {hv_txt:>12} {spread_txt:>12}",
         )
     ref_txt = np.array2string(hv_ref_point, precision=3, suppress_small=True)
-    logger.info("Hypervolume reference point: %s", ref_txt)
+    _logger().info("Hypervolume reference point: %s", ref_txt)
 
 
 def execute_problem_suite(
@@ -260,7 +266,7 @@ def execute_problem_suite(
     use_native_external_problem = args.external_problem_source == "native"
 
     if include_external and problem_selection.spec.key != "zdt1":
-        logger.info("External baselines are currently available only for ZDT1; skipping external runs.")
+        _logger().info("External baselines are currently available only for ZDT1; skipping external runs.")
         include_external = False
 
     if include_external:
@@ -353,7 +359,7 @@ def execute_problem_suite(
             results.append(metrics)
 
     if not results:
-        logger.info("No runs were executed. Check algorithm selection or install missing dependencies.")
+        _logger().info("No runs were executed. Check algorithm selection or install missing dependencies.")
         return
 
     fronts = [res["F"] for res in results]
@@ -371,7 +377,7 @@ def execute_problem_suite(
     if len(results) == 1:
         hv_val = results[0]["hv"]
         ref_txt = np.array2string(hv_ref_point, precision=3, suppress_small=True)
-        logger.info("Hypervolume (reference %s): %.6f", ref_txt, hv_val)
+        _logger().info("Hypervolume (reference %s): %.6f", ref_txt, hv_val)
     else:
         _print_summary(results, hv_ref_point)
 

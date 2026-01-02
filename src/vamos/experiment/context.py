@@ -27,7 +27,9 @@ from typing import TYPE_CHECKING, Any, Iterator
 if TYPE_CHECKING:
     from vamos.experiment.optimize import OptimizationResult
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 @dataclass
@@ -119,7 +121,7 @@ class Experiment:
         self._active = True
         self._start_time = time.perf_counter()
         if self.verbose:
-            logger.info("Starting experiment: %s", self.name)
+            _logger().info("Starting experiment: %s", self.name)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -129,7 +131,7 @@ class Experiment:
 
         if self.verbose:
             elapsed = self._end_time - (self._start_time or self._end_time)
-            logger.info(
+            _logger().info(
                 "Experiment '%s' completed: %s runs in %.2fs",
                 self.name,
                 len(self._runs),
@@ -185,7 +187,7 @@ class Experiment:
         run_name = name or f"{algorithm}_{problem_name}_{self._run_counter}"
 
         if self.verbose:
-            logger.info("Running: %s on %s...", algorithm, problem_name)
+            _logger().info("Running: %s on %s...", algorithm, problem_name)
 
         # Time the run
         start = time.perf_counter()
@@ -201,7 +203,7 @@ class Experiment:
         elapsed = time.perf_counter() - start
 
         if self.verbose:
-            logger.info("%s solutions in %.2fs", result.F.shape[0], elapsed)
+            _logger().info("%s solutions in %.2fs", result.F.shape[0], elapsed)
 
         # Record the run
         record = RunRecord(

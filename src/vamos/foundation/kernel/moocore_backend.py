@@ -5,10 +5,7 @@ from typing import Any, Iterable, TYPE_CHECKING, cast
 import numpy as np
 from numpy.typing import NDArray
 
-try:
-    import moocore
-except ImportError as exc:  # pragma: no cover
-    raise ImportError("MooCoreKernel requires the 'moocore' dependency. Install it or switch to a different backend.") from exc
+import moocore
 
 try:  # Optional JIT acceleration for tournament selection
     from numba import njit

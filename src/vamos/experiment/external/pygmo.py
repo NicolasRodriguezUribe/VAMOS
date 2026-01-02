@@ -7,7 +7,9 @@ import numpy as np
 
 from vamos.foundation.problem.registry import ProblemSelection
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _run_pygmo_nsga2(
@@ -75,5 +77,5 @@ def _run_pygmo_nsga2(
     F = np.asarray(pop.get_f(), dtype=float)
     metrics = make_metrics("pygmo_nsga2", "pygmo", total_time_ms, total_eval, F)
     print_results(metrics)
-    logger.info("%s", "=" * 80)
+    _logger().info("%s", "=" * 80)
     return metrics

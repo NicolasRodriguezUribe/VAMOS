@@ -1,25 +1,41 @@
 from __future__ import annotations
 
-import os
 import numpy as np
 
-_USE_NUMBA_VARIATION = os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
-_HAS_NUMBA = False
-if _USE_NUMBA_VARIATION:
+_RANDOM_RESET_MASKED_JIT = None
+
+
+def _use_numba_variation() -> bool:
+    import os
+
+    return os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
+
+
+def _get_random_reset_masked():
+    global _RANDOM_RESET_MASKED_JIT
+    if _RANDOM_RESET_MASKED_JIT is False:
+        return None
+    if _RANDOM_RESET_MASKED_JIT is not None:
+        return _RANDOM_RESET_MASKED_JIT
+    if not _use_numba_variation():
+        _RANDOM_RESET_MASKED_JIT = False
+        return None
     try:
         from numba import njit
     except ImportError:
-        _HAS_NUMBA = False
-    else:
-        _HAS_NUMBA = True
+        _RANDOM_RESET_MASKED_JIT = False
+        return None
 
-        @njit(cache=True)
-        def _random_reset_masked(X: np.ndarray, mask: np.ndarray, rand_vals: np.ndarray):
-            rows, cols = mask.shape
-            for i in range(rows):
-                for j in range(cols):
-                    if mask[i, j]:
-                        X[i, j] = rand_vals[i, j]
+    @njit(cache=True)
+    def _random_reset_masked(X: np.ndarray, mask: np.ndarray, rand_vals: np.ndarray):
+        rows, cols = mask.shape
+        for i in range(rows):
+            for j in range(cols):
+                if mask[i, j]:
+                    X[i, j] = rand_vals[i, j]
+
+    _RANDOM_RESET_MASKED_JIT = _random_reset_masked
+    return _RANDOM_RESET_MASKED_JIT
 
 
 def random_integer_population(pop_size: int, n_var: int, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator) -> np.ndarray:
@@ -102,8 +118,9 @@ def random_reset_mutation(X: np.ndarray, prob: float, lower: np.ndarray, upper: 
     if not np.any(mask):
         return
     rand_vals = rng.integers(lower, upper + 1, size=X.shape, dtype=X.dtype)
-    if _HAS_NUMBA:
-        _random_reset_masked(X, mask, rand_vals)
+    jit_fn = _get_random_reset_masked()
+    if jit_fn is not None:
+        jit_fn(X, mask, rand_vals)
     else:
         X[mask] = rand_vals[mask]
 

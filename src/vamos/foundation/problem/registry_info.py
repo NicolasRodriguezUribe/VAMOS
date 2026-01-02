@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from vamos.foundation.problem.registry import PROBLEM_SPECS, ProblemSpec
+from vamos.foundation.problem.registry.specs import ProblemSpec, get_problem_specs
 
 
 @dataclass
@@ -33,11 +33,12 @@ def _spec_to_info(spec: ProblemSpec) -> ProblemInfo:
 
 
 def list_problems() -> List[ProblemInfo]:
-    return [_spec_to_info(spec) for spec in PROBLEM_SPECS.values()]
+    specs = get_problem_specs()
+    return [_spec_to_info(spec) for spec in specs.values()]
 
 
 def get_problem_info(name: str) -> Optional[ProblemInfo]:
-    spec = PROBLEM_SPECS.get(name)
+    spec = get_problem_specs().get(name)
     if spec is None:
         return None
     return _spec_to_info(spec)

@@ -8,7 +8,9 @@ import numpy as np
 
 from vamos.experiment.optimize import pareto_filter
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _non_dominated_mask(points: np.ndarray) -> np.ndarray:
@@ -48,12 +50,12 @@ def plot_pareto_front(results, selection, *, output_root: str, title: str):
         return None
     n_obj = plot_entries[0][1].shape[1]
     if n_obj < 2:
-        logger.warning("Pareto visualization requires at least two objectives; skipping plot.")
+        _logger().warning("Pareto visualization requires at least two objectives; skipping plot.")
         return None
     try:
         import matplotlib.pyplot as plt
     except ImportError as exc:
-        logger.warning(
+        _logger().warning(
             "matplotlib is required for plotting the Pareto front (skipping plot: %s).",
             exc,
         )
@@ -116,5 +118,5 @@ def plot_pareto_front(results, selection, *, output_root: str, title: str):
     plot_path = os.path.join(_problem_output_dir(selection, output_root), filename)
     fig.savefig(plot_path, dpi=200)
     plt.close(fig)
-    logger.info("Pareto front plot saved to: %s", plot_path)
+    _logger().info("Pareto front plot saved to: %s", plot_path)
     return plot_path

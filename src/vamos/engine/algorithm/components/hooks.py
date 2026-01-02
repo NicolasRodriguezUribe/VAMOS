@@ -9,7 +9,10 @@ from typing import Any, TYPE_CHECKING
 
 import numpy as np
 
-_logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.state import AlgorithmState
@@ -72,7 +75,7 @@ def notify_generation(
         nd_mask = ranks == ranks.min(initial=0)
         live_cb.on_generation(generation, F=F[nd_mask], stats=stats)
     except (ValueError, IndexError) as exc:
-        _logger.debug("Failed to compute non-dominated front for viz: %s", exc)
+        _logger().debug("Failed to compute non-dominated front for viz: %s", exc)
         live_cb.on_generation(generation, F=F, stats=stats)
     return live_should_stop(live_cb)
 

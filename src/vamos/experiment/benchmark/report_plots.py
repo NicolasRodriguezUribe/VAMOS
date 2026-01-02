@@ -5,23 +5,33 @@ Plot helpers for benchmark reporting.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
-try:  # pragma: no cover - optional heavy dep
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-except Exception:  # pragma: no cover
-    matplotlib = None
-    plt = None
+_MATPLOTLIB_CACHE: tuple[Any | None, Any | None] | None = None
 
 from vamos.ux.analysis.stats import plot_critical_distance
+
+
+def _load_matplotlib() -> tuple[Any | None, Any | None]:
+    global _MATPLOTLIB_CACHE
+    if _MATPLOTLIB_CACHE is not None:
+        return _MATPLOTLIB_CACHE
+    try:  # pragma: no cover - optional heavy dep
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except Exception:  # pragma: no cover
+        _MATPLOTLIB_CACHE = (None, None)
+    else:
+        _MATPLOTLIB_CACHE = (matplotlib, plt)
+    return _MATPLOTLIB_CACHE
 
 
 def generate_plots(
     tidy, stats: Dict[str, dict], metrics: List[str], alpha: float, suite_name: str, output_dir: Path, higher_is_better
 ) -> Dict[str, List[Path]]:
+    _, plt = _load_matplotlib()
     if plt is None:
         return {}
     plots_dir = Path(output_dir)
