@@ -49,7 +49,9 @@ from vamos.engine.hyperheuristics.operator_selector import compute_reward
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 
-_logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 class NSGAII:
@@ -106,7 +108,7 @@ class NSGAII:
             stats = {"evals": int(evals)} if evals is not None else None
             live_cb.on_generation(generation, F=F[nd_mask], stats=stats)
         except (ValueError, IndexError) as exc:
-            _logger.debug("Failed to compute non-dominated front for viz: %s", exc)
+            _logger().debug("Failed to compute non-dominated front for viz: %s", exc)
             stats = {"evals": int(evals)} if evals is not None else None
             live_cb.on_generation(generation, F=F, stats=stats)
         return live_should_stop(live_cb)
@@ -312,7 +314,7 @@ class NSGAII:
                 ranks, _ = self.kernel.nsga2_ranking(st.F)
                 nd_mask = ranks == ranks.min(initial=0)
             except (ValueError, IndexError) as exc:
-                _logger.debug("Failed to compute ND mask for AOS: %s", exc)
+                _logger().debug("Failed to compute ND mask for AOS: %s", exc)
                 nd_mask = np.zeros(st.F.shape[0], dtype=bool)
             is_offspring = selected_idx >= parent_count
             n_survivors = int(np.sum(is_offspring))
@@ -352,7 +354,7 @@ class NSGAII:
         try:
             return st.indicator_eval.compute(st.hv_points_fn())
         except (ValueError, TypeError, RuntimeError) as exc:
-            _logger.debug("Failed to compute HV before: %s", exc)
+            _logger().debug("Failed to compute HV before: %s", exc)
             return None
 
     def _combine_ids(self, st: NSGAIIState) -> np.ndarray | None:
@@ -372,4 +374,4 @@ class NSGAII:
             reward = compute_reward(hv_before, hv_after, st.indicator_eval.mode)
             st.op_selector.update(st.last_operator_idx, reward)
         except (ValueError, TypeError, RuntimeError) as exc:
-            _logger.debug("Failed to compute operator reward: %s", exc)
+            _logger().debug("Failed to compute operator reward: %s", exc)

@@ -37,7 +37,9 @@ BUILDERS = {
     "smsemoa": build_smsemoa_config_space,
 }
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _configure_cli_logging(level: int = logging.INFO) -> None:
@@ -74,13 +76,13 @@ def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str
         try:
             ref_point = np.array([float(x.strip()) for x in ref_point_str.split(",")])
             if len(ref_point) != n_obj:
-                logger.warning(
+                _logger().warning(
                     "Reference point length (%s) does not match n_obj (%s).",
                     len(ref_point),
                     n_obj,
                 )
         except ValueError:
-            logger.warning("Error parsing --ref-point. Using default.")
+            _logger().warning("Error parsing --ref-point. Using default.")
             ref_point = np.array([1.1] * n_obj)
     else:
         # Default fallback
@@ -121,7 +123,7 @@ def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str
         except Exception as e:
             # In tuning, we often want to absorb errors and return bad score
             # to keep the racer alive.
-            logger.warning("Eval failed for %s: %s", algorithm_name, e)
+            _logger().warning("Eval failed for %s: %s", algorithm_name, e)
             return 0.0
 
     return eval_fn
@@ -138,8 +140,8 @@ def main():
 
     param_space = builder()
 
-    logger.info("Tuning %s on %s (Budget: %s)", args.algorithm, args.problem, args.tune_budget)
-    logger.info("Parallel Jobs: %s", args.n_jobs)
+    _logger().info("Tuning %s on %s (Budget: %s)", args.algorithm, args.problem, args.tune_budget)
+    _logger().info("Parallel Jobs: %s", args.n_jobs)
 
     # 2. Setup Scenario and Task
     scenario = Scenario(
@@ -175,12 +177,12 @@ def main():
 
     best_config, history = tuner.run(eval_fn)
 
-    logger.info("--- Tuning Complete ---")
-    logger.info("Best Configuration Found:")
+    _logger().info("--- Tuning Complete ---")
+    _logger().info("Best Configuration Found:")
     for k, v in best_config.items():
-        logger.info("  %s: %s", k, v)
+        _logger().info("  %s: %s", k, v)
 
-    logger.info("Use these parameters in your scripts or CLI using --config!")
+    _logger().info("Use these parameters in your scripts or CLI using --config!")
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -23,35 +23,45 @@ from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
-logger = logging.getLogger(__name__)
-_DEFAULT_CONFIG = ExperimentConfig()
-POPULATION_SIZE = _DEFAULT_CONFIG.population_size
-MAX_EVALUATIONS = _DEFAULT_CONFIG.max_evaluations
-SEED = _DEFAULT_CONFIG.seed
+_DEFAULT_CONFIG: ExperimentConfig | None = None
 
 
-DIAG_ROOT = Path(__file__).resolve().parent / "diagnostics"
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
+
+def _default_config() -> ExperimentConfig:
+    global _DEFAULT_CONFIG
+    if _DEFAULT_CONFIG is None:
+        _DEFAULT_CONFIG = ExperimentConfig()
+    return _DEFAULT_CONFIG
+
+
+def _diag_root() -> Path:
+    return Path(__file__).resolve().parent / "diagnostics"
 
 
 def _ensure_diag_dir() -> Path:
-    DIAG_ROOT.mkdir(parents=True, exist_ok=True)
-    return DIAG_ROOT
+    root = _diag_root()
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
 
-def _build_internal_algorithm(engine: str = "numpy") -> Tuple[NSGAII, Dict]:
+def _build_internal_algorithm(engine: str = "numpy") -> tuple[NSGAII, dict[str, Any]]:
+    defaults = _default_config()
     cfg = (
         NSGAIIConfig()
-        .pop_size(POPULATION_SIZE)
+        .pop_size(defaults.population_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .survival("nsga2")
         .engine(engine)
     ).fixed()
-    return NSGAII(cfg.to_dict(), kernel=NumPyKernel()), cfg.to_dict()
+    return NSGAII(cfg.to_dict(), kernel=NumPyKernel()), cfg.to_dict()  # type: ignore[no-untyped-call]
 
 
-def _prepare_params(cfg_dict: dict, n_var: int) -> Tuple[dict, dict, int]:
+def _prepare_params(cfg_dict: dict[str, Any], n_var: int) -> tuple[dict[str, Any], dict[str, Any], int]:
     cross_method, cross_params = cfg_dict["crossover"]
     assert cross_method == "sbx", "Only SBX crossover is supported in diagnostics."
     cross_params = dict(cross_params)
@@ -68,14 +78,14 @@ def _prepare_params(cfg_dict: dict, n_var: int) -> Tuple[dict, dict, int]:
     return cross_params, mut_params, pressure
 
 
-def _initialize_population(rng: np.random.Generator, problem, pop_size: int) -> Tuple[np.ndarray, np.ndarray]:
+def _initialize_population(rng: np.random.Generator, problem: Any, pop_size: int) -> tuple[np.ndarray, np.ndarray]:
     X = rng.uniform(problem.xl, problem.xu, size=(pop_size, problem.n_var))
     F = np.empty((pop_size, problem.n_obj))
     problem.evaluate(X, {"F": F})
     return X, F
 
 
-def _log_stats(X: np.ndarray, F: np.ndarray) -> Dict:
+def _log_stats(X: np.ndarray, F: np.ndarray) -> dict[str, float]:
     stats = {
         "f1_min": float(F[:, 0].min()),
         "f1_max": float(F[:, 0].max()),
@@ -99,16 +109,16 @@ def _log_stats(X: np.ndarray, F: np.ndarray) -> Dict:
 
 
 def _evolution_loop(
-    problem,
-    algorithm: NSGAII,
-    cfg_dict: dict,
+    problem: Any,
+    algorithm: Any,
+    cfg_dict: dict[str, Any],
     *,
     rng: np.random.Generator,
     max_eval: int,
     log_every: int = 1,
-    X_init: Optional[np.ndarray] = None,
-    F_init: Optional[np.ndarray] = None,
-) -> Tuple[np.ndarray, np.ndarray, List[Dict]]:
+    X_init: np.ndarray | None = None,
+    F_init: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray, list[dict[str, Any]]]:
     pop_size = cfg_dict["pop_size"]
     if X_init is None or F_init is None:
         X, F = _initialize_population(rng, problem, pop_size)
@@ -119,7 +129,7 @@ def _evolution_loop(
         n_eval = pop_size  # evaluate once per generation after this point
 
     cross_params, mut_params, pressure = _prepare_params(cfg_dict, problem.n_var)
-    stats_log: List[Dict] = []
+    stats_log: list[dict[str, Any]] = []
     generation = 0
 
     while n_eval < max_eval:
@@ -138,7 +148,7 @@ def _evolution_loop(
         F_off = np.empty((X_off.shape[0], problem.n_obj))
         problem.evaluate(X_off, {"F": F_off})
         n_eval += X_off.shape[0]
-        X, F = algorithm.kernel.nsga2_survival(X, F, X_off, F_off, pop_size)
+        X, F = algorithm.kernel.nsga2_survival(X, F, X_off, F_off, pop_size)  # type: ignore[misc]
         generation += 1
 
     sample = {"generation": generation, "evaluations": int(n_eval)}
@@ -147,7 +157,7 @@ def _evolution_loop(
     return X, F, stats_log
 
 
-def run_progress_diagnostic(seed: int, max_eval: int, n_var: int) -> Dict:
+def run_progress_diagnostic(seed: int, max_eval: int, n_var: int) -> dict[str, Any]:
     problem = ZDT1Problem(n_var=n_var)
     algorithm, cfg_dict = _build_internal_algorithm()
     rng = np.random.default_rng(seed)
@@ -170,7 +180,7 @@ def run_progress_diagnostic(seed: int, max_eval: int, n_var: int) -> Dict:
     return payload
 
 
-def _pymoo_reference(seed: int, n_var: int, max_eval: int):
+def _pymoo_reference(seed: int, n_var: int, max_eval: int) -> dict[str, np.ndarray] | None:
     try:
         from pymoo.algorithms.moo.nsga2 import NSGA2 as PymooNSGA2
         from pymoo.operators.crossover.sbx import SBX
@@ -184,8 +194,9 @@ def _pymoo_reference(seed: int, n_var: int, max_eval: int):
     pymoo_problem = get_problem("zdt1", n_var=n_var)
     crossover = SBX(prob=0.9, eta=20)
     mutation = PM(prob=1.0 / n_var, eta=20)
+    defaults = _default_config()
     algorithm = PymooNSGA2(
-        pop_size=POPULATION_SIZE,
+        pop_size=defaults.population_size,
         sampling=FloatRandomSampling(),
         crossover=crossover,
         mutation=mutation,
@@ -203,7 +214,7 @@ def _pymoo_reference(seed: int, n_var: int, max_eval: int):
     return {"X": X, "F": F}
 
 
-def compare_with_pymoo(seed: int, n_var: int, max_eval: int) -> Optional[Dict]:
+def compare_with_pymoo(seed: int, n_var: int, max_eval: int) -> dict[str, Any] | None:
     reference = _pymoo_reference(seed, n_var, max_eval)
     if reference is None:
         return None
@@ -231,13 +242,14 @@ def compare_with_pymoo(seed: int, n_var: int, max_eval: int) -> Optional[Dict]:
     return payload
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Diagnostics for the internal NSGA-II implementation.")
-    parser.add_argument("--seed", type=int, default=SEED, help="Random seed.")
+    defaults = _default_config()
+    parser.add_argument("--seed", type=int, default=defaults.seed, help="Random seed.")
     parser.add_argument(
         "--max-eval",
         type=int,
-        default=MAX_EVALUATIONS,
+        default=defaults.max_evaluations,
         help="Total evaluation budget.",
     )
     parser.add_argument(
@@ -258,17 +270,17 @@ def main():
     progress_path = output_dir / f"nsga2_progress_seed{args.seed}_eval{args.max_eval}_nvar{args.n_var}.json"
     with open(progress_path, "w", encoding="utf-8") as fh:
         json.dump(progress, fh, indent=2)
-    logger.info("Saved internal progress stats to %s", progress_path)
+    _logger().info("Saved internal progress stats to %s", progress_path)
 
     if not args.skip_pymoo:
         compare = compare_with_pymoo(args.seed, args.n_var, args.max_eval)
         if compare is None:
-            logger.info("pymoo is not installed; skipping external comparison.")
+            _logger().info("pymoo is not installed; skipping external comparison.")
         else:
             compare_path = output_dir / f"nsga2_pymoo_compare_seed{args.seed}_eval{args.max_eval}_nvar{args.n_var}.json"
             with open(compare_path, "w", encoding="utf-8") as fh:
                 json.dump(compare, fh, indent=2)
-            logger.info("Saved PyMOO comparison stats to %s", compare_path)
+            _logger().info("Saved PyMOO comparison stats to %s", compare_path)
 
 
 if __name__ == "__main__":

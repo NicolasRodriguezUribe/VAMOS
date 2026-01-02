@@ -10,7 +10,9 @@ from vamos.experiment.benchmark.report import BenchmarkReport, BenchmarkReportCo
 from vamos.experiment.benchmark.runner import BenchmarkResult, run_benchmark_suite
 from vamos.experiment.benchmark.suites import get_benchmark_suite
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _configure_cli_logging(level: int = logging.INFO) -> None:
@@ -60,7 +62,7 @@ def main(argv: list[str] | None = None) -> None:
     from vamos.experiment.benchmark.suites import list_benchmark_suites
 
     if args.list or not args.suite:
-        logger.info("Available benchmark suites: %s", ", ".join(list_benchmark_suites()))
+        _logger().info("Available benchmark suites: %s", ", ".join(list_benchmark_suites()))
         return
 
     suite = get_benchmark_suite(args.suite)
@@ -101,13 +103,13 @@ def main(argv: list[str] | None = None) -> None:
     tables = report.generate_latex_tables()
     plots = report.generate_plots()
 
-    logger.info("[Benchmark] Suite '%s' completed.", suite.name)
-    logger.info("[Benchmark] Summary CSV: %s", result.summary_path)
-    logger.info("[Benchmark] Tidy metrics: %s", report_output / "metrics_tidy.csv")
+    _logger().info("[Benchmark] Suite '%s' completed.", suite.name)
+    _logger().info("[Benchmark] Summary CSV: %s", result.summary_path)
+    _logger().info("[Benchmark] Tidy metrics: %s", report_output / "metrics_tidy.csv")
     if tables:
-        logger.info("[Benchmark] LaTeX tables in %s", report_output / "tables")
+        _logger().info("[Benchmark] LaTeX tables in %s", report_output / "tables")
     if plots:
-        logger.info("[Benchmark] Plots in %s", report_output / "plots")
+        _logger().info("[Benchmark] Plots in %s", report_output / "plots")
 
 
 if __name__ == "__main__":

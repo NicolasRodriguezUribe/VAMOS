@@ -26,7 +26,7 @@ from vamos.api import (
     run_optimization,
     run_self_check,
 )
-from vamos.foundation.version import __version__
+from vamos.foundation.version import get_version as _get_version
 
 __all__ = [
     "__version__",
@@ -46,3 +46,13 @@ __all__ = [
     "ProblemSelection",
     "ProblemSpec",
 ]
+
+
+def __getattr__(name: str):
+    if name == "__version__":
+        return _get_version()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted(set(__all__) | set(globals()))

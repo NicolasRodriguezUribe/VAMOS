@@ -18,7 +18,9 @@ from .refill import refill_population
 
 from joblib import Parallel, delayed
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _eval_worker(eval_fn: Callable[[Dict[str, Any], EvalContext], float], config: Dict[str, Any], ctx: EvalContext) -> float:
@@ -139,7 +141,7 @@ class RacingTuner:
         for inst_idx, seed_idx in schedule:
             if self.scenario.max_stages is not None and self._stage_index >= self.scenario.max_stages:
                 if verbose_flag:
-                    logger.info("[racing] Reached maximum number of stages.")
+                    _logger().info("[racing] Reached maximum number of stages.")
                 break
 
             if self._num_alive(configs) == 0:
@@ -148,11 +150,11 @@ class RacingTuner:
             stage_alive = self._num_alive(configs)
             if num_experiments + stage_alive > self.scenario.max_experiments:
                 if verbose_flag:
-                    logger.info("[racing] Experiment budget exhausted before next stage.")
+                    _logger().info("[racing] Experiment budget exhausted before next stage.")
                 break
 
             if verbose_flag:
-                logger.info(
+                _logger().info(
                     "[racing] Stage %s: instance %s, seed idx %s, alive=%s",
                     self._stage_index,
                     inst_idx,
@@ -195,12 +197,12 @@ class RacingTuner:
 
             if reached_budget:
                 if verbose_flag:
-                    logger.info("[racing] Reached maximum experiment budget.")
+                    _logger().info("[racing] Reached maximum experiment budget.")
                 break
 
             if reached_min_survivors:
                 if verbose_flag:
-                    logger.info("[racing] Reached minimum survivors, stopping early.")
+                    _logger().info("[racing] Reached minimum survivors, stopping early.")
                 break
 
         best_state, history = self._finalize_results(configs)
@@ -208,7 +210,7 @@ class RacingTuner:
             raise RuntimeError("RacingTuner finished without a valid configuration.")
 
         if verbose_flag and best_state.score is not None:
-            logger.info(
+            _logger().info(
                 "[racing] Best score=%.6f after stage %s.",
                 best_state.score,
                 self._stage_index,

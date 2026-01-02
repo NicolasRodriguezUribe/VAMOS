@@ -9,7 +9,11 @@ import numpy as np
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
+
 MetricsBuilder = Callable[[str, str, float, int, np.ndarray], dict[str, Any]]
 Printer = Callable[..., Any]
 
@@ -146,7 +150,7 @@ def _run_jmetalpy_nsga2(
     F = np.array([sol.objectives for sol in solutions], dtype=float)
     metrics = make_metrics("jmetalpy_nsga2", "jmetalpy", total_time_ms, config.max_evaluations, F)
     print_results(metrics)
-    logger.info("%s", "=" * 80)
+    _logger().info("%s", "=" * 80)
     return metrics
 
 
@@ -275,5 +279,5 @@ def _run_jmetalpy_perm_nsga2(
     F = np.array([sol.objectives for sol in solutions], dtype=float)
     metrics = make_metrics("jmetalpy_perm_nsga2", "jmetalpy", total_time_ms, config.max_evaluations, F)
     print_results(metrics)
-    logger.info("%s", "=" * 80)
+    _logger().info("%s", "=" * 80)
     return metrics

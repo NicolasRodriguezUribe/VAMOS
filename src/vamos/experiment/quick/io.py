@@ -9,7 +9,9 @@ import numpy as np
 
 from vamos.foundation.problem.types import ProblemProtocol
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def save_quick_result(
@@ -41,4 +43,4 @@ def save_quick_result(
     with open(out_dir / "metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)
 
-    logger.info("Results saved to %s", out_dir)
+    _logger().info("Results saved to %s", out_dir)

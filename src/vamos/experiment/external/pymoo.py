@@ -2,23 +2,37 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Any, Callable, Protocol
 
 import numpy as np
 
 from vamos.foundation.problem.registry import ProblemSelection
+from vamos.foundation.problem.types import ProblemProtocol
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
+
+MetricsBuilder = Callable[[str, str, float, int, np.ndarray], dict[str, Any]]
+Printer = Callable[..., None]
+
+
+class ExperimentConfig(Protocol):
+    population_size: int
+    max_evaluations: int
+    seed: int
 
 
 def _run_pymoo_nsga2(
     selection: ProblemSelection,
     *,
     use_native_problem: bool,
-    config,
-    make_metrics,
-    print_banner,
-    print_results,
-):
+    config: ExperimentConfig,
+    make_metrics: MetricsBuilder,
+    print_banner: Printer,
+    print_results: Printer,
+) -> dict[str, Any]:
     if selection.spec.key != "zdt1":
         raise ValueError("PyMOO baseline currently supports only ZDT1.")
     problem = selection.instantiate()
@@ -38,8 +52,8 @@ def _run_pymoo_nsga2(
         pymoo_problem = get_problem("zdt1", n_var=selection.n_var)
     else:
 
-        class _VamosPymooProblem(PymooProblem):
-            def __init__(self, base_problem):
+        class _VamosPymooProblem(PymooProblem):  # type: ignore[misc]
+            def __init__(self, base_problem: ProblemProtocol) -> None:
                 super().__init__(
                     n_var=base_problem.n_var,
                     n_obj=base_problem.n_obj,
@@ -48,7 +62,7 @@ def _run_pymoo_nsga2(
                 )
                 self._base_problem = base_problem
 
-            def _evaluate(self, X, out, *args, **kwargs):
+            def _evaluate(self, X: np.ndarray, out: dict[str, Any], *args: Any, **kwargs: Any) -> None:
                 F = np.empty((X.shape[0], self.n_obj))
                 self._base_problem.evaluate(X, {"F": F})
                 out["F"] = F
@@ -78,7 +92,7 @@ def _run_pymoo_nsga2(
     F = np.asarray(res.F, dtype=float)
     metrics = make_metrics("pymoo_nsga2", "pymoo", total_time_ms, config.max_evaluations, F)
     print_results(metrics)
-    logger.info("%s", "=" * 80)
+    _logger().info("%s", "=" * 80)
     return metrics
 
 
@@ -86,11 +100,11 @@ def _run_pymoo_perm_nsga2(
     selection: ProblemSelection,
     *,
     use_native_problem: bool,
-    config,
-    make_metrics,
-    print_banner,
-    print_results,
-):
+    config: ExperimentConfig,
+    make_metrics: MetricsBuilder,
+    print_banner: Printer,
+    print_results: Printer,
+) -> dict[str, Any]:
     problem = selection.instantiate()
     encoding = getattr(problem, "encoding", "continuous")
     if encoding != "permutation":
@@ -105,8 +119,8 @@ def _run_pymoo_perm_nsga2(
     except ImportError as exc:  # pragma: no cover
         raise ImportError("pymoo is not installed. Install it with 'pip install pymoo' to use this baseline.") from exc
 
-    class _VamosPymooPermutationProblem(PymooProblem):
-        def __init__(self, base_problem):
+    class _VamosPymooPermutationProblem(PymooProblem):  # type: ignore[misc]
+        def __init__(self, base_problem: ProblemProtocol) -> None:
             super().__init__(
                 n_var=base_problem.n_var,
                 n_obj=base_problem.n_obj,
@@ -116,7 +130,7 @@ def _run_pymoo_perm_nsga2(
             )
             self.base_problem = base_problem
 
-        def _evaluate(self, X, out, *args, **kwargs):
+        def _evaluate(self, X: np.ndarray, out: dict[str, Any], *args: Any, **kwargs: Any) -> None:
             perms = np.asarray(X, dtype=int)
             F = np.empty((perms.shape[0], self.n_obj))
             self.base_problem.evaluate(perms, {"F": F})
@@ -125,9 +139,9 @@ def _run_pymoo_perm_nsga2(
     pymoo_problem = _VamosPymooPermutationProblem(problem)
     mutation_prob = min(1.0, 2.0 / max(1, problem.n_var))
 
-    def _make_pymoo_perm_crossover(probability: float):
+    def _make_pymoo_perm_crossover(probability: float) -> Any:
         try:
-            from pymoo.operators.crossover.pmx import PMX  # type: ignore
+            from pymoo.operators.crossover.pmx import PMX
 
             return PMX(prob=probability)
         except ImportError:
@@ -138,8 +152,8 @@ def _run_pymoo_perm_nsga2(
                     "pymoo permutation crossover operators are unavailable; upgrade pymoo to a version that ships PMX or OX."
                 ) from exc
 
-            class _OrderCrossoverWrapper(OrderCrossover):
-                def __init__(self, prob):
+            class _OrderCrossoverWrapper(OrderCrossover):  # type: ignore[misc]
+                def __init__(self, prob: float) -> None:
                     super().__init__(prob=prob)
 
             return _OrderCrossoverWrapper(probability)
@@ -165,5 +179,5 @@ def _run_pymoo_perm_nsga2(
     F = np.asarray(res.F, dtype=float)
     metrics = make_metrics("pymoo_perm_nsga2", "pymoo", total_time_ms, config.max_evaluations, F)
     print_results(metrics)
-    logger.info("%s", "=" * 80)
+    _logger().info("%s", "=" * 80)
     return metrics

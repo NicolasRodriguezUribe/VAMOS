@@ -7,7 +7,9 @@ from vamos.foundation.problem.registry_info import list_problems, get_problem_in
 from vamos.experiment.runner import run_experiment
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _configure_cli_logging(level: int = logging.INFO) -> None:
@@ -24,7 +26,7 @@ def _list_cmd(args):
     infos = list_problems()
     for info in sorted(infos, key=lambda x: x.name):
         cats = ",".join(info.categories)
-        logger.info(
+        _logger().info(
             "%-15s | %-12s | n_var=%s n_obj=%s | %s",
             info.name,
             cats,
@@ -37,17 +39,17 @@ def _list_cmd(args):
 def _info_cmd(args):
     info = get_problem_info(args.name)
     if info is None:
-        logger.warning("Problem '%s' not found.", args.name)
+        _logger().warning("Problem '%s' not found.", args.name)
         return
-    logger.info("Name: %s", info.name)
-    logger.info("Description: %s", info.description)
-    logger.info("Categories: %s", ", ".join(info.categories))
-    logger.info(
+    _logger().info("Name: %s", info.name)
+    _logger().info("Description: %s", info.description)
+    _logger().info("Categories: %s", ", ".join(info.categories))
+    _logger().info(
         "Defaults: n_var=%s, n_obj=%s",
         info.default_n_variables,
         info.default_n_objectives,
     )
-    logger.info("Tags: %s", ", ".join(info.tags))
+    _logger().info("Tags: %s", ", ".join(info.tags))
 
 
 def _run_cmd(args):
@@ -64,7 +66,7 @@ def _run_cmd(args):
         config=config,
         selection_pressure=2,
     )
-    logger.info("Run finished. HV: %s, output: %s", metrics.get("hv"), metrics.get("output_dir"))
+    _logger().info("Run finished. HV: %s, output: %s", metrics.get("hv"), metrics.get("output_dir"))
 
 
 def build_parser():

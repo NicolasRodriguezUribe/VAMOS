@@ -13,7 +13,9 @@ from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.eval.backends import resolve_eval_backend, EvaluationBackend
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 @overload
@@ -97,14 +99,14 @@ class OptimizationResult:
 
     def summary(self) -> None:
         """Print a summary of the optimization result."""
-        logger.info("=== Optimization Result ===")
-        logger.info("Solutions: %s", len(self))
-        logger.info("Objectives: %s", self.n_objectives)
+        _logger().info("=== Optimization Result ===")
+        _logger().info("Solutions: %s", len(self))
+        _logger().info("Objectives: %s", self.n_objectives)
 
         if self.F is not None and len(self.F) > 0:
-            logger.info("Objective ranges:")
+            _logger().info("Objective ranges:")
             for i in range(self.n_objectives):
-                logger.info(
+                _logger().info(
                     "  f%s: [%.6f, %.6f]",
                     i + 1,
                     self.F[:, i].min(),
@@ -261,7 +263,7 @@ class OptimizationResult:
         with open(out_dir / "metadata.json", "w") as f:
             json.dump(metadata, f, indent=2)
 
-        logger.info("Results saved to %s", out_dir)
+        _logger().info("Results saved to %s", out_dir)
 
 
 @dataclass

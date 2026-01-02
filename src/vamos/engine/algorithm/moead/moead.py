@@ -15,7 +15,6 @@ References:
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -38,8 +37,6 @@ if TYPE_CHECKING:
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
 from vamos.hooks.live_viz import LiveVisualization
-
-_logger = logging.getLogger(__name__)
 
 
 class MOEAD:

@@ -55,3 +55,10 @@ nav:
     - Add an Algorithm: dev/add_algorithm.md
     - Add a Backend: dev/add_backend.md
     - Architecture Health: dev/architecture_health.md
+    - Architecture Decisions:
+      - ADR Index: dev/adr/index.md
+      - 0001 Layering and Facades: dev/adr/0001-layering-and-facades.md
+      - 0002 Import-Time Purity: dev/adr/0002-import-time-purity.md
+      - 0003 Optional Dependencies Policy: dev/adr/0003-optional-deps-policy.md
+      - 0004 No Shims, No Allowlists: dev/adr/0004-no-shims-no-allowlists.md
+      - 0005 Health Gates and Retention: dev/adr/0005-health-gates-and-retention.md

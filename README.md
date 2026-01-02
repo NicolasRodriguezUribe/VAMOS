@@ -315,6 +315,7 @@ pip install -e ".[backends]"
 - Full optional stack (after `pip install -e ".[dev,backends,benchmarks,studio,analytics,autodiff,notebooks]"`): `pytest -m "not slow"`
 - Examples/notebooks: set `VAMOS_RUN_NOTEBOOK_TESTS=1` then `pytest -m "examples"`
 - Architecture health checks (see `docs/dev/architecture_health.md`):
+  - `python tools/health.py` (runs the same fast-fail suite as CI)
   - `pytest -q tests/architecture/test_layer_boundaries.py`
   - `pytest -q tests/test_monolith_guard.py`
   - `pytest -q`

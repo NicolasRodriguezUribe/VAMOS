@@ -1,34 +1,62 @@
 from __future__ import annotations
 
-import os
-import numpy as np
+from typing import Any, Callable, TypeAlias
 
-_USE_NUMBA_VARIATION = os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
-_HAS_NUMBA = False
-if _USE_NUMBA_VARIATION:
+import numpy as np
+from numpy.typing import NDArray
+
+PermArray: TypeAlias = NDArray[np.integer[Any]]
+PermVec: TypeAlias = PermArray
+PermPop: TypeAlias = PermArray
+IndexArray: TypeAlias = NDArray[np.integer[Any]]
+RNG: TypeAlias = np.random.Generator
+CrossoverBuilder: TypeAlias = Callable[[PermVec, PermVec, RNG], tuple[PermVec, PermVec]]
+RowMutation: TypeAlias = Callable[[PermVec, RNG], None]
+Adjacency: TypeAlias = list[set[int]]
+
+_SWAP_ROWS_JIT = None
+
+
+def _use_numba_variation() -> bool:
+    import os
+
+    return os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
+
+
+def _get_swap_rows_jit():
+    global _SWAP_ROWS_JIT
+    if _SWAP_ROWS_JIT is False:
+        return None
+    if _SWAP_ROWS_JIT is not None:
+        return _SWAP_ROWS_JIT
+    if not _use_numba_variation():
+        _SWAP_ROWS_JIT = False
+        return None
     try:
         from numba import njit
     except ImportError:
-        _HAS_NUMBA = False
-    else:
-        _HAS_NUMBA = True
+        _SWAP_ROWS_JIT = False
+        return None
 
-        @njit(cache=True)
-        def _swap_rows_jit(X: np.ndarray, rows: np.ndarray, first: np.ndarray, second: np.ndarray):
-            for idx in range(rows.shape[0]):
-                r = rows[idx]
-                a = first[idx]
-                b = second[idx]
-                tmp = X[r, a]
-                X[r, a] = X[r, b]
-                X[r, b] = tmp
+    @njit(cache=True)
+    def _swap_rows_jit(X: np.ndarray, rows: np.ndarray, first: np.ndarray, second: np.ndarray) -> None:
+        for idx in range(rows.shape[0]):
+            r = rows[idx]
+            a = first[idx]
+            b = second[idx]
+            tmp = X[r, a]
+            X[r, a] = X[r, b]
+            X[r, b] = tmp
+
+    _SWAP_ROWS_JIT = _swap_rows_jit
+    return _SWAP_ROWS_JIT
 
 
 def random_permutation_population(
     pop_size: int,
     n_var: int,
-    rng: np.random.Generator,
-) -> np.ndarray:
+    rng: RNG,
+) -> PermPop:
     """
     Generate a batch of random permutations using the random-keys method.
     """
@@ -38,10 +66,7 @@ def random_permutation_population(
     return np.argsort(keys, axis=1).astype(np.int32, copy=False)
 
 
-def _ensure_distinct_indices(idx: np.ndarray, upper: int, rng: np.random.Generator) -> None:
-    """
-    Ensure each row in idx (shape *,2) contains distinct positions by resampling the clashes.
-    """
+def _ensure_distinct_indices(idx: IndexArray, upper: int, rng: RNG) -> None:
     if idx.size == 0:
         return
     same = idx[:, 0] == idx[:, 1]
@@ -51,9 +76,9 @@ def _ensure_distinct_indices(idx: np.ndarray, upper: int, rng: np.random.Generat
 
 
 def swap_mutation(
-    X: np.ndarray,
+    X: PermPop,
     prob: float,
-    rng: np.random.Generator,
+    rng: RNG,
 ) -> None:
     """
     Batched swap mutation that randomly swaps two positions in selected individuals.
@@ -74,8 +99,9 @@ def swap_mutation(
     _ensure_distinct_indices(idx_pairs, D, rng)
     first = idx_pairs[:, 0]
     second = idx_pairs[:, 1]
-    if _HAS_NUMBA:
-        _swap_rows_jit(X, rows.astype(np.int64), first.astype(np.int64), second.astype(np.int64))
+    jit_fn = _get_swap_rows_jit()
+    if jit_fn is not None:
+        jit_fn(X, rows.astype(np.int64), first.astype(np.int64), second.astype(np.int64))
     else:
         tmp = X[rows, first].copy()
         X[rows, first] = X[rows, second]
@@ -83,10 +109,10 @@ def swap_mutation(
 
 
 def pmx_crossover(
-    X_parents: np.ndarray,
+    X_parents: PermPop,
     prob: float,
-    rng: np.random.Generator,
-) -> np.ndarray:
+    rng: RNG,
+) -> PermPop:
     """
     Partially matched crossover (PMX) on permutation pairs.
     """
@@ -94,10 +120,10 @@ def pmx_crossover(
 
 
 def cycle_crossover(
-    X_parents: np.ndarray,
+    X_parents: PermPop,
     prob: float,
-    rng: np.random.Generator,
-) -> np.ndarray:
+    rng: RNG,
+) -> PermPop:
     """
     Cycle crossover (CX) on permutation pairs.
     """
@@ -105,10 +131,10 @@ def cycle_crossover(
 
 
 def position_based_crossover(
-    X_parents: np.ndarray,
+    X_parents: PermPop,
     prob: float,
-    rng: np.random.Generator,
-) -> np.ndarray:
+    rng: RNG,
+) -> PermPop:
     """
     Position-based crossover (POS). A random subset of positions from parent A is
     kept; remaining slots are filled with genes from parent B preserving order.
@@ -117,10 +143,10 @@ def position_based_crossover(
 
 
 def edge_recombination_crossover(
-    X_parents: np.ndarray,
+    X_parents: PermPop,
     prob: float,
-    rng: np.random.Generator,
-) -> np.ndarray:
+    rng: RNG,
+) -> PermPop:
     """
     Edge recombination crossover (ERX) preserving adjacency information.
     """
@@ -128,10 +154,10 @@ def edge_recombination_crossover(
 
 
 def order_crossover(
-    X_parents: np.ndarray,
+    X_parents: PermPop,
     prob: float,
-    rng: np.random.Generator,
-) -> np.ndarray:
+    rng: RNG,
+) -> PermPop:
     """
     Batched order crossover (OX) for permutation-encoded chromosomes.
     """
@@ -174,9 +200,9 @@ def order_crossover(
 
 
 def insert_mutation(
-    X: np.ndarray,
+    X: PermPop,
     prob: float,
-    rng: np.random.Generator,
+    rng: RNG,
 ) -> None:
     """
     Remove one gene and insert it at another position (shift in-between genes).
@@ -185,9 +211,9 @@ def insert_mutation(
 
 
 def scramble_mutation(
-    X: np.ndarray,
+    X: PermPop,
     prob: float,
-    rng: np.random.Generator,
+    rng: RNG,
 ) -> None:
     """
     Shuffle the genes inside a randomly chosen segment.
@@ -196,9 +222,9 @@ def scramble_mutation(
 
 
 def inversion_mutation(
-    X: np.ndarray,
+    X: PermPop,
     prob: float,
-    rng: np.random.Generator,
+    rng: RNG,
 ) -> None:
     """
     Reverse a randomly chosen segment (standard inversion).
@@ -207,9 +233,9 @@ def inversion_mutation(
 
 
 def simple_inversion_mutation(
-    X: np.ndarray,
+    X: PermPop,
     prob: float,
-    rng: np.random.Generator,
+    rng: RNG,
 ) -> None:
     """
     Alias of inversion_mutation for compatibility with jMetal naming.
@@ -218,9 +244,9 @@ def simple_inversion_mutation(
 
 
 def displacement_mutation(
-    X: np.ndarray,
+    X: PermPop,
     prob: float,
-    rng: np.random.Generator,
+    rng: RNG,
 ) -> None:
     """
     Remove a contiguous segment and reinsert it at a different position.
@@ -242,15 +268,12 @@ def _ensure_valid_segment(length: int, lo: int, hi: int) -> tuple[int, int]:
 
 
 def _order_crossover_into(
-    donor: np.ndarray,
-    filler: np.ndarray,
-    out: np.ndarray,
+    donor: PermVec,
+    filler: PermVec,
+    out: PermVec,
     cut1: int,
     cut2: int,
 ) -> None:
-    """
-    Helper that writes the OX child into `out` using donor/filler parents.
-    """
     cut1 = int(cut1)
     cut2 = int(cut2)
     if cut1 == cut2:
@@ -271,11 +294,11 @@ def _order_crossover_into(
 
 
 def _pairwise_crossover(
-    X_parents: np.ndarray,
+    X_parents: PermPop,
     prob: float,
-    rng: np.random.Generator,
-    builder,
-) -> np.ndarray:
+    rng: RNG,
+    builder: CrossoverBuilder,
+) -> PermPop:
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty_like(X_parents)
@@ -297,7 +320,7 @@ def _pairwise_crossover(
     return pairs.reshape(Np, D)
 
 
-def _pmx_children(p1: np.ndarray, p2: np.ndarray, rng: np.random.Generator):
+def _pmx_children(p1: PermVec, p2: PermVec, rng: RNG) -> tuple[PermVec, PermVec]:
     n = p1.size
     c1, c2 = p1.copy(), p2.copy()
     cut1, cut2 = _two_cut_points(n, rng)
@@ -306,7 +329,7 @@ def _pmx_children(p1: np.ndarray, p2: np.ndarray, rng: np.random.Generator):
     return c1, c2
 
 
-def _pmx_into(parent_a: np.ndarray, parent_b: np.ndarray, child: np.ndarray, cut1: int, cut2: int):
+def _pmx_into(parent_a: PermVec, parent_b: PermVec, child: PermVec, cut1: int, cut2: int) -> None:
     n = parent_a.size
     cut1, cut2 = _ensure_valid_segment(n, cut1, cut2)
     child.fill(-1)
@@ -336,7 +359,7 @@ def _pmx_into(parent_a: np.ndarray, parent_b: np.ndarray, child: np.ndarray, cut
         used[gene] = True
 
 
-def _cycle_children(p1: np.ndarray, p2: np.ndarray, rng: np.random.Generator):
+def _cycle_children(p1: PermVec, p2: PermVec, rng: RNG) -> tuple[PermVec, PermVec]:
     n = p1.size
     c1 = np.empty_like(p1)
     c2 = np.empty_like(p2)
@@ -365,7 +388,7 @@ def _cycle_children(p1: np.ndarray, p2: np.ndarray, rng: np.random.Generator):
     return c1, c2
 
 
-def _position_based_children(p1: np.ndarray, p2: np.ndarray, rng: np.random.Generator):
+def _position_based_children(p1: PermVec, p2: PermVec, rng: RNG) -> tuple[PermVec, PermVec]:
     n = p1.size
     c1 = np.full(n, -1, dtype=p1.dtype)
     c2 = np.full(n, -1, dtype=p2.dtype)
@@ -383,7 +406,7 @@ def _position_based_children(p1: np.ndarray, p2: np.ndarray, rng: np.random.Gene
     return c1, c2
 
 
-def _fill_from_other_parent(child: np.ndarray, donor: np.ndarray, fixed_mask: np.ndarray):
+def _fill_from_other_parent(child: PermVec, donor: PermVec, fixed_mask: NDArray[np.bool_]) -> None:
     n = donor.size
     used = np.zeros(n, dtype=bool)
     used[child[fixed_mask]] = True
@@ -398,11 +421,11 @@ def _fill_from_other_parent(child: np.ndarray, donor: np.ndarray, fixed_mask: np
                 break
 
 
-def _edge_recombination_children(p1: np.ndarray, p2: np.ndarray, rng: np.random.Generator):
+def _edge_recombination_children(p1: PermVec, p2: PermVec, rng: RNG) -> tuple[PermVec, PermVec]:
     n = p1.size
-    adj = [set() for _ in range(n)]
+    adj: Adjacency = [set() for _ in range(n)]
 
-    def add_edges(parent: np.ndarray):
+    def add_edges(parent: PermVec) -> None:
         for i in range(n):
             gene = parent[i]
             left = parent[(i - 1) % n]
@@ -418,10 +441,15 @@ def _edge_recombination_children(p1: np.ndarray, p2: np.ndarray, rng: np.random.
     return c1, c2
 
 
-def _edge_recombination_single(adj_template, parent_a: np.ndarray, parent_b: np.ndarray, rng: np.random.Generator):
+def _edge_recombination_single(
+    adj_template: Adjacency,
+    parent_a: PermVec,
+    parent_b: PermVec,
+    rng: RNG,
+) -> PermVec:
     n = parent_a.size
     adj = [set(neigh) for neigh in adj_template]
-    child = np.empty(n, dtype=parent_a.dtype)
+    child: PermVec = np.empty(n, dtype=parent_a.dtype)
     used = np.zeros(n, dtype=bool)
 
     current = parent_a[0] if rng.random() < 0.5 else parent_b[0]
@@ -446,10 +474,10 @@ def _edge_recombination_single(adj_template, parent_a: np.ndarray, parent_b: np.
 
 
 def _apply_row_mutation(
-    X: np.ndarray,
+    X: PermPop,
     prob: float,
-    rng: np.random.Generator,
-    mut_fn,
+    rng: RNG,
+    mut_fn: RowMutation,
 ) -> None:
     N, D = X.shape
     if N == 0 or D < 2:
@@ -462,7 +490,7 @@ def _apply_row_mutation(
         mut_fn(X[idx], rng)
 
 
-def _two_cut_points(length: int, rng: np.random.Generator) -> tuple[int, int]:
+def _two_cut_points(length: int, rng: RNG) -> tuple[int, int]:
     if length < 2:
         return 0, 0
     a = rng.integers(0, length)
@@ -474,7 +502,7 @@ def _two_cut_points(length: int, rng: np.random.Generator) -> tuple[int, int]:
     return int(a), int(b)
 
 
-def _insert_row_mutation(row: np.ndarray, rng: np.random.Generator):
+def _insert_row_mutation(row: PermVec, rng: RNG) -> None:
     n = row.size
     i, j = _two_cut_points(n, rng)
     gene = row[i]
@@ -486,7 +514,7 @@ def _insert_row_mutation(row: np.ndarray, rng: np.random.Generator):
         row[j] = gene
 
 
-def _scramble_row_mutation(row: np.ndarray, rng: np.random.Generator):
+def _scramble_row_mutation(row: PermVec, rng: RNG) -> None:
     n = row.size
     lo, hi = _two_cut_points(n, rng)
     segment = row[lo:hi].copy()
@@ -494,13 +522,13 @@ def _scramble_row_mutation(row: np.ndarray, rng: np.random.Generator):
     row[lo:hi] = segment
 
 
-def _inversion_row_mutation(row: np.ndarray, rng: np.random.Generator):
+def _inversion_row_mutation(row: PermVec, rng: RNG) -> None:
     n = row.size
     lo, hi = _two_cut_points(n, rng)
     row[lo:hi] = row[lo:hi][::-1]
 
 
-def _displacement_row_mutation(row: np.ndarray, rng: np.random.Generator):
+def _displacement_row_mutation(row: PermVec, rng: RNG) -> None:
     n = row.size
     lo, hi = _two_cut_points(n, rng)
     segment = row[lo:hi].copy()

@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import argparse
 
-def _parse_probability_arg(parser, flag: str, raw, *, allow_expression: bool):
+
+def _parse_probability_arg(
+    parser: argparse.ArgumentParser,
+    flag: str,
+    raw: object,
+    *,
+    allow_expression: bool,
+) -> float | str:
     if raw is None:
-        return None
+        return None  # type: ignore[return-value]
     text = str(raw).strip()
     if allow_expression and text.endswith("/n"):
         numerator = text[:-2].strip()
@@ -23,9 +31,15 @@ def _parse_probability_arg(parser, flag: str, raw, *, allow_expression: bool):
     return value
 
 
-def _parse_positive_float(parser, flag: str, raw, *, allow_zero: bool):
+def _parse_positive_float(
+    parser: argparse.ArgumentParser,
+    flag: str,
+    raw: object,
+    *,
+    allow_zero: bool,
+) -> float:
     if raw is None:
-        return None
+        return None  # type: ignore[return-value]
     value = float(raw)
     if allow_zero:
         if value < 0.0:

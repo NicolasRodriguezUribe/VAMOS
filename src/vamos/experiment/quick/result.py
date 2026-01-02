@@ -11,7 +11,9 @@ from vamos.foundation.problem.types import ProblemProtocol
 from .io import save_quick_result
 from .plot import plot_quick_front
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 @dataclass
@@ -47,16 +49,16 @@ class QuickResult:
     def summary(self) -> None:
         """Print a summary of the optimization results."""
         n_obj = self.F.shape[1] if self.F.ndim == 2 else 1
-        logger.info("=== VAMOS Quick Result ===")
-        logger.info("Algorithm: %s", self.algorithm.upper())
-        logger.info("Solutions: %s", len(self))
-        logger.info("Objectives: %s", n_obj)
-        logger.info("Evaluations: %s", self.n_evaluations)
-        logger.info("Seed: %s", self.seed)
-        logger.info("Objective ranges:")
+        _logger().info("=== VAMOS Quick Result ===")
+        _logger().info("Algorithm: %s", self.algorithm.upper())
+        _logger().info("Solutions: %s", len(self))
+        _logger().info("Objectives: %s", n_obj)
+        _logger().info("Evaluations: %s", self.n_evaluations)
+        _logger().info("Seed: %s", self.seed)
+        _logger().info("Objective ranges:")
         for i in range(n_obj):
             col = self.F[:, i]
-            logger.info("  f%s: [%.6f, %.6f]", i + 1, col.min(), col.max())
+            _logger().info("  f%s: [%.6f, %.6f]", i + 1, col.min(), col.max())
 
         # Compute hypervolume if possible
         try:
@@ -64,7 +66,7 @@ class QuickResult:
 
             ref_point = self.F.max(axis=0) * 1.1
             hv = compute_hypervolume(self.F, ref_point)
-            logger.info("Hypervolume (auto ref): %.6f", hv)
+            _logger().info("Hypervolume (auto ref): %.6f", hv)
         except Exception:
             pass
 

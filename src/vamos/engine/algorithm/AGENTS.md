@@ -3,6 +3,7 @@
 ## Architecture Health (must-read)
 - Follow `docs/dev/architecture_health.md` before adding new modules, APIs, or dependencies.
 - PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
+- ADRs in `docs/dev/adr/` are mandatory reading before architectural changes.
 
 
 This directory contains VAMOS's algorithm implementations plus shared algorithm

@@ -1,12 +1,8 @@
 # kernel/numba_backend.py
 import numpy as np
-
-try:
-    from numba import njit
-except ImportError as exc:  # pragma: no cover - informative error when numba missing
-    raise ImportError("NumbaKernel requires the 'numba' package. Install it or switch to NumPyKernel.") from exc
-
 from typing import Iterable
+
+from numba import njit
 
 from .backend import KernelBackend
 from .numpy_backend import NumPyKernel as _NumPyKernel

@@ -21,7 +21,11 @@ from .execution import execute_problem_suite, run_single as execute_run_single
 from .runner_utils import run_output_dir
 from .study.runner import StudyRunner, StudyResult, StudyTask
 
-logger = logging.getLogger(__name__)
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
+
 VariationConfig = dict[str, Any]
 
 
@@ -270,15 +274,15 @@ def run_from_args(
         )
 
         if multiple:
-            logger.info("%s", "\n" + "#" * 80)
-            logger.info(
+            _logger().info("%s", "\n" + "#" * 80)
+            _logger().info(
                 "Problem %s/%s: %s (%s)",
                 idx,
                 len(selections),
                 effective_selection.spec.label,
                 effective_selection.spec.key,
             )
-            logger.info("%s", "#" * 80 + "\n")
+            _logger().info("%s", "#" * 80 + "\n")
 
         hv_stop_config = None
         if effective_args.hv_threshold is not None:

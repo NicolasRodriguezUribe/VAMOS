@@ -4,8 +4,10 @@ Algorithm-specific builder helpers to keep the factory slim.
 
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any, Protocol, cast
 
+from vamos.foundation.kernel.backend import KernelBackend
+from vamos.foundation.problem.types import ProblemProtocol
 from vamos.engine.algorithm.config import (
     NSGAIIConfig,
     MOEADConfig,
@@ -19,19 +21,23 @@ from vamos.engine.algorithm.registry import resolve_algorithm
 from vamos.engine.config.variation import merge_variation_overrides, resolve_nsgaii_variation_config
 
 
+class ConfigData(Protocol):
+    def to_dict(self) -> dict[str, Any]: ...
+
+
 def build_nsgaii_algorithm(
     *,
-    kernel,
+    kernel: KernelBackend,
     engine_name: str,
-    problem,
+    problem: ProblemProtocol,
     pop_size: int,
     offspring_size: int,
     selection_pressure: int,
     external_archive_size: int | None,
     archive_type: str,
-    nsgaii_variation: dict | None,
+    nsgaii_variation: dict[str, Any] | None,
     track_genealogy: bool,
-) -> Tuple[Any, Any]:
+) -> tuple[Any, ConfigData]:
     encoding = getattr(problem, "encoding", "real")
     var_cfg = resolve_nsgaii_variation_config(encoding, nsgaii_variation)
 
@@ -65,19 +71,19 @@ def build_nsgaii_algorithm(
     if track_genealogy:
         builder.track_genealogy(True)
 
-    cfg_data = builder.fixed()
+    cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("nsgaii")
-    return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
 
 
 def build_moead_algorithm(
     *,
-    kernel,
+    kernel: KernelBackend,
     engine_name: str,
-    problem,
+    problem: ProblemProtocol,
     pop_size: int,
-    moead_variation: dict | None,
-) -> Tuple[Any, Any]:
+    moead_variation: dict[str, Any] | None,
+) -> tuple[Any, ConfigData]:
     var_cfg = merge_variation_overrides(
         {
             "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
@@ -103,19 +109,19 @@ def build_moead_algorithm(
     a_name, a_kwargs = var_cfg["aggregation"]
     builder.aggregation(a_name, **a_kwargs)
 
-    cfg_data = builder.fixed()
+    cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("moead")
-    return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
 
 
 def build_smsemoa_algorithm(
     *,
-    kernel,
+    kernel: KernelBackend,
     engine_name: str,
-    problem,
+    problem: ProblemProtocol,
     pop_size: int,
-    smsemoa_variation: dict | None,
-) -> Tuple[Any, Any]:
+    smsemoa_variation: dict[str, Any] | None,
+) -> tuple[Any, ConfigData]:
     var_cfg = merge_variation_overrides(
         {
             "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
@@ -138,20 +144,20 @@ def build_smsemoa_algorithm(
     s_name, s_kwargs = var_cfg["selection"]
     builder.selection(s_name, **s_kwargs)
 
-    cfg_data = builder.fixed()
+    cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("smsemoa")
-    return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
 
 
 def build_nsgaiii_algorithm(
     *,
-    kernel,
+    kernel: KernelBackend,
     engine_name: str,
-    problem,
+    problem: ProblemProtocol,
     pop_size: int,
-    nsgaiii_variation: dict | None,
+    nsgaiii_variation: dict[str, Any] | None,
     selection_pressure: int,
-) -> Tuple[Any, Any]:
+) -> tuple[Any, ConfigData]:
     var_cfg = merge_variation_overrides(
         {
             "crossover": ("sbx", {"prob": 1.0, "eta": 30.0}),
@@ -174,21 +180,21 @@ def build_nsgaiii_algorithm(
     s_name, s_kwargs = var_cfg["selection"]
     builder.selection(s_name, **s_kwargs)
 
-    cfg_data = builder.fixed()
+    cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("nsgaiii")
-    return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
 
 
 def build_spea2_algorithm(
     *,
-    kernel,
+    kernel: KernelBackend,
     engine_name: str,
-    problem,
+    problem: ProblemProtocol,
     pop_size: int,
     selection_pressure: int,
     external_archive_size: int | None,
-    spea2_variation: dict | None,
-) -> Tuple[Any, Any]:
+    spea2_variation: dict[str, Any] | None,
+) -> tuple[Any, ConfigData]:
     encoding = getattr(problem, "encoding", "real")
     spea2_overrides = spea2_variation or {}
     var_cfg = resolve_nsgaii_variation_config(encoding, spea2_overrides)
@@ -216,20 +222,20 @@ def build_spea2_algorithm(
         r_name, r_kwargs = var_cfg["repair"]
         builder.repair(r_name, **r_kwargs)
 
-    cfg_data = builder.fixed()
+    cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("spea2")
-    return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
 
 
 def build_ibea_algorithm(
     *,
-    kernel,
+    kernel: KernelBackend,
     engine_name: str,
-    problem,
+    problem: ProblemProtocol,
     pop_size: int,
     selection_pressure: int,
-    ibea_variation: dict | None,
-) -> Tuple[Any, Any]:
+    ibea_variation: dict[str, Any] | None,
+) -> tuple[Any, ConfigData]:
     encoding = getattr(problem, "encoding", "real")
     ibea_overrides = ibea_variation or {}
     var_cfg = resolve_nsgaii_variation_config(encoding, ibea_overrides)
@@ -250,20 +256,20 @@ def build_ibea_algorithm(
     if "repair" in var_cfg:
         r_name, r_kwargs = var_cfg["repair"]
         builder.repair(r_name, **r_kwargs)
-    cfg_data = builder.fixed()
+    cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("ibea")
-    return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
 
 
 def build_smpso_algorithm(
     *,
-    kernel,
+    kernel: KernelBackend,
     engine_name: str,
-    problem,
+    problem: ProblemProtocol,
     pop_size: int,
     external_archive_size: int | None,
-    smpso_variation: dict | None,
-) -> Tuple[Any, Any]:
+    smpso_variation: dict[str, Any] | None,
+) -> tuple[Any, ConfigData]:
     mut_cfg = merge_variation_overrides(
         {
             "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
@@ -287,9 +293,9 @@ def build_smpso_algorithm(
     if "repair" in mut_cfg:
         r_name, r_kwargs = mut_cfg["repair"]
         builder.repair(r_name, **r_kwargs)
-    cfg_data = builder.fixed()
+    cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("smpso")
-    return algo_ctor(cfg_data.to_dict(), kernel=kernel), cfg_data
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
 
 
 __all__ = [
