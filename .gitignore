@@ -50,6 +50,7 @@ bench/**/configs/
 
 # --- Engine study (local; do not version) ---
 engine_study*
+!experiments/configs/engine_study_full_continuous.yml
 
 # --- Generated experiment material (do not version) ---
 results/

@@ -1,0 +1,66 @@
+campaign: engine_study_full_continuous
+output_root: results/engine_study_full_continuous
+inputs:
+  problem_catalog: experiments\catalog\problem_catalog_enriched.json
+  algo_config_keys: experiments\catalog\algo_config_keys.json
+  operator_blocks: experiments\catalog\operator_blocks.yml
+common:
+  aos_enabled: false
+  track_genealogy: false
+matrix:
+  engines:
+  - numpy
+  - numba
+  - moocore
+  algorithms:
+  - nsgaii
+  - nsgaiii
+  - moead
+  - smsemoa
+  - spea2
+  - ibea
+  - smpso
+  seed_rule:
+    start: 1
+    count: 30
+    step: 1
+  problems:
+  - cec2009_cf1
+  - cec2009_uf1
+  - cec2009_uf2
+  - cec2009_uf3
+  - dtlz1
+  - dtlz2
+  - dtlz3
+  - dtlz4
+  - lz09_f1
+  - lz09_f2
+  - lz09_f3
+  - lz09_f4
+  - lz09_f5
+  - lz09_f6
+  - lz09_f7
+  - lz09_f8
+  - lz09_f9
+  - ml_tuning
+  - welded_beam
+  - wfg1
+  - wfg2
+  - wfg3
+  - wfg4
+  - wfg5
+  - wfg6
+  - wfg7
+  - wfg8
+  - wfg9
+  - zdt1
+  - zdt2
+  - zdt3
+  - zdt4
+  - zdt6
+  budget:
+    population_size: 200
+    offspring_size: 200
+    max_evaluations: 40000
+  domain_operator_block:
+    real: real
