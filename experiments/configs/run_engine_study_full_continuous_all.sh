@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 cd "$REPO_ROOT"
 
 ts() { date -u +"%Y%m%dT%H%M%SZ"; }
@@ -10,16 +10,17 @@ ts() { date -u +"%Y%m%dT%H%M%SZ"; }
 PY=".venv/bin/python"
 if [[ ! -x "$PY" ]]; then PY="python3"; fi
 
-SPEC_DEFAULT="experiments/configs/hv_archive_campaign_core.yml"
-SPEC="${1:-$SPEC_DEFAULT}"
-if [[ ! -f "$SPEC" ]]; then
-  echo "[ERROR] Spec not found: $SPEC"
+SPEC="${1:-}"
+if [[ -z "$SPEC" ]]; then
+  SPEC="$(find "$SCRIPT_DIR" -maxdepth 1 -name "engine_study_full_continuous*.yml" | sort | head -n 1 || true)"
+fi
+if [[ -z "$SPEC" || ! -f "$SPEC" ]]; then
+  echo "[ERROR] Spec not found. Expected: experiments/**/engine_study_full_continuous*.yml"
   exit 2
 fi
 
-CAMPAIGN_TAG="hv_archive_campaign_core"
+CAMPAIGN_TAG="engine_study_full_continuous"
 
-# Best-effort results root (defaults to results/<tag>, overridden if output_root appears in spec)
 RESULTS_ROOT="results/${CAMPAIGN_TAG}"
 if grep -q "output_root:" "$SPEC"; then
   OR="$(grep -R "output_root:" -n "$SPEC" | tail -n 1 | sed -E 's/.*output_root:\s*//')"
@@ -27,13 +28,12 @@ if grep -q "output_root:" "$SPEC"; then
   [[ -n "$OR" ]] && RESULTS_ROOT="$OR"
 fi
 
-REF_POINTS="experiments/catalog/hv_ref_points.json"
-TIDY_OUT="artifacts/tidy/${CAMPAIGN_TAG}_metrics.csv"
-SAMPLE_OUT="experiments/sample_outputs/${CAMPAIGN_TAG}_metrics_sample.csv"
+TIDY_OUT="artifacts/tidy/${CAMPAIGN_TAG}.csv"
+SAMPLE_OUT="experiments/sample_outputs/${CAMPAIGN_TAG}_sample.csv"
 
 mkdir -p artifacts/bundles artifacts/tidy experiments/sample_outputs
 
-echo "== HV Archive Core: full pipeline =="
+echo "== Engine Study Full Continuous: full pipeline =="
 echo "Repo root: $REPO_ROOT"
 echo "Git commit: $(git rev-parse HEAD 2>/dev/null || echo unknown)"
 echo "Python: $($PY -V 2>/dev/null || true)"
@@ -42,7 +42,7 @@ echo "Results root (expected): $RESULTS_ROOT"
 echo
 
 echo "== RUN: campaign =="
-RUNNER="experiments/scripts/run_campaign_variants_v2.py"
+RUNNER="experiments/scripts/run_campaign.py"
 if [[ ! -f "$RUNNER" ]]; then
   echo "[ERROR] Runner not found: $RUNNER"
   exit 3
@@ -60,39 +60,41 @@ else
 fi
 
 echo
-echo "== COLLECT: HV/IGD+ metrics =="
-COLLECTOR="experiments/scripts/collect_hv_archive_metrics.py"
+echo "== COLLECT: campaign tidy CSV =="
+COLLECTOR="experiments/scripts/collect_campaign_runs.py"
 if [[ ! -f "$COLLECTOR" ]]; then
   echo "[ERROR] Collector not found: $COLLECTOR"
   exit 4
 fi
 
-COL_ARGS=( --results-root "$RESULTS_ROOT" --out "$TIDY_OUT" --sample-out "$SAMPLE_OUT" )
-# add optional flags only if supported
-if $PY "$COLLECTOR" --help 2>&1 | grep -q -- "--mc-samples"; then COL_ARGS+=( --mc-samples 20000 ); fi
-if $PY "$COLLECTOR" --help 2>&1 | grep -q -- "--rng-seed"; then COL_ARGS+=( --rng-seed 0 ); fi
-if [[ -f "$REF_POINTS" ]] && $PY "$COLLECTOR" --help 2>&1 | grep -q -- "--ref-points"; then COL_ARGS+=( --ref-points "$REF_POINTS" ); fi
+COL_ARGS=()
+if $PY "$COLLECTOR" --help 2>&1 | grep -q -- "--results-root"; then COL_ARGS+=( --results-root "$RESULTS_ROOT" ); fi
+if $PY "$COLLECTOR" --help 2>&1 | grep -q -- "--out"; then COL_ARGS+=( --out "$TIDY_OUT" ); fi
+if $PY "$COLLECTOR" --help 2>&1 | grep -q -- "--sample-out"; then COL_ARGS+=( --sample-out "$SAMPLE_OUT" ); fi
 
 echo "[CMD] $PY $COLLECTOR ${COL_ARGS[*]}"
 $PY "$COLLECTOR" "${COL_ARGS[@]}"
 
 echo
-echo "== REPORT: paper-ready assets =="
-REPORTER="experiments/scripts/report_hv_archive_campaign.py"
+echo "== REPORT: engine full continuous slice assets =="
+REPORTER="experiments/scripts/report_engine_full_continuous_slice.py"
 if [[ ! -f "$REPORTER" ]]; then
   echo "[ERROR] Reporter not found: $REPORTER"
   exit 5
 fi
 
 REP_ARGS=()
-if $PY "$REPORTER" --help 2>&1 | grep -q -- "--metrics-csv"; then
-  REP_ARGS+=( --metrics-csv "$TIDY_OUT" )
-elif $PY "$REPORTER" --help 2>&1 | grep -q -- "--tidy-csv"; then
+if $PY "$REPORTER" --help 2>&1 | grep -q -- "--tidy-csv"; then
   REP_ARGS+=( --tidy-csv "$TIDY_OUT" )
+elif $PY "$REPORTER" --help 2>&1 | grep -q -- "--csv"; then
+  REP_ARGS+=( --csv "$TIDY_OUT" )
+elif $PY "$REPORTER" --help 2>&1 | grep -q -- "--input"; then
+  REP_ARGS+=( --input "$TIDY_OUT" )
 else
-  echo "[ERROR] Reporter does not accept --metrics-csv/--tidy-csv. Run: $PY $REPORTER --help"
+  echo "[ERROR] Unknown reporter input flag; run: $PY $REPORTER --help"
   exit 6
 fi
+
 if $PY "$REPORTER" --help 2>&1 | grep -q -- "--paper-root"; then REP_ARGS+=( --paper-root "paper/manuscript" ); fi
 if $PY "$REPORTER" --help 2>&1 | grep -q -- "--tag"; then REP_ARGS+=( --tag "$CAMPAIGN_TAG" ); fi
 
@@ -119,12 +121,10 @@ BUNDLE="artifacts/bundles/${CAMPAIGN_TAG}_bundle_$(ts).tar.zst"
 FILES=( "$MANIFEST_DIR" )
 [[ -f "${RESULTS_ROOT}/runs_index.jsonl" ]] && FILES+=( "${RESULTS_ROOT}/runs_index.jsonl" )
 [[ -f "$TIDY_OUT" ]] && FILES+=( "$TIDY_OUT" )
-[[ -f "${TIDY_OUT%.csv}.problem_stats.json" ]] && FILES+=( "${TIDY_OUT%.csv}.problem_stats.json" )
 [[ -f "$SAMPLE_OUT" ]] && FILES+=( "$SAMPLE_OUT" )
-[[ -f "$REF_POINTS" ]] && FILES+=( "$REF_POINTS" )
-[[ -f "paper/manuscript/sections/04b_results_hv_archive.tex" ]] && FILES+=( "paper/manuscript/sections/04b_results_hv_archive.tex" )
-[[ -f "paper/manuscript/tables/${CAMPAIGN_TAG}_summary.tex" ]] && FILES+=( "paper/manuscript/tables/${CAMPAIGN_TAG}_summary.tex" )
-[[ -f "paper/manuscript/figures/${CAMPAIGN_TAG}_tradeoff.png" ]] && FILES+=( "paper/manuscript/figures/${CAMPAIGN_TAG}_tradeoff.png" )
+[[ -f "paper/manuscript/sections/04_results_engine.tex" ]] && FILES+=( "paper/manuscript/sections/04_results_engine.tex" )
+[[ -d "paper/manuscript/tables" ]] && FILES+=( "paper/manuscript/tables" )
+[[ -d "paper/manuscript/figures" ]] && FILES+=( "paper/manuscript/figures" )
 [[ -d "experiments/scripts/logs/${CAMPAIGN_TAG}" ]] && FILES+=( "experiments/scripts/logs/${CAMPAIGN_TAG}" )
 
 echo "[CMD] tar --zstd -cf $BUNDLE <${#FILES[@]} paths>"
