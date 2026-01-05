@@ -1,0 +1,6 @@
+framework,problem,algorithm,n_evals,seed,runtime_seconds,n_solutions,hv
+VAMOS (numpy),zdt1,NSGA-II,5000,0,0.18724529999599326,100,
+VAMOS (numba),zdt1,NSGA-II,5000,0,0.8533852000036859,100,
+VAMOS (jax),zdt1,NSGA-II,5000,0,1.273771599997417,100,
+VAMOS (moocore),zdt1,NSGA-II,5000,0,0.06323730000440264,100,
+pymoo,zdt1,NSGA-II,5000,0,0.3856201000016881,64,
