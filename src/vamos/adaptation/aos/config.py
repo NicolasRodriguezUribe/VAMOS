@@ -43,6 +43,7 @@ class AdaptiveOperatorSelectionConfig:
     gamma: float = 0.2
     min_usage: int = 1
     rng_seed: int | None = None
+    window_size: int = 0  # For sliding window policies; 0 = disabled
     reward_scope: str = "combined"
     reward_weights: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_REWARD_WEIGHTS))
 
@@ -61,6 +62,7 @@ class AdaptiveOperatorSelectionConfig:
             gamma=float(config.get("gamma", 0.2)),
             min_usage=int(config.get("min_usage", 1)),
             rng_seed=config.get("rng_seed"),
+            window_size=int(config.get("window_size", 0)),
             reward_scope=str(config.get("reward_scope", "combined")),
             reward_weights=_normalize_reward_weights(config.get("reward_weights")),
         )
@@ -77,6 +79,7 @@ class AdaptiveOperatorSelectionConfig:
             "gamma": self.gamma,
             "min_usage": self.min_usage,
             "rng_seed": self.rng_seed,
+            "window_size": self.window_size,
             "reward_scope": self.reward_scope,
             "reward_weights": dict(self.reward_weights),
         }

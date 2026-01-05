@@ -25,6 +25,19 @@ from vamos.operators.integer import (
     random_reset_mutation,
     uniform_integer_crossover,
 )
+from vamos.operators.permutation import (
+    order_crossover,
+    pmx_crossover,
+    cycle_crossover,
+    position_based_crossover,
+    edge_recombination_crossover,
+    swap_mutation,
+    insert_mutation,
+    scramble_mutation,
+    inversion_mutation,
+    simple_inversion_mutation,
+    displacement_mutation,
+)
 from vamos.operators.real import PolynomialMutation, SBXCrossover
 from vamos.operators.real import VariationWorkspace
 
@@ -54,6 +67,30 @@ INT_MUTATION = {
     "reset": random_reset_mutation,
     "random_reset": random_reset_mutation,
     "creep": creep_mutation,
+}
+
+PERM_CROSSOVER = {
+    "ox": order_crossover,
+    "order": order_crossover,
+    "pmx": pmx_crossover,
+    "cycle": cycle_crossover,
+    "cx": cycle_crossover,
+    "position": position_based_crossover,
+    "position_based": position_based_crossover,
+    "pos": position_based_crossover,
+    "edge": edge_recombination_crossover,
+    "edge_recombination": edge_recombination_crossover,
+    "erx": edge_recombination_crossover,
+}
+
+PERM_MUTATION = {
+    "swap": swap_mutation,
+    "insert": insert_mutation,
+    "scramble": scramble_mutation,
+    "inversion": inversion_mutation,
+    "simple_inversion": simple_inversion_mutation,
+    "simpleinv": simple_inversion_mutation,
+    "displacement": displacement_mutation,
 }
 
 
@@ -104,6 +141,8 @@ def build_variation_operators(
         return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif encoding == "integer":
         return _build_integer_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
+    elif encoding == "permutation":
+        return _build_permutation_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif encoding in {"continuous", "real"}:
         return _build_continuous_operators(cross_params, mut_params, n_var, xl, xu, rng)
     else:
@@ -216,10 +255,43 @@ def _build_continuous_operators(
     return crossover, mutation
 
 
+def _build_permutation_operators(
+    cross_method: str,
+    cross_params: dict,
+    mut_method: str,
+    mut_params: dict,
+    n_var: int,
+    rng: np.random.Generator,
+) -> tuple[Callable, Callable]:
+    """Build variation operators for permutation encoding."""
+    if cross_method not in PERM_CROSSOVER:
+        raise ValueError(f"Unsupported MOEA/D crossover '{cross_method}' for permutation encoding.")
+    if mut_method not in PERM_MUTATION:
+        raise ValueError(f"Unsupported MOEA/D mutation '{mut_method}' for permutation encoding.")
+
+    cross_fn = PERM_CROSSOVER[cross_method]
+    cross_prob = float(cross_params.get("prob", 0.9))
+    mut_fn = PERM_MUTATION[mut_method]
+    mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+
+    def crossover(parents, rng=rng):
+        parents_flat = parents.reshape(-1, parents.shape[-1])
+        offspring_flat = cross_fn(parents_flat, cross_prob, rng)
+        return offspring_flat.reshape(parents.shape)
+
+    def mutation(X_child, rng=rng):
+        mut_fn(X_child, mut_prob, rng)
+        return X_child
+
+    return crossover, mutation
+
+
 __all__ = [
     "BINARY_CROSSOVER",
     "BINARY_MUTATION",
     "INT_CROSSOVER",
     "INT_MUTATION",
+    "PERM_CROSSOVER",
+    "PERM_MUTATION",
     "build_variation_operators",
 ]

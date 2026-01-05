@@ -43,26 +43,11 @@ from vamos.engine.algorithm.components.variation.helpers import (
     INT_MUTATION,
     MIXED_CROSSOVER,
     MIXED_MUTATION,
+    REAL_CROSSOVER,
+    REAL_MUTATION,
 )
 
-# Canonical real-valued operators supported by variation pipeline
-REAL_CROSSOVER = {
-    "sbx",
-    "blx_alpha",
-    "arithmetic",
-    "pcx",
-    "undx",
-    "spx",
-}
-REAL_MUTATION = {
-    "pm",
-    "non_uniform",
-    "gaussian",
-    "uniform_reset",
-    "cauchy",
-    "uniform",
-    "linked_polynomial",
-}
+
 
 
 def available_algorithms() -> Tuple[str, ...]:
@@ -84,13 +69,13 @@ def available_crossover_methods(encoding: str = "real") -> Tuple[str, ...]:
     if encoding == "real":
         return tuple(sorted(REAL_CROSSOVER))
     if encoding == "binary":
-        return tuple(sorted(BINARY_CROSSOVER.keys()))
+        return tuple(sorted(BINARY_CROSSOVER))
     if encoding == "permutation":
-        return tuple(sorted(PERM_CROSSOVER.keys()))
+        return tuple(sorted(PERM_CROSSOVER))
     if encoding == "integer":
-        return tuple(sorted(INT_CROSSOVER.keys()))
+        return tuple(sorted(INT_CROSSOVER))
     if encoding == "mixed":
-        return tuple(sorted(MIXED_CROSSOVER.keys()))
+        return tuple(sorted(MIXED_CROSSOVER))
     return ()
 
 
@@ -108,13 +93,13 @@ def available_mutation_methods(encoding: str = "real") -> Tuple[str, ...]:
     if encoding == "real":
         return tuple(sorted(REAL_MUTATION))
     if encoding == "binary":
-        return tuple(sorted(BINARY_MUTATION.keys()))
+        return tuple(sorted(BINARY_MUTATION))
     if encoding == "permutation":
-        return tuple(sorted(PERM_MUTATION.keys()))
+        return tuple(sorted(PERM_MUTATION))
     if encoding == "integer":
-        return tuple(sorted(INT_MUTATION.keys()))
+        return tuple(sorted(INT_MUTATION))
     if encoding == "mixed":
-        return tuple(sorted(MIXED_MUTATION.keys()))
+        return tuple(sorted(MIXED_MUTATION))
     return ()
 
 

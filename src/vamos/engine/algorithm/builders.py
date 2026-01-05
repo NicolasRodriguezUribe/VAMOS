@@ -16,9 +16,11 @@ from vamos.engine.algorithm.config import (
     SPEA2Config,
     IBEAConfig,
     SMPSOConfig,
+    AGEMOEAConfig,
+    RVEAConfig,
 )
 from vamos.engine.algorithm.registry import resolve_algorithm
-from vamos.engine.config.variation import merge_variation_overrides, resolve_nsgaii_variation_config
+from vamos.engine.config.variation import merge_variation_overrides, resolve_default_variation_config
 
 
 class ConfigData(Protocol):
@@ -39,7 +41,7 @@ def build_nsgaii_algorithm(
     track_genealogy: bool,
 ) -> tuple[Any, ConfigData]:
     encoding = getattr(problem, "encoding", "real")
-    var_cfg = resolve_nsgaii_variation_config(encoding, nsgaii_variation)
+    var_cfg = resolve_default_variation_config(encoding, nsgaii_variation)
 
     builder = NSGAIIConfig()
     builder.pop_size(pop_size)
@@ -84,14 +86,16 @@ def build_moead_algorithm(
     pop_size: int,
     moead_variation: dict[str, Any] | None,
 ) -> tuple[Any, ConfigData]:
-    var_cfg = merge_variation_overrides(
-        {
-            "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
-            "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
-            "aggregation": ("tchebycheff", {}),
-        },
-        moead_variation,
-    )
+    encoding = getattr(problem, "encoding", "real")
+    moead_overrides = moead_variation or {}
+    var_cfg = resolve_default_variation_config(encoding, moead_overrides)
+    # Ensure default aggregation if not present
+    if "aggregation" not in var_cfg:
+        var_cfg["aggregation"] = ("tchebycheff", {})
+    
+    # Merge any other overrides that resolve_default didn't catch (like aggregation)
+    extra_cfg = {k: v for k, v in moead_overrides.items() if k not in var_cfg}
+    var_cfg.update(extra_cfg)
 
     builder = MOEADConfig()
     builder.pop_size(pop_size)
@@ -106,8 +110,13 @@ def build_moead_algorithm(
     m_name, m_kwargs = var_cfg["mutation"]
     builder.mutation(m_name, **m_kwargs)
 
-    a_name, a_kwargs = var_cfg["aggregation"]
-    builder.aggregation(a_name, **a_kwargs)
+    if "aggregation" in var_cfg:
+        a_name, a_kwargs = var_cfg["aggregation"]
+        builder.aggregation(a_name, **a_kwargs)
+
+    if "repair" in var_cfg:
+        r_name, r_kwargs = var_cfg["repair"]
+        builder.repair(r_name, **r_kwargs)
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("moead")
@@ -122,14 +131,11 @@ def build_smsemoa_algorithm(
     pop_size: int,
     smsemoa_variation: dict[str, Any] | None,
 ) -> tuple[Any, ConfigData]:
-    var_cfg = merge_variation_overrides(
-        {
-            "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
-            "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
-            "selection": ("random", {}),
-        },
-        smsemoa_variation,
-    )
+    encoding = getattr(problem, "encoding", "real")
+    smsemoa_overrides = smsemoa_variation or {}
+    var_cfg = resolve_default_variation_config(encoding, smsemoa_overrides)
+    extra_cfg = {k: v for k, v in smsemoa_overrides.items() if k not in var_cfg}
+    var_cfg.update(extra_cfg)
 
     builder = SMSEMOAConfig()
     builder.pop_size(pop_size)
@@ -141,8 +147,13 @@ def build_smsemoa_algorithm(
     m_name, m_kwargs = var_cfg["mutation"]
     builder.mutation(m_name, **m_kwargs)
 
-    s_name, s_kwargs = var_cfg["selection"]
+    # SMS-EMOA typically uses random selection for steady-state
+    s_name, s_kwargs = var_cfg.get("selection", ("random", {}))
     builder.selection(s_name, **s_kwargs)
+
+    if "repair" in var_cfg:
+        r_name, r_kwargs = var_cfg["repair"]
+        builder.repair(r_name, **r_kwargs)
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("smsemoa")
@@ -158,14 +169,11 @@ def build_nsgaiii_algorithm(
     nsgaiii_variation: dict[str, Any] | None,
     selection_pressure: int,
 ) -> tuple[Any, ConfigData]:
-    var_cfg = merge_variation_overrides(
-        {
-            "crossover": ("sbx", {"prob": 1.0, "eta": 30.0}),
-            "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
-            "selection": ("tournament", {"pressure": selection_pressure}),
-        },
-        nsgaiii_variation,
-    )
+    encoding = getattr(problem, "encoding", "real")
+    nsgaiii_overrides = nsgaiii_variation or {}
+    var_cfg = resolve_default_variation_config(encoding, nsgaiii_overrides)
+    extra_cfg = {k: v for k, v in nsgaiii_overrides.items() if k not in var_cfg}
+    var_cfg.update(extra_cfg)
 
     builder = NSGAIIIConfig()
     builder.pop_size(pop_size)
@@ -177,8 +185,12 @@ def build_nsgaiii_algorithm(
     m_name, m_kwargs = var_cfg["mutation"]
     builder.mutation(m_name, **m_kwargs)
 
-    s_name, s_kwargs = var_cfg["selection"]
+    s_name, s_kwargs = var_cfg.get("selection", ("tournament", {"pressure": selection_pressure}))
     builder.selection(s_name, **s_kwargs)
+    
+    if "repair" in var_cfg:
+        r_name, r_kwargs = var_cfg["repair"]
+        builder.repair(r_name, **r_kwargs)
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("nsgaiii")
@@ -197,7 +209,7 @@ def build_spea2_algorithm(
 ) -> tuple[Any, ConfigData]:
     encoding = getattr(problem, "encoding", "real")
     spea2_overrides = spea2_variation or {}
-    var_cfg = resolve_nsgaii_variation_config(encoding, spea2_overrides)
+    var_cfg = resolve_default_variation_config(encoding, spea2_overrides)
     extra_cfg = {k: v for k, v in spea2_overrides.items() if k not in {"crossover", "mutation", "repair"}}
     var_cfg.update(extra_cfg)
 
@@ -238,7 +250,7 @@ def build_ibea_algorithm(
 ) -> tuple[Any, ConfigData]:
     encoding = getattr(problem, "encoding", "real")
     ibea_overrides = ibea_variation or {}
-    var_cfg = resolve_nsgaii_variation_config(encoding, ibea_overrides)
+    var_cfg = resolve_default_variation_config(encoding, ibea_overrides)
     extra_cfg = {k: v for k, v in ibea_overrides.items() if k not in {"crossover", "mutation", "repair"}}
     var_cfg.update(extra_cfg)
 
@@ -298,6 +310,98 @@ def build_smpso_algorithm(
     return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
 
 
+class DictConfigWrapper:
+    def __init__(self, data: dict[str, Any]):
+        self._data = data
+
+    def to_dict(self) -> dict[str, Any]:
+        return self._data
+
+def _process_legacy_variation(cfg: dict[str, Any], variation: dict[str, Any] | None):
+    """Helper to unpack tuple-based variation into legacy config keys."""
+    if not variation:
+        return
+    
+    for key in ["crossover", "mutation"]:
+        if key in variation:
+            op = variation[key]
+            if isinstance(op, tuple):
+                cfg[key] = op[0]
+                cfg[f"{key}_params"] = op[1]
+            else:
+                cfg[key] = op
+
+
+def build_agemoea_algorithm(
+    *,
+    kernel: KernelBackend,
+    engine_name: str,
+    problem: ProblemProtocol,
+    pop_size: int,
+    agemoea_variation: dict[str, Any] | None,
+) -> tuple[Any, ConfigData]:
+    encoding = getattr(problem, "encoding", "real")
+    agemoea_overrides = agemoea_variation or {}
+    var_cfg = resolve_default_variation_config(encoding, agemoea_overrides)
+    extra_cfg = {k: v for k, v in agemoea_overrides.items() if k not in var_cfg}
+    var_cfg.update(extra_cfg)
+
+    builder = AGEMOEAConfig()
+    builder.pop_size(pop_size)
+    builder.engine(engine_name)
+
+    c_name, c_kwargs = var_cfg["crossover"]
+    builder.crossover(c_name, **c_kwargs)
+
+    m_name, m_kwargs = var_cfg["mutation"]
+    builder.mutation(m_name, **m_kwargs)
+
+    if "repair" in var_cfg:
+        r_name, r_kwargs = var_cfg["repair"]
+        builder.repair(r_name, **r_kwargs)
+
+    cfg_data = cast(ConfigData, builder.fixed())
+    algo_ctor = resolve_algorithm("agemoea")
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+
+
+def build_rvea_algorithm(
+    *,
+    kernel: KernelBackend,
+    engine_name: str,
+    problem: ProblemProtocol,
+    pop_size: int,
+    rvea_variation: dict[str, Any] | None,
+) -> tuple[Any, ConfigData]:
+    encoding = getattr(problem, "encoding", "real")
+    rvea_overrides = rvea_variation or {}
+    var_cfg = resolve_default_variation_config(encoding, rvea_overrides)
+    extra_cfg = {k: v for k, v in rvea_overrides.items() if k not in var_cfg}
+    var_cfg.update(extra_cfg)
+
+    builder = RVEAConfig()
+    builder.pop_size(pop_size)
+    builder.engine(engine_name)
+    
+    # RVEA specific: check if n_partitions is hidden in overrides
+    if "n_partitions" in rvea_overrides:
+        builder.n_partitions(int(rvea_overrides["n_partitions"]))
+
+    c_name, c_kwargs = var_cfg["crossover"]
+    builder.crossover(c_name, **c_kwargs)
+
+    m_name, m_kwargs = var_cfg["mutation"]
+    builder.mutation(m_name, **m_kwargs)
+
+    if "repair" in var_cfg:
+        r_name, r_kwargs = var_cfg["repair"]
+        builder.repair(r_name, **r_kwargs)
+
+    cfg_data = cast(ConfigData, builder.fixed())
+    algo_ctor = resolve_algorithm("rvea")
+    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+
+
 __all__ = [
     "build_nsgaii_algorithm",
     "build_moead_algorithm",
@@ -306,4 +410,6 @@ __all__ = [
     "build_spea2_algorithm",
     "build_ibea_algorithm",
     "build_smpso_algorithm",
+    "build_agemoea_algorithm",
+    "build_rvea_algorithm",
 ]

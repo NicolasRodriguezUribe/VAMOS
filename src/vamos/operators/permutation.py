@@ -535,3 +535,98 @@ def _displacement_row_mutation(row: PermVec, rng: RNG) -> None:
     remaining = np.concatenate([row[:lo], row[hi:]])
     insert_pos = rng.integers(0, remaining.size + 1)
     row[:] = np.concatenate([remaining[:insert_pos], segment, remaining[insert_pos:]])
+
+
+# === Adapters ===
+
+class SwapMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
+        swap_mutation(X, self.prob, rng)
+
+class PMXCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
+        return pmx_crossover(parents, self.prob, rng)
+
+class CycleCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
+        return cycle_crossover(parents, self.prob, rng)
+
+class PositionBasedCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
+        return position_based_crossover(parents, self.prob, rng)
+
+class EdgeRecombinationCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
+        return edge_recombination_crossover(parents, self.prob, rng)
+
+class OrderCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
+        return order_crossover(parents, self.prob, rng)
+
+class InsertMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
+        insert_mutation(X, self.prob, rng)
+
+class ScrambleMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
+        scramble_mutation(X, self.prob, rng)
+
+class InversionMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
+        inversion_mutation(X, self.prob, rng)
+
+class SimpleInversionMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
+        simple_inversion_mutation(X, self.prob, rng)
+
+class DisplacementMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
+        displacement_mutation(X, self.prob, rng)
+
+__all__ = [
+    "random_permutation_population",
+    "swap_mutation",
+    "pmx_crossover",
+    "cycle_crossover",
+    "position_based_crossover",
+    "edge_recombination_crossover",
+    "order_crossover",
+    "insert_mutation",
+    "scramble_mutation",
+    "inversion_mutation",
+    "simple_inversion_mutation",
+    "displacement_mutation",
+    "SwapMutation",
+    "PMXCrossover",
+    "CycleCrossover",
+    "PositionBasedCrossover",
+    "EdgeRecombinationCrossover",
+    "OrderCrossover",
+    "InsertMutation",
+    "ScrambleMutation",
+    "InversionMutation",
+    "SimpleInversionMutation",
+    "DisplacementMutation",
+]

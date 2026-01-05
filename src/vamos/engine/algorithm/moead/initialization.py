@@ -22,6 +22,7 @@ from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 from vamos.operators.binary import random_binary_population
 from vamos.operators.integer import random_integer_population
+from vamos.operators.permutation import random_permutation_population
 
 from .helpers import build_aggregator, compute_neighbors
 from .operators import build_variation_operators
@@ -202,6 +203,8 @@ def initialize_population(
         X = random_binary_population(pop_size, n_var, rng)
     elif encoding == "integer":
         X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
+    elif encoding == "permutation":
+        X = random_permutation_population(pop_size, n_var, rng)
     else:
         X = rng.uniform(xl, xu, size=(pop_size, n_var))
 

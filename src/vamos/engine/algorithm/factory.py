@@ -12,6 +12,8 @@ from vamos.engine.algorithm.builders import (
     build_spea2_algorithm,
     build_ibea_algorithm,
     build_smpso_algorithm,
+    build_agemoea_algorithm,
+    build_rvea_algorithm,
 )
 
 
@@ -31,6 +33,8 @@ def build_algorithm(
     spea2_variation: dict | None = None,
     ibea_variation: dict | None = None,
     smpso_variation: dict | None = None,
+    agemoea_variation: dict | None = None,
+    rvea_variation: dict | None = None,
     track_genealogy: bool = False,
 ) -> Tuple[Any, Any]:
     """
@@ -112,6 +116,24 @@ def build_algorithm(
             pop_size=pop_size,
             external_archive_size=external_archive_size,
             smpso_variation=smpso_variation,
+        )
+
+    elif algorithm_name == "agemoea":
+        return build_agemoea_algorithm(
+            kernel=kernel,
+            engine_name=engine_name,
+            problem=problem,
+            pop_size=pop_size,
+            agemoea_variation=agemoea_variation,   # Using generic **kwargs if not in signature? No, need to add to signature.
+        )
+
+    elif algorithm_name == "rvea":
+        return build_rvea_algorithm(
+            kernel=kernel,
+            engine_name=engine_name,
+            problem=problem,
+            pop_size=pop_size,
+            rvea_variation=rvea_variation,
         )
 
     else:

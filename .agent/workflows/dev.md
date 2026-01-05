@@ -17,9 +17,10 @@ This workflow enables auto-running of common development commands.
 6. Quick Python check: `.venv\Scripts\python -c "<code>"`
 
 ## Testing
-7. Run all tests: `.venv\Scripts\pytest`
-8. Run specific test: `.venv\Scripts\pytest tests/<test_file.py>`
-9. Run with verbose: `.venv\Scripts\pytest -v`
+7. Run unit tests: `.venv\Scripts\pytest tests/engine tests/foundation`
+8. Run Integration Gauntlet (E2E): `.venv\Scripts\pytest tests/e2e`
+9. Run Reference Verification (Scientific): `.venv\Scripts\pytest tests/reference`
+10. Run all tests: `.venv\Scripts\pytest`
 
 ## Package Management
 10. List installed: `.venv\Scripts\pip list`

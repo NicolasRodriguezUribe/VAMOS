@@ -35,15 +35,60 @@ class AlgorithmLike(Protocol):
 
 AlgorithmBuilder = Callable[[dict, KernelBackend], AlgorithmLike]
 
-ALGORITHMS: Dict[str, AlgorithmBuilder] = {
-    "nsgaii": lambda cfg, kernel: NSGAII(cfg, kernel=kernel),
-    "nsgaiii": lambda cfg, kernel: NSGAIII(cfg, kernel=kernel),
-    "moead": lambda cfg, kernel: MOEAD(cfg, kernel=kernel),
-    "smsemoa": lambda cfg, kernel: SMSEMOA(cfg, kernel=kernel),
-    "spea2": lambda cfg, kernel: SPEA2(cfg, kernel=kernel),
-    "ibea": lambda cfg, kernel: IBEA(cfg, kernel=kernel),
-    "smpso": lambda cfg, kernel: SMPSO(cfg, kernel=kernel),
-}
+from vamos.foundation.registry import Registry
+
+ALGORITHMS: Registry[AlgorithmBuilder] = Registry("Algorithms")
+
+
+@ALGORITHMS.register("nsgaii")
+def _build_nsgaii(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    return NSGAII(cfg, kernel=kernel)
+
+
+@ALGORITHMS.register("nsgaiii")
+def _build_nsgaiii(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    return NSGAIII(cfg, kernel=kernel)
+
+
+@ALGORITHMS.register("moead")
+def _build_moead(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    return MOEAD(cfg, kernel=kernel)
+
+
+@ALGORITHMS.register("smsemoa")
+def _build_smsemoa(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    return SMSEMOA(cfg, kernel=kernel)
+
+
+@ALGORITHMS.register("spea2")
+def _build_spea2(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    return SPEA2(cfg, kernel=kernel)
+
+
+@ALGORITHMS.register("ibea")
+def _build_ibea(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    return IBEA(cfg, kernel=kernel)
+
+
+@ALGORITHMS.register("smpso")
+def _build_smpso(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    """
+    Note: SMPSO typically requires a different config structure, but the builder
+    signature remains consistent.
+    """
+    return SMPSO(cfg, kernel=kernel)
+
+
+@ALGORITHMS.register("agemoea")
+def _build_agemoea(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    from .agemoea import AGEMOEA
+    return AGEMOEA(cfg, kernel=kernel)
+
+
+@ALGORITHMS.register("rvea")
+def _build_rvea(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+    from .rvea import RVEA
+    return RVEA(cfg, kernel=kernel)
 
 
 def resolve_algorithm(name: str) -> AlgorithmBuilder:

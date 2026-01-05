@@ -163,6 +163,60 @@ class Scenario:
     - >1: Use exact number of cores.
     """
 
+    convergence_window: int = 0
+    """
+    Number of consecutive stages without improvement before stopping early.
+    Set to 0 to disable convergence-based early stopping.
+    """
+
+    convergence_threshold: float = 0.01
+    """
+    Relative improvement threshold for convergence detection.
+    If the best score improves by less than this fraction over convergence_window
+    stages, the race is considered converged.
+    """
+
+    # =========================================================================
+    # Multi-Fidelity (Hyperband-style)
+    # =========================================================================
+
+    use_multi_fidelity: bool = False
+    """
+    If True, enables Hyperband-style multi-fidelity evaluation.
+    Configurations are first evaluated with low budget, and only the best
+    are promoted to higher fidelity levels.
+    """
+
+    fidelity_levels: tuple[int, ...] = (1000, 3000, 10000)
+    """
+    Sequence of evaluation budgets for each fidelity level.
+    Must be strictly increasing. Example: (1000, 3000, 10000) means:
+    - Level 0: evaluate with budget=1000
+    - Level 1: survivors evaluated with budget=3000
+    - Level 2: final survivors evaluated with budget=10000
+    """
+
+    fidelity_promotion_ratio: float = 0.3
+    """
+    Fraction of configurations promoted to the next fidelity level.
+    For example, 0.3 means the top 30% of configs at each level advance.
+    """
+
+    fidelity_min_configs: int = 3
+    """
+    Minimum number of configurations to keep at each fidelity level.
+    Ensures we don't eliminate too aggressively between fidelity levels.
+    """
+
+    fidelity_warm_start: bool = True
+    """
+    If True, pass checkpoints between fidelity levels so the algorithm can
+    continue from where it left off instead of starting from scratch.
+    
+    The eval_fn receives `ctx.checkpoint` with the previous state and should
+    return a tuple `(score, new_checkpoint)` instead of just `score`.
+    """
+
     def __post_init__(self) -> None:
         if self.max_experiments <= 0:
             raise ValueError("max_experiments must be > 0")
@@ -182,8 +236,6 @@ class Scenario:
             raise ValueError("max_budget_per_run must be > 0 when provided")
         if self.budget_growth_factor < 1.0:
             raise ValueError("budget_growth_factor must be >= 1.0")
-        if not (0.0 <= self.elite_fraction <= 1.0):  # Fixed typo in range check (0, 1] vs [0, 1] ? Original was (0, 1]. Assuming > 0
-            pass  # keeping original check below
         if not (0.0 < self.elite_fraction <= 1.0):
             raise ValueError("elite_fraction must be in (0, 1]")
         if not (0.0 <= self.neighbor_fraction <= 1.0):
@@ -194,6 +246,20 @@ class Scenario:
             raise ValueError("target_population_size must be >= 1 when provided")
         if self.n_jobs < 1 and self.n_jobs != -1:
             raise ValueError("n_jobs must be >= 1 or -1")
+        if self.convergence_window < 0:
+            raise ValueError("convergence_window must be >= 0")
+        if not (0.0 < self.convergence_threshold <= 1.0):
+            raise ValueError("convergence_threshold must be in (0, 1]")
+        # Multi-fidelity validation
+        if self.use_multi_fidelity:
+            if len(self.fidelity_levels) < 2:
+                raise ValueError("fidelity_levels must have at least 2 levels")
+            if not all(self.fidelity_levels[i] < self.fidelity_levels[i + 1] for i in range(len(self.fidelity_levels) - 1)):
+                raise ValueError("fidelity_levels must be strictly increasing")
+            if not (0.0 < self.fidelity_promotion_ratio <= 1.0):
+                raise ValueError("fidelity_promotion_ratio must be in (0, 1]")
+            if self.fidelity_min_configs < 1:
+                raise ValueError("fidelity_min_configs must be >= 1")
 
 
 __all__ = ["Scenario"]

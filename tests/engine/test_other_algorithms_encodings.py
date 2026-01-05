@@ -7,6 +7,7 @@ from vamos.engine.algorithm.config import MOEADConfig, SMSEMOAConfig, NSGAIIICon
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.binary import BinaryKnapsackProblem
 from vamos.foundation.problem.integer import IntegerResourceAllocationProblem
+from vamos.foundation.problem.tsp import TSPProblem
 
 
 def _run_moead(problem, cross, mut, pop_size=12, n_eval=60):
@@ -68,6 +69,10 @@ def test_moead_binary_and_integer():
         ("uniform", {"prob": 0.9}),
         ("reset", {"prob": "1/n", "step": 1}),
     )
+
+
+def test_moead_permutation():
+    _run_moead(TSPProblem(n_cities=7), ("ox", {"prob": 0.9}), ("swap", {"prob": "2/n"}), pop_size=10, n_eval=40)
 
 
 def test_smsemoa_binary_and_integer():

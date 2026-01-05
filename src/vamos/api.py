@@ -18,10 +18,9 @@ from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.experiment.optimize import (
     OptimizeConfig,
     OptimizationResult,
-    optimize,
-    pareto_filter,
     run_optimization,
 )
+from vamos.foundation.metrics.pareto import pareto_filter
 from vamos.foundation.problem.registry import (
     ProblemSelection,
     ProblemSpec,
@@ -34,9 +33,19 @@ from vamos.ux.analysis.core_objective_reduction import (
     reduce_objectives,
 )
 
+# Unified API - the primary entry point
+from vamos.experiment.unified import optimize
+
+# Legacy aliases (kept for backward compatibility)
+from vamos.experiment.builder import study
+from vamos.experiment.auto import auto_optimize
+
 __all__ = [
+    # Primary API
     "optimize",
     "run_optimization",
+    "study",
+    "auto_optimize",
     "OptimizeConfig",
     "OptimizationResult",
     "pareto_filter",

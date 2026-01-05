@@ -19,10 +19,11 @@ building blocks used across multiple algorithms.
   - `hypervolume.py`: hypervolume utilities (with backend fallbacks)
   - `weight_vectors.py`: weight vectors (NSGA-III / MOEA-D)
   - `variation/`: variation pipelines (crossover + mutation wiring)
-- Algorithm subfolders: `nsgaii/`, `moead/`, `spea2/`, `ibea/`, `smsemoa/`, `smpso/`, `nsgaiii/`
+- Algorithm subfolders: `nsgaii/`, `moead/`, `spea2/`, `ibea/`, `smsemoa/`, `smpso/`, `nsgaiii/`, `agemoea/`, `rvea/`
   - Each contains: `__init__.py`, `{algorithm}.py`, `initialization.py`, `helpers.py`, `operators.py`, `state.py`
 - Config subfolder: `config/`
-  - `base.py`, `nsgaii.py`, `moead.py`, `spea2.py`, `ibea.py`, `smsemoa.py`, `smpso.py`, `nsgaiii.py`
+  - `base.py`, `nsgaii.py`, `moead.py`, `spea2.py`, `ibea.py`, `smsemoa.py`, `smpso.py`, `nsgaiii.py`, `agemoea.py`, `rvea.py`
+  - **Unified Archive API**: All configs must support `.archive(size, **kwargs)` using `BoundedArchive` parameters.
 - Registry/factory: `registry.py`, `factory.py`, `builders.py`
 
 ## Conventions
@@ -45,3 +46,12 @@ building blocks used across multiple algorithms.
 - Do not add compatibility shims at this level; reuse `components/*` instead.
 - Delegate expensive operations to kernels (`problem.evaluate`, `kernel.*`) or to
   shared utilities in `components/`.
+
+## Tuning Integration
+
+Algorithms are tunable via `vamos.engine.tuning.racing`:
+- Use `build_{algo}_config_space()` from `bridge.py` to get parameter space
+- Use `config_from_assignment(algo_name, params)` to convert tuned params to config
+- Multi-fidelity tuning passes varying `budget` via `EvalContext`
+- Warm-start support: algorithms can checkpoint population state for continuation
+

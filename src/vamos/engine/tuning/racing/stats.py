@@ -193,7 +193,5 @@ def select_configs_by_paired_test(
 
 __all__ = [
     "build_score_matrix",
-    "_z_critical",
-    "_t_critical",
     "select_configs_by_paired_test",
 ]

@@ -19,82 +19,57 @@ This file explains how to set up the environment, how the project is structured,
 ## 1. What VAMOS is
 
 - Research-grade, vectorized multi-objective optimization framework in Python (Python 3.10+).
-- **User-friendly by design**: Clean public API at `from vamos import ...` for end users; layered internals for contributors.
-- Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO with vectorized kernels (NumPy, Numba, MooCore).
-- Encodings: continuous, permutation, binary, integer, mixed; operators are vectorized and workspace-aware.
-- Problems: ZDT, DTLZ, WFG, LZ09, CEC2009 UF/CF (pymoo-backed), TSP/TSPLIB, feature selection/knapsack/QUBO, allocation/job assignment, welded beam, ML/real-data examples.
-- Tooling and orchestration: CLI (`python -m vamos.experiment.cli.main`), StudyRunner (problem x algorithm x seed sweeps), config-driven runs (YAML/JSON), diagnostics (`vamos-self-check`), benchmarking (`vamos-benchmark`), Studio (`vamos-studio`) for interactive decision-making, visualization/MCDM/stats utilities, and hypervolume early-stop options.
-- Output lives under `results/` by default (fronts, metadata).
+- **Unified API**: All workflows should use `vamos.optimize()` as the primary entry point.
+- **Algorithms**: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA with vectorized kernels.
+- **Tooling**: Comprehensive suite including `vamos-profile` (profiling), `vamos-benchmark` (reporting), and `vamos-studio` (interactive dashboard).
+- **Notebooks**: extensive examples under `notebooks/0_basic/`, `notebooks/1_intermediate/` and `notebooks/2_advanced/`.
 
 ### User-Friendliness Principles
 
 VAMOS prioritizes ease of use:
 
-1. **Clean public API**: Users import from `vamos` directly, not deep internal paths:
-   ```python
-   # GOOD - user-friendly
-   from vamos import optimize, NSGAIIConfig, ZDT1, plot_pareto_front_2d
-   
-   # AVOID - internal paths (for contributors only)
-   from vamos.engine.algorithm.config import NSGAIIConfig
-   ```
+1.  **Unified Entry Point**: Always prefer `vamos.optimize(config)` over manual wiring.
+    ```python
+    from vamos import optimize, OptimizeConfig, NSGAIIConfig
+    
+    # Simple, fluent configuration
+    cfg = OptimizeConfig(
+        problem="zdt1",
+        algorithm=NSGAIIConfig().pop_size(100).fixed(),
+        max_evaluations=2000
+    )
+    result = optimize(cfg)
+    ```
 
-2. **Sensible defaults**: Algorithms work out-of-the-box with reasonable settings.
-
-3. **Fluent configuration**: Builder pattern for algorithm configs:
-   ```python
-   cfg = (
-       NSGAIIConfig()
-       .pop_size(100)
-       .crossover("sbx", prob=0.9, eta=20.0)
-       .mutation("pm", prob="1/n", eta=20.0)
-       .selection("tournament", pressure=2)
-       .survival("nsga2")
-       .engine("numpy")
-       .fixed()
-   )
-   ```
-
-4. **Consistent patterns**: All algorithms follow the same `optimize()` workflow.
-
-5. **Clear error messages**: Validate early with helpful suggestions.
+2.  **Interactive Results**: Use `result.explore()` for immediate visualization in notebooks.
+3.  **Publication Ready**: Use `result.to_latex()` for generating tables directly from code.
+4.  **No Internal Imports**: Users should never see `vamos.engine...` or `vamos.foundation...`. Stick to the top-level `vamos` exports.
 
 ---
 
 ## 2. Environment and install
 
-- Create a virtual environment:
-
+- **Standard Install**:
   ```powershell
-  python -m venv .venv
-  .\.venv\Scripts\Activate.ps1
+  pip install -e ".[backends,benchmarks,dev,notebooks]"
   ```
 
-- Typical editable install (core + backends + benchmarks + dev/test):
-
-  ```powershell
-  pip install -e ".[backends,benchmarks,dev]"
-  ```
-
-- Extras you may need: `backends`, `benchmarks`, `dev`, `notebooks`, `examples`, `docs`, `studio`, `analytics`, `autodiff` (see README for commands such as `pip install -e ".[backends,benchmarks,dev,notebooks]"`). The `examples` extra pulls in scikit-learn for real-world notebooks (feature selection, hyperparameter tuning). The interactive Pareto explorer notebook needs plotly + ipywidgets (included in `notebooks`).
-
-- Useful commands:
+- **Useful commands**:
   - Quick run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
-  - MooCore backend: `python -m vamos.experiment.cli.main --engine moocore --problem zdt1 --max-evaluations 2000`
-  - Benchmark suite: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/`
-  - Diagnostics: `python -m vamos.experiment.diagnostics.self_check` or `vamos-self-check`
-  - Tests: `pytest` (full optional stack: `pytest -m "not slow"` after installing the relevant extras)
-  - Numba variation toggle: `VAMOS_USE_NUMBA_VARIATION=1`
-  - **Library imports (user-facing)**: Always prefer the clean public API:
-    ```python
-    from vamos import optimize, NSGAIIConfig, ZDT1, make_problem_selection
-    from vamos import plot_pareto_front_2d, weighted_sum_scores, friedman_test
-    ```
-  - **Library imports (contributors)**: Layered packages for internal work:
-    ```python
-    from vamos.engine.algorithm.nsgaii import NSGAII
-    from vamos.foundation.problem.registry import PROBLEM_SPECS
-    ```
+  - Self-check: `vamos-self-check`
+  - Profile: `vamos-profile nsgaii zdt1`
+  - Tests: `pytest`
+
+- **Library imports (user-facing)**:
+  ```python
+  from vamos import optimize, OptimizeConfig, NSGAIIConfig, ZDT1
+  from vamos import plot_pareto_front_2d, weighted_sum_scores
+  ```
+- **Library imports (contributors)**: Layered packages for internal work:
+  ```python
+  from vamos.engine.algorithm.nsgaii import NSGAII
+  from vamos.foundation.problem.registry import PROBLEM_SPECS
+  ```
 
 ---
 
@@ -106,19 +81,6 @@ VAMOS prioritizes ease of use:
 - `ux`: user-facing analysis/visualization (including MCDM/stats) and Studio surfaces.
 - The `vamos` package root re-exports a curated public API (see `vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`); use these for user-facing examples.
 - Standard results layout under `results/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`. All experiment runners (CLI/benchmark/zoo) must write to this schema; UX helpers (`vamos.ux.analysis.results`) read it.
-- Dependency rules:
-  - `ux` may depend on `experiment`, `engine`, `foundation`.
-  - `experiment` may depend on `engine`, `foundation`.
-  - `engine` may depend on `foundation`.
-  - `foundation` should stay free of upward dependencies; keep cross-layer facades minimal and documented.
-- Place new code in the correct layer and keep imports aligned with these directions.
-- Only re-export stable, well-documented constructs from the root package; extension work should live in the layered modules.
-
-### Tests and markers
-- Tests are organized by layer: `tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, with `tests/integration` for cross-layer scenarios.
-- Markers: `smoke` (fast critical), `slow` (long), `backends` (optional backends), `notebooks`, `examples`, plus `cli`/`numba`/`moocore`/`studio`/`autodiff` where applicable.
-- Default quick run: `pytest -m "smoke"`. Tag backend/notebook-heavy tests appropriately to keep smoke runs fast.
-
 ---
 
 ## 4. Repository layout (aligns with README)

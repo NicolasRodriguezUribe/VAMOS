@@ -4,7 +4,91 @@ Shared helpers for variation/default handling across CLI, runner, and factories.
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
+
+
+# =============================================================================
+# Operator Registry by Encoding
+# =============================================================================
+
+OPERATORS_BY_ENCODING: Dict[str, Dict[str, List[Tuple[str, Dict[str, Any]]]]] = {
+    "real": {
+        "crossover": [
+            ("sbx", {"prob": 0.9, "eta": 20.0}),
+            ("uniform", {"prob": 0.9}),
+            ("blx", {"prob": 0.9, "alpha": 0.5}),
+            ("arithmetic", {"prob": 0.9}),
+            ("de", {"prob": 0.9, "F": 0.5}),
+        ],
+        "mutation": [
+            ("pm", {"prob": 0.1, "eta": 20.0}),
+            ("gaussian", {"prob": 0.1, "sigma": 0.1}),
+            ("uniform_reset", {"prob": 0.1}),
+        ],
+    },
+    "binary": {
+        "crossover": [
+            ("hux", {"prob": 0.9}),
+            ("uniform", {"prob": 0.9}),
+            ("one_point", {"prob": 0.9}),
+            ("two_point", {"prob": 0.9}),
+        ],
+        "mutation": [
+            ("bitflip", {"prob": "1/n"}),
+        ],
+    },
+    "integer": {
+        "crossover": [
+            ("uniform", {"prob": 0.9}),
+            ("arithmetic", {"prob": 0.9}),
+        ],
+        "mutation": [
+            ("reset", {"prob": "1/n"}),
+            ("creep", {"prob": 0.1}),
+        ],
+    },
+    "permutation": {
+        "crossover": [
+            ("ox", {"prob": 0.9}),
+            ("pmx", {"prob": 0.9}),
+            ("edge", {"prob": 0.9}),
+            ("cycle", {"prob": 0.9}),
+            ("position", {"prob": 0.9}),
+        ],
+        "mutation": [
+            ("swap", {"prob": 0.1}),
+            ("inversion", {"prob": 0.1}),
+            ("scramble", {"prob": 0.1}),
+            ("insert", {"prob": 0.1}),
+            ("displacement", {"prob": 0.1}),
+        ],
+    },
+    "mixed": {
+        "crossover": [
+            ("mixed", {"prob": 0.9}),
+        ],
+        "mutation": [
+            ("mixed", {"prob": "1/n"}),
+        ],
+    },
+}
+
+
+def get_operators_for_encoding(encoding: str) -> Dict[str, List[Tuple[str, Dict[str, Any]]]]:
+    """Return available operators for the given encoding type."""
+    return OPERATORS_BY_ENCODING.get(encoding, OPERATORS_BY_ENCODING["real"])
+
+
+def get_crossover_names(encoding: str) -> List[str]:
+    """Return list of crossover operator names for given encoding."""
+    ops = get_operators_for_encoding(encoding)
+    return [op[0] for op in ops.get("crossover", [])]
+
+
+def get_mutation_names(encoding: str) -> List[str]:
+    """Return list of mutation operator names for given encoding."""
+    ops = get_operators_for_encoding(encoding)
+    return [op[0] for op in ops.get("mutation", [])]
 
 
 def normalize_operator_tuple(spec) -> tuple[str, dict] | None:
@@ -46,9 +130,9 @@ def normalize_variation_config(raw: dict | None) -> dict | None:
     return normalized or None
 
 
-def resolve_nsgaii_variation_config(encoding: str, overrides: dict | None) -> Dict[str, Any]:
+def resolve_default_variation_config(encoding: str, overrides: dict | None) -> Dict[str, Any]:
     """
-    Default NSGA-II variation by encoding, merged with user overrides.
+    Default variation configuration by encoding, merged with user overrides.
     """
     if encoding == "real":
         base = {

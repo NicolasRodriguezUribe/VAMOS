@@ -122,4 +122,31 @@ def mixed_mutation(X: np.ndarray, prob: float, spec: dict, rng: np.random.Genera
             X[:, cat_idx] = X_cat
 
 
-__all__ = ["mixed_initialize", "mixed_crossover", "mixed_mutation"]
+
+# === Adapters ===
+
+class MixedCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+        spec = kwargs.get("spec")
+        if spec is None:
+            raise ValueError("MixedCrossover requires 'spec' in kwargs.")
+        return mixed_crossover(parents, self.prob, spec, rng)
+
+class MixedMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> None:
+        spec = kwargs.get("spec")
+        if spec is None:
+            raise ValueError("MixedMutation requires 'spec' in kwargs.")
+        mixed_mutation(X, self.prob, spec, rng)
+
+__all__ = [
+    "mixed_initialize",
+    "mixed_crossover",
+    "mixed_mutation",
+    "MixedCrossover",
+    "MixedMutation",
+]

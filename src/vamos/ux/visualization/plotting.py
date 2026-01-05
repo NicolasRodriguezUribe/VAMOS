@@ -6,7 +6,7 @@ from datetime import datetime
 
 import numpy as np
 
-from vamos.experiment.optimize import pareto_filter
+from vamos.foundation.metrics.pareto import pareto_filter
 
 
 def _logger() -> logging.Logger:

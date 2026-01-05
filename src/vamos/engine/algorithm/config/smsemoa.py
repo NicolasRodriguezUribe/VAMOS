@@ -129,15 +129,22 @@ class SMSEMOAConfig:
         self._cfg["archive_type"] = str(value)
         return self
 
-    def archive(self, size: int) -> "SMSEMOAConfig":
+    def archive(self, size: int, **kwargs) -> "SMSEMOAConfig":
         """
-        Convenience alias to configure an external archive by size.
-        A size <= 0 disables the archive.
+        Configure an external archive.
+        
+        Args:
+            size: Archive size (required). <= 0 disables the archive.
+            **kwargs: Optional configuration:
+                - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
+                - prune_policy: "crowding", "hv_contrib", "random"
+                - epsilon: Grid epsilon for epsilon_grid/hybrid types
         """
         if size <= 0:
             self._cfg["archive"] = {"size": 0}
             return self
-        self._cfg["archive"] = {"size": int(size)}
+        archive_cfg = {"size": int(size), **kwargs}
+        self._cfg["archive"] = archive_cfg
         return self
 
     def fixed(self) -> SMSEMOAConfigData:

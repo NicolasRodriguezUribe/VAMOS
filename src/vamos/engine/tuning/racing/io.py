@@ -90,6 +90,48 @@ def save_history_csv(
             if include_raw:
                 row.append(json.dumps(trial.config))
             writer.writerow(row)
+def save_checkpoint(
+    best_configs: List[Dict[str, Any]],
+    elite_archive: List[Dict[str, Any]],
+    path: str | Path,
+    *,
+    metadata: Dict[str, Any] | None = None,
+) -> None:
+    """
+    Save a tuning checkpoint with elite configurations for warm restart.
+
+    Args:
+        best_configs: List of best configuration dicts found so far.
+        elite_archive: List of elite entry dicts (config + score).
+        path: Path to save the checkpoint JSON.
+        metadata: Optional additional metadata (e.g., stage_index, num_experiments).
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint = {
+        "best_configs": best_configs,
+        "elite_archive": elite_archive,
+        "metadata": metadata or {},
+    }
+    with path.open("w", encoding="utf-8") as fh:
+        json.dump(checkpoint, fh, indent=2)
+
+
+def load_checkpoint(path: str | Path) -> Dict[str, Any]:
+    """
+    Load a tuning checkpoint for warm restart.
+
+    Returns:
+        Dictionary with keys:
+            - best_configs: List of configuration dicts.
+            - elite_archive: List of elite entry dicts.
+            - metadata: Any additional metadata.
+
+    The 'best_configs' can be passed to RacingTuner(initial_configs=...).
+    """
+    path = Path(path)
+    with path.open("r", encoding="utf-8") as fh:
+        return json.load(fh)
 
 
 __all__ = [
@@ -97,4 +139,6 @@ __all__ = [
     "history_to_dict",
     "save_history_json",
     "save_history_csv",
+    "save_checkpoint",
+    "load_checkpoint",
 ]

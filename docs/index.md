@@ -17,9 +17,7 @@ python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000
 ```
 
 Docs roadmap:
-- `Getting Started` for install and smoke tests
-- `CLI & Config` for flags and YAML/JSON specs
-- `Algorithms & Backends` for capabilities and extras
-- `Problems` for the registry and encodings
-- `Constraints & Autodiff` for the DSL and JAX helpers
-- `Extending VAMOS` for adding algorithms, operators, problems, or kernels
+- `Guide`: Getting Started, CLI, Studio, and Cookbook
+- `Reference`: API docs, algorithms, problems, and constraints
+- `Topics`: Hyperparameter tuning, analysis, extending VAMOS, and engineering details
+- `Examples`: Comprehensive notebook suite (Basic, Intermediate, Advanced)

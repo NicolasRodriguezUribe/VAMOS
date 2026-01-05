@@ -44,6 +44,8 @@ from .racing import (
     history_to_dict,
     save_history_json,
     save_history_csv,
+    save_checkpoint,
+    load_checkpoint,
     # Config space builders
     build_spea2_config_space,
     build_ibea_config_space,
@@ -90,6 +92,8 @@ __all__ = [
     "history_to_dict",
     "save_history_json",
     "save_history_csv",
+    "save_checkpoint",
+    "load_checkpoint",
     # Config space builders
     "build_spea2_config_space",
     "build_ibea_config_space",

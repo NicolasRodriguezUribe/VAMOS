@@ -25,6 +25,8 @@ from vamos.api import (
     reduce_objectives,
     run_optimization,
     run_self_check,
+    study,
+    auto_optimize,
 )
 from vamos.foundation.version import get_version as _get_version
 
@@ -33,6 +35,8 @@ __all__ = [
     # Optimization
     "optimize",
     "run_optimization",
+    "study",
+    "auto_optimize",
     "OptimizeConfig",
     "OptimizationResult",
     "pareto_filter",

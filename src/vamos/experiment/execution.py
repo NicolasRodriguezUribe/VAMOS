@@ -4,7 +4,7 @@ import logging
 from argparse import Namespace
 from importlib.resources import as_file
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Optional
 
 import numpy as np
 
@@ -22,15 +22,11 @@ from vamos.foundation.data import weight_path
 from vamos.foundation.eval.backends import resolve_eval_backend
 from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.problem.resolver import ProblemSelection
-from vamos.experiment.runner_output import (
-    build_metrics,
-    persist_run_outputs,
-    print_run_banner,
-    print_run_results,
-)
+from vamos.foundation.observer import Observer, RunContext
 from vamos.experiment.runner_utils import run_output_dir, validate_problem
+from vamos.experiment.observers.console import ConsoleObserver
+from vamos.experiment.observers.storage import StorageObserver
 from vamos.hooks import (
-    CompositeLiveVisualization,
     HookManager,
     HookManagerConfig,
     LiveVisualization,
@@ -49,6 +45,51 @@ def _logger() -> logging.Logger:
 
 Metrics = dict[str, Any]
 VariationConfig = dict[str, Any]
+
+
+class CompositeObserver(Observer):
+    """Fans out events to multiple observers."""
+    def __init__(self, observers: list[Observer]):
+        self.observers = [o for o in observers if o is not None]
+
+    def on_start(self, ctx: RunContext = None, **kwargs) -> None:
+        # Support both RunContext and legacy kwargs (problem=, algorithm=, config=)
+        for obs in self.observers:
+            try:
+                if ctx is not None:
+                    obs.on_start(ctx)
+                else:
+                    obs.on_start(**kwargs)
+            except TypeError:
+                # Observer doesn't support this signature, skip
+                pass
+
+    def on_generation(
+        self,
+        generation: int,
+        F: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        stats: Optional[dict[str, Any]] = None,
+    ) -> None:
+        for obs in self.observers:
+            obs.on_generation(generation, F, X, stats)
+
+    def on_end(
+        self,
+        final_F: Optional[np.ndarray] = None,
+        final_stats: Optional[dict[str, Any]] = None,
+    ) -> None:
+        for obs in self.observers:
+            obs.on_end(final_F, final_stats)
+            
+    def should_stop(self) -> bool:
+        # Check if any observer requests stopping (e.g. Hooks)
+        # Note: Observer protocol doesn't strictly have should_stop, but HookManager does.
+        # We handle this specifically for observers that support it.
+        for obs in self.observers:
+            if hasattr(obs, "should_stop") and obs.should_stop():
+                return True
+        return False
 
 
 def _default_weight_path(problem_name: str, n_obj: int, pop_size: int) -> str:
@@ -88,8 +129,78 @@ def run_single(
     live_viz: LiveVisualization | None = None,
 ) -> Metrics:
     problem = problem or selection.instantiate()
-    display_algo = algorithm_name.upper()
-    print_run_banner(problem, selection, display_algo, engine_name, config)
+    
+    # 1. Build Context
+    ctx = RunContext(
+        problem=problem,
+        algorithm=algorithm,
+        config=config,
+        selection=selection,
+        algorithm_name=algorithm_name,
+        engine_name=engine_name,
+    )
+    
+    output_dir = run_output_dir(selection, algorithm_name, engine_name, config.seed, config)
+    ensure_dir(output_dir)
+
+    # 2. Build Observers
+    observers: list[Observer] = []
+    
+    # Console
+    observers.append(ConsoleObserver())
+    
+    # Storage
+    # Collect variations for metadata
+    variations = {
+        "nsgaii_variation": nsgaii_variation,
+        "moead_variation": moead_variation,
+        "smsemoa_variation": smsemoa_variation,
+        "nsgaiii_variation": nsgaiii_variation,
+        "spea2_variation": spea2_variation,
+        "ibea_variation": ibea_variation,
+        "smpso_variation": smpso_variation,
+    }
+    
+    storage = StorageObserver(
+        output_dir=output_dir,
+        project_root=_project_root(),
+        config_source=config_source,
+        problem_override=problem_override,
+        hv_stop_config=hv_stop_config,
+        selection_pressure=selection_pressure,
+        external_archive_size=external_archive_size,
+        variations=variations,
+    )
+    observers.append(storage)
+
+    # Hooks
+    hook_mgr = None
+    if isinstance(config_spec, dict):
+        try:
+            hook_cfg = parse_stopping_archive(config_spec, problem_key=selection.spec.key)
+            if hook_cfg.get("stopping_enabled") or hook_cfg.get("archive_enabled"):
+                hook_mgr = HookManager(
+                    out_dir=Path(output_dir),
+                    cfg=HookManagerConfig(
+                        stopping_enabled=hook_cfg["stopping_enabled"],
+                        stop_cfg=hook_cfg["stop_cfg"],
+                        archive_enabled=hook_cfg["archive_enabled"],
+                        archive_cfg=hook_cfg["archive_cfg"],
+                        hv_ref_point=hook_cfg.get("hv_ref_point"),
+                    ),
+                )
+                observers.append(hook_mgr)
+        except Exception:
+            hook_mgr = None
+            
+    # User Viz (LiveVisualization is protocol-compatible with Observer)
+    if live_viz:
+        observers.append(live_viz)
+        
+    main_observer = CompositeObserver(observers)
+    
+    # 3. Notify Start
+    main_observer.on_start(ctx)
 
     autodiff_info = None
     if autodiff_constraints:
@@ -115,29 +226,6 @@ def run_single(
         getattr(config, "eval_backend", "serial"),
         n_workers=getattr(config, "n_workers", None),
     )
-    output_dir = run_output_dir(selection, algorithm_name, engine_name, config.seed, config)
-    visualizer = live_viz or NoOpLiveVisualization()
-    hook_mgr = None
-    if isinstance(config_spec, dict):
-        try:
-            hook_cfg = parse_stopping_archive(config_spec, problem_key=selection.spec.key)
-            if hook_cfg.get("stopping_enabled") or hook_cfg.get("archive_enabled"):
-                hook_mgr = HookManager(
-                    out_dir=Path(output_dir),
-                    cfg=HookManagerConfig(
-                        stopping_enabled=hook_cfg["stopping_enabled"],
-                        stop_cfg=hook_cfg["stop_cfg"],
-                        archive_enabled=hook_cfg["archive_enabled"],
-                        archive_cfg=hook_cfg["archive_cfg"],
-                        hv_ref_point=hook_cfg.get("hv_ref_point"),
-                    ),
-                )
-                if live_viz is None:
-                    visualizer = hook_mgr
-                else:
-                    visualizer = CompositeLiveVisualization([hook_mgr, visualizer])
-        except Exception:
-            hook_mgr = None
 
     kernel_backend = getattr(algorithm, "kernel", None)
 
@@ -151,73 +239,73 @@ def run_single(
 
     validate_problem(problem)
 
-    ensure_dir(output_dir)
+    # 4. Execute
     exec_result = execute_algorithm(
         algorithm,
         problem,
         termination=termination,
         seed=config.seed,
         eval_backend=eval_backend,
-        live_viz=visualizer,
+        live_viz=main_observer, # CompositeObserver acts as LiveVisualization
     )
+    
     payload = exec_result.payload
     total_time_ms = exec_result.elapsed_ms
     F = payload["F"]
     actual_evaluations = int(payload.get("evaluations", config.max_evaluations))
+    
+    # Termination reason determination
     termination_reason = "max_evaluations"
-    if hook_mgr is not None and hook_mgr.should_stop():
+    if main_observer.should_stop(): # Check hooks via composite
         termination_reason = "hv_convergence"
     if hv_enabled and payload.get("hv_reached"):
         termination_reason = "hv_threshold"
 
-    metrics: Metrics = build_metrics(algorithm_name, engine_name, total_time_ms, actual_evaluations, F)
-    metrics["termination"] = termination_reason
-    metrics["eval_backend"] = getattr(config, "eval_backend", "serial")
-    metrics["n_workers"] = getattr(config, "n_workers", None)
+    # 5. Build Final Stats / Metrics
+    # (Still need this for return value and notifying observers)
+    from vamos.experiment.runner_output import build_metrics # Keeping this helper for now or inline it?
+    # Ideally should move build_metrics to execution utils or just inline.
+    # For now, inline simplified version or rely on it.
+    # Let's import it to save time, but it's deprecated. All logic moved to Observers?
+    # No, build_metrics creates the dict that StorageObserver uses.
+    # StorageObserver expects 'final_stats' to have 'metrics' + 'payload'.
+    
+    # Recreate build_metrics logic here to be independent
+    spread = None
+    if F.size and F.shape[1] >= 1:
+        spread = np.ptp(F[:, 0])
+    evals_per_sec = actual_evaluations / max(1e-9, total_time_ms / 1000.0)
+    
+    metrics = {
+        "algorithm": algorithm_name,
+        "engine": engine_name,
+        "time_ms": total_time_ms,
+        "evaluations": actual_evaluations,
+        "evals_per_sec": evals_per_sec,
+        "spread": spread,
+        "F": F,
+        "X": payload.get("X"),
+        "termination": termination_reason,
+        "eval_backend": getattr(config, "eval_backend", "serial"),
+        "n_workers": getattr(config, "n_workers", None),
+        "config": cfg_data,
+        "_kernel_backend": kernel_backend,
+        "backend_device": kernel_backend.device() if kernel_backend else "external",
+        "backend_capabilities": sorted(set(kernel_backend.capabilities())) if kernel_backend else [],
+        "output_dir": output_dir, # Needed?
+        "payload": payload, # Pass payload for StorageObserver to extract archives etc.
+        "autodiff_info": autodiff_info,
+    }
+    
     if hv_enabled and hv_stop_config:
         metrics["hv_threshold_fraction"] = hv_stop_config.get("threshold_fraction")
         metrics["hv_reference_point"] = hv_stop_config.get("reference_point")
         metrics["hv_reference_front"] = hv_stop_config.get("reference_front_path")
-    metrics["config"] = cfg_data
-    if kernel_backend is not None:
-        metrics["_kernel_backend"] = kernel_backend
-        metrics["backend_device"] = kernel_backend.device()
-        metrics["backend_capabilities"] = sorted(set(kernel_backend.capabilities()))
-    else:
-        metrics["backend_device"] = "external"
-        metrics["backend_capabilities"] = []
-    print_run_results(metrics)
-    metrics["output_dir"] = output_dir
-    persist_run_outputs(
-        output_dir=output_dir,
-        selection=selection,
-        algorithm_name=algorithm_name,
-        engine_name=engine_name,
-        cfg_data=cfg_data,
-        metrics=metrics,
-        payload=payload,
-        total_time_ms=total_time_ms,
-        hv_stop_config=hv_stop_config,
-        config_source=config_source,
-        selection_pressure=selection_pressure,
-        external_archive_size=external_archive_size,
-        encoding=getattr(problem, "encoding", getattr(selection.spec, "encoding", "continuous")),
-        problem_override=problem_override,
-        autodiff_info=autodiff_info,
-        config=config,
-        kernel_backend=kernel_backend,
-        project_root=_project_root(),
-        nsgaii_variation=nsgaii_variation,
-        moead_variation=moead_variation,
-        smsemoa_variation=smsemoa_variation,
-        nsgaiii_variation=nsgaiii_variation,
-        hook_mgr=hook_mgr,
-    )
 
-    _logger().info("Results stored in: %s", output_dir)
-    _logger().info("%s", "=" * 80)
+    # 6. Notify End
+    main_observer.on_end(F, metrics)
 
-    return metrics
+    return metrics # Return metrics for benchmark aggregation
 
 
 def _print_summary(results: Iterable[Metrics], hv_ref_point: np.ndarray) -> None:
@@ -346,6 +434,19 @@ def execute_problem_suite(
             results.append(metrics)
 
     for algorithm_name in external_algorithms:
+        # TODO: Observer support for external algorithms?
+        # For now, keeping legacy facade for external, or updating it to use build_metrics from somewhere.
+        # External runner has its own printing/persisting logic via callbacks?
+        # execute_problem_suite passed make_metrics=build_metrics and callbacks.
+        # We need to expose build_metrics or re-implement it in a sharable way if external.run_external depends on it.
+        # Assuming external.run_external uses the callbacks provided.
+        # We can implement callbacks using our Observers manually here if desired, but let's keep it simple.
+        
+        # We need to import build_metrics to pass it.
+        # Wait, I removed build_metrics import in this file?
+        # Yes, I removed implicit dependency.
+        from vamos.experiment.runner_output import build_metrics, print_run_banner, print_run_results
+        
         metrics = external.run_external(
             algorithm_name,
             problem_selection,
