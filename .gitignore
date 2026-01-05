@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 .venv/
+.venv-wsl/
 .uv/
 .env
 .ipynb_checkpoints/
@@ -32,6 +33,15 @@ Thumbs.db
 site/
 build/
 dist/
+
+# --- LaTeX auxiliary files ---
+*.fdb_latexmk
+*.fls
+*.spl
+*.aux
+*.log
+*.out
+*.synctex.gz
 
 # --- Packaging ---
 *.egg-info/
