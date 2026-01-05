@@ -7,21 +7,12 @@ from __future__ import annotations
 from importlib import metadata as importlib_metadata
 from typing import TYPE_CHECKING
 
-_VERSION: str | None = None
-
-if TYPE_CHECKING:
-    __version__: str
+# Managed by python-semantic-release
+__version__ = "0.1.0"
 
 
 def get_version() -> str:
-    global _VERSION
-    if _VERSION is not None:
-        return _VERSION
-    try:  # pragma: no cover - fallback when metadata is unavailable
-        _VERSION = importlib_metadata.version("vamos")
-    except importlib_metadata.PackageNotFoundError:  # pragma: no cover
-        _VERSION = "0.0.0+unknown"
-    return _VERSION
+    return __version__
 
 
 def __getattr__(name: str):

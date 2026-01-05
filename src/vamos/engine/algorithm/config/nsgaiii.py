@@ -22,6 +22,8 @@ class NSGAIIIConfigData(_SerializableConfig):
     mutation_prob_factor: Optional[float] = None
     track_genealogy: bool = False
     result_mode: Optional[str] = None
+    archive: Optional[Dict[str, Any]] = None
+    archive_type: Optional[str] = None
 
 
 class NSGAIIIConfig:
@@ -119,6 +121,29 @@ class NSGAIIIConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
+    def archive(self, size: int, **kwargs) -> "NSGAIIIConfig":
+        """
+        Configure an external archive.
+        
+        Args:
+            size: Archive size (required). <= 0 disables the archive.
+            **kwargs: Optional configuration:
+                - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
+                - prune_policy: "crowding", "hv_contrib", "random"
+                - epsilon: Grid epsilon for epsilon_grid/hybrid types
+        """
+        if size <= 0:
+            self._cfg["archive"] = {"size": 0}
+            return self
+        archive_cfg = {"size": int(size), **kwargs}
+        self._cfg["archive"] = archive_cfg
+        return self
+
+    def archive_type(self, value: str) -> "NSGAIIIConfig":
+        """Set archive pruning strategy."""
+        self._cfg["archive_type"] = str(value)
+        return self
+
     def fixed(self) -> NSGAIIIConfigData:
         _require_fields(
             self._cfg,
@@ -139,4 +164,6 @@ class NSGAIIIConfig:
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
+            archive=self._cfg.get("archive"),
+            archive_type=self._cfg.get("archive_type"),
         )

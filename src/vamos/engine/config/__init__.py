@@ -5,7 +5,7 @@ from .variation import (
     merge_variation_overrides,
     normalize_operator_tuple,
     normalize_variation_config,
-    resolve_nsgaii_variation_config,
+    resolve_default_variation_config,
 )
 
 __all__ = [
@@ -13,5 +13,5 @@ __all__ = [
     "merge_variation_overrides",
     "normalize_operator_tuple",
     "normalize_variation_config",
-    "resolve_nsgaii_variation_config",
+    "resolve_default_variation_config",
 ]

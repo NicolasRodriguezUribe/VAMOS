@@ -199,6 +199,44 @@ def bit_flip_mutation(X: np.ndarray, prob: float, rng: np.random.Generator) -> N
         X[mask] = 1 - X[mask]
 
 
+
+class BitFlipMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+        # Mutation in place
+        bit_flip_mutation(X, self.prob, rng)
+        return X
+
+class OnePointCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+        return one_point_crossover(parents, self.prob, rng)
+
+class TwoPointCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+        return two_point_crossover(parents, self.prob, rng)
+
+class UniformCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+        return uniform_crossover(parents, self.prob, rng)
+
+class HuxCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+        return hux_crossover(parents, self.prob, rng)
+
 __all__ = [
     "random_binary_population",
     "one_point_crossover",
@@ -206,4 +244,9 @@ __all__ = [
     "uniform_crossover",
     "hux_crossover",
     "bit_flip_mutation",
+    "BitFlipMutation",
+    "OnePointCrossover",
+    "TwoPointCrossover",
+    "UniformCrossover",
+    "HuxCrossover",
 ]

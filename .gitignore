@@ -46,7 +46,7 @@ experiments/scripts/logs/
 bench/**/configs/
 
 # --- Notebooks (keep local unless explicitly tracked) ---
-*.ipynb
+# *.ipynb
 
 # --- Engine study (local; do not version) ---
 engine_study*
@@ -64,4 +64,4 @@ build/
 *.egg-info/
 
 # --- Notebooks (keep local unless explicitly tracked) ---
-*.ipynb
+# *.ipynb

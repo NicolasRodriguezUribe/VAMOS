@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import csv
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import copy2
-from typing import Callable, Iterable, List, Sequence, Any, Dict
+from typing import Callable, Iterable, List, Sequence, Any, Dict, Protocol
 
 import numpy as np
 
@@ -16,61 +14,12 @@ from vamos.foundation.problem.registry import ProblemSelection, make_problem_sel
 from vamos.foundation.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
 from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
 
+from vamos.experiment.study.types import StudyTask, StudyResult
+from vamos.experiment.study.persistence import StudyPersister
+
 
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class StudyTask:
-    """
-    Defines a single algorithm/engine/problem/seed combination.
-    """
-
-    algorithm: str
-    engine: str
-    problem: str
-    n_var: int | None = None
-    n_obj: int | None = None
-    seed: int = ExperimentConfig().seed
-    selection_pressure: int = 2
-    external_archive_size: int | None = None
-    archive_type: str = "hypervolume"
-    nsgaii_variation: Dict[str, Any] | None = None
-    config_overrides: Dict[str, Any] | None = None
-
-
-@dataclass
-class StudyResult:
-    task: StudyTask
-    selection: ProblemSelection
-    metrics: dict
-
-    def to_row(self) -> dict:
-        hv_ref = self.metrics.get("hv_reference")
-        hv_ref_str = " ".join(f"{val:.6f}" for val in hv_ref) if isinstance(hv_ref, np.ndarray) else ""
-        row = {
-            "problem": self.selection.spec.key,
-            "problem_label": self.selection.spec.label,
-            "n_var": self.selection.n_var,
-            "n_obj": self.selection.n_obj,
-            "algorithm": self.metrics["algorithm"],
-            "engine": self.metrics["engine"],
-            "seed": self.task.seed,
-            "time_ms": self.metrics["time_ms"],
-            "evaluations": self.metrics["evaluations"],
-            "evals_per_sec": self.metrics["evals_per_sec"],
-            "spread": self.metrics.get("spread"),
-            "hv": self.metrics.get("hv"),
-            "hv_source": self.metrics.get("hv_source"),
-            "hv_reference": hv_ref_str,
-            "backend_device": self.metrics.get("backend_device"),
-            "backend_capabilities": ",".join(self.metrics.get("backend_capabilities", [])),
-            "output_dir": self.metrics.get("output_dir"),
-        }
-        for name, value in (self.metrics.get("indicator_values") or {}).items():
-            row[f"indicator_{name}"] = value
-        return row
 
 
 class StudyRunner:
@@ -82,25 +31,25 @@ class StudyRunner:
         self,
         *,
         verbose: bool = True,
-        mirror_output_roots: Sequence[str | Path] | None = ("results",),
         indicators: Sequence[str] | None = ("hv",),
+        persister: StudyPersister | None = None,
     ):
         self.verbose = verbose
-        roots = mirror_output_roots or ()
-        self._mirror_roots = tuple(Path(root) for root in roots)
         self.indicators = tuple(indicators or ())
+        self.persister = persister
 
     def run(
         self,
         tasks: Sequence[StudyTask],
         *,
-        export_csv_path: str | Path | None = None,
+        export_csv_path: str | Path | None = None, # Deprecated but kept for compat with wiring
         run_single_fn: Callable[..., dict] | None = None,
     ) -> List[StudyResult]:
         if not tasks:
             return []
         if run_single_fn is None:
             raise ValueError("run_single_fn is required to execute StudyRunner tasks.")
+        
         results: List[StudyResult] = []
         for idx, task in enumerate(tasks, start=1):
             if self.verbose:
@@ -128,17 +77,28 @@ class StudyRunner:
                 selection_pressure=task.selection_pressure,
                 nsgaii_variation=task.nsgaii_variation,
             )
-            self._mirror_artifacts(metrics)
-            results.append(StudyResult(task=task, selection=selection, metrics=metrics))
+            
+            result = StudyResult(task=task, selection=selection, metrics=metrics)
+            results.append(result)
+            
+            # Delegate artifact mirroring to persister if available
+            if self.persister:
+                self.persister.mirror_artifacts(result)
+            
 
         self._attach_hypervolume(results)
         self._attach_indicators(results)
-        if export_csv_path is not None:
-            self.export_csv(results, export_csv_path)
+        
+        # Delegate CSV saving
+        if self.persister and export_csv_path:
+             self.persister.save_results(results, export_csv_path)
+             
         return results
 
     def _attach_hypervolume(self, results: Iterable[StudyResult]) -> None:
         fronts = [res.metrics["F"] for res in results]
+        if not fronts:
+            return
         hv_ref_point = compute_hv_reference(fronts)
         for res in results:
             metrics = res.metrics
@@ -174,6 +134,8 @@ class StudyRunner:
                 _logger().info("[Study] MooCore not available; skipping indicator computation.")
             return
         fronts = [res.metrics["F"] for res in results]
+        if not fronts:
+             return
         ref_front = self._nondominated_union(fronts)
         hv_ref_point = compute_hv_reference(fronts)
         for res in results:
@@ -194,54 +156,9 @@ class StudyRunner:
                         _logger().warning("[Study] indicator '%s' failed: %s", name, exc)
                     vals[name] = None
             res.metrics["indicator_values"] = vals
-
-    def export_csv(self, results: Iterable[StudyResult], path: str | Path) -> Path:
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        rows = [res.to_row() for res in results]
-        if not rows:
-            return path
-        fieldnames: list[str] = []
-        for row in rows:
-            for key in row.keys():
-                if key not in fieldnames:
-                    fieldnames.append(key)
-        with path.open("w", newline="", encoding="utf-8") as fh:
-            writer = csv.DictWriter(fh, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(rows)
-        if self.verbose:
-            _logger().info("[Study] CSV exported to %s", path)
-        return path
-
-    def _mirror_artifacts(self, metrics: dict) -> None:
-        if not self._mirror_roots:
-            return
-        output_dir = metrics.get("output_dir")
-        if not output_dir:
-            return
-        src_dir = Path(output_dir).resolve()
-        base_root = Path(ExperimentConfig().output_root).resolve()
-        relative = None
-        try:
-            relative = src_dir.relative_to(base_root)
-        except ValueError:
-            relative = None
-
-        for root in self._mirror_roots:
-            target_root = Path(root).resolve()
-            if relative is not None:
-                dst = target_root / relative
-            else:
-                dst = target_root / src_dir.name
-            if dst.resolve() == src_dir:
-                continue
-            dst.mkdir(parents=True, exist_ok=True)
-            for name in ("FUN.csv", "ARCHIVE_FUN.csv", "time.txt", "metadata.json"):
-                src_file = src_dir / name
-                if src_file.exists():
-                    copy2(src_file, dst / name)
-
+            
+    # expand_tasks is static and purely data transformation, can stay or move.
+    # Moving it to types or keeping it here as helper is fine. Keeping for backward compat.
     @staticmethod
     def expand_tasks(
         problems: Sequence[StudyTask | dict],
@@ -256,6 +173,8 @@ class StudyRunner:
         """
         entries: List[StudyTask] = []
         for problem_entry in problems:
+            # Import locally to avoid circular dep if types wasn't imported (though it is)
+            # Actually StudyTask is imported at top.
             if isinstance(problem_entry, StudyTask):
                 base = problem_entry
                 problem = base.problem

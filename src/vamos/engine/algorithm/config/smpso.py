@@ -11,7 +11,7 @@ from .base import _SerializableConfig, _require_fields
 @dataclass(frozen=True)
 class SMPSOConfigData(_SerializableConfig):
     pop_size: int
-    archive_size: int
+    archive_size: int  # Internal archive (part of SMPSO algorithm)
     mutation: Tuple[str, Dict[str, Any]]
     engine: str
     inertia: float = 0.5
@@ -23,6 +23,8 @@ class SMPSOConfigData(_SerializableConfig):
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
     result_mode: Optional[str] = None
+    archive: Optional[Dict[str, Any]] = None  # External archive for results
+    archive_type: Optional[str] = None
 
 
 class SMPSOConfig:
@@ -83,6 +85,31 @@ class SMPSOConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
+    def archive(self, size: int, **kwargs) -> "SMPSOConfig":
+        """
+        Configure an external archive for result storage.
+        
+        Note: This is separate from archive_size which is the internal SMPSO archive.
+        
+        Args:
+            size: Archive size (required). <= 0 disables the archive.
+            **kwargs: Optional configuration:
+                - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
+                - prune_policy: "crowding", "hv_contrib", "random"
+                - epsilon: Grid epsilon for epsilon_grid/hybrid types
+        """
+        if size <= 0:
+            self._cfg["archive"] = {"size": 0}
+            return self
+        archive_cfg = {"size": int(size), **kwargs}
+        self._cfg["archive"] = archive_cfg
+        return self
+
+    def external_archive_type(self, value: str) -> "SMPSOConfig":
+        """Set external archive pruning strategy."""
+        self._cfg["archive_type"] = str(value)
+        return self
+
     def fixed(self) -> SMPSOConfigData:
         _require_fields(
             self._cfg,
@@ -103,4 +130,6 @@ class SMPSOConfig:
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
+            archive=self._cfg.get("archive"),
+            archive_type=self._cfg.get("archive_type"),
         )

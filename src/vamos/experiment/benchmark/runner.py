@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Sequence
 from vamos.experiment.benchmark.suites import BenchmarkSuite, BenchmarkExperiment
 from vamos.foundation.core.experiment_config import DEFAULT_ENGINE
 from vamos.experiment.study.runner import StudyRunner, StudyTask, StudyResult
-from vamos.experiment.wiring import run_single
+from vamos.experiment.runner import run_single
 
 
 @dataclass

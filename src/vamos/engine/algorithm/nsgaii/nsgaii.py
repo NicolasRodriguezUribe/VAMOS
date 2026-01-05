@@ -72,33 +72,91 @@ class NSGAII:
         seed: int,
         eval_backend: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
+        checkpoint_dir: str | None = None,
+        checkpoint_interval: int = 50,
     ) -> dict[str, Any]:
-        """Run the NSGA-II algorithm."""
+        """Run the NSGA-II algorithm.
+        
+        Args:
+            problem: Problem to optimize.
+            termination: Termination criterion.
+            seed: Random seed.
+            eval_backend: Evaluation backend.
+            live_viz: Live visualization callback.
+            checkpoint_dir: Directory for checkpoints (None = disabled).
+            checkpoint_interval: Save checkpoint every N generations.
+        """
+        import signal
+        from pathlib import Path
+        
         live_cb, eval_backend, max_eval, n_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
         st = self._st
         assert st is not None, "State not initialized"
+        
+        # Signal handling for graceful termination
+        interrupted = False
+        original_handler = signal.getsignal(signal.SIGINT)
+        
+        def _handle_interrupt(signum, frame):
+            nonlocal interrupted
+            interrupted = True
+            _logger().info("Interrupt received, finishing current generation...")
+        
+        signal.signal(signal.SIGINT, _handle_interrupt)
 
         generation = 0
         stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
         hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn())
 
-        while n_eval < max_eval and not hv_reached and not stop_requested:
-            st.generation = generation
-            X_off = self.ask()
-            eval_off = eval_backend.evaluate(X_off, problem)
-            hv_reached = self.tell(eval_off, st.pop_size)
-            n_eval += X_off.shape[0]
+        try:
+            while n_eval < max_eval and not hv_reached and not stop_requested and not interrupted:
+                st.generation = generation
+                X_off = self.ask()
+                eval_off = eval_backend.evaluate(X_off, problem)
+                hv_reached = self.tell(eval_off, st.pop_size)
+                n_eval += X_off.shape[0]
 
-            generation += 1
-            st.generation = generation
-            stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
-            if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
-                hv_reached = True
+                generation += 1
+                st.generation = generation
+                stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
+                if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
+                    hv_reached = True
+                
+                # Checkpointing
+                if checkpoint_dir and generation % checkpoint_interval == 0:
+                    self._save_checkpoint(checkpoint_dir, seed, generation, n_eval)
+        finally:
+            # Restore original signal handler
+            signal.signal(signal.SIGINT, original_handler)
 
         result = build_result(st, n_eval, hv_reached, kernel=self.kernel)
+        result["interrupted"] = interrupted
         live_cb.on_end(final_F=st.F)
         finalize_genealogy(result, st, self.kernel)
         return result
+    
+    def _save_checkpoint(self, checkpoint_dir: str, seed: int, generation: int, n_eval: int) -> None:
+        """Save current state to checkpoint file."""
+        from pathlib import Path
+        from vamos.foundation.checkpoint import save_checkpoint
+        
+        st = self._st
+        if st is None:
+            return
+        
+        path = Path(checkpoint_dir) / f"nsgaii_seed{seed}_gen{generation}.ckpt"
+        save_checkpoint(
+            path,
+            X=st.X,
+            F=st.F,
+            generation=generation,
+            n_eval=n_eval,
+            rng_state=st.rng.bit_generator.state,
+            G=st.G,
+            archive_X=st.archive_X,
+            archive_F=st.archive_F,
+        )
+        _logger().info(f"Checkpoint saved: {path}")
 
     def _notify_generation(self, live_cb: LiveVisualization, generation: int, F: np.ndarray, evals: int | None = None) -> bool:
         """Notify live visualization of generation progress."""

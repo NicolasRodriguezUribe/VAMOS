@@ -20,6 +20,8 @@ from .ibea import IBEAConfig, IBEAConfigData
 from .smsemoa import SMSEMOAConfig, SMSEMOAConfigData
 from .smpso import SMPSOConfig, SMPSOConfigData
 from .nsgaiii import NSGAIIIConfig, NSGAIIIConfigData
+from .agemoea import AGEMOEAConfig, AGEMOEAConfigData
+from .rvea import RVEAConfig, RVEAConfigData
 
 __all__ = [
     # NSGA-II
@@ -43,4 +45,10 @@ __all__ = [
     # NSGA-III
     "NSGAIIIConfig",
     "NSGAIIIConfigData",
+    # AGE-MOEA
+    "AGEMOEAConfig",
+    "AGEMOEAConfigData",
+    # RVEA
+    "RVEAConfig",
+    "RVEAConfigData",
 ]

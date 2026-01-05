@@ -18,47 +18,7 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-@overload
-def pareto_filter(F: np.ndarray | None, *, return_indices: Literal[False] = False) -> np.ndarray | None: ...
-
-
-@overload
-def pareto_filter(F: np.ndarray | None, *, return_indices: Literal[True]) -> tuple[np.ndarray, np.ndarray]: ...
-
-
-def pareto_filter(F: np.ndarray | None, *, return_indices: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
-    """
-    Return the non-dominated subset of points (first Pareto front).
-
-    Args:
-        F: Objective values array (n_solutions, n_objectives) or None.
-        return_indices: When True, also return indices of the front in F.
-
-    Returns:
-        Front array, or (front, indices) when return_indices is True.
-    """
-    if F is None:
-        if return_indices:
-            return np.empty((0, 0)), np.array([], dtype=int)
-        return None
-    F = np.asarray(F)
-    if F.size == 0 or F.ndim < 2:
-        if return_indices:
-            n = int(F.shape[0]) if F.ndim > 0 else 0
-            idx = np.arange(n, dtype=int)
-            return F, idx
-        return F
-    from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
-
-    fronts, _ = _fast_non_dominated_sort(F)
-    if not fronts or not fronts[0]:
-        if return_indices:
-            idx = np.arange(int(F.shape[0]), dtype=int)
-            return F, idx
-        return F
-    idx = np.asarray(fronts[0], dtype=int)
-    front = F[idx]
-    return (front, idx) if return_indices else front
+from vamos.foundation.metrics.pareto import pareto_filter
 
 
 class OptimizationResult:
@@ -264,6 +224,168 @@ class OptimizationResult:
             json.dump(metadata, f, indent=2)
 
         _logger().info("Results saved to %s", out_dir)
+
+    def explore(self, title: str = "Pareto Front Explorer") -> Any:
+        """
+        Launch interactive Plotly dashboard for exploring the Pareto front.
+        
+        Opens a browser window with an interactive scatter plot where you can:
+        - Hover over points to see objective values  
+        - Click and drag to zoom
+        - Box select to focus on regions
+        - Download as PNG
+        
+        Args:
+            title: Title for the plot
+            
+        Returns:
+            Plotly Figure object
+            
+        Raises:
+            ImportError: If plotly is not installed
+            ValueError: If no solutions or >3 objectives
+        """
+        try:
+            import plotly.express as px
+            import plotly.graph_objects as go
+        except ImportError as exc:
+            raise ImportError(
+                "plotly is required for explore(). Install with: pip install plotly"
+            ) from exc
+        
+        F_plot = self.front()
+        if F_plot is None or len(F_plot) == 0:
+            raise ValueError("No solutions to explore")
+        
+        n_obj = self.n_objectives
+        n_solutions = len(F_plot)
+        
+        # Build hover text with decision variables
+        hover_texts = []
+        for i in range(n_solutions):
+            lines = [f"<b>Solution {i}</b>"]
+            for j in range(n_obj):
+                lines.append(f"f{j+1}: {F_plot[i, j]:.4f}")
+            if self.X is not None and i < len(self.X):
+                lines.append("<br><b>Decision Variables</b>")
+                n_show = min(5, self.X.shape[1])
+                for k in range(n_show):
+                    lines.append(f"x{k+1}: {self.X[i, k]:.4f}")
+                if self.X.shape[1] > 5:
+                    lines.append(f"... ({self.X.shape[1] - 5} more)")
+            hover_texts.append("<br>".join(lines))
+        
+        if n_obj == 2:
+            fig = go.Figure(data=go.Scatter(
+                x=F_plot[:, 0],
+                y=F_plot[:, 1],
+                mode='markers',
+                marker=dict(size=10, color='royalblue', opacity=0.7),
+                hovertext=hover_texts,
+                hoverinfo='text'
+            ))
+            fig.update_layout(
+                title=title,
+                xaxis_title="f1",
+                yaxis_title="f2",
+                hovermode='closest'
+            )
+        elif n_obj == 3:
+            fig = go.Figure(data=go.Scatter3d(
+                x=F_plot[:, 0],
+                y=F_plot[:, 1],
+                z=F_plot[:, 2],
+                mode='markers',
+                marker=dict(size=6, color='royalblue', opacity=0.7),
+                hovertext=hover_texts,
+                hoverinfo='text'
+            ))
+            fig.update_layout(
+                title=title,
+                scene=dict(
+                    xaxis_title="f1",
+                    yaxis_title="f2",
+                    zaxis_title="f3"
+                )
+            )
+        else:
+            raise ValueError(
+                f"Cannot visualize {n_obj} objectives interactively. "
+                "Use to_dataframe() for analysis."
+            )
+        
+        fig.show()
+        return fig
+
+    def to_latex(
+        self,
+        caption: str = "Optimization Results",
+        label: str = "tab:results",
+        precision: int = 4,
+    ) -> str:
+        """
+        Generate a LaTeX table from the optimization results.
+        
+        Args:
+            caption: Table caption
+            label: LaTeX label for referencing
+            precision: Decimal places for numbers
+            
+        Returns:
+            LaTeX table code as string
+            
+        Example:
+            >>> result = vamos.optimize("zdt1")
+            >>> print(result.to_latex())
+        """
+        if self.F is None or len(self.F) == 0:
+            return "% No solutions to display"
+        
+        n_obj = self.n_objectives
+        n_sol = len(self)
+        
+        # Build header
+        obj_headers = " & ".join([f"$f_{{{i+1}}}$" for i in range(n_obj)])
+        header = f"Solution & {obj_headers}"
+        col_spec = "l" + "r" * n_obj
+        
+        # Build rows - show summary stats
+        lines = [
+            r"\begin{table}[htbp]",
+            r"\centering",
+            f"\\caption{{{caption}}}",
+            f"\\label{{{label}}}",
+            f"\\begin{{tabular}}{{{col_spec}}}",
+            r"\toprule",
+            f"{header} \\\\",
+            r"\midrule",
+        ]
+        
+        # Summary statistics
+        f_min = self.F.min(axis=0)
+        f_max = self.F.max(axis=0)
+        f_mean = self.F.mean(axis=0)
+        f_std = self.F.std(axis=0)
+        
+        min_vals = " & ".join([f"{v:.{precision}f}" for v in f_min])
+        max_vals = " & ".join([f"{v:.{precision}f}" for v in f_max])
+        mean_vals = " & ".join([f"{v:.{precision}f}" for v in f_mean])
+        std_vals = " & ".join([f"{v:.{precision}f}" for v in f_std])
+        
+        lines.append(f"Min & {min_vals} \\\\")
+        lines.append(f"Max & {max_vals} \\\\")
+        lines.append(f"Mean & {mean_vals} \\\\")
+        lines.append(f"Std & {std_vals} \\\\")
+        
+        lines.extend([
+            r"\bottomrule",
+            r"\end{tabular}",
+            f"\\\\[0.5em]",
+            f"\\footnotesize{{$n = {n_sol}$ solutions}}",
+            r"\end{table}",
+        ])
+        
+        return "\n".join(lines)
 
 
 @dataclass

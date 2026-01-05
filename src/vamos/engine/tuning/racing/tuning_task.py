@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Sequence, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Sequence, TYPE_CHECKING
 
 import numpy as np
 
@@ -22,11 +22,24 @@ class Instance:
 
 @dataclass
 class EvalContext:
-    """Information passed to the evaluation function."""
+    """
+    Information passed to the evaluation function.
+    
+    For multi-fidelity warm-starting:
+    - `fidelity_level`: Current fidelity level (0-indexed)
+    - `previous_budget`: Budget used in previous fidelity level (None if first level)
+    - `checkpoint`: Algorithm state from previous fidelity level (None if first level)
+    
+    The eval_fn can use `checkpoint` to warm-start the algorithm instead of
+    starting from scratch.
+    """
 
     instance: Instance
     seed: int
     budget: int
+    fidelity_level: int = 0
+    previous_budget: Optional[int] = None
+    checkpoint: Optional[Any] = None
 
 
 @dataclass

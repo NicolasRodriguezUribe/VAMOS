@@ -24,7 +24,8 @@ from .sampler import Sampler, UniformSampler, ModelBasedSampler
 from .tuning_task import TuningTask, EvalContext, Instance
 from .scenario import Scenario
 from .config_space import AlgorithmConfigSpace
-from .io import filter_active_config, history_to_dict, save_history_json, save_history_csv
+from .warm_start import WarmStartEvaluator
+from .io import filter_active_config, history_to_dict, save_history_json, save_history_csv, save_checkpoint, load_checkpoint
 from .bridge import (
     build_spea2_config_space,
     build_ibea_config_space,
@@ -71,11 +72,15 @@ __all__ = [
     "Scenario",
     # Config space
     "AlgorithmConfigSpace",
+    # Warm-start helper
+    "WarmStartEvaluator",
     # I/O
     "filter_active_config",
     "history_to_dict",
     "save_history_json",
     "save_history_csv",
+    "save_checkpoint",
+    "load_checkpoint",
     # Config space builders
     "build_spea2_config_space",
     "build_ibea_config_space",

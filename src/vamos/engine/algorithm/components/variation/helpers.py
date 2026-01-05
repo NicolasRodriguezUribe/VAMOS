@@ -59,70 +59,102 @@ def prepare_mutation_params(mut_params: dict, encoding: str, n_var: int, prob_fa
     return params
 
 
-PERM_CROSSOVER = {
-    "ox": order_crossover,
-    "order": order_crossover,
-    "oxd": order_crossover,
-    "pmx": pmx_crossover,
-    "cycle": cycle_crossover,
-    "cx": cycle_crossover,
-    "position": position_based_crossover,
-    "position_based": position_based_crossover,
-    "pos": position_based_crossover,
-    "edge": edge_recombination_crossover,
-    "edge_recombination": edge_recombination_crossover,
-    "erx": edge_recombination_crossover,
-}
+from vamos.foundation.registry import Registry
 
-PERM_MUTATION = {
-    "swap": swap_mutation,
-    "insert": insert_mutation,
-    "scramble": scramble_mutation,
-    "inversion": inversion_mutation,
-    "simple_inversion": simple_inversion_mutation,
-    "simpleinv": simple_inversion_mutation,
-    "displacement": displacement_mutation,
-}
+def _populate(reg: Registry, items: dict):
+    for k, v in items.items():
+        reg.register(k, v)
 
-BINARY_CROSSOVER = {
-    "one_point": one_point_crossover,
-    "single_point": one_point_crossover,
-    "1point": one_point_crossover,
-    "two_point": two_point_crossover,
-    "2point": two_point_crossover,
-    "uniform": uniform_crossover,
-    "hux": hux_crossover,
-}
 
-BINARY_MUTATION = {
-    "bitflip": bit_flip_mutation,
-    "bit_flip": bit_flip_mutation,
-}
+PERM_CROSSOVER = Registry("Permutation Crossover")
+PERM_MUTATION = Registry("Permutation Mutation")
+BINARY_CROSSOVER = Registry("Binary Crossover")
+BINARY_MUTATION = Registry("Binary Mutation")
+INT_CROSSOVER = Registry("Integer Crossover")
+INT_MUTATION = Registry("Integer Mutation")
+MIXED_CROSSOVER = Registry("Mixed Crossover")
+MIXED_MUTATION = Registry("Mixed Mutation")
+REAL_CROSSOVER = Registry("Real Crossover")
+REAL_MUTATION = Registry("Real Mutation")
 
-INT_CROSSOVER = {
-    "uniform": uniform_integer_crossover,
-    "blend": arithmetic_integer_crossover,
-    "arithmetic": arithmetic_integer_crossover,
-}
+def _populate_defaults():
+    # Only populate if empty to avoid double registration
+    if len(PERM_CROSSOVER) > 0:
+        return
 
-INT_MUTATION = {
-    "reset": random_reset_mutation,
-    "random_reset": random_reset_mutation,
-    "creep": creep_mutation,
-}
+    _populate(PERM_CROSSOVER, {
+        "ox": order_crossover,
+        "order": order_crossover,
+        "oxd": order_crossover,
+        "pmx": pmx_crossover,
+        "cycle": cycle_crossover,
+        "cx": cycle_crossover,
+        "position": position_based_crossover,
+        "position_based": position_based_crossover,
+        "pos": position_based_crossover,
+        "edge": edge_recombination_crossover,
+        "edge_recombination": edge_recombination_crossover,
+        "erx": edge_recombination_crossover,
+    })
 
-MIXED_CROSSOVER = {
-    "mixed": mixed_crossover,
-    "uniform": mixed_crossover,
-}
+    _populate(PERM_MUTATION, {
+        "swap": swap_mutation,
+        "insert": insert_mutation,
+        "scramble": scramble_mutation,
+        "inversion": inversion_mutation,
+        "simple_inversion": simple_inversion_mutation,
+        "simpleinv": simple_inversion_mutation,
+        "displacement": displacement_mutation,
+    })
 
-MIXED_MUTATION = {
-    "mixed": mixed_mutation,
-    "gaussian": mixed_mutation,
-}
+    _populate(BINARY_CROSSOVER, {
+        "one_point": one_point_crossover,
+        "single_point": one_point_crossover,
+        "1point": one_point_crossover,
+        "two_point": two_point_crossover,
+        "2point": two_point_crossover,
+        "uniform": uniform_crossover,
+        "hux": hux_crossover,
+    })
+
+    _populate(BINARY_MUTATION, {
+        "bitflip": bit_flip_mutation,
+        "bit_flip": bit_flip_mutation,
+    })
+
+    _populate(INT_CROSSOVER, {
+        "uniform": uniform_integer_crossover,
+        "blend": arithmetic_integer_crossover,
+        "arithmetic": arithmetic_integer_crossover,
+    })
+
+    _populate(INT_MUTATION, {
+        "reset": random_reset_mutation,
+        "random_reset": random_reset_mutation,
+        "creep": creep_mutation,
+    })
+
+    _populate(MIXED_CROSSOVER, {
+        "mixed": mixed_crossover,
+        "uniform": mixed_crossover,
+    })
+
+    _populate(MIXED_MUTATION, {
+        "mixed": mixed_mutation,
+        "gaussian": mixed_mutation,
+    })
+
+    _populate(REAL_CROSSOVER, {k: "PLACEHOLDER" for k in [
+        "sbx", "blx_alpha", "arithmetic", "pcx", "undx", "spx"
+    ]})
+
+    _populate(REAL_MUTATION, {k: "PLACEHOLDER" for k in [
+        "pm", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform", "linked_polynomial"
+    ]})
 
 
 def validate_operator_support(encoding: str, crossover: str, mutation: str) -> None:
+    _populate_defaults()
     if encoding == "permutation":
         if crossover not in PERM_CROSSOVER:
             raise ValueError(f"Unsupported crossover '{crossover}' for permutation encoding.")
@@ -144,9 +176,9 @@ def validate_operator_support(encoding: str, crossover: str, mutation: str) -> N
         if mutation not in MIXED_MUTATION:
             raise ValueError(f"Unsupported mutation '{mutation}' for mixed encoding.")
     else:
-        if crossover not in {"sbx", "blx_alpha", "arithmetic", "pcx", "undx", "spx"}:
+        if crossover not in REAL_CROSSOVER:
             raise ValueError(f"Unsupported crossover '{crossover}' for continuous encoding.")
-        if mutation not in {"pm", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform", "linked_polynomial"}:
+        if mutation not in REAL_MUTATION:
             raise ValueError(f"Unsupported mutation '{mutation}' for continuous encoding.")
 
 

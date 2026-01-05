@@ -23,6 +23,7 @@ def _logger() -> logging.Logger:
 
 def print_run_banner(problem, problem_selection, algorithm_label: str, backend_label: str, config) -> None:
     spec = getattr(problem_selection, "spec", None)
+    # DEPRECATED: Use ConsoleObserver
     label = getattr(spec, "label", None) or getattr(spec, "key", "unknown")
     description = getattr(spec, "description", None) or ""
     _logger().info("%s", "=" * 80)
@@ -54,6 +55,7 @@ def build_metrics(
     total_time_ms: float,
     evaluations: int,
     F: np.ndarray,
+    X: np.ndarray | None = None,
 ) -> dict:
     spread = None
     if F.size and F.shape[1] >= 1:
@@ -67,6 +69,7 @@ def build_metrics(
         "evals_per_sec": evals_per_sec,
         "spread": spread,
         "F": F,
+        "X": X,
     }
 
 
@@ -116,6 +119,7 @@ def persist_run_outputs(
     nsgaiii_variation: dict | None = None,
     hook_mgr: HookManager | None = None,
 ) -> tuple[dict, dict, dict]:
+    # DEPRECATED: Use StorageObserver
     artifacts = write_population(
         output_dir,
         payload.get("F"),

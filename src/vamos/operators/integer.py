@@ -146,10 +146,51 @@ def creep_mutation(X: np.ndarray, prob: float, step: int, lower: np.ndarray, upp
     X[:] = proposed
 
 
+
+# === Adapters ===
+
+class UniformIntegerCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+        return uniform_integer_crossover(parents, self.prob, rng)
+
+class ArithmeticIntegerCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+        return arithmetic_integer_crossover(parents, self.prob, rng)
+
+class RandomResetMutation:
+    def __init__(self, prob: float = 0.1, **kwargs):
+        self.prob = float(prob)
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> None:
+        # kwargs must typically contain 'lower' and 'upper'
+        lower = kwargs.get("lower")
+        upper = kwargs.get("upper")
+        if lower is None or upper is None:
+            raise ValueError("RandomResetMutation requires 'lower' and 'upper' bounds in kwargs.")
+        random_reset_mutation(X, self.prob, lower, upper, rng)
+
+class CreepMutation:
+    def __init__(self, prob: float = 0.1, step: int = 1, **kwargs):
+        self.prob = float(prob)
+        self.step = int(step)
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> None:
+        lower = kwargs.get("lower")
+        upper = kwargs.get("upper")
+        if lower is None or upper is None:
+            raise ValueError("CreepMutation requires 'lower' and 'upper' bounds in kwargs.")
+        creep_mutation(X, self.prob, self.step, lower, upper, rng)
+
 __all__ = [
     "random_integer_population",
     "uniform_integer_crossover",
     "arithmetic_integer_crossover",
     "random_reset_mutation",
     "creep_mutation",
+    "UniformIntegerCrossover",
+    "ArithmeticIntegerCrossover",
+    "RandomResetMutation",
+    "CreepMutation",
 ]

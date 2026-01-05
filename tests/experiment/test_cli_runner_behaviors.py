@@ -9,7 +9,9 @@ from vamos.experiment import runner
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
 from vamos.foundation.problem.tsp import TSPProblem
-from vamos.experiment.study.runner import StudyRunner, StudyTask
+from vamos.experiment.study.runner import StudyRunner
+from vamos.experiment.study.types import StudyTask
+from vamos.experiment.study.persistence import CSVPersister
 
 
 def test_cli_hv_threshold_requires_reference_for_non_zdt(monkeypatch):
@@ -80,7 +82,10 @@ def test_study_runner_mirrors_outputs(monkeypatch, tmp_path):
             seed=1,
         )
     ]
-    runner_obj = StudyRunner(verbose=False, mirror_output_roots=[mirror_root])
+    runner_obj = StudyRunner(
+        verbose=False, 
+        persister=CSVPersister(mirror_roots=[mirror_root])
+    )
     results = runner_obj.run(tasks, run_single_fn=fake_run_single)
 
     assert results, "No study results returned"

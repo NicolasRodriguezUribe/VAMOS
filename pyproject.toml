@@ -18,16 +18,60 @@ dependencies = [
 readme = "README.md"
 
 [project.optional-dependencies]
+# High-performance compute backends
 backends = [
   "numba>=0.57",
-  # NOTE: moocore>=0.4 does not exist on PyPI; latest releases are 0.1.x.
   "moocore>=0.1.10,<1.0",
+  "dask[distributed]>=2023.5.0",
 ]
+# Research and benchmarking
 benchmarks = [
   "pymoo>=0.6",
   "jmetalpy>=1.5",
   "pygmo>=2.19",
 ]
+# Analytics and visualization
+analytics = [
+  "pandas>=1.5",
+  "matplotlib>=3.7",
+  "seaborn>=0.12",
+  "networkx>=3.0",
+]
+# Notebooks and exploratory analysis
+notebooks = [
+  "pandas>=1.5",
+  "matplotlib>=3.7",
+  "plotly>=5.18",
+  "seaborn>=0.12",
+  "scikit-learn>=1.3",
+  "ipython>=8.10",
+  "ipywidgets>=8.1",
+  "nbformat>=5.9",
+  "nbconvert>=7.10",
+]
+# Studio UI
+studio = [
+  "streamlit>=1.29",
+  "plotly>=5.18",
+  "pandas>=1.5",
+]
+# Examples
+examples = [
+  "matplotlib>=3.7",
+  "scikit-learn>=1.3",
+]
+# Autodiff helpers (JAX)
+autodiff = [
+  "jax>=0.4",
+]
+# Documentation
+docs = [
+  "mkdocs>=1.6",
+  "mkdocs-material>=9.5",
+  "mkdocstrings[python]>=0.24",
+  "jinja2>=3.1",
+]
+# Development and documentation
 dev = [
   "pytest>=7.0",
   "pytest-cov>=4.1",
@@ -36,42 +80,12 @@ dev = [
   "ruff>=0.6",
   "build>=1.2",
   "wheel>=0.40",
-  "pandas>=1.5",
-  "nbformat>=5.9",
-  "nbconvert>=7.10",
-  "jinja2>=3.1",
-]
-notebooks = [
-  "pandas>=1.5",
-  "matplotlib>=3.7",
-  "ipython>=8.10",
-  "ipywidgets>=8.1",
-  "plotly>=5.18",
-  "seaborn>=0.12",
-  "scikit-learn>=1.3",
-  "nbformat>=5.9",
-  "nbconvert>=7.10",
-  "networkx>=3.0",
-  "yellowbrick>=1.5",
-]
-examples = [
-  "pandas>=1.5",
-  "matplotlib>=3.7",
-  "seaborn>=0.12",
-  "scikit-learn>=1.3",
-]
-studio = [
-  "streamlit>=1.29",
-  "plotly>=5.18",
-  "pandas>=1.5"
-]
-autodiff = [
-  "jax>=0.4"
-]
-docs = [
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
   "mkdocstrings[python]>=0.24",
+  "nbformat>=5.9",
+  "nbconvert>=7.10",
+  "jinja2>=3.1",
 ]
 
 [project.scripts]
@@ -81,6 +95,7 @@ vamos-benchmark = "vamos.experiment.benchmark.cli:main"
 vamos-studio = "vamos.ux.studio.app:main"
 vamos-zoo = "vamos.experiment.zoo.cli:main"
 vamos-tune = "vamos.engine.tuning.cli:main"
+vamos-profile = "vamos.experiment.profiler.cli:main"
 
 [tool.mypy]
 python_version = "3.11"
@@ -140,17 +155,19 @@ markers = [
   "cli: command-line interface smoke tests",
   "numba: tests requiring the numba backend",
   "moocore: tests requiring the moocore backend",
+  "e2e: integration gauntlet tests",
+  "reference: scientific correctness verification tests",
 ]
+
+[tool.setuptools.package-data]
+"vamos" = ["py.typed"]
+"vamos.foundation.data" = ["reference_fronts/*.csv", "weights/*.csv"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-"vamos" = ["py.typed"]
-"vamos.foundation.data" = ["reference_fronts/*.csv", "weights/*.csv"]
 
 [tool.ruff]
 line-length = 140
@@ -168,4 +185,14 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["E402"]  # Tests often need matplotlib.use() before imports
+[tool.semantic_release]
+version_variable = [
+    "src/vamos/foundation/version.py:__version__",
+]
+version_toml = [
+    "pyproject.toml:project.version",
+]
+branch = "main"
+upload_to_pypi = false
+upload_to_release = true
+build_command = "pip install build && python -m build"
