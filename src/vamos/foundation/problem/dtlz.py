@@ -123,3 +123,34 @@ class DTLZ4Problem(DTLZBase):
             out["F"][:] = F_res
         else:
             out["F"] = F_res
+
+
+class DTLZ7Problem(DTLZBase):
+    """DTLZ7: Problem with disconnected Pareto-optimal regions."""
+
+    def __init__(self, n_var: int = 22, n_obj: int = 3):
+        super().__init__(n_var, n_obj)
+
+    def _evaluate(self, X: np.ndarray, out: dict):
+        # g function uses the last k variables
+        g = 1.0 + (9.0 / (self.n_var - self.n_obj + 1)) * np.sum(
+            X[:, self.n_obj - 1 :], axis=1
+        )
+
+        # First M-1 objectives are just x_i
+        F = np.zeros((X.shape[0], self.n_obj))
+        for i in range(self.n_obj - 1):
+            F[:, i] = X[:, i]
+
+        # Last objective: h function
+        h = self.n_obj - np.sum(
+            (F[:, : self.n_obj - 1] / (1.0 + g[:, None]))
+            * (1.0 + np.sin(3.0 * np.pi * F[:, : self.n_obj - 1])),
+            axis=1,
+        )
+        F[:, self.n_obj - 1] = (1.0 + g) * h
+
+        if "F" in out and out["F"] is not None:
+            out["F"][:] = F
+        else:
+            out["F"] = F

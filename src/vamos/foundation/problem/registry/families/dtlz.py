@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ...dtlz import DTLZ1Problem, DTLZ2Problem, DTLZ3Problem, DTLZ4Problem
+from ...dtlz import DTLZ1Problem, DTLZ2Problem, DTLZ3Problem, DTLZ4Problem, DTLZ7Problem
 from ..common import ProblemSpec
 
 
@@ -53,6 +53,15 @@ def get_specs() -> dict[str, ProblemSpec]:
                 allow_n_obj_override=True,
                 description="DTLZ4 with configurable objectives (defaults to 3).",
                 factory=lambda n_var, n_obj: _dtlz_factory(DTLZ4Problem, n_var, n_obj),
+            ),
+            "dtlz7": ProblemSpec(
+                key="dtlz7",
+                label="DTLZ7",
+                default_n_var=22,
+                default_n_obj=3,
+                allow_n_obj_override=True,
+                description="DTLZ7 with disconnected Pareto-optimal regions.",
+                factory=lambda n_var, n_obj: _dtlz_factory(DTLZ7Problem, n_var, n_obj),
             ),
         }
     )

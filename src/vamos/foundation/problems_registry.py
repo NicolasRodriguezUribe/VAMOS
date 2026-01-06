@@ -10,6 +10,7 @@ from vamos.foundation.problem.dtlz import DTLZ1Problem as DTLZ1
 from vamos.foundation.problem.dtlz import DTLZ2Problem as DTLZ2
 from vamos.foundation.problem.dtlz import DTLZ3Problem as DTLZ3
 from vamos.foundation.problem.dtlz import DTLZ4Problem as DTLZ4
+from vamos.foundation.problem.dtlz import DTLZ7Problem as DTLZ7
 from vamos.foundation.problem.registry import (
     ProblemSelection,
     ProblemSpec,
@@ -59,6 +60,7 @@ __all__ = [
     "DTLZ2",
     "DTLZ3",
     "DTLZ4",
+    "DTLZ7",
     # WFG family
     "WFG1",
     "WFG2",
