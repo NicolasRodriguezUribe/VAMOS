@@ -9,6 +9,7 @@ import numpy as np
 
 from vamos.archive import BoundedArchive, BoundedArchiveConfig
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
+from vamos.foundation.observer import RunContext
 from vamos.monitoring import HVConvergenceConfig, HVConvergenceMonitor, HVDecision
 
 
@@ -61,9 +62,9 @@ class CompositeLiveVisualization:
     def __init__(self, callbacks: List[Any]) -> None:
         self._callbacks = [cb for cb in callbacks if cb is not None]
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
+    def on_start(self, ctx: RunContext) -> None:
         for cb in self._callbacks:
-            cb.on_start(problem=problem, algorithm=algorithm, config=config)
+            cb.on_start(ctx)
 
     def on_generation(
         self,
@@ -119,7 +120,7 @@ class HookManager:
         self._last_sample_evals: Optional[int] = None
         self._stop_decision: Optional[HVDecision] = None
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
+    def on_start(self, ctx: RunContext) -> None:
         return None
 
     def on_generation(

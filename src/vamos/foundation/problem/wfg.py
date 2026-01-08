@@ -1,447 +1,465 @@
 """
-Native NumPy implementation of the WFG problem suite (WFG1-WFG9).
-Based on the definitions from:
-Huband, S., Hingston, P., Barone, L., & While, L. (2006). 
-A review of multiobjective test problems and a scalable test problem toolkit. 
-IEEE Transactions on Evolutionary Computation, 10(5), 477-506.
+NumPy implementation of the WFG1-WFG9 benchmark suite.
+Based on the standard WFG toolkit definitions.
 """
+
+from __future__ import annotations
 
 import numpy as np
 
 
-# =============================================================================
-# TRANSFORMATION FUNCTIONS
-# =============================================================================
-
-def b_poly(y, alpha):
-    return np.power(y, alpha)
-
-
-def b_flat(y, A, B, C):
-    tmp1 = (y - B) * 1.0
-    tmp2 = (C - B) * 1.0
-    val = A + (1.0 - A) * (1.0 - np.cos(np.pi * tmp1 / (2.0 * tmp2)))  # Avoid division by zero handled by clip
-    
-    # Correct handling of regions
-    res = np.zeros_like(y)
-    mask1 = y < B
-    mask2 = (y >= B) & (y < C)
-    mask3 = y >= C
-    
-    res[mask1] = A
-    res[mask2] = val[mask2]
-    res[mask3] = 1.0
-    return res
+def _correct_to_01(x: np.ndarray, epsilon: float = 1.0e-10) -> np.ndarray:
+    x = np.asarray(x, dtype=float).copy()
+    x[np.logical_and(x < 0.0, x >= -epsilon)] = 0.0
+    x[np.logical_and(x > 1.0, x <= 1.0 + epsilon)] = 1.0
+    return x
 
 
-def b_param(y, u, A, B, C):
-    v = A - (1.0 - 2.0 * u) * np.abs(np.floor(0.5 - u) + A)
-    return np.power(y, B + (C - B) * v)
+# -----------------------------------------------------------------------------
+# Transformations
+# -----------------------------------------------------------------------------
 
 
-def s_linear(y, A):
-    return np.abs(y - A) / np.abs(np.floor(A - y) + A)
+def _transformation_shift_linear(value: np.ndarray, shift: float = 0.35) -> np.ndarray:
+    return _correct_to_01(np.fabs(value - shift) / np.fabs(np.floor(shift - value) + shift))
 
 
-def s_decept(y, A, B, C):
-    tmp1 = np.floor(y - A + B)
-    tmp2 = (1.0 - A + B)
-    val_top = 1.0 + (np.abs(y - A) - B) * (A - tmp1 * tmp2) / (B + 1e-10) # Avoid div0
-    val_bot = 1.0 + (np.abs(y - A) - B) * (1.0 - A - tmp1 * tmp2) / (B + 1e-10)
-    
-    res = np.zeros_like(y)
-    mask = y <= A
-    res[mask] = val_top[mask]
-    res[~mask] = val_bot[~mask]
-    return res
+def _transformation_shift_deceptive(y: np.ndarray, a: float = 0.35, b: float = 0.005, c: float = 0.05) -> np.ndarray:
+    tmp1 = np.floor(y - a + b) * (1.0 - c + (a - b) / b) / (a - b)
+    tmp2 = np.floor(a + b - y) * (1.0 - c + (1.0 - a - b) / b) / (1.0 - a - b)
+    ret = 1.0 + (np.fabs(y - a) - b) * (tmp1 + tmp2 + 1.0 / b)
+    return _correct_to_01(ret)
 
 
-def s_multi(y, A, B, C):
-    tmp1 = (4.0 * A + 2.0) * np.pi * (0.5 + y)
-    tmp2 = 4.0 * A + 2.0
-    val = (1.0 + np.cos(tmp1)) / tmp2
-    
-    res = np.zeros_like(y)
-    mask = y <= C
-    res[mask] = val[mask]
-    res[~mask] = (y[~mask] - 1.0 - C) / (1.0 - C + 1e-10) # Avoid div0 in fallback? No, it's just (y-1-C)??
-    # Actually checking paper eq 24: (1 + cos(...)) / (4A + 2) if y <= C
-    # else (y - 1 - C )?? No wait.
-    # WFG Toolkit paper p. 497:
-    # "s_multi(y, A, B, C) = (1 + cos((4A+2)pi(0.5+y))) / (4A+2)"
-    # BUT there is a condition for A and B usage
-    # Wait, looking at standard implementations. The paper says:
-    # (1 + cos((4A+2)pi(0.5+y))) / (4A+2)  if y <= C ?? No.
-    # Correct formula: (1 + cos( (4A+2)*pi*(0.5 + y) )) / (4A+2)
-    # The range of output is approx [0, 1] but slightly shifted.
-    # Standard implementation:
-    term1 = 1.0 + np.cos((4.0 * A + 2.0) * np.pi * (0.5 + y))
-    term2 = 4.0 * A + 2.0
-    return term1 / term2
+def _transformation_shift_multi_modal(y: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
+    tmp1 = np.fabs(y - c) / (2.0 * (np.floor(c - y) + c))
+    tmp2 = (4.0 * a + 2.0) * np.pi * (0.5 - tmp1)
+    ret = (1.0 + np.cos(tmp2) + 4.0 * b * np.power(tmp1, 2.0)) / (b + 2.0)
+    return _correct_to_01(ret)
 
 
-def r_sum(y, w):
-    # vector y (elements y_1...y_|y|), vector w (weights)
-    # returns scalar (sum w_i y_i) / (sum w_i)
-    return np.sum(y * w, axis=1) / np.sum(w)
+def _transformation_bias_flat(y: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
+    ret = (
+        a
+        + np.minimum(0.0, np.floor(y - b)) * (a * (b - y) / b)
+        - np.minimum(0.0, np.floor(c - y)) * ((1.0 - a) * (y - c) / (1.0 - c))
+    )
+    return _correct_to_01(ret)
 
 
-def r_nonsep(y, A):
-    # y is a vector size |y|, A is int
-    # returns vector size |y|
-    n = y.shape[1]
-    res = np.zeros_like(y)
-    
-    # Precompute terms
-    for j in range(n):
-        k_start = 0
-        k_end = (j + A)
-        
-        # We need sum over k=0 to A-1 of (y_{ (j+k) mod n )
-        # Optimized implementation
-        temp_sum = np.zeros(y.shape[0])
-        for k in range(A):
-            idx = (j + k) % n
-            temp_sum += y[:, idx]
-        
-        term1 = temp_sum
-        term2 = np.abs(y[:, j] - 0.5)
-        
-        res[:, j] = (term1 + term2) / (A + 1.0) # wait, A+1 or |y|? 
-        # Paper eq 26: y_j + sum_{k=0}^{A-1} ... / (|y|/A * ceil(A/2)) ??
-        # The paper formula (26) is complex.
-        # r_nonsep(y, A) = ( sum_{k=0}^{A-2} | y_{(j+k)mod|y|} - y_{(1+j+k)mod|y|} | ) ...
-        # WAIT, implementation differs by paper version.
-        # Using concise definition often found in code:
-        # r_nonsep(y, A) = (y_j + sum_{k=0}^{A-1}(y_(j+k)mod n)) / ...
-        pass
-
-    # Correct logic for r_nonsep from WFG toolkit C++ source:
-    # y_j = (y_j + \sum_{k=0}^{A-2} |y_{(j+k) mod n} - y_{(j+k+1) mod n}| ) / (1 + (A-1)*something) ?
-    # Let's use a simpler implementation verified against WFG code.
-    
-    # Actually, simpler: r_sum is reduction, r_nonsep is transformation.
-    # Let's double check standard libraries (reverse engineering the behavior or using known standard):
-    # y_j = (y_j + sum_{k=0 to A-2} |y_{(j+k)%n} - y_{(j+k+1)%n}| ) / (A/2 * ceil(A/2))? No.
-    
-    # Let's implement the one from WFG paper 2006, Eq 26:
-    # r_nonsep(y, A) -> vector of size |y|
-    # w_j = ( y_j + \sum_{k=0}^{A-2} |y_{(j+k) mod n} - y_{(j+k+1) mod n}| ) / (A) ??
-    # Let's stick to simple composition for now or simplify.
-    
-    # Actually, let's implement based on the simpler form used in standard libraries if possible.
-    # Re-reading Eq 26 carefully:
-    # result_j = ( y_j + sum_{k=0}^{A-2} |y_{(j+k)%n} - y_{(j+k+1)%n}| ) / ceil(A/2) / (1 + 2A - 2 ceil(A/2) ) ??
-    # This is getting complicated to type from memory.
-    
-    # Alternative: Use a verified snippet logic.
-    n_var = y.shape[1]
-    res = np.zeros_like(y)
-    denominator = float(np.ceil(A / 2.0) * (1.0 + 2.0 * A - 2.0 * np.ceil(A / 2.0))) # Denom from paper?
-    # Wait, denominator is simpler usually.
-    
-    # Let's implement the loop clearly:
-    for i in range(n_var):
-        temp = y[:, i].copy()
-        for k in range(A - 1):
-            temp += np.abs(y[:, (i + k) % n_var] - y[:, (i + k + 1) % n_var])
-        res[:, i] = temp / float(A) # Simplified from similar implementations
-        
-    return res
+def _transformation_bias_poly(y: np.ndarray, alpha: float) -> np.ndarray:
+    return _correct_to_01(y**alpha)
 
 
-# =============================================================================
-# WFG BASE CLASS
-# =============================================================================
+def _transformation_param_dependent(
+    y: np.ndarray, y_deg: np.ndarray, a: float = 0.98 / 49.98, b: float = 0.02, c: float = 50.0
+) -> np.ndarray:
+    aux = a - (1.0 - 2.0 * y_deg) * np.fabs(np.floor(0.5 - y_deg) + a)
+    ret = np.power(y, b + (c - b) * aux)
+    return _correct_to_01(ret)
+
+
+def _transformation_param_deceptive(y: np.ndarray, a: float = 0.35, b: float = 0.001, c: float = 0.05) -> np.ndarray:
+    tmp1 = np.floor(y - a + b) * (1.0 - c + (a - b) / b) / (a - b)
+    tmp2 = np.floor(a + b - y) * (1.0 - c + (1.0 - a - b) / b) / (1.0 - a - b)
+    ret = 1.0 + (np.fabs(y - a) - b) * (tmp1 + tmp2 + 1.0 / b)
+    return _correct_to_01(ret)
+
+
+# -----------------------------------------------------------------------------
+# Reductions
+# -----------------------------------------------------------------------------
+
+
+def _reduction_weighted_sum(y: np.ndarray, w: np.ndarray) -> np.ndarray:
+    return _correct_to_01(np.dot(y, w) / w.sum())
+
+
+def _reduction_weighted_sum_uniform(y: np.ndarray) -> np.ndarray:
+    return _correct_to_01(y.mean(axis=1))
+
+
+def _reduction_non_sep(y: np.ndarray, a: int) -> np.ndarray:
+    n, m = y.shape
+    val = np.ceil(a / 2.0)
+    num = np.zeros(n, dtype=float)
+    for j in range(m):
+        num += y[:, j]
+        for k in range(a - 1):
+            num += np.fabs(y[:, j] - y[:, (1 + j + k) % m])
+    denom = m * val * (1.0 + 2.0 * a - 2.0 * val) / a
+    return _correct_to_01(num / denom)
+
+
+# -----------------------------------------------------------------------------
+# Shapes
+# -----------------------------------------------------------------------------
+
+
+def _shape_concave(x: np.ndarray, m: int) -> np.ndarray:
+    m_dim = x.shape[1]
+    if m == 1:
+        ret = np.prod(np.sin(0.5 * x[:, :m_dim] * np.pi), axis=1)
+    elif 1 < m <= m_dim:
+        ret = np.prod(np.sin(0.5 * x[:, : m_dim - m + 1] * np.pi), axis=1)
+        ret *= np.cos(0.5 * x[:, m_dim - m + 1] * np.pi)
+    else:
+        ret = np.cos(0.5 * x[:, 0] * np.pi)
+    return _correct_to_01(ret)
+
+
+def _shape_convex(x: np.ndarray, m: int) -> np.ndarray:
+    m_dim = x.shape[1]
+    if m == 1:
+        ret = np.prod(1.0 - np.cos(0.5 * x[:, :m_dim] * np.pi), axis=1)
+    elif 1 < m <= m_dim:
+        ret = np.prod(1.0 - np.cos(0.5 * x[:, : m_dim - m + 1] * np.pi), axis=1)
+        ret *= 1.0 - np.sin(0.5 * x[:, m_dim - m + 1] * np.pi)
+    else:
+        ret = 1.0 - np.sin(0.5 * x[:, 0] * np.pi)
+    return _correct_to_01(ret)
+
+
+def _shape_linear(x: np.ndarray, m: int) -> np.ndarray:
+    m_dim = x.shape[1]
+    if m == 1:
+        ret = np.prod(x, axis=1)
+    elif 1 < m <= m_dim:
+        ret = np.prod(x[:, : m_dim - m + 1], axis=1)
+        ret *= 1.0 - x[:, m_dim - m + 1]
+    else:
+        ret = 1.0 - x[:, 0]
+    return _correct_to_01(ret)
+
+
+def _shape_mixed(x: np.ndarray, a: float = 5.0, alpha: float = 1.0) -> np.ndarray:
+    aux = 2.0 * a * np.pi
+    ret = np.power(1.0 - x - (np.cos(aux * x + 0.5 * np.pi) / aux), alpha)
+    return _correct_to_01(ret)
+
+
+def _shape_disconnected(x: np.ndarray, alpha: float = 1.0, beta: float = 1.0, a: float = 5.0) -> np.ndarray:
+    aux = np.cos(a * np.pi * x**beta)
+    return _correct_to_01(1.0 - x**alpha * aux**2)
+
+
+def _validate_wfg2_wfg3(l: int) -> None:
+    if l % 2 != 0:
+        raise ValueError("In WFG2/WFG3 the distance-related parameter (l) must be divisible by 2.")
+
+
+# -----------------------------------------------------------------------------
+# WFG Problems
+# -----------------------------------------------------------------------------
+
 
 class WFGProblem:
-    def __init__(self, name, n_var, n_obj, k, l):
+    def __init__(self, name: str, n_var: int, n_obj: int, k: int | None = None, l: int | None = None):
         self.name = name
         self.n_var = int(n_var)
         self.n_obj = int(n_obj)
-        self.k = k if k is not None else 2 * (self.n_obj - 1)
-        self.l = l if l is not None else self.n_var - self.k
-        
+        self.xl = np.zeros(self.n_var, dtype=float)
+        self.xu = 2.0 * np.arange(1, self.n_var + 1, dtype=float)
+        self.S = np.arange(2, 2 * self.n_obj + 1, 2, dtype=float)
+        self.A = np.ones(self.n_obj - 1, dtype=float)
+
+        if k is None:
+            k = 4 if self.n_obj == 2 else 2 * (self.n_obj - 1)
+        if l is None:
+            l = self.n_var - k
+
+        self.k = int(k)
+        self.l = int(l)
+        self._validate()
+
+    def _validate(self) -> None:
+        if self.n_obj < 2:
+            raise ValueError("WFG problems must have two or more objectives.")
         if self.k % (self.n_obj - 1) != 0:
-            raise ValueError("k must be divisible by (n_obj - 1)")
-        if self.k + self.l != self.n_var:
-            raise ValueError("n_var must equal k + l")
-            
-        self.M = self.n_obj
-        self.S = np.array([2.0 * (m + 1) for m in range(self.M)])
-        self.A = np.ones(self.M - 1)
-        self.xl = np.zeros(self.n_var)
-        self.xu = np.ones(self.n_var)  # Reference problems are [0, 2*(i+1)], we map from [0,1]
-        # Wait, WFG natively defines limits as [0, 2i].
-        # But most frameworks normalize input to [0,1] and then scale inside.
-        # We will assume input X is [0,1].
+            raise ValueError("Position parameter (k) must be divisible by number of objectives minus one.")
+        if self.k < 4:
+            raise ValueError("Position parameter (k) must be greater or equal than 4.")
+        if (self.k + self.l) < self.n_obj:
+            raise ValueError("Sum of distance and position parameters must be >= number of objectives.")
+        if (self.k + self.l) != self.n_var:
+            raise ValueError("n_var must equal k + l.")
 
-    def evaluate(self, X, out):
-        X = np.asarray(X)
-        N = X.shape[0]
-        
-        # 1. Normalize x from domain to [0, 1] (if implied)
-        # We assume X is already [0, 1] as per standard benchmark usage
-        z = X.copy()
-        
-        # 2. Scale z to [0, 2, 4, ..., 2n] for internal calc?
-        # Actually standard WFG paper says x_i in [0, 2i].
-        # But we act like standard implementations: Assume X in [0,1], then multiply by variable weights?
-        # Actually standard WFG uses [0,1] box calc.
-        # Let's follow standard: y = x (since x in [0,1])
-        # But wait, WFG transformations expect specific ranges?
-        # Standard WFG: "y_i = x_i / x_{i,u}" to normalize.
-        # Since our X is already normalized [0,1], z = X is correct starting point.
-        
-        # 3. Transitions (Problem specific)
-        y = self._evaluate_custom(z)
-        
-        # 4. Shape functions (calculate fitness)
-        # y is now the vector of M-1 position parameters and 1 distance parameter?
-        # No, y is usually size M at the end.
-        
-        # Final calculation from y vector (size M) to objective values
-        # The result of _evaluate_custom should be a vector 'h' of size M
-        # Or position/distance params.
-        
-        # Actually, WFG structure:
-        # X -> (transitions) -> t_p (final transition vector)
-        # t_p has size M. k_p position params, l_p distance params? No.
-        # Finally map to objectives.
-        
-        # Let's abstract the final step in _evaluate_custom or specific problems.
-        # Implemented below strictly per problem.
-        
-        out["F"] = y
+    def _post(self, t: np.ndarray) -> np.ndarray:
+        x = []
+        for i in range(t.shape[1] - 1):
+            x.append(np.maximum(t[:, -1], self.A[i]) * (t[:, i] - 0.5) + 0.5)
+        x.append(t[:, -1])
+        return np.column_stack(x)
 
+    def _calculate(self, x: np.ndarray, h: list[np.ndarray]) -> np.ndarray:
+        return x[:, -1][:, None] + self.S * np.column_stack(h)
 
-    def _evaluate_custom(self, z):
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
+    def evaluate(self, X: np.ndarray, out: dict) -> None:
+        x = np.asarray(X, dtype=float)
+        f = self._evaluate(x)
+        if "F" in out and out["F"] is not None:
+            out["F"][:] = f
+        else:
+            out["F"] = f
 
-# =============================================================================
-# SHAPE FUNCTIONS
-# =============================================================================
-
-def shape_linear(x, m):
-    # x shape: (N, dim)
-    # m is 1-based index (1..M)
-    dim = x.shape[1]
-    M = dim + 1
-    res = np.ones(x.shape[0])
-    for i in range(M - m):
-        res *= x[:, i]
-    if m > 1:
-        res *= (1.0 - x[:, M - m])
-    return res
-
-
-def shape_convex(x, m):
-    dim = x.shape[1]
-    M = dim + 1
-    res = np.ones(x.shape[0])
-    for i in range(M - m):
-        res *= (1.0 - np.cos(x[:, i] * np.pi / 2.0))
-    if m > 1:
-        res *= (1.0 - np.sin(x[:, M - m] * np.pi / 2.0))
-    return res
-
-
-def shape_concave(x, m):
-    dim = x.shape[1]
-    M = dim + 1
-    res = np.ones(x.shape[0])
-    for i in range(M - m):
-        res *= np.sin(x[:, i] * np.pi / 2.0)
-    if m > 1:
-        res *= np.cos(x[:, M - m] * np.pi / 2.0)
-    return res
-
-
-def shape_mixed(x, alpha=5.0, A=1.0):
-    # Only for f_M (last objective)
-    # x is (N, dim), usually dim=1 (x_1)?
-    # Actually mixed uses x_1 (first param)
-    return (1.0 - x[:, 0] - np.cos(2.0 * A * np.pi * x[:, 0] + np.pi / 2.0) / (2.0 * A * np.pi)) ** alpha
-
-
-def shape_disc(x, alpha=1.0, beta=1.0, A=5.0):
-    # Only for f_M
-    return 1.0 - (x[:, 0] ** alpha) * (np.cos(A * (x[:, 0] ** beta) * np.pi)) ** 2
-
-
-def calculate_wfg_objectives(x, h_func_list, S):
-    # x: last transition vector (N, M), elements in [0,1]
-    # h_func_list: list of M callables for shape
-    # S: scaling constants
-    
-    N, M = x.shape
-    # x_M is the last element (distance), but x has M elements?
-    # WFG final vector has M elements: 0..M-2 are position, M-1 is distance?
-    # Actually, standard is: x has M elements.
-    # x_1...x_{M-1} position, x_M distance.
-    
-    # Calculate objectives
-    F = np.zeros((N, M))
-    
-    # Common term x_M (distance)
-    dist = x[:, M-1]
-    
-    for m in range(M):
-        # Shape function h_m
-        h = h_func_list[m](x[:, :-1]) # Pass position params
-        F[:, m] = dist + S[m] * h
-        
-    return F
-
-
-# =============================================================================
-# INDIVIDUAL PROBLEMS (WFG1-WFG9)
-# =============================================================================
 
 class WFG1Problem(WFGProblem):
-    def __init__(self, n_var=24, n_obj=3, k=None, l=None):
-        super().__init__('wfg1', n_var, n_obj, k, l)
-        
-    def _evaluate_custom(self, z):
-        # WFG1 Transformations
-        N = z.shape[0]
-        n_var = self.n_var
-        k = self.k
-        M = self.n_obj
-        
-        # t1: Linear shift
-        # y_i = s_linear(z_i, 0.35) for i=k+1...n (distance vars)
-        # y_i = z_i for i=1...k (position vars)
-        t1 = z.copy()
-        t1[:, k:] = s_linear(z[:, k:], 0.35)
-        
-        # t2: Bias: flat
-        # y_i = b_flat(y_i, 0.8, 0.75, 0.85) for i=k+1...n
-        # y_i = y_i for i=1...k
-        t2 = t1.copy()
-        t2[:, k:] = b_flat(t1[:, k:], 0.8, 0.75, 0.85)
-        
-        # t3: Bias: poly
-        # y_i = b_poly(y_i, 0.02) for all i
-        t3 = b_poly(t2, 0.02)
-        
-        # t4: Reduction: r_sum
-        # Reduces n vars to M vars
-        # Standard reduction:
-        # x_m = r_sum(y group m)
-        # Groups: 
-        # m=1..M-1:  (m-1)k/(M-1) to mk/(M-1)
-        # m=M:       k to n
-        
-        t4 = np.zeros((N, M))
-        w = np.ones(n_var) # w_i = 1 for classic WFG reduction weighting? 
-        # Standard WFG weights are usually w_i = 2*i_based, but r_sum often uses all 1s or specific weights.
-        # Paper says: w_i = 1.
-        w = np.ones(n_var)
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg1", n_var, n_obj, k, l)
 
-        # Gap calculation
-        # Position variables (0 to k-1) split into M-1 groups
-        # Distance variables (k to n-1) is one group
-        
-        for m in range(M - 1):
-            head = int(m * k / (M - 1))
-            tail = int((m + 1) * k / (M - 1))
-            t4[:, m] = r_sum(t3[:, head:tail], w[head:tail])
-            
-        t4[:, M - 1] = r_sum(t3[:, k:], w[k:])
-        
-        # Shape: Convex (1..M-1) Mixed (M)
-        # Define callables
-        h_funcs = [lambda x, m=m: shape_convex(x, m + 1) for m in range(M - 1)]
-        h_funcs.append(lambda x: shape_mixed(x, alpha=1.0, A=5.0))
-        
-        # Final calc
-        # For WFG1, S_m = 2*m (as per base init)
-        # Wait, WFG1 Mixed params: alpha=1.0, A=5.0? Check.
-        # Generic mixed is alpha=5.0, A=1.0 default. WFG1 uses alpha=1.0, A=5.0?
-        # Let's trust standard param logic for WFG1.
-        
-        return calculate_wfg_objectives(t4, h_funcs, self.S)
+    @staticmethod
+    def _t1(x: np.ndarray, n: int, k: int) -> np.ndarray:
+        x[:, k:n] = _transformation_shift_linear(x[:, k:n], 0.35)
+        return x
+
+    @staticmethod
+    def _t2(x: np.ndarray, n: int, k: int) -> np.ndarray:
+        x[:, k:n] = _transformation_bias_flat(x[:, k:n], 0.8, 0.75, 0.85)
+        return x
+
+    @staticmethod
+    def _t3(x: np.ndarray, n: int) -> np.ndarray:
+        x[:, :n] = _transformation_bias_poly(x[:, :n], 0.02)
+        return x
+
+    @staticmethod
+    def _t4(x: np.ndarray, m: int, n: int, k: int) -> np.ndarray:
+        w = np.arange(2, 2 * n + 1, 2, dtype=float)
+        gap = k // (m - 1)
+        t = []
+        for idx in range(1, m):
+            head = (idx - 1) * gap
+            tail = idx * gap
+            t.append(_reduction_weighted_sum(x[:, head:tail], w[head:tail]))
+        t.append(_reduction_weighted_sum(x[:, k:n], w[k:n]))
+        return np.column_stack(t)
+
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        y = self._t1(y, self.n_var, self.k)
+        y = self._t2(y, self.n_var, self.k)
+        y = self._t3(y, self.n_var)
+        y = self._t4(y, self.n_obj, self.n_var, self.k)
+        y = self._post(y)
+
+        h = [_shape_convex(y[:, :-1], m + 1) for m in range(self.n_obj - 1)]
+        h.append(_shape_mixed(y[:, 0], alpha=1.0, a=5.0))
+        return self._calculate(y, h)
 
 
 class WFG2Problem(WFGProblem):
-    def __init__(self, n_var=24, n_obj=3, k=None, l=None):
-        super().__init__('wfg2', n_var, n_obj, k, l)
-        
-    def _evaluate_custom(self, z):
-        N = z.shape[0]
-        k = self.k
-        M = self.n_obj
-        n_var = self.n_var
-        
-        # t1: Linear shift similar to WFG1 but z_i shift for distance
-        t1 = z.copy()
-        t1[:, k:] = s_linear(z[:, k:], 0.35)
-        
-        # t2: Non-sep
-        # y_i = r_nonsep(y group, A=2)?
-        # WFG2 applies non-sep to blocks
-        # l_block from k to n
-        # k_block from 0 to k
-        
-        # Actually WFG2 t2:
-        # y_i = r_nonsep(y inputs, 2)
-        # BUT applied to what?
-        # Applied to k position vars as one block?
-        # Applied to l distance vars / 2 blocks?
-        
-        # Simplified WFG2:
-        # t2 position = r_nonsep(t1[0:k], 2) (Wait, A is diff?)
-        # WFG2: A=3?
-        # Let's simplify and implement a basic version or fallback to the logic 
-        # "t2[i] = nonsep" for just the k vars group.
-        
-        # For reliability, I'll implement t2 as identity for now
-        # until I verify r_nonsep logic fully.
-        t2 = t1 # Placeholder for non-sep complexity
-        
-        # t3: Reduction same as WFG1
-        t3 = np.zeros((N, M))
-        w = np.ones(n_var)
-        for m in range(M - 1):
-            head = int(m * k / (M - 1))
-            tail = int((m + 1) * k / (M - 1))
-            t3[:, m] = r_sum(t2[:, head:tail], w[head:tail])
-        t3[:, M - 1] = r_sum(t2[:, k:], w[k:])
-        
-        # Shape: Convex + Disc
-        h_funcs = [lambda x, m=m: shape_convex(x, m + 1) for m in range(M - 1)]
-        h_funcs.append(lambda x: shape_disc(x, alpha=1.0, beta=1.0, A=5.0))
-        
-        return calculate_wfg_objectives(t3, h_funcs, self.S)
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg2", n_var, n_obj, k, l)
+        _validate_wfg2_wfg3(self.l)
 
+    @staticmethod
+    def _t2(x: np.ndarray, n: int, k: int) -> np.ndarray:
+        y = [x[:, i] for i in range(k)]
+        l = n - k
+        ind_non_sep = k + l // 2
+        i = k + 1
+        while i <= ind_non_sep:
+            head = k + 2 * (i - k) - 2
+            tail = k + 2 * (i - k)
+            y.append(_reduction_non_sep(x[:, head:tail], 2))
+            i += 1
+        return np.column_stack(y)
 
-# ... (For brevity, I'm providing WFG1/2 fully and placeholders for rest)
-# In a real scenario I would write all 9, but for 8000 char limits I must batch.
+    @staticmethod
+    def _t3(x: np.ndarray, m: int, n: int, k: int) -> np.ndarray:
+        ind_r_sum = k + (n - k) // 2
+        gap = k // (m - 1)
+        t = [_reduction_weighted_sum_uniform(x[:, (idx - 1) * gap : (idx * gap)]) for idx in range(1, m)]
+        t.append(_reduction_weighted_sum_uniform(x[:, k:ind_r_sum]))
+        return np.column_stack(t)
+
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        y = WFG1Problem._t1(y, self.n_var, self.k)
+        y = self._t2(y, self.n_var, self.k)
+        y = self._t3(y, self.n_obj, self.n_var, self.k)
+        y = self._post(y)
+
+        h = [_shape_convex(y[:, :-1], m + 1) for m in range(self.n_obj - 1)]
+        h.append(_shape_disconnected(y[:, 0], alpha=1.0, beta=1.0, a=5.0))
+        return self._calculate(y, h)
+
 
 class WFG3Problem(WFGProblem):
-    def __init__(self, n_var=24, n_obj=3, k=None, l=None):
-        super().__init__('wfg3', n_var, n_obj, k, l)
-    def _evaluate_custom(self, z): return self._evaluate_custom_placeholder(z)
-    def _evaluate_custom_placeholder(self, z):
-        # Quick fallback logic to ensure it runs
-        N = z.shape[0]
-        M = self.n_obj
-        # Mock reduction
-        t = np.zeros((N, M))
-        for m in range(M): t[:, m] = np.mean(z[:, m::M], axis=1)
-        # Linear shape
-        h_funcs = [lambda x, m=m: shape_linear(x, m + 1) for m in range(M)]
-        return calculate_wfg_objectives(t, h_funcs, self.S)
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg3", n_var, n_obj, k, l)
+        _validate_wfg2_wfg3(self.l)
+        self.A[1:] = 0.0
 
-# WFG4-9 will use similar placeholders or inherit
-class WFG4Problem(WFG3Problem): pass
-class WFG5Problem(WFG3Problem): pass
-class WFG6Problem(WFG3Problem): pass
-class WFG7Problem(WFG3Problem): pass
-class WFG8Problem(WFG3Problem): pass
-class WFG9Problem(WFG3Problem): pass
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        y = WFG1Problem._t1(y, self.n_var, self.k)
+        y = WFG2Problem._t2(y, self.n_var, self.k)
+        y = WFG2Problem._t3(y, self.n_obj, self.n_var, self.k)
+        y = self._post(y)
 
-    
+        h = [_shape_linear(y[:, :-1], m + 1) for m in range(self.n_obj)]
+        return self._calculate(y, h)
 
+
+class WFG4Problem(WFGProblem):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg4", n_var, n_obj, k, l)
+
+    @staticmethod
+    def _t1(x: np.ndarray) -> np.ndarray:
+        return _transformation_shift_multi_modal(x, 30.0, 10.0, 0.35)
+
+    @staticmethod
+    def _t2(x: np.ndarray, m: int, k: int) -> np.ndarray:
+        gap = k // (m - 1)
+        t = [_reduction_weighted_sum_uniform(x[:, (idx - 1) * gap : (idx * gap)]) for idx in range(1, m)]
+        t.append(_reduction_weighted_sum_uniform(x[:, k:]))
+        return np.column_stack(t)
+
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        y = self._t1(y)
+        y = self._t2(y, self.n_obj, self.k)
+        y = self._post(y)
+
+        h = [_shape_concave(y[:, :-1], m + 1) for m in range(self.n_obj)]
+        return self._calculate(y, h)
+
+
+class WFG5Problem(WFGProblem):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg5", n_var, n_obj, k, l)
+
+    @staticmethod
+    def _t1(x: np.ndarray) -> np.ndarray:
+        return _transformation_param_deceptive(x, a=0.35, b=0.001, c=0.05)
+
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        y = self._t1(y)
+        y = WFG4Problem._t2(y, self.n_obj, self.k)
+        y = self._post(y)
+
+        h = [_shape_concave(y[:, :-1], m + 1) for m in range(self.n_obj)]
+        return self._calculate(y, h)
+
+
+class WFG6Problem(WFGProblem):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg6", n_var, n_obj, k, l)
+
+    @staticmethod
+    def _t2(x: np.ndarray, m: int, n: int, k: int) -> np.ndarray:
+        gap = k // (m - 1)
+        t = [_reduction_non_sep(x[:, (idx - 1) * gap : (idx * gap)], gap) for idx in range(1, m)]
+        t.append(_reduction_non_sep(x[:, k:], n - k))
+        return np.column_stack(t)
+
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        y = WFG1Problem._t1(y, self.n_var, self.k)
+        y = self._t2(y, self.n_obj, self.n_var, self.k)
+        y = self._post(y)
+
+        h = [_shape_concave(y[:, :-1], m + 1) for m in range(self.n_obj)]
+        return self._calculate(y, h)
+
+
+class WFG7Problem(WFGProblem):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg7", n_var, n_obj, k, l)
+
+    @staticmethod
+    def _t1(x: np.ndarray, k: int) -> np.ndarray:
+        for i in range(k):
+            aux = _reduction_weighted_sum_uniform(x[:, i + 1 :])
+            x[:, i] = _transformation_param_dependent(x[:, i], aux)
+        return x
+
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        y = self._t1(y, self.k)
+        y = WFG1Problem._t1(y, self.n_var, self.k)
+        y = WFG4Problem._t2(y, self.n_obj, self.k)
+        y = self._post(y)
+
+        h = [_shape_concave(y[:, :-1], m + 1) for m in range(self.n_obj)]
+        return self._calculate(y, h)
+
+
+class WFG8Problem(WFGProblem):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg8", n_var, n_obj, k, l)
+
+    @staticmethod
+    def _t1(x: np.ndarray, n: int, k: int) -> np.ndarray:
+        ret = []
+        for i in range(k, n):
+            aux = _reduction_weighted_sum_uniform(x[:, :i])
+            ret.append(_transformation_param_dependent(x[:, i], aux, a=0.98 / 49.98, b=0.02, c=50.0))
+        return np.column_stack(ret)
+
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        if self.k < self.n_var:
+            y[:, self.k : self.n_var] = self._t1(y, self.n_var, self.k)
+        y = WFG1Problem._t1(y, self.n_var, self.k)
+        y = WFG4Problem._t2(y, self.n_obj, self.k)
+        y = self._post(y)
+
+        h = [_shape_concave(y[:, :-1], m + 1) for m in range(self.n_obj)]
+        return self._calculate(y, h)
+
+
+class WFG9Problem(WFGProblem):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+        super().__init__("wfg9", n_var, n_obj, k, l)
+
+    @staticmethod
+    def _t1(x: np.ndarray, n: int) -> np.ndarray:
+        ret = []
+        for i in range(0, n - 1):
+            aux = _reduction_weighted_sum_uniform(x[:, i + 1 :])
+            ret.append(_transformation_param_dependent(x[:, i], aux))
+        return np.column_stack(ret)
+
+    @staticmethod
+    def _t2(x: np.ndarray, n: int, k: int) -> np.ndarray:
+        a = [_transformation_shift_deceptive(x[:, i], 0.35, 0.001, 0.05) for i in range(k)]
+        b = [_transformation_shift_multi_modal(x[:, i], 30.0, 95.0, 0.35) for i in range(k, n)]
+        return np.column_stack(a + b)
+
+    @staticmethod
+    def _t3(x: np.ndarray, m: int, n: int, k: int) -> np.ndarray:
+        gap = k // (m - 1)
+        t = [_reduction_non_sep(x[:, (idx - 1) * gap : (idx * gap)], gap) for idx in range(1, m)]
+        t.append(_reduction_non_sep(x[:, k:], n - k))
+        return np.column_stack(t)
+
+    def _evaluate(self, x: np.ndarray) -> np.ndarray:
+        y = x / self.xu
+        if self.n_var > 1:
+            y[:, : self.n_var - 1] = self._t1(y, self.n_var)
+        y = self._t2(y, self.n_var, self.k)
+        y = self._t3(y, self.n_obj, self.n_var, self.k)
+
+        h = [_shape_concave(y[:, :-1], m + 1) for m in range(self.n_obj)]
+        return self._calculate(y, h)
+
+
+__all__ = [
+    "WFGProblem",
+    "WFG1Problem",
+    "WFG2Problem",
+    "WFG3Problem",
+    "WFG4Problem",
+    "WFG5Problem",
+    "WFG6Problem",
+    "WFG7Problem",
+    "WFG8Problem",
+    "WFG9Problem",
+]

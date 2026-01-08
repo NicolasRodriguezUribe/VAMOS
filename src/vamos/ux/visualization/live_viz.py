@@ -7,11 +7,13 @@ from typing import Any, Optional, Protocol, Sequence
 
 import numpy as np
 
+from vamos.foundation.observer import RunContext
+
 
 class LiveVisualization(Protocol):
     """Callback interface for live/streaming visualization."""
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None: ...
+    def on_start(self, ctx: RunContext) -> None: ...
 
     def on_generation(
         self,
@@ -31,7 +33,7 @@ class LiveVisualization(Protocol):
 class NoOpLiveVisualization:
     """Default no-op implementation."""
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
+    def on_start(self, ctx: RunContext) -> None:
         return None
 
     def on_generation(
@@ -89,13 +91,14 @@ class LiveParetoPlot:
     plt: Any = field(default=None, init=False)
     _interactive: bool = field(default=False, init=False)
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
+    def on_start(self, ctx: RunContext) -> None:
         self.plt = _safe_matplotlib(self.interactive_backend)
         if self.plt is None:
             return
         self.plt.ion()
         backend_name = str(self.plt.get_backend()).lower()
         self._interactive = not any(token in backend_name for token in ("agg", "inline", "pdf", "svg", "ps", "cairo"))
+        problem = ctx.problem
         if problem is not None and getattr(problem, "n_obj", 2) >= 3:
             self.dims = 3
         self.figure = self.plt.figure(figsize=(6, 5))
@@ -194,7 +197,7 @@ class LiveTuningPlot:
     last_update: int = field(default=-1, init=False)
     _interactive: bool = field(default=False, init=False)
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
+    def on_start(self, ctx: RunContext) -> None:
         self.plt = _safe_matplotlib(self.interactive_backend)
         if self.plt is None:
             return

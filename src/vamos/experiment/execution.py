@@ -52,17 +52,9 @@ class CompositeObserver(Observer):
     def __init__(self, observers: list[Observer]):
         self.observers = [o for o in observers if o is not None]
 
-    def on_start(self, ctx: RunContext = None, **kwargs) -> None:
-        # Support both RunContext and legacy kwargs (problem=, algorithm=, config=)
+    def on_start(self, ctx: RunContext) -> None:
         for obs in self.observers:
-            try:
-                if ctx is not None:
-                    obs.on_start(ctx)
-                else:
-                    obs.on_start(**kwargs)
-            except TypeError:
-                # Observer doesn't support this signature, skip
-                pass
+            obs.on_start(ctx)
 
     def on_generation(
         self,
@@ -90,6 +82,35 @@ class CompositeObserver(Observer):
             if hasattr(obs, "should_stop") and obs.should_stop():
                 return True
         return False
+
+
+class _LiveVizAdapter:
+    """Bridge algorithm live-viz callbacks to observer on_generation events."""
+
+    def __init__(self, observer: CompositeObserver):
+        self._observer = observer
+
+    def on_start(self, ctx: RunContext) -> None:
+        return None
+
+    def on_generation(
+        self,
+        generation: int,
+        F: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        stats: Optional[dict[str, Any]] = None,
+    ) -> None:
+        self._observer.on_generation(generation, F, X, stats)
+
+    def on_end(
+        self,
+        final_F: Optional[np.ndarray] = None,
+        final_stats: Optional[dict[str, Any]] = None,
+    ) -> None:
+        return None
+
+    def should_stop(self) -> bool:
+        return self._observer.should_stop()
 
 
 def _default_weight_path(problem_name: str, n_obj: int, pop_size: int) -> str:
@@ -193,7 +214,7 @@ def run_single(
         except Exception:
             hook_mgr = None
             
-    # User Viz (LiveVisualization is protocol-compatible with Observer)
+    # User Viz (LiveVisualization uses RunContext)
     if live_viz:
         observers.append(live_viz)
         
@@ -246,7 +267,7 @@ def run_single(
         termination=termination,
         seed=config.seed,
         eval_backend=eval_backend,
-        live_viz=main_observer, # CompositeObserver acts as LiveVisualization
+        live_viz=_LiveVizAdapter(main_observer),
     )
     
     payload = exec_result.payload
@@ -434,17 +455,6 @@ def execute_problem_suite(
             results.append(metrics)
 
     for algorithm_name in external_algorithms:
-        # TODO: Observer support for external algorithms?
-        # For now, keeping legacy facade for external, or updating it to use build_metrics from somewhere.
-        # External runner has its own printing/persisting logic via callbacks?
-        # execute_problem_suite passed make_metrics=build_metrics and callbacks.
-        # We need to expose build_metrics or re-implement it in a sharable way if external.run_external depends on it.
-        # Assuming external.run_external uses the callbacks provided.
-        # We can implement callbacks using our Observers manually here if desired, but let's keep it simple.
-        
-        # We need to import build_metrics to pass it.
-        # Wait, I removed build_metrics import in this file?
-        # Yes, I removed implicit dependency.
         from vamos.experiment.runner_output import build_metrics, print_run_banner, print_run_results
         
         metrics = external.run_external(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Iterable, TYPE_CHECKING, cast
 
 import numpy as np
@@ -99,8 +100,12 @@ class MooCoreKernel(KernelBackend):
     CROWDING_DIM_THRESHOLD = 3
     HV_SIZE_THRESHOLD = 256
 
-    def __init__(self) -> None:
+    def __init__(self, use_hv_contrib: bool | None = None) -> None:
         self._numpy_ops = cast(Any, _NumPyKernel)()
+        if use_hv_contrib is None:
+            env_flag = os.environ.get("VAMOS_MOOCORE_HV_CONTRIB", "0").strip().lower()
+            use_hv_contrib = env_flag in {"1", "true", "yes", "on"}
+        self._use_hv_contrib = bool(use_hv_contrib)
         self._X_buffer: np.ndarray | None = None
         self._F_buffer: np.ndarray | None = None
         self._keep_buffer: np.ndarray | None = None
@@ -136,17 +141,7 @@ class MooCoreKernel(KernelBackend):
         rng: np.random.Generator,
         n_parents: int,
     ) -> np.ndarray:
-        N = ranks.shape[0]
-        if pressure <= 0:
-            raise ValueError("pressure must be a positive integer")
-        if n_parents <= 0 or N == 0:
-            return np.empty(0, dtype=int)
-        candidates = rng.integers(0, N, size=(n_parents, pressure))
-        if njit is not None:
-            winners = _tournament_winners_numba(ranks, crowding, candidates)
-        else:
-            winners = _tournament_winners_numpy(ranks, crowding, candidates)
-        return winners
+        return self._numpy_ops.tournament_selection(ranks, crowding, pressure, rng, n_parents)
 
     def sbx_crossover(
         self,
@@ -225,7 +220,11 @@ class MooCoreKernel(KernelBackend):
 
     def _select_partial_front(self, F_comb: np.ndarray, front_idx: np.ndarray, remaining: int) -> np.ndarray:
         front = F_comb[front_idx]
-        use_crowding = front.shape[1] > self.CROWDING_DIM_THRESHOLD or front_idx.size > self.HV_SIZE_THRESHOLD
+        use_crowding = (
+            front.shape[1] > self.CROWDING_DIM_THRESHOLD
+            or front_idx.size > self.HV_SIZE_THRESHOLD
+            or not self._use_hv_contrib
+        )
         if use_crowding:
             self._stats["crowding_fallbacks"] += 1
             crowded = self._crowding_single(front)

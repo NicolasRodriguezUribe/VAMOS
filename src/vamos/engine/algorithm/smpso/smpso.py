@@ -32,7 +32,8 @@ if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.protocols import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-    from vamos.hooks.live_viz import LiveVisualization
+from vamos.hooks.live_viz import LiveVisualization
+from vamos.foundation.observer import RunContext
 
 
 __all__ = ["SMPSO"]
@@ -127,7 +128,14 @@ class SMPSO:
         self._problem = problem
 
         st = self._st
-        live_cb.on_start(problem=problem, algorithm=self, config=self.cfg)
+        ctx = RunContext(
+            problem=problem,
+            algorithm=self,
+            config=self.cfg,
+            algorithm_name="smpso",
+            engine_name=str(self.cfg.get("engine", "unknown")),
+        )
+        live_cb.on_start(ctx)
         live_cb.on_generation(0, F=st.hv_points(), stats={"evals": st.n_eval})
         stop_requested = live_should_stop(live_cb)
 
@@ -181,7 +189,14 @@ class SMPSO:
         )
         self._problem = problem
         if self._st is not None and self._live_cb is not None:
-            self._live_cb.on_start(problem=problem, algorithm=self, config=self.cfg)
+            ctx = RunContext(
+                problem=problem,
+                algorithm=self,
+                config=self.cfg,
+                algorithm_name="smpso",
+                engine_name=str(self.cfg.get("engine", "unknown")),
+            )
+            self._live_cb.on_start(ctx)
             self._live_cb.on_generation(0, F=self._st.hv_points())
 
     def ask(self) -> np.ndarray:

@@ -45,6 +45,7 @@ from .helpers import (
 from vamos.operators.real import VariationWorkspace
 from vamos.foundation.eval.backends import SerialEvalBackend, EvaluationBackend
 from vamos.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
+from vamos.foundation.observer import RunContext
 from vamos.engine.hyperheuristics.operator_selector import compute_reward
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
@@ -200,7 +201,14 @@ class NSGAII:
         n_var = problem.n_var
         xl, xu = resolve_bounds(problem, encoding)
 
-        live_cb.on_start(problem=problem, algorithm=self, config=self.cfg)
+        ctx = RunContext(
+            problem=problem,
+            algorithm=self,
+            config=self.cfg,
+            algorithm_name="nsgaii",
+            engine_name=str(self.cfg.get("engine", "unknown")),
+        )
+        live_cb.on_start(ctx)
         hv_tracker = HVTracker(hv_config, self.kernel)
 
         archive_size = resolve_archive_size(self.cfg)

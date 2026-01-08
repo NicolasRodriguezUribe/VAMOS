@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
 from vamos.hooks.live_viz import LiveVisualization
+from vamos.foundation.observer import RunContext
 
 
 def initialize_ibea_run(
@@ -137,7 +138,14 @@ def initialize_ibea_run(
     track_genealogy = bool(cfg.get("track_genealogy", False))
     genealogy_tracker, ids = setup_genealogy(pop_size, F, track_genealogy, "ibea")
 
-    live_cb.on_start(problem=problem, algorithm=None, config=cfg)
+    ctx = RunContext(
+        problem=problem,
+        algorithm=None,
+        config=cfg,
+        algorithm_name="ibea",
+        engine_name=str(cfg.get("engine", "unknown")),
+    )
+    live_cb.on_start(ctx)
 
     # Create state
     state = IBEAState(

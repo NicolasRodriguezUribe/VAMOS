@@ -31,7 +31,8 @@ if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.protocols import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-    from vamos.hooks.live_viz import LiveVisualization
+from vamos.hooks.live_viz import LiveVisualization
+from vamos.foundation.observer import RunContext
 
 
 __all__ = ["SMSEMOA"]
@@ -132,7 +133,14 @@ class SMSEMOA:
         self._hv_tracker = hv_tracker
 
         st = self._st
-        live_cb.on_start(problem=problem, algorithm=self, config=self.cfg)
+        ctx = RunContext(
+            problem=problem,
+            algorithm=self,
+            config=self.cfg,
+            algorithm_name="smsemoa",
+            engine_name=str(self.cfg.get("engine", "unknown")),
+        )
+        live_cb.on_start(ctx)
 
         hv_reached = False
         stop_requested = False
@@ -255,7 +263,14 @@ class SMSEMOA:
         if self._st is not None:
             self._st.pending_offspring = None
         if self._live_cb is not None:
-            self._live_cb.on_start(problem=problem, algorithm=self, config=self.cfg)
+            ctx = RunContext(
+                problem=problem,
+                algorithm=self,
+                config=self.cfg,
+                algorithm_name="smsemoa",
+                engine_name=str(self.cfg.get("engine", "unknown")),
+            )
+            self._live_cb.on_start(ctx)
 
     def ask(self) -> np.ndarray:
         """Generate offspring for evaluation.

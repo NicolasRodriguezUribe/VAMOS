@@ -61,6 +61,7 @@ def sbx_crossover_numba(
     X_parents: np.ndarray,
     prob: float,
     eta: float,
+    prob_var: float,
     lower: np.ndarray,
     upper: np.ndarray,
 ) -> np.ndarray:
@@ -101,10 +102,14 @@ def sbx_crossover_numba(
     # Process pairs
     for i in range(0, n_parents, 2):
         # pair i and i+1
-        
+
         # Check probability for this pair
         if np.random.random() <= prob:
             for j in range(n_var):
+                if np.random.random() > prob_var:
+                    offspring[i, j] = X_parents[i, j]
+                    offspring[i + 1, j] = X_parents[i + 1, j]
+                    continue
                 y1 = X_parents[i, j]
                 y2 = X_parents[i+1, j]
                 

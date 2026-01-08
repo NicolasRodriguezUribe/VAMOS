@@ -4,11 +4,13 @@ from typing import Any, Optional, Protocol
 
 import numpy as np
 
+from vamos.foundation.observer import RunContext
+
 
 class LiveVisualization(Protocol):
     """Callback interface for live/streaming visualization."""
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None: ...
+    def on_start(self, ctx: RunContext) -> None: ...
 
     def on_generation(
         self,
@@ -28,7 +30,7 @@ class LiveVisualization(Protocol):
 class NoOpLiveVisualization:
     """Default no-op implementation."""
 
-    def on_start(self, problem: Any = None, algorithm: Any = None, config: Any = None) -> None:
+    def on_start(self, ctx: RunContext) -> None:
         return None
 
     def on_generation(

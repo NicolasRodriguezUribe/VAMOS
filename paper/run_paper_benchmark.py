@@ -3,7 +3,7 @@ VAMOS Paper Benchmark Script
 ===========================
 Runs complete benchmark and writes CSV results for the paper.
 
-Usage: python run_paper_benchmark.py
+Usage: python -m paper.run_paper_benchmark
 
 Use update_paper_tables_from_csv.py to generate and inject LaTeX tables.
 """
@@ -24,6 +24,7 @@ for extra_path in (JMETALPY_SRC, PLATYPUS_SRC):
     if extra_path.exists():
         sys.path.insert(0, str(extra_path))
 
+import os
 import time
 import pandas as pd
 import numpy as np
@@ -44,8 +45,21 @@ USE_DTLZ = True
 USE_WFG = True
 
 N_EVALS = 100000
-N_SEEDS = 30  # 30 seeds for statistical significance (Wilcoxon tests)
+# Default to 1 seed for quick iteration; set VAMOS_N_SEEDS=30 for paper-ready stats.
+N_SEEDS = 30
 OUTPUT_CSV = DATA_DIR / "benchmark_paper.csv"
+
+POP_SIZE = 100
+CROSSOVER_PROB = 0.9
+CROSSOVER_ETA = 20.0
+MUTATION_ETA = 20.0
+
+ZDT_N_VAR = {"zdt1": 30, "zdt2": 30, "zdt3": 30, "zdt4": 10, "zdt6": 10}
+DTLZ_N_VAR = {"dtlz1": 7, "dtlz2": 12, "dtlz3": 12, "dtlz4": 12, "dtlz7": 22}
+WFG_N_VAR = 24
+ZDT_N_OBJ = 2
+DTLZ_N_OBJ = 3
+WFG_N_OBJ = 2
 
 # Frameworks to benchmark
 FRAMEWORKS = [
@@ -75,257 +89,92 @@ print(f"Total runs: {len(PROBLEMS) * len(FRAMEWORKS) * N_SEEDS}")
 # PARALLEL BENCHMARK EXECUTION
 # =============================================================================
 
-import os
 from joblib import Parallel, delayed
 
 # Use all cores minus 1
-N_JOBS = max(1, os.cpu_count() - 1)
+N_JOBS = int(os.environ.get("VAMOS_N_JOBS", max(1, os.cpu_count() - 1)))
 print(f"Using {N_JOBS} parallel workers")
 
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos import run_optimization
-from vamos.foundation.metrics.hypervolume import hypervolume
-
-# Reference points for hypervolume (problem-specific, normalized)
-REF_POINTS = {
-    # ZDT (2 objectives, minimization, ref slightly above nadir)
-    'zdt1': [1.1, 1.1], 'zdt2': [1.1, 1.1], 'zdt3': [1.1, 1.1],
-    'zdt4': [1.1, 1.1], 'zdt6': [1.1, 1.1],
-    # DTLZ (3 objectives by default)
-    'dtlz1': [1.0, 1.0, 1.0], 'dtlz2': [1.1, 1.1, 1.1],
-    'dtlz3': [1.1, 1.1, 1.1], 'dtlz4': [1.1, 1.1, 1.1], 'dtlz7': [1.1, 1.1, 10.0],
-    # WFG (2 objectives)
-    'wfg1': [3.0, 5.0], 'wfg2': [3.0, 5.0], 'wfg3': [3.0, 5.0],
-    'wfg4': [3.0, 5.0], 'wfg5': [3.0, 5.0], 'wfg6': [3.0, 5.0],
-    'wfg7': [3.0, 5.0], 'wfg8': [3.0, 5.0], 'wfg9': [3.0, 5.0],
-}
-
-
-def compute_hv(F, problem_name):
-    """Compute hypervolume with problem-specific reference point."""
-    import sys
-    import numpy as np
-    
-    ref = REF_POINTS.get(problem_name, [1.1] * F.shape[1])
-    
-    try:
-        return hypervolume(F, ref)
-    except Exception as e:
-        # Static reference failed, try dynamic reference
-        # This happens when results are unnormalized (Platypus DTLZ, VAMOS WFG)
-        try:
-            # Use F.max() * 1.1 as a safe reference point
-            dynamic_ref = np.array(F.max(axis=0) * 1.1)
-            hv = hypervolume(F, dynamic_ref)
-            print(f"INFO: Using dynamic reference for {problem_name}: {dynamic_ref}", file=sys.stderr)
-            return hv
-        except Exception as e2:
-            # Both failed, log and return NaN
-            print(f"WARNING: HV calculation failed for {problem_name}", file=sys.stderr)
-            print(f"  Static ref error: {e}", file=sys.stderr)
-            print(f"  Dynamic ref error: {e2}", file=sys.stderr)
-            print(f"  F shape: {F.shape}, F min: {F.min(axis=0)}, F max: {F.max(axis=0)}", file=sys.stderr)
-            return float('nan')
+from vamos import OptimizeConfig, optimize
+from vamos.engine.algorithm.config import NSGAIIConfig
+try:
+    from .benchmark_utils import compute_hv
+except ImportError:
+    from benchmark_utils import compute_hv
 
 
 # =============================================================================
-# DEAP PROBLEM IMPLEMENTATIONS (ZDT, DTLZ, WFG)
+# PROBLEM DIMENSIONS
 
-def get_deap_problem(problem_name, n_var=30):
-    """Get DEAP-compatible problem function."""
-    import math
-    
-    # ZDT functions
-    def zdt1(individual):
-        n = len(individual)
-        f1 = individual[0]
-        g = 1 + 9 * sum(individual[1:]) / (n - 1)
-        f2 = g * (1 - math.sqrt(f1 / g))
-        return f1, f2
-    
-    def zdt2(individual):
-        n = len(individual)
-        f1 = individual[0]
-        g = 1 + 9 * sum(individual[1:]) / (n - 1)
-        f2 = g * (1 - (f1 / g) ** 2)
-        return f1, f2
-    
-    def zdt3(individual):
-        n = len(individual)
-        f1 = individual[0]
-        g = 1 + 9 * sum(individual[1:]) / (n - 1)
-        f2 = g * (1 - math.sqrt(f1 / g) - (f1 / g) * math.sin(10 * math.pi * f1))
-        return f1, f2
-    
-    def zdt4(individual):
-        n = len(individual)
-        f1 = individual[0]
-        g = 1 + 10 * (n - 1) + sum(x**2 - 10 * math.cos(4 * math.pi * x) for x in individual[1:])
-        f2 = g * (1 - math.sqrt(f1 / g))
-        return f1, f2
-    
-    def zdt6(individual):
-        n = len(individual)
-        f1 = 1 - math.exp(-4 * individual[0]) * (math.sin(6 * math.pi * individual[0]) ** 6)
-        g = 1 + 9 * (sum(individual[1:]) / (n - 1)) ** 0.25
-        f2 = g * (1 - (f1 / g) ** 2)
-        return f1, f2
-    
-    # DTLZ functions
-    def dtlz1(individual):
-        k = len(individual) - 2
-        g = 100 * (k + sum((x - 0.5)**2 - math.cos(20 * math.pi * (x - 0.5)) for x in individual[2:]))
-        f1 = 0.5 * individual[0] * individual[1] * (1 + g)
-        f2 = 0.5 * individual[0] * (1 - individual[1]) * (1 + g)
-        f3 = 0.5 * (1 - individual[0]) * (1 + g)
-        return f1, f2, f3
-    
-    def dtlz2(individual):
-        k = len(individual) - 2
-        g = sum((x - 0.5)**2 for x in individual[2:])
-        f1 = (1 + g) * math.cos(individual[0] * math.pi / 2) * math.cos(individual[1] * math.pi / 2)
-        f2 = (1 + g) * math.cos(individual[0] * math.pi / 2) * math.sin(individual[1] * math.pi / 2)
-        f3 = (1 + g) * math.sin(individual[0] * math.pi / 2)
-        return f1, f2, f3
-    
-    # WFG helper functions
-    def correct_to_01(a):
-        return max(0.0, min(1.0, a))
-    
-    def s_linear(y, a):
-        return correct_to_01(abs(y - a) / abs(math.floor(a - y) + a))
-    
-    def s_multi(y, a, b, c):
-        tmp1 = abs(y - c) / (2.0 * (math.floor(c - y) + c))
-        tmp2 = (4.0 * a + 2.0) * math.pi * (0.5 - tmp1)
-        return correct_to_01((1.0 + math.cos(tmp2) + 4.0 * b * (tmp1 ** 2)) / (b + 2.0))
-    
-    def s_decept(y, a, b, c):
-        tmp1 = math.floor(y - a + b) * (1.0 - c + (a - b) / b) / (a - b)
-        tmp2 = math.floor(a + b - y) * (1.0 - c + (1.0 - a - b) / b) / (1.0 - a - b)
-        return correct_to_01(1.0 + (abs(y - a) - b) * (tmp1 + tmp2 + 1.0 / b))
-    
-    def b_poly(y, a):
-        return correct_to_01(y ** a)
-    
-    def b_flat(y, a, b, c):
-        tmp1 = min(0.0, math.floor(y - b)) * a * (b - y) / b
-        tmp2 = min(0.0, math.floor(c - y)) * (1.0 - a) * (y - c) / (1.0 - c)
-        return correct_to_01(a + tmp1 - tmp2)
-    
-    def r_sum(y, w):
-        return sum(yi * wi for yi, wi in zip(y, w)) / sum(w)
-    
-    def r_nonsep(y, a):
-        n = len(y)
-        tmp = 0.0
-        for j in range(n):
-            tmp += y[j]
-            for k in range(a - 1):
-                tmp += abs(y[j] - y[(j + k + 1) % n])
-        return tmp / (n * math.ceil(a / 2.0) * (1.0 + 2.0 * a - 2.0 * math.ceil(a / 2.0)))
-    
-    # WFG shape functions
-    def linear(x):
-        m = len(x) + 1
-        result = [1.0] * m
-        for i in range(m - 1):
-            for j in range(m - i - 1):
-                result[i] *= x[j]
-            if i > 0:
-                result[i] *= 1.0 - x[m - i - 1]
-        result[m - 1] = 1.0 - x[0]
-        return result
-    
-    def convex(x):
-        m = len(x) + 1
-        result = [1.0] * m
-        for i in range(m - 1):
-            for j in range(m - i - 1):
-                result[i] *= 1.0 - math.cos(x[j] * math.pi / 2.0)
-            if i > 0:
-                result[i] *= 1.0 - math.sin(x[m - i - 1] * math.pi / 2.0)
-        result[m - 1] = 1.0 - math.sin(x[0] * math.pi / 2.0)
-        return result
-    
-    def concave(x):
-        m = len(x) + 1
-        result = [1.0] * m
-        for i in range(m - 1):
-            for j in range(m - i - 1):
-                result[i] *= math.sin(x[j] * math.pi / 2.0)
-            if i > 0:
-                result[i] *= math.cos(x[m - i - 1] * math.pi / 2.0)
-        result[m - 1] = math.cos(x[0] * math.pi / 2.0)
-        return result
-    
-    # Simplified WFG (using basic implementation)
-    def wfg_base(individual, shape_fn, n_obj=2):
-        n = len(individual)
-        k = 4  # position parameters
-        l = n - k  # distance parameters
-        
-        # Normalize
-        z = [individual[i] / (2.0 * (i + 1)) for i in range(n)]
-        
-        # Transition
-        t = z[:]
-        
-        # Reduction
-        w = [1.0] * n
-        gap = k // (n_obj - 1)
-        x = []
-        for i in range(n_obj - 1):
-            start = i * gap
-            end = (i + 1) * gap
-            x.append(r_sum(t[start:end], w[start:end]))
-        x.append(r_sum(t[k:], w[k:]))
-        
-        # Shape
-        h = shape_fn(x[:-1])
-        
-        # Scale
-        s = [2.0 * (i + 1) for i in range(n_obj)]
-        f = [x[-1] + s[i] * h[i] for i in range(n_obj)]
-        
-        return tuple(f)
-    
-    def wfg1(individual): return wfg_base(individual, convex)
-    def wfg2(individual): return wfg_base(individual, convex)
-    def wfg3(individual): return wfg_base(individual, linear)
-    def wfg4(individual): return wfg_base(individual, concave)
-    def wfg5(individual): return wfg_base(individual, concave)
-    def wfg6(individual): return wfg_base(individual, concave)
-    def wfg7(individual): return wfg_base(individual, concave)
-    def wfg8(individual): return wfg_base(individual, concave)
-    def wfg9(individual): return wfg_base(individual, concave)
-    
-    problems = {
-        'zdt1': zdt1, 'zdt2': zdt2, 'zdt3': zdt3, 'zdt4': zdt4, 'zdt6': zdt6,
-        'dtlz1': dtlz1, 'dtlz2': dtlz2, 'dtlz3': dtlz2, 'dtlz4': dtlz2, 'dtlz7': dtlz2,
-        'wfg1': wfg1, 'wfg2': wfg2, 'wfg3': wfg3, 'wfg4': wfg4, 'wfg5': wfg5,
-        'wfg6': wfg6, 'wfg7': wfg7, 'wfg8': wfg8, 'wfg9': wfg9,
-    }
-    return problems.get(problem_name)
+def problem_dims(problem_name: str) -> tuple[int, int]:
+    if problem_name in ZDT_N_VAR:
+        return ZDT_N_VAR[problem_name], ZDT_N_OBJ
+    if problem_name in DTLZ_N_VAR:
+        return DTLZ_N_VAR[problem_name], DTLZ_N_OBJ
+    if problem_name in WFG_PROBLEMS:
+        return WFG_N_VAR, WFG_N_OBJ
+    raise ValueError(f"Unknown problem dimensions for '{problem_name}'")
+
+
+# =============================================================================
+# DEAP PROBLEM IMPLEMENTATIONS (using VAMOS definitions)
+
+def _resolve_bounds(problem, n_var: int) -> tuple[np.ndarray, np.ndarray]:
+    xl = np.asarray(problem.xl, dtype=float)
+    xu = np.asarray(problem.xu, dtype=float)
+    if xl.ndim == 0:
+        xl = np.full(n_var, float(xl))
+    if xu.ndim == 0:
+        xu = np.full(n_var, float(xu))
+    if xl.shape != (n_var,) or xu.shape != (n_var,):
+        raise ValueError(f"Invalid bounds for {problem.__class__.__name__}: xl={xl.shape}, xu={xu.shape}")
+    return xl, xu
+
+def get_deap_problem(problem_name: str, n_var: int, n_obj: int):
+    """Get DEAP-compatible problem function and bounds using VAMOS definitions."""
+    problem = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj).instantiate()
+    xl, xu = _resolve_bounds(problem, n_var)
+
+    def evaluate(individual):
+        X = np.asarray(individual, dtype=float).reshape(1, -1)
+        out = {"F": np.zeros((1, n_obj), dtype=float)}
+        problem.evaluate(X, out)
+        return tuple(out["F"][0])
+
+    return evaluate, xl, xu
 
 
 def run_single_benchmark(problem_name, seed, framework):
     """Run a single benchmark configuration."""
     result_entry = None
+    n_var, n_obj = problem_dims(problem_name)
     
     # VAMOS backends
     if framework.startswith("vamos-"):
         backend = framework.replace("vamos-", "")
         try:
-            problem = make_problem_selection(problem_name).instantiate()
-            start = time.perf_counter()
-            result = run_optimization(
-                problem, "nsgaii",
-                max_evaluations=N_EVALS,
-                pop_size=100,
-                engine=backend,
-                seed=seed
+            problem = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj).instantiate()
+            algo_config = (
+                NSGAIIConfig()
+                .pop_size(POP_SIZE)
+                .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
+                .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                .selection("tournament")
+                .survival("rank_crowding")
+                .engine(backend)
+                .fixed()
             )
+            config = OptimizeConfig(
+                problem=problem,
+                algorithm="nsgaii",
+                algorithm_config=algo_config,
+                termination=("n_eval", N_EVALS),
+                seed=seed,
+                engine=backend,
+            )
+            start = time.perf_counter()
+            result = optimize(config)
             elapsed = time.perf_counter() - start
             hv = compute_hv(result.F, problem_name) if result.F is not None else float('nan')
             result_entry = {
@@ -349,13 +198,19 @@ def run_single_benchmark(problem_name, seed, framework):
             from pymoo.optimize import minimize
             from pymoo.termination import get_termination
             from pymoo.problems import get_problem
-            
-            if problem_name.startswith('wfg'):
-                pymoo_problem = get_problem(problem_name, n_var=24, n_obj=2)
+            from pymoo.operators.crossover.sbx import SBX
+            from pymoo.operators.mutation.pm import PM
+
+            if problem_name.startswith("zdt"):
+                pymoo_problem = get_problem(problem_name, n_var=n_var)
             else:
-                pymoo_problem = get_problem(problem_name)
-            
-            algorithm = NSGA2(pop_size=100)
+                pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
+
+            algorithm = NSGA2(
+                pop_size=POP_SIZE,
+                crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
+                mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
+            )
             termination = get_termination("n_eval", N_EVALS)
             
             start = time.perf_counter()
@@ -379,16 +234,14 @@ def run_single_benchmark(problem_name, seed, framework):
     # DEAP
     elif framework == "deap":
         try:
-            from deap import base, creator, tools, algorithms
+            from deap import base, creator, tools
+            import copy
             import random
-            
-            problem_func = get_deap_problem(problem_name)
-            if problem_func is None:
-                raise ValueError(f"Problem {problem_name} not implemented for DEAP")
-            
-            n_obj = 3 if problem_name.startswith('dtlz') else 2
-            n_var = 30
-            
+
+            problem_func, xl, xu = get_deap_problem(problem_name, n_var=n_var, n_obj=n_obj)
+            xl_list = xl.tolist()
+            xu_list = xu.tolist()
+
             # Setup DEAP (use per-objective fitness/individual to avoid shape mismatches)
             fitness_name = f"FitnessMin{n_obj}"
             individual_name = f"Individual{n_obj}"
@@ -396,24 +249,57 @@ def run_single_benchmark(problem_name, seed, framework):
                 creator.create(fitness_name, base.Fitness, weights=(-1.0,) * n_obj)
             if not hasattr(creator, individual_name):
                 creator.create(individual_name, list, fitness=getattr(creator, fitness_name))
-            
+
             toolbox = base.Toolbox()
-            toolbox.register("attr_float", random.random)
-            toolbox.register("individual", tools.initRepeat, getattr(creator, individual_name), toolbox.attr_float, n_var)
+
+            def _random_individual():
+                return [random.uniform(lo, hi) for lo, hi in zip(xl_list, xu_list)]
+
+            toolbox.register("individual", tools.initIterate, getattr(creator, individual_name), _random_individual)
             toolbox.register("population", tools.initRepeat, list, toolbox.individual)
             toolbox.register("evaluate", problem_func)
-            toolbox.register("mate", tools.cxSimulatedBinaryBounded, low=0.0, up=1.0, eta=20.0)
-            toolbox.register("mutate", tools.mutPolynomialBounded, low=0.0, up=1.0, eta=20.0, indpb=1.0/n_var)
+            toolbox.register("mate", tools.cxSimulatedBinaryBounded, low=xl_list, up=xu_list, eta=CROSSOVER_ETA)
+            toolbox.register("mutate", tools.mutPolynomialBounded, low=xl_list, up=xu_list, eta=MUTATION_ETA, indpb=1.0 / n_var)
             toolbox.register("select", tools.selNSGA2)
-            
+            toolbox.register("select_tournament", tools.selTournamentDCD)
+            toolbox.register("clone", copy.deepcopy)
+
             random.seed(seed)
-            pop = toolbox.population(n=100)
-            n_gen = N_EVALS // 100
-            
+            pop = toolbox.population(n=POP_SIZE)
+            n_gen = max(0, (N_EVALS - POP_SIZE) // POP_SIZE)
+
             start = time.perf_counter()
-            algorithms.eaMuPlusLambda(pop, toolbox, mu=100, lambda_=100, cxpb=0.9, mutpb=0.1, ngen=n_gen, verbose=False)
+
+            # Evaluate the initial population
+            invalid = [ind for ind in pop if not ind.fitness.valid]
+            for ind in invalid:
+                ind.fitness.values = toolbox.evaluate(ind)
+
+            # Assign crowding distance
+            pop = toolbox.select(pop, len(pop))
+
+            for _ in range(n_gen):
+                offspring = toolbox.select_tournament(pop, len(pop))
+                offspring = list(map(toolbox.clone, offspring))
+
+                for i in range(0, len(offspring), 2):
+                    if random.random() <= CROSSOVER_PROB:
+                        toolbox.mate(offspring[i], offspring[i + 1])
+                        del offspring[i].fitness.values
+                        del offspring[i + 1].fitness.values
+
+                for mutant in offspring:
+                    toolbox.mutate(mutant)
+                    del mutant.fitness.values
+
+                invalid = [ind for ind in offspring if not ind.fitness.valid]
+                for ind in invalid:
+                    ind.fitness.values = toolbox.evaluate(ind)
+
+                pop = toolbox.select(pop + offspring, POP_SIZE)
+
             elapsed = time.perf_counter() - start
-            
+
             fronts = tools.sortNondominated(pop, len(pop), first_front_only=True)
             F = np.array([ind.fitness.values for ind in fronts[0]])
             hv = compute_hv(F, problem_name)
@@ -442,21 +328,31 @@ def run_single_benchmark(problem_name, seed, framework):
             from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
             from jmetal.problem import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ7
             from jmetal.problem import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
-            
-            wfg_n_var = 24
-            wfg_n_obj = 2
+            import random
+
+            random.seed(seed)
+            np.random.seed(seed)
+
             problem_map = {
-                'zdt1': ZDT1(), 'zdt2': ZDT2(), 'zdt3': ZDT3(), 'zdt4': ZDT4(), 'zdt6': ZDT6(),
-                'dtlz1': DTLZ1(), 'dtlz2': DTLZ2(), 'dtlz3': DTLZ3(), 'dtlz4': DTLZ4(), 'dtlz7': DTLZ7(),
-                'wfg1': WFG1(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
-                'wfg2': WFG2(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
-                'wfg3': WFG3(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
-                'wfg4': WFG4(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
-                'wfg5': WFG5(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
-                'wfg6': WFG6(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
-                'wfg7': WFG7(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
-                'wfg8': WFG8(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
-                'wfg9': WFG9(number_of_variables=wfg_n_var, number_of_objectives=wfg_n_obj),
+                'zdt1': ZDT1(number_of_variables=ZDT_N_VAR["zdt1"]),
+                'zdt2': ZDT2(number_of_variables=ZDT_N_VAR["zdt2"]),
+                'zdt3': ZDT3(number_of_variables=ZDT_N_VAR["zdt3"]),
+                'zdt4': ZDT4(number_of_variables=ZDT_N_VAR["zdt4"]),
+                'zdt6': ZDT6(number_of_variables=ZDT_N_VAR["zdt6"]),
+                'dtlz1': DTLZ1(number_of_variables=DTLZ_N_VAR["dtlz1"], number_of_objectives=DTLZ_N_OBJ),
+                'dtlz2': DTLZ2(number_of_variables=DTLZ_N_VAR["dtlz2"], number_of_objectives=DTLZ_N_OBJ),
+                'dtlz3': DTLZ3(number_of_variables=DTLZ_N_VAR["dtlz3"], number_of_objectives=DTLZ_N_OBJ),
+                'dtlz4': DTLZ4(number_of_variables=DTLZ_N_VAR["dtlz4"], number_of_objectives=DTLZ_N_OBJ),
+                'dtlz7': DTLZ7(number_of_variables=DTLZ_N_VAR["dtlz7"], number_of_objectives=DTLZ_N_OBJ),
+                'wfg1': WFG1(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                'wfg2': WFG2(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                'wfg3': WFG3(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                'wfg4': WFG4(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                'wfg5': WFG5(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                'wfg6': WFG6(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                'wfg7': WFG7(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                'wfg8': WFG8(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                'wfg9': WFG9(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
             }
             
             if problem_name not in problem_map:
@@ -466,10 +362,10 @@ def run_single_benchmark(problem_name, seed, framework):
             
             algorithm = NSGAII(
                 problem=jmetal_problem,
-                population_size=100,
-                offspring_population_size=100,
-                mutation=PolynomialMutation(probability=1.0/jmetal_problem.number_of_variables(), distribution_index=20),
-                crossover=SBXCrossover(probability=0.9, distribution_index=20),
+                population_size=POP_SIZE,
+                offspring_population_size=POP_SIZE,
+                mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+                crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
                 termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS)
             )
             
@@ -499,9 +395,37 @@ def run_single_benchmark(problem_name, seed, framework):
     elif framework == "platypus":
         try:
             from platypus import NSGAII as PlatypusNSGAII, Problem, Real
+            from platypus import GAOperator, PM, SBX, TournamentSelector
             from platypus import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
             from platypus import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ7
-            
+            import random
+
+            random.seed(seed)
+
+            # Custom VAMOS wrapper for Platypus (aligns bounds/definitions)
+            class PlatypusVAMOSProblem(Problem):
+                def __init__(self, name: str, n_var: int, n_obj: int):
+                    selection = make_problem_selection(name, n_var=n_var, n_obj=n_obj)
+                    self._problem = selection.instantiate()
+                    super().__init__(self._problem.n_var, self._problem.n_obj)
+                    xl = np.asarray(self._problem.xl, dtype=float)
+                    xu = np.asarray(self._problem.xu, dtype=float)
+                    if xl.ndim == 0:
+                        xl = np.full(self._problem.n_var, float(xl))
+                    if xu.ndim == 0:
+                        xu = np.full(self._problem.n_var, float(xu))
+                    if xl.shape != (self._problem.n_var,) or xu.shape != (self._problem.n_var,):
+                        raise ValueError(
+                            f"Invalid bounds for {name}: xl={xl.shape}, xu={xu.shape}"
+                        )
+                    self.types[:] = [Real(lo, hi) for lo, hi in zip(xl, xu)]
+
+                def evaluate(self, solution):
+                    X = np.asarray(solution.variables, dtype=float).reshape(1, -1)
+                    out = {"F": np.zeros((1, self._problem.n_obj), dtype=float)}
+                    self._problem.evaluate(X, out)
+                    solution.objectives[:] = out["F"][0]
+
             # Custom WFG wrapper for Platypus (using pymoo as backend)
             class PlatypusWFG(Problem):
                 def __init__(self, wfg_num, n_var=24, n_obj=2):
@@ -517,12 +441,23 @@ def run_single_benchmark(problem_name, seed, framework):
                     solution.objectives[:] = out["F"][0]
             
             problem_map = {
-                'zdt1': ZDT1(), 'zdt2': ZDT2(), 'zdt3': ZDT3(), 'zdt4': ZDT4(), 'zdt6': ZDT6(),
-                'dtlz1': DTLZ1(), 'dtlz2': DTLZ2(), 'dtlz3': DTLZ3(),
-                'dtlz4': DTLZ4(), 'dtlz7': DTLZ7(),
-                'wfg1': PlatypusWFG(1), 'wfg2': PlatypusWFG(2), 'wfg3': PlatypusWFG(3),
-                'wfg4': PlatypusWFG(4), 'wfg5': PlatypusWFG(5), 'wfg6': PlatypusWFG(6),
-                'wfg7': PlatypusWFG(7), 'wfg8': PlatypusWFG(8), 'wfg9': PlatypusWFG(9),
+                'zdt1': PlatypusVAMOSProblem("zdt1", n_var=ZDT_N_VAR["zdt1"], n_obj=ZDT_N_OBJ),
+                'zdt2': PlatypusVAMOSProblem("zdt2", n_var=ZDT_N_VAR["zdt2"], n_obj=ZDT_N_OBJ),
+                'zdt3': PlatypusVAMOSProblem("zdt3", n_var=ZDT_N_VAR["zdt3"], n_obj=ZDT_N_OBJ),
+                'zdt4': PlatypusVAMOSProblem("zdt4", n_var=ZDT_N_VAR["zdt4"], n_obj=ZDT_N_OBJ),
+                'zdt6': PlatypusVAMOSProblem("zdt6", n_var=ZDT_N_VAR["zdt6"], n_obj=ZDT_N_OBJ),
+                'dtlz1': DTLZ1(DTLZ_N_OBJ), 'dtlz2': DTLZ2(DTLZ_N_OBJ, nvars=DTLZ_N_VAR["dtlz2"]),
+                'dtlz3': DTLZ3(DTLZ_N_OBJ, nvars=DTLZ_N_VAR["dtlz3"]),
+                'dtlz4': DTLZ4(DTLZ_N_OBJ), 'dtlz7': DTLZ7(DTLZ_N_OBJ),
+                'wfg1': PlatypusWFG(1, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                'wfg2': PlatypusWFG(2, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                'wfg3': PlatypusWFG(3, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                'wfg4': PlatypusWFG(4, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                'wfg5': PlatypusWFG(5, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                'wfg6': PlatypusWFG(6, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                'wfg7': PlatypusWFG(7, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                'wfg8': PlatypusWFG(8, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                'wfg9': PlatypusWFG(9, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
             }
             
             if problem_name not in problem_map:
@@ -530,7 +465,16 @@ def run_single_benchmark(problem_name, seed, framework):
             
             platypus_problem = problem_map[problem_name]
             
-            algorithm = PlatypusNSGAII(platypus_problem, population_size=100)
+            variator = GAOperator(
+                SBX(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
+                PM(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+            )
+            algorithm = PlatypusNSGAII(
+                platypus_problem,
+                population_size=POP_SIZE,
+                selector=TournamentSelector(2),
+                variator=variator,
+            )
             
             start = time.perf_counter()
             algorithm.run(N_EVALS)
