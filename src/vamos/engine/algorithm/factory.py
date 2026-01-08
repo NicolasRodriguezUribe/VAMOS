@@ -124,7 +124,7 @@ def build_algorithm(
             engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
-            agemoea_variation=agemoea_variation,   # Using generic **kwargs if not in signature? No, need to add to signature.
+            agemoea_variation=agemoea_variation,  # Using generic **kwargs if not in signature? No, need to add to signature.
         )
 
     elif algorithm_name == "rvea":

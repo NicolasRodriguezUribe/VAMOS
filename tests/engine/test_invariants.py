@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from vamos.api import run_optimization
 from vamos.foundation.problem.zdt1 import ZDT1Problem
-from vamos.foundation.problem.registry import ProblemSelection
+
 
 @pytest.mark.smoke
 def test_nsgaii_invariants():
@@ -14,18 +14,11 @@ def test_nsgaii_invariants():
     """
     problem = ZDT1Problem(n_var=10)
     pop_size = 40
-    
+
     # We use 'numpy' engine for baseline invariants, 'numba' for performance check if enabled
     # Let's test default (numpy) first
-    res = run_optimization(
-        problem=problem,
-        algorithm="nsgaii",
-        max_evaluations=1000,
-        pop_size=pop_size,
-        seed=123,
-        engine="numpy"
-    )
-    
+    res = run_optimization(problem=problem, algorithm="nsgaii", max_evaluations=1000, pop_size=pop_size, seed=123, engine="numpy")
+
     # Invariant 1: Population Size
     # NSGA-II should return exactly pop_size solutions unless we requested result_mode="non_dominated" AND the front is small?
     # By default result_mode="non_dominated" usually returns the front.
@@ -33,19 +26,20 @@ def test_nsgaii_invariants():
     # but strictly speaking the 'result' usually contains the final front or population.
     # If the default is "non_dominated", len(res.F) might be <= pop_size.
     # But for ZDT1 with 1000 evals and pop 40, we likely have 40 points in the front or close to it.
-    
+
     # Let's check non-nullity and basic bounds
     assert res.F is not None
     assert res.X is not None
-    
+
     # Invariant 2: Bounds
     # ZDT1 bounds are [0, 1] for all vars
     assert np.all(res.X >= 0.0 - 1e-12)
     assert np.all(res.X <= 1.0 + 1e-12)
-    
+
     # Invariant 3: No NaNs
     assert not np.any(np.isnan(res.F))
     assert not np.any(np.isnan(res.X))
+
 
 @pytest.mark.smoke
 def test_nsgaii_population_mode_invariants():

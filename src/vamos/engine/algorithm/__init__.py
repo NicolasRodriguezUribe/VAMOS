@@ -35,15 +35,6 @@ from vamos.engine.algorithm.nsgaiii import NSGAIII
 from vamos.engine.algorithm.ibea import IBEA
 from vamos.engine.algorithm.smpso import SMPSO
 
-# Re-export for backwards compatibility (subfolders)
-from vamos.engine.algorithm.nsgaii import (
-    build_mating_pool,
-    feasible_nsga2_survival,
-    match_ids,
-    operator_success_stats,
-    generation_contributions,
-)
-
 from vamos.engine.algorithm.components.protocol import (
     AlgorithmProtocol,
     InteractiveAlgorithmProtocol,
@@ -67,10 +58,4 @@ __all__ = [
     "SelectionMethod",
     "SurvivalMethod",
     "ConstraintMode",
-    # NSGA-II utilities
-    "build_mating_pool",
-    "feasible_nsga2_survival",
-    "match_ids",
-    "operator_success_stats",
-    "generation_contributions",
 ]

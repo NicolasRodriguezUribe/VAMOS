@@ -103,7 +103,7 @@ class RVEAConfig:
     def archive(self, size: int, **kwargs) -> "RVEAConfig":
         """
         Configure an external archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:

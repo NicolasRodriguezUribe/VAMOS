@@ -92,7 +92,7 @@ def build_moead_algorithm(
     # Ensure default aggregation if not present
     if "aggregation" not in var_cfg:
         var_cfg["aggregation"] = ("tchebycheff", {})
-    
+
     # Merge any other overrides that resolve_default didn't catch (like aggregation)
     extra_cfg = {k: v for k, v in moead_overrides.items() if k not in var_cfg}
     var_cfg.update(extra_cfg)
@@ -187,7 +187,7 @@ def build_nsgaiii_algorithm(
 
     s_name, s_kwargs = var_cfg.get("selection", ("tournament", {"pressure": selection_pressure}))
     builder.selection(s_name, **s_kwargs)
-    
+
     if "repair" in var_cfg:
         r_name, r_kwargs = var_cfg["repair"]
         builder.repair(r_name, **r_kwargs)
@@ -317,6 +317,7 @@ class DictConfigWrapper:
     def to_dict(self) -> dict[str, Any]:
         return self._data
 
+
 def build_agemoea_algorithm(
     *,
     kernel: KernelBackend,
@@ -367,10 +368,7 @@ def build_rvea_algorithm(
     builder = RVEAConfig()
     builder.pop_size(pop_size)
     builder.engine(engine_name)
-    
-    # RVEA specific: check if n_partitions is hidden in overrides
-    if "n_partitions" in rvea_overrides:
-        builder.n_partitions(int(rvea_overrides["n_partitions"]))
+    builder.n_partitions(int(rvea_overrides.get("n_partitions", 12)))
 
     c_name, c_kwargs = var_cfg["crossover"]
     builder.crossover(c_name, **c_kwargs)

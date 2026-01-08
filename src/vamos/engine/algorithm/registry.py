@@ -8,7 +8,7 @@ and return an initialized algorithm instance.
 
 from __future__ import annotations
 
-from typing import Callable, Dict, Mapping, Any, Protocol
+from typing import Any, Callable, Mapping, Protocol
 
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
@@ -20,6 +20,7 @@ from .smsemoa import SMSEMOA
 from .spea2 import SPEA2
 from .ibea import IBEA
 from .smpso import SMPSO
+from vamos.foundation.registry import Registry
 
 
 class AlgorithmLike(Protocol):
@@ -33,45 +34,36 @@ class AlgorithmLike(Protocol):
     ) -> Mapping[str, Any]: ...
 
 
-AlgorithmBuilder = Callable[[dict, KernelBackend], AlgorithmLike]
+AlgorithmBuilder = Callable[[dict[str, Any], KernelBackend], AlgorithmLike]
 
-from vamos.foundation.registry import Registry
-
-ALGORITHMS: Registry[AlgorithmBuilder] = Registry("Algorithms")
+_ALGORITHMS: Registry[AlgorithmBuilder] | None = None
 
 
-@ALGORITHMS.register("nsgaii")
-def _build_nsgaii(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_nsgaii(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     return NSGAII(cfg, kernel=kernel)
 
 
-@ALGORITHMS.register("nsgaiii")
-def _build_nsgaiii(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_nsgaiii(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     return NSGAIII(cfg, kernel=kernel)
 
 
-@ALGORITHMS.register("moead")
-def _build_moead(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_moead(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     return MOEAD(cfg, kernel=kernel)
 
 
-@ALGORITHMS.register("smsemoa")
-def _build_smsemoa(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_smsemoa(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     return SMSEMOA(cfg, kernel=kernel)
 
 
-@ALGORITHMS.register("spea2")
-def _build_spea2(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_spea2(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     return SPEA2(cfg, kernel=kernel)
 
 
-@ALGORITHMS.register("ibea")
-def _build_ibea(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_ibea(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     return IBEA(cfg, kernel=kernel)
 
 
-@ALGORITHMS.register("smpso")
-def _build_smpso(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_smpso(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     """
     Note: SMPSO typically requires a different config structure, but the builder
     signature remains consistent.
@@ -79,25 +71,53 @@ def _build_smpso(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
     return SMPSO(cfg, kernel=kernel)
 
 
-@ALGORITHMS.register("agemoea")
-def _build_agemoea(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_agemoea(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     from .agemoea import AGEMOEA
+
     return AGEMOEA(cfg, kernel=kernel)
 
 
-@ALGORITHMS.register("rvea")
-def _build_rvea(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
+def _build_rvea(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
     from .rvea import RVEA
+
     return RVEA(cfg, kernel=kernel)
+
+
+def _register_algorithms(registry: Registry[AlgorithmBuilder]) -> None:
+    registry.register("nsgaii", _build_nsgaii)
+    registry.register("nsgaiii", _build_nsgaiii)
+    registry.register("moead", _build_moead)
+    registry.register("smsemoa", _build_smsemoa)
+    registry.register("spea2", _build_spea2)
+    registry.register("ibea", _build_ibea)
+    registry.register("smpso", _build_smpso)
+    registry.register("agemoea", _build_agemoea)
+    registry.register("rvea", _build_rvea)
+
+
+def get_algorithms_registry() -> Registry[AlgorithmBuilder]:
+    global _ALGORITHMS
+    if _ALGORITHMS is None:
+        registry: Registry[AlgorithmBuilder] = Registry("Algorithms")
+        _register_algorithms(registry)
+        _ALGORITHMS = registry
+    return _ALGORITHMS
 
 
 def resolve_algorithm(name: str) -> AlgorithmBuilder:
     key = name.lower()
+    registry = get_algorithms_registry()
     try:
-        return ALGORITHMS[key]
+        return registry[key]
     except KeyError as exc:
-        available = ", ".join(sorted(ALGORITHMS))
+        available = ", ".join(sorted(registry.keys()))
         raise ValueError(f"Unsupported algorithm '{name}'. Available: {available}") from exc
 
 
-__all__ = ["ALGORITHMS", "resolve_algorithm", "AlgorithmBuilder", "AlgorithmLike"]
+def __getattr__(name: str) -> Any:
+    if name == "ALGORITHMS":
+        return get_algorithms_registry()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+__all__ = ["get_algorithms_registry", "resolve_algorithm", "AlgorithmBuilder", "AlgorithmLike"]

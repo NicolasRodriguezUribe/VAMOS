@@ -4,7 +4,9 @@ Shared helpers and operator registries for variation pipelines.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
 
+from vamos.foundation.registry import Registry
 from vamos.operators.binary import (
     one_point_crossover,
     two_point_crossover,
@@ -28,13 +30,12 @@ from vamos.operators.permutation import (
     insert_mutation,
     scramble_mutation,
     inversion_mutation,
-    simple_inversion_mutation,
     displacement_mutation,
 )
 from vamos.operators.mixed import mixed_crossover, mixed_mutation
 
 
-def resolve_prob_expression(value, n_var: int, default: float) -> float:
+def resolve_prob_expression(value: float | int | str | None, n_var: int, default: float) -> float:
     if value is None:
         return default
     if isinstance(value, str) and value.endswith("/n"):
@@ -44,13 +45,18 @@ def resolve_prob_expression(value, n_var: int, default: float) -> float:
     return float(value)
 
 
-def prepare_mutation_params(mut_params: dict, encoding: str, n_var: int, prob_factor: float | None = None) -> dict:
+def prepare_mutation_params(
+    mut_params: dict[str, float | int | str | None],
+    encoding: str,
+    n_var: int,
+    prob_factor: float | None = None,
+) -> dict[str, float | int | str | None]:
     params = dict(mut_params)
     factor = prob_factor if prob_factor is not None else params.get("prob_factor") or params.get("mutation_prob_factor")
     if factor is not None:
         params["prob"] = float(factor) / max(1, n_var)
     elif "prob" in params:
-        params["prob"] = resolve_prob_expression(params["prob"], n_var, params["prob"])
+        params["prob"] = resolve_prob_expression(params["prob"], n_var, 1.0)
     else:
         if encoding == "permutation":
             params["prob"] = min(1.0, 2.0 / max(1, n_var))
@@ -59,127 +65,203 @@ def prepare_mutation_params(mut_params: dict, encoding: str, n_var: int, prob_fa
     return params
 
 
-from vamos.foundation.registry import Registry
+if TYPE_CHECKING:
+    PERM_CROSSOVER: Registry[Any]
+    PERM_MUTATION: Registry[Any]
+    BINARY_CROSSOVER: Registry[Any]
+    BINARY_MUTATION: Registry[Any]
+    INT_CROSSOVER: Registry[Any]
+    INT_MUTATION: Registry[Any]
+    MIXED_CROSSOVER: Registry[Any]
+    MIXED_MUTATION: Registry[Any]
+    REAL_CROSSOVER: Registry[Any]
+    REAL_MUTATION: Registry[Any]
 
-def _populate(reg: Registry, items: dict):
-    for k, v in items.items():
-        reg.register(k, v)
+_REGISTRY_LABELS = {
+    "PERM_CROSSOVER": "Permutation Crossover",
+    "PERM_MUTATION": "Permutation Mutation",
+    "BINARY_CROSSOVER": "Binary Crossover",
+    "BINARY_MUTATION": "Binary Mutation",
+    "INT_CROSSOVER": "Integer Crossover",
+    "INT_MUTATION": "Integer Mutation",
+    "MIXED_CROSSOVER": "Mixed Crossover",
+    "MIXED_MUTATION": "Mixed Mutation",
+    "REAL_CROSSOVER": "Real Crossover",
+    "REAL_MUTATION": "Real Mutation",
+}
+_REGISTRIES: dict[str, Registry[Any]] = {}
+_DEFAULTS_POPULATED = False
 
 
-PERM_CROSSOVER = Registry("Permutation Crossover")
-PERM_MUTATION = Registry("Permutation Mutation")
-BINARY_CROSSOVER = Registry("Binary Crossover")
-BINARY_MUTATION = Registry("Binary Mutation")
-INT_CROSSOVER = Registry("Integer Crossover")
-INT_MUTATION = Registry("Integer Mutation")
-MIXED_CROSSOVER = Registry("Mixed Crossover")
-MIXED_MUTATION = Registry("Mixed Mutation")
-REAL_CROSSOVER = Registry("Real Crossover")
-REAL_MUTATION = Registry("Real Mutation")
+def _get_registry(name: str) -> Registry[Any]:
+    registry = _REGISTRIES.get(name)
+    if registry is None:
+        registry = Registry(_REGISTRY_LABELS[name])
+        _REGISTRIES[name] = registry
+    return registry
 
-def _populate_defaults():
-    # Only populate if empty to avoid double registration
-    if len(PERM_CROSSOVER) > 0:
+
+def _populate(reg: Registry[Any], items: dict[str, object]) -> None:
+    for key, value in items.items():
+        reg.register(key, value)
+
+
+def _populate_defaults() -> None:
+    global _DEFAULTS_POPULATED
+    if _DEFAULTS_POPULATED:
+        return
+    perm_crossover = _get_registry("PERM_CROSSOVER")
+    if len(perm_crossover) > 0:
+        _DEFAULTS_POPULATED = True
         return
 
-    _populate(PERM_CROSSOVER, {
-        "ox": order_crossover,
-        "order": order_crossover,
-        "oxd": order_crossover,
-        "pmx": pmx_crossover,
-        "cycle": cycle_crossover,
-        "cx": cycle_crossover,
-        "position": position_based_crossover,
-        "position_based": position_based_crossover,
-        "pos": position_based_crossover,
-        "edge": edge_recombination_crossover,
-        "edge_recombination": edge_recombination_crossover,
-        "erx": edge_recombination_crossover,
-    })
+    perm_mutation = _get_registry("PERM_MUTATION")
+    binary_crossover = _get_registry("BINARY_CROSSOVER")
+    binary_mutation = _get_registry("BINARY_MUTATION")
+    int_crossover = _get_registry("INT_CROSSOVER")
+    int_mutation = _get_registry("INT_MUTATION")
+    mixed_crossover_registry = _get_registry("MIXED_CROSSOVER")
+    mixed_mutation_registry = _get_registry("MIXED_MUTATION")
+    real_crossover = _get_registry("REAL_CROSSOVER")
+    real_mutation = _get_registry("REAL_MUTATION")
 
-    _populate(PERM_MUTATION, {
-        "swap": swap_mutation,
-        "insert": insert_mutation,
-        "scramble": scramble_mutation,
-        "inversion": inversion_mutation,
-        "simple_inversion": simple_inversion_mutation,
-        "simpleinv": simple_inversion_mutation,
-        "displacement": displacement_mutation,
-    })
+    _populate(
+        perm_crossover,
+        {
+            "ox": order_crossover,
+            "order": order_crossover,
+            "oxd": order_crossover,
+            "pmx": pmx_crossover,
+            "cycle": cycle_crossover,
+            "cx": cycle_crossover,
+            "position": position_based_crossover,
+            "position_based": position_based_crossover,
+            "pos": position_based_crossover,
+            "edge": edge_recombination_crossover,
+            "edge_recombination": edge_recombination_crossover,
+            "erx": edge_recombination_crossover,
+        },
+    )
 
-    _populate(BINARY_CROSSOVER, {
-        "one_point": one_point_crossover,
-        "single_point": one_point_crossover,
-        "1point": one_point_crossover,
-        "two_point": two_point_crossover,
-        "2point": two_point_crossover,
-        "uniform": uniform_crossover,
-        "hux": hux_crossover,
-    })
+    _populate(
+        perm_mutation,
+        {
+            "swap": swap_mutation,
+            "insert": insert_mutation,
+            "scramble": scramble_mutation,
+            "inversion": inversion_mutation,
+            "displacement": displacement_mutation,
+        },
+    )
 
-    _populate(BINARY_MUTATION, {
-        "bitflip": bit_flip_mutation,
-        "bit_flip": bit_flip_mutation,
-    })
+    _populate(
+        binary_crossover,
+        {
+            "one_point": one_point_crossover,
+            "single_point": one_point_crossover,
+            "1point": one_point_crossover,
+            "two_point": two_point_crossover,
+            "2point": two_point_crossover,
+            "uniform": uniform_crossover,
+            "hux": hux_crossover,
+        },
+    )
 
-    _populate(INT_CROSSOVER, {
-        "uniform": uniform_integer_crossover,
-        "blend": arithmetic_integer_crossover,
-        "arithmetic": arithmetic_integer_crossover,
-    })
+    _populate(
+        binary_mutation,
+        {
+            "bitflip": bit_flip_mutation,
+            "bit_flip": bit_flip_mutation,
+        },
+    )
 
-    _populate(INT_MUTATION, {
-        "reset": random_reset_mutation,
-        "random_reset": random_reset_mutation,
-        "creep": creep_mutation,
-    })
+    _populate(
+        int_crossover,
+        {
+            "uniform": uniform_integer_crossover,
+            "blend": arithmetic_integer_crossover,
+            "arithmetic": arithmetic_integer_crossover,
+        },
+    )
 
-    _populate(MIXED_CROSSOVER, {
-        "mixed": mixed_crossover,
-        "uniform": mixed_crossover,
-    })
+    _populate(
+        int_mutation,
+        {
+            "reset": random_reset_mutation,
+            "random_reset": random_reset_mutation,
+            "creep": creep_mutation,
+        },
+    )
 
-    _populate(MIXED_MUTATION, {
-        "mixed": mixed_mutation,
-        "gaussian": mixed_mutation,
-    })
+    _populate(
+        mixed_crossover_registry,
+        {
+            "mixed": mixed_crossover,
+            "uniform": mixed_crossover,
+        },
+    )
 
-    _populate(REAL_CROSSOVER, {k: "PLACEHOLDER" for k in [
-        "sbx", "blx_alpha", "arithmetic", "pcx", "undx", "spx"
-    ]})
+    _populate(
+        mixed_mutation_registry,
+        {
+            "mixed": mixed_mutation,
+            "gaussian": mixed_mutation,
+        },
+    )
 
-    _populate(REAL_MUTATION, {k: "PLACEHOLDER" for k in [
-        "pm", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform", "linked_polynomial"
-    ]})
+    _populate(real_crossover, {k: "PLACEHOLDER" for k in ["sbx", "blx_alpha", "arithmetic", "pcx", "undx", "spx"]})
+
+    _populate(
+        real_mutation,
+        {k: "PLACEHOLDER" for k in ["pm", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform", "linked_polynomial"]},
+    )
+    _DEFAULTS_POPULATED = True
 
 
 def validate_operator_support(encoding: str, crossover: str, mutation: str) -> None:
     _populate_defaults()
+    perm_crossover = _get_registry("PERM_CROSSOVER")
+    perm_mutation = _get_registry("PERM_MUTATION")
+    binary_crossover = _get_registry("BINARY_CROSSOVER")
+    binary_mutation = _get_registry("BINARY_MUTATION")
+    int_crossover = _get_registry("INT_CROSSOVER")
+    int_mutation = _get_registry("INT_MUTATION")
+    mixed_crossover = _get_registry("MIXED_CROSSOVER")
+    mixed_mutation = _get_registry("MIXED_MUTATION")
+    real_crossover = _get_registry("REAL_CROSSOVER")
+    real_mutation = _get_registry("REAL_MUTATION")
     if encoding == "permutation":
-        if crossover not in PERM_CROSSOVER:
+        if crossover not in perm_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for permutation encoding.")
-        if mutation not in PERM_MUTATION:
+        if mutation not in perm_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for permutation encoding.")
     elif encoding == "binary":
-        if crossover not in BINARY_CROSSOVER:
+        if crossover not in binary_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for binary encoding.")
-        if mutation not in BINARY_MUTATION:
+        if mutation not in binary_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for binary encoding.")
     elif encoding == "integer":
-        if crossover not in INT_CROSSOVER:
+        if crossover not in int_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for integer encoding.")
-        if mutation not in INT_MUTATION:
+        if mutation not in int_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for integer encoding.")
     elif encoding == "mixed":
-        if crossover not in MIXED_CROSSOVER:
+        if crossover not in mixed_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for mixed encoding.")
-        if mutation not in MIXED_MUTATION:
+        if mutation not in mixed_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for mixed encoding.")
     else:
-        if crossover not in REAL_CROSSOVER:
+        if crossover not in real_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for continuous encoding.")
-        if mutation not in REAL_MUTATION:
+        if mutation not in real_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for continuous encoding.")
+
+
+def __getattr__(name: str) -> Registry[Any]:
+    if name in _REGISTRY_LABELS:
+        _populate_defaults()
+        return _get_registry(name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [

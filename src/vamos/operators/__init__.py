@@ -27,7 +27,6 @@ from .permutation import (
     insert_mutation,
     scramble_mutation,
     inversion_mutation,
-    simple_inversion_mutation,
     displacement_mutation,
 )
 from .real import (
@@ -71,7 +70,6 @@ __all__ = [
     "insert_mutation",
     "scramble_mutation",
     "inversion_mutation",
-    "simple_inversion_mutation",
     "displacement_mutation",
     "ArithmeticCrossover",
     "BLXAlphaCrossover",

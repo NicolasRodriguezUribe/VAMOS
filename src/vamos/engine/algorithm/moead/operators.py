@@ -35,7 +35,6 @@ from vamos.operators.permutation import (
     insert_mutation,
     scramble_mutation,
     inversion_mutation,
-    simple_inversion_mutation,
     displacement_mutation,
 )
 from vamos.operators.real import PolynomialMutation, SBXCrossover
@@ -88,8 +87,6 @@ PERM_MUTATION = {
     "insert": insert_mutation,
     "scramble": scramble_mutation,
     "inversion": inversion_mutation,
-    "simple_inversion": simple_inversion_mutation,
-    "simpleinv": simple_inversion_mutation,
     "displacement": displacement_mutation,
 }
 

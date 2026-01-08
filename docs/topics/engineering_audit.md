@@ -90,7 +90,6 @@ God-function candidates (top by LOC):
 - `src/vamos/experiment/runner.py` `run_single` (~175 LOC)
 - `src/vamos/experiment/runner.py` `execute_problem_suite` (~148 LOC)
 - `src/vamos/engine/algorithm/ibea/initialization.py` `initialize_ibea_run` (~137 LOC)
-- `src/vamos/experiment/runner_output.py` `persist_run_outputs` (~132 LOC)
 
 Cross-cutting tangling hotspots:
 - `src/vamos/experiment/runner.py`: execution + config override + plotting + persistence + CLI hints.
@@ -174,7 +173,7 @@ Refactor plan: extract shared execution logic (e.g., `src/vamos/experiment/execu
 Suggested tests: add a lightweight import-cycle check for experiment modules; unit tests for config override resolution; integration tests that CLI parsing matches programmatic calls.
 
 2) High - Separate result presentation (plotting, saving, printing) from core API results.
-Evidence: `src/vamos/experiment/optimize.py`, `src/vamos/experiment/quick.py`, `src/vamos/experiment/runner_output.py`.
+Evidence: `src/vamos/experiment/optimize.py`, `src/vamos/experiment/quick.py`.
 Refactor plan: keep `OptimizationResult` and `QuickResult` as data containers; move `plot`, `save`, and `summary` to `src/vamos/experiment/output.py` or `src/vamos/ux/` and wire them from CLI/UX.
 Suggested tests: unit tests for output helpers; integration tests for CLI output parity.
 
@@ -295,10 +294,9 @@ Scope: move plot/save/summary helpers into `src/vamos/experiment/output.py` or `
 - `Get-Content mkdocs.yml` (docs config)
 - `Get-Content .pre-commit-config.yaml` (pre-commit config)
 - `Get-Content src\vamos\engine\config\loader.py` (config loader)
-- `Get-Content src\vamos\experiment\runner_output.py` (runner output/persistence)
 - `Get-Content experiments\scripts\collect_hv_archive_metrics.py` (metrics script)
 - `@'...python script...'@ | .\.venv\Scripts\python.exe -` (refresh LOC/classes/functions/import graph)
 - `rg --files tests -g "*.py" | Measure-Object` (test file count refresh)
 - `rg -n "ux\.visualization|ux\.analysis|ux\.studio" src\vamos\experiment\runner.py` (experiment -> ux imports)
 - `rg -n "vamos\.engine" src\vamos\ux` (ux -> engine imports)
-- `rg -n "foundation\.core\.(runner|optimize|runner_output|runner_utils)" src tests docs examples experiments` (verify old import paths removed)
+- `rg -n "foundation\.core\.(runner|optimize|runner_utils)" src tests docs examples experiments` (verify old import paths removed)

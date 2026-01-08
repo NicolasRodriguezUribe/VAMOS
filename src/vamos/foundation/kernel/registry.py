@@ -41,9 +41,7 @@ def _load_jax():
         module = import_module("vamos.foundation.kernel.jax_backend")
         return module.JaxKernel()
     except ImportError as exc:
-        raise ImportError(
-            "Kernel 'jax' requires the [autodiff] extra (jax>=0.4). Install with `pip install -e \".[autodiff]\"`."
-        ) from exc
+        raise ImportError("Kernel 'jax' requires the [autodiff] extra (jax>=0.4). Install with `pip install -e \".[autodiff]\"`.") from exc
 
 
 KERNELS: Dict[str, Callable[[], KernelBackend]] = {

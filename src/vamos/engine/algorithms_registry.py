@@ -27,7 +27,7 @@ from vamos.engine.algorithm.config import (
 from vamos.engine.algorithm.moead import MOEAD
 from vamos.engine.algorithm.nsgaiii import NSGAIII
 from vamos.engine.algorithm.nsgaii import NSGAII
-from vamos.engine.algorithm.registry import ALGORITHMS, resolve_algorithm
+from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
 from vamos.engine.algorithm.smpso import SMPSO
 from vamos.engine.algorithm.smsemoa import SMSEMOA
 from vamos.engine.algorithm.spea2 import SPEA2
@@ -48,11 +48,9 @@ from vamos.engine.algorithm.components.variation.helpers import (
 )
 
 
-
-
 def available_algorithms() -> Tuple[str, ...]:
     """Return the canonical algorithm identifiers supported by the engine."""
-    return tuple(sorted(ALGORITHMS))
+    return tuple(sorted(get_algorithms_registry().keys()))
 
 
 def available_crossover_methods(encoding: str = "real") -> Tuple[str, ...]:
@@ -67,15 +65,15 @@ def available_crossover_methods(encoding: str = "real") -> Tuple[str, ...]:
     """
     encoding = encoding.lower()
     if encoding == "real":
-        return tuple(sorted(REAL_CROSSOVER))
+        return tuple(sorted(REAL_CROSSOVER.keys()))
     if encoding == "binary":
-        return tuple(sorted(BINARY_CROSSOVER))
+        return tuple(sorted(BINARY_CROSSOVER.keys()))
     if encoding == "permutation":
-        return tuple(sorted(PERM_CROSSOVER))
+        return tuple(sorted(PERM_CROSSOVER.keys()))
     if encoding == "integer":
-        return tuple(sorted(INT_CROSSOVER))
+        return tuple(sorted(INT_CROSSOVER.keys()))
     if encoding == "mixed":
-        return tuple(sorted(MIXED_CROSSOVER))
+        return tuple(sorted(MIXED_CROSSOVER.keys()))
     return ()
 
 
@@ -91,15 +89,15 @@ def available_mutation_methods(encoding: str = "real") -> Tuple[str, ...]:
     """
     encoding = encoding.lower()
     if encoding == "real":
-        return tuple(sorted(REAL_MUTATION))
+        return tuple(sorted(REAL_MUTATION.keys()))
     if encoding == "binary":
-        return tuple(sorted(BINARY_MUTATION))
+        return tuple(sorted(BINARY_MUTATION.keys()))
     if encoding == "permutation":
-        return tuple(sorted(PERM_MUTATION))
+        return tuple(sorted(PERM_MUTATION.keys()))
     if encoding == "integer":
-        return tuple(sorted(INT_MUTATION))
+        return tuple(sorted(INT_MUTATION.keys()))
     if encoding == "mixed":
-        return tuple(sorted(MIXED_MUTATION))
+        return tuple(sorted(MIXED_MUTATION.keys()))
     return ()
 
 

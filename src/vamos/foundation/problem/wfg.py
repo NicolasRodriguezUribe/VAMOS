@@ -39,11 +39,7 @@ def _transformation_shift_multi_modal(y: np.ndarray, a: float, b: float, c: floa
 
 
 def _transformation_bias_flat(y: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
-    ret = (
-        a
-        + np.minimum(0.0, np.floor(y - b)) * (a * (b - y) / b)
-        - np.minimum(0.0, np.floor(c - y)) * ((1.0 - a) * (y - c) / (1.0 - c))
-    )
+    ret = a + np.minimum(0.0, np.floor(y - b)) * (a * (b - y) / b) - np.minimum(0.0, np.floor(c - y)) * ((1.0 - a) * (y - c) / (1.0 - c))
     return _correct_to_01(ret)
 
 

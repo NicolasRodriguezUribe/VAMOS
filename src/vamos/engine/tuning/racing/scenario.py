@@ -212,7 +212,7 @@ class Scenario:
     """
     If True, pass checkpoints between fidelity levels so the algorithm can
     continue from where it left off instead of starting from scratch.
-    
+
     The eval_fn receives `ctx.checkpoint` with the previous state and should
     return a tuple `(score, new_checkpoint)` instead of just `score`.
     """

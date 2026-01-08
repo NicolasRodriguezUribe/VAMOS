@@ -90,6 +90,8 @@ def save_history_csv(
             if include_raw:
                 row.append(json.dumps(trial.config))
             writer.writerow(row)
+
+
 def save_checkpoint(
     best_configs: List[Dict[str, Any]],
     elite_archive: List[Dict[str, Any]],

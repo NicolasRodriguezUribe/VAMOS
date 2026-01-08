@@ -254,7 +254,7 @@ class ThompsonSamplingPolicy:
         """Compute Beta parameters from reward history."""
         rewards = self._reward_history[arm_index]
         if self.window_size > 0 and len(rewards) > self.window_size:
-            rewards = rewards[-self.window_size:]
+            rewards = rewards[-self.window_size :]
         if not rewards:
             return 1.0, 1.0
         alpha = 1.0 + sum(rewards)
@@ -337,7 +337,7 @@ class SlidingWindowUCBPolicy:
         rewards = self._reward_history[arm_index]
         if not rewards:
             return 0.0
-        window = rewards[-self.window_size:] if len(rewards) > self.window_size else rewards
+        window = rewards[-self.window_size :] if len(rewards) > self.window_size else rewards
         return sum(window) / len(window)
 
     def _windowed_count(self, arm_index: int) -> int:

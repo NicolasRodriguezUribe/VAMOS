@@ -9,9 +9,11 @@ Usage:
     python examples/auto_design/generic_auto_solver.py bin_knapsack
     python examples/auto_design/generic_auto_solver.py tsp6
 """
+
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from typing import Any
 
@@ -31,7 +33,6 @@ from vamos.engine.tuning.api import (
     TuningTask,
 )
 from vamos.engine.config.variation import (
-    OPERATORS_BY_ENCODING,
     get_crossover_names,
     get_mutation_names,
     get_operators_for_encoding,
@@ -43,17 +44,23 @@ from vamos.foundation.problem.registry import get_problem_specs
 # Conditional Hyperparameters Registry
 # =============================================================================
 
-CONDITIONAL_PARAMS = {
-    "crossover": {
-        "sbx": ("sbx_eta", Real("sbx_eta", 5.0, 30.0)),
-        "blx": ("blx_alpha", Real("blx_alpha", 0.1, 0.5)),
-        "de": ("de_F", Real("de_F", 0.3, 0.9)),
-    },
-    "mutation": {
-        "pm": ("pm_eta", Real("pm_eta", 5.0, 30.0)),
-        "gaussian": ("gauss_sigma", Real("gauss_sigma", 0.01, 0.3)),
-    },
-}
+
+def _conditional_params() -> dict[str, dict[str, tuple[str, Real]]]:
+    return {
+        "crossover": {
+            "sbx": ("sbx_eta", Real("sbx_eta", 5.0, 30.0)),
+            "blx": ("blx_alpha", Real("blx_alpha", 0.1, 0.5)),
+            "de": ("de_F", Real("de_F", 0.3, 0.9)),
+        },
+        "mutation": {
+            "pm": ("pm_eta", Real("pm_eta", 5.0, 30.0)),
+            "gaussian": ("gauss_sigma", Real("gauss_sigma", 0.01, 0.3)),
+        },
+    }
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _add_conditional_params(
@@ -63,7 +70,8 @@ def _add_conditional_params(
     available_ops: dict[str, Any],
 ) -> None:
     """Add conditional hyperparameters for operators that require them."""
-    for op_name, (param_name, param_def) in CONDITIONAL_PARAMS.get(operator_type, {}).items():
+    conditional_params = _conditional_params()
+    for op_name, (param_name, param_def) in conditional_params.get(operator_type, {}).items():
         if op_name in available_ops:
             params[param_name] = param_def
             conditions.append(Condition(param_name, f"cfg['{operator_type}'] == '{op_name}'"))
@@ -73,22 +81,23 @@ def _add_conditional_params(
 # Dynamic Search Space Construction
 # =============================================================================
 
+
 def build_param_space_for_encoding(encoding: str) -> ParamSpace:
     """
     Dynamically build a hyperparameter space based on problem encoding.
-    
+
     Operators are auto-detected from the OPERATORS_BY_ENCODING registry.
     Conditional hyperparameters are added for operators that require them.
     """
     # Normalize encoding
     if encoding == "continuous":
         encoding = "real"
-    
+
     # Get operators from registry
     crossover_names = get_crossover_names(encoding)
     mutation_names = get_mutation_names(encoding)
     operators_info = get_operators_for_encoding(encoding)
-    
+
     params: dict[str, Any] = {
         # Common parameters across all encodings
         "pop_size": Int("pop_size", 50, 150, log=True),
@@ -101,34 +110,30 @@ def build_param_space_for_encoding(encoding: str) -> ParamSpace:
         "result_mode": Categorical("result_mode", ["population", "archive"]),
     }
     conditions: list[Condition] = []
-    
+
     # Archive configuration (only active when result_mode == "archive")
-    params["archive_type"] = Categorical(
-        "archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"]
-    )
+    params["archive_type"] = Categorical("archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"])
     conditions.append(Condition("archive_type", "cfg['result_mode'] == 'archive'"))
-    
+
     # Archive size cap
     params["archive_size"] = Int("archive_size", 50, 300)
     conditions.append(Condition("archive_size", "cfg['result_mode'] == 'archive'"))
-    
+
     # Epsilon for grid-based archives (will be ignored for non-epsilon types)
     params["archive_epsilon"] = Real("archive_epsilon", 0.001, 0.1, log=True)
     conditions.append(Condition("archive_epsilon", "cfg['result_mode'] == 'archive'"))
-    
+
     # Prune policy for bounded archives
-    params["prune_policy"] = Categorical(
-        "prune_policy", ["crowding", "hv_contrib", "random"]
-    )
+    params["prune_policy"] = Categorical("prune_policy", ["crowding", "hv_contrib", "random"])
     conditions.append(Condition("prune_policy", "cfg['result_mode'] == 'archive'"))
-    
+
     # Add conditional hyperparameters from registry
     crossover_ops = {op[0]: op[1] for op in operators_info.get("crossover", [])}
     mutation_ops = {op[0]: op[1] for op in operators_info.get("mutation", [])}
-    
+
     _add_conditional_params(params, conditions, "crossover", crossover_ops)
     _add_conditional_params(params, conditions, "mutation", mutation_ops)
-    
+
     return ParamSpace(params=params, conditions=conditions)
 
 
@@ -136,18 +141,15 @@ def build_param_space_for_encoding(encoding: str) -> ParamSpace:
 # Algorithm Configuration Translation
 # =============================================================================
 
+
 def make_algo_config(assignment: dict[str, Any], encoding: str):
     """Translate hyperparameters into an NSGA-II config based on encoding."""
-    config = (
-        NSGAIIConfig()
-        .pop_size(int(assignment["pop_size"]))
-        .offspring_size(int(assignment["pop_size"]))
-    )
-    
+    config = NSGAIIConfig().pop_size(int(assignment["pop_size"])).offspring_size(int(assignment["pop_size"]))
+
     # Crossover configuration
     crossover_type = assignment.get("crossover", "sbx")
     crossover_prob = float(assignment["crossover_prob"])
-    
+
     if crossover_type == "sbx":
         eta = float(assignment.get("sbx_eta", 20.0))
         config = config.crossover("sbx", prob=crossover_prob, eta=eta)
@@ -165,11 +167,11 @@ def make_algo_config(assignment: dict[str, Any], encoding: str):
         config = config.crossover(crossover_type, prob=crossover_prob)
     else:
         config = config.crossover(crossover_type, prob=crossover_prob)
-    
+
     # Mutation configuration
     mutation_type = assignment.get("mutation", "pm")
     mutation_prob = float(assignment["mutation_prob"])
-    
+
     if mutation_type == "pm":
         eta = float(assignment.get("pm_eta", 20.0))
         config = config.mutation("pm", prob=mutation_prob, eta=eta)
@@ -182,27 +184,27 @@ def make_algo_config(assignment: dict[str, Any], encoding: str):
         config = config.mutation(mutation_type, prob=mutation_prob)
     else:
         config = config.mutation(mutation_type, prob=mutation_prob)
-    
+
     # Result mode: population vs external archive
     result_mode = assignment.get("result_mode", "population")
     if result_mode == "archive":
         archive_type = assignment.get("archive_type", "size_cap")
         archive_size = int(assignment.get("archive_size", 200))
         prune_policy = assignment.get("prune_policy", "crowding")
-        
+
         archive_kwargs = {
             "archive_type": archive_type,
             "prune_policy": prune_policy,
         }
-        
+
         # Add epsilon for grid-based archives
         if archive_type in ("epsilon_grid", "hybrid"):
             archive_kwargs["epsilon"] = float(assignment.get("archive_epsilon", 0.01))
-        
+
         config = config.result_mode("archive").archive(archive_size, **archive_kwargs)
     else:
         config = config.result_mode("population")
-    
+
     return config.selection("tournament", pressure=2).survival("nsga2").engine("numpy").fixed()
 
 
@@ -210,16 +212,17 @@ def make_algo_config(assignment: dict[str, Any], encoding: str):
 # Evaluation Function
 # =============================================================================
 
+
 def make_evaluator(problem_name: str, encoding: str):
     """Create an evaluation function for the tuner."""
     specs = get_problem_specs()
-    
+
     def evaluate_config(config: dict[str, Any], ctx) -> float:
         spec = specs[problem_name]
         problem = spec.factory(spec.default_n_var, spec.default_n_obj)
-        
+
         algo_cfg = make_algo_config(config, encoding)
-        
+
         try:
             result = optimize(
                 OptimizeConfig(
@@ -237,15 +240,16 @@ def make_evaluator(problem_name: str, encoding: str):
             # Minimize sum of objectives (simple aggregation)
             return float(np.mean(np.sum(F, axis=1)))
         except Exception as e:
-            print(f"  [!] Evaluation failed: {e}")
+            _logger().warning("Evaluation failed: %s", e)
             return float("inf")
-    
+
     return evaluate_config
 
 
 # =============================================================================
 # Main Entry Point
 # =============================================================================
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -263,35 +267,36 @@ Examples:
     parser.add_argument("--max-configs", type=int, default=8, help="Max configurations to evaluate")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
-    
+    logger = _logger()
+
     # Load problem and detect encoding
     specs = get_problem_specs()
     if args.problem not in specs:
-        print(f"Error: Problem '{args.problem}' not found in registry.")
-        print(f"Available: {', '.join(sorted(specs.keys())[:20])}...")
+        logger.error("Problem '%s' not found in registry.", args.problem)
+        logger.info("Available: %s...", ", ".join(sorted(specs.keys())[:20]))
         sys.exit(1)
-    
+
     spec = specs[args.problem]
     problem = spec.factory(spec.default_n_var, spec.default_n_obj)
     encoding = getattr(problem, "encoding", spec.encoding if hasattr(spec, "encoding") else "real")
-    
-    print("=" * 60)
-    print(" VAMOS Generic Auto-Solver: Meta-Learning Framework")
-    print("=" * 60)
-    print(f"  Problema: {args.problem}")
-    print(f"  Encoding detectado: {encoding}")
-    print(f"  Variables: {spec.default_n_var}, Objetivos: {spec.default_n_obj}")
-    print("=" * 60)
-    
+
+    logger.info("%s", "=" * 60)
+    logger.info(" VAMOS Generic Auto-Solver: Meta-Learning Framework")
+    logger.info("%s", "=" * 60)
+    logger.info("  Problema: %s", args.problem)
+    logger.info("  Encoding detectado: %s", encoding)
+    logger.info("  Variables: %s, Objetivos: %s", spec.default_n_var, spec.default_n_obj)
+    logger.info("%s", "=" * 60)
+
     # Build dynamic parameter space
     param_space = build_param_space_for_encoding(encoding)
-    print(f"\n[*] Espacio de búsqueda dinámico ({len(param_space.params)} parámetros):")
+    logger.info("[*] Espacio de búsqueda dinámico (%s parámetros):", len(param_space.params))
     for name, p in param_space.params.items():
         if hasattr(p, "choices"):
-            print(f"    - {name}: {p.choices}")
+            logger.info("    - %s: %s", name, p.choices)
         elif hasattr(p, "low"):
-            print(f"    - {name}: [{p.low}, {p.high}]")
-    
+            logger.info("    - %s: [%s, %s]", name, p.low, p.high)
+
     # Setup tuning task
     task = TuningTask(
         name=f"auto_{args.problem}",
@@ -301,7 +306,7 @@ Examples:
         budget_per_run=args.budget,
         maximize=False,
     )
-    
+
     scenario = Scenario(
         max_experiments=args.max_configs * 2,
         min_survivors=2,
@@ -309,32 +314,36 @@ Examples:
         start_instances=1,
         verbose=args.verbose,
     )
-    
-    print(f"\n[*] Iniciando Racing Tuner (máx {args.max_configs} configs)...\n")
-    
+
+    logger.info("[*] Iniciando Racing Tuner (máx %s configs)...", args.max_configs)
+
     tuner = RacingTuner(task=task, scenario=scenario, seed=42, max_initial_configs=args.max_configs)
     evaluator = make_evaluator(args.problem, encoding)
     best_config, history = tuner.run(evaluator, verbose=args.verbose)
-    
+
     # Format output
-    print("\n" + "=" * 60)
-    print(f" Problema detectado: {encoding.upper()}")
-    print("=" * 60)
-    print(" Mejor Arquitectura encontrada:")
-    print("-" * 60)
+    logger.info("%s", "=" * 60)
+    logger.info(" Problema detectado: %s", encoding.upper())
+    logger.info("%s", "=" * 60)
+    logger.info(" Mejor Arquitectura encontrada:")
+    logger.info("%s", "-" * 60)
     for k, v in sorted(best_config.items()):
         if isinstance(v, float):
-            print(f"    {k}: {v:.4f}")
+            logger.info("    %s: %.4f", k, v)
         else:
-            print(f"    {k}: {v}")
-    
+            logger.info("    %s: %s", k, v)
+
     best_score = min(trial.score for trial in history if trial.score < float("inf"))
-    print("-" * 60)
-    print(f" Score: {best_score:.6f} (menor es mejor)")
-    print("=" * 60)
-    
+    logger.info("%s", "-" * 60)
+    logger.info(" Score: %.6f (menor es mejor)", best_score)
+    logger.info("%s", "=" * 60)
+
     # Summary message
-    print(f"\n>>> Problema detectado: {encoding.upper()} -> Mejor Arquitectura encontrada: {best_config}")
+    logger.info(
+        ">>> Problema detectado: %s -> Mejor Arquitectura encontrada: %s",
+        encoding.upper(),
+        best_config,
+    )
 
 
 if __name__ == "__main__":

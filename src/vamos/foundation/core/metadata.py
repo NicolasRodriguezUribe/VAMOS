@@ -60,11 +60,14 @@ def build_run_metadata(
     """
     timestamp = datetime.now(UTC).isoformat()
     problem = selection.instantiate()
+    spec = getattr(selection, "spec", None)
+    label = getattr(spec, "label", None) or getattr(spec, "key", "unknown")
+    key = getattr(spec, "key", "unknown")
     problem_info = {
-        "label": selection.spec.label,
-        "key": selection.spec.key,
-        "n_var": selection.n_var,
-        "n_obj": selection.n_obj,
+        "label": label,
+        "key": key,
+        "n_var": getattr(selection, "n_var", None),
+        "n_obj": getattr(selection, "n_obj", None),
         "encoding": getattr(problem, "encoding", "continuous"),
     }
     try:

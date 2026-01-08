@@ -5,6 +5,8 @@ from typing import Any
 import numpy as np
 
 from vamos.foundation.problem.types import ProblemProtocol
+
+
 def plot_quick_front(
     *,
     F: np.ndarray,
@@ -16,6 +18,7 @@ def plot_quick_front(
 ) -> Any:
     """Plot a 2D or 3D Pareto front for a quick run."""
     from vamos.ux.visualization import plot_pareto_front_2d, plot_pareto_front_3d
+
     n_obj = F.shape[1] if F.ndim == 2 else 1
     default_title = f"{algorithm.upper()} on {type(problem).__name__}"
 

@@ -88,9 +88,9 @@ class SMPSOConfig:
     def archive(self, size: int, **kwargs) -> "SMPSOConfig":
         """
         Configure an external archive for result storage.
-        
+
         Note: This is separate from archive_size which is the internal SMPSO archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:

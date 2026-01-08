@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 import sys
+from shutil import which
 from collections import Counter
 from pathlib import Path
 
@@ -13,12 +14,18 @@ SUMMARY_RE = re.compile(r"Found (\d+) errors in (\d+) files")
 ERROR_LINE_RE = re.compile(r"^(?P<path>[^:]+\.py):\d+:")
 
 
-def _run_mypy() -> tuple[int, str]:
+def _find_mypy_cmd() -> list[str]:
     mypy_exe = Path(sys.executable).with_name("mypy.exe")
-    if not mypy_exe.exists():
-        raise AssertionError('mypy.exe not found. Install dev dependencies: python -m pip install -e ".[dev]"')
-    cmd = [
-        str(mypy_exe),
+    if mypy_exe.exists():
+        return [str(mypy_exe)]
+    path_mypy = which("mypy")
+    if path_mypy:
+        return [path_mypy]
+    return [sys.executable, "-m", "mypy"]
+
+
+def _run_mypy() -> tuple[int, str]:
+    cmd = _find_mypy_cmd() + [
         "--config-file",
         "pyproject.toml",
         "src/vamos",

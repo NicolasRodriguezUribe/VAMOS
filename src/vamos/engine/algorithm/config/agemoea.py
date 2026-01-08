@@ -45,14 +45,7 @@ class AGEMOEAConfig:
     ) -> "AGEMOEAConfigData":
         """Create a default AGE-MOEA configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
-        return (
-            cls()
-            .pop_size(pop_size)
-            .crossover("sbx", prob=0.9, eta=20.0)
-            .mutation("pm", prob=mut_prob, eta=20.0)
-            .engine(engine)
-            .fixed()
-        )
+        return cls().pop_size(pop_size).crossover("sbx", prob=0.9, eta=20.0).mutation("pm", prob=mut_prob, eta=20.0).engine(engine).fixed()
 
     def pop_size(self, value: int) -> "AGEMOEAConfig":
         self._cfg["pop_size"] = value
@@ -97,7 +90,7 @@ class AGEMOEAConfig:
     def archive(self, size: int, **kwargs) -> "AGEMOEAConfig":
         """
         Configure an external archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:

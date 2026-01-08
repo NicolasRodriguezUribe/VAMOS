@@ -102,6 +102,7 @@ def main(argv: list[str] | None = None) -> None:
     _ = report.compute_statistics()  # Populates internal cache
     tables = report.generate_latex_tables()
     plots = report.generate_plots()
+    lab_outputs = report.generate_lab_outputs()
 
     _logger().info("[Benchmark] Suite '%s' completed.", suite.name)
     _logger().info("[Benchmark] Summary CSV: %s", result.summary_path)
@@ -110,6 +111,8 @@ def main(argv: list[str] | None = None) -> None:
         _logger().info("[Benchmark] LaTeX tables in %s", report_output / "tables")
     if plots:
         _logger().info("[Benchmark] Plots in %s", report_output / "plots")
+    if lab_outputs:
+        _logger().info("[Benchmark] Lab outputs in %s", report_output / "lab")
 
 
 if __name__ == "__main__":

@@ -39,6 +39,7 @@ class NSGAIIIState(AlgorithmState):
     pressure: int = 2
     crossover_fn: Callable[[np.ndarray], np.ndarray] | None = None
     mutation_fn: Callable[[np.ndarray], np.ndarray] | None = None
+    result_mode: str = "population"
 
 
 def build_nsgaiii_result(
@@ -64,8 +65,11 @@ def build_nsgaiii_result(
         Result dictionary with X, F, G, reference_directions, population, archive data,
         and metadata. X and F contain only non-dominated solutions when kernel is provided.
     """
-    # Filter to non-dominated solutions only
-    if kernel is not None:
+    mode = getattr(state, "result_mode", "population")
+    should_filter = kernel is not None and mode is not None and mode != "population"
+
+    # Filter to non-dominated solutions only (if requested)
+    if should_filter:
         try:
             ranks, _ = kernel.nsga2_ranking(state.F)
             nd_mask = ranks == ranks.min(initial=0)

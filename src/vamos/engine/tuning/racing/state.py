@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 class ConfigState:
     """
     Internal structure to keep track of a single configuration during racing.
-    
+
     For multi-fidelity warm-starting:
     - `checkpoint`: Stores algorithm state from last evaluation for warm-starting
     - `last_budget`: Budget used in the last evaluation (for cumulative budgets)

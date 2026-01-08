@@ -4,8 +4,6 @@ Version helpers for VAMOS.
 
 from __future__ import annotations
 
-from importlib import metadata as importlib_metadata
-from typing import TYPE_CHECKING
 
 # Managed by python-semantic-release
 __version__ = "0.1.0"

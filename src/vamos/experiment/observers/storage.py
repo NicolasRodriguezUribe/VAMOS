@@ -51,9 +51,6 @@ class StorageObserver(Observer):
         self.external_archive_size = external_archive_size
         self.variations = variations or {}
 
-    def on_start(self, ctx: RunContext) -> None:
-        ensure_dir(self.output_dir)
-
     def on_generation(
         self,
         generation: int,
@@ -73,21 +70,21 @@ class StorageObserver(Observer):
 
         # Extract payload from statistics (assuming orchestrator puts things there)
         # In the new design, 'final_stats' should ideally contain what 'metrics' + 'payload' used to have.
-        
+
         # NOTE: logic requires `payload` dict which contains 'archive', 'genealogy', etc.
         # We assume the caller (orchestrator) merges payload into final_stats or we access it differently.
         # For now, let's assume `final_stats` IS the rich metrics dictionary.
-        
+
         payload = final_stats.get("payload", {})
         # If payload is missing, we might only have metrics.
         # For full persistence, we need X, G, Archive, etc.
-        
+
         # Reconstruct F/X if passed directly
         F_to_save = final_F if final_F is not None else payload.get("F")
         X_to_save = payload.get("X")
         G_to_save = payload.get("G")
         archive = payload.get("archive")
-        
+
         artifacts = write_population(
             self.output_dir,
             F_to_save,
@@ -106,7 +103,7 @@ class StorageObserver(Observer):
             autodiff_path = self.output_dir / "autodiff_constraints.json"
             autodiff_path.write_text(json.dumps(autodiff_info, indent=2), encoding="utf-8")
             artifacts["autodiff_constraints"] = autodiff_path.name
-            
+
         aos_payload = payload.get("aos") or {}
         trace_rows = aos_payload.get("trace_rows")
         summary_rows = aos_payload.get("summary")
@@ -130,36 +127,42 @@ class StorageObserver(Observer):
             return
 
         ctx = self._ctx
-        
+
         # Build metadata
         metadata = build_run_metadata(
             ctx.selection,
             ctx.algorithm_name,
             ctx.engine_name,
-            final_stats.get("config"), # cfg_data
-            final_stats, # metrics
+            final_stats.get("config"),  # cfg_data
+            final_stats,  # metrics
             kernel_backend=final_stats.get("_kernel_backend"),
             seed=getattr(ctx.config, "seed", None),
             config=ctx.config,
             project_root=self.project_root,
         )
-        
+
         metadata["config_source"] = self.config_source
         if self.problem_override:
             metadata["problem_override"] = self.problem_override
         if self.hv_stop_config:
             metadata["hv_stop_config"] = self.hv_stop_config
-            
+
         # Hook payload integration?
         # If HookManager was used, it should have injected its data into payload or metrics.
         # In the new design, HookManager is an Observer too!
         # It should expose its data differently.
         # For now, if payload has hook data, use it.
-        
+
         if payload.get("genealogy"):
-             metadata["genealogy"] = payload["genealogy"]
+            metadata["genealogy"] = payload["genealogy"]
         if autodiff_info is not None:
-             metadata["autodiff_constraints"] = autodiff_info
+            metadata["autodiff_constraints"] = autodiff_info
+        hook_metadata = final_stats.get("hook_metadata")
+        if isinstance(hook_metadata, dict):
+            if "stopping" in hook_metadata:
+                metadata["stopping"] = hook_metadata["stopping"]
+            if "archive" in hook_metadata:
+                metadata["archive"] = hook_metadata["archive"]
 
         # Artifact entries
         artifact_entries = {
@@ -182,11 +185,11 @@ class StorageObserver(Observer):
         if archive_stats.exists():
             artifact_entries["archive_stats"] = archive_stats.name
         metadata["artifacts"] = {k: v for k, v in artifact_entries.items() if v is not None}
-        
+
         # Resolved Config
         problem_key = getattr(getattr(ctx.selection, "spec", None), "key", "unknown")
         encoding = getattr(ctx.problem, "encoding", "continuous")
-        
+
         resolved_cfg = {
             "algorithm": ctx.algorithm_name,
             "engine": ctx.engine_name,
@@ -208,17 +211,22 @@ class StorageObserver(Observer):
             "config_source": self.config_source,
             "problem_override": self.problem_override,
         }
-        
+
         # AOS config if present
         aos_config = getattr(ctx, "aos_config", None)
+        if aos_config is None:
+            nsgaii_variation = self.variations.get("nsgaii_variation")
+            if isinstance(nsgaii_variation, dict):
+                aos_config = nsgaii_variation.get("adaptive_operator_selection")
         if aos_config is not None:
-             resolved_cfg["adaptive_operator_selection"] = aos_config
-             
+            resolved_cfg["adaptive_operator_selection"] = aos_config
+
         write_metadata(self.output_dir, metadata, resolved_cfg)
 
         # Generate lockfile (Phase 4.3)
         try:
             from vamos.foundation.lockfile import write_lockfile
+
             write_lockfile(self.output_dir / "vamos.lock")
         except Exception as exc:
             _logger().warning("Failed to emit lockfile: %s", exc)

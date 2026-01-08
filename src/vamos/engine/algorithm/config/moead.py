@@ -199,7 +199,7 @@ class MOEADConfig:
     def archive(self, size: int, **kwargs) -> "MOEADConfig":
         """
         Configure an external archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:

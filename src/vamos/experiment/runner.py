@@ -254,6 +254,7 @@ def run_study(
         tasks = adjusted
     return runner.run(list(tasks), run_single_fn=run_single)
 
+
 __all__ = [
     "run_single",
     "execute_problem_suite",

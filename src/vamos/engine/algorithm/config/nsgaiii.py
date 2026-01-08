@@ -124,7 +124,7 @@ class NSGAIIIConfig:
     def archive(self, size: int, **kwargs) -> "NSGAIIIConfig":
         """
         Configure an external archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:
@@ -163,7 +163,7 @@ class NSGAIIIConfig:
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
-            result_mode=self._cfg.get("result_mode", "non_dominated"),
+            result_mode=self._cfg.get("result_mode", "population"),
             archive=self._cfg.get("archive"),
             archive_type=self._cfg.get("archive_type"),
         )

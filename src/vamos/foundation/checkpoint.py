@@ -1,6 +1,7 @@
 """
 Checkpointing utilities for saving and resuming optimization runs.
 """
+
 from __future__ import annotations
 
 import pickle
@@ -28,7 +29,7 @@ def save_checkpoint(
 ) -> Path:
     """
     Save algorithm state to a checkpoint file.
-    
+
     Args:
         path: File path for checkpoint (will add .ckpt extension if missing).
         X: Population decision variables.
@@ -40,16 +41,16 @@ def save_checkpoint(
         archive_X: Archive decision variables (optional).
         archive_F: Archive objective values (optional).
         extra: Additional algorithm-specific state (optional).
-        
+
     Returns:
         Path to saved checkpoint file.
     """
     path = Path(path)
     if not path.suffix:
         path = path.with_suffix(".ckpt")
-    
+
     path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     checkpoint = {
         "version": 1,
         "X": X,
@@ -62,20 +63,20 @@ def save_checkpoint(
         "archive_F": archive_F,
         "extra": extra or {},
     }
-    
+
     with open(path, "wb") as f:
         pickle.dump(checkpoint, f, protocol=pickle.HIGHEST_PROTOCOL)
-    
+
     return path
 
 
 def load_checkpoint(path: str | Path) -> dict[str, Any]:
     """
     Load algorithm state from a checkpoint file.
-    
+
     Args:
         path: Path to checkpoint file.
-        
+
     Returns:
         Dictionary containing checkpoint data with keys:
         - X, F, G: Population arrays
@@ -83,7 +84,7 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
         - rng_state: RNG state dict
         - archive_X, archive_F: Archive arrays (may be None)
         - extra: Additional state dict
-        
+
     Raises:
         FileNotFoundError: If checkpoint file doesn't exist.
         ValueError: If checkpoint version is unsupported.
@@ -91,21 +92,21 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
-    
+
     with open(path, "rb") as f:
         checkpoint = pickle.load(f)
-    
+
     version = checkpoint.get("version", 0)
     if version != 1:
         raise ValueError(f"Unsupported checkpoint version: {version}")
-    
+
     return checkpoint
 
 
 def restore_rng(rng: "Generator", state: dict[str, Any]) -> None:
     """
     Restore RNG state from checkpoint.
-    
+
     Args:
         rng: NumPy random generator to restore.
         state: State dict from checkpoint['rng_state'].
