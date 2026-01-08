@@ -4,7 +4,7 @@ Generic registry pattern for managing named components (algorithms, operators, e
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar, Iterable, Callable, Any
+from typing import Any, Callable, Generic, Iterable, TypeVar
 
 T = TypeVar("T")
 

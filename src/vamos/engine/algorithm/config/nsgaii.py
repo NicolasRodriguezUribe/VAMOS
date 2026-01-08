@@ -229,7 +229,7 @@ class NSGAIIConfig:
     def archive(self, size: int, **kwargs) -> "NSGAIIConfig":
         """
         Configure an external archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:

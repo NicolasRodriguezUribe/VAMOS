@@ -27,8 +27,8 @@ def build_my_algorithm(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
 
 Then use it:
 ```python
-import vamos
-result = vamos.study("zdt1").using("my_algorithm").run()
+from vamos.experiment.builder import study
+result = study("zdt1").using("my_algorithm").run()
 ```
 
 ## Custom Operator
@@ -73,5 +73,6 @@ class MyProblem(ProblemProtocol):
 
 Use it directly:
 ```python
-result = vamos.study(MyProblem()).run()
+from vamos.experiment.builder import study
+result = study(MyProblem()).run()
 ```

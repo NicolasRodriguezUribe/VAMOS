@@ -24,12 +24,12 @@ class Instance:
 class EvalContext:
     """
     Information passed to the evaluation function.
-    
+
     For multi-fidelity warm-starting:
     - `fidelity_level`: Current fidelity level (0-indexed)
     - `previous_budget`: Budget used in previous fidelity level (None if first level)
     - `checkpoint`: Algorithm state from previous fidelity level (None if first level)
-    
+
     The eval_fn can use `checkpoint` to warm-start the algorithm instead of
     starting from scratch.
     """

@@ -77,7 +77,7 @@ class NSGAII:
         checkpoint_interval: int = 50,
     ) -> dict[str, Any]:
         """Run the NSGA-II algorithm.
-        
+
         Args:
             problem: Problem to optimize.
             termination: Termination criterion.
@@ -88,21 +88,20 @@ class NSGAII:
             checkpoint_interval: Save checkpoint every N generations.
         """
         import signal
-        from pathlib import Path
-        
+
         live_cb, eval_backend, max_eval, n_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
         st = self._st
         assert st is not None, "State not initialized"
-        
+
         # Signal handling for graceful termination
         interrupted = False
         original_handler = signal.getsignal(signal.SIGINT)
-        
+
         def _handle_interrupt(signum, frame):
             nonlocal interrupted
             interrupted = True
             _logger().info("Interrupt received, finishing current generation...")
-        
+
         signal.signal(signal.SIGINT, _handle_interrupt)
 
         generation = 0
@@ -122,7 +121,7 @@ class NSGAII:
                 stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
                 if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
                     hv_reached = True
-                
+
                 # Checkpointing
                 if checkpoint_dir and generation % checkpoint_interval == 0:
                     self._save_checkpoint(checkpoint_dir, seed, generation, n_eval)
@@ -135,16 +134,16 @@ class NSGAII:
         live_cb.on_end(final_F=st.F)
         finalize_genealogy(result, st, self.kernel)
         return result
-    
+
     def _save_checkpoint(self, checkpoint_dir: str, seed: int, generation: int, n_eval: int) -> None:
         """Save current state to checkpoint file."""
         from pathlib import Path
         from vamos.foundation.checkpoint import save_checkpoint
-        
+
         st = self._st
         if st is None:
             return
-        
+
         path = Path(checkpoint_dir) / f"nsgaii_seed{seed}_gen{generation}.ckpt"
         save_checkpoint(
             path,

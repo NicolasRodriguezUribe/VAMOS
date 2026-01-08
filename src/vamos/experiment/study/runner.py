@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Callable, Iterable, List, Sequence, Any, Dict, Protocol
+import inspect
+from typing import Callable, Iterable, List, Sequence, Any
 
 import numpy as np
 
 from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
-from vamos.foundation.problem.registry import ProblemSelection, make_problem_selection
+from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
 from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
 
@@ -33,24 +32,28 @@ class StudyRunner:
         verbose: bool = True,
         indicators: Sequence[str] | None = ("hv",),
         persister: StudyPersister | None = None,
+        evaluator: Any | None = None,
+        termination: Any | None = None,
     ):
         self.verbose = verbose
         self.indicators = tuple(indicators or ())
         self.persister = persister
+        self.evaluator = evaluator
+        self.termination = termination
 
     def run(
         self,
         tasks: Sequence[StudyTask],
         *,
-        export_csv_path: str | Path | None = None, # Deprecated but kept for compat with wiring
         run_single_fn: Callable[..., dict] | None = None,
     ) -> List[StudyResult]:
         if not tasks:
             return []
         if run_single_fn is None:
             raise ValueError("run_single_fn is required to execute StudyRunner tasks.")
-        
+
         results: List[StudyResult] = []
+        run_sig = inspect.signature(run_single_fn)
         for idx, task in enumerate(tasks, start=1):
             if self.verbose:
                 _logger().info(
@@ -67,6 +70,11 @@ class StudyRunner:
             if task.config_overrides:
                 cfg_kwargs.update(task.config_overrides)
             task_config = ExperimentConfig(**cfg_kwargs)
+            extra_kwargs: dict[str, Any] = {}
+            if self.evaluator is not None and "evaluator" in run_sig.parameters:
+                extra_kwargs["evaluator"] = self.evaluator
+            if self.termination is not None and "termination" in run_sig.parameters:
+                extra_kwargs["termination"] = self.termination
             metrics = run_single_fn(
                 task.engine,
                 task.algorithm,
@@ -76,23 +84,19 @@ class StudyRunner:
                 archive_type=task.archive_type,
                 selection_pressure=task.selection_pressure,
                 nsgaii_variation=task.nsgaii_variation,
+                **extra_kwargs,
             )
-            
+
             result = StudyResult(task=task, selection=selection, metrics=metrics)
             results.append(result)
-            
+
             # Delegate artifact mirroring to persister if available
             if self.persister:
                 self.persister.mirror_artifacts(result)
-            
 
         self._attach_hypervolume(results)
         self._attach_indicators(results)
-        
-        # Delegate CSV saving
-        if self.persister and export_csv_path:
-             self.persister.save_results(results, export_csv_path)
-             
+
         return results
 
     def _attach_hypervolume(self, results: Iterable[StudyResult]) -> None:
@@ -135,7 +139,7 @@ class StudyRunner:
             return
         fronts = [res.metrics["F"] for res in results]
         if not fronts:
-             return
+            return
         ref_front = self._nondominated_union(fronts)
         hv_ref_point = compute_hv_reference(fronts)
         for res in results:
@@ -156,57 +160,3 @@ class StudyRunner:
                         _logger().warning("[Study] indicator '%s' failed: %s", name, exc)
                     vals[name] = None
             res.metrics["indicator_values"] = vals
-            
-    # expand_tasks is static and purely data transformation, can stay or move.
-    # Moving it to types or keeping it here as helper is fine. Keeping for backward compat.
-    @staticmethod
-    def expand_tasks(
-        problems: Sequence[StudyTask | dict],
-        algorithms: Sequence[str],
-        engines: Sequence[str],
-        seeds: Sequence[int],
-    ) -> List[StudyTask]:
-        """
-        Convenience helper: expand grid definitions into StudyTask objects.
-        Each entry in `problems` can be either a StudyTask (with engine/algorithm ignored)
-        or a dict containing keys {problem, n_var, n_obj}.
-        """
-        entries: List[StudyTask] = []
-        for problem_entry in problems:
-            # Import locally to avoid circular dep if types wasn't imported (though it is)
-            # Actually StudyTask is imported at top.
-            if isinstance(problem_entry, StudyTask):
-                base = problem_entry
-                problem = base.problem
-                n_var = base.n_var
-                n_obj = base.n_obj
-                sel_pressure = base.selection_pressure
-                external_archive_size = base.external_archive_size
-                archive_type = base.archive_type
-                nsgaii_variation = base.nsgaii_variation
-            else:
-                problem = problem_entry["problem"]
-                n_var = problem_entry.get("n_var")
-                n_obj = problem_entry.get("n_obj")
-                sel_pressure = problem_entry.get("selection_pressure", 2)
-                external_archive_size = problem_entry.get("external_archive_size")
-                archive_type = problem_entry.get("archive_type", "hypervolume")
-                nsgaii_variation = problem_entry.get("nsgaii_variation")
-            for algorithm in algorithms:
-                for engine in engines:
-                    for seed in seeds:
-                        entries.append(
-                            StudyTask(
-                                algorithm=algorithm,
-                                engine=engine,
-                                problem=problem,
-                                n_var=n_var,
-                                n_obj=n_obj,
-                                seed=seed,
-                                selection_pressure=sel_pressure,
-                                external_archive_size=external_archive_size,
-                                archive_type=archive_type,
-                                nsgaii_variation=nsgaii_variation,
-                            )
-                        )
-        return entries

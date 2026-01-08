@@ -114,9 +114,9 @@ class SPEA2Config:
     def archive(self, size: int, **kwargs) -> "SPEA2Config":
         """
         Configure an external archive for result storage.
-        
+
         Note: This is separate from archive_size which is the internal SPEA2 archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:

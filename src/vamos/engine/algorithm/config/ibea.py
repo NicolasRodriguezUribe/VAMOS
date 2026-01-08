@@ -88,7 +88,7 @@ class IBEAConfig:
     def archive(self, size: int, **kwargs) -> "IBEAConfig":
         """
         Configure an external archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:

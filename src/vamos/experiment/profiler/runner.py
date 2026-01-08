@@ -1,12 +1,13 @@
 """
 Performance profiling runner for comparing backends.
 """
+
 from __future__ import annotations
 
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Sequence
+from typing import Sequence
 
 from vamos.experiment.unified import optimize
 from vamos.foundation.problem.registry import make_problem_selection
@@ -19,6 +20,7 @@ def _logger() -> logging.Logger:
 @dataclass
 class ProfileResult:
     """Result from a single profiling run."""
+
     engine: str
     time_seconds: float
     n_solutions: int
@@ -29,10 +31,11 @@ class ProfileResult:
 @dataclass
 class ProfileReport:
     """Aggregated profiling report."""
+
     problem: str
     budget: int
     results: list[ProfileResult] = field(default_factory=list)
-    
+
     def print_summary(self) -> None:
         """Print formatted summary table."""
         _logger().info("%s", "=" * 50)
@@ -40,11 +43,11 @@ class ProfileReport:
         _logger().info("%s", "=" * 50)
         _logger().info("Problem: %s", self.problem)
         _logger().info("Budget: %s evaluations", self.budget)
-        
+
         # Header
         _logger().info("%-12s %-10s %-10s %-10s", "Engine", "Time (s)", "Solutions", "HV")
         _logger().info("%s", "-" * 42)
-        
+
         # Results
         baseline_time = None
         for r in self.results:
@@ -58,7 +61,7 @@ class ProfileReport:
                 r.n_solutions,
                 hv_str,
             )
-        
+
         # Speedups
         if baseline_time and len(self.results) > 1:
             _logger().info("Speedup vs %s:", self.results[0].engine)
@@ -66,13 +69,14 @@ class ProfileReport:
                 if r.time_seconds > 0:
                     speedup = baseline_time / r.time_seconds
                     _logger().info("  %s: %.1fx", r.engine, speedup)
-    
+
     def to_csv(self, path: str) -> None:
         """Export results to CSV."""
         import csv
-        with open(path, 'w', newline='') as f:
+
+        with open(path, "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(['engine', 'time_seconds', 'n_solutions', 'hypervolume'])
+            writer.writerow(["engine", "time_seconds", "n_solutions", "hypervolume"])
             for r in self.results:
                 writer.writerow([r.engine, r.time_seconds, r.n_solutions, r.hypervolume])
 
@@ -86,19 +90,19 @@ def run_profile(
 ) -> ProfileReport:
     """
     Profile optimization across multiple backends.
-    
+
     Args:
         problem: Problem name (e.g., "zdt1")
         engines: List of engines to compare
         budget: Evaluation budget per run
         seed: Random seed for reproducibility
         compute_hv: Whether to compute hypervolume
-        
+
     Returns:
         ProfileReport with timing and quality metrics
     """
     report = ProfileReport(problem=problem, budget=budget)
-    
+
     # Get reference point for HV
     ref_point = None
     if compute_hv:
@@ -109,48 +113,33 @@ def run_profile(
             ref_point = [1.1] * n_obj  # Standard reference point
         except Exception:
             compute_hv = False
-    
+
     for engine in engines:
         _logger().info("Profiling %s...", engine)
-        
+
         try:
             start = time.perf_counter()
-            result = optimize(
-                problem,
-                engine=engine,
-                budget=budget,
-                seed=seed,
-                verbose=False
-            )
+            result = optimize(problem, engine=engine, budget=budget, seed=seed, verbose=False)
             elapsed = time.perf_counter() - start
-            
+
             n_solutions = len(result) if result else 0
-            
+
             # Compute hypervolume if requested
             hv = None
             if compute_hv and result.F is not None and len(result.F) > 0:
                 try:
                     from vamos.foundation.metrics.hypervolume import compute_hypervolume
+
                     hv = compute_hypervolume(result.F, ref_point)
                 except Exception:
                     pass
-            
-            report.results.append(ProfileResult(
-                engine=engine,
-                time_seconds=elapsed,
-                n_solutions=n_solutions,
-                hypervolume=hv
-            ))
-            
+
+            report.results.append(ProfileResult(engine=engine, time_seconds=elapsed, n_solutions=n_solutions, hypervolume=hv))
+
         except Exception as exc:
             _logger().warning("  ERROR: %s", exc)
-            report.results.append(ProfileResult(
-                engine=engine,
-                time_seconds=0,
-                n_solutions=0,
-                hypervolume=None
-            ))
-    
+            report.results.append(ProfileResult(engine=engine, time_seconds=0, n_solutions=0, hypervolume=None))
+
     return report
 
 

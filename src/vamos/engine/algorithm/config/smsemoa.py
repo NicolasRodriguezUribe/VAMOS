@@ -132,7 +132,7 @@ class SMSEMOAConfig:
     def archive(self, size: int, **kwargs) -> "SMSEMOAConfig":
         """
         Configure an external archive.
-        
+
         Args:
             size: Archive size (required). <= 0 disables the archive.
             **kwargs: Optional configuration:

@@ -133,9 +133,7 @@ class DTLZ7Problem(DTLZBase):
 
     def _evaluate(self, X: np.ndarray, out: dict):
         # g function uses the last k variables
-        g = 1.0 + (9.0 / (self.n_var - self.n_obj + 1)) * np.sum(
-            X[:, self.n_obj - 1 :], axis=1
-        )
+        g = 1.0 + (9.0 / (self.n_var - self.n_obj + 1)) * np.sum(X[:, self.n_obj - 1 :], axis=1)
 
         # First M-1 objectives are just x_i
         F = np.zeros((X.shape[0], self.n_obj))
@@ -144,8 +142,7 @@ class DTLZ7Problem(DTLZBase):
 
         # Last objective: h function
         h = self.n_obj - np.sum(
-            (F[:, : self.n_obj - 1] / (1.0 + g[:, None]))
-            * (1.0 + np.sin(3.0 * np.pi * F[:, : self.n_obj - 1])),
+            (F[:, : self.n_obj - 1] / (1.0 + g[:, None])) * (1.0 + np.sin(3.0 * np.pi * F[:, : self.n_obj - 1])),
             axis=1,
         )
         F[:, self.n_obj - 1] = (1.0 + g) * h

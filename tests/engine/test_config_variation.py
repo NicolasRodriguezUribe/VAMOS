@@ -4,7 +4,7 @@ from vamos.engine.config.variation import (
     merge_variation_overrides,
     normalize_operator_tuple,
     normalize_variation_config,
-    resolve_nsgaii_variation_config,
+    resolve_default_variation_config,
 )
 
 
@@ -38,15 +38,15 @@ def test_merge_variation_overrides_prefers_non_null_override():
     assert merged["repair"] == ("clip", {})
 
 
-def test_resolve_nsgaii_variation_config_defaults_by_encoding():
-    real_cfg = resolve_nsgaii_variation_config("real", None)
+def test_resolve_default_variation_config_defaults_by_encoding():
+    real_cfg = resolve_default_variation_config("real", None)
     assert real_cfg["crossover"][0] == "sbx"
     assert real_cfg["mutation"][0] == "pm"
 
-    binary_cfg = resolve_nsgaii_variation_config("binary", None)
+    binary_cfg = resolve_default_variation_config("binary", None)
     assert binary_cfg["crossover"][0] == "hux"
     assert binary_cfg["mutation"][0] == "bitflip"
 
-    perm_cfg = resolve_nsgaii_variation_config("permutation", {"repair": ("clip", {})})
+    perm_cfg = resolve_default_variation_config("permutation", {"repair": ("clip", {})})
     assert perm_cfg["crossover"][0] == "ox"
     assert perm_cfg["repair"] == ("clip", {})

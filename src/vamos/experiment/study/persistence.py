@@ -18,6 +18,7 @@ class StudyPersister(Protocol):
     """
     Protocol for Components that handle the persistence of StudyResults.
     """
+
     def save_results(self, results: Iterable[StudyResult], path: str | Path | None = None) -> Path | None:
         """
         Save the aggregated results (e.g. to a CSV file).
@@ -43,39 +44,39 @@ class CSVPersister:
     def save_results(self, results: Iterable[StudyResult], path: str | Path | None = None) -> Path | None:
         if path is None:
             return None
-            
+
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Convert iterable to list to iterate multiple times if needed, 
+
+        # Convert iterable to list to iterate multiple times if needed,
         # though strictly we only iterate once to build rows
         rows = [res.to_row() for res in results]
         if not rows:
             return path
-            
+
         fieldnames: list[str] = []
         for row in rows:
             for key in row.keys():
                 if key not in fieldnames:
                     fieldnames.append(key)
-                    
+
         with path.open("w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(rows)
-            
+
         _logger().info("[Persister] CSV exported to %s", path)
         return path
 
     def mirror_artifacts(self, result: StudyResult) -> None:
         if not self._mirror_roots:
             return
-            
+
         metrics = result.metrics
         output_dir = metrics.get("output_dir")
         if not output_dir:
             return
-            
+
         src_dir = Path(output_dir).resolve()
         base_root = Path(ExperimentConfig().output_root).resolve()
         relative = None

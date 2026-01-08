@@ -32,27 +32,40 @@ pip install -e ".[backends,benchmarks,notebooks]"
 Solve the ZDT1 benchmark problem with NSGA-II in just a few lines:
 
 ```python
-from vamos import optimize, OptimizeConfig, NSGAIIConfig
+from vamos import optimize
 
-# Configure the experiment
-config = OptimizeConfig(
-    problem="zdt1",
-    algorithm=NSGAIIConfig()
-        .pop_size(100)
-        .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("pm", prob="1/n", eta=20.0)
-        .engine("numpy")
-        .fixed(),
-    max_evaluations=10000,
-    seed=42
+result = optimize(
+    "zdt1",
+    algorithm="nsgaii",
+    budget=10000,
+    pop_size=100,
+    engine="numpy",
+    seed=42,
 )
 
-# Run!
-result = optimize(config)
+front = result.front()
+print(f"Non-dominated solutions: {len(front) if front is not None else 0}")
+# result.plot()  # Quick Pareto front plot
+```
 
-# Analyze results
-print(f"Solutions found: {len(result.F)}")
-# result.explore() # Open interactive dashboard
+Need full control? Build an explicit `OptimizeConfig`:
+
+```python
+from vamos import OptimizeConfig, make_problem_selection, optimize
+from vamos.engine.api import NSGAIIConfig
+
+problem = make_problem_selection("zdt1").instantiate()
+algo = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var, engine="numpy")
+
+config = OptimizeConfig(
+    problem=problem,
+    algorithm="nsgaii",
+    algorithm_config=algo,
+    termination=("n_eval", 10000),
+    seed=42,
+)
+
+result = optimize(config)
 ```
 
 ## 📚 Examples & Notebooks
@@ -73,7 +86,7 @@ VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
   ```bash
   vamos-profile nsgaii zdt1 --budget 5000
   ```
-- **`vamos-benchmark`**: Generate full reports comparing multiple algorithms.
+- **`vamos-benchmark`**: Generate full reports comparing multiple algorithms, plus jMetalPy-compatible lab outputs (`summary/lab/QualityIndicatorSummary.csv`, Wilcoxon tables, boxplots). Boxplots require `matplotlib`.
   ```bash
   vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/
   ```

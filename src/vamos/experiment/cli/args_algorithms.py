@@ -67,15 +67,13 @@ def add_algorithm_arguments(
             "insert",
             "scramble",
             "inversion",
-            "simple_inversion",
-            "simpleinv",
             "displacement",
         ),
         default=(nsgaii_defaults.get("mutation", {}) or {}).get("method"),
         help=(
             "Mutation operator for NSGA-II. Continuous problems support pm/non_uniform "
             "(default: pm); permutation problems support swap/insert/scramble/inversion/"
-            "simple_inversion/displacement (default: swap)."
+            "displacement (default: swap)."
         ),
     )
     parser.add_argument(

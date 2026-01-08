@@ -1,59 +1,59 @@
 Wrote: experiments\catalog\integration_targets.json
-Files with hits: 24
+Files with hits: 27
 
 Top loop-candidate files:
-  src\vamos\engine\operators\real\crossover.py  (n=6, best_score=11, best=SBXCrossover.__call__)
+  src\vamos\operators\real\crossover.py  (n=6, best_score=11, best=SBXCrossover.__call__)
+  src\vamos\engine\algorithm\components\variation\pipeline.py  (n=4, best_score=15, best=VariationPipeline._produce_offspring_nonreal)
   src\vamos\foundation\kernel\numba_backend.py  (n=3, best_score=16, best=_fast_non_dominated_sort_ranks)
-  src\vamos\experiment\study\runner.py  (n=2, best_score=8, best=StudyRunner.expand_tasks)
-  src\vamos\engine\algorithm\components\variation\pipeline.py  (n=2, best_score=24, best=VariationPipeline.produce_offspring)
   src\vamos\engine\algorithm\moead\moead.py  (n=2, best_score=10, best=MOEAD.run)
   src\vamos\engine\algorithm\nsgaii\helpers.py  (n=2, best_score=12, best=generation_contributions)
-  src\vamos\engine\algorithm\nsgaii\nsgaii.py  (n=2, best_score=10, best=NSGAII.run)
+  src\vamos\engine\algorithm\nsgaii\nsgaii.py  (n=2, best_score=12, best=NSGAII.run)
   src\vamos\engine\algorithm\spea2\spea2.py  (n=2, best_score=10, best=SPEA2.run)
   src\vamos\engine\tuning\racing\sampler.py  (n=2, best_score=10, best=ModelBasedSampler.update)
+  src\vamos\experiment\study\runner.py  (n=2, best_score=8, best=StudyRunner.expand_tasks)
   src\vamos\ux\analytics\genealogy.py  (n=2, best_score=12, best=compute_generation_contributions)
   src\vamos\ux\studio\app.py  (n=1, best_score=12, best=main)
   src\vamos\engine\algorithm\nsgaiii\helpers.py  (n=1, best_score=10, best=fast_non_dominated_sort)
 
 Top artifact-writer hint files:
-  src\vamos\experiment\study\runner.py  (write_hits=1)
   src\vamos\ux\studio\app.py  (write_hits=1)
   src\vamos\experiment\results.py  (write_hits=10)
   src\vamos\ux\studio\data.py  (write_hits=6)
   src\vamos\foundation\core\io_utils.py  (write_hits=5)
-  src\vamos\experiment\quick.py  (write_hits=2)
-  src\vamos\foundation\core\optimize.py  (write_hits=2)
-  src\vamos\foundation\core\runner_output.py  (write_hits=1)
+  src\vamos\experiment\optimize.py  (write_hits=2)
+  src\vamos\experiment\quick\io.py  (write_hits=2)
+  src\vamos\experiment\study\persistence.py  (write_hits=2)
+  src\vamos\experiment\observers\storage.py  (write_hits=1)
 
 === BEST LOOP SNIPPET ===
-src\vamos\engine\operators\real\crossover.py
+src\vamos\operators\real\crossover.py
 SBXCrossover.__call__ score= 11
-   61: 
-   62:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
-   63:         if self.workspace is None:
-   64:             return np.empty(shape, dtype=dtype)
-   65:         return self.workspace.request(key, shape, dtype)
-   66: 
-   67:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
-   68:         parents_arr = self._as_matings(parents, copy=False, name="parents")
-   69:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()
-   70:         n_pairs, _, _ = offspring.shape
-   71:         if n_pairs == 0:
-   72:             return offspring
-   73:         self._check_bounds_match(offspring[:, 0, :], self.lower)
+   63: 
+   64:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
+   65:         if self.workspace is None:
+   66:             return np.empty(shape, dtype=dtype)
+   67:         return self.workspace.request(key, shape, dtype)
+   68: 
+   69:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+   70:         parents_arr = self._as_matings(parents, copy=False, name="parents")
+   71:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()
+   72:         n_pairs, _, _ = offspring.shape
+   73:         if n_pairs == 0:
+   74:             return offspring
+   75:         self._check_bounds_match(offspring[:, 0, :], self.lower)
 
 === BEST WRITER SNIPPET ===
-src\vamos\experiment\study\runner.py
-  226:                 dst = target_root / relative
-  227:             else:
-  228:                 dst = target_root / src_dir.name
-  229:             if dst.resolve() == src_dir:
-  230:                 continue
-  231:             dst.mkdir(parents=True, exist_ok=True)
-  232:             for name in ("FUN.csv", "ARCHIVE_FUN.csv", "time.txt", "metadata.json"):
-  233:                 src_file = src_dir / name
-  234:                 if src_file.exists():
-  235:                     copy2(src_file, dst / name)
-  236: 
-  237:     @staticmethod
-  238:     def expand_tasks(
+src\vamos\ux\studio\app.py
+  102:     # Instantiate problem
+  103:     selection = make_problem_selection(problem_name)
+  104:     problem = selection.instantiate()
+  105: 
+  106:     # Adjust config for budget if needed, or assume fixed budget
+  107:     # We respect the passed config but might override budget
+  108:     # If the config came from resolved_config.json, it might have "termination"
+  109: 
+  110:     # Clean config for usage
+  111:     algo_name = config.get("algorithm", "nsgaii")
+  112:     algo_cfg = config.get("algorithm_config", {})
+  113:     if not algo_cfg:
+  114:         # Fallback to defaults if empty

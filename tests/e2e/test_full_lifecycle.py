@@ -1,9 +1,9 @@
 """
 E2E Test: Full Lifecycle (Optimize -> Save -> Analyze)
 """
+
 import pytest
 import pandas as pd
-from pathlib import Path
 
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.experiment.optimize import OptimizeConfig, optimize, OptimizationResult

@@ -85,6 +85,7 @@ def test_no_import_time_side_effects() -> None:
     repo_root = _repo_root()
     src_root = repo_root / "src" / "vamos"
     violations: list[str] = []
+    allowed_calls = {"TypeVar", "typing.TypeVar"}
 
     for path in sorted(src_root.rglob("*.py")):
         rel_path = path.relative_to(repo_root).as_posix()
@@ -94,6 +95,8 @@ def test_no_import_time_side_effects() -> None:
         except SyntaxError as exc:  # pragma: no cover - should not happen
             raise AssertionError(f"Failed to parse {rel_path}: {exc}") from exc
         for lineno, name in _top_level_calls(tree):
+            if name in allowed_calls:
+                continue
             violations.append(f"{rel_path}:{lineno}: call {name}")
 
     if violations:

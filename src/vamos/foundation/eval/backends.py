@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -80,16 +80,16 @@ class MultiprocessingEvalBackend(EvaluationBackend):
 class DaskEvalBackend(EvaluationBackend):
     """
     Distributed evaluation using Dask.
-    
+
     Notes:
         - Requires `dask.distributed`.
         - Falls back to serial if dask is not installed or client is invalid.
     """
-    
+
     def __init__(self, client: Any = None, address: str | None = None):
         """
         Initialize Dask backend.
-        
+
         Args:
             client: Existing dask.distributed.Client
             address: Address of scheduler to connect to (if client is None)
@@ -97,9 +97,10 @@ class DaskEvalBackend(EvaluationBackend):
         self.client = client
         self.address = address
         self._connected = False
-        
+
         try:
             from dask.distributed import Client
+
             if self.client is None:
                 if self.address:
                     self.client = Client(self.address)
@@ -122,43 +123,44 @@ class DaskEvalBackend(EvaluationBackend):
             # Re-check client connection
             if self.client is None and self.address:
                 from dask.distributed import Client
+
                 self.client = Client(self.address)
-            
+
             if self.client is None:
                 # Fallback
                 return SerialEvalBackend().evaluate(X, problem)
-                
+
             n = X.shape[0]
             # Map futures
             # Dask handles efficient chunking usually, but for strict comparison
             # with multiprocessing, we can chunk manually or let dask decide.
             # Simple map over rows:
             # futures = self.client.map(lambda x: _eval_chunk(problem, x[None, :]), X)
-            
+
             # Better: chunk it to reduce overhead
-            n_workers = len(self.client.scheduler_info()['workers'])
+            n_workers = len(self.client.scheduler_info()["workers"])
             chunk_size = max(1, math.ceil(n / n_workers))
             slices = [(i, min(i + chunk_size, n)) for i in range(0, n, chunk_size)]
-            
+
             futures = []
             for start, end in slices:
                 # Submit chunk
                 fut = self.client.submit(_eval_chunk, problem, X[start:end])
                 futures.append((start, fut))
-            
+
             # Gather
             results = self.client.gather([f for _, f in futures])
-            
+
             # Reassemble
             # Assuming first result gives dimensions
             F_sample = results[0][0]
             G_sample = results[0][1]
-            
+
             F = np.empty((n, F_sample.shape[1]), dtype=float)
             G = None
             if G_sample is not None:
                 G = np.empty((n, G_sample.shape[1]), dtype=float)
-                
+
             for i, (start, _) in enumerate(futures):
                 f_chunk, g_chunk = results[i]
                 end = start + f_chunk.shape[0]
@@ -173,7 +175,9 @@ class DaskEvalBackend(EvaluationBackend):
             return SerialEvalBackend().evaluate(X, problem)
 
 
-def resolve_eval_backend(name: str, *, n_workers: Optional[int] = None, chunk_size: Optional[int] = None, dask_address: str | None = None) -> EvaluationBackend:
+def resolve_eval_backend(
+    name: str, *, n_workers: Optional[int] = None, chunk_size: Optional[int] = None, dask_address: str | None = None
+) -> EvaluationBackend:
     key = (name or "serial").lower()
     if key == "multiprocessing":
         return MultiprocessingEvalBackend(n_workers=n_workers, chunk_size=chunk_size)

@@ -90,6 +90,7 @@ def initialize_nsgaiii_run(
     n_var = problem.n_var
     n_obj = problem.n_obj
     constraint_mode = config.get("constraint_mode", "penalty")
+    result_mode = config.get("result_mode", "population")
 
     # Build variation operators
     crossover_fn, mutation_fn = build_variation_operators(config, encoding, n_var, xl, xu, rng)
@@ -162,6 +163,7 @@ def initialize_nsgaiii_run(
         track_genealogy=track_genealogy,
         genealogy_tracker=genealogy_tracker,
         ids=ids,
+        result_mode=result_mode,
     )
 
     return state, live_cb, eval_backend, max_eval, hv_tracker

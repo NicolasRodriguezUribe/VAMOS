@@ -2,6 +2,7 @@
 E2E Test: Plugin Registration Flow
 Verifies the dynamic Registry can accept custom algorithms.
 """
+
 import pytest
 import numpy as np
 
@@ -28,6 +29,7 @@ def test_plugin_registration_and_usage():
                     "X": np.zeros((5, problem.n_var)),
                     "F": np.random.rand(5, problem.n_obj),
                 }
+
         return MockAlgo()
 
     # 2. Register (skip if already present from previous run)

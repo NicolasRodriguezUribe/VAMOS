@@ -31,7 +31,7 @@ class SBXCrossover(Crossover):
         self,
         prob_crossover: float = 0.9,
         eta: float = 10.0,
-        prob_var: float = 0.5,
+        prob_var: float = 1.0,
         *,
         lower: ArrayLike,
         upper: ArrayLike,
@@ -89,13 +89,16 @@ class SBXCrossover(Crossover):
         y2 = np.maximum(parent1, parent2)
         diff = y2 - y1
         valid = diff > eps
-        var_rand = self._rand("sbx_var", parent1.shape, rng)
-        if self.workspace is None:
-            var_mask = var_rand <= self.prob_var
+        if self.prob_var >= 1.0:
+            active = valid
         else:
-            var_mask = self.workspace.request("sbx_var_mask", parent1.shape, np.bool_)
-            np.less_equal(var_rand, self.prob_var, out=var_mask)
-        active = valid & var_mask
+            var_rand = self._rand("sbx_var", parent1.shape, rng)
+            if self.workspace is None:
+                var_mask = var_rand <= self.prob_var
+            else:
+                var_mask = self.workspace.request("sbx_var_mask", parent1.shape, np.bool_)
+                np.less_equal(var_rand, self.prob_var, out=var_mask)
+            active = valid & var_mask
         if not np.any(active):
             return offspring
 

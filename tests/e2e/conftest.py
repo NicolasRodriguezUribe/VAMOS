@@ -1,8 +1,8 @@
 import pytest
 import tempfile
 import shutil
-import os
 from pathlib import Path
+
 
 @pytest.fixture(scope="function")
 def e2e_workspace():
@@ -13,3 +13,8 @@ def e2e_workspace():
     temp_dir = tempfile.mkdtemp(prefix="vamos_e2e_")
     yield Path(temp_dir)
     shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@pytest.fixture(scope="function")
+def workspace(e2e_workspace):
+    return e2e_workspace

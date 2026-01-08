@@ -28,6 +28,12 @@ runner = StudyRunner(tasks, output_dir="results/my_study", engine="numpy")
 runner.run_all()
 ```
 
+## Evaluator and Termination Overrides
+
+`StudyRunner` accepts optional `evaluator` and `termination` overrides to control
+the evaluation backend (serial/parallel) and stopping criteria consistently across
+all tasks in a batch.
+
 ## Study Definition via Config
 
 ```yaml

@@ -57,9 +57,6 @@ def random_permutation_population(
     n_var: int,
     rng: RNG,
 ) -> PermPop:
-    """
-    Generate a batch of random permutations using the random-keys method.
-    """
     if pop_size <= 0 or n_var <= 0:
         raise ValueError("pop_size and n_var must be positive integers.")
     keys = rng.random((pop_size, n_var))
@@ -80,9 +77,6 @@ def swap_mutation(
     prob: float,
     rng: RNG,
 ) -> None:
-    """
-    Batched swap mutation that randomly swaps two positions in selected individuals.
-    """
     N, D = X.shape
     if N == 0:
         return
@@ -113,9 +107,6 @@ def pmx_crossover(
     prob: float,
     rng: RNG,
 ) -> PermPop:
-    """
-    Partially matched crossover (PMX) on permutation pairs.
-    """
     return _pairwise_crossover(X_parents, prob, rng, _pmx_children)
 
 
@@ -124,9 +115,6 @@ def cycle_crossover(
     prob: float,
     rng: RNG,
 ) -> PermPop:
-    """
-    Cycle crossover (CX) on permutation pairs.
-    """
     return _pairwise_crossover(X_parents, prob, rng, _cycle_children)
 
 
@@ -135,10 +123,6 @@ def position_based_crossover(
     prob: float,
     rng: RNG,
 ) -> PermPop:
-    """
-    Position-based crossover (POS). A random subset of positions from parent A is
-    kept; remaining slots are filled with genes from parent B preserving order.
-    """
     return _pairwise_crossover(X_parents, prob, rng, _position_based_children)
 
 
@@ -147,9 +131,6 @@ def edge_recombination_crossover(
     prob: float,
     rng: RNG,
 ) -> PermPop:
-    """
-    Edge recombination crossover (ERX) preserving adjacency information.
-    """
     return _pairwise_crossover(X_parents, prob, rng, _edge_recombination_children)
 
 
@@ -158,9 +139,6 @@ def order_crossover(
     prob: float,
     rng: RNG,
 ) -> PermPop:
-    """
-    Batched order crossover (OX) for permutation-encoded chromosomes.
-    """
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty_like(X_parents)
@@ -204,9 +182,6 @@ def insert_mutation(
     prob: float,
     rng: RNG,
 ) -> None:
-    """
-    Remove one gene and insert it at another position (shift in-between genes).
-    """
     _apply_row_mutation(X, prob, rng, _insert_row_mutation)
 
 
@@ -215,9 +190,6 @@ def scramble_mutation(
     prob: float,
     rng: RNG,
 ) -> None:
-    """
-    Shuffle the genes inside a randomly chosen segment.
-    """
     _apply_row_mutation(X, prob, rng, _scramble_row_mutation)
 
 
@@ -226,21 +198,7 @@ def inversion_mutation(
     prob: float,
     rng: RNG,
 ) -> None:
-    """
-    Reverse a randomly chosen segment (standard inversion).
-    """
     _apply_row_mutation(X, prob, rng, _inversion_row_mutation)
-
-
-def simple_inversion_mutation(
-    X: PermPop,
-    prob: float,
-    rng: RNG,
-) -> None:
-    """
-    Alias of inversion_mutation for compatibility with jMetal naming.
-    """
-    inversion_mutation(X, prob, rng)
 
 
 def displacement_mutation(
@@ -248,9 +206,6 @@ def displacement_mutation(
     prob: float,
     rng: RNG,
 ) -> None:
-    """
-    Remove a contiguous segment and reinsert it at a different position.
-    """
     _apply_row_mutation(X, prob, rng, _displacement_row_mutation)
 
 
@@ -537,73 +492,18 @@ def _displacement_row_mutation(row: PermVec, rng: RNG) -> None:
     row[:] = np.concatenate([remaining[:insert_pos], segment, remaining[insert_pos:]])
 
 
-# === Adapters ===
-
-class SwapMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
-        swap_mutation(X, self.prob, rng)
-
-class PMXCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
-        return pmx_crossover(parents, self.prob, rng)
-
-class CycleCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
-        return cycle_crossover(parents, self.prob, rng)
-
-class PositionBasedCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
-        return position_based_crossover(parents, self.prob, rng)
-
-class EdgeRecombinationCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
-        return edge_recombination_crossover(parents, self.prob, rng)
-
-class OrderCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, parents: PermPop, rng: RNG, **kwargs) -> PermPop:
-        return order_crossover(parents, self.prob, rng)
-
-class InsertMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
-        insert_mutation(X, self.prob, rng)
-
-class ScrambleMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
-        scramble_mutation(X, self.prob, rng)
-
-class InversionMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
-        inversion_mutation(X, self.prob, rng)
-
-class SimpleInversionMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
-        simple_inversion_mutation(X, self.prob, rng)
-
-class DisplacementMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
-        self.prob = float(prob)
-    def __call__(self, X: PermPop, rng: RNG, **kwargs) -> None:
-        displacement_mutation(X, self.prob, rng)
+from .permutation_adapters import (
+    SwapMutation,
+    PMXCrossover,
+    CycleCrossover,
+    PositionBasedCrossover,
+    EdgeRecombinationCrossover,
+    OrderCrossover,
+    InsertMutation,
+    ScrambleMutation,
+    InversionMutation,
+    DisplacementMutation,
+)
 
 __all__ = [
     "random_permutation_population",
@@ -616,7 +516,6 @@ __all__ = [
     "insert_mutation",
     "scramble_mutation",
     "inversion_mutation",
-    "simple_inversion_mutation",
     "displacement_mutation",
     "SwapMutation",
     "PMXCrossover",
@@ -627,6 +526,5 @@ __all__ = [
     "InsertMutation",
     "ScrambleMutation",
     "InversionMutation",
-    "SimpleInversionMutation",
     "DisplacementMutation",
 ]

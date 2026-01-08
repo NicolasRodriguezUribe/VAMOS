@@ -28,22 +28,30 @@ This file explains how to set up the environment, how the project is structured,
 
 VAMOS prioritizes ease of use:
 
-1.  **Unified Entry Point**: Always prefer `vamos.optimize(config)` over manual wiring.
+1.  **Unified Entry Point**: Prefer `vamos.optimize(...)` for user-facing examples; use `OptimizeConfig` only when you need full control.
     ```python
-    from vamos import optimize, OptimizeConfig, NSGAIIConfig
-    
-    # Simple, fluent configuration
+    from vamos import optimize
+
+    result = optimize("zdt1", algorithm="nsgaii", budget=2000, pop_size=100, seed=42)
+    ```
+    ```python
+    from vamos import OptimizeConfig, make_problem_selection, optimize
+    from vamos.engine.api import NSGAIIConfig
+
+    problem = make_problem_selection("zdt1").instantiate()
     cfg = OptimizeConfig(
-        problem="zdt1",
-        algorithm=NSGAIIConfig().pop_size(100).fixed(),
-        max_evaluations=2000
+        problem=problem,
+        algorithm="nsgaii",
+        algorithm_config=NSGAIIConfig.default(pop_size=100, n_var=problem.n_var, engine="numpy"),
+        termination=("n_eval", 2000),
+        seed=42,
     )
     result = optimize(cfg)
     ```
 
 2.  **Interactive Results**: Use `result.explore()` for immediate visualization in notebooks.
 3.  **Publication Ready**: Use `result.to_latex()` for generating tables directly from code.
-4.  **No Internal Imports**: Users should never see `vamos.engine...` or `vamos.foundation...`. Stick to the top-level `vamos` exports.
+4.  **No Internal Imports**: Avoid deep internal modules (`vamos.engine.algorithm...`, `vamos.foundation...`). Use the public facades: `vamos`, `vamos.engine.api`, and `vamos.ux.api`.
 
 ---
 
@@ -62,8 +70,9 @@ VAMOS prioritizes ease of use:
 
 - **Library imports (user-facing)**:
   ```python
-  from vamos import optimize, OptimizeConfig, NSGAIIConfig, ZDT1
-  from vamos import plot_pareto_front_2d, weighted_sum_scores
+  from vamos import optimize, OptimizeConfig, make_problem_selection
+  from vamos.engine.api import NSGAIIConfig
+  from vamos.ux.api import plot_pareto_front_2d, weighted_sum_scores
   ```
 - **Library imports (contributors)**: Layered packages for internal work:
   ```python
@@ -79,7 +88,7 @@ VAMOS prioritizes ease of use:
 - `engine`: evolutionary/search machinery — algorithms, operators, hyperheuristics, tuning pipelines, and algorithm configs.
 - `experiment`: orchestration and entry points — CLI, StudyRunner, benchmark suites, diagnostics, and zoo presets.
 - `ux`: user-facing analysis/visualization (including MCDM/stats) and Studio surfaces.
-- The `vamos` package root re-exports a curated public API (see `vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`); use these for user-facing examples.
+- The `vamos` package root re-exports a curated public API (see `vamos.api`, `vamos.engine.api`, `vamos.ux.api`, and `vamos.plotting`); use these for user-facing examples.
 - Standard results layout under `results/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`. All experiment runners (CLI/benchmark/zoo) must write to this schema; UX helpers (`vamos.ux.analysis.results`) read it.
 ---
 

@@ -82,10 +82,7 @@ def test_study_runner_mirrors_outputs(monkeypatch, tmp_path):
             seed=1,
         )
     ]
-    runner_obj = StudyRunner(
-        verbose=False, 
-        persister=CSVPersister(mirror_roots=[mirror_root])
-    )
+    runner_obj = StudyRunner(verbose=False, persister=CSVPersister(mirror_roots=[mirror_root]))
     results = runner_obj.run(tasks, run_single_fn=fake_run_single)
 
     assert results, "No study results returned"

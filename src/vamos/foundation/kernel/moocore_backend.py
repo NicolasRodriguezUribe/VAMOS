@@ -220,11 +220,7 @@ class MooCoreKernel(KernelBackend):
 
     def _select_partial_front(self, F_comb: np.ndarray, front_idx: np.ndarray, remaining: int) -> np.ndarray:
         front = F_comb[front_idx]
-        use_crowding = (
-            front.shape[1] > self.CROWDING_DIM_THRESHOLD
-            or front_idx.size > self.HV_SIZE_THRESHOLD
-            or not self._use_hv_contrib
-        )
+        use_crowding = front.shape[1] > self.CROWDING_DIM_THRESHOLD or front_idx.size > self.HV_SIZE_THRESHOLD or not self._use_hv_contrib
         if use_crowding:
             self._stats["crowding_fallbacks"] += 1
             crowded = self._crowding_single(front)

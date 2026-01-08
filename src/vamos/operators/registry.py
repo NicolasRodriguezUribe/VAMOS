@@ -1,6 +1,7 @@
 """
 Registry for variation operators.
 """
+
 from __future__ import annotations
 
 from vamos.foundation.registry import Registry
@@ -13,13 +14,14 @@ from vamos.foundation.registry import Registry
 # Value: Class type or factory function
 _operator_registry: Registry | None = None
 
+
 def _get_registry() -> Registry:
     global _operator_registry
     if _operator_registry is not None:
         return _operator_registry
 
     reg = Registry("VariationOperators")
-    
+
     # Register common operators
     from vamos.operators.real import (
         SBXCrossover,
@@ -75,6 +77,7 @@ def _get_registry() -> Registry:
         UniformCrossover as BinaryUniformCrossover,
         HuxCrossover,
     )
+
     reg.register("bitflip", BitFlipMutation)
     reg.register("one_point", OnePointCrossover)
     reg.register("two_point", TwoPointCrossover)
@@ -94,6 +97,7 @@ def _get_registry() -> Registry:
         InversionMutation,
         DisplacementMutation,
     )
+
     reg.register("swap", SwapMutation)
     reg.register("pmx", PMXCrossover)
     reg.register("cx", CycleCrossover)
@@ -114,6 +118,7 @@ def _get_registry() -> Registry:
         RandomResetMutation,
         CreepMutation,
     )
+
     reg.register("int_uniform", UniformIntegerCrossover)
     reg.register("int_arithmetic", ArithmeticIntegerCrossover)
     reg.register("reset", RandomResetMutation)
@@ -121,11 +126,13 @@ def _get_registry() -> Registry:
 
     # Mixed operators
     from vamos.operators.mixed import MixedCrossover, MixedMutation
+
     reg.register("mixed", MixedCrossover)
     reg.register("mixed_mutation", MixedMutation)
 
     _operator_registry = reg
     return reg
+
 
 def __getattr__(name: str):
     if name == "operator_registry":

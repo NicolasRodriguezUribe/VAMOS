@@ -60,6 +60,7 @@ def test_thompson_sampling_with_window():
 
 def test_thompson_sampling_deterministic_seed():
     """Test that Thompson Sampling is deterministic with same seed."""
+
     def run(seed):
         policy = ThompsonSamplingPolicy(n_arms=3, rng_seed=seed, min_usage=0)
         selections = []

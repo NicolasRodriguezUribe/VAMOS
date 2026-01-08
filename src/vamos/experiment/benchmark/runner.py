@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Sequence
 from vamos.experiment.benchmark.suites import BenchmarkSuite, BenchmarkExperiment
 from vamos.foundation.core.experiment_config import DEFAULT_ENGINE
 from vamos.experiment.study.runner import StudyRunner, StudyTask, StudyResult
+from vamos.experiment.study.persistence import CSVPersister
 from vamos.experiment.runner import run_single
 
 
@@ -101,13 +102,14 @@ def run_benchmark_suite(
     tasks, overrides, raw_root = _prepare_tasks(suite, algos, metric_list, base_output_dir, global_config_overrides)
     # hv computed separately; ask for additional indicators only
     indicator_metrics = [m for m in metric_list if m.lower() not in {"hv", "hypervolume"}]
-    runner = study_runner_cls(verbose=True, mirror_output_roots=(), indicators=indicator_metrics)
+    persister = CSVPersister(mirror_roots=())
+    runner = study_runner_cls(verbose=True, indicators=indicator_metrics, persister=persister)
     summary_dir = _ensure_dir(base_output_dir / "summary")
     results = runner.run(
         tasks,
-        export_csv_path=summary_dir / "metrics.csv",
         run_single_fn=run_single,
     )
+    persister.save_results(results, summary_dir / "metrics.csv")
     runs: List[SingleRunInfo] = []
     for res in results:
         runs.append(

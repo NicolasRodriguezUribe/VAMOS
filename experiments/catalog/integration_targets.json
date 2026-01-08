@@ -1,49 +1,83 @@
 {
   "targets": [
     {
-      "path": "src\\vamos\\engine\\operators\\real\\crossover.py",
+      "path": "src\\vamos\\operators\\real\\crossover.py",
       "loop_candidates": [
         {
           "kind": "method",
           "name": "SBXCrossover.__call__",
           "score": 11,
-          "lineno": 67,
-          "snippet": "   61: \n   62:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:\n   63:         if self.workspace is None:\n   64:             return np.empty(shape, dtype=dtype)\n   65:         return self.workspace.request(key, shape, dtype)\n   66: \n   67:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n   68:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n   69:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n   70:         n_pairs, _, _ = offspring.shape\n   71:         if n_pairs == 0:\n   72:             return offspring\n   73:         self._check_bounds_match(offspring[:, 0, :], self.lower)"
+          "lineno": 69,
+          "snippet": "   63: \n   64:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:\n   65:         if self.workspace is None:\n   66:             return np.empty(shape, dtype=dtype)\n   67:         return self.workspace.request(key, shape, dtype)\n   68: \n   69:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n   70:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n   71:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n   72:         n_pairs, _, _ = offspring.shape\n   73:         if n_pairs == 0:\n   74:             return offspring\n   75:         self._check_bounds_match(offspring[:, 0, :], self.lower)"
         },
         {
           "kind": "function",
           "name": "__call__",
           "score": 11,
-          "lineno": 67,
-          "snippet": "   61: \n   62:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:\n   63:         if self.workspace is None:\n   64:             return np.empty(shape, dtype=dtype)\n   65:         return self.workspace.request(key, shape, dtype)\n   66: \n   67:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n   68:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n   69:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n   70:         n_pairs, _, _ = offspring.shape\n   71:         if n_pairs == 0:\n   72:             return offspring\n   73:         self._check_bounds_match(offspring[:, 0, :], self.lower)"
+          "lineno": 69,
+          "snippet": "   63: \n   64:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:\n   65:         if self.workspace is None:\n   66:             return np.empty(shape, dtype=dtype)\n   67:         return self.workspace.request(key, shape, dtype)\n   68: \n   69:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n   70:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n   71:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n   72:         n_pairs, _, _ = offspring.shape\n   73:         if n_pairs == 0:\n   74:             return offspring\n   75:         self._check_bounds_match(offspring[:, 0, :], self.lower)"
         },
         {
           "kind": "method",
           "name": "BLXAlphaCrossover.__call__",
           "score": 8,
-          "lineno": 216,
-          "snippet": "  210:             self._repair_reflect(child)\n  211:         elif self.repair == \"round\":\n  212:             self._repair_round(child)\n  213:         else:\n  214:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  215: \n  216:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  217:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  218:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  219:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  220:         n_pairs = offspring.shape[0]\n  221:         if n_pairs == 0:\n  222:             return offspring"
+          "lineno": 230,
+          "snippet": "  224:             self._repair_reflect(child)\n  225:         elif self.repair == \"round\":\n  226:             self._repair_round(child)\n  227:         else:\n  228:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  229: \n  230:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  231:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  232:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  233:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  234:         n_pairs = offspring.shape[0]\n  235:         if n_pairs == 0:\n  236:             return offspring"
         },
         {
           "kind": "function",
           "name": "__call__",
           "score": 8,
-          "lineno": 216,
-          "snippet": "  210:             self._repair_reflect(child)\n  211:         elif self.repair == \"round\":\n  212:             self._repair_round(child)\n  213:         else:\n  214:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  215: \n  216:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  217:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  218:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  219:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  220:         n_pairs = offspring.shape[0]\n  221:         if n_pairs == 0:\n  222:             return offspring"
+          "lineno": 230,
+          "snippet": "  224:             self._repair_reflect(child)\n  225:         elif self.repair == \"round\":\n  226:             self._repair_round(child)\n  227:         else:\n  228:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  229: \n  230:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  231:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  232:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  233:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  234:         n_pairs = offspring.shape[0]\n  235:         if n_pairs == 0:\n  236:             return offspring"
         },
         {
           "kind": "method",
           "name": "ArithmeticCrossover.__call__",
           "score": 10,
-          "lineno": 255,
-          "snippet": "  249: class ArithmeticCrossover(Crossover):\n  250:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  251: \n  252:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  253:         self.prob = float(prob_crossover)\n  254: \n  255:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  256:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  257:         offspring = parents_arr.copy()\n  258:         n_pairs = offspring.shape[0]\n  259:         if n_pairs == 0:\n  260:             return offspring\n  261: "
+          "lineno": 269,
+          "snippet": "  263: class ArithmeticCrossover(Crossover):\n  264:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  265: \n  266:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  267:         self.prob = float(prob_crossover)\n  268: \n  269:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  270:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  271:         offspring = parents_arr.copy()\n  272:         n_pairs = offspring.shape[0]\n  273:         if n_pairs == 0:\n  274:             return offspring\n  275: "
         },
         {
           "kind": "function",
           "name": "__call__",
           "score": 10,
-          "lineno": 255,
-          "snippet": "  249: class ArithmeticCrossover(Crossover):\n  250:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  251: \n  252:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  253:         self.prob = float(prob_crossover)\n  254: \n  255:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  256:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  257:         offspring = parents_arr.copy()\n  258:         n_pairs = offspring.shape[0]\n  259:         if n_pairs == 0:\n  260:             return offspring\n  261: "
+          "lineno": 269,
+          "snippet": "  263: class ArithmeticCrossover(Crossover):\n  264:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  265: \n  266:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  267:         self.prob = float(prob_crossover)\n  268: \n  269:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  270:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  271:         offspring = parents_arr.copy()\n  272:         n_pairs = offspring.shape[0]\n  273:         if n_pairs == 0:\n  274:             return offspring\n  275: "
+        }
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\engine\\algorithm\\components\\variation\\pipeline.py",
+      "loop_candidates": [
+        {
+          "kind": "method",
+          "name": "VariationPipeline.produce_offspring",
+          "score": 9,
+          "lineno": 165,
+          "snippet": "  159:             return cast(np.ndarray, population[parent_idx])\n  160:         shape = (parent_idx.size, population.shape[1])\n  161:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n  162:         np.take(population, parent_idx, axis=0, out=buffer)\n  163:         return buffer\n  164: \n  165:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  166:         # Non-real encoding path (handled by dedicated operators).\n  167:         if self.encoding != \"real\":\n  168:              return self._produce_offspring_nonreal(parents, rng)\n  169: \n  170:         # Pipeline execution for Real encoding\n  171:         n_var = parents.shape[1]"
+        },
+        {
+          "kind": "method",
+          "name": "VariationPipeline._produce_offspring_nonreal",
+          "score": 15,
+          "lineno": 204,
+          "snippet": "  198:             flat = offspring.reshape(-1, offspring.shape[-1])\n  199:             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))\n  200:             offspring = repaired.reshape(offspring.shape)\n  201: \n  202:         return offspring\n  203: \n  204:     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  205:         # Dedicated logic for non-real encodings.\n  206:         encoding = self.encoding\n  207:         cross_params = self.cross_params\n  208:         mut_params = self.mut_params\n  209:         xl, xu = self.xl, self.xu\n  210: "
+        },
+        {
+          "kind": "function",
+          "name": "produce_offspring",
+          "score": 9,
+          "lineno": 165,
+          "snippet": "  159:             return cast(np.ndarray, population[parent_idx])\n  160:         shape = (parent_idx.size, population.shape[1])\n  161:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n  162:         np.take(population, parent_idx, axis=0, out=buffer)\n  163:         return buffer\n  164: \n  165:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  166:         # Non-real encoding path (handled by dedicated operators).\n  167:         if self.encoding != \"real\":\n  168:              return self._produce_offspring_nonreal(parents, rng)\n  169: \n  170:         # Pipeline execution for Real encoding\n  171:         n_var = parents.shape[1]"
+        },
+        {
+          "kind": "function",
+          "name": "_produce_offspring_nonreal",
+          "score": 15,
+          "lineno": 204,
+          "snippet": "  198:             flat = offspring.reshape(-1, offspring.shape[-1])\n  199:             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))\n  200:             offspring = repaired.reshape(offspring.shape)\n  201: \n  202:         return offspring\n  203: \n  204:     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  205:         # Dedicated logic for non-real encodings.\n  206:         encoding = self.encoding\n  207:         cross_params = self.cross_params\n  208:         mut_params = self.mut_params\n  209:         xl, xu = self.xl, self.xu\n  210: "
         }
       ],
       "write_hits": []
@@ -55,68 +89,22 @@
           "kind": "function",
           "name": "_fast_non_dominated_sort_ranks",
           "score": 16,
-          "lineno": 19,
-          "snippet": "   13: \n   14: from .backend import KernelBackend\n   15: from .numpy_backend import NumPyKernel as _NumPyKernel\n   16: \n   17: \n   18: @njit(cache=True)\n   19: def _fast_non_dominated_sort_ranks(F: np.ndarray) -> np.ndarray:\n   20:     N = F.shape[0]\n   21:     if N == 0:\n   22:         return np.empty(0, dtype=np.int64)\n   23: \n   24:     M = F.shape[1]\n   25:     dom_matrix = np.zeros((N, N), dtype=np.bool_)"
+          "lineno": 12,
+          "snippet": "    6: \n    7: from .backend import KernelBackend\n    8: from .numpy_backend import NumPyKernel as _NumPyKernel\n    9: \n   10: \n   11: @njit(cache=True)\n   12: def _fast_non_dominated_sort_ranks(F: np.ndarray) -> np.ndarray:\n   13:     N = F.shape[0]\n   14:     if N == 0:\n   15:         return np.empty(0, dtype=np.int64)\n   16: \n   17:     M = F.shape[1]\n   18:     dom_matrix = np.zeros((N, N), dtype=np.bool_)"
         },
         {
           "kind": "function",
           "name": "_compute_crowding_numba",
           "score": 14,
-          "lineno": 79,
-          "snippet": "   73:         level += 1\n   74: \n   75:     return ranks\n   76: \n   77: \n   78: @njit(cache=True)\n   79: def _compute_crowding_numba(F: np.ndarray, ranks: np.ndarray) -> np.ndarray:\n   80:     N = F.shape[0]\n   81:     crowding = np.zeros(N, dtype=np.float64)\n   82:     if N == 0:\n   83:         return crowding\n   84: \n   85:     M = F.shape[1]"
+          "lineno": 72,
+          "snippet": "   66:         level += 1\n   67: \n   68:     return ranks\n   69: \n   70: \n   71: @njit(cache=True)\n   72: def _compute_crowding_numba(F: np.ndarray, ranks: np.ndarray) -> np.ndarray:\n   73:     N = F.shape[0]\n   74:     crowding = np.zeros(N, dtype=np.float64)\n   75:     if N == 0:\n   76:         return crowding\n   77: \n   78:     M = F.shape[1]"
         },
         {
           "kind": "function",
           "name": "_select_nsga2_indices",
           "score": 12,
-          "lineno": 131,
-          "snippet": "  125:             crowding[front_idx[i]] = distances[i]\n  126: \n  127:     return crowding\n  128: \n  129: \n  130: @njit(cache=True)\n  131: def _select_nsga2_indices(ranks: np.ndarray, crowding: np.ndarray, pop_size: int) -> np.ndarray:\n  132:     N = ranks.shape[0]\n  133:     selected = np.empty(pop_size, dtype=np.int64)\n  134:     if pop_size == 0 or N == 0:\n  135:         return selected\n  136: \n  137:     max_rank = 0"
-        }
-      ],
-      "write_hits": []
-    },
-    {
-      "path": "src\\vamos\\experiment\\study\\runner.py",
-      "loop_candidates": [
-        {
-          "kind": "method",
-          "name": "StudyRunner.expand_tasks",
-          "score": 8,
-          "lineno": 238,
-          "snippet": "  232:             for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):\n  233:                 src_file = src_dir / name\n  234:                 if src_file.exists():\n  235:                     copy2(src_file, dst / name)\n  236: \n  237:     @staticmethod\n  238:     def expand_tasks(\n  239:         problems: Sequence[StudyTask | dict],\n  240:         algorithms: Sequence[str],\n  241:         engines: Sequence[str],\n  242:         seeds: Sequence[int],\n  243:     ) -> List[StudyTask]:\n  244:         \"\"\""
-        },
-        {
-          "kind": "function",
-          "name": "expand_tasks",
-          "score": 8,
-          "lineno": 238,
-          "snippet": "  232:             for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):\n  233:                 src_file = src_dir / name\n  234:                 if src_file.exists():\n  235:                     copy2(src_file, dst / name)\n  236: \n  237:     @staticmethod\n  238:     def expand_tasks(\n  239:         problems: Sequence[StudyTask | dict],\n  240:         algorithms: Sequence[str],\n  241:         engines: Sequence[str],\n  242:         seeds: Sequence[int],\n  243:     ) -> List[StudyTask]:\n  244:         \"\"\""
-        }
-      ],
-      "write_hits": [
-        {
-          "lineno": 232,
-          "line": "for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):",
-          "snippet": "  226:                 dst = target_root / relative\n  227:             else:\n  228:                 dst = target_root / src_dir.name\n  229:             if dst.resolve() == src_dir:\n  230:                 continue\n  231:             dst.mkdir(parents=True, exist_ok=True)\n  232:             for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):\n  233:                 src_file = src_dir / name\n  234:                 if src_file.exists():\n  235:                     copy2(src_file, dst / name)\n  236: \n  237:     @staticmethod\n  238:     def expand_tasks("
-        }
-      ]
-    },
-    {
-      "path": "src\\vamos\\engine\\algorithm\\components\\variation\\pipeline.py",
-      "loop_candidates": [
-        {
-          "kind": "method",
-          "name": "VariationPipeline.produce_offspring",
-          "score": 24,
-          "lineno": 86,
-          "snippet": "   80:             return population[parent_idx]\n   81:         shape = (parent_idx.size, population.shape[1])\n   82:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n   83:         np.take(population, parent_idx, axis=0, out=buffer)\n   84:         return buffer\n   85: \n   86:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n   87:         encoding = self.encoding\n   88:         cross_params = self.cross_params\n   89:         mut_params = self.mut_params\n   90:         xl, xu = self.xl, self.xu\n   91:         group_size = self.parents_per_group\n   92:         if encoding == \"permutation\":"
-        },
-        {
-          "kind": "function",
-          "name": "produce_offspring",
-          "score": 24,
-          "lineno": 86,
-          "snippet": "   80:             return population[parent_idx]\n   81:         shape = (parent_idx.size, population.shape[1])\n   82:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n   83:         np.take(population, parent_idx, axis=0, out=buffer)\n   84:         return buffer\n   85: \n   86:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n   87:         encoding = self.encoding\n   88:         cross_params = self.cross_params\n   89:         mut_params = self.mut_params\n   90:         xl, xu = self.xl, self.xu\n   91:         group_size = self.parents_per_group\n   92:         if encoding == \"permutation\":"
+          "lineno": 124,
+          "snippet": "  118:             crowding[front_idx[i]] = distances[i]\n  119: \n  120:     return crowding\n  121: \n  122: \n  123: @njit(cache=True)\n  124: def _select_nsga2_indices(ranks: np.ndarray, crowding: np.ndarray, pop_size: int) -> np.ndarray:\n  125:     N = ranks.shape[0]\n  126:     selected = np.empty(pop_size, dtype=np.int64)\n  127:     if pop_size == 0 or N == 0:\n  128:         return selected\n  129: \n  130:     max_rank = 0"
         }
       ],
       "write_hits": []
@@ -128,15 +116,15 @@
           "kind": "method",
           "name": "MOEAD.run",
           "score": 10,
-          "lineno": 95,
-          "snippet": "   89: \n   90:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   91:         self.cfg = config\n   92:         self.kernel = kernel\n   93:         self._st: MOEADState | None = None\n   94: \n   95:     def run(\n   96:         self,\n   97:         problem: \"ProblemProtocol\",\n   98:         termination: tuple[str, Any],\n   99:         seed: int,\n  100:         eval_backend: \"EvaluationBackend | None\" = None,\n  101:         live_viz: \"LiveVisualization | None\" = None,"
+          "lineno": 94,
+          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: \"ProblemProtocol\",\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_backend: \"EvaluationBackend | None\" = None,\n  100:         live_viz: \"LiveVisualization | None\" = None,"
         },
         {
           "kind": "function",
           "name": "run",
           "score": 10,
-          "lineno": 95,
-          "snippet": "   89: \n   90:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   91:         self.cfg = config\n   92:         self.kernel = kernel\n   93:         self._st: MOEADState | None = None\n   94: \n   95:     def run(\n   96:         self,\n   97:         problem: \"ProblemProtocol\",\n   98:         termination: tuple[str, Any],\n   99:         seed: int,\n  100:         eval_backend: \"EvaluationBackend | None\" = None,\n  101:         live_viz: \"LiveVisualization | None\" = None,"
+          "lineno": 94,
+          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: \"ProblemProtocol\",\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_backend: \"EvaluationBackend | None\" = None,\n  100:         live_viz: \"LiveVisualization | None\" = None,"
         }
       ],
       "write_hits": []
@@ -148,15 +136,15 @@
           "kind": "function",
           "name": "operator_success_stats",
           "score": 8,
-          "lineno": 103,
-          "snippet": "   97:         matches = np.where(np.all(combined_X == row, axis=1))[0]\n   98:         if matches.size:\n   99:             new_ids[i] = combined_ids[matches[0]]\n  100:     return new_ids\n  101: \n  102: \n  103: def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:\n  104:     final_ancestors = set()\n  105:     for fid in final_ids:\n  106:         for rec in get_lineage(tracker, fid):\n  107:             final_ancestors.add(rec.individual_id)\n  108:     totals = {}\n  109:     finals = {}"
+          "lineno": 102,
+          "snippet": "   96:         matches = np.where(np.all(combined_X == row, axis=1))[0]\n   97:         if matches.size:\n   98:             new_ids[i] = combined_ids[matches[0]]\n   99:     return new_ids\n  100: \n  101: \n  102: def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:\n  103:     final_ancestors = set()\n  104:     for fid in final_ids:\n  105:         for rec in get_lineage(tracker, fid):\n  106:             final_ancestors.add(rec.individual_id)\n  107:     totals = {}\n  108:     finals = {}"
         },
         {
           "kind": "function",
           "name": "generation_contributions",
           "score": 12,
-          "lineno": 131,
-          "snippet": "  125:                 \"ratio\": (good / cnt) if cnt else 0.0,\n  126:             }\n  127:         )\n  128:     return rows\n  129: \n  130: \n  131: def generation_contributions(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:\n  132:     final_ancestors = set()\n  133:     for fid in final_ids:\n  134:         for rec in get_lineage(tracker, fid):\n  135:             final_ancestors.add(rec.individual_id)\n  136:     gen_totals = {}\n  137:     gen_final = {}"
+          "lineno": 130,
+          "snippet": "  124:                 \"ratio\": (good / cnt) if cnt else 0.0,\n  125:             }\n  126:         )\n  127:     return rows\n  128: \n  129: \n  130: def generation_contributions(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:\n  131:     final_ancestors = set()\n  132:     for fid in final_ids:\n  133:         for rec in get_lineage(tracker, fid):\n  134:             final_ancestors.add(rec.individual_id)\n  135:     gen_totals = {}\n  136:     gen_final = {}"
         }
       ],
       "write_hits": []
@@ -167,16 +155,16 @@
         {
           "kind": "method",
           "name": "NSGAII.run",
-          "score": 10,
-          "lineno": 64,
-          "snippet": "   58: \n   59:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   60:         self.cfg = config\n   61:         self.kernel = kernel\n   62:         self._st: NSGAIIState | None = None\n   63: \n   64:     def run(\n   65:         self,\n   66:         problem: ProblemProtocol,\n   67:         termination: tuple[str, Any],\n   68:         seed: int,\n   69:         eval_backend: EvaluationBackend | None = None,\n   70:         live_viz: LiveVisualization | None = None,"
+          "score": 12,
+          "lineno": 69,
+          "snippet": "   63: \n   64:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   65:         self.cfg = config\n   66:         self.kernel = kernel\n   67:         self._st: NSGAIIState | None = None\n   68: \n   69:     def run(\n   70:         self,\n   71:         problem: ProblemProtocol,\n   72:         termination: tuple[str, Any],\n   73:         seed: int,\n   74:         eval_backend: EvaluationBackend | None = None,\n   75:         live_viz: LiveVisualization | None = None,"
         },
         {
           "kind": "function",
           "name": "run",
-          "score": 10,
-          "lineno": 64,
-          "snippet": "   58: \n   59:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   60:         self.cfg = config\n   61:         self.kernel = kernel\n   62:         self._st: NSGAIIState | None = None\n   63: \n   64:     def run(\n   65:         self,\n   66:         problem: ProblemProtocol,\n   67:         termination: tuple[str, Any],\n   68:         seed: int,\n   69:         eval_backend: EvaluationBackend | None = None,\n   70:         live_viz: LiveVisualization | None = None,"
+          "score": 12,
+          "lineno": 69,
+          "snippet": "   63: \n   64:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   65:         self.cfg = config\n   66:         self.kernel = kernel\n   67:         self._st: NSGAIIState | None = None\n   68: \n   69:     def run(\n   70:         self,\n   71:         problem: ProblemProtocol,\n   72:         termination: tuple[str, Any],\n   73:         seed: int,\n   74:         eval_backend: EvaluationBackend | None = None,\n   75:         live_viz: LiveVisualization | None = None,"
         }
       ],
       "write_hits": []
@@ -188,15 +176,15 @@
           "kind": "method",
           "name": "SPEA2.run",
           "score": 10,
-          "lineno": 87,
-          "snippet": "   81:         self._live_cb = None\n   82:         self._eval_backend = None\n   83:         self._max_eval = None\n   84:         self._hv_tracker = None\n   85:         self._problem = None\n   86: \n   87:     def run(\n   88:         self,\n   89:         problem: \"ProblemProtocol\",\n   90:         termination: tuple[str, Any],\n   91:         seed: int,\n   92:         eval_backend: \"EvaluationBackend | None\" = None,\n   93:         live_viz: \"LiveVisualization | None\" = None,"
+          "lineno": 86,
+          "snippet": "   80:         self._live_cb = None\n   81:         self._eval_backend = None\n   82:         self._max_eval = None\n   83:         self._hv_tracker = None\n   84:         self._problem = None\n   85: \n   86:     def run(\n   87:         self,\n   88:         problem: \"ProblemProtocol\",\n   89:         termination: tuple[str, Any],\n   90:         seed: int,\n   91:         eval_backend: \"EvaluationBackend | None\" = None,\n   92:         live_viz: \"LiveVisualization | None\" = None,"
         },
         {
           "kind": "function",
           "name": "run",
           "score": 10,
-          "lineno": 87,
-          "snippet": "   81:         self._live_cb = None\n   82:         self._eval_backend = None\n   83:         self._max_eval = None\n   84:         self._hv_tracker = None\n   85:         self._problem = None\n   86: \n   87:     def run(\n   88:         self,\n   89:         problem: \"ProblemProtocol\",\n   90:         termination: tuple[str, Any],\n   91:         seed: int,\n   92:         eval_backend: \"EvaluationBackend | None\" = None,\n   93:         live_viz: \"LiveVisualization | None\" = None,"
+          "lineno": 86,
+          "snippet": "   80:         self._live_cb = None\n   81:         self._eval_backend = None\n   82:         self._max_eval = None\n   83:         self._hv_tracker = None\n   84:         self._problem = None\n   85: \n   86:     def run(\n   87:         self,\n   88:         problem: \"ProblemProtocol\",\n   89:         termination: tuple[str, Any],\n   90:         seed: int,\n   91:         eval_backend: \"EvaluationBackend | None\" = None,\n   92:         live_viz: \"LiveVisualization | None\" = None,"
         }
       ],
       "write_hits": []
@@ -217,6 +205,26 @@
           "score": 10,
           "lineno": 80,
           "snippet": "   74:     \"\"\"\n   75: \n   76:     _cat_models: Dict[str, Dict[str, Any]] = field(default_factory=dict)\n   77:     _real_models: Dict[str, Dict[str, float]] = field(default_factory=dict)\n   78:     _int_models: Dict[str, Dict[str, float]] = field(default_factory=dict)\n   79: \n   80:     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:\n   81:         \"\"\"\n   82:         Update the internal marginal model from a collection of 'good' configs.\n   83: \n   84:         If the number of good_configs is below min_samples_to_model, the internal\n   85:         model is cleared and only uniform sampling will be used.\n   86:         \"\"\""
+        }
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\experiment\\study\\runner.py",
+      "loop_candidates": [
+        {
+          "kind": "method",
+          "name": "StudyRunner.expand_tasks",
+          "score": 8,
+          "lineno": 174,
+          "snippet": "  168:                     vals[name] = None\n  169:             res.metrics[\"indicator_values\"] = vals\n  170: \n  171:     # expand_tasks is static and purely data transformation, can stay or move.\n  172:     # Moving it to types or keeping it here as helper is fine. Keeping for backward compat.\n  173:     @staticmethod\n  174:     def expand_tasks(\n  175:         problems: Sequence[StudyTask | dict],\n  176:         algorithms: Sequence[str],\n  177:         engines: Sequence[str],\n  178:         seeds: Sequence[int],\n  179:     ) -> List[StudyTask]:\n  180:         \"\"\""
+        },
+        {
+          "kind": "function",
+          "name": "expand_tasks",
+          "score": 8,
+          "lineno": 174,
+          "snippet": "  168:                     vals[name] = None\n  169:             res.metrics[\"indicator_values\"] = vals\n  170: \n  171:     # expand_tasks is static and purely data transformation, can stay or move.\n  172:     # Moving it to types or keeping it here as helper is fine. Keeping for backward compat.\n  173:     @staticmethod\n  174:     def expand_tasks(\n  175:         problems: Sequence[StudyTask | dict],\n  176:         algorithms: Sequence[str],\n  177:         engines: Sequence[str],\n  178:         seeds: Sequence[int],\n  179:     ) -> List[StudyTask]:\n  180:         \"\"\""
         }
       ],
       "write_hits": []
@@ -248,15 +256,15 @@
           "kind": "function",
           "name": "main",
           "score": 12,
-          "lineno": 136,
-          "snippet": "  130:     )\n  131: \n  132:     result = optimize(run_cfg)\n  133:     return result, callback.history\n  134: \n  135: \n  136: def main(argv: List[str] | None = None) -> None:\n  137:     parser = argparse.ArgumentParser(description=\"Launch VAMOS Studio (Streamlit).\")\n  138:     parser.add_argument(\"--study-dir\", help=\"Path to a StudyRunner output directory.\", default=\"results\")\n  139:     args, _ = parser.parse_known_args(argv)\n  140: \n  141:     st = _import_streamlit()\n  142:     px = _import_plotly()"
+          "lineno": 135,
+          "snippet": "  129:     )\n  130: \n  131:     result = optimize(run_cfg)\n  132:     return result, callback.history\n  133: \n  134: \n  135: def main(argv: List[str] | None = None) -> None:\n  136:     parser = argparse.ArgumentParser(description=\"Launch VAMOS Studio (Streamlit).\")\n  137:     parser.add_argument(\"--study-dir\", help=\"Path to a StudyRunner output directory.\", default=\"results\")\n  138:     args, _ = parser.parse_known_args(argv)\n  139: \n  140:     st = _import_streamlit()\n  141:     px = _import_plotly()"
         }
       ],
       "write_hits": [
         {
-          "lineno": 110,
+          "lineno": 108,
           "line": "# If the config came from resolved_config.json, it might have \"termination\"",
-          "snippet": "  104:     # Instantiate problem\n  105:     selection = make_problem_selection(problem_name)\n  106:     problem = selection.instantiate()\n  107: \n  108:     # Adjust config for budget if needed, or assume fixed budget\n  109:     # We respect the passed config but might override budget\n  110:     # If the config came from resolved_config.json, it might have \"termination\"\n  111: \n  112:     # Clean config for usage\n  113:     algo_name = config.get(\"algorithm\", \"nsgaii\")\n  114:     algo_cfg = config.get(\"algorithm_config\", {})\n  115:     if not algo_cfg:\n  116:         # Fallback to defaults if empty"
+          "snippet": "  102:     # Instantiate problem\n  103:     selection = make_problem_selection(problem_name)\n  104:     problem = selection.instantiate()\n  105: \n  106:     # Adjust config for budget if needed, or assume fixed budget\n  107:     # We respect the passed config but might override budget\n  108:     # If the config came from resolved_config.json, it might have \"termination\"\n  109: \n  110:     # Clean config for usage\n  111:     algo_name = config.get(\"algorithm\", \"nsgaii\")\n  112:     algo_cfg = config.get(\"algorithm_config\", {})\n  113:     if not algo_cfg:\n  114:         # Fallback to defaults if empty"
         }
       ]
     },
@@ -280,21 +288,8 @@
           "kind": "function",
           "name": "spea2_fitness",
           "score": 8,
-          "lineno": 76,
-          "snippet": "   70:             if np.all(F[i] <= F[j]) and np.any(F[i] < F[j]):\n   71:                 dom[i, j] = True\n   72: \n   73:     return dom, feas, cv\n   74: \n   75: \n   76: def spea2_fitness(\n   77:     F: np.ndarray, dom: np.ndarray, k: int | None = None\n   78: ) -> tuple[np.ndarray, np.ndarray]:\n   79:     \"\"\"Compute SPEA2 fitness and distance matrix.\n   80: \n   81:     SPEA2 fitness consists of:\n   82:     1. Raw fitness: sum of strengths of all dominators"
-        }
-      ],
-      "write_hits": []
-    },
-    {
-      "path": "src\\vamos\\engine\\operators\\permutation.py",
-      "loop_candidates": [
-        {
-          "kind": "function",
-          "name": "_pmx_into",
-          "score": 8,
-          "lineno": 309,
-          "snippet": "  303:     cut1, cut2 = _two_cut_points(n, rng)\n  304:     _pmx_into(p1, p2, c1, cut1, cut2)\n  305:     _pmx_into(p2, p1, c2, cut1, cut2)\n  306:     return c1, c2\n  307: \n  308: \n  309: def _pmx_into(parent_a: np.ndarray, parent_b: np.ndarray, child: np.ndarray, cut1: int, cut2: int):\n  310:     n = parent_a.size\n  311:     cut1, cut2 = _ensure_valid_segment(n, cut1, cut2)\n  312:     child.fill(-1)\n  313:     used = np.zeros(n, dtype=bool)\n  314:     mapping = {}\n  315: "
+          "lineno": 75,
+          "snippet": "   69:             if np.all(F[i] <= F[j]) and np.any(F[i] < F[j]):\n   70:                 dom[i, j] = True\n   71: \n   72:     return dom, feas, cv\n   73: \n   74: \n   75: def spea2_fitness(F: np.ndarray, dom: np.ndarray, k: int | None = None) -> tuple[np.ndarray, np.ndarray]:\n   76:     \"\"\"Compute SPEA2 fitness and distance matrix.\n   77: \n   78:     SPEA2 fitness consists of:\n   79:     1. Raw fitness: sum of strengths of all dominators\n   80:     2. Density: based on k-th nearest neighbor distance\n   81: "
         }
       ],
       "write_hits": []
@@ -306,34 +301,73 @@
           "kind": "function",
           "name": "build_schedule",
           "score": 8,
-          "lineno": 7,
-          "snippet": "    1: from __future__ import annotations\n    2: \n    3: from typing import List, Sequence, Tuple\n    4: \n    5: \n    6: \n    7: def build_schedule(\n    8:     instances: Sequence,\n    9:     seeds: Sequence[int],\n   10:     *,\n   11:     start_instances: int,\n   12:     instance_order_random: bool,\n   13:     seed_order_random: bool,"
+          "lineno": 6,
+          "snippet": "    1: from __future__ import annotations\n    2: \n    3: from typing import List, Sequence, Tuple\n    4: \n    5: \n    6: def build_schedule(\n    7:     instances: Sequence,\n    8:     seeds: Sequence[int],\n    9:     *,\n   10:     start_instances: int,\n   11:     instance_order_random: bool,\n   12:     seed_order_random: bool,"
         }
       ],
       "write_hits": []
     },
     {
-      "path": "src\\vamos\\experiment\\cli\\parser.py",
+      "path": "src\\vamos\\experiment\\benchmark\\lab_stats.py",
       "loop_candidates": [
         {
           "kind": "function",
-          "name": "parse_args",
-          "score": 15,
+          "name": "write_wilcoxon_tables",
+          "score": 8,
           "lineno": 52,
-          "snippet": "   46:         smsemoa_defaults = experiment_defaults.get(\"smsemoa\", {}) or {}\n   47:         nsgaiii_defaults = experiment_defaults.get(\"nsgaiii\", {}) or {}\n   48:     return spec, problem_overrides, experiment_defaults, nsgaii_defaults, moead_defaults, smsemoa_defaults, nsgaiii_defaults\n   49: \n   50: \n   51: # Config-file aware parser (overrides the legacy definition above).\n   52: def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type: ignore[override]\n   53:     pre_parser = argparse.ArgumentParser(add_help=False)\n   54:     pre_parser.add_argument(\n   55:         \"--config\",\n   56:         help=\"Path to a YAML/JSON experiment specification. CLI arguments override file values.\",\n   57:     )\n   58:     pre_args, remaining = pre_parser.parse_known_args()"
+          "snippet": "   46:             table.to_csv(path, sep=\"\\t\", encoding=\"utf-8\")\n   47:             created[f\"{label}-{indicator_name}\"] = path\n   48: \n   49:     return created\n   50: \n   51: \n   52: def write_wilcoxon_tables(summary, output_dir: Path, *, alpha: float = 0.05) -> Dict[str, Path]:\n   53:     pd = import_pandas()\n   54:     try:\n   55:         from scipy import stats as spstats  # type: ignore\n   56:     except Exception:  # pragma: no cover - optional\n   57:         return {}\n   58: "
         }
       ],
       "write_hits": []
     },
     {
-      "path": "src\\vamos\\foundation\\core\\runner.py",
+      "path": "src\\vamos\\experiment\\cli\\validation.py",
+      "loop_candidates": [
+        {
+          "kind": "function",
+          "name": "finalize_args",
+          "score": 14,
+          "lineno": 11,
+          "snippet": "    5: from vamos.foundation.problem.resolver import resolve_reference_front_path\n    6: \n    7: from .common import _normalize_operator_args, collect_nsgaii_variation_args\n    8: from .types import SpecDefaults\n    9: \n   10: \n   11: def finalize_args(\n   12:     parser: argparse.ArgumentParser,\n   13:     args: argparse.Namespace,\n   14:     *,\n   15:     spec_defaults: SpecDefaults,\n   16:     config_path: str | None,\n   17: ) -> argparse.Namespace:"
+        }
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\experiment\\execution.py",
       "loop_candidates": [
         {
           "kind": "function",
           "name": "execute_problem_suite",
           "score": 12,
-          "lineno": 231,
-          "snippet": "  225:             f\"{res['evals_per_sec']:>12.1f} {hv_txt:>12} {spread_txt:>12}\"\n  226:         )\n  227:     ref_txt = np.array2string(hv_ref_point, precision=3, suppress_small=True)\n  228:     print(f\"\\nHypervolume reference point: {ref_txt}\")\n  229: \n  230: \n  231: def execute_problem_suite(\n  232:     args,\n  233:     problem_selection: ProblemSelection,\n  234:     config: ExperimentConfig,\n  235:     *,\n  236:     hv_stop_config: dict | None = None,\n  237:     nsgaii_variation: dict | None = None,"
+          "lineno": 349,
+          "snippet": "  343:             f\"{res['evals_per_sec']:>12.1f} {hv_txt:>12} {spread_txt:>12}\",\n  344:         )\n  345:     ref_txt = np.array2string(hv_ref_point, precision=3, suppress_small=True)\n  346:     _logger().info(\"Hypervolume reference point: %s\", ref_txt)\n  347: \n  348: \n  349: def execute_problem_suite(\n  350:     args: Namespace,\n  351:     problem_selection: ProblemSelection,\n  352:     config: ExperimentConfig,\n  353:     *,\n  354:     run_single_fn: Callable[..., Metrics],\n  355:     hv_stop_config: dict[str, Any] | None = None,"
+        }
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\foundation\\kernel\\numba_ops.py",
+      "loop_candidates": [
+        {
+          "kind": "function",
+          "name": "sbx_crossover_numba",
+          "score": 18,
+          "lineno": 60,
+          "snippet": "   54:                     y = yu\n   55: \n   56:                 X[i, j] = y\n   57: \n   58: \n   59: @njit(cache=True)\n   60: def sbx_crossover_numba(\n   61:     X_parents: np.ndarray,\n   62:     prob: float,\n   63:     eta: float,\n   64:     prob_var: float,\n   65:     lower: np.ndarray,\n   66:     upper: np.ndarray,"
+        }
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\operators\\permutation.py",
+      "loop_candidates": [
+        {
+          "kind": "function",
+          "name": "_pmx_into",
+          "score": 8,
+          "lineno": 332,
+          "snippet": "  326:     cut1, cut2 = _two_cut_points(n, rng)\n  327:     _pmx_into(p1, p2, c1, cut1, cut2)\n  328:     _pmx_into(p2, p1, c2, cut1, cut2)\n  329:     return c1, c2\n  330: \n  331: \n  332: def _pmx_into(parent_a: PermVec, parent_b: PermVec, child: PermVec, cut1: int, cut2: int) -> None:\n  333:     n = parent_a.size\n  334:     cut1, cut2 = _ensure_valid_segment(n, cut1, cut2)\n  335:     child.fill(-1)\n  336:     used = np.zeros(n, dtype=bool)\n  337:     mapping = {}\n  338: "
         }
       ],
       "write_hits": []
@@ -350,47 +384,47 @@
         {
           "lineno": 9,
           "line": "ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)",
-          "snippet": "    3: \n    4: Standard layout (relative to `output_root`, defaults to `results/`):\n    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: from __future__ import annotations\n   15: "
+          "snippet": "    3: \n    4: Standard layout (relative to `output_root`, defaults to `results/`):\n    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: \n   15: from __future__ import annotations"
         },
         {
           "lineno": 10,
           "line": "metadata.json",
-          "snippet": "    4: Standard layout (relative to `output_root`, defaults to `results/`):\n    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: from __future__ import annotations\n   15: \n   16: from pathlib import Path"
+          "snippet": "    4: Standard layout (relative to `output_root`, defaults to `results/`):\n    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: \n   15: from __future__ import annotations\n   16: "
         },
         {
           "lineno": 11,
           "line": "resolved_config.json",
-          "snippet": "    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: from __future__ import annotations\n   15: \n   16: from pathlib import Path\n   17: "
+          "snippet": "    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: \n   15: from __future__ import annotations\n   16: \n   17: from pathlib import Path"
         },
         {
           "lineno": 12,
           "line": "time.txt",
-          "snippet": "    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: from __future__ import annotations\n   15: \n   16: from pathlib import Path\n   17: \n   18: RESULT_FILES = {"
+          "snippet": "    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: \n   15: from __future__ import annotations\n   16: \n   17: from pathlib import Path\n   18: "
         },
         {
-          "lineno": 19,
+          "lineno": 20,
           "line": "\"fun\": \"FUN.csv\",",
-          "snippet": "   13: \"\"\"\n   14: from __future__ import annotations\n   15: \n   16: from pathlib import Path\n   17: \n   18: RESULT_FILES = {\n   19:     \"fun\": \"FUN.csv\",\n   20:     \"x\": \"X.csv\",\n   21:     \"g\": \"G.csv\",\n   22:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   23:     \"archive_x\": \"ARCHIVE_X.csv\",\n   24:     \"archive_g\": \"ARCHIVE_G.csv\",\n   25:     \"metadata\": \"metadata.json\","
+          "snippet": "   14: \n   15: from __future__ import annotations\n   16: \n   17: from pathlib import Path\n   18: \n   19: RESULT_FILES = {\n   20:     \"fun\": \"FUN.csv\",\n   21:     \"x\": \"X.csv\",\n   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\","
         },
         {
-          "lineno": 22,
+          "lineno": 23,
           "line": "\"archive_fun\": \"ARCHIVE_FUN.csv\",",
-          "snippet": "   16: from pathlib import Path\n   17: \n   18: RESULT_FILES = {\n   19:     \"fun\": \"FUN.csv\",\n   20:     \"x\": \"X.csv\",\n   21:     \"g\": \"G.csv\",\n   22:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   23:     \"archive_x\": \"ARCHIVE_X.csv\",\n   24:     \"archive_g\": \"ARCHIVE_G.csv\",\n   25:     \"metadata\": \"metadata.json\",\n   26:     \"resolved_config\": \"resolved_config.json\",\n   27:     \"time\": \"time.txt\",\n   28: }"
-        },
-        {
-          "lineno": 25,
-          "line": "\"metadata\": \"metadata.json\",",
-          "snippet": "   19:     \"fun\": \"FUN.csv\",\n   20:     \"x\": \"X.csv\",\n   21:     \"g\": \"G.csv\",\n   22:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   23:     \"archive_x\": \"ARCHIVE_X.csv\",\n   24:     \"archive_g\": \"ARCHIVE_G.csv\",\n   25:     \"metadata\": \"metadata.json\",\n   26:     \"resolved_config\": \"resolved_config.json\",\n   27:     \"time\": \"time.txt\",\n   28: }\n   29: \n   30: \n   31: def standard_run_dir("
+          "snippet": "   17: from pathlib import Path\n   18: \n   19: RESULT_FILES = {\n   20:     \"fun\": \"FUN.csv\",\n   21:     \"x\": \"X.csv\",\n   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\",\n   27:     \"resolved_config\": \"resolved_config.json\",\n   28:     \"time\": \"time.txt\",\n   29: }"
         },
         {
           "lineno": 26,
-          "line": "\"resolved_config\": \"resolved_config.json\",",
-          "snippet": "   20:     \"x\": \"X.csv\",\n   21:     \"g\": \"G.csv\",\n   22:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   23:     \"archive_x\": \"ARCHIVE_X.csv\",\n   24:     \"archive_g\": \"ARCHIVE_G.csv\",\n   25:     \"metadata\": \"metadata.json\",\n   26:     \"resolved_config\": \"resolved_config.json\",\n   27:     \"time\": \"time.txt\",\n   28: }\n   29: \n   30: \n   31: def standard_run_dir(\n   32:     *,"
+          "line": "\"metadata\": \"metadata.json\",",
+          "snippet": "   20:     \"fun\": \"FUN.csv\",\n   21:     \"x\": \"X.csv\",\n   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\",\n   27:     \"resolved_config\": \"resolved_config.json\",\n   28:     \"time\": \"time.txt\",\n   29: }\n   30: \n   31: \n   32: def standard_run_dir("
         },
         {
           "lineno": 27,
+          "line": "\"resolved_config\": \"resolved_config.json\",",
+          "snippet": "   21:     \"x\": \"X.csv\",\n   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\",\n   27:     \"resolved_config\": \"resolved_config.json\",\n   28:     \"time\": \"time.txt\",\n   29: }\n   30: \n   31: \n   32: def standard_run_dir(\n   33:     *,"
+        },
+        {
+          "lineno": 28,
           "line": "\"time\": \"time.txt\",",
-          "snippet": "   21:     \"g\": \"G.csv\",\n   22:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   23:     \"archive_x\": \"ARCHIVE_X.csv\",\n   24:     \"archive_g\": \"ARCHIVE_G.csv\",\n   25:     \"metadata\": \"metadata.json\",\n   26:     \"resolved_config\": \"resolved_config.json\",\n   27:     \"time\": \"time.txt\",\n   28: }\n   29: \n   30: \n   31: def standard_run_dir(\n   32:     *,\n   33:     problem_label: str,"
+          "snippet": "   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\",\n   27:     \"resolved_config\": \"resolved_config.json\",\n   28:     \"time\": \"time.txt\",\n   29: }\n   30: \n   31: \n   32: def standard_run_dir(\n   33:     *,\n   34:     problem_label: str,"
         }
       ]
     },
@@ -435,72 +469,88 @@
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 36,
+          "lineno": 37,
           "line": "fun_path = output_dir / \"FUN.csv\"",
-          "snippet": "   30:     Returns:\n   31:         dict: artifact names keyed by a short label for metadata wiring.\n   32:     \"\"\"\n   33:     out = {}\n   34:     output_dir = ensure_dir(output_dir)\n   35: \n   36:     fun_path = output_dir / \"FUN.csv\"\n   37:     np.savetxt(fun_path, F, delimiter=\",\")\n   38:     out[\"fun\"] = fun_path.name\n   39: \n   40:     if X is not None:\n   41:         x_path = output_dir / \"X.csv\"\n   42:         np.savetxt(x_path, X, delimiter=\",\")"
+          "snippet": "   31:     Returns:\n   32:         dict: artifact names keyed by a short label for metadata wiring.\n   33:     \"\"\"\n   34:     out = {}\n   35:     output_dir = ensure_dir(output_dir)\n   36: \n   37:     fun_path = output_dir / \"FUN.csv\"\n   38:     np.savetxt(fun_path, F, delimiter=\",\")\n   39:     out[\"fun\"] = fun_path.name\n   40: \n   41:     if X is not None:\n   42:         x_path = output_dir / \"X.csv\"\n   43:         np.savetxt(x_path, X, delimiter=\",\")"
         },
         {
-          "lineno": 55,
+          "lineno": 56,
           "line": "archive_fun = output_dir / \"ARCHIVE_FUN.csv\"",
-          "snippet": "   49: \n   50:     if archive is not None:\n   51:         archive_F = archive.get(\"F\")\n   52:         archive_X = archive.get(\"X\")\n   53:         archive_G = archive.get(\"G\")\n   54:         if archive_F is not None:\n   55:             archive_fun = output_dir / \"ARCHIVE_FUN.csv\"\n   56:             np.savetxt(archive_fun, archive_F, delimiter=\",\")\n   57:             out[\"archive_fun\"] = archive_fun.name\n   58:         if archive_X is not None:\n   59:             archive_x = output_dir / \"ARCHIVE_X.csv\"\n   60:             np.savetxt(archive_x, archive_X, delimiter=\",\")\n   61:             out[\"archive_x\"] = archive_x.name"
+          "snippet": "   50: \n   51:     if archive is not None:\n   52:         archive_F = archive.get(\"F\")\n   53:         archive_X = archive.get(\"X\")\n   54:         archive_G = archive.get(\"G\")\n   55:         if archive_F is not None:\n   56:             archive_fun = output_dir / \"ARCHIVE_FUN.csv\"\n   57:             np.savetxt(archive_fun, archive_F, delimiter=\",\")\n   58:             out[\"archive_fun\"] = archive_fun.name\n   59:         if archive_X is not None:\n   60:             archive_x = output_dir / \"ARCHIVE_X.csv\"\n   61:             np.savetxt(archive_x, archive_X, delimiter=\",\")\n   62:             out[\"archive_x\"] = archive_x.name"
         },
         {
-          "lineno": 72,
+          "lineno": 73,
           "line": "with (output_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:",
-          "snippet": "   66: \n   67:     return out\n   68: \n   69: \n   70: def write_metadata(output_dir: str | Path, metadata: dict, resolved_cfg: dict) -> None:\n   71:     output_dir = ensure_dir(output_dir)\n   72:     with (output_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:\n   73:         json.dump(metadata, f, indent=2, sort_keys=True)\n   74:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   75:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   76: \n   77: \n   78: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:"
+          "snippet": "   67: \n   68:     return out\n   69: \n   70: \n   71: def write_metadata(output_dir: str | Path, metadata: dict, resolved_cfg: dict) -> None:\n   72:     output_dir = ensure_dir(output_dir)\n   73:     with (output_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:\n   74:         json.dump(metadata, f, indent=2, sort_keys=True)\n   75:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   76:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   77: \n   78: \n   79: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:"
         },
         {
-          "lineno": 74,
+          "lineno": 75,
           "line": "with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:",
-          "snippet": "   68: \n   69: \n   70: def write_metadata(output_dir: str | Path, metadata: dict, resolved_cfg: dict) -> None:\n   71:     output_dir = ensure_dir(output_dir)\n   72:     with (output_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:\n   73:         json.dump(metadata, f, indent=2, sort_keys=True)\n   74:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   75:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   76: \n   77: \n   78: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:\n   79:     output_dir = ensure_dir(output_dir)\n   80:     with (output_dir / \"time.txt\").open(\"w\", encoding=\"utf-8\") as f:"
+          "snippet": "   69: \n   70: \n   71: def write_metadata(output_dir: str | Path, metadata: dict, resolved_cfg: dict) -> None:\n   72:     output_dir = ensure_dir(output_dir)\n   73:     with (output_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:\n   74:         json.dump(metadata, f, indent=2, sort_keys=True)\n   75:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   76:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   77: \n   78: \n   79: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:\n   80:     output_dir = ensure_dir(output_dir)\n   81:     with (output_dir / \"time.txt\").open(\"w\", encoding=\"utf-8\") as f:"
         },
         {
-          "lineno": 80,
+          "lineno": 81,
           "line": "with (output_dir / \"time.txt\").open(\"w\", encoding=\"utf-8\") as f:",
-          "snippet": "   74:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   75:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   76: \n   77: \n   78: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:\n   79:     output_dir = ensure_dir(output_dir)\n   80:     with (output_dir / \"time.txt\").open(\"w\", encoding=\"utf-8\") as f:\n   81:         f.write(f\"{total_time_ms:.2f}\\n\")\n   82: \n   83: \n   84: __all__ = [\"write_population\", \"write_metadata\", \"write_timing\", \"ensure_dir\"]"
+          "snippet": "   75:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   76:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   77: \n   78: \n   79: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:\n   80:     output_dir = ensure_dir(output_dir)\n   81:     with (output_dir / \"time.txt\").open(\"w\", encoding=\"utf-8\") as f:\n   82:         f.write(f\"{total_time_ms:.2f}\\n\")\n   83: \n   84: \n   85: __all__ = [\"write_population\", \"write_metadata\", \"write_timing\", \"ensure_dir\"]"
         }
       ]
     },
     {
-      "path": "src\\vamos\\experiment\\quick.py",
+      "path": "src\\vamos\\experiment\\optimize.py",
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 217,
+          "lineno": 215,
           "line": "np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")",
-          "snippet": "  211:         import json\n  212:         from pathlib import Path\n  213: \n  214:         out_dir = Path(path)\n  215:         out_dir.mkdir(parents=True, exist_ok=True)\n  216: \n  217:         np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")\n  218:         if self.X is not None:\n  219:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  220: \n  221:         metadata = {\n  222:             \"algorithm\": self.algorithm,\n  223:             \"n_evaluations\": self.n_evaluations,"
+          "snippet": "  209:         from pathlib import Path\n  210: \n  211:         out_dir = Path(path)\n  212:         out_dir.mkdir(parents=True, exist_ok=True)\n  213: \n  214:         if self.F is not None:\n  215:             np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")\n  216:         if self.X is not None:\n  217:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  218: \n  219:         metadata = {\n  220:             \"n_solutions\": len(self),\n  221:             \"n_objectives\": self.n_objectives,"
         },
         {
-          "lineno": 229,
+          "lineno": 223,
           "line": "with open(out_dir / \"metadata.json\", \"w\") as f:",
-          "snippet": "  223:             \"n_evaluations\": self.n_evaluations,\n  224:             \"seed\": self.seed,\n  225:             \"n_solutions\": len(self),\n  226:             \"n_objectives\": self.F.shape[1],\n  227:             \"problem\": type(self.problem).__name__,\n  228:         }\n  229:         with open(out_dir / \"metadata.json\", \"w\") as f:\n  230:             json.dump(metadata, f, indent=2)\n  231: \n  232:         print(f\"Results saved to {out_dir}\")\n  233: \n  234: \n  235: def _resolve_problem("
+          "snippet": "  217:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  218: \n  219:         metadata = {\n  220:             \"n_solutions\": len(self),\n  221:             \"n_objectives\": self.n_objectives,\n  222:         }\n  223:         with open(out_dir / \"metadata.json\", \"w\") as f:\n  224:             json.dump(metadata, f, indent=2)\n  225: \n  226:         _logger().info(\"Results saved to %s\", out_dir)\n  227: \n  228:     def explore(self, title: str = \"Pareto Front Explorer\") -> Any:\n  229:         \"\"\""
         }
       ]
     },
     {
-      "path": "src\\vamos\\foundation\\core\\optimize.py",
+      "path": "src\\vamos\\experiment\\quick\\io.py",
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 271,
-          "line": "np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")",
-          "snippet": "  265:         from pathlib import Path\n  266: \n  267:         out_dir = Path(path)\n  268:         out_dir.mkdir(parents=True, exist_ok=True)\n  269: \n  270:         if self.F is not None:\n  271:             np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")\n  272:         if self.X is not None:\n  273:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  274: \n  275:         metadata = {\n  276:             \"n_solutions\": len(self),\n  277:             \"n_objectives\": self.n_objectives,"
+          "lineno": 31,
+          "line": "np.savetxt(out_dir / \"FUN.csv\", F, delimiter=\",\")",
+          "snippet": "   25:     seed: int,\n   26: ) -> None:\n   27:     \"\"\"Save quick results to a directory with CSV data and JSON metadata.\"\"\"\n   28:     out_dir = Path(path)\n   29:     out_dir.mkdir(parents=True, exist_ok=True)\n   30: \n   31:     np.savetxt(out_dir / \"FUN.csv\", F, delimiter=\",\")\n   32:     if X is not None:\n   33:         np.savetxt(out_dir / \"X.csv\", X, delimiter=\",\")\n   34: \n   35:     metadata: dict[str, Any] = {\n   36:         \"algorithm\": algorithm,\n   37:         \"n_evaluations\": n_evaluations,"
         },
         {
-          "lineno": 279,
+          "lineno": 43,
           "line": "with open(out_dir / \"metadata.json\", \"w\") as f:",
-          "snippet": "  273:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  274: \n  275:         metadata = {\n  276:             \"n_solutions\": len(self),\n  277:             \"n_objectives\": self.n_objectives,\n  278:         }\n  279:         with open(out_dir / \"metadata.json\", \"w\") as f:\n  280:             json.dump(metadata, f, indent=2)\n  281: \n  282:         print(f\"Results saved to {out_dir}\")\n  283: \n  284: @dataclass\n  285: class OptimizeConfig:"
+          "snippet": "   37:         \"n_evaluations\": n_evaluations,\n   38:         \"seed\": seed,\n   39:         \"n_solutions\": int(F.shape[0]),\n   40:         \"n_objectives\": int(F.shape[1]) if F.ndim > 1 else 1,\n   41:         \"problem\": type(problem).__name__,\n   42:     }\n   43:     with open(out_dir / \"metadata.json\", \"w\") as f:\n   44:         json.dump(metadata, f, indent=2)\n   45: \n   46:     _logger().info(\"Results saved to %s\", out_dir)"
         }
       ]
     },
     {
-      "path": "src\\vamos\\foundation\\core\\runner_output.py",
+      "path": "src\\vamos\\experiment\\study\\persistence.py",
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 166,
+          "lineno": 29,
+          "line": "Mirror per-run artifacts (like FUN.csv) to a consolidated directory.",
+          "snippet": "   23:         Save the aggregated results (e.g. to a CSV file).\n   24:         \"\"\"\n   25:         ...\n   26: \n   27:     def mirror_artifacts(self, result: StudyResult) -> None:\n   28:         \"\"\"\n   29:         Mirror per-run artifacts (like FUN.csv) to a consolidated directory.\n   30:         \"\"\"\n   31:         ...\n   32: \n   33: \n   34: class CSVPersister:\n   35:     \"\"\""
+        },
+        {
+          "lineno": 96,
+          "line": "for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):",
+          "snippet": "   90:                 dst = target_root / relative\n   91:             else:\n   92:                 dst = target_root / src_dir.name\n   93:             if dst.resolve() == src_dir:\n   94:                 continue\n   95:             dst.mkdir(parents=True, exist_ok=True)\n   96:             for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):\n   97:                 src_file = src_dir / name\n   98:                 if src_file.exists():\n   99:                     copy2(src_file, dst / name)"
+        }
+      ]
+    },
+    {
+      "path": "src\\vamos\\experiment\\observers\\storage.py",
+      "loop_candidates": [],
+      "write_hits": [
+        {
+          "lineno": 176,
           "line": "\"time_ms\": \"time.txt\",",
-          "snippet": "  160:         \"archive_x\": artifacts.get(\"archive_x\"),\n  161:         \"archive_g\": artifacts.get(\"archive_g\"),\n  162:         \"genealogy\": artifacts.get(\"genealogy\"),\n  163:         \"autodiff_constraints\": artifacts.get(\"autodiff_constraints\"),\n  164:         \"aos_trace\": artifacts.get(\"aos_trace\"),\n  165:         \"aos_summary\": artifacts.get(\"aos_summary\"),\n  166:         \"time_ms\": \"time.txt\",\n  167:     }\n  168:     metadata[\"artifacts\"] = {k: v for k, v in artifact_entries.items() if v is not None}\n  169: \n  170:     resolved_cfg = {\n  171:         \"algorithm\": algorithm_name,\n  172:         \"engine\": engine_name,"
+          "snippet": "  170:             \"archive_x\": artifacts.get(\"archive_x\"),\n  171:             \"archive_g\": artifacts.get(\"archive_g\"),\n  172:             \"genealogy\": artifacts.get(\"genealogy\"),\n  173:             \"autodiff_constraints\": artifacts.get(\"autodiff_constraints\"),\n  174:             \"aos_trace\": artifacts.get(\"aos_trace\"),\n  175:             \"aos_summary\": artifacts.get(\"aos_summary\"),\n  176:             \"time_ms\": \"time.txt\",\n  177:         }\n  178:         hv_trace = self.output_dir / \"hv_trace.csv\"\n  179:         if hv_trace.exists():\n  180:             artifact_entries[\"hv_trace\"] = hv_trace.name\n  181:         archive_stats = self.output_dir / \"archive_stats.csv\"\n  182:         if archive_stats.exists():"
         }
       ]
     },
@@ -509,9 +559,9 @@
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 64,
+          "lineno": 65,
           "line": "Recursively locate run directories by scanning for metadata.json files.",
-          "snippet": "   58:         return None\n   59:     return _coerce_array(np.asarray(data))\n   60: \n   61: \n   62: def discover_runs(base_dir: str | Path = \"results\") -> List[RunInfo]:\n   63:     \"\"\"\n   64:     Recursively locate run directories by scanning for metadata.json files.\n   65:     \"\"\"\n   66:     base = Path(base_dir)\n   67:     runs: list[RunInfo] = []\n   68:     for meta_path in base.rglob(RESULT_FILES[\"metadata\"]):\n   69:         try:\n   70:             metadata = json.loads(meta_path.read_text(encoding=\"utf-8\"))"
+          "snippet": "   59:         return None\n   60:     return _coerce_array(np.asarray(data))\n   61: \n   62: \n   63: def discover_runs(base_dir: str | Path = \"results\") -> List[RunInfo]:\n   64:     \"\"\"\n   65:     Recursively locate run directories by scanning for metadata.json files.\n   66:     \"\"\"\n   67:     base = Path(base_dir)\n   68:     runs: list[RunInfo] = []\n   69:     for meta_path in base.rglob(RESULT_FILES[\"metadata\"]):\n   70:         try:\n   71:             metadata = json.loads(meta_path.read_text(encoding=\"utf-8\"))"
         }
       ]
     }

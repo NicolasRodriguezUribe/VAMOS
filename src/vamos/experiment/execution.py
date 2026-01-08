@@ -19,7 +19,7 @@ from vamos.foundation.core.experiment_config import (
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.data import weight_path
-from vamos.foundation.eval.backends import resolve_eval_backend
+from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
 from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.problem.resolver import ProblemSelection
 from vamos.foundation.observer import Observer, RunContext
@@ -30,7 +30,6 @@ from vamos.hooks import (
     HookManager,
     HookManagerConfig,
     LiveVisualization,
-    NoOpLiveVisualization,
 )
 from vamos.hooks.config_parse import parse_stopping_archive
 
@@ -49,6 +48,7 @@ VariationConfig = dict[str, Any]
 
 class CompositeObserver(Observer):
     """Fans out events to multiple observers."""
+
     def __init__(self, observers: list[Observer]):
         self.observers = [o for o in observers if o is not None]
 
@@ -73,7 +73,7 @@ class CompositeObserver(Observer):
     ) -> None:
         for obs in self.observers:
             obs.on_end(final_F, final_stats)
-            
+
     def should_stop(self) -> bool:
         # Check if any observer requests stopping (e.g. Hooks)
         # Note: Observer protocol doesn't strictly have should_stop, but HookManager does.
@@ -142,6 +142,8 @@ def run_single(
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
     hv_stop_config: dict[str, Any] | None = None,
+    evaluator: Any | None = None,
+    termination: tuple[str, Any] | None = None,
     config_source: str | None = None,
     config_spec: dict[str, Any] | None = None,
     problem_override: dict[str, Any] | None = None,
@@ -150,7 +152,7 @@ def run_single(
     live_viz: LiveVisualization | None = None,
 ) -> Metrics:
     problem = problem or selection.instantiate()
-    
+
     # 1. Build Context
     ctx = RunContext(
         problem=problem,
@@ -160,16 +162,28 @@ def run_single(
         algorithm_name=algorithm_name,
         engine_name=engine_name,
     )
-    
+
     output_dir = run_output_dir(selection, algorithm_name, engine_name, config.seed, config)
     ensure_dir(output_dir)
 
+    termination_spec = resolve_termination(
+        termination,
+        config,
+        hv_stop_config=hv_stop_config,
+        algorithm_name=algorithm_name,
+    )
+    termination_kind, termination_payload = termination_spec
+    hv_enabled = termination_kind == "hv"
+    hv_termination = termination_payload if hv_enabled else None
+    if hv_enabled and isinstance(hv_termination, dict):
+        hv_stop_config = hv_termination
+
     # 2. Build Observers
     observers: list[Observer] = []
-    
+
     # Console
     observers.append(ConsoleObserver())
-    
+
     # Storage
     # Collect variations for metadata
     variations = {
@@ -181,7 +195,7 @@ def run_single(
         "ibea_variation": ibea_variation,
         "smpso_variation": smpso_variation,
     }
-    
+
     storage = StorageObserver(
         output_dir=output_dir,
         project_root=_project_root(),
@@ -213,13 +227,13 @@ def run_single(
                 observers.append(hook_mgr)
         except Exception:
             hook_mgr = None
-            
+
     # User Viz (LiveVisualization uses RunContext)
     if live_viz:
         observers.append(live_viz)
-        
+
     main_observer = CompositeObserver(observers)
-    
+
     # 3. Notify Start
     main_observer.on_start(ctx)
 
@@ -243,60 +257,47 @@ def run_single(
         except Exception as exc:
             autodiff_info = {"status": "error", "message": str(exc)}
 
-    eval_backend = resolve_eval_backend(
-        getattr(config, "eval_backend", "serial"),
-        n_workers=getattr(config, "n_workers", None),
-    )
+    eval_backend = resolve_evaluator(evaluator, config)
 
     kernel_backend = getattr(algorithm, "kernel", None)
 
-    hv_termination = None
-    termination = ("n_eval", config.max_evaluations)
-    hv_enabled = hv_stop_config is not None and algorithm_name == "nsgaii"
-    if hv_enabled:
-        hv_termination = dict(hv_stop_config)
-        hv_termination["max_evaluations"] = config.max_evaluations
-        termination = ("hv", hv_termination)
+    if hv_enabled and not isinstance(hv_termination, dict):
+        hv_enabled = False
+        hv_termination = None
 
     validate_problem(problem)
+    encoding = getattr(problem, "encoding", "continuous")
+    if encoding == "permutation" and algorithm_name != "nsgaii":
+        raise ValueError("Permutation problems are only supported by NSGA-II.")
 
     # 4. Execute
     exec_result = execute_algorithm(
         algorithm,
         problem,
-        termination=termination,
+        termination=termination_spec,
         seed=config.seed,
         eval_backend=eval_backend,
         live_viz=_LiveVizAdapter(main_observer),
     )
-    
+
     payload = exec_result.payload
     total_time_ms = exec_result.elapsed_ms
     F = payload["F"]
     actual_evaluations = int(payload.get("evaluations", config.max_evaluations))
-    
+
     # Termination reason determination
     termination_reason = "max_evaluations"
-    if main_observer.should_stop(): # Check hooks via composite
+    if main_observer.should_stop():  # Check hooks via composite
         termination_reason = "hv_convergence"
     if hv_enabled and payload.get("hv_reached"):
         termination_reason = "hv_threshold"
 
     # 5. Build Final Stats / Metrics
-    # (Still need this for return value and notifying observers)
-    from vamos.experiment.runner_output import build_metrics # Keeping this helper for now or inline it?
-    # Ideally should move build_metrics to execution utils or just inline.
-    # For now, inline simplified version or rely on it.
-    # Let's import it to save time, but it's deprecated. All logic moved to Observers?
-    # No, build_metrics creates the dict that StorageObserver uses.
-    # StorageObserver expects 'final_stats' to have 'metrics' + 'payload'.
-    
-    # Recreate build_metrics logic here to be independent
     spread = None
     if F.size and F.shape[1] >= 1:
         spread = np.ptp(F[:, 0])
     evals_per_sec = actual_evaluations / max(1e-9, total_time_ms / 1000.0)
-    
+
     metrics = {
         "algorithm": algorithm_name,
         "engine": engine_name,
@@ -313,20 +314,23 @@ def run_single(
         "_kernel_backend": kernel_backend,
         "backend_device": kernel_backend.device() if kernel_backend else "external",
         "backend_capabilities": sorted(set(kernel_backend.capabilities())) if kernel_backend else [],
-        "output_dir": output_dir, # Needed?
-        "payload": payload, # Pass payload for StorageObserver to extract archives etc.
+        "output_dir": output_dir,  # Needed?
+        "payload": payload,  # Pass payload for StorageObserver to extract archives etc.
         "autodiff_info": autodiff_info,
     }
-    
-    if hv_enabled and hv_stop_config:
-        metrics["hv_threshold_fraction"] = hv_stop_config.get("threshold_fraction")
-        metrics["hv_reference_point"] = hv_stop_config.get("reference_point")
-        metrics["hv_reference_front"] = hv_stop_config.get("reference_front_path")
+
+    if hook_mgr is not None:
+        metrics["hook_metadata"] = hook_mgr.metadata_payload()
+
+    if hv_enabled and hv_termination:
+        metrics["hv_threshold_fraction"] = hv_termination.get("threshold_fraction")
+        metrics["hv_reference_point"] = hv_termination.get("reference_point")
+        metrics["hv_reference_front"] = hv_termination.get("reference_front_path")
 
     # 6. Notify End
     main_observer.on_end(F, metrics)
 
-    return metrics # Return metrics for benchmark aggregation
+    return metrics  # Return metrics for benchmark aggregation
 
 
 def _print_summary(results: Iterable[Metrics], hv_ref_point: np.ndarray) -> None:
@@ -455,8 +459,8 @@ def execute_problem_suite(
             results.append(metrics)
 
     for algorithm_name in external_algorithms:
-        from vamos.experiment.runner_output import build_metrics, print_run_banner, print_run_results
-        
+        from vamos.experiment.external.reporting import build_metrics, print_run_banner, print_run_results
+
         metrics = external.run_external(
             algorithm_name,
             problem_selection,

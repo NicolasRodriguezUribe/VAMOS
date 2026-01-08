@@ -4,7 +4,7 @@ VariationPipeline class leveraging shared registries/helpers.
 
 from __future__ import annotations
 
-from typing import Any, cast, Callable
+from typing import Any, cast
 
 import numpy as np
 
@@ -23,7 +23,7 @@ from vamos.engine.algorithm.components.variation.helpers import (
 from vamos.operators.integer import creep_mutation
 
 # Protocol definition location
-from vamos.engine.algorithm.components.variation.protocol import VariationOperator
+
 
 class VariationPipeline:
     """
@@ -58,14 +58,14 @@ class VariationPipeline:
         self.workspace = workspace
         self.problem = problem
         self.repair_cfg = repair_cfg
-        
+
         # Determine parents required (encoding-dependent helper).
         # Ideally operators should report this.
         self.parents_per_group = self._parents_required(cross_method)
         self.children_per_group = self.parents_per_group
-        
+
         validate_operator_support(encoding, cross_method, mut_method)
-        
+
         # Build operators
         self.crossover_op: Any = self._resolve_operator(cross_method, cross_params, is_crossover=True)
         self.mutation_op: Any = self._resolve_operator(mut_method, mut_params, is_crossover=False)
@@ -78,7 +78,7 @@ class VariationPipeline:
         """
         if self.encoding in {"permutation", "binary", "integer", "mixed"}:
             return None
-            
+
         try:
             op_cls = operator_registry.get(method)
         except KeyError:
@@ -89,14 +89,14 @@ class VariationPipeline:
         # We need to map generic params to specific constructor args.
         # This mapping logic was previously hardcoded.
         # Ideally, we standardize params.
-        
+
         # Common args
         kwargs = {
             "lower": self.xl,
             "upper": self.xu,
             "workspace": self.workspace,
         }
-        
+
         # Specific mappings (Compatibility handling)
         if is_crossover:
             kwargs["prob_crossover"] = float(params.get("prob", 0.9))
@@ -107,8 +107,8 @@ class VariationPipeline:
                 if "prob_var" in params:
                     kwargs["prob_var"] = float(params.get("prob_var", 0.5))
             if method == "blx_alpha":
-                 kwargs["alpha"] = float(params.get("alpha", 0.5))
-                 kwargs["repair"] = params.get("repair", "clip")
+                kwargs["alpha"] = float(params.get("alpha", 0.5))
+                kwargs["repair"] = params.get("repair", "clip")
             if method == "pcx":
                 kwargs["sigma_eta"] = float(params.get("sigma_eta", 0.1))
                 kwargs["sigma_zeta"] = float(params.get("sigma_zeta", 0.1))
@@ -118,29 +118,29 @@ class VariationPipeline:
             if method == "spx":
                 kwargs["epsilon"] = float(params.get("epsilon", 0.5))
         else:
-             kwargs["prob_mutation"] = float(params.get("prob", 0.1))
-             if method in {"pm", "polynomial", "linked_polynomial"}:
-                 kwargs["eta"] = float(params.get("eta", 20.0))
-             if method == "non_uniform":
-                 kwargs["perturbation"] = float(params.get("perturbation", 0.5))
-             if method == "gaussian":
-                 kwargs["sigma"] = float(params.get("sigma", 0.1))
-             if method == "cauchy":
-                 kwargs["gamma"] = float(params.get("gamma", 0.1))
-             if method == "uniform":
-                 kwargs["perturb"] = float(params.get("perturb", 0.1))
-                 kwargs["repair"] = None
+            kwargs["prob_mutation"] = float(params.get("prob", 0.1))
+            if method in {"pm", "polynomial", "linked_polynomial"}:
+                kwargs["eta"] = float(params.get("eta", 20.0))
+            if method == "non_uniform":
+                kwargs["perturbation"] = float(params.get("perturbation", 0.5))
+            if method == "gaussian":
+                kwargs["sigma"] = float(params.get("sigma", 0.1))
+            if method == "cauchy":
+                kwargs["gamma"] = float(params.get("gamma", 0.1))
+            if method == "uniform":
+                kwargs["perturb"] = float(params.get("perturb", 0.1))
+                kwargs["repair"] = None
 
         # Filter kwargs that the constructor accepts?
         # Python classes will error on unexpected kwargs unless they take **kwargs.
         # Most VAMOS operators are specific.
         # We need to be careful here or accept that we are cleaning up.
         # Let's simple check if method is in registry and instantiate.
-        
+
         # HACK: Filter kwargs based on known keys for safety or just pass relevant ones?
         # Relying on implicit knowledge of operator constructor is what makes this hard to genericize fully without a Factory pattern.
         # But `operator_registry` contains classes.
-        
+
         return op_cls(**{k: v for k, v in kwargs.items() if k in op_cls.__init__.__code__.co_varnames})
 
     def _resolve_repair(self) -> Any | None:
@@ -165,22 +165,22 @@ class VariationPipeline:
     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:
         # Non-real encoding path (handled by dedicated operators).
         if self.encoding != "real":
-             return self._produce_offspring_nonreal(parents, rng)
+            return self._produce_offspring_nonreal(parents, rng)
 
         # Pipeline execution for Real encoding
         n_var = parents.shape[1]
         group_size = self.parents_per_group
-        
+
         # Crossover
         if self.crossover_op is None:
-             raise ValueError("Crossover operator is not initialized.")
-             
+            raise ValueError("Crossover operator is not initialized.")
+
         if parents.shape[0] % group_size != 0:
             usable = (parents.shape[0] // group_size) * group_size
             parents = parents[:usable]
         if parents.size == 0:
             return parents
-            
+
         if group_size == 2:
             pairs = parents.reshape(-1, 2, n_var)
             offspring = cast(np.ndarray, self.crossover_op(pairs, rng)).reshape(parents.shape)
@@ -198,7 +198,7 @@ class VariationPipeline:
             flat = offspring.reshape(-1, offspring.shape[-1])
             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))
             offspring = repaired.reshape(offspring.shape)
-            
+
         return offspring
 
     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:
@@ -207,7 +207,7 @@ class VariationPipeline:
         cross_params = self.cross_params
         mut_params = self.mut_params
         xl, xu = self.xl, self.xu
-        
+
         if encoding == "permutation":
             cross_prob = float(cross_params.get("prob", 1.0))
             cross_fn = cast(Any, PERM_CROSSOVER[self.cross_method])
@@ -247,7 +247,7 @@ class VariationPipeline:
             mut_fn = cast(Any, MIXED_MUTATION[self.mut_method])
             mut_fn(offspring, float(mut_params.get("prob", 0.0)), spec, rng)
             return offspring
-            
+
         return parents
 
     @staticmethod
@@ -255,5 +255,6 @@ class VariationPipeline:
         if cross_method in {"pcx", "undx", "spx"}:
             return 3
         return 2
+
 
 __all__ = ["VariationPipeline"]

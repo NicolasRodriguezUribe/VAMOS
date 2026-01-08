@@ -2,8 +2,10 @@
 Unified API for VAMOS optimization.
 
 This module provides a single, powerful entry point that consolidates
-optimize(), study(), and auto_optimize() into one flexible function.
+problem-based runs, study-style configuration, and auto-parameter defaults
+into one flexible function.
 """
+
 from __future__ import annotations
 
 import logging
@@ -12,7 +14,6 @@ from typing import Any, Sequence
 from vamos.experiment.optimize import OptimizeConfig, OptimizationResult, optimize as _optimize_config
 from vamos.experiment.auto import _resolve_problem, _select_algorithm, _compute_pop_size, _compute_budget
 from vamos.experiment.builder import study as _study_builder
-from vamos.foundation.problem.registry import make_problem_selection
 
 
 def _logger() -> logging.Logger:
@@ -32,12 +33,12 @@ def optimize(
 ) -> OptimizationResult | list[OptimizationResult]:
     """
     Unified entry point for VAMOS optimization.
-    
+
     This function consolidates multiple APIs into a single powerful interface:
     - Accepts problem names (strings), instances, or OptimizeConfig
     - Supports AutoML with algorithm="auto"
     - Handles multi-run studies with seed=[0,1,2,...]
-    
+
     Args:
         problem: Problem name (e.g., "zdt1"), problem instance, or OptimizeConfig.
         algorithm: Algorithm name or "auto" for automatic selection.
@@ -47,36 +48,31 @@ def optimize(
         seed: Random seed or list of seeds for multi-run mode.
         verbose: Print progress information.
         **algo_kwargs: Additional algorithm-specific parameters.
-        
+
     Returns:
         OptimizationResult for single seed, or list[OptimizationResult] for multiple seeds.
-        
+
     Examples:
         # AutoML mode - zero config
         >>> result = vamos.optimize("zdt1")
-        
+
         # Specify algorithm
         >>> result = vamos.optimize("zdt1", algorithm="moead", budget=5000)
-        
+
         # Multi-seed study
         >>> results = vamos.optimize("zdt1", seeds=[0, 1, 2, 3, 4])
-        
-        # Full control with OptimizeConfig (backward compatible)
+
+        # Full control with OptimizeConfig
         >>> result = vamos.optimize(my_config)
     """
-    # Case 1: OptimizeConfig passed directly (backward compatibility)
+    # Case 1: OptimizeConfig passed directly
     if isinstance(problem, OptimizeConfig):
         return _optimize_config(problem, engine=engine if engine != "numpy" else None)
-    
+
     # Case 2: Multi-seed mode
     if isinstance(seed, (list, tuple)):
-        return [
-            _run_single(
-                problem, algorithm, budget, pop_size, engine, s, verbose, algo_kwargs
-            )
-            for s in seed
-        ]
-    
+        return [_run_single(problem, algorithm, budget, pop_size, engine, s, verbose, algo_kwargs) for s in seed]
+
     # Case 3: Single run
     return _run_single(problem, algorithm, budget, pop_size, engine, seed, verbose, algo_kwargs)
 
@@ -94,22 +90,22 @@ def _run_single(
     """Execute a single optimization run."""
     # Resolve problem
     problem_instance = _resolve_problem(problem)
-    
+
     # Extract metadata
     n_var = getattr(problem_instance, "n_var", 10)
     n_obj = getattr(problem_instance, "n_obj", 2)
     encoding = getattr(problem_instance, "encoding", "real")
-    
+
     # Auto-select algorithm if needed
     if algorithm == "auto":
         algorithm = _select_algorithm(n_obj, encoding)
         if verbose:
             _logger().info("[vamos] Auto-selected algorithm: %s", algorithm)
-    
+
     # Auto-determine hyperparameters if not specified
     effective_pop_size = pop_size if pop_size else _compute_pop_size(n_var, n_obj)
     effective_budget = budget if budget else _compute_budget(n_var, n_obj)
-    
+
     if verbose:
         _logger().info("[vamos] Problem: n_var=%s, n_obj=%s, encoding=%s", n_var, n_obj, encoding)
         _logger().info(
@@ -118,7 +114,7 @@ def _run_single(
             effective_pop_size,
             effective_budget,
         )
-    
+
     # For string problems, use StudyBuilder
     if isinstance(problem, str):
         builder = _study_builder(problem)
@@ -127,10 +123,10 @@ def _run_single(
         builder = builder.evaluations(effective_budget)
         builder = builder.seed(seed)
         return builder.run()
-    
+
     # For instance problems, use run_optimization directly
     from vamos.experiment.optimize import run_optimization
-    
+
     return run_optimization(
         problem_instance,
         algorithm=algorithm,
@@ -138,7 +134,7 @@ def _run_single(
         pop_size=effective_pop_size,
         engine=engine,
         seed=seed,
-        **algo_kwargs
+        **algo_kwargs,
     )
 
 

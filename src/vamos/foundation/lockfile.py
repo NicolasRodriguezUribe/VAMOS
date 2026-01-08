@@ -1,12 +1,13 @@
 """
 Lockfile generation utilities for run reproducibility.
 """
+
 from __future__ import annotations
 
 import json
 import platform
 import sys
-from importlib.metadata import distributions, version, PackageNotFoundError
+from importlib.metadata import distributions
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +15,7 @@ from typing import Any
 def generate_lockfile_data() -> dict[str, Any]:
     """
     Generate a dictionary containing environment information associated with a run.
-    
+
     Returns:
         Dictionary with keys:
         - python: Python version info
@@ -34,7 +35,7 @@ def generate_lockfile_data() -> dict[str, Any]:
             "version": platform.version(),
             "machine": platform.machine(),
             "processor": platform.processor(),
-        }
+        },
     }
 
     # Installed packages
@@ -45,7 +46,7 @@ def generate_lockfile_data() -> dict[str, Any]:
         except Exception:
             # Should not happen typically, but fail safe
             continue
-            
+
     # Sort for deterministic output
     packages = dict(sorted(packages.items()))
 
@@ -58,10 +59,10 @@ def generate_lockfile_data() -> dict[str, Any]:
 def write_lockfile(path: str | Path) -> Path:
     """
     Generate and write environment lockfile to the specified path.
-    
+
     Args:
         path: Output path for the lockfile.
-        
+
     Returns:
         Path to the written file.
     """
@@ -71,13 +72,13 @@ def write_lockfile(path: str | Path) -> Path:
     # If directory, append 'vamos.lock'.
     if path.is_dir():
         path = path / "vamos.lock"
-        
+
     data = generate_lockfile_data()
-    
+
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
-        
+
     return path
 
 

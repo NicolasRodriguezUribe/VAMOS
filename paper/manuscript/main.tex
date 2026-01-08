@@ -15,6 +15,10 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{hyperref}
+\hypersetup{hypertexnames=false}
+\makeatletter
+\g@addto@macro\UrlBreaks{\do\.\do\_\do\-}
+\makeatother
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{multirow}
@@ -89,7 +93,7 @@ The contributions of this work are:
 
 \subsection{Python MOEA frameworks}
 
-Several mature Python libraries exist for MOEAs. \textbf{pymoo}~\cite{blank2020pymoo} provides a rich collection of algorithms and operators with an emphasis on modularity. \textbf{DEAP}~\cite{fortin2012deap} is a general evolutionary computation toolkit; while flexible, users typically assemble MOEAs manually. \textbf{jMetalPy}~\cite{benitez2019jmetalpy} ports the jMetal architecture to Python, offering a broad algorithm set but relying on object-centric representations. \textbf{Platypus}~\cite{hadka2015platypus} provides a lightweight API and a set of classic MOEAs.
+Several mature Python libraries exist for MOEAs. \textbf{pymoo}~\cite{blank2020pymoo} provides a rich collection of algorithms and operators with an emphasis on modularity. \textbf{DEAP}~\cite{fortin2012deap} is a general evolutionary computation toolkit; while flexible, users typically assemble MOEAs manually. \textbf{jMetalPy}~\cite{benitez2019jmetalpy} ports the jMetal architecture to Python and emphasizes end-to-end experimentation (observer-driven progress/visualization, a ``laboratory'' workflow, and built-in statistical post-processing with LaTeX export), but it relies on object-centric representations and does not address cross-toolkit semantic drift. We build upon this methodological focus on rigorous experimental studies and complement it with an array-based execution model and a fairness-oriented benchmarking protocol that aligns problem definitions and operator semantics across toolkits. \textbf{Platypus}~\cite{hadka2015platypus} provides a lightweight API and a set of classic MOEAs.
 
 Table~\ref{tab:frameworks} summarizes high-level differences relevant to this work. The main distinction is the internal representation: \VAMOS{} consistently uses dense arrays for populations and objectives, while most alternatives operate on per-solution objects. This difference enables kernel-based acceleration and reduces Python overhead in the inner loop.
 
@@ -200,7 +204,7 @@ Algorithms in \VAMOS{} expose a uniform \texttt{run(problem, termination, seed, 
   \State Compute ranks and crowding distances
   \State Select survivors of size $N$ (rank--crowding)
 \EndWhile
-\State \Return final non-dominated set
+\State \Return final population and derived non-dominated set
 \end{algorithmic}
 \end{algorithm}
 
@@ -231,13 +235,15 @@ We evaluate runtime and solution quality on widely used synthetic benchmarks: ZD
 
 To ensure comparability across frameworks, we standardize the algorithmic settings of NSGA-II: population size $N=100$, SBX crossover probability $p_c=0.9$ and distribution index $\eta_c=20$, polynomial mutation distribution index $\eta_m=20$ and mutation probability $p_m=1/n$, tournament selection, and rank--crowding survival. For each framework we map these settings to the closest available implementation.
 
+This workflow follows standard practice in comparative MOEA studies (independent runs, indicator computation, and statistical testing) and is consistent with the experimentation methodology described in jMetalPy~\cite{benitez2019jmetalpy}. Our main extension is to make the \emph{inputs} to this workflow comparable across toolkits by enforcing semantic alignment of both problem definitions and operator probabilities.
+
 Crucially, we align \emph{semantics} (not only parameter names) and enforce consistent benchmark definitions. Two examples illustrate why this matters. First, in \textbf{pymoo} the polynomial mutation operator exposes both an individual-level probability (\texttt{prob}) and a per-variable probability (\texttt{prob\_var}); to match the standard ``$p_m=1/n$ per decision variable'' setting used by DEAP/jMetalPy, we set \texttt{prob}=1 and \texttt{prob\_var}=1/n. Second, some libraries ship benchmark problems under canonical names but with library-specific domains; for instance, Platypus' built-in ZDT base class uses $[0,1]^n$, whereas ZDT4 is defined with $x_1\in[0,1]$ and $x_{2..n}\in[-5,5]$.
 
 Therefore, for toolkits or APIs where problem definitions differ (notably DEAP and Platypus for ZDT4), we evaluate individuals using a shared reference implementation of the benchmark function and bounds (validated against pymoo) while still using each framework's NSGA-II implementation and operators. For WFG in Platypus we similarly wrap pymoo's WFG definitions to avoid definition drift. While full equivalence cannot be guaranteed due to framework-specific details (tie-breaking, boundary handling, duplicate elimination, etc.), these choices aim to make the comparison as fair as possible by removing confounders unrelated to algorithmic overhead and numerical kernels.
 
 \subsection{Runtime measurement}
 
-All runtimes are measured wall-clock using high-resolution timers and include algorithm overhead and objective evaluations. We report medians across independent seeds and provide per-problem and per-family summaries.
+All runtimes are measured wall-clock using high-resolution timers and include algorithm overhead and objective evaluations. We report medians across 30 independent seeds and provide per-problem and per-family summaries.
 
 \subsection{Normalized hypervolume protocol}
 \label{sec:hv}
@@ -267,9 +273,9 @@ Table~\ref{tab:backends} reports median runtime for \VAMOS{} backends aggregated
 \toprule
 \textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Numba & 2.57 & \textbf{1.68} & \textbf{2.21} & \textbf{2.16} \\
-Moocore & \textbf{2.31} & 2.57 & 2.95 & 2.61 \\
-Numpy & 5.61 & 5.96 & 7.35 & 6.31 \\
+Numba & \textbf{7.72} & \textbf{6.85} & \textbf{7.91} & \textbf{7.50} \\
+Moocore & 7.80 & 7.79 & 8.08 & 7.89 \\
+Numpy & 13.33 & 13.56 & 13.41 & 13.44 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -286,11 +292,11 @@ Table~\ref{tab:frameworks_perf} compares \VAMOS{} against other Python framework
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-VAMOS & \textbf{2.57} & \textbf{1.68} & \textbf{2.21} & \textbf{2.16} \\
-pymoo & 8.50 & 7.76 & 9.20 & 8.49 \\
-DEAP & 28.00 & 34.02 & 75.80 & 45.94 \\
-jMetalPy & 24.41 & 27.15 & 75.45 & 42.34 \\
-Platypus & 34.35 & 41.21 & 82.28 & 52.61 \\
+VAMOS & \textbf{7.72} & \textbf{6.85} & \textbf{7.91} & \textbf{7.50} \\
+pymoo & 12.04 & 10.87 & 11.33 & 11.41 \\
+DEAP & 38.36 & 42.93 & 76.02 & 52.44 \\
+jMetalPy & 25.82 & 23.80 & 75.05 & 41.56 \\
+Platypus & 50.82 & 40.38 & 84.89 & 58.69 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -298,7 +304,7 @@ Platypus & 34.35 & 41.21 & 82.28 & 52.61 \\
 \subsection{Statistical analysis}
 \label{sec:stats}
 
-We use the Wilcoxon signed-rank test~\cite{wilcoxon1945} at significance level $\alpha=0.05$ to compare paired performance distributions across seeds, per problem. Runtime is treated as a \emph{minimization} metric, and normalized hypervolume as a \emph{maximization} metric.
+We use the Wilcoxon signed-rank test~\cite{wilcoxon1945} at significance level $\alpha=0.05$ to compare paired performance distributions across seeds, per problem. Runtime is treated as a \emph{minimization} metric, and normalized hypervolume as a \emph{maximization} metric. While jMetalPy~\cite{benitez2019jmetalpy} illustrates both frequentist and Bayesian statistical workflows (and exemplifies Wilcoxon rank-sum tests in a multi-algorithm setting), our design is explicitly paired by construction (shared seeds), so we report the signed-rank variant as a minimal, widely used test under this protocol.
 
 \begin{table}[htbp]
 \centering
@@ -308,25 +314,25 @@ We use the Wilcoxon signed-rank test~\cite{wilcoxon1945} at significance level $
 \toprule
 \textbf{Problem} & \textbf{VAMOS (numba)} & \textbf{pymoo} & \textbf{p-value} & \textbf{Sig.} \\
 \midrule
-zdt1 & \textbf{2.57} & 8.50 & 1.000 &  \\
-zdt2 & \textbf{2.46} & 8.67 & 1.000 &  \\
-zdt3 & \textbf{3.41} & 8.18 & 1.000 &  \\
-zdt4 & \textbf{1.26} & 6.50 & 1.000 &  \\
-zdt6 & \textbf{2.88} & 12.28 & 1.000 &  \\
-dtlz1 & \textbf{2.52} & 6.88 & 1.000 &  \\
-dtlz2 & \textbf{1.33} & 8.63 & 1.000 &  \\
-dtlz3 & \textbf{2.10} & 7.76 & 1.000 &  \\
-dtlz4 & \textbf{1.35} & 6.93 & 1.000 &  \\
-dtlz7 & \textbf{1.68} & 9.20 & 1.000 &  \\
-wfg1 & \textbf{1.92} & 7.54 & 1.000 &  \\
-wfg2 & \textbf{1.86} & 9.20 & 1.000 &  \\
-wfg3 & \textbf{2.06} & 9.11 & 1.000 &  \\
-wfg4 & \textbf{2.21} & 10.14 & 1.000 &  \\
-wfg5 & \textbf{2.40} & 9.65 & 1.000 &  \\
-wfg6 & \textbf{2.48} & 10.05 & 1.000 &  \\
-wfg7 & \textbf{1.86} & 8.70 & 1.000 &  \\
-wfg8 & \textbf{2.29} & 8.93 & 1.000 &  \\
-wfg9 & \textbf{6.62} & 12.87 & 1.000 &  \\
+zdt1 & \textbf{7.47} & 12.49 & 0.0000 & $\checkmark$ \\
+zdt2 & \textbf{6.99} & 10.36 & 0.0000 & $\checkmark$ \\
+zdt3 & \textbf{7.98} & 12.39 & 0.0000 & $\checkmark$ \\
+zdt4 & \textbf{8.05} & 12.59 & 0.0000 & $\checkmark$ \\
+zdt6 & \textbf{7.60} & 16.02 & 0.0000 & $\checkmark$ \\
+dtlz1 & \textbf{7.86} & 11.51 & 0.0000 & $\checkmark$ \\
+dtlz2 & \textbf{7.56} & 12.00 & 0.0000 & $\checkmark$ \\
+dtlz3 & \textbf{5.60} & 9.86 & 0.0000 & $\checkmark$ \\
+dtlz4 & \textbf{6.09} & 10.97 & 0.0000 & $\checkmark$ \\
+dtlz7 & \textbf{6.07} & 8.76 & 0.0000 & $\checkmark$ \\
+wfg1 & \textbf{6.96} & 9.47 & 0.0000 & $\checkmark$ \\
+wfg2 & \textbf{6.92} & 9.26 & 0.0000 & $\checkmark$ \\
+wfg3 & \textbf{7.95} & 11.85 & 0.0000 & $\checkmark$ \\
+wfg4 & \textbf{7.52} & 10.42 & 0.0000 & $\checkmark$ \\
+wfg5 & \textbf{6.48} & 9.07 & 0.0000 & $\checkmark$ \\
+wfg6 & \textbf{7.56} & 10.08 & 0.0000 & $\checkmark$ \\
+wfg7 & \textbf{8.06} & 9.11 & 0.0000 & $\checkmark$ \\
+wfg8 & \textbf{8.33} & 12.89 & 0.0000 & $\checkmark$ \\
+wfg9 & \textbf{9.38} & 11.87 & 0.0000 & $\checkmark$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -339,25 +345,25 @@ wfg9 & \textbf{6.62} & 12.87 & 1.000 &  \\
 \toprule
 \textbf{Problem} & \textbf{VAMOS (numba)} & \textbf{pymoo} & \textbf{p-value} & \textbf{Sig.} \\
 \midrule
-zdt1 & 0.99 & \textbf{0.99} & 1.000 &  \\
-zdt2 & 0.98 & \textbf{0.98} & 1.000 &  \\
-zdt3 & 0.99 & \textbf{1.00} & 1.000 &  \\
-zdt4 & 0.99 & \textbf{0.99} & 1.000 &  \\
-zdt6 & \textbf{0.98} & 0.98 & 1.000 &  \\
-dtlz1 & 0.50 & \textbf{0.91} & 1.000 &  \\
-dtlz2 & 0.75 & \textbf{0.79} & 1.000 &  \\
-dtlz3 & 0.00 & \textbf{0.00} & nan &  \\
-dtlz4 & 0.78 & \textbf{0.79} & 1.000 &  \\
-dtlz7 & 0.81 & \textbf{0.92} & 1.000 &  \\
-wfg1 & 0.38 & \textbf{0.46} & 1.000 &  \\
-wfg2 & \textbf{0.99} & 0.94 & 1.000 &  \\
-wfg3 & \textbf{0.98} & 0.89 & 1.000 &  \\
-wfg4 & 0.96 & \textbf{0.96} & 1.000 &  \\
-wfg5 & 0.83 & \textbf{0.83} & 1.000 &  \\
-wfg6 & \textbf{0.83} & 0.82 & 1.000 &  \\
-wfg7 & 0.97 & \textbf{0.97} & 1.000 &  \\
-wfg8 & \textbf{1.40} & 1.37 & 1.000 &  \\
-wfg9 & \textbf{0.97} & 0.94 & 1.000 &  \\
+zdt1 & 0.99 & \textbf{0.99} & 0.005 & $\checkmark$ \\
+zdt2 & 0.98 & \textbf{0.98} & 0.036 & $\checkmark$ \\
+zdt3 & 1.00 & \textbf{1.00} & 0.001 & $\checkmark$ \\
+zdt4 & 0.99 & \textbf{0.99} & 0.129 &  \\
+zdt6 & 0.98 & \textbf{0.98} & 0.0000 & $\checkmark$ \\
+dtlz1 & \textbf{0.92} & 0.91 & 0.404 &  \\
+dtlz2 & 0.79 & \textbf{0.79} & 0.146 &  \\
+dtlz3 & 0.79 & \textbf{0.79} & 0.584 &  \\
+dtlz4 & 0.79 & \textbf{0.80} & 0.012 & $\checkmark$ \\
+dtlz7 & \textbf{0.89} & 0.88 & 0.871 &  \\
+wfg1 & 0.59 & \textbf{0.62} & 0.158 &  \\
+wfg2 & 0.99 & \textbf{0.99} & 0.213 &  \\
+wfg3 & \textbf{0.98} & 0.98 & 0.871 &  \\
+wfg4 & 0.97 & \textbf{0.97} & 0.004 & $\checkmark$ \\
+wfg5 & 0.83 & \textbf{0.83} & 0.020 & $\checkmark$ \\
+wfg6 & 0.84 & \textbf{0.85} & 0.073 &  \\
+wfg7 & 0.97 & \textbf{0.97} & 0.100 &  \\
+wfg8 & 0.76 & \textbf{0.76} & 0.221 &  \\
+wfg9 & \textbf{0.81} & 0.71 & 0.205 &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -374,11 +380,18 @@ For hypervolume, reference fronts for problems without closed-form Pareto fronts
 
 \subsection{Reproducibility}
 
-All experiments in this paper are reproducible from the repository. Benchmarks are executed via \texttt{python -m paper.run\_paper\_benchmark} (with \texttt{VAMOS\_N\_SEEDS} and \texttt{VAMOS\_N\_JOBS} controlling the number of seeds and parallel workers), and LaTeX tables are regenerated by \texttt{python paper/update\_paper\_tables\_from\_csv.py} (runtime tables) and \texttt{python paper/run\_statistical\_tests.py} (Wilcoxon tables). Reference Pareto fronts used for normalized hypervolume are stored in \texttt{data/reference\_fronts/} and can be regenerated with the provided scripts under \texttt{experiments/scripts/} (front density is configurable via environment variables, e.g., \texttt{VAMOS\_REF\_WFG2\_POINTS}).
+All experiments in this paper are reproducible from the repository. Benchmarks are executed via \path{python -m paper.run_paper_benchmark}. We control the number of seeds and workers with \texttt{VAMOS\_N\_SEEDS} and \texttt{VAMOS\_N\_JOBS}; unless otherwise stated, we use \texttt{VAMOS\_N\_SEEDS=30}. LaTeX tables are regenerated by \path{python paper/update_paper_tables_from_csv.py} (runtime tables) and \path{python paper/run_statistical_tests.py} (Wilcoxon tables). Benchmark reports also emit jMetalPy-compatible laboratory outputs (QualityIndicatorSummary.csv, Wilcoxon tables, and boxplots) under \path{summary/lab/} for interoperable post-processing. Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
 
 \subsection{LLM-assisted development workflow}
 
-LLMs were used to propose patches and accelerate mechanical refactors, while correctness and architectural integrity were enforced via automated verification. Concretely, we adopted a propose--apply--verify loop: the assistant proposes a minimal diff, the patch is applied explicitly, and we run fast-fail checks (e.g., architecture/health gates and static checks) followed by the project test/build suite and targeted benchmark smoke tests. Only patches that pass these checks are retained. This process constrains AI assistance to a productivity role and keeps the implementation and results grounded in deterministic, reproducible tooling.
+We used a large language model (LLM) as a code assistant to accelerate mechanical refactors, surface configuration mismatches across frameworks, and propose minimal patches. The LLM was treated strictly as a proposal generator: changes were applied as explicit diffs, reviewed by the authors, and accepted only if they passed automated verification gates. In practice we followed an agentic propose--apply--verify loop: propose a targeted change \(\rightarrow\) implement the patch \(\rightarrow\) run fast-fail checks (architecture/health gates and static checks) \(\rightarrow\) run the project test/build suite and targeted benchmark smoke tests \(\rightarrow\) iterate until all gates pass. This constrains AI assistance to a productivity role rather than a source of truth; all reported results are produced solely by the released code and fixed reference data.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/methodology_pro.png}
+  \caption{Agentic propose--apply--verify loop used to control LLM-assisted changes in the benchmarking pipeline.}
+  \label{fig:llm_workflow}
+\end{figure}
 
 %==============================================================================
 \section{Conclusions and Future Work}
@@ -400,7 +413,7 @@ We presented \VAMOS{}, a high-performance Python framework for multi-objective o
 \label{app:detailed}
 %==============================================================================
 
-The repository includes dense reference Pareto fronts for all benchmark problems used for normalized hypervolume computation (\texttt{data/reference\_fronts/}). These fronts are generated analytically when closed forms are available (ZDT and most DTLZ problems) and by dense sampling followed by non-dominated filtering for cases where the Pareto front is disconnected or defined implicitly (DTLZ7 and WFG). For WFG2 we use a higher sampling density (configurable via \texttt{VAMOS\_REF\_WFG2\_POINTS}) to stabilize HV normalization.
+The repository includes dense reference Pareto fronts for all benchmark problems used for normalized hypervolume computation (\path{data/reference_fronts/}). These fronts are generated analytically when closed forms are available (ZDT and most DTLZ problems) and by dense sampling followed by non-dominated filtering for cases where the Pareto front is disconnected or defined implicitly (DTLZ7 and WFG). For WFG2 we use a higher sampling density (configurable via \path{VAMOS_REF_WFG2_POINTS}) to stabilize HV normalization.
 
 Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-problem median runtimes.
 
@@ -412,27 +425,27 @@ Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-
 \toprule
 \textbf{Problem} & \textbf{Numba} & \textbf{Moocore} & \textbf{Numpy} \\
 \midrule
-dtlz1 & \textbf{2.52} & 2.57 & 5.44 \\
-dtlz2 & \textbf{1.33} & 1.82 & 5.96 \\
-dtlz3 & \textbf{2.10} & 2.95 & 6.03 \\
-dtlz4 & \textbf{1.35} & 2.10 & 7.23 \\
-dtlz7 & \textbf{1.68} & 2.63 & 5.60 \\
-wfg1 & \textbf{1.92} & 2.95 & 6.93 \\
-wfg2 & \textbf{1.86} & 1.88 & 7.35 \\
-wfg3 & \textbf{2.06} & 2.79 & 6.80 \\
-wfg4 & 2.21 & \textbf{1.51} & 6.86 \\
-wfg5 & \textbf{2.40} & 3.04 & 6.52 \\
-wfg6 & \textbf{2.48} & 3.96 & 10.71 \\
-wfg7 & 1.86 & \textbf{1.86} & 8.50 \\
-wfg8 & \textbf{2.29} & 3.43 & 7.80 \\
-wfg9 & \textbf{6.62} & 6.88 & 8.76 \\
-zdt1 & \textbf{2.57} & 2.95 & 5.61 \\
-zdt2 & 2.46 & \textbf{2.31} & 5.39 \\
-zdt3 & 3.41 & \textbf{2.47} & 5.88 \\
-zdt4 & 1.26 & \textbf{1.10} & 6.29 \\
-zdt6 & 2.88 & \textbf{2.14} & 5.57 \\
+dtlz1 & \textbf{7.86} & 8.19 & 15.52 \\
+dtlz2 & \textbf{7.56} & 8.33 & 14.32 \\
+dtlz3 & \textbf{5.60} & 6.41 & 12.22 \\
+dtlz4 & \textbf{6.09} & 7.05 & 11.88 \\
+dtlz7 & \textbf{6.07} & 8.63 & 14.15 \\
+wfg1 & \textbf{6.96} & 8.20 & 11.75 \\
+wfg2 & 6.92 & \textbf{6.75} & 11.52 \\
+wfg3 & \textbf{7.95} & 8.23 & 11.60 \\
+wfg4 & 7.52 & \textbf{7.31} & 11.17 \\
+wfg5 & \textbf{6.48} & 7.89 & 13.84 \\
+wfg6 & \textbf{7.56} & 7.73 & 12.29 \\
+wfg7 & 8.06 & \textbf{6.99} & 11.60 \\
+wfg8 & 8.33 & \textbf{7.85} & 15.55 \\
+wfg9 & \textbf{9.38} & 9.77 & 14.00 \\
+zdt1 & 7.47 & \textbf{7.38} & 12.56 \\
+zdt2 & \textbf{6.99} & 7.25 & 12.23 \\
+zdt3 & \textbf{7.98} & 8.69 & 13.81 \\
+zdt4 & 8.05 & \textbf{7.88} & 15.09 \\
+zdt6 & 7.60 & \textbf{6.45} & 11.81 \\
 \midrule
-\textbf{Average} & \textbf{2.38} & 2.70 & 6.80 \\
+\textbf{Average} & \textbf{7.39} & 7.74 & 12.99 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -446,27 +459,27 @@ zdt6 & 2.88 & \textbf{2.14} & 5.57 \\
 \toprule
 \textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{DEAP} & \textbf{jMetalPy} & \textbf{Platypus} \\
 \midrule
-dtlz1 & \textbf{2.52} & 6.88 & 33.53 & 25.58 & 33.84 \\
-dtlz2 & \textbf{1.33} & 8.63 & 33.62 & 24.77 & 42.91 \\
-dtlz3 & \textbf{2.10} & 7.76 & 38.03 & 29.34 & 35.75 \\
-dtlz4 & \textbf{1.35} & 6.93 & 35.86 & 27.15 & 41.21 \\
-dtlz7 & \textbf{1.68} & 9.20 & 34.02 & 28.86 & 49.59 \\
-wfg1 & \textbf{1.92} & 7.54 & 47.04 & 46.83 & 74.47 \\
-wfg2 & \textbf{1.86} & 9.20 & 76.95 & 89.80 & 82.28 \\
-wfg3 & \textbf{2.06} & 9.11 & 75.80 & 75.45 & 91.78 \\
-wfg4 & \textbf{2.21} & 10.14 & 55.28 & 47.20 & 58.55 \\
-wfg5 & \textbf{2.40} & 9.65 & 53.28 & 45.29 & 63.89 \\
-wfg6 & \textbf{2.48} & 10.05 & 164.27 & 179.50 & 165.39 \\
-wfg7 & \textbf{1.86} & 8.70 & 64.21 & 50.15 & 66.53 \\
-wfg8 & \textbf{2.29} & 8.93 & 110.35 & 123.23 & 108.36 \\
-wfg9 & \textbf{6.62} & 12.87 & 257.90 & 308.90 & 267.49 \\
-zdt1 & \textbf{2.57} & 8.50 & 27.53 & 25.81 & 35.65 \\
-zdt2 & \textbf{2.46} & 8.67 & 28.00 & 25.73 & 34.35 \\
-zdt3 & \textbf{3.41} & 8.18 & 29.24 & 23.89 & 38.43 \\
-zdt4 & \textbf{1.26} & 6.50 & 29.65 & 24.41 & 30.03 \\
-zdt6 & \textbf{2.88} & 12.28 & 24.27 & 22.69 & 31.52 \\
+dtlz1 & \textbf{7.86} & 11.51 & 44.64 & 27.83 & 43.81 \\
+dtlz2 & \textbf{7.56} & 12.00 & 43.21 & 24.46 & 44.41 \\
+dtlz3 & \textbf{5.60} & 9.86 & 41.05 & 23.88 & 35.31 \\
+dtlz4 & \textbf{6.09} & 10.97 & 42.52 & 22.39 & 41.10 \\
+dtlz7 & \textbf{6.07} & 8.76 & 38.96 & 20.74 & 38.68 \\
+wfg1 & \textbf{6.96} & 9.47 & 47.04 & 55.68 & 57.42 \\
+wfg2 & \textbf{6.92} & 9.26 & 87.82 & 76.53 & 83.89 \\
+wfg3 & \textbf{7.95} & 11.85 & 96.22 & 76.52 & 85.23 \\
+wfg4 & \textbf{7.52} & 10.42 & 43.31 & 42.71 & 55.68 \\
+wfg5 & \textbf{6.48} & 9.07 & 43.87 & 37.57 & 73.03 \\
+wfg6 & \textbf{7.56} & 10.08 & 200.89 & 223.06 & 241.54 \\
+wfg7 & \textbf{8.06} & 9.11 & 60.41 & 47.03 & 70.96 \\
+wfg8 & \textbf{8.33} & 12.89 & 172.66 & 150.11 & 160.46 \\
+wfg9 & \textbf{9.38} & 11.87 & 364.86 & 413.85 & 373.63 \\
+zdt1 & \textbf{7.47} & 12.49 & 38.91 & 27.92 & 51.50 \\
+zdt2 & \textbf{6.99} & 10.36 & 35.39 & 24.08 & 46.55 \\
+zdt3 & \textbf{7.98} & 12.39 & 43.52 & 29.38 & 62.73 \\
+zdt4 & \textbf{8.05} & 12.59 & 49.89 & 27.07 & 43.81 \\
+zdt6 & \textbf{7.60} & 16.02 & 38.17 & 28.58 & 60.10 \\
 \midrule
-\textbf{Average} & \textbf{2.38} & 8.93 & 64.15 & 64.45 & 71.16 \\
+\textbf{Average} & \textbf{7.39} & 11.10 & 80.70 & 72.60 & 87.89 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -499,8 +512,8 @@ J. Mach. Learn. Res. 13 (2012) 2171--2175.
 
 \bibitem{benitez2019jmetalpy}
 A.~Ben{\'\i}tez-Hidalgo, et~al.,
-jMetalPy: A Python framework for multi-objective optimization,
-Swarm Evol. Comput. 51 (2019) 100598.
+jMetalPy: A Python framework for multi-objective optimization with metaheuristics,
+Swarm Evol. Comput. 51 (2019) 100598, doi:10.1016/j.swevo.2019.100598.
 
 \bibitem{hadka2015platypus}
 D.~Hadka,

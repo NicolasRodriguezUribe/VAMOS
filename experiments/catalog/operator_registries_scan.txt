@@ -1,0 +1,195 @@
+Wrote: experiments\catalog\operator_registries.json registries: 50
+Wrote: experiments\catalog\operator_registries_summary.json
+
+Summary:
+ {
+  "total_registries": 50,
+  "kinds": {
+    "crossover": 24,
+    "mutation": 24,
+    "operator/variation": 2
+  },
+  "top10_by_size": [
+    {
+      "module": "vamos.engine.algorithm.components.variation.pipeline",
+      "attr": "operator_registry",
+      "summary": {
+        "n_keys": 43,
+        "sample_keys": [
+          "arithmetic",
+          "binary_uniform",
+          "bitflip",
+          "blx_alpha",
+          "cauchy",
+          "clamp",
+          "clip",
+          "creep",
+          "cx",
+          "cycle",
+          "displacement",
+          "erx",
+          "gaussian",
+          "hux",
+          "insert",
+          "int_arithmetic",
+          "int_uniform",
+          "inversion",
+          "linked_polynomial",
+          "mixed",
+          "mixed_mutation",
+          "non_uniform",
+          "one_point",
+          "order",
+          "ox",
+          "pcx",
+          "pm",
+          "pmx",
+          "polynomial",
+          "position_based",
+          "random",
+          "reflect",
+          "resample",
+          "reset",
+          "round",
+          "sbx",
+          "scramble",
+          "spx",
+          "swap",
+          "two_point",
+          "undx",
+          "uniform",
+          "uniform_reset"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.algorithm.moead.operators",
+      "attr": "PERM_CROSSOVER",
+      "summary": {
+        "n_keys": 11,
+        "sample_keys": [
+          "cx",
+          "cycle",
+          "edge",
+          "edge_recombination",
+          "erx",
+          "order",
+          "ox",
+          "pmx",
+          "pos",
+          "position",
+          "position_based"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.algorithm.moead.operators",
+      "attr": "BINARY_CROSSOVER",
+      "summary": {
+        "n_keys": 6,
+        "sample_keys": [
+          "1point",
+          "2point",
+          "one_point",
+          "single_point",
+          "two_point",
+          "uniform"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.algorithm.nsgaiii.operators",
+      "attr": "BINARY_CROSSOVER",
+      "summary": {
+        "n_keys": 6,
+        "sample_keys": [
+          "1point",
+          "2point",
+          "one_point",
+          "single_point",
+          "two_point",
+          "uniform"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.algorithm.smsemoa.operators",
+      "attr": "BINARY_CROSSOVER",
+      "summary": {
+        "n_keys": 6,
+        "sample_keys": [
+          "1point",
+          "2point",
+          "one_point",
+          "single_point",
+          "two_point",
+          "uniform"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.algorithm.moead.operators",
+      "attr": "PERM_MUTATION",
+      "summary": {
+        "n_keys": 5,
+        "sample_keys": [
+          "displacement",
+          "insert",
+          "inversion",
+          "scramble",
+          "swap"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.config.variation",
+      "attr": "OPERATORS_BY_ENCODING",
+      "summary": {
+        "n_keys": 5,
+        "sample_keys": [
+          "binary",
+          "integer",
+          "mixed",
+          "permutation",
+          "real"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.algorithm.moead.operators",
+      "attr": "INT_CROSSOVER",
+      "summary": {
+        "n_keys": 3,
+        "sample_keys": [
+          "arithmetic",
+          "blend",
+          "uniform"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.algorithm.moead.operators",
+      "attr": "INT_MUTATION",
+      "summary": {
+        "n_keys": 3,
+        "sample_keys": [
+          "creep",
+          "random_reset",
+          "reset"
+        ]
+      }
+    },
+    {
+      "module": "vamos.engine.algorithm.nsgaiii.operators",
+      "attr": "INT_CROSSOVER",
+      "summary": {
+        "n_keys": 3,
+        "sample_keys": [
+          "arithmetic",
+          "blend",
+          "uniform"
+        ]
+      }
+    }
+  ]
+}

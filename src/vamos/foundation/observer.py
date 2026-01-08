@@ -12,6 +12,7 @@ class RunContext:
     Encapsulates the static context of an optimization run.
     Passed to on_start events.
     """
+
     problem: Any  # Problem instance
     algorithm: Any  # Algorithm instance (if available during start)
     config: Any  # ExperimentConfig or OptimizeConfig

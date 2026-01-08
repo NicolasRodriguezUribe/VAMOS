@@ -8,15 +8,13 @@
     "ProblemSelection",
     "ProblemSpec",
     "__version__",
-    "auto_optimize",
     "available_problem_names",
     "make_problem_selection",
     "optimize",
     "pareto_filter",
     "reduce_objectives",
     "run_optimization",
-    "run_self_check",
-    "study"
+    "run_self_check"
   ],
   "vamos.api": [
     "ExperimentConfig",
@@ -26,15 +24,13 @@
     "OptimizeConfig",
     "ProblemSelection",
     "ProblemSpec",
-    "auto_optimize",
     "available_problem_names",
     "make_problem_selection",
     "optimize",
     "pareto_filter",
     "reduce_objectives",
     "run_optimization",
-    "run_self_check",
-    "study"
+    "run_self_check"
   ],
   "vamos.engine.api": [
     "IBEAConfig",

@@ -36,16 +36,10 @@ from vamos.ux.analysis.core_objective_reduction import (
 # Unified API - the primary entry point
 from vamos.experiment.unified import optimize
 
-# Legacy aliases (kept for backward compatibility)
-from vamos.experiment.builder import study
-from vamos.experiment.auto import auto_optimize
-
 __all__ = [
     # Primary API
     "optimize",
     "run_optimization",
-    "study",
-    "auto_optimize",
     "OptimizeConfig",
     "OptimizationResult",
     "pareto_filter",
