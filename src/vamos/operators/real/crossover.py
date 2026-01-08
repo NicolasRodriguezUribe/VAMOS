@@ -31,6 +31,7 @@ class SBXCrossover(Crossover):
         self,
         prob_crossover: float = 0.9,
         eta: float = 10.0,
+        prob_var: float = 0.5,
         *,
         lower: ArrayLike,
         upper: ArrayLike,
@@ -39,6 +40,7 @@ class SBXCrossover(Crossover):
     ) -> None:
         self.prob = float(prob_crossover)
         self.eta = float(eta)
+        self.prob_var = float(prob_var)
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.workspace = workspace
         self.allow_inplace = bool(allow_inplace)
@@ -79,13 +81,22 @@ class SBXCrossover(Crossover):
 
         parent1 = offspring[idx, 0, :]
         parent2 = offspring[idx, 1, :]
+        base1 = parent1.copy()
+        base2 = parent2.copy()
         eps = 1.0e-14
 
         y1 = np.minimum(parent1, parent2)
         y2 = np.maximum(parent1, parent2)
         diff = y2 - y1
         valid = diff > eps
-        if not np.any(valid):
+        var_rand = self._rand("sbx_var", parent1.shape, rng)
+        if self.workspace is None:
+            var_mask = var_rand <= self.prob_var
+        else:
+            var_mask = self.workspace.request("sbx_var_mask", parent1.shape, np.bool_)
+            np.less_equal(var_rand, self.prob_var, out=var_mask)
+        active = valid & var_mask
+        if not np.any(active):
             return offspring
 
         xl = self.lower.reshape(1, -1)
@@ -120,11 +131,14 @@ class SBXCrossover(Crossover):
         else:
             swap_mask = self.workspace.request("sbx_swap_mask", parent1.shape, np.bool_)
             np.less_equal(swap, 0.5, out=swap_mask)
-        child1 = np.where(swap_mask, c2, c1)
-        child2 = np.where(swap_mask, c1, c2)
+        child1 = np.where(active, c1, base1)
+        child2 = np.where(active, c2, base2)
+        swap_mask = swap_mask & active
+        new_child1 = np.where(swap_mask, child2, child1)
+        new_child2 = np.where(swap_mask, child1, child2)
 
-        offspring[idx, 0, :] = child1
-        offspring[idx, 1, :] = child2
+        offspring[idx, 0, :] = new_child1
+        offspring[idx, 1, :] = new_child2
         return offspring
 
 

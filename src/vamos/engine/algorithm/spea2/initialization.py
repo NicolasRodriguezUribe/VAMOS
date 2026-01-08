@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
 from vamos.hooks.live_viz import LiveVisualization
+from vamos.foundation.observer import RunContext
 
 
 def initialize_spea2_run(
@@ -115,7 +116,14 @@ def initialize_spea2_run(
     # Build variation operators
     crossover_fn, mutation_fn = build_variation_operators(cfg, encoding, n_var, xl, xu, rng)
 
-    live_cb.on_start(problem=problem, algorithm=None, config=cfg)
+    ctx = RunContext(
+        problem=problem,
+        algorithm=None,
+        config=cfg,
+        algorithm_name="spea2",
+        engine_name=str(cfg.get("engine", "unknown")),
+    )
+    live_cb.on_start(ctx)
 
     # Create state
     state = SPEA2State(

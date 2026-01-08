@@ -112,14 +112,14 @@ def _load_optional_backends() -> None:
     _LIBHV_CLASS = hv_cls
 
 
-def hypervolume(points: np.ndarray, reference_point: np.ndarray) -> float:
+def hypervolume(points: np.ndarray, reference_point: np.ndarray, *, allow_ref_expand: bool = True) -> float:
     points = np.asarray(points, dtype=float)
     if points.ndim != 2:
         raise ValueError("points must be a 2D array.")
     if points.shape[0] == 0:
         return 0.0
 
-    ref = _validate_reference_point(points, reference_point)
+    ref = _validate_reference_point(points, reference_point, allow_ref_expand=allow_ref_expand)
     _load_optional_backends()
     if _MOOCORE is not None:
         data = np.ascontiguousarray(points, dtype=np.float64)
@@ -129,12 +129,17 @@ def hypervolume(points: np.ndarray, reference_point: np.ndarray) -> float:
     return _hypervolume_impl(points, ref)
 
 
-def hypervolume_contributions(points: np.ndarray, reference_point: np.ndarray) -> np.ndarray:
+def hypervolume_contributions(
+    points: np.ndarray,
+    reference_point: np.ndarray,
+    *,
+    allow_ref_expand: bool = True,
+) -> np.ndarray:
     points = np.asarray(points, dtype=float)
     if points.ndim != 2 or points.shape[0] == 0:
         return np.zeros(points.shape[0], dtype=float)
 
-    ref = _validate_reference_point(points, reference_point)
+    ref = _validate_reference_point(points, reference_point, allow_ref_expand=allow_ref_expand)
     _load_optional_backends()
     if _MOOCORE is not None:
         data = np.ascontiguousarray(points, dtype=np.float64)
@@ -163,7 +168,7 @@ def _hypervolume_with_libhv(points: np.ndarray, ref: np.ndarray) -> float:
 def _hypervolume_impl(points: np.ndarray, reference_point: np.ndarray) -> float:
     if points.shape[0] == 0:
         return 0.0
-    ref = _validate_reference_point(points, reference_point)
+    ref = np.asarray(reference_point, dtype=float)
     n_obj = points.shape[1]
     if n_obj == 1:
         widths = np.maximum(ref[0] - points[:, 0], 0.0)
@@ -175,13 +180,20 @@ def _hypervolume_impl(points: np.ndarray, reference_point: np.ndarray) -> float:
     return _hypervolume_recursive(points, ref)
 
 
-def _validate_reference_point(points: np.ndarray, reference_point: np.ndarray) -> np.ndarray:
+def _validate_reference_point(
+    points: np.ndarray,
+    reference_point: np.ndarray,
+    *,
+    allow_ref_expand: bool = True,
+) -> np.ndarray:
     ref = np.asarray(reference_point, dtype=float)
     if ref.ndim != 1:
         raise ValueError("reference_point must be a 1D array.")
     if ref.shape[0] != points.shape[1]:
         raise ValueError("reference_point dimensionality mismatch.")
     if np.any(points > ref):
+        if not allow_ref_expand:
+            raise ValueError("reference_point must dominate all points.")
         # Expand reference point to dominate all points to avoid runtime errors.
         ref = np.maximum(ref, points.max(axis=0) + 1e-9)
     return ref

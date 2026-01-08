@@ -160,24 +160,30 @@ class NumPyKernel(KernelBackend):
             raise ValueError("pressure must be a positive integer")
         if n_parents <= 0 or N == 0:
             return np.empty(0, dtype=int)
+        if pressure > N:
+            raise ValueError("pressure cannot exceed population size for tournament selection without replacement")
 
-        candidates = rng.integers(0, N, size=(n_parents, pressure))
-        candidate_ranks = ranks[candidates]
-        candidate_crowding = crowding[candidates]
+        if pressure == 1:
+            return rng.integers(0, N, size=n_parents, dtype=int)
 
-        finite_crowding = candidate_crowding[np.isfinite(candidate_crowding)]
-        crowd_span = float(finite_crowding.max() - finite_crowding.min()) if finite_crowding.size else 0.0
-        rank_scale = crowd_span + 1.0
-        if not np.isfinite(rank_scale):
-            rank_scale = 1.0
+        candidates = np.empty((n_parents, pressure), dtype=int)
+        for i in range(n_parents):
+            candidates[i] = rng.choice(N, size=pressure, replace=False)
 
-        scores = self._ensure_score_buffer(candidate_ranks.shape)
-        np.multiply(candidate_ranks, rank_scale, out=scores, casting="unsafe")
-        scores -= candidate_crowding
-
-        winner_cols = np.argmin(scores, axis=1)
-        row_idx = self._ensure_row_index(n_parents)
-        return candidates[row_idx, winner_cols]
+        winners = np.empty(n_parents, dtype=int)
+        for i in range(n_parents):
+            row = candidates[i]
+            row_ranks = ranks[row]
+            min_rank = row_ranks.min()
+            best = row[row_ranks == min_rank]
+            if best.size == 1:
+                winners[i] = int(best[0])
+                continue
+            best_crowd = np.nan_to_num(crowding[best], nan=-np.inf)
+            max_crowd = best_crowd.max()
+            tied = best[best_crowd == max_crowd]
+            winners[i] = int(rng.choice(tied)) if tied.size > 1 else int(tied[0])
+        return winners
 
     def sbx_crossover(
         self,

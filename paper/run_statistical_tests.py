@@ -51,7 +51,7 @@ def wilcoxon_test(group1, group2):
         return float('nan'), float('nan')
 
 
-def compare_frameworks(df, metric, fw1, fw2):
+def compare_frameworks(df, metric, fw1, fw2, *, higher_is_better: bool):
     """Compare two frameworks across all problems using Wilcoxon test."""
     results = []
     
@@ -64,14 +64,21 @@ def compare_frameworks(df, metric, fw1, fw2):
         
         p_value, effect = wilcoxon_test(data1, data2)
         
+        m1 = float(np.median(data1))
+        m2 = float(np.median(data2))
+        if higher_is_better:
+            winner = fw1 if m1 > m2 else fw2
+        else:
+            winner = fw1 if m1 < m2 else fw2
+
         results.append({
             'problem': problem,
-            f'{fw1}_median': np.median(data1),
-            f'{fw2}_median': np.median(data2),
+            f'{fw1}_median': m1,
+            f'{fw2}_median': m2,
             'p_value': p_value,
             'effect_size': effect,
-            'significant': p_value < ALPHA,
-            'winner': fw1 if np.median(data1) < np.median(data2) else fw2
+            'significant': (p_value < ALPHA) if np.isfinite(p_value) else False,
+            'winner': winner,
         })
     
     return pd.DataFrame(results)
@@ -81,7 +88,9 @@ print("\n" + "=" * 60)
 print("RUNTIME COMPARISON: VAMOS (numba) vs pymoo")
 print("=" * 60)
 
-runtime_comparison = compare_frameworks(df, 'runtime_seconds', 'VAMOS (numba)', 'pymoo')
+runtime_comparison = compare_frameworks(
+    df, 'runtime_seconds', 'VAMOS (numba)', 'pymoo', higher_is_better=False
+)
 print(runtime_comparison.to_string())
 
 # Count wins
@@ -98,20 +107,13 @@ print("HYPERVOLUME COMPARISON: VAMOS (numba) vs pymoo")
 print("=" * 60)
 
 if 'hypervolume' in df.columns:
-    hv_comparison = compare_frameworks(df, 'hypervolume', 'VAMOS (numba)', 'pymoo')
+    hv_comparison = compare_frameworks(
+        df, 'hypervolume', 'VAMOS (numba)', 'pymoo', higher_is_better=True
+    )
     print(hv_comparison.to_string())
     
-    # Count HV wins (higher is better for hypervolume)
-    hv_results = []
-    for _, row in hv_comparison.iterrows():
-        vamos_hv = row['VAMOS (numba)_median']
-        pymoo_hv = row['pymoo_median']
-        winner = 'VAMOS (numba)' if vamos_hv > pymoo_hv else 'pymoo'
-        hv_results.append(winner)
-    
-    hv_comparison['hv_winner'] = hv_results
-    vamos_hv_wins = (hv_comparison['hv_winner'] == 'VAMOS (numba)').sum()
-    pymoo_hv_wins = (hv_comparison['hv_winner'] == 'pymoo').sum()
+    vamos_hv_wins = (hv_comparison['winner'] == 'VAMOS (numba)').sum()
+    pymoo_hv_wins = (hv_comparison['winner'] == 'pymoo').sum()
     
     print(f"\nHV: VAMOS better: {vamos_hv_wins}/{len(hv_comparison)}")
     print(f"HV: pymoo better: {pymoo_hv_wins}/{len(hv_comparison)}")
@@ -126,7 +128,9 @@ print("\n" + "=" * 60)
 print("BACKEND COMPARISON: numba vs moocore")
 print("=" * 60)
 
-backend_comparison = compare_frameworks(df, 'runtime_seconds', 'VAMOS (numba)', 'VAMOS (moocore)')
+backend_comparison = compare_frameworks(
+    df, 'runtime_seconds', 'VAMOS (numba)', 'VAMOS (moocore)', higher_is_better=False
+)
 print(backend_comparison.to_string())
 
 numba_wins = (backend_comparison['winner'] == 'VAMOS (numba)').sum()
@@ -138,33 +142,45 @@ print(f"moocore wins: {moocore_wins}/{len(backend_comparison)}")
 # LATEX TABLE GENERATION
 # =============================================================================
 
-def generate_latex_stats_table(comparison_df, metric_name):
+def generate_latex_stats_table(
+    comparison_df,
+    *,
+    fw1: str,
+    fw2: str,
+    caption: str,
+    label: str,
+    higher_is_better: bool,
+):
     """Generate LaTeX table with statistical test results."""
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        f"\\caption{{{metric_name} comparison with Wilcoxon signed-rank test results.}}",
-        f"\\label{{tab:stats_{metric_name.lower().replace(' ', '_')}}}",
+        f"\\caption{{{caption}}}",
+        f"\\label{{{label}}}",
         r"\begin{tabular}{l|rr|r|l}",
         r"\toprule",
-        r"\textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{p-value} & \textbf{Sig.} \\",
+        rf"\textbf{{Problem}} & \textbf{{{fw1}}} & \textbf{{{fw2}}} & \textbf{{p-value}} & \textbf{{Sig.}} \\",
         r"\midrule",
     ]
     
     for _, row in comparison_df.iterrows():
         problem = row['problem']
-        v1 = row.iloc[1]  # First median
-        v2 = row.iloc[2]  # Second median
+        v1 = float(row[f'{fw1}_median'])
+        v2 = float(row[f'{fw2}_median'])
         p = row['p_value']
         sig = r"$\checkmark$" if row['significant'] else ""
         
-        # Bold the winner
-        if v1 < v2:
-            v1_str, v2_str = f"\\textbf{{{v1:.2f}}}", f"{v2:.2f}"
+        # Bold the winner (minimize runtime, maximize quality metrics such as HV).
+        if higher_is_better:
+            first_wins = v1 > v2
         else:
-            v1_str, v2_str = f"{v1:.2f}", f"\\textbf{{{v2:.2f}}}"
+            first_wins = v1 < v2
+        v1_str, v2_str = (f"\\textbf{{{v1:.2f}}}", f"{v2:.2f}") if first_wins else (f"{v1:.2f}", f"\\textbf{{{v2:.2f}}}")
         
-        p_str = f"{p:.4f}" if p < 0.0001 else f"{p:.3f}"
+        if not np.isfinite(p):
+            p_str = "nan"
+        else:
+            p_str = f"{p:.4f}" if p < 0.0001 else f"{p:.3f}"
         lines.append(f"{problem} & {v1_str} & {v2_str} & {p_str} & {sig} \\\\")
     
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
@@ -174,7 +190,14 @@ def generate_latex_stats_table(comparison_df, metric_name):
 print("\n" + "=" * 60)
 print("LATEX TABLE - Runtime Statistics")
 print("=" * 60)
-latex_runtime = generate_latex_stats_table(runtime_comparison, "Runtime")
+latex_runtime = generate_latex_stats_table(
+    runtime_comparison,
+    fw1="VAMOS (numba)",
+    fw2="pymoo",
+    caption="Runtime comparison with Wilcoxon signed-rank test results.",
+    label="tab:stats_runtime",
+    higher_is_better=False,
+)
 print(latex_runtime)
 
 # =============================================================================
@@ -295,7 +318,14 @@ def compile_latex(tex_path: Path) -> bool:
 
 # Generate HV table if available
 if 'hypervolume' in df.columns:
-    latex_hv = generate_latex_stats_table(hv_comparison, "Hypervolume")
+    latex_hv = generate_latex_stats_table(
+        hv_comparison,
+        fw1="VAMOS (numba)",
+        fw2="pymoo",
+        caption="Normalized hypervolume comparison with Wilcoxon signed-rank test results.",
+        label="tab:stats_hypervolume",
+        higher_is_better=True,
+    )
 else:
     latex_hv = ""
 

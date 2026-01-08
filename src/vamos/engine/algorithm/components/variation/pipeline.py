@@ -45,7 +45,10 @@ class VariationPipeline:
         repair_cfg: tuple[str, dict[str, Any]] | None = None,
         problem: Any | None = None,
     ) -> None:
-        self.encoding = encoding
+        normalized = (encoding or "continuous").lower()
+        if normalized == "continuous":
+            normalized = "real"
+        self.encoding = normalized
         self.cross_method = cross_method
         self.cross_params = cross_params
         self.mut_method = mut_method
@@ -56,7 +59,7 @@ class VariationPipeline:
         self.problem = problem
         self.repair_cfg = repair_cfg
         
-        # Determine parents required (legacy helper needed?)
+        # Determine parents required (encoding-dependent helper).
         # Ideally operators should report this.
         self.parents_per_group = self._parents_required(cross_method)
         self.children_per_group = self.parents_per_group
@@ -71,7 +74,7 @@ class VariationPipeline:
     def _resolve_operator(self, method: str, params: dict[str, Any], is_crossover: bool) -> Any | None:
         """
         Resolve operator from registry if applicable (real encoding).
-        Returns None for specialized encodings handled in produce_offspring (legacy).
+        Returns None for specialized encodings handled in produce_offspring.
         """
         if self.encoding in {"permutation", "binary", "integer", "mixed"}:
             return None
@@ -101,6 +104,8 @@ class VariationPipeline:
             # Mapping specific params
             if method == "sbx":
                 kwargs["eta"] = float(params.get("eta", 20.0))
+                if "prob_var" in params:
+                    kwargs["prob_var"] = float(params.get("prob_var", 0.5))
             if method == "blx_alpha":
                  kwargs["alpha"] = float(params.get("alpha", 0.5))
                  kwargs["repair"] = params.get("repair", "clip")
@@ -158,9 +163,9 @@ class VariationPipeline:
         return buffer
 
     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-        # Legacy handling for non-real encodings (unchanged for now)
+        # Non-real encoding path (handled by dedicated operators).
         if self.encoding != "real":
-             return self._produce_offspring_legacy(parents, rng)
+             return self._produce_offspring_nonreal(parents, rng)
 
         # Pipeline execution for Real encoding
         n_var = parents.shape[1]
@@ -196,8 +201,8 @@ class VariationPipeline:
             
         return offspring
 
-    def _produce_offspring_legacy(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-        # Copied legacy logic for other encodings
+    def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+        # Dedicated logic for non-real encodings.
         encoding = self.encoding
         cross_params = self.cross_params
         mut_params = self.mut_params

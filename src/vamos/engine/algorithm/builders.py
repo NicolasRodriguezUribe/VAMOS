@@ -317,21 +317,6 @@ class DictConfigWrapper:
     def to_dict(self) -> dict[str, Any]:
         return self._data
 
-def _process_legacy_variation(cfg: dict[str, Any], variation: dict[str, Any] | None):
-    """Helper to unpack tuple-based variation into legacy config keys."""
-    if not variation:
-        return
-    
-    for key in ["crossover", "mutation"]:
-        if key in variation:
-            op = variation[key]
-            if isinstance(op, tuple):
-                cfg[key] = op[0]
-                cfg[f"{key}_params"] = op[1]
-            else:
-                cfg[key] = op
-
-
 def build_agemoea_algorithm(
     *,
     kernel: KernelBackend,

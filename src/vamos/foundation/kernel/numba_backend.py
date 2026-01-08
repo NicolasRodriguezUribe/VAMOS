@@ -216,6 +216,7 @@ class NumbaKernel(KernelBackend):
             
         prob = float(params.get("prob", 0.9))
         eta = float(params.get("eta", 20.0))
+        prob_var = float(params.get("prob_var", 0.5))
         lower = np.full(D, xl) if np.ndim(xl) == 0 else xl
         upper = np.full(D, xu) if np.ndim(xu) == 0 else xu
         
@@ -224,7 +225,7 @@ class NumbaKernel(KernelBackend):
         upper = np.asarray(upper, dtype=np.float64)
         
         # Call Numba op
-        return sbx_crossover_numba(X_parents, prob, eta, lower, upper)
+        return sbx_crossover_numba(X_parents, prob, eta, prob_var, lower, upper)
 
     def polynomial_mutation(
         self,
