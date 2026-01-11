@@ -32,8 +32,7 @@ def optimize(
     *,
     engine: str = "numpy",
     verbose: bool = False,
-) -> OptimizationResult:
-    ...
+) -> OptimizationResult: ...
 
 
 @overload
@@ -47,8 +46,7 @@ def optimize(
     seed: int = 42,
     verbose: bool = False,
     **algo_kwargs: Any,
-) -> OptimizationResult:
-    ...
+) -> OptimizationResult: ...
 
 
 @overload
@@ -62,8 +60,7 @@ def optimize(
     seed: list[int] | tuple[int, ...],
     verbose: bool = False,
     **algo_kwargs: Any,
-) -> list[OptimizationResult]:
-    ...
+) -> list[OptimizationResult]: ...
 
 
 def optimize(

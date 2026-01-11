@@ -22,7 +22,7 @@ def extract_snippet(lines: List[str], lineno: int, ctx: int = 6) -> str:
     hi = min(len(lines), lineno + ctx)
     chunk = []
     for i in range(lo, hi + 1):
-        chunk.append(f"{i:5d}: {lines[i-1].rstrip()}")
+        chunk.append(f"{i:5d}: {lines[i - 1].rstrip()}")
     return "\n".join(chunk)
 
 
@@ -68,12 +68,14 @@ class LoopVisitor(ast.NodeVisitor):
 
         score += 2 * loop_nodes + 1 * name_hits
         if score >= 8:  # threshold
-            self.candidates.append({
-                "kind": kind,
-                "name": name,
-                "score": score,
-                "lineno": getattr(node, "lineno", None),
-            })
+            self.candidates.append(
+                {
+                    "kind": kind,
+                    "name": name,
+                    "score": score,
+                    "lineno": getattr(node, "lineno", None),
+                }
+            )
 
 
 def scan_file(path: Path) -> Dict[str, Any]:

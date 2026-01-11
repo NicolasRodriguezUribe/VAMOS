@@ -12,8 +12,8 @@ def pareto_nondominated_mask(F: np.ndarray) -> np.ndarray:
     n = F.shape[0]
     if n == 0:
         return np.zeros((0,), dtype=bool)
-    le = (F[:, None, :] <= F[None, :, :])
-    lt = (F[:, None, :] < F[None, :, :])
+    le = F[:, None, :] <= F[None, :, :]
+    lt = F[:, None, :] < F[None, :, :]
     dom = np.all(le, axis=2) & np.any(lt, axis=2)
     dominated = np.any(dom, axis=0)
     return ~dominated
@@ -199,9 +199,7 @@ def load_ref_points(path: Optional[str]) -> Dict[str, np.ndarray]:
         except Exception as exc:
             raise ValueError(f"Invalid ref point for problem '{key}': {value}") from exc
         if out[str(key)].ndim != 1:
-            raise ValueError(
-                f"Ref point for problem '{key}' must be 1D list/array. Got shape {out[str(key)].shape}"
-            )
+            raise ValueError(f"Ref point for problem '{key}' must be 1D list/array. Got shape {out[str(key)].shape}")
     return out
 
 
@@ -259,8 +257,7 @@ def main() -> int:
             ref = frozen_ref[prob].astype(float, copy=False)
             if ref.shape[0] != m:
                 raise ValueError(
-                    f"Frozen ref point dimension mismatch for problem '{prob}': "
-                    f"expected {m}, got {ref.shape[0]} (ref={ref.tolist()})"
+                    f"Frozen ref point dimension mismatch for problem '{prob}': expected {m}, got {ref.shape[0]} (ref={ref.tolist()})"
                 )
             ref_source = "frozen"
         else:

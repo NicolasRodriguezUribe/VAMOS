@@ -106,9 +106,9 @@ def build_config_base(
         cfg["defaults"][algo] = op_payload
 
     # Disable AOS unless explicitly configured elsewhere
-    cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault(
-        "adaptive_operator_selection", {}
-    )["enabled"] = False
+    cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("adaptive_operator_selection", {})["enabled"] = (
+        False
+    )
     return cfg
 
 
@@ -205,9 +205,7 @@ def main() -> int:
                         if isinstance(vpatch, dict) and vpatch:
                             merge_dict(cfg, vpatch)
 
-                        cfg_name = (
-                            f"{campaign}__{vname}__{suite}__{algo}__{problem}__{engine}__seed{seed}.yml"
-                        )
+                        cfg_name = f"{campaign}__{vname}__{suite}__{algo}__{problem}__{engine}__seed{seed}.yml"
                         cfg_path = cfg_root / cfg_name
                         log_path = log_root / f"{cfg_path.stem}.log"
                         dump_yaml(cfg, cfg_path)

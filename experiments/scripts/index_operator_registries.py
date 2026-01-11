@@ -10,17 +10,20 @@ import vamos
 
 REPO = Path.cwd()
 OUT_JSON = REPO / "experiments" / "catalog" / "operator_registries.json"
-OUT_SUM  = REPO / "experiments" / "catalog" / "operator_registries_summary.json"
+OUT_SUM = REPO / "experiments" / "catalog" / "operator_registries_summary.json"
 
 PATTERNS = ("operator", "operators", "variation", "crossover", "mutation", "repair", "selection")
 
+
 def is_mapping_like(obj: Any) -> bool:
     return hasattr(obj, "keys") and hasattr(obj, "items")
+
 
 def summarize_mapping(keys: List[Any], max_keys: int = 80) -> Dict[str, Any]:
     sk = [k for k in keys if isinstance(k, (str, int, float))]
     sk2 = sorted([str(k) for k in sk])[:max_keys]
     return {"n_keys": len(keys), "sample_keys": sk2}
+
 
 def main() -> int:
     registries: List[Dict[str, Any]] = []
@@ -48,11 +51,13 @@ def main() -> int:
                     keys = list(val.keys())
                 except Exception:
                     continue
-                registries.append({
-                    "module": name,
-                    "attr": attr,
-                    "summary": summarize_mapping(keys),
-                })
+                registries.append(
+                    {
+                        "module": name,
+                        "attr": attr,
+                        "summary": summarize_mapping(keys),
+                    }
+                )
 
             # objects that contain .REGISTRY or .registry dicts
             for subattr in ("REGISTRY", "registry"):
@@ -61,11 +66,13 @@ def main() -> int:
                         sub = getattr(val, subattr)
                         if is_mapping_like(sub):
                             keys = list(sub.keys())
-                            registries.append({
-                                "module": name,
-                                "attr": f"{attr}.{subattr}",
-                                "summary": summarize_mapping(keys),
-                            })
+                            registries.append(
+                                {
+                                    "module": name,
+                                    "attr": f"{attr}.{subattr}",
+                                    "summary": summarize_mapping(keys),
+                                }
+                            )
                     except Exception:
                         pass
 
@@ -117,6 +124,7 @@ def main() -> int:
     print("\nSummary:\n", json.dumps(summary, indent=2, ensure_ascii=False)[:12000])
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

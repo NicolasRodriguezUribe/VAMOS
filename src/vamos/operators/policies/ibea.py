@@ -1,4 +1,4 @@
-# algorithm/ibea/operators.py
+# operators/policies/ibea.py
 """
 Operator building for IBEA.
 
@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
-from vamos.operators.real import VariationWorkspace
+from vamos.operators.impl.real import VariationWorkspace
 
 if TYPE_CHECKING:
     from vamos.foundation.problem.types import ProblemProtocol

@@ -89,6 +89,7 @@ def write_latex_table(path: Path, rows: List[Dict[str, Any]]) -> None:
 def plot_tradeoff(path: Path, rows: List[Dict[str, Any]]) -> None:
     try:
         import matplotlib
+
         matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
     except Exception as exc:

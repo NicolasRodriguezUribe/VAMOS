@@ -22,7 +22,7 @@ from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
-from .operators import (
+from vamos.operators.policies.smpso import (
     build_mutation_operator,
     build_repair_operator,
 )

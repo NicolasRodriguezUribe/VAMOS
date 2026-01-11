@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
+
 def load_yaml(path: Path) -> dict:
     try:
         import yaml  # type: ignore
@@ -14,12 +15,16 @@ def load_yaml(path: Path) -> dict:
         raise SystemExit("Missing dependency: PyYAML. Install with: pip install pyyaml") from e
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
+
 def dump_yaml(obj: dict, path: Path) -> None:
     import yaml  # type: ignore
+
     path.write_text(yaml.safe_dump(obj, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
 
 def deep_copy(x: Any) -> Any:
     return json.loads(json.dumps(x))
+
 
 def set_aos_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
     # Try to toggle AOS in the per-problem override block if present
@@ -28,6 +33,7 @@ def set_aos_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
         aos["enabled"] = bool(enabled)
     except Exception:
         pass
+
 
 def base_template() -> dict:
     # Minimal template compatible with vamos.experiment.cli.main configs
@@ -43,8 +49,9 @@ def base_template() -> dict:
             "seed": None,
             "selection_pressure": 2,
         },
-        "problems": {}
+        "problems": {},
     }
+
 
 def main() -> int:
     repo = Path.cwd()
@@ -69,7 +76,7 @@ def main() -> int:
     selection_pressure = int(spec.get("common", {}).get("selection_pressure", 2))
 
     # Algo blocks (operators)
-    algo_blocks = {k: v for k, v in spec["matrix"].items() if k not in ("engines","algorithms","seeds","problems")}
+    algo_blocks = {k: v for k, v in spec["matrix"].items() if k not in ("engines", "algorithms", "seeds", "problems")}
 
     runs = []
     total = 0
@@ -84,17 +91,19 @@ def main() -> int:
                 for seed in seeds:
                     total += 1
                     cfg = base_template()
-                    cfg["defaults"].update({
-                        "algorithm": algo,
-                        "engine": eng,
-                        "problem": prob,
-                        "output_root": str(out_root.as_posix()),
-                        "population_size": pop,
-                        "offspring_population_size": off,
-                        "max_evaluations": maxeval,
-                        "seed": int(seed),
-                        "selection_pressure": selection_pressure,
-                    })
+                    cfg["defaults"].update(
+                        {
+                            "algorithm": algo,
+                            "engine": eng,
+                            "problem": prob,
+                            "output_root": str(out_root.as_posix()),
+                            "population_size": pop,
+                            "offspring_population_size": off,
+                            "max_evaluations": maxeval,
+                            "seed": int(seed),
+                            "selection_pressure": selection_pressure,
+                        }
+                    )
 
                     # Add algo operator block at top-level defaults.<algo> if your config schema expects it there.
                     # In your example it is: defaults: { nsgaii: { ... } }
@@ -116,13 +125,20 @@ def main() -> int:
                     with log_path.open("w", encoding="utf-8") as f:
                         p = subprocess.run(cmd, cwd=repo, stdout=f, stderr=subprocess.STDOUT)
 
-                    runs.append({
-                        "algo": algo, "engine": eng, "problem": prob, "seed": seed,
-                        "pop": pop, "off": off, "maxeval": maxeval,
-                        "returncode": p.returncode,
-                        "config": str(cfg_path.relative_to(repo)),
-                        "log": str(log_path.relative_to(repo)),
-                    })
+                    runs.append(
+                        {
+                            "algo": algo,
+                            "engine": eng,
+                            "problem": prob,
+                            "seed": seed,
+                            "pop": pop,
+                            "off": off,
+                            "maxeval": maxeval,
+                            "returncode": p.returncode,
+                            "config": str(cfg_path.relative_to(repo)),
+                            "log": str(log_path.relative_to(repo)),
+                        }
+                    )
 
     # Summary
     failed = [r for r in runs if r["returncode"] != 0]
@@ -140,6 +156,7 @@ def main() -> int:
     print("Wrote:", index_path.relative_to(repo))
 
     return 0 if not failed else 10
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

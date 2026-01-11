@@ -8,22 +8,30 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+
 def load_yaml(path: Path) -> dict:
     import yaml  # type: ignore
+
     return yaml.safe_load(path.read_text(encoding="utf-8"))
+
 
 def dump_yaml(obj: dict, path: Path) -> None:
     import yaml  # type: ignore
+
     path.write_text(yaml.safe_dump(obj, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
+
 def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
 
+
 def deep_copy(x: Any) -> Any:
     return json.loads(json.dumps(x))
+
 
 def flatten_seed_rule(rule: dict) -> List[int]:
     start = int(rule.get("start", 1))
@@ -31,14 +39,17 @@ def flatten_seed_rule(rule: dict) -> List[int]:
     step = int(rule.get("step", 1))
     return [start + i * step for i in range(count)]
 
+
 def problem_domain(problem_catalog: dict, problem_key: str) -> str:
     for p in problem_catalog.get("problems", []):
         if p.get("problem_key") == problem_key:
             return str(p.get("domain", "unknown"))
     return "unknown"
 
+
 def keep_keys(d: dict, allowed: set[str]) -> dict:
     return {k: v for k, v in d.items() if k in allowed}
+
 
 def set_aos_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
     try:
@@ -47,8 +58,10 @@ def set_aos_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
     except Exception:
         pass
 
+
 def base_template() -> dict:
     return {"defaults": {}, "problems": {}}
+
 
 def compute_seed_dir(output_root: Path, suite: str, algo: str, engine: str, seed: int, problem_key: str) -> Path:
     # Mirror observed structure: results/<campaign>/<PROBLEM_KEY_UPPER>/<algo>/<engine>/seed_<k>/
@@ -56,14 +69,17 @@ def compute_seed_dir(output_root: Path, suite: str, algo: str, engine: str, seed
     top = str(problem_key).upper()
     return output_root / top / algo / engine / f"seed_{seed}"
 
+
 def infer_suite_from_problem(problem_key: str) -> str:
     # Use prefix heuristics similar to catalog
     import re
+
     k = str(problem_key).lower()
     m = re.match(r"^([a-z]+)", k)
     pref = m.group(1) if m else "unknown"
     # For display we keep uppercase for benchmark families (matches your smoke output style)
     return pref.upper()
+
 
 @dataclass
 class RunSpec:
@@ -79,6 +95,7 @@ class RunSpec:
     cfg_path: Path
     log_path: Path
     seed_dir: Path
+
 
 def build_config(
     *,
@@ -126,6 +143,7 @@ def build_config(
     set_aos_enabled(cfg, problem, algo, aos_enabled)
 
     return cfg
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -191,8 +209,13 @@ def main() -> int:
                         continue
 
                     cfg = build_config(
-                        algo=algo, engine=engine, problem=problem, seed=seed,
-                        pop=pop, off=off, maxeval=maxeval,
+                        algo=algo,
+                        engine=engine,
+                        problem=problem,
+                        seed=seed,
+                        pop=pop,
+                        off=off,
+                        maxeval=maxeval,
                         output_root=output_root,
                         aos_enabled=aos_enabled,
                         algo_keys=algo_keys,
@@ -205,12 +228,22 @@ def main() -> int:
                     log_path = log_root / f"{cfg_path.stem}.log"
                     dump_yaml(cfg, cfg_path)
 
-                    runs.append(RunSpec(
-                        algo=algo, engine=engine, problem=problem, suite=suite, seed=seed,
-                        pop=pop, off=off, maxeval=maxeval,
-                        output_root=output_root,
-                        cfg_path=cfg_path, log_path=log_path, seed_dir=seed_dir
-                    ))
+                    runs.append(
+                        RunSpec(
+                            algo=algo,
+                            engine=engine,
+                            problem=problem,
+                            suite=suite,
+                            seed=seed,
+                            pop=pop,
+                            off=off,
+                            maxeval=maxeval,
+                            output_root=output_root,
+                            cfg_path=cfg_path,
+                            log_path=log_path,
+                            seed_dir=seed_dir,
+                        )
+                    )
 
     # Breakdown
     by = {}
@@ -247,15 +280,21 @@ def main() -> int:
                 break
 
             cmd = [sys.executable, "-m", "vamos.experiment.cli.main", "--config", str(r.cfg_path)]
-            print(f"\n=== RUN {executed+1}/{min(len(runs), args.limit) if args.limit else len(runs)} ===")
+            print(f"\n=== RUN {executed + 1}/{min(len(runs), args.limit) if args.limit else len(runs)} ===")
             print("cmd:", " ".join(cmd))
 
             with r.log_path.open("w", encoding="utf-8") as f:
                 p = subprocess.run(cmd, cwd=repo, stdout=f, stderr=subprocess.STDOUT)
 
             rec = {
-                "algo": r.algo, "engine": r.engine, "problem": r.problem, "suite": r.suite, "seed": r.seed,
-                "pop": r.pop, "off": r.off, "maxeval": r.maxeval,
+                "algo": r.algo,
+                "engine": r.engine,
+                "problem": r.problem,
+                "suite": r.suite,
+                "seed": r.seed,
+                "pop": r.pop,
+                "off": r.off,
+                "maxeval": r.maxeval,
                 "config": str(r.cfg_path.relative_to(repo)),
                 "log": str(r.log_path.relative_to(repo)),
                 "seed_dir": str(r.seed_dir.relative_to(repo)),
@@ -273,6 +312,7 @@ def main() -> int:
     print("executed:", executed, "failed:", failed)
     print("index:", index_path.relative_to(repo))
     return 0 if failed == 0 else 10
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

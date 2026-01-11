@@ -1,7 +1,7 @@
 # VAMOS Software Engineering Best Practices Audit
 
 ## Executive summary
-- Operators are consolidated into `src/vamos/operators`, and an architecture boundary test now guards layer inversions; foundation->engine and engine->ux edges are removed.
+- Operators are split into `src/vamos/operators/impl` (implementations) and `src/vamos/operators/policies` (algorithm wiring), and an architecture boundary test now guards layer inversions; foundation->engine and engine->ux edges are removed.
 - Import graph is cleaner, but `experiment.runner` and `experiment.study.runner` form a static cycle; coupling is concentrated in experiment->engine/ux and a small foundation->operators dependency for kernels.
 - Experiment orchestration modules (runner/quick/CLI) remain large and mix execution, IO, and presentation, creating monolith risk.
 - Algorithm classes are large but mostly cohesive; variation pipeline and config classes remain heavy and will be hard to evolve without stronger interfaces.
@@ -16,7 +16,7 @@ Key directories (concise):
 src/vamos/
   __init__.py, api.py              # Public API facade and reexports
   foundation/                      # Core types, kernels, problems, metrics, constraints, eval
-  operators/                       # Canonical operator library (real/binary/permutation/etc.)
+  operators/                       # Operator packages (impl + policies)
   engine/                          # Algorithms, configs, tuning, hyperheuristics
   experiment/                      # CLI, diagnostics, benchmarks, study runner, quick API
   ux/                              # Analysis, visualization, studio app
@@ -41,7 +41,7 @@ Primary public APIs:
 
 Core layers and responsibilities (observed):
 - foundation: problems/registries, kernels/backends, metrics, constraints, eval backends, core types.
-- operators: canonical operator library (real/binary/integer/permutation/mixed/repair).
+- operators: operator implementations (impl) and algorithm wiring (policies).
 - engine: algorithm implementations, algorithm configs, tuning, hyperheuristics.
 - experiment: runner/optimize execution, CLI/config parsing, benchmark/study orchestration, diagnostics, quick wrappers.
 - ux: analysis, stats, visualization, streamlit Studio UI.
@@ -57,11 +57,11 @@ Top 20 largest Python files under `src/vamos/` by non-blank LOC (static scan):
 | `src/vamos/experiment/runner.py` | 536 | Orchestrates runs, builds algorithms, HV, hooks, plotting, persistence | High: execution + IO + plotting + config overrides |
 | `src/vamos/foundation/core/external/base.py` | 510 | External baseline adapters (pymoo/jmetalpy/pygmo), wrappers, printing | High: integration + CLI output + optional deps |
 | `src/vamos/experiment/cli/parser.py` | 491 | CLI parsing, config loading, validation, defaults for algorithms | High: parsing + config semantics + validation |
-| `src/vamos/operators/permutation.py` | 428 | All permutation operators and optional numba paths | Medium: large single-purpose operator library |
-| `src/vamos/operators/real/crossover.py` | 379 | Many real-valued crossover operators | Medium: large operator module |
+| `src/vamos/operators/impl/permutation.py` | 428 | All permutation operators and optional numba paths | Medium: large single-purpose operator library |
+| `src/vamos/operators/impl/real/crossover.py` | 379 | Many real-valued crossover operators | Medium: large operator module |
 | `src/vamos/experiment/optimize.py` | 370 | Optimize API, result helpers, plotting, saving | Medium: core + presentation/IO |
 | `src/vamos/foundation/kernel/moocore_backend.py` | 332 | MooCore kernel + HV + archives + tournament selection | Medium: kernel + metrics/selection coupling |
-| `src/vamos/operators/real/mutation.py` | 327 | Many real-valued mutation operators | Medium: large operator module |
+| `src/vamos/operators/impl/real/mutation.py` | 327 | Many real-valued mutation operators | Medium: large operator module |
 | `src/vamos/engine/algorithm/nsgaiii/nsgaiii.py` | 324 | NSGA-III algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/smsemoa/smsemoa.py` | 322 | SMS-EMOA algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/smpso/smpso.py` | 311 | SMPSO algorithm loop and helpers | Medium: large but cohesive |
@@ -101,7 +101,7 @@ Cross-cutting tangling hotspots:
 Utility modules that are growing:
 - `src/vamos/engine/algorithm/components/utils.py`
 - `src/vamos/engine/algorithm/components/variation/helpers.py`
-- `src/vamos/operators/real/utils.py`
+- `src/vamos/operators/impl/real/utils.py`
 - `src/vamos/foundation/constraints/utils.py`
 - `src/vamos/experiment/runner_utils.py`
 - `src/vamos/foundation/core/io_utils.py`
@@ -127,7 +127,7 @@ Examples of risky couplings:
 - `src/vamos/experiment/runner.py` imports `vamos.engine.algorithm.factory` and `vamos.engine.config.*` (experiment -> engine).
 - `src/vamos/experiment/runner.py` imports `vamos.ux.visualization.plotting` and `LiveParetoPlot` (experiment -> ux).
 - `src/vamos/experiment/study/runner.py` imports `run_single` from `vamos.experiment.runner`, while `run_study` in runner imports `StudyRunner` (static cycle).
-- `src/vamos/foundation/kernel/numpy_backend.py` imports `vamos.operators.real.*` (foundation -> operators; shared package, still a tight dependency).
+- `src/vamos/foundation/kernel/numpy_backend.py` imports `vamos.operators.impl.real.*` (foundation -> operators; shared package, still a tight dependency).
 - `src/vamos/ux/studio/app.py` imports `vamos.engine.algorithm.config.NSGAIIConfig` (ux -> engine).
 
 There is a single static cycle between `experiment.runner` and `experiment.study.runner`; otherwise, foundation->engine/ux and engine->ux edges are cleared, improving backend modularity and UX replaceability.
@@ -198,7 +198,7 @@ Refactor plan: define an `ExperimentSpec` dataclass or pydantic model; add schem
 Suggested tests: schema validation tests for typical configs; regression tests for YAML/JSON compatibility.
 
 7) Low - Split large operator modules by operator family.
-Evidence: `src/vamos/operators/permutation.py`, `src/vamos/operators/real/crossover.py`, `src/vamos/operators/real/mutation.py`.
+Evidence: `src/vamos/operators/impl/permutation.py`, `src/vamos/operators/impl/real/crossover.py`, `src/vamos/operators/impl/real/mutation.py`.
 Refactor plan: move each operator family into dedicated files and provide registries for lookup; keep public imports stable.
 Suggested tests: existing operator tests should continue to pass; add import performance checks if needed.
 
@@ -210,7 +210,8 @@ Recommended thresholds:
 
 Layering rules (proposed):
 - foundation must not import engine or ux.
-- operators is a shared package; foundation/engine/experiment/ux may depend on it, but it must not depend on engine/ux.
+- operators.impl is shared; foundation/engine/experiment/ux may depend on it, but it must not depend on engine/ux.
+- operators.policies may depend on engine for algorithm wiring, but should avoid ux.
 - engine may depend on foundation and hooks, but not on ux.
 - experiment and ux may depend on foundation and engine.
 - avoid experiment <-> ux mutual imports; prefer hooks and experiment-driven wiring for optional visualization.
@@ -278,7 +279,7 @@ Scope: move plot/save/summary helpers into `src/vamos/experiment/output.py` or `
 - `Get-Content src\vamos\experiment\optimize.py` (optimize API)
 - `Get-Content src\vamos\foundation\kernel\moocore_backend.py` (MooCore backend)
 - `Get-Content src\vamos\ux\studio\app.py` (studio app)
-- `Get-Content src\vamos\operators\permutation.py` (permutation operators)
+- `Get-Content src\vamos\operators\impl\permutation.py` (permutation operators)
 - `Get-Content src\vamos\engine\algorithm\nsgaii\state.py` (NSGA-II state)
 - `Get-Content src\vamos\engine\algorithm\nsgaii\helpers.py` (NSGA-II helpers)
 - `Get-Content src\vamos\foundation\eval\backends.py` (eval backends)
@@ -286,7 +287,7 @@ Scope: move plot/save/summary helpers into `src/vamos/experiment/output.py` or `
 - `Get-Content src\vamos\engine\algorithm\components\hypervolume.py` (hypervolume utilities)
 - `Get-Content src\vamos\foundation\exceptions.py` (exception hierarchy)
 - `Get-Content src\vamos\engine\algorithm\nsgaii\nsgaii.py` (NSGA-II core)
-- `Get-Content src\vamos\operators\real\crossover.py` (real crossover operators)
+- `Get-Content src\vamos\operators\impl\real\crossover.py` (real crossover operators)
 - `Get-Content src\vamos\foundation\problem\registry\__init__.py` (problem registry exports)
 - `Get-Content src\vamos\foundation\core\api.py` (foundation API)
 - `Get-ChildItem docs\dev` (dev docs listing)

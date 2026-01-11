@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import numpy as np
 
-from vamos.operators.registry import operator_registry
+from vamos.operators.impl.registry import operator_registry
 from vamos.engine.algorithm.components.variation.helpers import (
     PERM_CROSSOVER,
     PERM_MUTATION,
@@ -20,7 +20,7 @@ from vamos.engine.algorithm.components.variation.helpers import (
     MIXED_MUTATION,
     validate_operator_support,
 )
-from vamos.operators.integer import creep_mutation
+from vamos.operators.impl.integer import creep_mutation
 
 # Protocol definition location
 
@@ -143,21 +143,16 @@ class VariationPipeline:
 
         # Check if constructor accepts **kwargs using inspect
         import inspect
+
         sig = inspect.signature(op_cls.__init__)
-        accepts_var_keyword = any(
-            p.kind == inspect.Parameter.VAR_KEYWORD
-            for p in sig.parameters.values()
-        )
+        accepts_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
 
         if accepts_var_keyword:
             # Pass all kwargs - operator can handle them
             return op_cls(**kwargs)
         else:
             # Filter to known parameters to avoid TypeError
-            valid_params = {
-                k: v for k, v in kwargs.items()
-                if k in sig.parameters
-            }
+            valid_params = {k: v for k, v in kwargs.items() if k in sig.parameters}
             try:
                 return op_cls(**valid_params)
             except TypeError as e:

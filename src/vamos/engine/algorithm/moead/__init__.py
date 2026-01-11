@@ -6,7 +6,7 @@ Decomposition) implementation with modular components:
 - `core.py`: main MOEAD class (run/ask/tell loop)
 - `setup.py`: initialization/config helpers
 - `state.py`: MOEADState + result building
-- `operators.py`: operator registries and building
+- `operators/policies/moead.py`: operator registries and building
 - `helpers.py`: aggregation functions + neighborhood update
 
 References:
@@ -24,7 +24,7 @@ from .helpers import (
     update_neighborhood,
     weighted_sum,
 )
-from .operators import (
+from vamos.operators.policies.moead import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
     INT_CROSSOVER,

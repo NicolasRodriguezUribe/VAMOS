@@ -1,8 +1,10 @@
 """
 Debug script for dtlz3/pymoo HV=0 issue
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import numpy as np
@@ -75,7 +77,7 @@ for i, f1 in enumerate(res.F):
 print(f"   Dominated solutions: {dominated_count}/{len(res.F)}")
 
 # Check constraint violations if any
-if hasattr(res, 'G') and res.G is not None:
+if hasattr(res, "G") and res.G is not None:
     violations = np.sum(res.G > 0, axis=1)
     print(f"   Constraint violations: {np.sum(violations > 0)}/{len(res.G)}")
 
@@ -88,7 +90,6 @@ algo_config = (
     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
     .mutation("pm", prob=1.0 / N_VAR, eta=MUTATION_ETA)
     .selection("tournament")
-    
     .engine("numpy")
     .fixed()
 )

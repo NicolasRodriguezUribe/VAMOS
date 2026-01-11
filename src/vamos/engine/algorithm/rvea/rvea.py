@@ -145,8 +145,7 @@ class RVEA:
         ref_dirs = _generate_reference_vectors(n_obj, n_partitions)
         if ref_dirs.shape[0] != pop_size:
             raise ValueError(
-                f"RVEA requires pop_size == #ref_dirs for partitions={n_partitions} "
-                f"(pop_size={pop_size}, ref_dirs={ref_dirs.shape[0]})."
+                f"RVEA requires pop_size == #ref_dirs for partitions={n_partitions} (pop_size={pop_size}, ref_dirs={ref_dirs.shape[0]})."
             )
         V = _calc_V(ref_dirs)
         gamma = _calc_gamma(V)

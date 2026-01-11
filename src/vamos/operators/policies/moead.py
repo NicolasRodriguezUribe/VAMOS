@@ -1,4 +1,4 @@
-# algorithm/moead/operators.py
+# operators/policies/moead.py
 """
 Operator building for MOEA/D.
 
@@ -13,13 +13,13 @@ from typing import Any, Callable
 import numpy as np
 
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
-from vamos.operators.binary import (
+from vamos.operators.impl.binary import (
     bit_flip_mutation,
     one_point_crossover,
     two_point_crossover,
     uniform_crossover,
 )
-from vamos.operators.integer import (
+from vamos.operators.impl.integer import (
     arithmetic_integer_crossover,
     creep_mutation,
     integer_polynomial_mutation,
@@ -27,7 +27,7 @@ from vamos.operators.integer import (
     random_reset_mutation,
     uniform_integer_crossover,
 )
-from vamos.operators.permutation import (
+from vamos.operators.impl.permutation import (
     order_crossover,
     pmx_crossover,
     cycle_crossover,
@@ -39,8 +39,8 @@ from vamos.operators.permutation import (
     inversion_mutation,
     displacement_mutation,
 )
-from vamos.operators.real import PolynomialMutation, SBXCrossover
-from vamos.operators.real import VariationWorkspace
+from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
+from vamos.operators.impl.real import VariationWorkspace
 
 
 # Operator registries

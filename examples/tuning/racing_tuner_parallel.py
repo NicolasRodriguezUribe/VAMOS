@@ -7,6 +7,7 @@ on the ZDT1 problem using parallel evaluation (n_jobs=4).
 Usage:
     python examples/racing_tuner_parallel.py
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -20,11 +21,11 @@ from vamos.foundation.problems_registry import ZDT1
 def evaluate_config(config: dict, ctx) -> float:
     """
     Evaluate a configuration.
-    
+
     Args:
         config: Dictionary of hyperparameter values.
         ctx: Evaluation context containing instance, seed, and budget.
-        
+
     Returns:
         float: The score to MINIMIZE (lower is better).
     """
@@ -36,8 +37,7 @@ def evaluate_config(config: dict, ctx) -> float:
         .crossover("sbx", prob=float(config["crossover_prob"]), eta=20.0)
         .mutation("pm", prob=float(config["mutation_prob"]), eta=20.0)
         .selection("tournament", pressure=2)
-        
-        .engine("numpy") # Use "numba" for better speed if available
+        .engine("numpy")  # Use "numba" for better speed if available
         .fixed()
     )
 
@@ -60,7 +60,7 @@ def evaluate_config(config: dict, ctx) -> float:
     F = result.F
     if F is None or len(F) == 0:
         return float("inf")
-    
+
     # Simple scalarization for tuning signal
     return float(np.mean(F.sum(axis=1)))
 
@@ -79,18 +79,18 @@ def main():
         instances=[
             Instance("zdt1_30", n_var=30),  # Can add more instances
         ],
-        seeds=[101, 102, 103, 104], # Seeds to race over
-        budget_per_run=2000,        # Evaluations per run
+        seeds=[101, 102, 103, 104],  # Seeds to race over
+        budget_per_run=2000,  # Evaluations per run
         evaluator=evaluate_config,
-        maximize=False,             # Minimize the score
+        maximize=False,  # Minimize the score
     )
 
     # 3. Define Racing Scenario
     scenario = Scenario(
-        max_experiments=50,       # Total tuning budget (evals of configurations)
-        min_survivors=3,          # Keep at least 3 configs
-        elimination_fraction=0.3, # Eliminate 30% worst per stage
-        n_jobs=4,                 # PARALLEL execution (4 workers)
+        max_experiments=50,  # Total tuning budget (evals of configurations)
+        min_survivors=3,  # Keep at least 3 configs
+        elimination_fraction=0.3,  # Eliminate 30% worst per stage
+        n_jobs=4,  # PARALLEL execution (4 workers)
         verbose=True,
     )
 

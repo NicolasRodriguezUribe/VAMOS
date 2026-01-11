@@ -24,10 +24,10 @@ from .helpers import (
     evaluate_population_with_constraints,
     initialize_reference_point,
 )
-from .operators import build_variation_operators
+from vamos.operators.policies.smsemoa import build_variation_operators
 from .state import SMSEMOAState
-from vamos.operators.binary import random_binary_population
-from vamos.operators.integer import random_integer_population
+from vamos.operators.impl.binary import random_binary_population
+from vamos.operators.impl.integer import random_integer_population
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend

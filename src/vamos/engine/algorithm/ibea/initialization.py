@@ -25,7 +25,7 @@ from vamos.engine.algorithm.components.population import (
 )
 
 from .helpers import environmental_selection
-from .operators import build_variation_pipeline
+from vamos.operators.policies.ibea import build_variation_pipeline
 from .state import IBEAState
 
 if TYPE_CHECKING:

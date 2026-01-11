@@ -3,6 +3,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+
 def main() -> int:
     repo = Path.cwd()
     tidy = repo / "artifacts" / "tidy" / "engine_study_full_continuous.csv"
@@ -16,19 +17,30 @@ def main() -> int:
     df = pd.read_csv(tidy)
 
     # Output dirs
-    artifacts_plots  = repo / "artifacts" / "plots"
+    artifacts_plots = repo / "artifacts" / "plots"
     artifacts_tables = repo / "artifacts" / "tables"
-    paper_figures    = repo / "paper" / "manuscript" / "figures"
-    paper_tables     = repo / "paper" / "manuscript" / "tables"
+    paper_figures = repo / "paper" / "manuscript" / "figures"
+    paper_tables = repo / "paper" / "manuscript" / "tables"
     for d in (artifacts_plots, artifacts_tables, paper_figures, paper_tables):
         d.mkdir(parents=True, exist_ok=True)
 
     # Slice report name
     table_path = artifacts_tables / "engine_full_continuous_slice.tex"
-    plot_path  = artifacts_plots  / "engine_full_continuous_slice_runtime.png"
+    plot_path = artifacts_plots / "engine_full_continuous_slice_runtime.png"
 
     # Table: one row per run (compact)
-    cols = ["suite","algorithm","problem","engine","seed","max_evaluations","population_size","runtime_seconds","front_size","fun_ncols"]
+    cols = [
+        "suite",
+        "algorithm",
+        "problem",
+        "engine",
+        "seed",
+        "max_evaluations",
+        "population_size",
+        "runtime_seconds",
+        "front_size",
+        "fun_ncols",
+    ]
     for c in cols:
         if c not in df.columns:
             df[c] = None
@@ -36,7 +48,7 @@ def main() -> int:
 
     # Formatting
     tab["runtime_seconds"] = tab["runtime_seconds"].apply(lambda x: "" if str(x) == "nan" else f"{float(x):.4g}")
-    for ic in ["seed","max_evaluations","population_size","front_size","fun_ncols"]:
+    for ic in ["seed", "max_evaluations", "population_size", "front_size", "fun_ncols"]:
         tab[ic] = tab[ic].apply(lambda v: "" if str(v) == "nan" else str(int(float(v))))
 
     lines = []
@@ -47,7 +59,8 @@ def main() -> int:
     for _, r in tab.iterrows():
         lines.append(
             f"{r['suite']} & {r['algorithm']} & {r['problem']} & {r['engine']} & "
-            f"{r['seed']} & {r['max_evaluations']} & {r['population_size']} & {r['runtime_seconds']} & {r['front_size']} & {r['fun_ncols']} \\")
+            f"{r['seed']} & {r['max_evaluations']} & {r['population_size']} & {r['runtime_seconds']} & {r['front_size']} & {r['fun_ncols']} \\"
+        )
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     table_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -106,6 +119,7 @@ configurations run end-to-end, produce stable artifacts, and can be collected in
         print("Results section already contains validation slice; not duplicating.")
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -192,7 +192,7 @@ def main(argv: List[str] | None = None) -> None:
     focus_budget = st.number_input("Budget (evaluations)", min_value=100, max_value=5000, value=500, step=100)
     if st.button("Run focused optimization"):
         if reference_point is None:
-                st.error("Provide a reference point first.")
+            st.error("Provide a reference point first.")
         else:
             with st.spinner("Running focused optimization..."):
                 F_new, X_new = run_focused_optimization(problem, reference_point, primary_algo, int(focus_budget))

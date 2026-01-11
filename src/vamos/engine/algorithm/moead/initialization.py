@@ -20,12 +20,12 @@ from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
-from vamos.operators.binary import random_binary_population
-from vamos.operators.integer import random_integer_population
-from vamos.operators.permutation import random_permutation_population
+from vamos.operators.impl.binary import random_binary_population
+from vamos.operators.impl.integer import random_integer_population
+from vamos.operators.impl.permutation import random_permutation_population
 
 from .helpers import build_aggregator, compute_neighbors
-from .operators import build_variation_operators
+from vamos.operators.policies.moead import build_variation_operators
 from .state import MOEADState
 
 if TYPE_CHECKING:

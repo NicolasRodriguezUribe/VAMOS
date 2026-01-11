@@ -60,10 +60,7 @@ def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: Optional
 
     weight_path = _resolve_jmetalpy_weight_path(path, n_obj, pop_size)
     if weight_path is None:
-        raise ValueError(
-            "jMetalPy mode requires weight_vectors.path for n_obj > 2 "
-            f"(expected W{n_obj}D_{pop_size}.dat)."
-        )
+        raise ValueError(f"jMetalPy mode requires weight_vectors.path for n_obj > 2 (expected W{n_obj}D_{pop_size}.dat).")
     if not os.path.exists(weight_path):
         weights = _generate_weights(pop_size, n_obj, divisions=None)
         saved = False
@@ -75,10 +72,9 @@ def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: Optional
             saved = True
         except (PermissionError, OSError) as e:
             warnings.warn(
-                f"Could not save generated weights to '{weight_path}': {e}. "
-                "Continuing with in-memory weights.",
+                f"Could not save generated weights to '{weight_path}': {e}. Continuing with in-memory weights.",
                 RuntimeWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
         if saved:
@@ -86,23 +82,21 @@ def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: Optional
                 f"Weight vector file not found: {weight_path}. Generated and saved simplex-lattice weights; "
                 "results may differ from jMetalPy reference weights.",
                 RuntimeWarning,
-                stacklevel=2
+                stacklevel=2,
             )
         else:
             warnings.warn(
                 f"Weight vector file not found: {weight_path}. Generated simplex-lattice weights in memory; "
                 "results may differ from jMetalPy reference weights.",
                 RuntimeWarning,
-                stacklevel=2
+                stacklevel=2,
             )
         return weights
 
     weights = _load_weights(weight_path, delimiter=None)
     _assert_valid_weights(weights, n_obj)
     if weights.shape[0] != pop_size:
-        raise ValueError(
-            f"Expected {pop_size} weight vectors in '{weight_path}', got {weights.shape[0]}."
-        )
+        raise ValueError(f"Expected {pop_size} weight vectors in '{weight_path}', got {weights.shape[0]}.")
     return weights
 
 

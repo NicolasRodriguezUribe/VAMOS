@@ -6,7 +6,7 @@ implementation with modular components:
 - `core.py`: main NSGAII class (run/ask/tell loop)
 - `setup.py`: initialization/config helpers
 - `state.py`: NSGAIIState + result/genealogy helpers
-- `operators.py`: operator pool + adaptive selection wiring
+- `operators/policies/nsgaii.py`: operator pool + adaptive selection wiring
 - `helpers.py`: mating pool + survival helpers
 
 Example:

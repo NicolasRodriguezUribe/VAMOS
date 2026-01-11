@@ -58,7 +58,6 @@ def build_nsgaii_config(
         .crossover(crossover, prob=crossover_prob, eta=crossover_eta)
         .mutation(mutation, prob=mutation_prob, eta=mutation_eta)
         .selection("tournament", pressure=selection_pressure)
-
         .engine(engine)
         .constraint_mode(constraint_mode)
         .track_genealogy(track_genealogy)

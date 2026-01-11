@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from difflib import get_close_matches
 
 from vamos.foundation.problem.registry import ProblemSelection
 
@@ -9,6 +10,29 @@ from .pymoo import _run_pymoo_nsga2, _run_pymoo_perm_nsga2
 from .pygmo import _run_pygmo_nsga2
 
 _EXTERNAL_ALGORITHM_ADAPTERS = None
+_EXTERNAL_DOCS = "docs/reference/algorithms.md"
+_TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
+
+
+def _suggest_names(name: str, options: list[str]) -> list[str]:
+    if not name or not options:
+        return []
+    lookup = {option.lower(): option for option in options}
+    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
+    return [lookup[match] for match in matches]
+
+
+def _format_unknown_external(name: str, options: list[str]) -> str:
+    parts = [f"Unknown external algorithm '{name}'.", f"Available: {', '.join(options)}."]
+    suggestions = _suggest_names(name, options)
+    if suggestions:
+        if len(suggestions) == 1:
+            parts.append(f"Did you mean '{suggestions[0]}'?")
+        else:
+            parts.append("Did you mean one of: " + ", ".join(f"'{item}'" for item in suggestions) + "?")
+    parts.append(f"Docs: {_EXTERNAL_DOCS}.")
+    parts.append(f"Troubleshooting: {_TROUBLESHOOTING_DOCS}.")
+    return " ".join(parts)
 
 
 def _logger() -> logging.Logger:
@@ -65,8 +89,8 @@ def resolve_external_algorithm(name: str) -> ExternalAlgorithmAdapter:
     try:
         return adapters[name]
     except KeyError as exc:  # pragma: no cover - defensive guard
-        available = ", ".join(sorted(adapters))
-        raise ValueError(f"Unknown external algorithm '{name}'. Available: {available}") from exc
+        available = sorted(adapters)
+        raise ValueError(_format_unknown_external(name, available)) from exc
 
 
 def run_external(

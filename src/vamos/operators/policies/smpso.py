@@ -11,10 +11,10 @@ from typing import Any
 
 import numpy as np
 
-from vamos.operators.real import PolynomialMutation
+from vamos.operators.impl.real import PolynomialMutation
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
-from vamos.operators.real import VariationWorkspace
-from .helpers import resolve_repair
+from vamos.operators.impl.real import VariationWorkspace
+from vamos.engine.algorithm.smpso.helpers import resolve_repair
 
 
 __all__ = [

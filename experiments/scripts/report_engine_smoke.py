@@ -3,6 +3,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+
 def main() -> int:
     repo = Path(__file__).resolve().parents[2]
 
@@ -41,11 +42,7 @@ def main() -> int:
     # Filter non-null runtimes
     dfr = df.dropna(subset=["runtime_seconds"]).copy()
     if not dfr.empty:
-        agg = (
-            dfr.groupby("engine", as_index=False)["runtime_seconds"]
-               .median()
-               .sort_values("runtime_seconds", ascending=True)
-        )
+        agg = dfr.groupby("engine", as_index=False)["runtime_seconds"].median().sort_values("runtime_seconds", ascending=True)
         plt.figure()
         plt.bar(agg["engine"].astype(str), agg["runtime_seconds"])
         plt.xlabel("Engine")
@@ -64,8 +61,19 @@ def main() -> int:
 
     # ---- Table: compact LaTeX summary ----
     cols = []
-    for c in ["suite", "algorithm", "problem", "engine", "seed", "max_evaluations", "population_size",
-              "runtime_seconds", "front_size", "fun_ncols", "x_ncols"]:
+    for c in [
+        "suite",
+        "algorithm",
+        "problem",
+        "engine",
+        "seed",
+        "max_evaluations",
+        "population_size",
+        "runtime_seconds",
+        "front_size",
+        "fun_ncols",
+        "x_ncols",
+    ]:
         if c in df.columns:
             cols.append(c)
 
@@ -78,6 +86,7 @@ def main() -> int:
     # Ensure ints display nicely
     for ic in ["seed", "max_evaluations", "population_size", "front_size", "fun_ncols", "x_ncols"]:
         if ic in tab.columns:
+
             def _fmt(v):
                 try:
                     if str(v) == "nan":
@@ -85,27 +94,28 @@ def main() -> int:
                     return str(int(float(v)))
                 except Exception:
                     return str(v)
+
             tab[ic] = tab[ic].apply(_fmt)
 
     # Write a booktabs table fragment (to \input{} in the manuscript)
     lines = []
     lines.append(r"\begin{tabular}{l l l l r r r r r r}")
     lines.append(r"\toprule")
-    header = ["suite","algorithm","problem","engine","seed","evals","pop","runtime(s)","front","m","n"]
+    header = ["suite", "algorithm", "problem", "engine", "seed", "evals", "pop", "runtime(s)", "front", "m", "n"]
     lines.append(" & ".join(header) + r" \\")
     lines.append(r"\midrule")
     for _, row in tab.iterrows():
-        suite = row.get("suite","")
-        algo = row.get("algorithm","")
-        prob = row.get("problem","")
-        eng = row.get("engine","")
-        seed = row.get("seed","")
-        evals = row.get("max_evaluations","")
-        pop = row.get("population_size","")
-        rt = row.get("runtime_seconds","")
-        front = row.get("front_size","")
-        m = row.get("fun_ncols","")
-        n = row.get("x_ncols","")
+        suite = row.get("suite", "")
+        algo = row.get("algorithm", "")
+        prob = row.get("problem", "")
+        eng = row.get("engine", "")
+        seed = row.get("seed", "")
+        evals = row.get("max_evaluations", "")
+        pop = row.get("population_size", "")
+        rt = row.get("runtime_seconds", "")
+        front = row.get("front_size", "")
+        m = row.get("fun_ncols", "")
+        n = row.get("x_ncols", "")
         lines.append(f"{suite} & {algo} & {prob} & {eng} & {seed} & {evals} & {pop} & {rt} & {front} & {m} & {n} \\")
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
@@ -120,7 +130,8 @@ def main() -> int:
 
     # ---- Write results section to include artifacts ----
     results_tex = repo / "paper" / "manuscript" / "sections" / "04_results_engine.tex"
-    results_tex.write_text(r"""
+    results_tex.write_text(
+        r"""
 \section{Engine differentiation: smoke sanity check}
 
 Table~\ref{tab:engine-smoke} reports a minimal end-to-end sanity check where the same NSGA-II configuration
@@ -140,10 +151,13 @@ artifact contract is stable across engines and that basic timing/outputs are col
 \caption{Smoke run runtime (median per engine).}
 \label{fig:engine-smoke-runtime}
 \end{figure}
-""".lstrip(), encoding="utf-8")
+""".lstrip(),
+        encoding="utf-8",
+    )
     print("Updated:", results_tex.relative_to(repo))
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

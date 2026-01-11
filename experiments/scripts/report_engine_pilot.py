@@ -5,8 +5,14 @@ import re
 import shutil
 from pathlib import Path
 
-def q25(x): return x.quantile(0.25)
-def q75(x): return x.quantile(0.75)
+
+def q25(x):
+    return x.quantile(0.25)
+
+
+def q75(x):
+    return x.quantile(0.75)
+
 
 def safe_slug(val: object) -> str:
     s = "" if val is None else str(val)
@@ -16,6 +22,7 @@ def safe_slug(val: object) -> str:
     s = re.sub(r"[^A-Za-z0-9_-]+", "_", s)
     s = re.sub(r"_+", "_", s).strip("_")
     return s or "unknown"
+
 
 def normalize_problem(problem_val: object, suite_val: object) -> tuple[str, str]:
     label = "" if problem_val is None else str(problem_val)
@@ -41,6 +48,7 @@ def normalize_problem(problem_val: object, suite_val: object) -> tuple[str, str]
         label = str(suite_val)
     return label, str(key)
 
+
 def main() -> int:
     repo = Path.cwd()
 
@@ -59,43 +67,53 @@ def main() -> int:
     df = pd.read_csv(tidy)
 
     # Required cols (defensive)
-    for c in ["engine","problem","algorithm","suite","seed","runtime_seconds","front_size","max_evaluations","population_size","fun_ncols"]:
+    for c in [
+        "engine",
+        "problem",
+        "algorithm",
+        "suite",
+        "seed",
+        "runtime_seconds",
+        "front_size",
+        "max_evaluations",
+        "population_size",
+        "fun_ncols",
+    ]:
         if c not in df.columns:
             df[c] = None
 
     # Output dirs
-    artifacts_plots  = repo / "artifacts" / "plots"
+    artifacts_plots = repo / "artifacts" / "plots"
     artifacts_tables = repo / "artifacts" / "tables"
-    paper_figures    = repo / "paper" / "manuscript" / "figures"
-    paper_tables     = repo / "paper" / "manuscript" / "tables"
+    paper_figures = repo / "paper" / "manuscript" / "figures"
+    paper_tables = repo / "paper" / "manuscript" / "tables"
     for d in (artifacts_plots, artifacts_tables, paper_figures, paper_tables):
         d.mkdir(parents=True, exist_ok=True)
 
     # Aggregate over seeds: median + IQR per (problem, engine)
     dfr = df.dropna(subset=["runtime_seconds"]).copy()
-    grp = (
-        dfr.groupby(["suite","algorithm","problem","engine"], as_index=False)
-           .agg(
-               runtime_med=("runtime_seconds","median"),
-               runtime_q25=("runtime_seconds", q25),
-               runtime_q75=("runtime_seconds", q75),
-               front_med=("front_size","median"),
-               m=("fun_ncols","max"),
-               evals=("max_evaluations","max"),
-               pop=("population_size","max"),
-               seeds=("seed", lambda s: ",".join(str(int(x)) for x in sorted(set(s.dropna()))))
-           )
+    grp = dfr.groupby(["suite", "algorithm", "problem", "engine"], as_index=False).agg(
+        runtime_med=("runtime_seconds", "median"),
+        runtime_q25=("runtime_seconds", q25),
+        runtime_q75=("runtime_seconds", q75),
+        front_med=("front_size", "median"),
+        m=("fun_ncols", "max"),
+        evals=("max_evaluations", "max"),
+        pop=("population_size", "max"),
+        seeds=("seed", lambda s: ",".join(str(int(x)) for x in sorted(set(s.dropna())))),
     )
 
     # Speedup vs numpy within each (suite,algo,problem)
-    base = grp[grp["engine"].astype(str).str.lower().eq("numpy")][["suite","algorithm","problem","runtime_med"]].rename(columns={"runtime_med":"runtime_numpy"})
-    merged = grp.merge(base, on=["suite","algorithm","problem"], how="left")
+    base = grp[grp["engine"].astype(str).str.lower().eq("numpy")][["suite", "algorithm", "problem", "runtime_med"]].rename(
+        columns={"runtime_med": "runtime_numpy"}
+    )
+    merged = grp.merge(base, on=["suite", "algorithm", "problem"], how="left")
     merged["speedup_vs_numpy"] = merged["runtime_numpy"] / merged["runtime_med"]
 
     # ---- Plot 1: runtime bars per problem (median) ----
     # We generate one figure per problem to keep it readable.
     plot_paths = []
-    for (suite, algo, prob), sub in merged.groupby(["suite","algorithm","problem"]):
+    for (suite, algo, prob), sub in merged.groupby(["suite", "algorithm", "problem"]):
         suite_str = "" if suite is None else str(suite)
         algo_str = "" if algo is None else str(algo)
         prob_label, prob_key = normalize_problem(prob, suite_str)
@@ -122,7 +140,7 @@ def main() -> int:
 
     # ---- Plot 2: speedup vs numpy per problem ----
     speed_paths = []
-    for (suite, algo, prob), sub in merged.groupby(["suite","algorithm","problem"]):
+    for (suite, algo, prob), sub in merged.groupby(["suite", "algorithm", "problem"]):
         suite_str = "" if suite is None else str(suite)
         algo_str = "" if algo is None else str(algo)
         prob_label, prob_key = normalize_problem(prob, suite_str)
@@ -149,7 +167,21 @@ def main() -> int:
 
     # ---- Table: compact LaTeX fragment ----
     table_path = artifacts_tables / "engine_pilot_summary.tex"
-    cols = ["suite","algorithm","problem","engine","seeds","evals","pop","m","runtime_med","runtime_q25","runtime_q75","speedup_vs_numpy","front_med"]
+    cols = [
+        "suite",
+        "algorithm",
+        "problem",
+        "engine",
+        "seeds",
+        "evals",
+        "pop",
+        "m",
+        "runtime_med",
+        "runtime_q25",
+        "runtime_q75",
+        "speedup_vs_numpy",
+        "front_med",
+    ]
     tab = merged[cols].copy()
 
     def fmt(x, nd=4):
@@ -170,7 +202,8 @@ def main() -> int:
             f"{r['suite']} & {r['algorithm']} & {r['problem']} & {r['engine']} & {r['seeds']} & "
             f"{int(r['evals'])} & {int(r['pop'])} & {int(r['m'])} & "
             f"{fmt(r['runtime_med'])} & {fmt(r['runtime_q25'])} & {fmt(r['runtime_q75'])} & "
-            f"{fmt(r['speedup_vs_numpy'])} & {fmt(r['front_med'])} \\\\")
+            f"{fmt(r['speedup_vs_numpy'])} & {fmt(r['front_med'])} \\\\"
+        )
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     table_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -224,6 +257,7 @@ Figures \ref{fig:engine-pilot-runtime}--\ref{fig:engine-pilot-speedup} show per-
         print("Results section already contains pilot subsection; not duplicating.")
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

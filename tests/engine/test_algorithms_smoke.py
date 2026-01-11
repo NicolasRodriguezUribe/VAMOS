@@ -31,7 +31,6 @@ def test_nsgaii_hv_termination_hits_target():
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-
         .engine("numpy")
         .fixed()
     )
@@ -179,7 +178,6 @@ def test_nsgaii_with_multiprocessing_eval_strategy():
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-
         .engine("numpy")
         .fixed()
     )
@@ -207,7 +205,6 @@ def test_nsgaii_permutation_smoke():
         .crossover("ox", prob=0.9)
         .mutation("swap", prob="2/n")
         .selection("tournament", pressure=2)
-
         .engine("numpy")
         .fixed()
     )

@@ -1,4 +1,4 @@
-# algorithm/nsgaii/operators.py
+# operators/policies/nsgaii.py
 """
 Operator pool building and adaptive operator selection for NSGA-II.
 
@@ -15,7 +15,7 @@ import numpy as np
 from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
 from vamos.engine.hyperheuristics.indicator import IndicatorEvaluator
 from vamos.engine.hyperheuristics.operator_selector import make_operator_selector
-from vamos.operators.real import VariationWorkspace
+from vamos.operators.impl.real import VariationWorkspace
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.adaptation.aos.config import AdaptiveOperatorSelectionConfig
 from vamos.adaptation.aos.controller import AOSController

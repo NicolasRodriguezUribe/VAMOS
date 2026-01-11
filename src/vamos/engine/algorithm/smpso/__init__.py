@@ -6,7 +6,7 @@ implementation with modular components:
 - `core.py`: main SMPSO class (run/ask/tell loop)
 - `setup.py`: initialization/config helpers
 - `state.py`: SMPSOState + result building
-- `operators.py`: mutation operator building
+- `operators/policies/smpso.py`: mutation operator building
 - `helpers.py`: personal best updates, evaluation helpers
 
 References:
@@ -17,7 +17,7 @@ References:
 
 from .smpso import SMPSO
 from .helpers import extract_eval_arrays, update_personal_bests
-from .operators import build_mutation_operator
+from vamos.operators.policies.smpso import build_mutation_operator
 from .initialization import initialize_smpso_run
 from .state import SMPSOState, build_smpso_result
 

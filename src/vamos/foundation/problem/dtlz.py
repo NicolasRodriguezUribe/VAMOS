@@ -27,10 +27,9 @@ class DTLZ1Problem(DTLZBase):
         k = n_var - n_obj + 1
         if k != 5:
             warnings.warn(
-                f"Non-standard DTLZ1 configuration: k={k} (standard k=5). "
-                f"Consider using n_var={n_obj + 4} for standard benchmark.",
+                f"Non-standard DTLZ1 configuration: k={k} (standard k=5). Consider using n_var={n_obj + 4} for standard benchmark.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
     def _evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
@@ -70,10 +69,9 @@ class DTLZ2Problem(DTLZBase):
         k = n_var - n_obj + 1
         if k != 10:
             warnings.warn(
-                f"Non-standard DTLZ2 configuration: k={k} (standard k=10). "
-                f"Consider using n_var={n_obj + 9} for standard benchmark.",
+                f"Non-standard DTLZ2 configuration: k={k} (standard k=10). Consider using n_var={n_obj + 9} for standard benchmark.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
     def _evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
@@ -105,10 +103,9 @@ class DTLZ3Problem(DTLZBase):
         k = n_var - n_obj + 1
         if k != 10:
             warnings.warn(
-                f"Non-standard DTLZ3 configuration: k={k} (standard k=10). "
-                f"Consider using n_var={n_obj + 9} for standard benchmark.",
+                f"Non-standard DTLZ3 configuration: k={k} (standard k=10). Consider using n_var={n_obj + 9} for standard benchmark.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
     def _evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
@@ -149,10 +146,9 @@ class DTLZ4Problem(DTLZBase):
         k = n_var - n_obj + 1
         if k != 10:
             warnings.warn(
-                f"Non-standard DTLZ4 configuration: k={k} (standard k=10). "
-                f"Consider using n_var={n_obj + 9} for standard benchmark.",
+                f"Non-standard DTLZ4 configuration: k={k} (standard k=10). Consider using n_var={n_obj + 9} for standard benchmark.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
     def _evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
@@ -187,10 +183,9 @@ class DTLZ7Problem(DTLZBase):
         k = n_var - n_obj + 1
         if k != 20:
             warnings.warn(
-                f"Non-standard DTLZ7 configuration: k={k} (standard k=20). "
-                f"Consider using n_var={n_obj + 19} for standard benchmark.",
+                f"Non-standard DTLZ7 configuration: k={k} (standard k=20). Consider using n_var={n_obj + 19} for standard benchmark.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
     def _evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:

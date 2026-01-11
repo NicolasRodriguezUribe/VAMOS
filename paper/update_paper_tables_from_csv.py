@@ -49,12 +49,12 @@ def make_latex_table_a1(df_table: pd.DataFrame) -> str:
     """Table A.1: backends with row-wise minimum bolded."""
     # Requested order: Numba, Moocore, NumPy
     backend_order = ["numba", "moocore", "numpy"]
-    
+
     # Check which exist
     valid_backends = [b for b in backend_order if b in df_table.columns]
-    
+
     header_cols = [f"\\textbf{{{b.capitalize() if b != 'moocore' else 'Moocore'}}}" for b in valid_backends]
-    
+
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
@@ -95,39 +95,39 @@ def make_latex_table_a1(df_table: pd.DataFrame) -> str:
 def make_latex_table_a2(df_table: pd.DataFrame) -> str:
     """Table A.2 (or A.6): detailed comparison of all frameworks."""
     # df_table indices are problems (or Average). Columns are frameworks.
-    
+
     # Sort columns to have VAMOS variants first, then others
     # Explicit order requested: VAMOS, pymoo, DEAP, jMetalPy, Platypus
     cols = df_table.columns.tolist()
-    
+
     order_map = {
         "VAMOS": 0,
         "pymoo": 1,
         "DEAP": 2,
         "jMetalPy": 3,
         "Platypus": 4,
-        "VAMOS (numba)": 0 # Handle alias if needed
+        "VAMOS (numba)": 0,  # Handle alias if needed
     }
-    
+
     def sort_key(c):
         base_c = c
         # Case insensitive check or direct map
         for k, v in order_map.items():
             if k.lower() == c.lower():
-                 return v
-            if k in c: # partial match
-                 return v
-        return 99 # Others at end
-        
+                return v
+            if k in c:  # partial match
+                return v
+        return 99  # Others at end
+
     cols = sorted(cols, key=sort_key)
-    
-    # We might need to rotate table or ensure it fits. 
-    # If too many columns, maybe small font? 
+
+    # We might need to rotate table or ensure it fits.
+    # If too many columns, maybe small font?
     # For now, standard table.
-    
+
     lines = [
-        r"\begin{table*}[htbp]", # Use table* for wide content
-        r"\tiny", # Reduce font size to fit all columns
+        r"\begin{table*}[htbp]",  # Use table* for wide content
+        r"\tiny",  # Reduce font size to fit all columns
         r"\centering",
         r"\caption{Detailed comparison of median runtime (seconds) across all frameworks.}",
         r"\label{tab:detailed_comparison}",
@@ -139,12 +139,12 @@ def make_latex_table_a2(df_table: pd.DataFrame) -> str:
 
     for idx, row in df_table.iterrows():
         row_str = []
-        
+
         # Find min value for bolding
         # Filter out NaNs if any, though median shouldn't have them if data exists
         valid_vals = [row[c] for c in cols if pd.notna(row[c])]
         min_val = min(valid_vals) if valid_vals else -1
-        
+
         for col in cols:
             val = row[col]
             if pd.isna(val):
@@ -184,7 +184,7 @@ def make_latex_table_3(vamos_fam: pd.DataFrame) -> str:
     # Desired backend order: Numba, Moocore, NumPy
     backend_order = ["numba", "moocore", "numpy"]
     valid_backends = [b for b in backend_order if b in vamos_fam.index]
-    
+
     # Calculate min per column for bolding (across backends)
     min_vals = {}
     for col in families + ["Average"]:
@@ -212,31 +212,29 @@ def make_latex_table_3(vamos_fam: pd.DataFrame) -> str:
 
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     return "\n".join(lines)
+
+
 def make_latex_table_4(family_df: pd.DataFrame) -> str:
     """Table 4: Framework comparison by family."""
     # family_df index = Frameworks, cols = ZDT, DTLZ, WFG, Average
-    
+
     # Sort frameworks
     idx_list = sorted(family_df.index.tolist())
-    
-    order_map = {
-        "VAMOS": 0,
-        "pymoo": 1,
-        "DEAP": 2,
-        "jMetalPy": 3,
-        "Platypus": 4
-    }
-    
+
+    order_map = {"VAMOS": 0, "pymoo": 1, "DEAP": 2, "jMetalPy": 3, "Platypus": 4}
+
     def sort_key(c):
         for k, v in order_map.items():
-            if k.lower() == c.lower(): return v
-            if k in c: return v
+            if k.lower() == c.lower():
+                return v
+            if k in c:
+                return v
         return 99
 
     idx_list = sorted(idx_list, key=sort_key)
-    
+
     families = [col for col in ["ZDT", "DTLZ", "WFG"] if col in family_df.columns]
-    
+
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
@@ -252,25 +250,26 @@ def make_latex_table_4(family_df: pd.DataFrame) -> str:
 
     for fw in idx_list:
         row = family_df.loc[fw]
-        
+
         # Determine if this row has the best average? Or bolding per column?
         # Let's bold the best per column
-        
+
         row_str = []
         for col in families + ["Average"]:
             val = row[col]
             # Check if this is the min in the column
             col_min = family_df[col].min()
             if abs(val - col_min) < 1e-9:
-                 row_str.append(f"\\textbf{{{val:.2f}}}")
+                row_str.append(f"\\textbf{{{val:.2f}}}")
             else:
-                 row_str.append(f"{val:.2f}")
-                 
+                row_str.append(f"{val:.2f}")
+
         lines.append(f"{fw} & {' & '.join(row_str)} \\\\")
 
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     return "\n".join(lines)
-    
+
+
 def _find_table_bounds(content: str, label: str) -> tuple[int, int, str, str] | None:
     label_token = f"\\label{{{label}}}"
     label_pos = content.find(label_token)
@@ -358,9 +357,7 @@ def main() -> None:
     family["Average"] = family.mean(axis=1)
 
     vamos_family = family.loc[family.index.str.contains("VAMOS")].copy()
-    vamos_family.index = (
-        vamos_family.index.str.replace("VAMOS (", "", regex=False).str.replace(")", "", regex=False)
-    )
+    vamos_family.index = vamos_family.index.str.replace("VAMOS (", "", regex=False).str.replace(")", "", regex=False)
 
     detail = df.groupby(["framework", "problem"])["runtime_seconds"].median().unstack()
 
@@ -371,24 +368,24 @@ def main() -> None:
     backends_detail = pd.concat([backends_detail, avg_row.to_frame().T])
 
     # --- TABLE 4 Data Preparation ---
-    # User Request: Only show "VAMOS" (using Numba data) vs others. 
+    # User Request: Only show "VAMOS" (using Numba data) vs others.
     # Exclude VAMOS (numpy), VAMOS (moocore).
-    
+
     # Filter family df
     family_filtered = family.copy()
     if "VAMOS (numba)" in family_filtered.index:
         family_filtered = family_filtered.rename(index={"VAMOS (numba)": "VAMOS"})
-    
+
     # Remove other VAMOS rows
     family_filtered = family_filtered.loc[~family_filtered.index.str.contains(r"VAMOS \(")]
-    
+
     # --- TABLE A.2 (Comparison) Data Preparation ---
     comparison_detail = detail.T.copy()
-    
+
     # Rename columns and filter
     if "VAMOS (numba)" in comparison_detail.columns:
         comparison_detail = comparison_detail.rename(columns={"VAMOS (numba)": "VAMOS"})
-    
+
     # Drop other VAMOS columns
     cols_to_drop = [c for c in comparison_detail.columns if c.startswith("VAMOS (")]
     comparison_detail = comparison_detail.drop(columns=cols_to_drop)
@@ -407,7 +404,6 @@ def main() -> None:
     table_4_latex = make_latex_table_4(family_filtered) if not family_filtered.empty else ""
     table_a1_latex = make_latex_table_a1(backends_detail) if not missing_backends else ""
     table_a2_latex = make_latex_table_a2(comparison_detail) if not comparison_detail.empty else ""
-
 
     print("\n" + "=" * 60)
     print("TABLE 3 - Backend by Family")
@@ -428,7 +424,6 @@ def main() -> None:
     print("TABLE A.2 - Comparison")
     print("=" * 60)
     print(table_a2_latex)
-
 
     content = main_tex.read_text(encoding="utf-8")
     original_len = len(content)

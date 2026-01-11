@@ -76,6 +76,7 @@ Tip: Prefer config objects (`OptimizeConfig` + algorithm config builders). Raw d
 - RVEA requires `pop_size` to match the number of reference directions implied by `n_partitions` (simplex-lattice). It uses APD survival with periodic reference-vector adaptation (`alpha`, `adapt_freq`).
 - For reproducible results, set `seed`; NumPy/Numba/MooCore backends share the same RNG-driven stochastic operators.
 - Default operator settings align with jMetalPy standard configurations (e.g., SBX prob 1.0, PM prob 1/n, MOEA/D PBI, IBEA kappa 1.0); override via config/CLI if needed.
+- Troubleshooting guide: `docs/guide/troubleshooting.md`.
 
 ## 📚 Examples & Notebooks
 

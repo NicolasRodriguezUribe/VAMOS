@@ -23,7 +23,7 @@ def _get_registry() -> Registry[object]:
     reg: Registry[object] = Registry("VariationOperators")
 
     # Register common operators
-    from vamos.operators.real import (
+    from vamos.operators.impl.real import (
         SBXCrossover,
         PolynomialMutation,
         ArithmeticCrossover,
@@ -70,7 +70,7 @@ def _get_registry() -> Registry[object]:
     reg.register("round", RoundRepair)
 
     # Binary operators
-    from vamos.operators.binary import (
+    from vamos.operators.impl.binary import (
         BitFlipMutation,
         OnePointCrossover,
         TwoPointCrossover,
@@ -86,7 +86,7 @@ def _get_registry() -> Registry[object]:
     reg.register("spx", OnePointCrossover)
 
     # Permutation operators
-    from vamos.operators.permutation import (
+    from vamos.operators.impl.permutation import (
         SwapMutation,
         PMXCrossover,
         CycleCrossover,
@@ -113,7 +113,7 @@ def _get_registry() -> Registry[object]:
     reg.register("displacement", DisplacementMutation)
 
     # Integer operators
-    from vamos.operators.integer import (
+    from vamos.operators.impl.integer import (
         UniformIntegerCrossover,
         ArithmeticIntegerCrossover,
         IntegerSBXCrossover,
@@ -130,7 +130,7 @@ def _get_registry() -> Registry[object]:
     reg.register("creep", CreepMutation)
 
     # Mixed operators
-    from vamos.operators.mixed import MixedCrossover, MixedMutation
+    from vamos.operators.impl.mixed import MixedCrossover, MixedMutation
 
     reg.register("mixed", MixedCrossover)
     reg.register("mixed_mutation", MixedMutation)

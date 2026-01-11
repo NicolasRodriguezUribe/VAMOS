@@ -9,8 +9,10 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+
 def read_json(p: Path) -> Dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
+
 
 def try_parse_float(s: str) -> float | None:
     s = s.strip()
@@ -25,6 +27,7 @@ def try_parse_float(s: str) -> float | None:
     except Exception:
         return None
 
+
 def flatten(prefix: str, obj: Any, out: Dict[str, Any]) -> None:
     if isinstance(obj, dict):
         for k, v in obj.items():
@@ -38,12 +41,15 @@ def flatten(prefix: str, obj: Any, out: Dict[str, Any]) -> None:
         else:
             out[prefix] = f"<{type(obj).__name__}>"
 
+
 def is_nan(x: float) -> bool:
     return x != x
+
 
 def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
     rows: List[List[float]] = []
     import csv
+
     with p.open("r", encoding="utf-8", newline="") as f:
         reader = csv.reader(f)
         for r in reader:
@@ -69,11 +75,13 @@ def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
             r.extend([float("nan")] * (ncols - len(r)))
     return nrows, ncols, rows
 
+
 def col_min_max(mat: List[List[float]], j: int) -> Tuple[float | None, float | None]:
     vals = [r[j] for r in mat if j < len(r) and not is_nan(r[j])]
     if not vals:
         return None, None
     return min(vals), max(vals)
+
 
 def infer_from_seed_dir(sd: Path) -> Dict[str, str]:
     # expected: .../<suite>/<algo>/<engine>/seed_<k>
@@ -82,6 +90,7 @@ def infer_from_seed_dir(sd: Path) -> Dict[str, str]:
         "algorithm": sd.parent.parent.name if len(sd.parents) >= 2 else "",
         "engine": sd.parent.name,
     }
+
 
 def row_from_seed_dir(sd: Path, campaign: str) -> Dict[str, Any]:
     r: Dict[str, Any] = {}
@@ -94,7 +103,17 @@ def row_from_seed_dir(sd: Path, campaign: str) -> Dict[str, Any]:
     meta_p = sd / "metadata.json"
     if meta_p.exists():
         meta = read_json(meta_p)
-        for k in ["algorithm","problem","seed","max_evaluations","population_size","vamos_version","git_revision","timestamp","backend"]:
+        for k in [
+            "algorithm",
+            "problem",
+            "seed",
+            "max_evaluations",
+            "population_size",
+            "vamos_version",
+            "git_revision",
+            "timestamp",
+            "backend",
+        ]:
             if k in meta:
                 r[k] = meta[k]
         # backend_info + metrics flattened
@@ -135,6 +154,7 @@ def row_from_seed_dir(sd: Path, campaign: str) -> Dict[str, Any]:
 
     return r
 
+
 def read_index(index_path: Path) -> List[Dict[str, Any]]:
     rows = []
     with index_path.open("r", encoding="utf-8") as f:
@@ -144,6 +164,7 @@ def read_index(index_path: Path) -> List[Dict[str, Any]]:
                 continue
             rows.append(json.loads(line))
     return rows
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -184,10 +205,10 @@ def main() -> int:
             print("Using index:", index_path.relative_to(repo), "runs:", len(seed_dirs))
         else:
             print("Index present but no valid seed dirs; scanning results instead.")
-            seed_dirs = sorted([p for p in results_root.rglob("seed_*") if p.is_dir() and (p/"metadata.json").exists()])
+            seed_dirs = sorted([p for p in results_root.rglob("seed_*") if p.is_dir() and (p / "metadata.json").exists()])
             print("Scan found seed dirs:", len(seed_dirs))
     else:
-        seed_dirs = sorted([p for p in results_root.rglob("seed_*") if p.is_dir() and (p/"metadata.json").exists()])
+        seed_dirs = sorted([p for p in results_root.rglob("seed_*") if p.is_dir() and (p / "metadata.json").exists()])
         print("Index not found; scanning seed dirs:", len(seed_dirs))
 
     if not seed_dirs:
@@ -202,10 +223,25 @@ def main() -> int:
         keys |= set(r.keys())
 
     core = [
-        "run_path","campaign","suite","algorithm","engine",
-        "problem","seed","max_evaluations","population_size",
-        "runtime_seconds","front_size","fun_ncols","x_nrows","x_ncols",
-        "git_revision","timestamp","vamos_version","backend","config_keys",
+        "run_path",
+        "campaign",
+        "suite",
+        "algorithm",
+        "engine",
+        "problem",
+        "seed",
+        "max_evaluations",
+        "population_size",
+        "runtime_seconds",
+        "front_size",
+        "fun_ncols",
+        "x_nrows",
+        "x_ncols",
+        "git_revision",
+        "timestamp",
+        "vamos_version",
+        "backend",
+        "config_keys",
     ]
     cols = core + sorted([k for k in keys if k not in core])
 
@@ -228,9 +264,10 @@ def main() -> int:
     # Preview
     lines = out.read_text(encoding="utf-8").splitlines()
     print("\nPreview:")
-    print("\n".join(lines[: min(6, len(lines)) ]))
+    print("\n".join(lines[: min(6, len(lines))]))
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

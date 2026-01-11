@@ -1,8 +1,10 @@
 """
 Quick test: Does pymoo escape the local optimum with different seeds?
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import numpy as np
@@ -41,11 +43,11 @@ for seed in range(5):
     )
     termination = get_termination("n_eval", N_EVALS)
     res = minimize(pymoo_problem, algorithm, termination, seed=seed, verbose=False)
-    
+
     hv = compute_hv(res.F, PROBLEM_NAME)
     f_max = res.F.max(axis=0)
     results.append((seed, hv, f_max))
-    
+
     status = "✓ Good" if hv > 0.5 else "❌ Stuck in local optimum"
     print(f"Seed {seed}: HV={hv:.6f}, F_max={f_max}, {status}")
 

@@ -11,8 +11,10 @@ Requirements:
     pip install -e .  # Core only
     pip install -e ".[analysis]"  # With matplotlib for plotting
 """
+
 from __future__ import annotations
 from vamos.api import optimize
+
 
 def main():
     # 1. Run optimization with a single improved command
@@ -51,6 +53,7 @@ def main():
         plt.show()
     except ImportError:
         print("\nInstall matplotlib for visualization: pip install matplotlib")
+
 
 if __name__ == "__main__":
     main()

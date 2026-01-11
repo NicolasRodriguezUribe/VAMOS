@@ -18,7 +18,7 @@ from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, H
 from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.hooks.genealogy import GenealogyTracker
-from vamos.operators.real import VariationWorkspace
+from vamos.operators.impl.real import VariationWorkspace
 from vamos.adaptation.aos.controller import AOSController
 
 

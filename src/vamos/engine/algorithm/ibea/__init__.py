@@ -6,7 +6,7 @@ implementation with modular components:
 - `core.py`: main IBEA class (run/ask/tell loop)
 - `setup.py`: initialization/config helpers
 - `state.py`: IBEAState + result building
-- `operators.py`: variation pipeline building
+    - `operators/policies/ibea.py`: variation pipeline building
 - `helpers.py`: indicator computation, fitness, environmental selection
 
 References:
@@ -24,7 +24,7 @@ from .helpers import (
     hypervolume_indicator,
     ibea_fitness,
 )
-from .operators import build_variation_pipeline
+from vamos.operators.policies.ibea import build_variation_pipeline
 from .initialization import initialize_ibea_run
 from .state import IBEAState, build_ibea_result
 

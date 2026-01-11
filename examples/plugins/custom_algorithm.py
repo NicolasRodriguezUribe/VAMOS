@@ -3,6 +3,7 @@ Example: Custom Algorithm Plugin for VAMOS
 
 This example demonstrates how to create and register a custom optimization algorithm.
 """
+
 from __future__ import annotations
 
 from typing import Any, Mapping
@@ -17,7 +18,7 @@ from vamos.foundation.problem.types import ProblemProtocol
 class RandomSearchAlgorithm:
     """
     A simple random search algorithm for demonstration purposes.
-    
+
     This is not a competitive algorithm - it's just an example of the interface.
     """
 
@@ -36,29 +37,29 @@ class RandomSearchAlgorithm:
     ) -> Mapping[str, Any]:
         """Run random search optimization."""
         rng = np.random.default_rng(seed)
-        
+
         # Parse termination
         _, max_evals = termination
         if isinstance(max_evals, dict):
             max_evals = max_evals.get("max_evaluations", 1000)
-        
+
         # Initialize
         xl, xu = problem.xl, problem.xu
         best_X = None
         best_F = None
         n_eval = 0
-        
+
         # Notify start
         if live_viz:
             live_viz.on_start(problem=problem, algorithm=self, config=self.config)
-        
+
         generation = 0
         while n_eval < max_evals:
             # Generate random population
             X = rng.uniform(xl, xu, size=(self.pop_size, problem.n_var))
             F = problem.evaluate(X)
             n_eval += self.pop_size
-            
+
             # Keep non-dominated
             if best_F is None:
                 best_X, best_F = X, F
@@ -66,17 +67,17 @@ class RandomSearchAlgorithm:
                 combined_X = np.vstack([best_X, X])
                 combined_F = np.vstack([best_F, F])
                 # Simple: just keep best by first objective
-                idx = np.argsort(combined_F[:, 0])[:self.pop_size]
+                idx = np.argsort(combined_F[:, 0])[: self.pop_size]
                 best_X = combined_X[idx]
                 best_F = combined_F[idx]
-            
+
             generation += 1
             if live_viz:
                 live_viz.on_generation(generation, F=best_F)
-        
+
         if live_viz:
             live_viz.on_end(final_F=best_F)
-        
+
         return {
             "X": best_X,
             "F": best_F,

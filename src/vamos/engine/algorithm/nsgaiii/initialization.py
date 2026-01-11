@@ -26,10 +26,10 @@ from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 from .helpers import evaluate_population_with_constraints
-from .operators import build_variation_operators
+from vamos.operators.policies.nsgaiii import build_variation_operators
 from .state import NSGAIIIState
-from vamos.operators.binary import random_binary_population
-from vamos.operators.integer import random_integer_population
+from vamos.operators.impl.binary import random_binary_population
+from vamos.operators.impl.integer import random_integer_population
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
@@ -146,7 +146,7 @@ def initialize_nsgaiii_run(
             pop_size = _handle_refdir_mismatch(
                 expected,
                 pop_size,
-                f"NSGA-III reference directions for divisions={ref_divisions} expect {expected} points (got {pop_size}).",
+                f"NSGA-III reference directions for divisions={ref_divisions} expect {expected} points (pop_size={pop_size}).",
             )
         ref_dirs = load_or_generate_weight_vectors(pop_size, n_obj, path=ref_path, divisions=ref_divisions)
     else:

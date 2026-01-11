@@ -10,7 +10,7 @@ from typing import Iterable
 
 import numpy as np
 
-from vamos.operators.real import SBXCrossover, PolynomialMutation
+from vamos.operators.impl.real import SBXCrossover, PolynomialMutation
 
 from .backend import KernelBackend
 
@@ -132,6 +132,20 @@ class NumPyKernel(KernelBackend):
             self._score_buffer = np.empty(shape, dtype=np.float64)
         return self._score_buffer
 
+    @staticmethod
+    def _normalize_bounds(
+        xl: float | np.ndarray,
+        xu: float | np.ndarray,
+        n_var: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        lower = np.asarray(xl, dtype=float)
+        upper = np.asarray(xu, dtype=float)
+        if lower.ndim == 0 or (lower.ndim == 1 and lower.shape[0] == 1 and n_var > 1):
+            lower = np.full(n_var, float(lower.reshape(-1)[0]))
+        if upper.ndim == 0 or (upper.ndim == 1 and upper.shape[0] == 1 and n_var > 1):
+            upper = np.full(n_var, float(upper.reshape(-1)[0]))
+        return lower, upper
+
     def capabilities(self) -> Iterable[str]:
         return ("cpu",)
 
@@ -189,22 +203,25 @@ class NumPyKernel(KernelBackend):
         self,
         X_parents: np.ndarray,
         params: dict,
-        rng: np.random.Generator,
+        rng: np.random.Generator | None,
         xl: float,
         xu: float,
     ) -> np.ndarray:
         Np, D = X_parents.shape
         if Np == 0:
             return np.empty_like(X_parents)
+        if rng is None:
+            rng = np.random.default_rng()
         # Handle odd parent count by duplicating the last parent
         if Np % 2 != 0:
             X_parents = np.vstack([X_parents, X_parents[-1:]])
             Np += 1
+        lower, upper = self._normalize_bounds(xl, xu, D)
         operator = SBXCrossover(
             prob_crossover=float(params.get("prob", 0.9)),
             eta=float(params.get("eta", 20.0)),
-            lower=xl,
-            upper=xu,
+            lower=lower,
+            upper=upper,
         )
         pairs = X_parents.reshape(Np // 2, 2, D)
         offspring = operator(pairs, rng)
@@ -214,17 +231,21 @@ class NumPyKernel(KernelBackend):
         self,
         X: np.ndarray,
         params: dict,
-        rng: np.random.Generator,
+        rng: np.random.Generator | None,
         xl: float,
         xu: float,
     ) -> None:
         if X.size == 0:
             return
+        if rng is None:
+            rng = np.random.default_rng()
+        n_var = X.shape[1]
+        lower, upper = self._normalize_bounds(xl, xu, n_var)
         operator = PolynomialMutation(
             prob_mutation=float(params.get("prob", 0.1)),
             eta=float(params.get("eta", 20.0)),
-            lower=xl,
-            upper=xu,
+            lower=lower,
+            upper=upper,
         )
         mutated = operator(X, rng)
         X[:] = mutated

@@ -50,7 +50,6 @@ class TestGenealogyTracking:
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
-
             .engine("numpy")
             .track_genealogy(True)
             .fixed()
@@ -191,7 +190,6 @@ class TestGenealogyTracking:
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
-
             .engine("numpy")
             .fixed()
         )

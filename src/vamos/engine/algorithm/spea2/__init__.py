@@ -6,7 +6,7 @@ implementation with modular components:
 - `core.py`: main SPEA2 class (run/ask/tell loop)
 - `setup.py`: initialization/config helpers
 - `state.py`: SPEA2State + result building
-- `operators.py`: variation operator building
+- `operators/policies/spea2.py`: variation operator building
 - `helpers.py`: environmental selection, fitness calculation, truncation
 
 References:
@@ -22,7 +22,7 @@ from .helpers import (
     spea2_fitness,
     truncate_by_distance,
 )
-from .operators import build_variation_operators
+from vamos.operators.policies.spea2 import build_variation_operators
 from .initialization import initialize_spea2_run
 from .state import SPEA2State, build_spea2_result
 

@@ -1,6 +1,6 @@
-"""SMS-EMOA operator registration and building.
+"""NSGA-III operator registration and building.
 
-This module provides operator registries and factory functions for SMS-EMOA
+This module provides operator registries and factory functions for NSGA-III
 supporting continuous, binary, and integer encodings.
 """
 
@@ -11,20 +11,20 @@ from typing import Callable
 import numpy as np
 
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
-from vamos.operators.binary import (
+from vamos.operators.impl.binary import (
     bit_flip_mutation,
     one_point_crossover,
     two_point_crossover,
     uniform_crossover,
 )
-from vamos.operators.integer import (
+from vamos.operators.impl.integer import (
     arithmetic_integer_crossover,
     creep_mutation,
     random_reset_mutation,
     uniform_integer_crossover,
 )
-from vamos.operators.real import PolynomialMutation, SBXCrossover
-from vamos.operators.real import VariationWorkspace
+from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
+from vamos.operators.impl.real import VariationWorkspace
 
 
 __all__ = [
@@ -107,7 +107,7 @@ def build_variation_operators(
     ValueError
         If encoding or operator is not supported.
     """
-    # Unpack crossover config (format: ("sbx", {"prob": 0.9, "eta": 20.0}))
+    # Unpack crossover config
     cross_cfg = config.get("crossover", ("sbx", {}))
     if isinstance(cross_cfg, tuple):
         cross_method, cross_params = cross_cfg
@@ -116,7 +116,7 @@ def build_variation_operators(
         cross_method = "sbx"
         cross_params = cross_cfg or {}
 
-    # Unpack mutation config (format: ("pm", {"prob": "1/n", "eta": 20.0}))
+    # Unpack mutation config
     mut_cfg = config.get("mutation", ("pm", {}))
     if isinstance(mut_cfg, tuple):
         mut_method, mut_params = mut_cfg
@@ -135,7 +135,7 @@ def build_variation_operators(
     elif encoding in {"continuous", "real"}:
         return _build_real_operators(cross_params, mut_params, n_var, xl, xu, rng)
     else:
-        raise ValueError(f"SMSEMOA does not support encoding '{encoding}'.")
+        raise ValueError(f"NSGA-III does not support encoding '{encoding}'.")
 
 
 def _build_binary_operators(
@@ -148,9 +148,9 @@ def _build_binary_operators(
 ) -> tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]]:
     """Build binary encoding operators."""
     if cross_method not in BINARY_CROSSOVER:
-        raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for binary encoding.")
+        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for binary encoding.")
     if mut_method not in BINARY_MUTATION:
-        raise ValueError(f"Unsupported SMSEMOA mutation '{mut_method}' for binary encoding.")
+        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for binary encoding.")
 
     cross_fn = BINARY_CROSSOVER[cross_method]
     cross_prob = float(cross_params.get("prob", 0.9))
@@ -179,9 +179,9 @@ def _build_integer_operators(
 ) -> tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]]:
     """Build integer encoding operators."""
     if cross_method not in INT_CROSSOVER:
-        raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for integer encoding.")
+        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for integer encoding.")
     if mut_method not in INT_MUTATION:
-        raise ValueError(f"Unsupported SMSEMOA mutation '{mut_method}' for integer encoding.")
+        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for integer encoding.")
 
     cross_fn = INT_CROSSOVER[cross_method]
     cross_prob = float(cross_params.get("prob", 0.9))

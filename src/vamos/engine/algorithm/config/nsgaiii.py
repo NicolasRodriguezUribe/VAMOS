@@ -36,7 +36,7 @@ class NSGAIIIConfigData(_SerializableConfig["NSGAIIIConfigDict"]):
     selection: Tuple[str, Dict[str, Any]]
     reference_directions: Dict[str, Optional[int | str]]
     engine: str
-    enforce_ref_dirs: bool = False
+    enforce_ref_dirs: bool = True
     pop_size_auto: bool = False
     constraint_mode: str = "feasibility"
     repair: Optional[Tuple[str, Dict[str, Any]]] = None
@@ -191,7 +191,7 @@ class NSGAIIIConfig:
             selection=self._cfg["selection"],
             reference_directions=ref_dirs,
             engine=self._cfg["engine"],
-            enforce_ref_dirs=bool(self._cfg.get("enforce_ref_dirs", False)),
+            enforce_ref_dirs=bool(self._cfg.get("enforce_ref_dirs", True)),
             pop_size_auto=bool(self._cfg.get("pop_size_auto", False)),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             repair=self._cfg.get("repair"),

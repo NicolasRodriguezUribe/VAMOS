@@ -60,14 +60,7 @@ class SMPSOConfig:
     ) -> "SMPSOConfigData":
         """Create a default SMPSO configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
-        return (
-            cls()
-            .pop_size(pop_size)
-            .archive_size(pop_size)
-            .mutation("pm", prob=mut_prob, eta=20.0)
-            .engine(engine)
-            .fixed()
-        )
+        return cls().pop_size(pop_size).archive_size(pop_size).mutation("pm", prob=mut_prob, eta=20.0).engine(engine).fixed()
 
     def pop_size(self, value: int) -> "SMPSOConfig":
         self._cfg["pop_size"] = value

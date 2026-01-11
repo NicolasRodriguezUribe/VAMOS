@@ -25,7 +25,7 @@ from vamos.engine.algorithm.components.population import (
 )
 
 from .helpers import environmental_selection
-from .operators import build_variation_operators
+from vamos.operators.policies.spea2 import build_variation_operators
 from .state import SPEA2State
 
 if TYPE_CHECKING:

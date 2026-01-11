@@ -8,22 +8,30 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+
 def load_yaml(path: Path) -> dict:
     import yaml  # type: ignore
+
     return yaml.safe_load(path.read_text(encoding="utf-8"))
+
 
 def dump_yaml(obj: dict, path: Path) -> None:
     import yaml  # type: ignore
+
     path.write_text(yaml.safe_dump(obj, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
+
 def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
 
+
 def deep_copy(x: Any) -> Any:
     return json.loads(json.dumps(x))
+
 
 def merge_dict(dst: dict, src: dict) -> dict:
     for k, v in src.items():
@@ -33,17 +41,21 @@ def merge_dict(dst: dict, src: dict) -> dict:
             dst[k] = deep_copy(v)
     return dst
 
+
 def flatten_seed_rule(rule: dict) -> List[int]:
     start = int(rule.get("start", 1))
     count = int(rule.get("count", 1))
     step = int(rule.get("step", 1))
     return [start + i * step for i in range(count)]
 
+
 def infer_suite(problem_key: str) -> str:
     import re
+
     k = str(problem_key).lower()
     m = re.match(r"^([a-z]+)", k)
     return (m.group(1) if m else "unknown").upper()
+
 
 def load_success_set(index_path: Path) -> Set[str]:
     ok: Set[str] = set()
@@ -61,6 +73,7 @@ def load_success_set(index_path: Path) -> Set[str]:
             ok.add(str(r.get("config", "")))
     return ok
 
+
 @dataclass
 class RunSpec:
     variant: str
@@ -71,6 +84,7 @@ class RunSpec:
     seed: int
     cfg_path: Path
     log_path: Path
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -100,7 +114,7 @@ def main() -> int:
     operator_blocks = load_yaml((repo / inputs["operator_blocks"]).resolve())
 
     # domain lookup (real/bin/etc.)
-    dom_map = {p["problem_key"]: p.get("domain","unknown") for p in prob_catalog.get("problems", [])}
+    dom_map = {p["problem_key"]: p.get("domain", "unknown") for p in prob_catalog.get("problems", [])}
 
     matrix = spec["matrix"]
     engines = list(matrix["engines"])
@@ -128,7 +142,8 @@ def main() -> int:
 
     cfg_root = repo / "experiments" / "configs" / "generated" / campaign
     log_root = repo / "experiments" / "scripts" / "logs" / campaign
-    ensure_dir(cfg_root); ensure_dir(log_root)
+    ensure_dir(cfg_root)
+    ensure_dir(log_root)
 
     runs: List[RunSpec] = []
     for v in variants:
@@ -184,7 +199,9 @@ def main() -> int:
                             cfg["defaults"][algo] = op_payload
 
                         # disable AOS explicitly
-                        cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("adaptive_operator_selection", {})["enabled"] = False
+                        cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault(
+                            "adaptive_operator_selection", {}
+                        )["enabled"] = False
 
                         # apply variant patch (stopping/archive)
                         if isinstance(vpatch, dict) and vpatch:
@@ -242,6 +259,7 @@ def main() -> int:
     print("executed:", executed, "failed:", failed)
     print("index:", index_path.relative_to(repo))
     return 0 if failed == 0 else 10
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

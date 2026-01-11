@@ -1,4 +1,4 @@
-# algorithm/spea2/operators.py
+# operators/policies/spea2.py
 """
 Operator building for SPEA2.
 
@@ -12,8 +12,8 @@ from typing import Any, Callable
 
 import numpy as np
 
-from vamos.operators.real import PolynomialMutation, SBXCrossover
-from vamos.operators.real import VariationWorkspace
+from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
+from vamos.operators.impl.real import VariationWorkspace
 
 
 def build_variation_operators(
