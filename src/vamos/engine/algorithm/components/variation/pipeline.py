@@ -62,7 +62,7 @@ class VariationPipeline:
         # Determine parents required (encoding-dependent helper).
         # Ideally operators should report this.
         self.parents_per_group = self._parents_required(cross_method)
-        self.children_per_group = self.parents_per_group
+        self.children_per_group = self._children_per_group(cross_method)
 
         validate_operator_support(encoding, cross_method, mut_method)
 
@@ -113,9 +113,9 @@ class VariationPipeline:
                 kwargs["sigma_eta"] = float(params.get("sigma_eta", 0.1))
                 kwargs["sigma_zeta"] = float(params.get("sigma_zeta", 0.1))
             if method == "undx":
-                kwargs["sigma_xi"] = float(params.get("sigma_xi", 0.5))
-                kwargs["sigma_eta"] = float(params.get("sigma_eta", 0.35))
-            if method == "spx":
+                kwargs["zeta"] = float(params.get("zeta", 0.5))
+                kwargs["eta"] = float(params.get("eta", 0.35))
+            if method == "simplex":
                 kwargs["epsilon"] = float(params.get("epsilon", 0.5))
         else:
             kwargs["prob_mutation"] = float(params.get("prob", 0.1))
@@ -141,7 +141,31 @@ class VariationPipeline:
         # Relying on implicit knowledge of operator constructor is what makes this hard to genericize fully without a Factory pattern.
         # But `operator_registry` contains classes.
 
-        return op_cls(**{k: v for k, v in kwargs.items() if k in op_cls.__init__.__code__.co_varnames})
+        # Check if constructor accepts **kwargs using inspect
+        import inspect
+        sig = inspect.signature(op_cls.__init__)
+        accepts_var_keyword = any(
+            p.kind == inspect.Parameter.VAR_KEYWORD
+            for p in sig.parameters.values()
+        )
+
+        if accepts_var_keyword:
+            # Pass all kwargs - operator can handle them
+            return op_cls(**kwargs)
+        else:
+            # Filter to known parameters to avoid TypeError
+            valid_params = {
+                k: v for k, v in kwargs.items()
+                if k in sig.parameters
+            }
+            try:
+                return op_cls(**valid_params)
+            except TypeError as e:
+                raise ValueError(
+                    f"Failed to initialize operator '{method}' with config {valid_params}. "
+                    f"Expected parameters: {list(sig.parameters.keys())}. "
+                    f"Error: {e}"
+                ) from e
 
     def _resolve_repair(self) -> Any | None:
         if self.encoding in {"permutation", "binary", "integer", "mixed"}:
@@ -183,10 +207,12 @@ class VariationPipeline:
 
         if group_size == 2:
             pairs = parents.reshape(-1, 2, n_var)
-            offspring = cast(np.ndarray, self.crossover_op(pairs, rng)).reshape(parents.shape)
+            offspring = cast(np.ndarray, self.crossover_op(pairs, rng))
         else:
             groups = parents.reshape(-1, group_size, n_var)
-            offspring = cast(np.ndarray, self.crossover_op(groups, rng)).reshape(parents.shape)
+            offspring = cast(np.ndarray, self.crossover_op(groups, rng))
+        if offspring.ndim == 3:
+            offspring = offspring.reshape(-1, n_var)
 
         # Mutation
         if self.mutation_op is None:
@@ -233,6 +259,9 @@ class VariationPipeline:
             if mut_fn is creep_mutation:
                 step = int(mut_params.get("step", 1))
                 mut_fn(offspring, mut_prob, step, xl, xu, rng)
+            elif self.mut_method in {"pm", "polynomial"}:
+                eta = float(mut_params.get("eta", 20.0))
+                mut_fn(offspring, mut_prob, eta, xl, xu, rng)
             else:
                 mut_fn(offspring, mut_prob, xl, xu, rng)
             return offspring
@@ -252,7 +281,15 @@ class VariationPipeline:
 
     @staticmethod
     def _parents_required(cross_method: str) -> int:
-        if cross_method in {"pcx", "undx", "spx"}:
+        if cross_method in {"pcx", "undx", "simplex"}:
+            return 3
+        return 2
+
+    @staticmethod
+    def _children_per_group(cross_method: str) -> int:
+        if cross_method == "undx":
+            return 2
+        if cross_method in {"pcx", "simplex"}:
             return 3
         return 2
 

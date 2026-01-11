@@ -66,6 +66,8 @@ VAMOS prioritizes ease of use:
   - Quick run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
   - Self-check: `vamos-self-check`
   - Profile: `vamos-profile nsgaii zdt1`
+  - Tune: `vamos-tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5`
+    (`--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.)
   - Tests: `pytest`
 
 - **Library imports (user-facing)**:

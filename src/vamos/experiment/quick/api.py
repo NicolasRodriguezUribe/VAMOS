@@ -24,6 +24,10 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
+from vamos.experiment.optimize import OptimizationResult
+
 from vamos.foundation.problem.types import ProblemProtocol
 
 from .config import (
@@ -35,7 +39,13 @@ from .config import (
     resolve_problem,
 )
 from .result import QuickResult
-from .run import run_optimization
+from .run import _run_optimization
+
+
+def _require_front(result: OptimizationResult) -> np.ndarray:
+    if result.F is None:
+        raise RuntimeError("Optimization result is missing objective values.")
+    return result.F
 
 
 def run_nsgaii(
@@ -88,7 +98,7 @@ def run_nsgaii(
         archive_type=archive_type,
     )
 
-    result = run_optimization(
+    result = _run_optimization(
         problem=prob,
         algorithm="nsgaii",
         algorithm_config=cfg,
@@ -97,8 +107,9 @@ def run_nsgaii(
         engine=engine,
     )
 
+    front = _require_front(result)
     return QuickResult(
-        F=result.F,
+        F=front,
         X=result.X,
         problem=prob,
         algorithm="nsgaii",
@@ -158,7 +169,7 @@ def run_moead(
         archive_type=archive_type,
     )
 
-    result = run_optimization(
+    result = _run_optimization(
         problem=prob,
         algorithm="moead",
         algorithm_config=cfg,
@@ -167,8 +178,9 @@ def run_moead(
         engine=engine,
     )
 
+    front = _require_front(result)
     return QuickResult(
-        F=result.F,
+        F=front,
         X=result.X,
         problem=prob,
         algorithm="moead",
@@ -222,7 +234,7 @@ def run_spea2(
         result_mode=result_mode,
     )
 
-    result = run_optimization(
+    result = _run_optimization(
         problem=prob,
         algorithm="spea2",
         algorithm_config=cfg,
@@ -231,8 +243,9 @@ def run_spea2(
         engine=engine,
     )
 
+    front = _require_front(result)
     return QuickResult(
-        F=result.F,
+        F=front,
         X=result.X,
         problem=prob,
         algorithm="spea2",
@@ -290,7 +303,7 @@ def run_smsemoa(
         archive_type=archive_type,
     )
 
-    result = run_optimization(
+    result = _run_optimization(
         problem=prob,
         algorithm="smsemoa",
         algorithm_config=cfg,
@@ -299,8 +312,9 @@ def run_smsemoa(
         engine=engine,
     )
 
+    front = _require_front(result)
     return QuickResult(
-        F=result.F,
+        F=front,
         X=result.X,
         problem=prob,
         algorithm="smsemoa",
@@ -352,7 +366,7 @@ def run_nsgaiii(
         result_mode=result_mode,
     )
 
-    result = run_optimization(
+    result = _run_optimization(
         problem=prob,
         algorithm="nsgaiii",
         algorithm_config=cfg,
@@ -361,8 +375,9 @@ def run_nsgaiii(
         engine=engine,
     )
 
+    front = _require_front(result)
     return QuickResult(
-        F=result.F,
+        F=front,
         X=result.X,
         problem=prob,
         algorithm="nsgaiii",

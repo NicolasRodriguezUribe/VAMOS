@@ -8,26 +8,34 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-import inspect
+from typing import Any
 
 
 @dataclass
 class ExecutionResult:
     """Container for the raw algorithm payload plus timing."""
 
-    payload: dict
+    payload: dict[str, Any]
     elapsed_ms: float
 
 
-def execute_algorithm(algorithm, problem, termination, seed: int, eval_backend=None, live_viz=None) -> ExecutionResult:
+def execute_algorithm(
+    algorithm: Any,
+    problem: Any,
+    termination: Any,
+    seed: int,
+    eval_strategy: Any = None,
+    live_viz: Any = None,
+) -> ExecutionResult:
     start = time.perf_counter()
     run_fn = getattr(algorithm, "run")
-    sig = inspect.signature(run_fn)
-    kwargs = {"problem": problem, "termination": termination, "seed": seed}
-    if "eval_backend" in sig.parameters:
-        kwargs["eval_backend"] = eval_backend
-    if "live_viz" in sig.parameters:
-        kwargs["live_viz"] = live_viz
+    kwargs = {
+        "problem": problem,
+        "termination": termination,
+        "seed": seed,
+        "eval_strategy": eval_strategy,
+        "live_viz": live_viz,
+    }
     result = run_fn(**kwargs)
     end = time.perf_counter()
     return ExecutionResult(payload=result, elapsed_ms=(end - start) * 1000.0)

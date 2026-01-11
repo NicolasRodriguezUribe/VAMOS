@@ -192,7 +192,7 @@ markers = [
 
 [tool.setuptools.package-data]
 "vamos" = ["py.typed"]
-"vamos.foundation.data" = ["reference_fronts/*.csv", "weights/*.csv"]
+"vamos.foundation.data" = ["reference_fronts/*.csv", "weights/*.csv", "weights/*.dat"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -15,13 +15,14 @@ NSGA-II selects exactly one arm per generation when AOS is enabled.
 
 ## Policies
 
-Supported policies in the NSGA-II config contract:
+Supported methods in the NSGA-II config contract
+(`adaptive_operator_selection.method`):
 
+- `epsilon_greedy`
 - `ucb`
-- `eps_greedy`
-
-`exp3` exists in the adaptation package but is **planned** for the NSGA-II
-contract and is not listed as supported here.
+- `exp3`
+- `thompson_sampling`
+- `sliding_ucb` (requires `window_size > 0`)
 
 ## Reward definitions
 
@@ -50,6 +51,12 @@ Determinism is controlled by:
 
 - `seed` (global run seed)
 - `adaptive_operator_selection.rng_seed` (policy RNG)
+
+## Exploration floor
+
+`adaptive_operator_selection.floor_prob` mixes a uniform draw into selection
+with probability `floor_prob`. Set it to 0 to disable; 1.0 makes selection
+fully uniform.
 
 With the same engine, configuration, and seeds, operator selection and rewards
 are deterministic.

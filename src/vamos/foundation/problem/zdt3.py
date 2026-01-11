@@ -4,7 +4,7 @@ import numpy as np
 class ZDT3Problem:
     """ZDT3 benchmark with a disconnected Pareto front."""
 
-    def __init__(self, n_var: int):
+    def __init__(self, n_var: int) -> None:
         if n_var < 2:
             raise ValueError("ZDT3 requires at least two decision variables.")
         self.n_var = int(n_var)
@@ -12,7 +12,7 @@ class ZDT3Problem:
         self.xl = 0.0
         self.xu = 1.0
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         X = np.asarray(X, dtype=float)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected input shape (N, {self.n_var}), got {X.shape}.")

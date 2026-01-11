@@ -102,6 +102,13 @@ def _run_jmetalpy_nsga2(
         PRNG.seed(config.seed)
     except Exception:  # pragma: no cover
         pass
+    try:
+        import random
+
+        random.seed(config.seed)
+        np.random.seed(config.seed)
+    except Exception:  # pragma: no cover
+        pass
 
     if use_native_problem:
         jm_problem = ZDT1(number_of_variables=selection.n_var)
@@ -195,6 +202,14 @@ def _run_jmetalpy_perm_nsga2(
     _SwapMutationOp = _patch_permutation_swap_mutation_cls(_SwapMutationCandidate, PermutationSolution, Mutation)
 
     try:
+        import random
+
+        random.seed(config.seed)
+        np.random.seed(config.seed)
+    except Exception:  # pragma: no cover
+        pass
+
+    try:
         from vamos.operators.permutation import order_crossover as _vamos_order_crossover
     except ImportError as exc:  # pragma: no cover
         raise ImportError("VAMOS permutation operators are unavailable.") from exc
@@ -224,7 +239,7 @@ def _run_jmetalpy_perm_nsga2(
             return "Order crossover (VAMOS)"
 
     class _VamosJMetalPermutationProblem(PermutationProblem):  # type: ignore[misc]
-        def __init__(self, base_problem: Any) -> None:
+        def __init__(self, base_problem: Any, rng: np.random.Generator) -> None:
             super().__init__()
             self.base_problem = base_problem
             self._n_var = int(base_problem.n_var)
@@ -233,6 +248,7 @@ def _run_jmetalpy_perm_nsga2(
             self._name = f"VAMOS-{base_problem.__class__.__name__}"
             self.obj_directions = [self.MINIMIZE] * self._n_obj
             self.obj_labels = [f"f{i + 1}" for i in range(self._n_obj)]
+            self._rng = rng
 
         def number_of_variables(self) -> int:
             return self._n_var
@@ -255,10 +271,11 @@ def _run_jmetalpy_perm_nsga2(
 
         def create_solution(self) -> PermutationSolution:
             sol = PermutationSolution(self._n_var, self._n_obj, self._n_con)
-            sol.variables = np.random.permutation(self._n_var).tolist()
+            sol.variables = self._rng.permutation(self._n_var).tolist()
             return sol
 
-    jm_problem = _VamosJMetalPermutationProblem(problem)
+    rng = np.random.default_rng(config.seed)
+    jm_problem = _VamosJMetalPermutationProblem(problem, rng)
     mutation_prob = min(1.0, 2.0 / max(1, problem.n_var))
     crossover = _VamosOrderCrossover(probability=0.9, seed=config.seed)
     mutation = _SwapMutationOp(probability=mutation_prob)

@@ -34,7 +34,7 @@ class BenchmarkResult:
 
 def run_vamos_benchmark(problem: str, n_evals: int, seed: int, engine: str = "numpy") -> BenchmarkResult:
     """Run VAMOS benchmark."""
-    from vamos.api import run_optimization
+    from vamos.api import optimize
     from vamos.foundation.problem.registry import make_problem_selection
     
     # Resolve problem
@@ -42,10 +42,10 @@ def run_vamos_benchmark(problem: str, n_evals: int, seed: int, engine: str = "nu
     prob_instance = prob_selection.instantiate()
     
     start = time.perf_counter()
-    result = run_optimization(
-        problem=prob_instance,
+    result = optimize(
+        prob_instance,
         algorithm="nsgaii",
-        max_evaluations=n_evals,
+        budget=n_evals,
         pop_size=100,
         engine=engine,
         seed=seed,

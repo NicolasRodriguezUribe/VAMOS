@@ -50,7 +50,7 @@ class TestGenealogyTracking:
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
-            .survival("nsga2")
+
             .engine("numpy")
             .track_genealogy(True)
             .fixed()
@@ -165,7 +165,7 @@ class TestGenealogyTracking:
         """Test NSGA-III with genealogy tracking enabled."""
         cfg = (
             NSGAIIIConfig()
-            .pop_size(12)
+            .pop_size(10)
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
@@ -191,7 +191,7 @@ class TestGenealogyTracking:
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
-            .survival("nsga2")
+
             .engine("numpy")
             .fixed()
         )

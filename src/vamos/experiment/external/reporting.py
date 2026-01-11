@@ -10,7 +10,13 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def print_run_banner(problem, problem_selection, algorithm_label: str, backend_label: str, config) -> None:
+def print_run_banner(
+    problem: Any,
+    problem_selection: Any,
+    algorithm_label: str,
+    backend_label: str,
+    config: Any,
+) -> None:
     spec = getattr(problem_selection, "spec", None)
     label = getattr(spec, "label", None) or getattr(spec, "key", "unknown")
     description = getattr(spec, "description", None) or ""

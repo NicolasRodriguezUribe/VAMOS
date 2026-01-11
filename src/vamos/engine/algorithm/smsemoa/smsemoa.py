@@ -86,7 +86,7 @@ class SMSEMOA:
         self.kernel = kernel
         self._st: SMSEMOAState | None = None
         self._live_cb: "LiveVisualization | None" = None
-        self._eval_backend: "EvaluationBackend | None" = None
+        self._eval_strategy: "EvaluationBackend | None" = None
         self._max_eval: int = 0
         self._hv_tracker: Any = None
         self._problem: "ProblemProtocol | None" = None
@@ -100,7 +100,7 @@ class SMSEMOA:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> dict[str, Any]:
         """Run SMS-EMOA optimization loop.
@@ -113,7 +113,7 @@ class SMSEMOA:
             Termination criterion, e.g., ("n_eval", 10000).
         seed : int
             Random seed for reproducibility.
-        eval_backend : EvaluationBackend, optional
+        eval_strategy : EvaluationBackend, optional
             Evaluation backend for parallel evaluation.
         live_viz : LiveVisualization, optional
             Live visualization callback.
@@ -123,12 +123,12 @@ class SMSEMOA:
         dict
             Result dictionary with X, F, G, reference_point, archive data.
         """
-        self._st, live_cb, eval_backend, max_eval, hv_tracker = initialize_smsemoa_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_smsemoa_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
         self._problem = problem
         self._live_cb = live_cb
-        self._eval_backend = eval_backend
+        self._eval_strategy = eval_strategy
         self._max_eval = max_eval
         self._hv_tracker = hv_tracker
 
@@ -149,7 +149,7 @@ class SMSEMOA:
             X_child = self._generate_offspring(st)
 
             # Evaluate using backend or directly
-            F_child, G_child = self._evaluate_offspring(problem, X_child, eval_backend, st.constraint_mode)
+            F_child, G_child = self._evaluate_offspring(problem, X_child, eval_strategy, st.constraint_mode)
             st.n_eval += X_child.shape[0]
 
             # Survival selection (one child at a time for SMS-EMOA)
@@ -190,10 +190,20 @@ class SMSEMOA:
     # -------------------------------------------------------------------------
 
     def _generate_offspring(self, st: SMSEMOAState) -> np.ndarray:
-        """Generate offspring using tournament selection and variation."""
-        # Tournament selection for parent indices
-        ranks, crowd = self.kernel.nsga2_ranking(st.F)
-        parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=2)
+        """Generate offspring using parent selection and variation."""
+        sel_cfg = self.cfg.get("selection", ("random", {}))
+        if isinstance(sel_cfg, tuple):
+            sel_method, _ = sel_cfg
+        else:
+            sel_method = sel_cfg
+
+        if sel_method == "tournament":
+            ranks, crowd = self.kernel.nsga2_ranking(st.F)
+            parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=2)
+        else:
+            if st.X.shape[0] == 0:
+                raise ValueError("Cannot select parents from an empty population.")
+            parents_idx = st.rng.choice(st.X.shape[0], size=2, replace=True)
 
         parents = st.X[parents_idx]
         if parents.ndim == 2:
@@ -220,7 +230,7 @@ class SMSEMOA:
         self,
         problem: "ProblemProtocol",
         X: np.ndarray,
-        eval_backend: "EvaluationBackend",
+        eval_strategy: "EvaluationBackend",
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
@@ -238,7 +248,7 @@ class SMSEMOA:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop.
@@ -251,13 +261,13 @@ class SMSEMOA:
             Termination criterion.
         seed : int
             Random seed.
-        eval_backend : EvaluationBackend, optional
+        eval_strategy : EvaluationBackend, optional
             Evaluation backend.
         live_viz : LiveVisualization, optional
             Live visualization callback.
         """
-        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = initialize_smsemoa_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = initialize_smsemoa_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
         self._problem = problem
         if self._st is not None:

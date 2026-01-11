@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -20,18 +20,18 @@ def ensure_dir(path: str | Path) -> Path:
 def write_population(
     output_dir: str | Path,
     F: np.ndarray,
-    archive: Optional[dict] = None,
+    archive: Optional[dict[str, np.ndarray]] = None,
     *,
     X: Optional[np.ndarray] = None,
     G: Optional[np.ndarray] = None,
-) -> dict:
+) -> dict[str, str]:
     """
     Save population (F and optionally X/G) and optional archive to CSV files.
 
     Returns:
         dict: artifact names keyed by a short label for metadata wiring.
     """
-    out = {}
+    out: dict[str, str] = {}
     output_dir = ensure_dir(output_dir)
 
     fun_path = output_dir / "FUN.csv"
@@ -68,7 +68,7 @@ def write_population(
     return out
 
 
-def write_metadata(output_dir: str | Path, metadata: dict, resolved_cfg: dict) -> None:
+def write_metadata(output_dir: str | Path, metadata: dict[str, Any], resolved_cfg: dict[str, Any]) -> None:
     output_dir = ensure_dir(output_dir)
     with (output_dir / "metadata.json").open("w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2, sort_keys=True)

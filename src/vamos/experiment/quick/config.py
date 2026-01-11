@@ -8,6 +8,7 @@ from vamos.engine.algorithm.config import (
     NSGAIIIConfig,
     SMSEMOAConfig,
     SPEA2Config,
+    AlgorithmConfigProtocol,
 )
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.problem.types import ProblemProtocol
@@ -49,15 +50,15 @@ def build_nsgaii_config(
     offspring_size: int | None = None,
     result_mode: str = "non_dominated",
     archive_type: str = "hypervolume",
-) -> dict[str, Any]:
-    """Build NSGA-II config dict with all available parameters."""
+) -> AlgorithmConfigProtocol:
+    """Build NSGA-II config object with all available parameters."""
     cfg = (
         NSGAIIConfig()
         .pop_size(pop_size)
         .crossover(crossover, prob=crossover_prob, eta=crossover_eta)
         .mutation(mutation, prob=mutation_prob, eta=mutation_eta)
         .selection("tournament", pressure=selection_pressure)
-        .survival("nsga2")
+
         .engine(engine)
         .constraint_mode(constraint_mode)
         .track_genealogy(track_genealogy)
@@ -68,7 +69,7 @@ def build_nsgaii_config(
         cfg = cfg.offspring_size(offspring_size)
     if archive_size is not None and archive_size > 0:
         cfg = cfg.external_archive(size=archive_size, archive_type=archive_type)
-    return cfg.fixed().to_dict()
+    return cfg.fixed()
 
 
 def build_moead_config(
@@ -90,8 +91,8 @@ def build_moead_config(
     archive_size: int | None = None,
     result_mode: str = "non_dominated",
     archive_type: str = "hypervolume",
-) -> dict[str, Any]:
-    """Build MOEA/D config dict with all available parameters."""
+) -> AlgorithmConfigProtocol:
+    """Build MOEA/D config object with all available parameters."""
     cfg = (
         MOEADConfig()
         .pop_size(pop_size)
@@ -109,7 +110,7 @@ def build_moead_config(
     )
     if archive_size is not None and archive_size > 0:
         cfg = cfg.external_archive(size=archive_size, archive_type=archive_type)
-    return cfg.fixed().to_dict()
+    return cfg.fixed()
 
 
 def build_spea2_config(
@@ -128,8 +129,8 @@ def build_spea2_config(
     constraint_mode: str = "feasibility",
     track_genealogy: bool = False,
     result_mode: str = "non_dominated",
-) -> dict[str, Any]:
-    """Build SPEA2 config dict with all available parameters."""
+) -> AlgorithmConfigProtocol:
+    """Build SPEA2 config object with all available parameters."""
     cfg = (
         SPEA2Config()
         .pop_size(pop_size)
@@ -144,7 +145,7 @@ def build_spea2_config(
     )
     if k_neighbors is not None:
         cfg = cfg.k_neighbors(k_neighbors)
-    return cfg.fixed().to_dict()
+    return cfg.fixed()
 
 
 def build_smsemoa_config(
@@ -165,8 +166,8 @@ def build_smsemoa_config(
     archive_size: int | None = None,
     result_mode: str = "non_dominated",
     archive_type: str = "hypervolume",
-) -> dict[str, Any]:
-    """Build SMS-EMOA config dict with all available parameters."""
+) -> AlgorithmConfigProtocol:
+    """Build SMS-EMOA config object with all available parameters."""
     cfg = (
         SMSEMOAConfig()
         .pop_size(pop_size)
@@ -182,7 +183,7 @@ def build_smsemoa_config(
     )
     if archive_size is not None and archive_size > 0:
         cfg = cfg.external_archive(size=archive_size, archive_type=archive_type)
-    return cfg.fixed().to_dict()
+    return cfg.fixed()
 
 
 def build_nsgaiii_config(
@@ -200,8 +201,8 @@ def build_nsgaiii_config(
     constraint_mode: str = "feasibility",
     track_genealogy: bool = False,
     result_mode: str = "non_dominated",
-) -> dict[str, Any]:
-    """Build NSGA-III config dict with all available parameters."""
+) -> AlgorithmConfigProtocol:
+    """Build NSGA-III config object with all available parameters."""
     cfg = (
         NSGAIIIConfig()
         .pop_size(pop_size)
@@ -215,4 +216,4 @@ def build_nsgaiii_config(
     )
     if ref_divisions is not None:
         cfg = cfg.reference_directions(divisions=ref_divisions)
-    return cfg.fixed().to_dict()
+    return cfg.fixed()

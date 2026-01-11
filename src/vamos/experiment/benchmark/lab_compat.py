@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, Sequence
 
 from vamos.experiment.benchmark.report_utils import ensure_dir, import_pandas
 
@@ -26,14 +26,14 @@ def _normalize_indicator_name(metric: str) -> str:
     return _INDICATOR_ALIASES.get(key, metric)
 
 
-def _needs_engine_suffix(df) -> bool:
+def _needs_engine_suffix(df: Any) -> bool:
     if "engine" not in df.columns:
         return False
     counts = df.groupby("algorithm")["engine"].nunique()
     return bool((counts > 1).any())
 
 
-def _algorithm_labels(df) -> Iterable[str]:
+def _algorithm_labels(df: Any) -> list[str]:
     use_engine = _needs_engine_suffix(df)
 
     def _format_row(row) -> str:
@@ -43,10 +43,10 @@ def _algorithm_labels(df) -> Iterable[str]:
             return f"{algo}-{engine}"
         return algo
 
-    return df.apply(_format_row, axis=1)
+    return list(df.apply(_format_row, axis=1).tolist())
 
 
-def build_quality_indicator_summary(raw_df, metrics: Sequence[str], *, include_time: bool = True):
+def build_quality_indicator_summary(raw_df: Any, metrics: Sequence[str], *, include_time: bool = True) -> Any:
     pd = import_pandas()
     df = raw_df.copy()
     df["Algorithm"] = _algorithm_labels(df)
@@ -90,7 +90,7 @@ def build_quality_indicator_summary(raw_df, metrics: Sequence[str], *, include_t
 
 
 def write_quality_indicator_summary(
-    raw_df,
+    raw_df: Any,
     metrics: Sequence[str],
     output_dir: Path,
     *,

@@ -15,7 +15,7 @@ class MyAlgorithm:
         self.config = config
         self.kernel = kernel
 
-    def run(self, problem, termination, seed, eval_backend=None, live_viz=None):
+    def run(self, problem, termination, seed, eval_strategy=None, live_viz=None):
         # Your optimization loop here
         return {"F": final_objectives, "X": final_solutions, "evaluations": n_eval}
 

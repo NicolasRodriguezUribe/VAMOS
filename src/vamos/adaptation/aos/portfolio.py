@@ -5,7 +5,7 @@ Operator portfolio primitives for AOS.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import Iterable, Iterator, Sequence
 
 
 @dataclass(frozen=True)
@@ -23,11 +23,11 @@ class OperatorPortfolio:
     Registry-style portfolio with stable arm ordering.
     """
 
-    def __init__(self, arms: Sequence[OperatorArm]):
+    def __init__(self, arms: Sequence[OperatorArm]) -> None:
         if not arms:
             raise ValueError("OperatorPortfolio requires at least one arm.")
         self._arms = list(arms)
-        self._index = {}
+        self._index: dict[str, int] = {}
         for idx, arm in enumerate(self._arms):
             if not arm.op_id:
                 raise ValueError("OperatorArm.op_id must be non-empty.")
@@ -60,7 +60,7 @@ class OperatorPortfolio:
     def __len__(self) -> int:
         return len(self._arms)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[OperatorArm]:
         return iter(self._arms)
 
     def __getitem__(self, index: int) -> OperatorArm:

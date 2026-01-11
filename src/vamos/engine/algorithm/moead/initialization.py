@@ -14,7 +14,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
-from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
@@ -43,7 +43,7 @@ def initialize_moead_run(
     problem: "ProblemProtocol",
     termination: tuple[str, Any],
     seed: int,
-    eval_backend: "EvaluationBackend | None" = None,
+    eval_strategy: "EvaluationBackend | None" = None,
     live_viz: "LiveVisualization | None" = None,
 ) -> tuple[MOEADState, Any, Any, int, "HVTracker"]:
     """Initialize all components for a MOEA/D run.
@@ -60,7 +60,7 @@ def initialize_moead_run(
         Termination criterion.
     seed : int
         Random seed.
-    eval_backend : EvaluationBackend | None
+    eval_strategy : EvaluationBackend | None
         Optional evaluation backend.
     live_viz : LiveVisualization | None
         Optional live visualization callback.
@@ -68,11 +68,11 @@ def initialize_moead_run(
     Returns
     -------
     tuple[MOEADState, Any, Any, int, HVTracker]
-        (state, live_cb, eval_backend, max_eval, hv_tracker)
+        (state, live_cb, eval_strategy, max_eval, hv_tracker)
     """
     max_eval, hv_config = parse_termination(termination, "MOEA/D")
 
-    eval_backend = get_eval_backend(eval_backend)
+    eval_strategy = get_eval_strategy(eval_strategy)
     live_cb = get_live_viz(live_viz)
     rng = np.random.default_rng(seed)
 
@@ -97,6 +97,7 @@ def initialize_moead_run(
         n_obj,
         path=weight_cfg.get("path"),
         divisions=weight_cfg.get("divisions"),
+        mode="jmetalpy",
     )
 
     neighbor_size = cfg.get("neighbor_size", min(20, pop_size))
@@ -104,7 +105,7 @@ def initialize_moead_run(
     neighbors = compute_neighbors(weights, neighbor_size)
 
     # Setup aggregation
-    aggregation = cfg.get("aggregation", ("tchebycheff", {}))
+    aggregation = cfg.get("aggregation", ("pbi", {"theta": 5.0}))
     agg_method, agg_params = aggregation
     aggregator = build_aggregator(agg_method, agg_params)
 
@@ -132,6 +133,14 @@ def initialize_moead_run(
     )
     live_cb.on_start(ctx)
 
+    batch_size = int(cfg.get("batch_size", 1))
+    if batch_size <= 0:
+        raise ValueError("MOEA/D batch_size must be positive.")
+    if batch_size > pop_size:
+        batch_size = pop_size
+
+    subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
+
     # Create state
     state = MOEADState(
         X=X,
@@ -139,7 +148,7 @@ def initialize_moead_run(
         G=G,
         rng=rng,
         pop_size=pop_size,
-        offspring_size=pop_size,
+        offspring_size=batch_size,
         constraint_mode=constraint_mode,
         n_eval=n_eval,
         # MOEA/D-specific
@@ -150,6 +159,9 @@ def initialize_moead_run(
         neighbor_size=neighbor_size,
         delta=float(cfg.get("delta", 0.9)),
         replace_limit=max(1, int(cfg.get("replace_limit", 2))),
+        batch_size=batch_size,
+        subproblem_order=subproblem_order,
+        subproblem_cursor=0,
         crossover_fn=crossover_fn,
         mutation_fn=mutation_fn,
         xl=xl,
@@ -168,7 +180,7 @@ def initialize_moead_run(
         result_mode=cfg.get("result_mode", "non_dominated"),
     )
 
-    return state, live_cb, eval_backend, max_eval, hv_tracker
+    return state, live_cb, eval_strategy, max_eval, hv_tracker
 
 
 def initialize_population(

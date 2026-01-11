@@ -50,7 +50,7 @@ N_SEEDS = 30
 OUTPUT_CSV = DATA_DIR / "benchmark_paper.csv"
 
 POP_SIZE = 100
-CROSSOVER_PROB = 0.9
+CROSSOVER_PROB = 1.0
 CROSSOVER_ETA = 20.0
 MUTATION_ETA = 20.0
 
@@ -161,7 +161,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
                 .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
                 .selection("tournament")
-                .survival("rank_crowding")
+                
                 .engine(backend)
                 .fixed()
             )

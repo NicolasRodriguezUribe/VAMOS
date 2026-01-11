@@ -219,15 +219,15 @@ class TestExceptionUsage:
     """Test exceptions in actual usage."""
 
     @pytest.mark.smoke
-    def test_run_optimization_invalid_algorithm(self):
-        """run_optimization() should raise InvalidAlgorithmError."""
-        from vamos.api import run_optimization
+    def test_optimize_invalid_algorithm(self):
+        """optimize() should raise InvalidAlgorithmError."""
+        from vamos.api import optimize
         from vamos.foundation.exceptions import InvalidAlgorithmError
         from vamos.foundation.problems_registry import ZDT1
 
         problem = ZDT1(n_var=10)
         with pytest.raises(InvalidAlgorithmError) as exc_info:
-            run_optimization(problem, "invalid_algo", max_evaluations=100)
+            optimize(problem, algorithm="invalid_algo", budget=100, pop_size=20)
 
         assert "invalid_algo" in str(exc_info.value)
         assert exc_info.value.suggestion is not None

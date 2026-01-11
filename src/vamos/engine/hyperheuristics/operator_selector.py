@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -24,7 +24,7 @@ class BanditOperatorSelector(OperatorSelector):
     Tracks counts and value estimates; subclasses implement selection policy.
     """
 
-    def __init__(self, n_ops: int):
+    def __init__(self, n_ops: int) -> None:
         if n_ops <= 0:
             raise ValueError("n_ops must be positive.")
         self.counts = np.zeros(n_ops, dtype=int)
@@ -40,7 +40,7 @@ class BanditOperatorSelector(OperatorSelector):
 
 
 class EpsilonGreedyOperatorSelector(BanditOperatorSelector):
-    def __init__(self, n_ops: int, epsilon: float = 0.1, rng: np.random.Generator | None = None):
+    def __init__(self, n_ops: int, epsilon: float = 0.1, rng: np.random.Generator | None = None) -> None:
         super().__init__(n_ops)
         self.epsilon = float(epsilon)
         self.rng = rng or np.random.default_rng()
@@ -52,7 +52,7 @@ class EpsilonGreedyOperatorSelector(BanditOperatorSelector):
 
 
 class UCBOperatorSelector(BanditOperatorSelector):
-    def __init__(self, n_ops: int, c: float = 1.0):
+    def __init__(self, n_ops: int, c: float = 1.0) -> None:
         super().__init__(n_ops)
         self.c = float(c)
 
@@ -64,7 +64,7 @@ class UCBOperatorSelector(BanditOperatorSelector):
         return int(np.argmax(ucb))
 
 
-def make_operator_selector(method: str, n_ops: int, **kwargs) -> OperatorSelector:
+def make_operator_selector(method: str, n_ops: int, **kwargs: Any) -> OperatorSelector:
     method = method.lower()
     if method in {"epsilon_greedy", "egreedy", "eps"}:
         return EpsilonGreedyOperatorSelector(n_ops, epsilon=kwargs.get("epsilon", 0.1), rng=kwargs.get("rng"))

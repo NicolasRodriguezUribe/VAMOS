@@ -19,7 +19,7 @@ import ast
 import math
 import operator
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 
@@ -162,7 +162,7 @@ class ConditionalBlock:
 
     parent_name: str
     parent_value: Any
-    params: List[Any]  # List of Real, Int, Categorical, etc.
+    params: List["ParamType"]  # List of Real, Int, Categorical, etc.
 
 
 # Type alias for any parameter type
@@ -225,7 +225,7 @@ BooleanParam = Boolean
 CategoricalIntegerParam = Categorical
 
 
-_CMP_OPS = {
+_CMP_OPS: dict[type[ast.AST], Callable[[Any, Any], bool]] = {
     ast.Eq: operator.eq,
     ast.NotEq: operator.ne,
     ast.Lt: operator.lt,

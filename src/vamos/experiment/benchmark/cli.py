@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from vamos.experiment.benchmark.report import BenchmarkReport, BenchmarkReportConfig
 from vamos.experiment.benchmark.runner import BenchmarkResult, run_benchmark_suite
@@ -33,13 +33,13 @@ def _load_config(path: str | None) -> Dict[str, Any]:
         raise FileNotFoundError(f"Config file '{cfg_path}' not found.")
     if cfg_path.suffix.lower() in {".yaml", ".yml"}:
         try:
-            import yaml  # type: ignore
+            import yaml  # type: ignore[import-untyped]
         except ImportError as exc:  # pragma: no cover - optional dep
             raise ImportError("PyYAML is required to read YAML configs.") from exc
         with cfg_path.open("r", encoding="utf-8") as fh:
-            return yaml.safe_load(fh) or {}
+            return cast(Dict[str, Any], yaml.safe_load(fh) or {})
     with cfg_path.open("r", encoding="utf-8") as fh:
-        return json.load(fh)
+        return cast(Dict[str, Any], json.load(fh))
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

@@ -40,7 +40,7 @@ def initialize_reference_point(
         Initial population objective values, shape (pop_size, n_obj).
     ref_cfg : dict
         Reference point configuration with keys:
-        - offset (float): Offset from nadir point (default 0.1)
+        - offset (float): Offset from nadir point (default 1.0)
         - adaptive (bool): Whether to adaptively update (default True)
         - vector (list): Explicit reference point vector (optional)
 
@@ -49,7 +49,7 @@ def initialize_reference_point(
     tuple
         (ref_point, ref_offset, ref_adaptive)
     """
-    offset = float(ref_cfg.get("offset", 0.1))
+    offset = float(ref_cfg.get("offset", 1.0))
     adaptive = bool(ref_cfg.get("adaptive", True))
     vector = ref_cfg.get("vector")
 
@@ -69,14 +69,14 @@ def update_reference_point(
     F_new: np.ndarray,
     ref_offset: float,
 ) -> np.ndarray:
-    """Update reference point with new objective values.
+    """Update reference point from current objective values.
 
     Parameters
     ----------
     ref_point : np.ndarray
         Current reference point.
     F_new : np.ndarray
-        New objective values, shape (n_new, n_obj).
+        Current objective values, shape (n, n_obj).
     ref_offset : float
         Offset to add beyond observed maximum.
 
@@ -85,7 +85,7 @@ def update_reference_point(
     np.ndarray
         Updated reference point.
     """
-    return np.maximum(ref_point, F_new.max(axis=0) + ref_offset)
+    return F_new.max(axis=0) + ref_offset
 
 
 def survival_selection(
@@ -126,7 +126,7 @@ def survival_selection(
 
     # Update reference point if adaptive
     if st.ref_adaptive:
-        st.ref_point = update_reference_point(st.ref_point, F_child, st.ref_offset)
+        st.ref_point = update_reference_point(st.ref_point, F_comb, st.ref_offset)
 
     # Non-dominated ranking
     ranks, _ = kernel.nsga2_ranking(F_comb)

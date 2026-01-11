@@ -3,15 +3,35 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
-@dataclass(frozen=True)
-class RVEAConfigData(_SerializableConfig):
+class RVEAConfigDict(TypedDict):
     pop_size: int
     n_partitions: int
+    alpha: float
+    adapt_freq: float | None
+    crossover: Tuple[str, Dict[str, Any]]
+    mutation: Tuple[str, Dict[str, Any]]
+    engine: str
+    repair: Optional[Tuple[str, Dict[str, Any]]]
+    initializer: Optional[Dict[str, Any]]
+    mutation_prob_factor: Optional[float]
+    constraint_mode: str
+    track_genealogy: bool
+    result_mode: Optional[str]
+    archive: Optional[Dict[str, Any]]
+    archive_type: Optional[str]
+
+
+@dataclass(frozen=True)
+class RVEAConfigData(_SerializableConfig["RVEAConfigDict"]):
+    pop_size: int
+    n_partitions: int
+    alpha: float
+    adapt_freq: float | None
     crossover: Tuple[str, Dict[str, Any]]
     mutation: Tuple[str, Dict[str, Any]]
     engine: str
@@ -50,7 +70,9 @@ class RVEAConfig:
             cls()
             .pop_size(pop_size)
             .n_partitions(12)
-            .crossover("sbx", prob=0.9, eta=20.0)
+            .alpha(2.0)
+            .adapt_freq(0.1)
+            .crossover("sbx", prob=1.0, eta=30.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .engine(engine)
             .fixed()
@@ -64,11 +86,19 @@ class RVEAConfig:
         self._cfg["n_partitions"] = value
         return self
 
-    def crossover(self, method: str, **kwargs) -> "RVEAConfig":
+    def alpha(self, value: float) -> "RVEAConfig":
+        self._cfg["alpha"] = float(value)
+        return self
+
+    def adapt_freq(self, value: float | None) -> "RVEAConfig":
+        self._cfg["adapt_freq"] = None if value is None else float(value)
+        return self
+
+    def crossover(self, method: str, **kwargs: Any) -> "RVEAConfig":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs) -> "RVEAConfig":
+    def mutation(self, method: str, **kwargs: Any) -> "RVEAConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
@@ -76,11 +106,11 @@ class RVEAConfig:
         self._cfg["engine"] = value
         return self
 
-    def repair(self, method: str, **kwargs) -> "RVEAConfig":
+    def repair(self, method: str, **kwargs: Any) -> "RVEAConfig":
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs) -> "RVEAConfig":
+    def initializer(self, method: str, **kwargs: Any) -> "RVEAConfig":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -100,7 +130,7 @@ class RVEAConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs) -> "RVEAConfig":
+    def archive(self, size: int, **kwargs: Any) -> "RVEAConfig":
         """
         Configure an external archive.
 
@@ -126,12 +156,14 @@ class RVEAConfig:
     def fixed(self) -> RVEAConfigData:
         _require_fields(
             self._cfg,
-            ("pop_size", "n_partitions", "crossover", "mutation", "engine"),
+            ("pop_size", "n_partitions", "alpha", "crossover", "mutation", "engine"),
             "RVEA",
         )
         return RVEAConfigData(
             pop_size=self._cfg["pop_size"],
             n_partitions=self._cfg.get("n_partitions", 12),
+            alpha=float(self._cfg.get("alpha", 2.0)),
+            adapt_freq=self._cfg.get("adapt_freq", 0.1),
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
             engine=self._cfg["engine"],

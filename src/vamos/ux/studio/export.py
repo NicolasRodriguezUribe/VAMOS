@@ -3,12 +3,12 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 from vamos.ux.studio.dm import DecisionView
 
 
-def _record_payload(view: DecisionView, idx: int) -> dict:
+def _record_payload(view: DecisionView, idx: int) -> dict[str, Any]:
     payload = {
         "objectives": view.front.points_F[idx].tolist(),
         "normalized_objectives": view.normalized_F[idx].tolist(),

@@ -9,7 +9,8 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from .parameters import BaseParam, ConditionalBlock
+from .parameters import ConditionalBlock
+from .param_space import Condition, ParamSpace, ParamType
 
 
 @dataclass
@@ -19,7 +20,7 @@ class AlgorithmConfigSpace:
     """
 
     algorithm_name: str
-    params: List[BaseParam]
+    params: List[ParamType]
     conditionals: List[ConditionalBlock] | None = None
 
     def _active_conditionals(self, assignment: Dict[str, Any]) -> List[ConditionalBlock]:
@@ -29,7 +30,7 @@ class AlgorithmConfigSpace:
                 active.append(block)
         return active
 
-    def flatten(self, assignment: Dict[str, Any] | None = None) -> List[BaseParam]:
+    def flatten(self, assignment: Dict[str, Any] | None = None) -> List[ParamType]:
         """
         Return the list of active parameters given a partial assignment.
         If assignment is None, only top-level params are returned.
@@ -79,3 +80,20 @@ class AlgorithmConfigSpace:
                 assignment[p.name] = p.from_unit(float(u[idx]))
                 idx += 1
         return assignment
+
+    def to_param_space(self) -> ParamSpace:
+        """
+        Convert this config space into a ParamSpace suitable for the racing pipeline.
+        """
+        params: Dict[str, ParamType] = {p.name: p for p in self.params}
+        conditions: List[Condition] = []
+
+        for block in self.conditionals or []:
+            expr = f"cfg['{block.parent_name}'] == {block.parent_value!r}"
+            for p in block.params:
+                if p.name in params and params[p.name] is not p:
+                    raise ValueError(f"Duplicate parameter '{p.name}' in conditional blocks.")
+                params[p.name] = p
+                conditions.append(Condition(p.name, expr))
+
+        return ParamSpace(params=params, conditions=conditions)

@@ -14,10 +14,10 @@ import numpy as np
 from vamos.api import OptimizeConfig, optimize
 from vamos.foundation.problems_registry import FeatureSelectionProblem
 from vamos.ux.api import plot_pareto_front_2d
-from vamos.engine.api import NSGAIIConfig
+from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
 
 
-def build_config(pop_size: int = 30) -> dict:
+def build_config(pop_size: int = 30) -> NSGAIIConfigData:
     cfg = (
         NSGAIIConfig()
         .pop_size(pop_size)
@@ -25,12 +25,12 @@ def build_config(pop_size: int = 30) -> dict:
         .crossover("uniform", prob=0.9)
         .mutation("bitflip", prob="1/n")
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+        
         .engine("numpy")
         .result_mode("population")
         .fixed()
     )
-    return cfg.to_dict()
+    return cfg
 
 
 def summarize_solution(X: np.ndarray) -> str:

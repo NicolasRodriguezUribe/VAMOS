@@ -203,29 +203,7 @@ class NumbaKernel(KernelBackend):
         xl: float,
         xu: float,
     ) -> np.ndarray:
-        from .numba_ops import sbx_crossover_numba
-
-        Np, D = X_parents.shape
-        if Np == 0:
-            return np.empty_like(X_parents)
-
-        # Handle odd parent count by duplicating last
-        if Np % 2 != 0:
-            X_parents = np.vstack([X_parents, X_parents[-1:]])
-            Np += 1
-
-        prob = float(params.get("prob", 0.9))
-        eta = float(params.get("eta", 20.0))
-        prob_var = float(params.get("prob_var", 1.0))
-        lower = np.full(D, xl) if np.ndim(xl) == 0 else xl
-        upper = np.full(D, xu) if np.ndim(xu) == 0 else xu
-
-        # Ensure array types for Numba
-        lower = np.asarray(lower, dtype=np.float64)
-        upper = np.asarray(upper, dtype=np.float64)
-
-        # Call Numba op
-        return sbx_crossover_numba(X_parents, prob, eta, lower, upper, prob_var)
+        return self._numpy_ops.sbx_crossover(X_parents, params, rng, xl, xu)
 
     def polynomial_mutation(
         self,
@@ -235,22 +213,7 @@ class NumbaKernel(KernelBackend):
         xl: float,
         xu: float,
     ) -> None:
-        from .numba_ops import polynomial_mutation_numba
-
-        if X.size == 0:
-            return
-
-        prob = float(params.get("prob", 0.1))
-        eta = float(params.get("eta", 20.0))
-        D = X.shape[1]
-        lower = np.full(D, xl) if np.ndim(xl) == 0 else xl
-        upper = np.full(D, xu) if np.ndim(xu) == 0 else xu
-
-        # Ensure array types for Numba
-        lower = np.asarray(lower, dtype=np.float64)
-        upper = np.asarray(upper, dtype=np.float64)
-
-        polynomial_mutation_numba(X, prob, eta, lower, upper)
+        self._numpy_ops.polynomial_mutation(X, params, rng, xl, xu)
 
     def nsga2_survival(
         self,

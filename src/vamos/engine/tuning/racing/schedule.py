@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from typing import List, Sequence, Tuple
+from typing import Any, List, Sequence, Tuple
+
+import numpy as np
 
 
 def build_schedule(
-    instances: Sequence,
+    instances: Sequence[Any],
     seeds: Sequence[int],
     *,
     start_instances: int,
     instance_order_random: bool,
     seed_order_random: bool,
-    rng,
+    rng: np.random.Generator,
 ) -> List[Tuple[int, int]]:
     """
     Build a list of (instance_index, seed_index) pairs defining evaluation order.

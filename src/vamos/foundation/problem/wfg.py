@@ -150,7 +150,7 @@ def _validate_wfg2_wfg3(l: int) -> None:
 
 
 class WFGProblem:
-    def __init__(self, name: str, n_var: int, n_obj: int, k: int | None = None, l: int | None = None):
+    def __init__(self, name: str, n_var: int, n_obj: int, k: int | None = None, l: int | None = None) -> None:
         self.name = name
         self.n_var = int(n_var)
         self.n_obj = int(n_obj)
@@ -188,12 +188,12 @@ class WFGProblem:
         return np.column_stack(x)
 
     def _calculate(self, x: np.ndarray, h: list[np.ndarray]) -> np.ndarray:
-        return x[:, -1][:, None] + self.S * np.column_stack(h)
+        return np.asarray(x[:, -1][:, None] + self.S * np.column_stack(h), dtype=float)
 
     def _evaluate(self, x: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         x = np.asarray(X, dtype=float)
         f = self._evaluate(x)
         if "F" in out and out["F"] is not None:
@@ -203,7 +203,7 @@ class WFGProblem:
 
 
 class WFG1Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg1", n_var, n_obj, k, l)
 
     @staticmethod
@@ -247,7 +247,7 @@ class WFG1Problem(WFGProblem):
 
 
 class WFG2Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg2", n_var, n_obj, k, l)
         _validate_wfg2_wfg3(self.l)
 
@@ -285,7 +285,7 @@ class WFG2Problem(WFGProblem):
 
 
 class WFG3Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg3", n_var, n_obj, k, l)
         _validate_wfg2_wfg3(self.l)
         self.A[1:] = 0.0
@@ -302,7 +302,7 @@ class WFG3Problem(WFGProblem):
 
 
 class WFG4Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg4", n_var, n_obj, k, l)
 
     @staticmethod
@@ -327,7 +327,7 @@ class WFG4Problem(WFGProblem):
 
 
 class WFG5Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg5", n_var, n_obj, k, l)
 
     @staticmethod
@@ -345,7 +345,7 @@ class WFG5Problem(WFGProblem):
 
 
 class WFG6Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg6", n_var, n_obj, k, l)
 
     @staticmethod
@@ -366,7 +366,7 @@ class WFG6Problem(WFGProblem):
 
 
 class WFG7Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg7", n_var, n_obj, k, l)
 
     @staticmethod
@@ -388,7 +388,7 @@ class WFG7Problem(WFGProblem):
 
 
 class WFG8Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg8", n_var, n_obj, k, l)
 
     @staticmethod
@@ -412,7 +412,7 @@ class WFG8Problem(WFGProblem):
 
 
 class WFG9Problem(WFGProblem):
-    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None):
+    def __init__(self, n_var: int = 24, n_obj: int = 3, k: int | None = None, l: int | None = None) -> None:
         super().__init__("wfg9", n_var, n_obj, k, l)
 
     @staticmethod

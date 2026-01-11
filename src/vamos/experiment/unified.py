@@ -9,15 +9,61 @@ into one flexible function.
 from __future__ import annotations
 
 import logging
-from typing import Any, Sequence
+from typing import Any, overload
 
-from vamos.experiment.optimize import OptimizeConfig, OptimizationResult, optimize as _optimize_config
+from vamos.experiment.optimize import (
+    OptimizeConfig,
+    OptimizationResult,
+    optimize_config as _optimize_config,
+    _optimize_problem,
+)
+from vamos.foundation.problem.types import ProblemProtocol
 from vamos.experiment.auto import _resolve_problem, _select_algorithm, _compute_pop_size, _compute_budget
 from vamos.experiment.builder import study as _study_builder
 
 
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
+
+
+@overload
+def optimize(
+    problem: OptimizeConfig,
+    *,
+    engine: str = "numpy",
+    verbose: bool = False,
+) -> OptimizationResult:
+    ...
+
+
+@overload
+def optimize(
+    problem: str | ProblemProtocol,
+    *,
+    algorithm: str = "auto",
+    budget: int | None = None,
+    pop_size: int | None = None,
+    engine: str = "numpy",
+    seed: int = 42,
+    verbose: bool = False,
+    **algo_kwargs: Any,
+) -> OptimizationResult:
+    ...
+
+
+@overload
+def optimize(
+    problem: str | ProblemProtocol,
+    *,
+    algorithm: str = "auto",
+    budget: int | None = None,
+    pop_size: int | None = None,
+    engine: str = "numpy",
+    seed: list[int] | tuple[int, ...],
+    verbose: bool = False,
+    **algo_kwargs: Any,
+) -> list[OptimizationResult]:
+    ...
 
 
 def optimize(
@@ -27,7 +73,7 @@ def optimize(
     budget: int | None = None,
     pop_size: int | None = None,
     engine: str = "numpy",
-    seed: int | Sequence[int] = 42,
+    seed: int | list[int] | tuple[int, ...] = 42,
     verbose: bool = False,
     **algo_kwargs: Any,
 ) -> OptimizationResult | list[OptimizationResult]:
@@ -38,6 +84,7 @@ def optimize(
     - Accepts problem names (strings), instances, or OptimizeConfig
     - Supports AutoML with algorithm="auto"
     - Handles multi-run studies with seed=[0,1,2,...]
+    - Prefer config objects (OptimizeConfig + algorithm config builders); raw dicts are not accepted.
 
     Args:
         problem: Problem name (e.g., "zdt1"), problem instance, or OptimizeConfig.
@@ -124,10 +171,7 @@ def _run_single(
         builder = builder.seed(seed)
         return builder.run()
 
-    # For instance problems, use run_optimization directly
-    from vamos.experiment.optimize import run_optimization
-
-    return run_optimization(
+    return _optimize_problem(
         problem_instance,
         algorithm=algorithm,
         max_evaluations=effective_budget,

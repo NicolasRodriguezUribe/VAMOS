@@ -26,7 +26,22 @@ class SMPSOState(AlgorithmState):
     inertia: float = 0.5
     c1: float = 1.5
     c2: float = 1.5
+    c1_min: float = 1.5
+    c1_max: float = 2.5
+    c2_min: float = 1.5
+    c2_max: float = 2.5
+    r1_min: float = 0.0
+    r1_max: float = 1.0
+    r2_min: float = 0.0
+    r2_max: float = 1.0
+    min_weight: float = 0.1
+    max_weight: float = 0.1
+    change_velocity1: float = -1.0
+    change_velocity2: float = -1.0
+    mutation_every: int = 6
     vmax: np.ndarray = field(default_factory=lambda: np.array([]))
+    delta_max: np.ndarray = field(default_factory=lambda: np.array([]))
+    delta_min: np.ndarray = field(default_factory=lambda: np.array([]))
 
     xl: np.ndarray = field(default_factory=lambda: np.array([]))
     xu: np.ndarray = field(default_factory=lambda: np.array([]))

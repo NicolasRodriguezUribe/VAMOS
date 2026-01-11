@@ -3,13 +3,31 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
+class SPEA2ConfigDict(TypedDict):
+    pop_size: int
+    archive_size: int
+    crossover: Tuple[str, Dict[str, Any]]
+    mutation: Tuple[str, Dict[str, Any]]
+    selection: Tuple[str, Dict[str, Any]]
+    engine: str
+    k_neighbors: Optional[int]
+    repair: Optional[Tuple[str, Dict[str, Any]]]
+    initializer: Optional[Dict[str, Any]]
+    mutation_prob_factor: Optional[float]
+    constraint_mode: str
+    track_genealogy: bool
+    result_mode: Optional[str]
+    archive: Optional[Dict[str, Any]]
+    archive_type: Optional[str]
+
+
 @dataclass(frozen=True)
-class SPEA2ConfigData(_SerializableConfig):
+class SPEA2ConfigData(_SerializableConfig["SPEA2ConfigDict"]):
     pop_size: int
     archive_size: int  # Internal archive (part of SPEA2 algorithm)
     crossover: Tuple[str, Dict[str, Any]]
@@ -52,7 +70,7 @@ class SPEA2Config:
             cls()
             .pop_size(pop_size)
             .archive_size(pop_size)
-            .crossover("sbx", prob=0.9, eta=20.0)
+            .crossover("sbx", prob=1.0, eta=20.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("tournament")
             .engine(engine)
@@ -67,15 +85,15 @@ class SPEA2Config:
         self._cfg["archive_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs) -> "SPEA2Config":
+    def crossover(self, method: str, **kwargs: Any) -> "SPEA2Config":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs) -> "SPEA2Config":
+    def mutation(self, method: str, **kwargs: Any) -> "SPEA2Config":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs) -> "SPEA2Config":
+    def selection(self, method: str, **kwargs: Any) -> "SPEA2Config":
         self._cfg["selection"] = (method, kwargs)
         return self
 
@@ -87,11 +105,11 @@ class SPEA2Config:
         self._cfg["k_neighbors"] = value
         return self
 
-    def repair(self, method: str, **kwargs) -> "SPEA2Config":
+    def repair(self, method: str, **kwargs: Any) -> "SPEA2Config":
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs) -> "SPEA2Config":
+    def initializer(self, method: str, **kwargs: Any) -> "SPEA2Config":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -111,7 +129,7 @@ class SPEA2Config:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs) -> "SPEA2Config":
+    def archive(self, size: int, **kwargs: Any) -> "SPEA2Config":
         """
         Configure an external archive for result storage.
 

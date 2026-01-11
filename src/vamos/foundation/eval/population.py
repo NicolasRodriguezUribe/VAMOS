@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 
-def evaluate_population_with_constraints(problem, X: np.ndarray) -> tuple[np.ndarray, np.ndarray | None]:
+def evaluate_population_with_constraints(problem: Any, X: np.ndarray) -> tuple[np.ndarray, np.ndarray | None]:
     """
     Evaluate population and optionally return constraints G if provided by the problem.
     """

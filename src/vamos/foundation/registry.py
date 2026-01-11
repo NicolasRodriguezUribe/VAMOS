@@ -4,9 +4,10 @@ Generic registry pattern for managing named components (algorithms, operators, e
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, Iterable, TypeVar
+from typing import Callable, Generic, Iterable, TypeVar, overload
 
 T = TypeVar("T")
+U = TypeVar("U")
 
 
 class Registry(Generic[T]):
@@ -46,7 +47,15 @@ class Registry(Generic[T]):
             return _do_register
         return _do_register(item)
 
-    def get(self, key: str, default: Any = ...) -> T:
+    @overload
+    def get(self, key: str) -> T:
+        ...
+
+    @overload
+    def get(self, key: str, default: U) -> T | U:
+        ...
+
+    def get(self, key: str, default: object = ...) -> object:
         """
         Retrieve an item by key.
 

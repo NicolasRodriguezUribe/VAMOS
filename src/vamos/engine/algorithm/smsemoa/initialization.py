@@ -16,7 +16,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
-from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
@@ -48,7 +48,7 @@ def initialize_smsemoa_run(
     problem: "ProblemProtocol",
     termination: tuple[str, Any],
     seed: int,
-    eval_backend: "EvaluationBackend | None" = None,
+    eval_strategy: "EvaluationBackend | None" = None,
     live_viz: "LiveVisualization | None" = None,
 ) -> tuple["SMSEMOAState", Any, Any, int, Any]:
     """Initialize SMS-EMOA run and create state.
@@ -65,7 +65,7 @@ def initialize_smsemoa_run(
         Termination criterion, e.g., ("n_eval", 10000).
     seed : int
         Random seed for reproducibility.
-    eval_backend : EvaluationBackend, optional
+    eval_strategy : EvaluationBackend, optional
         Evaluation backend for parallel evaluation.
     live_viz : LiveVisualization, optional
         Live visualization callback.
@@ -73,12 +73,12 @@ def initialize_smsemoa_run(
     Returns
     -------
     tuple
-        (state, live_cb, eval_backend, max_eval, hv_tracker)
+        (state, live_cb, eval_strategy, max_eval, hv_tracker)
     """
     max_eval, hv_config = parse_termination(termination, config)
 
     live_cb = get_live_viz(live_viz)
-    eval_backend = get_eval_backend(eval_backend)
+    eval_strategy = get_eval_strategy(eval_strategy)
 
     # Setup HV tracker if configured
     hv_tracker = None
@@ -164,7 +164,7 @@ def initialize_smsemoa_run(
         result_mode=config.get("result_mode", "non_dominated"),
     )
 
-    return state, live_cb, eval_backend, max_eval, hv_tracker
+    return state, live_cb, eval_strategy, max_eval, hv_tracker
 
 
 def initialize_population(

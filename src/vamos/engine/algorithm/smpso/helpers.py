@@ -103,7 +103,7 @@ def dominates(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """
     leq = a <= b
     lt = a < b
-    return np.all(leq, axis=1) & np.any(lt, axis=1)
+    return np.asarray(np.all(leq, axis=1) & np.any(lt, axis=1), dtype=bool)
 
 
 def update_personal_bests(
@@ -154,8 +154,8 @@ def update_personal_bests(
         better |= (~feas_new) & (~feas_old) & (cv_new < cv_old)
         update_idx = better
     else:
-        # Without constraints, use dominance or equal
-        update_idx = dominates(F, pbest_F) | np.allclose(F, pbest_F)
+        # Without constraints, update if current is not dominated by personal best
+        update_idx = ~dominates(pbest_F, F)
 
     pbest_X[update_idx] = X[update_idx]
     pbest_F[update_idx] = F[update_idx]
@@ -180,9 +180,15 @@ def extract_eval_arrays(eval_result: Any) -> tuple[np.ndarray, np.ndarray | None
         (F, G) objective and constraint arrays.
     """
     if hasattr(eval_result, "F"):
-        F = eval_result.F
-        G = getattr(eval_result, "G", None)
-        return F, G
+        F_val = getattr(eval_result, "F", None)
+        if F_val is None:
+            raise ValueError("Evaluation result is missing F.")
+        G_val = getattr(eval_result, "G", None)
+        return np.asarray(F_val, dtype=float), np.asarray(G_val, dtype=float) if G_val is not None else None
     if isinstance(eval_result, dict):
-        return eval_result.get("F"), eval_result.get("G")
+        F_val = eval_result.get("F")
+        if F_val is None:
+            raise ValueError("Evaluation result dict is missing 'F'.")
+        G_val = eval_result.get("G")
+        return np.asarray(F_val, dtype=float), np.asarray(G_val, dtype=float) if G_val is not None else None
     return np.asarray(eval_result, dtype=float), None

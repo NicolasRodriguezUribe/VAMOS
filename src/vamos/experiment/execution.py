@@ -21,7 +21,7 @@ from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.data import weight_path
 from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
 from vamos.foundation.metrics.hypervolume import hypervolume
-from vamos.foundation.problem.resolver import ProblemSelection
+from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.observer import Observer, RunContext
 from vamos.experiment.runner_utils import run_output_dir, validate_problem
 from vamos.experiment.observers.console import ConsoleObserver
@@ -237,7 +237,7 @@ def run_single(
     # 3. Notify Start
     main_observer.on_start(ctx)
 
-    autodiff_info = None
+    autodiff_info: dict[str, Any] | None = None
     if autodiff_constraints:
         autodiff_info = {"status": "unavailable"}
         try:
@@ -257,7 +257,7 @@ def run_single(
         except Exception as exc:
             autodiff_info = {"status": "error", "message": str(exc)}
 
-    eval_backend = resolve_evaluator(evaluator, config)
+    eval_strategy = resolve_evaluator(evaluator, config)
 
     kernel_backend = getattr(algorithm, "kernel", None)
 
@@ -276,7 +276,7 @@ def run_single(
         problem,
         termination=termination_spec,
         seed=config.seed,
-        eval_backend=eval_backend,
+        eval_strategy=eval_strategy,
         live_viz=_LiveVizAdapter(main_observer),
     )
 
@@ -308,7 +308,7 @@ def run_single(
         "F": F,
         "X": payload.get("X"),
         "termination": termination_reason,
-        "eval_backend": getattr(config, "eval_backend", "serial"),
+        "eval_strategy": getattr(config, "eval_strategy", "serial"),
         "n_workers": getattr(config, "n_workers", None),
         "config": cfg_data,
         "_kernel_backend": kernel_backend,

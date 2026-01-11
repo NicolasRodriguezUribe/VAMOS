@@ -22,12 +22,13 @@ from .param_space import (
     Real,
     Int,
     Categorical,
+    ParamType,
     ConditionalBlock,
 )
 
 
 def build_nsgaii_config_space() -> AlgorithmConfigSpace:
-    params = [
+    params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Int("offspring_size", 20, 200, log=True),
         Categorical("engine", ["numpy", "numba", "moocore"]),
@@ -47,25 +48,28 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
 
 
 def build_moead_config_space() -> AlgorithmConfigSpace:
-    params = [
+    params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Categorical("engine", ["numpy", "numba", "moocore"]),
         Int("neighbor_size", 5, 40),
         Real("delta", 0.5, 0.95),
         Int("replace_limit", 1, 5),
-        Categorical("crossover", ["sbx"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Real("crossover_eta", 10.0, 40.0),
+        Categorical("crossover", ["sbx", "de"]),
         Categorical("mutation", ["pm"]),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
-        Categorical("aggregation", ["tchebycheff", "weighted_sum"]),
+        Categorical("aggregation", ["tchebycheff", "weighted_sum", "pbi"]),
     ]
-    return AlgorithmConfigSpace("moead", params, [])
+    conditionals = [
+        ConditionalBlock("crossover", "sbx", [Real("crossover_prob", 0.6, 1.0), Real("crossover_eta", 10.0, 40.0)]),
+        ConditionalBlock("crossover", "de", [Real("de_cr", 0.0, 1.0), Real("de_f", 0.0, 1.0)]),
+        ConditionalBlock("aggregation", "pbi", [Real("pbi_theta", 1.0, 10.0)]),
+    ]
+    return AlgorithmConfigSpace("moead", params, conditionals)
 
 
 def build_nsgaiii_config_space() -> AlgorithmConfigSpace:
-    params = [
+    params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Categorical("engine", ["numpy", "numba", "moocore"]),
         Categorical("crossover", ["sbx"]),
@@ -80,7 +84,7 @@ def build_nsgaiii_config_space() -> AlgorithmConfigSpace:
 
 
 def build_smsemoa_config_space() -> AlgorithmConfigSpace:
-    params = [
+    params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Categorical("engine", ["numpy", "numba", "moocore"]),
         Categorical("crossover", ["sbx"]),
@@ -95,7 +99,7 @@ def build_smsemoa_config_space() -> AlgorithmConfigSpace:
 
 
 def build_spea2_config_space() -> AlgorithmConfigSpace:
-    params = [
+    params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Int("archive_size", 20, 200, log=True),
         Categorical("engine", ["numpy", "numba", "moocore"]),
@@ -112,7 +116,7 @@ def build_spea2_config_space() -> AlgorithmConfigSpace:
 
 
 def build_ibea_config_space() -> AlgorithmConfigSpace:
-    params = [
+    params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Categorical("engine", ["numpy", "numba", "moocore"]),
         Categorical("crossover", ["sbx"]),
@@ -129,7 +133,7 @@ def build_ibea_config_space() -> AlgorithmConfigSpace:
 
 
 def build_smpso_config_space() -> AlgorithmConfigSpace:
-    params = [
+    params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Int("archive_size", 20, 200, log=True),
         Categorical("engine", ["numpy", "numba", "moocore"]),
@@ -167,7 +171,6 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
             mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
         builder.mutation(mut, **mut_params)
         builder.selection(str(assignment.get("selection", "tournament")), pressure=int(assignment["selection_pressure"]))
-        builder.survival("nsga2")
         return builder.fixed()
     if algo == "moead":
         builder = MOEADConfig()
@@ -176,17 +179,29 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         builder.neighbor_size(int(assignment["neighbor_size"]))
         builder.delta(float(assignment["delta"]))
         builder.replace_limit(int(assignment["replace_limit"]))
-        builder.crossover(
-            str(assignment["crossover"]),
-            prob=float(assignment["crossover_prob"]),
-            eta=float(assignment["crossover_eta"]),
-        )
+        cross = str(assignment["crossover"])
+        if cross == "de":
+            builder.crossover(
+                "de",
+                cr=float(assignment.get("de_cr", 1.0)),
+                f=float(assignment.get("de_f", 0.5)),
+            )
+        else:
+            builder.crossover(
+                "sbx",
+                prob=float(assignment.get("crossover_prob", 1.0)),
+                eta=float(assignment.get("crossover_eta", 20.0)),
+            )
         builder.mutation(
             str(assignment["mutation"]),
             prob=float(assignment["mutation_prob"]),
             eta=float(assignment["mutation_eta"]),
         )
-        builder.aggregation(str(assignment["aggregation"]))
+        aggregation = str(assignment["aggregation"])
+        if aggregation == "pbi":
+            builder.aggregation("pbi", theta=float(assignment.get("pbi_theta", 5.0)))
+        else:
+            builder.aggregation(aggregation)
         return builder.fixed()
     if algo == "nsgaiii":
         builder = NSGAIIIConfig()
@@ -255,7 +270,7 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         )
         builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
         builder.indicator(str(assignment.get("indicator", "eps")))
-        builder.kappa(float(assignment.get("kappa", 0.05)))
+        builder.kappa(float(assignment.get("kappa", 1.0)))
         return builder.fixed()
     if algo == "smpso":
         builder = SMPSOConfig()

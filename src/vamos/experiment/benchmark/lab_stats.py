@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 from vamos.experiment.benchmark.report_utils import ensure_dir, import_pandas
 
@@ -10,7 +10,7 @@ def _indicator_is_minimization(indicator: str) -> bool:
     return indicator.strip().upper() != "HV"
 
 
-def _group_stats(summary, agg: str):
+def _group_stats(summary: Any, agg: str) -> Any:
     grouped = summary.groupby(["Algorithm", "Problem", "IndicatorName"])["IndicatorValue"]
     if agg == "median":
         return grouped.median()
@@ -25,7 +25,7 @@ def _group_stats(summary, agg: str):
     raise ValueError(f"Unknown aggregation '{agg}'")
 
 
-def write_summary_tables(summary, output_dir: Path) -> Dict[str, Path]:
+def write_summary_tables(summary: Any, output_dir: Path) -> Dict[str, Path]:
     import_pandas()
     output_dir = ensure_dir(output_dir)
     created: Dict[str, Path] = {}
@@ -49,10 +49,10 @@ def write_summary_tables(summary, output_dir: Path) -> Dict[str, Path]:
     return created
 
 
-def write_wilcoxon_tables(summary, output_dir: Path, *, alpha: float = 0.05) -> Dict[str, Path]:
+def write_wilcoxon_tables(summary: Any, output_dir: Path, *, alpha: float = 0.05) -> Dict[str, Path]:
     pd = import_pandas()
     try:
-        from scipy import stats as spstats  # type: ignore
+        from scipy import stats as spstats  # type: ignore[import-untyped]
     except Exception:  # pragma: no cover - optional
         return {}
 

@@ -6,7 +6,7 @@ import numpy as np
 class _CEC2009UFBase:
     """Base utilities shared by UF1-UF3 implementations."""
 
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         if n_var < 3:
             raise ValueError("CEC2009 UF problems require at least 3 decision variables.")
         self.n_var = int(n_var)
@@ -18,7 +18,7 @@ class _CEC2009UFBase:
         self.xl = xl
         self.xu = xu
 
-    def _split_even_odd(self):
+    def _split_even_odd(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         # j indices correspond to the literature's 1-based variables (j=2..n_var)
         j = np.arange(2, self.n_var + 1)
         even_mask = j % 2 == 0
@@ -29,7 +29,7 @@ class _CEC2009UFBase:
 class CEC2009_UF1(_CEC2009UFBase):
     """UF1 from the CEC2009 competition."""
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         X = np.asarray(X)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}).")
@@ -58,7 +58,7 @@ class CEC2009_UF1(_CEC2009UFBase):
 class CEC2009_UF2(_CEC2009UFBase):
     """UF2 from the CEC2009 competition."""
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         X = np.asarray(X)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}).")
@@ -91,7 +91,7 @@ class CEC2009_UF2(_CEC2009UFBase):
 class CEC2009_UF3(_CEC2009UFBase):
     """UF3 from the CEC2009 competition."""
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         X = np.asarray(X)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}).")
@@ -128,7 +128,7 @@ class CEC2009_UF3(_CEC2009UFBase):
 class CEC2009_CF1(_CEC2009UFBase):
     """Constrained CF1 from the CEC2009 competition."""
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         X = np.asarray(X)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}).")

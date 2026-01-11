@@ -63,7 +63,7 @@ def sbx_crossover_numba(
     eta: float,
     lower: np.ndarray,
     upper: np.ndarray,
-    prob_var: float = 1.0,
+    prob_var: float = 0.5,
 ) -> np.ndarray:
     """
     Apply SBX crossover.

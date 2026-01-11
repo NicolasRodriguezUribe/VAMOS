@@ -71,6 +71,8 @@ class AlgorithmProtocol(Protocol):
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
+        eval_strategy: Any | None = None,
+        live_viz: Any | None = None,
     ) -> dict[str, Any]:
         """
         Run the optimization algorithm.
@@ -83,6 +85,10 @@ class AlgorithmProtocol(Protocol):
             Termination criterion, e.g., ("n_eval", 10000) or ("hv", {...}).
         seed : int
             Random seed for reproducibility.
+        eval_strategy : Any | None
+            Evaluation backend for problem evaluations.
+        live_viz : Any | None
+            Live visualization callback.
 
         Returns
         -------

@@ -63,7 +63,7 @@ class KernelBackend(ABC):
     def sbx_crossover(
         self,
         X_parents: np.ndarray,
-        params: dict,
+        params: dict[str, float],
         rng: np.random.Generator,
         xl: float,
         xu: float,
@@ -76,7 +76,7 @@ class KernelBackend(ABC):
     def polynomial_mutation(
         self,
         X: np.ndarray,
-        params: dict,
+        params: dict[str, float],
         rng: np.random.Generator,
         xl: float,
         xu: float,

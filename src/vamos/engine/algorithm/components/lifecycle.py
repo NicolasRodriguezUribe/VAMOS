@@ -1,5 +1,5 @@
 """
-Lifecycle helpers for algorithm runs (initial population, evaluation backends).
+Lifecycle helpers for algorithm runs (initial population, evaluation strategies).
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 def setup_initial_population(
     problem: "ProblemProtocol",
-    eval_backend: EvaluationBackend,
+    eval_strategy: EvaluationBackend,
     rng: np.random.Generator,
     pop_size: int,
     constraint_mode: str,
@@ -30,7 +30,7 @@ def setup_initial_population(
     ----------
     problem : ProblemProtocol
         The optimization problem.
-    eval_backend : EvaluationBackend
+    eval_strategy : EvaluationBackend
         Backend for evaluating solutions.
     rng : np.random.Generator
         Random number generator.
@@ -51,22 +51,22 @@ def setup_initial_population(
     xl, xu = resolve_bounds(problem, encoding)
 
     X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
-    eval_result = eval_backend.evaluate(X, problem)
+    eval_result = eval_strategy.evaluate(X, problem)
     F = eval_result.F
     G = eval_result.G if constraint_mode != "none" else None
 
     return X, F, G, X.shape[0]
 
 
-def get_eval_backend(
-    eval_backend: EvaluationBackend | None,
+def get_eval_strategy(
+    eval_strategy: EvaluationBackend | None,
 ) -> EvaluationBackend:
     """
     Get evaluation backend, defaulting to serial.
 
     Parameters
     ----------
-    eval_backend : EvaluationBackend | None
+    eval_strategy : EvaluationBackend | None
         User-provided backend or None.
 
     Returns
@@ -74,7 +74,7 @@ def get_eval_backend(
     EvaluationBackend
         The backend or a serial implementation.
     """
-    return eval_backend or SerialEvalBackend()
+    return eval_strategy or SerialEvalBackend()
 
 
-__all__ = ["setup_initial_population", "get_eval_backend"]
+__all__ = ["setup_initial_population", "get_eval_strategy"]

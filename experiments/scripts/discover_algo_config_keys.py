@@ -48,7 +48,6 @@ def main() -> int:
         "crossover": {"method": "sbx", "prob": 0.9, "eta": 20},
         "mutation":  {"method": "pm",  "prob": "1/n", "eta": 20},
         "selection": {"method": "tournament", "pressure": 2},
-        "survival": "nsga2",
     }
 
     runs = []

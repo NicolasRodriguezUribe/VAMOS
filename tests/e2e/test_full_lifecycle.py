@@ -6,7 +6,7 @@ import pytest
 import pandas as pd
 
 from vamos.foundation.problem.zdt1 import ZDT1Problem
-from vamos.experiment.optimize import OptimizeConfig, optimize, OptimizationResult
+from vamos.experiment.optimize import OptimizeConfig, optimize_config, OptimizationResult
 from vamos.foundation.metrics import compute_hypervolume
 from vamos.engine.algorithm.config import NSGAIIConfig
 
@@ -31,7 +31,7 @@ def test_full_lifecycle_optimize_save_analyze(e2e_workspace):
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine("numpy")
         .fixed()
     )
@@ -44,7 +44,7 @@ def test_full_lifecycle_optimize_save_analyze(e2e_workspace):
         engine="numpy",
     )
 
-    result = optimize(config)
+    result = optimize_config(config)
 
     assert isinstance(result, OptimizationResult)
     assert len(result.F) > 0, "Optimization returned empty front"

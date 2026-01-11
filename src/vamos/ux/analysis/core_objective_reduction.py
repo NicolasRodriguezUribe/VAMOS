@@ -239,4 +239,6 @@ def reduce_objectives(
     )
     reducer = ObjectiveReducer(cfg)
     F_reduced = reducer.fit_transform(F)
+    if reducer.selected_indices_ is None:
+        raise RuntimeError("ObjectiveReducer did not set selected indices after fit.")
     return F_reduced, reducer.selected_indices_

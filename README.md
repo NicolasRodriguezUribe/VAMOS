@@ -68,6 +68,15 @@ config = OptimizeConfig(
 result = optimize(config)
 ```
 
+Tip: Prefer config objects (`OptimizeConfig` + algorithm config builders). Raw dict configs are no longer accepted.
+
+## Notes
+
+- NSGA-III works best when `pop_size` matches the number of reference directions. With `reference_directions(divisions=p)`, the count is `comb(p + n_obj - 1, n_obj - 1)`; mismatches emit a warning unless strict enforcement is enabled.
+- RVEA requires `pop_size` to match the number of reference directions implied by `n_partitions` (simplex-lattice). It uses APD survival with periodic reference-vector adaptation (`alpha`, `adapt_freq`).
+- For reproducible results, set `seed`; NumPy/Numba/MooCore backends share the same RNG-driven stochastic operators.
+- Default operator settings align with jMetalPy standard configurations (e.g., SBX prob 1.0, PM prob 1/n, MOEA/D PBI, IBEA kappa 1.0); override via config/CLI if needed.
+
 ## 📚 Examples & Notebooks
 
 VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
@@ -89,6 +98,10 @@ VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
 - **`vamos-benchmark`**: Generate full reports comparing multiple algorithms, plus jMetalPy-compatible lab outputs (`summary/lab/QualityIndicatorSummary.csv`, Wilcoxon tables, boxplots). Boxplots require `matplotlib`.
   ```bash
   vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/
+  ```
+- **`vamos-tune`**: Racing-style hyperparameter tuning with optional multi-fidelity. `--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.
+  ```bash
+  vamos-tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5
   ```
 - **`vamos-self-check`**: Verify your installation and backend availability.
 

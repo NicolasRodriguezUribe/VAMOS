@@ -6,15 +6,49 @@ Re-exports the canonical exception classes from vamos.foundation.exceptions.
 
 from __future__ import annotations
 
-from .foundation import exceptions as _exceptions
+from .foundation.exceptions import (
+    BackendNotAvailableError,
+    BoundsError,
+    ConfigurationError,
+    ConstraintViolationError,
+    ConvergenceError,
+    DataError,
+    DependencyError,
+    EvaluationError,
+    InvalidAlgorithmError,
+    InvalidEngineError,
+    InvalidOperatorError,
+    InvalidProblemError,
+    InvalidResultsError,
+    MissingConfigError,
+    OptimizationError,
+    ProblemDimensionError,
+    ProblemError,
+    ResultsNotFoundError,
+    VAMOSError,
+)
 
-__all__ = _exceptions.__all__
-
-
-def __getattr__(name: str):
-    if name in __all__:
-        return getattr(_exceptions, name)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+__all__ = [
+    "VAMOSError",
+    "ConfigurationError",
+    "InvalidAlgorithmError",
+    "InvalidEngineError",
+    "InvalidOperatorError",
+    "MissingConfigError",
+    "ProblemError",
+    "InvalidProblemError",
+    "ProblemDimensionError",
+    "BoundsError",
+    "OptimizationError",
+    "ConvergenceError",
+    "EvaluationError",
+    "ConstraintViolationError",
+    "DataError",
+    "ResultsNotFoundError",
+    "InvalidResultsError",
+    "DependencyError",
+    "BackendNotAvailableError",
+]
 
 
 def __dir__() -> list[str]:

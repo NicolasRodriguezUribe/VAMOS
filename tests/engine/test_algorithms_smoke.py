@@ -31,7 +31,7 @@ def test_nsgaii_hv_termination_hits_target():
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine("numpy")
         .fixed()
     )
@@ -63,8 +63,8 @@ def test_smsemoa_smoke_runs_with_small_population():
         .pop_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
-        .reference_point(offset=0.1, adaptive=True)
+        .selection("random")
+        .reference_point(offset=1.0, adaptive=True)
         .engine("numpy")
         .fixed()
     )
@@ -89,7 +89,7 @@ def test_moead_smoke_runs_without_weight_files():
         .neighbor_size(3)
         .delta(0.9)
         .replace_limit(2)
-        .crossover("sbx", prob=0.9, eta=20.0)
+        .crossover("de", cr=1.0, f=0.5)
         .mutation("pm", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
         .weight_vectors(divisions=6)
@@ -170,7 +170,7 @@ def test_smpso_smoke_runs():
     assert np.isfinite(result["F"]).all()
 
 
-def test_nsgaii_with_multiprocessing_eval_backend():
+def test_nsgaii_with_multiprocessing_eval_strategy():
     pop_size = 10
     cfg = (
         NSGAIIConfig()
@@ -179,7 +179,7 @@ def test_nsgaii_with_multiprocessing_eval_backend():
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine("numpy")
         .fixed()
     )
@@ -187,8 +187,8 @@ def test_nsgaii_with_multiprocessing_eval_backend():
     problem = ZDT1Problem(n_var=6)
     from vamos.foundation.eval.backends import MultiprocessingEvalBackend
 
-    eval_backend = MultiprocessingEvalBackend(n_workers=2)
-    result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=10, eval_backend=eval_backend)
+    eval_strategy = MultiprocessingEvalBackend(n_workers=2)
+    result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=10, eval_strategy=eval_strategy)
 
     # Result contains only non-dominated solutions (may be <= pop_size)
     assert result["F"].shape[0] <= pop_size
@@ -207,7 +207,7 @@ def test_nsgaii_permutation_smoke():
         .crossover("ox", prob=0.9)
         .mutation("swap", prob="2/n")
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine("numpy")
         .fixed()
     )

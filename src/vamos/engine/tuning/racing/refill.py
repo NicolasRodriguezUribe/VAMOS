@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TYPE_CHECKING
 import math
 
 import numpy as np
@@ -8,6 +8,9 @@ import numpy as np
 from .param_space import ParamSpace, Real, Int, Categorical
 from .sampler import Sampler
 from .state import ConfigState, EliteEntry
+
+if TYPE_CHECKING:
+    from .scenario import Scenario
 
 
 def make_neighbor_config(base_config: Dict[str, Any], param_space: ParamSpace, rng: np.random.Generator) -> Dict[str, Any]:
@@ -90,7 +93,7 @@ def make_neighbor_config(base_config: Dict[str, Any], param_space: ParamSpace, r
 def refill_population(
     configs: List[ConfigState],
     *,
-    scenario,
+    scenario: "Scenario",
     param_space: ParamSpace,
     sampler: Sampler,
     elite_archive: List[EliteEntry],

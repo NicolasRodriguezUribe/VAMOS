@@ -71,7 +71,7 @@ class NSGAII:
         problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: EvaluationBackend | None = None,
+        eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
         checkpoint_dir: str | None = None,
         checkpoint_interval: int = 50,
@@ -82,14 +82,14 @@ class NSGAII:
             problem: Problem to optimize.
             termination: Termination criterion.
             seed: Random seed.
-            eval_backend: Evaluation backend.
+            eval_strategy: Evaluation backend.
             live_viz: Live visualization callback.
             checkpoint_dir: Directory for checkpoints (None = disabled).
             checkpoint_interval: Save checkpoint every N generations.
         """
         import signal
 
-        live_cb, eval_backend, max_eval, n_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        live_cb, eval_strategy, max_eval, n_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_strategy, live_viz)
         st = self._st
         assert st is not None, "State not initialized"
 
@@ -112,7 +112,7 @@ class NSGAII:
             while n_eval < max_eval and not hv_reached and not stop_requested and not interrupted:
                 st.generation = generation
                 X_off = self.ask()
-                eval_off = eval_backend.evaluate(X_off, problem)
+                eval_off = eval_strategy.evaluate(X_off, problem)
                 hv_reached = self.tell(eval_off, st.pop_size)
                 n_eval += X_off.shape[0]
 
@@ -176,14 +176,14 @@ class NSGAII:
         problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: EvaluationBackend | None,
+        eval_strategy: EvaluationBackend | None,
         live_viz: LiveVisualization | None,
     ) -> tuple[LiveVisualization, EvaluationBackend, int, int, HVTracker]:
         """Initialize algorithm state for a run."""
         max_eval, hv_config = parse_termination(termination)
 
-        if eval_backend is None:
-            eval_backend = SerialEvalBackend()
+        if eval_strategy is None:
+            eval_strategy = SerialEvalBackend()
         live_cb = live_viz or NoOpLiveVisualization()
         rng = np.random.default_rng(seed)
 
@@ -194,7 +194,7 @@ class NSGAII:
 
         constraint_mode = self.cfg.get("constraint_mode", "feasibility")
         initializer_cfg = self.cfg.get("initializer")
-        X, F, G, n_eval = setup_population(problem, eval_backend, rng, pop_size, constraint_mode, initializer_cfg)
+        X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
 
         encoding = getattr(problem, "encoding", "continuous")
         n_var = problem.n_var
@@ -278,7 +278,7 @@ class NSGAII:
             ids=ids,
             aos_controller=aos_controller,
         )
-        return live_cb, eval_backend, max_eval, n_eval, hv_tracker
+        return live_cb, eval_strategy, max_eval, n_eval, hv_tracker
 
     def ask(self) -> np.ndarray:
         """Generate offspring from the current state (minimal ask/tell support)."""

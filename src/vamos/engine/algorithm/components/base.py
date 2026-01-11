@@ -22,7 +22,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from vamos.engine.algorithm.components.lifecycle import (
-    get_eval_backend,
+    get_eval_strategy,
     setup_initial_population,
 )
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -38,7 +38,7 @@ __all__ = [
     "setup_hv_tracker",
     # Population lifecycle
     "setup_initial_population",
-    "get_eval_backend",
+    "get_eval_strategy",
     # Archives
     "setup_archive",
     "update_archive",

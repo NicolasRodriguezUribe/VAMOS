@@ -25,7 +25,7 @@ def _ensure_project_root_on_path() -> None:
             sys.path.insert(0, project_root_str)
 
 
-def main():
+def main() -> None:
     _ensure_project_root_on_path()
     from vamos.experiment.cli import parse_args
     from vamos.experiment.runner import run_experiments_from_args
@@ -41,7 +41,7 @@ def main():
         offspring_population_size=args.offspring_population_size,
         max_evaluations=args.max_evaluations,
         seed=args.seed,
-        eval_backend=args.eval_backend,
+        eval_strategy=args.eval_strategy,
         n_workers=args.n_workers,
         live_viz=args.live_viz,
         live_viz_interval=args.live_viz_interval,

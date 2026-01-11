@@ -53,7 +53,7 @@ class NoOpLiveVisualization:
         return None
 
 
-def _safe_matplotlib(interactive_backend: str | None = None):
+def _safe_matplotlib(interactive_backend: str | None = None) -> Any | None:
     try:
         import matplotlib
 

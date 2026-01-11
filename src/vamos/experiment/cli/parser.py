@@ -15,7 +15,7 @@ from .validation import finalize_args
 
 
 # Config-file aware parser.
-def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:  # type: ignore[override]
+def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
     pre_parser = build_pre_parser()
     pre_args, remaining = pre_parser.parse_known_args()
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -12,11 +12,11 @@ class ProblemProtocol(Protocol):
     xu: float | int | np.ndarray
     encoding: str
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None: ...
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None: ...
 
 
 class MixedProblemProtocol(ProblemProtocol, Protocol):
-    mixed_spec: dict
+    mixed_spec: dict[str, Any]
 
 
 __all__ = ["ProblemProtocol", "MixedProblemProtocol"]

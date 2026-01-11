@@ -11,7 +11,7 @@ from vamos.foundation.eval.population import evaluate_population_with_constraint
 from . import EvaluationBackend, EvaluationResult
 
 
-def _eval_chunk(problem, X_chunk: np.ndarray) -> tuple[np.ndarray, Optional[np.ndarray]]:
+def _eval_chunk(problem: Any, X_chunk: np.ndarray) -> tuple[np.ndarray, Optional[np.ndarray]]:
     """Worker helper to evaluate a chunk; kept at module level for pickling."""
     F, G = evaluate_population_with_constraints(problem, X_chunk)
     return F, G
@@ -20,7 +20,7 @@ def _eval_chunk(problem, X_chunk: np.ndarray) -> tuple[np.ndarray, Optional[np.n
 class SerialEvalBackend(EvaluationBackend):
     """Synchronous in-process evaluation (current default)."""
 
-    def evaluate(self, X: np.ndarray, problem) -> EvaluationResult:
+    def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         F, G = evaluate_population_with_constraints(problem, X)
         return EvaluationResult(F=F, G=G)
 
@@ -34,11 +34,11 @@ class MultiprocessingEvalBackend(EvaluationBackend):
         - Best suited for expensive evaluations; overhead dominates for tiny problems.
     """
 
-    def __init__(self, n_workers: Optional[int] = None, chunk_size: Optional[int] = None):
+    def __init__(self, n_workers: Optional[int] = None, chunk_size: Optional[int] = None) -> None:
         self.n_workers = max(1, n_workers or os.cpu_count() or 1)
         self.chunk_size = chunk_size
 
-    def evaluate(self, X: np.ndarray, problem) -> EvaluationResult:
+    def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         if self.n_workers <= 1 or X.shape[0] <= 1:
             return SerialEvalBackend().evaluate(X, problem)
 
@@ -63,18 +63,19 @@ class MultiprocessingEvalBackend(EvaluationBackend):
         # Restore original order
         F = np.empty((n, F_parts[0][1].shape[1]), dtype=float)
         G_sample = G_parts[0][1]
-        G = None
+        G_out: np.ndarray | None = None
         if G_sample is not None:
-            G = np.empty((n, G_sample.shape[1]), dtype=float)
+            G_out = np.empty((n, G_sample.shape[1]), dtype=float)
         for start, part in sorted(F_parts, key=lambda p: p[0]):
             F[start : start + part.shape[0]] = part
-        for start, part in sorted(G_parts, key=lambda p: p[0]):
-            if part is None or G is None:
-                G = None
-                break
-            G[start : start + part.shape[0]] = part
+        if G_out is not None:
+            for start, part in sorted(G_parts, key=lambda p: p[0]):
+                if part is None:
+                    G_out = None
+                    break
+                G_out[start : start + part.shape[0]] = part
 
-        return EvaluationResult(F=F, G=G)
+        return EvaluationResult(F=F, G=G_out)
 
 
 class DaskEvalBackend(EvaluationBackend):
@@ -86,7 +87,7 @@ class DaskEvalBackend(EvaluationBackend):
         - Falls back to serial if dask is not installed or client is invalid.
     """
 
-    def __init__(self, client: Any = None, address: str | None = None):
+    def __init__(self, client: Any = None, address: str | None = None) -> None:
         """
         Initialize Dask backend.
 
@@ -99,7 +100,7 @@ class DaskEvalBackend(EvaluationBackend):
         self._connected = False
 
         try:
-            from dask.distributed import Client
+            from dask.distributed import Client  # type: ignore[import-not-found]
 
             if self.client is None:
                 if self.address:
@@ -115,14 +116,14 @@ class DaskEvalBackend(EvaluationBackend):
         except ImportError:
             pass
 
-    def evaluate(self, X: np.ndarray, problem) -> EvaluationResult:
+    def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         if not self._connected or (self.client is None and self.address is None):
             return SerialEvalBackend().evaluate(X, problem)
 
         try:
             # Re-check client connection
             if self.client is None and self.address:
-                from dask.distributed import Client
+                from dask.distributed import Client  # type: ignore[import-not-found]
 
                 self.client = Client(self.address)
 
@@ -175,7 +176,7 @@ class DaskEvalBackend(EvaluationBackend):
             return SerialEvalBackend().evaluate(X, problem)
 
 
-def resolve_eval_backend(
+def resolve_eval_strategy(
     name: str, *, n_workers: Optional[int] = None, chunk_size: Optional[int] = None, dask_address: str | None = None
 ) -> EvaluationBackend:
     key = (name or "serial").lower()
@@ -186,4 +187,10 @@ def resolve_eval_backend(
     return SerialEvalBackend()
 
 
-__all__ = ["SerialEvalBackend", "MultiprocessingEvalBackend", "DaskEvalBackend", "resolve_eval_backend"]
+__all__ = [
+    "EvaluationBackend",
+    "SerialEvalBackend",
+    "MultiprocessingEvalBackend",
+    "DaskEvalBackend",
+    "resolve_eval_strategy",
+]

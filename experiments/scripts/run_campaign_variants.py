@@ -99,7 +99,7 @@ def build_config_base(
         cfg["defaults"]["track_genealogy"] = bool(track_genealogy)
 
     op_payload = {}
-    for key in ["crossover", "mutation", "selection", "repair", "survival"]:
+    for key in ["crossover", "mutation", "selection", "repair"]:
         if key in algo_keys and operator_block.get(key) is not None:
             op_payload[key] = deep_copy(operator_block[key])
     if op_payload:

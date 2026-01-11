@@ -20,13 +20,13 @@ pip install -e .
 Now, let's solve the classic **ZDT1** problem (2 objectives, 30 variables) using **NSGA-II**. Create a file `hello_vamos.py`:
 
 ```python
-from vamos.api import optimize
+from vamos.api import optimize, OptimizeConfig, make_problem_selection
 import matplotlib.pyplot as plt
 
 # 1. Run NSGA-II on ZDT1
 # The 'optimize' function is your main entry point.
 # It automatically selects a sane configuration for standard problems.
-res = optimize("zdt1", algorithm="nsgaii", n_evaluations=10000, seed=42)
+res = optimize("zdt1", algorithm="nsgaii", budget=10000, seed=42)
 
 # 2. Visualize immediately
 F = res.F  # Objective values (Pareto front approximation)
@@ -76,7 +76,7 @@ for algo in algorithms:
     # Collect hypervolume (HV) for each seed
     hvs = []
     for seed in range(n_seeds):
-        res = optimize(problem_name, algorithm=algo, n_evaluations=5000, seed=seed)
+        res = optimize(problem_name, algorithm=algo, budget=5000, seed=seed)
         # Assuming we have a helper or just use the last HV for now
         # VAMOS 'optimize' returns the final population. For HV, we'd typically use a metric.
         # Let's fake a metric for this quick demo or use a simple sum as a proxy for 'quality'
@@ -136,16 +136,21 @@ def run_algorithm(config_dict, ctx: EvalContext, checkpoint=None):
     # Calculate how much extra budget we need
     if checkpoint is not None and ctx.previous_budget:
         extra_budget = ctx.budget - ctx.previous_budget
-        # TODO: Use checkpoint to initialize population for continuation
+        # Note: Warm-start from checkpoint population is planned but not yet implemented.
+        # Each fidelity level currently restarts with fresh initialization.
+        # The checkpoint is preserved for budget accounting and future warm-start support.
     else:
         extra_budget = ctx.budget
     
-    res = optimize(
-        ctx.instance.name,
-        algorithm=algo_config,
-        n_evaluations=extra_budget,
-        seed=ctx.seed
+    selection = make_problem_selection(ctx.instance.name, n_var=ctx.instance.n_var)
+    run_cfg = OptimizeConfig(
+        problem=selection.instantiate(),
+        algorithm="nsgaii",
+        algorithm_config=algo_config,
+        termination=("n_eval", extra_budget),
+        seed=ctx.seed,
     )
+    res = optimize(run_cfg)
     
     # Return result AND checkpoint for next fidelity level
     new_checkpoint = {"X": res.X, "F": res.F}

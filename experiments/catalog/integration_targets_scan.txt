@@ -2,15 +2,15 @@ Wrote: experiments\catalog\integration_targets.json
 Files with hits: 27
 
 Top loop-candidate files:
-  src\vamos\operators\real\crossover.py  (n=6, best_score=11, best=SBXCrossover.__call__)
-  src\vamos\engine\algorithm\components\variation\pipeline.py  (n=4, best_score=15, best=VariationPipeline._produce_offspring_nonreal)
+  src\vamos\operators\real\crossover.py  (n=8, best_score=12, best=UNDXCrossover.__call__)
+  src\vamos\engine\algorithm\components\variation\pipeline.py  (n=4, best_score=16, best=VariationPipeline._produce_offspring_nonreal)
   src\vamos\foundation\kernel\numba_backend.py  (n=3, best_score=16, best=_fast_non_dominated_sort_ranks)
   src\vamos\engine\algorithm\moead\moead.py  (n=2, best_score=10, best=MOEAD.run)
   src\vamos\engine\algorithm\nsgaii\helpers.py  (n=2, best_score=12, best=generation_contributions)
   src\vamos\engine\algorithm\nsgaii\nsgaii.py  (n=2, best_score=12, best=NSGAII.run)
+  src\vamos\engine\algorithm\rvea\rvea.py  (n=2, best_score=8, best=RVEA.run)
   src\vamos\engine\algorithm\spea2\spea2.py  (n=2, best_score=10, best=SPEA2.run)
   src\vamos\engine\tuning\racing\sampler.py  (n=2, best_score=10, best=ModelBasedSampler.update)
-  src\vamos\experiment\study\runner.py  (n=2, best_score=8, best=StudyRunner.expand_tasks)
   src\vamos\ux\analytics\genealogy.py  (n=2, best_score=12, best=compute_generation_contributions)
   src\vamos\ux\studio\app.py  (n=1, best_score=12, best=main)
   src\vamos\engine\algorithm\nsgaiii\helpers.py  (n=1, best_score=10, best=fast_non_dominated_sort)
@@ -20,27 +20,27 @@ Top artifact-writer hint files:
   src\vamos\experiment\results.py  (write_hits=10)
   src\vamos\ux\studio\data.py  (write_hits=6)
   src\vamos\foundation\core\io_utils.py  (write_hits=5)
-  src\vamos\experiment\optimize.py  (write_hits=2)
+  src\vamos\experiment\optimization_result.py  (write_hits=2)
   src\vamos\experiment\quick\io.py  (write_hits=2)
   src\vamos\experiment\study\persistence.py  (write_hits=2)
   src\vamos\experiment\observers\storage.py  (write_hits=1)
 
 === BEST LOOP SNIPPET ===
 src\vamos\operators\real\crossover.py
-SBXCrossover.__call__ score= 11
-   63: 
-   64:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
-   65:         if self.workspace is None:
-   66:             return np.empty(shape, dtype=dtype)
-   67:         return self.workspace.request(key, shape, dtype)
-   68: 
-   69:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
-   70:         parents_arr = self._as_matings(parents, copy=False, name="parents")
-   71:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()
-   72:         n_pairs, _, _ = offspring.shape
-   73:         if n_pairs == 0:
-   74:             return offspring
-   75:         self._check_bounds_match(offspring[:, 0, :], self.lower)
+UNDXCrossover.__call__ score= 12
+  383:     ) -> None:
+  384:         self.prob = float(prob_crossover)
+  385:         self.zeta = float(zeta)
+  386:         self.eta = float(eta)
+  387:         self.lower, self.upper = _ensure_bounds(lower, upper)
+  388: 
+  389:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+  390:         groups = self._as_matings(parents, expected_parents=3, copy=False)
+  391:         n_groups, _, n_vars = groups.shape
+  392:         if n_groups == 0:
+  393:             return np.empty((0, 2, n_vars), dtype=groups.dtype)
+  394:         offspring = np.empty((n_groups, 2, n_vars), dtype=groups.dtype)
+  395:         for i in range(n_groups):
 
 === BEST WRITER SNIPPET ===
 src\vamos\ux\studio\app.py

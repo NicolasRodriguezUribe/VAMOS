@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any, Protocol, cast
 
 from vamos.foundation.kernel.backend import KernelBackend
+from vamos.foundation.data import weight_path
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.engine.algorithm.config import (
     NSGAIIConfig,
@@ -47,7 +48,6 @@ def build_nsgaii_algorithm(
     builder.pop_size(pop_size)
     builder.offspring_size(offspring_size)
     builder.engine(engine_name)
-    builder.survival("nsga2")
 
     if "crossover" in var_cfg:
         c_name, c_kwargs = var_cfg["crossover"]
@@ -89,9 +89,14 @@ def build_moead_algorithm(
     encoding = getattr(problem, "encoding", "real")
     moead_overrides = moead_variation or {}
     var_cfg = resolve_default_variation_config(encoding, moead_overrides)
+    if encoding == "real":
+        if "crossover" not in moead_overrides:
+            var_cfg["crossover"] = ("de", {"cr": 1.0, "f": 0.5})
+        if "mutation" not in moead_overrides:
+            var_cfg["mutation"] = ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})
     # Ensure default aggregation if not present
     if "aggregation" not in var_cfg:
-        var_cfg["aggregation"] = ("tchebycheff", {})
+        var_cfg["aggregation"] = ("pbi", {"theta": 5.0})
 
     # Merge any other overrides that resolve_default didn't catch (like aggregation)
     extra_cfg = {k: v for k, v in moead_overrides.items() if k not in var_cfg}
@@ -103,6 +108,14 @@ def build_moead_algorithm(
     builder.neighbor_size(20)
     builder.delta(0.9)
     builder.replace_limit(2)
+    if "weight_vectors" in moead_overrides and moead_overrides["weight_vectors"] is not None:
+        weight_cfg = moead_overrides["weight_vectors"]
+        if isinstance(weight_cfg, dict):
+            builder.weight_vectors(**weight_cfg)
+        else:
+            builder.weight_vectors(path=str(weight_cfg))
+    else:
+        builder.weight_vectors(path=str(weight_path("W3D_91.dat").parent))
 
     c_name, c_kwargs = var_cfg["crossover"]
     builder.crossover(c_name, **c_kwargs)
@@ -221,7 +234,7 @@ def build_spea2_algorithm(
     if "k_neighbors" in var_cfg and var_cfg["k_neighbors"] is not None:
         builder.k_neighbors(int(var_cfg["k_neighbors"]))
 
-    c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 0.9, "eta": 20.0}))
+    c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 1.0, "eta": 20.0}))
     builder.crossover(c_name, **c_kwargs)
 
     m_name, m_kwargs = var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
@@ -257,14 +270,14 @@ def build_ibea_algorithm(
     builder = IBEAConfig()
     builder.pop_size(pop_size)
     builder.engine(engine_name)
-    c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 0.9, "eta": 20.0}))
+    c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 1.0, "eta": 20.0}))
     builder.crossover(c_name, **c_kwargs)
     m_name, m_kwargs = var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
     builder.mutation(m_name, **m_kwargs)
     sel_name, sel_kwargs = var_cfg.get("selection", ("tournament", {"pressure": selection_pressure}))
     builder.selection(sel_name, **sel_kwargs)
     builder.indicator((var_cfg.get("indicator") or "eps"))
-    builder.kappa(float(var_cfg.get("kappa", 0.05)))
+    builder.kappa(float(var_cfg.get("kappa", 1.0)))
     if "repair" in var_cfg:
         r_name, r_kwargs = var_cfg["repair"]
         builder.repair(r_name, **r_kwargs)
@@ -332,6 +345,12 @@ def build_agemoea_algorithm(
     extra_cfg = {k: v for k, v in agemoea_overrides.items() if k not in var_cfg}
     var_cfg.update(extra_cfg)
 
+    if encoding == "real":
+        if "crossover" not in agemoea_overrides:
+            var_cfg["crossover"] = ("sbx", {"prob": 0.9, "eta": 15.0})
+        if "mutation" not in agemoea_overrides:
+            var_cfg["mutation"] = ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})
+
     builder = AGEMOEAConfig()
     builder.pop_size(pop_size)
     builder.engine(engine_name)
@@ -365,10 +384,21 @@ def build_rvea_algorithm(
     extra_cfg = {k: v for k, v in rvea_overrides.items() if k not in var_cfg}
     var_cfg.update(extra_cfg)
 
+    if encoding == "real":
+        if "crossover" not in rvea_overrides:
+            var_cfg["crossover"] = ("sbx", {"prob": 1.0, "eta": 30.0})
+        if "mutation" not in rvea_overrides:
+            var_cfg["mutation"] = ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})
+
     builder = RVEAConfig()
     builder.pop_size(pop_size)
     builder.engine(engine_name)
     builder.n_partitions(int(rvea_overrides.get("n_partitions", 12)))
+    builder.alpha(float(rvea_overrides.get("alpha", 2.0)))
+    if "adapt_freq" in rvea_overrides:
+        builder.adapt_freq(rvea_overrides["adapt_freq"])
+    else:
+        builder.adapt_freq(0.1)
 
     c_name, c_kwargs = var_cfg["crossover"]
     builder.crossover(c_name, **c_kwargs)

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -94,7 +94,7 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
         raise FileNotFoundError(f"Checkpoint not found: {path}")
 
     with open(path, "rb") as f:
-        checkpoint = pickle.load(f)
+        checkpoint = cast(dict[str, Any], pickle.load(f))
 
     version = checkpoint.get("version", 0)
     if version != 1:

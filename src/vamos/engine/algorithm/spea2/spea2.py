@@ -27,7 +27,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 
-from .helpers import environmental_selection
+from .helpers import dominance_matrix, environmental_selection, strength_raw_fitness, knn_density
 from .initialization import initialize_spea2_run
 from .state import SPEA2State, build_spea2_result
 
@@ -36,6 +36,41 @@ if TYPE_CHECKING:
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
 from vamos.hooks.live_viz import LiveVisualization
+
+
+def _tournament_by_strength(
+    raw_fitness: np.ndarray,
+    density: np.ndarray,
+    rng: np.random.Generator,
+    n_pairs: int,
+) -> np.ndarray:
+    """Binary tournament selection using strength ranking + kNN density."""
+    n = raw_fitness.size
+    if n == 0:
+        raise ValueError("Cannot select parents from an empty archive.")
+    if n == 1:
+        return np.zeros((n_pairs, 2), dtype=int)
+
+    n_parents = n_pairs * 2
+    winners = np.empty(n_parents, dtype=int)
+    for i in range(n_parents):
+        a, b = rng.choice(n, size=2, replace=False)
+        fa = raw_fitness[a]
+        fb = raw_fitness[b]
+        if fa < fb:
+            winners[i] = a
+        elif fb < fa:
+            winners[i] = b
+        else:
+            da = density[a]
+            db = density[b]
+            if da > db:
+                winners[i] = a
+            elif db > da:
+                winners[i] = b
+            else:
+                winners[i] = a if rng.random() < 0.5 else b
+    return winners.reshape(n_pairs, 2)
 
 
 class SPEA2:
@@ -78,7 +113,7 @@ class SPEA2:
         self.kernel = kernel
         self._st: SPEA2State | None = None
         self._live_cb = None
-        self._eval_backend = None
+        self._eval_strategy = None
         self._max_eval = None
         self._hv_tracker = None
         self._problem = None
@@ -88,7 +123,7 @@ class SPEA2:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> dict[str, Any]:
         """Run SPEA2 optimization.
@@ -101,7 +136,7 @@ class SPEA2:
             Termination criterion: ("n_eval", N) or ("hv", {...}).
         seed : int
             Random seed for reproducibility.
-        eval_backend : EvaluationBackend | None
+        eval_strategy : EvaluationBackend | None
             Optional evaluation backend for parallel evaluation.
         live_viz : LiveVisualization | None
             Optional live visualization callback.
@@ -111,7 +146,7 @@ class SPEA2:
         dict[str, Any]
             Result dictionary with X, F, evaluations, and archive.
         """
-        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        live_cb, eval_strategy, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_strategy, live_viz)
         st = self._st
         assert st is not None, "State not initialized"
 
@@ -125,7 +160,7 @@ class SPEA2:
             X_off = self.ask()
 
             # Evaluate offspring
-            eval_result = eval_backend.evaluate(X_off, problem)
+            eval_result = eval_strategy.evaluate(X_off, problem)
             hv_reached = self.tell(eval_result, problem)
 
             if hv_tracker.enabled and hv_tracker.reached(st.env_F):
@@ -146,18 +181,18 @@ class SPEA2:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> tuple[Any, Any, int, Any]:
         """Initialize algorithm state for a run."""
-        self._st, live_cb, eval_backend, max_eval, hv_tracker = initialize_spea2_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_spea2_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
         self._live_cb = live_cb
-        self._eval_backend = eval_backend
+        self._eval_strategy = eval_strategy
         self._max_eval = max_eval
         self._hv_tracker = hv_tracker
-        return live_cb, eval_backend, max_eval, hv_tracker
+        return live_cb, eval_strategy, max_eval, hv_tracker
 
     # -------------------------------------------------------------------------
     # Ask/Tell Interface
@@ -168,12 +203,12 @@ class SPEA2:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop."""
-        self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = self._initialize_run(
-            problem, termination, seed, eval_backend, live_viz
+        self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = self._initialize_run(
+            problem, termination, seed, eval_strategy, live_viz
         )
         self._problem = problem
         if self._st is not None:
@@ -198,10 +233,11 @@ class SPEA2:
         st = self._st
         n_pairs = st.offspring_size
 
-        # Random selection from internal archive
-        # SPEA2 uses fitness-based tournament but for simplicity we use random
-        archive_size = st.env_X.shape[0]
-        parent_idx = st.rng.integers(0, archive_size, size=(n_pairs, 2))
+        # Fitness-based binary tournament selection (SPEA2)
+        dom, _, _ = dominance_matrix(st.env_F, st.env_G, st.constraint_mode)
+        raw_fitness = strength_raw_fitness(dom)
+        density = knn_density(st.env_F, st.k_neighbors or 1)
+        parent_idx = _tournament_by_strength(raw_fitness, density, st.rng, n_pairs)
 
         # Gather parents in shape (n_pairs, 2, n_var)
         n_var = st.env_X.shape[1]

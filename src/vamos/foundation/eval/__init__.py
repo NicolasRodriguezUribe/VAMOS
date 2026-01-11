@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Protocol
+from typing import Any, Optional, Protocol
 
 import numpy as np
 
@@ -17,7 +17,7 @@ class EvaluationResult:
 class EvaluationBackend(Protocol):
     """Protocol for evaluation backends."""
 
-    def evaluate(self, X: np.ndarray, problem) -> EvaluationResult: ...
+    def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult: ...
 
     def close(self) -> None:  # pragma: no cover - optional for async backends
         """Clean up any resources (executors, pools)."""

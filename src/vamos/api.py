@@ -15,11 +15,7 @@ from __future__ import annotations
 
 from vamos.experiment.diagnostics.self_check import run_self_check
 from vamos.foundation.core.experiment_config import ExperimentConfig
-from vamos.experiment.optimize import (
-    OptimizeConfig,
-    OptimizationResult,
-    run_optimization,
-)
+from vamos.experiment.optimize import OptimizeConfig, OptimizationResult
 from vamos.foundation.metrics.pareto import pareto_filter
 from vamos.foundation.problem.registry import (
     ProblemSelection,
@@ -39,7 +35,6 @@ from vamos.experiment.unified import optimize
 __all__ = [
     # Primary API
     "optimize",
-    "run_optimization",
     "OptimizeConfig",
     "OptimizationResult",
     "pareto_filter",

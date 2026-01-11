@@ -44,9 +44,9 @@ def _aos_variation() -> dict:
     return {
         "adaptive_operator_selection": {
             "enabled": True,
-            "policy": "eps_greedy",
+            "method": "epsilon_greedy",
             "reward_scope": "survival",
-            "exploration": 0.2,
+            "epsilon": 0.2,
             "min_usage": 1,
             "rng_seed": 0,
             "operator_pool": [

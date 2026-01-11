@@ -13,11 +13,11 @@ Main runner
 - `--max-evaluations`
 - `--hv-threshold` and `--hv-reference-front`
 - `--selection-pressure`, `--external-archive-size`
-- `--eval-backend`: serial | multiprocessing (with `--n-workers`)
+- `--eval-strategy`: serial | multiprocessing (with `--n-workers`)
 - `--live-viz` with `--live-viz-interval`, `--live-viz-max-points`
 - Variation overrides per algorithm (examples):
-  - `--nsgaii-crossover sbx --nsgaii-crossover-prob 0.9 --nsgaii-mutation pm --nsgaii-mutation-prob 1/n`
-  - `--moead-crossover sbx --moead-mutation pm --moead-aggregation tchebycheff`
+  - `--nsgaii-crossover sbx --nsgaii-crossover-prob 1.0 --nsgaii-mutation pm --nsgaii-mutation-prob 1/n`
+  - `--moead-crossover sbx --moead-mutation pm --moead-aggregation pbi`
   - `--smsemoa-mutation pm --nsga3-crossover sbx`
 
 Config files (YAML/JSON)
@@ -34,7 +34,7 @@ defaults:
   max_evaluations: 20000
   hv_threshold: 0.8
   moead:
-    crossover: {method: sbx, prob: 0.9, eta: 20}
+    crossover: {method: sbx, prob: 1.0, eta: 20}
     mutation: {method: pm, prob: "1/n", eta: 20}
 problems:
   bin_knapsack:

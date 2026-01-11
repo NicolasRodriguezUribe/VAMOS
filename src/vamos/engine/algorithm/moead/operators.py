@@ -22,6 +22,8 @@ from vamos.operators.binary import (
 from vamos.operators.integer import (
     arithmetic_integer_crossover,
     creep_mutation,
+    integer_polynomial_mutation,
+    integer_sbx_crossover,
     random_reset_mutation,
     uniform_integer_crossover,
 )
@@ -46,6 +48,7 @@ BINARY_CROSSOVER = {
     "one_point": one_point_crossover,
     "single_point": one_point_crossover,
     "1point": one_point_crossover,
+    "spx": one_point_crossover,
     "two_point": two_point_crossover,
     "2point": two_point_crossover,
     "uniform": uniform_crossover,
@@ -60,12 +63,15 @@ INT_CROSSOVER = {
     "uniform": uniform_integer_crossover,
     "blend": arithmetic_integer_crossover,
     "arithmetic": arithmetic_integer_crossover,
+    "sbx": integer_sbx_crossover,
 }
 
 INT_MUTATION = {
     "reset": random_reset_mutation,
     "random_reset": random_reset_mutation,
     "creep": creep_mutation,
+    "pm": integer_polynomial_mutation,
+    "polynomial": integer_polynomial_mutation,
 }
 
 PERM_CROSSOVER = {
@@ -141,7 +147,7 @@ def build_variation_operators(
     elif encoding == "permutation":
         return _build_permutation_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif encoding in {"continuous", "real"}:
-        return _build_continuous_operators(cross_params, mut_params, n_var, xl, xu, rng)
+        return _build_continuous_operators(cross_method, cross_params, mut_params, n_var, xl, xu, rng)
     else:
         raise ValueError(f"MOEA/D does not support encoding '{encoding}'.")
 
@@ -203,6 +209,11 @@ def _build_integer_operators(
 
         def mutation(X_child, rng=rng):
             return mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child
+    elif mut_method in {"pm", "polynomial"}:
+
+        def mutation(X_child, rng=rng):
+            eta = float(mut_params.get("eta", 20.0))
+            return mut_fn(X_child, mut_prob, eta, xl, xu, rng) or X_child
     else:
 
         def mutation(X_child, rng=rng):
@@ -212,6 +223,7 @@ def _build_integer_operators(
 
 
 def _build_continuous_operators(
+    cross_method: str,
     cross_params: dict,
     mut_params: dict,
     n_var: int,
@@ -220,18 +232,44 @@ def _build_continuous_operators(
     rng: np.random.Generator,
 ) -> tuple[Callable, Callable]:
     """Build variation operators for continuous/real encoding."""
-    cross_prob = float(cross_params.get("prob", 0.9))
-    cross_eta = float(cross_params.get("eta", 20.0))
+    method = (cross_method or "sbx").lower()
     workspace = VariationWorkspace()
 
-    crossover_operator = SBXCrossover(
-        prob_crossover=cross_prob,
-        eta=cross_eta,
-        lower=xl,
-        upper=xu,
-        workspace=workspace,
-        allow_inplace=True,
-    )
+    if method in {"de", "differential", "differential_evolution"}:
+        cr = float(cross_params.get("cr", cross_params.get("CR", 1.0)))
+        f = float(cross_params.get("f", cross_params.get("F", 0.5)))
+
+        def crossover(parents, rng=rng):
+            parents_arr = np.asarray(parents)
+            if parents_arr.ndim != 3 or parents_arr.shape[1] != 3:
+                raise ValueError("DE crossover expects parents shaped (n_pairs, 3, n_var).")
+            n_pairs, _, n_vars = parents_arr.shape
+            base = parents_arr[:, 2, :]
+            p1 = parents_arr[:, 0, :]
+            p2 = parents_arr[:, 1, :]
+            mutant = base + f * (p1 - p2)
+            rand = rng.random((n_pairs, n_vars))
+            mask = rand < cr
+            j_rand = rng.integers(0, n_vars, size=n_pairs)
+            mask[np.arange(n_pairs), j_rand] = True
+            child = np.where(mask, mutant, base)
+            np.clip(child, xl, xu, out=child)
+            return child[:, None, :]
+
+    else:
+        cross_prob = float(cross_params.get("prob", 0.9))
+        cross_eta = float(cross_params.get("eta", 20.0))
+        crossover_operator = SBXCrossover(
+            prob_crossover=cross_prob,
+            eta=cross_eta,
+            lower=xl,
+            upper=xu,
+            workspace=workspace,
+            allow_inplace=True,
+        )
+
+        def crossover(parents, rng=rng):
+            return crossover_operator(parents, rng)
 
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     mut_eta = float(mut_params.get("eta", 20.0))
@@ -242,9 +280,6 @@ def _build_continuous_operators(
         upper=xu,
         workspace=workspace,
     )
-
-    def crossover(parents, rng=rng):
-        return crossover_operator(parents, rng)
 
     def mutation(X_child, rng=rng):
         return mutation_operator(X_child, rng)

@@ -59,6 +59,9 @@ vamos-tune --algorithm nsgaii --problem zdt1 --budget 1000 --n-jobs 4
 
 This will run a racing tuner to find the best hyperparameters for NSGA-II on ZDT1.
 
+Notes:
+- The MOEA/D tuner explores both SBX and DE crossovers, and can select PBI aggregation (with a tunable theta). These settings align with the jMetalPy default configuration when chosen.
+
 ### Options
 
 - `--algorithm`: Algorithm to tune (e.g., nsgaii, moead).

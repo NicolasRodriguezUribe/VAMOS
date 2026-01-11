@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
 
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed  # type: ignore[import-untyped]
 
 from .state import ConfigState
 from .tuning_task import EvalContext
@@ -40,6 +40,18 @@ def _run_multi_fidelity(
     configs: List[ConfigState] = tuner._sample_initial_configs()
     num_experiments = 0
 
+    inst_indices = list(range(len(tuner.instances)))
+    seed_indices = list(range(len(tuner.seeds)))
+    if tuner.scenario.instance_order_random:
+        tuner.rng.shuffle(inst_indices)
+    if tuner.scenario.seed_order_random:
+        tuner.rng.shuffle(seed_indices)
+    blocks = [(inst_idx, seed_idx) for seed_idx in seed_indices for inst_idx in inst_indices]
+    n_blocks = len(blocks)
+
+    if n_blocks == 0:
+        raise ValueError("Multi-fidelity tuning requires at least one instance and one seed.")
+
     if verbose_flag:
         _logger().info(
             "[multi-fidelity] Starting with %d configs, %d fidelity levels: %s",
@@ -55,33 +67,36 @@ def _run_multi_fidelity(
                 _logger().info("[multi-fidelity] No configs alive, stopping.")
             break
 
-        if num_experiments + alive_count > tuner.scenario.max_experiments:
+        stage_evals = alive_count * n_blocks
+        if num_experiments + stage_evals > tuner.scenario.max_experiments:
             if verbose_flag:
                 _logger().info("[multi-fidelity] Experiment budget exhausted.")
             break
 
         if verbose_flag:
             _logger().info(
-                "[multi-fidelity] Fidelity %d/%d (budget=%d): evaluating %d configs",
+                "[multi-fidelity] Fidelity %d/%d (budget=%d): evaluating %d configs across %d blocks",
                 fidelity_idx + 1,
                 len(fidelity_levels),
                 budget,
                 alive_count,
+                n_blocks,
             )
 
-        inst_idx = fidelity_idx % len(tuner.instances)
-        seed_idx = fidelity_idx % len(tuner.seeds)
+        for inst_idx, seed_idx in blocks:
+            _run_stage_with_budget(tuner, configs, inst_idx, seed_idx, eval_fn, budget, fidelity_idx)
 
-        _run_stage_with_budget(tuner, configs, inst_idx, seed_idx, eval_fn, budget, fidelity_idx)
-        num_experiments += alive_count
+        num_experiments += stage_evals
 
         scored_configs: List[Tuple[int, float]] = []
         for idx, state in enumerate(configs):
             if not state.alive:
                 continue
-            if not state.scores:
-                continue
-            agg = float(tuner.task.aggregator(state.scores))
+            scores = state.fidelity_scores.get(fidelity_idx, [])
+            if scores:
+                agg = float(tuner.task.aggregator(scores))
+            else:
+                agg = float("-inf") if tuner.task.maximize else float("inf")
             scored_configs.append((idx, agg))
 
         if tuner.task.maximize:
@@ -136,20 +151,27 @@ def _run_stage_with_budget(
     instance = tuner.instances[inst_idx]
     seed = tuner.seeds[seed_idx]
     warm_start = tuner.scenario.fidelity_warm_start
+    block_key = (inst_idx, seed_idx)
 
     tasks = []
     indices = []
     for idx, state in enumerate(configs):
         if not state.alive:
             continue
+        if warm_start:
+            checkpoint = state.checkpoint_map.get(block_key, state.checkpoint)
+            prev_budget = state.last_budget_map.get(block_key, state.last_budget)
+        else:
+            checkpoint = None
+            prev_budget = None
 
         ctx = EvalContext(
             instance=instance,
             seed=seed,
             budget=budget,
             fidelity_level=fidelity_level,
-            previous_budget=state.last_budget if warm_start else None,
-            checkpoint=state.checkpoint if warm_start else None,
+            previous_budget=prev_budget if warm_start else None,
+            checkpoint=checkpoint if warm_start else None,
         )
         tasks.append((state.config, ctx, idx))
         indices.append(idx)
@@ -164,11 +186,14 @@ def _run_stage_with_budget(
             if warm_start and isinstance(result, tuple) and len(result) == 2:
                 score, checkpoint = result
                 configs[idx].checkpoint = checkpoint
+                configs[idx].checkpoint_map[block_key] = checkpoint
             else:
                 score = float(result) if not isinstance(result, tuple) else float(result[0])
 
             configs[idx].scores.append(float(score))
+            configs[idx].fidelity_scores.setdefault(fidelity_level, []).append(float(score))
             configs[idx].last_budget = budget
+            configs[idx].last_budget_map[block_key] = budget
     else:
         results = Parallel(n_jobs=tuner.scenario.n_jobs)(
             delayed(_eval_worker_warmstart)(eval_fn, cfg, ctx, warm_start) for cfg, ctx, _ in tasks
@@ -178,11 +203,14 @@ def _run_stage_with_budget(
             if warm_start and isinstance(result, tuple) and len(result) == 2:
                 score, checkpoint = result
                 configs[idx].checkpoint = checkpoint
+                configs[idx].checkpoint_map[block_key] = checkpoint
             else:
                 score = float(result) if not isinstance(result, tuple) else float(result[0])
 
             configs[idx].scores.append(float(score))
+            configs[idx].fidelity_scores.setdefault(fidelity_level, []).append(float(score))
             configs[idx].last_budget = budget
+            configs[idx].last_budget_map[block_key] = budget
 
 
 __all__ = ["_run_multi_fidelity", "_run_stage_with_budget"]

@@ -26,14 +26,14 @@ class WeldedBeamDesignProblem:
         g4: geometric coupling (h <= b)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.n_var = 6
         self.n_obj = 2
         self.encoding = "mixed"
         self.xl = np.array([0.125, 0.1, 0.1, 0.125, 0.0, 2.0], dtype=float)
         self.xu = np.array([5.0, 10.0, 10.0, 5.0, 2.0, 6.0], dtype=float)
         self._material_factor = np.array([1.0, 1.15, 1.3])
-        self.mixed_spec = {
+        self.mixed_spec: dict[str, np.ndarray] = {
             "real_idx": np.array([0, 1, 2, 3], dtype=int),
             "int_idx": np.array([5], dtype=int),
             "cat_idx": np.array([4], dtype=int),
@@ -44,7 +44,7 @@ class WeldedBeamDesignProblem:
             "cat_cardinality": np.array([3], dtype=int),
         }
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         h = X[:, 0]
         l = X[:, 1]
         t = X[:, 2]

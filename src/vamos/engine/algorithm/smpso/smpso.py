@@ -21,6 +21,7 @@ from vamos.engine.algorithm.components.hooks import (
     notify_generation,
     track_offspring_genealogy,
 )
+from vamos.engine.algorithm.components.archive import _single_front_crowding
 from .helpers import (
     extract_eval_arrays,
     update_personal_bests,
@@ -37,6 +38,42 @@ from vamos.foundation.observer import RunContext
 
 
 __all__ = ["SMPSO"]
+
+
+def _select_global_best(
+    arch_X: np.ndarray,
+    arch_F: np.ndarray,
+    rng: np.random.Generator,
+    n_select: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Select leaders using crowding-distance binary tournaments.
+
+    Returns the selected leaders and their indices in the archive.
+    """
+    size = arch_X.shape[0]
+    if size == 0:
+        raise ValueError("Archive is empty.")
+    if size <= 2:
+        leaders = np.repeat(arch_X[:1], n_select, axis=0)
+        leader_idx = np.zeros(n_select, dtype=int)
+        return leaders, leader_idx
+
+    crowding = _single_front_crowding(arch_F)
+    leaders = np.empty((n_select, arch_X.shape[1]), dtype=arch_X.dtype)
+    leader_idx = np.empty(n_select, dtype=int)
+    for i in range(n_select):
+        a, b = rng.choice(size, size=2, replace=False)
+        ca = crowding[a]
+        cb = crowding[b]
+        if ca > cb:
+            winner = a
+        elif cb > ca:
+            winner = b
+        else:
+            winner = a if rng.random() < 0.5 else b
+        leaders[i] = arch_X[winner]
+        leader_idx[i] = winner
+    return leaders, leader_idx
 
 
 class SMPSO:
@@ -81,7 +118,7 @@ class SMPSO:
         self.kernel = kernel
         self._st: SMPSOState | None = None
         self._live_cb: "LiveVisualization | None" = None
-        self._eval_backend: "EvaluationBackend | None" = None
+        self._eval_strategy: "EvaluationBackend | None" = None
         self._max_eval: int = 0
         self._hv_tracker: Any = None
         self._problem: "ProblemProtocol | None" = None
@@ -95,7 +132,7 @@ class SMPSO:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> dict[str, Any]:
         """Run SMPSO optimization loop.
@@ -108,7 +145,7 @@ class SMPSO:
             Termination criterion.
         seed : int
             Random seed.
-        eval_backend : EvaluationBackend, optional
+        eval_strategy : EvaluationBackend, optional
             Evaluation backend.
         live_viz : LiveVisualization, optional
             Live visualization callback.
@@ -118,11 +155,11 @@ class SMPSO:
         dict
             Result dictionary with X, F, archive data.
         """
-        self._st, live_cb, eval_backend, max_eval, hv_tracker = initialize_smpso_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_smpso_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
         self._live_cb = live_cb
-        self._eval_backend = eval_backend
+        self._eval_strategy = eval_strategy
         self._max_eval = max_eval
         self._hv_tracker = hv_tracker
         self._problem = problem
@@ -143,7 +180,7 @@ class SMPSO:
 
         while st.n_eval < max_eval and not hv_reached and not stop_requested:
             X_off = self.ask()
-            eval_result = eval_backend.evaluate(X_off, problem)
+            eval_result = eval_strategy.evaluate(X_off, problem)
             hv_reached = self.tell(eval_result, problem)
 
             if hv_tracker.enabled and hv_tracker.reached(st.hv_points()):
@@ -166,7 +203,7 @@ class SMPSO:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop.
@@ -179,13 +216,13 @@ class SMPSO:
             Termination criterion.
         seed : int
             Random seed.
-        eval_backend : EvaluationBackend, optional
+        eval_strategy : EvaluationBackend, optional
             Evaluation backend.
         live_viz : LiveVisualization, optional
             Live visualization callback.
         """
-        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = initialize_smpso_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = initialize_smpso_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
         self._problem = problem
         if self._st is not None and self._live_cb is not None:
@@ -221,38 +258,54 @@ class SMPSO:
         if st.pending_offspring is not None:
             raise RuntimeError("Previous offspring not yet consumed by tell().")
 
-        # Select leaders from archive using tournament selection
+        # Select leaders from archive using crowding-based binary tournament
         arch_X = st.archive_X
         arch_F = st.archive_F
         if arch_X is None or arch_F is None or arch_F.size == 0:
             leader_idx = st.rng.integers(0, st.X.shape[0], size=st.X.shape[0])
             leaders = st.X[leader_idx]
         else:
-            ranks, crowding = self.kernel.nsga2_ranking(arch_F)
-            leader_idx = self.kernel.tournament_selection(
-                ranks=ranks,
-                crowding=crowding,
-                pressure=2,
-                rng=st.rng,
-                n_parents=st.X.shape[0],
-            )
-            leaders = arch_X[leader_idx]
+            leaders, leader_idx = _select_global_best(arch_X, arch_F, st.rng, st.X.shape[0])
 
-        # PSO velocity update
-        r1 = st.rng.random(size=st.X.shape)
-        r2 = st.rng.random(size=st.X.shape)
-        cognitive = st.c1 * r1 * (st.pbest_X - st.X)
-        social = st.c2 * r2 * (leaders - st.X)
-        velocity = st.inertia * st.velocity + cognitive + social
-        velocity = np.clip(velocity, -st.vmax, st.vmax)
+        # PSO velocity update (SMPSO with constriction)
+        pop_size, n_var = st.X.shape
+        r1 = np.round(st.rng.uniform(st.r1_min, st.r1_max, size=(pop_size, 1)), 1)
+        r2 = np.round(st.rng.uniform(st.r2_min, st.r2_max, size=(pop_size, 1)), 1)
+        c1 = np.round(st.rng.uniform(st.c1_min, st.c1_max, size=(pop_size, 1)), 1)
+        c2 = np.round(st.rng.uniform(st.c2_min, st.c2_max, size=(pop_size, 1)), 1)
+        rho = c1 + c2
+        disc = np.maximum(rho * rho - 4.0 * rho, 0.0)
+        constriction = np.where(
+            rho <= 4.0,
+            1.0,
+            2.0 / (2.0 - rho - np.sqrt(disc)),
+        )
+        velocity = constriction * (
+            st.max_weight * st.velocity
+            + c1 * r1 * (st.pbest_X - st.X)
+            + c2 * r2 * (leaders - st.X)
+        )
+        velocity = np.clip(velocity, st.delta_min, st.delta_max)
 
         # Position update
         X_new = st.X + velocity
-        np.clip(X_new, st.xl, st.xu, out=X_new)
+        low_mask = X_new < st.xl
+        if np.any(low_mask):
+            X_new = np.where(low_mask, st.xl, X_new)
+            velocity[low_mask] *= st.change_velocity1
+        high_mask = X_new > st.xu
+        if np.any(high_mask):
+            X_new = np.where(high_mask, st.xu, X_new)
+            velocity[high_mask] *= st.change_velocity2
 
         # Apply mutation (turbulence)
         if st.mutation_op is not None:
-            X_new = st.mutation_op(X_new, st.rng)
+            if st.mutation_every <= 1:
+                X_new = st.mutation_op(X_new, st.rng)
+            else:
+                mask = (np.arange(pop_size) % st.mutation_every) == 0
+                if np.any(mask):
+                    X_new[mask] = st.mutation_op(X_new[mask], st.rng)
 
         # Apply repair
         if st.repair_op is not None:

@@ -23,7 +23,7 @@ class MixedDesignProblem:
     Objective 2: linear cost combining ints and category-specific costs.
     """
 
-    def __init__(self, n_var: int = 9):
+    def __init__(self, n_var: int = 9) -> None:
         if n_var <= 0:
             raise ValueError("n_var must be positive.")
         n_real, n_int, n_cat = _split_counts(n_var)
@@ -69,7 +69,7 @@ class MixedDesignProblem:
         }
         self._validate_mixed_spec(self.mixed_spec)
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}).")
 
@@ -106,7 +106,7 @@ class MixedDesignProblem:
         }
 
     @staticmethod
-    def _validate_mixed_spec(spec: dict) -> None:
+    def _validate_mixed_spec(spec: dict[str, np.ndarray]) -> None:
         required = (
             "real_idx",
             "int_idx",

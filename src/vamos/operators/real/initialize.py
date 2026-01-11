@@ -10,7 +10,13 @@ class LatinHypercubeInitializer:
     Generates n_solutions points inside [lower, upper].
     """
 
-    def __init__(self, n_solutions: int, lower: np.ndarray, upper: np.ndarray, rng: Optional[np.random.Generator] = None):
+    def __init__(
+        self,
+        n_solutions: int,
+        lower: np.ndarray,
+        upper: np.ndarray,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
         self.n_solutions = int(n_solutions)
         if self.n_solutions <= 0:
             raise ValueError("n_solutions must be positive.")
@@ -32,7 +38,7 @@ class LatinHypercubeInitializer:
             self.rng.shuffle(strata)
             samples[:, j] = strata
         span = self.upper - self.lower
-        return self.lower + samples * span
+        return np.asarray(self.lower + samples * span, dtype=float)
 
 
 class ScatterSearchInitializer:
@@ -47,7 +53,7 @@ class ScatterSearchInitializer:
         upper: np.ndarray,
         base_size: int = 20,
         rng: Optional[np.random.Generator] = None,
-    ):
+    ) -> None:
         self.n_solutions = int(n_solutions)
         if self.n_solutions <= 0:
             raise ValueError("n_solutions must be positive.")

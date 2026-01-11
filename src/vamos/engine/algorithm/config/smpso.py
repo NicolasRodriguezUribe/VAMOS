@@ -3,18 +3,36 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
+class SMPSOConfigDict(TypedDict):
+    pop_size: int
+    archive_size: int
+    mutation: Tuple[str, Dict[str, Any]]
+    engine: str
+    inertia: float
+    c1: float
+    c2: float
+    vmax_fraction: float
+    repair: Optional[Tuple[str, Dict[str, Any]]]
+    initializer: Optional[Dict[str, Any]]
+    constraint_mode: str
+    track_genealogy: bool
+    result_mode: Optional[str]
+    archive: Optional[Dict[str, Any]]
+    archive_type: Optional[str]
+
+
 @dataclass(frozen=True)
-class SMPSOConfigData(_SerializableConfig):
+class SMPSOConfigData(_SerializableConfig["SMPSOConfigDict"]):
     pop_size: int
     archive_size: int  # Internal archive (part of SMPSO algorithm)
     mutation: Tuple[str, Dict[str, Any]]
     engine: str
-    inertia: float = 0.5
+    inertia: float = 0.1
     c1: float = 1.5
     c2: float = 1.5
     vmax_fraction: float = 0.5
@@ -33,6 +51,24 @@ class SMPSOConfig:
     def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
 
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 100,
+        n_var: int | None = None,
+        engine: str = "numpy",
+    ) -> "SMPSOConfigData":
+        """Create a default SMPSO configuration."""
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        return (
+            cls()
+            .pop_size(pop_size)
+            .archive_size(pop_size)
+            .mutation("pm", prob=mut_prob, eta=20.0)
+            .engine(engine)
+            .fixed()
+        )
+
     def pop_size(self, value: int) -> "SMPSOConfig":
         self._cfg["pop_size"] = value
         return self
@@ -41,7 +77,7 @@ class SMPSOConfig:
         self._cfg["archive_size"] = value
         return self
 
-    def mutation(self, method: str, **kwargs) -> "SMPSOConfig":
+    def mutation(self, method: str, **kwargs: Any) -> "SMPSOConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
@@ -65,11 +101,11 @@ class SMPSOConfig:
         self._cfg["vmax_fraction"] = value
         return self
 
-    def repair(self, method: str, **kwargs) -> "SMPSOConfig":
+    def repair(self, method: str, **kwargs: Any) -> "SMPSOConfig":
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs) -> "SMPSOConfig":
+    def initializer(self, method: str, **kwargs: Any) -> "SMPSOConfig":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -85,7 +121,7 @@ class SMPSOConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs) -> "SMPSOConfig":
+    def archive(self, size: int, **kwargs: Any) -> "SMPSOConfig":
         """
         Configure an external archive for result storage.
 
@@ -121,7 +157,7 @@ class SMPSOConfig:
             archive_size=self._cfg["archive_size"],
             mutation=self._cfg["mutation"],
             engine=self._cfg["engine"],
-            inertia=float(self._cfg.get("inertia", 0.5)),
+            inertia=float(self._cfg.get("inertia", 0.1)),
             c1=float(self._cfg.get("c1", 1.5)),
             c2=float(self._cfg.get("c2", 1.5)),
             vmax_fraction=float(self._cfg.get("vmax_fraction", 0.5)),

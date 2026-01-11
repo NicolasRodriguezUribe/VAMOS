@@ -219,7 +219,7 @@ def normalize_objectives(
 
     range_vals = nadir - ideal
     range_vals = np.where(range_vals < eps, eps, range_vals)
-    return (F - ideal) / range_vals
+    return np.asarray((F - ideal) / range_vals, dtype=float)
 
 
 __all__ = [

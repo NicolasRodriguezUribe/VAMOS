@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import numpy as np
 
@@ -60,7 +61,7 @@ class PolynomialMutation(Mutation):
         rng.random(out=buf)
         return buf
 
-    def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
+    def _buffer(self, key: str, shape: tuple[int, ...], dtype: Any) -> np.ndarray:
         if self.workspace is None:
             return np.empty(shape, dtype=dtype)
         return self.workspace.request(key, shape, dtype)

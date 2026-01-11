@@ -47,7 +47,7 @@ def pareto_nondominated_mask(F: np.ndarray) -> np.ndarray:
     lt = F[:, None, :] < F[None, :, :]
     dom = np.all(le, axis=2) & np.any(lt, axis=2)
     dominated = np.any(dom, axis=0)
-    return ~dominated
+    return np.asarray(~dominated, dtype=bool)
 
 
 def crowding_distance(F: np.ndarray) -> np.ndarray:

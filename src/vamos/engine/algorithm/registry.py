@@ -12,6 +12,7 @@ from typing import Any, Callable, Mapping, Protocol
 
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
+from vamos.engine.algorithm.config.types import AlgorithmConfigMapping
 
 from .nsgaii import NSGAII
 from .nsgaiii import NSGAIII
@@ -29,58 +30,58 @@ class AlgorithmLike(Protocol):
         problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: Any | None = None,
+        eval_strategy: Any | None = None,
         live_viz: Any | None = None,
     ) -> Mapping[str, Any]: ...
 
 
-AlgorithmBuilder = Callable[[dict[str, Any], KernelBackend], AlgorithmLike]
+AlgorithmBuilder = Callable[[AlgorithmConfigMapping, KernelBackend], AlgorithmLike]
 
 _ALGORITHMS: Registry[AlgorithmBuilder] | None = None
 
 
-def _build_nsgaii(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
-    return NSGAII(cfg, kernel=kernel)
+def _build_nsgaii(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
+    return NSGAII(dict(cfg), kernel=kernel)
 
 
-def _build_nsgaiii(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
-    return NSGAIII(cfg, kernel=kernel)
+def _build_nsgaiii(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
+    return NSGAIII(dict(cfg), kernel=kernel)
 
 
-def _build_moead(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
-    return MOEAD(cfg, kernel=kernel)
+def _build_moead(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
+    return MOEAD(dict(cfg), kernel=kernel)
 
 
-def _build_smsemoa(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
-    return SMSEMOA(cfg, kernel=kernel)
+def _build_smsemoa(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
+    return SMSEMOA(dict(cfg), kernel=kernel)
 
 
-def _build_spea2(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
-    return SPEA2(cfg, kernel=kernel)
+def _build_spea2(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
+    return SPEA2(dict(cfg), kernel=kernel)
 
 
-def _build_ibea(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
-    return IBEA(cfg, kernel=kernel)
+def _build_ibea(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
+    return IBEA(dict(cfg), kernel=kernel)
 
 
-def _build_smpso(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
+def _build_smpso(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
     """
     Note: SMPSO typically requires a different config structure, but the builder
     signature remains consistent.
     """
-    return SMPSO(cfg, kernel=kernel)
+    return SMPSO(dict(cfg), kernel=kernel)
 
 
-def _build_agemoea(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
+def _build_agemoea(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
     from .agemoea import AGEMOEA
 
-    return AGEMOEA(cfg, kernel=kernel)
+    return AGEMOEA(dict(cfg), kernel=kernel)
 
 
-def _build_rvea(cfg: dict[str, Any], kernel: KernelBackend) -> AlgorithmLike:
+def _build_rvea(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
     from .rvea import RVEA
 
-    return RVEA(cfg, kernel=kernel)
+    return RVEA(dict(cfg), kernel=kernel)
 
 
 def _register_algorithms(registry: Registry[AlgorithmBuilder]) -> None:

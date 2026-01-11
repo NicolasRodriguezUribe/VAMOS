@@ -50,7 +50,7 @@ class NSGAIII:
     ----------
     config : dict
         Algorithm configuration with keys:
-        - pop_size (int): Population size (should align with reference points)
+        - pop_size (int): Population size (recommended to align with reference points)
         - crossover (tuple): Crossover operator config
         - mutation (tuple): Mutation operator config
         - reference_directions (dict, optional): Reference point configuration
@@ -86,7 +86,7 @@ class NSGAIII:
         self.kernel = kernel
         self._st: NSGAIIIState | None = None
         self._live_cb: "LiveVisualization | None" = None
-        self._eval_backend: "EvaluationBackend | None" = None
+        self._eval_strategy: "EvaluationBackend | None" = None
         self._max_eval: int = 0
         self._hv_tracker: Any = None
         self._problem: "ProblemProtocol | None" = None
@@ -100,7 +100,7 @@ class NSGAIII:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> dict[str, Any]:
         """Run NSGA-III optimization loop.
@@ -113,7 +113,7 @@ class NSGAIII:
             Termination criterion, e.g., ("n_eval", 10000).
         seed : int
             Random seed for reproducibility.
-        eval_backend : EvaluationBackend, optional
+        eval_strategy : EvaluationBackend, optional
             Evaluation backend for parallel evaluation.
         live_viz : LiveVisualization, optional
             Live visualization callback.
@@ -123,11 +123,11 @@ class NSGAIII:
         dict
             Result dictionary with X, F, G, reference_directions, archive data.
         """
-        self._st, live_cb, eval_backend, max_eval, hv_tracker = initialize_nsgaiii_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_nsgaiii_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
         self._live_cb = live_cb
-        self._eval_backend = eval_backend
+        self._eval_strategy = eval_strategy
         self._max_eval = max_eval
         self._hv_tracker = hv_tracker
         self._problem = problem
@@ -149,7 +149,7 @@ class NSGAIII:
             X_off = self._generate_offspring(st)
 
             # Evaluate offspring
-            F_off, G_off = self._evaluate_offspring(problem, X_off, eval_backend, st.constraint_mode)
+            F_off, G_off = self._evaluate_offspring(problem, X_off, eval_strategy, st.constraint_mode)
             st.n_eval += X_off.shape[0]
 
             # Combine ids for genealogy if tracking
@@ -158,8 +158,27 @@ class NSGAIII:
                 ids_combined = np.concatenate([st.ids, st.pending_offspring_ids])
 
             # NSGA-III survival selection
-            st.X, st.F, st.G, survivor_indices = nsgaiii_survival(
-                st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size, st.ref_dirs_norm, st.rng
+            (
+                st.X,
+                st.F,
+                st.G,
+                survivor_indices,
+                st.ideal_point,
+                st.extreme_points,
+                st.worst_point,
+            ) = nsgaiii_survival(
+                st.X,
+                st.F,
+                st.G,
+                X_off,
+                F_off,
+                G_off,
+                st.pop_size,
+                st.ref_dirs_norm,
+                st.rng,
+                st.ideal_point,
+                st.extreme_points,
+                st.worst_point,
             )
 
             # Update ids based on survival selection
@@ -217,7 +236,7 @@ class NSGAIII:
         self,
         problem: "ProblemProtocol",
         X: np.ndarray,
-        eval_backend: "EvaluationBackend",
+        eval_strategy: "EvaluationBackend",
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
@@ -235,7 +254,7 @@ class NSGAIII:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop.
@@ -248,13 +267,13 @@ class NSGAIII:
             Termination criterion.
         seed : int
             Random seed.
-        eval_backend : EvaluationBackend, optional
+        eval_strategy : EvaluationBackend, optional
             Evaluation backend.
         live_viz : LiveVisualization, optional
             Live visualization callback.
         """
-        self._st, self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = initialize_nsgaiii_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = initialize_nsgaiii_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
         self._problem = problem
         if self._st is not None:
@@ -327,7 +346,28 @@ class NSGAIII:
             ids_combined = np.concatenate([st.ids, st.pending_offspring_ids])
 
         # NSGA-III survival selection
-        st.X, st.F, st.G, survivor_indices = nsgaiii_survival(st.X, st.F, st.G, X, F, G, st.pop_size, st.ref_dirs_norm, st.rng)
+        (
+            st.X,
+            st.F,
+            st.G,
+            survivor_indices,
+            st.ideal_point,
+            st.extreme_points,
+            st.worst_point,
+        ) = nsgaiii_survival(
+            st.X,
+            st.F,
+            st.G,
+            X,
+            F,
+            G,
+            st.pop_size,
+            st.ref_dirs_norm,
+            st.rng,
+            st.ideal_point,
+            st.extreme_points,
+            st.worst_point,
+        )
 
         # Update ids based on survival selection
         if ids_combined is not None:

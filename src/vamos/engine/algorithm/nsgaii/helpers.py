@@ -5,6 +5,8 @@ Separated to keep the main algorithm class focused on orchestration.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
@@ -12,7 +14,7 @@ from vamos.hooks.genealogy import GenealogyTracker, get_lineage
 
 
 def build_mating_pool(
-    kernel,
+    kernel: Any,
     ranks: np.ndarray,
     crowding: np.ndarray,
     pressure: int,
@@ -36,15 +38,18 @@ def build_mating_pool(
 
 
 def feasible_nsga2_survival(
-    kernel,
-    X,
-    F,
-    G,
-    X_off,
-    F_off,
-    G_off,
-    pop_size,
+    kernel: Any,
+    X: np.ndarray,
+    F: np.ndarray,
+    G: np.ndarray | None,
+    X_off: np.ndarray,
+    F_off: np.ndarray,
+    G_off: np.ndarray | None,
+    pop_size: int,
     return_indices: bool = False,
+) -> (
+    tuple[np.ndarray, np.ndarray, np.ndarray | None]
+    | tuple[np.ndarray, np.ndarray, np.ndarray | None, np.ndarray]
 ):
     """
     Feasibility rule:
@@ -99,13 +104,13 @@ def match_ids(new_X: np.ndarray, combined_X: np.ndarray, combined_ids: np.ndarra
     return new_ids
 
 
-def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:
+def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict[str, object]]:
     final_ancestors = set()
     for fid in final_ids:
         for rec in get_lineage(tracker, fid):
             final_ancestors.add(rec.individual_id)
-    totals = {}
-    finals = {}
+    totals: dict[str, int] = {}
+    finals: dict[str, int] = {}
     for rec in tracker.records.values():
         if rec.operator_name is None:
             continue
@@ -113,7 +118,7 @@ def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> l
         totals[op] = totals.get(op, 0) + 1
         if rec.individual_id in final_ancestors:
             finals[op] = finals.get(op, 0) + 1
-    rows = []
+    rows: list[dict[str, object]] = []
     for op, cnt in totals.items():
         good = finals.get(op, 0)
         rows.append(
@@ -127,18 +132,18 @@ def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> l
     return rows
 
 
-def generation_contributions(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:
+def generation_contributions(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict[str, object]]:
     final_ancestors = set()
     for fid in final_ids:
         for rec in get_lineage(tracker, fid):
             final_ancestors.add(rec.individual_id)
-    gen_totals = {}
-    gen_final = {}
+    gen_totals: dict[int, int] = {}
+    gen_final: dict[int, int] = {}
     for rec in tracker.records.values():
         gen_totals[rec.generation] = gen_totals.get(rec.generation, 0) + 1
         if rec.individual_id in final_ancestors:
             gen_final[rec.generation] = gen_final.get(rec.generation, 0) + 1
-    rows = []
+    rows: list[dict[str, object]] = []
     for gen in sorted(gen_totals.keys()):
         tot = gen_totals.get(gen, 0)
         fin = gen_final.get(gen, 0)

@@ -79,7 +79,7 @@ def run_self_check(verbose: bool = False) -> List[CheckResult]:
     return checks
 
 
-def main():
+def main() -> None:
     """Entry-point for `python -m vamos.experiment.diagnostics.self_check`."""
     _configure_cli_logging()
     checks = run_self_check(verbose=True)

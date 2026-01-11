@@ -4,6 +4,7 @@ Controller for coordinating AOS policies and tracking rewards.
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, field
 
 from .config import AdaptiveOperatorSelectionConfig
@@ -53,17 +54,21 @@ class AOSController:
     _gen_pulls: list[int] = field(default_factory=list, init=False)
     _total_pulls: list[int] = field(default_factory=list, init=False)
     _total_reward: list[float] = field(default_factory=list, init=False)
+    _rng: random.Random = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         n_arms = len(self.portfolio)
         if n_arms <= 0:
             raise ValueError("AOSController requires a non-empty portfolio.")
+        if self.config.floor_prob < 0.0 or self.config.floor_prob > 1.0:
+            raise ValueError("floor_prob must be within [0, 1].")
         self._gen_offspring = [0] * n_arms
         self._gen_survivors = [0] * n_arms
         self._gen_nd_insertions = [0] * n_arms
         self._gen_pulls = [0] * n_arms
         self._total_pulls = [0] * n_arms
         self._total_reward = [0.0] * n_arms
+        self._rng = random.Random(self.config.rng_seed)
 
     def start_generation(self, step: int) -> None:
         self._current_step = int(step)
@@ -77,7 +82,13 @@ class AOSController:
     def select_arm(self, mating_id: int, batch_size: int) -> OperatorArm:
         if self._current_step is None:
             raise RuntimeError("start_generation() must be called before select_arm().")
-        idx = self.policy.select_arm()
+        warm_idx = self._warmup_index()
+        if warm_idx is not None:
+            idx = warm_idx
+        elif self.config.floor_prob > 0.0 and self._rng.random() < self.config.floor_prob:
+            idx = self._rng.randrange(len(self.portfolio))
+        else:
+            idx = self.policy.select_arm()
         self._selections.append((int(mating_id), idx, int(batch_size)))
         self._gen_pulls[idx] += 1
         self._total_pulls[idx] += 1
@@ -121,19 +132,19 @@ class AOSController:
         rows: list[TraceRow] = []
         for mating_id, idx, batch_size in self._selections:
             arm = self.portfolio[idx]
-            summary = reward_by_arm.get(idx)
-            if summary is None:
-                summary = RewardSummary(0.0, 0.0, 0.0, 0.0)
+            row_summary = reward_by_arm.get(idx)
+            if row_summary is None:
+                row_summary = RewardSummary(0.0, 0.0, 0.0, 0.0)
             rows.append(
                 TraceRow(
                     step=self._current_step,
                     mating_id=mating_id,
                     op_id=arm.op_id,
                     op_name=arm.name,
-                    reward=summary.reward,
-                    reward_survival=summary.reward_survival,
-                    reward_nd_insertions=summary.reward_nd_insertions,
-                    reward_hv_delta=summary.reward_hv_delta,
+                    reward=row_summary.reward,
+                    reward_survival=row_summary.reward_survival,
+                    reward_nd_insertions=row_summary.reward_nd_insertions,
+                    reward_hv_delta=row_summary.reward_hv_delta,
                     batch_size=batch_size,
                 )
             )
@@ -168,6 +179,19 @@ class AOSController:
             return
         idx = self.portfolio.index_of(op_id)
         target[idx] += int(n)
+
+    def _warmup_index(self) -> int | None:
+        min_usage = self.config.min_usage
+        if min_usage <= 0:
+            return None
+        counts = self.policy.counts()
+        min_count = min(counts)
+        if min_count >= min_usage:
+            return None
+        for idx, count in enumerate(counts):
+            if count == min_count:
+                return idx
+        return None
 
 
 __all__ = ["AOSController", "TraceRow", "SummaryRow"]

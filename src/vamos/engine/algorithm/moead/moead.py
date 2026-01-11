@@ -58,7 +58,7 @@ class MOEAD:
         - neighbor_size (int, optional): T parameter (default: 20)
         - delta (float, optional): Neighborhood selection probability (default: 0.9)
         - replace_limit (int, optional): Max replacements per offspring (default: 2)
-        - aggregation (tuple, optional): ("tchebycheff", {}) or similar
+        - aggregation (tuple, optional): ("pbi", {"theta": 5.0}) or similar
         - constraint_mode (str, optional): "feasibility" or "none"
         - archive (dict, optional): {"size": int, "type": str}
     kernel : KernelBackend
@@ -96,7 +96,7 @@ class MOEAD:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> dict[str, Any]:
         """
@@ -110,7 +110,7 @@ class MOEAD:
             Termination criterion: ("n_eval", N) or ("hv", {...}).
         seed : int
             Random seed for reproducibility.
-        eval_backend : EvaluationBackend | None
+        eval_strategy : EvaluationBackend | None
             Optional evaluation backend for parallel evaluation.
         live_viz : LiveVisualization | None
             Optional live visualization callback.
@@ -120,7 +120,7 @@ class MOEAD:
         dict[str, Any]
             Result dictionary with X, F, weights, evaluations, and optional archive.
         """
-        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        live_cb, eval_strategy, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_strategy, live_viz)
         st = self._st
         assert st is not None, "State not initialized"
 
@@ -132,7 +132,7 @@ class MOEAD:
         while st.n_eval < max_eval and not hv_reached and not stop_requested:
             st.generation = generation
             X_off = self.ask()
-            eval_result = eval_backend.evaluate(X_off, problem)
+            eval_result = eval_strategy.evaluate(X_off, problem)
             hv_reached = self.tell(eval_result, problem)
 
             if hv_tracker.enabled and hv_tracker.reached(st.hv_points()):
@@ -153,14 +153,14 @@ class MOEAD:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> tuple[Any, Any, int, Any]:
         """Initialize algorithm state for a run."""
-        self._st, live_cb, eval_backend, max_eval, hv_tracker = initialize_moead_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_moead_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
-        return live_cb, eval_backend, max_eval, hv_tracker
+        return live_cb, eval_strategy, max_eval, hv_tracker
 
     def ask(self) -> np.ndarray:
         """
@@ -181,35 +181,52 @@ class MOEAD:
             raise RuntimeError("ask() called before initialization.")
 
         pop_size = st.pop_size
-        order = st.rng.permutation(pop_size)
-        batch_size = pop_size  # Process all subproblems per generation
-        active = order[:batch_size]
+        batch_size = int(st.batch_size)
+        if batch_size <= 0:
+            raise ValueError("MOEA/D batch_size must be positive.")
+        if batch_size > pop_size:
+            batch_size = pop_size
+        active = self._next_active_indices(st, batch_size)
+        use_neighbors = st.rng.random(batch_size) < st.delta
 
         # Select parent pairs
         all_indices = np.arange(pop_size)
         parent_pairs = np.empty((batch_size, 2), dtype=int)
 
         for pos, i in enumerate(active):
-            mating_pool = st.neighbors[i] if st.rng.random() < st.delta else all_indices
+            mating_pool = st.neighbors[i] if use_neighbors[pos] else all_indices
             if mating_pool.size < 2:
                 mating_pool = all_indices
             parent_pairs[pos] = st.rng.choice(mating_pool, size=2, replace=False)
 
         # Generate offspring
-        parents_flat = parent_pairs.reshape(-1)
         n_var = st.X.shape[1]
-        parents = st.X[parents_flat].reshape(batch_size, 2, n_var)
-        offspring = st.crossover_fn(parents)
-        children = offspring[:, 0, :].copy()
+        cross_method = str(self.cfg.get("crossover", ("sbx", {}))[0]).lower()
+        if cross_method in {"de", "differential", "differential_evolution"}:
+            parents = np.empty((batch_size, 3, n_var), dtype=st.X.dtype)
+            parents[:, 0, :] = st.X[parent_pairs[:, 0]]
+            parents[:, 1, :] = st.X[parent_pairs[:, 1]]
+            parents[:, 2, :] = st.X[active]
+            offspring = st.crossover_fn(parents)
+            children = offspring[:, 0, :].copy()
+            parents_flat = np.column_stack([parent_pairs, active]).reshape(-1)
+        else:
+            parents_flat = parent_pairs.reshape(-1)
+            parents = st.X[parents_flat].reshape(batch_size, 2, n_var)
+            offspring = st.crossover_fn(parents)
+            children = offspring[:, 0, :].copy()
+
         children = st.mutation_fn(children)
 
         # Store pending info for tell()
         st.pending_offspring = children
         st.pending_active_indices = active
         st.pending_parent_pairs = parent_pairs
+        st.pending_use_neighbors = use_neighbors
 
         # Track genealogy
-        track_offspring_genealogy(st, parents_flat, children.shape[0], "sbx+pm", "moead")
+        op_name = "de+pm" if cross_method in {"de", "differential", "differential_evolution"} else "sbx+pm"
+        track_offspring_genealogy(st, parents_flat, children.shape[0], op_name, "moead")
 
         return children
 
@@ -240,8 +257,9 @@ class MOEAD:
 
         children = st.pending_offspring
         active = st.pending_active_indices
+        use_neighbors = st.pending_use_neighbors
 
-        if children is None or active is None:
+        if children is None or active is None or use_neighbors is None:
             raise ValueError("tell() called without a pending ask().")
 
         F_child = eval_result.F
@@ -253,6 +271,9 @@ class MOEAD:
         st.pending_offspring = None
         st.pending_active_indices = None
         st.pending_parent_pairs = None
+        st.pending_use_neighbors = None
+
+        pop_size = st.pop_size
 
         # Update ideal point
         st.ideal = np.minimum(st.ideal, F_child.min(axis=0))
@@ -263,6 +284,10 @@ class MOEAD:
             child_f = F_child[pos]
             child_g = G_child[pos] if G_child is not None else None
             cv_penalty = compute_violation(G_child)[pos] if G_child is not None else 0.0
+            if use_neighbors[pos]:
+                candidate_order = st.neighbors[i]
+            else:
+                candidate_order = st.rng.permutation(pop_size)
 
             update_neighborhood(
                 st=st,
@@ -271,6 +296,7 @@ class MOEAD:
                 child_f=child_f,
                 child_g=child_g,
                 cv_penalty=cv_penalty,
+                candidate_order=candidate_order,
             )
 
         # Update archive
@@ -279,6 +305,22 @@ class MOEAD:
         # Check HV termination
         hv_reached = st.hv_tracker is not None and st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points())
         return hv_reached
+
+    @staticmethod
+    def _next_active_indices(st: MOEADState, batch_size: int) -> np.ndarray:
+        """Return next subproblem indices using a rolling permutation."""
+        if st.subproblem_order.size != st.pop_size:
+            st.subproblem_order = st.rng.permutation(st.pop_size).astype(int, copy=False)
+            st.subproblem_cursor = 0
+
+        active = np.empty(batch_size, dtype=int)
+        for i in range(batch_size):
+            if st.subproblem_cursor >= st.pop_size:
+                st.subproblem_order = st.rng.permutation(st.pop_size).astype(int, copy=False)
+                st.subproblem_cursor = 0
+            active[i] = int(st.subproblem_order[st.subproblem_cursor])
+            st.subproblem_cursor += 1
+        return active
 
 
 __all__ = ["MOEAD"]

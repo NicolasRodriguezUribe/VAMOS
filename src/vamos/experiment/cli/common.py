@@ -9,9 +9,9 @@ def _parse_probability_arg(
     raw: object,
     *,
     allow_expression: bool,
-) -> float | str:
+) -> float | str | None:
     if raw is None:
-        return None  # type: ignore[return-value]
+        return None
     text = str(raw).strip()
     if allow_expression and text.endswith("/n"):
         numerator = text[:-2].strip()
@@ -37,10 +37,10 @@ def _parse_positive_float(
     raw: object,
     *,
     allow_zero: bool,
-) -> float:
+) -> float | None:
     if raw is None:
-        return None  # type: ignore[return-value]
-    value = float(raw)
+        return None
+    value = float(str(raw))
     if allow_zero:
         if value < 0.0:
             parser.error(f"{flag} must be non-negative.")
@@ -50,7 +50,7 @@ def _parse_positive_float(
     return value
 
 
-def _normalize_operator_args(parser, args):
+def _normalize_operator_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     args.nsgaii_crossover_prob = _parse_probability_arg(
         parser, "--nsgaii-crossover-prob", args.nsgaii_crossover_prob, allow_expression=False
     )
@@ -81,7 +81,7 @@ def _normalize_operator_args(parser, args):
     )
 
 
-def collect_nsgaii_variation_args(args) -> dict:
+def collect_nsgaii_variation_args(args: argparse.Namespace) -> dict[str, object]:
     return {
         "crossover": {
             "method": getattr(args, "nsgaii_crossover", None),
@@ -99,7 +99,7 @@ def collect_nsgaii_variation_args(args) -> dict:
     }
 
 
-def _collect_generic_variation(args, prefix: str) -> dict:
+def _collect_generic_variation(args: argparse.Namespace, prefix: str) -> dict[str, object]:
     return {
         "crossover": {
             "method": getattr(args, f"{prefix}_crossover", None),

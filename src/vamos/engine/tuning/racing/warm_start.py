@@ -115,12 +115,14 @@ class WarmStartEvaluator:
 
     def _update_bounds(self, F: np.ndarray) -> None:
         """Update global min/max for normalization."""
-        if self.global_min is None:
+        if self.global_min is None or self.global_max is None:
             self.global_min = F.min(axis=0).copy()
             self.global_max = F.max(axis=0).copy()
         else:
-            self.global_min = np.minimum(self.global_min, F.min(axis=0))
-            self.global_max = np.maximum(self.global_max, F.max(axis=0))
+            current_min = self.global_min
+            current_max = self.global_max
+            self.global_min = np.minimum(current_min, F.min(axis=0))
+            self.global_max = np.maximum(current_max, F.max(axis=0))
         self._objectives_seen = True
 
     def normalize(self, F: np.ndarray) -> np.ndarray:
@@ -132,9 +134,12 @@ class WarmStartEvaluator:
         if self.global_min is None or self.global_max is None:
             return F
 
-        span = self.global_max - self.global_min
+        min_vals = self.global_min
+        max_vals = self.global_max
+        assert min_vals is not None and max_vals is not None
+        span = max_vals - min_vals
         span = np.where(span < 1e-12, 1.0, span)
-        return (F - self.global_min) / span
+        return np.asarray((F - min_vals) / span, dtype=float)
 
     def compute_normalized_hv(self, F: np.ndarray, ref_offset: float = 0.05) -> float:
         """

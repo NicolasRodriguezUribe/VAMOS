@@ -13,6 +13,21 @@ DEFAULT_REWARD_WEIGHTS = {
     "hv_delta": 0.0,
 }
 
+AOS_CONFIG_KEYS = {
+    "enabled",
+    "method",
+    "epsilon",
+    "c",
+    "gamma",
+    "min_usage",
+    "rng_seed",
+    "window_size",
+    "reward_scope",
+    "reward_weights",
+    "floor_prob",
+    "operator_pool",
+}
+
 
 def _normalize_reward_weights(raw: Mapping[str, Any] | None) -> dict[str, float]:
     weights = dict(DEFAULT_REWARD_WEIGHTS)
@@ -46,6 +61,7 @@ class AdaptiveOperatorSelectionConfig:
     window_size: int = 0  # For sliding window policies; 0 = disabled
     reward_scope: str = "combined"
     reward_weights: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_REWARD_WEIGHTS))
+    floor_prob: float = 0.0
 
     @classmethod
     def from_dict(cls, config: Mapping[str, Any] | None) -> "AdaptiveOperatorSelectionConfig":
@@ -54,17 +70,27 @@ class AdaptiveOperatorSelectionConfig:
         """
         if not config:
             return cls()
+        unexpected = set(config) - AOS_CONFIG_KEYS
+        if unexpected:
+            raise ValueError(f"Unsupported AOS config keys: {sorted(unexpected)}")
+        floor_prob = float(config.get("floor_prob", 0.0))
+        if floor_prob < 0.0 or floor_prob > 1.0:
+            raise ValueError("floor_prob must be within [0, 1].")
+        window_size = int(config.get("window_size", 0))
+        if window_size < 0:
+            raise ValueError("window_size must be >= 0.")
         return cls(
             enabled=bool(config.get("enabled", False)),
-            method=str(config.get("method", "epsilon_greedy")),
+            method=str(config.get("method", "epsilon_greedy")).lower(),
             epsilon=float(config.get("epsilon", 0.1)),
             c=float(config.get("c", 1.0)),
             gamma=float(config.get("gamma", 0.2)),
             min_usage=int(config.get("min_usage", 1)),
             rng_seed=config.get("rng_seed"),
-            window_size=int(config.get("window_size", 0)),
-            reward_scope=str(config.get("reward_scope", "combined")),
+            window_size=window_size,
+            reward_scope=str(config.get("reward_scope", "combined")).lower(),
             reward_weights=_normalize_reward_weights(config.get("reward_weights")),
+            floor_prob=floor_prob,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -82,6 +108,7 @@ class AdaptiveOperatorSelectionConfig:
             "window_size": self.window_size,
             "reward_scope": self.reward_scope,
             "reward_weights": dict(self.reward_weights),
+            "floor_prob": self.floor_prob,
         }
 
 

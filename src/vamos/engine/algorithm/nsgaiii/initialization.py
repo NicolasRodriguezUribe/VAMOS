@@ -12,11 +12,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import os
+import warnings
+from math import comb
+
 import numpy as np
 
 from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
-from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
@@ -46,7 +50,7 @@ def initialize_nsgaiii_run(
     problem: "ProblemProtocol",
     termination: tuple[str, Any],
     seed: int,
-    eval_backend: "EvaluationBackend | None" = None,
+    eval_strategy: "EvaluationBackend | None" = None,
     live_viz: "LiveVisualization | None" = None,
 ) -> tuple["NSGAIIIState", Any, Any, int, Any]:
     """Initialize NSGA-III run and create state.
@@ -63,7 +67,7 @@ def initialize_nsgaiii_run(
         Termination criterion.
     seed : int
         Random seed.
-    eval_backend : EvaluationBackend, optional
+    eval_strategy : EvaluationBackend, optional
         Evaluation backend.
     live_viz : LiveVisualization, optional
         Visualization callback.
@@ -71,12 +75,12 @@ def initialize_nsgaiii_run(
     Returns
     -------
     tuple
-        (state, live_cb, eval_backend, max_eval, hv_tracker)
+        (state, live_cb, eval_strategy, max_eval, hv_tracker)
     """
     max_eval, hv_config = parse_termination(termination, config)
 
     live_cb = get_live_viz(live_viz)
-    eval_backend = get_eval_backend(eval_backend)
+    eval_strategy = get_eval_strategy(eval_strategy)
 
     # Setup HV tracker if configured
     hv_tracker = None
@@ -85,6 +89,8 @@ def initialize_nsgaiii_run(
 
     rng = np.random.default_rng(seed)
     pop_size = config["pop_size"]
+    enforce_ref_dirs = bool(config.get("enforce_ref_dirs", False))
+    pop_size_auto = bool(config.get("pop_size_auto", False))
     encoding = getattr(problem, "encoding", "continuous")
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
@@ -99,11 +105,58 @@ def initialize_nsgaiii_run(
     sel_method, sel_params = config["selection"]
     pressure = sel_params.get("pressure", 2) if sel_method == "tournament" else 2
 
-    # Load reference directions
+    def _handle_refdir_mismatch(expected: int, actual: int, detail: str) -> int:
+        if enforce_ref_dirs:
+            raise ValueError(detail)
+        if pop_size_auto:
+            warnings.warn(
+                f"{detail} Auto-adjusting pop_size to {expected}.",
+                RuntimeWarning,
+            )
+            return expected
+        warnings.warn(
+            f"{detail} Continuing with pop_size={actual}.",
+            RuntimeWarning,
+        )
+        return actual
+
+    # Load reference directions (prefer #ref_dirs == pop_size; warn if mismatched)
     dir_cfg = config.get("reference_directions", {}) or {}
-    ref_dirs = load_or_generate_weight_vectors(pop_size, n_obj, path=dir_cfg.get("path"), divisions=dir_cfg.get("divisions"))
-    if ref_dirs.shape[0] > pop_size:
-        ref_dirs = ref_dirs[:pop_size]
+    ref_path = dir_cfg.get("path")
+    ref_divisions = dir_cfg.get("divisions")
+    if ref_path and os.path.exists(ref_path):
+        ref_dirs = np.loadtxt(ref_path, delimiter=",")
+        ref_dirs = np.atleast_2d(ref_dirs).astype(float, copy=False)
+        if ref_dirs.ndim != 2 or ref_dirs.shape[1] != n_obj:
+            raise ValueError("Reference directions file has invalid shape.")
+        if np.any(ref_dirs < 0.0):
+            raise ValueError("Reference directions must be non-negative.")
+        row_sums = ref_dirs.sum(axis=1)
+        if np.any(np.abs(row_sums - 1.0) > 1e-6):
+            raise ValueError("Each reference direction must sum to 1.")
+        if ref_dirs.shape[0] != pop_size:
+            pop_size = _handle_refdir_mismatch(
+                ref_dirs.shape[0],
+                pop_size,
+                f"NSGA-III reference directions ({ref_dirs.shape[0]}) do not match pop_size ({pop_size}).",
+            )
+    elif ref_divisions is not None:
+        expected = comb(int(ref_divisions) + n_obj - 1, n_obj - 1)
+        if pop_size != expected:
+            pop_size = _handle_refdir_mismatch(
+                expected,
+                pop_size,
+                f"NSGA-III reference directions for divisions={ref_divisions} expect {expected} points (got {pop_size}).",
+            )
+        ref_dirs = load_or_generate_weight_vectors(pop_size, n_obj, path=ref_path, divisions=ref_divisions)
+    else:
+        ref_dirs = load_or_generate_weight_vectors(pop_size, n_obj, path=ref_path, divisions=ref_divisions)
+        if ref_dirs.shape[0] != pop_size:
+            pop_size = _handle_refdir_mismatch(
+                ref_dirs.shape[0],
+                pop_size,
+                f"NSGA-III reference directions ({ref_dirs.shape[0]}) do not match pop_size ({pop_size}).",
+            )
 
     ref_dirs = np.asarray(ref_dirs, dtype=float)
     ref_dirs_norm = ref_dirs / np.linalg.norm(ref_dirs, axis=1, keepdims=True)
@@ -152,6 +205,9 @@ def initialize_nsgaiii_run(
         pressure=pressure,
         crossover_fn=crossover_fn,
         mutation_fn=mutation_fn,
+        ideal_point=np.full(n_obj, np.inf),
+        worst_point=np.full(n_obj, -np.inf),
+        extreme_points=None,
         # Archive
         archive_size=archive_size,
         archive_X=archive_X,
@@ -166,7 +222,7 @@ def initialize_nsgaiii_run(
         result_mode=result_mode,
     )
 
-    return state, live_cb, eval_backend, max_eval, hv_tracker
+    return state, live_cb, eval_strategy, max_eval, hv_tracker
 
 
 def initialize_population(

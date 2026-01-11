@@ -53,10 +53,10 @@ def add_core_arguments(
         help="Directory where run artifacts are stored (default: VAMOS_OUTPUT_ROOT or 'results').",
     )
     parser.add_argument(
-        "--eval-backend",
+        "--eval-strategy",
         choices=("serial", "multiprocessing"),
-        default=spec_default(experiment_defaults, "eval_backend", "serial"),
-        help="Evaluation backend to use (default: serial).",
+        default=spec_default(experiment_defaults, "eval_strategy", "serial"),
+        help="Evaluation strategy to use (default: serial).",
     )
     parser.add_argument(
         "--n-workers",

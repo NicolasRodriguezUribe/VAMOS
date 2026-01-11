@@ -7,48 +7,63 @@ Examples:
     from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
 
     # Fluent builder
-    cfg = NSGAIIConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+    cfg = NSGAIIConfig().pop_size(100).crossover("sbx", prob=1.0).fixed()
 
     # Quick defaults
     cfg = NSGAIIConfig.default(pop_size=100, n_var=30)
 """
 
-from .nsgaii import NSGAIIConfig, NSGAIIConfigData
-from .moead import MOEADConfig, MOEADConfigData
-from .spea2 import SPEA2Config, SPEA2ConfigData
-from .ibea import IBEAConfig, IBEAConfigData
-from .smsemoa import SMSEMOAConfig, SMSEMOAConfigData
-from .smpso import SMPSOConfig, SMPSOConfigData
-from .nsgaiii import NSGAIIIConfig, NSGAIIIConfigData
-from .agemoea import AGEMOEAConfig, AGEMOEAConfigData
-from .rvea import RVEAConfig, RVEAConfigData
+from .types import AlgorithmConfigDict, AlgorithmConfigLike, AlgorithmConfigMapping, AlgorithmConfigProtocol
+from .nsgaii import NSGAIIConfig, NSGAIIConfigData, NSGAIIConfigDict
+from .moead import MOEADConfig, MOEADConfigData, MOEADConfigDict
+from .spea2 import SPEA2Config, SPEA2ConfigData, SPEA2ConfigDict
+from .ibea import IBEAConfig, IBEAConfigData, IBEAConfigDict
+from .smsemoa import SMSEMOAConfig, SMSEMOAConfigData, SMSEMOAConfigDict
+from .smpso import SMPSOConfig, SMPSOConfigData, SMPSOConfigDict
+from .nsgaiii import NSGAIIIConfig, NSGAIIIConfigData, NSGAIIIConfigDict
+from .agemoea import AGEMOEAConfig, AGEMOEAConfigData, AGEMOEAConfigDict
+from .rvea import RVEAConfig, RVEAConfigData, RVEAConfigDict
 
 __all__ = [
     # NSGA-II
     "NSGAIIConfig",
     "NSGAIIConfigData",
+    "NSGAIIConfigDict",
     # MOEA/D
     "MOEADConfig",
     "MOEADConfigData",
+    "MOEADConfigDict",
     # SPEA2
     "SPEA2Config",
     "SPEA2ConfigData",
+    "SPEA2ConfigDict",
     # IBEA
     "IBEAConfig",
     "IBEAConfigData",
+    "IBEAConfigDict",
     # SMS-EMOA
     "SMSEMOAConfig",
     "SMSEMOAConfigData",
+    "SMSEMOAConfigDict",
     # SMPSO
     "SMPSOConfig",
     "SMPSOConfigData",
+    "SMPSOConfigDict",
     # NSGA-III
     "NSGAIIIConfig",
     "NSGAIIIConfigData",
+    "NSGAIIIConfigDict",
     # AGE-MOEA
     "AGEMOEAConfig",
     "AGEMOEAConfigData",
+    "AGEMOEAConfigDict",
     # RVEA
     "RVEAConfig",
     "RVEAConfigData",
+    "RVEAConfigDict",
+    # Typing helpers
+    "AlgorithmConfigDict",
+    "AlgorithmConfigMapping",
+    "AlgorithmConfigProtocol",
+    "AlgorithmConfigLike",
 ]

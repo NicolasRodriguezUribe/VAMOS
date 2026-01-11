@@ -14,7 +14,8 @@ CrossoverBuilder: TypeAlias = Callable[[PermVec, PermVec, RNG], tuple[PermVec, P
 RowMutation: TypeAlias = Callable[[PermVec, RNG], None]
 Adjacency: TypeAlias = list[set[int]]
 
-_SWAP_ROWS_JIT = None
+_SWAP_ROWS_JIT: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], None] | None = None
+_SWAP_ROWS_JIT_DISABLED = False
 
 
 def _use_numba_variation() -> bool:
@@ -23,22 +24,22 @@ def _use_numba_variation() -> bool:
     return os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
 
 
-def _get_swap_rows_jit():
-    global _SWAP_ROWS_JIT
-    if _SWAP_ROWS_JIT is False:
+def _get_swap_rows_jit() -> Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], None] | None:
+    global _SWAP_ROWS_JIT, _SWAP_ROWS_JIT_DISABLED
+    if _SWAP_ROWS_JIT_DISABLED:
         return None
     if _SWAP_ROWS_JIT is not None:
         return _SWAP_ROWS_JIT
     if not _use_numba_variation():
-        _SWAP_ROWS_JIT = False
+        _SWAP_ROWS_JIT_DISABLED = True
         return None
     try:
         from numba import njit
     except ImportError:
-        _SWAP_ROWS_JIT = False
+        _SWAP_ROWS_JIT_DISABLED = True
         return None
 
-    @njit(cache=True)
+    @njit(cache=True)  # type: ignore[untyped-decorator]
     def _swap_rows_jit(X: np.ndarray, rows: np.ndarray, first: np.ndarray, second: np.ndarray) -> None:
         for idx in range(rows.shape[0]):
             r = rows[idx]
@@ -286,60 +287,54 @@ def _pmx_children(p1: PermVec, p2: PermVec, rng: RNG) -> tuple[PermVec, PermVec]
 
 def _pmx_into(parent_a: PermVec, parent_b: PermVec, child: PermVec, cut1: int, cut2: int) -> None:
     n = parent_a.size
-    cut1, cut2 = _ensure_valid_segment(n, cut1, cut2)
-    child.fill(-1)
-    used = np.zeros(n, dtype=bool)
-    mapping = {}
+    if n < 2:
+        return
+    if cut2 < cut1:
+        cut1, cut2 = cut2, cut1
+    cut1 = max(0, min(int(cut1), n - 1))
+    cut2 = max(0, min(int(cut2), n - 1))
 
-    for i in range(cut1, cut2):
-        gene_a = parent_a[i]
-        gene_b = parent_b[i]
-        child[i] = gene_a
-        used[gene_a] = True
+    mapping: dict[int, int] = {}
+    for i in range(cut1, cut2 + 1):
+        gene_a = int(parent_a[i])
+        gene_b = int(parent_b[i])
+        mapping[gene_a] = gene_b
         mapping[gene_b] = gene_a
 
-    for idx in np.concatenate([np.arange(0, cut1), np.arange(cut2, n)]):
-        gene = parent_b[idx]
-        seen = set()
-        while gene in mapping and gene not in seen:
-            seen.add(gene)
-            gene = mapping[gene]
-        if used[gene]:
-            # Fallback to the next unused gene in parent_b scan order
-            for candidate in parent_b:
-                if not used[candidate]:
-                    gene = candidate
-                    break
-        child[idx] = gene
-        used[gene] = True
+    for i in range(n):
+        if i < cut1 or i > cut2:
+            gene = int(parent_a[i])
+            steps = 0
+            limit = len(mapping) + 1
+            while gene in mapping and steps < limit:
+                gene = mapping[gene]
+                steps += 1
+            child[i] = gene
+        else:
+            child[i] = parent_b[i]
 
 
 def _cycle_children(p1: PermVec, p2: PermVec, rng: RNG) -> tuple[PermVec, PermVec]:
     n = p1.size
-    c1 = np.empty_like(p1)
-    c2 = np.empty_like(p2)
-    pos_in_p2 = np.empty(n, dtype=int)
-    pos_in_p2[p2] = np.arange(n, dtype=int)
+    if n == 0:
+        return p1.copy(), p2.copy()
+    c1 = p2.copy()
+    c2 = p1.copy()
+    pos_in_p1 = np.empty(n, dtype=int)
+    pos_in_p1[p1] = np.arange(n, dtype=int)
 
-    used = np.zeros(n, dtype=bool)
-    cycle_idx = 0
-    for start in range(n):
-        if used[start]:
-            continue
-        idx = start
-        current_cycle = []
-        while not used[idx]:
-            used[idx] = True
-            current_cycle.append(idx)
-            idx = pos_in_p2[p1[idx]]
-        pick_from_p1 = (cycle_idx % 2) == 0
-        if pick_from_p1:
-            c1[current_cycle] = p1[current_cycle]
-            c2[current_cycle] = p2[current_cycle]
-        else:
-            c1[current_cycle] = p2[current_cycle]
-            c2[current_cycle] = p1[current_cycle]
-        cycle_idx += 1
+    start_idx = int(rng.integers(0, n))
+    cycle = []
+    idx = start_idx
+    while True:
+        cycle.append(idx)
+        idx = pos_in_p1[p2[idx]]
+        if idx == start_idx:
+            break
+
+    cycle_idx = np.asarray(cycle, dtype=int)
+    c1[cycle_idx] = p1[cycle_idx]
+    c2[cycle_idx] = p2[cycle_idx]
     return c1, c2
 
 
@@ -471,10 +466,19 @@ def _insert_row_mutation(row: PermVec, rng: RNG) -> None:
 
 def _scramble_row_mutation(row: PermVec, rng: RNG) -> None:
     n = row.size
-    lo, hi = _two_cut_points(n, rng)
-    segment = row[lo:hi].copy()
+    if n < 2:
+        return
+    point1 = int(rng.integers(0, n + 1))
+    point2 = int(rng.integers(0, n))
+    if point2 >= point1:
+        point2 += 1
+    else:
+        point1, point2 = point2, point1
+    if point2 - point1 >= 20:
+        point2 = point1 + 20
+    segment = row[point1:point2].copy()
     rng.shuffle(segment)
-    row[lo:hi] = segment
+    row[point1:point2] = segment
 
 
 def _inversion_row_mutation(row: PermVec, rng: RNG) -> None:

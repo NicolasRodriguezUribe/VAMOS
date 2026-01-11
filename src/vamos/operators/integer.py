@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import Any, Callable
+
 import numpy as np
 
-_RANDOM_RESET_MASKED_JIT = None
+_RANDOM_RESET_MASKED_JIT: Callable[[np.ndarray, np.ndarray, np.ndarray], None] | None = None
+_RANDOM_RESET_MASKED_DISABLED = False
 
 
 def _use_numba_variation() -> bool:
@@ -11,23 +14,23 @@ def _use_numba_variation() -> bool:
     return os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
 
 
-def _get_random_reset_masked():
-    global _RANDOM_RESET_MASKED_JIT
-    if _RANDOM_RESET_MASKED_JIT is False:
+def _get_random_reset_masked() -> Callable[[np.ndarray, np.ndarray, np.ndarray], None] | None:
+    global _RANDOM_RESET_MASKED_JIT, _RANDOM_RESET_MASKED_DISABLED
+    if _RANDOM_RESET_MASKED_DISABLED:
         return None
     if _RANDOM_RESET_MASKED_JIT is not None:
         return _RANDOM_RESET_MASKED_JIT
     if not _use_numba_variation():
-        _RANDOM_RESET_MASKED_JIT = False
+        _RANDOM_RESET_MASKED_DISABLED = True
         return None
     try:
         from numba import njit
     except ImportError:
-        _RANDOM_RESET_MASKED_JIT = False
+        _RANDOM_RESET_MASKED_DISABLED = True
         return None
 
-    @njit(cache=True)
-    def _random_reset_masked(X: np.ndarray, mask: np.ndarray, rand_vals: np.ndarray):
+    @njit(cache=True)  # type: ignore[untyped-decorator]
+    def _random_reset_masked(X: np.ndarray, mask: np.ndarray, rand_vals: np.ndarray) -> None:
         rows, cols = mask.shape
         for i in range(rows):
             for j in range(cols):
@@ -103,6 +106,95 @@ def arithmetic_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.ran
     return pairs.reshape(X_parents.shape)
 
 
+def integer_sbx_crossover(
+    X_parents: np.ndarray,
+    prob: float,
+    eta: float,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """
+    Integer-valued SBX crossover aligned with jMetalPy (clamp + int cast).
+    """
+    pairs, D = _as_pairs(X_parents)
+    if pairs.size == 0 or D == 0:
+        return pairs.reshape(X_parents.shape)
+    prob = float(np.clip(prob, 0.0, 1.0))
+    if prob <= 0.0:
+        return pairs.reshape(X_parents.shape)
+    lower = np.asarray(lower, dtype=float)
+    upper = np.asarray(upper, dtype=float)
+    if lower.shape[0] != D or upper.shape[0] != D:
+        raise ValueError("lower/upper must match chromosome length.")
+
+    active = rng.random(pairs.shape[0]) <= prob
+    idx = np.flatnonzero(active)
+    if idx.size == 0:
+        return pairs.reshape(X_parents.shape)
+
+    eps = 1.0e-14
+    eta = float(eta)
+    inv_eta = 1.0 / (eta + 1.0)
+
+    for row in idx:
+        p1 = pairs[row, 0].copy()
+        p2 = pairs[row, 1].copy()
+        for j in range(D):
+            if rng.random() > 0.5:
+                continue
+            x1 = float(p1[j])
+            x2 = float(p2[j])
+            if abs(x1 - x2) <= eps:
+                continue
+            if x1 < x2:
+                y1, y2 = x1, x2
+            else:
+                y1, y2 = x2, x1
+            lb = float(lower[j])
+            ub = float(upper[j])
+            try:
+                beta1 = 1.0 + (2.0 * (y1 - lb) / (y2 - y1))
+                alpha1 = 2.0 - beta1 ** (-(eta + 1.0))
+                rand_val = rng.random()
+                if rand_val <= (1.0 / alpha1):
+                    betaq1 = (rand_val * alpha1) ** inv_eta
+                else:
+                    betaq1 = (1.0 / (2.0 - rand_val * alpha1)) ** inv_eta
+                c1 = 0.5 * (y1 + y2 - betaq1 * (y2 - y1))
+
+                beta2 = 1.0 + (2.0 * (ub - y2) / (y2 - y1))
+                alpha2 = 2.0 - beta2 ** (-(eta + 1.0))
+                if rand_val <= (1.0 / alpha2):
+                    betaq2 = (rand_val * alpha2) ** inv_eta
+                else:
+                    betaq2 = (1.0 / (2.0 - rand_val * alpha2)) ** inv_eta
+                c2 = 0.5 * (y1 + y2 + betaq2 * (y2 - y1))
+            except (ValueError, ZeroDivisionError):
+                c1, c2 = y1, y2
+
+            if c1 < lb:
+                c1 = lb
+            if c1 > ub:
+                c1 = ub
+            if c2 < lb:
+                c2 = lb
+            if c2 > ub:
+                c2 = ub
+
+            if rng.random() <= 0.5:
+                p1[j] = int(c2)
+                p2[j] = int(c1)
+            else:
+                p1[j] = int(c1)
+                p2[j] = int(c2)
+
+        pairs[row, 0] = p1
+        pairs[row, 1] = p2
+
+    return pairs.reshape(X_parents.shape)
+
+
 def random_reset_mutation(X: np.ndarray, prob: float, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator) -> None:
     """
     Per-gene random reset to any value within bounds.
@@ -146,30 +238,96 @@ def creep_mutation(X: np.ndarray, prob: float, step: int, lower: np.ndarray, upp
     X[:] = proposed
 
 
+def integer_polynomial_mutation(
+    X: np.ndarray,
+    prob: float,
+    eta: float,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    rng: np.random.Generator,
+) -> None:
+    """
+    Integer polynomial mutation aligned with jMetalPy (round + clamp).
+    """
+    if X.size == 0:
+        return
+    prob = float(np.clip(prob, 0.0, 1.0))
+    if prob <= 0.0:
+        return
+    lower = np.asarray(lower, dtype=float)
+    upper = np.asarray(upper, dtype=float)
+    if lower.shape[0] != X.shape[1] or upper.shape[0] != X.shape[1]:
+        raise ValueError("lower/upper must match chromosome length.")
+
+    rnd_mask = rng.random(X.shape)
+    rnd_delta = rng.random(X.shape)
+    mask = rnd_mask <= prob
+    if not np.any(mask):
+        return
+
+    mut_pow = 1.0 / (float(eta) + 1.0)
+    rows, cols = np.nonzero(mask)
+    for i, j in zip(rows, cols):
+        y = float(X[i, j])
+        yl = float(lower[j])
+        yu = float(upper[j])
+        if yu <= yl:
+            X[i, j] = int(yl)
+            continue
+        delta1 = (y - yl) / (yu - yl)
+        delta2 = (yu - y) / (yu - yl)
+        rnd = rnd_delta[i, j]
+        if rnd <= 0.5:
+            xy = 1.0 - delta1
+            val = 2.0 * rnd + (1.0 - 2.0 * rnd) * (xy ** (float(eta) + 1.0))
+            deltaq = val**mut_pow - 1.0
+        else:
+            xy = 1.0 - delta2
+            val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (float(eta) + 1.0))
+            deltaq = 1.0 - val**mut_pow
+
+        y += deltaq * (yu - yl)
+        y = min(max(y, yl), yu)
+        X[i, j] = int(round(y))
+
+
 # === Adapters ===
 
 
 class UniformIntegerCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
+    def __init__(self, prob: float = 0.9, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         return uniform_integer_crossover(parents, self.prob, rng)
 
 
 class ArithmeticIntegerCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
+    def __init__(self, prob: float = 0.9, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         return arithmetic_integer_crossover(parents, self.prob, rng)
 
 
+class IntegerSBXCrossover:
+    def __init__(self, prob: float = 0.9, eta: float = 20.0, **kwargs: Any) -> None:
+        self.prob = float(prob)
+        self.eta = float(eta)
+
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
+        lower = kwargs.get("lower")
+        upper = kwargs.get("upper")
+        if lower is None or upper is None:
+            raise ValueError("IntegerSBXCrossover requires 'lower' and 'upper' bounds in kwargs.")
+        return integer_sbx_crossover(parents, self.prob, self.eta, lower, upper, rng)
+
+
 class RandomResetMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
+    def __init__(self, prob: float = 0.1, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> None:
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> None:
         # kwargs must typically contain 'lower' and 'upper'
         lower = kwargs.get("lower")
         upper = kwargs.get("upper")
@@ -178,12 +336,25 @@ class RandomResetMutation:
         random_reset_mutation(X, self.prob, lower, upper, rng)
 
 
+class IntegerPolynomialMutation:
+    def __init__(self, prob: float = 0.1, eta: float = 20.0, **kwargs: Any) -> None:
+        self.prob = float(prob)
+        self.eta = float(eta)
+
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> None:
+        lower = kwargs.get("lower")
+        upper = kwargs.get("upper")
+        if lower is None or upper is None:
+            raise ValueError("IntegerPolynomialMutation requires 'lower' and 'upper' bounds in kwargs.")
+        integer_polynomial_mutation(X, self.prob, self.eta, lower, upper, rng)
+
+
 class CreepMutation:
-    def __init__(self, prob: float = 0.1, step: int = 1, **kwargs):
+    def __init__(self, prob: float = 0.1, step: int = 1, **kwargs: Any) -> None:
         self.prob = float(prob)
         self.step = int(step)
 
-    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> None:
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> None:
         lower = kwargs.get("lower")
         upper = kwargs.get("upper")
         if lower is None or upper is None:
@@ -195,10 +366,14 @@ __all__ = [
     "random_integer_population",
     "uniform_integer_crossover",
     "arithmetic_integer_crossover",
+    "integer_sbx_crossover",
     "random_reset_mutation",
     "creep_mutation",
+    "integer_polynomial_mutation",
     "UniformIntegerCrossover",
     "ArithmeticIntegerCrossover",
+    "IntegerSBXCrossover",
     "RandomResetMutation",
+    "IntegerPolynomialMutation",
     "CreepMutation",
 ]

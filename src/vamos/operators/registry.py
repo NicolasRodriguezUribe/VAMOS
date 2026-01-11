@@ -12,15 +12,15 @@ from vamos.foundation.registry import Registry
 # Global registry for variation operators (classes or factories)
 # Key: operator name (e.g. "sbx", "pm")
 # Value: Class type or factory function
-_operator_registry: Registry | None = None
+_operator_registry: Registry[object] | None = None
 
 
-def _get_registry() -> Registry:
+def _get_registry() -> Registry[object]:
     global _operator_registry
     if _operator_registry is not None:
         return _operator_registry
 
-    reg = Registry("VariationOperators")
+    reg: Registry[object] = Registry("VariationOperators")
 
     # Register common operators
     from vamos.operators.real import (
@@ -49,7 +49,7 @@ def _get_registry() -> Registry:
     reg.register("arithmetic", ArithmeticCrossover)
     reg.register("pcx", PCXCrossover)
     reg.register("undx", UNDXCrossover)
-    reg.register("spx", SPXCrossover)
+    reg.register("simplex", SPXCrossover)
 
     # Mutation
     reg.register("pm", PolynomialMutation)
@@ -83,6 +83,7 @@ def _get_registry() -> Registry:
     reg.register("two_point", TwoPointCrossover)
     reg.register("binary_uniform", BinaryUniformCrossover)
     reg.register("hux", HuxCrossover)
+    reg.register("spx", OnePointCrossover)
 
     # Permutation operators
     from vamos.operators.permutation import (
@@ -115,13 +116,17 @@ def _get_registry() -> Registry:
     from vamos.operators.integer import (
         UniformIntegerCrossover,
         ArithmeticIntegerCrossover,
+        IntegerSBXCrossover,
         RandomResetMutation,
+        IntegerPolynomialMutation,
         CreepMutation,
     )
 
     reg.register("int_uniform", UniformIntegerCrossover)
     reg.register("int_arithmetic", ArithmeticIntegerCrossover)
+    reg.register("int_sbx", IntegerSBXCrossover)
     reg.register("reset", RandomResetMutation)
+    reg.register("int_pm", IntegerPolynomialMutation)
     reg.register("creep", CreepMutation)
 
     # Mixed operators
@@ -134,7 +139,7 @@ def _get_registry() -> Registry:
     return reg
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     if name == "operator_registry":
         return _get_registry()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

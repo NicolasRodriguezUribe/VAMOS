@@ -1,7 +1,7 @@
 import numpy as np
 
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.experiment.optimize import OptimizeConfig, optimize
+from vamos.experiment.optimize import OptimizeConfig, optimize_config
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
@@ -14,7 +14,7 @@ def test_optimize_reproducible_with_seed():
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine("numpy")
         .fixed()
     )
@@ -26,6 +26,6 @@ def test_optimize_reproducible_with_seed():
         seed=42,
         engine="numpy",
     )
-    res1 = optimize(run_cfg)
-    res2 = optimize(run_cfg)
+    res1 = optimize_config(run_cfg)
+    res2 = optimize_config(run_cfg)
     assert np.array_equal(res1.F, res2.F)

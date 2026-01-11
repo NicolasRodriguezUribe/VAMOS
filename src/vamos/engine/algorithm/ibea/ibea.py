@@ -54,7 +54,7 @@ class IBEA:
         - crossover (tuple): Crossover operator config
         - mutation (tuple): Mutation operator config
         - indicator (str, optional): "epsilon" (default) or "hypervolume"
-        - kappa (float, optional): Scaling factor (default: 0.05)
+        - kappa (float, optional): Scaling factor (default: 1.0)
         - constraint_mode (str, optional): "none" or "penalty"
     kernel : KernelBackend
         Backend for vectorized operations.
@@ -62,7 +62,7 @@ class IBEA:
     Examples
     --------
     >>> from vamos.engine.api import IBEAConfig
-    >>> config = IBEAConfig().pop_size(100).indicator("epsilon").kappa(0.05).fixed()
+    >>> config = IBEAConfig().pop_size(100).indicator("epsilon").kappa(1.0).fixed()
     >>> ibea = IBEA(config, kernel)
     >>> result = ibea.run(problem, ("n_eval", 10000), seed=42)
 
@@ -80,7 +80,7 @@ class IBEA:
         self.kernel = kernel
         self._st: IBEAState | None = None
         self._live_cb: "LiveVisualization | None" = None
-        self._eval_backend: "EvaluationBackend | None" = None
+        self._eval_strategy: "EvaluationBackend | None" = None
         self._max_eval: int = 0
         self._hv_tracker: Any = None
         self._problem: "ProblemProtocol | None" = None
@@ -94,7 +94,7 @@ class IBEA:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> dict[str, Any]:
         """Run IBEA optimization loop.
@@ -107,7 +107,7 @@ class IBEA:
             Termination criterion, e.g., ("n_eval", 10000).
         seed : int
             Random seed for reproducibility.
-        eval_backend : EvaluationBackend, optional
+        eval_strategy : EvaluationBackend, optional
             Evaluation backend for parallel evaluation.
         live_viz : LiveVisualization, optional
             Live visualization callback.
@@ -117,7 +117,7 @@ class IBEA:
         dict
             Result dictionary with X, F, G, archive data.
         """
-        live_cb, eval_backend, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_backend, live_viz)
+        live_cb, eval_strategy, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_strategy, live_viz)
         self._problem = problem
 
         st = self._st
@@ -131,7 +131,7 @@ class IBEA:
             X_off = self._generate_offspring(st)
 
             # Evaluate offspring
-            F_off, G_off = self._evaluate_offspring(problem, X_off, eval_backend, st.constraint_mode)
+            F_off, G_off = self._evaluate_offspring(problem, X_off, eval_strategy, st.constraint_mode)
             st.n_eval += X_off.shape[0]
 
             # Environmental selection
@@ -169,22 +169,23 @@ class IBEA:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> tuple[Any, Any, int, Any]:
         """Initialize the algorithm run."""
-        self._st, live_cb, eval_backend, max_eval, hv_tracker = initialize_ibea_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_backend, live_viz
+        self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_ibea_run(
+            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
         self._live_cb = live_cb
-        self._eval_backend = eval_backend
+        self._eval_strategy = eval_strategy
         self._max_eval = max_eval
         self._hv_tracker = hv_tracker
-        return live_cb, eval_backend, max_eval, hv_tracker
+        return live_cb, eval_strategy, max_eval, hv_tracker
 
     def _generate_offspring(self, st: IBEAState) -> np.ndarray:
         """Generate offspring using tournament selection and variation."""
-        ranks = np.argsort(np.argsort(st.fitness))
+        # Higher fitness is better in IBEA (less negative).
+        ranks = np.argsort(np.argsort(-st.fitness))
         crowd = np.zeros_like(st.fitness, dtype=float)
         parents_per_group = st.variation.parents_per_group
         children_per_group = st.variation.children_per_group
@@ -207,7 +208,7 @@ class IBEA:
         self,
         problem: "ProblemProtocol",
         X: np.ndarray,
-        eval_backend: "EvaluationBackend",
+        eval_strategy: "EvaluationBackend",
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
@@ -227,12 +228,12 @@ class IBEA:
         problem: "ProblemProtocol",
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: "EvaluationBackend | None" = None,
+        eval_strategy: "EvaluationBackend | None" = None,
         live_viz: "LiveVisualization | None" = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop."""
-        self._live_cb, self._eval_backend, self._max_eval, self._hv_tracker = self._initialize_run(
-            problem, termination, seed, eval_backend, live_viz
+        self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = self._initialize_run(
+            problem, termination, seed, eval_strategy, live_viz
         )
         self._problem = problem
         if self._st is not None:

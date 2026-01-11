@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Any, Iterable, Sequence
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 import matplotlib.pyplot as plt
 
 from vamos.ux.analysis.core_objective_reduction import reduce_objectives
@@ -49,7 +49,7 @@ def tuning_result_to_dataframe(tuning_result: Any, param_names: Sequence[str] | 
     return pd.DataFrame(rows)
 
 
-def plot_tuning_scatter(df: pd.DataFrame, x_param: str, y_param: str, color_by: str = "obj_0"):
+def plot_tuning_scatter(df: pd.DataFrame, x_param: str, y_param: str, color_by: str = "obj_0") -> Any:
     """Scatter plot of hyperparameters colored by an objective/metric."""
     plt.figure()
     sc = plt.scatter(df[x_param], df[y_param], c=df[color_by], cmap="viridis", edgecolor="k", alpha=0.8)
@@ -61,7 +61,7 @@ def plot_tuning_scatter(df: pd.DataFrame, x_param: str, y_param: str, color_by: 
     return plt.gca()
 
 
-def plot_objective_tradeoff(df: pd.DataFrame, obj_x: str = "obj_0", obj_y: str = "obj_1"):
+def plot_objective_tradeoff(df: pd.DataFrame, obj_x: str = "obj_0", obj_y: str = "obj_1") -> Any:
     """Plot objective trade-off scatter."""
     plt.figure()
     plt.scatter(df[obj_x], df[obj_y], color="tab:blue", edgecolor="k", alpha=0.8)
@@ -71,7 +71,12 @@ def plot_objective_tradeoff(df: pd.DataFrame, obj_x: str = "obj_0", obj_y: str =
     return plt.gca()
 
 
-def plot_reduced_front(F: np.ndarray, labels: Sequence[str] | None = None, target_dim: int = 2, method: str = "angle"):
+def plot_reduced_front(
+    F: np.ndarray,
+    labels: Sequence[str] | None = None,
+    target_dim: int = 2,
+    method: str = "angle",
+) -> Any:
     """
     Reduce a front to 2D/3D and plot it.
     """

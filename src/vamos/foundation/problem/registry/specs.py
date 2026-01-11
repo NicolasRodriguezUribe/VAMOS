@@ -37,7 +37,7 @@ def available_problem_names() -> Tuple[str, ...]:
     return tuple(get_problem_specs().keys())
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     if name == "PROBLEM_SPECS":
         return get_problem_specs()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

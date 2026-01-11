@@ -7,7 +7,7 @@ from __future__ import annotations
 import subprocess
 from datetime import datetime, UTC
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from vamos.foundation.version import get_version
 
@@ -24,14 +24,16 @@ def git_revision(project_root: Path) -> Optional[str]:
     return rev.decode().strip() or None
 
 
-def serialize_operator_tuple(op_tuple):
+def serialize_operator_tuple(op_tuple: object) -> dict[str, Any] | None:
     if not op_tuple:
         return None
+    if not isinstance(op_tuple, tuple) or len(op_tuple) != 2:
+        return None
     name, params = op_tuple
-    return {"name": name, "params": params}
+    return {"name": str(name), "params": params}
 
 
-def collect_operator_metadata(cfg_data) -> dict:
+def collect_operator_metadata(cfg_data: Any) -> dict[str, Any]:
     if cfg_data is None:
         return {}
     payload = {}
@@ -44,17 +46,17 @@ def collect_operator_metadata(cfg_data) -> dict:
 
 
 def build_run_metadata(
-    selection,
+    selection: Any,
     algorithm_name: str,
     engine_name: str,
-    cfg_data,
-    metrics: dict,
+    cfg_data: Any,
+    metrics: dict[str, Any],
     *,
-    kernel_backend,
-    seed: int,
-    config,
+    kernel_backend: Any,
+    seed: int | None,
+    config: Any,
     project_root: Path,
-) -> dict:
+) -> dict[str, Any]:
     """
     Assemble the metadata payload for a single run.
     """

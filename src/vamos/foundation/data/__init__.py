@@ -24,7 +24,7 @@ def reference_front_path(name: str) -> Path:
 
 def weight_path(filename: str) -> Path:
     """
-    Return a filesystem path to a packaged weight vector CSV.
+    Return a filesystem path to a packaged weight vector file.
     """
     path = resources.files(__name__) / "weights" / filename
     if not path.is_file():

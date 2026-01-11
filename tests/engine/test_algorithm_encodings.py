@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from unittest.mock import MagicMock
 from vamos.engine.algorithm.builders import (
@@ -134,11 +135,11 @@ def test_agemoea_pipeline_run_integration(mock_kernel):
 
     # Mock backend
     mock_backend = MagicMock(spec=SerialEvalBackend)
-    mock_backend.evaluate.return_value.F = [[0.1, 0.2]] * 100
-    mock_kernel.nsga2_ranking.return_value = ([0] * 100, [0.0] * 100)
+    mock_backend.evaluate.return_value.F = np.full((100, 2), 0.1)
+    mock_kernel.nsga2_ranking.return_value = (np.zeros(100, dtype=int), np.zeros(100, dtype=float))
 
     with patch("vamos.engine.algorithm.agemoea.agemoea.VariationPipeline") as MockPipeline:
-        algo.run(problem, ("n_gen", 1), seed=0, eval_backend=mock_backend)
+        algo.run(problem, ("n_gen", 1), seed=0, eval_strategy=mock_backend)
         _, kwargs = MockPipeline.call_args
         # Should default to binary operators
         assert kwargs["encoding"] == "binary"

@@ -9,7 +9,7 @@ import os
 import numpy as np
 
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.foundation.problem.resolver import ProblemSelection
+from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
 

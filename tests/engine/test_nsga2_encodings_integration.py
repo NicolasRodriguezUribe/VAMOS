@@ -16,7 +16,7 @@ def _run_nsga2(problem, crossover, mutation, pop_size=10, n_eval=40):
         .crossover(*crossover)
         .mutation(*mutation)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine("numpy")
     ).fixed()
     algo = NSGAII(cfg.to_dict(), kernel=NumPyKernel())

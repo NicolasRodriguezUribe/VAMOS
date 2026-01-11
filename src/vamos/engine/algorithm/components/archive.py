@@ -37,13 +37,14 @@ class _BaseArchive:
     Subclasses implement different pruning strategies via _get_indicator().
     """
 
-    def __init__(self, capacity: int, n_var: int, n_obj: int, dtype):
+    def __init__(self, capacity: int, n_var: int, n_obj: int, dtype, objective_tolerance: float = 1e-10):
         self.capacity = int(capacity)
         if self.capacity <= 0:
             raise ValueError("archive capacity must be positive.")
         self._dtype = np.dtype(dtype)
         self._n_var = int(n_var)
         self._n_obj = int(n_obj)
+        self._objective_tolerance = float(objective_tolerance)
         storage_rows = self.capacity + 1  # allow temporary overflow before trimming
         self._X = np.empty((storage_rows, self._n_var), dtype=self._dtype)
         self._F = np.empty((storage_rows, self._n_obj), dtype=float)
@@ -63,6 +64,8 @@ class _BaseArchive:
                 self._append(x, f)
                 continue
             if self._is_dominated(f):
+                continue
+            if self._is_duplicate(f):
                 continue
             self._remove_dominated(f)
             self._append(x, f)
@@ -97,6 +100,13 @@ class _BaseArchive:
     def _is_dominated(self, f: np.ndarray) -> bool:
         existing = self._F[: self._size]
         return self._dominates(existing, f).any() if existing.shape[0] else False
+
+    def _is_duplicate(self, f: np.ndarray) -> bool:
+        if self._size == 0:
+            return False
+        existing = self._F[: self._size]
+        diff = np.abs(existing - f)
+        return np.any(np.all(diff <= self._objective_tolerance, axis=1))
 
     @staticmethod
     def _dominates(candidates: np.ndarray, f: np.ndarray) -> np.ndarray:

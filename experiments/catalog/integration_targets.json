@@ -21,29 +21,43 @@
           "kind": "method",
           "name": "BLXAlphaCrossover.__call__",
           "score": 8,
-          "lineno": 230,
-          "snippet": "  224:             self._repair_reflect(child)\n  225:         elif self.repair == \"round\":\n  226:             self._repair_round(child)\n  227:         else:\n  228:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  229: \n  230:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  231:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  232:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  233:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  234:         n_pairs = offspring.shape[0]\n  235:         if n_pairs == 0:\n  236:             return offspring"
+          "lineno": 233,
+          "snippet": "  227:             self._repair_reflect(child)\n  228:         elif self.repair == \"round\":\n  229:             self._repair_round(child)\n  230:         else:\n  231:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  232: \n  233:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  234:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  235:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  236:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  237:         n_pairs = offspring.shape[0]\n  238:         if n_pairs == 0:\n  239:             return offspring"
         },
         {
           "kind": "function",
           "name": "__call__",
           "score": 8,
-          "lineno": 230,
-          "snippet": "  224:             self._repair_reflect(child)\n  225:         elif self.repair == \"round\":\n  226:             self._repair_round(child)\n  227:         else:\n  228:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  229: \n  230:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  231:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  232:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  233:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  234:         n_pairs = offspring.shape[0]\n  235:         if n_pairs == 0:\n  236:             return offspring"
+          "lineno": 233,
+          "snippet": "  227:             self._repair_reflect(child)\n  228:         elif self.repair == \"round\":\n  229:             self._repair_round(child)\n  230:         else:\n  231:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  232: \n  233:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  234:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  235:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  236:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  237:         n_pairs = offspring.shape[0]\n  238:         if n_pairs == 0:\n  239:             return offspring"
         },
         {
           "kind": "method",
           "name": "ArithmeticCrossover.__call__",
-          "score": 10,
-          "lineno": 269,
-          "snippet": "  263: class ArithmeticCrossover(Crossover):\n  264:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  265: \n  266:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  267:         self.prob = float(prob_crossover)\n  268: \n  269:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  270:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  271:         offspring = parents_arr.copy()\n  272:         n_pairs = offspring.shape[0]\n  273:         if n_pairs == 0:\n  274:             return offspring\n  275: "
+          "score": 9,
+          "lineno": 272,
+          "snippet": "  266: class ArithmeticCrossover(Crossover):\n  267:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  268: \n  269:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  270:         self.prob = float(prob_crossover)\n  271: \n  272:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  273:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  274:         offspring = parents_arr.copy()\n  275:         n_pairs = offspring.shape[0]\n  276:         if n_pairs == 0:\n  277:             return offspring\n  278: "
         },
         {
           "kind": "function",
           "name": "__call__",
-          "score": 10,
-          "lineno": 269,
-          "snippet": "  263: class ArithmeticCrossover(Crossover):\n  264:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  265: \n  266:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  267:         self.prob = float(prob_crossover)\n  268: \n  269:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  270:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  271:         offspring = parents_arr.copy()\n  272:         n_pairs = offspring.shape[0]\n  273:         if n_pairs == 0:\n  274:             return offspring\n  275: "
+          "score": 9,
+          "lineno": 272,
+          "snippet": "  266: class ArithmeticCrossover(Crossover):\n  267:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  268: \n  269:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  270:         self.prob = float(prob_crossover)\n  271: \n  272:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  273:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  274:         offspring = parents_arr.copy()\n  275:         n_pairs = offspring.shape[0]\n  276:         if n_pairs == 0:\n  277:             return offspring\n  278: "
+        },
+        {
+          "kind": "method",
+          "name": "UNDXCrossover.__call__",
+          "score": 12,
+          "lineno": 389,
+          "snippet": "  383:     ) -> None:\n  384:         self.prob = float(prob_crossover)\n  385:         self.zeta = float(zeta)\n  386:         self.eta = float(eta)\n  387:         self.lower, self.upper = _ensure_bounds(lower, upper)\n  388: \n  389:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  390:         groups = self._as_matings(parents, expected_parents=3, copy=False)\n  391:         n_groups, _, n_vars = groups.shape\n  392:         if n_groups == 0:\n  393:             return np.empty((0, 2, n_vars), dtype=groups.dtype)\n  394:         offspring = np.empty((n_groups, 2, n_vars), dtype=groups.dtype)\n  395:         for i in range(n_groups):"
+        },
+        {
+          "kind": "function",
+          "name": "__call__",
+          "score": 12,
+          "lineno": 389,
+          "snippet": "  383:     ) -> None:\n  384:         self.prob = float(prob_crossover)\n  385:         self.zeta = float(zeta)\n  386:         self.eta = float(eta)\n  387:         self.lower, self.upper = _ensure_bounds(lower, upper)\n  388: \n  389:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  390:         groups = self._as_matings(parents, expected_parents=3, copy=False)\n  391:         n_groups, _, n_vars = groups.shape\n  392:         if n_groups == 0:\n  393:             return np.empty((0, 2, n_vars), dtype=groups.dtype)\n  394:         offspring = np.empty((n_groups, 2, n_vars), dtype=groups.dtype)\n  395:         for i in range(n_groups):"
         }
       ],
       "write_hits": []
@@ -54,30 +68,30 @@
         {
           "kind": "method",
           "name": "VariationPipeline.produce_offspring",
-          "score": 9,
-          "lineno": 165,
-          "snippet": "  159:             return cast(np.ndarray, population[parent_idx])\n  160:         shape = (parent_idx.size, population.shape[1])\n  161:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n  162:         np.take(population, parent_idx, axis=0, out=buffer)\n  163:         return buffer\n  164: \n  165:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  166:         # Non-real encoding path (handled by dedicated operators).\n  167:         if self.encoding != \"real\":\n  168:              return self._produce_offspring_nonreal(parents, rng)\n  169: \n  170:         # Pipeline execution for Real encoding\n  171:         n_var = parents.shape[1]"
+          "score": 12,
+          "lineno": 189,
+          "snippet": "  183:             return cast(np.ndarray, population[parent_idx])\n  184:         shape = (parent_idx.size, population.shape[1])\n  185:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n  186:         np.take(population, parent_idx, axis=0, out=buffer)\n  187:         return buffer\n  188: \n  189:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  190:         # Non-real encoding path (handled by dedicated operators).\n  191:         if self.encoding != \"real\":\n  192:             return self._produce_offspring_nonreal(parents, rng)\n  193: \n  194:         # Pipeline execution for Real encoding\n  195:         n_var = parents.shape[1]"
         },
         {
           "kind": "method",
           "name": "VariationPipeline._produce_offspring_nonreal",
-          "score": 15,
-          "lineno": 204,
-          "snippet": "  198:             flat = offspring.reshape(-1, offspring.shape[-1])\n  199:             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))\n  200:             offspring = repaired.reshape(offspring.shape)\n  201: \n  202:         return offspring\n  203: \n  204:     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  205:         # Dedicated logic for non-real encodings.\n  206:         encoding = self.encoding\n  207:         cross_params = self.cross_params\n  208:         mut_params = self.mut_params\n  209:         xl, xu = self.xl, self.xu\n  210: "
+          "score": 16,
+          "lineno": 230,
+          "snippet": "  224:             flat = offspring.reshape(-1, offspring.shape[-1])\n  225:             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))\n  226:             offspring = repaired.reshape(offspring.shape)\n  227: \n  228:         return offspring\n  229: \n  230:     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  231:         # Dedicated logic for non-real encodings.\n  232:         encoding = self.encoding\n  233:         cross_params = self.cross_params\n  234:         mut_params = self.mut_params\n  235:         xl, xu = self.xl, self.xu\n  236: "
         },
         {
           "kind": "function",
           "name": "produce_offspring",
-          "score": 9,
-          "lineno": 165,
-          "snippet": "  159:             return cast(np.ndarray, population[parent_idx])\n  160:         shape = (parent_idx.size, population.shape[1])\n  161:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n  162:         np.take(population, parent_idx, axis=0, out=buffer)\n  163:         return buffer\n  164: \n  165:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  166:         # Non-real encoding path (handled by dedicated operators).\n  167:         if self.encoding != \"real\":\n  168:              return self._produce_offspring_nonreal(parents, rng)\n  169: \n  170:         # Pipeline execution for Real encoding\n  171:         n_var = parents.shape[1]"
+          "score": 12,
+          "lineno": 189,
+          "snippet": "  183:             return cast(np.ndarray, population[parent_idx])\n  184:         shape = (parent_idx.size, population.shape[1])\n  185:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n  186:         np.take(population, parent_idx, axis=0, out=buffer)\n  187:         return buffer\n  188: \n  189:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  190:         # Non-real encoding path (handled by dedicated operators).\n  191:         if self.encoding != \"real\":\n  192:             return self._produce_offspring_nonreal(parents, rng)\n  193: \n  194:         # Pipeline execution for Real encoding\n  195:         n_var = parents.shape[1]"
         },
         {
           "kind": "function",
           "name": "_produce_offspring_nonreal",
-          "score": 15,
-          "lineno": 204,
-          "snippet": "  198:             flat = offspring.reshape(-1, offspring.shape[-1])\n  199:             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))\n  200:             offspring = repaired.reshape(offspring.shape)\n  201: \n  202:         return offspring\n  203: \n  204:     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  205:         # Dedicated logic for non-real encodings.\n  206:         encoding = self.encoding\n  207:         cross_params = self.cross_params\n  208:         mut_params = self.mut_params\n  209:         xl, xu = self.xl, self.xu\n  210: "
+          "score": 16,
+          "lineno": 230,
+          "snippet": "  224:             flat = offspring.reshape(-1, offspring.shape[-1])\n  225:             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))\n  226:             offspring = repaired.reshape(offspring.shape)\n  227: \n  228:         return offspring\n  229: \n  230:     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  231:         # Dedicated logic for non-real encodings.\n  232:         encoding = self.encoding\n  233:         cross_params = self.cross_params\n  234:         mut_params = self.mut_params\n  235:         xl, xu = self.xl, self.xu\n  236: "
         }
       ],
       "write_hits": []
@@ -117,14 +131,14 @@
           "name": "MOEAD.run",
           "score": 10,
           "lineno": 94,
-          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: \"ProblemProtocol\",\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_backend: \"EvaluationBackend | None\" = None,\n  100:         live_viz: \"LiveVisualization | None\" = None,"
+          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: \"ProblemProtocol\",\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_strategy: \"EvaluationBackend | None\" = None,\n  100:         live_viz: \"LiveVisualization | None\" = None,"
         },
         {
           "kind": "function",
           "name": "run",
           "score": 10,
           "lineno": 94,
-          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: \"ProblemProtocol\",\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_backend: \"EvaluationBackend | None\" = None,\n  100:         live_viz: \"LiveVisualization | None\" = None,"
+          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: \"ProblemProtocol\",\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_strategy: \"EvaluationBackend | None\" = None,\n  100:         live_viz: \"LiveVisualization | None\" = None,"
         }
       ],
       "write_hits": []
@@ -157,14 +171,34 @@
           "name": "NSGAII.run",
           "score": 12,
           "lineno": 69,
-          "snippet": "   63: \n   64:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   65:         self.cfg = config\n   66:         self.kernel = kernel\n   67:         self._st: NSGAIIState | None = None\n   68: \n   69:     def run(\n   70:         self,\n   71:         problem: ProblemProtocol,\n   72:         termination: tuple[str, Any],\n   73:         seed: int,\n   74:         eval_backend: EvaluationBackend | None = None,\n   75:         live_viz: LiveVisualization | None = None,"
+          "snippet": "   63: \n   64:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   65:         self.cfg = config\n   66:         self.kernel = kernel\n   67:         self._st: NSGAIIState | None = None\n   68: \n   69:     def run(\n   70:         self,\n   71:         problem: ProblemProtocol,\n   72:         termination: tuple[str, Any],\n   73:         seed: int,\n   74:         eval_strategy: EvaluationBackend | None = None,\n   75:         live_viz: LiveVisualization | None = None,"
         },
         {
           "kind": "function",
           "name": "run",
           "score": 12,
           "lineno": 69,
-          "snippet": "   63: \n   64:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   65:         self.cfg = config\n   66:         self.kernel = kernel\n   67:         self._st: NSGAIIState | None = None\n   68: \n   69:     def run(\n   70:         self,\n   71:         problem: ProblemProtocol,\n   72:         termination: tuple[str, Any],\n   73:         seed: int,\n   74:         eval_backend: EvaluationBackend | None = None,\n   75:         live_viz: LiveVisualization | None = None,"
+          "snippet": "   63: \n   64:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   65:         self.cfg = config\n   66:         self.kernel = kernel\n   67:         self._st: NSGAIIState | None = None\n   68: \n   69:     def run(\n   70:         self,\n   71:         problem: ProblemProtocol,\n   72:         termination: tuple[str, Any],\n   73:         seed: int,\n   74:         eval_strategy: EvaluationBackend | None = None,\n   75:         live_viz: LiveVisualization | None = None,"
+        }
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\engine\\algorithm\\rvea\\rvea.py",
+      "loop_candidates": [
+        {
+          "kind": "method",
+          "name": "RVEA.run",
+          "score": 8,
+          "lineno": 119,
+          "snippet": "  113: \n  114:     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):\n  115:         self.config = config\n  116:         self.kernel = kernel or NumPyKernel()\n  117:         self._state = None\n  118: \n  119:     def run(\n  120:         self,\n  121:         problem: ProblemProtocol,\n  122:         termination: Tuple[str, Any],\n  123:         seed: int,\n  124:         eval_strategy: EvaluationBackend | None = None,\n  125:         live_viz: Any | None = None,"
+        },
+        {
+          "kind": "function",
+          "name": "run",
+          "score": 8,
+          "lineno": 119,
+          "snippet": "  113: \n  114:     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):\n  115:         self.config = config\n  116:         self.kernel = kernel or NumPyKernel()\n  117:         self._state = None\n  118: \n  119:     def run(\n  120:         self,\n  121:         problem: ProblemProtocol,\n  122:         termination: Tuple[str, Any],\n  123:         seed: int,\n  124:         eval_strategy: EvaluationBackend | None = None,\n  125:         live_viz: Any | None = None,"
         }
       ],
       "write_hits": []
@@ -176,15 +210,15 @@
           "kind": "method",
           "name": "SPEA2.run",
           "score": 10,
-          "lineno": 86,
-          "snippet": "   80:         self._live_cb = None\n   81:         self._eval_backend = None\n   82:         self._max_eval = None\n   83:         self._hv_tracker = None\n   84:         self._problem = None\n   85: \n   86:     def run(\n   87:         self,\n   88:         problem: \"ProblemProtocol\",\n   89:         termination: tuple[str, Any],\n   90:         seed: int,\n   91:         eval_backend: \"EvaluationBackend | None\" = None,\n   92:         live_viz: \"LiveVisualization | None\" = None,"
+          "lineno": 121,
+          "snippet": "  115:         self._live_cb = None\n  116:         self._eval_strategy = None\n  117:         self._max_eval = None\n  118:         self._hv_tracker = None\n  119:         self._problem = None\n  120: \n  121:     def run(\n  122:         self,\n  123:         problem: \"ProblemProtocol\",\n  124:         termination: tuple[str, Any],\n  125:         seed: int,\n  126:         eval_strategy: \"EvaluationBackend | None\" = None,\n  127:         live_viz: \"LiveVisualization | None\" = None,"
         },
         {
           "kind": "function",
           "name": "run",
           "score": 10,
-          "lineno": 86,
-          "snippet": "   80:         self._live_cb = None\n   81:         self._eval_backend = None\n   82:         self._max_eval = None\n   83:         self._hv_tracker = None\n   84:         self._problem = None\n   85: \n   86:     def run(\n   87:         self,\n   88:         problem: \"ProblemProtocol\",\n   89:         termination: tuple[str, Any],\n   90:         seed: int,\n   91:         eval_backend: \"EvaluationBackend | None\" = None,\n   92:         live_viz: \"LiveVisualization | None\" = None,"
+          "lineno": 121,
+          "snippet": "  115:         self._live_cb = None\n  116:         self._eval_strategy = None\n  117:         self._max_eval = None\n  118:         self._hv_tracker = None\n  119:         self._problem = None\n  120: \n  121:     def run(\n  122:         self,\n  123:         problem: \"ProblemProtocol\",\n  124:         termination: tuple[str, Any],\n  125:         seed: int,\n  126:         eval_strategy: \"EvaluationBackend | None\" = None,\n  127:         live_viz: \"LiveVisualization | None\" = None,"
         }
       ],
       "write_hits": []
@@ -205,26 +239,6 @@
           "score": 10,
           "lineno": 80,
           "snippet": "   74:     \"\"\"\n   75: \n   76:     _cat_models: Dict[str, Dict[str, Any]] = field(default_factory=dict)\n   77:     _real_models: Dict[str, Dict[str, float]] = field(default_factory=dict)\n   78:     _int_models: Dict[str, Dict[str, float]] = field(default_factory=dict)\n   79: \n   80:     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:\n   81:         \"\"\"\n   82:         Update the internal marginal model from a collection of 'good' configs.\n   83: \n   84:         If the number of good_configs is below min_samples_to_model, the internal\n   85:         model is cleared and only uniform sampling will be used.\n   86:         \"\"\""
-        }
-      ],
-      "write_hits": []
-    },
-    {
-      "path": "src\\vamos\\experiment\\study\\runner.py",
-      "loop_candidates": [
-        {
-          "kind": "method",
-          "name": "StudyRunner.expand_tasks",
-          "score": 8,
-          "lineno": 174,
-          "snippet": "  168:                     vals[name] = None\n  169:             res.metrics[\"indicator_values\"] = vals\n  170: \n  171:     # expand_tasks is static and purely data transformation, can stay or move.\n  172:     # Moving it to types or keeping it here as helper is fine. Keeping for backward compat.\n  173:     @staticmethod\n  174:     def expand_tasks(\n  175:         problems: Sequence[StudyTask | dict],\n  176:         algorithms: Sequence[str],\n  177:         engines: Sequence[str],\n  178:         seeds: Sequence[int],\n  179:     ) -> List[StudyTask]:\n  180:         \"\"\""
-        },
-        {
-          "kind": "function",
-          "name": "expand_tasks",
-          "score": 8,
-          "lineno": 174,
-          "snippet": "  168:                     vals[name] = None\n  169:             res.metrics[\"indicator_values\"] = vals\n  170: \n  171:     # expand_tasks is static and purely data transformation, can stay or move.\n  172:     # Moving it to types or keeping it here as helper is fine. Keeping for backward compat.\n  173:     @staticmethod\n  174:     def expand_tasks(\n  175:         problems: Sequence[StudyTask | dict],\n  176:         algorithms: Sequence[str],\n  177:         engines: Sequence[str],\n  178:         seeds: Sequence[int],\n  179:     ) -> List[StudyTask]:\n  180:         \"\"\""
         }
       ],
       "write_hits": []
@@ -257,7 +271,7 @@
           "name": "main",
           "score": 12,
           "lineno": 135,
-          "snippet": "  129:     )\n  130: \n  131:     result = optimize(run_cfg)\n  132:     return result, callback.history\n  133: \n  134: \n  135: def main(argv: List[str] | None = None) -> None:\n  136:     parser = argparse.ArgumentParser(description=\"Launch VAMOS Studio (Streamlit).\")\n  137:     parser.add_argument(\"--study-dir\", help=\"Path to a StudyRunner output directory.\", default=\"results\")\n  138:     args, _ = parser.parse_known_args(argv)\n  139: \n  140:     st = _import_streamlit()\n  141:     px = _import_plotly()"
+          "snippet": "  129:     )\n  130: \n  131:     result = optimize_config(run_cfg)\n  132:     return result, callback.history\n  133: \n  134: \n  135: def main(argv: List[str] | None = None) -> None:\n  136:     parser = argparse.ArgumentParser(description=\"Launch VAMOS Studio (Streamlit).\")\n  137:     parser.add_argument(\"--study-dir\", help=\"Path to a StudyRunner output directory.\", default=\"results\")\n  138:     args, _ = parser.parse_known_args(argv)\n  139: \n  140:     st = _import_streamlit()\n  141:     px = _import_plotly()"
         }
       ],
       "write_hits": [
@@ -275,8 +289,8 @@
           "kind": "function",
           "name": "fast_non_dominated_sort",
           "score": 10,
-          "lineno": 31,
-          "snippet": "   25:     \"niche_selection\",\n   26:     \"nsgaiii_survival\",\n   27:     \"evaluate_population_with_constraints\",\n   28: ]\n   29: \n   30: \n   31: def fast_non_dominated_sort(F: np.ndarray) -> list[list[int]]:\n   32:     \"\"\"Fast non-dominated sorting.\n   33: \n   34:     Parameters\n   35:     ----------\n   36:     F : np.ndarray\n   37:         Objective values, shape (n, n_obj)."
+          "lineno": 33,
+          "snippet": "   27:     \"niche_selection\",\n   28:     \"nsgaiii_survival\",\n   29:     \"evaluate_population_with_constraints\",\n   30: ]\n   31: \n   32: \n   33: def fast_non_dominated_sort(F: np.ndarray) -> list[list[int]]:\n   34:     \"\"\"Fast non-dominated sorting.\n   35: \n   36:     Parameters\n   37:     ----------\n   38:     F : np.ndarray\n   39:         Objective values, shape (n, n_obj)."
         }
       ],
       "write_hits": []
@@ -290,6 +304,19 @@
           "score": 8,
           "lineno": 75,
           "snippet": "   69:             if np.all(F[i] <= F[j]) and np.any(F[i] < F[j]):\n   70:                 dom[i, j] = True\n   71: \n   72:     return dom, feas, cv\n   73: \n   74: \n   75: def spea2_fitness(F: np.ndarray, dom: np.ndarray, k: int | None = None) -> tuple[np.ndarray, np.ndarray]:\n   76:     \"\"\"Compute SPEA2 fitness and distance matrix.\n   77: \n   78:     SPEA2 fitness consists of:\n   79:     1. Raw fitness: sum of strengths of all dominators\n   80:     2. Density: based on k-th nearest neighbor distance\n   81: "
+        }
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\engine\\tuning\\racing\\multi_fidelity.py",
+      "loop_candidates": [
+        {
+          "kind": "function",
+          "name": "_run_multi_fidelity",
+          "score": 8,
+          "lineno": 30,
+          "snippet": "   24:     warm_start: bool,\n   25: ) -> Any:\n   26:     result = eval_fn(config, ctx)\n   27:     return result\n   28: \n   29: \n   30: def _run_multi_fidelity(\n   31:     tuner: \"RacingTuner\",\n   32:     eval_fn: Callable[[Dict[str, Any], EvalContext], float],\n   33:     verbose: Optional[bool] = None,\n   34: ) -> Tuple[Dict[str, Any], List[TrialResult]]:\n   35:     verbose_flag = tuner.scenario.verbose if verbose is None else verbose\n   36:     fidelity_levels = list(tuner.scenario.fidelity_levels)"
         }
       ],
       "write_hits": []
@@ -340,8 +367,8 @@
           "kind": "function",
           "name": "execute_problem_suite",
           "score": 12,
-          "lineno": 349,
-          "snippet": "  343:             f\"{res['evals_per_sec']:>12.1f} {hv_txt:>12} {spread_txt:>12}\",\n  344:         )\n  345:     ref_txt = np.array2string(hv_ref_point, precision=3, suppress_small=True)\n  346:     _logger().info(\"Hypervolume reference point: %s\", ref_txt)\n  347: \n  348: \n  349: def execute_problem_suite(\n  350:     args: Namespace,\n  351:     problem_selection: ProblemSelection,\n  352:     config: ExperimentConfig,\n  353:     *,\n  354:     run_single_fn: Callable[..., Metrics],\n  355:     hv_stop_config: dict[str, Any] | None = None,"
+          "lineno": 355,
+          "snippet": "  349:             f\"{res['evals_per_sec']:>12.1f} {hv_txt:>12} {spread_txt:>12}\",\n  350:         )\n  351:     ref_txt = np.array2string(hv_ref_point, precision=3, suppress_small=True)\n  352:     _logger().info(\"Hypervolume reference point: %s\", ref_txt)\n  353: \n  354: \n  355: def execute_problem_suite(\n  356:     args: Namespace,\n  357:     problem_selection: ProblemSelection,\n  358:     config: ExperimentConfig,\n  359:     *,\n  360:     run_single_fn: Callable[..., Metrics],\n  361:     hv_stop_config: dict[str, Any] | None = None,"
         }
       ],
       "write_hits": []
@@ -354,20 +381,7 @@
           "name": "sbx_crossover_numba",
           "score": 18,
           "lineno": 60,
-          "snippet": "   54:                     y = yu\n   55: \n   56:                 X[i, j] = y\n   57: \n   58: \n   59: @njit(cache=True)\n   60: def sbx_crossover_numba(\n   61:     X_parents: np.ndarray,\n   62:     prob: float,\n   63:     eta: float,\n   64:     prob_var: float,\n   65:     lower: np.ndarray,\n   66:     upper: np.ndarray,"
-        }
-      ],
-      "write_hits": []
-    },
-    {
-      "path": "src\\vamos\\operators\\permutation.py",
-      "loop_candidates": [
-        {
-          "kind": "function",
-          "name": "_pmx_into",
-          "score": 8,
-          "lineno": 332,
-          "snippet": "  326:     cut1, cut2 = _two_cut_points(n, rng)\n  327:     _pmx_into(p1, p2, c1, cut1, cut2)\n  328:     _pmx_into(p2, p1, c2, cut1, cut2)\n  329:     return c1, c2\n  330: \n  331: \n  332: def _pmx_into(parent_a: PermVec, parent_b: PermVec, child: PermVec, cut1: int, cut2: int) -> None:\n  333:     n = parent_a.size\n  334:     cut1, cut2 = _ensure_valid_segment(n, cut1, cut2)\n  335:     child.fill(-1)\n  336:     used = np.zeros(n, dtype=bool)\n  337:     mapping = {}\n  338: "
+          "snippet": "   54:                     y = yu\n   55: \n   56:                 X[i, j] = y\n   57: \n   58: \n   59: @njit(cache=True)\n   60: def sbx_crossover_numba(\n   61:     X_parents: np.ndarray,\n   62:     prob: float,\n   63:     eta: float,\n   64:     lower: np.ndarray,\n   65:     upper: np.ndarray,\n   66:     prob_var: float = 0.5,"
         }
       ],
       "write_hits": []
@@ -496,18 +510,18 @@
       ]
     },
     {
-      "path": "src\\vamos\\experiment\\optimize.py",
+      "path": "src\\vamos\\experiment\\optimization_result.py",
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 215,
+          "lineno": 210,
           "line": "np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")",
-          "snippet": "  209:         from pathlib import Path\n  210: \n  211:         out_dir = Path(path)\n  212:         out_dir.mkdir(parents=True, exist_ok=True)\n  213: \n  214:         if self.F is not None:\n  215:             np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")\n  216:         if self.X is not None:\n  217:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  218: \n  219:         metadata = {\n  220:             \"n_solutions\": len(self),\n  221:             \"n_objectives\": self.n_objectives,"
+          "snippet": "  204:         from pathlib import Path\n  205: \n  206:         out_dir = Path(path)\n  207:         out_dir.mkdir(parents=True, exist_ok=True)\n  208: \n  209:         if self.F is not None:\n  210:             np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")\n  211:         if self.X is not None:\n  212:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  213: \n  214:         metadata = {\n  215:             \"n_solutions\": len(self),\n  216:             \"n_objectives\": self.n_objectives,"
         },
         {
-          "lineno": 223,
+          "lineno": 218,
           "line": "with open(out_dir / \"metadata.json\", \"w\") as f:",
-          "snippet": "  217:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  218: \n  219:         metadata = {\n  220:             \"n_solutions\": len(self),\n  221:             \"n_objectives\": self.n_objectives,\n  222:         }\n  223:         with open(out_dir / \"metadata.json\", \"w\") as f:\n  224:             json.dump(metadata, f, indent=2)\n  225: \n  226:         _logger().info(\"Results saved to %s\", out_dir)\n  227: \n  228:     def explore(self, title: str = \"Pareto Front Explorer\") -> Any:\n  229:         \"\"\""
+          "snippet": "  212:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  213: \n  214:         metadata = {\n  215:             \"n_solutions\": len(self),\n  216:             \"n_objectives\": self.n_objectives,\n  217:         }\n  218:         with open(out_dir / \"metadata.json\", \"w\") as f:\n  219:             json.dump(metadata, f, indent=2)\n  220: \n  221:         _logger().info(\"Results saved to %s\", out_dir)\n  222: \n  223:     def explore(self, title: str = \"Pareto Front Explorer\") -> Any:\n  224:         \"\"\""
         }
       ]
     },
@@ -532,14 +546,14 @@
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 29,
+          "lineno": 30,
           "line": "Mirror per-run artifacts (like FUN.csv) to a consolidated directory.",
-          "snippet": "   23:         Save the aggregated results (e.g. to a CSV file).\n   24:         \"\"\"\n   25:         ...\n   26: \n   27:     def mirror_artifacts(self, result: StudyResult) -> None:\n   28:         \"\"\"\n   29:         Mirror per-run artifacts (like FUN.csv) to a consolidated directory.\n   30:         \"\"\"\n   31:         ...\n   32: \n   33: \n   34: class CSVPersister:\n   35:     \"\"\""
+          "snippet": "   24:         Save the aggregated results (e.g. to a CSV file).\n   25:         \"\"\"\n   26:         ...\n   27: \n   28:     def mirror_artifacts(self, result: StudyResult) -> None:\n   29:         \"\"\"\n   30:         Mirror per-run artifacts (like FUN.csv) to a consolidated directory.\n   31:         \"\"\"\n   32:         ...\n   33: \n   34: \n   35: class CSVPersister:\n   36:     \"\"\""
         },
         {
-          "lineno": 96,
+          "lineno": 97,
           "line": "for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):",
-          "snippet": "   90:                 dst = target_root / relative\n   91:             else:\n   92:                 dst = target_root / src_dir.name\n   93:             if dst.resolve() == src_dir:\n   94:                 continue\n   95:             dst.mkdir(parents=True, exist_ok=True)\n   96:             for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):\n   97:                 src_file = src_dir / name\n   98:                 if src_file.exists():\n   99:                     copy2(src_file, dst / name)"
+          "snippet": "   91:                 dst = target_root / relative\n   92:             else:\n   93:                 dst = target_root / src_dir.name\n   94:             if dst.resolve() == src_dir:\n   95:                 continue\n   96:             dst.mkdir(parents=True, exist_ok=True)\n   97:             for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):\n   98:                 src_file = src_dir / name\n   99:                 if src_file.exists():\n  100:                     copy2(src_file, dst / name)"
         }
       ]
     },
@@ -548,9 +562,9 @@
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 176,
+          "lineno": 179,
           "line": "\"time_ms\": \"time.txt\",",
-          "snippet": "  170:             \"archive_x\": artifacts.get(\"archive_x\"),\n  171:             \"archive_g\": artifacts.get(\"archive_g\"),\n  172:             \"genealogy\": artifacts.get(\"genealogy\"),\n  173:             \"autodiff_constraints\": artifacts.get(\"autodiff_constraints\"),\n  174:             \"aos_trace\": artifacts.get(\"aos_trace\"),\n  175:             \"aos_summary\": artifacts.get(\"aos_summary\"),\n  176:             \"time_ms\": \"time.txt\",\n  177:         }\n  178:         hv_trace = self.output_dir / \"hv_trace.csv\"\n  179:         if hv_trace.exists():\n  180:             artifact_entries[\"hv_trace\"] = hv_trace.name\n  181:         archive_stats = self.output_dir / \"archive_stats.csv\"\n  182:         if archive_stats.exists():"
+          "snippet": "  173:             \"archive_x\": artifacts.get(\"archive_x\"),\n  174:             \"archive_g\": artifacts.get(\"archive_g\"),\n  175:             \"genealogy\": artifacts.get(\"genealogy\"),\n  176:             \"autodiff_constraints\": artifacts.get(\"autodiff_constraints\"),\n  177:             \"aos_trace\": artifacts.get(\"aos_trace\"),\n  178:             \"aos_summary\": artifacts.get(\"aos_summary\"),\n  179:             \"time_ms\": \"time.txt\",\n  180:         }\n  181:         hv_trace = self.output_dir / \"hv_trace.csv\"\n  182:         if hv_trace.exists():\n  183:             artifact_entries[\"hv_trace\"] = hv_trace.name\n  184:         archive_stats = self.output_dir / \"archive_stats.csv\"\n  185:         if archive_stats.exists():"
         }
       ]
     },

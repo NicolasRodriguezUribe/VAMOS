@@ -40,6 +40,9 @@ class NSGAIIIState(AlgorithmState):
     crossover_fn: Callable[[np.ndarray], np.ndarray] | None = None
     mutation_fn: Callable[[np.ndarray], np.ndarray] | None = None
     result_mode: str = "population"
+    ideal_point: np.ndarray = field(default_factory=lambda: np.array([]))
+    worst_point: np.ndarray = field(default_factory=lambda: np.array([]))
+    extreme_points: np.ndarray | None = None
 
 
 def build_nsgaiii_result(

@@ -22,7 +22,7 @@ def _configure_cli_logging(level: int = logging.INFO) -> None:
     root.setLevel(level)
 
 
-def _list_cmd(args):
+def _list_cmd(args: argparse.Namespace) -> None:
     infos = list_problems()
     for info in sorted(infos, key=lambda x: x.name):
         cats = ",".join(info.categories)
@@ -36,7 +36,7 @@ def _list_cmd(args):
         )
 
 
-def _info_cmd(args):
+def _info_cmd(args: argparse.Namespace) -> None:
     info = get_problem_info(args.name)
     if info is None:
         _logger().warning("Problem '%s' not found.", args.name)
@@ -52,7 +52,7 @@ def _info_cmd(args):
     _logger().info("Tags: %s", ", ".join(info.tags))
 
 
-def _run_cmd(args):
+def _run_cmd(args: argparse.Namespace) -> None:
     config = ExperimentConfig(
         output_root=args.output,
         population_size=args.pop_size,
@@ -69,7 +69,7 @@ def _run_cmd(args):
     _logger().info("Run finished. HV: %s, output: %s", metrics.get("hv"), metrics.get("output_dir"))
 
 
-def build_parser():
+def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="VAMOS problem zoo browser.")
     sub = p.add_subparsers(dest="cmd")
 
@@ -89,7 +89,7 @@ def build_parser():
     return p
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> None:
     _configure_cli_logging()
     parser = build_parser()
     args = parser.parse_args(argv)

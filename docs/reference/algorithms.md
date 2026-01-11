@@ -4,8 +4,8 @@ Algorithms (internal)
 ---------------------
 
 - NSGA-II: continuous, permutation, binary, integer, mixed; supports archive, adaptive operators, HV early-stop.
-- NSGA-III: many-objective real/binary/integer; reference direction support.
-- MOEA/D: real/binary/integer; aggregation methods (tchebycheff, weighted sum, pbi).
+- NSGA-III: many-objective real/binary/integer; reference direction support. Matching `pop_size` to the number of reference directions is recommended (with divisions p: `comb(p + n_obj - 1, n_obj - 1)`); mismatches emit a warning unless strict enforcement is enabled.
+- MOEA/D: real/binary/integer; aggregation methods (tchebycheff, weighted sum, pbi). Defaults align with jMetalPy (PBI aggregation, DE crossover CR=1.0/F=0.5, packaged weight vectors for n_obj > 2).
 - SMS-EMOA: real/binary/integer; adaptive reference points.
 - SPEA2: real/binary/integer with constraint handling.
 - IBEA: epsilon or hypervolume indicator variants.
