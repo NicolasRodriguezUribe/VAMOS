@@ -177,7 +177,7 @@ def main() -> int:
 
                         # operator block only if supported
                         op_payload = {}
-                        for k in ["crossover", "mutation", "selection", "repair", "survival"]:
+                        for k in ["crossover", "mutation", "selection", "repair"]:
                             if k in algo_keys and operator_block.get(k) is not None:
                                 op_payload[k] = deep_copy(operator_block[k])
                         if op_payload:

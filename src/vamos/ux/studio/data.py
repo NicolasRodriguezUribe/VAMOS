@@ -159,4 +159,4 @@ def normalize_objectives(F: np.ndarray) -> np.ndarray:
     mins = F.min(axis=0)
     maxs = F.max(axis=0)
     span = np.where(maxs - mins == 0, 1.0, maxs - mins)
-    return (F - mins) / span
+    return np.asarray((F - mins) / span, dtype=float)

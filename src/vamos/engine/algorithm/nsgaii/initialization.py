@@ -62,7 +62,7 @@ def parse_termination(termination: tuple[str, Any]) -> tuple[int, dict[str, Any]
 
 def setup_population(
     problem: ProblemProtocol,
-    eval_backend: EvaluationBackend,
+    eval_strategy: EvaluationBackend,
     rng: np.random.Generator,
     pop_size: int,
     constraint_mode: str,
@@ -74,7 +74,7 @@ def setup_population(
     ----------
     problem : ProblemProtocol
         The optimization problem.
-    eval_backend : EvaluationBackend
+    eval_strategy : EvaluationBackend
         Backend for evaluating solutions.
     rng : np.random.Generator
         Random number generator.
@@ -94,7 +94,7 @@ def setup_population(
     n_var = problem.n_var
     xl, xu = resolve_bounds(problem, encoding)
     X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
-    eval_result = eval_backend.evaluate(X, problem)
+    eval_result = eval_strategy.evaluate(X, problem)
     F = eval_result.F
     G = eval_result.G if constraint_mode != "none" else None
     assert X.shape[0] == F.shape[0], "Population and objectives must align"

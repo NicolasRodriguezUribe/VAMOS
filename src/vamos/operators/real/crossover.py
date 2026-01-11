@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import numpy as np
 
@@ -31,7 +32,7 @@ class SBXCrossover(Crossover):
         self,
         prob_crossover: float = 0.9,
         eta: float = 10.0,
-        prob_var: float = 1.0,
+        prob_var: float = 0.5,
         *,
         lower: ArrayLike,
         upper: ArrayLike,
@@ -61,7 +62,7 @@ class SBXCrossover(Crossover):
         np.less_equal(probs, self.prob, out=mask)
         return mask
 
-    def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
+    def _buffer(self, key: str, shape: tuple[int, ...], dtype: Any) -> np.ndarray:
         if self.workspace is None:
             return np.empty(shape, dtype=dtype)
         return self.workspace.request(key, shape, dtype)
@@ -276,11 +277,11 @@ class ArithmeticCrossover(Crossover):
         if n_pairs == 0:
             return offspring
 
-        mask = rng.random(n_pairs) <= self.prob
+        mask = np.asarray(rng.random(n_pairs) <= self.prob, dtype=bool)
         if not np.any(mask):
             return offspring
 
-        lam = rng.random((mask.sum(), offspring.shape[2]))
+        lam = rng.random((int(mask.sum()), 1))
         p1 = offspring[mask, 0, :]
         p2 = offspring[mask, 1, :]
         child1 = lam * p1 + (1.0 - lam) * p2
@@ -310,17 +311,17 @@ class DifferentialCrossover(Crossover):
         pop = self._as_population(population, name="population", copy=False)
         n_ind, n_vars = pop.shape
         _check_nvars(n_vars, self.lower)
-        if n_ind < 4:
-            raise ValueError("Differential crossover requires at least 4 individuals.")
+        if n_ind < 3:
+            raise ValueError("Differential crossover requires at least 3 individuals.")
 
         trial = pop.copy()
         all_indices = np.arange(n_ind)
         for i in range(n_ind):
             choices = np.delete(all_indices, i)
-            r1, r2, r3 = rng.choice(choices, size=3, replace=False)
-            mutant = pop[r1] + self.F * (pop[r2] - pop[r3])
+            r1, r2 = rng.choice(choices, size=2, replace=False)
+            mutant = pop[i] + self.F * (pop[r1] - pop[r2])
 
-            cross_mask = rng.random(n_vars) < self.CR
+            cross_mask = np.asarray(rng.random(n_vars) < self.CR, dtype=bool)
             j_rand = rng.integers(n_vars)
             cross_mask[j_rand] = True
             trial[i, cross_mask] = mutant[cross_mask]
@@ -370,51 +371,56 @@ class PCXCrossover(Crossover):
 
 
 class UNDXCrossover(Crossover):
-    """Unimodal Normal Distribution Crossover (UNDX) for 3-parent groups."""
+    """Unimodal Normal Distribution Crossover (UNDX) aligned with jMetalPy."""
 
     def __init__(
         self,
-        sigma_xi: float = 0.5,
-        sigma_eta: float = 0.35,
+        prob_crossover: float = 0.9,
+        zeta: float = 0.5,
+        eta: float = 0.35,
         *,
         lower: ArrayLike,
         upper: ArrayLike,
     ) -> None:
-        self.sigma_xi = float(sigma_xi)
-        self.sigma_eta = float(sigma_eta)
+        self.prob = float(prob_crossover)
+        self.zeta = float(zeta)
+        self.eta = float(eta)
         self.lower, self.upper = _ensure_bounds(lower, upper)
 
     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
         groups = self._as_matings(parents, expected_parents=3, copy=False)
         n_groups, _, n_vars = groups.shape
-        offspring = np.empty_like(groups)
+        if n_groups == 0:
+            return np.empty((0, 2, n_vars), dtype=groups.dtype)
+        offspring = np.empty((n_groups, 2, n_vars), dtype=groups.dtype)
         for i in range(n_groups):
             p1, p2, p3 = groups[i]
-            mid = 0.5 * (p1 + p2)
-            e = p2 - p1
-            norm_e = np.linalg.norm(e)
-            if norm_e <= 0.0:
-                e_unit = np.zeros_like(e)
-                norm_e = 1.0
-            else:
-                e_unit = e / norm_e
-            v = p3 - p1
-            proj = np.dot(v, e_unit)
-            ortho = v - proj * e_unit
-            norm_ortho = np.linalg.norm(ortho)
-            if norm_ortho <= 0.0:
-                # random orthogonal vector
-                rand_vec = rng.normal(0.0, 1.0, size=n_vars)
-                rand_vec -= np.dot(rand_vec, e_unit) * e_unit
-                norm_ortho = np.linalg.norm(rand_vec)
-                ortho = rand_vec if norm_ortho > 0 else e_unit
-                norm_ortho = np.linalg.norm(ortho) or 1.0
-            ortho_unit = ortho / norm_ortho
-            for j in range(3):
-                xi = rng.normal(0.0, self.sigma_xi * norm_e)
-                eta = rng.normal(0.0, self.sigma_eta * norm_e / np.sqrt(n_vars))
-                child = mid + xi * e_unit + eta * ortho_unit
-                offspring[i, j, :] = np.clip(child, self.lower, self.upper)
+            if rng.random() > self.prob:
+                offspring[i, 0, :] = p1
+                offspring[i, 1, :] = p2
+                continue
+
+            center = 0.5 * (p1 + p2)
+            diff = p2 - p1
+            distance = np.linalg.norm(diff)
+            if distance < 1.0e-10:
+                offspring[i, 0, :] = p1
+                offspring[i, 1, :] = p2
+                continue
+
+            child1 = np.empty(n_vars, dtype=groups.dtype)
+            child2 = np.empty(n_vars, dtype=groups.dtype)
+            for j in range(n_vars):
+                alpha = rng.uniform(-self.zeta * distance, self.zeta * distance)
+                beta = (rng.random() - 0.5) * self.eta * distance + (rng.random() - 0.5) * self.eta * distance
+                orthogonal = (p3[j] - center[j]) / distance
+                value1 = center[j] + alpha * diff[j] / distance + beta * orthogonal
+                value2 = center[j] - alpha * diff[j] / distance - beta * orthogonal
+                child1[j] = np.clip(value1, self.lower[j], self.upper[j])
+                child2[j] = np.clip(value2, self.lower[j], self.upper[j])
+
+            offspring[i, 0, :] = child1
+            offspring[i, 1, :] = child2
         return offspring
 
 
@@ -439,8 +445,8 @@ class SPXCrossover(Crossover):
             g = groups[i]
             centroid = np.mean(g, axis=0)
             for j in range(k):
-                weights = rng.random(k)
-                weights /= weights.sum()
+                weights = np.asarray(rng.random(k), dtype=float)
+                weights /= float(weights.sum())
                 point = np.sum(weights[:, None] * g, axis=0)
                 child = centroid + self.epsilon * (point - centroid)
                 offspring[i, j, :] = np.clip(child, self.lower, self.upper)

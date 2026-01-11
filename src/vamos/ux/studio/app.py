@@ -2,28 +2,34 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import List
+from typing import Any, List, TYPE_CHECKING
 
 import numpy as np
 
+from vamos.ux.studio.runner import run_focused_optimization, run_with_history
 
-def _import_streamlit():
+if TYPE_CHECKING:
+    from vamos.ux.studio.data import FrontRecord, RunRecord
+    from vamos.ux.studio.dm import DecisionView
+
+
+def _import_streamlit() -> Any:
     try:
-        import streamlit as st  # type: ignore
+        import streamlit as st
     except ImportError as exc:  # pragma: no cover - optional dependency
         raise ImportError("VAMOS Studio requires the 'studio' extra: pip install -e \".[studio]\"") from exc
     return st
 
 
-def _import_plotly():
+def _import_plotly() -> Any:
     try:
-        import plotly.express as px  # type: ignore
+        import plotly.express as px  # type: ignore[import-not-found]
     except ImportError as exc:  # pragma: no cover - optional dependency
         raise ImportError("Plotly is required for interactive plots. Install with the 'studio' extras.") from exc
     return px
 
 
-def _load_data(study_dir: Path):
+def _load_data(study_dir: Path) -> tuple[list["RunRecord"], list["FrontRecord"]]:
     from vamos.ux.studio.data import load_runs_from_study, build_fronts
 
     runs = load_runs_from_study(study_dir)
@@ -31,7 +37,12 @@ def _load_data(study_dir: Path):
     return runs, fronts
 
 
-def _build_decision_views(fronts, weights, reference_point, method):
+def _build_decision_views(
+    fronts: list["FrontRecord"],
+    weights: np.ndarray,
+    reference_point: np.ndarray | None,
+    method: str,
+) -> list["DecisionView"]:
     from vamos.ux.studio.dm import build_decision_view
 
     views = []
@@ -39,97 +50,6 @@ def _build_decision_views(fronts, weights, reference_point, method):
         view = build_decision_view(front, weights=weights, reference_point=reference_point, methods=[method, "weighted_sum", "knee"])
         views.append(view)
     return views
-
-
-def _run_focused_optimization(problem: str, reference_point: np.ndarray, algo: str, budget: int):
-    # Minimal focused re-run leveraging optimize(); uses reference point to bias ranking via Tchebycheff scores post-hoc.
-    from vamos.foundation.problem.registry import make_problem_selection
-    from vamos.experiment.optimize import OptimizeConfig, optimize
-    from vamos.engine.algorithm.config import NSGAIIConfig
-
-    selection = make_problem_selection(problem)
-    cfg = (
-        NSGAIIConfig()
-        .pop_size(40)
-        .offspring_size(40)
-        .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
-        .survival("nsga2")
-        .engine("numpy")
-        .result_mode("population")
-        .fixed()
-    ).to_dict()
-    run_cfg = OptimizeConfig(
-        problem=selection.instantiate(),
-        algorithm="nsgaii",
-        algorithm_config=cfg,
-        termination=("n_eval", budget),
-        seed=0,
-        engine="numpy",
-    )
-    result = optimize(run_cfg)
-    F = result.F
-    # Re-rank by distance to reference point
-    from vamos.ux.analysis.mcdm import reference_point_scores
-
-    scores = reference_point_scores(F, reference_point).scores
-    order = np.argsort(scores)
-    return F[order], result.X[order] if result.X is not None else None
-
-
-class DynamicsCallback:
-    def __init__(self):
-        self.history = []
-
-    def __call__(self, algorithm):
-        # Capture current F
-        # Logic depends on algorithm structure, assuming standard VAMOS algo with 'pop'
-        try:
-            if hasattr(algorithm, "pop") and algorithm.pop is not None:
-                F = algorithm.pop.get("F")
-                if F is not None:
-                    # Store as copy
-                    self.history.append(np.array(F))
-        except Exception:
-            pass
-
-
-def _run_with_history(problem_name: str, config: dict, budget: int):
-    from vamos.foundation.problem.registry import make_problem_selection
-    from vamos.experiment.optimize import OptimizeConfig, optimize
-
-    # Instantiate problem
-    selection = make_problem_selection(problem_name)
-    problem = selection.instantiate()
-
-    # Adjust config for budget if needed, or assume fixed budget
-    # We respect the passed config but might override budget
-    # If the config came from resolved_config.json, it might have "termination"
-
-    # Clean config for usage
-    algo_name = config.get("algorithm", "nsgaii")
-    algo_cfg = config.get("algorithm_config", {})
-    if not algo_cfg:
-        # Fallback to defaults if empty
-        from vamos.engine.algorithm.config import NSGAIIConfig
-
-        algo_cfg = NSGAIIConfig().pop_size(100).fixed().to_dict()
-
-    callback = DynamicsCallback()
-
-    run_cfg = OptimizeConfig(
-        problem=problem,
-        algorithm=algo_name,
-        algorithm_config=algo_cfg,
-        termination=("n_eval", budget),
-        seed=config.get("seed", 0),
-        engine=config.get("engine", "numpy"),
-        live_viz=callback,
-    )
-
-    result = optimize(run_cfg)
-    return result, callback.history
 
 
 def main(argv: List[str] | None = None) -> None:
@@ -171,6 +91,9 @@ def main(argv: List[str] | None = None) -> None:
     if not primary_front:
         st.error("Primary front not found.")
         return
+    if primary_algo is None:
+        st.error("Primary algorithm not selected.")
+        return
 
     # --- MCDM Setup (on Primary) ---
     default_weights = np.ones(primary_front.points_F.shape[1]) / primary_front.points_F.shape[1]
@@ -201,7 +124,7 @@ def main(argv: List[str] | None = None) -> None:
 
     if len(obj_idx) == 2:
         # Build comparison plot
-        import pandas as pd
+        import pandas as pd  # type: ignore[import-untyped]
 
         plot_data = []
         for f in comparison_fronts:
@@ -269,10 +192,10 @@ def main(argv: List[str] | None = None) -> None:
     focus_budget = st.number_input("Budget (evaluations)", min_value=100, max_value=5000, value=500, step=100)
     if st.button("Run focused optimization"):
         if reference_point is None:
-            st.error("Provide a reference point first.")
+                st.error("Provide a reference point first.")
         else:
             with st.spinner("Running focused optimization..."):
-                F_new, X_new = _run_focused_optimization(problem, reference_point, primary_algo, int(focus_budget))
+                F_new, X_new = run_focused_optimization(problem, reference_point, primary_algo, int(focus_budget))
             st.success(f"Focused run produced {len(F_new)} points.")
             # Show quick scatter
             if len(obj_idx) == 2:
@@ -287,7 +210,7 @@ def main(argv: List[str] | None = None) -> None:
             # Use same seed/budget from config if possible, or override budget for speed
             # Use 'focus_budget' from UI
             with st.spinner("Re-running optimization to capture history..."):
-                _, history = _run_with_history(problem, config, int(focus_budget))
+                _, history = run_with_history(problem, config, int(focus_budget))
 
             if not history:
                 st.warning("No history captured. Ensure algorithm supports live_viz/callbacks.")
@@ -327,6 +250,7 @@ def main(argv: List[str] | None = None) -> None:
         with st.spinner("Sampling landscape (Random Walk)..."):
             selection = make_problem_selection(problem)
             prob_instance = selection.instantiate()
+            import pandas as pd
 
             # Simple Random Walk
             n_steps = 500
@@ -336,12 +260,12 @@ def main(argv: List[str] | None = None) -> None:
             xu = getattr(prob_instance, "xu", np.ones(n_var))
 
             current_x = np.random.uniform(xl, xu)
-            walk_f = []
+            walk_f: list[np.ndarray] = []
             step_size = 0.05 * (xu - xl)  # 5% step
 
             for _ in range(n_steps):
                 # Evaluate
-                out = {}
+                out: dict[str, Any] = {}
                 prob_instance.evaluate(current_x.reshape(1, -1), out)
                 f_val = out["F"][0]
                 walk_f.append(f_val)
@@ -351,9 +275,9 @@ def main(argv: List[str] | None = None) -> None:
                 candidate = np.clip(current_x + perturb, xl, xu)
                 current_x = candidate
 
-            walk_f = np.array(walk_f)
+            walk_f_arr = np.asarray(walk_f, dtype=float)
             # Take f1 for visualization if multi-objective
-            y_series = walk_f[:, 0]
+            y_series = walk_f_arr[:, 0]
 
             # Autocorrelation
             lags = range(1, 50)

@@ -23,7 +23,6 @@ def _base_cfg():
         "crossover": ("sbx", {"prob": 0.9, "eta": 15.0}),
         "mutation": ("pm", {"prob": "1/n", "eta": 20.0}),
         "selection": ("tournament", {"pressure": 2}),
-        "survival": "nsga2",
         "engine": "numpy",
         "result_mode": "population",
     }
@@ -44,9 +43,9 @@ def test_nsgaii_aos_enabled_produces_trace_rows():
     cfg = _base_cfg()
     cfg["adaptive_operator_selection"] = {
         "enabled": True,
-        "policy": "eps_greedy",
+        "method": "epsilon_greedy",
         "reward_scope": "survival",
-        "exploration": 0.2,
+        "epsilon": 0.2,
         "min_usage": 1,
         "rng_seed": 0,
         "operator_pool": [

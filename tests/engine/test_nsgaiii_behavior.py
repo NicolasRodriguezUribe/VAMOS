@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from vamos.engine.algorithm.nsgaiii import NSGAIII, associate, nsgaiii_survival
 from vamos.engine.algorithm.config import NSGAIIIConfig
@@ -7,26 +8,26 @@ from vamos.foundation.problem.dtlz import DTLZ2Problem
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
-def _make_config(pop_size=11, prob="1/n"):
+def _make_config(pop_size=10, divisions=3, prob="1/n"):
     return (
         NSGAIIIConfig()
         .pop_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob=prob, eta=20.0)
         .selection("tournament", pressure=2)
-        .reference_directions(divisions=3)
+        .reference_directions(divisions=divisions)
         .engine("numpy")
         .fixed()
     ).to_dict()
 
 
 def test_nsgaiii_survival_preserves_population_size_with_odd_pop():
-    cfg = _make_config(pop_size=11)
+    cfg = _make_config(pop_size=15, divisions=4)
     alg = NSGAIII(cfg, kernel=NumPyKernel())
     problem = DTLZ2Problem(n_var=12, n_obj=3)
     result = alg.run(problem, termination=("n_eval", 30), seed=7)
-    assert result["X"].shape[0] == 11
-    assert result["F"].shape[0] == 11
+    assert result["X"].shape[0] == 15
+    assert result["F"].shape[0] == 15
 
 
 def test_reference_directions_truncate_when_excess():
@@ -42,9 +43,8 @@ def test_reference_directions_truncate_when_excess():
     ).to_dict()
     alg = NSGAIII(cfg, kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=6)
-    result = alg.run(problem, termination=("n_eval", 12), seed=3)
-    # Should still respect pop_size=6 even with many reference directions
-    assert result["X"].shape[0] == 6
+    with pytest.raises(ValueError, match="pop_size"):
+        alg.run(problem, termination=("n_eval", 12), seed=3)
 
 
 def test_association_handles_degenerate_front():
@@ -80,8 +80,21 @@ def test_directional_diversity_preserved():
     ref_dirs_norm = ref_dirs / np.linalg.norm(ref_dirs, axis=1, keepdims=True)
     # Use public helper function instead of method
     # Simulate with empty offspring arrays for survival test
-    X_sel, F_sel, _, _ = nsgaiii_survival(
-        X, F, None, np.empty((0, X.shape[1])), np.empty((0, F.shape[1])), None, cfg["pop_size"], ref_dirs_norm, rng
+    ideal = np.full(n_obj, np.inf)
+    worst = np.full(n_obj, -np.inf)
+    X_sel, F_sel, _, _, _, _, _ = nsgaiii_survival(
+        X,
+        F,
+        None,
+        np.empty((0, X.shape[1])),
+        np.empty((0, F.shape[1])),
+        None,
+        cfg["pop_size"],
+        ref_dirs_norm,
+        rng,
+        ideal,
+        None,
+        worst,
     )
     # Expect at least one solution per principal direction
     associations, _ = associate(F_sel - F_sel.min(axis=0), ref_dirs_norm)

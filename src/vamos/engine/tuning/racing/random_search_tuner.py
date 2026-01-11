@@ -47,6 +47,7 @@ class RandomSearchTuner:
         history: List[TrialResult] = []
         best_score: Optional[float] = None
         best_config: Optional[Dict[str, Any]] = None
+        assert self.sampler is not None
 
         for trial_id in range(self.max_trials):
             config = self.sampler.sample(self.rng)

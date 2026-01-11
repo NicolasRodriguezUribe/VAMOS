@@ -14,7 +14,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
-from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
@@ -43,7 +43,7 @@ def initialize_spea2_run(
     problem: "ProblemProtocol",
     termination: tuple[str, Any],
     seed: int,
-    eval_backend: "EvaluationBackend | None" = None,
+    eval_strategy: "EvaluationBackend | None" = None,
     live_viz: "LiveVisualization | None" = None,
 ) -> tuple[SPEA2State, Any, Any, int, "HVTracker"]:
     """Initialize all components for a SPEA2 run.
@@ -60,7 +60,7 @@ def initialize_spea2_run(
         Termination criterion.
     seed : int
         Random seed.
-    eval_backend : EvaluationBackend | None
+    eval_strategy : EvaluationBackend | None
         Optional evaluation backend.
     live_viz : LiveVisualization | None
         Optional live visualization callback.
@@ -68,11 +68,11 @@ def initialize_spea2_run(
     Returns
     -------
     tuple[SPEA2State, Any, Any, int, HVTracker]
-        (state, live_cb, eval_backend, max_eval, hv_tracker)
+        (state, live_cb, eval_strategy, max_eval, hv_tracker)
     """
     max_eval, hv_config = parse_termination(termination, "SPEA2")
 
-    eval_backend = get_eval_backend(eval_backend)
+    eval_strategy = get_eval_strategy(eval_strategy)
     live_cb = get_live_viz(live_viz)
     rng = np.random.default_rng(seed)
 
@@ -80,6 +80,7 @@ def initialize_spea2_run(
     env_archive_size = int(cfg.get("archive_size", pop_size))
     offspring_size = pop_size
     k_neighbors = cfg.get("k_neighbors")
+    k_neighbors = 1 if k_neighbors is None else int(k_neighbors)
     constraint_mode = cfg.get("constraint_mode", "none")
 
     encoding = getattr(problem, "encoding", "continuous")
@@ -159,7 +160,7 @@ def initialize_spea2_run(
         ids=ids,
     )
 
-    return state, live_cb, eval_backend, max_eval, hv_tracker
+    return state, live_cb, eval_strategy, max_eval, hv_tracker
 
 
 __all__ = [

@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from .param_space import ParamSpace
 from .random_search_tuner import TrialResult
@@ -133,7 +133,8 @@ def load_checkpoint(path: str | Path) -> Dict[str, Any]:
     """
     path = Path(path)
     with path.open("r", encoding="utf-8") as fh:
-        return json.load(fh)
+        payload = json.load(fh)
+    return cast(Dict[str, Any], payload)
 
 
 __all__ = [

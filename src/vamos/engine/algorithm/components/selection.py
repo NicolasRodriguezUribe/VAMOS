@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from typing import Callable, Optional
+from typing import Callable, Optional, Sequence
 
 
 class TournamentSelection:
@@ -10,14 +10,19 @@ class TournamentSelection:
     comparator(a, b) returns <0 if a better than b, >0 if b better, 0 if tie.
     """
 
-    def __init__(self, tournament_size: int, comparator: Callable[[int, int], int], rng: Optional[np.random.Generator] = None):
+    def __init__(
+        self,
+        tournament_size: int,
+        comparator: Callable[[int, int], int],
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
         if tournament_size <= 0:
             raise ValueError("tournament_size must be positive.")
         self.tournament_size = int(tournament_size)
         self.comparator = comparator
         self.rng = rng or np.random.default_rng()
 
-    def __call__(self, population, n_parents: int) -> np.ndarray:
+    def __call__(self, population: Sequence[object], n_parents: int) -> np.ndarray:
         pop_size = len(population)
         if pop_size == 0:
             raise ValueError("population is empty.")
@@ -37,10 +42,10 @@ class TournamentSelection:
 class RandomSelection:
     """Uniform random parent selection."""
 
-    def __init__(self, rng: Optional[np.random.Generator] = None):
+    def __init__(self, rng: Optional[np.random.Generator] = None) -> None:
         self.rng = rng or np.random.default_rng()
 
-    def __call__(self, population, n_parents: int) -> np.ndarray:
+    def __call__(self, population: Sequence[object], n_parents: int) -> np.ndarray:
         pop_size = len(population)
         if pop_size == 0:
             raise ValueError("population is empty.")

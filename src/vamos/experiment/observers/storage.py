@@ -36,12 +36,12 @@ class StorageObserver(Observer):
         # Ideally, many of these should be in RunContext or final_stats
         project_root: Path | None = None,
         config_source: str | None = None,
-        problem_override: dict | None = None,
-        hv_stop_config: dict | None = None,
+        problem_override: dict[str, Any] | None = None,
+        hv_stop_config: dict[str, Any] | None = None,
         selection_pressure: int = 2,
         external_archive_size: int | None = None,
         variations: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         self.output_dir = Path(output_dir)
         self.project_root = project_root or _project_root()
         self.config_source = config_source

@@ -115,7 +115,7 @@ def build_config(
     # Discovered keys live under meta["config"] (not defaults), but they correspond to algorithm config surface.
     # In your canonical configs, these are set under defaults.<algo> (which the CLI resolves into config).
     op_payload = {}
-    for k in ["crossover", "mutation", "selection", "repair", "survival"]:
+    for k in ["crossover", "mutation", "selection", "repair"]:
         if k in algo_keys and operator_block.get(k) is not None:
             op_payload[k] = deep_copy(operator_block[k])
 

@@ -17,8 +17,10 @@ from vamos.operators.binary import (
 from vamos.operators.integer import (
     uniform_integer_crossover,
     arithmetic_integer_crossover,
+    integer_sbx_crossover,
     random_reset_mutation,
     creep_mutation,
+    integer_polynomial_mutation,
 )
 from vamos.operators.permutation import order_crossover
 from vamos.operators.permutation import (
@@ -160,6 +162,7 @@ def _populate_defaults() -> None:
             "one_point": one_point_crossover,
             "single_point": one_point_crossover,
             "1point": one_point_crossover,
+            "spx": one_point_crossover,
             "two_point": two_point_crossover,
             "2point": two_point_crossover,
             "uniform": uniform_crossover,
@@ -181,6 +184,7 @@ def _populate_defaults() -> None:
             "uniform": uniform_integer_crossover,
             "blend": arithmetic_integer_crossover,
             "arithmetic": arithmetic_integer_crossover,
+            "sbx": integer_sbx_crossover,
         },
     )
 
@@ -190,6 +194,8 @@ def _populate_defaults() -> None:
             "reset": random_reset_mutation,
             "random_reset": random_reset_mutation,
             "creep": creep_mutation,
+            "pm": integer_polynomial_mutation,
+            "polynomial": integer_polynomial_mutation,
         },
     )
 
@@ -209,7 +215,7 @@ def _populate_defaults() -> None:
         },
     )
 
-    _populate(real_crossover, {k: "PLACEHOLDER" for k in ["sbx", "blx_alpha", "arithmetic", "pcx", "undx", "spx"]})
+    _populate(real_crossover, {k: "PLACEHOLDER" for k in ["sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex"]})
 
     _populate(
         real_mutation,

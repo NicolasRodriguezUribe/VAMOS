@@ -1,22 +1,21 @@
 from __future__ import annotations
 
-from typing import Any
-
-from vamos.experiment.optimize import OptimizeConfig, OptimizationResult, optimize
+from vamos.experiment.optimize import OptimizeConfig, OptimizationResult, optimize_config
+from vamos.engine.algorithm.config import AlgorithmConfigProtocol
 from vamos.foundation.problem.types import ProblemProtocol
 
 
-def run_optimization(
+def _run_optimization(
     *,
     problem: ProblemProtocol,
     algorithm: str,
-    algorithm_config: dict[str, Any],
+    algorithm_config: AlgorithmConfigProtocol,
     max_evaluations: int,
     seed: int,
     engine: str,
 ) -> OptimizationResult:
     """Execute optimization with a fully resolved config."""
-    return optimize(
+    return optimize_config(
         OptimizeConfig(
             problem=problem,
             algorithm=algorithm,

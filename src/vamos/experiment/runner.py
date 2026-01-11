@@ -64,7 +64,7 @@ def run_from_args(
             offspring_population_size=override.get("offspring_population_size", config.offspring_population_size),
             max_evaluations=override.get("max_evaluations", config.max_evaluations),
             seed=override.get("seed", config.seed),
-            eval_backend=override.get("eval_backend", getattr(config, "eval_backend", "serial")),
+            eval_strategy=override.get("eval_strategy", getattr(config, "eval_strategy", "serial")),
             n_workers=override.get("n_workers", getattr(config, "n_workers", None)),
             live_viz=override.get("live_viz", getattr(config, "live_viz", False)),
             live_viz_interval=override.get("live_viz_interval", getattr(config, "live_viz_interval", 5)),
@@ -86,7 +86,7 @@ def run_from_args(
         effective_args.hv_reference_front = override.get("hv_reference_front", args.hv_reference_front)
         effective_args.n_var = override.get("n_var", args.n_var)
         effective_args.n_obj = override.get("n_obj", args.n_obj)
-        effective_args.eval_backend = override.get("eval_backend", args.eval_backend)
+        effective_args.eval_strategy = override.get("eval_strategy", args.eval_strategy)
         effective_args.n_workers = override.get("n_workers", args.n_workers)
         effective_args.live_viz = override.get("live_viz", args.live_viz)
         effective_args.live_viz_interval = override.get("live_viz_interval", args.live_viz_interval)

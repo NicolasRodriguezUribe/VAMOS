@@ -33,7 +33,7 @@ SUMMARY_HEADER = [
 
 
 def _row_to_dict(row: Any) -> dict[str, Any]:
-    if is_dataclass(row):
+    if is_dataclass(row) and not isinstance(row, type):
         return asdict(row)
     if isinstance(row, dict):
         return dict(row)

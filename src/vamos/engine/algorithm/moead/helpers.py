@@ -41,11 +41,12 @@ def tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np
         Aggregated scalar values, shape (N,) or scalar.
     """
     diff = np.abs(fvals - ideal)
-    return np.max(weights * diff, axis=-1)
+    weighted = np.where(weights == 0, 0.0001 * diff, weights * diff)
+    return np.max(weighted, axis=-1)
 
 
 def weighted_sum(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np.ndarray:
-    """Weighted sum aggregation: sum(w * (f - z*)).
+    """Weighted sum aggregation: sum(w * f).
 
     Parameters
     ----------
@@ -54,15 +55,14 @@ def weighted_sum(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> n
     weights : np.ndarray
         Weight vectors.
     ideal : np.ndarray
-        Ideal point.
+        Ideal point (unused; kept for a consistent signature).
 
     Returns
     -------
     np.ndarray
         Aggregated scalar values.
     """
-    shifted = fvals - ideal
-    return np.sum(weights * shifted, axis=-1)
+    return np.sum(weights * fvals, axis=-1)
 
 
 def pbi(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, theta: float = 5.0) -> np.ndarray:
@@ -114,7 +114,7 @@ def modified_tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarr
         Aggregated scalar values.
     """
     diff = np.abs(fvals - ideal)
-    weighted = weights * diff
+    weighted = np.where(weights == 0, 0.0001 * diff, weights * diff)
     return np.max(weighted, axis=-1) + rho * np.sum(weighted, axis=-1)
 
 
@@ -185,6 +185,7 @@ def update_neighborhood(
     child_f: np.ndarray,
     child_g: np.ndarray | None,
     cv_penalty: float,
+    candidate_order: np.ndarray | None = None,
 ) -> None:
     """Update neighborhood with a new offspring using aggregation comparison.
 
@@ -206,49 +207,50 @@ def update_neighborhood(
         Offspring constraint values.
     cv_penalty : float
         Offspring constraint violation penalty.
+    candidate_order : np.ndarray | None
+        Optional ordered candidate indices for replacement. When None, uses
+        the precomputed neighborhood order.
     """
     constraint_mode = st.constraint_mode
     if constraint_mode == "none" or st.G is None or child_g is None:
         constraint_mode = "none"
 
-    neighbor_idx = st.neighbors[idx]
-    if neighbor_idx.size == 0:
+    if candidate_order is None:
+        candidate_order = st.neighbors[idx]
+    if candidate_order.size == 0:
         return
+    replacements = 0
+    child_cv = cv_penalty if constraint_mode != "none" else 0.0
 
-    local_weights = st.weights[neighbor_idx]
-    current_vals = st.aggregator(st.F[neighbor_idx], local_weights, st.ideal)
-    child_vals = st.aggregator(child_f.reshape(1, -1), local_weights, st.ideal).ravel()
+    for k in candidate_order:
+        weight = st.weights[k]
+        current_val = st.aggregator(st.F[k], weight, st.ideal)
+        child_val = st.aggregator(child_f, weight, st.ideal)
 
-    if constraint_mode != "none":
-        child_cv = cv_penalty
-        current_cv = compute_violation(st.G[neighbor_idx]) if st.G is not None else np.zeros_like(current_vals)
-        feas_child = child_cv <= 0.0
-        feas_curr = current_cv <= 0.0
-
-        better_mask = np.zeros_like(current_vals, dtype=bool)
-        better_mask |= ~feas_curr & feas_child
-        if feas_child:
-            better_mask |= feas_curr & (child_vals < current_vals)
+        replace = False
+        if constraint_mode != "none":
+            current_cv = compute_violation(st.G[k : k + 1])[0] if st.G is not None else 0.0
+            feas_child = child_cv <= 0.0
+            feas_curr = current_cv <= 0.0
+            if not feas_curr and feas_child:
+                replace = True
+            elif feas_child and feas_curr:
+                replace = child_val < current_val
+            elif (not feas_child) and (not feas_curr):
+                replace = child_cv < current_cv
         else:
-            better_mask |= ~feas_curr & (child_cv < current_cv)
+            replace = child_val < current_val
 
-        if not np.any(better_mask):
-            return
-        candidates = neighbor_idx[better_mask]
-    else:
-        improved_mask = child_vals < current_vals
-        if not np.any(improved_mask):
-            return
-        candidates = neighbor_idx[improved_mask]
+        if not replace:
+            continue
 
-    if candidates.size > st.replace_limit:
-        replace_idx = st.rng.choice(candidates.size, size=st.replace_limit, replace=False)
-        candidates = candidates[replace_idx]
-
-    st.X[candidates] = child
-    st.F[candidates] = child_f
-    if st.G is not None and child_g is not None:
-        st.G[candidates] = child_g
+        st.X[k] = child
+        st.F[k] = child_f
+        if st.G is not None and child_g is not None:
+            st.G[k] = child_g
+        replacements += 1
+        if replacements >= st.replace_limit:
+            break
 
 
 __all__ = [

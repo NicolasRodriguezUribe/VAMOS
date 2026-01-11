@@ -15,7 +15,7 @@ class MyAlgorithm:
         self.cfg = config
         self.kernel = kernel
 
-    def run(self, problem, termination, seed: int, eval_backend=None, live_viz=None):
+    def run(self, problem, termination, seed: int, eval_strategy=None, live_viz=None):
         rng = np.random.default_rng(seed)
         # ... initialize, loop, return {"X": ..., "F": ...}
         return {"X": np.empty((0, problem.n_var)), "F": np.empty((0, problem.n_obj))}

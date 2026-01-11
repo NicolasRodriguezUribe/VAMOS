@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from matplotlib.axes import Axes
-
-
-def _require_matplotlib():
+def _require_matplotlib() -> Any:
     try:
-        import matplotlib.pyplot as plt  # type: ignore
+        import matplotlib.pyplot as plt
 
         return plt
     except ImportError as exc:
@@ -19,7 +15,7 @@ def _require_matplotlib():
         ) from exc
 
 
-def _get_ax(ax, projection: str | None = None):
+def _get_ax(ax: Any | None, projection: str | None = None) -> Any:
     plt = _require_matplotlib()
     if ax is not None:
         return ax
@@ -31,11 +27,11 @@ def _get_ax(ax, projection: str | None = None):
 
 def plot_pareto_front_2d(
     F: np.ndarray,
-    ax: Axes | None = None,
+    ax: Any | None = None,
     labels: tuple[str, str] | None = None,
     title: str | None = None,
     show: bool = False,
-) -> object:
+) -> Any:
     plt = _require_matplotlib()
     F = np.asarray(F, dtype=float)
     if F.ndim != 2 or F.shape[1] != 2:
@@ -56,11 +52,11 @@ def plot_pareto_front_2d(
 
 def plot_pareto_front_3d(
     F: np.ndarray,
-    ax: Axes | None = None,
+    ax: Any | None = None,
     labels: tuple[str, str, str] | None = None,
     title: str | None = None,
     show: bool = False,
-) -> object:
+) -> Any:
     plt = _require_matplotlib()
     F = np.asarray(F, dtype=float)
     if F.ndim != 2 or F.shape[1] != 3:
@@ -84,10 +80,10 @@ def plot_pareto_front_3d(
 def plot_parallel_coordinates(
     F: np.ndarray,
     labels: list[str] | None = None,
-    ax: Axes | None = None,
+    ax: Any | None = None,
     title: str | None = None,
     show: bool = False,
-) -> object:
+) -> Any:
     plt = _require_matplotlib()
     F = np.asarray(F, dtype=float)
     if F.ndim != 2:
@@ -115,11 +111,11 @@ def plot_parallel_coordinates(
 def plot_hv_convergence(
     evals: np.ndarray,
     hv_values: np.ndarray,
-    ax: Axes | None = None,
+    ax: Any | None = None,
     label: str | None = None,
     title: str | None = "Hypervolume convergence",
     show: bool = False,
-) -> object:
+) -> Any:
     plt = _require_matplotlib()
     evals = np.asarray(evals, dtype=float)
     hv_values = np.asarray(hv_values, dtype=float)

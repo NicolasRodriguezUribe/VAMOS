@@ -5,8 +5,7 @@ from typing import Any, Dict
 import numpy as np
 
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.foundation.core.experiment_config import ExperimentConfig
-from vamos.experiment.runner import run_single
+from vamos.api import OptimizeConfig, optimize
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
 
 from vamos.engine.tuning import (
@@ -59,8 +58,14 @@ def parse_args():
     parser.add_argument("--n-var", type=int, default=30, help="Number of variables")
     parser.add_argument("--n-obj", type=int, default=2, help="Number of objectives")
     parser.add_argument("--budget", type=int, default=5000, help="Max evaluations per run")
-    parser.add_argument("--tune-budget", type=int, default=20000, help="Total tuning budget (evaluations)")
+    parser.add_argument(
+        "--tune-budget",
+        type=int,
+        default=20000,
+        help="Max number of configuration evaluations (config x instance x seed)",
+    )
     parser.add_argument("--seed", type=int, default=1, help="Random seed")
+    parser.add_argument("--n-seeds", type=int, default=5, help="Number of seeds to evaluate per config")
     parser.add_argument("--pop-size", type=int, default=100, help="Fixed population size (if not tuning it)")
     parser.add_argument("--n-jobs", type=int, default=1, help="Number of parallel jobs (-1 for all cores)")
     parser.add_argument("--ref-point", type=str, default=None, help="Reference point for HV (comma-separated, e.g. '1.1,1.1')")
@@ -102,16 +107,15 @@ def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str
             # 2. Run the algorithm
             selection = make_problem_selection(problem_key, n_var=n_var, n_obj=n_obj)
 
-            exp_cfg = ExperimentConfig(population_size=cfg.population_size, max_evaluations=ctx.budget, seed=ctx.seed)
-
-            result = run_single(
-                engine="numpy",  # Defaulting to numpy for stability in tuning
+            opt_cfg = OptimizeConfig(
+                problem=selection.instantiate(),
                 algorithm=algorithm_name,
-                problem_selection=selection,
-                experiment_config=exp_cfg,
                 algorithm_config=cfg,
-                verbose=False,
+                termination=("n_eval", ctx.budget),
+                seed=ctx.seed,
+                engine="numpy",
             )
+            result = optimize(opt_cfg)
 
             # 3. Compute metric (Hypervolume)
             if result.F is None or len(result.F) == 0:
@@ -138,7 +142,8 @@ def main():
     if not builder:
         raise ValueError(f"Unknown algorithm {args.algorithm}")
 
-    param_space = builder()
+    algo_space = builder()
+    param_space = algo_space.to_param_space() if hasattr(algo_space, "to_param_space") else algo_space
 
     _logger().info("Tuning %s on %s (Budget: %s)", args.algorithm, args.problem, args.tune_budget)
     _logger().info("Parallel Jobs: %s", args.n_jobs)
@@ -152,7 +157,7 @@ def main():
     instances = [Instance(name=args.problem, n_var=args.n_var, kwargs={})]
 
     # Seeds
-    seeds = [args.seed + i for i in range(100)]
+    seeds = [args.seed + i for i in range(args.n_seeds)]
 
     # Aggregator: Mean
     def _mean(scores: list[float]) -> float:

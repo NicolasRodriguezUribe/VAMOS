@@ -49,7 +49,7 @@ def _require_pymoo() -> None:
 class _BaseCEC2009:
     """Thin wrapper around pymoo's CEC2009 implementations."""
 
-    def __init__(self, cls: Callable[..., Any] | None, fallback_cls: Callable[..., Any], n_var: int = 30):
+    def __init__(self, cls: Callable[..., Any] | None, fallback_cls: Callable[..., Any], n_var: int = 30) -> None:
         _load_pymoo()
         _require_pymoo()
         if cls is not None:
@@ -64,11 +64,13 @@ class _BaseCEC2009:
         self.xu = getattr(self._problem, "xu", 1.0)
         self.encoding = getattr(self._problem, "encoding", "continuous")
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         if self._uses_pymoo:
-            tmp: dict[str, Any] = {}
+            tmp: dict[str, np.ndarray] = {}
             self._problem._evaluate(X, out=tmp)
-            out["F"] = tmp.get("F", out.get("F"))
+            F = tmp.get("F")
+            if F is not None:
+                out["F"] = F
             if "G" in tmp:
                 out["G"] = tmp["G"]
         else:
@@ -76,25 +78,25 @@ class _BaseCEC2009:
 
 
 class CEC2009UF1Problem(_BaseCEC2009):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         _load_pymoo()
         super().__init__(CEC2009_UF1, _FallbackUF1, n_var=n_var)
 
 
 class CEC2009UF2Problem(_BaseCEC2009):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         _load_pymoo()
         super().__init__(CEC2009_UF2, _FallbackUF2, n_var=n_var)
 
 
 class CEC2009UF3Problem(_BaseCEC2009):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         _load_pymoo()
         super().__init__(CEC2009_UF3, _FallbackUF3, n_var=n_var)
 
 
 class CEC2009CF1Problem(_BaseCEC2009):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         _load_pymoo()
         super().__init__(CEC2009_CF1, _FallbackCF1, n_var=n_var)
 

@@ -14,7 +14,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
-from vamos.engine.algorithm.components.lifecycle import get_eval_backend
+from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
@@ -42,7 +42,7 @@ def initialize_ibea_run(
     problem: "ProblemProtocol",
     termination: tuple[str, Any],
     seed: int,
-    eval_backend: "EvaluationBackend | None" = None,
+    eval_strategy: "EvaluationBackend | None" = None,
     live_viz: "LiveVisualization | None" = None,
 ) -> tuple[IBEAState, Any, Any, int, Any]:
     """Initialize all components for an IBEA run.
@@ -59,7 +59,7 @@ def initialize_ibea_run(
         Termination criterion.
     seed : int
         Random seed.
-    eval_backend : EvaluationBackend | None
+    eval_strategy : EvaluationBackend | None
         Optional evaluation backend.
     live_viz : LiveVisualization | None
         Optional live visualization callback.
@@ -67,12 +67,12 @@ def initialize_ibea_run(
     Returns
     -------
     tuple[IBEAState, Any, Any, int, Any]
-        (state, live_cb, eval_backend, max_eval, hv_tracker)
+        (state, live_cb, eval_strategy, max_eval, hv_tracker)
     """
     max_eval, hv_config = parse_termination(termination, cfg)
 
     live_cb = get_live_viz(live_viz)
-    eval_backend = get_eval_backend(eval_backend)
+    eval_strategy = get_eval_strategy(eval_strategy)
 
     # Setup HV tracker if configured
     hv_tracker = None
@@ -110,7 +110,7 @@ def initialize_ibea_run(
     indicator = cfg.get("indicator", "eps").lower()
     if indicator in ("eps", "epsilon", "additive_epsilon"):
         indicator = "epsilon"
-    kappa = float(cfg.get("kappa", 0.05))
+    kappa = float(cfg.get("kappa", 1.0))
 
     # Compute initial fitness
     _, _, _, fitness = environmental_selection(X.copy(), F.copy(), G.copy() if G is not None else None, pop_size, indicator, kappa)
@@ -176,7 +176,7 @@ def initialize_ibea_run(
         ids=ids,
     )
 
-    return state, live_cb, eval_backend, max_eval, hv_tracker
+    return state, live_cb, eval_strategy, max_eval, hv_tracker
 
 
 __all__ = [

@@ -6,7 +6,7 @@ from typing import Any, Optional, Protocol, Sequence
 import numpy as np
 
 try:  # pragma: no cover - optional dependency
-    import moocore as _moocore  # type: ignore
+    import moocore as _moocore
 
     _MC = _moocore._moocore
 except Exception:  # pragma: no cover - optional dependency
@@ -58,7 +58,13 @@ class HVIndicator(QualityIndicator):
     reference_point: Optional[np.ndarray] = None
     name: str = "hv"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **_: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **_: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
         ref = np.asarray(self.reference_point if self.reference_point is not None else np.max(F, axis=0) + 1.0, dtype=float)
@@ -71,7 +77,13 @@ class HVContributionsIndicator(QualityIndicator):
     reference_point: Optional[np.ndarray] = None
     name: str = "hv_contributions"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **_: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **_: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
         ref = np.asarray(self.reference_point if self.reference_point is not None else np.max(F, axis=0) + 1.0, dtype=float)
@@ -84,7 +96,13 @@ class IGDIndicator(QualityIndicator):
     reference_front: np.ndarray
     name: str = "igd"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **_: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **_: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
@@ -97,7 +115,13 @@ class IGDPlusIndicator(QualityIndicator):
     reference_front: np.ndarray
     name: str = "igd_plus"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **_: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **_: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
@@ -110,7 +134,13 @@ class EpsilonAdditiveIndicator(QualityIndicator):
     reference_front: np.ndarray
     name: str = "epsilon_additive"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **_: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **_: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
@@ -123,7 +153,13 @@ class EpsilonMultiplicativeIndicator(QualityIndicator):
     reference_front: np.ndarray
     name: str = "epsilon_multiplicative"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **_: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **_: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
@@ -136,7 +172,13 @@ class AvgHausdorffIndicator(QualityIndicator):
     reference_front: np.ndarray
     name: str = "avg_hausdorff"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **kwargs: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **kwargs: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
@@ -150,7 +192,13 @@ class HVApproxIndicator(QualityIndicator):
     reference_point: Optional[np.ndarray] = None
     name: str = "hv_approx"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **kwargs: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **kwargs: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
         ref = np.asarray(self.reference_point if self.reference_point is not None else np.max(F, axis=0) + 1.0, dtype=float)
@@ -165,7 +213,13 @@ class WHVRectIndicator(QualityIndicator):
     rectangles: Optional[np.ndarray] = None
     name: str = "whv_rect"
 
-    def compute(self, front: np.ndarray, reference_front: Optional[np.ndarray] = None, maximise=None, **kwargs: Any) -> IndicatorResult:
+    def compute(
+        self,
+        front: np.ndarray,
+        reference_front: Optional[np.ndarray] = None,
+        maximise: bool | Sequence[bool] | None = None,
+        **kwargs: Any,
+    ) -> IndicatorResult:
         _require_moocore()
         F = _to_minimization(np.asarray(front, dtype=float), maximise)
         ref = np.asarray(self.reference_point if self.reference_point is not None else np.max(F, axis=0) + 1.0, dtype=float)

@@ -35,10 +35,10 @@ class BenchmarkReport:
         self.result = result
         self.config = config
         self.output_dir = ensure_dir(output_dir)
-        self._tidy = None
+        self._tidy: Any | None = None
         self._stats_cache: Dict[str, Any] | None = None
 
-    def aggregate_metrics(self):
+    def aggregate_metrics(self) -> Any:
         if self._tidy is not None:
             return self._tidy
         pd = import_pandas()
@@ -106,7 +106,7 @@ class BenchmarkReport:
         dump_stats_summary(stats, self.output_dir / "statistics.json")
         return stats
 
-    def _best_algorithms(self, mean_table, metric: str) -> Dict[str, str]:
+    def _best_algorithms(self, mean_table: Any, metric: str) -> Dict[str, str]:
         best: Dict[str, str] = {}
         higher = higher_is_better(metric)
         for problem in mean_table.index:
@@ -118,10 +118,10 @@ class BenchmarkReport:
             best[problem] = best_alg
         return best
 
-    def _per_problem_markers(self, dfm, problem: str, best_alg: str, metric: str) -> Dict[str, str]:
+    def _per_problem_markers(self, dfm: Any, problem: str, best_alg: str, metric: str) -> Dict[str, str]:
         markers: Dict[str, str] = {}
         try:
-            from scipy import stats as spstats  # type: ignore
+            from scipy import stats as spstats  # type: ignore[import-untyped]
         except Exception:  # pragma: no cover - optional
             return markers
         subset = dfm[dfm["problem"] == problem]

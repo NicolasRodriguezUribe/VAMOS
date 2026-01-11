@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime
+from typing import Any, Iterable
 
 import numpy as np
 
@@ -28,12 +29,18 @@ def _non_dominated_mask(points: np.ndarray) -> np.ndarray:
     return mask
 
 
-def _problem_output_dir(selection, output_root: str) -> str:
+def _problem_output_dir(selection: Any, output_root: str) -> str:
     safe = selection.spec.label.replace(" ", "_").upper()
     return os.path.join(output_root, f"{safe}")
 
 
-def plot_pareto_front(results, selection, *, output_root: str, title: str):
+def plot_pareto_front(
+    results: Iterable[dict[str, Any]],
+    selection: Any,
+    *,
+    output_root: str,
+    title: str,
+) -> str | None:
     plot_entries = []
     for res in results:
         F = res.get("F")

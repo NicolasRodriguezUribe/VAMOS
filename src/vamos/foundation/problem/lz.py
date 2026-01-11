@@ -18,7 +18,7 @@ class LZ09Problem:
         ptype: int,
         dtype: int,
         ltype: int,
-    ):
+    ) -> None:
         if n_var <= 1:
             raise ValueError("n_var must be greater than 1 for LZ09 problems.")
         if n_obj not in (2, 3):
@@ -75,7 +75,7 @@ class LZ09Problem:
                 beta = xy - ra * np.sin(theta)
         else:  # pragma: no cover - guarded by constructor choices
             raise ValueError(f"Unsupported ltype '{self.ltype}' for 2D LZ09 PS function.")
-        return beta
+        return np.asarray(beta, dtype=float)
 
     def _ps_func3(self, x: np.ndarray, t1: np.ndarray, t2: np.ndarray, dim: int) -> np.ndarray:
         dim = dim + 1
@@ -88,7 +88,7 @@ class LZ09Problem:
             beta = xy - 2.0 * t2 * np.sin(theta)
         else:  # pragma: no cover - guarded by constructor choices
             raise ValueError(f"Unsupported ltype '{self.ltype}' for 3D LZ09 PS function.")
-        return beta
+        return np.asarray(beta, dtype=float)
 
     def _alpha_2d(self, x0: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if self.ptype == 21:
@@ -146,9 +146,9 @@ class LZ09Problem:
             beta = 2.0 * (np.sum(xx * xx, axis=1) - 2.0 * prod + 2.0) / dim
         else:  # pragma: no cover - guarded by constructor choices
             raise ValueError(f"Unsupported dtype '{self.dtype}' for beta function.")
-        return beta
+        return np.asarray(beta, dtype=float)
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         X = np.asarray(X)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}).")
@@ -159,53 +159,53 @@ class LZ09Problem:
             out["F"] = F
 
         if self.n_obj == 2:
-            aa: list[np.ndarray] = []
-            bb: list[np.ndarray] = []
+            aa_2d: list[np.ndarray] = []
+            bb_2d: list[np.ndarray] = []
             if self.ltype in (21, 22, 23, 24, 26):
                 for idx in range(1, self.n_var):
                     xj = X[:, idx]
                     if idx % 2 == 0:
-                        aa.append(self._ps_func2(xj, X[:, 0], idx, css=1))
+                        aa_2d.append(self._ps_func2(xj, X[:, 0], idx, css=1))
                     else:
-                        bb.append(self._ps_func2(xj, X[:, 0], idx, css=2))
+                        bb_2d.append(self._ps_func2(xj, X[:, 0], idx, css=2))
             elif self.ltype == 25:
                 for idx in range(1, self.n_var):
                     xj = X[:, idx]
                     if idx % 3 == 0:
-                        aa.append(self._ps_func2(xj, X[:, 0], idx, css=1))
+                        aa_2d.append(self._ps_func2(xj, X[:, 0], idx, css=1))
                     elif idx % 3 == 1:
-                        bb.append(self._ps_func2(xj, X[:, 0], idx, css=2))
+                        bb_2d.append(self._ps_func2(xj, X[:, 0], idx, css=2))
                     else:
                         css = 3
-                        target = aa if idx % 2 == 0 else bb
+                        target = aa_2d if idx % 2 == 0 else bb_2d
                         target.append(self._ps_func2(xj, X[:, 0], idx, css=css))
             else:  # pragma: no cover
                 raise ValueError(f"Unsupported ltype '{self.ltype}' for 2-objective LZ09.")
 
-            aa_arr = np.column_stack(aa) if aa else np.zeros((n_points, 0))
-            bb_arr = np.column_stack(bb) if bb else np.zeros((n_points, 0))
+            aa_arr = np.column_stack(aa_2d) if aa_2d else np.zeros((n_points, 0))
+            bb_arr = np.column_stack(bb_2d) if bb_2d else np.zeros((n_points, 0))
             g = self._beta_func(aa_arr)
             h = self._beta_func(bb_arr)
             alpha0, alpha1 = self._alpha_2d(X[:, 0])
             F[:, 0] = alpha0 + h
             F[:, 1] = alpha1 + g
         else:
-            aa: list[np.ndarray] = []
-            bb: list[np.ndarray] = []
-            cc: list[np.ndarray] = []
+            aa_3d: list[np.ndarray] = []
+            bb_3d: list[np.ndarray] = []
+            cc_3d: list[np.ndarray] = []
             for idx in range(2, self.n_var):
                 xj = X[:, idx]
                 res = self._ps_func3(xj, X[:, 0], X[:, 1], idx)
                 if idx % 3 == 0:
-                    aa.append(res)
+                    aa_3d.append(res)
                 elif idx % 3 == 1:
-                    bb.append(res)
+                    bb_3d.append(res)
                 else:
-                    cc.append(res)
+                    cc_3d.append(res)
 
-            aa_arr = np.column_stack(aa) if aa else np.zeros((n_points, 0))
-            bb_arr = np.column_stack(bb) if bb else np.zeros((n_points, 0))
-            cc_arr = np.column_stack(cc) if cc else np.zeros((n_points, 0))
+            aa_arr = np.column_stack(aa_3d) if aa_3d else np.zeros((n_points, 0))
+            bb_arr = np.column_stack(bb_3d) if bb_3d else np.zeros((n_points, 0))
+            cc_arr = np.column_stack(cc_3d) if cc_3d else np.zeros((n_points, 0))
             g = self._beta_func(aa_arr)
             h = self._beta_func(bb_arr)
             e = self._beta_func(cc_arr)
@@ -216,47 +216,47 @@ class LZ09Problem:
 
 
 class LZ09_F1(LZ09Problem):
-    def __init__(self, n_var: int = 10):
+    def __init__(self, n_var: int = 10) -> None:
         super().__init__(n_var=n_var, n_obj=2, dtype=1, ltype=21, ptype=21)
 
 
 class LZ09_F2(LZ09Problem):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         super().__init__(n_var=n_var, n_obj=2, dtype=1, ltype=22, ptype=21)
 
 
 class LZ09_F3(LZ09Problem):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         super().__init__(n_var=n_var, n_obj=2, dtype=1, ltype=23, ptype=21)
 
 
 class LZ09_F4(LZ09Problem):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         super().__init__(n_var=n_var, n_obj=2, dtype=1, ltype=24, ptype=21)
 
 
 class LZ09_F5(LZ09Problem):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         super().__init__(n_var=n_var, n_obj=2, dtype=1, ltype=26, ptype=21)
 
 
 class LZ09_F6(LZ09Problem):
-    def __init__(self, n_var: int = 10):
+    def __init__(self, n_var: int = 10) -> None:
         super().__init__(n_var=n_var, n_obj=3, dtype=1, ltype=32, ptype=31)
 
 
 class LZ09_F7(LZ09Problem):
-    def __init__(self, n_var: int = 10):
+    def __init__(self, n_var: int = 10) -> None:
         super().__init__(n_var=n_var, n_obj=2, dtype=3, ltype=21, ptype=21)
 
 
 class LZ09_F8(LZ09Problem):
-    def __init__(self, n_var: int = 10):
+    def __init__(self, n_var: int = 10) -> None:
         super().__init__(n_var=n_var, n_obj=2, dtype=4, ltype=21, ptype=21)
 
 
 class LZ09_F9(LZ09Problem):
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         super().__init__(n_var=n_var, n_obj=2, dtype=1, ltype=22, ptype=22)
 
 

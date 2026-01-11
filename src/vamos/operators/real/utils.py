@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Any, Tuple
 
 import numpy as np
 
@@ -39,10 +39,10 @@ class VariationWorkspace:
     Operators can reuse temporary arrays across generations to avoid reallocations.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._buffers: dict[str, np.ndarray] = {}
 
-    def request(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:
+    def request(self, key: str, shape: tuple[int, ...], dtype: Any) -> np.ndarray:
         dtype = np.dtype(dtype)
         buf = self._buffers.get(key)
         if buf is None or buf.shape != shape or buf.dtype != dtype:

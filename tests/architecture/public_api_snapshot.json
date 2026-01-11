@@ -13,7 +13,6 @@
     "optimize",
     "pareto_filter",
     "reduce_objectives",
-    "run_optimization",
     "run_self_check"
   ],
   "vamos.api": [
@@ -29,7 +28,6 @@
     "optimize",
     "pareto_filter",
     "reduce_objectives",
-    "run_optimization",
     "run_self_check"
   ],
   "vamos.engine.api": [

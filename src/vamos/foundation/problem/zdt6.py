@@ -4,7 +4,7 @@ import numpy as np
 class ZDT6Problem:
     """ZDT6 benchmark with non-uniform objective distribution."""
 
-    def __init__(self, n_var: int):
+    def __init__(self, n_var: int) -> None:
         if n_var < 1:
             raise ValueError("ZDT6 requires at least one decision variable.")
         self.n_var = int(n_var)
@@ -12,7 +12,7 @@ class ZDT6Problem:
         self.xl = 0.0
         self.xu = 1.0
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         X = np.asarray(X, dtype=float)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected input shape (N, {self.n_var}), got {X.shape}.")

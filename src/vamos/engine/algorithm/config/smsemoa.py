@@ -3,13 +3,30 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
+class SMSEMOAConfigDict(TypedDict):
+    pop_size: int
+    crossover: Tuple[str, Dict[str, Any]]
+    mutation: Tuple[str, Dict[str, Any]]
+    selection: Tuple[str, Dict[str, Any]]
+    reference_point: Dict[str, Any]
+    engine: str
+    constraint_mode: str
+    repair: Optional[Tuple[str, Dict[str, Any]]]
+    initializer: Optional[Dict[str, Any]]
+    mutation_prob_factor: Optional[float]
+    track_genealogy: bool
+    result_mode: Optional[str]
+    archive_type: Optional[str]
+    archive: Optional[Dict[str, Any]]
+
+
 @dataclass(frozen=True)
-class SMSEMOAConfigData(_SerializableConfig):
+class SMSEMOAConfigData(_SerializableConfig["SMSEMOAConfigDict"]):
     pop_size: int
     crossover: Tuple[str, Dict[str, Any]]
     mutation: Tuple[str, Dict[str, Any]]
@@ -32,7 +49,7 @@ class SMSEMOAConfig:
 
     Examples:
         cfg = SMSEMOAConfig.default()
-        cfg = SMSEMOAConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+        cfg = SMSEMOAConfig().pop_size(100).crossover("sbx", prob=1.0).fixed()
     """
 
     def __init__(self) -> None:
@@ -50,9 +67,9 @@ class SMSEMOAConfig:
         return (
             cls()
             .pop_size(pop_size)
-            .crossover("sbx", prob=0.9, eta=20.0)
+            .crossover("sbx", prob=1.0, eta=20.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
-            .selection("tournament")
+            .selection("random")
             .reference_point(adaptive=True)
             .engine(engine)
             .fixed()
@@ -62,23 +79,23 @@ class SMSEMOAConfig:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs) -> "SMSEMOAConfig":
+    def crossover(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs) -> "SMSEMOAConfig":
+    def mutation(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs) -> "SMSEMOAConfig":
+    def selection(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
         self._cfg["selection"] = (method, kwargs)
         return self
 
     def reference_point(
         self,
         *,
-        vector=None,
-        offset: float = 0.1,
+        vector: Any = None,
+        offset: float = 1.0,
         adaptive: bool = True,
     ) -> "SMSEMOAConfig":
         self._cfg["reference_point"] = {
@@ -96,11 +113,11 @@ class SMSEMOAConfig:
         self._cfg["constraint_mode"] = value
         return self
 
-    def repair(self, method: str, **kwargs) -> "SMSEMOAConfig":
+    def repair(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs) -> "SMSEMOAConfig":
+    def initializer(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -129,7 +146,7 @@ class SMSEMOAConfig:
         self._cfg["archive_type"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs) -> "SMSEMOAConfig":
+    def archive(self, size: int, **kwargs: Any) -> "SMSEMOAConfig":
         """
         Configure an external archive.
 
@@ -153,7 +170,7 @@ class SMSEMOAConfig:
             ("pop_size", "crossover", "mutation", "selection", "engine"),
             "SMS-EMOA",
         )
-        reference_point = self._cfg.get("reference_point", {"offset": 0.1, "adaptive": True})
+        reference_point = self._cfg.get("reference_point", {"offset": 1.0, "adaptive": True})
         return SMSEMOAConfigData(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],

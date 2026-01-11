@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Any, Callable
 
 import numpy as np
 
 from vamos.foundation.problem.registry import ProblemSelection
+from vamos.foundation.core.experiment_config import ExperimentConfig
 
 
 def _logger() -> logging.Logger:
@@ -16,11 +18,11 @@ def _run_pygmo_nsga2(
     selection: ProblemSelection,
     *,
     use_native_problem: bool,
-    config,
-    make_metrics,
-    print_banner,
-    print_results,
-):
+    config: ExperimentConfig,
+    make_metrics: Callable[[str, str, float, int, np.ndarray], dict[str, Any]],
+    print_banner: Callable[[Any, ProblemSelection, str, str], None],
+    print_results: Callable[[dict[str, Any]], None],
+) -> dict[str, Any]:
     if selection.spec.key != "zdt1":
         raise ValueError("PyGMO baseline currently supports only ZDT1.")
     problem = selection.instantiate()
@@ -45,24 +47,24 @@ def _run_pygmo_nsga2(
     else:
 
         class _VamosPyGMOProblem:
-            def __init__(self, base_problem):
+            def __init__(self, base_problem: Any) -> None:
                 self._base_problem = base_problem
                 self._lower = [base_problem.xl] * base_problem.n_var
                 self._upper = [base_problem.xu] * base_problem.n_var
 
-            def fitness(self, x):
+            def fitness(self, x: Any) -> list[float]:
                 X = np.asarray(x, dtype=float)[np.newaxis, :]
                 F = np.empty((1, self._base_problem.n_obj))
                 self._base_problem.evaluate(X, {"F": F})
                 return F[0].tolist()
 
-            def get_bounds(self):
+            def get_bounds(self) -> tuple[list[float], list[float]]:
                 return (self._lower, self._upper)
 
-            def get_nobj(self):
+            def get_nobj(self) -> int:
                 return self._base_problem.n_obj
 
-            def get_name(self):
+            def get_name(self) -> str:
                 return "VAMOS-ZDT1"
 
         base_problem = _VamosPyGMOProblem(problem)

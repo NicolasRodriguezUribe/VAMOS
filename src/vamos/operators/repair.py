@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import numpy as np
 from typing import Callable
+
+import numpy as np
 
 
 class GradientRepair:
@@ -10,13 +11,25 @@ class GradientRepair:
     Assumes constraint_grad(X) returns shape (N, n_constraints, n_var).
     """
 
-    def __init__(self, constraint_fun: Callable, constraint_grad: Callable, step_size: float = 0.1, max_iters: int = 3):
+    def __init__(
+        self,
+        constraint_fun: Callable[[np.ndarray], np.ndarray],
+        constraint_grad: Callable[[np.ndarray], np.ndarray],
+        step_size: float = 0.1,
+        max_iters: int = 3,
+    ) -> None:
         self.constraint_fun = constraint_fun
         self.constraint_grad = constraint_grad
         self.step_size = float(step_size)
         self.max_iters = int(max_iters)
 
-    def __call__(self, X: np.ndarray, xl: np.ndarray, xu: np.ndarray, rng=None) -> np.ndarray:
+    def __call__(
+        self,
+        X: np.ndarray,
+        xl: np.ndarray,
+        xu: np.ndarray,
+        rng: np.random.Generator | None = None,
+    ) -> np.ndarray:
         X_new = np.array(X, copy=True)
         for _ in range(self.max_iters):
             violations = self.constraint_fun(X_new)  # (N, m)

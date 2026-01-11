@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List
+from typing import Any, Iterable, List
 
 import numpy as np
 
@@ -39,7 +39,7 @@ class RunData:
     archive_F: np.ndarray | None
     archive_X: np.ndarray | None
     archive_G: np.ndarray | None
-    metadata: dict
+    metadata: dict[str, Any]
 
 
 def _coerce_array(arr: np.ndarray | float | int) -> np.ndarray:
@@ -105,12 +105,19 @@ def load_run_data(run: RunInfo) -> RunData:
         filename = artifacts.get(name) or RESULT_FILES.get(name)
         return run_dir / filename if filename else None
 
-    F = _try_load_csv(resolve("fun")) if resolve("fun") else None
-    X = _try_load_csv(resolve("x")) if resolve("x") else None
-    G = _try_load_csv(resolve("g")) if resolve("g") else None
-    archive_F = _try_load_csv(resolve("archive_fun")) if resolve("archive_fun") else None
-    archive_X = _try_load_csv(resolve("archive_x")) if resolve("archive_x") else None
-    archive_G = _try_load_csv(resolve("archive_g")) if resolve("archive_g") else None
+    fun_path = resolve("fun")
+    x_path = resolve("x")
+    g_path = resolve("g")
+    archive_fun_path = resolve("archive_fun")
+    archive_x_path = resolve("archive_x")
+    archive_g_path = resolve("archive_g")
+
+    F = _try_load_csv(fun_path) if fun_path else None
+    X = _try_load_csv(x_path) if x_path else None
+    G = _try_load_csv(g_path) if g_path else None
+    archive_F = _try_load_csv(archive_fun_path) if archive_fun_path else None
+    archive_X = _try_load_csv(archive_x_path) if archive_x_path else None
+    archive_G = _try_load_csv(archive_g_path) if archive_g_path else None
 
     return RunData(
         info=run,
@@ -124,7 +131,7 @@ def load_run_data(run: RunInfo) -> RunData:
     )
 
 
-def aggregate_results(runs: Iterable[RunInfo]):
+def aggregate_results(runs: Iterable[RunInfo]) -> Any:
     """
     Aggregate metadata/metrics for a collection of runs.
     Returns a pandas DataFrame if pandas is installed, otherwise a list of dicts.

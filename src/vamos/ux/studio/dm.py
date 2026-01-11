@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Protocol, Sequence
+from typing import Any, Callable, Dict, List, Sequence
 
 import numpy as np
 
@@ -9,15 +9,14 @@ from vamos.ux.analysis.mcdm import weighted_sum_scores, tchebycheff_scores, knee
 from vamos.ux.studio.data import FrontRecord, normalize_objectives
 
 
-class SolutionDecoder(Protocol):
-    def decode(self, x: np.ndarray) -> Dict[str, Any]: ...
+SolutionDecoder = Callable[[np.ndarray], Dict[str, Any]]
 
 
 def default_decoder(var: np.ndarray) -> Dict[str, Any]:
     return {f"x{i}": float(val) for i, val in enumerate(var)}
 
 
-def build_decoder(_problem_name: str, metadata: dict | None = None) -> SolutionDecoder:
+def build_decoder(_problem_name: str, metadata: Dict[str, Any] | None = None) -> SolutionDecoder:
     # Placeholder for richer problem-specific decoding; metadata can be extended later.
     return default_decoder
 

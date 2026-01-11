@@ -72,10 +72,10 @@ Run multiple algorithms and plot their fronts together.
 
 ```python
 import matplotlib.pyplot as plt
-from vamos.api import run_optimization
+from vamos.api import optimize
 
-res_nsga2 = run_optimization(problem, "nsgaii")
-res_moead = run_optimization(problem, "moead")
+res_nsga2 = optimize(problem, algorithm="nsgaii")
+res_moead = optimize(problem, algorithm="moead")
 
 plt.scatter(res_nsga2.F[:,0], res_nsga2.F[:,1], label="NSGA-II")
 plt.scatter(res_moead.F[:,0], res_moead.F[:,1], label="MOEA/D")

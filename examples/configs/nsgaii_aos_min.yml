@@ -14,16 +14,15 @@ defaults:
     crossover: {method: sbx, prob: 0.9, eta: 20}
     mutation: {method: pm, prob: "1/n", eta: 20}
     selection: {method: tournament, pressure: 2}
-    survival: nsga2
 
 problems:
   zdt1:
     nsgaii:
       adaptive_operator_selection:
         enabled: true
-        policy: eps_greedy
+        method: epsilon_greedy
         reward_scope: survival
-        exploration: 0.2
+        epsilon: 0.2
         min_usage: 1
         rng_seed: 0
         operator_pool:

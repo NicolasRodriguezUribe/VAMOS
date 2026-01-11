@@ -10,16 +10,18 @@ Reference:
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any, Tuple
 
 import numpy as np
 
+from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
+from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
+from vamos.engine.config.variation import resolve_default_variation_config
+from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
-from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
-from vamos.engine.config.variation import resolve_default_variation_config
 
 
 def _logger() -> logging.Logger:
@@ -27,14 +29,12 @@ def _logger() -> logging.Logger:
 
 
 def _generate_reference_vectors(n_obj: int, n_partitions: int = 12) -> np.ndarray:
-    # ... (unchanged) ...
     """Generate uniformly distributed reference vectors using Das-Dennis."""
     from itertools import combinations
 
     def _das_dennis(n_partitions: int, n_obj: int) -> np.ndarray:
         if n_obj == 1:
             return np.array([[1.0]])
-
         vectors = []
         for indices in combinations(range(n_partitions + n_obj - 1), n_obj - 1):
             prev = -1
@@ -44,91 +44,71 @@ def _generate_reference_vectors(n_obj: int, n_partitions: int = 12) -> np.ndarra
                 prev = idx
             vec.append(n_partitions + n_obj - 2 - prev)
             vectors.append(vec)
-
         vectors = np.array(vectors, dtype=float) / n_partitions
         return vectors
 
-    V = _das_dennis(n_partitions, n_obj)
-    # Normalize
-    norms = np.linalg.norm(V, axis=1, keepdims=True)
-    norms[norms == 0] = 1.0
-    return V / norms
+    ref_dirs = _das_dennis(n_partitions, n_obj)
+    return ref_dirs
 
 
-def _angle_penalized_distance(F: np.ndarray, V: np.ndarray, gamma: float) -> np.ndarray:
-    # ... (unchanged) ...
-    """Compute angle-penalized distance (APD) for each solution to each reference vector."""
-    n_points = len(F)
-    n_vectors = len(V)
-
-    # Normalize objectives to translate
-    f_min = F.min(axis=0)
-    F_trans = F - f_min + 1e-6
-
-    # Compute cosine similarity
-    F_norm = F_trans / np.linalg.norm(F_trans, axis=1, keepdims=True)
-
-    # Distance to each reference vector
-    apd = np.zeros((n_points, n_vectors))
-    for j in range(n_vectors):
-        cos_theta = F_norm @ V[j]
-        cos_theta = np.clip(cos_theta, -1, 1)
-        theta = np.arccos(cos_theta)
-
-        # APD = (1 + gamma * theta) * ||F||
-        d1 = np.linalg.norm(F_trans, axis=1)
-        penalty = 1 + gamma * theta
-        apd[:, j] = penalty * d1
-
-    return apd
+def _calc_V(ref_dirs: np.ndarray) -> np.ndarray:
+    norms = np.linalg.norm(ref_dirs, axis=1, keepdims=True)
+    norms[norms == 0.0] = 1.0
+    return ref_dirs / norms
 
 
-def _rvea_survival(F: np.ndarray, V: np.ndarray, n_survive: int, gen: int, max_gen: int) -> np.ndarray:
-    # ... (unchanged) ...
-    """RVEA survival selection using adaptive reference vectors."""
-    n_points = len(F)
-    n_vectors = len(V)
+def _calc_gamma(V: np.ndarray) -> np.ndarray:
+    cosine = V @ V.T
+    gamma = np.arccos((-np.sort(-1.0 * cosine, axis=1))[:, 1])
+    gamma = np.maximum(gamma, 1e-64)
+    return gamma
 
-    if n_points <= n_survive:
-        return np.arange(n_points)
 
-    # Adaptive penalty parameter
-    gamma = (gen / max_gen) ** 2
+def _apd_survival(
+    F: np.ndarray,
+    V: np.ndarray,
+    gamma: np.ndarray,
+    ideal: np.ndarray,
+    n_survive: int,
+    n_gen: int,
+    n_max_gen: int,
+    alpha: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+    n_obj = F.shape[1]
+    ideal = np.minimum(F.min(axis=0), ideal)
 
-    # Compute APD
-    apd = _angle_penalized_distance(F, V, gamma)
+    F_shift = F - ideal
+    dist_to_ideal = np.linalg.norm(F_shift, axis=1)
+    dist_to_ideal[dist_to_ideal < 1e-64] = 1e-64
+    F_prime = F_shift / dist_to_ideal[:, None]
 
-    # Associate each solution to closest reference vector
-    associations = np.argmin(apd, axis=1)
+    cos_theta = np.clip(F_prime @ V.T, -1.0, 1.0)
+    acute_angle = np.arccos(cos_theta)
+    niches = acute_angle.argmin(axis=1)
 
-    # Select best solution for each reference vector
     survivors = []
-    for j in range(n_vectors):
-        mask = associations == j
-        if mask.sum() > 0:
-            candidates = np.where(mask)[0]
-            best = candidates[np.argmin(apd[candidates, j])]
-            survivors.append(best)
+    for k in range(len(V)):
+        assigned = np.where(niches == k)[0]
+        if assigned.size == 0:
+            continue
+        theta = acute_angle[assigned, k]
+        M = float(n_obj) if n_obj > 2 else 1.0
+        penalty = M * ((n_gen / n_max_gen) ** alpha) * (theta / gamma[k])
+        apd = dist_to_ideal[assigned] * (1.0 + penalty)
+        survivor = assigned[int(np.argmin(apd))]
+        survivors.append(survivor)
 
-    # If not enough, fill with remaining best
-    survivors = list(set(survivors))
-    remaining = [i for i in range(n_points) if i not in survivors]
-
-    while len(survivors) < n_survive and remaining:
-        # Add solution with best overall APD
-        best_idx = remaining[np.argmin(apd[remaining].min(axis=1))]
-        survivors.append(best_idx)
-        remaining.remove(best_idx)
-
-    return np.array(survivors[:n_survive])
+    survivors = np.asarray(survivors, dtype=int)
+    nadir = F[survivors].max(axis=0) if survivors.size else None
+    return survivors, ideal, nadir
 
 
 class RVEA:
     """
     RVEA: Reference Vector-guided Evolutionary Algorithm.
 
-    Designed for many-objective optimization (>3 objectives) using
-    adaptive reference vectors.
+    Implements angle-penalized distance (APD) survival and periodic
+    reference-vector adaptation.
     """
 
     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
@@ -141,46 +121,54 @@ class RVEA:
         problem: ProblemProtocol,
         termination: Tuple[str, Any],
         seed: int,
-        eval_backend: EvaluationBackend | None = None,
+        eval_strategy: EvaluationBackend | None = None,
         live_viz: Any | None = None,
     ) -> dict[str, Any]:
         """Run RVEA optimization."""
         rng = np.random.default_rng(seed)
-        backend = eval_backend or SerialEvalBackend()
+        backend = eval_strategy or SerialEvalBackend()
 
-        pop_size = self.config.get("pop_size", 100)
-        n_var = problem.n_var
-        n_obj = problem.n_obj
-        xl = np.atleast_1d(problem.xl)
-        xu = np.atleast_1d(problem.xu)
+        pop_size = int(self.config.get("pop_size", 100))
+        n_obj = int(problem.n_obj)
+        n_partitions = int(self.config.get("n_partitions", 12))
+        alpha = float(self.config.get("alpha", 2.0))
+        adapt_freq = self.config.get("adapt_freq", 0.1)
 
         term_key, term_val = termination
-        max_evals = term_val if term_key == "n_eval" else term_val * pop_size
-        max_gen = max_evals // pop_size
+        if term_key == "n_gen":
+            max_gen = max(1, int(term_val))
+            max_evals = max_gen * pop_size
+        else:
+            max_evals = int(term_val)
+            max_gen = max(1, int(math.ceil((max_evals - pop_size) / pop_size)))
 
-        # Generate reference vectors
-        n_partitions = self.config.get("n_partitions", 12)
-        V = _generate_reference_vectors(n_obj, n_partitions)
+        ref_dirs = _generate_reference_vectors(n_obj, n_partitions)
+        if ref_dirs.shape[0] != pop_size:
+            raise ValueError(
+                f"RVEA requires pop_size == #ref_dirs for partitions={n_partitions} "
+                f"(pop_size={pop_size}, ref_dirs={ref_dirs.shape[0]})."
+            )
+        V = _calc_V(ref_dirs)
+        gamma = _calc_gamma(V)
 
-        # Initialize population
-        X = rng.uniform(xl, xu, size=(pop_size, n_var))
-        F = backend.evaluate(X, problem).F
-        n_eval = pop_size
-
-        # Variation pipeline
         encoding = getattr(problem, "encoding", "real")
+        xl, xu = resolve_bounds(problem, encoding)
+        X = initialize_population(pop_size, problem.n_var, xl, xu, encoding, rng, problem, self.config.get("initializer"))
+        F = np.asarray(backend.evaluate(X, problem).F, dtype=float)
+        n_eval = X.shape[0]
 
-        # Extract explicit overrides from config
         explicit_overrides = {}
         if "crossover" in self.config:
             explicit_overrides["crossover"] = self.config["crossover"]
         if "mutation" in self.config:
             explicit_overrides["mutation"] = self.config["mutation"]
+        if "repair" in self.config:
+            explicit_overrides["repair"] = self.config["repair"]
 
         var_cfg = resolve_default_variation_config(encoding, explicit_overrides)
-
         c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {}))
         m_name, m_kwargs = var_cfg.get("mutation", ("pm", {}))
+        repair_cfg = var_cfg.get("repair")
 
         variation = VariationPipeline(
             encoding=encoding,
@@ -191,9 +179,10 @@ class RVEA:
             xl=xl,
             xu=xu,
             workspace=None,
+            repair_cfg=repair_cfg,
+            problem=problem,
         )
 
-        # Setup external archive
         from vamos.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
 
         archive = None
@@ -208,50 +197,53 @@ class RVEA:
                 nondominated_only=True,
             )
             archive = BoundedArchive(bac)
-            # Add initial population
             archive.add(X, F, n_eval)
 
-        generation = 0
+        ideal = np.full(n_obj, np.inf)
+        nadir = None
+        adapt_interval = None
+        if adapt_freq is not None:
+            adapt_interval = max(1, int(math.ceil(max_gen * float(adapt_freq))))
+
+        generation = 1
         while n_eval < max_evals:
-            # Generate offspring
             parents_idx = rng.integers(0, len(X), size=pop_size)
             X_off = variation.produce_offspring(X[parents_idx], rng)
-            F_off = backend.evaluate(X_off, problem).F
-            n_eval += len(X_off)
+            F_off = np.asarray(backend.evaluate(X_off, problem).F, dtype=float)
+            n_eval += X_off.shape[0]
 
-            # Update external archive with new points
             if archive is not None:
                 archive.add(X_off, F_off, n_eval)
 
-            # Combine populations
             X_combined = np.vstack([X, X_off])
             F_combined = np.vstack([F, F_off])
 
-            # RVEA survival selection
-            survivors = _rvea_survival(F_combined, V, pop_size, generation, max_gen)
+            survivors, ideal, nadir = _apd_survival(
+                F_combined,
+                V,
+                gamma,
+                ideal,
+                pop_size,
+                generation,
+                max_gen,
+                alpha,
+            )
+            if survivors.size == 0:
+                break
             X = X_combined[survivors]
             F = F_combined[survivors]
 
+            if adapt_interval is not None and generation % adapt_interval == 0 and nadir is not None:
+                scale = np.maximum(nadir - ideal, 1e-64)
+                V = _calc_V(_calc_V(ref_dirs) * scale)
+                gamma = _calc_gamma(V)
+
             generation += 1
 
-        # Determine result based on mode
         result_mode = self.config.get("result_mode", "non_dominated")
-
         if result_mode == "archive" and archive is not None:
-            return {
-                "X": archive.X,
-                "F": archive.F,
-                "n_eval": n_eval,
-                "n_gen": generation,
-            }
+            return {"X": archive.X, "F": archive.F, "n_eval": n_eval, "n_gen": generation}
 
-        # Return non-dominated solutions from final population
         ranks, _ = self.kernel.nsga2_ranking(F)
         front_mask = ranks == 0
-
-        return {
-            "X": X[front_mask],
-            "F": F[front_mask],
-            "n_eval": n_eval,
-            "n_gen": generation,
-        }
+        return {"X": X[front_mask], "F": F[front_mask], "n_eval": n_eval, "n_gen": generation}

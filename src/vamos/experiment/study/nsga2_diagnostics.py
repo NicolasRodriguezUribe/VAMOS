@@ -55,7 +55,7 @@ def _build_internal_algorithm(engine: str = "numpy") -> tuple[NSGAII, dict[str, 
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine(engine)
     ).fixed()
     return NSGAII(cfg.to_dict(), kernel=NumPyKernel()), cfg.to_dict()  # type: ignore[no-untyped-call]

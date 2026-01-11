@@ -18,3 +18,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **Dependency Hygiene**: Simplified `pyproject.toml` extras into 4 core groups: `compute`, `research`, `analysis`, `dev`.
 - **Type Safety**: Improved type hints in fluent API (`StudyBuilder`) using `Self` types for better IDE support.
+
+### Fixed
+- **Deterministic Numba Ops**: Numba backend now routes stochastic operators (SBX/PM) through the NumPy RNG to respect run seeds.
+- **jMetalPy Perm Baseline**: Seeded permutation initialization/mutation to make wrapper runs reproducible.

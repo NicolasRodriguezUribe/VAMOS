@@ -124,7 +124,12 @@ class Experiment:
             _logger().info("Starting experiment: %s", self.name)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,
+    ) -> bool | None:
         """End the experiment session."""
         self._end_time = time.perf_counter()
         self._active = False
@@ -171,7 +176,7 @@ class Experiment:
         Returns:
             OptimizationResult with Pareto front
         """
-        from vamos.experiment.optimize import run_optimization
+        from vamos.experiment.optimize import _optimize_problem
 
         if not self._active:
             raise RuntimeError("Experiment not active. Use 'with Experiment(...) as exp:' context.")
@@ -191,7 +196,7 @@ class Experiment:
 
         # Time the run
         start = time.perf_counter()
-        result = run_optimization(
+        result = _optimize_problem(
             problem,
             algorithm,
             max_evaluations=max_evaluations,
@@ -202,6 +207,8 @@ class Experiment:
         )
         elapsed = time.perf_counter() - start
 
+        if result.F is None:
+            raise RuntimeError("Optimization result missing objective values.")
         if self.verbose:
             _logger().info("%s solutions in %.2fs", result.F.shape[0], elapsed)
 
@@ -286,12 +293,12 @@ class Experiment:
                 "problem": run.problem_name,
                 "n_solutions": run.n_solutions,
                 "time": run.elapsed_seconds,
-                "f_min": run.result.F.min(axis=0).tolist(),
-                "f_max": run.result.F.max(axis=0).tolist(),
+                "f_min": run.result.F.min(axis=0).tolist() if run.result.F is not None else [],
+                "f_max": run.result.F.max(axis=0).tolist() if run.result.F is not None else [],
             }
         return comparison
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> Any:
         """
         Convert runs to a pandas DataFrame.
 
@@ -301,7 +308,7 @@ class Experiment:
             DataFrame with run information
         """
         try:
-            import pandas as pd
+            import pandas as pd  # type: ignore[import-untyped]
         except ImportError:
             from vamos.exceptions import DependencyError
 

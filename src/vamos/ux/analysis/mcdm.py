@@ -27,7 +27,7 @@ def _validate_weights(weights: np.ndarray, n_obj: int) -> np.ndarray:
         raise ValueError("weights must be non-negative.")
     if np.allclose(w.sum(), 0):
         raise ValueError("weights must not sum to zero.")
-    return w / w.sum()
+    return np.asarray(w / w.sum(), dtype=float)
 
 
 def weighted_sum_scores(F: np.ndarray, weights: np.ndarray) -> MCDMResult:

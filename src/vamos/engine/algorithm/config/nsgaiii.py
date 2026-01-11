@@ -3,19 +3,41 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from math import comb
+from typing import Any, Dict, Optional, Tuple, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
-@dataclass(frozen=True)
-class NSGAIIIConfigData(_SerializableConfig):
+class NSGAIIIConfigDict(TypedDict):
     pop_size: int
     crossover: Tuple[str, Dict[str, Any]]
     mutation: Tuple[str, Dict[str, Any]]
     selection: Tuple[str, Dict[str, Any]]
     reference_directions: Dict[str, Optional[int | str]]
     engine: str
+    enforce_ref_dirs: bool
+    pop_size_auto: bool
+    constraint_mode: str
+    repair: Optional[Tuple[str, Dict[str, Any]]]
+    initializer: Optional[Dict[str, Any]]
+    mutation_prob_factor: Optional[float]
+    track_genealogy: bool
+    result_mode: Optional[str]
+    archive: Optional[Dict[str, Any]]
+    archive_type: Optional[str]
+
+
+@dataclass(frozen=True)
+class NSGAIIIConfigData(_SerializableConfig["NSGAIIIConfigDict"]):
+    pop_size: int
+    crossover: Tuple[str, Dict[str, Any]]
+    mutation: Tuple[str, Dict[str, Any]]
+    selection: Tuple[str, Dict[str, Any]]
+    reference_directions: Dict[str, Optional[int | str]]
+    engine: str
+    enforce_ref_dirs: bool = False
+    pop_size_auto: bool = False
     constraint_mode: str = "feasibility"
     repair: Optional[Tuple[str, Dict[str, Any]]] = None
     initializer: Optional[Dict[str, Any]] = None
@@ -32,7 +54,7 @@ class NSGAIIIConfig:
 
     Examples:
         cfg = NSGAIIIConfig.default(n_obj=3)
-        cfg = NSGAIIIConfig().pop_size(92).crossover("sbx", prob=0.9).fixed()
+        cfg = NSGAIIIConfig().pop_size(92).crossover("sbx", prob=1.0).fixed()
     """
 
     def __init__(self) -> None:
@@ -41,7 +63,7 @@ class NSGAIIIConfig:
     @classmethod
     def default(
         cls,
-        pop_size: int = 92,
+        pop_size: int | None = None,
         n_var: int | None = None,
         n_obj: int = 3,
         engine: str = "numpy",
@@ -50,20 +72,23 @@ class NSGAIIIConfig:
         Create a default NSGA-III configuration.
 
         Args:
-            pop_size: Population size (default: 92, matches 3-obj reference dirs)
+            pop_size: Population size (default: matches reference directions)
             n_var: Number of variables (for mutation prob)
             n_obj: Number of objectives (for reference directions)
             engine: Backend engine
         """
         mut_prob = 1.0 / n_var if n_var else 0.1
         divisions = 12 if n_obj == 3 else 6
+        if pop_size is None:
+            pop_size = comb(divisions + n_obj - 1, n_obj - 1)
         return (
             cls()
             .pop_size(pop_size)
-            .crossover("sbx", prob=0.9, eta=20.0)
+            .crossover("sbx", prob=1.0, eta=30.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
-            .selection("random")
+            .selection("tournament")
             .reference_directions(divisions=divisions)
+            .pop_size_auto(True)
             .engine(engine)
             .fixed()
         )
@@ -72,15 +97,15 @@ class NSGAIIIConfig:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs) -> "NSGAIIIConfig":
+    def crossover(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs) -> "NSGAIIIConfig":
+    def mutation(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs) -> "NSGAIIIConfig":
+    def selection(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
         self._cfg["selection"] = (method, kwargs)
         return self
 
@@ -93,6 +118,14 @@ class NSGAIIIConfig:
         self._cfg["reference_directions"] = {"path": path, "divisions": divisions}
         return self
 
+    def enforce_ref_dirs(self, enabled: bool = True) -> "NSGAIIIConfig":
+        self._cfg["enforce_ref_dirs"] = bool(enabled)
+        return self
+
+    def pop_size_auto(self, enabled: bool = True) -> "NSGAIIIConfig":
+        self._cfg["pop_size_auto"] = bool(enabled)
+        return self
+
     def engine(self, value: str) -> "NSGAIIIConfig":
         self._cfg["engine"] = value
         return self
@@ -101,11 +134,11 @@ class NSGAIIIConfig:
         self._cfg["constraint_mode"] = value
         return self
 
-    def repair(self, method: str, **kwargs) -> "NSGAIIIConfig":
+    def repair(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs) -> "NSGAIIIConfig":
+    def initializer(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -121,7 +154,7 @@ class NSGAIIIConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs) -> "NSGAIIIConfig":
+    def archive(self, size: int, **kwargs: Any) -> "NSGAIIIConfig":
         """
         Configure an external archive.
 
@@ -158,6 +191,8 @@ class NSGAIIIConfig:
             selection=self._cfg["selection"],
             reference_directions=ref_dirs,
             engine=self._cfg["engine"],
+            enforce_ref_dirs=bool(self._cfg.get("enforce_ref_dirs", False)),
+            pop_size_auto=bool(self._cfg.get("pop_size_auto", False)),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),

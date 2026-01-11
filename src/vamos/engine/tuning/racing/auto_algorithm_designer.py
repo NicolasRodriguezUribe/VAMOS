@@ -15,15 +15,16 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import Any
+from typing import Any, Callable, cast
 
 import numpy as np
 
 from vamos.api import OptimizeConfig, optimize
-from vamos.engine.api import NSGAIIConfig
+from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
 from vamos.engine.tuning.api import (
     Categorical,
     Condition,
+    EvalContext,
     Instance,
     Int,
     ParamSpace,
@@ -38,6 +39,7 @@ from vamos.engine.config.variation import (
     get_operators_for_encoding,
 )
 from vamos.foundation.problem.registry import get_problem_specs
+from vamos.foundation.problem.types import ProblemProtocol
 
 
 # =============================================================================
@@ -142,7 +144,7 @@ def build_param_space_for_encoding(encoding: str) -> ParamSpace:
 # =============================================================================
 
 
-def make_algo_config(assignment: dict[str, Any], encoding: str):
+def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfigData:
     """Translate hyperparameters into an NSGA-II config based on encoding."""
     config = NSGAIIConfig().pop_size(int(assignment["pop_size"])).offspring_size(int(assignment["pop_size"]))
 
@@ -201,11 +203,11 @@ def make_algo_config(assignment: dict[str, Any], encoding: str):
         if archive_type in ("epsilon_grid", "hybrid"):
             archive_kwargs["epsilon"] = float(assignment.get("archive_epsilon", 0.01))
 
-        config = config.result_mode("archive").archive(archive_size, **archive_kwargs)
+        config = config.result_mode("external_archive").archive(archive_size, **archive_kwargs)
     else:
         config = config.result_mode("population")
 
-    return config.selection("tournament", pressure=2).survival("nsga2").engine("numpy").fixed()
+    return config.selection("tournament", pressure=2).engine("numpy").fixed()
 
 
 # =============================================================================
@@ -213,13 +215,13 @@ def make_algo_config(assignment: dict[str, Any], encoding: str):
 # =============================================================================
 
 
-def make_evaluator(problem_name: str, encoding: str):
+def make_evaluator(problem_name: str, encoding: str) -> Callable[[dict[str, Any], EvalContext], float]:
     """Create an evaluation function for the tuner."""
     specs = get_problem_specs()
 
-    def evaluate_config(config: dict[str, Any], ctx) -> float:
+    def evaluate_config(config: dict[str, Any], ctx: EvalContext) -> float:
         spec = specs[problem_name]
-        problem = spec.factory(spec.default_n_var, spec.default_n_obj)
+        problem = cast(ProblemProtocol, spec.factory(spec.default_n_var, spec.default_n_obj))
 
         algo_cfg = make_algo_config(config, encoding)
 
@@ -292,9 +294,9 @@ Examples:
     param_space = build_param_space_for_encoding(encoding)
     logger.info("[*] Espacio de búsqueda dinámico (%s parámetros):", len(param_space.params))
     for name, p in param_space.params.items():
-        if hasattr(p, "choices"):
+        if isinstance(p, Categorical):
             logger.info("    - %s: %s", name, p.choices)
-        elif hasattr(p, "low"):
+        elif isinstance(p, (Real, Int)):
             logger.info("    - %s: [%s, %s]", name, p.low, p.high)
 
     # Setup tuning task

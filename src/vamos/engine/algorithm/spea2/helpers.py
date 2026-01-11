@@ -11,7 +11,7 @@ This module contains the core SPEA2 selection functions:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 
@@ -42,8 +42,8 @@ def dominance_matrix(F: np.ndarray, G: np.ndarray | None, constraint_mode: str) 
     if n == 0:
         return np.zeros((0, 0), dtype=bool), None, None
 
-    feas = None
-    cv = None
+    feas: np.ndarray | None = None
+    cv: np.ndarray | None = None
 
     if constraint_mode and constraint_mode != "none" and G is not None:
         cv = compute_violation(G)
@@ -55,7 +55,7 @@ def dominance_matrix(F: np.ndarray, G: np.ndarray | None, constraint_mode: str) 
             if i == j:
                 continue
             # Feasibility-based dominance
-            if feas is not None:
+            if feas is not None and cv is not None:
                 if feas[i] and not feas[j]:
                     dom[i, j] = True
                     continue
@@ -131,6 +131,36 @@ def spea2_fitness(F: np.ndarray, dom: np.ndarray, k: int | None = None) -> tuple
     return raw_fitness + density, dist
 
 
+def strength_raw_fitness(dom: np.ndarray) -> np.ndarray:
+    """Compute SPEA2 raw fitness (strength ranking) from dominance matrix."""
+    n = dom.shape[0]
+    if n == 0:
+        return np.empty(0, dtype=float)
+    strength = dom.sum(axis=1)
+    raw_fitness = np.zeros(n, dtype=float)
+    for i in range(n):
+        dominators = np.where(dom[:, i])[0]
+        raw_fitness[i] = strength[dominators].sum()
+    return raw_fitness
+
+
+def knn_density(F: np.ndarray, k: int = 1) -> np.ndarray:
+    """Compute k-th nearest neighbor distance for each solution (higher is better)."""
+    n = F.shape[0]
+    if n == 0:
+        return np.empty(0, dtype=float)
+    if n == 1:
+        return np.full(1, np.inf, dtype=float)
+    k = int(k)
+    if k < 1:
+        k = 1
+    if k >= n:
+        k = n - 1
+    dist = np.linalg.norm(F[:, None, :] - F[None, :, :], axis=2)
+    kth = np.partition(dist, kth=k, axis=1)[:, k]
+    return kth
+
+
 def truncate_by_distance(dist_matrix: np.ndarray, keep: int) -> np.ndarray:
     """Truncate by iteratively removing solution with smallest distance.
 
@@ -171,7 +201,7 @@ def environmental_selection(
     k_neighbors: int | None,
     constraint_mode: str,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
-    """SPEA2 environmental selection.
+    """SPEA2 environmental selection (sequential truncation).
 
     Select solutions for the next generation archive based on fitness.
 
@@ -195,31 +225,49 @@ def environmental_selection(
     tuple[np.ndarray, np.ndarray, np.ndarray | None]
         (X_selected, F_selected, G_selected)
     """
+    n = F.shape[0]
+    if n == 0:
+        return X, F, G
+    if n <= archive_size:
+        return X, F, G
+
     dom, _, _ = dominance_matrix(F, G, constraint_mode)
-    fitness, dist = spea2_fitness(F, dom, k_neighbors)
+    raw_fitness = strength_raw_fitness(dom)
+    k = int(k_neighbors) if k_neighbors is not None else 1
 
-    # Select non-dominated individuals (fitness < 1)
-    selected = np.flatnonzero(fitness < 1.0)
-    if selected.size == 0:
-        order = np.argsort(fitness)
-        selected = order[: min(archive_size, F.shape[0])]
+    unique_fitness = np.unique(raw_fitness)
+    fronts = [np.flatnonzero(raw_fitness == fit) for fit in np.sort(unique_fitness)]
 
-    # Truncate if too many non-dominated
-    if selected.size > archive_size:
-        rel = truncate_by_distance(dist[np.ix_(selected, selected)], archive_size)
-        selected = selected[rel]
-    # Fill if too few non-dominated
-    elif selected.size < archive_size:
-        remaining = np.setdiff1d(np.arange(F.shape[0]), selected, assume_unique=True)
-        if remaining.size:
-            order = remaining[np.argsort(fitness[remaining])]
-            needed = archive_size - selected.size
-            selected = np.concatenate([selected, order[:needed]])
+    selected: list[int] = []
+    for front in fronts:
+        if len(selected) + front.size <= archive_size:
+            selected.extend(front.tolist())
+            continue
 
-    return X[selected], F[selected], G[selected] if G is not None else None
+        remaining = archive_size - len(selected)
+        if remaining <= 0:
+            break
+
+        # Sequential truncation within the splitting front (jMetalPy-style).
+        keep = front.tolist()
+        while len(keep) > remaining:
+            density = knn_density(F[np.asarray(keep)], k)
+            order = np.argsort(-density, kind="mergesort")
+            keep = [keep[i] for i in order]
+            keep.pop()
+        selected.extend(keep)
+        break
+
+    selected_idx = np.asarray(selected, dtype=int)
+    return X[selected_idx], F[selected_idx], G[selected_idx] if G is not None else None
 
 
-def compute_selection_metrics(F: np.ndarray, G: np.ndarray | None, constraint_mode: str, kernel) -> tuple[np.ndarray, np.ndarray]:
+def compute_selection_metrics(
+    F: np.ndarray,
+    G: np.ndarray | None,
+    constraint_mode: str,
+    kernel: Any,
+) -> tuple[np.ndarray, np.ndarray]:
     """Compute selection metrics for mating selection.
 
     Parameters
@@ -257,12 +305,15 @@ def compute_selection_metrics(F: np.ndarray, G: np.ndarray | None, constraint_mo
         crowd = -cv
         return ranks, crowd
 
-    return kernel.nsga2_ranking(F)
+    ranks, crowd = kernel.nsga2_ranking(F)
+    return np.asarray(ranks, dtype=int), np.asarray(crowd, dtype=float)
 
 
 __all__ = [
     "dominance_matrix",
     "spea2_fitness",
+    "strength_raw_fitness",
+    "knn_density",
     "truncate_by_distance",
     "environmental_selection",
     "compute_selection_metrics",

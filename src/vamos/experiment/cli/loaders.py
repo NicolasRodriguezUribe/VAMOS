@@ -9,8 +9,8 @@ from .types import SpecDefaults
 
 def load_spec_defaults(config_path: str | None) -> SpecDefaults:
     """Load YAML/JSON spec if provided and return defaults per algorithm and problems."""
-    spec: dict = {}
-    problem_overrides: dict = {}
+    spec: dict[str, Any] = {}
+    problem_overrides: dict[str, Any] = {}
     experiment_defaults: dict[str, Any] = {}
     nsgaii_defaults: dict[str, Any] = {}
     moead_defaults: dict[str, Any] = {}

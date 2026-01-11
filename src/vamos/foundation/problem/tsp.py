@@ -43,7 +43,7 @@ class TSPProblem:
         n_cities: Optional[int] = None,
         coordinates: Sequence[Sequence[float]] | None = None,
         dataset: str | None = None,
-    ):
+    ) -> None:
         if dataset is not None:
             coords = load_tsplib_coords(dataset)
         elif coordinates is not None:
@@ -62,7 +62,7 @@ class TSPProblem:
         self.encoding = "permutation"
         self.labels = [f"City {i}" for i in range(self.n_var)]
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         routes = np.asarray(X, dtype=int)
         if routes.ndim != 2 or routes.shape[1] != self.n_var:
             raise ValueError(f"Expected routes of shape (N, {self.n_var}).")

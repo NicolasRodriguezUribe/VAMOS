@@ -1,6 +1,6 @@
-import pytest
 import numpy as np
-from vamos.api import run_optimization
+import pytest
+from vamos.api import optimize
 from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 
 
@@ -13,7 +13,7 @@ def test_numba_engine_e2e(workspace):
     problem = ZDT1(n_var=30)
 
     # Use the high-level helper which handles config construction
-    res = run_optimization(problem=problem, algorithm="nsgaii", max_evaluations=500, pop_size=40, seed=42, engine="numba")
+    res = optimize(problem, algorithm="nsgaii", budget=500, pop_size=40, seed=42, engine="numba")
 
     # res.success does not exist in OptimizationResult
     assert res.F is not None

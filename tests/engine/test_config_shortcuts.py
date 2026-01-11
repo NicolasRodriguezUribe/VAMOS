@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from math import comb
+
 from vamos.engine.api import MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SMSEMOAConfig, SPEA2Config
 
 
@@ -16,7 +18,6 @@ class TestNSGAIIConfigShortcuts:
         assert cfg.crossover[0] == "sbx"
         assert cfg.mutation[0] == "pm"
         assert cfg.selection[0] == "tournament"
-        assert cfg.survival == "rank_crowding"
         assert cfg.engine == "numpy"
 
     def test_default_with_custom_pop_size(self):
@@ -38,7 +39,6 @@ class TestNSGAIIConfigShortcuts:
                 "crossover": ("sbx", {"prob": 0.8, "eta": 15}),
                 "mutation": ("pm", {"prob": 0.1, "eta": 25}),
                 "selection": "tournament",
-                "survival": "rank_crowding",
                 "engine": "numpy",
             }
         )
@@ -55,7 +55,6 @@ class TestNSGAIIConfigShortcuts:
                 "crossover": {"method": "sbx", "prob": 0.9},
                 "mutation": {"method": "pm", "prob": 0.1},
                 "selection": {"method": "tournament"},
-                "survival": "rank_crowding",
                 "engine": "numpy",
             }
         )
@@ -71,11 +70,11 @@ class TestMOEADConfigShortcuts:
         """default() should create a valid frozen config."""
         cfg = MOEADConfig.default()
 
-        assert cfg.pop_size == 100
+        assert cfg.pop_size == 91
         assert cfg.neighbor_size == 20
         assert cfg.delta == 0.9
         assert cfg.replace_limit == 2
-        assert cfg.aggregation[0] == "tchebycheff"
+        assert cfg.aggregation[0] == "pbi"
 
     def test_from_dict_basic(self):
         """from_dict() should create config from dictionary."""
@@ -129,6 +128,6 @@ class TestNSGAIIIConfigShortcuts:
         """default() should create a valid frozen config."""
         cfg = NSGAIIIConfig.default()
 
-        assert cfg.pop_size == 92
+        assert cfg.pop_size == comb(12 + 3 - 1, 3 - 1)
         assert cfg.crossover[0] == "sbx"
         assert cfg.reference_directions["divisions"] == 12

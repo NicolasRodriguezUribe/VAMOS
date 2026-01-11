@@ -23,7 +23,6 @@ from vamos.api import (
     optimize,
     pareto_filter,
     reduce_objectives,
-    run_optimization,
     run_self_check,
 )
 from vamos.foundation.version import get_version as _get_version
@@ -32,7 +31,6 @@ __all__ = [
     "__version__",
     # Optimization
     "optimize",
-    "run_optimization",
     "OptimizeConfig",
     "OptimizationResult",
     "pareto_filter",
@@ -48,7 +46,7 @@ __all__ = [
 ]
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     if name == "__version__":
         return _get_version()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

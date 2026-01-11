@@ -5,7 +5,7 @@ from typing import Sequence
 
 
 def _is_finite_array(arr: np.ndarray) -> bool:
-    return np.isfinite(arr).all()
+    return bool(np.isfinite(arr).all())
 
 
 def compute_hypervolume(F: np.ndarray, ref_point: Sequence[float]) -> float:
@@ -32,9 +32,8 @@ def compute_hypervolume(F: np.ndarray, ref_point: Sequence[float]) -> float:
     if not _is_finite_array(F) or not np.isfinite(ref).all():
         raise ValueError("F and ref_point must contain finite numbers")
 
-    # Filter dominated/worse points relative to reference
-    # Keep only points that are strictly better than ref in at least one objective
-    mask = np.any(F < ref, axis=1)
+    # Filter points inside the reference box (dominated by ref in ALL objectives)
+    mask = np.all(F <= ref, axis=1)
     pts = F[mask]
 
     if pts.size == 0:
@@ -46,20 +45,20 @@ def compute_hypervolume(F: np.ndarray, ref_point: Sequence[float]) -> float:
     sorted_pts = pts[idx]
 
     # Sweep from left (small f1) to right, keeping non-dominated in f2
-    pareto = []
+    pareto: list[tuple[float, float]] = []
     best_f2 = np.inf
     for x, y in sorted_pts:
         if y < best_f2:
             pareto.append((x, y))
             best_f2 = y
 
-    pareto = np.array(pareto)
+    pareto_arr = np.asarray(pareto, dtype=float)
 
     # Compute hypervolume as sum of rectangles between successive Pareto points
     hv = 0.0
     prev_f1 = ref[0]
     # iterate pareto points in reverse (from worst f1 to best) to form rectangles
-    for x, y in pareto[::-1]:
+    for x, y in pareto_arr[::-1]:
         width = prev_f1 - x
         height = ref[1] - y
         if width > 0 and height > 0:
@@ -83,13 +82,13 @@ def _load_optional_backends() -> None:
         return
     _OPTIONAL_LOADED = True
     try:  # Prefer the MooCore C backend when available.
-        import moocore as moocore_module  # type: ignore
+        import moocore as moocore_module
     except ImportError:  # pragma: no cover - optional dependency
         moocore_module = None
     _MOOCORE = moocore_module
 
     try:  # pragma: no cover - optional dependency
-        import libhv as libhv_module  # type: ignore
+        import libhv as libhv_module
     except ImportError:
         libhv_module = None
 
@@ -154,7 +153,7 @@ def _hypervolume_with_libhv(points: np.ndarray, ref: np.ndarray) -> float:
     data = np.ascontiguousarray(points, dtype=np.float64)
     ref_arr = np.asarray(ref, dtype=np.float64)
     if _LIBHV_HV_FN is not None:
-        return _LIBHV_HV_FN(data, ref_arr)
+        return float(_LIBHV_HV_FN(data, ref_arr))
     hv_class = _LIBHV_CLASS
     if hv_class is None:  # pragma: no cover - guarded by initialization
         raise RuntimeError("libhv is imported without HyperVolume support.")
@@ -162,7 +161,7 @@ def _hypervolume_with_libhv(points: np.ndarray, ref: np.ndarray) -> float:
     compute = getattr(hv_obj, "compute", None) or getattr(hv_obj, "compute_from_points", None)
     if compute is None:
         raise AttributeError("libhv.HyperVolume object lacks a compute method.")
-    return compute(data)
+    return float(compute(data))
 
 
 def _hypervolume_impl(points: np.ndarray, reference_point: np.ndarray) -> float:
@@ -172,7 +171,7 @@ def _hypervolume_impl(points: np.ndarray, reference_point: np.ndarray) -> float:
     n_obj = points.shape[1]
     if n_obj == 1:
         widths = np.maximum(ref[0] - points[:, 0], 0.0)
-        return np.max(widths)
+        return float(np.max(widths))
     if n_obj == 2:
         return _hypervolume_2d(points, ref)
     if n_obj == 3:

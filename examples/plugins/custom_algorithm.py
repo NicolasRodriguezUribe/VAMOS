@@ -31,7 +31,7 @@ class RandomSearchAlgorithm:
         problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_backend: Any | None = None,
+        eval_strategy: Any | None = None,
         live_viz: Any | None = None,
     ) -> Mapping[str, Any]:
         """Run random search optimization."""

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from argparse import Namespace
 from typing import Iterable, Sequence
 
 from importlib.resources import as_file
@@ -49,7 +50,7 @@ def _make_selection(name: str, n_var: int | None, n_obj: int | None) -> ProblemS
     return make_problem_selection(name, n_var=n_var, n_obj=n_obj)
 
 
-def resolve_problem_selection(args) -> Iterable[ProblemSelection]:
+def resolve_problem_selection(args: Namespace) -> Iterable[ProblemSelection]:
     """
     Decide which problems to run based on CLI args, returning registry-backed selections.
     """
@@ -66,14 +67,14 @@ def resolve_problem_selection(args) -> Iterable[ProblemSelection]:
     return (_make_selection("zdt1", args.n_var, args.n_obj),)
 
 
-def resolve_problem_selections(args) -> Iterable[ProblemSelection]:
+def resolve_problem_selections(args: Namespace) -> Iterable[ProblemSelection]:
     """
     Return a list of ProblemSelection objects to run.
     Handles 'all', specific sets, or single problems.
     """
     if getattr(args, "problem_set", None):
         if args.problem_set == "all":
-            all_names = []
+            all_names: list[str] = []
             for key, problems in PROBLEM_SET_PRESETS.items():
                 if key == "families":
                     continue

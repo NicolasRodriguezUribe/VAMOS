@@ -44,7 +44,7 @@ def add_algorithm_arguments(
     parser.add_argument(
         "--nsgaii-crossover-prob",
         default=(nsgaii_defaults.get("crossover", {}) or {}).get("prob"),
-        help="Crossover probability for NSGA-II real-coded operators (default: 0.9).",
+        help="Crossover probability for NSGA-II real-coded operators (default: 1.0).",
     )
     parser.add_argument(
         "--nsgaii-crossover-eta",

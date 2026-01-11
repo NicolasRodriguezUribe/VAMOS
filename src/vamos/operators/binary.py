@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import Any, Callable
+
 import numpy as np
 
-_BIT_FLIP_MASKED_JIT = None
+_BIT_FLIP_MASKED_JIT: Callable[[np.ndarray, np.ndarray], None] | None = None
+_BIT_FLIP_MASKED_DISABLED = False
 
 
 def _use_numba_variation() -> bool:
@@ -11,23 +14,23 @@ def _use_numba_variation() -> bool:
     return os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
 
 
-def _get_bit_flip_masked():
-    global _BIT_FLIP_MASKED_JIT
-    if _BIT_FLIP_MASKED_JIT is False:
+def _get_bit_flip_masked() -> Callable[[np.ndarray, np.ndarray], None] | None:
+    global _BIT_FLIP_MASKED_JIT, _BIT_FLIP_MASKED_DISABLED
+    if _BIT_FLIP_MASKED_DISABLED:
         return None
     if _BIT_FLIP_MASKED_JIT is not None:
         return _BIT_FLIP_MASKED_JIT
     if not _use_numba_variation():
-        _BIT_FLIP_MASKED_JIT = False
+        _BIT_FLIP_MASKED_DISABLED = True
         return None
     try:
         from numba import njit
     except ImportError:
-        _BIT_FLIP_MASKED_JIT = False
+        _BIT_FLIP_MASKED_DISABLED = True
         return None
 
-    @njit(cache=True)
-    def _bit_flip_masked(X: np.ndarray, mask: np.ndarray):
+    @njit(cache=True)  # type: ignore[untyped-decorator]
+    def _bit_flip_masked(X: np.ndarray, mask: np.ndarray) -> None:
         rows, cols = mask.shape
         for i in range(rows):
             for j in range(cols):
@@ -200,44 +203,44 @@ def bit_flip_mutation(X: np.ndarray, prob: float, rng: np.random.Generator) -> N
 
 
 class BitFlipMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
+    def __init__(self, prob: float = 0.1, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         # Mutation in place
         bit_flip_mutation(X, self.prob, rng)
         return X
 
 
 class OnePointCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
+    def __init__(self, prob: float = 0.9, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         return one_point_crossover(parents, self.prob, rng)
 
 
 class TwoPointCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
+    def __init__(self, prob: float = 0.9, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         return two_point_crossover(parents, self.prob, rng)
 
 
 class UniformCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
+    def __init__(self, prob: float = 0.9, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         return uniform_crossover(parents, self.prob, rng)
 
 
 class HuxCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
+    def __init__(self, prob: float = 0.9, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         return hux_crossover(parents, self.prob, rng)
 
 

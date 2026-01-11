@@ -1,24 +1,24 @@
-"""Tests for run_optimization() and unified backend parameter."""
+"""Tests for optimize() convenience path and unified backend parameter."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from vamos.api import OptimizeConfig, OptimizationResult, optimize, run_optimization
+from vamos.api import OptimizeConfig, OptimizationResult, optimize
 from vamos.engine.api import MOEADConfig, NSGAIIConfig
 from vamos.foundation.exceptions import InvalidAlgorithmError
 from vamos.foundation.problems_registry import ZDT1
 
 
-class TestRunOptimization:
-    """Test the simplified run_optimization() function."""
+class TestOptimizeConvenience:
+    """Test the unified optimize() convenience path."""
 
     @pytest.mark.smoke
     def test_run_nsgaii_basic(self):
-        """run_optimization() should work with NSGAII."""
+        """optimize() should work with NSGAII."""
         problem = ZDT1(n_var=10)
-        result = run_optimization(problem, "nsgaii", max_evaluations=500, pop_size=20)
+        result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20)
 
         assert result.F is not None
         assert result.F.shape[0] > 0
@@ -26,42 +26,42 @@ class TestRunOptimization:
 
     @pytest.mark.smoke
     def test_run_moead_basic(self):
-        """run_optimization() should work with MOEAD."""
+        """optimize() should work with MOEAD."""
         problem = ZDT1(n_var=10)
-        result = run_optimization(problem, "moead", max_evaluations=500, pop_size=50)
+        result = optimize(problem, algorithm="moead", budget=500, pop_size=50)
 
         assert result.F is not None
         assert result.F.shape[0] > 0
 
     @pytest.mark.smoke
     def test_run_spea2_basic(self):
-        """run_optimization() should work with SPEA2."""
+        """optimize() should work with SPEA2."""
         problem = ZDT1(n_var=10)
-        result = run_optimization(problem, "spea2", max_evaluations=500, pop_size=20)
+        result = optimize(problem, algorithm="spea2", budget=500, pop_size=20)
 
         assert result.F is not None
         assert result.F.shape[0] > 0
 
     @pytest.mark.smoke
     def test_run_smsemoa_basic(self):
-        """run_optimization() should work with SMSEMOA."""
+        """optimize() should work with SMSEMOA."""
         problem = ZDT1(n_var=10)
-        result = run_optimization(problem, "smsemoa", max_evaluations=500, pop_size=20)
+        result = optimize(problem, algorithm="smsemoa", budget=500, pop_size=20)
 
         assert result.F is not None
         assert result.F.shape[0] > 0
 
     def test_run_invalid_algorithm(self):
-        """run_optimization() with invalid algorithm should raise."""
+        """optimize() with invalid algorithm should raise."""
         problem = ZDT1(n_var=10)
         with pytest.raises(InvalidAlgorithmError, match="Unknown algorithm"):
-            run_optimization(problem, "invalid_algo", max_evaluations=100)
+            optimize(problem, algorithm="invalid_algo", budget=100, pop_size=20)
 
     @pytest.mark.smoke
     def test_result_has_helper_methods(self):
         """Result should have all helper methods."""
         problem = ZDT1(n_var=10)
-        result = run_optimization(problem, "nsgaii", max_evaluations=500, pop_size=20)
+        result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20)
 
         # Check helper methods exist
         assert hasattr(result, "summary")
@@ -74,8 +74,8 @@ class TestRunOptimization:
     def test_run_with_different_seeds(self):
         """Different seeds should produce different results."""
         problem = ZDT1(n_var=10)
-        result1 = run_optimization(problem, "nsgaii", max_evaluations=500, pop_size=20, seed=42)
-        result2 = run_optimization(problem, "nsgaii", max_evaluations=500, pop_size=20, seed=123)
+        result1 = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20, seed=42)
+        result2 = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20, seed=123)
 
         # Results should differ (not exactly equal)
         assert result1.F.shape != result2.F.shape or not np.allclose(result1.F, result2.F)
@@ -103,10 +103,10 @@ class TestUnifiedBackendParameter:
         assert result.F.shape[0] > 0
 
     @pytest.mark.smoke
-    def test_run_optimization_engine_parameter(self):
-        """run_optimization() should accept engine parameter."""
+    def test_optimize_engine_parameter(self):
+        """optimize() should accept engine parameter."""
         problem = ZDT1(n_var=10)
-        result = run_optimization(problem, "nsgaii", max_evaluations=500, pop_size=20, engine="numpy")
+        result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20, engine="numpy")
 
         assert result.F is not None
 
@@ -130,17 +130,16 @@ class TestAPIConsistency:
     """Test API consistency across interfaces."""
 
     @pytest.mark.smoke
-    def test_run_optimization_returns_optimization_result(self):
-        """run_optimization() should return OptimizationResult."""
+    def test_optimize_returns_optimization_result(self):
+        """optimize() should return OptimizationResult."""
         problem = ZDT1(n_var=10)
-        result = run_optimization(problem, "nsgaii", max_evaluations=500, pop_size=20)
+        result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20)
 
         assert isinstance(result, OptimizationResult)
 
     @pytest.mark.smoke
     def test_all_exports_available(self):
         """All new exports should be available from canonical facades."""
-        assert run_optimization is not None
         assert optimize is not None
         assert NSGAIIConfig.default is not None
         assert MOEADConfig.default is not None

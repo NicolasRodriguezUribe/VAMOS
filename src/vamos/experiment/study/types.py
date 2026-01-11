@@ -32,9 +32,9 @@ class StudyTask:
 class StudyResult:
     task: StudyTask
     selection: ProblemSelection
-    metrics: dict
+    metrics: Dict[str, Any]
 
-    def to_row(self) -> dict:
+    def to_row(self) -> Dict[str, Any]:
         hv_ref = self.metrics.get("hv_reference")
         hv_ref_str = " ".join(f"{val:.6f}" for val in hv_ref) if isinstance(hv_ref, np.ndarray) else ""
         row = {

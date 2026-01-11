@@ -35,8 +35,9 @@ def epsilon_indicator(F: np.ndarray) -> np.ndarray:
     np.ndarray
         Epsilon indicator matrix, shape (N, N).
     """
-    diff = F[:, None, :] - F[None, :, :]
-    return np.max(diff, axis=2)
+    # Match jMetalPy: epsilon(i, j) = max_k (f_jk - f_ik)
+    diff = F[None, :, :] - F[:, None, :]
+    return np.asarray(np.max(diff, axis=2), dtype=float)
 
 
 def hypervolume_indicator(F: np.ndarray) -> np.ndarray:
@@ -92,7 +93,7 @@ def ibea_fitness(indicator: np.ndarray, kappa: float) -> np.ndarray:
     """Compute IBEA fitness from indicator matrix.
 
     IBEA fitness is the negative sum of exponential indicator contributions.
-    Lower fitness values are better.
+    Lower fitness values are worse (more negative); the worst is removed.
 
     Parameters
     ----------
@@ -110,7 +111,7 @@ def ibea_fitness(indicator: np.ndarray, kappa: float) -> np.ndarray:
     np.fill_diagonal(mat, np.inf)
     contrib = np.exp(-mat / kappa)
     contrib[~np.isfinite(contrib)] = 0.0
-    return -np.sum(contrib, axis=0)
+    return np.asarray(-np.sum(contrib, axis=1), dtype=float)
 
 
 def apply_constraint_penalty(fitness: np.ndarray, G: np.ndarray | None) -> np.ndarray:
@@ -129,11 +130,11 @@ def apply_constraint_penalty(fitness: np.ndarray, G: np.ndarray | None) -> np.nd
         Penalized fitness values.
     """
     if G is None:
-        return fitness
+        return np.asarray(fitness, dtype=float)
     cv = compute_violation(G)
     feas = is_feasible(G)
     if not feas.any():
-        return fitness + cv
+        return np.asarray(fitness + cv, dtype=float)
     penalty = np.max(np.abs(fitness)) + 1.0
     penalized = fitness.copy()
     penalized[~feas] += penalty * (1.0 + cv[~feas])
@@ -177,10 +178,10 @@ def environmental_selection(
     fitness = apply_constraint_penalty(fitness, G)
 
     while X.shape[0] > pop_size:
-        worst = int(np.argmax(fitness))
-        delta = np.exp(-ind[worst] / kappa)
+        worst = int(np.argmin(fitness))
+        delta = np.exp(-ind[:, worst] / kappa)
         delta[worst] = 0.0
-        fitness -= delta
+        fitness += delta
         X = np.delete(X, worst, axis=0)
         F = np.delete(F, worst, axis=0)
         if G is not None:

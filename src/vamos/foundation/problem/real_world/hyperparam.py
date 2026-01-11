@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import Any, Callable, List
 
 import numpy as np
 
@@ -28,13 +28,13 @@ class HyperparameterTuningProblem:
         dataset: str = "breast_cancer",
         test_size: float = 0.3,
         random_state: int = 0,
-    ):
+    ) -> None:
         try:
-            from sklearn import datasets
-            from sklearn.model_selection import train_test_split
-            from sklearn.pipeline import make_pipeline
-            from sklearn.preprocessing import StandardScaler
-            from sklearn.svm import SVC
+            from sklearn import datasets  # type: ignore[import-not-found]
+            from sklearn.model_selection import train_test_split  # type: ignore[import-not-found]
+            from sklearn.pipeline import make_pipeline  # type: ignore[import-not-found]
+            from sklearn.preprocessing import StandardScaler  # type: ignore[import-not-found]
+            from sklearn.svm import SVC  # type: ignore[import-not-found]
         except ImportError as exc:  # pragma: no cover - exercised only when sklearn is missing
             raise ImportError("HyperparameterTuningProblem requires scikit-learn. Install the 'examples' extras to enable it.") from exc
 
@@ -57,7 +57,7 @@ class HyperparameterTuningProblem:
         self._y_train = y_train
         self._y_val = y_val
         self._n_features = data.data.shape[1]
-        self._make_model = lambda params: make_pipeline(StandardScaler(), SVC(**params))
+        self._make_model: Callable[[dict[str, Any]], Any] = lambda params: make_pipeline(StandardScaler(), SVC(**params))
         self._kernels = np.array(["rbf", "linear", "poly"])
 
         self.n_var = 4
@@ -77,20 +77,20 @@ class HyperparameterTuningProblem:
             "cat_cardinality": np.array([len(self._kernels)], dtype=int),
         }
 
-    def _decode_params(self, X: np.ndarray) -> List[dict]:
+    def _decode_params(self, X: np.ndarray) -> List[dict[str, Any]]:
         C = 10.0 ** (X[:, 0] * 4.0 - 2.0)  # 1e-2 .. 1e2
         gamma = 10.0 ** (X[:, 1] * 4.0 - 3.0)  # 1e-3 .. 1e1
         kernel_idx = np.clip(np.rint(X[:, 2]), 0, len(self._kernels) - 1).astype(int)
         kernels = self._kernels[kernel_idx]
         degrees = np.clip(np.rint(X[:, 3]), 2, 5).astype(int)
 
-        params: List[dict] = []
+        params: List[dict[str, Any]] = []
         for c, g, k, d in zip(C, gamma, kernels, degrees):
             params.append({"C": float(c), "gamma": float(g), "kernel": str(k), "degree": int(d)})
         return params
 
     @staticmethod
-    def _complexity(model, params: dict) -> float:
+    def _complexity(model: Any, params: dict[str, Any]) -> float:
         try:
             svc = model[-1]
         except Exception:  # pragma: no cover - defensive
@@ -103,7 +103,7 @@ class HyperparameterTuningProblem:
         complexity += 0.1 * float(params.get("degree", 2))
         return complexity
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         params_list = self._decode_params(X)
         F = out["F"]
 

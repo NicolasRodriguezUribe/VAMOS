@@ -54,12 +54,14 @@ config = (
     .problem("zdt1")
     .parameters(pop_size=100, seed=42)
     .term_evaluations(10000)
-    .crossover("sbx", 0.9, 20.0)
+    .crossover("sbx", 1.0, 20.0)
     .mutation("pm", "1/n", 20.0)
     .fixed()
 )
 result = optimize(config)
 ```
+
+Prefer config objects (`OptimizeConfig` + algorithm config builders). Raw dict configs are no longer accepted.
 
 Benchmarks and studies
 ----------------------

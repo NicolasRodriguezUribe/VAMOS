@@ -31,7 +31,7 @@ class ExperimentConfig:
     offspring_population_size: int | None = None
     max_evaluations: int = 25000
     seed: int = 42
-    eval_backend: str = "serial"
+    eval_strategy: str = "serial"
     n_workers: int | None = None
     live_viz: bool = False
     live_viz_interval: int = 5

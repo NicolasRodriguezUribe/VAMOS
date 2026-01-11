@@ -186,6 +186,8 @@ RVEA & Reference vectors & \cite{cheng2016reference} \\
 \end{tabular}
 \end{table}
 
+AGE-MOEA follows the adaptive geometry estimation survival scheme of Panichella~\cite{panichella2019adaptive}: after non-dominated sorting, the first front is normalized by extreme points, a curvature-dependent $p$-norm is estimated, and survival uses geometry-aware crowding based on Minkowski distances. RVEA follows Cheng et~al.~\cite{cheng2016reference} with angle-penalized distance (APD) survival and periodic reference-vector adaptation using ideal/nadir scaling; we therefore enforce \texttt{pop\_size} to match the number of simplex-lattice reference directions induced by \texttt{n\_partitions}.
+
 \subsection{Execution model and evaluation backends}
 
 Algorithms in \VAMOS{} expose a uniform \texttt{run(problem, termination, seed, eval\_backend, live\_viz)} interface, and several algorithms also support an \emph{ask--tell} loop for streaming or interactive use. Objective evaluations are dispatched through a small evaluation-backend protocol, enabling serial evaluation for controlled benchmarking and parallel evaluation (e.g., multiprocessing or Dask-based) when objective functions are expensive. Separating evaluation from algorithmic state keeps the algorithm core deterministic under a fixed random seed and reduces the risk of framework-specific parallelism becoming a confounder in empirical comparisons.
@@ -218,11 +220,11 @@ The framework includes optional external archives (with configurable pruning str
 
 \subsection{Adaptive operator selection (AOS)}
 
-AOS in \VAMOS{} is portfolio-based: users specify an operator pool (e.g., multiple SBX/PM parameterizations) and a bandit policy that selects an operator per mating event. The current NSGA-II integration supports $\epsilon$-greedy, UCB, and EXP3 policies~\cite{fialho2010analyzing}, with rewards computed from survival rate and non-dominated insertions. Additional policies (e.g., Thompson sampling) are provided in the adaptation layer and can be integrated into algorithm-specific controllers.
+AOS in \VAMOS{} is portfolio-based: users specify an operator pool (e.g., multiple SBX/PM parameterizations) and a bandit method that selects one operator per generation. The NSGA-II integration supports $\epsilon$-greedy, UCB, EXP3, Thompson sampling, and sliding-window UCB~\cite{fialho2010analyzing}, with an optional exploration floor that mixes uniform sampling. Rewards are computed from survival rate and non-dominated insertions, with support for weighted combinations.
 
 \subsection{Racing-based hyperparameter tuning}
 
-\VAMOS{} provides an irace-inspired racing tuner~\cite{lopez2016irace} for automatic algorithm configuration. Candidates are evaluated across instances and seeds; underperforming configurations are eliminated as evidence accumulates. For sample efficiency, the tuner optionally uses a multi-fidelity strategy (Hyperband-style successive halving~\cite{li2017hyperband}) and can pass warm-start checkpoints between fidelity levels to reuse computation.
+\VAMOS{} provides an irace-inspired racing tuner~\cite{lopez2016irace} for automatic algorithm configuration. Candidates are evaluated across instances and seeds; underperforming configurations are eliminated as evidence accumulates. At each fidelity level we evaluate all remaining configurations on the same instance $\times$ seed blocks, and promotions are based on scores from the current level only. For sample efficiency, the tuner optionally uses a multi-fidelity strategy (Hyperband-style successive halving~\cite{li2017hyperband}) and can pass warm-start checkpoints between fidelity levels to reuse computation.
 
 %==============================================================================
 \section{Experimental Evaluation}
@@ -233,7 +235,7 @@ AOS in \VAMOS{} is portfolio-based: users specify an operator pool (e.g., multip
 
 We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives), DTLZ1--4 and DTLZ7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2/3/4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$).
 
-To ensure comparability across frameworks, we standardize the algorithmic settings of NSGA-II: population size $N=100$, SBX crossover probability $p_c=0.9$ and distribution index $\eta_c=20$, polynomial mutation distribution index $\eta_m=20$ and mutation probability $p_m=1/n$, tournament selection, and rank--crowding survival. For each framework we map these settings to the closest available implementation.
+To ensure comparability across frameworks, we standardize the algorithmic settings of NSGA-II: population size $N=100$, SBX crossover probability $p_c=1.0$ and distribution index $\eta_c=20$, polynomial mutation distribution index $\eta_m=20$ and mutation probability $p_m=1/n$, tournament selection, and rank--crowding survival. For each framework we map these settings to the closest available implementation.
 
 This workflow follows standard practice in comparative MOEA studies (independent runs, indicator computation, and statistical testing) and is consistent with the experimentation methodology described in jMetalPy~\cite{benitez2019jmetalpy}. Our main extension is to make the \emph{inputs} to this workflow comparable across toolkits by enforcing semantic alignment of both problem definitions and operator probabilities.
 

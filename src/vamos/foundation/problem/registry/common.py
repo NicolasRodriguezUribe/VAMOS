@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional, Tuple
 
 ProblemFactory = Callable[[int, Optional[int]], object]
+DefaultNVarFn = Callable[[int], int]
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,7 @@ class ProblemSpec:
     default_n_obj: int
     allow_n_obj_override: bool
     factory: ProblemFactory
+    default_n_var_fn: Optional[DefaultNVarFn] = None
     description: str = ""
     encoding: str = "continuous"
 
@@ -23,10 +25,6 @@ class ProblemSpec:
         """
         Apply default dimensions and enforce override rules.
         """
-        actual_n_var = n_var if n_var is not None else self.default_n_var
-        if actual_n_var <= 0:
-            raise ValueError("n_var must be a positive integer.")
-
         if self.allow_n_obj_override:
             actual_n_obj = n_obj if n_obj is not None else self.default_n_obj
             if actual_n_obj <= 0:
@@ -37,6 +35,17 @@ class ProblemSpec:
                 raise ValueError(
                     f"Problem '{self.label}' has a fixed number of objectives ({self.default_n_obj}). --n-obj overrides are not supported."
                 )
+
+        if n_var is None:
+            actual_n_var = (
+                self.default_n_var_fn(actual_n_obj)
+                if self.default_n_var_fn is not None
+                else self.default_n_var
+            )
+        else:
+            actual_n_var = n_var
+        if actual_n_var <= 0:
+            raise ValueError("n_var must be a positive integer.")
 
         return actual_n_var, actual_n_obj
 

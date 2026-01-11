@@ -2,7 +2,7 @@ import pytest
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.foundation.problem.zdt2 import ZDT2Problem
 from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
-from vamos.experiment.optimize import OptimizeConfig, optimize
+from vamos.experiment.optimize import OptimizeConfig, optimize_config
 from vamos.foundation.metrics import compute_hypervolume
 
 
@@ -22,7 +22,7 @@ def test_zdt1_nsgaii_convergence():
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob=1.0 / 30, eta=20.0)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine("numpy")
         .fixed()
     )
@@ -36,7 +36,7 @@ def test_zdt1_nsgaii_convergence():
         engine="numpy",
     )
 
-    result = optimize(config)
+    result = optimize_config(config)
 
     # Normalized HV (Reference Point [1.1, 1.1])
     hv = compute_hypervolume(result.F, [1.1, 1.1])
@@ -74,7 +74,7 @@ def test_zdt1_moead_convergence():
         engine="numpy",
     )
 
-    result = optimize(config)
+    result = optimize_config(config)
 
     hv = compute_hypervolume(result.F, [1.1, 1.1])
     assert hv > 0.60, f"ZDT1 MOEA/D failed to converge. HV={hv:.4f} < 0.60"
@@ -96,7 +96,7 @@ def test_zdt2_nsgaii_convergence():
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob=1.0 / 30, eta=20.0)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+
         .engine("numpy")
         .fixed()
     )
@@ -110,7 +110,7 @@ def test_zdt2_nsgaii_convergence():
         engine="numpy",
     )
 
-    result = optimize(config)
+    result = optimize_config(config)
 
     hv = compute_hypervolume(result.F, [1.1, 1.1])
     assert hv > 0.30, f"ZDT2 NSGA-II failed to converge. HV={hv:.4f} < 0.30"

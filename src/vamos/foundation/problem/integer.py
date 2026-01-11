@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 
-def _validate_bounds(n_var: int, lower: np.ndarray, upper: np.ndarray):
+def _validate_bounds(n_var: int, lower: np.ndarray, upper: np.ndarray) -> None:
     if lower.shape != upper.shape or lower.shape[0] != n_var:
         raise ValueError("lower and upper bounds must be 1D arrays of length n_var.")
     if np.any(lower > upper):
@@ -17,7 +17,7 @@ class IntegerResourceAllocationProblem:
     Objective 2: maximize diminishing returns (as negative utility).
     """
 
-    def __init__(self, n_var: int = 20, max_per_task: int = 10):
+    def __init__(self, n_var: int = 20, max_per_task: int = 10) -> None:
         if n_var <= 0:
             raise ValueError("n_var must be positive.")
         self.n_var = int(n_var)
@@ -30,7 +30,7 @@ class IntegerResourceAllocationProblem:
         self.task_cost = rng.uniform(0.5, 2.0, size=self.n_var)
         self.task_reward = rng.uniform(1.0, 3.0, size=self.n_var)
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}).")
         X_int = np.clip(np.rint(X), self.xl, self.xu).astype(int, copy=False)
@@ -57,7 +57,7 @@ class IntegerJobAssignmentProblem:
     Objective 2: minimize diversity penalty (encourage spread across types).
     """
 
-    def __init__(self, n_positions: int = 30, n_job_types: int = 5):
+    def __init__(self, n_positions: int = 30, n_job_types: int = 5) -> None:
         if n_positions <= 0 or n_job_types <= 1:
             raise ValueError("n_positions must be positive and n_job_types > 1.")
         self.n_var = int(n_positions)
@@ -71,7 +71,7 @@ class IntegerJobAssignmentProblem:
         self.preferences = rng.integers(0, self.n_job_types, size=self.n_var, dtype=int)
         self.mismatch_penalty = rng.uniform(0.5, 2.5, size=self.n_var)
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}).")
         X_int = np.clip(np.rint(X), self.xl, self.xu).astype(int, copy=False)

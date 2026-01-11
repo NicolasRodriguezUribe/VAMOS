@@ -3,13 +3,31 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
+class IBEAConfigDict(TypedDict):
+    pop_size: int
+    crossover: Tuple[str, Dict[str, Any]]
+    mutation: Tuple[str, Dict[str, Any]]
+    selection: Tuple[str, Dict[str, Any]]
+    indicator: str
+    kappa: float
+    engine: str
+    repair: Optional[Tuple[str, Dict[str, Any]]]
+    initializer: Optional[Dict[str, Any]]
+    mutation_prob_factor: Optional[float]
+    constraint_mode: str
+    track_genealogy: bool
+    result_mode: Optional[str]
+    archive: Optional[Dict[str, Any]]
+    archive_type: Optional[str]
+
+
 @dataclass(frozen=True)
-class IBEAConfigData(_SerializableConfig):
+class IBEAConfigData(_SerializableConfig["IBEAConfigDict"]):
     pop_size: int
     crossover: Tuple[str, Dict[str, Any]]
     mutation: Tuple[str, Dict[str, Any]]
@@ -33,19 +51,40 @@ class IBEAConfig:
     def __init__(self) -> None:
         self._cfg: Dict[str, Any] = {}
 
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 100,
+        n_var: int | None = None,
+        engine: str = "numpy",
+    ) -> "IBEAConfigData":
+        """Create a default IBEA configuration."""
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        return (
+            cls()
+            .pop_size(pop_size)
+            .crossover("sbx", prob=1.0, eta=20.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
+            .selection("tournament")
+            .indicator("eps")
+            .kappa(1.0)
+            .engine(engine)
+            .fixed()
+        )
+
     def pop_size(self, value: int) -> "IBEAConfig":
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs) -> "IBEAConfig":
+    def crossover(self, method: str, **kwargs: Any) -> "IBEAConfig":
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs) -> "IBEAConfig":
+    def mutation(self, method: str, **kwargs: Any) -> "IBEAConfig":
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs) -> "IBEAConfig":
+    def selection(self, method: str, **kwargs: Any) -> "IBEAConfig":
         self._cfg["selection"] = (method, kwargs)
         return self
 
@@ -61,11 +100,11 @@ class IBEAConfig:
         self._cfg["engine"] = value
         return self
 
-    def repair(self, method: str, **kwargs) -> "IBEAConfig":
+    def repair(self, method: str, **kwargs: Any) -> "IBEAConfig":
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs) -> "IBEAConfig":
+    def initializer(self, method: str, **kwargs: Any) -> "IBEAConfig":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -85,7 +124,7 @@ class IBEAConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs) -> "IBEAConfig":
+    def archive(self, size: int, **kwargs: Any) -> "IBEAConfig":
         """
         Configure an external archive.
 

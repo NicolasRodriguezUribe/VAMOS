@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Sequence, Tuple, TYPE_CHECKING
+from typing import Callable, List, Sequence, Tuple, TYPE_CHECKING
 
 import numpy as np
 
@@ -57,7 +57,7 @@ def _z_critical(alpha: float) -> float:
     set of typical alpha values with precomputed constants.
     """
     try:
-        from scipy.stats import norm  # type: ignore
+        from scipy.stats import norm  # type: ignore[import-untyped]
     except Exception:
         if abs(alpha - 0.05) < 1e-8:
             return 1.96
@@ -77,7 +77,7 @@ def _t_critical(alpha: float, df: int) -> float:
     Falls back to z critical when scipy is unavailable.
     """
     try:
-        from scipy.stats import t  # type: ignore
+        from scipy.stats import t
     except Exception:
         return _z_critical(alpha)
 
@@ -89,7 +89,7 @@ def _get_p_value(t_stat: float, df: int) -> float:
     Two-sided p-value for a given t-statistic and degrees of freedom.
     """
     try:
-        from scipy.stats import t  # type: ignore
+        from scipy.stats import t
 
         # Survival function (1 - cdf) for the absolute t-stat * 2 for two-sided
         return float(t.sf(abs(t_stat), df) * 2)
@@ -110,7 +110,7 @@ def select_configs_by_paired_test(
     maximize: bool,
     alpha: float,
     *,
-    aggregator=None,
+    aggregator: Callable[[list[float]], float] | None = None,
 ) -> np.ndarray:
     """
     Perform pairwise t-tests against the best configuration with Holm-Bonferroni correction.

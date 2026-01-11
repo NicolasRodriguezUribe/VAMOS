@@ -45,7 +45,7 @@ class StudyBuilder:
 
         # Advanced config
         self._live_viz = False
-        self._eval_backend = "serial"
+        self._eval_strategy = "serial"
 
     def using(self, algorithm: str, **kwargs: Any) -> "Self":
         """
@@ -111,8 +111,8 @@ class StudyBuilder:
         config = ExperimentConfig(
             population_size=self._pop_size if self._pop_size else 100,
             max_evaluations=self._max_evaluations,
-            seed=self._seed,
-            eval_backend=self._eval_backend,
+            seed=self._seed if self._seed is not None else 42,
+            eval_strategy=self._eval_strategy,
             live_viz=self._live_viz,
         )
 

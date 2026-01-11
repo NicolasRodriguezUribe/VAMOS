@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence, List, TYPE_CHECKING
+from typing import Any, Sequence, List, TYPE_CHECKING
 
 import numpy as np
-from scipy import stats as spstats
+from scipy import stats as spstats  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
 
-def _require_matplotlib():
+def _require_matplotlib() -> Any:
     try:
-        import matplotlib.pyplot as plt  # type: ignore
+        import matplotlib.pyplot as plt
 
         return plt
     except ImportError as exc:

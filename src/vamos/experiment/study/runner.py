@@ -160,3 +160,6 @@ class StudyRunner:
                         _logger().warning("[Study] indicator '%s' failed: %s", name, exc)
                     vals[name] = None
             res.metrics["indicator_values"] = vals
+
+
+__all__ = ["StudyRunner", "StudyTask", "StudyResult"]

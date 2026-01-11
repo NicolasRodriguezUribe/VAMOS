@@ -3,18 +3,35 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
-@dataclass(frozen=True)
-class NSGAIIConfigData(_SerializableConfig):
+class NSGAIIConfigDict(TypedDict):
     pop_size: int
     crossover: Tuple[str, Dict[str, Any]]
     mutation: Tuple[str, Dict[str, Any]]
     selection: Tuple[str, Dict[str, Any]]
-    survival: str
+    engine: str
+    offspring_size: Optional[int]
+    repair: Optional[Tuple[str, Dict[str, Any]]]
+    archive: Optional[Dict[str, Any]]
+    initializer: Optional[Dict[str, Any]]
+    mutation_prob_factor: Optional[float]
+    result_mode: Optional[str]
+    archive_type: Optional[str]
+    constraint_mode: str
+    track_genealogy: bool
+    adaptive_operator_selection: Optional[Dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class NSGAIIConfigData(_SerializableConfig["NSGAIIConfigDict"]):
+    pop_size: int
+    crossover: Tuple[str, Dict[str, Any]]
+    mutation: Tuple[str, Dict[str, Any]]
+    selection: Tuple[str, Dict[str, Any]]
     engine: str
     offspring_size: Optional[int] = None
     repair: Optional[Tuple[str, Dict[str, Any]]] = None
@@ -35,13 +52,13 @@ class NSGAIIConfig:
 
     Examples:
         # Fluent builder
-        cfg = NSGAIIConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+        cfg = NSGAIIConfig().pop_size(100).crossover("sbx", prob=1.0).fixed()
 
         # Quick default configuration
         cfg = NSGAIIConfig.default()
 
         # From dictionary
-        cfg = NSGAIIConfig.from_dict({"pop_size": 100, "crossover": ("sbx", {"prob": 0.9})})
+        cfg = NSGAIIConfig.from_dict({"pop_size": 100, "crossover": ("sbx", {"prob": 1.0})})
     """
 
     def __init__(self) -> None:
@@ -69,10 +86,9 @@ class NSGAIIConfig:
         return (
             cls()
             .pop_size(pop_size)
-            .crossover("sbx", prob=0.9, eta=20.0)
+            .crossover("sbx", prob=1.0, eta=20.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("tournament")
-            .survival("rank_crowding")
             .engine(engine)
             .fixed()
         )
@@ -88,12 +104,13 @@ class NSGAIIConfig:
                 - crossover: Tuple of (method, params) or dict with method and params
                 - mutation: Tuple of (method, params) or dict with method and params
                 - selection: Tuple of (method, params) or just method string
-                - survival: Survival method string
                 - engine: Backend engine string
 
         Returns:
             Frozen NSGAIIConfigData
         """
+        if "survival" in config:
+            raise ValueError("NSGA-II no longer supports a 'survival' setting.")
         builder = cls()
 
         if "pop_size" in config:
@@ -133,8 +150,6 @@ class NSGAIIConfig:
                 builder.selection(sel)
 
         # Simple string fields
-        if "survival" in config:
-            builder.survival(config["survival"])
         if "engine" in config:
             builder.engine(config["engine"])
 
@@ -165,14 +180,24 @@ class NSGAIIConfig:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str | tuple, params: dict | None = None, **kwargs) -> "NSGAIIConfig":
+    def crossover(
+        self,
+        method: str | tuple[str, dict[str, Any]],
+        params: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> "NSGAIIConfig":
         if isinstance(method, tuple) and params is None and not kwargs:
             method, params = method
         cfg_kwargs = params or kwargs
         self._cfg["crossover"] = (method, cfg_kwargs)
         return self
 
-    def mutation(self, method: str | tuple, params: dict | None = None, **kwargs) -> "NSGAIIConfig":
+    def mutation(
+        self,
+        method: str | tuple[str, dict[str, Any]],
+        params: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> "NSGAIIConfig":
         if isinstance(method, tuple) and params is None and not kwargs:
             method, params = method
         cfg_kwargs = params or kwargs
@@ -185,23 +210,19 @@ class NSGAIIConfig:
         self._cfg["offspring_size"] = value
         return self
 
-    def repair(self, method: str, **kwargs) -> "NSGAIIConfig":
+    def repair(self, method: str, **kwargs: Any) -> "NSGAIIConfig":
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs) -> "NSGAIIConfig":
+    def selection(self, method: str, **kwargs: Any) -> "NSGAIIConfig":
         self._cfg["selection"] = (method, kwargs)
-        return self
-
-    def survival(self, method: str) -> "NSGAIIConfig":
-        self._cfg["survival"] = method
         return self
 
     def engine(self, value: str) -> "NSGAIIConfig":
         self._cfg["engine"] = value
         return self
 
-    def initializer(self, method: str, **kwargs) -> "NSGAIIConfig":
+    def initializer(self, method: str, **kwargs: Any) -> "NSGAIIConfig":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -226,7 +247,7 @@ class NSGAIIConfig:
         self._cfg["archive_type"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs) -> "NSGAIIConfig":
+    def archive(self, size: int, **kwargs: Any) -> "NSGAIIConfig":
         """
         Configure an external archive.
 
@@ -263,7 +284,7 @@ class NSGAIIConfig:
     def fixed(self) -> NSGAIIConfigData:
         _require_fields(
             self._cfg,
-            ("pop_size", "crossover", "mutation", "selection", "survival", "engine"),
+            ("pop_size", "crossover", "mutation", "selection", "engine"),
             "NSGA-II",
         )
         archive_cfg = self._cfg.get("archive", self._cfg.get("external_archive"))
@@ -272,7 +293,6 @@ class NSGAIIConfig:
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
             selection=self._cfg["selection"],
-            survival=self._cfg["survival"],
             engine=self._cfg["engine"],
             offspring_size=self._cfg.get("offspring_size"),
             repair=self._cfg.get("repair"),

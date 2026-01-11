@@ -5,7 +5,7 @@ from typing import Any, Protocol
 
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.eval import EvaluationBackend
-from vamos.foundation.eval.backends import resolve_eval_backend
+from vamos.foundation.eval.backends import resolve_eval_strategy
 
 
 class Evaluator(Protocol):
@@ -24,10 +24,10 @@ class EvaluatorSpec:
     def resolve(self, config: ExperimentConfig) -> EvaluationBackend:
         backend = self.backend
         if backend is None:
-            backend = getattr(config, "eval_backend", "serial")
+            backend = getattr(config, "eval_strategy", "serial")
         if isinstance(backend, str):
             n_workers = self.n_workers if self.n_workers is not None else getattr(config, "n_workers", None)
-            return resolve_eval_backend(
+            return resolve_eval_strategy(
                 backend,
                 n_workers=n_workers,
                 chunk_size=self.chunk_size,
@@ -67,12 +67,12 @@ def resolve_evaluator(
     config: ExperimentConfig,
 ) -> EvaluationBackend:
     if evaluator is None:
-        name = getattr(config, "eval_backend", "serial")
+        name = getattr(config, "eval_strategy", "serial")
         n_workers = getattr(config, "n_workers", None)
-        return resolve_eval_backend(name, n_workers=n_workers)
+        return resolve_eval_strategy(name, n_workers=n_workers)
     if isinstance(evaluator, str):
         n_workers = getattr(config, "n_workers", None)
-        return resolve_eval_backend(evaluator, n_workers=n_workers)
+        return resolve_eval_strategy(evaluator, n_workers=n_workers)
     if hasattr(evaluator, "resolve"):
         return evaluator.resolve(config)
     return evaluator

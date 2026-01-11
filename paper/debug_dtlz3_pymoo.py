@@ -88,7 +88,7 @@ algo_config = (
     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
     .mutation("pm", prob=1.0 / N_VAR, eta=MUTATION_ETA)
     .selection("tournament")
-    .survival("rank_crowding")
+    
     .engine("numpy")
     .fixed()
 )

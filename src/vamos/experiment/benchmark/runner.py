@@ -19,7 +19,7 @@ class SingleRunInfo:
     seed: int
     output_dir: str | None
     selection: Any
-    metrics: dict
+    metrics: dict[str, Any]
 
 
 @dataclass
@@ -60,7 +60,7 @@ def _prepare_tasks(
         "offspring_population_size",
         "max_evaluations",
         "seed",
-        "eval_backend",
+        "eval_strategy",
         "n_workers",
         "live_viz",
         "live_viz_interval",
@@ -112,10 +112,11 @@ def run_benchmark_suite(
     persister.save_results(results, summary_dir / "metrics.csv")
     runs: List[SingleRunInfo] = []
     for res in results:
+        algorithm_name = res.metrics.get("algorithm") or res.task.algorithm
         runs.append(
             SingleRunInfo(
                 problem=res.selection.spec.key,
-                algorithm=res.metrics.get("algorithm"),
+                algorithm=str(algorithm_name),
                 seed=res.task.seed,
                 output_dir=res.metrics.get("output_dir"),
                 selection=res.selection,

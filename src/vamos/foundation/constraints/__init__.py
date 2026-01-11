@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -29,8 +30,8 @@ def compute_constraint_info(G: np.ndarray, eps: float = 0.0) -> ConstraintInfo:
     if G.ndim != 2:
         raise ValueError("G must be a 2D array of shape (n_points, n_constr).")
     positive = np.maximum(G - eps, 0.0)
-    cv = np.sum(positive, axis=1)
-    feasible = np.all(G <= eps, axis=1)
+    cv = np.asarray(np.sum(positive, axis=1), dtype=float)
+    feasible = np.asarray(np.all(G <= eps, axis=1), dtype=bool)
     return ConstraintInfo(G=G, cv=cv, feasible_mask=feasible)
 
 
@@ -48,9 +49,9 @@ class ConstraintHandlingStrategy(ABC):
 
 def _aggregate_objectives(F: np.ndarray, mode: str) -> np.ndarray:
     if mode == "sum":
-        return np.sum(F, axis=1)
+        return np.asarray(np.sum(F, axis=1), dtype=float)
     if mode == "max":
-        return np.max(F, axis=1)
+        return np.asarray(np.max(F, axis=1), dtype=float)
     if mode == "none":
         return np.zeros(F.shape[0], dtype=float)
     raise ValueError(f"Unknown objective aggregator '{mode}'.")
@@ -116,7 +117,7 @@ class EpsilonConstraintStrategy(ConstraintHandlingStrategy):
         return np.where(info.feasible_mask, agg, agg.max(initial=0.0) + 1.0 + infeasible_penalty)
 
 
-def get_constraint_strategy(name: str, **kwargs) -> ConstraintHandlingStrategy:
+def get_constraint_strategy(name: str, **kwargs: Any) -> ConstraintHandlingStrategy:
     key = name.lower()
     if key == "feasibility_first":
         return FeasibilityFirstStrategy(**kwargs)

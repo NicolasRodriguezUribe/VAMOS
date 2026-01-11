@@ -14,9 +14,9 @@ def ensure_dir(path: Path) -> Path:
     return path
 
 
-def import_pandas():
+def import_pandas() -> Any:
     try:
-        import pandas as pd  # type: ignore
+        import pandas as pd  # type: ignore[import-untyped]
     except ImportError as exc:  # pragma: no cover - optional dependency
         raise ImportError(
             "Benchmark reporting requires pandas. Install via 'pip install pandas' or the 'notebooks'/'examples' extras."

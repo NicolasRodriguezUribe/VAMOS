@@ -36,7 +36,7 @@ def evaluate_config(config: dict, ctx) -> float:
         .crossover("sbx", prob=float(config["crossover_prob"]), eta=20.0)
         .mutation("pm", prob=float(config["mutation_prob"]), eta=20.0)
         .selection("tournament", pressure=2)
-        .survival("nsga2")
+        
         .engine("numpy") # Use "numba" for better speed if available
         .fixed()
     )

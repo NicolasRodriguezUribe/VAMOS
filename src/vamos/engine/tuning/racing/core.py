@@ -17,7 +17,7 @@ from .refill import refill_population
 from .multi_fidelity import _run_multi_fidelity
 
 
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed  # type: ignore[import-untyped]
 
 
 def _logger() -> logging.Logger:

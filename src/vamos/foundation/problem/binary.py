@@ -17,7 +17,7 @@ class BinaryFeatureSelectionProblem:
     Objective 2: minimize cumulative feature cost.
     """
 
-    def __init__(self, n_var: int = 50):
+    def __init__(self, n_var: int = 50) -> None:
         if n_var <= 0:
             raise ValueError("n_var must be positive.")
         self.n_var = int(n_var)
@@ -30,7 +30,7 @@ class BinaryFeatureSelectionProblem:
         self.utility = np.abs(rng.normal(loc=1.0, scale=0.5, size=self.n_var)) + 0.05
         self.cost = rng.uniform(0.2, 1.5, size=self.n_var)
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         bits = _as_bits(X, self.n_var)
         gain = bits @ self.utility
         complexity = bits @ self.cost
@@ -53,7 +53,7 @@ class BinaryKnapsackProblem:
     Objective 2: maximize item value (minimize negative value).
     """
 
-    def __init__(self, n_var: int = 50, capacity_ratio: float = 0.4):
+    def __init__(self, n_var: int = 50, capacity_ratio: float = 0.4) -> None:
         if n_var <= 0:
             raise ValueError("n_var must be positive.")
         self.n_var = int(n_var)
@@ -67,7 +67,7 @@ class BinaryKnapsackProblem:
         self.values = rng.uniform(1.0, 5.0, size=self.n_var)
         self.capacity = float(capacity_ratio) * float(self.weights.sum())
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         bits = _as_bits(X, self.n_var)
         total_weight = bits @ self.weights
         total_value = bits @ self.values
@@ -91,7 +91,7 @@ class BinaryQUBOProblem:
     Objective 2: maximize the number of selected bits (minimize negative count).
     """
 
-    def __init__(self, n_var: int = 30):
+    def __init__(self, n_var: int = 30) -> None:
         if n_var <= 0:
             raise ValueError("n_var must be positive.")
         self.n_var = int(n_var)
@@ -107,7 +107,7 @@ class BinaryQUBOProblem:
         self.Q = sym + diag_boost
         self.bias = rng.normal(scale=0.2, size=self.n_var)
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         bits = _as_bits(X, self.n_var)
         quad = np.einsum("bi,ij,bj->b", bits, self.Q, bits)
         linear = bits @ self.bias

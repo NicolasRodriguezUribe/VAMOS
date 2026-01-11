@@ -29,7 +29,7 @@ from vamos.engine.algorithm.components.hooks import (
     notify_generation,
 )
 from vamos.engine.algorithm.components.lifecycle import (
-    get_eval_backend,
+    get_eval_strategy,
     setup_initial_population,
 )
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -75,7 +75,7 @@ __all__ = [
     "setup_hv_tracker",
     "get_live_viz",
     "notify_generation",
-    "get_eval_backend",
+    "get_eval_strategy",
     "build_result",
     # archive
     "CrowdingDistanceArchive",

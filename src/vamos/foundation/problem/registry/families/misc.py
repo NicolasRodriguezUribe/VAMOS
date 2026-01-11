@@ -6,15 +6,15 @@ from ...binary import BinaryFeatureSelectionProblem, BinaryKnapsackProblem, Bina
 from ...integer import IntegerJobAssignmentProblem, IntegerResourceAllocationProblem
 from ...mixed import MixedDesignProblem
 from ...tsp import TSPProblem
-from ..common import ProblemSpec
+from ..common import ProblemFactory, ProblemSpec
 
 
-def _tsp_factory(n_var: int, _ignored: Optional[int] = None):
+def _tsp_factory(n_var: int, _ignored: Optional[int] = None) -> TSPProblem:
     return TSPProblem(n_cities=n_var)
 
 
-def _tsplib_tsp_factory(dataset: str):
-    def _factory(_n_var: int, _ignored: Optional[int] = None):
+def _tsplib_tsp_factory(dataset: str) -> ProblemFactory:
+    def _factory(_n_var: int, _ignored: Optional[int] = None) -> TSPProblem:
         return TSPProblem(dataset=dataset)
 
     return _factory

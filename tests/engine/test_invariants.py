@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from vamos.api import run_optimization
+from vamos.api import optimize
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
@@ -17,7 +17,7 @@ def test_nsgaii_invariants():
 
     # We use 'numpy' engine for baseline invariants, 'numba' for performance check if enabled
     # Let's test default (numpy) first
-    res = run_optimization(problem=problem, algorithm="nsgaii", max_evaluations=1000, pop_size=pop_size, seed=123, engine="numpy")
+    res = optimize(problem, algorithm="nsgaii", budget=1000, pop_size=pop_size, seed=123, engine="numpy")
 
     # Invariant 1: Population Size
     # NSGA-II should return exactly pop_size solutions unless we requested result_mode="non_dominated" AND the front is small?
@@ -47,6 +47,6 @@ def test_nsgaii_population_mode_invariants():
     Verify NSGA-II returns full population if configured.
     """
     # This requires configuring 'result_mode'="population".
-    # run_optimization helper might not expose it easily without kwargs magic or OptimizeConfig.
+    # optimize helper might not expose it easily without kwargs magic or OptimizeConfig.
     # We'll skip this if it's too complex to wire via api, but bounds check is critical.
     pass

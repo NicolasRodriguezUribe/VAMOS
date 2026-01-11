@@ -11,17 +11,21 @@ from typing import Any, Dict, List, Tuple
 # Operator Registry by Encoding
 # =============================================================================
 
-OPERATORS_BY_ENCODING: Dict[str, Dict[str, List[Tuple[str, Dict[str, Any]]]]] = {
+OperatorParams = Dict[str, Any]
+OperatorTuple = Tuple[str, OperatorParams]
+VariationConfig = Dict[str, Any]
+
+OPERATORS_BY_ENCODING: Dict[str, Dict[str, List[OperatorTuple]]] = {
     "real": {
         "crossover": [
-            ("sbx", {"prob": 0.9, "eta": 20.0}),
+            ("sbx", {"prob": 1.0, "eta": 20.0}),
             ("uniform", {"prob": 0.9}),
             ("blx", {"prob": 0.9, "alpha": 0.5}),
             ("arithmetic", {"prob": 0.9}),
             ("de", {"prob": 0.9, "F": 0.5}),
         ],
         "mutation": [
-            ("pm", {"prob": 0.1, "eta": 20.0}),
+            ("pm", {"prob": "1/n", "eta": 20.0}),
             ("gaussian", {"prob": 0.1, "sigma": 0.1}),
             ("uniform_reset", {"prob": 0.1}),
         ],
@@ -74,7 +78,7 @@ OPERATORS_BY_ENCODING: Dict[str, Dict[str, List[Tuple[str, Dict[str, Any]]]]] = 
 }
 
 
-def get_operators_for_encoding(encoding: str) -> Dict[str, List[Tuple[str, Dict[str, Any]]]]:
+def get_operators_for_encoding(encoding: str) -> Dict[str, List[OperatorTuple]]:
     """Return available operators for the given encoding type."""
     return OPERATORS_BY_ENCODING.get(encoding, OPERATORS_BY_ENCODING["real"])
 
@@ -91,14 +95,15 @@ def get_mutation_names(encoding: str) -> List[str]:
     return [op[0] for op in ops.get("mutation", [])]
 
 
-def normalize_operator_tuple(spec) -> tuple[str, dict] | None:
+def normalize_operator_tuple(spec: object) -> OperatorTuple | None:
     """
     Accept operator specs in tuple/dict/string form and normalize to (name, params).
     """
     if spec is None:
         return None
     if isinstance(spec, tuple):
-        return spec
+        name, params = spec
+        return (str(name), dict(params))
     if isinstance(spec, str):
         return (spec, {})
     if isinstance(spec, dict):
@@ -106,17 +111,17 @@ def normalize_operator_tuple(spec) -> tuple[str, dict] | None:
         if not method:
             return None
         params = {k: v for k, v in spec.items() if k not in {"method", "name"} and v is not None}
-        return (method, params)
+        return (str(method), params)
     return None
 
 
-def normalize_variation_config(raw: dict | None) -> dict | None:
+def normalize_variation_config(raw: VariationConfig | None) -> VariationConfig | None:
     """
     Normalize variation configuration dictionaries into operator tuples where applicable.
     """
     if not raw:
         return None
-    normalized: dict = {}
+    normalized: VariationConfig = {}
     known_op_keys = {"crossover", "mutation", "selection", "repair", "aggregation"}
     for key in known_op_keys:
         op = normalize_operator_tuple(raw.get(key))
@@ -130,14 +135,14 @@ def normalize_variation_config(raw: dict | None) -> dict | None:
     return normalized or None
 
 
-def resolve_default_variation_config(encoding: str, overrides: dict | None) -> Dict[str, Any]:
+def resolve_default_variation_config(encoding: str, overrides: VariationConfig | None) -> VariationConfig:
     """
     Default variation configuration by encoding, merged with user overrides.
     """
     if encoding == "real":
         base = {
-            "crossover": ("sbx", {"prob": 0.9, "eta": 20.0}),
-            "mutation": ("pm", {"prob": 0.1, "eta": 20.0}),
+            "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
+            "mutation": ("pm", {"prob": "1/n", "eta": 20.0}),
         }
     elif encoding == "binary":
         base = {
@@ -180,7 +185,7 @@ def resolve_default_variation_config(encoding: str, overrides: dict | None) -> D
     return base
 
 
-def merge_variation_overrides(base: dict | None, override: dict | None) -> dict:
+def merge_variation_overrides(base: VariationConfig | None, override: VariationConfig | None) -> VariationConfig:
     base = base or {}
     if not override:
         return dict(base)

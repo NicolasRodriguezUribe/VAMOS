@@ -42,7 +42,7 @@ def make_algo_config(assignment: dict[str, float]) -> NSGAIIConfigData:
             eta=float(assignment["mutation_eta"]),
         )
         .selection("tournament", pressure=int(assignment["selection_pressure"]))
-        .survival("nsga2")
+        
         .engine("numpy")
         .fixed()
     )

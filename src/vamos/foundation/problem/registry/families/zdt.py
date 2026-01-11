@@ -10,7 +10,7 @@ from ...zdt6 import ZDT6Problem
 from ..common import ProblemSpec
 
 
-def _zdt1_factory(n_var: int, _ignored: Optional[int] = None):
+def _zdt1_factory(n_var: int, _ignored: Optional[int] = None) -> ZDT1Problem:
     return ZDT1Problem(n_var=n_var)
 
 

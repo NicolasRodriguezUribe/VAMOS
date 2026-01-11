@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -68,8 +68,8 @@ def get_lineage(tracker: GenealogyTracker, individual_id: IndividualID) -> List[
     return lineage
 
 
-def compute_operator_success_stats(tracker: GenealogyTracker):
-    import pandas as pd
+def compute_operator_success_stats(tracker: GenealogyTracker) -> Any:
+    import pandas as pd  # type: ignore[import-untyped]
 
     total: Dict[str, int] = {}
     final: Dict[str, int] = {}
@@ -97,7 +97,7 @@ def compute_operator_success_stats(tracker: GenealogyTracker):
     return pd.DataFrame(rows)
 
 
-def compute_generation_contributions(tracker: GenealogyTracker):
+def compute_generation_contributions(tracker: GenealogyTracker) -> Any:
     import pandas as pd
 
     final_ids = [rid for rid, rec in tracker.records.items() if rec.is_final_front]

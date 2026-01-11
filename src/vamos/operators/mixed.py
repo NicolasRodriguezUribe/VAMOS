@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 
-def mixed_initialize(pop_size: int, n_var: int, spec: dict, rng: np.random.Generator) -> np.ndarray:
+def mixed_initialize(
+    pop_size: int,
+    n_var: int,
+    spec: dict[str, np.ndarray],
+    rng: np.random.Generator,
+) -> np.ndarray:
     """
     Initialize a mixed-typed population using provided index spec.
     """
@@ -29,7 +36,12 @@ def mixed_initialize(pop_size: int, n_var: int, spec: dict, rng: np.random.Gener
     return X
 
 
-def mixed_crossover(X_parents: np.ndarray, prob: float, spec: dict, rng: np.random.Generator) -> np.ndarray:
+def mixed_crossover(
+    X_parents: np.ndarray,
+    prob: float,
+    spec: dict[str, np.ndarray],
+    rng: np.random.Generator,
+) -> np.ndarray:
     """
     Simple mixed crossover: arithmetic mean for real vars, uniform swap for int/cat.
     """
@@ -74,7 +86,12 @@ def mixed_crossover(X_parents: np.ndarray, prob: float, spec: dict, rng: np.rand
     return pairs.reshape(Np, D)
 
 
-def mixed_mutation(X: np.ndarray, prob: float, spec: dict, rng: np.random.Generator) -> None:
+def mixed_mutation(
+    X: np.ndarray,
+    prob: float,
+    spec: dict[str, np.ndarray],
+    rng: np.random.Generator,
+) -> None:
     """
     Mixed mutation: Gaussian perturb for real, random reset for int/cat.
     """
@@ -126,10 +143,10 @@ def mixed_mutation(X: np.ndarray, prob: float, spec: dict, rng: np.random.Genera
 
 
 class MixedCrossover:
-    def __init__(self, prob: float = 0.9, **kwargs):
+    def __init__(self, prob: float = 0.9, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, parents: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         spec = kwargs.get("spec")
         if spec is None:
             raise ValueError("MixedCrossover requires 'spec' in kwargs.")
@@ -137,10 +154,10 @@ class MixedCrossover:
 
 
 class MixedMutation:
-    def __init__(self, prob: float = 0.1, **kwargs):
+    def __init__(self, prob: float = 0.1, **kwargs: Any) -> None:
         self.prob = float(prob)
 
-    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> None:
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> None:
         spec = kwargs.get("spec")
         if spec is None:
             raise ValueError("MixedMutation requires 'spec' in kwargs.")

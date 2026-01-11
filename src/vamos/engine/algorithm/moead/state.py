@@ -58,6 +58,9 @@ class MOEADState(AlgorithmState):
     neighbor_size: int = 20
     delta: float = 0.9
     replace_limit: int = 2
+    batch_size: int = 1
+    subproblem_order: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
+    subproblem_cursor: int = 0
 
     # Variation operators (as callables for flexibility across encodings)
     crossover_fn: Callable | None = None
@@ -70,6 +73,7 @@ class MOEADState(AlgorithmState):
     # Pending offspring tracking for ask/tell
     pending_active_indices: np.ndarray | None = None
     pending_parent_pairs: np.ndarray | None = None
+    pending_use_neighbors: np.ndarray | None = None
 
 
 def build_moead_result(

@@ -21,6 +21,8 @@ __all__ = [
     "fast_non_dominated_sort",
     "identify_extremes",
     "compute_intercepts",
+    "get_extreme_points",
+    "get_nadir_point",
     "associate",
     "niche_selection",
     "nsgaiii_survival",
@@ -76,18 +78,7 @@ def fast_non_dominated_sort(F: np.ndarray) -> list[list[int]]:
 
 
 def identify_extremes(shifted: np.ndarray) -> np.ndarray:
-    """Identify extreme points using ASF (Achievement Scalarization Function).
-
-    Parameters
-    ----------
-    shifted : np.ndarray
-        Shifted objective values (F - ideal), shape (n, n_obj).
-
-    Returns
-    -------
-    np.ndarray
-        Indices of extreme points for each objective.
-    """
+    """Identify extreme points using ASF (Achievement Scalarization Function)."""
     if shifted.size == 0:
         return np.array([], dtype=int)
     n_obj = shifted.shape[1]
@@ -101,22 +92,7 @@ def identify_extremes(shifted: np.ndarray) -> np.ndarray:
 
 
 def compute_intercepts(shifted: np.ndarray, extreme_idx: np.ndarray) -> np.ndarray:
-    """Compute intercepts from extreme points.
-
-    Falls back to axis-wise maxima if plane solving fails.
-
-    Parameters
-    ----------
-    shifted : np.ndarray
-        Shifted objective values.
-    extreme_idx : np.ndarray
-        Indices of extreme points.
-
-    Returns
-    -------
-    np.ndarray
-        Intercepts for normalization.
-    """
+    """Compute intercepts from extreme points (legacy helper)."""
     n_obj = shifted.shape[1]
     if extreme_idx.size == 0:
         return np.ones(n_obj, dtype=float)
@@ -132,6 +108,54 @@ def compute_intercepts(shifted: np.ndarray, extreme_idx: np.ndarray) -> np.ndarr
         intercepts = shifted.max(axis=0)
     intercepts = np.where(intercepts > 0, intercepts, 1.0)
     return intercepts
+
+
+def get_extreme_points(
+    F: np.ndarray,
+    n_obj: int,
+    ideal_point: np.ndarray,
+    extreme_points: np.ndarray | None = None,
+) -> np.ndarray:
+    """Identify extreme points using ASF, preserving previous extremes."""
+    if F.size == 0:
+        return np.empty((0, n_obj), dtype=float)
+    base = F
+    if extreme_points is not None and extreme_points.size:
+        base = np.vstack([extreme_points, F])
+
+    shifted = base - ideal_point
+    shifted[shifted < 1e-3] = 0.0
+
+    asf = np.eye(n_obj)
+    asf[asf == 0] = 1e6
+    vals = np.max(shifted * asf[:, None, :], axis=2)
+    idx = np.argmin(vals, axis=1)
+    return np.asarray(base[idx], dtype=float)
+
+
+def get_nadir_point(
+    extreme_points: np.ndarray,
+    ideal_point: np.ndarray,
+    worst_point: np.ndarray,
+    worst_of_front: np.ndarray,
+    worst_of_population: np.ndarray,
+) -> np.ndarray:
+    """Compute nadir point using extreme points (Deb & Jain 2014)."""
+    try:
+        M = extreme_points - ideal_point
+        b = np.ones(extreme_points.shape[1])
+        plane = np.linalg.solve(M, b)
+        intercepts = 1.0 / plane
+        nadir = ideal_point + intercepts
+        if not np.allclose(M @ plane, b) or np.any(intercepts <= 1e-6) or np.any(nadir > worst_point):
+            raise np.linalg.LinAlgError
+    except Exception:
+        nadir = worst_of_front
+
+    mask = nadir - ideal_point <= 1e-6
+    nadir = nadir.copy()
+    nadir[mask] = worst_of_population[mask]
+    return nadir
 
 
 def associate(
@@ -172,54 +196,42 @@ def niche_selection(
     distances: np.ndarray,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """Perform niche-based selection from critical front.
-
-    Selects solutions to maintain diversity across reference directions.
-
-    Parameters
-    ----------
-    front : np.ndarray
-        Indices of solutions in the critical front.
-    n_remaining : int
-        Number of solutions to select.
-    niche_counts : np.ndarray
-        Current count of solutions per reference direction.
-    associations : np.ndarray
-        Reference direction association for each solution.
-    distances : np.ndarray
-        Perpendicular distance to associated reference direction.
-    rng : np.random.Generator
-        Random number generator.
-
-    Returns
-    -------
-    np.ndarray
-        Indices of selected solutions.
-    """
+    """Perform niche-based selection from the critical front (NSGA-III)."""
     selected: list[int] = []
-    pool = front.tolist()
-    while len(selected) < n_remaining and pool:
-        assoc_front = np.array([associations[idx] for idx in pool])
+    if front.size == 0 or n_remaining <= 0:
+        return np.empty(0, dtype=int)
+
+    mask = np.ones(front.size, dtype=bool)
+    while len(selected) < n_remaining:
+        remaining = n_remaining - len(selected)
+        active_pos = np.where(mask)[0]
+        if active_pos.size == 0:
+            break
+
+        assoc_front = associations[front[active_pos]]
         unique_refs = np.unique(assoc_front)
         ref_counts = niche_counts[unique_refs]
         min_count = np.min(ref_counts)
         candidate_refs = unique_refs[ref_counts == min_count]
-        ref_choice = rng.choice(candidate_refs)
+        rng.shuffle(candidate_refs)
+        candidate_refs = candidate_refs[:remaining]
 
-        candidates = [idx for idx in pool if associations[idx] == ref_choice]
-        if not candidates:
-            niche_counts[ref_choice] = np.inf
-            continue
-        cand_dist = np.array([distances[idx] for idx in candidates])
-        best = candidates[int(np.argmin(cand_dist))]
-        pool.remove(best)
-        niche_counts[ref_choice] += 1
-        selected.append(best)
-
-    if len(selected) < n_remaining and pool:
-        remaining = n_remaining - len(selected)
-        additional = rng.choice(pool, size=min(remaining, len(pool)), replace=False)
-        selected.extend(additional.tolist())
+        for ref_choice in candidate_refs:
+            candidates = active_pos[assoc_front == ref_choice]
+            if candidates.size == 0:
+                niche_counts[ref_choice] = np.inf
+                continue
+            rng.shuffle(candidates)
+            if niche_counts[ref_choice] == 0:
+                cand_dist = distances[front[candidates]]
+                pick = candidates[int(np.argmin(cand_dist))]
+            else:
+                pick = candidates[0]
+            mask[pick] = False
+            selected.append(int(front[pick]))
+            niche_counts[ref_choice] += 1
+            if len(selected) >= n_remaining:
+                break
 
     return np.asarray(selected, dtype=int)
 
@@ -234,7 +246,18 @@ def nsgaiii_survival(
     pop_size: int,
     ref_dirs_norm: np.ndarray,
     rng: np.random.Generator,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray | None, np.ndarray]:
+    ideal_point: np.ndarray,
+    extreme_points: np.ndarray | None,
+    worst_point: np.ndarray,
+) -> tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray | None,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray | None,
+    np.ndarray,
+]:
     """Perform NSGA-III survival selection with niching.
 
     Parameters
@@ -272,16 +295,28 @@ def nsgaiii_survival(
     survivor_indices: list[int] = []
     new_G: list[np.ndarray] | None = [] if G_all is not None else None
 
-    ideal = F_all.min(axis=0)
-    shifted = F_all - ideal
-    extreme_idx = identify_extremes(shifted)
-    intercepts = compute_intercepts(shifted, extreme_idx)
-    denom = np.where(intercepts > 0, intercepts, 1.0)
-    normalized = shifted / denom
+    ideal_point = np.minimum(ideal_point, F_all.min(axis=0))
+    worst_point = np.maximum(worst_point, F_all.max(axis=0))
+
+    if fronts:
+        front0 = np.asarray(fronts[0], dtype=int)
+        nd_F = F_all[front0]
+    else:
+        nd_F = F_all
+
+    extreme_points = get_extreme_points(nd_F, F_all.shape[1], ideal_point, extreme_points)
+    worst_of_population = F_all.max(axis=0)
+    worst_of_front = nd_F.max(axis=0) if nd_F.size else worst_of_population
+    nadir_point = get_nadir_point(extreme_points, ideal_point, worst_point, worst_of_front, worst_of_population)
+
+    denom = nadir_point - ideal_point
+    denom = np.where(denom == 0, 1e-12, denom)
+    normalized = (F_all - ideal_point) / denom
 
     associations, distances = associate(normalized, ref_dirs_norm)
     niche_counts = np.zeros(ref_dirs_norm.shape[0], dtype=int)
 
+    last_front: np.ndarray | None = None
     for front in fronts:
         front_arr = np.asarray(front, dtype=int)
         if len(survivor_indices) + front_arr.size <= pop_size:
@@ -291,12 +326,15 @@ def nsgaiii_survival(
             for idx in front:
                 niche_counts[associations[idx]] += 1
         else:
-            remaining = pop_size - len(survivor_indices)
-            selected_idx = niche_selection(front_arr, remaining, niche_counts, associations, distances, rng)
-            survivor_indices.extend(selected_idx.tolist())
-            if new_G is not None and G_all is not None:
-                new_G.extend(G_all[selected_idx])
+            last_front = front_arr
             break
+
+    if last_front is not None and len(survivor_indices) < pop_size:
+        remaining = pop_size - len(survivor_indices)
+        selected_idx = niche_selection(last_front, remaining, niche_counts, associations, distances, rng)
+        survivor_indices.extend(selected_idx.tolist())
+        if new_G is not None and G_all is not None:
+            new_G.extend(G_all[selected_idx])
 
     survivor_arr = np.asarray(survivor_indices, dtype=int)
     return (
@@ -304,6 +342,9 @@ def nsgaiii_survival(
         F_all[survivor_arr],
         np.asarray(new_G) if new_G is not None else None,
         survivor_arr,
+        ideal_point,
+        extreme_points,
+        worst_point,
     )
 
 

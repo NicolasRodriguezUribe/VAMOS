@@ -19,7 +19,13 @@ from vamos.operators.real import VariationWorkspace
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.adaptation.aos.config import AdaptiveOperatorSelectionConfig
 from vamos.adaptation.aos.controller import AOSController
-from vamos.adaptation.aos.policies import EpsGreedyPolicy, EXP3Policy, UCBPolicy
+from vamos.adaptation.aos.policies import (
+    EpsGreedyPolicy,
+    EXP3Policy,
+    SlidingWindowUCBPolicy,
+    ThompsonSamplingPolicy,
+    UCBPolicy,
+)
 from vamos.adaptation.aos.portfolio import OperatorPortfolio
 
 
@@ -280,39 +286,64 @@ def _setup_aos_controller(
     cfg: dict[str, Any],
     operator_pool: list[VariationPipeline],
 ) -> AOSController | None:
-    selector_cfg = cfg.get("adaptive_operator_selection", {}) or {}
-    enabled = bool(selector_cfg.get("enabled", False))
-    if not enabled or len(operator_pool) <= 1:
+    selector_cfg = cfg.get("adaptive_operator_selection")
+    aos_config = AdaptiveOperatorSelectionConfig.from_dict(selector_cfg)
+    if not aos_config.enabled or len(operator_pool) <= 1:
         return None
 
-    policy_name = str(selector_cfg.get("policy", "ucb")).lower()
-    reward_scope = str(selector_cfg.get("reward_scope", "survival")).lower()
-    exploration = selector_cfg.get("exploration")
-    min_usage = int(selector_cfg.get("min_usage", 1))
-    rng_seed = selector_cfg.get("rng_seed")
-    floor_prob = selector_cfg.get("floor_prob")
-
-    if reward_scope not in {"survival", "nd_insertion", "nd_insertions"}:
+    policy_name = aos_config.method
+    reward_scope = aos_config.reward_scope
+    valid_scopes = {
+        "survival",
+        "survival_rate",
+        "nd",
+        "nd_insertion",
+        "nd_insertions",
+        "hv",
+        "hv_delta",
+        "hypervolume",
+        "combined",
+    }
+    if reward_scope not in valid_scopes:
         raise ValueError(f"Unsupported reward_scope '{reward_scope}'.")
-    if floor_prob is not None:
-        floor_val = float(floor_prob)
-        if not (0.0 <= floor_val <= 1.0):
-            raise ValueError("floor_prob must be within [0, 1].")
 
-    if policy_name in {"eps_greedy", "epsilon_greedy"}:
-        eps = float(exploration) if exploration is not None else 0.1
-        policy = EpsGreedyPolicy(len(operator_pool), epsilon=eps, rng_seed=rng_seed, min_usage=min_usage)
-        method = "epsilon_greedy"
-    elif policy_name in {"ucb", "ucb1"}:
-        c = float(exploration) if exploration is not None else 1.0
-        policy = UCBPolicy(len(operator_pool), c=c, min_usage=min_usage)
-        method = "ucb"
+    if policy_name == "epsilon_greedy":
+        policy = EpsGreedyPolicy(
+            len(operator_pool),
+            epsilon=aos_config.epsilon,
+            rng_seed=aos_config.rng_seed,
+            min_usage=aos_config.min_usage,
+        )
+    elif policy_name == "ucb":
+        policy = UCBPolicy(
+            len(operator_pool),
+            c=aos_config.c,
+            min_usage=aos_config.min_usage,
+        )
     elif policy_name == "exp3":
-        gamma = float(exploration) if exploration is not None else 0.2
-        policy = EXP3Policy(len(operator_pool), gamma=gamma, rng_seed=rng_seed)
-        method = "exp3"
+        policy = EXP3Policy(
+            len(operator_pool),
+            gamma=aos_config.gamma,
+            rng_seed=aos_config.rng_seed,
+        )
+    elif policy_name == "thompson_sampling":
+        policy = ThompsonSamplingPolicy(
+            len(operator_pool),
+            rng_seed=aos_config.rng_seed,
+            min_usage=aos_config.min_usage,
+            window_size=aos_config.window_size,
+        )
+    elif policy_name == "sliding_ucb":
+        if aos_config.window_size <= 0:
+            raise ValueError("sliding_ucb requires window_size > 0.")
+        policy = SlidingWindowUCBPolicy(
+            len(operator_pool),
+            c=aos_config.c,
+            min_usage=aos_config.min_usage,
+            window_size=aos_config.window_size,
+        )
     else:
-        raise ValueError(f"Unsupported AOS policy '{policy_name}'.")
+        raise ValueError(f"Unsupported AOS method '{policy_name}'.")
 
     pairs = []
     for idx, pipeline in enumerate(operator_pool):
@@ -320,14 +351,4 @@ def _setup_aos_controller(
         pairs.append((str(idx), op_name))
     portfolio = OperatorPortfolio.from_pairs(pairs)
 
-    aos_config = AdaptiveOperatorSelectionConfig(
-        enabled=True,
-        method=method,
-        epsilon=float(exploration) if method == "epsilon_greedy" and exploration is not None else 0.1,
-        c=float(exploration) if method == "ucb" and exploration is not None else 1.0,
-        gamma=float(exploration) if method == "exp3" and exploration is not None else 0.2,
-        min_usage=min_usage,
-        rng_seed=rng_seed,
-        reward_scope=reward_scope,
-    )
     return AOSController(config=aos_config, portfolio=portfolio, policy=policy)

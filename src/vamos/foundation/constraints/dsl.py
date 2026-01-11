@@ -17,9 +17,9 @@ class Var:
 
 
 class Expr:
-    def __init__(self, op: str, args: Sequence[object]) -> None:
+    def __init__(self, op: str, args: Sequence[Expr | Var | float]) -> None:
         self.op = op
-        self.args: list[object] = list(args)
+        self.args: list[Expr | Var | float] = list(args)
 
     def _coerce(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
         if isinstance(other, (int, float, np.ndarray)):
@@ -52,7 +52,7 @@ class Expr:
         return Expr("div", [self, self._coerce(other)])
 
     def __rtruediv__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
-        return self._coerce(other).__div__(self)
+        return Expr("div", [self._coerce(other), self])
 
     def __pow__(self, power: Expr | Var | float | int | np.ndarray, modulo: object | None = None) -> Expr:
         return Expr("pow", [self, self._coerce(power)])
@@ -63,8 +63,8 @@ class Expr:
     def __ge__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:
         return Constraint(lhs=self, rhs=self._coerce(other), sense=">=")
 
-    def __eq__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:
-        return Constraint(lhs=self, rhs=self._coerce(other), sense="==")  # type: ignore[override]
+    def __eq__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:  # type: ignore[override]
+        return Constraint(lhs=self, rhs=self._coerce(other), sense="==")
 
 
 @dataclass
@@ -105,24 +105,31 @@ def constraint_model(n_vars: int) -> Iterator[ConstraintModel]:
 def _eval_expr(expr: Expr, X: np.ndarray) -> np.ndarray:
     op = expr.op
     if op == "const":
-        val = float(expr.args[0])
+        const = expr.args[0]
+        if not isinstance(const, (int, float)):
+            raise TypeError("Const expressions must store numeric values.")
+        val = float(const)
         return np.full(X.shape[0], val, dtype=float)
     if op == "var":
         var = expr.args[0]
         assert isinstance(var, Var)
         return X[:, var.index]
-    a = _eval_expr(expr.args[0], X)
-    b = _eval_expr(expr.args[1], X)
+    lhs = expr.args[0]
+    rhs = expr.args[1]
+    if not isinstance(lhs, Expr) or not isinstance(rhs, Expr):
+        raise TypeError("Binary expressions must have Expr operands.")
+    a = _eval_expr(lhs, X)
+    b = _eval_expr(rhs, X)
     if op == "add":
-        return a + b
+        return np.asarray(a + b, dtype=float)
     if op == "sub":
-        return a - b
+        return np.asarray(a - b, dtype=float)
     if op == "mul":
-        return a * b
+        return np.asarray(a * b, dtype=float)
     if op == "div":
-        return a / b
+        return np.asarray(a / b, dtype=float)
     if op == "pow":
-        return np.power(a, b)
+        return np.asarray(np.power(a, b), dtype=float)
     raise ValueError(f"Unsupported op {op}")
 
 

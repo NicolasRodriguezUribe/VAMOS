@@ -168,7 +168,6 @@ def main() -> int:
             # store some common config fields if available
             r["config.engine"] = find_first_key_recursively(meta["config"], "engine")
             r["config.selection"] = find_first_key_recursively(meta["config"], "selection")
-            r["config.survival"] = find_first_key_recursively(meta["config"], "survival")
             r["config.constraint_mode"] = find_first_key_recursively(meta["config"], "constraint_mode")
 
         # metrics passthrough (flatten)

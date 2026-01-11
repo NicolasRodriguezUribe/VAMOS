@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import math
-from typing import List, Tuple
+from typing import List, Tuple, TYPE_CHECKING
 
 import numpy as np
 
 from .stats import build_score_matrix, select_configs_by_paired_test
 from .state import ConfigState, EliteEntry
 
+if TYPE_CHECKING:
+    from .scenario import Scenario
+    from .tuning_task import TuningTask
 
-def compute_aggregated_scores(configs: List[ConfigState], task) -> Tuple[List[int], np.ndarray]:
+
+def compute_aggregated_scores(configs: List[ConfigState], task: "TuningTask") -> Tuple[List[int], np.ndarray]:
     """
     Compute aggregated scores for all alive configs that have at least one score.
     """
@@ -30,8 +34,8 @@ def rank_based_elimination(
     alive_indices: List[int],
     agg_scores: np.ndarray,
     *,
-    task,
-    scenario,
+    task: "TuningTask",
+    scenario: "Scenario",
 ) -> bool:
     n_alive = len(alive_indices)
     if n_alive <= 1:
@@ -60,7 +64,7 @@ def force_keep_top_k(
     alive_indices: List[int],
     agg_scores: np.ndarray,
     *,
-    task,
+    task: "TuningTask",
     k: int,
 ) -> bool:
     """Ensure that at least k configs remain alive by keeping the k best."""
@@ -80,7 +84,7 @@ def force_keep_top_k(
     return eliminated_any
 
 
-def eliminate_configs(configs: List[ConfigState], *, task, scenario) -> bool:
+def eliminate_configs(configs: List[ConfigState], *, task: "TuningTask", scenario: "Scenario") -> bool:
     """
     Eliminate configurations based on the current scores.
     """
@@ -118,7 +122,7 @@ def eliminate_configs(configs: List[ConfigState], *, task, scenario) -> bool:
     # Only if we have enough samples to be meaningful (e.g. at least 3 blocks, at least 3 configs)
     if len(aligned_indices) >= 3 and scores.shape[1] >= 3:
         try:
-            from scipy.stats import friedmanchisquare
+            from scipy.stats import friedmanchisquare  # type: ignore[import-untyped]
 
             # friedmanchisquare takes arguments as *samples
             # each sample is an array of measurements for one subject (here config)
@@ -169,8 +173,8 @@ def eliminate_configs(configs: List[ConfigState], *, task, scenario) -> bool:
 def update_elite_archive(
     configs: List[ConfigState],
     *,
-    task,
-    scenario,
+    task: "TuningTask",
+    scenario: "Scenario",
     elite_archive: List[EliteEntry],
 ) -> List[EliteEntry]:
     """
