@@ -14,7 +14,19 @@ Example:
 
 from __future__ import annotations
 
+from difflib import get_close_matches
 from typing import Any
+
+_ALGO_DOCS = "docs/reference/algorithms.md"
+_TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
+
+
+def _suggest_names(name: str, options: list[str]) -> list[str]:
+    if not name or not options:
+        return []
+    lookup = {option.lower(): option for option in options}
+    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
+    return [lookup[match] for match in matches]
 
 
 class VAMOSError(Exception):
@@ -70,8 +82,17 @@ class InvalidAlgorithmError(ConfigurationError):
             "ibea",
             "smpso",
         ]
+        suggestions = _suggest_names(algorithm, available)
         message = f"Unknown algorithm '{algorithm}'."
-        suggestion = f"Available algorithms: {', '.join(available)}"
+        suggestion_parts = [f"Available algorithms: {', '.join(available)}"]
+        if suggestions:
+            if len(suggestions) == 1:
+                suggestion_parts.append(f"Did you mean '{suggestions[0]}'?")
+            else:
+                suggestion_parts.append("Did you mean one of: " + ", ".join(f"'{item}'" for item in suggestions) + "?")
+        suggestion_parts.append(f"Docs: {_ALGO_DOCS}.")
+        suggestion_parts.append(f"Troubleshooting: {_TROUBLESHOOTING_DOCS}.")
+        suggestion = " ".join(suggestion_parts)
         super().__init__(message, suggestion, {"algorithm": algorithm, "available": available})
 
 
@@ -81,7 +102,19 @@ class InvalidEngineError(ConfigurationError):
     def __init__(self, engine: str, available: list[str] | None = None) -> None:
         available = available or ["numpy", "numba", "moocore"]
         message = f"Unknown engine '{engine}'."
-        suggestion = f"Available engines: {', '.join(available)}. Install extras with: pip install vamos[backends]"
+        suggestions = _suggest_names(engine, available)
+        suggestion_parts = [
+            f"Available engines: {', '.join(available)}.",
+            "Install extras with: pip install vamos[backends]",
+        ]
+        if suggestions:
+            if len(suggestions) == 1:
+                suggestion_parts.append(f"Did you mean '{suggestions[0]}'?")
+            else:
+                suggestion_parts.append("Did you mean one of: " + ", ".join(f"'{item}'" for item in suggestions) + "?")
+        suggestion_parts.append(f"Docs: {_ALGO_DOCS}.")
+        suggestion_parts.append(f"Troubleshooting: {_TROUBLESHOOTING_DOCS}.")
+        suggestion = " ".join(suggestion_parts)
         super().__init__(message, suggestion, {"engine": engine, "available": available})
 
 

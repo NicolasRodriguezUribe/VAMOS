@@ -9,6 +9,7 @@ Usage:
 Requirements:
     pip install -e ".[examples]"  # matplotlib for plotting
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -28,7 +29,6 @@ def main() -> None:
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        
         .engine("numpy")
         .constraint_mode("feasibility")  # respect problem-provided G <= 0 constraints
         .fixed()

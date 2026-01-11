@@ -20,7 +20,8 @@ building blocks used across multiple algorithms.
   - `weight_vectors.py`: weight vectors (NSGA-III / MOEA-D)
   - `variation/`: variation pipelines (crossover + mutation wiring)
 - Algorithm subfolders: `nsgaii/`, `moead/`, `spea2/`, `ibea/`, `smsemoa/`, `smpso/`, `nsgaiii/`, `agemoea/`, `rvea/`
-  - Each contains: `__init__.py`, `{algorithm}.py`, `initialization.py`, `helpers.py`, `operators.py`, `state.py`
+  - Each contains: `__init__.py`, `{algorithm}.py`, `initialization.py`, `helpers.py`, `state.py`
+  - Operator wiring lives in `src/vamos/operators/policies/`
 - Config subfolder: `config/`
   - `base.py`, `nsgaii.py`, `moead.py`, `spea2.py`, `ibea.py`, `smsemoa.py`, `smpso.py`, `nsgaiii.py`, `agemoea.py`, `rvea.py`
   - **Unified Archive API**: All configs must support `.archive(size, **kwargs)` using `BoundedArchive` parameters.

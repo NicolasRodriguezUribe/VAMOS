@@ -6,18 +6,19 @@
 - ADRs in `docs/dev/adr/` are mandatory reading before architectural changes.
 
 
-This directory contains variation operators organized by encoding type.
+This directory contains operator implementations and algorithm-specific wiring.
 
 ## Structure
 
 | Path | Encoding | Operators |
 |------|----------|-----------|
-| `real/` | Continuous | SBX, BLX-alpha, polynomial mutation, uniform |
-| `binary.py` | Binary | Bitflip, one-point, two-point, uniform crossover |
-| `permutation.py` | Permutation | PMX, OX, swap, insert, inversion |
-| `integer.py` | Integer | Random reset, creep mutation |
-| `mixed.py` | Mixed | Composite operators |
-| `repair.py` | All | Bounds repair strategies |
+| `impl/real/` | Continuous | SBX, BLX-alpha, polynomial mutation, uniform |
+| `impl/binary.py` | Binary | Bitflip, one-point, two-point, uniform crossover |
+| `impl/permutation.py` | Permutation | PMX, OX, swap, insert, inversion |
+| `impl/integer.py` | Integer | Random reset, creep mutation |
+| `impl/mixed.py` | Mixed | Composite operators |
+| `impl/repair.py` | All | Bounds repair strategies |
+| `policies/` | Wiring | Algorithm-specific operator selection/defaults |
 
 ## Operator Contract
 
@@ -36,7 +37,7 @@ def __call__(
 
 For memory efficiency, operators reuse pre-allocated arrays:
 ```python
-from vamos.operators.real import VariationWorkspace
+from vamos.operators.impl.real import VariationWorkspace
 
 ws = VariationWorkspace(pop_size=100, n_var=30)
 offspring = crossover(X, bounds, rng, workspace=ws)
@@ -44,18 +45,19 @@ offspring = crossover(X, bounds, rng, workspace=ws)
 
 ## Adding a New Operator
 
-1. Implement in appropriate file (or new file in `real/`)
+1. Implement in appropriate file (or new file under `impl/real/`)
 2. Follow vectorized pattern — no Python loops over individuals
 3. Use `rng` parameter, never global random state
 4. Add to `__init__.py` exports
-5. Register in `vamos.engine.algorithm.components.variation` operator lookup
+5. Register in `vamos.operators.impl.registry` operator lookup
 6. Add unit tests in `tests/operators/`
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `real/sbx.py` | Simulated Binary Crossover (reference impl) |
-| `real/polynomial_mutation.py` | PM mutation (reference impl) |
-| `real/__init__.py` | VariationWorkspace, operator exports |
-| `repair.py` | Bounds handling: clip, random, bounce |
+| `impl/real/crossover.py` | SBX/BLX/UNDX/SPX crossovers |
+| `impl/real/mutation.py` | PM/gaussian/cauchy mutations |
+| `impl/real/initialize.py` | LHS/Scatter initializers |
+| `impl/real/__init__.py` | VariationWorkspace, operator exports |
+| `impl/repair.py` | Bounds handling: clip, random, bounce |

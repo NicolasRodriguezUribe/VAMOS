@@ -14,6 +14,12 @@ Continuous benchmarks
 - LZ09: lz09_f1-f9.
 - CEC2009: cec2009_uf1, cec2009_uf2, cec2009_uf3, cec2009_cf1.
 
+DTLZ benchmarks note
+--------------------
+
+For DTLZ1-4, the standard benchmark uses `n_var = n_obj + 9` (e.g., `n_obj=3` -> `n_var=12`, `k=10`).
+Non-standard `n_var` values are allowed, but VAMOS will warn so results are not accidentally compared against the canonical setting.
+
 Permutation benchmarks
 ----------------------
 

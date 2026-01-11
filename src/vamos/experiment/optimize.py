@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, fields, replace
-from typing import Any, Tuple, cast
+from difflib import get_close_matches
+from typing import Any, Iterable, Tuple, cast
 
 from vamos.engine.algorithm.registry import resolve_algorithm, get_algorithms_registry
 from vamos.foundation.kernel.registry import resolve_kernel
@@ -18,6 +19,33 @@ def _logger() -> logging.Logger:
 
 from vamos.foundation.metrics.pareto import pareto_filter
 from .optimization_result import OptimizationResult
+
+_ALGO_DOCS = "docs/reference/algorithms.md"
+_TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
+
+
+def _suggest_names(name: str, options: Iterable[str]) -> list[str]:
+    if not name:
+        return []
+    options_list = list(options)
+    if not options_list:
+        return []
+    lookup = {option.lower(): option for option in options_list}
+    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
+    return [lookup[match] for match in matches]
+
+
+def _format_unknown_algorithm(name: str, options: list[str]) -> str:
+    parts = [f"Unknown algorithm '{name}'.", f"Available: {', '.join(options)}."]
+    suggestions = _suggest_names(name, options)
+    if suggestions:
+        if len(suggestions) == 1:
+            parts.append(f"Did you mean '{suggestions[0]}'?")
+        else:
+            parts.append("Did you mean one of: " + ", ".join(f"'{item}'" for item in suggestions) + "?")
+    parts.append(f"Docs: {_ALGO_DOCS}.")
+    parts.append(f"Troubleshooting: {_TROUBLESHOOTING_DOCS}.")
+    return " ".join(parts)
 
 
 @dataclass
@@ -58,8 +86,8 @@ def _apply_overrides(
     return cast(AlgorithmConfigProtocol, replace(cfg_data, **{key: overrides[key] for key in overrides}))
 
 
-def _available_algorithms() -> str:
-    return ", ".join(sorted(get_algorithms_registry().keys()))
+def _available_algorithms() -> list[str]:
+    return sorted(get_algorithms_registry().keys())
 
 
 def optimize_config(
@@ -90,12 +118,17 @@ def optimize_config(
     cfg = config
 
     cfg_dict = _normalize_cfg(cfg.algorithm_config)
-    algorithm_name = (cfg.algorithm or "").lower()
+    algorithm_raw = cfg.algorithm or ""
+    algorithm_name = algorithm_raw.lower()
+    available = _available_algorithms()
     if not algorithm_name:
-        raise ValueError(f"OptimizeConfig.algorithm must be specified. Available algorithms: {_available_algorithms()}")
+        raise ValueError(
+            "OptimizeConfig.algorithm must be specified. "
+            f"Available: {', '.join(available)}. Docs: {_ALGO_DOCS}. Troubleshooting: {_TROUBLESHOOTING_DOCS}."
+        )
     registry = get_algorithms_registry()
     if algorithm_name not in registry:
-        raise ValueError(f"Unknown algorithm '{algorithm_name}'. Available: {_available_algorithms()}")
+        raise ValueError(_format_unknown_algorithm(algorithm_raw, available))
 
     # Engine priority: function arg > config > algorithm_config > default
     effective_engine = engine or cfg.engine or cfg_dict.get("engine", "numpy")

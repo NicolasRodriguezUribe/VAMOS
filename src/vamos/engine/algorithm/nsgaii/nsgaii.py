@@ -28,7 +28,7 @@ from .initialization import (
     setup_result_archive,
     resolve_archive_size,
 )
-from .operators import build_operator_pool
+from vamos.operators.policies.nsgaii import build_operator_pool
 from .state import (
     NSGAIIState,
     build_result,
@@ -42,7 +42,7 @@ from .helpers import (
     feasible_nsga2_survival,
     match_ids,
 )
-from vamos.operators.real import VariationWorkspace
+from vamos.operators.impl.real import VariationWorkspace
 from vamos.foundation.eval.backends import SerialEvalBackend, EvaluationBackend
 from vamos.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.foundation.observer import RunContext

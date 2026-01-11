@@ -280,11 +280,7 @@ class SMPSO:
             1.0,
             2.0 / (2.0 - rho - np.sqrt(disc)),
         )
-        velocity = constriction * (
-            st.max_weight * st.velocity
-            + c1 * r1 * (st.pbest_X - st.X)
-            + c2 * r2 * (leaders - st.X)
-        )
+        velocity = constriction * (st.max_weight * st.velocity + c1 * r1 * (st.pbest_X - st.X) + c2 * r2 * (leaders - st.X))
         velocity = np.clip(velocity, st.delta_min, st.delta_max)
 
         # Position update

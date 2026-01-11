@@ -154,25 +154,64 @@ class NSGAIIConfig:
             builder.engine(config["engine"])
 
         # Optional fields
-        if "offspring_size" in config:
-            builder.offspring_size(config["offspring_size"])
-        if "repair" in config:
-            rep = config["repair"]
+        offspring_size = config.get("offspring_size")
+        if offspring_size is not None:
+            builder.offspring_size(offspring_size)
+
+        rep = config.get("repair")
+        if rep is not None:
             if isinstance(rep, tuple):
                 builder.repair(rep[0], **rep[1])
             elif isinstance(rep, dict):
                 method = rep.pop("method", rep.pop("type", "bounds"))
                 builder.repair(method, **rep)
-        if "archive" in config:
-            builder.archive(config["archive"])
-        if "archive_type" in config:
-            builder.archive_type(config["archive_type"])
-        if "constraint_mode" in config:
-            builder.constraint_mode(config["constraint_mode"])
-        if "track_genealogy" in config:
-            builder.track_genealogy(config["track_genealogy"])
+            else:
+                builder.repair(str(rep))
+
+        archive_cfg = config.get("archive")
+        if archive_cfg is not None:
+            if isinstance(archive_cfg, dict):
+                size = archive_cfg.get("size")
+                if size is None:
+                    raise ValueError("NSGA-II archive config requires a 'size' field.")
+                kwargs = {key: value for key, value in archive_cfg.items() if key != "size"}
+                builder.archive(int(size), **kwargs)
+            else:
+                builder.archive(int(archive_cfg))
+
+        archive_type = config.get("archive_type")
+        if archive_type is not None:
+            builder.archive_type(archive_type)
+
+        initializer_cfg = config.get("initializer")
+        if initializer_cfg is not None:
+            if isinstance(initializer_cfg, dict):
+                method = initializer_cfg.get("type") or initializer_cfg.get("method")
+                kwargs = {key: value for key, value in initializer_cfg.items() if key not in {"type", "method"}}
+                if method is None:
+                    raise ValueError("NSGA-II initializer config requires a 'type' field.")
+                builder.initializer(str(method), **kwargs)
+            else:
+                builder.initializer(str(initializer_cfg))
+
+        mutation_prob_factor = config.get("mutation_prob_factor")
+        if mutation_prob_factor is not None:
+            builder.mutation_prob_factor(mutation_prob_factor)
+
+        result_mode = config.get("result_mode")
+        if result_mode is not None:
+            builder.result_mode(result_mode)
+
+        constraint_mode = config.get("constraint_mode")
+        if constraint_mode is not None:
+            builder.constraint_mode(constraint_mode)
+
+        track_genealogy = config.get("track_genealogy")
+        if track_genealogy is not None:
+            builder.track_genealogy(bool(track_genealogy))
+
         if "adaptive_operator_selection" in config:
-            builder.adaptive_operator_selection(config["adaptive_operator_selection"])
+            builder.adaptive_operator_selection(config.get("adaptive_operator_selection"))
 
         return builder.fixed()
 

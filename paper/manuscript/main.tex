@@ -233,7 +233,7 @@ AOS in \VAMOS{} is portfolio-based: users specify an operator pool (e.g., multip
 
 \subsection{Benchmark suite and configuration alignment}
 
-We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives), DTLZ1--4 and DTLZ7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2/3/4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$).
+We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives), DTLZ1--4 and DTLZ7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2/3/4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$). Non-standard DTLZ dimensionalities are permitted but explicitly flagged to avoid accidental comparisons against canonical settings.
 
 To ensure comparability across frameworks, we standardize the algorithmic settings of NSGA-II: population size $N=100$, SBX crossover probability $p_c=1.0$ and distribution index $\eta_c=20$, polynomial mutation distribution index $\eta_m=20$ and mutation probability $p_m=1/n$, tournament selection, and rank--crowding survival. For each framework we map these settings to the closest available implementation.
 

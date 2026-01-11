@@ -6,27 +6,36 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+
 def load_yaml(path: Path) -> dict:
     import yaml  # type: ignore
+
     return yaml.safe_load(path.read_text(encoding="utf-8"))
+
 
 def dump_yaml(obj: dict, path: Path) -> None:
     import yaml  # type: ignore
+
     path.write_text(yaml.safe_dump(obj, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
 
 def deep_copy(x: Any) -> Any:
     return json.loads(json.dumps(x))
 
+
 def read_json(p: Path) -> dict:
     return json.loads(p.read_text(encoding="utf-8"))
+
 
 def find_seed_dirs(root: Path) -> List[Path]:
     return sorted([p for p in root.rglob("seed_*") if p.is_dir() and (p / "metadata.json").exists()])
 
-def infer_algo_engine(sd: Path) -> Tuple[str,str]:
+
+def infer_algo_engine(sd: Path) -> Tuple[str, str]:
     eng = sd.parent.name
     algo = sd.parent.parent.name if sd.parent.parent else "unknown"
     return algo, eng
+
 
 def main() -> int:
     repo = Path.cwd()
@@ -38,7 +47,7 @@ def main() -> int:
     cfg_root.mkdir(parents=True, exist_ok=True)
     log_root.mkdir(parents=True, exist_ok=True)
 
-    algos = ["nsgaii","nsgaiii","moead","smsemoa","spea2","ibea","smpso"]
+    algos = ["nsgaii", "nsgaiii", "moead", "smsemoa", "spea2", "ibea", "smpso"]
     engine = "numpy"
     problem = "zdt1"
     seed = 7
@@ -46,7 +55,7 @@ def main() -> int:
     # Use a known-good operator block for NSGA-II only (others we let defaults drive)
     nsgaii_block = {
         "crossover": {"method": "sbx", "prob": 0.9, "eta": 20},
-        "mutation":  {"method": "pm",  "prob": "1/n", "eta": 20},
+        "mutation": {"method": "pm", "prob": "1/n", "eta": 20},
         "selection": {"method": "tournament", "pressure": 2},
     }
 
@@ -64,13 +73,7 @@ def main() -> int:
                 "seed": seed,
                 "selection_pressure": 2,
             },
-            "problems": {
-                problem: {
-                    algo: {
-                        "adaptive_operator_selection": {"enabled": False}
-                    }
-                }
-            }
+            "problems": {problem: {algo: {"adaptive_operator_selection": {"enabled": False}}}},
         }
         if algo == "nsgaii":
             cfg["defaults"]["nsgaii"] = deep_copy(nsgaii_block)
@@ -85,7 +88,9 @@ def main() -> int:
         with log_path.open("w", encoding="utf-8") as f:
             p = subprocess.run(cmd, cwd=repo, stdout=f, stderr=subprocess.STDOUT)
 
-        runs.append({"algo": algo, "returncode": p.returncode, "config": str(cfg_path.relative_to(repo)), "log": str(log_path.relative_to(repo))})
+        runs.append(
+            {"algo": algo, "returncode": p.returncode, "config": str(cfg_path.relative_to(repo)), "log": str(log_path.relative_to(repo))}
+        )
 
     print("\n=== RUN SUMMARY ===")
     for r in runs:
@@ -112,6 +117,7 @@ def main() -> int:
     print(json.dumps(by_algo, indent=2, ensure_ascii=False)[:12000])
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

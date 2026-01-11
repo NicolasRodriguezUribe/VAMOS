@@ -9,6 +9,7 @@ Usage:
 Requirements:
     pip install -e ".[examples]"  # matplotlib for plotting
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -31,7 +32,6 @@ def main() -> None:
         .crossover("ox")  # order crossover for permutations
         .mutation("swap", prob="2/n")  # swap two cities with prob. 2/n
         .selection("tournament", pressure=2)
-        
         .engine("numpy")
         .fixed()
     )

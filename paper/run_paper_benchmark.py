@@ -63,11 +63,13 @@ WFG_N_OBJ = 2
 
 # Frameworks to benchmark
 FRAMEWORKS = [
-    "vamos-numpy", "vamos-numba", "vamos-moocore",  # VAMOS backends
-    "pymoo",      # pymoo
-    "deap",       # DEAP
-    "jmetalpy",   # jMetalPy
-    "platypus",   # Platypus
+    "vamos-numpy",
+    "vamos-numba",
+    "vamos-moocore",  # VAMOS backends
+    "pymoo",  # pymoo
+    "deap",  # DEAP
+    "jmetalpy",  # jMetalPy
+    "platypus",  # Platypus
 ]
 
 # Build problem list
@@ -98,6 +100,7 @@ print(f"Using {N_JOBS} parallel workers")
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos import OptimizeConfig, optimize
 from vamos.engine.algorithm.config import NSGAIIConfig
+
 try:
     from .benchmark_utils import compute_hv
 except ImportError:
@@ -106,6 +109,7 @@ except ImportError:
 
 # =============================================================================
 # PROBLEM DIMENSIONS
+
 
 def problem_dims(problem_name: str) -> tuple[int, int]:
     if problem_name in ZDT_N_VAR:
@@ -120,6 +124,7 @@ def problem_dims(problem_name: str) -> tuple[int, int]:
 # =============================================================================
 # DEAP PROBLEM IMPLEMENTATIONS (using VAMOS definitions)
 
+
 def _resolve_bounds(problem, n_var: int) -> tuple[np.ndarray, np.ndarray]:
     xl = np.asarray(problem.xl, dtype=float)
     xu = np.asarray(problem.xu, dtype=float)
@@ -130,6 +135,7 @@ def _resolve_bounds(problem, n_var: int) -> tuple[np.ndarray, np.ndarray]:
     if xl.shape != (n_var,) or xu.shape != (n_var,):
         raise ValueError(f"Invalid bounds for {problem.__class__.__name__}: xl={xl.shape}, xu={xu.shape}")
     return xl, xu
+
 
 def get_deap_problem(problem_name: str, n_var: int, n_obj: int):
     """Get DEAP-compatible problem function and bounds using VAMOS definitions."""
@@ -149,7 +155,7 @@ def run_single_benchmark(problem_name, seed, framework):
     """Run a single benchmark configuration."""
     result_entry = None
     n_var, n_obj = problem_dims(problem_name)
-    
+
     # VAMOS backends
     if framework.startswith("vamos-"):
         backend = framework.replace("vamos-", "")
@@ -161,7 +167,6 @@ def run_single_benchmark(problem_name, seed, framework):
                 .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
                 .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
                 .selection("tournament")
-                
                 .engine(backend)
                 .fixed()
             )
@@ -176,7 +181,7 @@ def run_single_benchmark(problem_name, seed, framework):
             start = time.perf_counter()
             result = optimize(config)
             elapsed = time.perf_counter() - start
-            hv = compute_hv(result.F, problem_name) if result.F is not None else float('nan')
+            hv = compute_hv(result.F, problem_name) if result.F is not None else float("nan")
             result_entry = {
                 "framework": f"VAMOS ({backend})",
                 "problem": problem_name,
@@ -190,7 +195,7 @@ def run_single_benchmark(problem_name, seed, framework):
             print(f"  {problem_name} VAMOS({backend}) seed={seed}: {elapsed:.2f}s")
         except Exception as e:
             print(f"  {problem_name} VAMOS({backend}) seed={seed} FAILED: {e}")
-    
+
     # pymoo
     elif framework == "pymoo":
         try:
@@ -212,11 +217,11 @@ def run_single_benchmark(problem_name, seed, framework):
                 mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
             )
             termination = get_termination("n_eval", N_EVALS)
-            
+
             start = time.perf_counter()
             res = minimize(pymoo_problem, algorithm, termination, seed=seed, verbose=False)
             elapsed = time.perf_counter() - start
-            hv = compute_hv(res.F, problem_name) if res.F is not None else float('nan')
+            hv = compute_hv(res.F, problem_name) if res.F is not None else float("nan")
             result_entry = {
                 "framework": "pymoo",
                 "problem": problem_name,
@@ -230,7 +235,7 @@ def run_single_benchmark(problem_name, seed, framework):
             print(f"  {problem_name} pymoo seed={seed}: {elapsed:.2f}s")
         except Exception as e:
             print(f"  {problem_name} pymoo seed={seed} FAILED: {e}")
-    
+
     # DEAP
     elif framework == "deap":
         try:
@@ -303,7 +308,7 @@ def run_single_benchmark(problem_name, seed, framework):
             fronts = tools.sortNondominated(pop, len(pop), first_front_only=True)
             F = np.array([ind.fitness.values for ind in fronts[0]])
             hv = compute_hv(F, problem_name)
-            
+
             result_entry = {
                 "framework": "DEAP",
                 "problem": problem_name,
@@ -317,7 +322,7 @@ def run_single_benchmark(problem_name, seed, framework):
             print(f"  {problem_name} DEAP seed={seed}: {elapsed:.2f}s")
         except Exception as e:
             print(f"  {problem_name} DEAP seed={seed} FAILED: {e}")
-    
+
     # jMetalPy
     elif framework == "jmetalpy":
         try:
@@ -334,49 +339,49 @@ def run_single_benchmark(problem_name, seed, framework):
             np.random.seed(seed)
 
             problem_map = {
-                'zdt1': ZDT1(number_of_variables=ZDT_N_VAR["zdt1"]),
-                'zdt2': ZDT2(number_of_variables=ZDT_N_VAR["zdt2"]),
-                'zdt3': ZDT3(number_of_variables=ZDT_N_VAR["zdt3"]),
-                'zdt4': ZDT4(number_of_variables=ZDT_N_VAR["zdt4"]),
-                'zdt6': ZDT6(number_of_variables=ZDT_N_VAR["zdt6"]),
-                'dtlz1': DTLZ1(number_of_variables=DTLZ_N_VAR["dtlz1"], number_of_objectives=DTLZ_N_OBJ),
-                'dtlz2': DTLZ2(number_of_variables=DTLZ_N_VAR["dtlz2"], number_of_objectives=DTLZ_N_OBJ),
-                'dtlz3': DTLZ3(number_of_variables=DTLZ_N_VAR["dtlz3"], number_of_objectives=DTLZ_N_OBJ),
-                'dtlz4': DTLZ4(number_of_variables=DTLZ_N_VAR["dtlz4"], number_of_objectives=DTLZ_N_OBJ),
-                'dtlz7': DTLZ7(number_of_variables=DTLZ_N_VAR["dtlz7"], number_of_objectives=DTLZ_N_OBJ),
-                'wfg1': WFG1(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
-                'wfg2': WFG2(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
-                'wfg3': WFG3(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
-                'wfg4': WFG4(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
-                'wfg5': WFG5(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
-                'wfg6': WFG6(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
-                'wfg7': WFG7(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
-                'wfg8': WFG8(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
-                'wfg9': WFG9(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "zdt1": ZDT1(number_of_variables=ZDT_N_VAR["zdt1"]),
+                "zdt2": ZDT2(number_of_variables=ZDT_N_VAR["zdt2"]),
+                "zdt3": ZDT3(number_of_variables=ZDT_N_VAR["zdt3"]),
+                "zdt4": ZDT4(number_of_variables=ZDT_N_VAR["zdt4"]),
+                "zdt6": ZDT6(number_of_variables=ZDT_N_VAR["zdt6"]),
+                "dtlz1": DTLZ1(number_of_variables=DTLZ_N_VAR["dtlz1"], number_of_objectives=DTLZ_N_OBJ),
+                "dtlz2": DTLZ2(number_of_variables=DTLZ_N_VAR["dtlz2"], number_of_objectives=DTLZ_N_OBJ),
+                "dtlz3": DTLZ3(number_of_variables=DTLZ_N_VAR["dtlz3"], number_of_objectives=DTLZ_N_OBJ),
+                "dtlz4": DTLZ4(number_of_variables=DTLZ_N_VAR["dtlz4"], number_of_objectives=DTLZ_N_OBJ),
+                "dtlz7": DTLZ7(number_of_variables=DTLZ_N_VAR["dtlz7"], number_of_objectives=DTLZ_N_OBJ),
+                "wfg1": WFG1(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "wfg2": WFG2(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "wfg3": WFG3(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "wfg4": WFG4(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "wfg5": WFG5(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "wfg6": WFG6(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "wfg7": WFG7(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "wfg8": WFG8(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
+                "wfg9": WFG9(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ),
             }
-            
+
             if problem_name not in problem_map:
                 raise ValueError(f"Problem {problem_name} not available in jMetalPy")
-            
+
             jmetal_problem = problem_map[problem_name]
-            
+
             algorithm = NSGAII(
                 problem=jmetal_problem,
                 population_size=POP_SIZE,
                 offspring_population_size=POP_SIZE,
                 mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
                 crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
-                termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS)
+                termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
             )
-            
+
             start = time.perf_counter()
             algorithm.run()
             elapsed = time.perf_counter() - start
-            
+
             solutions = algorithm.result()  # result() is a method, not property
             F = np.array([s.objectives for s in solutions])
             hv = compute_hv(F, problem_name)
-            
+
             result_entry = {
                 "framework": "jMetalPy",
                 "problem": problem_name,
@@ -390,7 +395,7 @@ def run_single_benchmark(problem_name, seed, framework):
             print(f"  {problem_name} jMetalPy seed={seed}: {elapsed:.2f}s")
         except Exception as e:
             print(f"  {problem_name} jMetalPy seed={seed} FAILED: {e}")
-    
+
     # Platypus
     elif framework == "platypus":
         try:
@@ -415,9 +420,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     if xu.ndim == 0:
                         xu = np.full(self._problem.n_var, float(xu))
                     if xl.shape != (self._problem.n_var,) or xu.shape != (self._problem.n_var,):
-                        raise ValueError(
-                            f"Invalid bounds for {name}: xl={xl.shape}, xu={xu.shape}"
-                        )
+                        raise ValueError(f"Invalid bounds for {name}: xl={xl.shape}, xu={xu.shape}")
                     self.types[:] = [Real(lo, hi) for lo, hi in zip(xl, xu)]
 
                 def evaluate(self, solution):
@@ -430,41 +433,44 @@ def run_single_benchmark(problem_name, seed, framework):
             class PlatypusWFG(Problem):
                 def __init__(self, wfg_num, n_var=24, n_obj=2):
                     super().__init__(n_var, n_obj)
-                    self.types[:] = [Real(0, 2*(i+1)) for i in range(n_var)]
+                    self.types[:] = [Real(0, 2 * (i + 1)) for i in range(n_var)]
                     from pymoo.problems import get_problem
+
                     self._pymoo_problem = get_problem(f"wfg{wfg_num}", n_var=n_var, n_obj=n_obj)
-                
+
                 def evaluate(self, solution):
                     x = np.array(solution.variables)
                     out = {"F": None}
                     self._pymoo_problem._evaluate(x.reshape(1, -1), out)
                     solution.objectives[:] = out["F"][0]
-            
+
             problem_map = {
-                'zdt1': PlatypusVAMOSProblem("zdt1", n_var=ZDT_N_VAR["zdt1"], n_obj=ZDT_N_OBJ),
-                'zdt2': PlatypusVAMOSProblem("zdt2", n_var=ZDT_N_VAR["zdt2"], n_obj=ZDT_N_OBJ),
-                'zdt3': PlatypusVAMOSProblem("zdt3", n_var=ZDT_N_VAR["zdt3"], n_obj=ZDT_N_OBJ),
-                'zdt4': PlatypusVAMOSProblem("zdt4", n_var=ZDT_N_VAR["zdt4"], n_obj=ZDT_N_OBJ),
-                'zdt6': PlatypusVAMOSProblem("zdt6", n_var=ZDT_N_VAR["zdt6"], n_obj=ZDT_N_OBJ),
-                'dtlz1': DTLZ1(DTLZ_N_OBJ), 'dtlz2': DTLZ2(DTLZ_N_OBJ, nvars=DTLZ_N_VAR["dtlz2"]),
-                'dtlz3': DTLZ3(DTLZ_N_OBJ, nvars=DTLZ_N_VAR["dtlz3"]),
-                'dtlz4': DTLZ4(DTLZ_N_OBJ), 'dtlz7': DTLZ7(DTLZ_N_OBJ),
-                'wfg1': PlatypusWFG(1, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
-                'wfg2': PlatypusWFG(2, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
-                'wfg3': PlatypusWFG(3, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
-                'wfg4': PlatypusWFG(4, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
-                'wfg5': PlatypusWFG(5, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
-                'wfg6': PlatypusWFG(6, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
-                'wfg7': PlatypusWFG(7, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
-                'wfg8': PlatypusWFG(8, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
-                'wfg9': PlatypusWFG(9, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "zdt1": PlatypusVAMOSProblem("zdt1", n_var=ZDT_N_VAR["zdt1"], n_obj=ZDT_N_OBJ),
+                "zdt2": PlatypusVAMOSProblem("zdt2", n_var=ZDT_N_VAR["zdt2"], n_obj=ZDT_N_OBJ),
+                "zdt3": PlatypusVAMOSProblem("zdt3", n_var=ZDT_N_VAR["zdt3"], n_obj=ZDT_N_OBJ),
+                "zdt4": PlatypusVAMOSProblem("zdt4", n_var=ZDT_N_VAR["zdt4"], n_obj=ZDT_N_OBJ),
+                "zdt6": PlatypusVAMOSProblem("zdt6", n_var=ZDT_N_VAR["zdt6"], n_obj=ZDT_N_OBJ),
+                "dtlz1": DTLZ1(DTLZ_N_OBJ),
+                "dtlz2": DTLZ2(DTLZ_N_OBJ, nvars=DTLZ_N_VAR["dtlz2"]),
+                "dtlz3": DTLZ3(DTLZ_N_OBJ, nvars=DTLZ_N_VAR["dtlz3"]),
+                "dtlz4": DTLZ4(DTLZ_N_OBJ),
+                "dtlz7": DTLZ7(DTLZ_N_OBJ),
+                "wfg1": PlatypusWFG(1, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "wfg2": PlatypusWFG(2, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "wfg3": PlatypusWFG(3, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "wfg4": PlatypusWFG(4, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "wfg5": PlatypusWFG(5, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "wfg6": PlatypusWFG(6, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "wfg7": PlatypusWFG(7, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "wfg8": PlatypusWFG(8, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
+                "wfg9": PlatypusWFG(9, n_var=WFG_N_VAR, n_obj=WFG_N_OBJ),
             }
-            
+
             if problem_name not in problem_map:
                 raise ValueError(f"Problem {problem_name} not available in Platypus")
-            
+
             platypus_problem = problem_map[problem_name]
-            
+
             variator = GAOperator(
                 SBX(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
                 PM(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
@@ -475,14 +481,14 @@ def run_single_benchmark(problem_name, seed, framework):
                 selector=TournamentSelector(2),
                 variator=variator,
             )
-            
+
             start = time.perf_counter()
             algorithm.run(N_EVALS)
             elapsed = time.perf_counter() - start
-            
+
             F = np.array([s.objectives for s in algorithm.result])
             hv = compute_hv(F, problem_name)
-            
+
             result_entry = {
                 "framework": "Platypus",
                 "problem": problem_name,
@@ -496,7 +502,7 @@ def run_single_benchmark(problem_name, seed, framework):
             print(f"  {problem_name} Platypus seed={seed}: {elapsed:.2f}s")
         except Exception as e:
             print(f"  {problem_name} Platypus seed={seed} FAILED: {e}")
-    
+
     return result_entry
 
 
@@ -522,9 +528,7 @@ print(f"Total: {len(parallel_jobs) + len(sequential_jobs)}")
 
 # Run parallel jobs first
 print(f"\nRunning {len(parallel_jobs)} parallel jobs...")
-results_list = Parallel(n_jobs=N_JOBS, verbose=10)(
-    delayed(run_single_benchmark)(p, s, b) for p, s, b in parallel_jobs
-)
+results_list = Parallel(n_jobs=N_JOBS, verbose=10)(delayed(run_single_benchmark)(p, s, b) for p, s, b in parallel_jobs)
 
 # Run sequential jobs (jMetalPy, Platypus)
 print(f"\nRunning {len(sequential_jobs)} sequential jobs...")
@@ -533,7 +537,7 @@ for i, (p, s, b) in enumerate(sequential_jobs):
     if result:
         results_list.append(result)
     if (i + 1) % 10 == 0:
-        print(f"  Progress: {i+1}/{len(sequential_jobs)}")
+        print(f"  Progress: {i + 1}/{len(sequential_jobs)}")
 
 # Filter out None results (failed runs)
 results = [r for r in results_list if r is not None]

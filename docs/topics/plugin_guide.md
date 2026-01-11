@@ -36,7 +36,7 @@ result = study("zdt1").using("my_algorithm").run()
 Register with `operator_registry`:
 
 ```python
-from vamos.operators.registry import operator_registry
+from vamos.operators.impl.registry import operator_registry
 import numpy as np
 
 class MyMutation:

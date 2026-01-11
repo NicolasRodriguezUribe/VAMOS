@@ -9,8 +9,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple
 
+
 def read_json(p: Path) -> Dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
+
 
 def try_parse_float(s: str) -> float | None:
     s = s.strip()
@@ -25,6 +27,7 @@ def try_parse_float(s: str) -> float | None:
         return float(t)
     except Exception:
         return None
+
 
 def flatten(prefix: str, obj: Any, out: Dict[str, Any]) -> None:
     """Flatten nested dicts into dot-keys; ignore huge lists/structures."""
@@ -41,8 +44,10 @@ def flatten(prefix: str, obj: Any, out: Dict[str, Any]) -> None:
         else:
             out[prefix] = f"<{type(obj).__name__}>"
 
+
 def safe_get(d: Dict[str, Any], key: str) -> Any:
     return d.get(key, None)
+
 
 def find_first_key_recursively(obj: Any, wanted: str) -> Any:
     """Return first occurrence of key in nested dicts."""
@@ -59,6 +64,7 @@ def find_first_key_recursively(obj: Any, wanted: str) -> Any:
             if got is not None:
                 return got
     return None
+
 
 def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
     rows: List[List[float]] = []
@@ -90,11 +96,13 @@ def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
             r.extend([float("nan")] * (ncols - len(r)))
     return nrows, ncols, rows
 
+
 def col_min_max(mat: List[List[float]], j: int) -> Tuple[float | None, float | None]:
     vals = [r[j] for r in mat if j < len(r) and not math.isnan(r[j])]
     if not vals:
         return None, None
     return min(vals), max(vals)
+
 
 def infer_from_path(seed_dir: Path) -> Dict[str, str]:
     # expected: .../<suite>/<algorithm>/<engine>/seed_<k>
@@ -107,6 +115,7 @@ def infer_from_path(seed_dir: Path) -> Dict[str, str]:
     algorithm = seed_dir.parent.parent.name if seed_dir.parent.parent else ""
     suite = seed_dir.parent.parent.parent.name if seed_dir.parent.parent.parent else ""
     return {"suite": suite, "algorithm": algorithm, "engine": engine}
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -218,11 +227,25 @@ def main() -> int:
 
     # stable column order: core first, then the rest sorted
     core = [
-        "run_path","campaign","suite","algorithm","engine",
-        "problem","seed","max_evaluations","population_size",
-        "n_obj","n_var","runtime_seconds",
-        "front_size","fun_ncols","x_nrows","x_ncols",
-        "git_revision","timestamp","vamos_version",
+        "run_path",
+        "campaign",
+        "suite",
+        "algorithm",
+        "engine",
+        "problem",
+        "seed",
+        "max_evaluations",
+        "population_size",
+        "n_obj",
+        "n_var",
+        "runtime_seconds",
+        "front_size",
+        "fun_ncols",
+        "x_nrows",
+        "x_ncols",
+        "git_revision",
+        "timestamp",
+        "vamos_version",
     ]
     rest = sorted([k for k in all_keys if k not in core])
     cols = core + rest
@@ -240,9 +263,10 @@ def main() -> int:
     # print first 6 lines
     lines = outp.read_text(encoding="utf-8").splitlines()
     print("\nPreview:")
-    print("\n".join(lines[: min(6, len(lines)) ]))
+    print("\n".join(lines[: min(6, len(lines))]))
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

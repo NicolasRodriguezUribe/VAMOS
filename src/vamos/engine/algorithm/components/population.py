@@ -4,11 +4,11 @@ from typing import Any
 
 import numpy as np
 
-from vamos.operators.binary import random_binary_population
-from vamos.operators.integer import random_integer_population
-from vamos.operators.mixed import mixed_initialize
-from vamos.operators.permutation import random_permutation_population
-from vamos.operators.real import LatinHypercubeInitializer, ScatterSearchInitializer
+from vamos.operators.impl.binary import random_binary_population
+from vamos.operators.impl.integer import random_integer_population
+from vamos.operators.impl.mixed import mixed_initialize
+from vamos.operators.impl.permutation import random_permutation_population
+from vamos.operators.impl.real import LatinHypercubeInitializer, ScatterSearchInitializer
 
 
 def resolve_bounds(problem: Any, encoding: str) -> tuple[np.ndarray, np.ndarray]:

@@ -6,7 +6,7 @@ implementation with modular components:
 - `core.py`: main SMSEMOA class (run/ask/tell loop)
 - `setup.py`: initialization/config helpers
 - `state.py`: SMSEMOAState + result building
-- `operators.py`: variation operator building
+- `operators/policies/smsemoa.py`: variation operator building
 - `helpers.py`: reference point management, survival selection
 
 References:
@@ -22,7 +22,7 @@ from .helpers import (
     survival_selection,
     update_reference_point,
 )
-from .operators import (
+from vamos.operators.policies.smsemoa import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
     INT_CROSSOVER,

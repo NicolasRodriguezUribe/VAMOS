@@ -1,8 +1,10 @@
 """
 Compare VAMOS vs pymoo robustness on DTLZ3
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import numpy as np
@@ -39,7 +41,7 @@ pymoo_results = []
 
 for seed in range(5):
     print(f"\nSeed {seed}:")
-    
+
     # VAMOS
     problem = make_problem_selection(PROBLEM_NAME, n_var=N_VAR, n_obj=N_OBJ).instantiate()
     algo_config = (
@@ -48,7 +50,6 @@ for seed in range(5):
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
         .mutation("pm", prob=1.0 / N_VAR, eta=MUTATION_ETA)
         .selection("tournament")
-        
         .engine("numpy")
         .fixed()
     )
@@ -64,7 +65,7 @@ for seed in range(5):
     hv_vamos = compute_hv(result.F, PROBLEM_NAME)
     vamos_results.append(hv_vamos)
     print(f"  VAMOS: HV={hv_vamos:.6f}")
-    
+
     # pymoo
     pymoo_problem = get_problem(PROBLEM_NAME, n_var=N_VAR, n_obj=N_OBJ)
     algorithm = PyMooNSGAII(

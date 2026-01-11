@@ -5,7 +5,7 @@ from pathlib import Path
 REPO = Path.cwd()
 
 stats_path = REPO / "artifacts" / "tidy" / "hv_archive_campaign_core_metrics.problem_stats.json"
-out_path   = REPO / "experiments" / "catalog" / "hv_ref_points.json"
+out_path = REPO / "experiments" / "catalog" / "hv_ref_points.json"
 out_path.parent.mkdir(parents=True, exist_ok=True)
 
 stats = json.loads(stats_path.read_text(encoding="utf-8"))

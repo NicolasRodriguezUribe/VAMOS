@@ -7,6 +7,7 @@ Usage:
 Requirements:
     pip install -e ".[examples]"  # scikit-learn, matplotlib
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -24,7 +25,6 @@ def main():
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        
         .engine("numpy")
         .fixed()
     )

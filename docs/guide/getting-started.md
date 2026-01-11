@@ -25,6 +25,7 @@ Smoke tests
 - Quick NSGA-II run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
 - Full test suite (core): `pytest`
 - With extras installed: `pytest -m "not slow"`
+- If you hit missing-dependency or unknown-key errors, see `docs/guide/troubleshooting.md`.
 
 Python API
 ----------

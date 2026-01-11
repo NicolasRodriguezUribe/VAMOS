@@ -14,14 +14,16 @@ REPO = Path.cwd()
 OUT_DIR = REPO / "experiments" / "catalog"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-OUT_CSV  = OUT_DIR / "problem_specs.csv"
-OUT_SUM  = OUT_DIR / "catalog_summary.json"
+OUT_CSV = OUT_DIR / "problem_specs.csv"
+OUT_SUM = OUT_DIR / "catalog_summary.json"
 OUT_JSON = OUT_DIR / "problem_specs_sanitized.json"
 
 KEY_PATTERNS = ("problem", "registry", "spec")
 
+
 def is_mapping_like(obj: Any) -> bool:
     return hasattr(obj, "keys") and hasattr(obj, "items")
+
 
 def find_mapping_attr(attr_name: str) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
     for m in pkgutil.walk_packages(vamos.__path__, prefix=vamos.__name__ + "."):
@@ -41,16 +43,18 @@ def find_mapping_attr(attr_name: str) -> Tuple[Optional[str], Optional[Dict[str,
                 continue
     return None, None
 
+
 def infer_family(problem_key: str) -> str:
     k = str(problem_key).strip().lower()
     # take prefix until first digit or underscore
     m = re.match(r"^([a-z]+)", k)
     pref = m.group(1) if m else "unknown"
     # normalize common families
-    known = {"zdt","dtlz","wfg","lz","cec","tsp","tsplib","real","real_world"}
+    known = {"zdt", "dtlz", "wfg", "lz", "cec", "tsp", "tsplib", "real", "real_world"}
     if pref in known:
         return "real_world" if pref == "real" else pref
     return pref or "unknown"
+
 
 def find_first_int(obj: Any, candidates: tuple[str, ...]) -> Optional[int]:
     if isinstance(obj, dict):
@@ -71,6 +75,7 @@ def find_first_int(obj: Any, candidates: tuple[str, ...]) -> Optional[int]:
                 return got
     return None
 
+
 def sanitize(obj: Any) -> Any:
     # Make it JSON serializable without losing too much info
     if isinstance(obj, (str, int, float, bool)) or obj is None:
@@ -82,6 +87,7 @@ def sanitize(obj: Any) -> Any:
     # fallback for callables / classes / numpy types
     return f"<{type(obj).__name__}>"
 
+
 def main() -> int:
     modname, specs = find_mapping_attr("PROBLEM_SPECS")
     if specs is None:
@@ -89,8 +95,8 @@ def main() -> int:
         return 2
 
     # Try to extract n_obj/n_var with broad candidate key names
-    n_obj = ("n_obj","n_objectives","num_objectives","objectives","m")
-    n_var = ("n_var","n_variables","num_variables","variables","dimension","d","n_dim")
+    n_obj = ("n_obj", "n_objectives", "num_objectives", "objectives", "m")
+    n_var = ("n_var", "n_variables", "num_variables", "variables", "dimension", "d", "n_dim")
 
     rows = []
     fam_counts: Dict[str, int] = {}
@@ -106,17 +112,19 @@ def main() -> int:
         m = find_first_int(spec_s, n_obj)
         d = find_first_int(spec_s, n_var)
 
-        rows.append({
-            "problem_key": key,
-            "family": fam,
-            "n_obj": "" if m is None else m,
-            "n_var": "" if d is None else d,
-        })
+        rows.append(
+            {
+                "problem_key": key,
+                "family": fam,
+                "n_obj": "" if m is None else m,
+                "n_var": "" if d is None else d,
+            }
+        )
 
     rows.sort(key=lambda r: (str(r["family"]), str(r["problem_key"])))
 
     with OUT_CSV.open("w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["problem_key","family","n_obj","n_var"])
+        w = csv.DictWriter(f, fieldnames=["problem_key", "family", "n_obj", "n_var"])
         w.writeheader()
         for r in rows:
             w.writerow(r)
@@ -147,6 +155,7 @@ def main() -> int:
     print("\nSummary:\n", json.dumps(summary, indent=2, ensure_ascii=False))
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

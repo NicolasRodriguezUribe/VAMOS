@@ -47,10 +47,7 @@ def feasible_nsga2_survival(
     G_off: np.ndarray | None,
     pop_size: int,
     return_indices: bool = False,
-) -> (
-    tuple[np.ndarray, np.ndarray, np.ndarray | None]
-    | tuple[np.ndarray, np.ndarray, np.ndarray | None, np.ndarray]
-):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None] | tuple[np.ndarray, np.ndarray, np.ndarray | None, np.ndarray]:
     """
     Feasibility rule:
       - Feasible dominate infeasible.

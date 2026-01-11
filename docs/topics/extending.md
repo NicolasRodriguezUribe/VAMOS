@@ -10,7 +10,7 @@ Algorithms
 Operators and kernels
 ---------------------
 
-- Operators live in `src/vamos/engine/operators/` (real, permutation, binary, integer, mixed). Add new operators with RNG-friendly vectorized implementations and register in `variation.py`.
+- Operators live in `src/vamos/operators/impl/` (real, permutation, binary, integer, mixed). Add new operators with RNG-friendly vectorized implementations and register in `operators/impl/registry.py`. Algorithm-specific wiring lives in `src/vamos/operators/policies/`.
 - Kernels live in `src/vamos/foundation/kernel/`; register new backends in `kernel/registry.py` and mirror the NumPy API.
 
 Problems

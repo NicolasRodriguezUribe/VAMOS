@@ -6,7 +6,7 @@ This module contains functions for parsing configuration, initializing populatio
 archives, and genealogy tracking. These are extracted from the main NSGAII class
 to keep the core algorithm focused on the evolutionary loop.
 
-Operator pool building has been moved to operators.py.
+Operator pool building lives in operators/policies/nsgaii.py.
 """
 
 from __future__ import annotations

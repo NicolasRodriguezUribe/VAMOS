@@ -1,7 +1,32 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from difflib import get_close_matches
 from typing import Any, Dict, List
+
+_BENCH_DOCS = "docs/guide/cli.md"
+_TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
+
+
+def _suggest_names(name: str, options: list[str]) -> list[str]:
+    if not name or not options:
+        return []
+    lookup = {option.lower(): option for option in options}
+    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
+    return [lookup[match] for match in matches]
+
+
+def _format_unknown_suite(name: str, options: list[str]) -> str:
+    parts = [f"Unknown benchmark suite '{name}'.", f"Available: {', '.join(options)}."]
+    suggestions = _suggest_names(name, options)
+    if suggestions:
+        if len(suggestions) == 1:
+            parts.append(f"Did you mean '{suggestions[0]}'?")
+        else:
+            parts.append("Did you mean one of: " + ", ".join(f"'{item}'" for item in suggestions) + "?")
+    parts.append(f"Docs: {_BENCH_DOCS}.")
+    parts.append(f"Troubleshooting: {_TROUBLESHOOTING_DOCS}.")
+    return " ".join(parts)
 
 
 @dataclass
@@ -53,7 +78,7 @@ def get_benchmark_suite(name: str) -> BenchmarkSuite:
     try:
         return _SUITES[name]
     except KeyError as exc:  # pragma: no cover - defensive
-        raise KeyError(f"Unknown benchmark suite '{name}'. Available: {list_benchmark_suites()}") from exc
+        raise KeyError(_format_unknown_suite(name, list_benchmark_suites())) from exc
 
 
 def list_benchmark_suites() -> List[str]:

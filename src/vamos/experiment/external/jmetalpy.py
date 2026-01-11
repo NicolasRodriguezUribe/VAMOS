@@ -210,7 +210,7 @@ def _run_jmetalpy_perm_nsga2(
         pass
 
     try:
-        from vamos.operators.permutation import order_crossover as _vamos_order_crossover
+        from vamos.operators.impl.permutation import order_crossover as _vamos_order_crossover
     except ImportError as exc:  # pragma: no cover
         raise ImportError("VAMOS permutation operators are unavailable.") from exc
 

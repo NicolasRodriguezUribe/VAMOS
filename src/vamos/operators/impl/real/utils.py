@@ -1,0 +1,94 @@
+"""Shared utilities for real-valued evolutionary operators."""
+
+from __future__ import annotations
+
+from typing import Any, Tuple
+
+import numpy as np
+
+ArrayLike = np.ndarray
+
+
+def _ensure_bounds(lower: ArrayLike, upper: ArrayLike) -> Tuple[np.ndarray, np.ndarray]:
+    """Validate bounds and return float arrays of identical shape."""
+    lower_arr = np.asarray(lower, dtype=float)
+    upper_arr = np.asarray(upper, dtype=float)
+    if lower_arr.shape != upper_arr.shape:
+        raise ValueError("lower and upper bounds must have the same shape.")
+    if lower_arr.ndim != 1:
+        raise ValueError("Bounds must be one-dimensional arrays.")
+    if np.any(lower_arr > upper_arr):
+        raise ValueError("Each lower bound must be <= corresponding upper bound.")
+    return lower_arr, upper_arr
+
+
+def _clip_population(x: ArrayLike, lower: ArrayLike, upper: ArrayLike) -> np.ndarray:
+    """Return a clipped copy of x inside [lower, upper]."""
+    return np.clip(x, lower, upper)
+
+
+def _check_nvars(n_vars: int, bounds: np.ndarray) -> None:
+    """Ensure that a bounds array matches the provided dimensionality."""
+    if bounds.shape[0] != n_vars:
+        raise ValueError("Bounds dimensionality does not match the individual size.")
+
+
+class VariationWorkspace:
+    """
+    Simple buffer registry that hands out reusable NumPy arrays keyed by name.
+    Operators can reuse temporary arrays across generations to avoid reallocations.
+    """
+
+    def __init__(self) -> None:
+        self._buffers: dict[str, np.ndarray] = {}
+
+    def request(self, key: str, shape: tuple[int, ...], dtype: Any) -> np.ndarray:
+        dtype = np.dtype(dtype)
+        buf = self._buffers.get(key)
+        if buf is None or buf.shape != shape or buf.dtype != dtype:
+            buf = np.empty(shape, dtype=dtype)
+            self._buffers[key] = buf
+        return buf
+
+
+class RealOperator:
+    """Common validation utilities shared by all real-coded operators."""
+
+    @staticmethod
+    def _as_matings(
+        parents: ArrayLike,
+        *,
+        expected_parents: int = 2,
+        copy: bool = False,
+        name: str = "parents",
+    ) -> np.ndarray:
+        arr = np.asarray(parents, dtype=float)
+        if arr.ndim != 3 or arr.shape[1] != expected_parents:
+            raise ValueError(f"{name} must have shape (n_matings, {expected_parents}, n_vars).")
+        return arr.copy() if copy else arr
+
+    @staticmethod
+    def _as_population(
+        values: ArrayLike,
+        *,
+        name: str,
+        copy: bool = True,
+    ) -> np.ndarray:
+        arr = np.asarray(values, dtype=float)
+        if arr.ndim != 2:
+            raise ValueError(f"{name} must have shape (n_individuals, n_vars).")
+        return arr.copy() if copy else arr
+
+    @staticmethod
+    def _check_bounds_match(matrix: np.ndarray, bounds: np.ndarray) -> None:
+        _check_nvars(matrix.shape[-1], bounds)
+
+
+__all__ = [
+    "ArrayLike",
+    "RealOperator",
+    "VariationWorkspace",
+    "_check_nvars",
+    "_clip_population",
+    "_ensure_bounds",
+]

@@ -6,6 +6,7 @@ Defines a ParamSpace, wraps NSGA-II evaluations, and reports the best config.
 Usage:
     python examples/racing_tuner_nsgaii.py
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -42,7 +43,6 @@ def make_algo_config(assignment: dict[str, float]) -> NSGAIIConfigData:
             eta=float(assignment["mutation_eta"]),
         )
         .selection("tournament", pressure=int(assignment["selection_pressure"]))
-        
         .engine("numpy")
         .fixed()
     )

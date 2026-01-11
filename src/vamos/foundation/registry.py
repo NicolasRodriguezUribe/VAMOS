@@ -48,12 +48,10 @@ class Registry(Generic[T]):
         return _do_register(item)
 
     @overload
-    def get(self, key: str) -> T:
-        ...
+    def get(self, key: str) -> T: ...
 
     @overload
-    def get(self, key: str, default: U) -> T | U:
-        ...
+    def get(self, key: str, default: U) -> T | U: ...
 
     def get(self, key: str, default: object = ...) -> object:
         """

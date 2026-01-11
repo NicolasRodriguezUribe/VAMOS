@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from argparse import Namespace
+from difflib import get_close_matches
 from typing import Iterable, Sequence
 
 from importlib.resources import as_file
@@ -24,6 +25,42 @@ PROBLEM_SET_PRESETS: dict[str, Sequence[str]] = {
     "tsplib": ("kroa100", "krob100", "kroc100", "krod100", "kroe100"),
     "real_world": ("ml_tuning", "welded_beam", "fs_real"),
 }
+_PROBLEM_DOCS = "docs/reference/problems.md"
+_TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
+
+
+def _suggest_names(name: str, options: Sequence[str]) -> list[str]:
+    if not name or not options:
+        return []
+    lookup = {option.lower(): option for option in options}
+    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
+    return [lookup[match] for match in matches]
+
+
+def _format_unknown_problem(name: str, options: list[str]) -> str:
+    parts = [f"Unknown problem '{name}'.", f"Available: {', '.join(options)}."]
+    suggestions = _suggest_names(name, options)
+    if suggestions:
+        if len(suggestions) == 1:
+            parts.append(f"Did you mean '{suggestions[0]}'?")
+        else:
+            parts.append("Did you mean one of: " + ", ".join(f"'{item}'" for item in suggestions) + "?")
+    parts.append(f"Docs: {_PROBLEM_DOCS}.")
+    parts.append(f"Troubleshooting: {_TROUBLESHOOTING_DOCS}.")
+    return " ".join(parts)
+
+
+def _format_unknown_problem_set(name: str, options: list[str]) -> str:
+    parts = [f"Unknown problem set '{name}'.", f"Available: {', '.join(options)}."]
+    suggestions = _suggest_names(name, options)
+    if suggestions:
+        if len(suggestions) == 1:
+            parts.append(f"Did you mean '{suggestions[0]}'?")
+        else:
+            parts.append("Did you mean one of: " + ", ".join(f"'{item}'" for item in suggestions) + "?")
+    parts.append(f"Docs: {_PROBLEM_DOCS}.")
+    parts.append(f"Troubleshooting: {_TROUBLESHOOTING_DOCS}.")
+    return " ".join(parts)
 
 
 def resolve_reference_front_path(problem_key: str, explicit_path: str | None) -> str | None:
@@ -40,9 +77,9 @@ def resolve_reference_front_path(problem_key: str, explicit_path: str | None) ->
 
 
 def _validate_problem_name(name: str) -> None:
-    if name not in available_problem_names():
-        available = ", ".join(sorted(available_problem_names()))
-        raise ValueError(f"Unknown problem '{name}'. Available problems: {available}")
+    available = sorted(available_problem_names())
+    if name not in available:
+        raise ValueError(_format_unknown_problem(name, available))
 
 
 def _make_selection(name: str, n_var: int | None, n_obj: int | None) -> ProblemSelection:
@@ -57,7 +94,7 @@ def resolve_problem_selection(args: Namespace) -> Iterable[ProblemSelection]:
     if getattr(args, "problem_set", None):
         preset_name = args.problem_set
         if preset_name not in PROBLEM_SET_PRESETS:
-            raise ValueError(f"Unknown problem set: {preset_name}")
+            raise ValueError(_format_unknown_problem_set(preset_name, sorted(PROBLEM_SET_PRESETS)))
         return tuple(_make_selection(name, args.n_var, args.n_obj) for name in PROBLEM_SET_PRESETS[preset_name])
 
     if getattr(args, "problem", None):

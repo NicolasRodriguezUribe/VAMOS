@@ -68,5 +68,5 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 
 ## Adding Problems/Operators (no cross references)
 - Problem registry: add specs in `foundation/problem/registry/families/*.py`.
-- Operators: canonical package is `vamos.operators`.
+- Operators: implementations live in `vamos.operators.impl`, algorithm wiring in `vamos.operators.policies`.
 - Update docs/tests when adding new modules or APIs.

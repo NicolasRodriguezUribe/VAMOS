@@ -10,6 +10,7 @@ Usage:
 Requirements:
     pip install -e ".[examples]"  # matplotlib for plotting
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -32,7 +33,6 @@ def build_config(archive_type: str = "hypervolume") -> NSGAIIConfig:
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        
         .engine("numpy")
         .external_archive(size=100, archive_type=archive_type)
         .fixed()

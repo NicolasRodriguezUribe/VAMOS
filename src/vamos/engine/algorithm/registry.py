@@ -8,6 +8,7 @@ and return an initialized algorithm instance.
 
 from __future__ import annotations
 
+from difflib import get_close_matches
 from typing import Any, Callable, Mapping, Protocol
 
 from vamos.foundation.kernel.backend import KernelBackend
@@ -38,6 +39,29 @@ class AlgorithmLike(Protocol):
 AlgorithmBuilder = Callable[[AlgorithmConfigMapping, KernelBackend], AlgorithmLike]
 
 _ALGORITHMS: Registry[AlgorithmBuilder] | None = None
+_ALGO_DOCS = "docs/reference/algorithms.md"
+_TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
+
+
+def _suggest_names(name: str, options: list[str]) -> list[str]:
+    if not name or not options:
+        return []
+    lookup = {option.lower(): option for option in options}
+    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
+    return [lookup[match] for match in matches]
+
+
+def _format_unknown_algorithm(name: str, options: list[str]) -> str:
+    parts = [f"Unsupported algorithm '{name}'.", f"Available: {', '.join(options)}."]
+    suggestions = _suggest_names(name, options)
+    if suggestions:
+        if len(suggestions) == 1:
+            parts.append(f"Did you mean '{suggestions[0]}'?")
+        else:
+            parts.append("Did you mean one of: " + ", ".join(f"'{item}'" for item in suggestions) + "?")
+    parts.append(f"Docs: {_ALGO_DOCS}.")
+    parts.append(f"Troubleshooting: {_TROUBLESHOOTING_DOCS}.")
+    return " ".join(parts)
 
 
 def _build_nsgaii(cfg: AlgorithmConfigMapping, kernel: KernelBackend) -> AlgorithmLike:
@@ -111,8 +135,8 @@ def resolve_algorithm(name: str) -> AlgorithmBuilder:
     try:
         return registry[key]
     except KeyError as exc:
-        available = ", ".join(sorted(registry.keys()))
-        raise ValueError(f"Unsupported algorithm '{name}'. Available: {available}") from exc
+        available = sorted(registry.keys())
+        raise ValueError(_format_unknown_algorithm(name, available)) from exc
 
 
 def __getattr__(name: str) -> Any:

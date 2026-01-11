@@ -4,6 +4,7 @@ from typing import Any
 
 import numpy as np
 
+
 def _require_matplotlib() -> Any:
     try:
         import matplotlib.pyplot as plt

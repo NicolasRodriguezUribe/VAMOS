@@ -7,10 +7,12 @@ and how to plug it into `vamos.optimize()` directly using the Unified API.
 Usage:
     python examples/custom_problem_definition.py
 """
+
 from __future__ import annotations
 
 import numpy as np
 from vamos.api import optimize
+
 
 class CustomBiObjectiveProblem:
     """
@@ -36,7 +38,7 @@ class CustomBiObjectiveProblem:
         f1 = X[:, 0]
         g = 1.0 + X[:, 1]
         f2 = g * (1.0 - np.sqrt(np.clip(X[:, 0], 0.0, 1.0))) + 0.1 * np.sin(5.0 * X[:, 0])
-        
+
         # Write directly to output buffers
         F = out["F"]
         F[:, 0] = f1
@@ -50,25 +52,19 @@ def main() -> None:
     # 2. Run optimize directy with the instance
     # Note: Unified API handles instance dispatch automatically
     print("optimizing custom problem instance...")
-    result = optimize(
-        problem,
-        algorithm="nsgaii",
-        budget=4000,
-        seed=3,
-        verbose=True
-    )
+    result = optimize(problem, algorithm="nsgaii", budget=4000, seed=3, verbose=True)
 
     F = result.F
     print(f"\nSolutions: {len(F)}")
-    print(f"Objective ranges: f1=[{F[:,0].min():.3f}, {F[:,0].max():.3f}], "
-          f"f2=[{F[:,1].min():.3f}, {F[:,1].max():.3f}]")
-    
+    print(f"Objective ranges: f1=[{F[:, 0].min():.3f}, {F[:, 0].max():.3f}], f2=[{F[:, 1].min():.3f}, {F[:, 1].max():.3f}]")
+
     # 3. Use built-in explorer if dependencies available (plotly)
     try:
         # result.explore(title="Custom Problem Result")
-        pass # Commented out to avoid auto-launching in non-interactive run
+        pass  # Commented out to avoid auto-launching in non-interactive run
     except:
         pass
+
 
 if __name__ == "__main__":
     main()

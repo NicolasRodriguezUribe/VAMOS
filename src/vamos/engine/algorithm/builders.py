@@ -48,6 +48,7 @@ def build_nsgaii_algorithm(
     builder.pop_size(pop_size)
     builder.offspring_size(offspring_size)
     builder.engine(engine_name)
+    builder.result_mode("population")
 
     if "crossover" in var_cfg:
         c_name, c_kwargs = var_cfg["crossover"]

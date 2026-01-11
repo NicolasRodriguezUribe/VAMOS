@@ -37,11 +37,7 @@ class ProblemSpec:
                 )
 
         if n_var is None:
-            actual_n_var = (
-                self.default_n_var_fn(actual_n_obj)
-                if self.default_n_var_fn is not None
-                else self.default_n_var
-            )
+            actual_n_var = self.default_n_var_fn(actual_n_obj) if self.default_n_var_fn is not None else self.default_n_var
         else:
             actual_n_var = n_var
         if actual_n_var <= 0:

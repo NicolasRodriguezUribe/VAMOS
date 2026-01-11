@@ -6,7 +6,7 @@ implementation with modular components:
 - `core.py`: main NSGAIII class (run/ask/tell loop)
 - `setup.py`: initialization/config helpers
 - `state.py`: NSGAIIIState + result building
-- `operators.py`: variation operator building
+- `operators/policies/nsgaiii.py`: variation operator building
 - `helpers.py`: reference point niching, survival selection
 
 References:
@@ -18,7 +18,7 @@ References:
 
 from .nsgaiii import NSGAIII
 from .helpers import associate, evaluate_population_with_constraints, nsgaiii_survival
-from .operators import build_variation_operators
+from vamos.operators.policies.nsgaiii import build_variation_operators
 from .initialization import initialize_nsgaiii_run
 from .state import NSGAIIIState, build_nsgaiii_result
 

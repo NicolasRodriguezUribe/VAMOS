@@ -7,14 +7,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from vamos.foundation.registry import Registry
-from vamos.operators.binary import (
+from vamos.operators.impl.binary import (
     one_point_crossover,
     two_point_crossover,
     uniform_crossover,
     hux_crossover,
     bit_flip_mutation,
 )
-from vamos.operators.integer import (
+from vamos.operators.impl.integer import (
     uniform_integer_crossover,
     arithmetic_integer_crossover,
     integer_sbx_crossover,
@@ -22,8 +22,8 @@ from vamos.operators.integer import (
     creep_mutation,
     integer_polynomial_mutation,
 )
-from vamos.operators.permutation import order_crossover
-from vamos.operators.permutation import (
+from vamos.operators.impl.permutation import order_crossover
+from vamos.operators.impl.permutation import (
     pmx_crossover,
     cycle_crossover,
     position_based_crossover,
@@ -34,7 +34,7 @@ from vamos.operators.permutation import (
     inversion_mutation,
     displacement_mutation,
 )
-from vamos.operators.mixed import mixed_crossover, mixed_mutation
+from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
 
 
 def resolve_prob_expression(value: float | int | str | None, n_var: int, default: float) -> float:

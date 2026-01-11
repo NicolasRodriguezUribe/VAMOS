@@ -4,7 +4,7 @@ MOEA/D evolutionary algorithm core.
 
 This module contains the main MOEAD class with the evolutionary loop (run/ask/tell).
 - Setup logic: setup.py
-- Operator building: operators.py
+- Operator building: operators/policies/moead.py
 - State and results: state.py
 - Helper functions: helpers.py
 
