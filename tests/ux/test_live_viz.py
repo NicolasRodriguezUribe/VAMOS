@@ -48,7 +48,6 @@ def test_live_viz_callbacks_invoked(monkeypatch, tmp_path):
         .crossover("sbx", prob=0.9, eta=10.0)
         .mutation("pm", prob="1/n", eta=10.0)
         .selection("tournament", pressure=2)
-        .engine("numpy")
         .result_mode("population")
         .fixed()
     )

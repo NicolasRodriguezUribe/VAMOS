@@ -48,7 +48,6 @@ def build_nsgaii_algorithm(
     builder = NSGAIIConfig()
     builder.pop_size(pop_size)
     builder.offspring_size(offspring_size)
-    builder.engine(engine_name)
     builder.result_mode("population")
 
     if "crossover" in var_cfg:
@@ -71,13 +70,17 @@ def build_nsgaii_algorithm(
         builder.adaptive_operator_selection(var_cfg["adaptive_operator_selection"])
 
     if external_archive_size:
-        builder.external_archive(size=external_archive_size, archive_type=archive_type)
+        builder.archive(external_archive_size)
+        builder.archive_type(archive_type)
+        builder.result_mode("external_archive")
     if track_genealogy:
         builder.track_genealogy(True)
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("nsgaii")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_moead_algorithm(
@@ -106,7 +109,6 @@ def build_moead_algorithm(
 
     builder = MOEADConfig()
     builder.pop_size(pop_size)
-    builder.engine(engine_name)
     builder.neighbor_size(20)
     builder.delta(0.9)
     builder.replace_limit(2)
@@ -135,7 +137,9 @@ def build_moead_algorithm(
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("moead")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_smsemoa_algorithm(
@@ -154,7 +158,6 @@ def build_smsemoa_algorithm(
 
     builder = SMSEMOAConfig()
     builder.pop_size(pop_size)
-    builder.engine(engine_name)
 
     c_name, c_kwargs = var_cfg["crossover"]
     builder.crossover(c_name, **c_kwargs)
@@ -172,7 +175,9 @@ def build_smsemoa_algorithm(
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("smsemoa")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_nsgaiii_algorithm(
@@ -192,7 +197,6 @@ def build_nsgaiii_algorithm(
 
     builder = NSGAIIIConfig()
     builder.pop_size(pop_size)
-    builder.engine(engine_name)
 
     c_name, c_kwargs = var_cfg["crossover"]
     builder.crossover(c_name, **c_kwargs)
@@ -209,7 +213,9 @@ def build_nsgaiii_algorithm(
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("nsgaiii")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_spea2_algorithm(
@@ -232,7 +238,6 @@ def build_spea2_algorithm(
     builder.pop_size(pop_size)
     archive_override = var_cfg.get("archive_size")
     builder.archive_size(int(archive_override) if archive_override is not None else (external_archive_size or pop_size))
-    builder.engine(engine_name)
     if "k_neighbors" in var_cfg and var_cfg["k_neighbors"] is not None:
         builder.k_neighbors(int(var_cfg["k_neighbors"]))
 
@@ -251,7 +256,9 @@ def build_spea2_algorithm(
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("spea2")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_ibea_algorithm(
@@ -271,7 +278,6 @@ def build_ibea_algorithm(
 
     builder = IBEAConfig()
     builder.pop_size(pop_size)
-    builder.engine(engine_name)
     c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 1.0, "eta": 20.0}))
     builder.crossover(c_name, **c_kwargs)
     m_name, m_kwargs = var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
@@ -285,7 +291,9 @@ def build_ibea_algorithm(
         builder.repair(r_name, **r_kwargs)
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("ibea")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_smpso_algorithm(
@@ -306,7 +314,6 @@ def build_smpso_algorithm(
     builder = SMPSOConfig()
     builder.pop_size(pop_size)
     builder.archive_size(pop_size if external_archive_size is None else external_archive_size)
-    builder.engine(engine_name)
     m_name, m_kwargs = mut_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
     builder.mutation(m_name, **m_kwargs)
     if "inertia" in mut_cfg:
@@ -322,7 +329,9 @@ def build_smpso_algorithm(
         builder.repair(r_name, **r_kwargs)
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("smpso")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 class DictConfigWrapper:
@@ -355,7 +364,6 @@ def build_agemoea_algorithm(
 
     builder = AGEMOEAConfig()
     builder.pop_size(pop_size)
-    builder.engine(engine_name)
 
     c_name, c_kwargs = var_cfg["crossover"]
     builder.crossover(c_name, **c_kwargs)
@@ -369,7 +377,9 @@ def build_agemoea_algorithm(
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("agemoea")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_rvea_algorithm(
@@ -394,7 +404,6 @@ def build_rvea_algorithm(
 
     builder = RVEAConfig()
     builder.pop_size(pop_size)
-    builder.engine(engine_name)
     builder.n_partitions(int(rvea_overrides.get("n_partitions", 12)))
     builder.alpha(float(rvea_overrides.get("alpha", 2.0)))
     if "adapt_freq" in rvea_overrides:
@@ -414,7 +423,9 @@ def build_rvea_algorithm(
 
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("rvea")
-    return algo_ctor(cfg_data.to_dict(), kernel), cfg_data
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine_name
+    return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 __all__ = [

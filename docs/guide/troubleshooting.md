@@ -7,8 +7,8 @@
 
 ## Missing optional dependencies
 
-- Backends (numba/moocore): `pip install -e ".[backends]"`
-- External baselines (pymoo/jmetalpy/pygmo): `pip install -e ".[benchmarks]"`
+- Backends (numba/moocore): `pip install -e ".[compute]"`
+- External baselines (pymoo/jmetalpy/pygmo): `pip install -e ".[research]"`
 
 ## Benchmark suites
 

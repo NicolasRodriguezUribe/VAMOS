@@ -4,6 +4,7 @@ import logging
 from typing import Any, Literal, Mapping, overload
 
 import numpy as np
+from numpy.typing import NDArray
 
 from vamos.foundation.metrics.pareto import pareto_filter
 
@@ -29,10 +30,11 @@ class OptimizationResult:
         >>> df = result.to_dataframe()  # Export to pandas
     """
 
-    def __init__(self, payload: Mapping[str, Any]):
-        self.F = payload.get("F")
-        self.X = payload.get("X")
-        self.data = dict(payload)
+    def __init__(self, payload: Mapping[str, Any], *, meta: Mapping[str, Any] | None = None):
+        self.F: NDArray[Any] | None = payload.get("F")
+        self.X: NDArray[Any] | None = payload.get("X")
+        self.data: dict[str, Any] = dict(payload)
+        self.meta: dict[str, Any] = dict(meta or {})
 
     def __len__(self) -> int:
         """Number of solutions in the result."""
@@ -48,21 +50,33 @@ class OptimizationResult:
         """Number of objectives."""
         return self.F.shape[1] if self.F is not None and len(self.F) > 0 else 0
 
-    def summary(self) -> None:
-        """Print a summary of the optimization result."""
-        _logger().info("=== Optimization Result ===")
-        _logger().info("Solutions: %s", len(self))
-        _logger().info("Objectives: %s", self.n_objectives)
+    def summary_text(self) -> str:
+        """Return a human-readable summary string (no logging side effects)."""
+        algo = self.meta.get("algorithm")
+        seed = self.meta.get("seed")
+        engine = self.meta.get("engine")
+
+        lines = [
+            "=== Optimization Result ===",
+            *([f"Algorithm: {algo}"] if algo else []),
+            *([f"Engine: {engine}"] if engine else []),
+            *([f"Seed: {seed}"] if seed is not None else []),
+            f"Solutions: {len(self)}",
+            f"Objectives: {self.n_objectives}",
+        ]
 
         if self.F is not None and len(self.F) > 0:
-            _logger().info("Objective ranges:")
+            lines.append("Objective ranges:")
             for i in range(self.n_objectives):
-                _logger().info(
-                    "  f%s: [%.6f, %.6f]",
-                    i + 1,
-                    self.F[:, i].min(),
-                    self.F[:, i].max(),
-                )
+                col = self.F[:, i]
+                lines.append(f"  f{i + 1}: [{col.min():.6f}, {col.max():.6f}]")
+
+        return "\n".join(lines)
+
+    def summary(self) -> None:
+        """Log a summary of the optimization result."""
+        for line in self.summary_text().splitlines():
+            _logger().info("%s", line)
 
     @overload
     def front(self, *, return_indices: Literal[False] = False) -> np.ndarray | None: ...

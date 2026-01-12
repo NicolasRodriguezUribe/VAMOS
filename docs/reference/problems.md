@@ -10,7 +10,7 @@ Continuous benchmarks
 
 - ZDT: zdt1, zdt2, zdt3, zdt4, zdt6 (bi-objective).
 - DTLZ: dtlz1, dtlz2, dtlz3, dtlz4 (default 3 objectives, override allowed).
-- WFG: wfg1-9 (requires `benchmarks` extra, override objectives allowed).
+- WFG: wfg1-9 (requires `research` extra, override objectives allowed).
 - LZ09: lz09_f1-f9.
 - CEC2009: cec2009_uf1, cec2009_uf2, cec2009_uf3, cec2009_cf1.
 
@@ -43,7 +43,7 @@ Mixed and real-world
 --------------------
 
 - mixed_design (mixed real/integer/categorical)
-- ml_tuning (SVM hyperparameter tuning; needs scikit-learn via `examples` or `notebooks` extras)
+- ml_tuning (SVM hyperparameter tuning; needs scikit-learn via `examples` or `analysis` extras)
 - welded_beam (mixed constrained design)
 - fs_real (binary feature selection on real data; needs scikit-learn)
 

@@ -19,7 +19,7 @@ def import_pandas() -> Any:
         import pandas as pd  # type: ignore[import-untyped]
     except ImportError as exc:  # pragma: no cover - optional dependency
         raise ImportError(
-            "Benchmark reporting requires pandas. Install via 'pip install pandas' or the 'notebooks'/'examples' extras."
+            "Benchmark reporting requires pandas. Install via 'pip install pandas' or the 'analysis'/'examples' extras."
         ) from exc
     return pd
 

@@ -6,7 +6,6 @@ from argparse import Namespace
 from copy import deepcopy
 from typing import Any, Callable, Iterable, Sequence
 
-from vamos.engine.config.loader import load_experiment_spec
 from vamos.engine.config.variation import merge_variation_overrides
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
@@ -41,12 +40,7 @@ def run_from_args(
     base_variation = getattr(args, "nsgaii_variation", None)
     overrides: dict[str, Any] = getattr(args, "problem_overrides", {}) or {}
     config_source = getattr(args, "config_path", None)
-    config_spec: dict[str, Any] | None = None
-    if config_source:
-        try:
-            config_spec = load_experiment_spec(config_source)
-        except Exception:
-            config_spec = None
+    config_spec: dict[str, Any] | None = getattr(args, "config_spec", None)
 
     for idx, selection in enumerate(selections, start=1):
         override: dict[str, Any] = overrides.get(selection.spec.key, {}) or {}

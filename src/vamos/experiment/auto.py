@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from vamos.foundation.encoding import normalize_encoding
+
 from vamos.foundation.problem.registry import make_problem_selection
 
 
@@ -43,6 +45,7 @@ def _resolve_problem(
 
 def _select_algorithm(n_obj: int, encoding: str) -> str:
     """Select algorithm based on problem characteristics."""
+    encoding = normalize_encoding(encoding)
     if n_obj == 1:
         # Single objective - use NSGA-II for now (could add DE later)
         return "nsgaii"
@@ -51,6 +54,30 @@ def _select_algorithm(n_obj: int, encoding: str) -> str:
     elif n_obj >= 3:
         return "nsgaiii"
     return "nsgaii"
+
+
+def suggest_algorithm(
+    problem: Any | None = None,
+    *,
+    n_var: int | None = None,
+    n_obj: int | None = None,
+    encoding: str | None = None,
+    problem_kwargs: Mapping[str, Any] | None = None,
+) -> str:
+    """Suggest an algorithm without running optimization."""
+    if problem is None:
+        if n_obj is None:
+            raise ValueError("suggest_algorithm() requires n_obj when problem is not provided.")
+        return _select_algorithm(n_obj, encoding or "real")
+
+    problem_instance = _resolve_problem(problem, n_var=n_var, n_obj=n_obj, problem_kwargs=problem_kwargs)
+    inferred_n_obj = getattr(problem_instance, "n_obj", None)
+    if inferred_n_obj is None:
+        if n_obj is None:
+            raise ValueError("suggest_algorithm() could not infer n_obj from problem; provide n_obj explicitly.")
+        inferred_n_obj = n_obj
+    inferred_encoding = getattr(problem_instance, "encoding", encoding or "real")
+    return _select_algorithm(inferred_n_obj, inferred_encoding)
 
 
 def _compute_pop_size(n_var: int, n_obj: int) -> int:

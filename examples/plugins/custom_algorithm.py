@@ -95,8 +95,8 @@ def build_random_search(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
 
 if __name__ == "__main__":
     # Demo usage
-    from vamos.experiment.builder import study
+    import vamos
 
-    result = study("zdt1").using("random_search").evaluations(1000).run()
+    result = vamos.optimize("zdt1", algorithm="random_search", budget=1000, pop_size=100, seed=42)
     print(f"Found {result.F.shape[0]} solutions")
     print(f"Best f1: {result.F[:, 0].min():.4f}")

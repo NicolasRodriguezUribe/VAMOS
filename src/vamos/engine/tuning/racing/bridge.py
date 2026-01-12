@@ -31,7 +31,6 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Int("offspring_size", 20, 200, log=True),
-        Categorical("engine", ["numpy", "numba", "moocore"]),
         Categorical("crossover", ["sbx", "blx_alpha"]),
         Real("crossover_prob", 0.6, 0.95),
         Categorical("mutation", ["pm", "non_uniform"]),
@@ -50,7 +49,6 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
 def build_moead_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
-        Categorical("engine", ["numpy", "numba", "moocore"]),
         Int("neighbor_size", 5, 40),
         Real("delta", 0.5, 0.95),
         Int("replace_limit", 1, 5),
@@ -71,7 +69,6 @@ def build_moead_config_space() -> AlgorithmConfigSpace:
 def build_nsgaiii_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
-        Categorical("engine", ["numpy", "numba", "moocore"]),
         Categorical("crossover", ["sbx"]),
         Real("crossover_prob", 0.6, 1.0),
         Real("crossover_eta", 20.0, 40.0),
@@ -86,7 +83,6 @@ def build_nsgaiii_config_space() -> AlgorithmConfigSpace:
 def build_smsemoa_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
-        Categorical("engine", ["numpy", "numba", "moocore"]),
         Categorical("crossover", ["sbx"]),
         Real("crossover_prob", 0.6, 1.0),
         Real("crossover_eta", 10.0, 40.0),
@@ -102,7 +98,6 @@ def build_spea2_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Int("archive_size", 20, 200, log=True),
-        Categorical("engine", ["numpy", "numba", "moocore"]),
         Categorical("crossover", ["sbx"]),
         Real("crossover_prob", 0.6, 0.95),
         Real("crossover_eta", 10.0, 40.0),
@@ -118,7 +113,6 @@ def build_spea2_config_space() -> AlgorithmConfigSpace:
 def build_ibea_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
-        Categorical("engine", ["numpy", "numba", "moocore"]),
         Categorical("crossover", ["sbx"]),
         Real("crossover_prob", 0.6, 0.95),
         Real("crossover_eta", 10.0, 40.0),
@@ -136,7 +130,6 @@ def build_smpso_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Int("archive_size", 20, 200, log=True),
-        Categorical("engine", ["numpy", "numba", "moocore"]),
         Real("inertia", 0.1, 0.9),
         Real("c1", 0.5, 2.5),
         Real("c2", 0.5, 2.5),
@@ -157,7 +150,6 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         builder = NSGAIIConfig()
         builder.pop_size(int(assignment["pop_size"]))
         builder.offspring_size(int(assignment.get("offspring_size", assignment["pop_size"])))
-        builder.engine(str(assignment.get("engine", "numpy")))
         cross = assignment["crossover"]
         cross_params = {"prob": float(assignment["crossover_prob"])}
         if cross == "sbx":
@@ -175,7 +167,6 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
     if algo == "moead":
         builder = MOEADConfig()
         builder.pop_size(int(assignment["pop_size"]))
-        builder.engine(str(assignment.get("engine", "numpy")))
         builder.neighbor_size(int(assignment["neighbor_size"]))
         builder.delta(float(assignment["delta"]))
         builder.replace_limit(int(assignment["replace_limit"]))
@@ -206,7 +197,6 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
     if algo == "nsgaiii":
         builder = NSGAIIIConfig()
         builder.pop_size(int(assignment["pop_size"]))
-        builder.engine(str(assignment.get("engine", "numpy")))
         builder.crossover(
             str(assignment["crossover"]),
             prob=float(assignment["crossover_prob"]),
@@ -222,7 +212,6 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
     if algo == "smsemoa":
         builder = SMSEMOAConfig()
         builder.pop_size(int(assignment["pop_size"]))
-        builder.engine(str(assignment.get("engine", "numpy")))
         builder.crossover(
             str(assignment["crossover"]),
             prob=float(assignment["crossover_prob"]),
@@ -240,7 +229,6 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         builder = SPEA2Config()
         builder.pop_size(int(assignment["pop_size"]))
         builder.archive_size(int(assignment.get("archive_size", assignment["pop_size"])))
-        builder.engine(str(assignment.get("engine", "numpy")))
         builder.crossover(
             str(assignment["crossover"]),
             prob=float(assignment["crossover_prob"]),
@@ -257,7 +245,6 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
     if algo == "ibea":
         builder = IBEAConfig()
         builder.pop_size(int(assignment["pop_size"]))
-        builder.engine(str(assignment.get("engine", "numpy")))
         builder.crossover(
             str(assignment["crossover"]),
             prob=float(assignment["crossover_prob"]),
@@ -276,7 +263,6 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         builder = SMPSOConfig()
         builder.pop_size(int(assignment["pop_size"]))
         builder.archive_size(int(assignment.get("archive_size", assignment["pop_size"])))
-        builder.engine(str(assignment.get("engine", "numpy")))
         builder.inertia(float(assignment["inertia"]))
         builder.c1(float(assignment["c1"]))
         builder.c2(float(assignment["c2"]))

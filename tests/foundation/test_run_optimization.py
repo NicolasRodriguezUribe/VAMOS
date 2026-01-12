@@ -69,7 +69,7 @@ class TestOptimizeConvenience:
     def test_rejects_unknown_algorithm_kwargs(self):
         """optimize() should not silently ignore unknown algorithm kwargs."""
         problem = ZDT1(n_var=10)
-        with pytest.raises(ValueError, match="does not support"):
+        with pytest.raises(TypeError, match="unexpected keyword argument"):
             optimize(problem, algorithm="nsgaii", budget=100, pop_size=20, unknown_param=1)
 
     @pytest.mark.smoke
@@ -126,19 +126,16 @@ class TestUnifiedBackendParameter:
         assert result.F is not None
 
     @pytest.mark.smoke
-    def test_config_default_engine(self):
-        """Config.default() should accept engine parameter."""
-        cfg = NSGAIIConfig.default(pop_size=50, n_var=10, engine="numpy")
-
-        # Verify the config has the engine set
-        assert cfg.engine == "numpy"
+    def test_config_default_rejects_engine_parameter(self):
+        """Algorithm config defaults should not accept engine (engine is run-level)."""
+        with pytest.raises(TypeError):
+            _ = NSGAIIConfig.default(pop_size=50, n_var=10, engine="numpy")  # type: ignore[call-arg]
 
     @pytest.mark.smoke
-    def test_moead_config_default_engine(self):
-        """MOEADConfig.default() should accept engine parameter."""
-        cfg = MOEADConfig.default(pop_size=50, n_var=10, engine="numpy")
-
-        assert cfg.engine == "numpy"
+    def test_moead_config_default_rejects_engine_parameter(self):
+        """Algorithm config defaults should not accept engine (engine is run-level)."""
+        with pytest.raises(TypeError):
+            _ = MOEADConfig.default(pop_size=50, n_var=10, engine="numpy")  # type: ignore[call-arg]
 
 
 class TestAPIConsistency:

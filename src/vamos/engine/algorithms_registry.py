@@ -64,7 +64,10 @@ def available_crossover_methods(encoding: str = "real") -> Tuple[str, ...]:
     Returns:
         Tuple of supported crossover method strings.
     """
-    normalized = normalize_encoding(encoding)
+    try:
+        normalized = normalize_encoding(encoding)
+    except ValueError:
+        return ()
     if normalized == "real":
         return tuple(sorted(REAL_CROSSOVER.keys()))
     if normalized == "binary":
@@ -88,7 +91,10 @@ def available_mutation_methods(encoding: str = "real") -> Tuple[str, ...]:
     Returns:
         Tuple of supported mutation method strings.
     """
-    normalized = normalize_encoding(encoding)
+    try:
+        normalized = normalize_encoding(encoding)
+    except ValueError:
+        return ()
     if normalized == "real":
         return tuple(sorted(REAL_MUTATION.keys()))
     if normalized == "binary":

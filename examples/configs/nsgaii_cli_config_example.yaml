@@ -2,6 +2,7 @@
 #   python -m vamos.experiment.cli.main --config examples/nsgaii_cli_config_example.yaml
 #
 # Values under `defaults` apply to every problem unless overridden below.
+version: "1"
 defaults:
   algorithm: nsgaii
   engine: numpy

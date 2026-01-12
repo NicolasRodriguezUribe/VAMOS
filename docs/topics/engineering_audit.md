@@ -51,7 +51,6 @@ Top 20 largest Python files under `src/vamos/` by non-blank LOC (static scan):
 
 | File | LOC | Responsibilities | Monolith risk |
 | --- | ---: | --- | --- |
-| `src/vamos/experiment/quick.py` | 749 | Quick API, `QuickResult` utilities, config building, plotting, persistence | High: API + config + plotting + IO in one module |
 | `src/vamos/engine/algorithm/components/base.py` | 574 | Base state, termination, population setup, archives, HV tracking, hooks for live viz + genealogy, results | High: many algorithm concerns + instrumentation coupling |
 | `src/vamos/foundation/problem/registry/specs.py` | 541 | Problem registry data and factories for all benchmark families | Medium: huge registry; consider splitting by family |
 | `src/vamos/experiment/runner.py` | 536 | Orchestrates runs, builds algorithms, HV, hooks, plotting, persistence | High: execution + IO + plotting + config overrides |
@@ -173,8 +172,8 @@ Refactor plan: extract shared execution logic (e.g., `src/vamos/experiment/execu
 Suggested tests: add a lightweight import-cycle check for experiment modules; unit tests for config override resolution; integration tests that CLI parsing matches programmatic calls.
 
 2) High - Separate result presentation (plotting, saving, printing) from core API results.
-Evidence: `src/vamos/experiment/optimize.py`, `src/vamos/experiment/quick.py`.
-Refactor plan: keep `OptimizationResult` and `QuickResult` as data containers; move `plot`, `save`, and `summary` to `src/vamos/experiment/output.py` or `src/vamos/ux/` and wire them from CLI/UX.
+Evidence: `src/vamos/experiment/optimization_result.py`.
+Refactor plan: keep `OptimizationResult` as a data container; move `plot`, `save`, and `summary` to `src/vamos/ux/` and wire them from CLI/UX.
 Suggested tests: unit tests for output helpers; integration tests for CLI output parity.
 
 3) Medium - Split external baseline integrations into per-library modules.

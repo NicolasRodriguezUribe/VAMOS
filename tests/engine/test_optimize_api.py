@@ -2,6 +2,7 @@ import pytest
 
 from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
 from vamos.experiment.optimize import OptimizeConfig, OptimizationResult, optimize_config
+from vamos.foundation.exceptions import InvalidAlgorithmError
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
@@ -13,7 +14,6 @@ def _nsgaii_cfg():
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .engine("numpy")
         .result_mode("population")
         .fixed()
     )
@@ -46,7 +46,6 @@ def test_optimize_explicit_algorithm_moead():
         .crossover("sbx", prob=1.0, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
-        .engine("numpy")
         .fixed()
     )
     cfg = OptimizeConfig(
@@ -71,7 +70,7 @@ def test_optimize_unknown_algorithm_errors():
         termination=("n_eval", 4),
         seed=0,
     )
-    with pytest.raises(ValueError, match="Unknown algorithm"):
+    with pytest.raises(InvalidAlgorithmError, match="Unknown algorithm"):
         optimize_config(cfg)
 
 

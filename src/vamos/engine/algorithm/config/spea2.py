@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
@@ -11,38 +11,36 @@ from .base import _SerializableConfig, _require_fields
 class SPEA2ConfigDict(TypedDict):
     pop_size: int
     archive_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    selection: Tuple[str, Dict[str, Any]]
-    engine: str
-    k_neighbors: Optional[int]
-    repair: Optional[Tuple[str, Dict[str, Any]]]
-    initializer: Optional[Dict[str, Any]]
-    mutation_prob_factor: Optional[float]
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
+    k_neighbors: int | None
+    repair: tuple[str, dict[str, Any]] | None
+    initializer: dict[str, Any] | None
+    mutation_prob_factor: float | None
     constraint_mode: str
     track_genealogy: bool
-    result_mode: Optional[str]
-    archive: Optional[Dict[str, Any]]
-    archive_type: Optional[str]
+    result_mode: str | None
+    archive: dict[str, Any] | None
+    archive_type: str | None
 
 
 @dataclass(frozen=True)
 class SPEA2ConfigData(_SerializableConfig["SPEA2ConfigDict"]):
     pop_size: int
     archive_size: int  # Internal archive (part of SPEA2 algorithm)
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    selection: Tuple[str, Dict[str, Any]]
-    engine: str
-    k_neighbors: Optional[int] = None
-    repair: Optional[Tuple[str, Dict[str, Any]]] = None
-    initializer: Optional[Dict[str, Any]] = None
-    mutation_prob_factor: Optional[float] = None
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
+    k_neighbors: int | None = None
+    repair: tuple[str, dict[str, Any]] | None = None
+    initializer: dict[str, Any] | None = None
+    mutation_prob_factor: float | None = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
-    result_mode: Optional[str] = None
-    archive: Optional[Dict[str, Any]] = None  # External archive for results
-    archive_type: Optional[str] = None
+    result_mode: str | None = None
+    archive: dict[str, Any] | None = None  # External archive for results
+    archive_type: str | None = None
 
 
 class SPEA2Config:
@@ -55,14 +53,13 @@ class SPEA2Config:
     """
 
     def __init__(self) -> None:
-        self._cfg: Dict[str, Any] = {}
+        self._cfg: dict[str, Any] = {}
 
     @classmethod
     def default(
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-        engine: str = "numpy",
     ) -> "SPEA2ConfigData":
         """Create a default SPEA2 configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
@@ -73,7 +70,6 @@ class SPEA2Config:
             .crossover("sbx", prob=1.0, eta=20.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("tournament")
-            .engine(engine)
             .fixed()
         )
 
@@ -95,10 +91,6 @@ class SPEA2Config:
 
     def selection(self, method: str, **kwargs: Any) -> "SPEA2Config":
         self._cfg["selection"] = (method, kwargs)
-        return self
-
-    def engine(self, value: str) -> "SPEA2Config":
-        self._cfg["engine"] = value
         return self
 
     def k_neighbors(self, value: int) -> "SPEA2Config":
@@ -157,7 +149,7 @@ class SPEA2Config:
     def fixed(self) -> SPEA2ConfigData:
         _require_fields(
             self._cfg,
-            ("pop_size", "archive_size", "crossover", "mutation", "selection", "engine"),
+            ("pop_size", "archive_size", "crossover", "mutation", "selection"),
             "SPEA2",
         )
         return SPEA2ConfigData(
@@ -166,7 +158,6 @@ class SPEA2Config:
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
             selection=self._cfg["selection"],
-            engine=self._cfg["engine"],
             k_neighbors=self._cfg.get("k_neighbors"),
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),

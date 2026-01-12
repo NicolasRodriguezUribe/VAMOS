@@ -30,7 +30,6 @@ def test_dtlz2_nsgaii_convergence():
         .mutation("pm", prob=1.0 / 12, eta=20.0)
         .selection("random")
         .reference_directions(divisions=12)
-        .engine("numpy")
         .fixed()
     )
 

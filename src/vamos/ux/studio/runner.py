@@ -44,7 +44,6 @@ def run_focused_optimization(
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .engine("numpy")
         .result_mode("population")
         .fixed()
     )
@@ -77,17 +76,9 @@ def run_with_history(
     from vamos.foundation.problem.registry import make_problem_selection
     from vamos.experiment.optimize import OptimizeConfig, optimize_config
     from vamos.engine.algorithm.config import (
-        AGEMOEAConfig,
-        IBEAConfig,
-        MOEADConfig,
         NSGAIIConfig,
-        NSGAIIIConfig,
-        RVEAConfig,
-        SMPSOConfig,
-        SMSEMOAConfig,
-        SPEA2Config,
-        AlgorithmConfigProtocol,
     )
+    from vamos.engine.algorithm.config.types import AlgorithmConfigLike
 
     # Instantiate problem
     selection = make_problem_selection(problem_name)
@@ -103,28 +94,14 @@ def run_with_history(
     if not algo_cfg_raw:
         algo_cfg_raw = NSGAIIConfig().pop_size(100).fixed()
 
-    def _coerce_algo_config(name: str, cfg: Any) -> AlgorithmConfigProtocol:
+    def _coerce_algo_config(cfg: Any) -> AlgorithmConfigLike:
         if hasattr(cfg, "to_dict"):
             return cfg
         if not isinstance(cfg, dict):
             raise TypeError("algorithm_config must be a config object or dict.")
-        mapping = {
-            "nsgaii": NSGAIIConfig,
-            "moead": MOEADConfig,
-            "nsgaiii": NSGAIIIConfig,
-            "smsemoa": SMSEMOAConfig,
-            "spea2": SPEA2Config,
-            "ibea": IBEAConfig,
-            "smpso": SMPSOConfig,
-            "agemoea": AGEMOEAConfig,
-            "rvea": RVEAConfig,
-        }
-        builder = mapping.get(name.lower())
-        if builder is None:
-            raise ValueError(f"Unsupported algorithm for replay: {name}")
-        return builder.from_dict(cfg)
+        return cfg
 
-    algo_cfg = _coerce_algo_config(algo_name, algo_cfg_raw)
+    algo_cfg = _coerce_algo_config(algo_cfg_raw)
 
     callback = DynamicsCallback()
 

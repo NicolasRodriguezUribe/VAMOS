@@ -105,7 +105,7 @@ class InvalidEngineError(ConfigurationError):
         suggestions = _suggest_names(engine, available)
         suggestion_parts = [
             f"Available engines: {', '.join(available)}.",
-            "Install extras with: pip install vamos[backends]",
+            "Install extras with: pip install vamos[compute]",
         ]
         if suggestions:
             if len(suggestions) == 1:
@@ -277,9 +277,9 @@ class BackendNotAvailableError(DependencyError):
     def __init__(self, backend: str) -> None:
         feature = f"the '{backend}' backend"
         if backend == "numba":
-            install_cmd = "pip install vamos[backends]"
+            install_cmd = "pip install vamos[compute]"
         elif backend == "moocore":
-            install_cmd = "pip install vamos[backends]"
+            install_cmd = "pip install vamos[compute]"
         else:
             install_cmd = f"pip install {backend}"
         super().__init__(backend, feature, install_cmd)

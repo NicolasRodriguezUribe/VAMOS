@@ -3,44 +3,42 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
 class SMSEMOAConfigDict(TypedDict):
     pop_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    selection: Tuple[str, Dict[str, Any]]
-    reference_point: Dict[str, Any]
-    engine: str
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
+    reference_point: dict[str, Any]
     constraint_mode: str
-    repair: Optional[Tuple[str, Dict[str, Any]]]
-    initializer: Optional[Dict[str, Any]]
-    mutation_prob_factor: Optional[float]
+    repair: tuple[str, dict[str, Any]] | None
+    initializer: dict[str, Any] | None
+    mutation_prob_factor: float | None
     track_genealogy: bool
-    result_mode: Optional[str]
-    archive_type: Optional[str]
-    archive: Optional[Dict[str, Any]]
+    result_mode: str | None
+    archive_type: str | None
+    archive: dict[str, Any] | None
 
 
 @dataclass(frozen=True)
 class SMSEMOAConfigData(_SerializableConfig["SMSEMOAConfigDict"]):
     pop_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    selection: Tuple[str, Dict[str, Any]]
-    reference_point: Dict[str, Any]
-    engine: str
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
+    reference_point: dict[str, Any]
     constraint_mode: str = "feasibility"
-    repair: Optional[Tuple[str, Dict[str, Any]]] = None
-    initializer: Optional[Dict[str, Any]] = None
-    mutation_prob_factor: Optional[float] = None
+    repair: tuple[str, dict[str, Any]] | None = None
+    initializer: dict[str, Any] | None = None
+    mutation_prob_factor: float | None = None
     track_genealogy: bool = False
-    result_mode: Optional[str] = None
-    archive_type: Optional[str] = None
-    archive: Optional[Dict[str, Any]] = None
+    result_mode: str | None = None
+    archive_type: str | None = None
+    archive: dict[str, Any] | None = None
 
 
 class SMSEMOAConfig:
@@ -53,14 +51,13 @@ class SMSEMOAConfig:
     """
 
     def __init__(self) -> None:
-        self._cfg: Dict[str, Any] = {}
+        self._cfg: dict[str, Any] = {}
 
     @classmethod
     def default(
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-        engine: str = "numpy",
     ) -> "SMSEMOAConfigData":
         """Create a default SMS-EMOA configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
@@ -71,7 +68,6 @@ class SMSEMOAConfig:
             .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("random")
             .reference_point(adaptive=True)
-            .engine(engine)
             .fixed()
         )
 
@@ -105,10 +101,6 @@ class SMSEMOAConfig:
         }
         return self
 
-    def engine(self, value: str) -> "SMSEMOAConfig":
-        self._cfg["engine"] = value
-        return self
-
     def constraint_mode(self, value: str) -> "SMSEMOAConfig":
         self._cfg["constraint_mode"] = value
         return self
@@ -133,14 +125,6 @@ class SMSEMOAConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(self, *, size: int, archive_type: str = "hypervolume") -> "SMSEMOAConfig":
-        if size <= 0:
-            raise ValueError("external archive size must be positive.")
-        self._cfg["external_archive"] = {"size": int(size)}
-        self._cfg["result_mode"] = "external_archive"
-        self._cfg["archive_type"] = archive_type
-        return self
-
     def archive_type(self, value: str) -> "SMSEMOAConfig":
         """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
         self._cfg["archive_type"] = str(value)
@@ -162,12 +146,13 @@ class SMSEMOAConfig:
             return self
         archive_cfg = {"size": int(size), **kwargs}
         self._cfg["archive"] = archive_cfg
+        self._cfg.setdefault("result_mode", "external_archive")
         return self
 
     def fixed(self) -> SMSEMOAConfigData:
         _require_fields(
             self._cfg,
-            ("pop_size", "crossover", "mutation", "selection", "engine"),
+            ("pop_size", "crossover", "mutation", "selection"),
             "SMS-EMOA",
         )
         reference_point = self._cfg.get("reference_point", {"offset": 1.0, "adaptive": True})
@@ -177,7 +162,6 @@ class SMSEMOAConfig:
             mutation=self._cfg["mutation"],
             selection=self._cfg["selection"],
             reference_point=reference_point,
-            engine=self._cfg["engine"],
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),
@@ -185,5 +169,5 @@ class SMSEMOAConfig:
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
             archive_type=self._cfg.get("archive_type"),
-            archive=self._cfg.get("archive", self._cfg.get("external_archive")),
+            archive=self._cfg.get("archive"),
         )

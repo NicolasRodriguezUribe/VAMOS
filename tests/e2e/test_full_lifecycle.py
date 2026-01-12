@@ -31,7 +31,6 @@ def test_full_lifecycle_optimize_save_analyze(e2e_workspace):
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .engine("numpy")
         .fixed()
     )
     config = OptimizeConfig(

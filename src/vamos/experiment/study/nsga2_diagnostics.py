@@ -49,15 +49,16 @@ def _ensure_diag_dir() -> Path:
 
 def _build_internal_algorithm(engine: str = "numpy") -> tuple[NSGAII, dict[str, Any]]:
     defaults = _default_config()
-    cfg = (
+    cfg_data = (
         NSGAIIConfig()
         .pop_size(defaults.population_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .engine(engine)
     ).fixed()
-    return NSGAII(cfg.to_dict(), kernel=NumPyKernel()), cfg.to_dict()  # type: ignore[no-untyped-call]
+    cfg_dict = cfg_data.to_dict()
+    cfg_dict["engine"] = engine
+    return NSGAII(cfg_dict, kernel=NumPyKernel()), cfg_dict  # type: ignore[no-untyped-call]
 
 
 def _prepare_params(cfg_dict: dict[str, Any], n_var: int) -> tuple[dict[str, Any], dict[str, Any], int]:

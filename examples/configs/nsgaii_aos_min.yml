@@ -1,5 +1,6 @@
 # Minimal NSGA-II AOS example for the CLI:
 #   .\.venv\Scripts\python.exe -m vamos.experiment.cli.main --config examples/configs/nsgaii_aos_min.yml
+version: "1"
 defaults:
   algorithm: nsgaii
   engine: numpy

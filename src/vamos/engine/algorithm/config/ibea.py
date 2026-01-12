@@ -3,60 +3,57 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
 class IBEAConfigDict(TypedDict):
     pop_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    selection: Tuple[str, Dict[str, Any]]
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
     indicator: str
     kappa: float
-    engine: str
-    repair: Optional[Tuple[str, Dict[str, Any]]]
-    initializer: Optional[Dict[str, Any]]
-    mutation_prob_factor: Optional[float]
+    repair: tuple[str, dict[str, Any]] | None
+    initializer: dict[str, Any] | None
+    mutation_prob_factor: float | None
     constraint_mode: str
     track_genealogy: bool
-    result_mode: Optional[str]
-    archive: Optional[Dict[str, Any]]
-    archive_type: Optional[str]
+    result_mode: str | None
+    archive: dict[str, Any] | None
+    archive_type: str | None
 
 
 @dataclass(frozen=True)
 class IBEAConfigData(_SerializableConfig["IBEAConfigDict"]):
     pop_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    selection: Tuple[str, Dict[str, Any]]
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
     indicator: str
     kappa: float
-    engine: str
-    repair: Optional[Tuple[str, Dict[str, Any]]] = None
-    initializer: Optional[Dict[str, Any]] = None
-    mutation_prob_factor: Optional[float] = None
+    repair: tuple[str, dict[str, Any]] | None = None
+    initializer: dict[str, Any] | None = None
+    mutation_prob_factor: float | None = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
-    result_mode: Optional[str] = None
-    archive: Optional[Dict[str, Any]] = None
-    archive_type: Optional[str] = None
+    result_mode: str | None = None
+    archive: dict[str, Any] | None = None
+    archive_type: str | None = None
 
 
 class IBEAConfig:
     """Declarative configuration holder for IBEA settings."""
 
     def __init__(self) -> None:
-        self._cfg: Dict[str, Any] = {}
+        self._cfg: dict[str, Any] = {}
 
     @classmethod
     def default(
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-        engine: str = "numpy",
     ) -> "IBEAConfigData":
         """Create a default IBEA configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
@@ -68,7 +65,6 @@ class IBEAConfig:
             .selection("tournament")
             .indicator("eps")
             .kappa(1.0)
-            .engine(engine)
             .fixed()
         )
 
@@ -94,10 +90,6 @@ class IBEAConfig:
 
     def kappa(self, value: float) -> "IBEAConfig":
         self._cfg["kappa"] = value
-        return self
-
-    def engine(self, value: str) -> "IBEAConfig":
-        self._cfg["engine"] = value
         return self
 
     def repair(self, method: str, **kwargs: Any) -> "IBEAConfig":
@@ -150,7 +142,7 @@ class IBEAConfig:
     def fixed(self) -> IBEAConfigData:
         _require_fields(
             self._cfg,
-            ("pop_size", "crossover", "mutation", "selection", "indicator", "kappa", "engine"),
+            ("pop_size", "crossover", "mutation", "selection", "indicator", "kappa"),
             "IBEA",
         )
         return IBEAConfigData(
@@ -160,7 +152,6 @@ class IBEAConfig:
             selection=self._cfg["selection"],
             indicator=str(self._cfg["indicator"]),
             kappa=float(self._cfg["kappa"]),
-            engine=self._cfg["engine"],
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),

@@ -25,7 +25,6 @@ def main():
         .crossover("uniform", prob=0.9)
         .mutation("bitflip", prob="1/n")
         .selection("tournament", pressure=2)
-        .engine("numpy")
         .fixed()
     )
     result = optimize(

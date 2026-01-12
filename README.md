@@ -27,6 +27,15 @@ python -m venv .venv
 pip install -e ".[compute,research,analysis]"
 ```
 
+```bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install core + essential extras
+pip install -e ".[compute,research,analysis]"
+```
+
 ## ⚡ Quickstart
 
 Solve the ZDT1 benchmark problem with NSGA-II in just a few lines:
@@ -55,7 +64,7 @@ from vamos import OptimizeConfig, make_problem_selection, optimize
 from vamos.engine.api import NSGAIIConfig
 
 problem = make_problem_selection("zdt1").instantiate()
-algo = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var, engine="numpy")
+algo = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var)
 
 config = OptimizeConfig(
     problem=problem,
@@ -63,6 +72,7 @@ config = OptimizeConfig(
     algorithm_config=algo,
     termination=("n_eval", 10000),
     seed=42,
+    engine="numpy",
 )
 
 result = optimize(config)

@@ -1,7 +1,7 @@
 """
 Wrappers for CEC multi-objective benchmark problems (CEC2009 UF/CF subset).
 
-All computations are delegated to pymoo. Install the optional ``benchmarks`` extras
+All computations are delegated to pymoo. Install the optional ``research`` extras
 to enable these problems.
 """
 

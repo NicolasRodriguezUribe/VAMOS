@@ -2,6 +2,7 @@ import pytest
 
 from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.experiment.optimize import OptimizeConfig, optimize_config
+from vamos.foundation.exceptions import InvalidAlgorithmError
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
@@ -13,7 +14,7 @@ def test_unknown_algorithm_name_errors():
         termination=("n_eval", 4),
         seed=0,
     )
-    with pytest.raises(ValueError, match="Unknown algorithm"):
+    with pytest.raises(InvalidAlgorithmError, match="Unknown algorithm"):
         optimize_config(cfg)
 
 

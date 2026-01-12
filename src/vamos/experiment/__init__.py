@@ -1,12 +1,7 @@
 """
-Experiment layer: CLI entry points, study orchestration, benchmark suites, diagnostics, and curated experiment zoo.
+Experiment layer: orchestration, benchmarking, diagnostics, and CLIs.
+
+Public entrypoints live in the stable facades (`vamos.api`, `vamos.engine.api`, `vamos.ux.api`).
 """
 
-from .context import Experiment, experiment, RunRecord, ExperimentSummary
-
-__all__ = [
-    "Experiment",
-    "experiment",
-    "RunRecord",
-    "ExperimentSummary",
-]
+__all__: list[str] = []

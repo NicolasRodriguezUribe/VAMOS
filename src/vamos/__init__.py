@@ -5,7 +5,6 @@ Import most features from the dedicated facades:
 - `vamos.api` for core optimization entrypoints.
 - `vamos.engine.api` for algorithm configs.
 - `vamos.ux.api` for analysis/visualization helpers.
-- `vamos.experiment.quick` for quick-start runs.
 """
 
 from __future__ import annotations
@@ -19,11 +18,14 @@ from vamos.api import (
     ProblemSelection,
     ProblemSpec,
     available_problem_names,
+    configure_logging,
     make_problem_selection,
     optimize,
+    optimize_many,
     pareto_filter,
     reduce_objectives,
     run_self_check,
+    suggest_algorithm,
 )
 from vamos.foundation.version import get_version as _get_version
 
@@ -31,6 +33,7 @@ __all__ = [
     "__version__",
     # Optimization
     "optimize",
+    "optimize_many",
     "OptimizeConfig",
     "OptimizationResult",
     "pareto_filter",
@@ -39,6 +42,8 @@ __all__ = [
     "ObjectiveReducer",
     "reduce_objectives",
     "run_self_check",
+    "suggest_algorithm",
+    "configure_logging",
     "available_problem_names",
     "make_problem_selection",
     "ProblemSelection",
