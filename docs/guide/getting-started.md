@@ -6,11 +6,14 @@ Install
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .\.venv\Scripts\Activate.ps1
-pip install -e ".[backends,benchmarks,dev]"
+pip install -e ".[compute,research,dev]"
 ```
 
 Useful extras:
 
+- `compute`: alias for `backends` (numba, moocore, dask)
+- `research`: alias for `benchmarks` (pymoo, jmetalpy, pygmo baselines)
+- `analysis`: plotting + notebook deps (matplotlib/plotly/scikit-learn, ipywidgets, nbconvert)
 - `backends`: numba and moocore kernels
 - `benchmarks`: pymoo, jmetalpy, pygmo baselines
 - `dev`: pytest, ruff, black, nbformat/nbconvert for notebook checks

@@ -6,10 +6,11 @@ supporting continuous, binary, and integer encodings.
 
 from __future__ import annotations
 
-from typing import Callable
+from typing import Any, Callable, TypeAlias
 
 import numpy as np
 
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.operators.impl.binary import (
     bit_flip_mutation,
@@ -40,7 +41,16 @@ __all__ = [
 # Operator registries
 # -------------------------------------------------------------------------
 
-BINARY_CROSSOVER: dict[str, Callable[..., np.ndarray]] = {
+BinaryCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
+BinaryMutationOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], None]
+IntCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
+IntMutationOp: TypeAlias = Callable[..., None]
+
+VariationCrossoverFn: TypeAlias = Callable[[np.ndarray], np.ndarray]
+VariationMutationFn: TypeAlias = Callable[[np.ndarray], np.ndarray]
+
+
+BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = {
     "one_point": one_point_crossover,
     "single_point": one_point_crossover,
     "1point": one_point_crossover,
@@ -49,18 +59,18 @@ BINARY_CROSSOVER: dict[str, Callable[..., np.ndarray]] = {
     "uniform": uniform_crossover,
 }
 
-BINARY_MUTATION: dict[str, Callable[..., np.ndarray]] = {
+BINARY_MUTATION: dict[str, BinaryMutationOp] = {
     "bitflip": bit_flip_mutation,
     "bit_flip": bit_flip_mutation,
 }
 
-INT_CROSSOVER: dict[str, Callable[..., np.ndarray]] = {
+INT_CROSSOVER: dict[str, IntCrossoverOp] = {
     "uniform": uniform_integer_crossover,
     "blend": arithmetic_integer_crossover,
     "arithmetic": arithmetic_integer_crossover,
 }
 
-INT_MUTATION: dict[str, Callable[..., np.ndarray]] = {
+INT_MUTATION: dict[str, IntMutationOp] = {
     "reset": random_reset_mutation,
     "random_reset": random_reset_mutation,
     "creep": creep_mutation,
@@ -73,13 +83,13 @@ INT_MUTATION: dict[str, Callable[..., np.ndarray]] = {
 
 
 def build_variation_operators(
-    config: dict,
-    encoding: str,
+    config: dict[str, Any],
+    encoding: EncodingLike,
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-) -> tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build crossover and mutation operators for the given encoding.
 
     Parameters
@@ -87,7 +97,7 @@ def build_variation_operators(
     config : dict
         Algorithm configuration containing 'crossover' and 'mutation' keys.
     encoding : str
-        Variable encoding: "continuous", "real", "binary", or "integer".
+        Variable encoding: "real", "binary", or "integer".
     n_var : int
         Number of decision variables.
     xl : np.ndarray
@@ -128,24 +138,25 @@ def build_variation_operators(
     if mut_params.get("prob") == "1/n":
         mut_params["prob"] = 1.0 / n_var
 
-    if encoding == "binary":
+    normalized = normalize_encoding(encoding)
+    if normalized == "binary":
         return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
-    elif encoding == "integer":
+    elif normalized == "integer":
         return _build_integer_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
-    elif encoding in {"continuous", "real"}:
+    elif normalized == "real":
         return _build_real_operators(cross_params, mut_params, n_var, xl, xu, rng)
     else:
-        raise ValueError(f"SMSEMOA does not support encoding '{encoding}'.")
+        raise ValueError(f"SMSEMOA does not support encoding '{normalized}'.")
 
 
 def _build_binary_operators(
     cross_method: str,
-    cross_params: dict,
+    cross_params: dict[str, Any],
     mut_method: str,
-    mut_params: dict,
+    mut_params: dict[str, Any],
     n_var: int,
     rng: np.random.Generator,
-) -> tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build binary encoding operators."""
     if cross_method not in BINARY_CROSSOVER:
         raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for binary encoding.")
@@ -161,22 +172,22 @@ def _build_binary_operators(
         return cross_fn(parents, cross_prob, _rng)
 
     def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        result = mut_fn(X_child, mut_prob, _rng)
-        return result if result is not None else X_child
+        mut_fn(X_child, mut_prob, _rng)
+        return X_child
 
     return crossover, mutation
 
 
 def _build_integer_operators(
     cross_method: str,
-    cross_params: dict,
+    cross_params: dict[str, Any],
     mut_method: str,
-    mut_params: dict,
+    mut_params: dict[str, Any],
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-) -> tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build integer encoding operators."""
     if cross_method not in INT_CROSSOVER:
         raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for integer encoding.")
@@ -195,26 +206,26 @@ def _build_integer_operators(
     if mut_fn is creep_mutation:
 
         def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-            result = mut_fn(X_child, mut_prob, step, xl, xu, _rng)
-            return result if result is not None else X_child
+            creep_mutation(X_child, mut_prob, step, xl, xu, _rng)
+            return X_child
 
     else:
 
         def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-            result = mut_fn(X_child, mut_prob, xl, xu, _rng)
-            return result if result is not None else X_child
+            mut_fn(X_child, mut_prob, xl, xu, _rng)
+            return X_child
 
     return crossover, mutation
 
 
 def _build_real_operators(
-    cross_params: dict,
-    mut_params: dict,
+    cross_params: dict[str, Any],
+    mut_params: dict[str, Any],
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-) -> tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build continuous (real) encoding operators using SBX and PM."""
     cross_prob = float(cross_params.get("prob", 0.9))
     cross_eta = float(cross_params.get("eta", 20.0))

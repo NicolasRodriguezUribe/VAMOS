@@ -23,6 +23,7 @@ from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
+from vamos.foundation.encoding import normalize_encoding
 
 from .helpers import environmental_selection
 from vamos.operators.policies.ibea import build_variation_pipeline
@@ -82,7 +83,7 @@ def initialize_ibea_run(
     rng = np.random.default_rng(seed)
     pop_size = int(cfg["pop_size"])
     offspring_size = pop_size
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     n_var = problem.n_var
     n_obj = problem.n_obj
     xl, xu = resolve_bounds(problem, encoding)

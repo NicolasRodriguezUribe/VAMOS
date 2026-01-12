@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import numpy as np
 
@@ -66,14 +66,17 @@ class MultiprocessingEvalBackend(EvaluationBackend):
         G_out: np.ndarray | None = None
         if G_sample is not None:
             G_out = np.empty((n, G_sample.shape[1]), dtype=float)
-        for start, part in sorted(F_parts, key=lambda p: p[0]):
-            F[start : start + part.shape[0]] = part
+        for start, f_part in sorted(F_parts, key=lambda p: p[0]):
+            F[start : start + f_part.shape[0]] = f_part
+        missing_constraints = False
         if G_out is not None:
-            for start, part in sorted(G_parts, key=lambda p: p[0]):
-                if part is None:
-                    G_out = None
+            for start, g_part in sorted(G_parts, key=lambda p: p[0]):
+                if g_part is None:
+                    missing_constraints = True
                     break
-                G_out[start : start + part.shape[0]] = part
+                G_out[start : start + g_part.shape[0]] = g_part
+        if missing_constraints:
+            G_out = None
 
         return EvaluationResult(F=F, G=G_out)
 
@@ -100,11 +103,11 @@ class DaskEvalBackend(EvaluationBackend):
         self._connected = False
 
         try:
-            from dask.distributed import Client  # type: ignore[import-not-found]
+            from dask.distributed import Client
 
             if self.client is None:
                 if self.address:
-                    self.client = Client(self.address)
+                    self.client = cast(Any, Client)(self.address)
                 else:
                     # Create local cluster if neither provided?
                     # Or let user manage strictness?
@@ -123,9 +126,9 @@ class DaskEvalBackend(EvaluationBackend):
         try:
             # Re-check client connection
             if self.client is None and self.address:
-                from dask.distributed import Client  # type: ignore[import-not-found]
+                from dask.distributed import Client
 
-                self.client = Client(self.address)
+                self.client = cast(Any, Client)(self.address)
 
             if self.client is None:
                 # Fallback

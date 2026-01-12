@@ -24,7 +24,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
 # Install core + essential extras
-pip install -e ".[backends,benchmarks,notebooks]"
+pip install -e ".[compute,research,analysis]"
 ```
 
 ## ⚡ Quickstart
@@ -116,4 +116,4 @@ We welcome contributions! Please see `CONTRIBUTING.md` for guidelines.
 
 ---
 
-**VAMOS** is developed by the Google Deepmind team for Advanced Agentic Coding.
+**VAMOS** is a research-oriented multi-objective optimization framework.

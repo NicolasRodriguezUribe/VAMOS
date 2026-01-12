@@ -48,6 +48,7 @@ def mixed_crossover(
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty_like(X_parents)
+    n_original = Np
     # Handle odd parent count by duplicating the last parent
     if Np % 2 != 0:
         X_parents = np.vstack([X_parents, X_parents[-1:]])
@@ -55,7 +56,10 @@ def mixed_crossover(
     pairs = X_parents.reshape(Np // 2, 2, D).copy()
     prob = float(np.clip(prob, 0.0, 1.0))
     if prob <= 0.0:
-        return pairs.reshape(Np, D)
+        offspring = pairs.reshape(Np, D)
+        if n_original % 2 != 0:
+            offspring = offspring[:n_original]
+        return offspring
 
     real_idx = np.asarray(spec.get("real_idx") if spec.get("real_idx") is not None else [], dtype=int)
     int_idx = np.asarray(spec.get("int_idx") if spec.get("int_idx") is not None else [], dtype=int)
@@ -64,7 +68,10 @@ def mixed_crossover(
     active = rng.random(pairs.shape[0]) <= prob
     act_idx = np.flatnonzero(active)
     if act_idx.size == 0:
-        return pairs.reshape(Np, D)
+        offspring = pairs.reshape(Np, D)
+        if n_original % 2 != 0:
+            offspring = offspring[:n_original]
+        return offspring
 
     for row in act_idx:
         p1, p2 = pairs[row, 0], pairs[row, 1]
@@ -83,7 +90,10 @@ def mixed_crossover(
                 child2[swap_cols] = p1[swap_cols]
         pairs[row, 0], pairs[row, 1] = child1, child2
 
-    return pairs.reshape(Np, D)
+    offspring = pairs.reshape(Np, D)
+    if n_original % 2 != 0:
+        offspring = offspring[:n_original]
+    return offspring
 
 
 def mixed_mutation(

@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
+
 if TYPE_CHECKING:
     from vamos.foundation.problem.types import ProblemProtocol
 
@@ -69,7 +71,7 @@ def resolve_prob_expression(
 
 def resolve_bounds_array(
     problem: "ProblemProtocol",
-    encoding: str = "continuous",
+    encoding: EncodingLike = "real",
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Resolve problem bounds to numpy arrays with correct dtype.
@@ -93,7 +95,8 @@ def resolve_bounds_array(
     >>> xl.shape
     (30,)
     """
-    bounds_dtype = int if encoding == "integer" else float
+    normalized = normalize_encoding(encoding)
+    bounds_dtype = int if normalized == "integer" else float
     n_var = problem.n_var
 
     xl = np.asarray(problem.xl, dtype=bounds_dtype)

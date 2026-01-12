@@ -25,6 +25,15 @@ class TestOptimizeConvenience:
         assert result.F.shape[1] == 2
 
     @pytest.mark.smoke
+    def test_run_string_problem_basic(self):
+        """optimize() should work with a registry problem name + params."""
+        result = optimize("zdt1", algorithm="nsgaii", budget=200, pop_size=20, seed=42, n_var=10)
+
+        assert result.F is not None
+        assert result.X is not None
+        assert result.X.shape[1] == 10
+
+    @pytest.mark.smoke
     def test_run_moead_basic(self):
         """optimize() should work with MOEAD."""
         problem = ZDT1(n_var=10)
@@ -56,6 +65,12 @@ class TestOptimizeConvenience:
         problem = ZDT1(n_var=10)
         with pytest.raises(InvalidAlgorithmError, match="Unknown algorithm"):
             optimize(problem, algorithm="invalid_algo", budget=100, pop_size=20)
+
+    def test_rejects_unknown_algorithm_kwargs(self):
+        """optimize() should not silently ignore unknown algorithm kwargs."""
+        problem = ZDT1(n_var=10)
+        with pytest.raises(ValueError, match="does not support"):
+            optimize(problem, algorithm="nsgaii", budget=100, pop_size=20, unknown_param=1)
 
     @pytest.mark.smoke
     def test_result_has_helper_methods(self):

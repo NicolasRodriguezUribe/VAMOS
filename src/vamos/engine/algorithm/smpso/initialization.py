@@ -22,6 +22,7 @@ from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
+from vamos.foundation.encoding import normalize_encoding
 from vamos.operators.policies.smpso import (
     build_mutation_operator,
     build_repair_operator,
@@ -101,8 +102,8 @@ def initialize_smpso_run(
     change_velocity2 = float(config.get("change_velocity2", -1.0))
     mutation_every = int(config.get("mutation_every", 6))
 
-    encoding = getattr(problem, "encoding", "continuous")
-    if encoding not in {"continuous", "real"}:
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
+    if encoding != "real":
         raise ValueError("SMPSO currently supports continuous/real encoding only.")
 
     n_var = int(problem.n_var)

@@ -138,30 +138,45 @@ class OptimizationResult:
 
         Returns:
             Dictionary with 'X' (decision vars), 'F' (objectives),
-            'index' (position in front)
+            'index' (position in original F/X), and 'front_index' (position in the front)
         """
         if self.F is None or len(self.F) == 0:
             raise ValueError("No solutions available")
 
+        front = self.front(return_indices=True)
+        if front is None:
+            raise ValueError("No solutions available")
+        front_F, front_idx = front
+        if len(front_F) == 0:
+            raise ValueError("No solutions available")
+
         if method == "knee":
             # Simple knee point: minimize normalized L1 distance
-            F_norm = (self.F - self.F.min(axis=0)) / (np.ptp(self.F, axis=0) + 1e-12)
-            idx = int(np.argmin(F_norm.sum(axis=1)))
+            F_norm = (front_F - front_F.min(axis=0)) / (np.ptp(front_F, axis=0) + 1e-12)
+            front_pos = int(np.argmin(F_norm.sum(axis=1)))
         elif method == "min_f1":
-            idx = int(np.argmin(self.F[:, 0]))
+            front_pos = int(np.argmin(front_F[:, 0]))
         elif method == "min_f2":
-            idx = int(np.argmin(self.F[:, 1]))
+            front_pos = int(np.argmin(front_F[:, 1]))
         elif method == "balanced":
             # Minimize max normalized objective
-            F_norm = (self.F - self.F.min(axis=0)) / (np.ptp(self.F, axis=0) + 1e-12)
-            idx = int(np.argmin(F_norm.max(axis=1)))
+            F_norm = (front_F - front_F.min(axis=0)) / (np.ptp(front_F, axis=0) + 1e-12)
+            front_pos = int(np.argmin(F_norm.max(axis=1)))
         else:
             raise ValueError(f"Unknown method '{method}'. Use: knee, min_f1, min_f2, balanced")
 
+        idx = int(front_idx[front_pos])
+        X_sel = None
+        if self.X is not None:
+            try:
+                X_sel = self.X[idx]
+            except Exception:
+                X_sel = None
         return {
-            "X": self.X[idx] if self.X is not None else None,
+            "X": X_sel,
             "F": self.F[idx],
             "index": idx,
+            "front_index": front_pos,
         }
 
     def to_dataframe(self) -> Any:

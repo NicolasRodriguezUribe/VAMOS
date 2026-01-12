@@ -21,6 +21,7 @@ import numpy as np
 
 from vamos.api import OptimizeConfig, optimize
 from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
+from vamos.foundation.encoding import normalize_encoding
 from vamos.engine.tuning.api import (
     Categorical,
     Condition,
@@ -51,8 +52,7 @@ def _conditional_params() -> dict[str, dict[str, tuple[str, Real]]]:
     return {
         "crossover": {
             "sbx": ("sbx_eta", Real("sbx_eta", 5.0, 30.0)),
-            "blx": ("blx_alpha", Real("blx_alpha", 0.1, 0.5)),
-            "de": ("de_F", Real("de_F", 0.3, 0.9)),
+            "blx_alpha": ("blx_alpha", Real("blx_alpha", 0.1, 0.5)),
         },
         "mutation": {
             "pm": ("pm_eta", Real("pm_eta", 5.0, 30.0)),
@@ -91,9 +91,7 @@ def build_param_space_for_encoding(encoding: str) -> ParamSpace:
     Operators are auto-detected from the OPERATORS_BY_ENCODING registry.
     Conditional hyperparameters are added for operators that require them.
     """
-    # Normalize encoding
-    if encoding == "continuous":
-        encoding = "real"
+    encoding = normalize_encoding(encoding)
 
     # Get operators from registry
     crossover_names = get_crossover_names(encoding)
@@ -157,12 +155,9 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfigD
         config = config.crossover("sbx", prob=crossover_prob, eta=eta)
     elif crossover_type == "uniform":
         config = config.crossover("uniform", prob=crossover_prob)
-    elif crossover_type == "de":
-        F = float(assignment.get("de_F", 0.5))
-        config = config.crossover("de", prob=crossover_prob, F=F)
-    elif crossover_type == "blx":
+    elif crossover_type == "blx_alpha":
         alpha = float(assignment.get("blx_alpha", 0.5))
-        config = config.crossover("blx", prob=crossover_prob, alpha=alpha)
+        config = config.crossover("blx_alpha", prob=crossover_prob, alpha=alpha)
     elif crossover_type == "hux":
         config = config.crossover("hux", prob=crossover_prob)
     elif crossover_type in ("pmx", "ox", "edge", "cycle", "position"):
@@ -280,7 +275,7 @@ Examples:
 
     spec = specs[args.problem]
     problem = spec.factory(spec.default_n_var, spec.default_n_obj)
-    encoding = getattr(problem, "encoding", spec.encoding if hasattr(spec, "encoding") else "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", spec.encoding if hasattr(spec, "encoding") else "real"))
 
     logger.info("%s", "=" * 60)
     logger.info(" VAMOS Generic Auto-Solver: Meta-Learning Framework")

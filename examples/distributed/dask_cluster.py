@@ -5,7 +5,7 @@ This example shows how to scale VAMOS optimization across a Dask cluster
 for expensive objective function evaluations.
 
 Requirements:
-    pip install -e ".[distributed]"
+    pip install -e ".[compute]"
 
 Usage:
     # Local cluster (for testing)
@@ -20,33 +20,42 @@ from __future__ import annotations
 import argparse
 import time
 
+import numpy as np
+
+from vamos.foundation.problem.types import ProblemProtocol
+
+
+class ExpensiveProblem(ProblemProtocol):
+    """
+    Simple ZDT1-like problem with an artificial per-individual delay.
+
+    Notes:
+        The evaluation backends (multiprocessing/dask) require the problem to be picklable.
+        Keep the problem class at module scope (not nested in a function) for best compatibility.
+    """
+
+    encoding = "continuous"
+
+    def __init__(self, n_var: int = 10, delay: float = 0.01) -> None:
+        self.n_var = n_var
+        self.n_obj = 2
+        self.xl = np.zeros(n_var, dtype=float)
+        self.xu = np.ones(n_var, dtype=float)
+        self.delay = float(delay)
+
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
+        # Simulate an expensive evaluation cost per individual.
+        time.sleep(self.delay * float(X.shape[0]))
+
+        # ZDT1-like objectives
+        f1 = X[:, 0]
+        g = 1.0 + 9.0 * X[:, 1:].mean(axis=1)
+        f2 = g * (1.0 - np.sqrt(f1 / g))
+
+        out["F"] = np.column_stack([f1, f2])
+
 
 def create_expensive_problem():
-    """Create a problem with expensive evaluation (simulated)."""
-    from vamos.foundation.problem.base import Problem
-    import numpy as np
-
-    class ExpensiveProblem(Problem):
-        def __init__(self, n_var: int = 10, delay: float = 0.1):
-            super().__init__(
-                n_var=n_var,
-                n_obj=2,
-                xl=0.0,
-                xu=1.0,
-            )
-            self.delay = delay
-
-        def _evaluate(self, X, out):
-            # Simulate expensive computation
-            time.sleep(self.delay)
-
-            # ZDT1-like objectives
-            f1 = X[:, 0]
-            g = 1.0 + 9.0 * X[:, 1:].mean(axis=1)
-            f2 = g * (1.0 - np.sqrt(f1 / g))
-
-            out["F"] = np.column_stack([f1, f2])
-
     return ExpensiveProblem()
 
 
@@ -68,10 +77,11 @@ def run_distributed(problem, budget: int, scheduler: str | None = None):
     try:
         from dask.distributed import Client, LocalCluster
     except ImportError:
-        print("ERROR: Dask not installed. Run: pip install -e '.[distributed]'")
+        print('ERROR: Dask not installed. Run: pip install -e ".[compute]"')
         return None
 
     # Create or connect to cluster
+    cluster = None
     if scheduler:
         print(f"Connecting to scheduler: {scheduler}")
         client = Client(scheduler)
@@ -90,17 +100,24 @@ def run_distributed(problem, budget: int, scheduler: str | None = None):
     print("Running DISTRIBUTED evaluation...")
     start = time.perf_counter()
 
-    # Note: Currently the backend is used at algorithm level
-    # This example shows the pattern for integration
     from vamos.experiment.builder import study
 
-    result = study(problem).using("nsgaii", pop_size=50).evaluations(budget).seed(42).run()
+    result = (
+        study(problem)
+        .using("nsgaii", pop_size=50)
+        .eval_strategy(backend)
+        .evaluations(budget)
+        .seed(42)
+        .run()
+    )
 
     elapsed = time.perf_counter() - start
     print(f"  Time: {elapsed:.2f}s")
     print(f"  Solutions: {len(result)}")
 
     client.close()
+    if cluster is not None:
+        cluster.close()
     return elapsed
 
 
@@ -108,10 +125,11 @@ def main():
     parser = argparse.ArgumentParser(description="Dask distributed VAMOS example")
     parser.add_argument("--scheduler", "-s", help="Dask scheduler address (e.g., scheduler:8786)")
     parser.add_argument("--budget", "-b", type=int, default=500, help="Evaluation budget (default: 500)")
+    parser.add_argument("--delay", type=float, default=0.01, help="Artificial per-individual evaluation delay (seconds)")
     parser.add_argument("--compare", action="store_true", help="Compare serial vs distributed")
     args = parser.parse_args()
 
-    problem = create_expensive_problem()
+    problem = ExpensiveProblem(delay=args.delay)
 
     if args.compare:
         serial_time = run_serial(problem, args.budget)

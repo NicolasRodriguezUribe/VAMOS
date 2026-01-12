@@ -21,9 +21,9 @@ class FeatureSelectionProblem:
         random_state: int = 0,
     ) -> None:
         try:
-            from sklearn import datasets  # type: ignore[import-not-found]
-            from sklearn.model_selection import train_test_split  # type: ignore[import-not-found]
-            from sklearn.preprocessing import StandardScaler  # type: ignore[import-not-found]
+            from sklearn import datasets
+            from sklearn.model_selection import train_test_split
+            from sklearn.preprocessing import StandardScaler
         except ImportError as exc:  # pragma: no cover - exercised when sklearn missing
             raise ImportError("FeatureSelectionProblem requires scikit-learn. Install the 'examples' extras to enable it.") from exc
 
@@ -55,7 +55,7 @@ class FeatureSelectionProblem:
 
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         try:
-            from sklearn.linear_model import LogisticRegression  # type: ignore[import-not-found]
+            from sklearn.linear_model import LogisticRegression
         except ImportError as exc:  # pragma: no cover - should be prevented by __init__
             raise ImportError("scikit-learn is required for evaluation.") from exc
 

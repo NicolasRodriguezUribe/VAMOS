@@ -1,6 +1,7 @@
 import pytest
 from vamos.api import OptimizationResult
 from vamos.experiment.builder import study
+from vamos.foundation.problems_registry import ZDT1
 
 
 @pytest.mark.smoke
@@ -33,3 +34,12 @@ def test_fluent_api_engine_switch():
         .run()
     )
     assert isinstance(res, OptimizationResult)
+
+
+@pytest.mark.smoke
+def test_fluent_api_problem_instance():
+    """Verify passing a Problem instance works via builder."""
+    res = study(ZDT1(n_var=10)).using("nsgaii", pop_size=20).engine("numpy").evaluations(200).seed(42).run()
+    assert isinstance(res, OptimizationResult)
+    assert res.X is not None
+    assert res.X.shape[1] == 10

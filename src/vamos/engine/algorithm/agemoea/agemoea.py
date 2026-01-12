@@ -16,6 +16,7 @@ import numpy as np
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
 from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
 from vamos.engine.config.variation import resolve_default_variation_config
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
@@ -228,7 +229,7 @@ class AGEMOEA:
         term_key, term_val = termination
         max_evals = term_val if term_key == "n_eval" else int(term_val) * pop_size
 
-        encoding = getattr(problem, "encoding", "real")
+        encoding = normalize_encoding(getattr(problem, "encoding", "real"))
         xl, xu = resolve_bounds(problem, encoding)
         X = initialize_population(pop_size, problem.n_var, xl, xu, encoding, rng, problem, self.config.get("initializer"))
         F = np.asarray(backend.evaluate(X, problem).F, dtype=float)

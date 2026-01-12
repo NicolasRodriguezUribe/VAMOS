@@ -165,8 +165,12 @@ def _build_algorithm_config(
     **kwargs: Any,
 ) -> AlgorithmConfigProtocol:
     from vamos.engine.algorithm.config import (
+        AGEMOEAConfig,
+        IBEAConfig,
         NSGAIIConfig,
         MOEADConfig,
+        RVEAConfig,
+        SMPSOConfig,
         SPEA2Config,
         SMSEMOAConfig,
         NSGAIIIConfig,
@@ -181,14 +185,11 @@ def _build_algorithm_config(
 
     if algorithm == "nsgaii":
         nsgaii_cfg = NSGAIIConfig.default(pop_size=pop_size, n_var=n_var, engine=engine)
-        if overrides:
-            nsgaii_cfg = NSGAIIConfig.from_dict({**nsgaii_cfg.to_dict(), **overrides})
-        return nsgaii_cfg
+        return _apply_overrides(nsgaii_cfg, overrides, algo_label="NSGA-II")
     if algorithm == "moead":
-        moead_cfg = MOEADConfig.default(pop_size=pop_size, n_var=n_var, engine=engine)
-        if overrides:
-            moead_cfg = MOEADConfig.from_dict({**moead_cfg.to_dict(), **overrides})
-        return moead_cfg
+        n_obj = n_obj if n_obj is not None else 3
+        moead_cfg = MOEADConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj, engine=engine)
+        return _apply_overrides(moead_cfg, overrides, algo_label="MOEA/D")
     if algorithm == "spea2":
         spea2_cfg = SPEA2Config.default(pop_size=pop_size, n_var=n_var, engine=engine)
         return _apply_overrides(spea2_cfg, overrides, algo_label="SPEA2")
@@ -199,12 +200,24 @@ def _build_algorithm_config(
         n_obj = n_obj if n_obj is not None else 3
         nsgaiii_cfg = NSGAIIIConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj, engine=engine)
         return _apply_overrides(nsgaiii_cfg, overrides, algo_label="NSGA-III")
+    if algorithm == "ibea":
+        ibea_cfg = IBEAConfig.default(pop_size=pop_size, n_var=n_var, engine=engine)
+        return _apply_overrides(ibea_cfg, overrides, algo_label="IBEA")
+    if algorithm == "smpso":
+        smpso_cfg = SMPSOConfig.default(pop_size=pop_size, n_var=n_var, engine=engine)
+        return _apply_overrides(smpso_cfg, overrides, algo_label="SMPSO")
+    if algorithm == "agemoea":
+        agemoea_cfg = AGEMOEAConfig.default(pop_size=pop_size, n_var=n_var, engine=engine)
+        return _apply_overrides(agemoea_cfg, overrides, algo_label="AGE-MOEA")
+    if algorithm == "rvea":
+        rvea_cfg = RVEAConfig.default(pop_size=pop_size, n_var=n_var, engine=engine)
+        return _apply_overrides(rvea_cfg, overrides, algo_label="RVEA")
 
     from vamos.exceptions import InvalidAlgorithmError
 
     raise InvalidAlgorithmError(
         algorithm,
-        available=["nsgaii", "moead", "spea2", "smsemoa", "nsgaiii"],
+        available=["nsgaii", "moead", "spea2", "smsemoa", "nsgaiii", "ibea", "smpso", "agemoea", "rvea"],
     )
 
 

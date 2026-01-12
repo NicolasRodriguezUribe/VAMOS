@@ -143,6 +143,7 @@ def order_crossover(
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty_like(X_parents)
+    n_original = Np
     # Handle odd parent count by duplicating the last parent
     if Np % 2 != 0:
         X_parents = np.vstack([X_parents, X_parents[-1:]])
@@ -150,13 +151,13 @@ def order_crossover(
     prob = float(np.clip(prob, 0.0, 1.0))
     parents = X_parents.reshape(Np // 2, 2, D).copy()
     if prob <= 0.0:
-        return parents.reshape(Np, D)
+        return _trim_offspring(parents.reshape(Np, D), n_original)
 
     n_pairs = parents.shape[0]
     mask = rng.random(n_pairs) <= prob
     active_idx = np.flatnonzero(mask)
     if active_idx.size == 0:
-        return parents.reshape(Np, D)
+        return _trim_offspring(parents.reshape(Np, D), n_original)
 
     cuts = rng.integers(0, D, size=(active_idx.size, 2))
     _ensure_distinct_indices(cuts, D, rng)
@@ -175,7 +176,7 @@ def order_crossover(
         _order_crossover_into(p2, p1, child2, lo, hi)
         parents[pair_idx, 0], parents[pair_idx, 1] = child1, child2
 
-    return parents.reshape(Np, D)
+    return _trim_offspring(parents.reshape(Np, D), n_original)
 
 
 def insert_mutation(
@@ -249,6 +250,10 @@ def _order_crossover_into(
     out[fill_positions] = filtered
 
 
+def _trim_offspring(offspring: PermPop, n_original: int) -> PermPop:
+    return offspring[:n_original] if n_original % 2 else offspring
+
+
 def _pairwise_crossover(
     X_parents: PermPop,
     prob: float,
@@ -258,6 +263,7 @@ def _pairwise_crossover(
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty_like(X_parents)
+    n_original = Np
     # Handle odd parent count by duplicating the last parent
     if Np % 2 != 0:
         X_parents = np.vstack([X_parents, X_parents[-1:]])
@@ -265,7 +271,7 @@ def _pairwise_crossover(
     prob = float(np.clip(prob, 0.0, 1.0))
     pairs = X_parents.reshape(Np // 2, 2, D).copy()
     if prob <= 0.0:
-        return pairs.reshape(Np, D)
+        return _trim_offspring(pairs.reshape(Np, D), n_original)
 
     mask = rng.random(pairs.shape[0]) <= prob
     active_idx = np.flatnonzero(mask)
@@ -273,7 +279,7 @@ def _pairwise_crossover(
         p1, p2 = pairs[pair_idx, 0], pairs[pair_idx, 1]
         c1, c2 = builder(p1, p2, rng)
         pairs[pair_idx, 0], pairs[pair_idx, 1] = c1, c2
-    return pairs.reshape(Np, D)
+    return _trim_offspring(pairs.reshape(Np, D), n_original)
 
 
 def _pmx_children(p1: PermVec, p2: PermVec, rng: RNG) -> tuple[PermVec, PermVec]:

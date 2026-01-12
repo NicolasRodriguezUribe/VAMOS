@@ -20,6 +20,7 @@ from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.operators.impl.binary import random_binary_population
 from vamos.operators.impl.integer import random_integer_population
 from vamos.operators.impl.permutation import random_permutation_population
@@ -81,7 +82,7 @@ def initialize_moead_run(
         raise ValueError("MOEA/D requires pop_size >= 2.")
 
     constraint_mode = cfg.get("constraint_mode", "feasibility")
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
     n_obj = problem.n_obj
@@ -184,7 +185,7 @@ def initialize_moead_run(
 
 
 def initialize_population(
-    encoding: str,
+    encoding: EncodingLike,
     pop_size: int,
     n_var: int,
     xl: np.ndarray,
@@ -198,7 +199,7 @@ def initialize_population(
     Parameters
     ----------
     encoding : str
-        Problem encoding: "binary", "integer", or "continuous"/"real".
+        Problem encoding: "binary", "integer", "permutation", or "real".
     pop_size : int
         Population size.
     n_var : int
@@ -219,11 +220,12 @@ def initialize_population(
     tuple[np.ndarray, np.ndarray, np.ndarray | None]
         (X, F, G) population arrays.
     """
-    if encoding == "binary":
+    normalized = normalize_encoding(encoding)
+    if normalized == "binary":
         X = random_binary_population(pop_size, n_var, rng)
-    elif encoding == "integer":
+    elif normalized == "integer":
         X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
-    elif encoding == "permutation":
+    elif normalized == "permutation":
         X = random_permutation_population(pop_size, n_var, rng)
     else:
         X = rng.uniform(xl, xu, size=(pop_size, n_var))

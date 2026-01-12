@@ -30,11 +30,11 @@ class HyperparameterTuningProblem:
         random_state: int = 0,
     ) -> None:
         try:
-            from sklearn import datasets  # type: ignore[import-not-found]
-            from sklearn.model_selection import train_test_split  # type: ignore[import-not-found]
-            from sklearn.pipeline import make_pipeline  # type: ignore[import-not-found]
-            from sklearn.preprocessing import StandardScaler  # type: ignore[import-not-found]
-            from sklearn.svm import SVC  # type: ignore[import-not-found]
+            from sklearn import datasets
+            from sklearn.model_selection import train_test_split
+            from sklearn.pipeline import make_pipeline
+            from sklearn.preprocessing import StandardScaler
+            from sklearn.svm import SVC
         except ImportError as exc:  # pragma: no cover - exercised only when sklearn is missing
             raise ImportError("HyperparameterTuningProblem requires scikit-learn. Install the 'examples' extras to enable it.") from exc
 

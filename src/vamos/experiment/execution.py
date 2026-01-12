@@ -8,6 +8,7 @@ from typing import Any, Callable, Iterable, Optional
 
 import numpy as np
 
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.core.execution import execute_algorithm
 from vamos.foundation.core.experiment_config import (
     ENABLED_ALGORITHMS,
@@ -266,7 +267,7 @@ def run_single(
         hv_termination = None
 
     validate_problem(problem)
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     if encoding == "permutation" and algorithm_name != "nsgaii":
         raise ValueError("Permutation problems are only supported by NSGA-II.")
 

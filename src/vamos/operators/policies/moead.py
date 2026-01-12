@@ -8,10 +8,11 @@ for different encodings (continuous, binary, integer).
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, TypeAlias
 
 import numpy as np
 
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.operators.impl.binary import (
     bit_flip_mutation,
@@ -44,7 +45,18 @@ from vamos.operators.impl.real import VariationWorkspace
 
 
 # Operator registries
-BINARY_CROSSOVER = {
+BinaryCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
+BinaryMutationOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], None]
+IntCrossoverOp: TypeAlias = Callable[..., np.ndarray]
+IntMutationOp: TypeAlias = Callable[..., None]
+PermCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
+PermMutationOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], None]
+
+VariationCrossoverFn: TypeAlias = Callable[[np.ndarray], np.ndarray]
+VariationMutationFn: TypeAlias = Callable[[np.ndarray], np.ndarray]
+
+
+BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = {
     "one_point": one_point_crossover,
     "single_point": one_point_crossover,
     "1point": one_point_crossover,
@@ -54,19 +66,19 @@ BINARY_CROSSOVER = {
     "uniform": uniform_crossover,
 }
 
-BINARY_MUTATION = {
+BINARY_MUTATION: dict[str, BinaryMutationOp] = {
     "bitflip": bit_flip_mutation,
     "bit_flip": bit_flip_mutation,
 }
 
-INT_CROSSOVER = {
+INT_CROSSOVER: dict[str, IntCrossoverOp] = {
     "uniform": uniform_integer_crossover,
     "blend": arithmetic_integer_crossover,
     "arithmetic": arithmetic_integer_crossover,
     "sbx": integer_sbx_crossover,
 }
 
-INT_MUTATION = {
+INT_MUTATION: dict[str, IntMutationOp] = {
     "reset": random_reset_mutation,
     "random_reset": random_reset_mutation,
     "creep": creep_mutation,
@@ -74,7 +86,7 @@ INT_MUTATION = {
     "polynomial": integer_polynomial_mutation,
 }
 
-PERM_CROSSOVER = {
+PERM_CROSSOVER: dict[str, PermCrossoverOp] = {
     "ox": order_crossover,
     "order": order_crossover,
     "pmx": pmx_crossover,
@@ -88,7 +100,7 @@ PERM_CROSSOVER = {
     "erx": edge_recombination_crossover,
 }
 
-PERM_MUTATION = {
+PERM_MUTATION: dict[str, PermMutationOp] = {
     "swap": swap_mutation,
     "insert": insert_mutation,
     "scramble": scramble_mutation,
@@ -99,12 +111,12 @@ PERM_MUTATION = {
 
 def build_variation_operators(
     cfg: dict[str, Any],
-    encoding: str,
+    encoding: EncodingLike,
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-) -> tuple[Callable, Callable]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build crossover and mutation operators for the given encoding.
 
     Parameters
@@ -112,7 +124,7 @@ def build_variation_operators(
     cfg : dict[str, Any]
         Algorithm configuration with 'crossover' and 'mutation' keys.
     encoding : str
-        Problem encoding type: "continuous", "real", "binary", or "integer".
+        Problem encoding type: "real", "binary", "integer", or "permutation".
     n_var : int
         Number of decision variables.
     xl : np.ndarray
@@ -140,26 +152,28 @@ def build_variation_operators(
     if mut_params.get("prob") == "1/n":
         mut_params["prob"] = 1.0 / n_var
 
-    if encoding == "binary":
+    normalized = normalize_encoding(encoding)
+
+    if normalized == "binary":
         return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
-    elif encoding == "integer":
+    elif normalized == "integer":
         return _build_integer_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
-    elif encoding == "permutation":
+    elif normalized == "permutation":
         return _build_permutation_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
-    elif encoding in {"continuous", "real"}:
+    elif normalized == "real":
         return _build_continuous_operators(cross_method, cross_params, mut_params, n_var, xl, xu, rng)
     else:
-        raise ValueError(f"MOEA/D does not support encoding '{encoding}'.")
+        raise ValueError(f"MOEA/D does not support encoding '{normalized}'.")
 
 
 def _build_binary_operators(
     cross_method: str,
-    cross_params: dict,
+    cross_params: dict[str, Any],
     mut_method: str,
-    mut_params: dict,
+    mut_params: dict[str, Any],
     n_var: int,
     rng: np.random.Generator,
-) -> tuple[Callable, Callable]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build variation operators for binary encoding."""
     if cross_method not in BINARY_CROSSOVER:
         raise ValueError(f"Unsupported MOEA/D crossover '{cross_method}' for binary encoding.")
@@ -171,25 +185,26 @@ def _build_binary_operators(
     mut_fn = BINARY_MUTATION[mut_method]
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
 
-    def crossover(parents, rng=rng):
-        return cross_fn(parents, cross_prob, rng)
+    def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        return cross_fn(parents, cross_prob, _rng)
 
-    def mutation(X_child, rng=rng):
-        return mut_fn(X_child, mut_prob, rng) or X_child
+    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        mut_fn(X_child, mut_prob, _rng)
+        return X_child
 
     return crossover, mutation
 
 
 def _build_integer_operators(
     cross_method: str,
-    cross_params: dict,
+    cross_params: dict[str, Any],
     mut_method: str,
-    mut_params: dict,
+    mut_params: dict[str, Any],
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-) -> tuple[Callable, Callable]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build variation operators for integer encoding."""
     if cross_method not in INT_CROSSOVER:
         raise ValueError(f"Unsupported MOEA/D crossover '{cross_method}' for integer encoding.")
@@ -202,35 +217,48 @@ def _build_integer_operators(
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     step = int(mut_params.get("step", 1))
 
-    def crossover(parents, rng=rng):
-        return cross_fn(parents, cross_prob, rng)
+    if cross_fn is integer_sbx_crossover:
+        eta = float(cross_params.get("eta", 20.0))
+
+        def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            return integer_sbx_crossover(parents, cross_prob, eta, xl, xu, _rng)
+
+    else:
+
+        def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            return cross_fn(parents, cross_prob, _rng)
 
     if mut_fn is creep_mutation:
 
-        def mutation(X_child, rng=rng):
-            return mut_fn(X_child, mut_prob, step, xl, xu, rng) or X_child
-    elif mut_method in {"pm", "polynomial"}:
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            creep_mutation(X_child, mut_prob, step, xl, xu, _rng)
+            return X_child
 
-        def mutation(X_child, rng=rng):
-            eta = float(mut_params.get("eta", 20.0))
-            return mut_fn(X_child, mut_prob, eta, xl, xu, rng) or X_child
+    elif mut_fn is integer_polynomial_mutation:
+        eta = float(mut_params.get("eta", 20.0))
+
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            integer_polynomial_mutation(X_child, mut_prob, eta, xl, xu, _rng)
+            return X_child
+
     else:
 
-        def mutation(X_child, rng=rng):
-            return mut_fn(X_child, mut_prob, xl, xu, rng) or X_child
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            mut_fn(X_child, mut_prob, xl, xu, _rng)
+            return X_child
 
     return crossover, mutation
 
 
 def _build_continuous_operators(
     cross_method: str,
-    cross_params: dict,
-    mut_params: dict,
+    cross_params: dict[str, Any],
+    mut_params: dict[str, Any],
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-) -> tuple[Callable, Callable]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build variation operators for continuous/real encoding."""
     method = (cross_method or "sbx").lower()
     workspace = VariationWorkspace()
@@ -239,7 +267,7 @@ def _build_continuous_operators(
         cr = float(cross_params.get("cr", cross_params.get("CR", 1.0)))
         f = float(cross_params.get("f", cross_params.get("F", 0.5)))
 
-        def crossover(parents, rng=rng):
+        def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
             parents_arr = np.asarray(parents)
             if parents_arr.ndim != 3 or parents_arr.shape[1] != 3:
                 raise ValueError("DE crossover expects parents shaped (n_pairs, 3, n_var).")
@@ -248,9 +276,9 @@ def _build_continuous_operators(
             p1 = parents_arr[:, 0, :]
             p2 = parents_arr[:, 1, :]
             mutant = base + f * (p1 - p2)
-            rand = rng.random((n_pairs, n_vars))
+            rand = _rng.random((n_pairs, n_vars))
             mask = rand < cr
-            j_rand = rng.integers(0, n_vars, size=n_pairs)
+            j_rand = _rng.integers(0, n_vars, size=n_pairs)
             mask[np.arange(n_pairs), j_rand] = True
             child = np.where(mask, mutant, base)
             np.clip(child, xl, xu, out=child)
@@ -268,8 +296,8 @@ def _build_continuous_operators(
             allow_inplace=True,
         )
 
-        def crossover(parents, rng=rng):
-            return crossover_operator(parents, rng)
+        def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            return crossover_operator(parents, _rng)
 
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     mut_eta = float(mut_params.get("eta", 20.0))
@@ -281,20 +309,20 @@ def _build_continuous_operators(
         workspace=workspace,
     )
 
-    def mutation(X_child, rng=rng):
-        return mutation_operator(X_child, rng)
+    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        return mutation_operator(X_child, _rng)
 
     return crossover, mutation
 
 
 def _build_permutation_operators(
     cross_method: str,
-    cross_params: dict,
+    cross_params: dict[str, Any],
     mut_method: str,
-    mut_params: dict,
+    mut_params: dict[str, Any],
     n_var: int,
     rng: np.random.Generator,
-) -> tuple[Callable, Callable]:
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build variation operators for permutation encoding."""
     if cross_method not in PERM_CROSSOVER:
         raise ValueError(f"Unsupported MOEA/D crossover '{cross_method}' for permutation encoding.")
@@ -306,13 +334,13 @@ def _build_permutation_operators(
     mut_fn = PERM_MUTATION[mut_method]
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
 
-    def crossover(parents, rng=rng):
+    def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
         parents_flat = parents.reshape(-1, parents.shape[-1])
-        offspring_flat = cross_fn(parents_flat, cross_prob, rng)
+        offspring_flat = cross_fn(parents_flat, cross_prob, _rng)
         return offspring_flat.reshape(parents.shape)
 
-    def mutation(X_child, rng=rng):
-        mut_fn(X_child, mut_prob, rng)
+    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        mut_fn(X_child, mut_prob, _rng)
         return X_child
 
     return crossover, mutation

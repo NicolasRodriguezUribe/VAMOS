@@ -6,23 +6,27 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
+from vamos.foundation.encoding import normalize_encoding
+from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, OperatorName
+
 
 # =============================================================================
 # Operator Registry by Encoding
 # =============================================================================
 
 OperatorParams = Dict[str, Any]
-OperatorTuple = Tuple[str, OperatorParams]
+OperatorTuple = Tuple[OperatorName, OperatorParams]
 VariationConfig = Dict[str, Any]
 
 OPERATORS_BY_ENCODING: Dict[str, Dict[str, List[OperatorTuple]]] = {
     "real": {
         "crossover": [
             ("sbx", {"prob": 1.0, "eta": 20.0}),
-            ("uniform", {"prob": 0.9}),
-            ("blx", {"prob": 0.9, "alpha": 0.5}),
             ("arithmetic", {"prob": 0.9}),
-            ("de", {"prob": 0.9, "F": 0.5}),
+            ("blx_alpha", {"prob": 0.9, "alpha": 0.5}),
+            ("pcx", {"prob": 0.9}),
+            ("undx", {"prob": 0.9}),
+            ("simplex", {"prob": 0.9}),
         ],
         "mutation": [
             ("pm", {"prob": "1/n", "eta": 20.0}),
@@ -80,16 +84,17 @@ OPERATORS_BY_ENCODING: Dict[str, Dict[str, List[OperatorTuple]]] = {
 
 def get_operators_for_encoding(encoding: str) -> Dict[str, List[OperatorTuple]]:
     """Return available operators for the given encoding type."""
-    return OPERATORS_BY_ENCODING.get(encoding, OPERATORS_BY_ENCODING["real"])
+    normalized = normalize_encoding(encoding)
+    return OPERATORS_BY_ENCODING.get(normalized, OPERATORS_BY_ENCODING["real"])
 
 
-def get_crossover_names(encoding: str) -> List[str]:
+def get_crossover_names(encoding: str) -> List[CrossoverName]:
     """Return list of crossover operator names for given encoding."""
     ops = get_operators_for_encoding(encoding)
     return [op[0] for op in ops.get("crossover", [])]
 
 
-def get_mutation_names(encoding: str) -> List[str]:
+def get_mutation_names(encoding: str) -> List[MutationName]:
     """Return list of mutation operator names for given encoding."""
     ops = get_operators_for_encoding(encoding)
     return [op[0] for op in ops.get("mutation", [])]
@@ -139,27 +144,28 @@ def resolve_default_variation_config(encoding: str, overrides: VariationConfig |
     """
     Default variation configuration by encoding, merged with user overrides.
     """
-    if encoding == "real":
+    normalized = normalize_encoding(encoding)
+    if normalized == "real":
         base = {
             "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
             "mutation": ("pm", {"prob": "1/n", "eta": 20.0}),
         }
-    elif encoding == "binary":
+    elif normalized == "binary":
         base = {
             "crossover": ("hux", {"prob": 0.9}),
             "mutation": ("bitflip", {"prob": "1/n"}),
         }
-    elif encoding == "integer":
+    elif normalized == "integer":
         base = {
             "crossover": ("uniform", {"prob": 0.9}),
             "mutation": ("reset", {"prob": "1/n"}),
         }
-    elif encoding == "mixed":
+    elif normalized == "mixed":
         base = {
             "crossover": ("mixed", {"prob": 0.9}),
             "mutation": ("mixed", {"prob": "1/n"}),
         }
-    elif encoding == "permutation":
+    elif normalized == "permutation":
         base = {
             "crossover": ("ox", {"prob": 0.9}),
             "mutation": ("swap", {"prob": 0.1}),

@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 import numpy as np
 
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.observer import Observer, RunContext
 from vamos.foundation.core.io_utils import ensure_dir, write_population, write_metadata, write_timing
 from vamos.foundation.core.metadata import build_run_metadata
@@ -188,7 +189,7 @@ class StorageObserver(Observer):
 
         # Resolved Config
         problem_key = getattr(getattr(ctx.selection, "spec", None), "key", "unknown")
-        encoding = getattr(ctx.problem, "encoding", "continuous")
+        encoding = normalize_encoding(getattr(ctx.problem, "encoding", "real"))
 
         resolved_cfg = {
             "algorithm": ctx.algorithm_name,

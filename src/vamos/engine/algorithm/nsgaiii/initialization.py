@@ -25,6 +25,7 @@ from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from .helpers import evaluate_population_with_constraints
 from vamos.operators.policies.nsgaiii import build_variation_operators
 from .state import NSGAIIIState
@@ -91,7 +92,7 @@ def initialize_nsgaiii_run(
     pop_size = config["pop_size"]
     enforce_ref_dirs = bool(config.get("enforce_ref_dirs", False))
     pop_size_auto = bool(config.get("pop_size_auto", False))
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
     n_obj = problem.n_obj
@@ -226,7 +227,7 @@ def initialize_nsgaiii_run(
 
 
 def initialize_population(
-    encoding: str,
+    encoding: EncodingLike,
     pop_size: int,
     n_var: int,
     xl: np.ndarray,
@@ -261,9 +262,10 @@ def initialize_population(
     tuple
         (X, F, G) initial population, objectives, and constraints.
     """
-    if encoding == "binary":
+    normalized = normalize_encoding(encoding)
+    if normalized == "binary":
         X = random_binary_population(pop_size, n_var, rng)
-    elif encoding == "integer":
+    elif normalized == "integer":
         X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
     else:
         X = rng.uniform(xl, xu, size=(pop_size, n_var))

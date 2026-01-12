@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Tuple
 
+from vamos.foundation.encoding import normalize_encoding
 from vamos.engine.algorithm.config import (
     IBEAConfig,
     IBEAConfigData,
@@ -63,16 +64,16 @@ def available_crossover_methods(encoding: str = "real") -> Tuple[str, ...]:
     Returns:
         Tuple of supported crossover method strings.
     """
-    encoding = encoding.lower()
-    if encoding == "real":
+    normalized = normalize_encoding(encoding)
+    if normalized == "real":
         return tuple(sorted(REAL_CROSSOVER.keys()))
-    if encoding == "binary":
+    if normalized == "binary":
         return tuple(sorted(BINARY_CROSSOVER.keys()))
-    if encoding == "permutation":
+    if normalized == "permutation":
         return tuple(sorted(PERM_CROSSOVER.keys()))
-    if encoding == "integer":
+    if normalized == "integer":
         return tuple(sorted(INT_CROSSOVER.keys()))
-    if encoding == "mixed":
+    if normalized == "mixed":
         return tuple(sorted(MIXED_CROSSOVER.keys()))
     return ()
 
@@ -87,16 +88,16 @@ def available_mutation_methods(encoding: str = "real") -> Tuple[str, ...]:
     Returns:
         Tuple of supported mutation method strings.
     """
-    encoding = encoding.lower()
-    if encoding == "real":
+    normalized = normalize_encoding(encoding)
+    if normalized == "real":
         return tuple(sorted(REAL_MUTATION.keys()))
-    if encoding == "binary":
+    if normalized == "binary":
         return tuple(sorted(BINARY_MUTATION.keys()))
-    if encoding == "permutation":
+    if normalized == "permutation":
         return tuple(sorted(PERM_MUTATION.keys()))
-    if encoding == "integer":
+    if normalized == "integer":
         return tuple(sorted(INT_MUTATION.keys()))
-    if encoding == "mixed":
+    if normalized == "mixed":
         return tuple(sorted(MIXED_MUTATION.keys()))
     return ()
 
