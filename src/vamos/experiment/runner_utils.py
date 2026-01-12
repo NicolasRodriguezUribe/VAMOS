@@ -8,6 +8,7 @@ import os
 
 import numpy as np
 
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.core.experiment_config import ExperimentConfig
@@ -26,7 +27,7 @@ def validate_problem(problem: ProblemProtocol) -> None:
         raise ValueError("Upper bounds length must match n_var.")
     if np.any(xl > xu):
         raise ValueError("Lower bounds must not exceed upper bounds.")
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     if encoding == "mixed":
         if not hasattr(problem, "mixed_spec"):
             raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")

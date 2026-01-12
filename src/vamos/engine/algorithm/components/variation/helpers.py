@@ -6,7 +6,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.registry import Registry
+from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName
 from vamos.operators.impl.binary import (
     one_point_crossover,
     two_point_crossover,
@@ -35,6 +37,20 @@ from vamos.operators.impl.permutation import (
     displacement_mutation,
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
+from vamos.operators.impl.registry import get_operator_registry
+
+
+_REAL_CROSSOVER_KEYS = ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
+_REAL_MUTATION_KEYS = (
+    "pm",
+    "polynomial",
+    "non_uniform",
+    "gaussian",
+    "uniform_reset",
+    "cauchy",
+    "uniform",
+    "linked_polynomial",
+)
 
 
 def resolve_prob_expression(value: float | int | str | None, n_var: int, default: float) -> float:
@@ -49,10 +65,11 @@ def resolve_prob_expression(value: float | int | str | None, n_var: int, default
 
 def prepare_mutation_params(
     mut_params: dict[str, float | int | str | None],
-    encoding: str,
+    encoding: EncodingLike,
     n_var: int,
     prob_factor: float | None = None,
 ) -> dict[str, float | int | str | None]:
+    normalized = normalize_encoding(encoding)
     params = dict(mut_params)
     factor = prob_factor if prob_factor is not None else params.get("prob_factor") or params.get("mutation_prob_factor")
     if factor is not None:
@@ -60,7 +77,7 @@ def prepare_mutation_params(
     elif "prob" in params:
         params["prob"] = resolve_prob_expression(params["prob"], n_var, 1.0)
     else:
-        if encoding == "permutation":
+        if normalized == "permutation":
             params["prob"] = min(1.0, 2.0 / max(1, n_var))
         else:
             params["prob"] = 1.0 / max(1, n_var)
@@ -215,17 +232,15 @@ def _populate_defaults() -> None:
         },
     )
 
-    _populate(real_crossover, {k: "PLACEHOLDER" for k in ["sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex"]})
-
-    _populate(
-        real_mutation,
-        {k: "PLACEHOLDER" for k in ["pm", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform", "linked_polynomial"]},
-    )
+    registry = get_operator_registry()
+    _populate(real_crossover, {k: registry.get(k) for k in _REAL_CROSSOVER_KEYS})
+    _populate(real_mutation, {k: registry.get(k) for k in _REAL_MUTATION_KEYS})
     _DEFAULTS_POPULATED = True
 
 
-def validate_operator_support(encoding: str, crossover: str, mutation: str) -> None:
+def validate_operator_support(encoding: EncodingLike, crossover: CrossoverName, mutation: MutationName) -> None:
     _populate_defaults()
+    normalized = normalize_encoding(encoding)
     perm_crossover = _get_registry("PERM_CROSSOVER")
     perm_mutation = _get_registry("PERM_MUTATION")
     binary_crossover = _get_registry("BINARY_CROSSOVER")
@@ -236,31 +251,31 @@ def validate_operator_support(encoding: str, crossover: str, mutation: str) -> N
     mixed_mutation = _get_registry("MIXED_MUTATION")
     real_crossover = _get_registry("REAL_CROSSOVER")
     real_mutation = _get_registry("REAL_MUTATION")
-    if encoding == "permutation":
+    if normalized == "permutation":
         if crossover not in perm_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for permutation encoding.")
         if mutation not in perm_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for permutation encoding.")
-    elif encoding == "binary":
+    elif normalized == "binary":
         if crossover not in binary_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for binary encoding.")
         if mutation not in binary_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for binary encoding.")
-    elif encoding == "integer":
+    elif normalized == "integer":
         if crossover not in int_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for integer encoding.")
         if mutation not in int_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for integer encoding.")
-    elif encoding == "mixed":
+    elif normalized == "mixed":
         if crossover not in mixed_crossover:
             raise ValueError(f"Unsupported crossover '{crossover}' for mixed encoding.")
         if mutation not in mixed_mutation:
             raise ValueError(f"Unsupported mutation '{mutation}' for mixed encoding.")
     else:
         if crossover not in real_crossover:
-            raise ValueError(f"Unsupported crossover '{crossover}' for continuous encoding.")
+            raise ValueError(f"Unsupported crossover '{crossover}' for real encoding.")
         if mutation not in real_mutation:
-            raise ValueError(f"Unsupported mutation '{mutation}' for continuous encoding.")
+            raise ValueError(f"Unsupported mutation '{mutation}' for real encoding.")
 
 
 def __getattr__(name: str) -> Registry[Any]:

@@ -6,12 +6,9 @@ from __future__ import annotations
 
 from vamos.foundation.registry import Registry
 
-# Global registry for variation operators (classes or factories)
-# Key: operator name (e.g. "sbx", "pm")
-# Value: Class type or factory function
-# Global registry for variation operators (classes or factories)
-# Key: operator name (e.g. "sbx", "pm")
-# Value: Class type or factory function
+# Global registry for variation operators (classes or factories).
+# Key: operator name (e.g. "sbx", "pm").
+# Value: Class type or factory function.
 _operator_registry: Registry[object] | None = None
 
 
@@ -137,6 +134,11 @@ def _get_registry() -> Registry[object]:
 
     _operator_registry = reg
     return reg
+
+
+def get_operator_registry() -> Registry[object]:
+    """Return the global variation operator registry (lazily initialized)."""
+    return _get_registry()
 
 
 def __getattr__(name: str) -> object:

@@ -6,6 +6,7 @@ from typing import Any, Callable, Sequence
 
 import numpy as np
 
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 
@@ -171,7 +172,7 @@ def _run_jmetalpy_perm_nsga2(
     print_results: Printer,
 ) -> dict[str, Any]:
     problem = selection.instantiate()
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     if encoding != "permutation":
         raise ValueError("jMetalPy permutation baseline requires a permutation-encoded problem.")
     print_banner(problem, selection, "jMetalPy NSGA-II (perm)", "jmetalpy")

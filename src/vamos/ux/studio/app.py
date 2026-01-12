@@ -23,7 +23,7 @@ def _import_streamlit() -> Any:
 
 def _import_plotly() -> Any:
     try:
-        import plotly.express as px  # type: ignore[import-not-found]
+        import plotly.express as px
     except ImportError as exc:  # pragma: no cover - optional dependency
         raise ImportError("Plotly is required for interactive plots. Install with the 'studio' extras.") from exc
     return px

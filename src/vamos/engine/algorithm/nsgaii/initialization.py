@@ -17,6 +17,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
+from vamos.foundation.encoding import normalize_encoding
 from vamos.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
 from vamos.foundation.eval.backends import EvaluationBackend
 from vamos.foundation.kernel.backend import KernelBackend
@@ -90,7 +91,7 @@ def setup_population(
     tuple[np.ndarray, np.ndarray, np.ndarray | None, int]
         (X, F, G, n_eval) - decision variables, objectives, constraints, evaluation count.
     """
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     n_var = problem.n_var
     xl, xu = resolve_bounds(problem, encoding)
     X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)

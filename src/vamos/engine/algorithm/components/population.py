@@ -4,6 +4,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.operators.impl.binary import random_binary_population
 from vamos.operators.impl.integer import random_integer_population
 from vamos.operators.impl.mixed import mixed_initialize
@@ -11,8 +12,9 @@ from vamos.operators.impl.permutation import random_permutation_population
 from vamos.operators.impl.real import LatinHypercubeInitializer, ScatterSearchInitializer
 
 
-def resolve_bounds(problem: Any, encoding: str) -> tuple[np.ndarray, np.ndarray]:
-    bounds_dtype = int if encoding == "integer" else float
+def resolve_bounds(problem: Any, encoding: EncodingLike) -> tuple[np.ndarray, np.ndarray]:
+    normalized = normalize_encoding(encoding)
+    bounds_dtype = int if normalized == "integer" else float
     xl = np.asarray(problem.xl, dtype=bounds_dtype)
     xu = np.asarray(problem.xu, dtype=bounds_dtype)
     n_var = problem.n_var
@@ -30,11 +32,12 @@ def initialize_population(
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
-    encoding: str,
+    encoding: EncodingLike,
     rng: np.random.Generator,
     problem: Any | None = None,
     initializer: Any | None = None,
 ) -> np.ndarray:
+    normalized = normalize_encoding(encoding)
     if pop_size <= 0:
         raise ValueError("pop_size must be positive.")
     if initializer is not None and callable(initializer):
@@ -46,13 +49,13 @@ def initialize_population(
         if init_type in {"scatter", "scatter_search"}:
             base = int(initializer.get("base_size", max(20, pop_size)))
             return ScatterSearchInitializer(pop_size, xl, xu, base_size=base, rng=rng)()
-    if encoding == "permutation":
+    if normalized == "permutation":
         return random_permutation_population(pop_size, n_var, rng)
-    if encoding == "binary":
+    if normalized == "binary":
         return random_binary_population(pop_size, n_var, rng)
-    if encoding == "integer":
+    if normalized == "integer":
         return random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
-    if encoding == "mixed":
+    if normalized == "mixed":
         spec = getattr(problem, "mixed_spec", None)
         if spec is None:
             raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")

@@ -7,17 +7,36 @@ evaluation budget) from lightweight problem metadata.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from vamos.foundation.problem.registry import make_problem_selection
 
 
-def _resolve_problem(problem: Any) -> Any:
+def _resolve_problem(
+    problem: Any,
+    *,
+    n_var: int | None = None,
+    n_obj: int | None = None,
+    problem_kwargs: Mapping[str, Any] | None = None,
+) -> Any:
     """Resolve problem from string, class, or instance."""
     if isinstance(problem, str):
-        selection = make_problem_selection(problem)
+        kwargs = dict(problem_kwargs or {})
+        if n_var is not None:
+            kwargs["n_var"] = n_var
+        if n_obj is not None:
+            kwargs["n_obj"] = n_obj
+        selection = make_problem_selection(problem, **kwargs)
         return selection.instantiate()
     if isinstance(problem, type):
+        kwargs = dict(problem_kwargs or {})
+        if n_var is not None:
+            kwargs["n_var"] = n_var
+        if n_obj is not None:
+            kwargs["n_obj"] = n_obj
+        if kwargs:
+            return problem(**kwargs)
         return problem()
     return problem
 

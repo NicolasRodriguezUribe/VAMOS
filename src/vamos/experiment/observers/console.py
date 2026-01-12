@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 import numpy as np
 
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.observer import Observer, RunContext
 
 
@@ -39,10 +40,8 @@ class ConsoleObserver(Observer):
         encoding = getattr(ctx.problem, "encoding", None)
         if encoding is None and spec:
             encoding = getattr(spec, "encoding", None)
-        if encoding is None:
-            encoding = "continuous"
-        if encoding:
-            _logger().info("Encoding: %s", encoding)
+        encoding = normalize_encoding(encoding, default="real")
+        _logger().info("Encoding: %s", encoding)
 
         _logger().info("Algorithm: %s", ctx.algorithm_name.upper())
         _logger().info("Backend: %s", ctx.engine_name)

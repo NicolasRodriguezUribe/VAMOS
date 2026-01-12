@@ -64,11 +64,13 @@ class MyProblem(ProblemProtocol):
     n_constr = 0
     xl = np.zeros(10)
     xu = np.ones(10)
+    encoding = "continuous"
 
-    def evaluate(self, X: np.ndarray) -> np.ndarray:
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         f1 = X[:, 0]
         f2 = 1 - np.sqrt(f1)
-        return np.column_stack([f1, f2])
+        out["F"][:, 0] = f1
+        out["F"][:, 1] = f2
 ```
 
 Use it directly:

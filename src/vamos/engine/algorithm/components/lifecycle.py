@@ -9,6 +9,7 @@ from typing import Any, TYPE_CHECKING
 import numpy as np
 
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 
 if TYPE_CHECKING:
@@ -46,7 +47,7 @@ def setup_initial_population(
     tuple[np.ndarray, np.ndarray, np.ndarray | None, int]
         (X, F, G, n_eval) - decision variables, objectives, constraints, evaluation count.
     """
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     n_var = problem.n_var
     xl, xu = resolve_bounds(problem, encoding)
 

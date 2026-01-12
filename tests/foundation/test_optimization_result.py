@@ -95,6 +95,27 @@ class TestOptimizationResultBest:
         assert "index" in best
         assert 0 <= best["index"] < 3
 
+    def test_best_knee_uses_pareto_front_scaling(self):
+        """best('knee') should pick from the Pareto front with front-based normalization."""
+        from vamos.experiment.optimize import OptimizationResult
+
+        # Three non-dominated points plus an extreme dominated outlier.
+        F = np.array(
+            [
+                [0.0, 100.0],
+                [50.0, 0.0],
+                [25.0, 25.0],
+                [10000.0, 1.0],
+            ]
+        )
+        X = np.arange(F.shape[0] * 2).reshape(F.shape[0], 2)
+        result = OptimizationResult({"F": F, "X": X})
+
+        best = result.best("knee")
+
+        assert best["index"] == 2
+        assert np.allclose(best["F"], F[2])
+
     def test_best_min_f1(self):
         """best('min_f1') should return min first objective."""
         from vamos.experiment.optimize import OptimizationResult

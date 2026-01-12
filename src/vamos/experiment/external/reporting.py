@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.foundation.encoding import normalize_encoding
 
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
@@ -31,10 +32,8 @@ def print_run_banner(
     encoding = getattr(problem, "encoding", None)
     if encoding is None:
         encoding = getattr(spec, "encoding", None)
-    if encoding is None:
-        encoding = "continuous"
-    if encoding:
-        _logger().info("Encoding: %s", encoding)
+    encoding = normalize_encoding(encoding, default="real")
+    _logger().info("Encoding: %s", encoding)
     _logger().info("Algorithm: %s", algorithm_label)
     _logger().info("Backend: %s", backend_label)
     _logger().info("Population size: %s", config.population_size)

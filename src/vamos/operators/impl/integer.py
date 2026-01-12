@@ -65,6 +65,12 @@ def _as_pairs(X_parents: np.ndarray) -> tuple[np.ndarray, int]:
     return X_parents.reshape(Np // 2, 2, D).copy(), D
 
 
+def _reshape_offspring(pairs: np.ndarray, parents: np.ndarray) -> np.ndarray:
+    if parents.ndim == 2 and parents.shape[0] % 2 != 0:
+        return pairs.reshape(-1, pairs.shape[2])[: parents.shape[0]]
+    return pairs.reshape(parents.shape)
+
+
 def uniform_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.random.Generator) -> np.ndarray:
     """
     Per-gene uniform crossover for integer vectors.
@@ -72,18 +78,18 @@ def uniform_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.random
     pairs, D = _as_pairs(X_parents)
     prob = float(np.clip(prob, 0.0, 1.0))
     if pairs.size == 0 or prob <= 0.0:
-        return pairs.reshape(X_parents.shape)
+        return _reshape_offspring(pairs, X_parents)
     active = rng.random(pairs.shape[0]) <= prob
     idx = np.flatnonzero(active)
     if idx.size == 0:
-        return pairs.reshape(X_parents.shape)
+        return _reshape_offspring(pairs, X_parents)
     swap_mask = rng.random((idx.size, D)) < 0.5
     for row, mask in zip(idx, swap_mask):
         p1, p2 = pairs[row, 0], pairs[row, 1]
         child1 = np.where(mask, p1, p2)
         child2 = np.where(mask, p2, p1)
         pairs[row, 0], pairs[row, 1] = child1, child2
-    return pairs.reshape(X_parents.shape)
+    return _reshape_offspring(pairs, X_parents)
 
 
 def arithmetic_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.random.Generator) -> np.ndarray:
@@ -93,17 +99,17 @@ def arithmetic_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.ran
     pairs, _ = _as_pairs(X_parents)
     prob = float(np.clip(prob, 0.0, 1.0))
     if pairs.size == 0 or prob <= 0.0:
-        return pairs.reshape(X_parents.shape)
+        return _reshape_offspring(pairs, X_parents)
     active = rng.random(pairs.shape[0]) <= prob
     idx = np.flatnonzero(active)
     if idx.size == 0:
-        return pairs.reshape(X_parents.shape)
+        return _reshape_offspring(pairs, X_parents)
     for row in idx:
         p1, p2 = pairs[row, 0], pairs[row, 1]
         mean = np.rint(0.5 * (p1 + p2)).astype(p1.dtype, copy=False)
         pairs[row, 0] = mean
         pairs[row, 1] = mean
-    return pairs.reshape(X_parents.shape)
+    return _reshape_offspring(pairs, X_parents)
 
 
 def integer_sbx_crossover(
@@ -119,10 +125,10 @@ def integer_sbx_crossover(
     """
     pairs, D = _as_pairs(X_parents)
     if pairs.size == 0 or D == 0:
-        return pairs.reshape(X_parents.shape)
+        return _reshape_offspring(pairs, X_parents)
     prob = float(np.clip(prob, 0.0, 1.0))
     if prob <= 0.0:
-        return pairs.reshape(X_parents.shape)
+        return _reshape_offspring(pairs, X_parents)
     lower = np.asarray(lower, dtype=float)
     upper = np.asarray(upper, dtype=float)
     if lower.shape[0] != D or upper.shape[0] != D:
@@ -131,7 +137,7 @@ def integer_sbx_crossover(
     active = rng.random(pairs.shape[0]) <= prob
     idx = np.flatnonzero(active)
     if idx.size == 0:
-        return pairs.reshape(X_parents.shape)
+        return _reshape_offspring(pairs, X_parents)
 
     eps = 1.0e-14
     eta = float(eta)
@@ -192,7 +198,7 @@ def integer_sbx_crossover(
         pairs[row, 0] = p1
         pairs[row, 1] = p2
 
-    return pairs.reshape(X_parents.shape)
+    return _reshape_offspring(pairs, X_parents)
 
 
 def random_reset_mutation(X: np.ndarray, prob: float, lower: np.ndarray, upper: np.ndarray, rng: np.random.Generator) -> None:

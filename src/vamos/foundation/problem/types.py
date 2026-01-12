@@ -4,13 +4,15 @@ from typing import Any, Protocol
 
 import numpy as np
 
+from vamos.foundation.encoding import EncodingLike
+
 
 class ProblemProtocol(Protocol):
     n_var: int
     n_obj: int
     xl: float | int | np.ndarray
     xu: float | int | np.ndarray
-    encoding: str
+    encoding: EncodingLike
 
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None: ...
 

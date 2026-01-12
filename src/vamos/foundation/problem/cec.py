@@ -11,6 +11,8 @@ from typing import Any, Callable
 
 import numpy as np
 
+from vamos.foundation.encoding import normalize_encoding
+
 CEC2009_CF1 = None
 CEC2009_UF1 = None
 CEC2009_UF2 = None
@@ -62,7 +64,7 @@ class _BaseCEC2009:
         self.n_obj = getattr(self._problem, "n_obj", 2)
         self.xl = getattr(self._problem, "xl", 0.0)
         self.xu = getattr(self._problem, "xu", 1.0)
-        self.encoding = getattr(self._problem, "encoding", "continuous")
+        self.encoding = normalize_encoding(getattr(self._problem, "encoding", "real"))
 
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         if self._uses_pymoo:

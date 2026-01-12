@@ -23,6 +23,7 @@ from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
+from vamos.foundation.encoding import normalize_encoding
 
 from .helpers import environmental_selection
 from vamos.operators.policies.spea2 import build_variation_operators
@@ -83,7 +84,7 @@ def initialize_spea2_run(
     k_neighbors = 1 if k_neighbors is None else int(k_neighbors)
     constraint_mode = cfg.get("constraint_mode", "none")
 
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     n_var = problem.n_var
     n_obj = problem.n_obj
     xl, xu = resolve_bounds(problem, encoding)

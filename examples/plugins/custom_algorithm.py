@@ -11,6 +11,7 @@ from typing import Any, Mapping
 import numpy as np
 
 from vamos.engine.algorithm.registry import ALGORITHMS, AlgorithmLike
+from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 
@@ -57,7 +58,7 @@ class RandomSearchAlgorithm:
         while n_eval < max_evals:
             # Generate random population
             X = rng.uniform(xl, xu, size=(self.pop_size, problem.n_var))
-            F = problem.evaluate(X)
+            F, _ = evaluate_population_with_constraints(problem, X)
             n_eval += self.pop_size
 
             # Keep non-dominated

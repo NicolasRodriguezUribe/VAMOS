@@ -116,6 +116,7 @@ class GaussianMutation(Mutation):
         *,
         lower: ArrayLike | None = None,
         upper: ArrayLike | None = None,
+        workspace: VariationWorkspace | None = None,
     ) -> None:
         self.prob = float(prob_mutation)
         sigma_arr = np.asarray(sigma, dtype=float)
@@ -160,6 +161,7 @@ class UniformResetMutation(Mutation):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
     ) -> None:
         self.prob = float(prob_mutation)
         self.lower, self.upper = _ensure_bounds(lower, upper)
@@ -245,15 +247,22 @@ class UniformMutation(Mutation):
 
     def __init__(
         self,
-        prob: float,
-        perturb: float,
+        prob_mutation: float | None = None,
+        perturb: float = 0.1,
         *,
+        prob: float | None = None,
         lower: ArrayLike,
         upper: ArrayLike,
         repair: Repair | None = None,
         rng: np.random.Generator | None = None,
-    ):
-        self.prob = float(prob)
+        workspace: VariationWorkspace | None = None,
+    ) -> None:
+        if prob_mutation is None and prob is None:
+            raise TypeError("UniformMutation requires 'prob' (legacy) or 'prob_mutation'.")
+        if prob_mutation is not None and prob is not None:
+            raise TypeError("UniformMutation received both 'prob' and 'prob_mutation'. Use only one.")
+        prob_value = prob_mutation if prob is None else prob
+        self.prob = float(prob_value)
         self.perturb = float(np.clip(perturb, 0.0, 1.0))
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.range = self.upper - self.lower
@@ -288,15 +297,22 @@ class LinkedPolynomialMutation(Mutation):
 
     def __init__(
         self,
-        prob: float,
-        eta: float,
+        prob_mutation: float | None = None,
+        eta: float = 20.0,
         *,
+        prob: float | None = None,
         lower: ArrayLike,
         upper: ArrayLike,
         repair: Repair | None = None,
         rng: np.random.Generator | None = None,
-    ):
-        self.prob = float(prob)
+        workspace: VariationWorkspace | None = None,
+    ) -> None:
+        if prob_mutation is None and prob is None:
+            raise TypeError("LinkedPolynomialMutation requires 'prob' (legacy) or 'prob_mutation'.")
+        if prob_mutation is not None and prob is not None:
+            raise TypeError("LinkedPolynomialMutation received both 'prob' and 'prob_mutation'. Use only one.")
+        prob_value = prob_mutation if prob is None else prob
+        self.prob = float(prob_value)
         self.eta = float(eta)
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.span = self.upper - self.lower
@@ -340,6 +356,7 @@ class CauchyMutation(Mutation):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
     ) -> None:
         self.prob = float(prob_mutation)
         self.gamma = float(gamma)

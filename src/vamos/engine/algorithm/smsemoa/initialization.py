@@ -20,6 +20,7 @@ from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from .helpers import (
     evaluate_population_with_constraints,
     initialize_reference_point,
@@ -87,7 +88,7 @@ def initialize_smsemoa_run(
 
     rng = np.random.default_rng(seed)
     pop_size = config["pop_size"]
-    encoding = getattr(problem, "encoding", "continuous")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
     n_obj = problem.n_obj
@@ -168,7 +169,7 @@ def initialize_smsemoa_run(
 
 
 def initialize_population(
-    encoding: str,
+    encoding: EncodingLike,
     pop_size: int,
     n_var: int,
     xl: np.ndarray,
@@ -203,9 +204,10 @@ def initialize_population(
     tuple
         (X, F, G) initial population, objectives, and constraints.
     """
-    if encoding == "binary":
+    normalized = normalize_encoding(encoding)
+    if normalized == "binary":
         X = random_binary_population(pop_size, n_var, rng)
-    elif encoding == "integer":
+    elif normalized == "integer":
         X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
     else:
         X = rng.uniform(xl, xu, size=(pop_size, n_var))

@@ -12,7 +12,7 @@ Quick start:
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # or .\.venv\Scripts\Activate.ps1 on Windows
-pip install -e ".[backends,benchmarks,dev]"
+pip install -e ".[compute,research,dev]"
 python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000
 ```
 

@@ -267,7 +267,15 @@ class BLXAlphaCrossover(Crossover):
 class ArithmeticCrossover(Crossover):
     """Arithmetic crossover mixing parents through random convex combinations."""
 
-    def __init__(self, prob_crossover: float = 0.9) -> None:
+    def __init__(
+        self,
+        prob_crossover: float = 0.9,
+        *,
+        lower: ArrayLike | None = None,
+        upper: ArrayLike | None = None,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
+    ) -> None:
         self.prob = float(prob_crossover)
 
     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
@@ -339,6 +347,9 @@ class PCXCrossover(Crossover):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        prob_crossover: float | None = None,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
     ) -> None:
         self.sigma_eta = float(sigma_eta)
         self.sigma_zeta = float(sigma_zeta)
@@ -381,6 +392,8 @@ class UNDXCrossover(Crossover):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
     ) -> None:
         self.prob = float(prob_crossover)
         self.zeta = float(zeta)
@@ -433,6 +446,9 @@ class SPXCrossover(Crossover):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        prob_crossover: float | None = None,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
     ) -> None:
         self.epsilon = float(epsilon)
         self.lower, self.upper = _ensure_bounds(lower, upper)

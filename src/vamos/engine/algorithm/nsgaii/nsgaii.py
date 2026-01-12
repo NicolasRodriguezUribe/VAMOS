@@ -19,6 +19,7 @@ from vamos.engine.algorithm.components.hooks import live_should_stop
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
+from vamos.foundation.encoding import normalize_encoding
 from .initialization import (
     parse_termination,
     setup_population,
@@ -196,7 +197,7 @@ class NSGAII:
         initializer_cfg = self.cfg.get("initializer")
         X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
 
-        encoding = getattr(problem, "encoding", "continuous")
+        encoding = normalize_encoding(getattr(problem, "encoding", "real"))
         n_var = problem.n_var
         xl, xu = resolve_bounds(problem, encoding)
 

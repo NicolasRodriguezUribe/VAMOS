@@ -5,33 +5,46 @@ VAMOS supports distributed evaluation using Dask for expensive objective functio
 ## Installation
 
 ```bash
-pip install -e ".[distributed]"
+pip install -e ".[compute]"
 ```
 
 ## Quick Start
 
 ```python
 from dask.distributed import Client, LocalCluster
-import vamos
+from vamos.foundation.eval.backends import DaskEvalBackend
+from vamos.experiment.builder import study
 
 # Create local cluster
 cluster = LocalCluster(n_workers=4)
 client = Client(cluster)
 
-# Run optimization
-result = vamos.optimize("zdt1", budget=10000)
+backend = DaskEvalBackend(client=client)
+
+# Run optimization (distributed evaluation)
+result = (
+    study("zdt1", n_var=30)
+    .using("nsgaii", pop_size=100)
+    .eval_strategy(backend)
+    .evaluations(10000)
+    .seed(42)
+    .run()
+)
 ```
 
 ## Connecting to Existing Cluster
 
 ```python
-from dask.distributed import Client
+from vamos.experiment.builder import study
 
-# Connect to scheduler
-client = Client("scheduler.example.com:8786")
-
-# VAMOS will use available workers
-result = vamos.optimize("expensive_problem", budget=50000)
+result = (
+    study("zdt1", n_var=30)
+    .using("nsgaii", pop_size=100)
+    .eval_strategy("dask", dask_address="scheduler.example.com:8786")
+    .evaluations(50000)
+    .seed(42)
+    .run()
+)
 ```
 
 ## Kubernetes Deployment

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol, cast
 
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.data import weight_path
 from vamos.foundation.problem.types import ProblemProtocol
@@ -41,7 +42,7 @@ def build_nsgaii_algorithm(
     nsgaii_variation: dict[str, Any] | None,
     track_genealogy: bool,
 ) -> tuple[Any, ConfigData]:
-    encoding = getattr(problem, "encoding", "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     var_cfg = resolve_default_variation_config(encoding, nsgaii_variation)
 
     builder = NSGAIIConfig()
@@ -87,7 +88,7 @@ def build_moead_algorithm(
     pop_size: int,
     moead_variation: dict[str, Any] | None,
 ) -> tuple[Any, ConfigData]:
-    encoding = getattr(problem, "encoding", "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     moead_overrides = moead_variation or {}
     var_cfg = resolve_default_variation_config(encoding, moead_overrides)
     if encoding == "real":
@@ -145,7 +146,7 @@ def build_smsemoa_algorithm(
     pop_size: int,
     smsemoa_variation: dict[str, Any] | None,
 ) -> tuple[Any, ConfigData]:
-    encoding = getattr(problem, "encoding", "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     smsemoa_overrides = smsemoa_variation or {}
     var_cfg = resolve_default_variation_config(encoding, smsemoa_overrides)
     extra_cfg = {k: v for k, v in smsemoa_overrides.items() if k not in var_cfg}
@@ -183,7 +184,7 @@ def build_nsgaiii_algorithm(
     nsgaiii_variation: dict[str, Any] | None,
     selection_pressure: int,
 ) -> tuple[Any, ConfigData]:
-    encoding = getattr(problem, "encoding", "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     nsgaiii_overrides = nsgaiii_variation or {}
     var_cfg = resolve_default_variation_config(encoding, nsgaiii_overrides)
     extra_cfg = {k: v for k, v in nsgaiii_overrides.items() if k not in var_cfg}
@@ -221,7 +222,7 @@ def build_spea2_algorithm(
     external_archive_size: int | None,
     spea2_variation: dict[str, Any] | None,
 ) -> tuple[Any, ConfigData]:
-    encoding = getattr(problem, "encoding", "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     spea2_overrides = spea2_variation or {}
     var_cfg = resolve_default_variation_config(encoding, spea2_overrides)
     extra_cfg = {k: v for k, v in spea2_overrides.items() if k not in {"crossover", "mutation", "repair"}}
@@ -262,7 +263,7 @@ def build_ibea_algorithm(
     selection_pressure: int,
     ibea_variation: dict[str, Any] | None,
 ) -> tuple[Any, ConfigData]:
-    encoding = getattr(problem, "encoding", "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     ibea_overrides = ibea_variation or {}
     var_cfg = resolve_default_variation_config(encoding, ibea_overrides)
     extra_cfg = {k: v for k, v in ibea_overrides.items() if k not in {"crossover", "mutation", "repair"}}
@@ -340,7 +341,7 @@ def build_agemoea_algorithm(
     pop_size: int,
     agemoea_variation: dict[str, Any] | None,
 ) -> tuple[Any, ConfigData]:
-    encoding = getattr(problem, "encoding", "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     agemoea_overrides = agemoea_variation or {}
     var_cfg = resolve_default_variation_config(encoding, agemoea_overrides)
     extra_cfg = {k: v for k, v in agemoea_overrides.items() if k not in var_cfg}
@@ -379,7 +380,7 @@ def build_rvea_algorithm(
     pop_size: int,
     rvea_variation: dict[str, Any] | None,
 ) -> tuple[Any, ConfigData]:
-    encoding = getattr(problem, "encoding", "real")
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     rvea_overrides = rvea_variation or {}
     var_cfg = resolve_default_variation_config(encoding, rvea_overrides)
     extra_cfg = {k: v for k, v in rvea_overrides.items() if k not in var_cfg}

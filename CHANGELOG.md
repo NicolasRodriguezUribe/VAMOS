@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 - **AI Agent Context**: Added `AGENTS.md` files throughout the codebase to help AI coding assistants understand architecture and conventions.
 
 ### Changed
-- **Dependency Hygiene**: Simplified `pyproject.toml` extras into 4 core groups: `compute`, `research`, `analysis`, `dev`.
+- **Dependency Hygiene**: Added 4 core extras groups (`compute`, `research`, `analysis`, `dev`) while keeping granular extras for backwards compatibility.
 - **Type Safety**: Improved type hints in fluent API (`StudyBuilder`) using `Self` types for better IDE support.
 
 ### Fixed
