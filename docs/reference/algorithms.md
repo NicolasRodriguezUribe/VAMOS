@@ -22,14 +22,14 @@ Optional baselines (install extras)
 -----------------------------------
 
 - PyMOO NSGA-II (real and permutation), jMetalPy NSGA-II (real and permutation), PyGMO NSGA-II.
-- Enabled via `--include-external` and extras `benchmarks`.
+- Enabled via `--include-external` and extras `research`.
 
 Backends
 --------
 
 - NumPy (default): vectorized CPU kernels.
 - Numba: JIT acceleration for supported kernels (set `VAMOS_USE_NUMBA_VARIATION=1` for permutation/binary/integer variation).
-- MooCore: accelerated kernels via `moocore` (install `backends` extra).
+- MooCore: accelerated kernels via `moocore` (install `compute` extra).
 
 Live visualization
 ------------------

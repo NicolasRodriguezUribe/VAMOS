@@ -26,7 +26,6 @@ def build_config(pop_size: int = 24) -> NSGAIIConfigData:
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .engine("numpy")
         .result_mode("population")
         .fixed()
     )

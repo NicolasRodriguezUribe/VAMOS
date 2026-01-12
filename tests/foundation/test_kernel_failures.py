@@ -17,7 +17,7 @@ def test_numba_missing_dependency(monkeypatch):
         return importlib.import_module(name, package=None)
 
     monkeypatch.setattr("vamos.foundation.kernel.registry.import_module", fake_import)
-    with pytest.raises(ImportError, match="requires the \\[backends\\] extra"):
+    with pytest.raises(ImportError, match="requires the \\[compute\\] extra"):
         resolve_kernel("numba")
 
 
@@ -28,5 +28,5 @@ def test_moocore_missing_dependency(monkeypatch):
         return importlib.import_module(name, package=None)
 
     monkeypatch.setattr("vamos.foundation.kernel.registry.import_module", fake_import)
-    with pytest.raises(ImportError, match="requires the \\[backends\\] extra"):
+    with pytest.raises(ImportError, match="requires the \\[compute\\] extra"):
         resolve_kernel("moocore")

@@ -177,12 +177,12 @@ class TestDependencyErrors:
         assert "pip install pandas" in str(err)
 
     def test_backend_not_available_error(self):
-        """BackendNotAvailableError should suggest vamos[backends]."""
+        """BackendNotAvailableError should suggest vamos[compute]."""
         from vamos.foundation.exceptions import BackendNotAvailableError
 
         err = BackendNotAvailableError("numba")
         assert "numba" in str(err)
-        assert "vamos[backends]" in str(err)
+        assert "vamos[compute]" in str(err)
 
 
 class TestExceptionHierarchy:

@@ -23,7 +23,7 @@ def _load_numba():
         return module.NumbaKernel()
     except ImportError as exc:
         raise ImportError(
-            "Kernel 'numba' requires the [backends] extra (numba>=0.57). Install with `pip install -e \".[backends]\"`."
+            "Kernel 'numba' requires the [compute] extra (numba>=0.57). Install with `pip install -e \".[compute]\"`."
         ) from exc
 
 
@@ -33,7 +33,7 @@ def _load_moocore():
         return module.MooCoreKernel()
     except ImportError as exc:
         raise ImportError(
-            "Kernel 'moocore' requires the [backends] extra (moocore>=0.4). Install with `pip install -e \".[backends]\"`."
+            "Kernel 'moocore' requires the [compute] extra (moocore>=0.4). Install with `pip install -e \".[compute]\"`."
         ) from exc
 
 

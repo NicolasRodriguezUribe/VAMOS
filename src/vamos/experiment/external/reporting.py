@@ -7,6 +7,7 @@ import numpy as np
 
 from vamos.foundation.encoding import normalize_encoding
 
+
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 

@@ -3,40 +3,38 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
 class AGEMOEAConfigDict(TypedDict):
     pop_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    engine: str
-    repair: Optional[Tuple[str, Dict[str, Any]]]
-    initializer: Optional[Dict[str, Any]]
-    mutation_prob_factor: Optional[float]
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    repair: tuple[str, dict[str, Any]] | None
+    initializer: dict[str, Any] | None
+    mutation_prob_factor: float | None
     constraint_mode: str
     track_genealogy: bool
-    result_mode: Optional[str]
-    archive: Optional[Dict[str, Any]]
-    archive_type: Optional[str]
+    result_mode: str | None
+    archive: dict[str, Any] | None
+    archive_type: str | None
 
 
 @dataclass(frozen=True)
 class AGEMOEAConfigData(_SerializableConfig["AGEMOEAConfigDict"]):
     pop_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    engine: str
-    repair: Optional[Tuple[str, Dict[str, Any]]] = None
-    initializer: Optional[Dict[str, Any]] = None
-    mutation_prob_factor: Optional[float] = None
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    repair: tuple[str, dict[str, Any]] | None = None
+    initializer: dict[str, Any] | None = None
+    mutation_prob_factor: float | None = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
-    result_mode: Optional[str] = None
-    archive: Optional[Dict[str, Any]] = None
-    archive_type: Optional[str] = None
+    result_mode: str | None = None
+    archive: dict[str, Any] | None = None
+    archive_type: str | None = None
 
 
 class AGEMOEAConfig:
@@ -49,18 +47,17 @@ class AGEMOEAConfig:
     """
 
     def __init__(self) -> None:
-        self._cfg: Dict[str, Any] = {}
+        self._cfg: dict[str, Any] = {}
 
     @classmethod
     def default(
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-        engine: str = "numpy",
     ) -> "AGEMOEAConfigData":
         """Create a default AGE-MOEA configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
-        return cls().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("pm", prob=mut_prob, eta=20.0).engine(engine).fixed()
+        return cls().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("pm", prob=mut_prob, eta=20.0).fixed()
 
     def pop_size(self, value: int) -> "AGEMOEAConfig":
         self._cfg["pop_size"] = value
@@ -72,10 +69,6 @@ class AGEMOEAConfig:
 
     def mutation(self, method: str, **kwargs: Any) -> "AGEMOEAConfig":
         self._cfg["mutation"] = (method, kwargs)
-        return self
-
-    def engine(self, value: str) -> "AGEMOEAConfig":
-        self._cfg["engine"] = value
         return self
 
     def repair(self, method: str, **kwargs: Any) -> "AGEMOEAConfig":
@@ -128,14 +121,13 @@ class AGEMOEAConfig:
     def fixed(self) -> AGEMOEAConfigData:
         _require_fields(
             self._cfg,
-            ("pop_size", "crossover", "mutation", "engine"),
+            ("pop_size", "crossover", "mutation"),
             "AGE-MOEA",
         )
         return AGEMOEAConfigData(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
-            engine=self._cfg["engine"],
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),

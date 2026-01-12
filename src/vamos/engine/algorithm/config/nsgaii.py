@@ -3,46 +3,44 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
 
 class NSGAIIConfigDict(TypedDict):
     pop_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    selection: Tuple[str, Dict[str, Any]]
-    engine: str
-    offspring_size: Optional[int]
-    repair: Optional[Tuple[str, Dict[str, Any]]]
-    archive: Optional[Dict[str, Any]]
-    initializer: Optional[Dict[str, Any]]
-    mutation_prob_factor: Optional[float]
-    result_mode: Optional[str]
-    archive_type: Optional[str]
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
+    offspring_size: int | None
+    repair: tuple[str, dict[str, Any]] | None
+    archive: dict[str, Any] | None
+    initializer: dict[str, Any] | None
+    mutation_prob_factor: float | None
+    result_mode: str | None
+    archive_type: str | None
     constraint_mode: str
     track_genealogy: bool
-    adaptive_operator_selection: Optional[Dict[str, Any]]
+    adaptive_operator_selection: dict[str, Any] | None
 
 
 @dataclass(frozen=True)
 class NSGAIIConfigData(_SerializableConfig["NSGAIIConfigDict"]):
     pop_size: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    selection: Tuple[str, Dict[str, Any]]
-    engine: str
-    offspring_size: Optional[int] = None
-    repair: Optional[Tuple[str, Dict[str, Any]]] = None
-    archive: Optional[Dict[str, Any]] = None
-    initializer: Optional[Dict[str, Any]] = None
-    mutation_prob_factor: Optional[float] = None
-    result_mode: Optional[str] = None
-    archive_type: Optional[str] = None
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
+    offspring_size: int | None = None
+    repair: tuple[str, dict[str, Any]] | None = None
+    archive: dict[str, Any] | None = None
+    initializer: dict[str, Any] | None = None
+    mutation_prob_factor: float | None = None
+    result_mode: str | None = None
+    archive_type: str | None = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
-    adaptive_operator_selection: Optional[Dict[str, Any]] = None
+    adaptive_operator_selection: dict[str, Any] | None = None
 
 
 class NSGAIIConfig:
@@ -56,20 +54,16 @@ class NSGAIIConfig:
 
         # Quick default configuration
         cfg = NSGAIIConfig.default()
-
-        # From dictionary
-        cfg = NSGAIIConfig.from_dict({"pop_size": 100, "crossover": ("sbx", {"prob": 1.0})})
     """
 
     def __init__(self) -> None:
-        self._cfg: Dict[str, Any] = {}
+        self._cfg: dict[str, Any] = {}
 
     @classmethod
     def default(
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-        engine: str = "numpy",
     ) -> "NSGAIIConfigData":
         """
         Create a default NSGA-II configuration with sensible defaults.
@@ -77,8 +71,6 @@ class NSGAIIConfig:
         Args:
             pop_size: Population size (default: 100)
             n_var: Number of variables (used for mutation prob = 1/n_var)
-            engine: Backend engine (default: "numpy")
-
         Returns:
             Frozen NSGAIIConfigData ready to use
         """
@@ -89,131 +81,8 @@ class NSGAIIConfig:
             .crossover("sbx", prob=1.0, eta=20.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("tournament")
-            .engine(engine)
             .fixed()
         )
-
-    @classmethod
-    def from_dict(cls, config: Dict[str, Any]) -> "NSGAIIConfigData":
-        """
-        Create configuration from a dictionary.
-
-        Args:
-            config: Dictionary with configuration keys:
-                - pop_size (required): Population size
-                - crossover: Tuple of (method, params) or dict with method and params
-                - mutation: Tuple of (method, params) or dict with method and params
-                - selection: Tuple of (method, params) or just method string
-                - engine: Backend engine string
-
-        Returns:
-            Frozen NSGAIIConfigData
-        """
-        if "survival" in config:
-            raise ValueError("NSGA-II no longer supports a 'survival' setting.")
-        builder = cls()
-
-        if "pop_size" in config:
-            builder.pop_size(config["pop_size"])
-
-        # Handle crossover
-        if "crossover" in config:
-            cx = config["crossover"]
-            if isinstance(cx, tuple):
-                builder.crossover(cx[0], **cx[1])
-            elif isinstance(cx, dict):
-                method = cx.pop("method", cx.pop("type", "sbx"))
-                builder.crossover(method, **cx)
-            else:
-                builder.crossover(cx)
-
-        # Handle mutation
-        if "mutation" in config:
-            mut = config["mutation"]
-            if isinstance(mut, tuple):
-                builder.mutation(mut[0], **mut[1])
-            elif isinstance(mut, dict):
-                method = mut.pop("method", mut.pop("type", "pm"))
-                builder.mutation(method, **mut)
-            else:
-                builder.mutation(mut)
-
-        # Handle selection
-        if "selection" in config:
-            sel = config["selection"]
-            if isinstance(sel, tuple):
-                builder.selection(sel[0], **sel[1])
-            elif isinstance(sel, dict):
-                method = sel.pop("method", sel.pop("type", "tournament"))
-                builder.selection(method, **sel)
-            else:
-                builder.selection(sel)
-
-        # Simple string fields
-        if "engine" in config:
-            builder.engine(config["engine"])
-
-        # Optional fields
-        offspring_size = config.get("offspring_size")
-        if offspring_size is not None:
-            builder.offspring_size(offspring_size)
-
-        rep = config.get("repair")
-        if rep is not None:
-            if isinstance(rep, tuple):
-                builder.repair(rep[0], **rep[1])
-            elif isinstance(rep, dict):
-                method = rep.pop("method", rep.pop("type", "bounds"))
-                builder.repair(method, **rep)
-            else:
-                builder.repair(str(rep))
-
-        archive_cfg = config.get("archive")
-        if archive_cfg is not None:
-            if isinstance(archive_cfg, dict):
-                size = archive_cfg.get("size")
-                if size is None:
-                    raise ValueError("NSGA-II archive config requires a 'size' field.")
-                kwargs = {key: value for key, value in archive_cfg.items() if key != "size"}
-                builder.archive(int(size), **kwargs)
-            else:
-                builder.archive(int(archive_cfg))
-
-        archive_type = config.get("archive_type")
-        if archive_type is not None:
-            builder.archive_type(archive_type)
-
-        initializer_cfg = config.get("initializer")
-        if initializer_cfg is not None:
-            if isinstance(initializer_cfg, dict):
-                method = initializer_cfg.get("type") or initializer_cfg.get("method")
-                kwargs = {key: value for key, value in initializer_cfg.items() if key not in {"type", "method"}}
-                if method is None:
-                    raise ValueError("NSGA-II initializer config requires a 'type' field.")
-                builder.initializer(str(method), **kwargs)
-            else:
-                builder.initializer(str(initializer_cfg))
-
-        mutation_prob_factor = config.get("mutation_prob_factor")
-        if mutation_prob_factor is not None:
-            builder.mutation_prob_factor(mutation_prob_factor)
-
-        result_mode = config.get("result_mode")
-        if result_mode is not None:
-            builder.result_mode(result_mode)
-
-        constraint_mode = config.get("constraint_mode")
-        if constraint_mode is not None:
-            builder.constraint_mode(constraint_mode)
-
-        track_genealogy = config.get("track_genealogy")
-        if track_genealogy is not None:
-            builder.track_genealogy(bool(track_genealogy))
-
-        if "adaptive_operator_selection" in config:
-            builder.adaptive_operator_selection(config.get("adaptive_operator_selection"))
-
-        return builder.fixed()
 
     def pop_size(self, value: int) -> "NSGAIIConfig":
         self._cfg["pop_size"] = value
@@ -257,10 +126,6 @@ class NSGAIIConfig:
         self._cfg["selection"] = (method, kwargs)
         return self
 
-    def engine(self, value: str) -> "NSGAIIConfig":
-        self._cfg["engine"] = value
-        return self
-
     def initializer(self, method: str, **kwargs: Any) -> "NSGAIIConfig":
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
@@ -271,14 +136,6 @@ class NSGAIIConfig:
 
     def result_mode(self, value: str) -> "NSGAIIConfig":
         self._cfg["result_mode"] = str(value)
-        return self
-
-    def external_archive(self, *, size: int, archive_type: str = "hypervolume") -> "NSGAIIConfig":
-        if size <= 0:
-            raise ValueError("external archive size must be positive.")
-        self._cfg["external_archive"] = {"size": int(size)}
-        self._cfg["result_mode"] = "external_archive"
-        self._cfg["archive_type"] = archive_type
         return self
 
     def archive_type(self, value: str) -> "NSGAIIConfig":
@@ -302,6 +159,7 @@ class NSGAIIConfig:
             return self
         archive_cfg = {"size": int(size), **kwargs}
         self._cfg["archive"] = archive_cfg
+        self._cfg.setdefault("result_mode", "external_archive")
         return self
 
     def constraint_mode(self, value: str) -> "NSGAIIConfig":
@@ -313,7 +171,7 @@ class NSGAIIConfig:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def adaptive_operator_selection(self, config: Dict[str, Any] | None) -> "NSGAIIConfig":
+    def adaptive_operator_selection(self, config: dict[str, Any] | None) -> "NSGAIIConfig":
         if config is None:
             self._cfg["adaptive_operator_selection"] = None
         else:
@@ -323,16 +181,15 @@ class NSGAIIConfig:
     def fixed(self) -> NSGAIIConfigData:
         _require_fields(
             self._cfg,
-            ("pop_size", "crossover", "mutation", "selection", "engine"),
+            ("pop_size", "crossover", "mutation", "selection"),
             "NSGA-II",
         )
-        archive_cfg = self._cfg.get("archive", self._cfg.get("external_archive"))
+        archive_cfg = self._cfg.get("archive")
         return NSGAIIConfigData(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
             selection=self._cfg["selection"],
-            engine=self._cfg["engine"],
             offspring_size=self._cfg.get("offspring_size"),
             repair=self._cfg.get("repair"),
             archive=archive_cfg,

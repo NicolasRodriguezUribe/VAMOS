@@ -8,8 +8,12 @@ ALLOWED_PREFIXES = (
     "vamos.api",
     "vamos.foundation.",
     "vamos.engine.api",
-    "vamos.experiment.quick",
     "vamos.ux.api",
+)
+PUBLIC_FACADES = (
+    "src/vamos/api.py",
+    "src/vamos/engine/api.py",
+    "src/vamos/ux/api.py",
 )
 MAX_ALL_SIZE = 25
 
@@ -54,7 +58,8 @@ def _literal_len(node: ast.AST | None) -> int | None:
 
 
 def test_public_api_guard() -> None:
-    init_path = _repo_root() / "src" / "vamos" / "__init__.py"
+    repo_root = _repo_root()
+    init_path = repo_root / "src" / "vamos" / "__init__.py"
     text = init_path.read_text(encoding="utf-8-sig")
     tree = ast.parse(text)
 
@@ -93,6 +98,16 @@ def test_public_api_guard() -> None:
         errors.append("__all__ must be defined as a list/tuple literal.")
     elif all_len > MAX_ALL_SIZE:
         errors.append(f"__all__ too large: {all_len} > {MAX_ALL_SIZE}")
+
+    for rel_path in PUBLIC_FACADES:
+        facade_path = repo_root / rel_path
+        facade_text = facade_path.read_text(encoding="utf-8-sig")
+        facade_tree = ast.parse(facade_text)
+        facade_all_len = _extract_all_len(facade_tree)
+        if facade_all_len is None:
+            errors.append(f"{facade_path.relative_to(repo_root)}: __all__ must be defined as a list/tuple literal.")
+        elif facade_all_len > MAX_ALL_SIZE:
+            errors.append(f"{facade_path.relative_to(repo_root)}: __all__ too large: {facade_all_len} > {MAX_ALL_SIZE}")
 
     if errors:
         raise AssertionError("\n".join(errors))

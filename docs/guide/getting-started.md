@@ -11,13 +11,11 @@ pip install -e ".[compute,research,dev]"
 
 Useful extras:
 
-- `compute`: alias for `backends` (numba, moocore, dask)
-- `research`: alias for `benchmarks` (pymoo, jmetalpy, pygmo baselines)
+- `compute`: accelerated kernels + distributed eval (numba, moocore, dask)
+- `research`: external baselines + benchmarks (pymoo, jmetalpy, pygmo)
 - `analysis`: plotting + notebook deps (matplotlib/plotly/scikit-learn, ipywidgets, nbconvert)
-- `backends`: numba and moocore kernels
-- `benchmarks`: pymoo, jmetalpy, pygmo baselines
 - `dev`: pytest, ruff, black, nbformat/nbconvert for notebook checks
-- `notebooks` / `examples`: plotting and scikit-learn deps (interactive explorer also needs plotly + ipywidgets, included in `notebooks`)
+- `examples`: minimal plotting + scikit-learn deps
 - `studio`: streamlit + plotly dashboard
 - `autodiff`: JAX for constraint autodiff helpers
 
@@ -33,39 +31,37 @@ Smoke tests
 Python API
 ----------
 
-**1. One-liner (Quick API):**
+**1. One-liner (Unified API):**
 
 ```python
-from vamos.experiment.quick import run_nsgaii
+from vamos import optimize
 
-result = run_nsgaii(
-    "zdt1",
-    max_evaluations=10000,
-    pop_size=100,
-    seed=42
-)
-print(result.summary())
+result = optimize("zdt1", algorithm="nsgaii", budget=10_000, pop_size=100, seed=42, verbose=True)
+print(result.summary_text())
 ```
 
-**2. Full Control (Optimize API):**
+**2. Full control (config objects):**
 
 ```python
-from vamos.api import optimize
+from vamos import OptimizeConfig, make_problem_selection, optimize
 from vamos.engine.api import NSGAIIConfig
 
-config = (
-    NSGAIIConfig()
-    .problem("zdt1")
-    .parameters(pop_size=100, seed=42)
-    .term_evaluations(10000)
-    .crossover("sbx", 1.0, 20.0)
-    .mutation("pm", "1/n", 20.0)
-    .fixed()
+problem = make_problem_selection("zdt1", n_var=30).instantiate()
+algo_cfg = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var)
+
+config = OptimizeConfig(
+    problem=problem,
+    algorithm="nsgaii",
+    algorithm_config=algo_cfg,
+    termination=("n_eval", 10_000),
+    seed=42,
+    engine="numpy",
 )
+
 result = optimize(config)
 ```
 
-Prefer config objects (`OptimizeConfig` + algorithm config builders). Raw dict configs are no longer accepted.
+Prefer config objects (`OptimizeConfig` + algorithm config builders). For custom algorithms, passing a plain dict algorithm config is supported.
 
 Benchmarks and studies
 ----------------------

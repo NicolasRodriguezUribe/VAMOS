@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from vamos.foundation.data import weight_path
 
@@ -16,19 +16,18 @@ class MOEADConfigDict(TypedDict):
     neighbor_size: int
     delta: float
     replace_limit: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    aggregation: Tuple[str, Dict[str, Any]]
-    weight_vectors: Dict[str, Optional[int | str]] | None
-    engine: str
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    aggregation: tuple[str, dict[str, Any]]
+    weight_vectors: dict[str, int | str | None] | None
     constraint_mode: str
-    repair: Optional[Tuple[str, Dict[str, Any]]]
-    initializer: Optional[Dict[str, Any]]
-    mutation_prob_factor: Optional[float]
+    repair: tuple[str, dict[str, Any]] | None
+    initializer: dict[str, Any] | None
+    mutation_prob_factor: float | None
     track_genealogy: bool
-    result_mode: Optional[str]
-    archive_type: Optional[str]
-    archive: Optional[Dict[str, Any]]
+    result_mode: str | None
+    archive_type: str | None
+    archive: dict[str, Any] | None
 
 
 @dataclass(frozen=True)
@@ -38,19 +37,18 @@ class MOEADConfigData(_SerializableConfig["MOEADConfigDict"]):
     neighbor_size: int
     delta: float
     replace_limit: int
-    crossover: Tuple[str, Dict[str, Any]]
-    mutation: Tuple[str, Dict[str, Any]]
-    aggregation: Tuple[str, Dict[str, Any]]
-    weight_vectors: Dict[str, Optional[int | str]] | None
-    engine: str
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    aggregation: tuple[str, dict[str, Any]]
+    weight_vectors: dict[str, int | str | None] | None
     constraint_mode: str = "feasibility"
-    repair: Optional[Tuple[str, Dict[str, Any]]] = None
-    initializer: Optional[Dict[str, Any]] = None
-    mutation_prob_factor: Optional[float] = None
+    repair: tuple[str, dict[str, Any]] | None = None
+    initializer: dict[str, Any] | None = None
+    mutation_prob_factor: float | None = None
     track_genealogy: bool = False
-    result_mode: Optional[str] = None
-    archive_type: Optional[str] = None
-    archive: Optional[Dict[str, Any]] = None
+    result_mode: str | None = None
+    archive_type: str | None = None
+    archive: dict[str, Any] | None = None
 
 
 class MOEADConfig:
@@ -63,13 +61,10 @@ class MOEADConfig:
 
         # Quick default configuration
         cfg = MOEADConfig.default()
-
-        # From dictionary
-        cfg = MOEADConfig.from_dict({"pop_size": 100, "neighbor_size": 20})
     """
 
     def __init__(self) -> None:
-        self._cfg: Dict[str, Any] = {}
+        self._cfg: dict[str, Any] = {}
 
     @classmethod
     def default(
@@ -77,7 +72,6 @@ class MOEADConfig:
         pop_size: int | None = None,
         n_var: int | None = None,
         n_obj: int = 3,
-        engine: str = "numpy",
     ) -> "MOEADConfigData":
         """Create a default MOEA/D configuration with sensible defaults."""
         if pop_size is None:
@@ -95,65 +89,8 @@ class MOEADConfig:
             .mutation("pm", prob=mut_prob, eta=20.0)
             .aggregation("pbi", theta=5.0)
             .weight_vectors(path=str(weights_dir))
-            .engine(engine)
             .fixed()
         )
-
-    @classmethod
-    def from_dict(cls, config: Dict[str, Any]) -> "MOEADConfigData":
-        """Create configuration from a dictionary."""
-        builder = cls()
-
-        if "pop_size" in config:
-            builder.pop_size(config["pop_size"])
-        if "batch_size" in config:
-            builder.batch_size(config["batch_size"])
-        if "neighbor_size" in config:
-            builder.neighbor_size(config["neighbor_size"])
-        if "delta" in config:
-            builder.delta(config["delta"])
-        if "replace_limit" in config:
-            builder.replace_limit(config["replace_limit"])
-
-        # Handle crossover
-        if "crossover" in config:
-            cx = config["crossover"]
-            if isinstance(cx, tuple):
-                builder.crossover(cx[0], **cx[1])
-            elif isinstance(cx, dict):
-                method = cx.pop("method", cx.pop("type", "sbx"))
-                builder.crossover(method, **cx)
-            else:
-                builder.crossover(cx)
-
-        # Handle mutation
-        if "mutation" in config:
-            mut = config["mutation"]
-            if isinstance(mut, tuple):
-                builder.mutation(mut[0], **mut[1])
-            elif isinstance(mut, dict):
-                method = mut.pop("method", mut.pop("type", "pm"))
-                builder.mutation(method, **mut)
-            else:
-                builder.mutation(mut)
-
-        # Handle aggregation
-        if "aggregation" in config:
-            agg = config["aggregation"]
-            if isinstance(agg, tuple):
-                builder.aggregation(agg[0], **agg[1])
-            elif isinstance(agg, dict):
-                method = agg.pop("method", agg.pop("type", "pbi"))
-                builder.aggregation(method, **agg)
-            else:
-                builder.aggregation(agg)
-
-        if "engine" in config:
-            builder.engine(config["engine"])
-        if "constraint_mode" in config:
-            builder.constraint_mode(config["constraint_mode"])
-
-        return builder.fixed()
 
     def pop_size(self, value: int) -> "MOEADConfig":
         self._cfg["pop_size"] = value
@@ -187,12 +124,8 @@ class MOEADConfig:
         self._cfg["aggregation"] = (method, kwargs)
         return self
 
-    def weight_vectors(self, *, path: Optional[str] = None, divisions: Optional[int] = None) -> "MOEADConfig":
+    def weight_vectors(self, *, path: str | None = None, divisions: int | None = None) -> "MOEADConfig":
         self._cfg["weight_vectors"] = {"path": path, "divisions": divisions}
-        return self
-
-    def engine(self, value: str) -> "MOEADConfig":
-        self._cfg["engine"] = value
         return self
 
     def constraint_mode(self, value: str) -> "MOEADConfig":
@@ -219,14 +152,6 @@ class MOEADConfig:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(self, *, size: int, archive_type: str = "hypervolume") -> "MOEADConfig":
-        if size <= 0:
-            raise ValueError("external archive size must be positive.")
-        self._cfg["external_archive"] = {"size": int(size)}
-        self._cfg["result_mode"] = "external_archive"
-        self._cfg["archive_type"] = archive_type
-        return self
-
     def archive_type(self, value: str) -> "MOEADConfig":
         """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
         self._cfg["archive_type"] = str(value)
@@ -248,6 +173,7 @@ class MOEADConfig:
             return self
         archive_cfg = {"size": int(size), **kwargs}
         self._cfg["archive"] = archive_cfg
+        self._cfg.setdefault("result_mode", "external_archive")
         return self
 
     def fixed(self) -> MOEADConfigData:
@@ -261,7 +187,6 @@ class MOEADConfig:
                 "crossover",
                 "mutation",
                 "aggregation",
-                "engine",
             ),
             "MOEA/D",
         )
@@ -275,7 +200,6 @@ class MOEADConfig:
             mutation=self._cfg["mutation"],
             aggregation=self._cfg["aggregation"],
             weight_vectors=self._cfg.get("weight_vectors"),
-            engine=self._cfg["engine"],
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),
@@ -283,5 +207,5 @@ class MOEADConfig:
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
             archive_type=self._cfg.get("archive_type"),
-            archive=self._cfg.get("archive", self._cfg.get("external_archive")),
+            archive=self._cfg.get("archive"),
         )

@@ -50,7 +50,6 @@ for seed in range(5):
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
         .mutation("pm", prob=1.0 / N_VAR, eta=MUTATION_ETA)
         .selection("tournament")
-        .engine("numpy")
         .fixed()
     )
     config = OptimizeConfig(

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 
 from vamos.foundation.problem.resolver import resolve_reference_front_path
+from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS
 
 from .common import _normalize_operator_args, collect_nsgaii_variation_args
 from .types import SpecDefaults
@@ -17,10 +18,19 @@ def finalize_args(
 ) -> argparse.Namespace:
     """Normalize and validate parsed CLI arguments."""
     args.config_path = config_path
+    args.config_spec = spec_defaults.spec
     args.problem_overrides = spec_defaults.problem_overrides
     args.experiment_defaults = spec_defaults.experiment_defaults
 
     _normalize_operator_args(parser, args)
+
+    if getattr(args, "problem_set", None) is not None:
+        if not PROBLEM_SET_PRESETS:
+            parser.error("--problem-set is not available because no presets are registered.")
+        if args.problem_set not in PROBLEM_SET_PRESETS:
+            parser.error(f"--problem-set must be one of: {', '.join(sorted(PROBLEM_SET_PRESETS))}.")
+    if getattr(args, "experiment", None) is not None and args.experiment not in ("backends",):
+        parser.error("--experiment must be one of: backends.")
 
     if args.population_size <= 0:
         parser.error("--population-size must be a positive integer.")

@@ -202,7 +202,7 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfigD
     else:
         config = config.result_mode("population")
 
-    return config.selection("tournament", pressure=2).engine("numpy").fixed()
+    return config.selection("tournament", pressure=2).fixed()
 
 
 # =============================================================================

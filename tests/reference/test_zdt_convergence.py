@@ -22,7 +22,6 @@ def test_zdt1_nsgaii_convergence():
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob=1.0 / 30, eta=20.0)
         .selection("tournament", pressure=2)
-        .engine("numpy")
         .fixed()
     )
 
@@ -60,7 +59,6 @@ def test_zdt1_moead_convergence():
         .aggregation("tchebycheff")
         .delta(0.9)
         .replace_limit(2)
-        .engine("numpy")
         .fixed()
     )
 
@@ -95,7 +93,6 @@ def test_zdt2_nsgaii_convergence():
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob=1.0 / 30, eta=20.0)
         .selection("tournament", pressure=2)
-        .engine("numpy")
         .fixed()
     )
 

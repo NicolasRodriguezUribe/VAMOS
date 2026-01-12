@@ -37,7 +37,6 @@ def evaluate_config(config: dict, ctx) -> float:
         .crossover("sbx", prob=float(config["crossover_prob"]), eta=20.0)
         .mutation("pm", prob=float(config["mutation_prob"]), eta=20.0)
         .selection("tournament", pressure=2)
-        .engine("numpy")  # Use "numba" for better speed if available
         .fixed()
     )
 
@@ -53,6 +52,7 @@ def evaluate_config(config: dict, ctx) -> float:
             algorithm_config=algo_cfg,
             termination=("n_eval", ctx.budget),
             seed=ctx.seed,
+            engine="numpy",  # Use "numba" for better speed if available
         )
     )
 

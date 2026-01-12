@@ -64,20 +64,8 @@ PermutationMutationName: TypeAlias = Literal["swap", "insert", "scramble", "inve
 MixedCrossoverName: TypeAlias = Literal["mixed", "uniform"]
 MixedMutationName: TypeAlias = Literal["mixed", "gaussian"]
 
-CrossoverName: TypeAlias = (
-    RealCrossoverName
-    | BinaryCrossoverName
-    | IntegerCrossoverName
-    | PermutationCrossoverName
-    | MixedCrossoverName
-)
-MutationName: TypeAlias = (
-    RealMutationName
-    | BinaryMutationName
-    | IntegerMutationName
-    | PermutationMutationName
-    | MixedMutationName
-)
+CrossoverName: TypeAlias = RealCrossoverName | BinaryCrossoverName | IntegerCrossoverName | PermutationCrossoverName | MixedCrossoverName
+MutationName: TypeAlias = RealMutationName | BinaryMutationName | IntegerMutationName | PermutationMutationName | MixedMutationName
 RepairName: TypeAlias = RealRepairName
 OperatorName: TypeAlias = CrossoverName | MutationName | RepairName
 

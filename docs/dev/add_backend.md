@@ -62,10 +62,10 @@ def test_mybackend_smoke():
         .crossover("sbx", prob=1.0, eta=15)
         .mutation("pm", prob="1/n", eta=20)
         .selection("tournament", pressure=2)
-        .engine("mybackend")
         .fixed()
         .to_dict()
     )
+    cfg["engine"] = "mybackend"
     algo = NSGAII(cfg, kernel=kernel)
     res = algo.run(ZDT1Problem(n_var=4), termination=("n_eval", 8), seed=0)
     assert res["F"].shape[0] > 0

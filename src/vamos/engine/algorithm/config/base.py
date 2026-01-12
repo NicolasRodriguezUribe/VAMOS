@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from typing import Any, Dict, Generic, Mapping, Tuple, TypeVar, cast
+from typing import Any, Generic, Mapping, TypeVar, cast
 
 
 _ConfigMap = TypeVar("_ConfigMap", bound=Mapping[str, Any])
@@ -13,7 +13,7 @@ _ConfigMap = TypeVar("_ConfigMap", bound=Mapping[str, Any])
 class _SerializableConfig(Generic[_ConfigMap]):
     """Mixin to serialize dataclass configs."""
 
-    __dataclass_fields__: Dict[str, Any]
+    __dataclass_fields__: dict[str, Any]
 
     def to_dict(self) -> _ConfigMap:
         return cast(_ConfigMap, asdict(cast(Any, self)))
@@ -22,7 +22,7 @@ class _SerializableConfig(Generic[_ConfigMap]):
         return json.dumps(self.to_dict(), sort_keys=True)
 
 
-def _require_fields(cfg: Dict[str, Any], fields: Tuple[str, ...], name: str) -> None:
+def _require_fields(cfg: dict[str, Any], fields: tuple[str, ...], name: str) -> None:
     """Validate that required fields are present in configuration."""
     missing = [field for field in fields if field not in cfg]
     if missing:

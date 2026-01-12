@@ -188,7 +188,7 @@ def _init_default_suites() -> None:
             experiments=mixed_experiments,
             default_algorithms=["nsgaii"],
             default_metrics=["hv", "igd_plus", "epsilon_additive"],
-            description="Mixed and real-world examples (requires examples/notebooks extras for some problems).",
+            description="Mixed and real-world examples (requires examples/analysis extras for some problems).",
             default_seeds=list(range(3)),
         )
     )

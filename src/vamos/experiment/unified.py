@@ -9,16 +9,18 @@ into one flexible function.
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
-from typing import Any, overload
+from collections.abc import Mapping, Sequence
+from typing import overload
 
+from vamos.engine.algorithm.config.types import AlgorithmConfigLike
 from vamos.experiment.optimize import (
     OptimizeConfig,
     OptimizationResult,
     optimize_config as _optimize_config,
-    _optimize_problem,
+    _build_algorithm_config,
 )
 from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.logging import configure_vamos_logging
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.experiment.auto import _resolve_problem, _select_algorithm, _compute_pop_size, _compute_budget
 
@@ -48,8 +50,8 @@ def optimize(
     verbose: bool = False,
     n_var: int | None = None,
     n_obj: int | None = None,
-    problem_kwargs: Mapping[str, Any] | None = None,
-    **algo_kwargs: Any,
+    problem_kwargs: Mapping[str, object] | None = None,
+    algorithm_config: AlgorithmConfigLike | None = None,
 ) -> OptimizationResult: ...
 
 
@@ -65,13 +67,13 @@ def optimize(
     verbose: bool = False,
     n_var: int | None = None,
     n_obj: int | None = None,
-    problem_kwargs: Mapping[str, Any] | None = None,
-    **algo_kwargs: Any,
+    problem_kwargs: Mapping[str, object] | None = None,
+    algorithm_config: AlgorithmConfigLike | None = None,
 ) -> list[OptimizationResult]: ...
 
 
 def optimize(
-    problem: str | Any | OptimizeConfig,
+    problem: str | ProblemProtocol | OptimizeConfig,
     *,
     algorithm: str = "auto",
     budget: int | None = None,
@@ -81,8 +83,8 @@ def optimize(
     verbose: bool = False,
     n_var: int | None = None,
     n_obj: int | None = None,
-    problem_kwargs: Mapping[str, Any] | None = None,
-    **algo_kwargs: Any,
+    problem_kwargs: Mapping[str, object] | None = None,
+    algorithm_config: AlgorithmConfigLike | None = None,
 ) -> OptimizationResult | list[OptimizationResult]:
     """
     Unified entry point for VAMOS optimization.
@@ -91,7 +93,7 @@ def optimize(
     - Accepts problem names (strings), instances, or OptimizeConfig
     - Supports AutoML with algorithm="auto"
     - Handles multi-run studies with seed=[0,1,2,...]
-    - Prefer config objects (OptimizeConfig + algorithm config builders); raw dicts are not accepted.
+    - Prefer config objects (OptimizeConfig + algorithm config builders). For plugins, `algorithm_config` may be a raw mapping.
 
     Args:
         problem: Problem name (e.g., "zdt1"), problem instance, or OptimizeConfig.
@@ -104,7 +106,7 @@ def optimize(
         n_var: Override problem dimension when using a string problem key.
         n_obj: Override objective count when using a string problem key.
         problem_kwargs: Extra kwargs forwarded to problem instantiation for string problems.
-        **algo_kwargs: Algorithm-config overrides (validated; unknown keys raise ValueError).
+        algorithm_config: Optional algorithm config object (preferred) or a raw mapping (plugins).
 
     Returns:
         OptimizationResult for single seed, or list[OptimizationResult] for multiple seeds.
@@ -116,28 +118,66 @@ def optimize(
         # Specify algorithm
         >>> result = vamos.optimize("zdt1", algorithm="moead", budget=5000)
 
-        # Multi-seed study
+        # Multi-seed study (prefer optimize_many for clarity)
         >>> results = vamos.optimize("zdt1", seed=[0, 1, 2, 3, 4])
+
+        # Explicit multi-seed helper
+        >>> results = vamos.optimize_many("zdt1", seeds=[0, 1, 2, 3, 4])
 
         # Full control with OptimizeConfig
         >>> result = vamos.optimize(my_config)
     """
     # Case 1: OptimizeConfig passed directly
     if isinstance(problem, OptimizeConfig):
+        if verbose:
+            configure_vamos_logging()
         return _optimize_config(problem, engine=engine)
 
     # Case 2: Multi-seed mode
     if isinstance(seed, (list, tuple)):
-        return [
-            _run_single(problem, algorithm, budget, pop_size, engine, s, verbose, n_var, n_obj, problem_kwargs, algo_kwargs) for s in seed
-        ]
+        return optimize_many(
+            problem,
+            algorithm=algorithm,
+            budget=budget,
+            pop_size=pop_size,
+            engine=engine,
+            seeds=seed,
+            verbose=verbose,
+            n_var=n_var,
+            n_obj=n_obj,
+            problem_kwargs=problem_kwargs,
+            algorithm_config=algorithm_config,
+        )
 
     # Case 3: Single run
-    return _run_single(problem, algorithm, budget, pop_size, engine, seed, verbose, n_var, n_obj, problem_kwargs, algo_kwargs)
+    return _run_single(problem, algorithm, budget, pop_size, engine, seed, verbose, n_var, n_obj, problem_kwargs, algorithm_config)
+
+
+def optimize_many(
+    problem: str | ProblemProtocol,
+    *,
+    algorithm: str = "auto",
+    budget: int | None = None,
+    pop_size: int | None = None,
+    engine: str | None = None,
+    seeds: Sequence[int],
+    verbose: bool = False,
+    n_var: int | None = None,
+    n_obj: int | None = None,
+    problem_kwargs: Mapping[str, object] | None = None,
+    algorithm_config: AlgorithmConfigLike | None = None,
+) -> list[OptimizationResult]:
+    """Run optimization for multiple seeds; always returns a list."""
+    if isinstance(problem, OptimizeConfig):
+        raise TypeError("optimize_many() expects a problem, not OptimizeConfig; use optimize_config in a loop instead.")
+    return [
+        _run_single(problem, algorithm, budget, pop_size, engine, seed, verbose, n_var, n_obj, problem_kwargs, algorithm_config)
+        for seed in seeds
+    ]
 
 
 def _run_single(
-    problem: str | Any,
+    problem: str | ProblemProtocol,
     algorithm: str,
     budget: int | None,
     pop_size: int | None,
@@ -146,10 +186,13 @@ def _run_single(
     verbose: bool,
     n_var: int | None,
     n_obj: int | None,
-    problem_kwargs: Mapping[str, Any] | None,
-    algo_kwargs: dict[str, Any],
+    problem_kwargs: Mapping[str, object] | None,
+    algorithm_config: AlgorithmConfigLike | None,
 ) -> OptimizationResult:
     """Execute a single optimization run."""
+    if verbose:
+        configure_vamos_logging()
+
     # Resolve problem
     problem_instance = _resolve_problem(problem, n_var=n_var, n_obj=n_obj, problem_kwargs=problem_kwargs)
 
@@ -157,6 +200,9 @@ def _run_single(
     n_var = getattr(problem_instance, "n_var", 10)
     n_obj = getattr(problem_instance, "n_obj", 2)
     encoding = normalize_encoding(getattr(problem_instance, "encoding", "real"))
+
+    if algorithm_config is not None and algorithm == "auto":
+        raise ValueError("algorithm_config requires an explicit algorithm name (not algorithm='auto').")
 
     # Auto-select algorithm if needed
     if algorithm == "auto":
@@ -178,15 +224,36 @@ def _run_single(
             effective_budget,
         )
 
-    return _optimize_problem(
-        problem_instance,
+    algo_cfg: AlgorithmConfigLike
+    if algorithm_config is None:
+        algo_cfg = _build_algorithm_config(
+            algorithm,
+            pop_size=effective_pop_size,
+            n_var=n_var,
+            n_obj=n_obj,
+        )
+    elif isinstance(algorithm_config, Mapping):
+        if "engine" in algorithm_config:
+            raise ValueError("engine must be configured via optimize(..., engine=...) or OptimizeConfig.engine, not algorithm_config.")
+        algo_cfg_dict: dict[str, object] = dict(algorithm_config)
+        algo_cfg_dict.setdefault("pop_size", effective_pop_size)
+        algo_cfg_dict.setdefault("n_var", n_var)
+        algo_cfg_dict.setdefault("n_obj", n_obj)
+        algo_cfg = algo_cfg_dict
+    else:
+        if pop_size is not None:
+            raise TypeError("pop_size must be set on algorithm_config when passing a config object.")
+        algo_cfg = algorithm_config
+
+    config = OptimizeConfig(
+        problem=problem_instance,
         algorithm=algorithm,
-        max_evaluations=effective_budget,
-        pop_size=effective_pop_size,
-        engine=effective_engine,
+        algorithm_config=algo_cfg,
+        termination=("n_eval", effective_budget),
         seed=seed,
-        **algo_kwargs,
+        engine=effective_engine,
     )
+    return _optimize_config(config)
 
 
-__all__ = ["optimize"]
+__all__ = ["optimize", "optimize_many"]

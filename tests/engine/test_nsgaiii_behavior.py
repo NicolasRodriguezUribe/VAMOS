@@ -16,7 +16,6 @@ def _make_config(pop_size=10, divisions=3, prob="1/n"):
         .mutation("pm", prob=prob, eta=20.0)
         .selection("tournament", pressure=2)
         .reference_directions(divisions=divisions)
-        .engine("numpy")
         .fixed()
     ).to_dict()
 
@@ -38,7 +37,6 @@ def test_reference_directions_truncate_when_excess():
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .reference_directions(divisions=10)  # generates more than pop_size
-        .engine("numpy")
         .fixed()
     ).to_dict()
     alg = NSGAIII(cfg, kernel=NumPyKernel())

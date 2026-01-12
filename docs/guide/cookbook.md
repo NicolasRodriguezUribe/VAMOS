@@ -60,10 +60,10 @@ VAMOS algorithms are stateful. You can `resume()` them if you manually stepped t
 
 ## 5. Using Numba for Performance
 
-Simply change the engine in the config.
+Select a backend via `optimize(..., engine=...)` or `OptimizeConfig.engine`.
 
 ```python
-config = NSGAIIConfig().engine("numba").fixed()
+result = optimize(problem, algorithm="nsgaii", engine="numba")
 ```
 
 ## 6. Comparing Algorithms

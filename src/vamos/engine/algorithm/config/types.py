@@ -23,7 +23,7 @@ class AlgorithmConfigProtocol(Protocol):
     def to_dict(self) -> AlgorithmConfigMapping: ...
 
 
-AlgorithmConfigLike: TypeAlias = AlgorithmConfigProtocol
+AlgorithmConfigLike: TypeAlias = AlgorithmConfigProtocol | AlgorithmConfigMapping
 
 
 __all__ = [

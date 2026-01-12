@@ -9,11 +9,14 @@
     "ProblemSpec",
     "__version__",
     "available_problem_names",
+    "configure_logging",
     "make_problem_selection",
     "optimize",
+    "optimize_many",
     "pareto_filter",
     "reduce_objectives",
-    "run_self_check"
+    "run_self_check",
+    "suggest_algorithm"
   ],
   "vamos.api": [
     "ExperimentConfig",
@@ -24,11 +27,14 @@
     "ProblemSelection",
     "ProblemSpec",
     "available_problem_names",
+    "configure_logging",
     "make_problem_selection",
     "optimize",
+    "optimize_many",
     "pareto_filter",
     "reduce_objectives",
-    "run_self_check"
+    "run_self_check",
+    "suggest_algorithm"
   ],
   "vamos.engine.api": [
     "IBEAConfig",
@@ -45,14 +51,6 @@
     "SMSEMOAConfigData",
     "SPEA2Config",
     "SPEA2ConfigData"
-  ],
-  "vamos.experiment.quick": [
-    "QuickResult",
-    "run_moead",
-    "run_nsgaii",
-    "run_nsgaiii",
-    "run_smsemoa",
-    "run_spea2"
   ],
   "vamos.ux.api": [
     "FriedmanResult",

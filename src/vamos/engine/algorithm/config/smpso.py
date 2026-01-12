@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from .base import _SerializableConfig, _require_fields
 
@@ -11,56 +11,53 @@ from .base import _SerializableConfig, _require_fields
 class SMPSOConfigDict(TypedDict):
     pop_size: int
     archive_size: int
-    mutation: Tuple[str, Dict[str, Any]]
-    engine: str
+    mutation: tuple[str, dict[str, Any]]
     inertia: float
     c1: float
     c2: float
     vmax_fraction: float
-    repair: Optional[Tuple[str, Dict[str, Any]]]
-    initializer: Optional[Dict[str, Any]]
+    repair: tuple[str, dict[str, Any]] | None
+    initializer: dict[str, Any] | None
     constraint_mode: str
     track_genealogy: bool
-    result_mode: Optional[str]
-    archive: Optional[Dict[str, Any]]
-    archive_type: Optional[str]
+    result_mode: str | None
+    archive: dict[str, Any] | None
+    archive_type: str | None
 
 
 @dataclass(frozen=True)
 class SMPSOConfigData(_SerializableConfig["SMPSOConfigDict"]):
     pop_size: int
     archive_size: int  # Internal archive (part of SMPSO algorithm)
-    mutation: Tuple[str, Dict[str, Any]]
-    engine: str
+    mutation: tuple[str, dict[str, Any]]
     inertia: float = 0.1
     c1: float = 1.5
     c2: float = 1.5
     vmax_fraction: float = 0.5
-    repair: Optional[Tuple[str, Dict[str, Any]]] = None
-    initializer: Optional[Dict[str, Any]] = None
+    repair: tuple[str, dict[str, Any]] | None = None
+    initializer: dict[str, Any] | None = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
-    result_mode: Optional[str] = None
-    archive: Optional[Dict[str, Any]] = None  # External archive for results
-    archive_type: Optional[str] = None
+    result_mode: str | None = None
+    archive: dict[str, Any] | None = None  # External archive for results
+    archive_type: str | None = None
 
 
 class SMPSOConfig:
     """Declarative configuration holder for SMPSO settings."""
 
     def __init__(self) -> None:
-        self._cfg: Dict[str, Any] = {}
+        self._cfg: dict[str, Any] = {}
 
     @classmethod
     def default(
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-        engine: str = "numpy",
     ) -> "SMPSOConfigData":
         """Create a default SMPSO configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
-        return cls().pop_size(pop_size).archive_size(pop_size).mutation("pm", prob=mut_prob, eta=20.0).engine(engine).fixed()
+        return cls().pop_size(pop_size).archive_size(pop_size).mutation("pm", prob=mut_prob, eta=20.0).fixed()
 
     def pop_size(self, value: int) -> "SMPSOConfig":
         self._cfg["pop_size"] = value
@@ -72,10 +69,6 @@ class SMPSOConfig:
 
     def mutation(self, method: str, **kwargs: Any) -> "SMPSOConfig":
         self._cfg["mutation"] = (method, kwargs)
-        return self
-
-    def engine(self, value: str) -> "SMPSOConfig":
-        self._cfg["engine"] = value
         return self
 
     def inertia(self, value: float) -> "SMPSOConfig":
@@ -142,14 +135,13 @@ class SMPSOConfig:
     def fixed(self) -> SMPSOConfigData:
         _require_fields(
             self._cfg,
-            ("pop_size", "archive_size", "mutation", "engine"),
+            ("pop_size", "archive_size", "mutation"),
             "SMPSO",
         )
         return SMPSOConfigData(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],
             mutation=self._cfg["mutation"],
-            engine=self._cfg["engine"],
             inertia=float(self._cfg.get("inertia", 0.1)),
             c1=float(self._cfg.get("c1", 1.5)),
             c2=float(self._cfg.get("c2", 1.5)),

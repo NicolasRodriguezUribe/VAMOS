@@ -17,7 +17,7 @@ def _require_matplotlib() -> Any:
         return plt
     except ImportError as exc:
         raise ImportError(
-            "Statistics plotting requires matplotlib. Install with `pip install vamos[notebooks]` or `pip install matplotlib`."
+            "Statistics plotting requires matplotlib. Install with `pip install vamos[analysis]` or `pip install matplotlib`."
         ) from exc
 
 

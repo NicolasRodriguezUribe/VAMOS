@@ -167,7 +167,6 @@ def run_single_benchmark(problem_name, seed, framework):
                 .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
                 .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
                 .selection("tournament")
-                .engine(backend)
                 .fixed()
             )
             config = OptimizeConfig(

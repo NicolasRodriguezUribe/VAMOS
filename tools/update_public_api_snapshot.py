@@ -14,7 +14,6 @@ FACADE_PATHS = {
     "vamos.api": SRC_ROOT / "api.py",
     "vamos.engine.api": SRC_ROOT / "engine" / "api.py",
     "vamos.ux.api": SRC_ROOT / "ux" / "api.py",
-    "vamos.experiment.quick": SRC_ROOT / "experiment" / "quick" / "__init__.py",
 }
 
 

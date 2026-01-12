@@ -13,8 +13,11 @@ For lower-level control, import from the layered packages:
 
 from __future__ import annotations
 
+import logging
+
 from vamos.experiment.diagnostics.self_check import run_self_check
 from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.logging import configure_vamos_logging
 from vamos.experiment.optimize import OptimizeConfig, OptimizationResult
 from vamos.foundation.metrics.pareto import pareto_filter
 from vamos.foundation.problem.registry import (
@@ -30,13 +33,26 @@ from vamos.ux.analysis.core_objective_reduction import (
 )
 
 # Unified API - the primary entry point
-from vamos.experiment.unified import optimize
+from vamos.experiment.auto import suggest_algorithm
+from vamos.experiment.unified import optimize, optimize_many
+
+
+def configure_logging(*, level: int = logging.INFO) -> None:
+    """
+    Configure a minimal console logger for VAMOS.
+
+    This is intentionally opt-in (library code must not call logging.basicConfig()).
+    """
+    configure_vamos_logging(level=level)
+
 
 __all__ = [
     # Primary API
     "optimize",
+    "optimize_many",
     "OptimizeConfig",
     "OptimizationResult",
+    "suggest_algorithm",
     "pareto_filter",
     "ExperimentConfig",
     "ProblemSelection",
@@ -47,4 +63,5 @@ __all__ = [
     "ObjectiveReducer",
     "reduce_objectives",
     "run_self_check",
+    "configure_logging",
 ]
