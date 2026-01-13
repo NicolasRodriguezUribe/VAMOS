@@ -6,6 +6,7 @@ import numpy as np
 
 from vamos.foundation.metrics.hypervolume import hypervolume
 
+_get_indicator: Callable[..., Any] | None
 try:
     from vamos.foundation.metrics.moocore_indicators import get_indicator as _get_indicator
 except Exception:  # pragma: no cover - optional moocore dependency

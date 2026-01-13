@@ -32,7 +32,7 @@ from vamos.operators.impl.integer import random_integer_population
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
-    from vamos.foundation.kernel.protocols import KernelBackend
+    from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
     from vamos.hooks.live_viz import LiveVisualization
 
@@ -44,7 +44,7 @@ __all__ = [
 
 
 def initialize_smsemoa_run(
-    config: dict,
+    config: dict[str, Any],
     kernel: "KernelBackend",
     problem: "ProblemProtocol",
     termination: tuple[str, Any],
@@ -76,15 +76,13 @@ def initialize_smsemoa_run(
     tuple
         (state, live_cb, eval_strategy, max_eval, hv_tracker)
     """
-    max_eval, hv_config = parse_termination(termination, config)
+    max_eval, hv_config = parse_termination(termination, "SMSEMOA")
 
     live_cb = get_live_viz(live_viz)
     eval_strategy = get_eval_strategy(eval_strategy)
 
     # Setup HV tracker if configured
-    hv_tracker = None
-    if hv_config is not None:
-        hv_tracker = setup_hv_tracker(hv_config, problem.n_obj)
+    hv_tracker = setup_hv_tracker(hv_config, kernel)
 
     rng = np.random.default_rng(seed)
     pop_size = config["pop_size"]
@@ -117,13 +115,13 @@ def initialize_smsemoa_run(
 
     # Setup external archive
     archive_size = resolve_archive_size(config) or 0
-    archive_manager = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
+    archive_manager = None
 
     if archive_size > 0:
         archive_type = config.get("archive_type", "hypervolume")
-        archive_manager, archive_X, archive_F = setup_archive(
+        archive_X, archive_F, archive_manager = setup_archive(
             kernel=kernel,
             X=X,
             F=F,

@@ -11,7 +11,7 @@ This module contains the main NSGAII class with the evolutionary loop (run/ask/t
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -47,7 +47,6 @@ from vamos.operators.impl.real import VariationWorkspace
 from vamos.foundation.eval.backends import SerialEvalBackend, EvaluationBackend
 from vamos.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.foundation.observer import RunContext
-from vamos.engine.hyperheuristics.operator_selector import compute_reward
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 
@@ -98,7 +97,7 @@ class NSGAII:
         interrupted = False
         original_handler = signal.getsignal(signal.SIGINT)
 
-        def _handle_interrupt(signum, frame):
+        def _handle_interrupt(signum: int, frame: Any | None) -> None:
             nonlocal interrupted
             interrupted = True
             _logger().info("Interrupt received, finishing current generation...")
@@ -152,7 +151,7 @@ class NSGAII:
             F=st.F,
             generation=generation,
             n_eval=n_eval,
-            rng_state=st.rng.bit_generator.state,
+            rng_state=cast(dict[str, Any], st.rng.bit_generator.state),
             G=st.G,
             archive_X=st.archive_X,
             archive_F=st.archive_F,
@@ -206,7 +205,7 @@ class NSGAII:
             algorithm=self,
             config=self.cfg,
             algorithm_name="nsgaii",
-            engine_name=str(self.cfg.get("engine", "unknown")),
+            engine_name=str(self.kernel.name),
         )
         live_cb.on_start(ctx)
         hv_tracker = HVTracker(hv_config, self.kernel)
@@ -232,7 +231,7 @@ class NSGAII:
         mut_params = prepare_mutation_params(mut_params, encoding, n_var, prob_factor=mut_factor)
 
         variation_workspace = VariationWorkspace()
-        operator_pool, op_selector, indicator_eval, aos_controller = build_operator_pool(
+        operator_pool, aos_controller = build_operator_pool(
             self.cfg,
             encoding,
             cross_method,
@@ -259,8 +258,6 @@ class NSGAII:
             variation=operator_pool[0],
             operator_pool=operator_pool,
             variation_workspace=variation_workspace,
-            op_selector=op_selector,
-            indicator_eval=indicator_eval,
             sel_method=sel_method,
             pressure=pressure,
             pop_size=pop_size,
@@ -292,15 +289,10 @@ class NSGAII:
             arm = st.aos_controller.select_arm(mating_id=0, batch_size=st.offspring_size)
             idx = st.aos_controller.portfolio.index_of(arm.op_id)
             st.variation = st.operator_pool[idx]
-            st.last_operator_idx = idx
             st.aos_last_op_id = arm.op_id
             st.aos_last_op_name = arm.name
             st.aos_last_batch_size = st.offspring_size
             st.aos_step = st.generation
-        elif st.op_selector is not None:
-            idx = st.op_selector.select_operator()
-            st.variation = st.operator_pool[idx]
-            st.last_operator_idx = idx
 
         ranks, crowding = compute_selection_metrics(self.kernel, st.F, st.G, st.constraint_mode)
         parents_per_group = st.variation.parents_per_group
@@ -345,8 +337,8 @@ class NSGAII:
 
         F_off = eval_result.F
         G_off = eval_result.G if st.constraint_mode != "none" else None
-        hv_before = self._compute_hv_before(st)
-        aos_enabled = st.aos_controller is not None
+        aos_controller = st.aos_controller
+        assert st.hv_tracker is not None
 
         # Combine IDs for genealogy
         combined_X = np.vstack([st.X, X_off])
@@ -356,13 +348,13 @@ class NSGAII:
 
         # Survival selection
         if st.G is None or G_off is None or st.constraint_mode == "none":
-            if aos_enabled:
+            if aos_controller is not None:
                 new_X, new_F, selected_idx = self.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size, return_indices=True)
             else:
                 new_X, new_F = self.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size)
             new_G = None
         else:
-            if aos_enabled:
+            if aos_controller is not None:
                 new_X, new_F, new_G, selected_idx = feasible_nsga2_survival(
                     self.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size, return_indices=True
                 )
@@ -375,7 +367,7 @@ class NSGAII:
         st.X, st.F, st.G = new_X, new_F, new_G
         st.pending_offspring_ids = None
 
-        if aos_enabled and selected_idx is not None and st.aos_last_op_id is not None:
+        if aos_controller is not None and selected_idx is not None and st.aos_last_op_id is not None:
             try:
                 ranks, _ = self.kernel.nsga2_ranking(st.F)
                 nd_mask = ranks == ranks.min(initial=0)
@@ -385,9 +377,9 @@ class NSGAII:
             is_offspring = selected_idx >= parent_count
             n_survivors = int(np.sum(is_offspring))
             n_nd_insertions = int(np.sum(is_offspring & nd_mask))
-            st.aos_controller.observe_survivors(st.aos_last_op_id, n_survivors)
-            st.aos_controller.observe_nd_insertions(st.aos_last_op_id, n_nd_insertions)
-            trace_rows = st.aos_controller.finalize_generation(st.aos_step or 0)
+            aos_controller.observe_survivors(st.aos_last_op_id, n_survivors)
+            aos_controller.observe_nd_insertions(st.aos_last_op_id, n_nd_insertions)
+            trace_rows = aos_controller.finalize_generation(st.aos_step or 0)
             for row in trace_rows:
                 st.aos_trace_rows.append(
                     {
@@ -406,22 +398,8 @@ class NSGAII:
         update_archives(st, self.kernel)
 
         hv_reached = st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points_fn())
-        if not aos_enabled:
-            self._update_operator_selector(st, hv_before)
 
         return hv_reached
-
-    def _compute_hv_before(self, st: NSGAIIState) -> float | None:
-        """Compute HV before survival for adaptive operator selection."""
-        if st.aos_controller is not None:
-            return None
-        if st.indicator_eval is None:
-            return None
-        try:
-            return st.indicator_eval.compute(st.hv_points_fn())
-        except (ValueError, TypeError, RuntimeError) as exc:
-            _logger().debug("Failed to compute HV before: %s", exc)
-            return None
 
     def _combine_ids(self, st: NSGAIIState) -> np.ndarray | None:
         """Combine parent and offspring IDs for genealogy tracking."""
@@ -429,15 +407,4 @@ class NSGAII:
             return None
         current_ids = st.ids if st.ids is not None else np.array([], dtype=int)
         pending_ids = st.pending_offspring_ids if st.pending_offspring_ids is not None else np.array([], dtype=int)
-        return np.concatenate([current_ids, pending_ids])
-
-    def _update_operator_selector(self, st: NSGAIIState, hv_before: float | None) -> None:
-        """Update adaptive operator selector with reward."""
-        if st.op_selector is None or hv_before is None:
-            return
-        try:
-            hv_after = st.indicator_eval.compute(st.hv_points_fn())
-            reward = compute_reward(hv_before, hv_after, st.indicator_eval.mode)
-            st.op_selector.update(st.last_operator_idx, reward)
-        except (ValueError, TypeError, RuntimeError) as exc:
-            _logger().debug("Failed to compute operator reward: %s", exc)
+        return cast(np.ndarray, np.concatenate([current_ids, pending_ids]))

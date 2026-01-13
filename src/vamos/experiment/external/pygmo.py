@@ -56,13 +56,13 @@ def _run_pygmo_nsga2(
                 X = np.asarray(x, dtype=float)[np.newaxis, :]
                 F = np.empty((1, self._base_problem.n_obj))
                 self._base_problem.evaluate(X, {"F": F})
-                return F[0].tolist()
+                return [float(v) for v in F[0]]
 
             def get_bounds(self) -> tuple[list[float], list[float]]:
                 return (self._lower, self._upper)
 
             def get_nobj(self) -> int:
-                return self._base_problem.n_obj
+                return int(self._base_problem.n_obj)
 
             def get_name(self) -> str:
                 return "VAMOS-ZDT1"

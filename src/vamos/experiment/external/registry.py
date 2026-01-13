@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from difflib import get_close_matches
+from typing import Any, Callable
 
 from vamos.foundation.problem.registry import ProblemSelection
 
@@ -9,7 +10,7 @@ from .jmetalpy import _run_jmetalpy_nsga2, _run_jmetalpy_perm_nsga2
 from .pymoo import _run_pymoo_nsga2, _run_pymoo_perm_nsga2
 from .pygmo import _run_pygmo_nsga2
 
-_EXTERNAL_ALGORITHM_ADAPTERS = None
+_EXTERNAL_ALGORITHM_ADAPTERS: dict[str, "ExternalAlgorithmAdapter"] | None = None
 _EXTERNAL_DOCS = "docs/reference/algorithms.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
 
@@ -44,7 +45,7 @@ class ExternalAlgorithmAdapter:
     Thin adapter to standardize external baseline invocation.
     """
 
-    def __init__(self, name: str, runner_fn):
+    def __init__(self, name: str, runner_fn: Callable[..., Any]) -> None:
         self.name = name
         self._runner_fn = runner_fn
 
@@ -53,11 +54,11 @@ class ExternalAlgorithmAdapter:
         selection: ProblemSelection,
         *,
         use_native_problem: bool,
-        config,
-        make_metrics,
-        print_banner,
-        print_results,
-    ):
+        config: Any,
+        make_metrics: Callable[..., Any],
+        print_banner: Callable[..., Any],
+        print_results: Callable[..., Any],
+    ) -> Any:
         return self._runner_fn(
             selection,
             use_native_problem=use_native_problem,
@@ -98,11 +99,11 @@ def run_external(
     selection: ProblemSelection,
     *,
     use_native_problem: bool,
-    config,
-    make_metrics,
-    print_banner,
-    print_results,
-):
+    config: Any,
+    make_metrics: Callable[..., Any],
+    print_banner: Callable[..., Any],
+    print_results: Callable[..., Any],
+) -> Any:
     adapter = resolve_external_algorithm(name)
     try:
         return adapter.run(

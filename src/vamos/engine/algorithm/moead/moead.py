@@ -179,6 +179,8 @@ class MOEAD:
         st = self._st
         if st is None:
             raise RuntimeError("ask() called before initialization.")
+        if st.crossover_fn is None or st.mutation_fn is None:
+            raise RuntimeError("MOEA/D variation operators are not initialized.")
 
         pop_size = st.pop_size
         batch_size = int(st.batch_size)
@@ -207,16 +209,16 @@ class MOEAD:
             parents[:, 0, :] = st.X[parent_pairs[:, 0]]
             parents[:, 1, :] = st.X[parent_pairs[:, 1]]
             parents[:, 2, :] = st.X[active]
-            offspring = st.crossover_fn(parents)
+            offspring = st.crossover_fn(parents, st.rng)
             children = offspring[:, 0, :].copy()
             parents_flat = np.column_stack([parent_pairs, active]).reshape(-1)
         else:
             parents_flat = parent_pairs.reshape(-1)
             parents = st.X[parents_flat].reshape(batch_size, 2, n_var)
-            offspring = st.crossover_fn(parents)
+            offspring = st.crossover_fn(parents, st.rng)
             children = offspring[:, 0, :].copy()
 
-        children = st.mutation_fn(children)
+        children = st.mutation_fn(children, st.rng)
 
         # Store pending info for tell()
         st.pending_offspring = children

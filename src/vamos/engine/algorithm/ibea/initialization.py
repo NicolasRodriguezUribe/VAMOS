@@ -70,15 +70,13 @@ def initialize_ibea_run(
     tuple[IBEAState, Any, Any, int, Any]
         (state, live_cb, eval_strategy, max_eval, hv_tracker)
     """
-    max_eval, hv_config = parse_termination(termination, cfg)
+    max_eval, hv_config = parse_termination(termination, "IBEA")
 
     live_cb = get_live_viz(live_viz)
     eval_strategy = get_eval_strategy(eval_strategy)
 
     # Setup HV tracker if configured
-    hv_tracker = None
-    if hv_config is not None:
-        hv_tracker = setup_hv_tracker(hv_config, problem.n_obj)
+    hv_tracker = setup_hv_tracker(hv_config, kernel)
 
     rng = np.random.default_rng(seed)
     pop_size = int(cfg["pop_size"])
@@ -124,7 +122,7 @@ def initialize_ibea_run(
 
     if archive_size > 0:
         archive_type = cfg.get("archive_type", "hypervolume")
-        archive_manager, archive_X, archive_F = setup_archive(
+        archive_X, archive_F, archive_manager = setup_archive(
             kernel=kernel,
             X=X,
             F=F,
@@ -144,7 +142,7 @@ def initialize_ibea_run(
         algorithm=None,
         config=cfg,
         algorithm_name="ibea",
-        engine_name=str(cfg.get("engine", "unknown")),
+        engine_name=str(kernel.name),
     )
     live_cb.on_start(ctx)
 

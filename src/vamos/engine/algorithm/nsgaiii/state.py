@@ -100,7 +100,7 @@ def build_nsgaiii_result(
     }
 
     # Include archive if present
-    if state.archive_X is not None and state.archive_X.size > 0:
+    if state.archive_X is not None and state.archive_F is not None and state.archive_X.size > 0:
         result["archive_X"] = state.archive_X.copy()
         result["archive_F"] = state.archive_F.copy()
 

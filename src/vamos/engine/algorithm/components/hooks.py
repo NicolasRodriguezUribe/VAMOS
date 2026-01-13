@@ -182,7 +182,7 @@ def track_offspring_genealogy(
 
 
 def finalize_genealogy(
-    result: dict,
+    result: dict[str, Any],
     state: "AlgorithmState",
     kernel: "KernelBackend",
 ) -> None:

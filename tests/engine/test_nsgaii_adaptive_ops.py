@@ -25,10 +25,9 @@ def test_nsga2_with_adaptive_operator_selector_runs():
         "selection": ("tournament", {"pressure": 2}),
         "engine": "numpy",
         "result_mode": "population",
-        "adaptive_operators": {
+        "adaptive_operator_selection": {
             "enabled": True,
             "method": "ucb",
-            "indicator": "hv",
             "operator_pool": [
                 {"crossover": ("sbx", {"prob": 0.9, "eta": 15.0}), "mutation": ("pm", {"prob": "1/n", "eta": 20.0})},
                 {"crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.5}), "mutation": ("gaussian", {"prob": "1/n", "sigma": 0.1})},

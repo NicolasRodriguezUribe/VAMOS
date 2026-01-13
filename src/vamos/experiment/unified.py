@@ -12,7 +12,7 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import overload
 
-from vamos.engine.algorithm.config.types import AlgorithmConfigLike
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.experiment.optimize import (
     OptimizeConfig,
     OptimizationResult,
@@ -51,7 +51,7 @@ def optimize(
     n_var: int | None = None,
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
-    algorithm_config: AlgorithmConfigLike | None = None,
+    algorithm_config: AlgorithmConfigProtocol | None = None,
 ) -> OptimizationResult: ...
 
 
@@ -68,7 +68,7 @@ def optimize(
     n_var: int | None = None,
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
-    algorithm_config: AlgorithmConfigLike | None = None,
+    algorithm_config: AlgorithmConfigProtocol | None = None,
 ) -> list[OptimizationResult]: ...
 
 
@@ -84,7 +84,7 @@ def optimize(
     n_var: int | None = None,
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
-    algorithm_config: AlgorithmConfigLike | None = None,
+    algorithm_config: AlgorithmConfigProtocol | None = None,
 ) -> OptimizationResult | list[OptimizationResult]:
     """
     Unified entry point for VAMOS optimization.
@@ -93,7 +93,7 @@ def optimize(
     - Accepts problem names (strings), instances, or OptimizeConfig
     - Supports AutoML with algorithm="auto"
     - Handles multi-run studies with seed=[0,1,2,...]
-    - Prefer config objects (OptimizeConfig + algorithm config builders). For plugins, `algorithm_config` may be a raw mapping.
+    - Prefer config objects (OptimizeConfig + algorithm config builders).
 
     Args:
         problem: Problem name (e.g., "zdt1"), problem instance, or OptimizeConfig.
@@ -106,7 +106,7 @@ def optimize(
         n_var: Override problem dimension when using a string problem key.
         n_obj: Override objective count when using a string problem key.
         problem_kwargs: Extra kwargs forwarded to problem instantiation for string problems.
-        algorithm_config: Optional algorithm config object (preferred) or a raw mapping (plugins).
+        algorithm_config: Optional algorithm config object.
 
     Returns:
         OptimizationResult for single seed, or list[OptimizationResult] for multiple seeds.
@@ -165,7 +165,7 @@ def optimize_many(
     n_var: int | None = None,
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
-    algorithm_config: AlgorithmConfigLike | None = None,
+    algorithm_config: AlgorithmConfigProtocol | None = None,
 ) -> list[OptimizationResult]:
     """Run optimization for multiple seeds; always returns a list."""
     if isinstance(problem, OptimizeConfig):
@@ -187,7 +187,7 @@ def _run_single(
     n_var: int | None,
     n_obj: int | None,
     problem_kwargs: Mapping[str, object] | None,
-    algorithm_config: AlgorithmConfigLike | None,
+    algorithm_config: AlgorithmConfigProtocol | None,
 ) -> OptimizationResult:
     """Execute a single optimization run."""
     if verbose:
@@ -224,7 +224,7 @@ def _run_single(
             effective_budget,
         )
 
-    algo_cfg: AlgorithmConfigLike
+    algo_cfg: AlgorithmConfigProtocol
     if algorithm_config is None:
         algo_cfg = _build_algorithm_config(
             algorithm,
@@ -232,15 +232,9 @@ def _run_single(
             n_var=n_var,
             n_obj=n_obj,
         )
-    elif isinstance(algorithm_config, Mapping):
-        if "engine" in algorithm_config:
-            raise ValueError("engine must be configured via optimize(..., engine=...) or OptimizeConfig.engine, not algorithm_config.")
-        algo_cfg_dict: dict[str, object] = dict(algorithm_config)
-        algo_cfg_dict.setdefault("pop_size", effective_pop_size)
-        algo_cfg_dict.setdefault("n_var", n_var)
-        algo_cfg_dict.setdefault("n_obj", n_obj)
-        algo_cfg = algo_cfg_dict
     else:
+        if not isinstance(algorithm_config, AlgorithmConfigProtocol):
+            raise TypeError("algorithm_config must be a config object (e.g., NSGAIIConfig().fixed()).")
         if pop_size is not None:
             raise TypeError("pop_size must be set on algorithm_config when passing a config object.")
         algo_cfg = algorithm_config

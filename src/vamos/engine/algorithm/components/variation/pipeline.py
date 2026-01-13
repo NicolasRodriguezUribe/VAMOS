@@ -74,7 +74,7 @@ class VariationPipeline:
             raise ValueError("Repair operators are only supported for real encoding.")
         method, params = self.repair_cfg
         try:
-            op_cls = get_operator_registry().get(method.lower())
+            op_cls = cast(type[Any], get_operator_registry().get(method.lower()))
         except KeyError as exc:
             available = ", ".join(get_operator_registry().list())
             raise ValueError(f"Unknown repair operator '{method}'. Available: {available}") from exc
@@ -101,8 +101,7 @@ class VariationPipeline:
 
         # Repair
         if self.repair_op is not None:
-            repaired = cast(np.ndarray, self.repair_op(offspring, self.xl, self.xu, rng))
-            offspring = repaired
+            offspring = self.repair_op(offspring, self.xl, self.xu, rng)
 
         return offspring
 

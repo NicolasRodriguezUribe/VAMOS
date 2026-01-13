@@ -12,7 +12,7 @@ References:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -27,10 +27,11 @@ from .helpers import (
 )
 from .initialization import initialize_nsgaiii_run
 from .state import NSGAIIIState, build_nsgaiii_result
+from vamos.engine.algorithm.components.termination import HVTracker
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
-    from vamos.foundation.kernel.protocols import KernelBackend
+    from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
 from vamos.hooks.live_viz import LiveVisualization
 from vamos.foundation.observer import RunContext
@@ -81,14 +82,14 @@ class NSGAIII:
     >>> result = nsga3.result()
     """
 
-    def __init__(self, config: dict, kernel: "KernelBackend"):
+    def __init__(self, config: dict[str, Any], kernel: "KernelBackend"):
         self.cfg = config
         self.kernel = kernel
         self._st: NSGAIIIState | None = None
         self._live_cb: "LiveVisualization | None" = None
         self._eval_strategy: "EvaluationBackend | None" = None
         self._max_eval: int = 0
-        self._hv_tracker: Any = None
+        self._hv_tracker: HVTracker | None = None
         self._problem: "ProblemProtocol | None" = None
 
     # -------------------------------------------------------------------------
@@ -129,7 +130,7 @@ class NSGAIII:
         self._live_cb = live_cb
         self._eval_strategy = eval_strategy
         self._max_eval = max_eval
-        self._hv_tracker = hv_tracker
+        self._hv_tracker = cast(HVTracker, hv_tracker)
         self._problem = problem
 
         st = self._st
@@ -138,7 +139,7 @@ class NSGAIII:
             algorithm=self,
             config=self.cfg,
             algorithm_name="nsgaiii",
-            engine_name=str(self.cfg.get("engine", "unknown")),
+            engine_name=str(self.kernel.name),
         )
         live_cb.on_start(ctx)
 
@@ -189,19 +190,16 @@ class NSGAIII:
 
             # Update archive
             if st.archive_manager is not None:
-                st.archive_manager.update(st.X, st.F)
-                st.archive_X, st.archive_F = st.archive_manager.get_archive()
+                st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F)
 
             # Live callback
             live_cb.on_generation(st.generation, F=st.F, stats={"evals": st.n_eval})
             stop_requested = live_should_stop(live_cb)
 
             # Check HV threshold
-            if hv_tracker is not None:
-                hv_tracker.update(st.F)
-                if hv_tracker.reached_threshold():
-                    hv_reached = True
-                    break
+            if hv_tracker is not None and hv_tracker.enabled and hv_tracker.reached(st.hv_points()):
+                hv_reached = True
+                break
 
         live_cb.on_end(final_F=st.F)
         result = build_nsgaiii_result(st, hv_reached, kernel=self.kernel)
@@ -221,6 +219,8 @@ class NSGAIII:
         parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=n_parents)
 
         X_parents = st.X[parents_idx].reshape(-1, 2, n_var)
+        if st.crossover_fn is None or st.mutation_fn is None:
+            raise RuntimeError("NSGA-III variation operators are not initialized.")
         offspring_pairs = st.crossover_fn(X_parents)
         X_off = offspring_pairs.reshape(-1, n_var)
         X_off = st.mutation_fn(X_off)
@@ -275,6 +275,7 @@ class NSGAIII:
         self._st, self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = initialize_nsgaiii_run(
             self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
+        self._hv_tracker = cast(HVTracker, self._hv_tracker)
         self._problem = problem
         if self._st is not None:
             self._st.pending_offspring = None
@@ -284,7 +285,7 @@ class NSGAIII:
                 algorithm=self,
                 config=self.cfg,
                 algorithm_name="nsgaiii",
-                engine_name=str(self.cfg.get("engine", "unknown")),
+                engine_name=str(self.kernel.name),
             )
             self._live_cb.on_start(ctx)
 
@@ -378,16 +379,15 @@ class NSGAIII:
 
         # Update archive
         if st.archive_manager is not None:
-            st.archive_manager.update(st.X, st.F)
-            st.archive_X, st.archive_F = st.archive_manager.get_archive()
+            st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F)
 
         # Live callback
         if self._live_cb is not None:
             self._live_cb.on_generation(st.generation, F=st.F)
 
         # Check HV tracker
-        if st.hv_tracker is not None:
-            st.hv_tracker.update(st.F)
+        if st.hv_tracker is not None and st.hv_tracker.enabled:
+            st.hv_tracker.reached(st.hv_points())
 
     def should_terminate(self) -> bool:
         """Check if termination criterion is met.
@@ -401,7 +401,7 @@ class NSGAIII:
             return True
         if self._st.n_eval >= self._max_eval:
             return True
-        if self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold():
+        if self._st.hv_tracker is not None and self._st.hv_tracker.enabled and self._st.hv_tracker.reached(self._st.hv_points()):
             return True
         return False
 
@@ -421,7 +421,7 @@ class NSGAIII:
         if self._st is None:
             raise RuntimeError("Algorithm not initialized.")
 
-        hv_reached = self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold()
+        hv_reached = self._st.hv_tracker is not None and self._st.hv_tracker.enabled and self._st.hv_tracker.reached(self._st.hv_points())
 
         if self._live_cb is not None:
             self._live_cb.on_end(final_F=self._st.F)

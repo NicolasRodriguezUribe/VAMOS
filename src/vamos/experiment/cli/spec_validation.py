@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import fields
+from difflib import get_close_matches
 from typing import Any, Iterable
 
 from vamos.archive.bounded_archive import BoundedArchiveConfig
@@ -22,6 +23,7 @@ from vamos.engine.algorithm.config import (
     SPEA2ConfigData,
 )
 from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.problem.registry import available_problem_names
 from vamos.monitoring.hv_convergence import HVConvergenceConfig
 
 from .spec_args import parser_spec_keys
@@ -51,10 +53,11 @@ def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -
         raise ValueError(f"Unknown top-level keys in experiment spec: {', '.join(unknown)}")
 
     version = spec.get("version")
-    if version is not None:
-        version_str = str(version).strip()
-        if version_str != EXPERIMENT_SPEC_VERSION:
-            raise ValueError(f"Unsupported experiment spec version. Expected version={EXPERIMENT_SPEC_VERSION!r}, got {version_str!r}.")
+    if version is None:
+        raise ValueError(f"Experiment spec must declare 'version: {EXPERIMENT_SPEC_VERSION}'.")
+    version_str = str(version).strip()
+    if version_str != EXPERIMENT_SPEC_VERSION:
+        raise ValueError(f"Unsupported experiment spec version. Expected version={EXPERIMENT_SPEC_VERSION!r}, got {version_str!r}.")
 
     defaults = spec.get("defaults")
     if defaults is None:
@@ -68,9 +71,17 @@ def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -
         problems = {}
     if not isinstance(problems, dict):
         raise ValueError("Experiment spec 'problems' must be a mapping of problem_key -> overrides.")
+    known_problems = sorted(available_problem_names())
     for key, value in problems.items():
         if not isinstance(key, str) or not key:
             raise ValueError("Experiment spec 'problems' keys must be non-empty strings.")
+        normalized_key = key.lower()
+        if normalized_key not in known_problems:
+            suggestions = get_close_matches(normalized_key, known_problems, n=3, cutoff=0.6)
+            suggestion_text = ""
+            if suggestions:
+                suggestion_text = f" Did you mean: {', '.join(suggestions)}?"
+            raise ValueError(f"Unknown problem key in experiment spec: {key!r}.{suggestion_text}")
         if value is None:
             continue
         if not isinstance(value, dict):

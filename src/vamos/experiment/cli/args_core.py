@@ -150,3 +150,17 @@ def add_core_arguments(
         default=spec_default(experiment_defaults, "seed", default_config.seed),
         help="Random seed used by internal and external runs (default: %(default)s).",
     )
+    add_spec_argument(
+        parser,
+        "--verbose",
+        action="store_true",
+        default=bool(experiment_defaults.get("verbose", False)),
+        help="Enable verbose logging (DEBUG).",
+    )
+    add_spec_argument(
+        parser,
+        "--quiet",
+        action="store_true",
+        default=bool(experiment_defaults.get("quiet", False)),
+        help="Suppress informational logging (only WARNING+).",
+    )

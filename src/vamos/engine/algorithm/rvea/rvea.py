@@ -36,16 +36,16 @@ def _generate_reference_vectors(n_obj: int, n_partitions: int = 12) -> np.ndarra
     def _das_dennis(n_partitions: int, n_obj: int) -> np.ndarray:
         if n_obj == 1:
             return np.array([[1.0]])
-        vectors = []
+        compositions: list[list[int]] = []
         for indices in combinations(range(n_partitions + n_obj - 1), n_obj - 1):
             prev = -1
-            vec = []
+            composition: list[int] = []
             for idx in indices:
-                vec.append(idx - prev - 1)
+                composition.append(idx - prev - 1)
                 prev = idx
-            vec.append(n_partitions + n_obj - 2 - prev)
-            vectors.append(vec)
-        vectors = np.array(vectors, dtype=float) / n_partitions
+            composition.append(n_partitions + n_obj - 2 - prev)
+            compositions.append(composition)
+        vectors = np.asarray(compositions, dtype=float) / float(n_partitions)
         return vectors
 
     ref_dirs = _das_dennis(n_partitions, n_obj)
@@ -55,14 +55,14 @@ def _generate_reference_vectors(n_obj: int, n_partitions: int = 12) -> np.ndarra
 def _calc_V(ref_dirs: np.ndarray) -> np.ndarray:
     norms = np.linalg.norm(ref_dirs, axis=1, keepdims=True)
     norms[norms == 0.0] = 1.0
-    return ref_dirs / norms
+    return np.asarray(ref_dirs / norms, dtype=float)
 
 
 def _calc_gamma(V: np.ndarray) -> np.ndarray:
     cosine = V @ V.T
     gamma = np.arccos((-np.sort(-1.0 * cosine, axis=1))[:, 1])
     gamma = np.maximum(gamma, 1e-64)
-    return gamma
+    return np.asarray(gamma, dtype=float)
 
 
 def _apd_survival(
@@ -87,7 +87,7 @@ def _apd_survival(
     acute_angle = np.arccos(cos_theta)
     niches = acute_angle.argmin(axis=1)
 
-    survivors = []
+    survivor_indices: list[int] = []
     for k in range(len(V)):
         assigned = np.where(niches == k)[0]
         if assigned.size == 0:
@@ -97,9 +97,9 @@ def _apd_survival(
         penalty = M * ((n_gen / n_max_gen) ** alpha) * (theta / gamma[k])
         apd = dist_to_ideal[assigned] * (1.0 + penalty)
         survivor = assigned[int(np.argmin(apd))]
-        survivors.append(survivor)
+        survivor_indices.append(int(survivor))
 
-    survivors = np.asarray(survivors, dtype=int)
+    survivors = np.asarray(survivor_indices, dtype=int)
     nadir = F[survivors].max(axis=0) if survivors.size else None
     return survivors, ideal, nadir
 

@@ -10,6 +10,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.algorithm.components.state import AlgorithmState
 
 
@@ -38,7 +39,7 @@ class IBEAState(AlgorithmState):
     kappa: float = 1.0
     fitness: np.ndarray = field(default_factory=lambda: np.array([]))
     pressure: int = 2
-    variation: Any = None
+    variation: VariationPipeline | None = None
 
 
 def build_ibea_result(
@@ -93,7 +94,7 @@ def build_ibea_result(
     }
 
     # Include archive if present
-    if state.archive_X is not None and state.archive_X.size > 0:
+    if state.archive_X is not None and state.archive_F is not None and state.archive_X.size > 0:
         result["archive_X"] = state.archive_X.copy()
         result["archive_F"] = state.archive_F.copy()
 

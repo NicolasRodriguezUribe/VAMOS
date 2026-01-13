@@ -37,7 +37,6 @@ def test_moead_binary_encoding_defaults(mock_kernel):
     problem = MockBinaryProblem()
     algo, config = build_moead_algorithm(
         kernel=mock_kernel,
-        engine_name="test_moead",
         problem=problem,
         pop_size=100,
         moead_variation=None,
@@ -54,7 +53,6 @@ def test_smsemoa_binary_encoding_defaults(mock_kernel):
     problem = MockBinaryProblem()
     algo, config = build_smsemoa_algorithm(
         kernel=mock_kernel,
-        engine_name="test_smsemoa",
         problem=problem,
         pop_size=100,
         smsemoa_variation=None,
@@ -70,7 +68,6 @@ def test_nsgaiii_permutation_encoding_defaults(mock_kernel):
     problem = MockPermutationProblem()
     algo, config = build_nsgaiii_algorithm(
         kernel=mock_kernel,
-        engine_name="test_nsgaiii",
         problem=problem,
         pop_size=100,
         nsgaiii_variation=None,
@@ -90,7 +87,6 @@ def test_agemoea_builder_legacy_variation(mock_kernel):
     variation = {"crossover": ("custom_cx", {"p": 0.5})}
     algo, config = build_agemoea_algorithm(
         kernel=mock_kernel,
-        engine_name="test_agemoea",
         problem=problem,
         pop_size=100,
         agemoea_variation=variation,
@@ -107,7 +103,6 @@ def test_rvea_builder_legacy_variation(mock_kernel):
     variation = {"mutation": ("custom_mut", {"p": 0.1})}
     algo, config = build_rvea_algorithm(
         kernel=mock_kernel,
-        engine_name="test_rvea",
         problem=problem,
         pop_size=100,
         rvea_variation=variation,
@@ -124,7 +119,6 @@ def test_agemoea_pipeline_run_integration(mock_kernel):
     # Build via builder
     algo, _ = build_agemoea_algorithm(
         kernel=mock_kernel,
-        engine_name="test_agemoea",
         problem=problem,
         pop_size=100,
         agemoea_variation=None,  # Uses defaults

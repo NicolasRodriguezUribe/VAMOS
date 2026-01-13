@@ -58,6 +58,7 @@ def setup_archive(
     if not archive_size:
         return None, None, None
 
+    archive_manager: CrowdingDistanceArchive | HypervolumeArchive
     if archive_type == "hypervolume":
         archive_manager = HypervolumeArchive(archive_size, n_var, n_obj, dtype)
     else:

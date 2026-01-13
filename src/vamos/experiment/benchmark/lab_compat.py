@@ -36,7 +36,7 @@ def _needs_engine_suffix(df: Any) -> bool:
 def _algorithm_labels(df: Any) -> list[str]:
     use_engine = _needs_engine_suffix(df)
 
-    def _format_row(row) -> str:
+    def _format_row(row: Any) -> str:
         algo = str(row.get("algorithm", "")).strip()
         engine = str(row.get("engine", "")).strip()
         if use_engine and engine and engine.lower() not in {"external", "none"}:

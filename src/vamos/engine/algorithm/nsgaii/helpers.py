@@ -5,7 +5,7 @@ Separated to keep the main algorithm class focused on orchestration.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal, overload
 
 import numpy as np
 
@@ -35,6 +35,34 @@ def build_mating_pool(
     if parent_indices.size != parent_count:
         raise ValueError("Selection operator returned an unexpected number of parents.")
     return parent_indices.reshape(parent_count // group_size, group_size)
+
+
+@overload
+def feasible_nsga2_survival(
+    kernel: Any,
+    X: np.ndarray,
+    F: np.ndarray,
+    G: np.ndarray | None,
+    X_off: np.ndarray,
+    F_off: np.ndarray,
+    G_off: np.ndarray | None,
+    pop_size: int,
+    return_indices: Literal[False] = False,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]: ...
+
+
+@overload
+def feasible_nsga2_survival(
+    kernel: Any,
+    X: np.ndarray,
+    F: np.ndarray,
+    G: np.ndarray | None,
+    X_off: np.ndarray,
+    F_off: np.ndarray,
+    G_off: np.ndarray | None,
+    pop_size: int,
+    return_indices: Literal[True],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None, np.ndarray]: ...
 
 
 def feasible_nsga2_survival(

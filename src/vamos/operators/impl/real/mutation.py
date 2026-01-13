@@ -262,6 +262,8 @@ class UniformMutation(Mutation):
         if prob_mutation is not None and prob is not None:
             raise TypeError("UniformMutation received both 'prob' and 'prob_mutation'. Use only one.")
         prob_value = prob_mutation if prob is None else prob
+        if prob_value is None:  # pragma: no cover - guarded by checks above
+            raise TypeError("UniformMutation requires a mutation probability.")
         self.prob = float(prob_value)
         self.perturb = float(np.clip(perturb, 0.0, 1.0))
         self.lower, self.upper = _ensure_bounds(lower, upper)
@@ -312,6 +314,8 @@ class LinkedPolynomialMutation(Mutation):
         if prob_mutation is not None and prob is not None:
             raise TypeError("LinkedPolynomialMutation received both 'prob' and 'prob_mutation'. Use only one.")
         prob_value = prob_mutation if prob is None else prob
+        if prob_value is None:  # pragma: no cover - guarded by checks above
+            raise TypeError("LinkedPolynomialMutation requires a mutation probability.")
         self.prob = float(prob_value)
         self.eta = float(eta)
         self.lower, self.upper = _ensure_bounds(lower, upper)

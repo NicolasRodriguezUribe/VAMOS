@@ -40,9 +40,6 @@ class NSGAIIState:
     variation: VariationPipeline
     operator_pool: list[VariationPipeline]
     variation_workspace: VariationWorkspace
-    op_selector: Any | None
-    indicator_eval: Any | None
-    last_operator_idx: int = 0
 
     # Selection
     sel_method: str = "tournament"

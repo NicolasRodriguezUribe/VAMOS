@@ -7,11 +7,12 @@ This module handles the construction of variation pipelines.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
 from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
+from vamos.foundation.encoding import normalize_encoding
 from vamos.operators.impl.real import VariationWorkspace
 
 if TYPE_CHECKING:
@@ -54,11 +55,17 @@ def build_variation_pipeline(
 
     mut_method, mut_params = cfg["mutation"]
     mut_method = mut_method.lower()
-    mut_params = prepare_mutation_params(mut_params, encoding, n_var, prob_factor=cfg.get("mutation_prob_factor"))
+    normalized = normalize_encoding(encoding)
+    mut_params = prepare_mutation_params(
+        cast(dict[str, float | int | str | None], dict(mut_params)),
+        normalized,
+        n_var,
+        prob_factor=cast(float | None, cfg.get("mutation_prob_factor")),
+    )
 
     variation_workspace = VariationWorkspace()
     variation = VariationPipeline(
-        encoding=encoding,
+        encoding=normalized,
         cross_method=cross_method,
         cross_params=cross_params,
         mut_method=mut_method,

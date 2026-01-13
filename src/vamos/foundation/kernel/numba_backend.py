@@ -1,11 +1,22 @@
 # kernel/numba_backend.py
-import numpy as np
-from typing import Iterable
+from __future__ import annotations
 
-from numba import njit
+import numpy as np
+from collections.abc import Callable, Iterable, Mapping
+from typing import Any, Literal, TypeVar, cast, overload
+
+from numba import njit as _numba_njit
 
 from .backend import KernelBackend
 from .numpy_backend import NumPyKernel as _NumPyKernel
+
+
+_F = TypeVar("_F", bound=Callable[..., object])
+
+
+def njit(*args: Any, **kwargs: Any) -> Callable[[_F], _F]:
+    """Typed wrapper around numba.njit to keep mypy happy."""
+    return cast(Callable[[_F], _F], _numba_njit(*args, **kwargs))
 
 
 @njit(cache=True)
@@ -171,7 +182,9 @@ class NumbaKernel(KernelBackend):
     Stochastic operators (selection, crossover, mutation) reuse the NumPy implementations.
     """
 
-    def __init__(self):
+    name = "numba"
+
+    def __init__(self) -> None:
         self._numpy_ops = _NumPyKernel()
 
     def capabilities(self) -> Iterable[str]:
@@ -198,22 +211,48 @@ class NumbaKernel(KernelBackend):
     def sbx_crossover(
         self,
         X_parents: np.ndarray,
-        params: dict,
-        rng: np.random.Generator,
+        params: Mapping[str, object],
+        rng: np.random.Generator | None,
         xl: float,
         xu: float,
     ) -> np.ndarray:
+        if rng is None:
+            rng = np.random.default_rng()
         return self._numpy_ops.sbx_crossover(X_parents, params, rng, xl, xu)
 
     def polynomial_mutation(
         self,
         X: np.ndarray,
-        params: dict,
-        rng: np.random.Generator,
+        params: Mapping[str, object],
+        rng: np.random.Generator | None,
         xl: float,
         xu: float,
     ) -> None:
+        if rng is None:
+            rng = np.random.default_rng()
         self._numpy_ops.polynomial_mutation(X, params, rng, xl, xu)
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
     def nsga2_survival(
         self,

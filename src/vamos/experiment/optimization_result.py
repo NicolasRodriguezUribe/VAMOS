@@ -91,7 +91,9 @@ class OptimizationResult:
         Args:
             return_indices: When True, also return indices of the front in F.
         """
-        return pareto_filter(self.F, return_indices=return_indices)
+        if return_indices:
+            return pareto_filter(self.F, return_indices=True)
+        return pareto_filter(self.F, return_indices=False)
 
     def plot(self, show: bool = True, **kwargs: Any) -> Any:
         """

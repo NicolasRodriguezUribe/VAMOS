@@ -8,6 +8,7 @@ This module contains utility functions for SMS-EMOA:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -16,7 +17,7 @@ from vamos.foundation.metrics.hypervolume import hypervolume_contributions
 
 if TYPE_CHECKING:
     from .state import SMSEMOAState
-    from vamos.foundation.kernel.protocols import KernelBackend
+    from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
 
 
@@ -30,7 +31,7 @@ __all__ = [
 
 def initialize_reference_point(
     F: np.ndarray,
-    ref_cfg: dict,
+    ref_cfg: Mapping[str, object],
 ) -> tuple[np.ndarray, float, bool]:
     """Initialize reference point for HV computation.
 
@@ -49,7 +50,8 @@ def initialize_reference_point(
     tuple
         (ref_point, ref_offset, ref_adaptive)
     """
-    offset = float(ref_cfg.get("offset", 1.0))
+    offset_raw = ref_cfg.get("offset", 1.0)
+    offset = float(offset_raw) if isinstance(offset_raw, (int, float, str)) else 1.0
     adaptive = bool(ref_cfg.get("adaptive", True))
     vector = ref_cfg.get("vector")
 
@@ -85,7 +87,7 @@ def update_reference_point(
     np.ndarray
         Updated reference point.
     """
-    return F_new.max(axis=0) + ref_offset
+    return np.asarray(F_new.max(axis=0) + ref_offset, dtype=float)
 
 
 def survival_selection(

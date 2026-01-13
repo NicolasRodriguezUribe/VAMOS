@@ -48,7 +48,6 @@ def build_algorithm(
     if algorithm_name == "nsgaii":
         return build_nsgaii_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             offspring_size=offspring_size,
@@ -62,7 +61,6 @@ def build_algorithm(
     elif algorithm_name == "moead":
         return build_moead_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             moead_variation=moead_variation,
@@ -71,7 +69,6 @@ def build_algorithm(
     elif algorithm_name == "smsemoa":
         return build_smsemoa_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             smsemoa_variation=smsemoa_variation,
@@ -80,7 +77,6 @@ def build_algorithm(
     elif algorithm_name == "nsgaiii":
         return build_nsgaiii_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             nsgaiii_variation=nsgaiii_variation,
@@ -90,7 +86,6 @@ def build_algorithm(
     elif algorithm_name == "spea2":
         return build_spea2_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             selection_pressure=selection_pressure,
@@ -101,7 +96,6 @@ def build_algorithm(
     elif algorithm_name == "ibea":
         return build_ibea_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             selection_pressure=selection_pressure,
@@ -111,7 +105,6 @@ def build_algorithm(
     elif algorithm_name == "smpso":
         return build_smpso_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             external_archive_size=external_archive_size,
@@ -121,7 +114,6 @@ def build_algorithm(
     elif algorithm_name == "agemoea":
         return build_agemoea_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             agemoea_variation=agemoea_variation,  # Using generic **kwargs if not in signature? No, need to add to signature.
@@ -130,7 +122,6 @@ def build_algorithm(
     elif algorithm_name == "rvea":
         return build_rvea_algorithm(
             kernel=kernel,
-            engine_name=engine_name,
             problem=problem,
             pop_size=pop_size,
             rvea_variation=rvea_variation,

@@ -2,6 +2,8 @@
 External baseline adapters and dispatch.
 """
 
+from typing import Any
+
 from .registry import (
     ExternalAlgorithmAdapter,
     EXTERNAL_ALGORITHM_RUNNERS,
@@ -11,7 +13,7 @@ from .registry import (
 )
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
     if name == "EXTERNAL_ALGORITHM_ADAPTERS":
         return _get_external_algorithm_adapters()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

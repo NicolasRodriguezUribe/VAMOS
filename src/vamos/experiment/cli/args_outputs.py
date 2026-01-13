@@ -23,6 +23,13 @@ def add_output_arguments(
     )
     add_spec_argument(
         parser,
+        "--plot",
+        action="store_true",
+        default=bool(experiment_defaults.get("plot", False)),
+        help="Save Pareto front plots after runs.",
+    )
+    add_spec_argument(
+        parser,
         "--live-viz-interval",
         type=int,
         default=experiment_defaults.get("live_viz_interval", 5),

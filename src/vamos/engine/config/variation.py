@@ -4,21 +4,21 @@ Shared helpers for variation/default handling across CLI, runner, and factories.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from collections.abc import Mapping
+from typing import Any
 
 from vamos.foundation.encoding import normalize_encoding
-from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, OperatorName
 
 
 # =============================================================================
 # Operator Registry by Encoding
 # =============================================================================
 
-OperatorParams = Dict[str, Any]
-OperatorTuple = Tuple[OperatorName, OperatorParams]
-VariationConfig = Dict[str, Any]
+OperatorParams = dict[str, Any]
+OperatorTuple = tuple[str, OperatorParams]
+VariationConfig = dict[str, Any]
 
-OPERATORS_BY_ENCODING: Dict[str, Dict[str, List[OperatorTuple]]] = {
+OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
     "real": {
         "crossover": [
             ("sbx", {"prob": 1.0, "eta": 20.0}),
@@ -82,19 +82,19 @@ OPERATORS_BY_ENCODING: Dict[str, Dict[str, List[OperatorTuple]]] = {
 }
 
 
-def get_operators_for_encoding(encoding: str) -> Dict[str, List[OperatorTuple]]:
+def get_operators_for_encoding(encoding: str) -> dict[str, list[OperatorTuple]]:
     """Return available operators for the given encoding type."""
     normalized = normalize_encoding(encoding)
     return OPERATORS_BY_ENCODING.get(normalized, OPERATORS_BY_ENCODING["real"])
 
 
-def get_crossover_names(encoding: str) -> List[CrossoverName]:
+def get_crossover_names(encoding: str) -> list[str]:
     """Return list of crossover operator names for given encoding."""
     ops = get_operators_for_encoding(encoding)
     return [op[0] for op in ops.get("crossover", [])]
 
 
-def get_mutation_names(encoding: str) -> List[MutationName]:
+def get_mutation_names(encoding: str) -> list[str]:
     """Return list of mutation operator names for given encoding."""
     ops = get_operators_for_encoding(encoding)
     return [op[0] for op in ops.get("mutation", [])]
@@ -107,16 +107,18 @@ def normalize_operator_tuple(spec: object) -> OperatorTuple | None:
     if spec is None:
         return None
     if isinstance(spec, tuple):
-        name, params = spec
-        return (str(name), dict(params))
+        name, params_raw = spec
+        if isinstance(params_raw, Mapping):
+            return (str(name), dict(params_raw))
+        return (str(name), {})
     if isinstance(spec, str):
         return (spec, {})
     if isinstance(spec, dict):
         method = spec.get("method") or spec.get("name")
         if not method:
             return None
-        params = {k: v for k, v in spec.items() if k not in {"method", "name"} and v is not None}
-        return (str(method), params)
+        op_params: dict[str, Any] = {str(k): v for k, v in spec.items() if k not in {"method", "name"} and v is not None}
+        return (str(method), op_params)
     return None
 
 

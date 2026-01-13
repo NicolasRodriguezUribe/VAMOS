@@ -8,7 +8,8 @@ crowding distance) on CPU/GPU/TPU with auto-vectorization and JIT compilation.
 from __future__ import annotations
 
 import logging
-from typing import Tuple
+from collections.abc import Callable, Mapping
+from typing import Any, Literal, TypeVar, cast, overload
 
 import numpy as np
 
@@ -16,7 +17,7 @@ from .backend import KernelBackend
 from .numpy_backend import NumPyKernel
 
 
-def _import_jax():
+def _import_jax() -> tuple[Any, Any, Any]:
     try:
         import jax
         import jax.numpy as jnp
@@ -30,9 +31,21 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def _build_jax_kernels(jnp, jit):
-    @jit
-    def fast_non_dominated_sort_jax(F):
+_F = TypeVar("_F", bound=Callable[..., object])
+
+
+def _typed_decorator(decorator: Any) -> Callable[[_F], _F]:
+    def _wrap(fn: _F) -> _F:
+        return cast(_F, decorator(fn))
+
+    return _wrap
+
+
+def _build_jax_kernels(jnp: Any, jit: Any) -> tuple[Callable[[Any], Any], Callable[[Any], Any]]:
+    jit_typed = _typed_decorator(jit)
+
+    @jit_typed
+    def fast_non_dominated_sort_jax(F: Any) -> Any:
         """
         Compute non-dominated rank using JAX.
 
@@ -70,8 +83,8 @@ def _build_jax_kernels(jnp, jit):
 
         return domination_count
 
-    @jit
-    def crowding_distance_jax(F):
+    @jit_typed
+    def crowding_distance_jax(F: Any) -> Any:
         """Compute crowding distance in JAX."""
         n_points, n_obj = F.shape
         crowding = jnp.zeros(n_points)
@@ -116,7 +129,9 @@ class JaxKernel(KernelBackend):
     - GPU/TPU support automatically provided by JAX
     """
 
-    def __init__(self):
+    name = "jax"
+
+    def __init__(self) -> None:
         jax, jnp, jit = _import_jax()
         self._jax = jax
         self._jnp = jnp
@@ -124,12 +139,43 @@ class JaxKernel(KernelBackend):
         _logger().info("JaxKernel initialized. Devices: %s", jax.devices())
 
     def update_archive(
-        self, archive_X: np.ndarray, archive_F: np.ndarray, X: np.ndarray, F: np.ndarray, capacity: int
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        # Fallback to NumPy for complex archive logic for now, or use basic
-        return NumPyKernel().update_archive(archive_X, archive_F, X, F, capacity)
+        self,
+        archive_X: np.ndarray | None,
+        archive_F: np.ndarray | None,
+        population_X: np.ndarray,
+        population_F: np.ndarray,
+        archive_size: int,
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
+        if archive_size <= 0:
+            return archive_X, archive_F
 
-    def nsga2_ranking(self, F: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        if archive_X is None or archive_X.size == 0:
+            X_comb = np.asarray(population_X)
+            F_comb = np.asarray(population_F)
+        else:
+            if archive_F is None:
+                raise ValueError("archive_F must be provided when archive_X is provided.")
+            X_comb = np.vstack([archive_X, population_X])
+            F_comb = np.vstack([archive_F, population_F])
+
+        from vamos.foundation.metrics.pareto import pareto_filter
+
+        front_F, idx = pareto_filter(F_comb, return_indices=True)
+        if idx.size == 0:
+            return (
+                np.empty((0, int(population_X.shape[1])), dtype=population_X.dtype),
+                np.empty((0, int(population_F.shape[1])), dtype=float),
+            )
+        X_nd = X_comb[idx]
+        F_nd = front_F
+        if X_nd.shape[0] <= archive_size:
+            return X_nd, F_nd
+
+        _, crowding = NumPyKernel().nsga2_ranking(F_nd)
+        order = np.argsort(crowding)[::-1][:archive_size]
+        return X_nd[order], F_nd[order]
+
+    def nsga2_ranking(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Compute dominance ranks and crowding distance using JAX.
         """
@@ -169,7 +215,7 @@ class JaxKernel(KernelBackend):
     def sbx_crossover(
         self,
         X_parents: np.ndarray,
-        params: dict,
+        params: Mapping[str, object],
         rng: np.random.Generator,
         xl: float,
         xu: float,
@@ -179,12 +225,34 @@ class JaxKernel(KernelBackend):
     def polynomial_mutation(
         self,
         X: np.ndarray,
-        params: dict,
+        params: Mapping[str, object],
         rng: np.random.Generator,
         xl: float,
         xu: float,
     ) -> None:
         NumPyKernel().polynomial_mutation(X, params, rng, xl, xu)
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
     def nsga2_survival(
         self,
@@ -195,4 +263,9 @@ class JaxKernel(KernelBackend):
         pop_size: int,
         return_indices: bool = False,
     ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return NumPyKernel().nsga2_survival(X, F, X_off, F_off, pop_size, return_indices)
+        kernel = NumPyKernel()
+        if return_indices:
+            X_new, F_new, selected = kernel.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=True)
+            return X_new, F_new, selected
+        X_new, F_new = kernel.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=False)
+        return X_new, F_new

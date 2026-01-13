@@ -1,40 +1,24 @@
 {
   "vamos": [
-    "ExperimentConfig",
-    "ObjectiveReducer",
-    "ObjectiveReductionConfig",
     "OptimizationResult",
     "OptimizeConfig",
-    "ProblemSelection",
-    "ProblemSpec",
     "__version__",
     "available_problem_names",
     "configure_logging",
     "make_problem_selection",
     "optimize",
     "optimize_many",
-    "pareto_filter",
-    "reduce_objectives",
-    "run_self_check",
-    "suggest_algorithm"
+    "run_self_check"
   ],
   "vamos.api": [
-    "ExperimentConfig",
-    "ObjectiveReducer",
-    "ObjectiveReductionConfig",
     "OptimizationResult",
     "OptimizeConfig",
-    "ProblemSelection",
-    "ProblemSpec",
     "available_problem_names",
     "configure_logging",
     "make_problem_selection",
     "optimize",
     "optimize_many",
-    "pareto_filter",
-    "reduce_objectives",
-    "run_self_check",
-    "suggest_algorithm"
+    "run_self_check"
   ],
   "vamos.engine.api": [
     "IBEAConfig",

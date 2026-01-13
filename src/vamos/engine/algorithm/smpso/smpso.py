@@ -11,7 +11,7 @@ Reference:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -28,10 +28,11 @@ from .helpers import (
 )
 from .initialization import initialize_smpso_run
 from .state import SMPSOState, build_smpso_result
+from vamos.engine.algorithm.components.termination import HVTracker
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
-    from vamos.foundation.kernel.protocols import KernelBackend
+    from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
 from vamos.hooks.live_viz import LiveVisualization
 from vamos.foundation.observer import RunContext
@@ -113,14 +114,14 @@ class SMPSO:
     >>> result = smpso.result()
     """
 
-    def __init__(self, config: dict, kernel: "KernelBackend"):
+    def __init__(self, config: dict[str, Any], kernel: "KernelBackend"):
         self.cfg = config
         self.kernel = kernel
         self._st: SMPSOState | None = None
         self._live_cb: "LiveVisualization | None" = None
         self._eval_strategy: "EvaluationBackend | None" = None
         self._max_eval: int = 0
-        self._hv_tracker: Any = None
+        self._hv_tracker: HVTracker | None = None
         self._problem: "ProblemProtocol | None" = None
 
     # -------------------------------------------------------------------------
@@ -161,7 +162,7 @@ class SMPSO:
         self._live_cb = live_cb
         self._eval_strategy = eval_strategy
         self._max_eval = max_eval
-        self._hv_tracker = hv_tracker
+        self._hv_tracker = cast(HVTracker, hv_tracker)
         self._problem = problem
 
         st = self._st
@@ -170,7 +171,7 @@ class SMPSO:
             algorithm=self,
             config=self.cfg,
             algorithm_name="smpso",
-            engine_name=str(self.cfg.get("engine", "unknown")),
+            engine_name=str(self.kernel.name),
         )
         live_cb.on_start(ctx)
         live_cb.on_generation(0, F=st.hv_points(), stats={"evals": st.n_eval})
@@ -231,7 +232,7 @@ class SMPSO:
                 algorithm=self,
                 config=self.cfg,
                 algorithm_name="smpso",
-                engine_name=str(self.cfg.get("engine", "unknown")),
+                engine_name=str(self.kernel.name),
             )
             self._live_cb.on_start(ctx)
             self._live_cb.on_generation(0, F=self._st.hv_points())
@@ -261,8 +262,10 @@ class SMPSO:
         # Select leaders from archive using crowding-based binary tournament
         arch_X = st.archive_X
         arch_F = st.archive_F
+        leaders: np.ndarray
+        leader_idx: np.ndarray
         if arch_X is None or arch_F is None or arch_F.size == 0:
-            leader_idx = st.rng.integers(0, st.X.shape[0], size=st.X.shape[0])
+            leader_idx = np.asarray(st.rng.integers(0, st.X.shape[0], size=st.X.shape[0]), dtype=int)
             leaders = st.X[leader_idx]
         else:
             leaders, leader_idx = _select_global_best(arch_X, arch_F, st.rng, st.X.shape[0])
@@ -318,7 +321,7 @@ class SMPSO:
             parent_pairs = np.column_stack([self_idx, leader_idx]).flatten()
             track_offspring_genealogy(st, parent_pairs, pop_size, "pso_update", "smpso")
 
-        return X_new
+        return cast(np.ndarray, X_new)
 
     def tell(
         self,
@@ -349,6 +352,7 @@ class SMPSO:
         st = self._st
 
         X_new = st.pending_offspring
+        assert X_new is not None
         st.pending_offspring = None
 
         F, G = extract_eval_arrays(eval_result)

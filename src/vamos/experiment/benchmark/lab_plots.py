@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
 
 from vamos.experiment.benchmark.report_utils import ensure_dir, import_pandas
 
 
-def _load_matplotlib():
+def _load_matplotlib() -> Tuple[Any | None, Any | None]:
     try:  # pragma: no cover - optional heavy dep
         import matplotlib
 
@@ -17,7 +17,7 @@ def _load_matplotlib():
     return matplotlib, plt
 
 
-def generate_boxplots(summary, output_dir: Path) -> Dict[str, List[Path]]:
+def generate_boxplots(summary: Any, output_dir: Path) -> Dict[str, List[Path]]:
     pd = import_pandas()
     _, plt = _load_matplotlib()
     if plt is None:

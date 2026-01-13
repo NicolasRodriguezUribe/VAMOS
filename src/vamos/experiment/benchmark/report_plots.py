@@ -4,6 +4,7 @@ Plot helpers for benchmark reporting.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -29,8 +30,14 @@ def _load_matplotlib() -> tuple[Any | None, Any | None]:
 
 
 def generate_plots(
-    tidy, stats: Dict[str, dict], metrics: List[str], alpha: float, suite_name: str, output_dir: Path, higher_is_better
-) -> Dict[str, List[Path]]:
+    tidy: Any,
+    stats: dict[str, dict[str, Any]],
+    metrics: list[str],
+    alpha: float,
+    suite_name: str,
+    output_dir: Path,
+    higher_is_better: Callable[[str], bool],
+) -> dict[str, list[Path]]:
     _, plt = _load_matplotlib()
     if plt is None:
         return {}

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Iterable, TYPE_CHECKING, cast
+from collections.abc import Iterable, Mapping
+from typing import Any, Literal, TYPE_CHECKING, cast, overload
 
 import numpy as np
 from numpy.typing import NDArray
@@ -97,6 +98,8 @@ class MooCoreKernel(KernelBackend):
     optional numba tournament selection, and incremental archive maintenance.
     """
 
+    name = "moocore"
+
     CROWDING_DIM_THRESHOLD = 3
     HV_SIZE_THRESHOLD = 256
 
@@ -141,12 +144,12 @@ class MooCoreKernel(KernelBackend):
         rng: np.random.Generator,
         n_parents: int,
     ) -> np.ndarray:
-        return self._numpy_ops.tournament_selection(ranks, crowding, pressure, rng, n_parents)
+        return cast(np.ndarray, self._numpy_ops.tournament_selection(ranks, crowding, pressure, rng, n_parents))
 
     def sbx_crossover(
         self,
         X_parents: np.ndarray,
-        params: dict[str, Any],
+        params: Mapping[str, object],
         rng: np.random.Generator,
         xl: float,
         xu: float,
@@ -156,7 +159,7 @@ class MooCoreKernel(KernelBackend):
     def polynomial_mutation(
         self,
         X: np.ndarray,
-        params: dict[str, Any],
+        params: Mapping[str, object],
         rng: np.random.Generator,
         xl: float,
         xu: float,
@@ -216,7 +219,7 @@ class MooCoreKernel(KernelBackend):
         if front.shape[0] == 0:
             return np.empty(0, dtype=float)
         fronts = [list(range(front.shape[0]))]
-        return cast(np.ndarray, _compute_crowding(front, fronts))
+        return _compute_crowding(front, fronts)
 
     def _select_partial_front(self, F_comb: np.ndarray, front_idx: np.ndarray, remaining: int) -> np.ndarray:
         front = F_comb[front_idx]
@@ -275,6 +278,28 @@ class MooCoreKernel(KernelBackend):
         if return_indices:
             return self._X_output[:target_size], self._F_output[:target_size], sel
         return self._X_output[:target_size], self._F_output[:target_size]
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
     def nsga2_survival(
         self,

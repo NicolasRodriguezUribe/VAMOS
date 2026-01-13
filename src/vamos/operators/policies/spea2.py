@@ -8,12 +8,16 @@ for different encodings.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any, TypeAlias
 
 import numpy as np
 
 from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
 from vamos.operators.impl.real import VariationWorkspace
+
+
+VariationFn: TypeAlias = Callable[[np.ndarray, np.random.Generator], np.ndarray]
 
 
 def build_variation_operators(
@@ -23,7 +27,7 @@ def build_variation_operators(
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-) -> tuple[Callable, Callable]:
+) -> tuple[VariationFn, VariationFn]:
     """Build variation operators for SPEA2.
 
     Parameters
@@ -86,11 +90,11 @@ def build_variation_operators(
         workspace=workspace,
     )
 
-    def crossover_fn(parents, rng=rng):
-        return crossover_operator(parents, rng)
+    def crossover_fn(parents: np.ndarray, rng: np.random.Generator = rng) -> np.ndarray:
+        return np.asarray(crossover_operator(parents, rng))
 
-    def mutation_fn(X_child, rng=rng):
-        return mutation_operator(X_child, rng)
+    def mutation_fn(X_child: np.ndarray, rng: np.random.Generator = rng) -> np.ndarray:
+        return np.asarray(mutation_operator(X_child, rng))
 
     return crossover_fn, mutation_fn
 

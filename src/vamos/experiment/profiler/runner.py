@@ -104,7 +104,7 @@ def run_profile(
     report = ProfileReport(problem=problem, budget=budget)
 
     # Get reference point for HV
-    ref_point = None
+    ref_point: list[float] | None = None
     if compute_hv:
         try:
             selection = make_problem_selection(problem)
@@ -126,7 +126,7 @@ def run_profile(
 
             # Compute hypervolume if requested
             hv = None
-            if compute_hv and result.F is not None and len(result.F) > 0:
+            if compute_hv and ref_point is not None and result.F is not None and len(result.F) > 0:
                 try:
                     from vamos.foundation.metrics.hypervolume import compute_hypervolume
 

@@ -15,6 +15,7 @@ from vamos.operators.impl.real import PolynomialMutation
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.operators.impl.real import VariationWorkspace
 from vamos.engine.algorithm.smpso.helpers import resolve_repair
+from vamos.foundation.encoding import normalize_encoding
 
 
 __all__ = [
@@ -24,7 +25,7 @@ __all__ = [
 
 
 def build_mutation_operator(
-    config: dict,
+    config: dict[str, Any],
     encoding: str,
     n_var: int,
     xl: np.ndarray,
@@ -63,19 +64,24 @@ def build_mutation_operator(
     if mut_method not in {"pm", "polynomial"}:
         raise ValueError(f"Unsupported SMPSO mutation '{mut_method}'.")
 
-    mut_params = prepare_mutation_params(dict(mut_params or {}), encoding, n_var)
+    normalized = normalize_encoding(encoding)
+    mut_params = prepare_mutation_params(dict(mut_params or {}), normalized, n_var)
     workspace = VariationWorkspace()
+    prob_raw = mut_params.get("prob")
+    prob = float(prob_raw) if prob_raw is not None else 1.0 / max(1, n_var)
+    eta_raw = mut_params.get("eta")
+    eta = float(eta_raw) if eta_raw is not None else 20.0
 
     return PolynomialMutation(
-        prob_mutation=float(mut_params.get("prob", 1.0 / max(1, n_var))),
-        eta=float(mut_params.get("eta", 20.0)),
+        prob_mutation=prob,
+        eta=eta,
         lower=xl,
         upper=xu,
         workspace=workspace,
     )
 
 
-def build_repair_operator(config: dict) -> Any | None:
+def build_repair_operator(config: dict[str, Any]) -> Any | None:
     """Build the repair operator from configuration.
 
     Parameters

@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import argparse
 import logging
-from typing import Any, Dict
+from collections.abc import Callable, Mapping
 
 import numpy as np
 
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.api import OptimizeConfig, optimize
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
+from vamos.engine.tuning.racing.config_space import AlgorithmConfigSpace
+from vamos.engine.tuning.racing.param_space import ParamSpace
 
 from vamos.engine.tuning import (
     RacingTuner,
@@ -26,7 +30,7 @@ from vamos.engine.tuning import (
     config_from_assignment,
 )
 
-BUILDERS = {
+BUILDERS: dict[str, Callable[[], AlgorithmConfigSpace | ParamSpace]] = {
     "nsgaii": build_nsgaii_config_space,
     "moead": build_moead_config_space,
     "nsgaiii": build_nsgaiii_config_space,
@@ -51,7 +55,7 @@ def _configure_cli_logging(level: int = logging.INFO) -> None:
     root.setLevel(level)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="VAMOS Tuning CLI (vamos-tune)")
     parser.add_argument("--problem", type=str, required=True, help="Problem ID (e.g., zdt1)")
     parser.add_argument("--algorithm", type=str, default="nsgaii", choices=list(BUILDERS.keys()), help="Algorithm to tune")
@@ -72,14 +76,22 @@ def parse_args():
     return parser.parse_args()
 
 
-def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str, fixed_pop_size: int, ref_point_str: str | None):
+def make_evaluator(
+    problem_key: str,
+    n_var: int,
+    n_obj: int,
+    algorithm_name: str,
+    fixed_pop_size: int,
+    ref_point_str: str | None,
+) -> Callable[[Mapping[str, object], EvalContext], float]:
     """
     Creates an evaluation function that runs the algorithm and returns the Hypervolume.
     """
     # Parse reference point once
+    ref_point: list[float]
     if ref_point_str:
         try:
-            ref_point = np.array([float(x.strip()) for x in ref_point_str.split(",")])
+            ref_point = [float(x.strip()) for x in ref_point_str.split(",")]
             if len(ref_point) != n_obj:
                 _logger().warning(
                     "Reference point length (%s) does not match n_obj (%s).",
@@ -88,16 +100,16 @@ def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str
                 )
         except ValueError:
             _logger().warning("Error parsing --ref-point. Using default.")
-            ref_point = np.array([1.1] * n_obj)
+            ref_point = [1.1] * n_obj
     else:
         # Default fallback
-        ref_point = np.array([1.1] * n_obj)
+        ref_point = [1.1] * n_obj
 
-    def eval_fn(config_dict: Dict[str, Any], ctx: EvalContext) -> float:
+    def eval_fn(config_dict: Mapping[str, object], ctx: EvalContext) -> float:
         try:
             # 1. Prepare Configuration
             # Merge fixed params if missing in tuning config
-            start_config = dict(config_dict)
+            start_config: dict[str, object] = dict(config_dict)
             if "pop_size" not in start_config:
                 start_config["pop_size"] = fixed_pop_size
 
@@ -122,28 +134,29 @@ def make_evaluator(problem_key: str, n_var: int, n_obj: int, algorithm_name: str
                 return 0.0
 
             hv = compute_hypervolume(result.F, ref_point)
-            return hv
+            return float(hv)
 
-        except Exception as e:
+        except Exception as exc:
             # In tuning, we often want to absorb errors and return bad score
             # to keep the racer alive.
-            _logger().warning("Eval failed for %s: %s", algorithm_name, e)
+            _logger().warning("Eval failed for %s: %s", algorithm_name, exc)
             return 0.0
 
     return eval_fn
 
 
-def main():
+def main() -> None:
     _configure_cli_logging()
     args = parse_args()
 
     # 1. Define Parameter Space
-    builder = BUILDERS.get(args.algorithm)
-    if not builder:
-        raise ValueError(f"Unknown algorithm {args.algorithm}")
+    builder = BUILDERS[args.algorithm]
 
     algo_space = builder()
-    param_space = algo_space.to_param_space() if hasattr(algo_space, "to_param_space") else algo_space
+    if isinstance(algo_space, AlgorithmConfigSpace):
+        param_space = algo_space.to_param_space()
+    else:
+        param_space = algo_space
 
     _logger().info("Tuning %s on %s (Budget: %s)", args.algorithm, args.problem, args.tune_budget)
     _logger().info("Parallel Jobs: %s", args.n_jobs)

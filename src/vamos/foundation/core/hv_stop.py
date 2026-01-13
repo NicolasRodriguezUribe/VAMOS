@@ -13,7 +13,11 @@ from vamos.foundation.problem.resolver import resolve_reference_front_path
 from vamos.foundation.core.experiment_config import HV_REFERENCE_OFFSET
 
 
-def build_hv_stop_config(hv_threshold: float | None, hv_reference_front: str | None, problem_key: str):
+def build_hv_stop_config(
+    hv_threshold: float | None,
+    hv_reference_front: str | None,
+    problem_key: str,
+) -> dict[str, object] | None:
     """
     Build an early-stop configuration for hypervolume-based termination.
     """
@@ -37,7 +41,7 @@ def build_hv_stop_config(hv_threshold: float | None, hv_reference_front: str | N
     return {
         "target_value": hv_full * threshold_fraction,
         "threshold_fraction": threshold_fraction,
-        "reference_point": ref_point.tolist(),
+        "reference_point": ref_point.astype(float, copy=False).tolist(),
         "reference_front_path": str(front_path),
     }
 
@@ -70,7 +74,7 @@ def compute_hv_reference(fronts: Iterable[np.ndarray]) -> np.ndarray:
     stacked = np.vstack(collected)
     max_vals = stacked.max(axis=0)
     margin = np.maximum(np.abs(max_vals) * HV_REFERENCE_OFFSET, HV_REFERENCE_OFFSET)
-    return max_vals + margin
+    return np.asarray(max_vals + margin, dtype=float)
 
 
 __all__ = ["build_hv_stop_config", "compute_hv_reference"]

@@ -8,7 +8,8 @@ This module contains neighborhood update logic and scalarization functions
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, TypeAlias
 
 import numpy as np
 
@@ -16,6 +17,8 @@ from vamos.foundation.constraints.utils import compute_violation
 
 if TYPE_CHECKING:
     from .state import MOEADState
+
+AggregatorFn: TypeAlias = Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]
 
 
 # =============================================================================
@@ -42,7 +45,7 @@ def tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np
     """
     diff = np.abs(fvals - ideal)
     weighted = np.where(weights == 0, 0.0001 * diff, weights * diff)
-    return np.max(weighted, axis=-1)
+    return np.asarray(np.max(weighted, axis=-1), dtype=float)
 
 
 def weighted_sum(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np.ndarray:
@@ -62,7 +65,7 @@ def weighted_sum(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> n
     np.ndarray
         Aggregated scalar values.
     """
-    return np.sum(weights * fvals, axis=-1)
+    return np.asarray(np.sum(weights * fvals, axis=-1), dtype=float)
 
 
 def pbi(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, theta: float = 5.0) -> np.ndarray:
@@ -91,7 +94,7 @@ def pbi(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, theta: float 
     d1 = np.abs(np.sum(diff * w_unit, axis=-1))
     proj = (d1[..., None]) * w_unit
     d2 = np.linalg.norm(diff - proj, axis=-1)
-    return d1 + theta * d2
+    return np.asarray(d1 + theta * d2, dtype=float)
 
 
 def modified_tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray, rho: float = 0.001) -> np.ndarray:
@@ -115,10 +118,10 @@ def modified_tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarr
     """
     diff = np.abs(fvals - ideal)
     weighted = np.where(weights == 0, 0.0001 * diff, weights * diff)
-    return np.max(weighted, axis=-1) + rho * np.sum(weighted, axis=-1)
+    return np.asarray(np.max(weighted, axis=-1) + rho * np.sum(weighted, axis=-1), dtype=float)
 
 
-def build_aggregator(name: str, params: dict) -> Callable:
+def build_aggregator(name: str, params: Mapping[str, object]) -> AggregatorFn:
     """Build aggregation function from name and parameters.
 
     Parameters
@@ -145,11 +148,21 @@ def build_aggregator(name: str, params: dict) -> Callable:
     if method in {"weighted_sum", "weightedsum"}:
         return weighted_sum
     if method in {"penaltyboundaryintersection", "penalty_boundary_intersection", "pbi"}:
-        theta = float(params.get("theta", 5.0))
-        return lambda fvals, weights, ideal: pbi(fvals, weights, ideal, theta)
+        theta_raw = params.get("theta", 5.0)
+        theta = float(theta_raw) if isinstance(theta_raw, (int, float, str)) else 5.0
+
+        def _agg(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np.ndarray:
+            return pbi(fvals, weights, ideal, theta)
+
+        return _agg
     if method in {"modifiedtchebycheff", "modified_tchebycheff"}:
-        rho = float(params.get("rho", 0.001))
-        return lambda fvals, weights, ideal: modified_tchebycheff(fvals, weights, ideal, rho)
+        rho_raw = params.get("rho", 0.001)
+        rho = float(rho_raw) if isinstance(rho_raw, (int, float, str)) else 0.001
+
+        def _agg(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np.ndarray:
+            return modified_tchebycheff(fvals, weights, ideal, rho)
+
+        return _agg
     raise ValueError(f"Unsupported aggregation method '{name}'.")
 
 
@@ -219,13 +232,14 @@ def update_neighborhood(
         candidate_order = st.neighbors[idx]
     if candidate_order.size == 0:
         return
+    assert st.aggregator is not None
     replacements = 0
     child_cv = cv_penalty if constraint_mode != "none" else 0.0
 
     for k in candidate_order:
         weight = st.weights[k]
-        current_val = st.aggregator(st.F[k], weight, st.ideal)
-        child_val = st.aggregator(child_f, weight, st.ideal)
+        current_val = float(np.asarray(st.aggregator(st.F[k], weight, st.ideal)).reshape(-1)[0])
+        child_val = float(np.asarray(st.aggregator(child_f, weight, st.ideal)).reshape(-1)[0])
 
         replace = False
         if constraint_mode != "none":

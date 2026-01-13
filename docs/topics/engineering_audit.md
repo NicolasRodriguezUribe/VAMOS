@@ -31,7 +31,7 @@ Entry points (from `pyproject.toml`):
 - `vamos` -> `src/vamos/experiment/cli/main.py`
 - `vamos-self-check` -> `src/vamos/experiment/diagnostics/self_check.py`
 - `vamos-benchmark` -> `src/vamos/experiment/benchmark/cli.py`
-- `vamos-studio` -> `src/vamos/ux/studio/app.py`
+- `vamos-studio` -> `src/vamos/experiment/studio/app.py`
 - `vamos-zoo` -> `src/vamos/experiment/zoo/cli.py`
 - `vamos-tune` -> `src/vamos/engine/tuning/cli.py`
 
@@ -64,7 +64,7 @@ Top 20 largest Python files under `src/vamos/` by non-blank LOC (static scan):
 | `src/vamos/engine/algorithm/nsgaiii/nsgaiii.py` | 324 | NSGA-III algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/smsemoa/smsemoa.py` | 322 | SMS-EMOA algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/smpso/smpso.py` | 311 | SMPSO algorithm loop and helpers | Medium: large but cohesive |
-| `src/vamos/ux/studio/app.py` | 310 | Streamlit UI, data loading, MCDM, focused runs, plots | High: UI + analysis + execution mixed |
+| `src/vamos/experiment/studio/app.py` | 310 | Streamlit UI, data loading, MCDM, focused runs, plots | High: UI + analysis + execution mixed |
 | `src/vamos/engine/algorithm/nsgaii/nsgaii.py` | 307 | NSGA-II algorithm loop, AOS integration | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/ibea/ibea.py` | 298 | IBEA algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/nsgaiii/helpers.py` | 291 | NSGA-III helper routines | Low/Medium: helper module scale |
@@ -85,7 +85,7 @@ God-class candidates (top by LOC/method count):
 
 God-function candidates (top by LOC):
 - `src/vamos/experiment/cli/parser.py` `parse_args` (~450 LOC)
-- `src/vamos/ux/studio/app.py` `main` (~236 LOC)
+- `src/vamos/experiment/studio/app.py` `main` (~236 LOC)
 - `src/vamos/experiment/runner.py` `run_single` (~175 LOC)
 - `src/vamos/experiment/runner.py` `execute_problem_suite` (~148 LOC)
 - `src/vamos/engine/algorithm/ibea/initialization.py` `initialize_ibea_run` (~137 LOC)
@@ -94,7 +94,7 @@ Cross-cutting tangling hotspots:
 - `src/vamos/experiment/runner.py`: execution + config override + plotting + persistence + CLI hints.
 - `src/vamos/experiment/cli/parser.py`: parsing + default merging + validation + algorithm-specific operator config.
 - `src/vamos/experiment/quick.py`: API + config building + plotting + saving.
-- `src/vamos/ux/studio/app.py`: UI + data loading + optimization runs + analysis/plots.
+- `src/vamos/experiment/studio/app.py`: UI + data loading + optimization runs + analysis/plots.
 - `src/vamos/experiment/optimize.py`: core optimize + result presentation/IO.
 
 Utility modules that are growing:
@@ -127,7 +127,7 @@ Examples of risky couplings:
 - `src/vamos/experiment/runner.py` imports `vamos.ux.visualization.plotting` and `LiveParetoPlot` (experiment -> ux).
 - `src/vamos/experiment/study/runner.py` imports `run_single` from `vamos.experiment.runner`, while `run_study` in runner imports `StudyRunner` (static cycle).
 - `src/vamos/foundation/kernel/numpy_backend.py` imports `vamos.operators.impl.real.*` (foundation -> operators; shared package, still a tight dependency).
-- `src/vamos/ux/studio/app.py` imports `vamos.engine.algorithm.config.NSGAIIConfig` (ux -> engine).
+- `src/vamos/experiment/studio/app.py` imports `vamos.engine.algorithm.config.NSGAIIConfig` (experiment -> engine).
 
 There is a single static cycle between `experiment.runner` and `experiment.study.runner`; otherwise, foundation->engine/ux and engine->ux edges are cleared, improving backend modularity and UX replaceability.
 
@@ -182,7 +182,7 @@ Refactor plan: move pymoo/jmetalpy/pygmo adapters to `src/vamos/experiment/bench
 Suggested tests: dependency-missing tests that verify informative error messages; functional tests for one baseline when optional deps are available.
 
 4) Medium - Break up the Streamlit Studio app into UI and service layers.
-Evidence: `src/vamos/ux/studio/app.py`.
+Evidence: `src/vamos/experiment/studio/app.py`.
 Refactor plan: keep UI layout in `app.py`; move data loading, focused runs, and dynamics capture into `src/vamos/ux/studio/services.py` and reuse existing `data.py`.
 Suggested tests: unit tests for data loading and focused-optimization logic (pure functions) without UI.
 

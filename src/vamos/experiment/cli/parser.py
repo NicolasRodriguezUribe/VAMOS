@@ -20,6 +20,9 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
     pre_parser = build_pre_parser()
     pre_args, remaining = pre_parser.parse_known_args()
 
+    if getattr(pre_args, "validate_config", False) and not getattr(pre_args, "config", None):
+        pre_parser.error("--validate-config requires --config.")
+
     try:
         spec_defaults = load_spec_defaults(pre_args.config)
     except Exception as exc:
@@ -34,6 +37,8 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
             validate_experiment_spec(spec_defaults.spec, parser=parser)
         except Exception as exc:
             pre_parser.error(str(exc))
+        if getattr(pre_args, "validate_config", False):
+            parser.exit(0, "Config OK.\n")
     args = parser.parse_args(remaining)
     return finalize_args(
         parser,

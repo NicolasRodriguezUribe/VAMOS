@@ -44,7 +44,8 @@ class VariationContext:
 
 
 class EncodingStrategy(Protocol):
-    encoding: Encoding
+    @property
+    def encoding(self) -> Encoding: ...
 
     def parents_per_group(self, cross_method: CrossoverName) -> int: ...
 
@@ -73,7 +74,7 @@ class RealEncodingStrategy:
     def build_crossover(self, method: CrossoverName, params: dict[str, Any]) -> CrossoverOperator:
         registry = get_operator_registry()
         try:
-            op_cls = registry.get(method)
+            op_cls = cast(type[Any], registry.get(method))
         except KeyError as exc:
             available = ", ".join(registry.list())
             raise ValueError(f"Unknown real crossover '{method}'. Available: {available}") from exc
@@ -114,7 +115,7 @@ class RealEncodingStrategy:
     def build_mutation(self, method: MutationName, params: dict[str, Any]) -> MutationOperator:
         registry = get_operator_registry()
         try:
-            op_cls = registry.get(method)
+            op_cls = cast(type[Any], registry.get(method))
         except KeyError as exc:
             available = ", ".join(registry.list())
             raise ValueError(f"Unknown real mutation '{method}'. Available: {available}") from exc
@@ -197,13 +198,13 @@ class IntegerEncodingStrategy:
         if method == "sbx":
             eta = float(params.get("eta", 20.0))
             xl, xu = self.ctx.xl, self.ctx.xu
-
-            def crossover(parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-                return cast(np.ndarray, cross_fn(parents, cross_prob, eta, xl, xu, rng))
-
-            return crossover
+        else:
+            eta = None
+            xl, xu = self.ctx.xl, self.ctx.xu
 
         def crossover(parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+            if eta is not None:
+                return cast(np.ndarray, cross_fn(parents, cross_prob, float(eta), xl, xu, rng))
             return cast(np.ndarray, cross_fn(parents, cross_prob, rng))
 
         return crossover
@@ -214,24 +215,21 @@ class IntegerEncodingStrategy:
         xl, xu = self.ctx.xl, self.ctx.xu
         if method == "creep":
             step = int(params.get("step", 1))
-
-            def mutate(offspring: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-                mut_fn(offspring, mut_prob, step, xl, xu, rng)
-                return offspring
-
-            return mutate
-
-        if method in {"pm", "polynomial"}:
+            eta = None
+        elif method in {"pm", "polynomial"}:
+            step = None
             eta = float(params.get("eta", 20.0))
-
-            def mutate(offspring: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-                mut_fn(offspring, mut_prob, eta, xl, xu, rng)
-                return offspring
-
-            return mutate
+        else:
+            step = None
+            eta = None
 
         def mutate(offspring: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-            mut_fn(offspring, mut_prob, xl, xu, rng)
+            if step is not None:
+                mut_fn(offspring, mut_prob, int(step), xl, xu, rng)
+            elif eta is not None:
+                mut_fn(offspring, mut_prob, float(eta), xl, xu, rng)
+            else:
+                mut_fn(offspring, mut_prob, xl, xu, rng)
             return offspring
 
         return mutate
