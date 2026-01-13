@@ -11,6 +11,7 @@ def test_cli_with_config_file_creates_artifacts(monkeypatch, tmp_path):
     config_file = tmp_path / "spec.json"
     # Minimal config file exercising algorithm/engine/output_root overrides
     spec = {
+        "version": "1",
         "defaults": {
             "algorithm": "nsgaii",
             "engine": "numpy",
@@ -63,6 +64,7 @@ def test_cli_runs_spea2_from_config(monkeypatch, tmp_path):
     output_root = tmp_path / "results"
     config_file = tmp_path / "spea2_spec.json"
     spec = {
+        "version": "1",
         "defaults": {
             "algorithm": "spea2",
             "engine": "numpy",

@@ -32,7 +32,6 @@ class ConfigData(Protocol):
 def build_nsgaii_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     offspring_size: int,
@@ -79,14 +78,12 @@ def build_nsgaii_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("nsgaii")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_moead_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     moead_variation: dict[str, Any] | None,
@@ -138,14 +135,12 @@ def build_moead_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("moead")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_smsemoa_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     smsemoa_variation: dict[str, Any] | None,
@@ -176,14 +171,12 @@ def build_smsemoa_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("smsemoa")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_nsgaiii_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     nsgaiii_variation: dict[str, Any] | None,
@@ -214,14 +207,12 @@ def build_nsgaiii_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("nsgaiii")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_spea2_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     selection_pressure: int,
@@ -257,14 +248,12 @@ def build_spea2_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("spea2")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_ibea_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     selection_pressure: int,
@@ -292,14 +281,12 @@ def build_ibea_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("ibea")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_smpso_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     external_archive_size: int | None,
@@ -330,7 +317,6 @@ def build_smpso_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("smpso")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 
@@ -345,7 +331,6 @@ class DictConfigWrapper:
 def build_agemoea_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     agemoea_variation: dict[str, Any] | None,
@@ -378,14 +363,12 @@ def build_agemoea_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("agemoea")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 
 def build_rvea_algorithm(
     *,
     kernel: KernelBackend,
-    engine_name: str,
     problem: ProblemProtocol,
     pop_size: int,
     rvea_variation: dict[str, Any] | None,
@@ -424,7 +407,6 @@ def build_rvea_algorithm(
     cfg_data = cast(ConfigData, builder.fixed())
     algo_ctor = resolve_algorithm("rvea")
     cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine_name
     return algo_ctor(cfg_dict, kernel), cfg_data
 
 

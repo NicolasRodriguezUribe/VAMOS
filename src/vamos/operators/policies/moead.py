@@ -52,8 +52,8 @@ IntMutationOp: TypeAlias = Callable[..., None]
 PermCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
 PermMutationOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], None]
 
-VariationCrossoverFn: TypeAlias = Callable[[np.ndarray], np.ndarray]
-VariationMutationFn: TypeAlias = Callable[[np.ndarray], np.ndarray]
+VariationCrossoverFn: TypeAlias = Callable[[np.ndarray, np.random.Generator], np.ndarray]
+VariationMutationFn: TypeAlias = Callable[[np.ndarray, np.random.Generator], np.ndarray]
 
 
 BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = {

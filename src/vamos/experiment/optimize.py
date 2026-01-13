@@ -9,7 +9,7 @@ from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.eval.backends import resolve_eval_strategy
-from vamos.engine.algorithm.config.types import AlgorithmConfigLike
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.exceptions import InvalidAlgorithmError
 
 
@@ -28,8 +28,7 @@ class OptimizeConfig:
 
     problem: ProblemProtocol
     algorithm: str
-    # Algorithm config can be a config object (preferred) or a raw mapping (for plugins).
-    algorithm_config: AlgorithmConfigLike
+    algorithm_config: AlgorithmConfigProtocol
     termination: Tuple[str, Any]
     seed: int
     engine: str = "numpy"
@@ -37,11 +36,7 @@ class OptimizeConfig:
     live_viz: Any = None
 
 
-def _normalize_cfg(cfg: AlgorithmConfigLike) -> dict[str, Any]:
-    if isinstance(cfg, dict):
-        return dict(cfg)
-    if not hasattr(cfg, "to_dict"):
-        raise TypeError("algorithm_config must be a config object with .to_dict() or a mapping.")
+def _normalize_cfg(cfg: AlgorithmConfigProtocol) -> dict[str, object]:
     return dict(cfg.to_dict())
 
 
@@ -96,12 +91,11 @@ def optimize_config(
 
     effective_engine = engine or cfg.engine
     kernel = resolve_kernel(effective_engine)
-    cfg_dict["engine"] = effective_engine
 
     if cfg.eval_strategy is not None:
         backend = resolve_eval_strategy(cfg.eval_strategy) if isinstance(cfg.eval_strategy, str) else cfg.eval_strategy
     else:
-        backend_name = cfg_dict.get("eval_strategy", "serial")
+        backend_name = str(cfg_dict.get("eval_strategy", "serial"))
         backend = resolve_eval_strategy(backend_name)
 
     algo_ctor = resolve_algorithm(algorithm_name)
@@ -133,17 +127,18 @@ def _build_algorithm_config(
     pop_size: int | None,
     n_var: int | None,
     n_obj: int | None,
-) -> AlgorithmConfigLike:
+) -> AlgorithmConfigProtocol:
     from vamos.engine.algorithm.config import (
         AGEMOEAConfig,
+        GenericAlgorithmConfig,
         IBEAConfig,
-        NSGAIIConfig,
         MOEADConfig,
+        NSGAIIIConfig,
+        NSGAIIConfig,
         RVEAConfig,
         SMPSOConfig,
         SPEA2Config,
         SMSEMOAConfig,
-        NSGAIIIConfig,
     )
 
     algorithm = algorithm.lower()
@@ -153,54 +148,59 @@ def _build_algorithm_config(
         if pop_size is None:
             pop_size = 100
         nsgaii_cfg = NSGAIIConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigLike, _with_result_mode(nsgaii_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(nsgaii_cfg, result_mode))
     if algorithm == "moead":
         n_obj = n_obj if n_obj is not None else 3
         moead_cfg = MOEADConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj)
-        return cast(AlgorithmConfigLike, _with_result_mode(moead_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(moead_cfg, result_mode))
     if algorithm == "spea2":
         if pop_size is None:
             pop_size = 100
         spea2_cfg = SPEA2Config.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigLike, _with_result_mode(spea2_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(spea2_cfg, result_mode))
     if algorithm == "smsemoa":
         if pop_size is None:
             pop_size = 100
         smsemoa_cfg = SMSEMOAConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigLike, _with_result_mode(smsemoa_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(smsemoa_cfg, result_mode))
     if algorithm == "nsgaiii":
         n_obj = n_obj if n_obj is not None else 3
         nsgaiii_cfg = NSGAIIIConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj)
-        return cast(AlgorithmConfigLike, _with_result_mode(nsgaiii_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(nsgaiii_cfg, result_mode))
     if algorithm == "ibea":
         if pop_size is None:
             pop_size = 100
         ibea_cfg = IBEAConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigLike, _with_result_mode(ibea_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(ibea_cfg, result_mode))
     if algorithm == "smpso":
         if pop_size is None:
             pop_size = 100
         smpso_cfg = SMPSOConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigLike, _with_result_mode(smpso_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(smpso_cfg, result_mode))
     if algorithm == "agemoea":
         if pop_size is None:
             pop_size = 100
         agemoea_cfg = AGEMOEAConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigLike, _with_result_mode(agemoea_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(agemoea_cfg, result_mode))
     if algorithm == "rvea":
         if pop_size is None:
             pop_size = 100
         rvea_cfg = RVEAConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigLike, _with_result_mode(rvea_cfg, result_mode))
+        return cast(AlgorithmConfigProtocol, _with_result_mode(rvea_cfg, result_mode))
 
-    cfg: dict[str, Any] = {}
-    if pop_size is not None:
-        cfg["pop_size"] = pop_size
-    if n_var is not None:
-        cfg["n_var"] = n_var
-    if n_obj is not None:
-        cfg["n_obj"] = n_obj
-    return cfg
+    registry = get_algorithms_registry()
+    if algorithm in registry:
+        base: dict[str, object] = {}
+        if pop_size is not None:
+            base["pop_size"] = pop_size
+        if n_var is not None:
+            base["n_var"] = n_var
+        if n_obj is not None:
+            base["n_obj"] = n_obj
+        return GenericAlgorithmConfig(base)
+
+    available = sorted(registry.keys())
+    raise InvalidAlgorithmError(algorithm, available=available)
 
 
 __all__ = ["OptimizeConfig", "optimize_config", "OptimizationResult"]

@@ -7,11 +7,10 @@ from pathlib import Path
 
 def _configure_cli_logging(level: int = logging.INFO) -> None:
     root = logging.getLogger()
-    if root.handlers:
-        return
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    root.addHandler(handler)
+    if not root.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        root.addHandler(handler)
     root.setLevel(level)
 
 
@@ -34,6 +33,10 @@ def main() -> None:
     _configure_cli_logging()
     default_config = ExperimentConfig()
     args = parse_args(default_config)
+    if getattr(args, "quiet", False):
+        _configure_cli_logging(logging.WARNING)
+    elif getattr(args, "verbose", False):
+        _configure_cli_logging(logging.DEBUG)
     config = ExperimentConfig(
         title=default_config.title,
         output_root=args.output_root,

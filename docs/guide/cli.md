@@ -9,6 +9,7 @@ Main runner
 - `--engine`: numpy | numba | moocore
 - `--problem`: any registry key (see Problems page)
 - `--problem-set`: predefined sets (e.g., `families`)
+- `--validate-config`: validate `--config` and exit
 - `--population-size`, `--offspring-population-size`
 - `--max-evaluations`
 - `--hv-threshold` and `--hv-reference-front`
@@ -26,6 +27,7 @@ Config files (YAML/JSON)
 Use `--config path/to/spec.yaml`; CLI flags override file values.
 
 ```yaml
+version: "1"
 defaults:
   title: My run
   algorithm: moead
@@ -41,9 +43,9 @@ problems:
     algorithm: nsgaii
     n_var: 30
     population_size: 150
-  nsgaii:
-    crossover: {method: uniform}
-    mutation: {method: bitflip, prob: "1/n"}
+    nsgaii:
+      crossover: {method: uniform}
+      mutation: {method: bitflip, prob: "1/n"}
 ```
 
 Other CLIs

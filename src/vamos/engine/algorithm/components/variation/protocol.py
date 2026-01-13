@@ -11,7 +11,7 @@ class VariationOperator(Protocol):
     Protocol for any variation operator (crossover, mutation, repair).
     """
 
-    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs) -> np.ndarray:
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         """
         Apply the operator to population X.
 

@@ -117,7 +117,7 @@ all = [
 vamos = "vamos.experiment.cli.main:main"
 vamos-self-check = "vamos.experiment.diagnostics.self_check:main"
 vamos-benchmark = "vamos.experiment.benchmark.cli:main"
-vamos-studio = "vamos.ux.studio.app:main"
+vamos-studio = "vamos.experiment.studio.app:main"
 vamos-zoo = "vamos.experiment.zoo.cli:main"
 vamos-tune = "vamos.engine.tuning.cli:main"
 vamos-profile = "vamos.experiment.profiler.cli:main"
@@ -154,8 +154,12 @@ disallow_untyped_defs = true
 module = [
   "moocore",
   "libhv",
+  "pandas",
+  "pandas.*",
   "dask",
   "dask.*",
+  "jax",
+  "jax.*",
   "numba",
   "plotly",
   "plotly.*",

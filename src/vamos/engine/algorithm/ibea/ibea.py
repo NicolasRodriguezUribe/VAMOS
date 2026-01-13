@@ -15,7 +15,7 @@ References:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -31,6 +31,7 @@ from vamos.engine.algorithm.nsgaii.helpers import build_mating_pool
 from .helpers import combine_constraints, environmental_selection
 from .initialization import initialize_ibea_run
 from .state import IBEAState, build_ibea_result
+from vamos.engine.algorithm.components.termination import HVTracker
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
@@ -75,14 +76,14 @@ class IBEA:
     >>> result = ibea.result()
     """
 
-    def __init__(self, config: dict, kernel: "KernelBackend"):
+    def __init__(self, config: dict[str, Any], kernel: "KernelBackend"):
         self.cfg = config
         self.kernel = kernel
         self._st: IBEAState | None = None
         self._live_cb: "LiveVisualization | None" = None
         self._eval_strategy: "EvaluationBackend | None" = None
         self._max_eval: int = 0
-        self._hv_tracker: Any = None
+        self._hv_tracker: HVTracker | None = None
         self._problem: "ProblemProtocol | None" = None
 
     # -------------------------------------------------------------------------
@@ -145,19 +146,16 @@ class IBEA:
 
             # Update archive
             if st.archive_manager is not None:
-                st.archive_manager.update(st.X, st.F)
-                st.archive_X, st.archive_F = st.archive_manager.get_archive()
+                st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F)
 
             # Live callback
             live_cb.on_generation(st.generation, F=st.F, stats={"evals": st.n_eval})
             stop_requested = live_should_stop(live_cb)
 
             # Check HV threshold
-            if hv_tracker is not None:
-                hv_tracker.update(st.F)
-                if hv_tracker.reached_threshold():
-                    hv_reached = True
-                    break
+            if hv_tracker is not None and hv_tracker.enabled and hv_tracker.reached(st.hv_points()):
+                hv_reached = True
+                break
 
         live_cb.on_end(final_F=st.F)
         result = build_ibea_result(st, hv_reached, kernel=self.kernel)
@@ -179,23 +177,26 @@ class IBEA:
         self._live_cb = live_cb
         self._eval_strategy = eval_strategy
         self._max_eval = max_eval
-        self._hv_tracker = hv_tracker
+        self._hv_tracker = cast(HVTracker, hv_tracker)
         return live_cb, eval_strategy, max_eval, hv_tracker
 
     def _generate_offspring(self, st: IBEAState) -> np.ndarray:
         """Generate offspring using tournament selection and variation."""
+        if st.variation is None:
+            raise RuntimeError("IBEA variation pipeline is not initialized.")
+        variation = st.variation
         # Higher fitness is better in IBEA (less negative).
         ranks = np.argsort(np.argsort(-st.fitness))
         crowd = np.zeros_like(st.fitness, dtype=float)
-        parents_per_group = st.variation.parents_per_group
-        children_per_group = st.variation.children_per_group
+        parents_per_group = variation.parents_per_group
+        children_per_group = variation.children_per_group
         parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
 
         sel_method, _ = self.cfg["selection"]
         mating_pairs = build_mating_pool(self.kernel, ranks, crowd, st.pressure, st.rng, parent_count, parents_per_group, sel_method)
         parent_idx = mating_pairs.reshape(-1)
-        X_parents = st.variation.gather_parents(st.X, parent_idx)
-        X_off = st.variation.produce_offspring(X_parents, st.rng)
+        X_parents = variation.gather_parents(st.X, parent_idx)
+        X_off = variation.produce_offspring(X_parents, st.rng)
         if X_off.shape[0] > st.offspring_size:
             X_off = X_off[: st.offspring_size]
 
@@ -303,16 +304,15 @@ class IBEA:
 
         # Update archive
         if st.archive_manager is not None:
-            st.archive_manager.update(st.X, st.F)
-            st.archive_X, st.archive_F = st.archive_manager.get_archive()
+            st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F)
 
         # Live callback
         if self._live_cb is not None:
             self._live_cb.on_generation(st.generation, F=st.F)
 
         # Check HV tracker
-        if st.hv_tracker is not None:
-            st.hv_tracker.update(st.F)
+        if st.hv_tracker is not None and st.hv_tracker.enabled:
+            st.hv_tracker.reached(st.hv_points())
 
     def should_terminate(self) -> bool:
         """Check if termination criterion is met."""
@@ -320,7 +320,7 @@ class IBEA:
             return True
         if self._st.n_eval >= self._max_eval:
             return True
-        if self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold():
+        if self._st.hv_tracker is not None and self._st.hv_tracker.enabled and self._st.hv_tracker.reached(self._st.hv_points()):
             return True
         return False
 
@@ -329,7 +329,7 @@ class IBEA:
         if self._st is None:
             raise RuntimeError("Algorithm not initialized.")
 
-        hv_reached = self._st.hv_tracker is not None and self._st.hv_tracker.reached_threshold()
+        hv_reached = self._st.hv_tracker is not None and self._st.hv_tracker.enabled and self._st.hv_tracker.reached(self._st.hv_points())
 
         if self._live_cb is not None:
             self._live_cb.on_end(final_F=self._st.F)

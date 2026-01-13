@@ -8,13 +8,13 @@ adaptive operator selection mechanisms.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
-from vamos.engine.hyperheuristics.indicator import IndicatorEvaluator
-from vamos.engine.hyperheuristics.operator_selector import make_operator_selector
+from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairName
+from vamos.foundation.encoding import EncodingLike
 from vamos.operators.impl.real import VariationWorkspace
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.adaptation.aos.config import AdaptiveOperatorSelectionConfig
@@ -22,6 +22,7 @@ from vamos.adaptation.aos.controller import AOSController
 from vamos.adaptation.aos.policies import (
     EpsGreedyPolicy,
     EXP3Policy,
+    OperatorBanditPolicy,
     SlidingWindowUCBPolicy,
     ThompsonSamplingPolicy,
     UCBPolicy,
@@ -31,7 +32,7 @@ from vamos.adaptation.aos.portfolio import OperatorPortfolio
 
 def build_operator_pool(
     cfg: dict[str, Any],
-    encoding: str,
+    encoding: EncodingLike,
     cross_method: str,
     cross_params: dict[str, Any],
     mut_method: str,
@@ -42,7 +43,7 @@ def build_operator_pool(
     variation_workspace: VariationWorkspace,
     problem: ProblemProtocol,
     mut_factor: float | None,
-) -> tuple[list[VariationPipeline], Any | None, IndicatorEvaluator | None, AOSController | None]:
+) -> tuple[list[VariationPipeline], AOSController | None]:
     """Build the operator pool and optional adaptive selector.
 
     Parameters
@@ -72,10 +73,8 @@ def build_operator_pool(
     mut_factor : float | None
         Optional mutation probability factor.
 
-    Returns
-    -------
-    tuple[list[VariationPipeline], Any | None, IndicatorEvaluator | None, AOSController | None]
-        (operator_pool, operator_selector, indicator_evaluator, aos_controller)
+    Returns:
+        (operator_pool, aos_controller)
     """
     operator_pool = _build_variation_pipelines(
         cfg,
@@ -91,14 +90,13 @@ def build_operator_pool(
         problem,
         mut_factor,
     )
-    op_selector, indicator_eval = _setup_adaptive_selection(cfg, len(operator_pool))
     aos_controller = _setup_aos_controller(cfg, operator_pool)
-    return operator_pool, op_selector, indicator_eval, aos_controller
+    return operator_pool, aos_controller
 
 
 def _build_variation_pipelines(
     cfg: dict[str, Any],
-    encoding: str,
+    encoding: EncodingLike,
     cross_method: str,
     cross_params: dict[str, Any],
     mut_method: str,
@@ -146,13 +144,18 @@ def _build_variation_pipelines(
     """
     operator_pool: list[VariationPipeline] = []
     aos_cfg = cfg.get("adaptive_operator_selection") or {}
-    op_configs = aos_cfg.get("operator_pool") or cfg.get("adaptive_operators", {}).get("operator_pool")
+    op_configs = aos_cfg.get("operator_pool")
 
     if op_configs:
         for entry in op_configs:
             c_method, c_params = entry.get("crossover", (cross_method, cross_params))
             m_method, m_params = entry.get("mutation", (mut_method, mut_params))
-            m_params = prepare_mutation_params(m_params, encoding, n_var, prob_factor=mut_factor)
+            m_params = prepare_mutation_params(
+                cast(dict[str, float | int | str | None], m_params),
+                encoding,
+                n_var,
+                prob_factor=mut_factor,
+            )
             operator_pool.append(
                 _create_variation_pipeline(
                     encoding,
@@ -189,7 +192,7 @@ def _build_variation_pipelines(
 
 
 def _create_variation_pipeline(
-    encoding: str,
+    encoding: EncodingLike,
     cross_method: str,
     cross_params: dict[str, Any],
     mut_method: str,
@@ -232,54 +235,16 @@ def _create_variation_pipeline(
     """
     return VariationPipeline(
         encoding=encoding,
-        cross_method=cross_method,
+        cross_method=cast(CrossoverName, str(cross_method).lower()),
         cross_params=cross_params,
-        mut_method=mut_method,
+        mut_method=cast(MutationName, str(mut_method).lower()),
         mut_params=mut_params,
         xl=xl,
         xu=xu,
         workspace=workspace,
-        repair_cfg=repair_cfg,
+        repair_cfg=cast(tuple[RepairName, dict[str, Any]] | None, repair_cfg),
         problem=problem,
     )
-
-
-def _setup_adaptive_selection(
-    cfg: dict[str, Any],
-    n_operators: int,
-) -> tuple[Any | None, IndicatorEvaluator | None]:
-    """Setup adaptive operator selection if enabled.
-
-    Parameters
-    ----------
-    cfg : dict[str, Any]
-        Algorithm configuration.
-    n_operators : int
-        Number of operators in the pool.
-
-    Returns
-    -------
-    tuple[Any | None, IndicatorEvaluator | None]
-        (operator_selector, indicator_evaluator) or (None, None) if disabled.
-    """
-    selector_cfg = cfg.get("adaptive_operators", {})
-    adaptive_enabled = bool(selector_cfg.get("enabled", False)) and n_operators > 1
-
-    if not adaptive_enabled:
-        return None, None
-
-    method = selector_cfg.get("method", "epsilon_greedy")
-    op_selector = make_operator_selector(
-        method,
-        n_operators,
-        epsilon=selector_cfg.get("epsilon", 0.1),
-        c=selector_cfg.get("c", 1.0),
-    )
-    indicator = selector_cfg.get("indicator", "hv")
-    indicator_mode = selector_cfg.get("mode", "maximize")
-    indicator_eval = IndicatorEvaluator(indicator, reference_point=None, mode=indicator_mode)
-
-    return op_selector, indicator_eval
 
 
 def _setup_aos_controller(
@@ -307,6 +272,7 @@ def _setup_aos_controller(
     if reward_scope not in valid_scopes:
         raise ValueError(f"Unsupported reward_scope '{reward_scope}'.")
 
+    policy: OperatorBanditPolicy
     if policy_name == "epsilon_greedy":
         policy = EpsGreedyPolicy(
             len(operator_pool),

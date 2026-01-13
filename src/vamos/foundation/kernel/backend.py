@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable
+from collections.abc import Iterable, Mapping
+from typing import Literal, overload
 
 import numpy as np
 
@@ -12,6 +13,9 @@ class KernelBackend(ABC):
     Backends implement heavy numeric primitives on vectorized populations.
     Performance-sensitive: implementations should be vectorized/SoA and avoid Python loops.
     """
+
+    # Stable backend identifier (e.g., "numpy", "numba", "moocore", "jax").
+    name: str = "unknown"
 
     # -------- Computation device / capability metadata --------
 
@@ -63,7 +67,7 @@ class KernelBackend(ABC):
     def sbx_crossover(
         self,
         X_parents: np.ndarray,
-        params: dict[str, float],
+        params: Mapping[str, object],
         rng: np.random.Generator,
         xl: float,
         xu: float,
@@ -76,7 +80,7 @@ class KernelBackend(ABC):
     def polynomial_mutation(
         self,
         X: np.ndarray,
-        params: dict[str, float],
+        params: Mapping[str, object],
         rng: np.random.Generator,
         xl: float,
         xu: float,
@@ -84,6 +88,28 @@ class KernelBackend(ABC):
         """
         Apply polynomial mutation in-place to array X.
         """
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
     @abstractmethod
     def nsga2_survival(

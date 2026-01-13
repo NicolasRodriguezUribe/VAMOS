@@ -208,11 +208,12 @@ def run_experiments_from_args(args: Namespace, config: ExperimentConfig) -> None
     """
     Entry point used by the CLI to execute one or more runs defined by parsed args.
     """
+    plotter = plotting.plot_pareto_front if getattr(args, "plot", False) else None
     run_from_args(
         args,
         config,
         live_viz_factory=_build_live_viz,
-        plotter=plotting.plot_pareto_front,
+        plotter=plotter,
     )
 
 

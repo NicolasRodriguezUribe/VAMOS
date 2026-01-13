@@ -31,7 +31,7 @@ from .state import SMPSOState
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
-    from vamos.foundation.kernel.protocols import KernelBackend
+    from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
     from vamos.hooks.live_viz import LiveVisualization
 
@@ -42,7 +42,7 @@ __all__ = [
 
 
 def initialize_smpso_run(
-    config: dict,
+    config: dict[str, Any],
     kernel: "KernelBackend",
     problem: "ProblemProtocol",
     termination: tuple[str, Any],

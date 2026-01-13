@@ -11,7 +11,7 @@ from typing import Any, Iterable, List
 
 import numpy as np
 
-from vamos.experiment.results import RESULT_FILES
+from vamos.foundation.core.io_utils import RESULT_FILES
 
 try:
     import pandas as pd  # type: ignore

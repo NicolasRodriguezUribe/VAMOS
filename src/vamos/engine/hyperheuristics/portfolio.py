@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Protocol
+from collections.abc import Mapping
+from typing import Protocol, cast
 
 import numpy as np
 
@@ -12,7 +13,7 @@ from vamos.engine.hyperheuristics.indicator import IndicatorEvaluator
 class PortfolioAlgorithm(Protocol):
     def step(self, evaluations: int) -> None: ...
 
-    def current_front(self) -> np.ndarray: ...
+    def current_front(self) -> np.ndarray | None: ...
 
 
 @dataclass
@@ -30,12 +31,12 @@ class AlgorithmPortfolio:
 
     def __init__(
         self,
-        entries: List[PortfolioEntry],
+        entries: list[PortfolioEntry],
         indicator: str = "hv",
         mode: str = "maximize",
         selector_method: str = "epsilon_greedy",
-        selector_kwargs: dict | None = None,
-    ):
+        selector_kwargs: Mapping[str, object] | None = None,
+    ) -> None:
         if not entries:
             raise ValueError("Portfolio requires at least one algorithm entry.")
         self.entries = entries
@@ -43,7 +44,7 @@ class AlgorithmPortfolio:
         self.indicator_eval = IndicatorEvaluator(indicator, reference_point=None, mode=mode)
 
     def combined_front(self) -> np.ndarray:
-        fronts = [e.algo.current_front() for e in self.entries if e.algo.current_front() is not None]
+        fronts = [front for e in self.entries if (front := e.algo.current_front()) is not None]
         if not fronts:
             return np.empty((0, 0))
         union = np.vstack(fronts)
@@ -58,7 +59,7 @@ class AlgorithmPortfolio:
                 if np.all(union[j] <= union[i]) and np.any(union[j] < union[i]):
                     mask[i] = False
                     break
-        return union[mask]
+        return cast(np.ndarray, union[mask])
 
     def step(self, step_evaluations: int) -> None:
         idx = self.selector.select_operator()

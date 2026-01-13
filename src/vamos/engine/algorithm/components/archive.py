@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 import numpy as np
 
 try:  # pragma: no cover - optional dependency
-    import moocore as _moocore  # type: ignore
+    import moocore as _moocore
 except ImportError:  # pragma: no cover - optional dependency
     _moocore = None
 
@@ -37,7 +39,7 @@ class _BaseArchive:
     Subclasses implement different pruning strategies via _get_indicator().
     """
 
-    def __init__(self, capacity: int, n_var: int, n_obj: int, dtype, objective_tolerance: float = 1e-10):
+    def __init__(self, capacity: int, n_var: int, n_obj: int, dtype: Any, objective_tolerance: float = 1e-10) -> None:
         self.capacity = int(capacity)
         if self.capacity <= 0:
             raise ValueError("archive capacity must be positive.")
@@ -99,14 +101,14 @@ class _BaseArchive:
 
     def _is_dominated(self, f: np.ndarray) -> bool:
         existing = self._F[: self._size]
-        return self._dominates(existing, f).any() if existing.shape[0] else False
+        return bool(self._dominates(existing, f).any()) if existing.shape[0] else False
 
     def _is_duplicate(self, f: np.ndarray) -> bool:
         if self._size == 0:
             return False
         existing = self._F[: self._size]
         diff = np.abs(existing - f)
-        return np.any(np.all(diff <= self._objective_tolerance, axis=1))
+        return bool(np.any(np.all(diff <= self._objective_tolerance, axis=1)))
 
     @staticmethod
     def _dominates(candidates: np.ndarray, f: np.ndarray) -> np.ndarray:
@@ -114,7 +116,7 @@ class _BaseArchive:
             return np.zeros(0, dtype=bool)
         less_equal = candidates <= f
         strictly_less = candidates < f
-        return np.all(less_equal, axis=1) & np.any(strictly_less, axis=1)
+        return cast(np.ndarray, np.all(less_equal, axis=1) & np.any(strictly_less, axis=1))
 
     def _remove_dominated(self, f: np.ndarray) -> None:
         """Remove existing solutions that are dominated by the new point f."""
@@ -178,7 +180,7 @@ class HypervolumeArchive(_BaseArchive):
     The reference point is dynamically computed from the current archive.
     """
 
-    def __init__(self, capacity: int, n_var: int, n_obj: int, dtype, ref_offset: float = 1.0):
+    def __init__(self, capacity: int, n_var: int, n_obj: int, dtype: Any, ref_offset: float = 1.0) -> None:
         super().__init__(capacity, n_var, n_obj, dtype)
         self._ref_offset = float(ref_offset)
 

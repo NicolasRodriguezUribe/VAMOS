@@ -68,7 +68,7 @@ def _detect_violations():
 
     for path in _iter_python_files():
         source_layer = _layer_from_path(path)
-        if source_layer not in {"foundation", "engine"}:
+        if source_layer not in {"foundation", "engine", "ux"}:
             continue
         text = _read_text(path)
         tree = ast.parse(text)
@@ -135,10 +135,16 @@ def _detect_violations():
 def _violation_record(source_layer: str, target_layer: str | None, rel_path: str, module: str):
     if source_layer == "foundation" and target_layer == "engine":
         return ("A", rel_path, module)
-    if source_layer == "foundation" and target_layer == "ux":
+    if source_layer == "foundation" and target_layer == "experiment":
         return ("B", rel_path, module)
-    if source_layer == "engine" and target_layer == "ux":
+    if source_layer == "foundation" and target_layer == "ux":
         return ("C", rel_path, module)
+    if source_layer == "engine" and target_layer == "experiment":
+        return ("D", rel_path, module)
+    if source_layer == "engine" and target_layer == "ux":
+        return ("E", rel_path, module)
+    if source_layer == "ux" and target_layer == "experiment":
+        return ("F", rel_path, module)
     return None
 
 

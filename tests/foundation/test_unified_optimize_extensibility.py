@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 import vamos
+from vamos.engine.algorithm.config import GenericAlgorithmConfig
 from vamos.engine.algorithm.registry import ALGORITHMS
 from vamos.experiment.optimize import OptimizeConfig, optimize_config
 from vamos.foundation.problems_registry import ZDT1
@@ -60,7 +61,7 @@ def test_optimize_config_resolves_eval_strategy_string() -> None:
     cfg = OptimizeConfig(
         problem=problem,
         algorithm=algo_key,
-        algorithm_config={},
+        algorithm_config=GenericAlgorithmConfig({}),
         termination=("n_eval", 5),
         seed=0,
         engine="numpy",

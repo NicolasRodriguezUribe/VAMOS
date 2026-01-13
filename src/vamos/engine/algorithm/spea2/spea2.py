@@ -15,7 +15,7 @@ References:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -30,6 +30,7 @@ from vamos.engine.algorithm.components.hooks import (
 from .helpers import dominance_matrix, environmental_selection, strength_raw_fitness, knn_density
 from .initialization import initialize_spea2_run
 from .state import SPEA2State, build_spea2_result
+from vamos.engine.algorithm.components.termination import HVTracker
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
@@ -112,11 +113,11 @@ class SPEA2:
         self.cfg = config
         self.kernel = kernel
         self._st: SPEA2State | None = None
-        self._live_cb = None
-        self._eval_strategy = None
-        self._max_eval = None
-        self._hv_tracker = None
-        self._problem = None
+        self._live_cb: LiveVisualization | None = None
+        self._eval_strategy: EvaluationBackend | None = None
+        self._max_eval: int = 0
+        self._hv_tracker: HVTracker | None = None
+        self._problem: ProblemProtocol | None = None
 
     def run(
         self,
@@ -147,8 +148,12 @@ class SPEA2:
             Result dictionary with X, F, evaluations, and archive.
         """
         live_cb, eval_strategy, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_strategy, live_viz)
+        hv_tracker = cast(HVTracker, hv_tracker)
+        if eval_strategy is None:
+            raise RuntimeError("SPEA2 requires an evaluation backend; initialize_spea2_run() returned None.")
         st = self._st
         assert st is not None, "State not initialized"
+        assert st.env_F is not None
 
         generation = 0
         live_cb.on_generation(generation, F=st.env_F, stats={"evals": st.n_eval})
@@ -163,12 +168,14 @@ class SPEA2:
             eval_result = eval_strategy.evaluate(X_off, problem)
             hv_reached = self.tell(eval_result, problem)
 
+            assert st.env_F is not None
             if hv_tracker.enabled and hv_tracker.reached(st.env_F):
                 hv_reached = True
                 break
 
             generation += 1
             st.generation = generation
+            assert st.env_F is not None
             stop_requested = notify_generation(live_cb, self.kernel, generation, st.env_F, stats={"evals": st.n_eval})
 
         result = build_spea2_result(st, hv_reached)
@@ -211,7 +218,7 @@ class SPEA2:
             problem, termination, seed, eval_strategy, live_viz
         )
         self._problem = problem
-        if self._st is not None:
+        if self._st is not None and self._live_cb is not None and self._st.env_F is not None:
             self._live_cb.on_generation(0, F=self._st.env_F)
 
     def ask(self) -> np.ndarray:
@@ -231,6 +238,12 @@ class SPEA2:
             raise RuntimeError("Call initialize() or run() before ask()")
 
         st = self._st
+        if st.env_X is None or st.env_F is None:
+            raise RuntimeError("SPEA2 internal archive is not initialized.")
+        if st.crossover_fn is None or st.mutation_fn is None:
+            raise RuntimeError("SPEA2 variation operators are not initialized.")
+        if st.xl is None or st.xu is None:
+            raise RuntimeError("SPEA2 bounds are not initialized.")
         n_pairs = st.offspring_size
 
         # Fitness-based binary tournament selection (SPEA2)
@@ -291,6 +304,9 @@ class SPEA2:
 
         st = self._st
         offspring_X = st.pending_offspring
+        assert offspring_X is not None
+        if st.env_X is None or st.env_F is None:
+            raise RuntimeError("SPEA2 internal archive is not initialized.")
 
         # Extract F and G from result
         if hasattr(eval_result, "F"):
@@ -356,7 +372,7 @@ class SPEA2:
             if self._st.n_eval >= self._max_eval:
                 return True
 
-        if self._hv_tracker is not None and self._hv_tracker.enabled:
+        if self._hv_tracker is not None and self._hv_tracker.enabled and self._st.env_F is not None:
             return self._hv_tracker.reached(self._st.env_F)
 
         return False
@@ -366,7 +382,12 @@ class SPEA2:
         if self._st is None:
             raise RuntimeError("Call initialize() and run before result()")
 
-        hv_reached = self._hv_tracker is not None and self._hv_tracker.enabled and self._hv_tracker.reached(self._st.env_F)
+        hv_reached = (
+            self._hv_tracker is not None
+            and self._hv_tracker.enabled
+            and self._st.env_F is not None
+            and self._hv_tracker.reached(self._st.env_F)
+        )
         return build_spea2_result(self._st, hv_reached)
 
 

@@ -6,7 +6,8 @@ Assumes F is float64 of shape (N, M), X is float64 of shape (N, n_var).
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable, Mapping
+from typing import Literal, overload
 
 import numpy as np
 
@@ -15,7 +16,7 @@ from vamos.operators.impl.real import SBXCrossover, PolynomialMutation
 from .backend import KernelBackend
 
 
-def _fast_non_dominated_sort(F: np.ndarray):
+def _fast_non_dominated_sort(F: np.ndarray) -> tuple[list[list[int]], np.ndarray]:
     """
     Classic O(N^2) fast non-dominated sort.
     Args:
@@ -37,7 +38,7 @@ def _fast_non_dominated_sort(F: np.ndarray):
 
     dominated_count = dom_matrix.sum(axis=0).astype(np.int64)
     rank = np.empty(N, dtype=int)
-    fronts = []
+    fronts: list[list[int]] = []
 
     current = np.flatnonzero(dominated_count == 0)
     level = 0
@@ -54,7 +55,7 @@ def _fast_non_dominated_sort(F: np.ndarray):
     return fronts, rank
 
 
-def _compute_crowding(F: np.ndarray, fronts):
+def _compute_crowding(F: np.ndarray, fronts: list[list[int]]) -> np.ndarray:
     """
     Standard crowding-distance computation.
     crowding: array of length N.
@@ -94,11 +95,11 @@ def _compute_crowding(F: np.ndarray, fronts):
     return crowding
 
 
-def _select_nsga2(fronts, crowding: np.ndarray, pop_size: int) -> np.ndarray:
+def _select_nsga2(fronts: list[list[int]], crowding: np.ndarray, pop_size: int) -> np.ndarray:
     """
     NSGA-II elitist selection based on fronts + crowding.
     """
-    selected = []
+    selected: list[int] = []
     for front in fronts:
         if len(front) == 0:
             continue
@@ -113,12 +114,26 @@ def _select_nsga2(fronts, crowding: np.ndarray, pop_size: int) -> np.ndarray:
     return np.array(selected, dtype=int)
 
 
+def _as_float(value: object | None, default: float) -> float:
+    if value is None:
+        return float(default)
+    if isinstance(value, bool):
+        return float(default)
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        return float(value)
+    return float(default)
+
+
 class NumPyKernel(KernelBackend):
     """
     Backend with pure NumPy implementations of the NSGA-II kernels.
     """
 
-    def __init__(self):
+    name = "numpy"
+
+    def __init__(self) -> None:
         self._row_index = np.empty(0, dtype=np.int64)
         self._score_buffer: np.ndarray | None = None
 
@@ -202,24 +217,22 @@ class NumPyKernel(KernelBackend):
     def sbx_crossover(
         self,
         X_parents: np.ndarray,
-        params: dict,
-        rng: np.random.Generator | None,
+        params: Mapping[str, object],
+        rng: np.random.Generator,
         xl: float,
         xu: float,
     ) -> np.ndarray:
         Np, D = X_parents.shape
         if Np == 0:
             return np.empty_like(X_parents)
-        if rng is None:
-            rng = np.random.default_rng()
         # Handle odd parent count by duplicating the last parent
         if Np % 2 != 0:
             X_parents = np.vstack([X_parents, X_parents[-1:]])
             Np += 1
         lower, upper = self._normalize_bounds(xl, xu, D)
         operator = SBXCrossover(
-            prob_crossover=float(params.get("prob", 0.9)),
-            eta=float(params.get("eta", 20.0)),
+            prob_crossover=_as_float(params.get("prob"), 0.9),
+            eta=_as_float(params.get("eta"), 20.0),
             lower=lower,
             upper=upper,
         )
@@ -230,25 +243,45 @@ class NumPyKernel(KernelBackend):
     def polynomial_mutation(
         self,
         X: np.ndarray,
-        params: dict,
-        rng: np.random.Generator | None,
+        params: Mapping[str, object],
+        rng: np.random.Generator,
         xl: float,
         xu: float,
     ) -> None:
         if X.size == 0:
             return
-        if rng is None:
-            rng = np.random.default_rng()
         n_var = X.shape[1]
         lower, upper = self._normalize_bounds(xl, xu, n_var)
         operator = PolynomialMutation(
-            prob_mutation=float(params.get("prob", 0.1)),
-            eta=float(params.get("eta", 20.0)),
+            prob_mutation=_as_float(params.get("prob"), 0.1),
+            eta=_as_float(params.get("eta"), 20.0),
             lower=lower,
             upper=upper,
         )
         mutated = operator(X, rng)
         X[:] = mutated
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def nsga2_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+        pop_size: int,
+        return_indices: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
     def nsga2_survival(
         self,

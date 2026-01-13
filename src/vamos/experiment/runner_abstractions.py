@@ -89,9 +89,9 @@ def resolve_termination(
         if hv_stop_config is not None and algorithm_name == "nsgaii":
             return HVTermination(hv_stop_config).resolve(config)
         return EvaluationsTermination().resolve(config)
-    if hasattr(termination, "resolve"):
-        return termination.resolve(config)
-    return termination
+    if isinstance(termination, tuple):
+        return termination
+    return termination.resolve(config)
 
 
 __all__ = [

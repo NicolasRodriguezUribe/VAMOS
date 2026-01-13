@@ -24,6 +24,9 @@ def finalize_args(
 
     _normalize_operator_args(parser, args)
 
+    if getattr(args, "quiet", False) and getattr(args, "verbose", False):
+        parser.error("--quiet and --verbose cannot be used together.")
+
     if getattr(args, "problem_set", None) is not None:
         if not PROBLEM_SET_PRESETS:
             parser.error("--problem-set is not available because no presets are registered.")

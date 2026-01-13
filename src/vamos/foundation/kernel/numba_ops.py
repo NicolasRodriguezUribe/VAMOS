@@ -1,7 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
+
 import numpy as np
-from numba import njit
+from numba import njit as _numba_njit
+
+_F = TypeVar("_F", bound=Callable[..., object])
+
+
+def njit(*args: Any, **kwargs: Any) -> Callable[[_F], _F]:
+    """Typed wrapper around numba.njit to keep mypy happy."""
+    return cast(Callable[[_F], _F], _numba_njit(*args, **kwargs))
 
 
 @njit(cache=True)

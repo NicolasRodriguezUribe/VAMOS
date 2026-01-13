@@ -19,7 +19,7 @@ import numpy as np
 
 from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.engine.algorithm.nsgaii import NSGAII
-from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
@@ -56,9 +56,9 @@ def _build_internal_algorithm(engine: str = "numpy") -> tuple[NSGAII, dict[str, 
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
     ).fixed()
-    cfg_dict = cfg_data.to_dict()
-    cfg_dict["engine"] = engine
-    return NSGAII(cfg_dict, kernel=NumPyKernel()), cfg_dict  # type: ignore[no-untyped-call]
+    cfg_dict: dict[str, Any] = dict(cfg_data.to_dict())
+    kernel = resolve_kernel(engine)
+    return NSGAII(cfg_dict, kernel=kernel), cfg_dict
 
 
 def _prepare_params(cfg_dict: dict[str, Any], n_var: int) -> tuple[dict[str, Any], dict[str, Any], int]:
@@ -134,9 +134,9 @@ def _evolution_loop(
 
     while n_eval < max_eval:
         if generation % log_every == 0:
-            sample = {"generation": generation, "evaluations": int(n_eval)}
-            sample.update(_log_stats(X, F))
-            stats_log.append(sample)
+            sample_point: dict[str, Any] = {"generation": generation, "evaluations": int(n_eval)}
+            sample_point.update(_log_stats(X, F))
+            stats_log.append(sample_point)
 
         ranks, crowd = algorithm.kernel.nsga2_ranking(F)
         n_pairs = pop_size // 2
@@ -148,12 +148,12 @@ def _evolution_loop(
         F_off = np.empty((X_off.shape[0], problem.n_obj))
         problem.evaluate(X_off, {"F": F_off})
         n_eval += X_off.shape[0]
-        X, F = algorithm.kernel.nsga2_survival(X, F, X_off, F_off, pop_size)  # type: ignore[misc]
+        X, F = algorithm.kernel.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=False)
         generation += 1
 
-    sample = {"generation": generation, "evaluations": int(n_eval)}
-    sample.update(_log_stats(X, F))
-    stats_log.append(sample)
+    final_sample: dict[str, Any] = {"generation": generation, "evaluations": int(n_eval)}
+    final_sample.update(_log_stats(X, F))
+    stats_log.append(final_sample)
     return X, F, stats_log
 
 

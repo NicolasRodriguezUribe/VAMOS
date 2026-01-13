@@ -10,6 +10,7 @@ Note: SPEA2 has two archives:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -42,8 +43,8 @@ class SPEA2State(AlgorithmState):
     k_neighbors: int | None = None
 
     # Variation operators (callables)
-    crossover_fn: Any = None
-    mutation_fn: Any = None
+    crossover_fn: Callable[[np.ndarray, np.random.Generator], np.ndarray] | None = None
+    mutation_fn: Callable[[np.ndarray, np.random.Generator], np.ndarray] | None = None
     xl: np.ndarray | None = None
     xu: np.ndarray | None = None
 

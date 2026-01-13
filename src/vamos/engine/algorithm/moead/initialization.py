@@ -130,7 +130,7 @@ def initialize_moead_run(
         algorithm=None,
         config=cfg,
         algorithm_name="moead",
-        engine_name=str(cfg.get("engine", "unknown")),
+        engine_name=str(kernel.name),
     )
     live_cb.on_start(ctx)
 

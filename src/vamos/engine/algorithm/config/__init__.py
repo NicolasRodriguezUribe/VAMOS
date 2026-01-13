@@ -13,7 +13,8 @@ Examples:
     cfg = NSGAIIConfig.default(pop_size=100, n_var=30)
 """
 
-from .types import AlgorithmConfigDict, AlgorithmConfigLike, AlgorithmConfigMapping, AlgorithmConfigProtocol
+from .types import AlgorithmConfigDict, AlgorithmConfigMapping, AlgorithmConfigProtocol
+from .generic import GenericAlgorithmConfig
 from .nsgaii import NSGAIIConfig, NSGAIIConfigData, NSGAIIConfigDict
 from .moead import MOEADConfig, MOEADConfigData, MOEADConfigDict
 from .spea2 import SPEA2Config, SPEA2ConfigData, SPEA2ConfigDict
@@ -61,9 +62,10 @@ __all__ = [
     "RVEAConfig",
     "RVEAConfigData",
     "RVEAConfigDict",
+    # Plugin/custom
+    "GenericAlgorithmConfig",
     # Typing helpers
     "AlgorithmConfigDict",
     "AlgorithmConfigMapping",
     "AlgorithmConfigProtocol",
-    "AlgorithmConfigLike",
 ]

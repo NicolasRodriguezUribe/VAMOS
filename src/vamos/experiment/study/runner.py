@@ -10,7 +10,7 @@ from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.foundation.metrics.moocore_indicators import has_moocore, get_indicator, HVIndicator
+from vamos.foundation.metrics.moocore_indicators import QualityIndicator, has_moocore, get_indicator, HVIndicator
 from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
 
 from vamos.experiment.study.types import StudyTask, StudyResult
@@ -45,7 +45,7 @@ class StudyRunner:
         self,
         tasks: Sequence[StudyTask],
         *,
-        run_single_fn: Callable[..., dict] | None = None,
+        run_single_fn: Callable[..., dict[str, Any]] | None = None,
     ) -> List[StudyResult]:
         if not tasks:
             return []
@@ -66,7 +66,7 @@ class StudyRunner:
                     task.seed,
                 )
             selection = make_problem_selection(task.problem, n_var=task.n_var, n_obj=task.n_obj)
-            cfg_kwargs = {"seed": task.seed}
+            cfg_kwargs: dict[str, Any] = {"seed": task.seed}
             if task.config_overrides:
                 cfg_kwargs.update(task.config_overrides)
             task_config = ExperimentConfig(**cfg_kwargs)
@@ -143,14 +143,13 @@ class StudyRunner:
         ref_front = self._nondominated_union(fronts)
         hv_ref_point = compute_hv_reference(fronts)
         for res in results:
-            vals = {}
+            vals: dict[str, float | np.ndarray | None] = {}
             for name in self.indicators:
                 try:
                     if name in {"hv", "hypervolume"}:
-                        indicator = HVIndicator(reference_point=hv_ref_point)
-                        vals[name] = indicator.compute(res.metrics["F"]).value
+                        vals[name] = HVIndicator(reference_point=hv_ref_point).compute(res.metrics["F"]).value
                     elif name in {"igd", "igd+", "igd_plus", "epsilon_additive", "epsilon_mult", "avg_hausdorff"}:
-                        indicator = get_indicator(name, reference_front=ref_front)
+                        indicator: QualityIndicator = get_indicator(name, reference_front=ref_front)
                         vals[name] = indicator.compute(res.metrics["F"]).value
                     else:
                         indicator = get_indicator(name)

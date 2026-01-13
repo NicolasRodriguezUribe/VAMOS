@@ -8,7 +8,8 @@ for the MOEA/D algorithm, similar to NSGAIIState.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -54,7 +55,7 @@ class MOEADState(AlgorithmState):
     weights: np.ndarray = field(default_factory=lambda: np.array([]))
     neighbors: np.ndarray = field(default_factory=lambda: np.array([]))
     ideal: np.ndarray = field(default_factory=lambda: np.array([]))
-    aggregator: Callable | None = None
+    aggregator: Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray] | None = None
     neighbor_size: int = 20
     delta: float = 0.9
     replace_limit: int = 2
@@ -63,8 +64,8 @@ class MOEADState(AlgorithmState):
     subproblem_cursor: int = 0
 
     # Variation operators (as callables for flexibility across encodings)
-    crossover_fn: Callable | None = None
-    mutation_fn: Callable | None = None
+    crossover_fn: Callable[[np.ndarray, np.random.Generator], np.ndarray] | None = None
+    mutation_fn: Callable[[np.ndarray, np.random.Generator], np.ndarray] | None = None
 
     # Bounds for integer/real encodings
     xl: np.ndarray | None = None

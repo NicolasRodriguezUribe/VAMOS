@@ -11,41 +11,42 @@ from __future__ import annotations
 
 from difflib import get_close_matches
 from importlib import import_module
-from typing import Callable, Dict
+from collections.abc import Callable
+from typing import cast
 
 from .backend import KernelBackend
 from .numpy_backend import NumPyKernel
 
 
-def _load_numba():
+def _load_numba() -> KernelBackend:
     try:
         module = import_module("vamos.foundation.kernel.numba_backend")
-        return module.NumbaKernel()
+        return cast(KernelBackend, module.NumbaKernel())
     except ImportError as exc:
         raise ImportError(
             "Kernel 'numba' requires the [compute] extra (numba>=0.57). Install with `pip install -e \".[compute]\"`."
         ) from exc
 
 
-def _load_moocore():
+def _load_moocore() -> KernelBackend:
     try:
         module = import_module("vamos.foundation.kernel.moocore_backend")
-        return module.MooCoreKernel()
+        return cast(KernelBackend, module.MooCoreKernel())
     except ImportError as exc:
         raise ImportError(
             "Kernel 'moocore' requires the [compute] extra (moocore>=0.4). Install with `pip install -e \".[compute]\"`."
         ) from exc
 
 
-def _load_jax():
+def _load_jax() -> KernelBackend:
     try:
         module = import_module("vamos.foundation.kernel.jax_backend")
-        return module.JaxKernel()
+        return cast(KernelBackend, module.JaxKernel())
     except ImportError as exc:
         raise ImportError("Kernel 'jax' requires the [autodiff] extra (jax>=0.4). Install with `pip install -e \".[autodiff]\"`.") from exc
 
 
-KERNELS: Dict[str, Callable[[], KernelBackend]] = {
+KERNELS: dict[str, Callable[[], KernelBackend]] = {
     "numpy": NumPyKernel,
     "numba": _load_numba,
     "moocore": _load_moocore,
