@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.api import OptimizeConfig, optimize
-from vamos.engine.api import NSGAIIConfig
+from vamos import optimize
+from vamos.algorithms import NSGAIIConfig
 from vamos.engine.tuning.api import Instance, Int, ParamSpace, RacingTuner, Real, Scenario, TuningTask
-from vamos.foundation.problems_registry import ZDT1
+from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 
 
 def evaluate_config(config: dict, ctx) -> float:
@@ -31,13 +31,13 @@ def evaluate_config(config: dict, ctx) -> float:
     """
     # 1. Build algorithm config from hyperparameters
     algo_cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(int(config["pop_size"]))
         .offspring_size(int(config["pop_size"]))
         .crossover("sbx", prob=float(config["crossover_prob"]), eta=20.0)
         .mutation("pm", prob=float(config["mutation_prob"]), eta=20.0)
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
 
     # 2. Instantiate the problem for this specific instance
@@ -46,14 +46,12 @@ def evaluate_config(config: dict, ctx) -> float:
 
     # 3. Run optimization
     result = optimize(
-        OptimizeConfig(
-            problem=problem,
-            algorithm="nsgaii",
-            algorithm_config=algo_cfg,
-            termination=("n_eval", ctx.budget),
-            seed=ctx.seed,
-            engine="numpy",  # Use "numba" for better speed if available
-        )
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=algo_cfg,
+        termination=("n_eval", ctx.budget),
+        seed=ctx.seed,
+        engine="numpy",  # Use "numba" for better speed if available
     )
 
     # 4. Compute metric (Avg(f1 + f2))

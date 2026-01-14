@@ -100,7 +100,7 @@ src\vamos\engine\algorithm\smpso\smpso.py:51: Returns the selected leaders and t
 src\vamos\engine\algorithm\smpso\smpso.py:55: raise ValueError("Archive is empty.")
 src\vamos\engine\algorithm\smpso\smpso.py:87: - archive_size (int): leaders archive capacity
 src\vamos\engine\algorithm\smpso\smpso.py:94: Backend for vectorized kernels (ranking, HV, etc.).
-src\vamos\engine\algorithm\smpso\smpso.py:101: >>> config = SMPSOConfig().pop_size(100).archive_size(100).fixed()
+src\vamos\engine\algorithm\smpso\smpso.py:101: >>> config = SMPSOConfig().pop_size(100).archive_size(100).build()
 src\vamos\engine\algorithm\smpso\smpso.py:123: self._hv_tracker: Any = None
 src\vamos\engine\algorithm\smpso\smpso.py:156: Result dictionary with X, F, archive data.
 src\vamos\engine\algorithm\smsemoa\smsemoa.py:4: hypervolume contribution for survival selection.
@@ -139,7 +139,7 @@ src\vamos\engine\algorithm\spea2\spea2.py:22: from vamos.engine.algorithm.compon
 src\vamos\engine\algorithm\spea2\spea2.py:50: raise ValueError("Cannot select parents from an empty archive.")
 src\vamos\engine\algorithm\spea2\spea2.py:79: Enhanced implementation with ask/tell interface, HV termination,
 src\vamos\engine\algorithm\spea2\spea2.py:87: - archive_size (int, optional): Internal archive size (default: pop_size)
-src\vamos\engine\algorithm\spea2\spea2.py:98: >>> config = SPEA2Config().pop_size(100).archive_size(100).fixed()
+src\vamos\engine\algorithm\spea2\spea2.py:98: >>> config = SPEA2Config().pop_size(100).archive_size(100).build()
 src\vamos\engine\algorithm\spea2\spea2.py:118: self._hv_tracker = None
 src\vamos\engine\algorithm\spea2\spea2.py:136: Termination criterion: ("n_eval", N) or ("hv", {...}).
 src\vamos\engine\algorithm\spea2\spea2.py:147: Result dictionary with X, F, evaluations, and archive.

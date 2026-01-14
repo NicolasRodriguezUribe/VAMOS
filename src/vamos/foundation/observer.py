@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 
@@ -15,7 +15,7 @@ class RunContext:
 
     problem: Any  # Problem instance
     algorithm: Any  # Algorithm instance (if available during start)
-    config: Any  # ExperimentConfig or OptimizeConfig
+    config: Any  # ExperimentConfig or internal run config
     selection: Any = None  # ProblemSelection (optional)
     algorithm_name: str = "unknown"
     engine_name: str = "unknown"
@@ -35,17 +35,17 @@ class Observer(Protocol):
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         """Called at every generation (or step) of the algorithm."""
         ...
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         """Called once at the end of the run."""
         ...

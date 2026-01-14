@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Tuple
 
 REPO = Path.cwd()
 SRC = REPO / "src" / "vamos"
@@ -23,7 +22,7 @@ TERMS = [
 ]
 
 
-def scan_terms() -> List[Tuple[str, int, str]]:
+def scan_terms() -> list[tuple[str, int, str]]:
     hits = []
     for p in SRC.rglob("*.py"):
         try:

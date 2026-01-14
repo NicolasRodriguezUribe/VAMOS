@@ -103,7 +103,7 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
     return checkpoint
 
 
-def restore_rng(rng: "Generator", state: dict[str, Any]) -> None:
+def restore_rng(rng: Generator, state: dict[str, Any]) -> None:
     """
     Restore RNG state from checkpoint.
 

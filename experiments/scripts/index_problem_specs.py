@@ -6,7 +6,7 @@ import re
 import pkgutil
 import importlib
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import vamos
 
@@ -25,7 +25,7 @@ def is_mapping_like(obj: Any) -> bool:
     return hasattr(obj, "keys") and hasattr(obj, "items")
 
 
-def find_mapping_attr(attr_name: str) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+def find_mapping_attr(attr_name: str) -> tuple[str | None, dict[str, Any] | None]:
     for m in pkgutil.walk_packages(vamos.__path__, prefix=vamos.__name__ + "."):
         name = m.name
         if not any(p in name.lower() for p in KEY_PATTERNS):
@@ -56,7 +56,7 @@ def infer_family(problem_key: str) -> str:
     return pref or "unknown"
 
 
-def find_first_int(obj: Any, candidates: tuple[str, ...]) -> Optional[int]:
+def find_first_int(obj: Any, candidates: tuple[str, ...]) -> int | None:
     if isinstance(obj, dict):
         for k, v in obj.items():
             if str(k) in candidates:
@@ -99,7 +99,7 @@ def main() -> int:
     n_var = ("n_var", "n_variables", "num_variables", "variables", "dimension", "d", "n_dim")
 
     rows = []
-    fam_counts: Dict[str, int] = {}
+    fam_counts: dict[str, int] = {}
 
     sanitized = {}
     for key, spec in specs.items():
@@ -132,7 +132,7 @@ def main() -> int:
     OUT_JSON.write_text(json.dumps(sanitized, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # Provide sample keys per family
-    samples: Dict[str, list[str]] = {}
+    samples: dict[str, list[str]] = {}
     for r in rows:
         fam = str(r["family"])
         samples.setdefault(fam, [])

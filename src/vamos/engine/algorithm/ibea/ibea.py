@@ -62,8 +62,8 @@ class IBEA:
 
     Examples
     --------
-    >>> from vamos.engine.api import IBEAConfig
-    >>> config = IBEAConfig().pop_size(100).indicator("epsilon").kappa(1.0).fixed()
+    >>> from vamos.algorithms import IBEAConfig
+    >>> config = IBEAConfig.builder().pop_size(100).indicator("epsilon").kappa(1.0).build()
     >>> ibea = IBEA(config, kernel)
     >>> result = ibea.run(problem, ("n_eval", 10000), seed=42)
 
@@ -76,15 +76,15 @@ class IBEA:
     >>> result = ibea.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: "KernelBackend"):
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend):
         self.cfg = config
         self.kernel = kernel
         self._st: IBEAState | None = None
-        self._live_cb: "LiveVisualization | None" = None
-        self._eval_strategy: "EvaluationBackend | None" = None
+        self._live_cb: LiveVisualization | None = None
+        self._eval_strategy: EvaluationBackend | None = None
         self._max_eval: int = 0
         self._hv_tracker: HVTracker | None = None
-        self._problem: "ProblemProtocol | None" = None
+        self._problem: ProblemProtocol | None = None
 
     # -------------------------------------------------------------------------
     # Main run method (batch mode)
@@ -92,11 +92,11 @@ class IBEA:
 
     def run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
         """Run IBEA optimization loop.
 
@@ -164,11 +164,11 @@ class IBEA:
 
     def _initialize_run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> tuple[Any, Any, int, Any]:
         """Initialize the algorithm run."""
         self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_ibea_run(
@@ -207,9 +207,9 @@ class IBEA:
 
     def _evaluate_offspring(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         X: np.ndarray,
-        eval_strategy: "EvaluationBackend",
+        eval_strategy: EvaluationBackend,
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
@@ -226,11 +226,11 @@ class IBEA:
 
     def initialize(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop."""
         self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = self._initialize_run(

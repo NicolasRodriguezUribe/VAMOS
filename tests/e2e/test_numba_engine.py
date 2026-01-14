@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from vamos.api import optimize
+from vamos import optimize
 from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 
 

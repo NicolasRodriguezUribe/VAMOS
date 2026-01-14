@@ -1,5 +1,5 @@
 {
-  "max_errors": 825,
+  "max_errors": 0,
   "command": ".\\.venv\\Scripts\\mypy.exe --config-file pyproject.toml src/vamos",
-  "notes": "Baseline after mypy config fixes (mypy 1.19.1); reduce this number over time."
+  "notes": "mypy is currently clean on src/vamos (mypy 1.19.1); keep this at 0 to prevent regressions."
 }

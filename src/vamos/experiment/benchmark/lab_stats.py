@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from vamos.experiment.benchmark.report_utils import ensure_dir, import_pandas
 
@@ -25,10 +25,10 @@ def _group_stats(summary: Any, agg: str) -> Any:
     raise ValueError(f"Unknown aggregation '{agg}'")
 
 
-def write_summary_tables(summary: Any, output_dir: Path) -> Dict[str, Path]:
+def write_summary_tables(summary: Any, output_dir: Path) -> dict[str, Path]:
     import_pandas()
     output_dir = ensure_dir(output_dir)
-    created: Dict[str, Path] = {}
+    created: dict[str, Path] = {}
 
     stats = {
         "Median": _group_stats(summary, "median"),
@@ -49,7 +49,7 @@ def write_summary_tables(summary: Any, output_dir: Path) -> Dict[str, Path]:
     return created
 
 
-def write_wilcoxon_tables(summary: Any, output_dir: Path, *, alpha: float = 0.05) -> Dict[str, Path]:
+def write_wilcoxon_tables(summary: Any, output_dir: Path, *, alpha: float = 0.05) -> dict[str, Path]:
     pd = import_pandas()
     try:
         from scipy import stats as spstats  # type: ignore[import-untyped]
@@ -57,7 +57,7 @@ def write_wilcoxon_tables(summary: Any, output_dir: Path, *, alpha: float = 0.05
         return {}
 
     output_dir = ensure_dir(output_dir)
-    created: Dict[str, Path] = {}
+    created: dict[str, Path] = {}
     algorithms = pd.unique(summary["Algorithm"])
     problems = pd.unique(summary["Problem"])
     indicators = pd.unique(summary["IndicatorName"])

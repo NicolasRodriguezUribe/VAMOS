@@ -1,7 +1,6 @@
 import os
 import warnings
 from math import comb
-from typing import Optional
 
 import numpy as np
 
@@ -10,8 +9,8 @@ def load_or_generate_weight_vectors(
     pop_size: int,
     n_obj: int,
     *,
-    path: Optional[str] = None,
-    divisions: Optional[int] = None,
+    path: str | None = None,
+    divisions: int | None = None,
     mode: str = "auto",
 ) -> np.ndarray:
     """
@@ -51,7 +50,7 @@ def _load_weights(path: str, delimiter: str | None = ",") -> np.ndarray:
     return arr
 
 
-def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: Optional[str]) -> np.ndarray:
+def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: str | None) -> np.ndarray:
     if n_obj < 2:
         return np.ones((pop_size, 1), dtype=float)
     if n_obj == 2:
@@ -100,7 +99,7 @@ def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: Optional
     return weights
 
 
-def _resolve_jmetalpy_weight_path(path: Optional[str], n_obj: int, pop_size: int) -> Optional[str]:
+def _resolve_jmetalpy_weight_path(path: str | None, n_obj: int, pop_size: int) -> str | None:
     if path is None:
         return None
     if os.path.isfile(path):
@@ -122,7 +121,7 @@ def _assert_valid_weights(weights: np.ndarray, n_obj: int) -> None:
         raise ValueError("Each weight vector must sum to 1.")
 
 
-def _generate_weights(pop_size: int, n_obj: int, divisions: Optional[int]) -> np.ndarray:
+def _generate_weights(pop_size: int, n_obj: int, divisions: int | None) -> np.ndarray:
     if n_obj < 2:
         # Degenerate single-objective: return uniform weights.
         return np.ones((pop_size, 1), dtype=float)
@@ -152,7 +151,7 @@ def _count_lattice_points(n_obj: int, divisions: int) -> int:
     return comb(divisions + n_obj - 1, n_obj - 1)
 
 
-def _simplex_lattice(n_obj: int, divisions: int, limit: Optional[int]) -> np.ndarray:
+def _simplex_lattice(n_obj: int, divisions: int, limit: int | None) -> np.ndarray:
     coords: list[tuple[int, ...]] = []
 
     def rec(remaining: int, depth: int, current: list[int]) -> None:

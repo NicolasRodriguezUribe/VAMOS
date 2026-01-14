@@ -1,7 +1,7 @@
 import pytest
 from vamos.foundation.problem.dtlz import DTLZ2Problem
 from vamos.engine.algorithm.config import NSGAIIIConfig
-from vamos.experiment.optimize import OptimizeConfig, optimize_config
+from vamos import optimize
 from vamos.foundation.metrics.hypervolume import hypervolume
 
 
@@ -24,25 +24,23 @@ def test_dtlz2_nsgaii_convergence():
     pop_size = 91
 
     algo_cfg = (
-        NSGAIIIConfig()
+        NSGAIIIConfig.builder()
         .pop_size(pop_size)
         .crossover("sbx", prob=0.9, eta=30.0)
         .mutation("pm", prob=1.0 / 12, eta=20.0)
         .selection("random")
         .reference_directions(divisions=12)
-        .fixed()
+        .build()
     )
 
-    config = OptimizeConfig(
-        problem=problem,
+    result = optimize(
+        problem,
         algorithm="nsgaiii",
         algorithm_config=algo_cfg,
         termination=("n_eval", 5000),
         seed=42,
         engine="numpy",
     )
-
-    result = optimize_config(config)
 
     hv = hypervolume(result.F, ref_point)
     assert hv > 0.50, f"DTLZ2 NSGA-III failed to converge. HV={hv:.4f} < 0.50"

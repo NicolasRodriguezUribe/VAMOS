@@ -10,7 +10,7 @@ Usage:
 
 from __future__ import annotations
 import time
-from vamos.api import optimize
+from vamos import optimize
 
 
 def run_numpy(pop_size=1000):

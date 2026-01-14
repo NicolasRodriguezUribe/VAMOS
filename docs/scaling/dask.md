@@ -13,8 +13,8 @@ pip install -e ".[compute]"
 ```python
 from dask.distributed import Client, LocalCluster
 from vamos.foundation.eval.backends import DaskEvalBackend
-from vamos import OptimizeConfig, make_problem_selection, optimize
-from vamos.engine.api import NSGAIIConfig
+from vamos import make_problem_selection, optimize
+from vamos.algorithms import NSGAIIConfig
 
 # Create local cluster
 cluster = LocalCluster(n_workers=4)
@@ -25,8 +25,8 @@ backend = DaskEvalBackend(client=client)
 # Run optimization (distributed evaluation)
 problem = make_problem_selection("zdt1", n_var=30).instantiate()
 algo_cfg = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var)
-config = OptimizeConfig(
-    problem=problem,
+result = optimize(
+    problem,
     algorithm="nsgaii",
     algorithm_config=algo_cfg,
     termination=("n_eval", 10_000),
@@ -34,21 +34,20 @@ config = OptimizeConfig(
     engine="numpy",
     eval_strategy=backend,
 )
-result = optimize(config)
 ```
 
 ## Connecting to Existing Cluster
 
 ```python
-from vamos import OptimizeConfig, make_problem_selection, optimize
-from vamos.engine.api import NSGAIIConfig
+from vamos import make_problem_selection, optimize
+from vamos.algorithms import NSGAIIConfig
 from vamos.foundation.eval.backends import DaskEvalBackend
 
 backend = DaskEvalBackend(address="scheduler.example.com:8786")
 problem = make_problem_selection("zdt1", n_var=30).instantiate()
 algo_cfg = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var)
-config = OptimizeConfig(
-    problem=problem,
+result = optimize(
+    problem,
     algorithm="nsgaii",
     algorithm_config=algo_cfg,
     termination=("n_eval", 50_000),
@@ -56,7 +55,6 @@ config = OptimizeConfig(
     engine="numpy",
     eval_strategy=backend,
 )
-result = optimize(config)
 ```
 
 ## Kubernetes Deployment

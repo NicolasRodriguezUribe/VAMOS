@@ -1,4 +1,4 @@
-from vamos.engine.algorithms_registry import available_algorithms, resolve_algorithm
+from vamos.algorithms import available_algorithms, resolve_algorithm
 
 print("Algorithms:", available_algorithms())
 

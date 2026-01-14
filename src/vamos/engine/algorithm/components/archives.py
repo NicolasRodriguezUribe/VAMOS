@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def setup_archive(
-    kernel: "KernelBackend",
+    kernel: KernelBackend,
     X: np.ndarray,
     F: np.ndarray,
     n_var: int,
@@ -69,7 +69,7 @@ def setup_archive(
 
 
 def update_archive(
-    state: "AlgorithmState",
+    state: AlgorithmState,
     X_new: np.ndarray | None = None,
     F_new: np.ndarray | None = None,
 ) -> None:

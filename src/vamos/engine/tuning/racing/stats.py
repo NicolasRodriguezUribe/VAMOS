@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, List, Sequence, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -10,8 +11,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def build_score_matrix(
-    configs: Sequence["ConfigState"],
-) -> Tuple[np.ndarray, List[int]]:
+    configs: Sequence[ConfigState],
+) -> tuple[np.ndarray, list[int]]:
     """
     Build a score matrix from the given configs, trimmed to the minimum history
     length across alive configs.
@@ -19,16 +20,16 @@ def build_score_matrix(
     Returns:
         scores: np.ndarray of shape (n_configs, n_blocks)
             Each row corresponds to one config, each column to one "block"
-            (instance × seed combination). We assume that scores are aligned
+            (instance x seed combination). We assume that scores are aligned
             in time: the t-th element of each config's scores corresponds to
             the same block.
-        alive_indices: List[int]
+        alive_indices: list[int]
             Indices in the original `configs` sequence corresponding to the
             rows in the returned score matrix (i.e., only alive configs with
             at least one score).
     """
-    rows: List[np.ndarray] = []
-    alive_indices: List[int] = []
+    rows: list[np.ndarray] = []
+    alive_indices: list[int] = []
 
     for idx, state in enumerate(configs):
         if not state.alive or not state.scores:

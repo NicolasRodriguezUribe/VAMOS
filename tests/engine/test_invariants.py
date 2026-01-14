@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from vamos.api import optimize
+from vamos import optimize
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
@@ -47,6 +47,6 @@ def test_nsgaii_population_mode_invariants():
     Verify NSGA-II returns full population if configured.
     """
     # This requires configuring 'result_mode'="population".
-    # optimize helper might not expose it easily without kwargs magic or OptimizeConfig.
+    # Use algorithm_config to request population mode if we wire this test.
     # We'll skip this if it's too complex to wire via api, but bounds check is critical.
     pass

@@ -4,7 +4,8 @@ Generic registry pattern for managing named components (algorithms, operators, e
 
 from __future__ import annotations
 
-from typing import Callable, Generic, Iterable, TypeVar, overload
+from typing import Generic, TypeVar, overload
+from collections.abc import Callable, Iterable
 
 T = TypeVar("T")
 U = TypeVar("U")

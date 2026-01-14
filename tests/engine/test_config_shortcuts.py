@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from math import comb
 
-from vamos.engine.api import MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SMSEMOAConfig, SPEA2Config
+from vamos.algorithms import MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SMSEMOAConfig, SPEA2Config
 
 
 class TestNSGAIIConfigShortcuts:

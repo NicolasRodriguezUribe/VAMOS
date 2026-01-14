@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -55,16 +55,16 @@ class StorageObserver(Observer):
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         pass
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         if final_stats is None:
             return

@@ -1,60 +1,52 @@
 """
-Convenience access to built-in multi-objective algorithms and their configs.
+Algorithm facade: configuration builders and registry helpers.
 
-For advanced customization, drop down to `vamos.engine.algorithm.*`.
+Use this module for algorithm config objects and discovery helpers.
+For running optimizations, use `vamos.api` or `vamos.optimize`.
 """
 
 from __future__ import annotations
 
-from typing import Tuple
+from typing import TYPE_CHECKING
 
 from vamos.foundation.encoding import normalize_encoding
 from vamos.engine.algorithm.config import (
+    AGEMOEAConfig,
+    GenericAlgorithmConfig,
     IBEAConfig,
-    IBEAConfigData,
     MOEADConfig,
-    MOEADConfigData,
     NSGAIIConfig,
-    NSGAIIConfigData,
     NSGAIIIConfig,
-    NSGAIIIConfigData,
+    RVEAConfig,
     SMPSOConfig,
-    SMPSOConfigData,
     SMSEMOAConfig,
-    SMSEMOAConfigData,
     SPEA2Config,
-    SPEA2ConfigData,
 )
-from vamos.engine.algorithm.moead import MOEAD
-from vamos.engine.algorithm.nsgaiii import NSGAIII
-from vamos.engine.algorithm.nsgaii import NSGAII
-from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
-from vamos.engine.algorithm.smpso import SMPSO
-from vamos.engine.algorithm.smsemoa import SMSEMOA
-from vamos.engine.algorithm.spea2 import SPEA2
-from vamos.engine.algorithm.ibea import IBEA
-
-
 from vamos.engine.algorithm.components.variation.helpers import (
-    PERM_CROSSOVER,
-    PERM_MUTATION,
     BINARY_CROSSOVER,
     BINARY_MUTATION,
     INT_CROSSOVER,
     INT_MUTATION,
     MIXED_CROSSOVER,
     MIXED_MUTATION,
+    PERM_CROSSOVER,
+    PERM_MUTATION,
     REAL_CROSSOVER,
     REAL_MUTATION,
 )
 
+if TYPE_CHECKING:
+    from vamos.engine.algorithm.registry import AlgorithmBuilder
 
-def available_algorithms() -> Tuple[str, ...]:
+
+def available_algorithms() -> tuple[str, ...]:
     """Return the canonical algorithm identifiers supported by the engine."""
+    from vamos.engine.algorithm.registry import get_algorithms_registry
+
     return tuple(sorted(get_algorithms_registry().keys()))
 
 
-def available_crossover_methods(encoding: str = "real") -> Tuple[str, ...]:
+def available_crossover_methods(encoding: str = "real") -> tuple[str, ...]:
     """
     Return the available crossover method identifiers for a given encoding.
 
@@ -81,7 +73,7 @@ def available_crossover_methods(encoding: str = "real") -> Tuple[str, ...]:
     return ()
 
 
-def available_mutation_methods(encoding: str = "real") -> Tuple[str, ...]:
+def available_mutation_methods(encoding: str = "real") -> tuple[str, ...]:
     """
     Return the available mutation method identifiers for a given encoding.
 
@@ -108,28 +100,24 @@ def available_mutation_methods(encoding: str = "real") -> Tuple[str, ...]:
     return ()
 
 
+def resolve_algorithm(name: str) -> AlgorithmBuilder:
+    """Return the registered builder for a named algorithm."""
+    from vamos.engine.algorithm.registry import resolve_algorithm as _resolve_algorithm
+
+    return _resolve_algorithm(name)
+
+
 __all__ = [
-    "NSGAII",
-    "NSGAIII",
-    "MOEAD",
-    "SMSEMOA",
-    "SPEA2",
-    "IBEA",
-    "SMPSO",
     "NSGAIIConfig",
-    "NSGAIIConfigData",
-    "MOEADConfig",
-    "MOEADConfigData",
-    "SMSEMOAConfig",
-    "SMSEMOAConfigData",
     "NSGAIIIConfig",
-    "NSGAIIIConfigData",
-    "SPEA2Config",
-    "SPEA2ConfigData",
-    "IBEAConfig",
-    "IBEAConfigData",
+    "MOEADConfig",
+    "SMSEMOAConfig",
     "SMPSOConfig",
-    "SMPSOConfigData",
+    "SPEA2Config",
+    "IBEAConfig",
+    "AGEMOEAConfig",
+    "RVEAConfig",
+    "GenericAlgorithmConfig",
     "available_algorithms",
     "available_crossover_methods",
     "available_mutation_methods",

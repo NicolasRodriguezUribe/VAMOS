@@ -10,13 +10,13 @@ from vamos.foundation.problem.mixed import MixedDesignProblem
 
 def _run_nsga2(problem, crossover, mutation, pop_size=10, n_eval=40):
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover(*crossover)
         .mutation(*mutation)
         .selection("tournament", pressure=2)
-    ).fixed()
+    ).build()
     algo = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     res = algo.run(problem, termination=("n_eval", n_eval), seed=0)
     assert "F" in res and "X" in res

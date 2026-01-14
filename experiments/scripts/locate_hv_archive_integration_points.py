@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 REPO = Path.cwd()
 SRC = REPO / "src" / "vamos"
@@ -17,7 +17,7 @@ def read_text(p: Path) -> str:
     return p.read_text(encoding="utf-8", errors="ignore")
 
 
-def extract_snippet(lines: List[str], lineno: int, ctx: int = 6) -> str:
+def extract_snippet(lines: list[str], lineno: int, ctx: int = 6) -> str:
     lo = max(1, lineno - ctx)
     hi = min(len(lines), lineno + ctx)
     chunk = []
@@ -28,7 +28,7 @@ def extract_snippet(lines: List[str], lineno: int, ctx: int = 6) -> str:
 
 class LoopVisitor(ast.NodeVisitor):
     def __init__(self):
-        self.candidates: List[Dict[str, Any]] = []
+        self.candidates: list[dict[str, Any]] = []
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
         self._scan_body(node, kind="function", name=node.name)
@@ -78,10 +78,10 @@ class LoopVisitor(ast.NodeVisitor):
             )
 
 
-def scan_file(path: Path) -> Dict[str, Any]:
+def scan_file(path: Path) -> dict[str, Any]:
     txt = read_text(path)
     lines = txt.splitlines()
-    res: Dict[str, Any] = {"path": str(path.relative_to(REPO)), "loop_candidates": [], "write_hits": []}
+    res: dict[str, Any] = {"path": str(path.relative_to(REPO)), "loop_candidates": [], "write_hits": []}
 
     # write-hits (string scan)
     for i, line in enumerate(lines, start=1):
@@ -106,7 +106,7 @@ def scan_file(path: Path) -> Dict[str, Any]:
 
 def main() -> int:
     files = sorted(SRC.rglob("*.py"))
-    targets: List[Dict[str, Any]] = []
+    targets: list[dict[str, Any]] = []
 
     for p in files:
         r = scan_file(p)
@@ -114,7 +114,7 @@ def main() -> int:
             targets.append(r)
 
     # Rank: files with loop_candidates first, then write_hits
-    def keyfn(r: Dict[str, Any]) -> Tuple[int, int]:
+    def keyfn(r: dict[str, Any]) -> tuple[int, int]:
         return (len(r.get("loop_candidates", [])), len(r.get("write_hits", [])))
 
     targets.sort(key=keyfn, reverse=True)

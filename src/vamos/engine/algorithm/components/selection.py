@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from typing import Callable, Optional, Sequence
+from collections.abc import Callable, Sequence
 
 
 class TournamentSelection:
@@ -14,7 +14,7 @@ class TournamentSelection:
         self,
         tournament_size: int,
         comparator: Callable[[int, int], int],
-        rng: Optional[np.random.Generator] = None,
+        rng: np.random.Generator | None = None,
     ) -> None:
         if tournament_size <= 0:
             raise ValueError("tournament_size must be positive.")
@@ -42,7 +42,7 @@ class TournamentSelection:
 class RandomSelection:
     """Uniform random parent selection."""
 
-    def __init__(self, rng: Optional[np.random.Generator] = None) -> None:
+    def __init__(self, rng: np.random.Generator | None = None) -> None:
         self.rng = rng or np.random.default_rng()
 
     def __call__(self, population: Sequence[object], n_parents: int) -> np.ndarray:

@@ -43,7 +43,7 @@ def main():
         .pop_size(100)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .fixed()
+        .build()
     )
     
     # 3. Run optimization

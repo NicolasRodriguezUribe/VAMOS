@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -18,7 +19,7 @@ class RunRecord:
     fun: np.ndarray
     var: np.ndarray | None
     archive_fun: np.ndarray | None = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -28,7 +29,7 @@ class FrontRecord:
     points_F: np.ndarray
     points_X: np.ndarray | None
     constraints: np.ndarray | None = None
-    extra: Dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
 
 
 def _load_csv(path: Path) -> np.ndarray:
@@ -52,7 +53,7 @@ def load_run_from_directory(run_dir: Path) -> RunRecord:
     archive_path = run_dir / "ARCHIVE_FUN.csv"
     archive_fun = _load_csv(archive_path) if archive_path.exists() else None
     metadata_path = run_dir / "metadata.json"
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
     if metadata_path.exists():
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
 
@@ -98,11 +99,11 @@ def _iter_run_dirs(study_dir: Path) -> Iterable[Path]:
         yield fun_path.parent
 
 
-def load_runs_from_study(study_dir: Path) -> List[RunRecord]:
+def load_runs_from_study(study_dir: Path) -> list[RunRecord]:
     """
     Load all run directories underneath a study root.
     """
-    runs: List[RunRecord] = []
+    runs: list[RunRecord] = []
     for run_dir in _iter_run_dirs(study_dir):
         try:
             runs.append(load_run_from_directory(run_dir))
@@ -114,13 +115,13 @@ def load_runs_from_study(study_dir: Path) -> List[RunRecord]:
 def build_fronts(
     runs: Iterable[RunRecord],
     *,
-    problem_filter: Optional[str] = None,
+    problem_filter: str | None = None,
     merge_seeds: bool = True,
-) -> List[FrontRecord]:
+) -> list[FrontRecord]:
     """
     Build per-(problem, algorithm) fronts by optionally merging seeds.
     """
-    grouped: Dict[tuple[str, str], List[RunRecord]] = {}
+    grouped: dict[tuple[str, str], list[RunRecord]] = {}
     for run in runs:
         if problem_filter and run.problem_name != problem_filter:
             continue
@@ -134,7 +135,7 @@ def build_fronts(
         )
         grouped.setdefault(key, []).append(run)
 
-    fronts: List[FrontRecord] = []
+    fronts: list[FrontRecord] = []
     for (problem, algorithm), records in grouped.items():
         F = np.vstack([r.fun for r in records if r.fun.size])
         X = None

@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from vamos.ux.studio.dm import DecisionView
 
@@ -24,14 +24,14 @@ def _record_payload(view: DecisionView, idx: int) -> dict[str, Any]:
     return payload
 
 
-def export_solutions_to_json(view: DecisionView, indices: List[int], path: Path) -> Path:
+def export_solutions_to_json(view: DecisionView, indices: list[int], path: Path) -> Path:
     records = [_record_payload(view, idx) for idx in indices]
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(records, indent=2), encoding="utf-8")
     return path
 
 
-def export_solutions_to_csv(view: DecisionView, indices: List[int], path: Path) -> Path:
+def export_solutions_to_csv(view: DecisionView, indices: list[int], path: Path) -> Path:
     rows = [_record_payload(view, idx) for idx in indices]
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:

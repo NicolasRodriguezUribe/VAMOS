@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, fields, replace
-from typing import Any, Tuple, cast
+from typing import Any, cast
 
 from vamos.engine.algorithm.registry import resolve_algorithm, get_algorithms_registry
 from vamos.foundation.kernel.registry import resolve_kernel
@@ -29,7 +29,7 @@ class OptimizeConfig:
     problem: ProblemProtocol
     algorithm: str
     algorithm_config: AlgorithmConfigProtocol
-    termination: Tuple[str, Any]
+    termination: tuple[str, Any]
     seed: int
     engine: str = "numpy"
     eval_strategy: EvaluationBackend | str | None = None  # name or backend instance
@@ -50,7 +50,7 @@ def _with_result_mode(cfg_data: Any, result_mode: str) -> Any:
     return replace(cfg_data, result_mode=result_mode)
 
 
-def optimize_config(
+def _run_config(
     config: OptimizeConfig,
     *,
     engine: str | None = None,
@@ -68,18 +68,18 @@ def optimize_config(
 
     Examples:
         # Standard usage
-        result = optimize_config(config)
+        result = _run_config(config)
 
         # Override engine at call time
-        result = optimize_config(config, engine="numba")
+        result = _run_config(config, engine="numba")
     """
     if not isinstance(config, OptimizeConfig):
-        raise TypeError("optimize_config() expects an OptimizeConfig instance.")
+        raise TypeError("_run_config() expects an OptimizeConfig instance.")
     cfg = config
 
     cfg_dict = _normalize_cfg(cfg.algorithm_config)
     if "engine" in cfg_dict:
-        raise ValueError("engine must be configured via OptimizeConfig.engine (or optimize_config(engine=...)), not algorithm_config.")
+        raise ValueError("engine must be configured via OptimizeConfig.engine (or _run_config(engine=...)), not algorithm_config.")
     algorithm_raw = cfg.algorithm or ""
     algorithm_name = algorithm_raw.lower()
     available = sorted(get_algorithms_registry().keys())
@@ -128,65 +128,20 @@ def _build_algorithm_config(
     n_var: int | None,
     n_obj: int | None,
 ) -> AlgorithmConfigProtocol:
-    from vamos.engine.algorithm.config import (
-        AGEMOEAConfig,
-        GenericAlgorithmConfig,
-        IBEAConfig,
-        MOEADConfig,
-        NSGAIIIConfig,
-        NSGAIIConfig,
-        RVEAConfig,
-        SMPSOConfig,
-        SPEA2Config,
-        SMSEMOAConfig,
-    )
-
     algorithm = algorithm.lower()
     result_mode = "population"
 
-    if algorithm == "nsgaii":
-        if pop_size is None:
-            pop_size = 100
-        nsgaii_cfg = NSGAIIConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(nsgaii_cfg, result_mode))
-    if algorithm == "moead":
-        n_obj = n_obj if n_obj is not None else 3
-        moead_cfg = MOEADConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(moead_cfg, result_mode))
-    if algorithm == "spea2":
-        if pop_size is None:
-            pop_size = 100
-        spea2_cfg = SPEA2Config.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(spea2_cfg, result_mode))
-    if algorithm == "smsemoa":
-        if pop_size is None:
-            pop_size = 100
-        smsemoa_cfg = SMSEMOAConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(smsemoa_cfg, result_mode))
-    if algorithm == "nsgaiii":
-        n_obj = n_obj if n_obj is not None else 3
-        nsgaiii_cfg = NSGAIIIConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(nsgaiii_cfg, result_mode))
-    if algorithm == "ibea":
-        if pop_size is None:
-            pop_size = 100
-        ibea_cfg = IBEAConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(ibea_cfg, result_mode))
-    if algorithm == "smpso":
-        if pop_size is None:
-            pop_size = 100
-        smpso_cfg = SMPSOConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(smpso_cfg, result_mode))
-    if algorithm == "agemoea":
-        if pop_size is None:
-            pop_size = 100
-        agemoea_cfg = AGEMOEAConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(agemoea_cfg, result_mode))
-    if algorithm == "rvea":
-        if pop_size is None:
-            pop_size = 100
-        rvea_cfg = RVEAConfig.default(pop_size=pop_size, n_var=n_var)
-        return cast(AlgorithmConfigProtocol, _with_result_mode(rvea_cfg, result_mode))
+    from vamos.engine.algorithm.config import GenericAlgorithmConfig
+    from vamos.engine.algorithm.config.defaults import build_default_algorithm_config
+
+    default_cfg = build_default_algorithm_config(
+        algorithm,
+        pop_size=pop_size,
+        n_var=n_var,
+        n_obj=n_obj,
+    )
+    if default_cfg is not None:
+        return cast(AlgorithmConfigProtocol, _with_result_mode(default_cfg, result_mode))
 
     registry = get_algorithms_registry()
     if algorithm in registry:
@@ -203,4 +158,4 @@ def _build_algorithm_config(
     raise InvalidAlgorithmError(algorithm, available=available)
 
 
-__all__ = ["OptimizeConfig", "optimize_config", "OptimizationResult"]
+__all__ = ["OptimizeConfig", "OptimizationResult"]

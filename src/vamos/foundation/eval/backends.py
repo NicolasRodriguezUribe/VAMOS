@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import logging
 import math
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import numpy as np
 
@@ -11,7 +12,11 @@ from vamos.foundation.eval.population import evaluate_population_with_constraint
 from . import EvaluationBackend, EvaluationResult
 
 
-def _eval_chunk(problem: Any, X_chunk: np.ndarray) -> tuple[np.ndarray, Optional[np.ndarray]]:
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
+
+def _eval_chunk(problem: Any, X_chunk: np.ndarray) -> tuple[np.ndarray, np.ndarray | None]:
     """Worker helper to evaluate a chunk; kept at module level for pickling."""
     F, G = evaluate_population_with_constraints(problem, X_chunk)
     return F, G
@@ -34,7 +39,7 @@ class MultiprocessingEvalBackend(EvaluationBackend):
         - Best suited for expensive evaluations; overhead dominates for tiny problems.
     """
 
-    def __init__(self, n_workers: Optional[int] = None, chunk_size: Optional[int] = None) -> None:
+    def __init__(self, n_workers: int | None = None, chunk_size: int | None = None) -> None:
         self.n_workers = max(1, n_workers or os.cpu_count() or 1)
         self.chunk_size = chunk_size
 
@@ -50,7 +55,7 @@ class MultiprocessingEvalBackend(EvaluationBackend):
         slices = [(i, min(i + chunk_size, n)) for i in range(0, n, chunk_size)]
 
         F_parts: list[tuple[int, np.ndarray]] = []
-        G_parts: list[tuple[int, Optional[np.ndarray]]] = []
+        G_parts: list[tuple[int, np.ndarray | None]] = []
 
         with ProcessPoolExecutor(max_workers=self.n_workers) as ex:
             future_map = {ex.submit(_eval_chunk, problem, X[start:end]): (start, end) for start, end in slices}
@@ -101,6 +106,7 @@ class DaskEvalBackend(EvaluationBackend):
         self.client = client
         self.address = address
         self._connected = False
+        self._logged_fallback = False
 
         try:
             from dask.distributed import Client
@@ -114,13 +120,18 @@ class DaskEvalBackend(EvaluationBackend):
                     # For now, require explicit client or address for "remote",
                     # otherwise create LocalCluster implicitly?
                     # Better to defer creation to first evaluate call or let user pass it.
-                    pass
+                    _logger().debug(
+                        "DaskEvalBackend initialized without a client/address; it will fall back to serial until a client or address is provided."
+                    )
             self._connected = True
         except ImportError:
-            pass
+            _logger().debug("DaskEvalBackend unavailable (missing dask.distributed); falling back to serial.")
 
     def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         if not self._connected or (self.client is None and self.address is None):
+            if not self._logged_fallback:
+                _logger().debug("DaskEvalBackend not connected; using SerialEvalBackend.")
+                self._logged_fallback = True
             return SerialEvalBackend().evaluate(X, problem)
 
         try:
@@ -175,12 +186,13 @@ class DaskEvalBackend(EvaluationBackend):
             return EvaluationResult(F=F, G=G)
 
         except Exception:
+            _logger().debug("DaskEvalBackend evaluation failed; falling back to SerialEvalBackend.", exc_info=True)
             # Fallback on failure
             return SerialEvalBackend().evaluate(X, problem)
 
 
 def resolve_eval_strategy(
-    name: str, *, n_workers: Optional[int] = None, chunk_size: Optional[int] = None, dask_address: str | None = None
+    name: str, *, n_workers: int | None = None, chunk_size: int | None = None, dask_address: str | None = None
 ) -> EvaluationBackend:
     key = (name or "serial").lower()
     if key == "multiprocessing":

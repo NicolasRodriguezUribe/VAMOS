@@ -3,99 +3,56 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import Any
 
 from .base import _SerializableConfig, _require_fields
 
 
-class AGEMOEAConfigDict(TypedDict):
-    pop_size: int
-    crossover: tuple[str, dict[str, Any]]
-    mutation: tuple[str, dict[str, Any]]
-    repair: tuple[str, dict[str, Any]] | None
-    initializer: dict[str, Any] | None
-    mutation_prob_factor: float | None
-    constraint_mode: str
-    track_genealogy: bool
-    result_mode: str | None
-    archive: dict[str, Any] | None
-    archive_type: str | None
-
-
-@dataclass(frozen=True)
-class AGEMOEAConfigData(_SerializableConfig["AGEMOEAConfigDict"]):
-    pop_size: int
-    crossover: tuple[str, dict[str, Any]]
-    mutation: tuple[str, dict[str, Any]]
-    repair: tuple[str, dict[str, Any]] | None = None
-    initializer: dict[str, Any] | None = None
-    mutation_prob_factor: float | None = None
-    constraint_mode: str = "feasibility"
-    track_genealogy: bool = False
-    result_mode: str | None = None
-    archive: dict[str, Any] | None = None
-    archive_type: str | None = None
-
-
-class AGEMOEAConfig:
+class _AGEMOEAConfigBuilder:
     """
-    Declarative configuration holder for AGE-MOEA settings.
-
-    Examples:
-        cfg = AGEMOEAConfig.default()
-        cfg = AGEMOEAConfig().pop_size(100).fixed()
+    Fluent builder for AGE-MOEA configs.
     """
 
     def __init__(self) -> None:
         self._cfg: dict[str, Any] = {}
 
-    @classmethod
-    def default(
-        cls,
-        pop_size: int = 100,
-        n_var: int | None = None,
-    ) -> "AGEMOEAConfigData":
-        """Create a default AGE-MOEA configuration."""
-        mut_prob = 1.0 / n_var if n_var else 0.1
-        return cls().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("pm", prob=mut_prob, eta=20.0).fixed()
-
-    def pop_size(self, value: int) -> "AGEMOEAConfig":
+    def pop_size(self, value: int) -> _AGEMOEAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> "AGEMOEAConfig":
+    def crossover(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> "AGEMOEAConfig":
+    def mutation(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> "AGEMOEAConfig":
+    def repair(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> "AGEMOEAConfig":
+    def initializer(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def mutation_prob_factor(self, value: float) -> "AGEMOEAConfig":
+    def mutation_prob_factor(self, value: float) -> _AGEMOEAConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> "AGEMOEAConfig":
+    def constraint_mode(self, value: str) -> _AGEMOEAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
-    def track_genealogy(self, enabled: bool = True) -> "AGEMOEAConfig":
+    def track_genealogy(self, enabled: bool = True) -> _AGEMOEAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> "AGEMOEAConfig":
+    def result_mode(self, value: str) -> _AGEMOEAConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs: Any) -> "AGEMOEAConfig":
+    def archive(self, size: int, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         """
         Configure an external archive.
 
@@ -113,18 +70,18 @@ class AGEMOEAConfig:
         self._cfg["archive"] = archive_cfg
         return self
 
-    def archive_type(self, value: str) -> "AGEMOEAConfig":
+    def archive_type(self, value: str) -> _AGEMOEAConfigBuilder:
         """Set archive pruning strategy."""
         self._cfg["archive_type"] = str(value)
         return self
 
-    def fixed(self) -> AGEMOEAConfigData:
+    def build(self) -> AGEMOEAConfig:
         _require_fields(
             self._cfg,
             ("pop_size", "crossover", "mutation"),
             "AGE-MOEA",
         )
-        return AGEMOEAConfigData(
+        return AGEMOEAConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
@@ -137,3 +94,32 @@ class AGEMOEAConfig:
             archive=self._cfg.get("archive"),
             archive_type=self._cfg.get("archive_type"),
         )
+
+
+@dataclass(frozen=True)
+class AGEMOEAConfig(_SerializableConfig):
+    pop_size: int
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    repair: tuple[str, dict[str, Any]] | None = None
+    initializer: dict[str, Any] | None = None
+    mutation_prob_factor: float | None = None
+    constraint_mode: str = "feasibility"
+    track_genealogy: bool = False
+    result_mode: str | None = None
+    archive: dict[str, Any] | None = None
+    archive_type: str | None = None
+
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 100,
+        n_var: int | None = None,
+    ) -> AGEMOEAConfig:
+        """Create a default AGE-MOEA configuration."""
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        return cls.builder().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("pm", prob=mut_prob, eta=20.0).build()
+
+    @classmethod
+    def builder(cls) -> _AGEMOEAConfigBuilder:
+        return _AGEMOEAConfigBuilder()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -15,15 +15,15 @@ class LiveVisualization(Protocol):
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None: ...
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None: ...
 
 
@@ -36,16 +36,16 @@ class NoOpLiveVisualization:
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         return None
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         return None
 

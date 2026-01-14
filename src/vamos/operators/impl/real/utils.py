@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any
 
 import numpy as np
 
 ArrayLike = np.ndarray
 
 
-def _ensure_bounds(lower: ArrayLike, upper: ArrayLike) -> Tuple[np.ndarray, np.ndarray]:
+def _ensure_bounds(lower: ArrayLike, upper: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
     """Validate bounds and return float arrays of identical shape."""
     lower_arr = np.asarray(lower, dtype=float)
     upper_arr = np.asarray(upper, dtype=float)

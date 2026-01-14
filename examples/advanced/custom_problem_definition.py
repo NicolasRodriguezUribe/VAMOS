@@ -11,7 +11,7 @@ Usage:
 from __future__ import annotations
 
 import numpy as np
-from vamos.api import optimize
+from vamos import optimize
 
 
 class CustomBiObjectiveProblem:

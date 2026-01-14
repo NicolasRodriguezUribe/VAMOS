@@ -47,11 +47,11 @@ class AlgorithmState:
     archive_size: int | None = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
-    archive_manager: "CrowdingDistanceArchive | HypervolumeArchive | None" = None
+    archive_manager: CrowdingDistanceArchive | HypervolumeArchive | None = None
     result_mode: str = "non_dominated"
 
     # Termination
-    hv_tracker: "HVTracker | None" = None
+    hv_tracker: HVTracker | None = None
 
     # Pending offspring for ask/tell
     pending_offspring: np.ndarray | None = None
@@ -59,7 +59,7 @@ class AlgorithmState:
 
     # Genealogy (optional)
     track_genealogy: bool = False
-    genealogy_tracker: "GenealogyTracker | None" = None
+    genealogy_tracker: GenealogyTracker | None = None
     ids: np.ndarray | None = None
 
     def hv_points(self) -> np.ndarray:

@@ -1,40 +1,36 @@
 {
   "vamos": [
     "OptimizationResult",
-    "OptimizeConfig",
     "__version__",
     "available_problem_names",
     "configure_logging",
     "make_problem_selection",
     "optimize",
-    "optimize_many",
     "run_self_check"
+  ],
+  "vamos.algorithms": [
+    "AGEMOEAConfig",
+    "GenericAlgorithmConfig",
+    "IBEAConfig",
+    "MOEADConfig",
+    "NSGAIIConfig",
+    "NSGAIIIConfig",
+    "RVEAConfig",
+    "SMPSOConfig",
+    "SMSEMOAConfig",
+    "SPEA2Config",
+    "available_algorithms",
+    "available_crossover_methods",
+    "available_mutation_methods",
+    "resolve_algorithm"
   ],
   "vamos.api": [
     "OptimizationResult",
-    "OptimizeConfig",
     "available_problem_names",
     "configure_logging",
     "make_problem_selection",
     "optimize",
-    "optimize_many",
     "run_self_check"
-  ],
-  "vamos.engine.api": [
-    "IBEAConfig",
-    "IBEAConfigData",
-    "MOEADConfig",
-    "MOEADConfigData",
-    "NSGAIIConfig",
-    "NSGAIIConfigData",
-    "NSGAIIIConfig",
-    "NSGAIIIConfigData",
-    "SMPSOConfig",
-    "SMPSOConfigData",
-    "SMSEMOAConfig",
-    "SMSEMOAConfigData",
-    "SPEA2Config",
-    "SPEA2ConfigData"
   ],
   "vamos.ux.api": [
     "FriedmanResult",

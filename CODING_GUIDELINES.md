@@ -9,7 +9,7 @@ VAMOS is designed to be **user-friendly first**. Every design decision should co
 1. **Clean public API**: Export stable symbols from `vamos` root. Users should write:
    ```python
    from vamos import optimize, ZDT1, plot_pareto_front_2d
-   from vamos.engine.api import NSGAIIConfig
+   from vamos.algorithms import NSGAIIConfig
    ```
    Not internal paths like `from vamos.engine.algorithm.config import NSGAIIConfig`.
 
@@ -46,6 +46,7 @@ VAMOS is designed to be **user-friendly first**. Every design decision should co
 
 ## Python style
 - Follow PEP 8/PEP 257 with **type hints everywhere**. Prefer explicit return types on public functions/classes.
+- Use modern typing (PEP 585/604): `list`/`dict`/`tuple`/`set` generics and `| None`/`|` unions; avoid `typing.List/Dict/Optional/Union` in new code.
 - Structure imports in three blocks (stdlib, third-party, local) and avoid wildcard imports.
 - Write pure/side-effect-free helpers when practical; keep state inside dataclasses or small objects (see `NSGAII`).
 - When dealing with randomness, use `numpy.random.Generator` instances passed through call stacks (`np.random.default_rng(seed)`) instead of global RNGs.

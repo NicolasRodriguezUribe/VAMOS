@@ -147,7 +147,7 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
     builder: Any
     algo = algorithm_name.lower()
     if algo == "nsgaii":
-        builder = NSGAIIConfig()
+        builder = NSGAIIConfig.builder()
         builder.pop_size(int(assignment["pop_size"]))
         builder.offspring_size(int(assignment.get("offspring_size", assignment["pop_size"])))
         cross = assignment["crossover"]
@@ -163,9 +163,9 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
             mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
         builder.mutation(mut, **mut_params)
         builder.selection(str(assignment.get("selection", "tournament")), pressure=int(assignment["selection_pressure"]))
-        return builder.fixed()
+        return builder.build()
     if algo == "moead":
-        builder = MOEADConfig()
+        builder = MOEADConfig.builder()
         builder.pop_size(int(assignment["pop_size"]))
         builder.neighbor_size(int(assignment["neighbor_size"]))
         builder.delta(float(assignment["delta"]))
@@ -193,9 +193,9 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
             builder.aggregation("pbi", theta=float(assignment.get("pbi_theta", 5.0)))
         else:
             builder.aggregation(aggregation)
-        return builder.fixed()
+        return builder.build()
     if algo == "nsgaiii":
-        builder = NSGAIIIConfig()
+        builder = NSGAIIIConfig.builder()
         builder.pop_size(int(assignment["pop_size"]))
         builder.crossover(
             str(assignment["crossover"]),
@@ -208,9 +208,9 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
             eta=float(assignment["mutation_eta"]),
         )
         builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
-        return builder.fixed()
+        return builder.build()
     if algo == "smsemoa":
-        builder = SMSEMOAConfig()
+        builder = SMSEMOAConfig.builder()
         builder.pop_size(int(assignment["pop_size"]))
         builder.crossover(
             str(assignment["crossover"]),
@@ -224,9 +224,9 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         )
         builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
         builder.reference_point(offset=0.1, adaptive=True)
-        return builder.fixed()
+        return builder.build()
     if algo == "spea2":
-        builder = SPEA2Config()
+        builder = SPEA2Config.builder()
         builder.pop_size(int(assignment["pop_size"]))
         builder.archive_size(int(assignment.get("archive_size", assignment["pop_size"])))
         builder.crossover(
@@ -241,9 +241,9 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         )
         builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
         builder.k_neighbors(int(assignment.get("k_neighbors", max(1, int(np.sqrt(assignment["pop_size"]))))))
-        return builder.fixed()
+        return builder.build()
     if algo == "ibea":
-        builder = IBEAConfig()
+        builder = IBEAConfig.builder()
         builder.pop_size(int(assignment["pop_size"]))
         builder.crossover(
             str(assignment["crossover"]),
@@ -258,9 +258,9 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
         builder.indicator(str(assignment.get("indicator", "eps")))
         builder.kappa(float(assignment.get("kappa", 1.0)))
-        return builder.fixed()
+        return builder.build()
     if algo == "smpso":
-        builder = SMPSOConfig()
+        builder = SMPSOConfig.builder()
         builder.pop_size(int(assignment["pop_size"]))
         builder.archive_size(int(assignment.get("archive_size", assignment["pop_size"])))
         builder.inertia(float(assignment["inertia"]))
@@ -272,5 +272,5 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
             prob=float(assignment["mutation_prob"]),
             eta=float(assignment["mutation_eta"]),
         )
-        return builder.fixed()
+        return builder.build()
     raise ValueError(f"Unsupported algorithm for config construction: {algorithm_name}")

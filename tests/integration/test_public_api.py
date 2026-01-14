@@ -1,7 +1,6 @@
 from vamos.api import available_problem_names, optimize
-from vamos.engine.algorithms_registry import available_algorithms
-from vamos.engine.api import NSGAIIConfig
-from vamos.foundation.problems_registry import ZDT1
+from vamos.algorithms import available_algorithms, NSGAIIConfig
+from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 from vamos.ux.api import friedman_test, plot_pareto_front_2d, weighted_sum_scores
 
 

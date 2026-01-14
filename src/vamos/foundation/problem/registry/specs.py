@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import Dict, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .common import ProblemFactory, ProblemSpec
 from .families import cec, dtlz, lz09, misc, real_world, wfg, zdt
 
-_PROBLEM_SPECS: Dict[str, ProblemSpec] | None = None
+_PROBLEM_SPECS: dict[str, ProblemSpec] | None = None
 
 if TYPE_CHECKING:
-    PROBLEM_SPECS: Dict[str, ProblemSpec]
+    PROBLEM_SPECS: dict[str, ProblemSpec]
 
 
-def _build_problem_specs() -> Dict[str, ProblemSpec]:
-    specs: Dict[str, ProblemSpec] = {}
+def _build_problem_specs() -> dict[str, ProblemSpec]:
+    specs: dict[str, ProblemSpec] = {}
     for family in (
         zdt.get_specs(),
         dtlz.get_specs(),
@@ -26,14 +26,14 @@ def _build_problem_specs() -> Dict[str, ProblemSpec]:
     return specs
 
 
-def get_problem_specs() -> Dict[str, ProblemSpec]:
+def get_problem_specs() -> dict[str, ProblemSpec]:
     global _PROBLEM_SPECS
     if _PROBLEM_SPECS is None:
         _PROBLEM_SPECS = _build_problem_specs()
     return _PROBLEM_SPECS
 
 
-def available_problem_names() -> Tuple[str, ...]:
+def available_problem_names() -> tuple[str, ...]:
     return tuple(get_problem_specs().keys())
 
 

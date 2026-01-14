@@ -39,12 +39,12 @@ from vamos.foundation.observer import RunContext
 
 def initialize_ibea_run(
     cfg: dict[str, Any],
-    kernel: "KernelBackend",
-    problem: "ProblemProtocol",
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
     termination: tuple[str, Any],
     seed: int,
-    eval_strategy: "EvaluationBackend | None" = None,
-    live_viz: "LiveVisualization | None" = None,
+    eval_strategy: EvaluationBackend | None = None,
+    live_viz: LiveVisualization | None = None,
 ) -> tuple[IBEAState, Any, Any, int, Any]:
     """Initialize all components for an IBEA run.
 

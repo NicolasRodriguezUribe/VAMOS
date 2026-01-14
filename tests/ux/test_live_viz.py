@@ -42,14 +42,14 @@ class RecorderViz(LiveVisualization):
 def test_live_viz_callbacks_invoked(monkeypatch, tmp_path):
     monkeypatch.setenv("MPLBACKEND", "Agg")
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(6)
         .offspring_size(6)
         .crossover("sbx", prob=0.9, eta=10.0)
         .mutation("pm", prob="1/n", eta=10.0)
         .selection("tournament", pressure=2)
         .result_mode("population")
-        .fixed()
+        .build()
     )
     algo = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = DummyProblem()

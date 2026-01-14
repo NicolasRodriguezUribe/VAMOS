@@ -119,7 +119,7 @@ vamos-self-check = "vamos.experiment.diagnostics.self_check:main"
 vamos-benchmark = "vamos.experiment.benchmark.cli:main"
 vamos-studio = "vamos.experiment.studio.app:main"
 vamos-zoo = "vamos.experiment.zoo.cli:main"
-vamos-tune = "vamos.engine.tuning.cli:main"
+vamos-tune = "vamos.experiment.cli.tune:main"
 vamos-profile = "vamos.experiment.profiler.cli:main"
 
 [tool.mypy]
@@ -208,7 +208,7 @@ target-version = "py310"
 line-ending = "auto"
 
 [tool.ruff.lint]
-select = ["E", "F", "W"]
+select = ["E", "F", "W", "UP"]
 ignore = [
     "E402",  # Module level import not at top - intentional for sys.path and matplotlib backend
     "E741",  # Ambiguous variable name 'l' - used in WFG problems (standard math notation)

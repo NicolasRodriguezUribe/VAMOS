@@ -26,6 +26,9 @@ pip install -e ".[autodiff]"
 result = vamos.optimize("zdt1", engine="jax", budget=10000)
 ```
 
+Note: JAX defaults to strict ranking, which falls back to NumPy for exact Pareto fronts.
+Set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking.
+
 ## When to Use JAX
 
 | Scenario | Recommended Engine |
@@ -34,7 +37,7 @@ result = vamos.optimize("zdt1", engine="jax", budget=10000)
 | Large populations (>1000) | jax |
 | GPU available | jax |
 | Quick experiments | numpy |
-| Production runs | jax |
+| Production runs | jax (strict ranking) |
 
 ## Expected Speedup
 
@@ -56,5 +59,6 @@ print(jax.devices())  # Should show GPU
 ## Limitations
 
 - First call triggers JIT compilation (slower)
-- Non-dominated sorting uses domination count approximation
+- Strict ranking falls back to NumPy for exact Pareto fronts (default; may reduce speed)
+- Approximate ranking uses domination counts (set `VAMOS_JAX_STRICT_RANKING=0`)
 - Complex archive operations fall back to NumPy

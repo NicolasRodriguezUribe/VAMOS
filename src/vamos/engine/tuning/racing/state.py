@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 @dataclass
@@ -13,17 +13,17 @@ class ConfigState:
     """
 
     config_id: int
-    config: Dict[str, Any]
+    config: dict[str, Any]
     alive: bool = True
     # Scores are stored in the same order as the evaluation schedule.
-    scores: List[float] = field(default_factory=list)
+    scores: list[float] = field(default_factory=list)
     # Warm-start support
-    checkpoint: Optional[Any] = None
+    checkpoint: Any | None = None
     last_budget: int = 0
-    checkpoint_map: Dict[Tuple[int, int], Any] = field(default_factory=dict)
-    last_budget_map: Dict[Tuple[int, int], int] = field(default_factory=dict)
+    checkpoint_map: dict[tuple[int, int], Any] = field(default_factory=dict)
+    last_budget_map: dict[tuple[int, int], int] = field(default_factory=dict)
     # Multi-fidelity score tracking
-    fidelity_scores: Dict[int, List[float]] = field(default_factory=dict)
+    fidelity_scores: dict[int, list[float]] = field(default_factory=dict)
 
 
 @dataclass
@@ -32,7 +32,7 @@ class EliteEntry:
     Elite archive entry: configuration and its aggregated score.
     """
 
-    config: Dict[str, Any]
+    config: dict[str, Any]
     score: float
 
 

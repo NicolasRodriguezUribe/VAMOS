@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, List
+from typing import Any
+from collections.abc import Callable
 
 import numpy as np
 
@@ -77,14 +78,14 @@ class HyperparameterTuningProblem:
             "cat_cardinality": np.array([len(self._kernels)], dtype=int),
         }
 
-    def _decode_params(self, X: np.ndarray) -> List[dict[str, Any]]:
+    def _decode_params(self, X: np.ndarray) -> list[dict[str, Any]]:
         C = 10.0 ** (X[:, 0] * 4.0 - 2.0)  # 1e-2 .. 1e2
         gamma = 10.0 ** (X[:, 1] * 4.0 - 3.0)  # 1e-3 .. 1e1
         kernel_idx = np.clip(np.rint(X[:, 2]), 0, len(self._kernels) - 1).astype(int)
         kernels = self._kernels[kernel_idx]
         degrees = np.clip(np.rint(X[:, 3]), 2, 5).astype(int)
 
-        params: List[dict[str, Any]] = []
+        params: list[dict[str, Any]] = []
         for c, g, k, d in zip(C, gamma, kernels, degrees):
             params.append({"C": float(c), "gamma": float(g), "kernel": str(k), "degree": int(d)})
         return params

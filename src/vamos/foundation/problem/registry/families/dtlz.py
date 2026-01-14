@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from ...dtlz import DTLZ1Problem, DTLZ2Problem, DTLZ3Problem, DTLZ4Problem, DTLZ7Problem
 from ..common import ProblemSpec
 
 
-def _dtlz_factory(cls: Callable[..., object], n_var: int, n_obj: Optional[int]) -> object:
+def _dtlz_factory(cls: Callable[..., object], n_var: int, n_obj: int | None) -> object:
     return cls(n_var=n_var, n_obj=n_obj if n_obj is not None else 3)
 
 

@@ -2,7 +2,7 @@
 User-facing API surface for VAMOS.
 
 This module exposes the small set of stable entrypoints most users need:
-- Programmatic optimization via `optimize` / `OptimizeConfig`.
+- Programmatic optimization via `optimize`.
 - Problem selection helpers.
 - Basic diagnostics helpers.
 
@@ -16,14 +16,14 @@ import logging
 
 from vamos.experiment.diagnostics.self_check import run_self_check
 from vamos.foundation.logging import configure_vamos_logging
-from vamos.experiment.optimize import OptimizeConfig, OptimizationResult
+from vamos.experiment.optimize import OptimizationResult
 from vamos.foundation.problem.registry import (
     available_problem_names,
     make_problem_selection,
 )
 
 # Unified API - the primary entry point
-from vamos.experiment.unified import optimize, optimize_many
+from vamos.experiment.unified import optimize
 
 
 def configure_logging(*, level: int = logging.INFO) -> None:
@@ -38,8 +38,6 @@ def configure_logging(*, level: int = logging.INFO) -> None:
 __all__ = [
     # Primary API
     "optimize",
-    "optimize_many",
-    "OptimizeConfig",
     "OptimizationResult",
     "available_problem_names",
     "make_problem_selection",

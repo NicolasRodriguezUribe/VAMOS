@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -81,7 +81,7 @@ def read_csv_matrix(path: Path) -> np.ndarray:
     return np.loadtxt(str(path), delimiter=",")
 
 
-def safe_float(x: Any) -> Optional[float]:
+def safe_float(x: Any) -> float | None:
     try:
         if x is None:
             return None
@@ -105,7 +105,7 @@ def _normalize_problem(meta_problem: Any) -> str:
     return str(meta_problem or "unknown")
 
 
-def scan_runs(results_root: Path) -> List[Dict[str, Any]]:
+def scan_runs(results_root: Path) -> list[dict[str, Any]]:
     runs = []
     for md_path in results_root.rglob("metadata.json"):
         try:
@@ -179,7 +179,7 @@ def scan_runs(results_root: Path) -> List[Dict[str, Any]]:
     return runs
 
 
-def load_ref_points(path: Optional[str]) -> Dict[str, np.ndarray]:
+def load_ref_points(path: str | None) -> dict[str, np.ndarray]:
     """
     Load frozen reference points mapping: { "<problem_key>": [r1, r2, ...] }.
     Returns empty dict if path is None.
@@ -192,7 +192,7 @@ def load_ref_points(path: Optional[str]) -> Dict[str, np.ndarray]:
     data = json.loads(ref_path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("--ref-points must be a JSON object mapping problem -> ref vector.")
-    out: Dict[str, np.ndarray] = {}
+    out: dict[str, np.ndarray] = {}
     for key, value in data.items():
         try:
             out[str(key)] = np.asarray(value, dtype=float)
@@ -235,17 +235,17 @@ def main() -> int:
     if not runs:
         return 2
 
-    by_problem: Dict[str, List[np.ndarray]] = {}
+    by_problem: dict[str, list[np.ndarray]] = {}
     for r in runs:
         F = read_csv_matrix(Path(r["FUN"]))
         if F.ndim == 1:
             F = F.reshape(1, -1)
         by_problem.setdefault(r["problem"], []).append(F)
 
-    problem_stats: Dict[str, Dict[str, Any]] = {}
-    refset_ultimate: Dict[str, np.ndarray] = {}
-    hv_ref: Dict[str, np.ndarray] = {}
-    hv_lo: Dict[str, np.ndarray] = {}
+    problem_stats: dict[str, dict[str, Any]] = {}
+    refset_ultimate: dict[str, np.ndarray] = {}
+    hv_ref: dict[str, np.ndarray] = {}
+    hv_lo: dict[str, np.ndarray] = {}
 
     for prob, Fs in by_problem.items():
         allF = np.vstack(Fs)
@@ -290,7 +290,7 @@ def main() -> int:
 
     rng = np.random.default_rng(int(args.rng_seed))
 
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     for r in runs:
         prob = r["problem"]
         F = read_csv_matrix(Path(r["FUN"]))

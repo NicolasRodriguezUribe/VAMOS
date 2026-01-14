@@ -12,7 +12,7 @@ SNAPSHOT_PATH = REPO_ROOT / "tests" / "architecture" / "public_api_snapshot.json
 FACADE_PATHS = {
     "vamos": SRC_ROOT / "__init__.py",
     "vamos.api": SRC_ROOT / "api.py",
-    "vamos.engine.api": SRC_ROOT / "engine" / "api.py",
+    "vamos.algorithms": SRC_ROOT / "algorithms.py",
     "vamos.ux.api": SRC_ROOT / "ux" / "api.py",
 }
 

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 def setup_hv_tracker(
     hv_config: dict[str, Any] | None,
-    kernel: "KernelBackend | None",
+    kernel: KernelBackend | None,
 ) -> HVTracker:
     """
     Create HV tracker from config.

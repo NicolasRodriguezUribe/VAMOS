@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 REPO = Path.cwd()
 
@@ -65,9 +65,9 @@ def infer_domain(problem_key: str, family: str) -> str:
     return "unknown"
 
 
-def extract_algo_config_keys(results_root: Path) -> Dict[str, List[str]]:
+def extract_algo_config_keys(results_root: Path) -> dict[str, list[str]]:
     # Parse metadata.json from results/algo_schema_discovery/**/seed_*/metadata.json
-    out: Dict[str, List[str]] = {}
+    out: dict[str, list[str]] = {}
     if not results_root.exists():
         return out
     for sd in sorted([p for p in results_root.rglob("seed_*") if p.is_dir() and (p / "metadata.json").exists()]):
@@ -101,9 +101,9 @@ def main() -> int:
     problem_keys = sorted(list(prob_specs.keys()))
 
     # Build enriched problem catalog
-    problems: List[dict] = []
-    fam_counts: Dict[str, int] = {}
-    dom_counts: Dict[str, int] = {}
+    problems: list[dict] = []
+    fam_counts: dict[str, int] = {}
+    dom_counts: dict[str, int] = {}
     for pk in problem_keys:
         fam = infer_family(pk)
         dom = infer_domain(pk, fam)

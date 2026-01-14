@@ -50,12 +50,12 @@ def _ensure_diag_dir() -> Path:
 def _build_internal_algorithm(engine: str = "numpy") -> tuple[NSGAII, dict[str, Any]]:
     defaults = _default_config()
     cfg_data = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(defaults.population_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-    ).fixed()
+    ).build()
     cfg_dict: dict[str, Any] = dict(cfg_data.to_dict())
     kernel = resolve_kernel(engine)
     return NSGAII(cfg_dict, kernel=kernel), cfg_dict

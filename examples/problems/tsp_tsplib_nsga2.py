@@ -14,9 +14,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.api import OptimizeConfig, make_problem_selection, optimize
+from vamos import make_problem_selection, optimize
 from vamos.ux.api import plot_pareto_front_2d
-from vamos.engine.api import NSGAIIConfig
+from vamos.algorithms import NSGAIIConfig
 
 
 def main() -> None:
@@ -26,24 +26,22 @@ def main() -> None:
 
     # NSGA-II tuned for permutation encodings (order crossover + swap mutation).
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(120)
         .offspring_size(120)
         .crossover("ox")  # order crossover for permutations
         .mutation("swap", prob="2/n")  # swap two cities with prob. 2/n
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
 
     result = optimize(
-        OptimizeConfig(
-            problem=problem,
-            algorithm="nsgaii",
-            algorithm_config=cfg,
-            termination=("n_eval", 15000),
-            seed=7,
-            engine="numpy",
-        )
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 15000),
+        seed=7,
+        engine="numpy",
     )
 
     F = result.F

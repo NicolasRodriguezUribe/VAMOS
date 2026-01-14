@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -32,10 +32,10 @@ def ensure_dir(path: str | Path) -> Path:
 def write_population(
     output_dir: str | Path,
     F: np.ndarray,
-    archive: Optional[dict[str, np.ndarray]] = None,
+    archive: dict[str, np.ndarray] | None = None,
     *,
-    X: Optional[np.ndarray] = None,
-    G: Optional[np.ndarray] = None,
+    X: np.ndarray | None = None,
+    G: np.ndarray | None = None,
 ) -> dict[str, str]:
     """
     Save population (F and optionally X/G) and optional archive to CSV files.

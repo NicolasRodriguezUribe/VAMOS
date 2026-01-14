@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
+from collections.abc import Callable
 
 from joblib import Parallel, delayed  # type: ignore[import-untyped]
 
@@ -18,8 +19,8 @@ def _logger() -> logging.Logger:
 
 
 def _eval_worker_warmstart(
-    eval_fn: Callable[[Dict[str, Any], EvalContext], Any],
-    config: Dict[str, Any],
+    eval_fn: Callable[[dict[str, Any], EvalContext], Any],
+    config: dict[str, Any],
     ctx: EvalContext,
     warm_start: bool,
 ) -> Any:
@@ -28,16 +29,16 @@ def _eval_worker_warmstart(
 
 
 def _run_multi_fidelity(
-    tuner: "RacingTuner",
-    eval_fn: Callable[[Dict[str, Any], EvalContext], float],
-    verbose: Optional[bool] = None,
-) -> Tuple[Dict[str, Any], List[TrialResult]]:
+    tuner: RacingTuner,
+    eval_fn: Callable[[dict[str, Any], EvalContext], float],
+    verbose: bool | None = None,
+) -> tuple[dict[str, Any], list[TrialResult]]:
     verbose_flag = tuner.scenario.verbose if verbose is None else verbose
     fidelity_levels = list(tuner.scenario.fidelity_levels)
     promotion_ratio = tuner.scenario.fidelity_promotion_ratio
     min_configs = tuner.scenario.fidelity_min_configs
 
-    configs: List[ConfigState] = tuner._sample_initial_configs()
+    configs: list[ConfigState] = tuner._sample_initial_configs()
     num_experiments = 0
 
     inst_indices = list(range(len(tuner.instances)))
@@ -88,7 +89,7 @@ def _run_multi_fidelity(
 
         num_experiments += stage_evals
 
-        scored_configs: List[Tuple[int, float]] = []
+        scored_configs: list[tuple[int, float]] = []
         for idx, state in enumerate(configs):
             if not state.alive:
                 continue
@@ -110,7 +111,7 @@ def _run_multi_fidelity(
         else:
             n_keep = max(int(len(scored_configs) * promotion_ratio), min_configs)
 
-        survivors = set(idx for idx, _ in scored_configs[:n_keep])
+        survivors = {idx for idx, _ in scored_configs[:n_keep]}
         eliminated = 0
         for idx, state in enumerate(configs):
             if state.alive and idx not in survivors:
@@ -140,11 +141,11 @@ def _run_multi_fidelity(
 
 
 def _run_stage_with_budget(
-    tuner: "RacingTuner",
-    configs: List[ConfigState],
+    tuner: RacingTuner,
+    configs: list[ConfigState],
     inst_idx: int,
     seed_idx: int,
-    eval_fn: Callable[[Dict[str, Any], EvalContext], float],
+    eval_fn: Callable[[dict[str, Any], EvalContext], float],
     budget: int,
     fidelity_level: int = 0,
 ) -> None:

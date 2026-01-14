@@ -6,10 +6,9 @@ import numpy as np
 import pytest
 
 import vamos
-from vamos.engine.algorithm.config import GenericAlgorithmConfig
+from vamos import optimize
 from vamos.engine.algorithm.registry import ALGORITHMS
-from vamos.experiment.optimize import OptimizeConfig, optimize_config
-from vamos.foundation.problems_registry import ZDT1
+from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 
 
 @pytest.mark.smoke
@@ -38,7 +37,7 @@ def test_unified_optimize_supports_registered_plugin_algorithm() -> None:
 
 
 @pytest.mark.smoke
-def test_optimize_config_resolves_eval_strategy_string() -> None:
+def test_optimize_resolves_eval_strategy_string() -> None:
     algo_key = "_test_plugin_algo_eval_strategy_resolution"
     seen: dict[str, Any] = {}
 
@@ -58,16 +57,15 @@ def test_optimize_config_resolves_eval_strategy_string() -> None:
         ALGORITHMS.register(algo_key, _builder)
 
     problem = ZDT1(n_var=4)
-    cfg = OptimizeConfig(
-        problem=problem,
+    result = optimize(
+        problem,
         algorithm=algo_key,
-        algorithm_config=GenericAlgorithmConfig({}),
-        termination=("n_eval", 5),
+        budget=5,
+        pop_size=2,
         seed=0,
         engine="numpy",
         eval_strategy="serial",
     )
-    result = optimize_config(cfg)
 
     assert result.F is not None
     assert "eval_strategy" in seen

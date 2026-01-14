@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 _MATPLOTLIB_CACHE: tuple[Any | None, Any | None] | None = None
 
@@ -43,9 +43,9 @@ def generate_plots(
         return {}
     plots_dir = Path(output_dir)
     plots_dir.mkdir(parents=True, exist_ok=True)
-    created: Dict[str, List[Path]] = {}
+    created: dict[str, list[Path]] = {}
     for metric in metrics:
-        metric_paths: List[Path] = []
+        metric_paths: list[Path] = []
         payload = stats.get(metric, {})
         fried = payload.get("friedman")
         if fried and getattr(fried, "p_value", 1.0) is not None and fried.p_value < alpha:

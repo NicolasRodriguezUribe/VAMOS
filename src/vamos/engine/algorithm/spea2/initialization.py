@@ -40,13 +40,13 @@ from vamos.foundation.observer import RunContext
 
 def initialize_spea2_run(
     cfg: dict[str, Any],
-    kernel: "KernelBackend",
-    problem: "ProblemProtocol",
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
     termination: tuple[str, Any],
     seed: int,
-    eval_strategy: "EvaluationBackend | None" = None,
-    live_viz: "LiveVisualization | None" = None,
-) -> tuple[SPEA2State, Any, Any, int, "HVTracker"]:
+    eval_strategy: EvaluationBackend | None = None,
+    live_viz: LiveVisualization | None = None,
+) -> tuple[SPEA2State, Any, Any, int, HVTracker]:
     """Initialize all components for a SPEA2 run.
 
     Parameters

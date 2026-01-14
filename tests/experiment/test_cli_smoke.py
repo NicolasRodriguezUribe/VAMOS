@@ -5,7 +5,7 @@ import pytest
 
 
 def _run_cmd(cmd):
-    return subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+    return subprocess.run(cmd, shell=True, capture_output=True, timeout=30)
 
 
 def test_self_check_module_smoke():

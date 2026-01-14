@@ -64,11 +64,11 @@ class AlgorithmProtocol(Protocol):
     """
 
     cfg: dict[str, Any]
-    kernel: "KernelBackend"
+    kernel: KernelBackend
 
     def run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
         eval_strategy: Any | None = None,

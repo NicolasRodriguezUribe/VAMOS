@@ -95,8 +95,8 @@ class SPEA2:
 
     Examples
     --------
-    >>> from vamos.engine.api import SPEA2Config
-    >>> config = SPEA2Config().pop_size(100).archive_size(100).fixed()
+    >>> from vamos.algorithms import SPEA2Config
+    >>> config = SPEA2Config.builder().pop_size(100).archive_size(100).build()
     >>> spea2 = SPEA2(config, kernel)
     >>> result = spea2.run(problem, ("n_eval", 10000), seed=42)
 
@@ -109,7 +109,7 @@ class SPEA2:
     >>> result = spea2.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: "KernelBackend") -> None:
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:
         self.cfg = config
         self.kernel = kernel
         self._st: SPEA2State | None = None
@@ -121,11 +121,11 @@ class SPEA2:
 
     def run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
         """Run SPEA2 optimization.
 
@@ -185,11 +185,11 @@ class SPEA2:
 
     def _initialize_run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> tuple[Any, Any, int, Any]:
         """Initialize algorithm state for a run."""
         self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_spea2_run(
@@ -207,11 +207,11 @@ class SPEA2:
 
     def initialize(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop."""
         self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = self._initialize_run(
@@ -278,7 +278,7 @@ class SPEA2:
     def tell(
         self,
         eval_result: Any,
-        problem: "ProblemProtocol | None" = None,
+        problem: ProblemProtocol | None = None,
     ) -> bool:
         """Process evaluated offspring.
 

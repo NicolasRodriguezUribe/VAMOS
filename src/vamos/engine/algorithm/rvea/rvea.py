@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -120,7 +120,7 @@ class RVEA:
     def run(
         self,
         problem: ProblemProtocol,
-        termination: Tuple[str, Any],
+        termination: tuple[str, Any],
         seed: int,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: Any | None = None,

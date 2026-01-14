@@ -91,11 +91,11 @@ def update_reference_point(
 
 
 def survival_selection(
-    st: "SMSEMOAState",
+    st: SMSEMOAState,
     X_child: np.ndarray,
     F_child: np.ndarray,
     G_child: np.ndarray | None,
-    kernel: "KernelBackend",
+    kernel: KernelBackend,
 ) -> None:
     """Perform survival selection, removing worst HV contributor.
 
@@ -153,7 +153,7 @@ def survival_selection(
 
 
 def evaluate_population_with_constraints(
-    problem: "ProblemProtocol",
+    problem: ProblemProtocol,
     X: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray | None]:
     """Evaluate population and compute constraints if present.

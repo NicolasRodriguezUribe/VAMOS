@@ -12,30 +12,28 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.api import OptimizeConfig, optimize
-from vamos.foundation.problems_registry import FeatureSelectionProblem
-from vamos.engine.api import NSGAIIConfig
+from vamos import optimize
+from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
+from vamos.algorithms import NSGAIIConfig
 
 
 def main():
     problem = FeatureSelectionProblem()
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(16)
         .crossover("uniform", prob=0.9)
         .mutation("bitflip", prob="1/n")
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
     result = optimize(
-        OptimizeConfig(
-            problem=problem,
-            algorithm="nsgaii",
-            algorithm_config=cfg,
-            termination=("n_eval", 80),
-            seed=7,
-            engine="numpy",
-        )
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 80),
+        seed=7,
+        engine="numpy",
     )
     F = result.F
     try:

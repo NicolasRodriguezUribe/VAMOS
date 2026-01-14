@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from argparse import Namespace
 from difflib import get_close_matches
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 from importlib.resources import as_file
 

@@ -76,6 +76,7 @@ results/my_study/
 | File | Purpose |
 |------|---------|
 | `runner.py` | StudyRunner, StudyTask classes |
+| `api.py` | Convenience helpers for programmatic study runs |
 | `config.py` | Study configuration parsing |
 | `aggregator.py` | Results collection utilities |
 

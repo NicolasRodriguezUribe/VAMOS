@@ -3,20 +3,18 @@ VAMOS package facade.
 
 Import most features from the dedicated facades:
 - `vamos.api` for core optimization entrypoints.
-- `vamos.engine.api` for algorithm configs.
+- `vamos.algorithms` for algorithm configs and registry helpers.
 - `vamos.ux.api` for analysis/visualization helpers.
 """
 
 from __future__ import annotations
 
 from vamos.api import (
-    OptimizeConfig,
     OptimizationResult,
     available_problem_names,
     configure_logging,
     make_problem_selection,
     optimize,
-    optimize_many,
     run_self_check,
 )
 from vamos.foundation.version import get_version as _get_version
@@ -25,8 +23,6 @@ __all__ = [
     "__version__",
     # Optimization
     "optimize",
-    "optimize_many",
-    "OptimizeConfig",
     "OptimizationResult",
     "configure_logging",
     "available_problem_names",

@@ -5,7 +5,7 @@ Demonstrates the usage of the newly added algorithms.
 """
 
 from __future__ import annotations
-from vamos.api import optimize
+from vamos import optimize
 
 
 def run_agemoea():

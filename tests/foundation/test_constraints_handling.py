@@ -26,7 +26,7 @@ class LinearConstraintProblem:
 
 def _make_nsgaii(cfg_mode: str):
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(10)
         .offspring_size(10)
         .crossover("sbx", prob=0.9, eta=15.0)
@@ -34,7 +34,7 @@ def _make_nsgaii(cfg_mode: str):
         .selection("tournament", pressure=2)
         .constraint_mode(cfg_mode)
         .result_mode("population")
-        .fixed()
+        .build()
     )
     return NSGAII(cfg.to_dict(), kernel=NumPyKernel())
 
@@ -61,7 +61,7 @@ def test_unconstrained_mode_can_keep_infeasible():
 def test_moead_penalty_reduces_violation():
     problem = LinearConstraintProblem()
     cfg = (
-        MOEADConfig()
+        MOEADConfig.builder()
         .pop_size(10)
         .neighbor_size(3)
         .delta(0.9)
@@ -70,7 +70,7 @@ def test_moead_penalty_reduces_violation():
         .mutation("pm", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
         .constraint_mode("feasibility")
-        .fixed()
+        .build()
     )
     algo = MOEAD(cfg.to_dict(), kernel=NumPyKernel())
     result = algo.run(problem, termination=("n_eval", 40), seed=5)

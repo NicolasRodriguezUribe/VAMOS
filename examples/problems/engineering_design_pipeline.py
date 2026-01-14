@@ -10,22 +10,22 @@ Requirements:
 
 from __future__ import annotations
 
-from vamos.api import OptimizeConfig, optimize
-from vamos.foundation.problems_registry import WeldedBeamDesignProblem
+from vamos import optimize
+from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
 from vamos.ux.api import plot_pareto_front_2d
-from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
+from vamos.algorithms import NSGAIIConfig
 
 
-def build_config(pop_size: int = 30) -> NSGAIIConfigData:
+def build_config(pop_size: int = 30) -> NSGAIIConfig:
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .constraint_mode("feasibility")
-        .fixed()
+        .build()
     )
     return cfg
 
@@ -34,14 +34,12 @@ def main(seed: int = 11) -> None:
     problem = WeldedBeamDesignProblem()
     cfg = build_config(pop_size=24)
     result = optimize(
-        OptimizeConfig(
-            problem=problem,
-            algorithm="nsgaii",
-            algorithm_config=cfg,
-            termination=("n_eval", 200),
-            seed=seed,
-            engine="numpy",
-        )
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 200),
+        seed=seed,
+        engine="numpy",
     )
     F = result.F
     G = result.data.get("G")

@@ -5,7 +5,7 @@ Operator portfolio primitives for AOS.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 
 
 @dataclass(frozen=True)
@@ -36,12 +36,12 @@ class OperatorPortfolio:
             self._index[arm.op_id] = idx
 
     @classmethod
-    def from_ids(cls, op_ids: Iterable[str]) -> "OperatorPortfolio":
+    def from_ids(cls, op_ids: Iterable[str]) -> OperatorPortfolio:
         arms = [OperatorArm(op_id=op_id, name=op_id) for op_id in op_ids]
         return cls(arms)
 
     @classmethod
-    def from_pairs(cls, pairs: Iterable[tuple[str, str]]) -> "OperatorPortfolio":
+    def from_pairs(cls, pairs: Iterable[tuple[str, str]]) -> OperatorPortfolio:
         arms = [OperatorArm(op_id=op_id, name=name) for op_id, name in pairs]
         return cls(arms)
 

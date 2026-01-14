@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def _is_finite_array(arr: np.ndarray) -> bool:

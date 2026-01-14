@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Literal, Optional, Tuple
+from typing import Literal
 import numpy as np
 
 ArchiveType = Literal["size_cap", "epsilon_grid", "hvc_prune", "hybrid"]
@@ -19,7 +19,7 @@ class BoundedArchiveConfig:
     prune_policy: PrunePolicy = "crowding"
 
     # HV contribution pruning
-    hv_ref_point: Optional[List[float]] = None
+    hv_ref_point: list[float] | None = None
     hv_samples: int = 20000  # for Monte Carlo contributions (m>2 fallback)
     rng_seed: int = 0
 
@@ -124,7 +124,7 @@ class BoundedArchive:
         if cfg.size_cap <= 0:
             raise ValueError("size_cap must be > 0")
         self.cfg = cfg
-        self.X: Optional[np.ndarray] = None
+        self.X: np.ndarray | None = None
         self.F: np.ndarray = np.zeros((0, 0), dtype=float)
         self._rng = np.random.default_rng(cfg.rng_seed)
         self.total_inserted = 0
@@ -133,7 +133,7 @@ class BoundedArchive:
     def size(self) -> int:
         return int(self.F.shape[0])
 
-    def add(self, X: Optional[np.ndarray], F: np.ndarray, evals: int) -> ArchiveUpdate:
+    def add(self, X: np.ndarray | None, F: np.ndarray, evals: int) -> ArchiveUpdate:
         before = self.size()
         F = np.asarray(F, dtype=float)
         if F.ndim != 2:
@@ -180,7 +180,7 @@ class BoundedArchive:
             prune_reason=prune_reason,
         )
 
-    def _prune_to_cap(self) -> Tuple[int, str]:
+    def _prune_to_cap(self) -> tuple[int, str]:
         n = self.size()
         cap = self.cfg.size_cap
         if n <= cap:
@@ -257,7 +257,7 @@ class BoundedArchive:
         if self.X is not None:
             self.X = self.X[idx]
 
-    def _ref_point(self, m: int) -> List[float]:
+    def _ref_point(self, m: int) -> list[float]:
         if self.cfg.hv_ref_point is not None:
             if len(self.cfg.hv_ref_point) != m:
                 raise ValueError("hv_ref_point dimension mismatch")
@@ -266,7 +266,7 @@ class BoundedArchive:
         mx = np.max(self.F, axis=0) if self.size() else np.ones((m,))
         return [float(x + 1.0) for x in mx]
 
-    def _mc_hv_contrib_prune(self, ref: List[float], k: int) -> np.ndarray:
+    def _mc_hv_contrib_prune(self, ref: list[float], k: int) -> np.ndarray:
         # Very simple Monte Carlo contribution proxy:
         # sample points uniformly in bounding box [min(F), ref], count dominated volume per point.
         # Not a full HV decomposition, but gives a monotone proxy for contributions under cap pruning.

@@ -4,19 +4,16 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from typing import Any, Generic, Mapping, TypeVar, cast
+from typing import Any, cast
 
 
-_ConfigMap = TypeVar("_ConfigMap", bound=Mapping[str, Any])
-
-
-class _SerializableConfig(Generic[_ConfigMap]):
+class _SerializableConfig:
     """Mixin to serialize dataclass configs."""
 
     __dataclass_fields__: dict[str, Any]
 
-    def to_dict(self) -> _ConfigMap:
-        return cast(_ConfigMap, asdict(cast(Any, self)))
+    def to_dict(self) -> dict[str, object]:
+        return cast(dict[str, object], asdict(cast(Any, self)))
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), sort_keys=True)

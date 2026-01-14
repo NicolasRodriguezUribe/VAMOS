@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import logging
 import os
 import random
 from dataclasses import dataclass, field
-from typing import Any, Optional, Protocol, Sequence
+from typing import Any, Protocol
+from collections.abc import Sequence
 
 import numpy as np
 
 from vamos.foundation.observer import RunContext
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 class LiveVisualization(Protocol):
@@ -18,15 +24,15 @@ class LiveVisualization(Protocol):
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None: ...
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None: ...
 
 
@@ -39,16 +45,16 @@ class NoOpLiveVisualization:
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         return None
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         return None
 
@@ -61,7 +67,7 @@ def _safe_matplotlib(interactive_backend: str | None = None) -> Any | None:
             try:
                 matplotlib.use(interactive_backend, force=True)
             except Exception:
-                pass
+                _logger().debug("Failed to set matplotlib backend to %r.", interactive_backend, exc_info=True)
         backend = matplotlib.get_backend().lower()
         if "agg" in backend and interactive_backend is None:
             pass
@@ -69,6 +75,7 @@ def _safe_matplotlib(interactive_backend: str | None = None) -> Any | None:
 
         return plt
     except Exception:
+        _logger().debug("Matplotlib unavailable for live visualization.", exc_info=True)
         return None
 
 
@@ -78,9 +85,9 @@ class LiveParetoPlot:
 
     update_interval: int = 1
     max_points: int = 1000
-    objectives_to_plot: Optional[Sequence[int]] = None
-    interactive_backend: Optional[str] = None
-    save_final_path: Optional[str | os.PathLike[str]] = None
+    objectives_to_plot: Sequence[int] | None = None
+    interactive_backend: str | None = None
+    save_final_path: str | os.PathLike[str] | None = None
     title: str = "Pareto front (live)"
 
     figure: Any = field(default=None, init=False)
@@ -135,9 +142,9 @@ class LiveParetoPlot:
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         if self.plt is None or F is None or generation - self.last_update < self.update_interval:
             return
@@ -167,8 +174,8 @@ class LiveParetoPlot:
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         if self.plt is None:
             return
@@ -186,10 +193,10 @@ class LiveTuningPlot:
 
     x_param: str
     y_metric: str = "hv"
-    color_param: Optional[str] = None
+    color_param: str | None = None
     update_interval: int = 1
-    save_final_path: Optional[str | os.PathLike[str]] = None
-    interactive_backend: Optional[str] = None
+    save_final_path: str | os.PathLike[str] | None = None
+    interactive_backend: str | None = None
 
     plt: Any = field(default=None, init=False)
     figure: Any = field(default=None, init=False)
@@ -225,9 +232,9 @@ class LiveTuningPlot:
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         if self.plt is None or stats is None:
             return
@@ -247,8 +254,8 @@ class LiveTuningPlot:
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         if self.plt is None:
             return

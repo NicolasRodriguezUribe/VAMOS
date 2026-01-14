@@ -24,7 +24,7 @@ def _collect_imported_modules() -> list[str]:
         "\n".join(
             [
                 "import json, sys",
-                "mods = ['vamos', 'vamos.api', 'vamos.engine.api', 'vamos.ux.api']",
+                "mods = ['vamos', 'vamos.api', 'vamos.algorithms', 'vamos.ux.api']",
                 "for m in mods:",
                 "    __import__(m)",
                 "print(json.dumps(sorted(sys.modules.keys())))",

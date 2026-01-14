@@ -13,3 +13,12 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pytest-smoke
+        name: pytest (smoke)
+        entry: pytest -m smoke
+        language: system
+        pass_filenames: false
+        stages: [manual]

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from vamos.engine.algorithm.registry import ALGORITHMS
 from vamos.foundation.problem.zdt1 import ZDT1Problem
-from vamos.experiment.optimize import OptimizeConfig, optimize_config
+from vamos import optimize
 
 
 @pytest.mark.e2e
@@ -45,14 +45,12 @@ def test_plugin_registration_and_usage():
 
     # 3. Use
     problem = ZDT1Problem(n_var=4)
-    config = OptimizeConfig(
-        problem=problem,
+    result = optimize(
+        problem,
         algorithm=algo_key,
         algorithm_config=DummyConfig(),
         termination=("n_eval", 10),
         seed=1,
         engine="numpy",
     )
-
-    result = optimize_config(config)
     assert result.F.shape[0] == 5, "Mock algo should return 5 individuals"

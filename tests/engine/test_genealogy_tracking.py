@@ -44,14 +44,14 @@ class TestGenealogyTracking:
     def test_nsgaii_genealogy_tracking(self, small_problem, kernel):
         """Test NSGA-II with genealogy tracking enabled."""
         cfg = (
-            NSGAIIConfig()
+            NSGAIIConfig.builder()
             .pop_size(10)
             .offspring_size(10)
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
             .track_genealogy(True)
-            .fixed()
+            .build()
         )
         alg = NSGAII(cfg.to_dict(), kernel)
         result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
@@ -65,7 +65,7 @@ class TestGenealogyTracking:
     def test_moead_genealogy_tracking(self, small_problem, kernel):
         """Test MOEA/D with genealogy tracking enabled."""
         cfg = (
-            MOEADConfig()
+            MOEADConfig.builder()
             .pop_size(10)
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
@@ -74,7 +74,7 @@ class TestGenealogyTracking:
             .replace_limit(2)
             .aggregation("tchebycheff")
             .track_genealogy(True)
-            .fixed()
+            .build()
         )
         alg = MOEAD(cfg.to_dict(), kernel)
         result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
@@ -87,14 +87,14 @@ class TestGenealogyTracking:
     def test_spea2_genealogy_tracking(self, small_problem, kernel):
         """Test SPEA2 with genealogy tracking enabled."""
         cfg = (
-            SPEA2Config()
+            SPEA2Config.builder()
             .pop_size(10)
             .archive_size(10)
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
             .track_genealogy(True)
-            .fixed()
+            .build()
         )
         alg = SPEA2(cfg.to_dict(), kernel)
         result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
@@ -107,7 +107,7 @@ class TestGenealogyTracking:
     def test_ibea_genealogy_tracking(self, small_problem, kernel):
         """Test IBEA with genealogy tracking enabled."""
         cfg = (
-            IBEAConfig()
+            IBEAConfig.builder()
             .pop_size(10)
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
@@ -115,7 +115,7 @@ class TestGenealogyTracking:
             .indicator("eps")
             .kappa(0.05)
             .track_genealogy(True)
-            .fixed()
+            .build()
         )
         alg = IBEA(cfg.to_dict(), kernel)
         result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
@@ -128,13 +128,13 @@ class TestGenealogyTracking:
     def test_smsemoa_genealogy_tracking(self, small_problem, kernel):
         """Test SMS-EMOA with genealogy tracking enabled."""
         cfg = (
-            SMSEMOAConfig()
+            SMSEMOAConfig.builder()
             .pop_size(10)
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
             .track_genealogy(True)
-            .fixed()
+            .build()
         )
         alg = SMSEMOA(cfg.to_dict(), kernel)
         result = alg.run(small_problem, termination=("n_eval", 20), seed=42)
@@ -146,7 +146,7 @@ class TestGenealogyTracking:
 
     def test_smpso_genealogy_tracking(self, small_problem, kernel):
         """Test SMPSO with genealogy tracking enabled."""
-        cfg = SMPSOConfig().pop_size(10).archive_size(10).mutation("pm", prob="1/n", eta=20.0).track_genealogy(True).fixed()
+        cfg = SMPSOConfig.builder().pop_size(10).archive_size(10).mutation("pm", prob="1/n", eta=20.0).track_genealogy(True).build()
         alg = SMPSO(cfg.to_dict(), kernel)
         result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
 
@@ -158,14 +158,14 @@ class TestGenealogyTracking:
     def test_nsgaiii_genealogy_tracking(self, many_obj_problem, kernel):
         """Test NSGA-III with genealogy tracking enabled."""
         cfg = (
-            NSGAIIIConfig()
+            NSGAIIIConfig.builder()
             .pop_size(10)
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
             .reference_directions(divisions=3)
             .track_genealogy(True)
-            .fixed()
+            .build()
         )
         alg = NSGAIII(cfg.to_dict(), kernel)
         result = alg.run(many_obj_problem, termination=("n_eval", 36), seed=42)
@@ -178,13 +178,13 @@ class TestGenealogyTracking:
     def test_genealogy_disabled_by_default(self, small_problem, kernel):
         """Test that genealogy is not tracked when disabled (default)."""
         cfg = (
-            NSGAIIConfig()
+            NSGAIIConfig.builder()
             .pop_size(10)
             .offspring_size(10)
             .crossover("sbx", prob=0.9, eta=15.0)
             .mutation("pm", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
-            .fixed()
+            .build()
         )
         alg = NSGAII(cfg.to_dict(), kernel)
         result = alg.run(small_problem, termination=("n_eval", 30), seed=42)

@@ -3,88 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import Any
 
 from .base import _SerializableConfig, _require_fields
 
 
-class NSGAIIConfigDict(TypedDict):
-    pop_size: int
-    crossover: tuple[str, dict[str, Any]]
-    mutation: tuple[str, dict[str, Any]]
-    selection: tuple[str, dict[str, Any]]
-    offspring_size: int | None
-    repair: tuple[str, dict[str, Any]] | None
-    archive: dict[str, Any] | None
-    initializer: dict[str, Any] | None
-    mutation_prob_factor: float | None
-    result_mode: str | None
-    archive_type: str | None
-    constraint_mode: str
-    track_genealogy: bool
-    adaptive_operator_selection: dict[str, Any] | None
-
-
-@dataclass(frozen=True)
-class NSGAIIConfigData(_SerializableConfig["NSGAIIConfigDict"]):
-    pop_size: int
-    crossover: tuple[str, dict[str, Any]]
-    mutation: tuple[str, dict[str, Any]]
-    selection: tuple[str, dict[str, Any]]
-    offspring_size: int | None = None
-    repair: tuple[str, dict[str, Any]] | None = None
-    archive: dict[str, Any] | None = None
-    initializer: dict[str, Any] | None = None
-    mutation_prob_factor: float | None = None
-    result_mode: str | None = None
-    archive_type: str | None = None
-    constraint_mode: str = "feasibility"
-    track_genealogy: bool = False
-    adaptive_operator_selection: dict[str, Any] | None = None
-
-
-class NSGAIIConfig:
+class _NSGAIIConfigBuilder:
     """
-    Declarative configuration holder for NSGA-II.
-    Provides a fluent builder that yields an immutable NSGAIIConfigData.
-
-    Examples:
-        # Fluent builder
-        cfg = NSGAIIConfig().pop_size(100).crossover("sbx", prob=1.0).fixed()
-
-        # Quick default configuration
-        cfg = NSGAIIConfig.default()
+    Fluent builder for NSGA-II configs.
     """
 
     def __init__(self) -> None:
         self._cfg: dict[str, Any] = {}
 
-    @classmethod
-    def default(
-        cls,
-        pop_size: int = 100,
-        n_var: int | None = None,
-    ) -> "NSGAIIConfigData":
-        """
-        Create a default NSGA-II configuration with sensible defaults.
-
-        Args:
-            pop_size: Population size (default: 100)
-            n_var: Number of variables (used for mutation prob = 1/n_var)
-        Returns:
-            Frozen NSGAIIConfigData ready to use
-        """
-        mut_prob = 1.0 / n_var if n_var else 0.1
-        return (
-            cls()
-            .pop_size(pop_size)
-            .crossover("sbx", prob=1.0, eta=20.0)
-            .mutation("pm", prob=mut_prob, eta=20.0)
-            .selection("tournament")
-            .fixed()
-        )
-
-    def pop_size(self, value: int) -> "NSGAIIConfig":
+    def pop_size(self, value: int) -> _NSGAIIConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
@@ -93,7 +25,7 @@ class NSGAIIConfig:
         method: str | tuple[str, dict[str, Any]],
         params: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> "NSGAIIConfig":
+    ) -> _NSGAIIConfigBuilder:
         if isinstance(method, tuple) and params is None and not kwargs:
             method, params = method
         cfg_kwargs = params or kwargs
@@ -105,45 +37,45 @@ class NSGAIIConfig:
         method: str | tuple[str, dict[str, Any]],
         params: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> "NSGAIIConfig":
+    ) -> _NSGAIIConfigBuilder:
         if isinstance(method, tuple) and params is None and not kwargs:
             method, params = method
         cfg_kwargs = params or kwargs
         self._cfg["mutation"] = (method, cfg_kwargs)
         return self
 
-    def offspring_size(self, value: int) -> "NSGAIIConfig":
+    def offspring_size(self, value: int) -> _NSGAIIConfigBuilder:
         if value <= 0:
             raise ValueError("offspring size must be positive.")
         self._cfg["offspring_size"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> "NSGAIIConfig":
+    def repair(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs: Any) -> "NSGAIIConfig":
+    def selection(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["selection"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> "NSGAIIConfig":
+    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def mutation_prob_factor(self, value: float) -> "NSGAIIConfig":
+    def mutation_prob_factor(self, value: float) -> _NSGAIIConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def result_mode(self, value: str) -> "NSGAIIConfig":
+    def result_mode(self, value: str) -> _NSGAIIConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive_type(self, value: str) -> "NSGAIIConfig":
+    def archive_type(self, value: str) -> _NSGAIIConfigBuilder:
         """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
         self._cfg["archive_type"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs: Any) -> "NSGAIIConfig":
+    def archive(self, size: int, **kwargs: Any) -> _NSGAIIConfigBuilder:
         """
         Configure an external archive.
 
@@ -162,30 +94,30 @@ class NSGAIIConfig:
         self._cfg.setdefault("result_mode", "external_archive")
         return self
 
-    def constraint_mode(self, value: str) -> "NSGAIIConfig":
+    def constraint_mode(self, value: str) -> _NSGAIIConfigBuilder:
         """Set constraint handling mode: 'feasibility' or 'none'/'penalty'."""
         self._cfg["constraint_mode"] = value
         return self
 
-    def track_genealogy(self, enabled: bool = True) -> "NSGAIIConfig":
+    def track_genealogy(self, enabled: bool = True) -> _NSGAIIConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def adaptive_operator_selection(self, config: dict[str, Any] | None) -> "NSGAIIConfig":
+    def adaptive_operator_selection(self, config: dict[str, Any] | None) -> _NSGAIIConfigBuilder:
         if config is None:
             self._cfg["adaptive_operator_selection"] = None
         else:
             self._cfg["adaptive_operator_selection"] = dict(config)
         return self
 
-    def fixed(self) -> NSGAIIConfigData:
+    def build(self) -> NSGAIIConfig:
         _require_fields(
             self._cfg,
             ("pop_size", "crossover", "mutation", "selection"),
             "NSGA-II",
         )
         archive_cfg = self._cfg.get("archive")
-        return NSGAIIConfigData(
+        return NSGAIIConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
@@ -201,3 +133,50 @@ class NSGAIIConfig:
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             adaptive_operator_selection=self._cfg.get("adaptive_operator_selection"),
         )
+
+
+@dataclass(frozen=True)
+class NSGAIIConfig(_SerializableConfig):
+    pop_size: int
+    crossover: tuple[str, dict[str, Any]]
+    mutation: tuple[str, dict[str, Any]]
+    selection: tuple[str, dict[str, Any]]
+    offspring_size: int | None = None
+    repair: tuple[str, dict[str, Any]] | None = None
+    archive: dict[str, Any] | None = None
+    initializer: dict[str, Any] | None = None
+    mutation_prob_factor: float | None = None
+    result_mode: str | None = None
+    archive_type: str | None = None
+    constraint_mode: str = "feasibility"
+    track_genealogy: bool = False
+    adaptive_operator_selection: dict[str, Any] | None = None
+
+    @classmethod
+    def default(
+        cls,
+        pop_size: int = 100,
+        n_var: int | None = None,
+    ) -> NSGAIIConfig:
+        """
+        Create a default NSGA-II configuration with sensible defaults.
+
+        Args:
+            pop_size: Population size (default: 100)
+            n_var: Number of variables (used for mutation prob = 1/n_var)
+        Returns:
+            Frozen NSGAIIConfig ready to use
+        """
+        mut_prob = 1.0 / n_var if n_var else 0.1
+        return (
+            cls.builder()
+            .pop_size(pop_size)
+            .crossover("sbx", prob=1.0, eta=20.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
+            .selection("tournament")
+            .build()
+        )
+
+    @classmethod
+    def builder(cls) -> _NSGAIIConfigBuilder:
+        return _NSGAIIConfigBuilder()

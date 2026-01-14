@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any
 
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.kernel.registry import resolve_kernel
@@ -36,7 +36,7 @@ def build_algorithm(
     agemoea_variation: dict[str, Any] | None = None,
     rvea_variation: dict[str, Any] | None = None,
     track_genealogy: bool = False,
-) -> Tuple[Any, Any]:
+) -> tuple[Any, Any]:
     """
     Factory to build the algorithm instance.
     """

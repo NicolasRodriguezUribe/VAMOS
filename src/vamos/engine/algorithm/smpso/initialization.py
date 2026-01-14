@@ -43,13 +43,13 @@ __all__ = [
 
 def initialize_smpso_run(
     config: dict[str, Any],
-    kernel: "KernelBackend",
-    problem: "ProblemProtocol",
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
     termination: tuple[str, Any],
     seed: int,
-    eval_strategy: "EvaluationBackend | None" = None,
-    live_viz: "LiveVisualization | None" = None,
-) -> tuple["SMPSOState", Any, Any, int, Any]:
+    eval_strategy: EvaluationBackend | None = None,
+    live_viz: LiveVisualization | None = None,
+) -> tuple[SMPSOState, Any, Any, int, Any]:
     """Initialize SMPSO run and create state.
 
     Parameters

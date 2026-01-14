@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -26,7 +26,7 @@ class ObjectiveReducer:
         self.removed_indices_: np.ndarray | None = None
         self._n_obj_fit: int | None = None
 
-    def fit(self, F: np.ndarray) -> "ObjectiveReducer":
+    def fit(self, F: np.ndarray) -> ObjectiveReducer:
         F = self._validate_input(F)
         n_obj = F.shape[1]
         self._n_obj_fit = n_obj
@@ -73,13 +73,13 @@ class ObjectiveReducer:
             raise ValueError("F must have at least one sample and one objective.")
         return F
 
-    def _fit_correlation(self, F: np.ndarray) -> List[int]:
+    def _fit_correlation(self, F: np.ndarray) -> list[int]:
         cfg = self.config
         keep_mand = set(cfg.keep_mandatory)
         n_obj = F.shape[1]
         stds = np.std(F, axis=0)
         epsilon = 1e-12
-        remaining: List[int] = []
+        remaining: list[int] = []
         removed: set[int] = set()
         for idx in range(n_obj):
             if stds[idx] < epsilon and idx not in keep_mand:
@@ -98,11 +98,11 @@ class ObjectiveReducer:
     def _correlation_greedy(
         self,
         F: np.ndarray,
-        indices: List[int],
+        indices: list[int],
         stds: np.ndarray,
         keep_mand: set[int],
         threshold: float,
-    ) -> List[int]:
+    ) -> list[int]:
         remaining = list(indices)
         while True:
             sub = F[:, remaining]
@@ -141,7 +141,7 @@ class ObjectiveReducer:
             return i
         return max(i, j)
 
-    def _truncate_to_target_dim(self, F: np.ndarray, remaining: List[int], keep_mand: set[int], target_dim: int) -> List[int]:
+    def _truncate_to_target_dim(self, F: np.ndarray, remaining: list[int], keep_mand: set[int], target_dim: int) -> list[int]:
         if target_dim >= len(remaining):
             return remaining
         mandatory = [idx for idx in remaining if idx in keep_mand]
@@ -154,13 +154,13 @@ class ObjectiveReducer:
         selected = mandatory + [idx for idx, _ in candidates[:capacity]]
         return sorted(selected)
 
-    def _fit_angle(self, F: np.ndarray, initial_indices: Iterable[int] | None = None) -> List[int]:
+    def _fit_angle(self, F: np.ndarray, initial_indices: Iterable[int] | None = None) -> list[int]:
         cfg = self.config
         keep_mand = set(cfg.keep_mandatory)
         indices = list(initial_indices) if initial_indices is not None else list(range(F.shape[1]))
         variances = np.var(F, axis=0)
-        remaining: List[int] = []
-        zero_norm: List[int] = []
+        remaining: list[int] = []
+        zero_norm: list[int] = []
         normalized_vectors: dict[int, np.ndarray] = {}
         for idx in indices:
             vec = F[:, idx] - F[:, idx].mean()
@@ -176,7 +176,7 @@ class ObjectiveReducer:
         if not remaining:
             return list(keep_mand) if keep_mand else indices
 
-        selected: List[int] = []
+        selected: list[int] = []
         if keep_mand:
             selected.extend(sorted(set(remaining) & keep_mand))
         if not selected:
@@ -203,7 +203,7 @@ class ObjectiveReducer:
             selected.append(best_idx)
         return sorted(selected)
 
-    def _min_angle_to_set(self, cand: int, selected: List[int], normalized_vectors: dict[int, np.ndarray]) -> float:
+    def _min_angle_to_set(self, cand: int, selected: list[int], normalized_vectors: dict[int, np.ndarray]) -> float:
         angles = []
         v_cand = normalized_vectors[cand]
         for sel in selected:

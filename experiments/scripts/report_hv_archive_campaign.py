@@ -3,12 +3,12 @@ from __future__ import annotations
 import argparse
 import csv
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 
 
-def read_rows(path: Path) -> List[Dict[str, Any]]:
+def read_rows(path: Path) -> list[dict[str, Any]]:
     with path.open("r", encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))
 
@@ -20,15 +20,15 @@ def to_float(x: Any) -> float:
         return float("nan")
 
 
-def groupby(rows: List[Dict[str, Any]], keys: Tuple[str, ...]) -> Dict[Tuple[str, ...], List[Dict[str, Any]]]:
-    out: Dict[Tuple[str, ...], List[Dict[str, Any]]] = {}
+def groupby(rows: list[dict[str, Any]], keys: tuple[str, ...]) -> dict[tuple[str, ...], list[dict[str, Any]]]:
+    out: dict[tuple[str, ...], list[dict[str, Any]]] = {}
     for row in rows:
         k = tuple(str(row.get(key, "")) for key in keys)
         out.setdefault(k, []).append(row)
     return out
 
 
-def median_iqr(vals: List[float]) -> Tuple[float, float]:
+def median_iqr(vals: list[float]) -> tuple[float, float]:
     v = np.array([x for x in vals if np.isfinite(x)], dtype=float)
     if v.size == 0:
         return float("nan"), float("nan")
@@ -38,7 +38,7 @@ def median_iqr(vals: List[float]) -> Tuple[float, float]:
     return med, (q3 - q1)
 
 
-def write_latex_table(path: Path, rows: List[Dict[str, Any]]) -> None:
+def write_latex_table(path: Path, rows: list[dict[str, Any]]) -> None:
     keys = ("problem", "algorithm", "engine", "variant")
     grouped = groupby(rows, keys)
 
@@ -86,7 +86,7 @@ def write_latex_table(path: Path, rows: List[Dict[str, Any]]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def plot_tradeoff(path: Path, rows: List[Dict[str, Any]]) -> None:
+def plot_tradeoff(path: Path, rows: list[dict[str, Any]]) -> None:
     try:
         import matplotlib
 
@@ -95,7 +95,7 @@ def plot_tradeoff(path: Path, rows: List[Dict[str, Any]]) -> None:
     except Exception as exc:
         raise RuntimeError("matplotlib is required for plotting.") from exc
 
-    def key_base(row: Dict[str, Any]) -> Tuple[str, str, str, str]:
+    def key_base(row: dict[str, Any]) -> tuple[str, str, str, str]:
         return (row["problem"], row["algorithm"], row["engine"], str(row.get("seed", "")))
 
     baseline = {key_base(r): r for r in rows if r["variant"] == "baseline"}

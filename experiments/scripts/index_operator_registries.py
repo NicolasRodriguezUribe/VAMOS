@@ -4,7 +4,7 @@ import importlib
 import json
 import pkgutil
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import vamos
 
@@ -19,14 +19,14 @@ def is_mapping_like(obj: Any) -> bool:
     return hasattr(obj, "keys") and hasattr(obj, "items")
 
 
-def summarize_mapping(keys: List[Any], max_keys: int = 80) -> Dict[str, Any]:
+def summarize_mapping(keys: list[Any], max_keys: int = 80) -> dict[str, Any]:
     sk = [k for k in keys if isinstance(k, (str, int, float))]
     sk2 = sorted([str(k) for k in sk])[:max_keys]
     return {"n_keys": len(keys), "sample_keys": sk2}
 
 
 def main() -> int:
-    registries: List[Dict[str, Any]] = []
+    registries: list[dict[str, Any]] = []
 
     for m in pkgutil.walk_packages(vamos.__path__, prefix=vamos.__name__ + "."):
         name = m.name
@@ -78,7 +78,7 @@ def main() -> int:
 
     # Deduplicate by (module, attr)
     seen = set()
-    unique: List[Dict[str, Any]] = []
+    unique: list[dict[str, Any]] = []
     for r in registries:
         k = (r["module"], r["attr"])
         if k in seen:
@@ -109,7 +109,7 @@ def main() -> int:
             return "operator/variation"
         return "other"
 
-    by_kind: Dict[str, List[Dict[str, Any]]] = {}
+    by_kind: dict[str, list[dict[str, Any]]] = {}
     for r in unique:
         by_kind.setdefault(kind(r["module"], r["attr"]), []).append(r)
 

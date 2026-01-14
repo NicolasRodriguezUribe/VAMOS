@@ -19,7 +19,8 @@ import ast
 import math
 import operator
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -162,11 +163,11 @@ class ConditionalBlock:
 
     parent_name: str
     parent_value: Any
-    params: List["ParamType"]  # List of Real, Int, Categorical, etc.
+    params: list[ParamType]  # list of Real, Int, Categorical, etc.
 
 
 # Type alias for any parameter type
-ParamType = Union[Real, Int, Categorical, Boolean]
+ParamType = Real | Int | Categorical | Boolean
 
 
 @dataclass
@@ -181,23 +182,23 @@ class ParamSpace:
         })
     """
 
-    params: Dict[str, ParamType] = field(default_factory=dict)
-    conditions: List[Condition] = field(default_factory=list)
+    params: dict[str, ParamType] = field(default_factory=dict)
+    conditions: list[Condition] = field(default_factory=list)
 
-    def sample(self, rng: Optional[np.random.Generator] = None) -> Dict[str, Any]:
+    def sample(self, rng: np.random.Generator | None = None) -> dict[str, Any]:
         """Sample a configuration from the space."""
         rng = np.random.default_rng() if rng is None else rng
         full_cfg = {name: spec.sample(rng) for name, spec in self.params.items()}
         return {name: value for name, value in full_cfg.items() if self.is_active(name, full_cfg)}
 
-    def is_active(self, param_name: str, config: Dict[str, Any]) -> bool:
+    def is_active(self, param_name: str, config: dict[str, Any]) -> bool:
         """Check if param is active given config and conditions."""
         relevant = [c for c in self.conditions if c.param_name == param_name]
         if not relevant:
             return True
         return all(_safe_eval_condition(c.expr, config) for c in relevant)
 
-    def validate(self, config: Dict[str, Any]) -> None:
+    def validate(self, config: dict[str, Any]) -> None:
         """Validate that all active params are present and within bounds."""
         for name, spec in self.params.items():
             if not self.is_active(name, config):
@@ -237,7 +238,7 @@ _CMP_OPS: dict[type[ast.AST], Callable[[Any, Any], bool]] = {
 }
 
 
-def _safe_eval_condition(expr: str, cfg: Dict[str, Any]) -> bool:
+def _safe_eval_condition(expr: str, cfg: dict[str, Any]) -> bool:
     """
     Evaluate a condition expression against cfg using a restricted AST (no calls/attrs).
     """

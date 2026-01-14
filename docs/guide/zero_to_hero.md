@@ -20,7 +20,7 @@ pip install -e .
 Now, let's solve the classic **ZDT1** problem (2 objectives, 30 variables) using **NSGA-II**. Create a file `hello_vamos.py`:
 
 ```python
-from vamos.api import optimize, OptimizeConfig, make_problem_selection
+from vamos import optimize
 import matplotlib.pyplot as plt
 
 # 1. Run NSGA-II on ZDT1
@@ -55,7 +55,7 @@ Create `benchmark.py`:
 
 ```python
 import pandas as pd
-from vamos.api import optimize
+from vamos import optimize
 from vamos.ux.analysis.stats import friedman_test, compute_ranks
 
 # 1. Define the study
@@ -121,7 +121,7 @@ Don't guess hyperparameters. Use the `RacingTuner` with **Hyperband-style multi-
 
 ```python
 import numpy as np
-from vamos.api import optimize
+from vamos import optimize, make_problem_selection
 from vamos.engine.tuning.racing import (
     RacingTuner, Scenario, TuningTask, Instance,
     WarmStartEvaluator, EvalContext,
@@ -143,14 +143,13 @@ def run_algorithm(config_dict, ctx: EvalContext, checkpoint=None):
         extra_budget = ctx.budget
     
     selection = make_problem_selection(ctx.instance.name, n_var=ctx.instance.n_var)
-    run_cfg = OptimizeConfig(
-        problem=selection.instantiate(),
+    res = optimize(
+        selection.instantiate(),
         algorithm="nsgaii",
         algorithm_config=algo_config,
         termination=("n_eval", extra_budget),
         seed=ctx.seed,
     )
-    res = optimize(run_cfg)
     
     # Return result AND checkpoint for next fidelity level
     new_checkpoint = {"X": res.X, "F": res.F}

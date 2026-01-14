@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Sequence
+from typing import Any
+from collections.abc import Sequence
 
 from vamos.experiment.benchmark.suites import BenchmarkSuite, BenchmarkExperiment
 from vamos.foundation.core.experiment_config import DEFAULT_ENGINE
@@ -25,12 +26,12 @@ class SingleRunInfo:
 @dataclass
 class BenchmarkResult:
     suite: BenchmarkSuite
-    algorithms: List[str]
-    metrics: List[str]
+    algorithms: list[str]
+    metrics: list[str]
     base_output_dir: Path
     summary_path: Path | None
-    runs: List[SingleRunInfo]
-    raw_results: List[StudyResult] | None = None
+    runs: list[SingleRunInfo]
+    raw_results: list[StudyResult] | None = None
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -38,7 +39,7 @@ def _ensure_dir(path: Path) -> Path:
     return path
 
 
-def _derive_budget(exp: BenchmarkExperiment, config_overrides: Dict[str, Any]) -> int:
+def _derive_budget(exp: BenchmarkExperiment, config_overrides: dict[str, Any]) -> int:
     pop = config_overrides.get("population_size")
     return exp.resolved_budget(population_size=pop)
 
@@ -48,8 +49,8 @@ def _prepare_tasks(
     algorithms: Sequence[str],
     metrics: Sequence[str],
     base_output_dir: Path,
-    global_config_overrides: Dict[str, Any] | None,
-) -> tuple[list[StudyTask], Dict[str, Any], Path]:
+    global_config_overrides: dict[str, Any] | None,
+) -> tuple[list[StudyTask], dict[str, Any], Path]:
     overrides = dict(global_config_overrides or {})
     raw_root = base_output_dir / "raw_runs" / suite.name
     overrides.setdefault("output_root", str(raw_root))
@@ -92,7 +93,7 @@ def run_benchmark_suite(
     algorithms: Sequence[str] | None,
     metrics: Sequence[str] | None,
     base_output_dir: Path,
-    global_config_overrides: Dict[str, Any] | None = None,
+    global_config_overrides: dict[str, Any] | None = None,
     *,
     study_runner_cls: type[StudyRunner] = StudyRunner,
 ) -> BenchmarkResult:
@@ -110,7 +111,7 @@ def run_benchmark_suite(
         run_single_fn=run_single,
     )
     persister.save_results(results, summary_dir / "metrics.csv")
-    runs: List[SingleRunInfo] = []
+    runs: list[SingleRunInfo] = []
     for res in results:
         algorithm_name = res.metrics.get("algorithm") or res.task.algorithm
         runs.append(

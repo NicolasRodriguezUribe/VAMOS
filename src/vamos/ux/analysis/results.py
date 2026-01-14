@@ -7,14 +7,15 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, List
+from typing import Any
+from collections.abc import Iterable
 
 import numpy as np
 
 from vamos.foundation.core.io_utils import RESULT_FILES
 
 try:
-    import pandas as pd  # type: ignore
+    import pandas as pd
 except ImportError:  # pragma: no cover - optional dependency
     pd = None
 
@@ -60,7 +61,7 @@ def _try_load_csv(path: Path) -> np.ndarray | None:
     return _coerce_array(np.asarray(data))
 
 
-def discover_runs(base_dir: str | Path = "results") -> List[RunInfo]:
+def discover_runs(base_dir: str | Path = "results") -> list[RunInfo]:
     """
     Recursively locate run directories by scanning for metadata.json files.
     """

@@ -98,7 +98,7 @@ N_JOBS = int(os.environ.get("VAMOS_N_JOBS", max(1, os.cpu_count() - 1)))
 print(f"Using {N_JOBS} parallel workers")
 
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos import OptimizeConfig, optimize
+from vamos import optimize
 from vamos.engine.algorithm.config import NSGAIIConfig
 
 try:
@@ -167,18 +167,17 @@ def run_single_benchmark(problem_name, seed, framework):
                 .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
                 .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
                 .selection("tournament")
-                .fixed()
+                .build()
             )
-            config = OptimizeConfig(
-                problem=problem,
+            start = time.perf_counter()
+            result = optimize(
+                problem,
                 algorithm="nsgaii",
                 algorithm_config=algo_config,
                 termination=("n_eval", N_EVALS),
                 seed=seed,
                 engine=backend,
             )
-            start = time.perf_counter()
-            result = optimize(config)
             elapsed = time.perf_counter() - start
             hv = compute_hv(result.F, problem_name) if result.F is not None else float("nan")
             result_entry = {

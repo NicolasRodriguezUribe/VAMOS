@@ -25,13 +25,13 @@ from vamos.foundation.problem.zdt2 import ZDT2Problem
 def test_nsgaii_hv_termination_hits_target():
     pop_size = 10
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=8)
@@ -57,13 +57,13 @@ def test_nsgaii_hv_termination_hits_target():
 def test_smsemoa_smoke_runs_with_small_population():
     pop_size = 8
     cfg = (
-        SMSEMOAConfig()
+        SMSEMOAConfig.builder()
         .pop_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("random")
         .reference_point(offset=1.0, adaptive=True)
-        .fixed()
+        .build()
     )
     algorithm = SMSEMOA(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT2Problem(n_var=6)
@@ -81,7 +81,7 @@ def test_smsemoa_smoke_runs_with_small_population():
 def test_moead_smoke_runs_without_weight_files():
     pop_size = 6
     cfg = (
-        MOEADConfig()
+        MOEADConfig.builder()
         .pop_size(pop_size)
         .neighbor_size(3)
         .delta(0.9)
@@ -90,7 +90,7 @@ def test_moead_smoke_runs_without_weight_files():
         .mutation("pm", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
         .weight_vectors(divisions=6)
-        .fixed()
+        .build()
     )
     algorithm = MOEAD(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=8)
@@ -108,13 +108,13 @@ def test_moead_smoke_runs_without_weight_files():
 def test_spea2_smoke_runs_with_archive():
     pop_size = 12
     cfg = (
-        SPEA2Config()
+        SPEA2Config.builder()
         .pop_size(pop_size)
         .archive_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
     algorithm = SPEA2(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=6)
@@ -129,14 +129,14 @@ def test_spea2_smoke_runs_with_archive():
 def test_ibea_smoke_indicator_eps():
     pop_size = 10
     cfg = (
-        IBEAConfig()
+        IBEAConfig.builder()
         .pop_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .indicator("eps")
         .kappa(0.05)
-        .fixed()
+        .build()
     )
     algorithm = IBEA(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT2Problem(n_var=6)
@@ -153,7 +153,7 @@ def test_ibea_smoke_indicator_eps():
 
 def test_smpso_smoke_runs():
     pop_size = 14
-    cfg = SMPSOConfig().pop_size(pop_size).archive_size(pop_size).mutation("pm", prob="1/n", eta=20.0).fixed()
+    cfg = SMPSOConfig.builder().pop_size(pop_size).archive_size(pop_size).mutation("pm", prob="1/n", eta=20.0).build()
     algorithm = SMPSO(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=5)
 
@@ -167,13 +167,13 @@ def test_smpso_smoke_runs():
 def test_nsgaii_with_multiprocessing_eval_strategy():
     pop_size = 10
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=6)
@@ -193,13 +193,13 @@ def test_nsgaii_with_multiprocessing_eval_strategy():
 def test_nsgaii_permutation_smoke():
     pop_size = 8
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("ox", prob=0.9)
         .mutation("swap", prob="2/n")
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = TSPProblem(n_cities=7)

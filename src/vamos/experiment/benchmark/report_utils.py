@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
 def ensure_dir(path: Path) -> Path:
@@ -16,7 +16,7 @@ def ensure_dir(path: Path) -> Path:
 
 def import_pandas() -> Any:
     try:
-        import pandas as pd  # type: ignore[import-untyped]
+        import pandas as pd
     except ImportError as exc:  # pragma: no cover - optional dependency
         raise ImportError(
             "Benchmark reporting requires pandas. Install via 'pip install pandas' or the 'analysis'/'examples' extras."
@@ -42,7 +42,7 @@ def format_cell(fmt: str, mean: float, std: float, is_best: bool, marker: str) -
     return cell
 
 
-def dump_stats_summary(stats: Dict[str, Any], path: Path) -> None:
+def dump_stats_summary(stats: dict[str, Any], path: Path) -> None:
     serializable = {}
     for metric, payload in stats.items():
         fried = payload.get("friedman")

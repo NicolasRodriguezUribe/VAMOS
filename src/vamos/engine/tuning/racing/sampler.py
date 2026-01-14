@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Protocol, Sequence
+from typing import Any, Protocol
+from collections.abc import Mapping, Sequence
 
 import math
 import numpy as np
@@ -18,7 +19,7 @@ class Sampler(Protocol):
     hyperparameter space.
     """
 
-    def sample(self, rng: np.random.Generator) -> Dict[str, Any]:
+    def sample(self, rng: np.random.Generator) -> dict[str, Any]:
         """
         Sample a new configuration.
 
@@ -41,7 +42,7 @@ class UniformSampler:
 
     param_space: ParamSpace
 
-    def sample(self, rng: np.random.Generator) -> Dict[str, Any]:
+    def sample(self, rng: np.random.Generator) -> dict[str, Any]:
         return self.param_space.sample(rng)
 
 
@@ -73,9 +74,9 @@ class ModelBasedSampler:
     marginal model for exploitation sampling.
     """
 
-    _cat_models: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    _real_models: Dict[str, Dict[str, float]] = field(default_factory=dict)
-    _int_models: Dict[str, Dict[str, float]] = field(default_factory=dict)
+    _cat_models: dict[str, dict[str, Any]] = field(default_factory=dict)
+    _real_models: dict[str, dict[str, float]] = field(default_factory=dict)
+    _int_models: dict[str, dict[str, float]] = field(default_factory=dict)
 
     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:
         """
@@ -90,7 +91,7 @@ class ModelBasedSampler:
             self._int_models.clear()
             return
 
-        observed: Dict[str, List[Any]] = {name: [] for name in self.param_space.params.keys()}
+        observed: dict[str, list[Any]] = {name: [] for name in self.param_space.params.keys()}
 
         for cfg in good_configs:
             for name in observed.keys():
@@ -107,7 +108,7 @@ class ModelBasedSampler:
                 continue
 
             if isinstance(spec, Categorical):
-                counts: Dict[Any, int] = {}
+                counts: dict[Any, int] = {}
                 for v in values:
                     counts[v] = counts.get(v, 0) + 1
 
@@ -115,8 +116,8 @@ class ModelBasedSampler:
                 if total == 0:
                     continue
 
-                choices: List[Any] = []
-                probs: List[float] = []
+                choices: list[Any] = []
+                probs: list[float] = []
                 for choice in spec.choices:
                     c = counts.get(choice, 0)
                     if c > 0:
@@ -181,7 +182,7 @@ class ModelBasedSampler:
                     "log": is_log,
                 }
 
-    def sample(self, rng: np.random.Generator) -> Dict[str, Any]:
+    def sample(self, rng: np.random.Generator) -> dict[str, Any]:
         """
         Sample a new configuration using a mixture of uniform exploration and
         marginal exploitation. If insufficient model data exist, falls back to
@@ -190,7 +191,7 @@ class ModelBasedSampler:
         if rng.random() < self.exploration_prob or (not self._cat_models and not self._real_models and not self._int_models):
             return self.param_space.sample(rng)
 
-        cfg: Dict[str, Any] = {}
+        cfg: dict[str, Any] = {}
 
         for name, spec in self.param_space.params.items():
             if isinstance(spec, Categorical) and name in self._cat_models:

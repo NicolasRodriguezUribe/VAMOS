@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from vamos.experiment.benchmark.runner import BenchmarkResult
 from vamos.ux.analysis.stats import friedman_test, pairwise_wilcoxon
@@ -21,7 +21,7 @@ from vamos.experiment.benchmark.lab_plots import generate_boxplots
 
 @dataclass
 class BenchmarkReportConfig:
-    metrics: List[str]
+    metrics: list[str]
     alpha: float = 0.05
     latex_float_format: str = "%.3f"
     table_caption_prefix: str = ""
@@ -36,7 +36,7 @@ class BenchmarkReport:
         self.config = config
         self.output_dir = ensure_dir(output_dir)
         self._tidy: Any | None = None
-        self._stats_cache: Dict[str, Any] | None = None
+        self._stats_cache: dict[str, Any] | None = None
 
     def aggregate_metrics(self) -> Any:
         if self._tidy is not None:
@@ -76,12 +76,12 @@ class BenchmarkReport:
         tidy.to_csv(tidy_path, index=False)
         return tidy
 
-    def compute_statistics(self) -> Dict[str, Any]:
+    def compute_statistics(self) -> dict[str, Any]:
         if self._stats_cache is not None:
             return self._stats_cache
         import_pandas()  # Ensure pandas is available
         tidy = self.aggregate_metrics()
-        stats: Dict[str, Any] = {}
+        stats: dict[str, Any] = {}
         for metric in self.config.metrics:
             dfm = tidy[tidy["metric"] == metric]
             if dfm.empty:
@@ -106,8 +106,8 @@ class BenchmarkReport:
         dump_stats_summary(stats, self.output_dir / "statistics.json")
         return stats
 
-    def _best_algorithms(self, mean_table: Any, metric: str) -> Dict[str, str]:
-        best: Dict[str, str] = {}
+    def _best_algorithms(self, mean_table: Any, metric: str) -> dict[str, str]:
+        best: dict[str, str] = {}
         higher = higher_is_better(metric)
         for problem in mean_table.index:
             row = mean_table.loc[problem]
@@ -118,8 +118,8 @@ class BenchmarkReport:
             best[problem] = best_alg
         return best
 
-    def _per_problem_markers(self, dfm: Any, problem: str, best_alg: str, metric: str) -> Dict[str, str]:
-        markers: Dict[str, str] = {}
+    def _per_problem_markers(self, dfm: Any, problem: str, best_alg: str, metric: str) -> dict[str, str]:
+        markers: dict[str, str] = {}
         try:
             from scipy import stats as spstats  # type: ignore[import-untyped]
         except Exception:  # pragma: no cover - optional
@@ -149,12 +149,12 @@ class BenchmarkReport:
                     markers[alg] = "-"
         return markers
 
-    def generate_latex_tables(self) -> Dict[str, Path]:
+    def generate_latex_tables(self) -> dict[str, Path]:
         pd = import_pandas()
         tidy = self.aggregate_metrics()
         _ = self.compute_statistics()  # Populate cache for later use
         tables_dir = ensure_dir(self.output_dir / "tables")
-        created: Dict[str, Path] = {}
+        created: dict[str, Path] = {}
         for metric in self.config.metrics:
             dfm = tidy[tidy["metric"] == metric]
             if dfm.empty:
@@ -197,13 +197,13 @@ class BenchmarkReport:
             created["all"] = master
         return created
 
-    def generate_plots(self) -> Dict[str, List[Path]]:
+    def generate_plots(self) -> dict[str, list[Path]]:
         tidy = self.aggregate_metrics()
         stats = self.compute_statistics()
         plots_dir = ensure_dir(self.output_dir / "plots")
         return generate_plots(tidy, stats, self.config.metrics, self.config.alpha, self.result.suite.name, plots_dir, higher_is_better)
 
-    def generate_lab_outputs(self) -> Dict[str, Path | Dict[str, Path]]:
+    def generate_lab_outputs(self) -> dict[str, Path | dict[str, Path]]:
         if not self.config.emit_lab_outputs:
             return {}
         pd = import_pandas()

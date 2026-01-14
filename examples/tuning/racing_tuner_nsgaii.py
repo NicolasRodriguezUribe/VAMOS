@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.api import OptimizeConfig, optimize
+from vamos import optimize
 from vamos.engine.tuning.api import Int, Instance, ParamSpace, RacingTuner, Real, Scenario, TuningTask
-from vamos.foundation.problems_registry import ZDT1
-from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
+from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
+from vamos.algorithms import NSGAIIConfig
 
 
 def build_param_space() -> ParamSpace:
@@ -30,10 +30,10 @@ def build_param_space() -> ParamSpace:
     )
 
 
-def make_algo_config(assignment: dict[str, float]) -> NSGAIIConfigData:
+def make_algo_config(assignment: dict[str, float]) -> NSGAIIConfig:
     """Translate sampled hyperparameters into an NSGA-II config."""
     return (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(int(assignment["pop_size"]))
         .offspring_size(int(assignment["pop_size"]))
         .crossover("sbx", prob=float(assignment["crossover_prob"]), eta=20.0)
@@ -43,7 +43,7 @@ def make_algo_config(assignment: dict[str, float]) -> NSGAIIConfigData:
             eta=float(assignment["mutation_eta"]),
         )
         .selection("tournament", pressure=int(assignment["selection_pressure"]))
-        .fixed()
+        .build()
     )
 
 
@@ -54,14 +54,12 @@ def evaluate_config(config: dict[str, float], ctx) -> float:
     """
     algo_cfg = make_algo_config(config)
     result = optimize(
-        OptimizeConfig(
-            problem=ZDT1(n_var=ctx.instance.n_var),
-            algorithm="nsgaii",
-            algorithm_config=algo_cfg,
-            termination=("n_eval", ctx.budget),
-            seed=ctx.seed,
-            engine="numpy",
-        )
+        ZDT1(n_var=ctx.instance.n_var),
+        algorithm="nsgaii",
+        algorithm_config=algo_cfg,
+        termination=("n_eval", ctx.budget),
+        seed=ctx.seed,
+        engine="numpy",
     )
     F = result.F
     if F is None or len(F) == 0:

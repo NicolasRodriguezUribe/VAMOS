@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-from typing import Optional
 
 
 class LatinHypercubeInitializer:
@@ -15,7 +14,7 @@ class LatinHypercubeInitializer:
         n_solutions: int,
         lower: np.ndarray,
         upper: np.ndarray,
-        rng: Optional[np.random.Generator] = None,
+        rng: np.random.Generator | None = None,
     ) -> None:
         self.n_solutions = int(n_solutions)
         if self.n_solutions <= 0:
@@ -52,7 +51,7 @@ class ScatterSearchInitializer:
         lower: np.ndarray,
         upper: np.ndarray,
         base_size: int = 20,
-        rng: Optional[np.random.Generator] = None,
+        rng: np.random.Generator | None = None,
     ) -> None:
         self.n_solutions = int(n_solutions)
         if self.n_solutions <= 0:

@@ -17,6 +17,8 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - `pytest -q tests/architecture/test_no_import_time_side_effects.py`
 - `pytest -q tests/architecture/test_public_api_snapshot.py`
 - `pytest -q tests/architecture/test_dependency_policy.py`
+- `pytest -q tests/architecture/test_no_facade_imports.py`
+- `pytest -q tests/architecture/test_experiment_import_cycles.py`
 - `pytest -q tests/architecture/test_report_retention_policy.py`
 - `pytest -q tests/test_no_deprecation_shims.py`
 - `pytest -q tests/test_no_prints_in_library.py`
@@ -28,7 +30,7 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - foundation must not import engine/ux/experiment.
 - engine may depend on foundation and hooks only.
 - experiment and ux may depend on foundation and engine.
-- Facades: prefer `vamos.api`, `vamos.engine.api`, `vamos.ux.api`.
+- Facades: prefer `vamos.api`, `vamos.algorithms`, `vamos.ux.api`.
 
 ## Optional Dependencies Policy
 - foundation/** and engine/**: no top-level imports of optional/heavy deps.

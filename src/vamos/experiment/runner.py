@@ -1,27 +1,23 @@
 from __future__ import annotations
 
 import logging
-import os
 from argparse import Namespace
 from copy import deepcopy
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any
+from collections.abc import Callable
 
 from vamos.engine.config.variation import merge_variation_overrides
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
-from vamos.foundation.problem.registry import ProblemSelection, make_problem_selection
+from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.problem.resolver import resolve_problem_selections
 from vamos.hooks import LiveVisualization
-from vamos.ux.visualization import plotting
-from vamos.ux.visualization.live_viz import LiveParetoPlot
 
 from vamos.experiment.services.config import normalize_variations
 from vamos.experiment.services.orchestrator import run_single
 
 from vamos.experiment.execution import execute_problem_suite
-from vamos.experiment.runner_utils import run_output_dir
-from vamos.experiment.study.runner import StudyRunner, StudyResult, StudyTask
-from vamos.experiment.study.persistence import CSVPersister
+from vamos.experiment.study.api import run_study
 
 
 def _logger() -> logging.Logger:
@@ -154,23 +150,6 @@ def run_from_args(
         )
 
 
-def _build_live_viz(
-    selection: ProblemSelection,
-    algorithm: str,
-    engine: str,
-    config: ExperimentConfig,
-) -> LiveVisualization | None:
-    if not getattr(config, "live_viz", False):
-        return None
-    output_dir = run_output_dir(selection, algorithm, engine, config.seed, config)
-    return LiveParetoPlot(
-        update_interval=getattr(config, "live_viz_interval", 5),
-        max_points=getattr(config, "live_viz_max_points", 1000),
-        save_final_path=os.path.join(output_dir, "live_pareto.png"),
-        title=f"{selection.spec.label} (live)",
-    )
-
-
 def run_experiment(
     *,
     algorithm: str,
@@ -180,6 +159,7 @@ def run_experiment(
     n_var: int | None = None,
     n_obj: int | None = None,
     selection_pressure: int = 2,
+    live_viz_factory: Callable[..., LiveVisualization | None] | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """
@@ -191,8 +171,8 @@ def run_experiment(
     cfg = config or ExperimentConfig()
     selection = make_problem_selection(problem, n_var=n_var, n_obj=n_obj)
     live_viz = kwargs.pop("live_viz", None)
-    if live_viz is None:
-        live_viz = _build_live_viz(selection, algorithm, engine, cfg)
+    if live_viz is None and live_viz_factory is not None:
+        live_viz = live_viz_factory(selection, algorithm, engine, cfg)
     return run_single(
         engine,
         algorithm,
@@ -204,57 +184,10 @@ def run_experiment(
     )
 
 
-def run_experiments_from_args(args: Namespace, config: ExperimentConfig) -> None:
-    """
-    Entry point used by the CLI to execute one or more runs defined by parsed args.
-    """
-    plotter = plotting.plot_pareto_front if getattr(args, "plot", False) else None
-    run_from_args(
-        args,
-        config,
-        live_viz_factory=_build_live_viz,
-        plotter=plotter,
-    )
-
-
-def run_study(
-    tasks: Iterable[StudyTask],
-    *,
-    config_overrides: dict[str, Any] | None = None,
-    mirror_output_roots: Sequence[str] | None = ("results",),
-) -> list[StudyResult]:
-    persister = CSVPersister(mirror_roots=mirror_output_roots) if mirror_output_roots else None
-    runner = StudyRunner(persister=persister)
-    overrides: dict[str, Any] = config_overrides or {}
-    if overrides:
-        adjusted: list[StudyTask] = []
-        for task in tasks:
-            merged: dict[str, Any] = dict(task.config_overrides or {})
-            merged.update({k: v for k, v in overrides.items() if v is not None})
-            adjusted.append(
-                StudyTask(
-                    algorithm=task.algorithm,
-                    engine=task.engine,
-                    problem=task.problem,
-                    n_var=task.n_var,
-                    n_obj=task.n_obj,
-                    seed=task.seed,
-                    selection_pressure=task.selection_pressure,
-                    external_archive_size=task.external_archive_size,
-                    archive_type=task.archive_type,
-                    nsgaii_variation=task.nsgaii_variation,
-                    config_overrides=merged,
-                )
-            )
-        tasks = adjusted
-    return runner.run(list(tasks), run_single_fn=run_single)
-
-
 __all__ = [
     "run_single",
     "execute_problem_suite",
     "run_from_args",
     "run_experiment",
-    "run_experiments_from_args",
     "run_study",
 ]

@@ -7,7 +7,8 @@ from __future__ import annotations
 import csv
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 
 TRACE_HEADER = [

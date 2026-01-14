@@ -4,7 +4,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 def load_yaml(path: Path) -> dict:
@@ -27,11 +27,11 @@ def read_json(p: Path) -> dict:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
-def find_seed_dirs(root: Path) -> List[Path]:
+def find_seed_dirs(root: Path) -> list[Path]:
     return sorted([p for p in root.rglob("seed_*") if p.is_dir() and (p / "metadata.json").exists()])
 
 
-def infer_algo_engine(sd: Path) -> Tuple[str, str]:
+def infer_algo_engine(sd: Path) -> tuple[str, str]:
     eng = sd.parent.name
     algo = sd.parent.parent.name if sd.parent.parent else "unknown"
     return algo, eng
@@ -99,7 +99,7 @@ def main() -> int:
     # Inspect metadata.config._keys for successes
     seed_dirs = find_seed_dirs(out_root)
     print("\nFound seed dirs:", len(seed_dirs))
-    by_algo: Dict[str, dict] = {}
+    by_algo: dict[str, dict] = {}
     for sd in seed_dirs:
         algo, eng = infer_algo_engine(sd)
         meta = read_json(sd / "metadata.json")

@@ -8,73 +8,64 @@ algorithm config structures without maintaining a separate hard-coded whitelist.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Iterable, Mapping
 from dataclasses import fields
 from difflib import get_close_matches
-from typing import Any, Iterable
+from typing import Any, cast
 
 from vamos.archive.bounded_archive import BoundedArchiveConfig
 from vamos.engine.algorithm.config import (
-    IBEAConfigData,
-    MOEADConfigData,
-    NSGAIIConfigData,
-    NSGAIIIConfigData,
-    SMPSOConfigData,
-    SMSEMOAConfigData,
-    SPEA2ConfigData,
+    IBEAConfig,
+    MOEADConfig,
+    NSGAIIConfig,
+    NSGAIIIConfig,
+    SMPSOConfig,
+    SMSEMOAConfig,
+    SPEA2Config,
 )
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import available_problem_names
 from vamos.monitoring.hv_convergence import HVConvergenceConfig
 
 from .spec_args import parser_spec_keys
+from .spec_types import ExperimentSpec
 
 
 EXPERIMENT_SPEC_VERSION = "1"
 
 _ALGORITHM_BLOCKS: dict[str, type] = {
-    "nsgaii": NSGAIIConfigData,
-    "moead": MOEADConfigData,
-    "smsemoa": SMSEMOAConfigData,
-    "nsgaiii": NSGAIIIConfigData,
-    "spea2": SPEA2ConfigData,
-    "ibea": IBEAConfigData,
-    "smpso": SMPSOConfigData,
+    "nsgaii": NSGAIIConfig,
+    "moead": MOEADConfig,
+    "smsemoa": SMSEMOAConfig,
+    "nsgaiii": NSGAIIIConfig,
+    "spea2": SPEA2Config,
+    "ibea": IBEAConfig,
+    "smpso": SMPSOConfig,
 }
 
 _OPERATOR_SPEC_KEYS = ("crossover", "mutation", "selection", "repair", "aggregation")
 
 
-def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -> dict[str, Any]:
-    if not isinstance(spec, dict):
-        raise TypeError("Experiment spec must be a mapping (YAML/JSON object).")
+def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -> ExperimentSpec:
+    spec_dict = _as_str_dict(spec, path="Experiment spec")
 
-    unknown = _unknown_keys(spec, {"version", "defaults", "problems", "stopping", "archive"})
+    unknown = _unknown_keys(spec_dict, {"version", "defaults", "problems", "stopping", "archive"})
     if unknown:
         raise ValueError(f"Unknown top-level keys in experiment spec: {', '.join(unknown)}")
 
-    version = spec.get("version")
+    version = spec_dict.get("version")
     if version is None:
         raise ValueError(f"Experiment spec must declare 'version: {EXPERIMENT_SPEC_VERSION}'.")
     version_str = str(version).strip()
     if version_str != EXPERIMENT_SPEC_VERSION:
         raise ValueError(f"Unsupported experiment spec version. Expected version={EXPERIMENT_SPEC_VERSION!r}, got {version_str!r}.")
 
-    defaults = spec.get("defaults")
-    if defaults is None:
-        defaults = {}
-    if not isinstance(defaults, dict):
-        raise ValueError("Experiment spec 'defaults' must be a mapping when provided.")
+    defaults = _as_str_dict(spec_dict.get("defaults"), path="Experiment spec 'defaults'")
     _validate_overrides_block(defaults, path="defaults", parser=parser)
 
-    problems = spec.get("problems")
-    if problems is None:
-        problems = {}
-    if not isinstance(problems, dict):
-        raise ValueError("Experiment spec 'problems' must be a mapping of problem_key -> overrides.")
+    problems = _as_str_dict(spec_dict.get("problems"), path="Experiment spec 'problems'")
     known_problems = sorted(available_problem_names())
     for key, value in problems.items():
-        if not isinstance(key, str) or not key:
-            raise ValueError("Experiment spec 'problems' keys must be non-empty strings.")
         normalized_key = key.lower()
         if normalized_key not in known_problems:
             suggestions = get_close_matches(normalized_key, known_problems, n=3, cutoff=0.6)
@@ -84,16 +75,15 @@ def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -
             raise ValueError(f"Unknown problem key in experiment spec: {key!r}.{suggestion_text}")
         if value is None:
             continue
-        if not isinstance(value, dict):
-            raise ValueError(f"Experiment spec 'problems.{key}' must be a mapping of overrides.")
-        _validate_overrides_block(value, path=f"problems.{key}", parser=parser)
+        overrides = _as_str_dict(value, path=f"Experiment spec 'problems.{key}'")
+        _validate_overrides_block(overrides, path=f"problems.{key}", parser=parser)
 
-    if "stopping" in spec:
-        _validate_stopping_block(spec.get("stopping"), path="stopping")
-    if "archive" in spec:
-        _validate_archive_block(spec.get("archive"), path="archive")
+    if "stopping" in spec_dict:
+        _validate_stopping_block(spec_dict.get("stopping"), path="stopping")
+    if "archive" in spec_dict:
+        _validate_archive_block(spec_dict.get("archive"), path="archive")
 
-    return spec
+    return cast(ExperimentSpec, spec_dict)
 
 
 def _validate_overrides_block(block: dict[str, Any], *, path: str, parser: argparse.ArgumentParser) -> None:
@@ -108,9 +98,8 @@ def _validate_overrides_block(block: dict[str, Any], *, path: str, parser: argpa
         algo_block = block.get(algo_key)
         if algo_block is None:
             continue
-        if not isinstance(algo_block, dict):
-            raise ValueError(f"'{path}.{algo_key}' must be a mapping when provided.")
-        _validate_algorithm_block(algo_block, config_cls=cfg_cls, path=f"{path}.{algo_key}")
+        algo_dict = _as_str_dict(algo_block, path=f"'{path}.{algo_key}'")
+        _validate_algorithm_block(algo_dict, config_cls=cfg_cls, path=f"{path}.{algo_key}")
 
     if "stopping" in block:
         _validate_stopping_block(block.get("stopping"), path=f"{path}.stopping")
@@ -141,7 +130,7 @@ def _validate_algorithm_block(block: dict[str, Any], *, config_cls: type, path: 
         _validate_operator_spec(spec, path=f"{path}.{op_key}")
 
     aos = block.get("adaptive_operator_selection")
-    if aos is not None and not isinstance(aos, dict):
+    if aos is not None and not isinstance(aos, Mapping):
         raise ValueError(f"'{path}.adaptive_operator_selection' must be a mapping when provided.")
 
 
@@ -156,11 +145,12 @@ def _validate_operator_spec(spec: object, *, path: str) -> None:
         method, params = spec
         if not isinstance(method, str) or not method.strip():
             raise ValueError(f"'{path}' operator method must be a non-empty string.")
-        if not isinstance(params, dict):
+        if not isinstance(params, Mapping):
             raise ValueError(f"'{path}' operator params must be a mapping.")
         return
-    if isinstance(spec, dict):
-        method = spec.get("method") or spec.get("name")
+    if isinstance(spec, Mapping):
+        spec_map = _as_str_dict(spec, path=f"'{path}'")
+        method = spec_map.get("method") or spec_map.get("name")
         if not isinstance(method, str) or not method.strip():
             raise ValueError(f"'{path}' mapping form requires a non-empty 'method' (or 'name') key.")
         return
@@ -170,22 +160,20 @@ def _validate_operator_spec(spec: object, *, path: str) -> None:
 def _validate_stopping_block(block: object, *, path: str) -> None:
     if block is None:
         return
-    if not isinstance(block, dict):
-        raise ValueError(f"'{path}' must be a mapping when provided.")
-    unknown = _unknown_keys(block, {"hv_convergence"})
+    block_dict = _as_str_dict(block, path=f"'{path}'")
+    unknown = _unknown_keys(block_dict, {"hv_convergence"})
     if unknown:
         raise ValueError(f"Unknown keys in '{path}': {', '.join(unknown)}")
-    hv = block.get("hv_convergence")
+    hv = block_dict.get("hv_convergence")
     if hv is None:
         return
-    if not isinstance(hv, dict):
-        raise ValueError(f"'{path}.hv_convergence' must be a mapping when provided.")
+    hv_dict = _as_str_dict(hv, path=f"'{path}.hv_convergence'")
     allowed = {"enabled", "ref_point", *_dataclass_field_names(HVConvergenceConfig)}
-    unknown_hv = _unknown_keys(hv, allowed)
+    unknown_hv = _unknown_keys(hv_dict, allowed)
     if unknown_hv:
         raise ValueError(f"Unknown keys in '{path}.hv_convergence': {', '.join(unknown_hv)}")
 
-    ref = hv.get("ref_point")
+    ref = hv_dict.get("ref_point")
     if ref is not None and not (
         (isinstance(ref, str) and ref.lower() == "auto") or (isinstance(ref, (list, tuple)) and all(_is_number(x) for x in ref))
     ):
@@ -195,18 +183,16 @@ def _validate_stopping_block(block: object, *, path: str) -> None:
 def _validate_archive_block(block: object, *, path: str) -> None:
     if block is None:
         return
-    if not isinstance(block, dict):
-        raise ValueError(f"'{path}' must be a mapping when provided.")
-    unknown = _unknown_keys(block, {"bounded"})
+    block_dict = _as_str_dict(block, path=f"'{path}'")
+    unknown = _unknown_keys(block_dict, {"bounded"})
     if unknown:
         raise ValueError(f"Unknown keys in '{path}': {', '.join(unknown)}")
-    bounded = block.get("bounded")
+    bounded = block_dict.get("bounded")
     if bounded is None:
         return
-    if not isinstance(bounded, dict):
-        raise ValueError(f"'{path}.bounded' must be a mapping when provided.")
+    bounded_dict = _as_str_dict(bounded, path=f"'{path}.bounded'")
     allowed = set(_dataclass_field_names(BoundedArchiveConfig))
-    unknown_bounded = _unknown_keys(bounded, allowed)
+    unknown_bounded = _unknown_keys(bounded_dict, allowed)
     if unknown_bounded:
         raise ValueError(f"Unknown keys in '{path}.bounded': {', '.join(unknown_bounded)}")
 
@@ -215,10 +201,23 @@ def _dataclass_field_names(cls: object) -> list[str]:
     return [field.name for field in fields(cls)]  # type: ignore[arg-type]
 
 
-def _unknown_keys(d: dict[str, Any], allowed: Iterable[str]) -> list[str]:
+def _unknown_keys(d: Mapping[str, Any], allowed: Iterable[str]) -> list[str]:
     allowed_set = set(allowed)
     return sorted(key for key in d.keys() if key not in allowed_set)
 
 
 def _is_number(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _as_str_dict(value: object, *, path: str) -> dict[str, Any]:
+    if value is None:
+        return {}
+    if not isinstance(value, Mapping):
+        raise TypeError(f"{path} must be a mapping (YAML/JSON object).")
+    out: dict[str, Any] = {}
+    for key, item in value.items():
+        if not isinstance(key, str) or not key:
+            raise TypeError(f"{path} keys must be non-empty strings.")
+        out[key] = item
+    return out

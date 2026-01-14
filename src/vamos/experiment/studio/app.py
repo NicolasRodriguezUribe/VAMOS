@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -29,7 +29,7 @@ def _import_plotly() -> Any:
     return px
 
 
-def _load_data(study_dir: Path) -> tuple[list["RunRecord"], list["FrontRecord"]]:
+def _load_data(study_dir: Path) -> tuple[list[RunRecord], list[FrontRecord]]:
     from vamos.ux.studio.data import build_fronts, load_runs_from_study
 
     runs = load_runs_from_study(study_dir)
@@ -38,11 +38,11 @@ def _load_data(study_dir: Path) -> tuple[list["RunRecord"], list["FrontRecord"]]
 
 
 def _build_decision_views(
-    fronts: list["FrontRecord"],
+    fronts: list[FrontRecord],
     weights: np.ndarray,
     reference_point: np.ndarray | None,
     method: str,
-) -> list["DecisionView"]:
+) -> list[DecisionView]:
     from vamos.ux.studio.dm import build_decision_view
 
     views = []
@@ -52,7 +52,7 @@ def _build_decision_views(
     return views
 
 
-def main(argv: List[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Launch VAMOS Studio (Streamlit).")
     parser.add_argument("--study-dir", help="Path to a StudyRunner output directory.", default="results")
     args, _ = parser.parse_known_args(argv)
@@ -117,7 +117,7 @@ def main(argv: List[str] | None = None) -> None:
     obj_idx = st.multiselect("Objectives (choose 2)", list(range(primary_front.points_F.shape[1])), default=[0, 1])
 
     if len(obj_idx) == 2:
-        import pandas as pd  # type: ignore[import-untyped]
+        import pandas as pd
 
         plot_data = []
         for front in comparison_fronts:

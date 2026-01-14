@@ -4,7 +4,8 @@ import logging
 from argparse import Namespace
 from importlib.resources import as_file
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
+from typing import Any
+from collections.abc import Callable, Iterable
 
 import numpy as np
 
@@ -60,17 +61,17 @@ class CompositeObserver(Observer):
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         for obs in self.observers:
             obs.on_generation(generation, F, X, stats)
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         for obs in self.observers:
             obs.on_end(final_F, final_stats)
@@ -97,16 +98,16 @@ class _LiveVizAdapter:
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         self._observer.on_generation(generation, F, X, stats)
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         return None
 

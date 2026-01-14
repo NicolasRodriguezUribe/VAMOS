@@ -3,13 +3,13 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from typing import Any, Dict, List, cast
+from typing import Any, cast
 
 from .param_space import ParamSpace
 from .random_search_tuner import TrialResult
 
 
-def filter_active_config(config: Dict[str, Any], param_space: ParamSpace) -> Dict[str, Any]:
+def filter_active_config(config: dict[str, Any], param_space: ParamSpace) -> dict[str, Any]:
     """
     Return a copy of `config` containing only parameters that are active
     according to `param_space.is_active`.
@@ -18,7 +18,7 @@ def filter_active_config(config: Dict[str, Any], param_space: ParamSpace) -> Dic
     declared in the ParamSpace (e.g., population_size, offspring_size, repair)
     are always preserved.
     """
-    active: Dict[str, Any] = {}
+    active: dict[str, Any] = {}
     for name, value in config.items():
         if name in param_space.params:
             if param_space.is_active(name, config):
@@ -29,19 +29,19 @@ def filter_active_config(config: Dict[str, Any], param_space: ParamSpace) -> Dic
 
 
 def history_to_dict(
-    history: List[TrialResult],
+    history: list[TrialResult],
     param_space: ParamSpace,
     *,
     include_raw: bool = False,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Convert TrialResult list into JSON-serializable dicts, filtering out
     inactive parameters using param_space.
     """
-    data: List[Dict[str, Any]] = []
+    data: list[dict[str, Any]] = []
     for trial in history:
         clean_config = filter_active_config(trial.config, param_space)
-        record: Dict[str, Any] = {
+        record: dict[str, Any] = {
             "trial_id": trial.trial_id,
             "score": trial.score,
             "config": clean_config,
@@ -54,7 +54,7 @@ def history_to_dict(
 
 
 def save_history_json(
-    history: List[TrialResult],
+    history: list[TrialResult],
     param_space: ParamSpace,
     path: str | Path,
     *,
@@ -69,7 +69,7 @@ def save_history_json(
 
 
 def save_history_csv(
-    history: List[TrialResult],
+    history: list[TrialResult],
     param_space: ParamSpace,
     path: str | Path,
     *,
@@ -93,11 +93,11 @@ def save_history_csv(
 
 
 def save_checkpoint(
-    best_configs: List[Dict[str, Any]],
-    elite_archive: List[Dict[str, Any]],
+    best_configs: list[dict[str, Any]],
+    elite_archive: list[dict[str, Any]],
     path: str | Path,
     *,
-    metadata: Dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> None:
     """
     Save a tuning checkpoint with elite configurations for warm restart.
@@ -119,7 +119,7 @@ def save_checkpoint(
         json.dump(checkpoint, fh, indent=2)
 
 
-def load_checkpoint(path: str | Path) -> Dict[str, Any]:
+def load_checkpoint(path: str | Path) -> dict[str, Any]:
     """
     Load a tuning checkpoint for warm restart.
 
@@ -134,7 +134,7 @@ def load_checkpoint(path: str | Path) -> Dict[str, Any]:
     path = Path(path)
     with path.open("r", encoding="utf-8") as fh:
         payload = json.load(fh)
-    return cast(Dict[str, Any], payload)
+    return cast(dict[str, Any], payload)
 
 
 __all__ = [

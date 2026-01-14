@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -19,7 +18,7 @@ class Scenario:
 
     max_experiments: int
     """
-    Maximum total number of configuration evaluations (config × instance × seed).
+    Maximum total number of configuration evaluations (config x instance x seed).
     Once this limit is reached, the race stops.
     """
 
@@ -62,7 +61,7 @@ class Scenario:
     Whether the racing tuner should print progress messages.
     """
 
-    max_stages: Optional[int] = None
+    max_stages: int | None = None
     """
     Optional maximum number of racing stages. Each stage corresponds to adding
     at least one (instance, seed) combination and performing an elimination
@@ -85,7 +84,7 @@ class Scenario:
 
     min_blocks_before_elimination: int = 3
     """
-    Minimum number of blocks (instance × seed combinations) that must be evaluated
+    Minimum number of blocks (instance x seed combinations) that must be evaluated
     before using statistical tests. Before this number is reached, the racing tuner
     may either avoid elimination or use the simpler rank-based elimination.
     """
@@ -97,14 +96,14 @@ class Scenario:
     and surviving configurations receive increasing budgets in later stages.
     """
 
-    initial_budget_per_run: Optional[int] = None
+    initial_budget_per_run: int | None = None
     """
-    Initial evaluation budget per block (config × instance × seed) used in the
+    Initial evaluation budget per block (config x instance x seed) used in the
     first stage of the race when use_adaptive_budget=True. If None, fall back
     to task.budget_per_run.
     """
 
-    max_budget_per_run: Optional[int] = None
+    max_budget_per_run: int | None = None
     """
     Maximum evaluation budget per block allowed when use_adaptive_budget=True.
     If None, no explicit upper bound is applied (besides task.budget_per_run).
@@ -126,7 +125,7 @@ class Scenario:
     (local search) to refill the population up to a target size.
     """
 
-    target_population_size: Optional[int] = None
+    target_population_size: int | None = None
     """
     Target number of alive configurations to maintain during the race. If None,
     the racing tuner will use max_initial_configs as the target population size.

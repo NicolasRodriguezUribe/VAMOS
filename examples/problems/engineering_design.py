@@ -14,31 +14,29 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.api import OptimizeConfig, optimize
-from vamos.foundation.problems_registry import WeldedBeamDesignProblem
-from vamos.engine.api import NSGAIIConfig
+from vamos import optimize
+from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
+from vamos.algorithms import NSGAIIConfig
 
 
 def main():
     problem = WeldedBeamDesignProblem()
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(20)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .constraint_mode("feasibility")
-        .fixed()
+        .build()
     )
     result = optimize(
-        OptimizeConfig(
-            problem=problem,
-            algorithm="nsgaii",
-            algorithm_config=cfg,
-            termination=("n_eval", 100),
-            seed=3,
-            engine="numpy",
-        )
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 100),
+        seed=3,
+        engine="numpy",
     )
     F = result.F
     try:

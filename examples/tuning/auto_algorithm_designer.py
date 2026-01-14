@@ -5,9 +5,9 @@ Demonstrates VAMOS as a meta-learning framework that automatically designs
 algorithm configurations based on problem encoding (real, binary, permutation).
 
 Usage:
-    python examples/auto_design/generic_auto_solver.py zdt1
-    python examples/auto_design/generic_auto_solver.py bin_knapsack
-    python examples/auto_design/generic_auto_solver.py tsp6
+    python examples/tuning/auto_algorithm_designer.py zdt1
+    python examples/tuning/auto_algorithm_designer.py bin_knapsack
+    python examples/tuning/auto_algorithm_designer.py tsp6
 """
 
 from __future__ import annotations
@@ -15,12 +15,13 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import Any, Callable, cast
+from typing import Any, cast
+from collections.abc import Callable
 
 import numpy as np
 
-from vamos.api import OptimizeConfig, optimize
-from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
+from vamos import optimize
+from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.foundation.encoding import normalize_encoding
 from vamos.engine.tuning.api import (
     Categorical,
@@ -142,9 +143,9 @@ def build_param_space_for_encoding(encoding: str) -> ParamSpace:
 # =============================================================================
 
 
-def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfigData:
+def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfig:
     """Translate hyperparameters into an NSGA-II config based on encoding."""
-    config = NSGAIIConfig().pop_size(int(assignment["pop_size"])).offspring_size(int(assignment["pop_size"]))
+    config = NSGAIIConfig.builder().pop_size(int(assignment["pop_size"])).offspring_size(int(assignment["pop_size"]))
 
     # Crossover configuration
     crossover_type = assignment.get("crossover", "sbx")
@@ -202,7 +203,7 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfigD
     else:
         config = config.result_mode("population")
 
-    return config.selection("tournament", pressure=2).fixed()
+    return config.selection("tournament", pressure=2).build()
 
 
 # =============================================================================
@@ -222,14 +223,12 @@ def make_evaluator(problem_name: str, encoding: str) -> Callable[[dict[str, Any]
 
         try:
             result = optimize(
-                OptimizeConfig(
-                    problem=problem,
-                    algorithm="nsgaii",
-                    algorithm_config=algo_cfg,
-                    termination=("n_eval", ctx.budget),
-                    seed=ctx.seed,
-                    engine="numpy",
-                )
+                problem,
+                algorithm="nsgaii",
+                algorithm_config=algo_cfg,
+                termination=("n_eval", ctx.budget),
+                seed=ctx.seed,
+                engine="numpy",
             )
             F = result.F
             if F is None or len(F) == 0:
@@ -254,9 +253,9 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    python generic_auto_solver.py zdt1          # Real encoding (continuous)
-    python generic_auto_solver.py bin_knapsack  # Binary encoding
-    python generic_auto_solver.py tsp6          # Permutation encoding
+    python auto_algorithm_designer.py zdt1          # Real encoding (continuous)
+    python auto_algorithm_designer.py bin_knapsack  # Binary encoding
+    python auto_algorithm_designer.py tsp6          # Permutation encoding
         """,
     )
     parser.add_argument("problem", help="Problem name from VAMOS registry")
@@ -280,14 +279,14 @@ Examples:
     logger.info("%s", "=" * 60)
     logger.info(" VAMOS Generic Auto-Solver: Meta-Learning Framework")
     logger.info("%s", "=" * 60)
-    logger.info("  Problema: %s", args.problem)
-    logger.info("  Encoding detectado: %s", encoding)
-    logger.info("  Variables: %s, Objetivos: %s", spec.default_n_var, spec.default_n_obj)
+    logger.info("  Problem: %s", args.problem)
+    logger.info("  Encoding: %s", encoding)
+    logger.info("  Variables: %s, Objectives: %s", spec.default_n_var, spec.default_n_obj)
     logger.info("%s", "=" * 60)
 
     # Build dynamic parameter space
     param_space = build_param_space_for_encoding(encoding)
-    logger.info("[*] Espacio de búsqueda dinámico (%s parámetros):", len(param_space.params))
+    logger.info("[*] Dynamic search space (%s params):", len(param_space.params))
     for name, p in param_space.params.items():
         if isinstance(p, Categorical):
             logger.info("    - %s: %s", name, p.choices)
@@ -312,7 +311,7 @@ Examples:
         verbose=args.verbose,
     )
 
-    logger.info("[*] Iniciando Racing Tuner (máx %s configs)...", args.max_configs)
+    logger.info("[*] Starting Racing Tuner (max %s configs)...", args.max_configs)
 
     tuner = RacingTuner(task=task, scenario=scenario, seed=42, max_initial_configs=args.max_configs)
     evaluator = make_evaluator(args.problem, encoding)
@@ -320,9 +319,9 @@ Examples:
 
     # Format output
     logger.info("%s", "=" * 60)
-    logger.info(" Problema detectado: %s", encoding.upper())
+    logger.info(" Detected encoding: %s", encoding.upper())
     logger.info("%s", "=" * 60)
-    logger.info(" Mejor Arquitectura encontrada:")
+    logger.info(" Best configuration found:")
     logger.info("%s", "-" * 60)
     for k, v in sorted(best_config.items()):
         if isinstance(v, float):
@@ -332,12 +331,12 @@ Examples:
 
     best_score = min(trial.score for trial in history if trial.score < float("inf"))
     logger.info("%s", "-" * 60)
-    logger.info(" Score: %.6f (menor es mejor)", best_score)
+    logger.info(" Score: %.6f (lower is better)", best_score)
     logger.info("%s", "=" * 60)
 
     # Summary message
     logger.info(
-        ">>> Problema detectado: %s -> Mejor Arquitectura encontrada: %s",
+        ">>> Detected encoding: %s -> Best configuration: %s",
         encoding.upper(),
         best_config,
     )

@@ -9,7 +9,8 @@ and return an initialized algorithm instance.
 from __future__ import annotations
 
 from difflib import get_close_matches
-from typing import Any, Callable, Mapping, Protocol
+from typing import Any, Protocol
+from collections.abc import Callable, Mapping
 
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
