@@ -78,6 +78,7 @@ vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size
 - `FUN.csv`: objective values (Pareto front)
 - `X.csv`: decision variables (if exported)
 - `metadata.json`: run configuration and timings
+- `resolved_config.json`: resolved settings and inferred defaults
 
 3) Save plots in the same folder:
 

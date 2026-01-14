@@ -19,14 +19,14 @@ def add_output_arguments(
         "--live-viz",
         action="store_true",
         default=bool(experiment_defaults.get("live_viz", False)),
-        help="Enable live/streaming Pareto visualization (matplotlib interactive).",
+        help="Enable live/streaming Pareto visualization (requires matplotlib).",
     )
     add_spec_argument(
         parser,
         "--plot",
         action="store_true",
         default=bool(experiment_defaults.get("plot", False)),
-        help="Save Pareto front plots after runs.",
+        help="Save Pareto front plots after runs (requires matplotlib).",
     )
     add_spec_argument(
         parser,
