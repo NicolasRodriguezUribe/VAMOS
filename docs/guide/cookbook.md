@@ -279,3 +279,31 @@ Check a YAML/JSON experiment spec before running:
 ```bash
 vamos --config configs/experiment.yaml --validate-config
 ```
+
+## 18. Convert Results to a DataFrame (pandas)
+
+Export results for analysis in pandas (requires the `analysis` extra).
+
+```python
+from vamos import optimize
+from vamos.ux.api import result_to_dataframe
+
+result = optimize("zdt1", algorithm="nsgaii", budget=4000)
+df = result_to_dataframe(result)
+df.to_csv("results/zdt1_nsgaii_front.csv", index=False)
+```
+
+## 19. Combine Fronts from Multiple Runs
+
+Merge fronts from multiple runs and keep the non-dominated set.
+
+```python
+import numpy as np
+
+from vamos import optimize
+from vamos.foundation.metrics.pareto import pareto_filter
+
+results = optimize("zdt1", algorithm="nsgaii", budget=4000, seed=[0, 1, 2])
+combined = np.vstack([res.F for res in results if res.F is not None])
+front = pareto_filter(combined, return_indices=False)
+```
