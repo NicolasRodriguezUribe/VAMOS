@@ -307,3 +307,34 @@ results = optimize("zdt1", algorithm="nsgaii", budget=4000, seed=[0, 1, 2])
 combined = np.vstack([res.F for res in results if res.F is not None])
 front = pareto_filter(combined, return_indices=False)
 ```
+
+## 20. Compute Hypervolume (2D)
+
+Compute hypervolume for 2D minimization fronts.
+
+```python
+import numpy as np
+
+from vamos import optimize
+from vamos.foundation.metrics import compute_hypervolume
+
+result = optimize("zdt1", algorithm="nsgaii", budget=4000)
+F = np.asarray(result.F)
+hv = compute_hypervolume(F, ref_point=[1.1, 1.1])
+print(hv)
+```
+
+## 21. Normalized HV for ZDT Problems
+
+Use the built-in reference front to compute normalized hypervolume on ZDT.
+
+```python
+import numpy as np
+
+from vamos import optimize
+from vamos.foundation.metrics import compute_normalized_hv
+
+result = optimize("zdt1", algorithm="nsgaii", budget=4000)
+hv_norm = compute_normalized_hv(np.asarray(result.F), "zdt1")
+print(hv_norm)
+```

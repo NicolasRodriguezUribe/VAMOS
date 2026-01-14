@@ -103,7 +103,7 @@ def add_core_arguments(
         "--include-external",
         action="store_true",
         default=bool(spec_default(experiment_defaults, "include_external", False)),
-        help="Include PyMOO/jMetalPy/PyGMO baselines when running algorithms.",
+        help="Include PyMOO/jMetalPy/PyGMO baselines when running algorithms (requires research extra).",
     )
     add_spec_argument(
         parser,
