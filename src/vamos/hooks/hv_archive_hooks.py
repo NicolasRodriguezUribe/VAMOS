@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 import csv
 
 import numpy as np
@@ -17,7 +17,7 @@ def _ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def _append_csv_row(path: Path, fieldnames: List[str], row: Dict[str, Any]) -> None:
+def _append_csv_row(path: Path, fieldnames: list[str], row: dict[str, Any]) -> None:
     _ensure_dir(path.parent)
     exists = path.exists()
     with path.open("a", encoding="utf-8", newline="") as f:
@@ -27,7 +27,7 @@ def _append_csv_row(path: Path, fieldnames: List[str], row: Dict[str, Any]) -> N
         writer.writerow(row)
 
 
-def _try_compute_hv(F: np.ndarray, ref: Optional[List[float]] = None) -> Optional[float]:
+def _try_compute_hv(F: np.ndarray, ref: list[float] | None = None) -> float | None:
     """
     Best-effort HV computation:
       - For 2D minimization: exact via compute_hypervolume
@@ -53,13 +53,13 @@ class HookManagerConfig:
     stop_cfg: HVConvergenceConfig
     archive_enabled: bool
     archive_cfg: BoundedArchiveConfig
-    hv_ref_point: Optional[List[float]] = None
+    hv_ref_point: list[float] | None = None
 
 
 class CompositeLiveVisualization:
     """Fan-out live visualization events to multiple callbacks."""
 
-    def __init__(self, callbacks: List[Any]) -> None:
+    def __init__(self, callbacks: list[Any]) -> None:
         self._callbacks = [cb for cb in callbacks if cb is not None]
 
     def on_start(self, ctx: RunContext) -> None:
@@ -69,17 +69,17 @@ class CompositeLiveVisualization:
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         for cb in self._callbacks:
             cb.on_generation(generation, F=F, X=X, stats=stats)
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         for cb in self._callbacks:
             cb.on_end(final_F=final_F, final_stats=final_stats)
@@ -116,9 +116,9 @@ class HookManager:
         self.monitor = HVConvergenceMonitor(cfg.stop_cfg) if cfg.stopping_enabled else None
         self.archive = BoundedArchive(cfg.archive_cfg) if cfg.archive_enabled else None
 
-        self._last_hv: Optional[float] = None
-        self._last_sample_evals: Optional[int] = None
-        self._stop_decision: Optional[HVDecision] = None
+        self._last_hv: float | None = None
+        self._last_sample_evals: int | None = None
+        self._stop_decision: HVDecision | None = None
 
     def on_start(self, ctx: RunContext) -> None:
         return None
@@ -126,9 +126,9 @@ class HookManager:
     def on_generation(
         self,
         generation: int,
-        F: Optional[np.ndarray] = None,
-        X: Optional[np.ndarray] = None,
-        stats: Optional[dict[str, Any]] = None,
+        F: np.ndarray | None = None,
+        X: np.ndarray | None = None,
+        stats: dict[str, Any] | None = None,
     ) -> None:
         if F is None:
             return
@@ -141,8 +141,8 @@ class HookManager:
 
     def on_end(
         self,
-        final_F: Optional[np.ndarray] = None,
-        final_stats: Optional[dict[str, Any]] = None,
+        final_F: np.ndarray | None = None,
+        final_stats: dict[str, Any] | None = None,
     ) -> None:
         return None
 
@@ -160,7 +160,7 @@ class HookManager:
         self,
         evals: int,
         F: np.ndarray,
-        X: Optional[np.ndarray] = None,
+        X: np.ndarray | None = None,
     ) -> None:
         # Update archive (optional)
         if self.archive is not None:
@@ -227,8 +227,8 @@ class HookManager:
             return False
         return bool(self._stop_decision.stop)
 
-    def metadata_payload(self) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {"stopping": {}, "archive": {}}
+    def metadata_payload(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {"stopping": {}, "archive": {}}
 
         if self.monitor is None:
             payload["stopping"] = {"enabled": False}

@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 import numpy as np
 
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.api import OptimizeConfig, optimize
+from vamos.experiment.unified import optimize
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
 from vamos.engine.tuning.racing.config_space import AlgorithmConfigSpace
 from vamos.engine.tuning.racing.param_space import ParamSpace
@@ -119,15 +119,14 @@ def make_evaluator(
             # 2. Run the algorithm
             selection = make_problem_selection(problem_key, n_var=n_var, n_obj=n_obj)
 
-            opt_cfg = OptimizeConfig(
-                problem=selection.instantiate(),
+            result = optimize(
+                selection.instantiate(),
                 algorithm=algorithm_name,
                 algorithm_config=cfg,
                 termination=("n_eval", ctx.budget),
                 seed=ctx.seed,
                 engine="numpy",
             )
-            result = optimize(opt_cfg)
 
             # 3. Compute metric (Hypervolume)
             if result.F is None or len(result.F) == 0:

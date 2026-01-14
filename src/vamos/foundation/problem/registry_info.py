@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from vamos.foundation.problem.registry.specs import ProblemSpec, get_problem_specs
 
@@ -10,10 +9,10 @@ from vamos.foundation.problem.registry.specs import ProblemSpec, get_problem_spe
 class ProblemInfo:
     name: str
     description: str
-    categories: List[str] = field(default_factory=list)
+    categories: list[str] = field(default_factory=list)
     default_n_variables: int | None = None
     default_n_objectives: int | None = None
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     encoding: str = "continuous"
 
 
@@ -32,12 +31,12 @@ def _spec_to_info(spec: ProblemSpec) -> ProblemInfo:
     )
 
 
-def list_problems() -> List[ProblemInfo]:
+def list_problems() -> list[ProblemInfo]:
     specs = get_problem_specs()
     return [_spec_to_info(spec) for spec in specs.values()]
 
 
-def get_problem_info(name: str) -> Optional[ProblemInfo]:
+def get_problem_info(name: str) -> ProblemInfo | None:
     spec = get_problem_specs().get(name)
     if spec is None:
         return None

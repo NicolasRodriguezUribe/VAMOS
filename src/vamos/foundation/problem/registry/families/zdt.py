@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
 
 from ...zdt1 import ZDT1Problem
 from ...zdt2 import ZDT2Problem
@@ -10,7 +9,7 @@ from ...zdt6 import ZDT6Problem
 from ..common import ProblemSpec
 
 
-def _zdt1_factory(n_var: int, _ignored: Optional[int] = None) -> ZDT1Problem:
+def _zdt1_factory(n_var: int, _ignored: int | None = None) -> ZDT1Problem:
     return ZDT1Problem(n_var=n_var)
 
 

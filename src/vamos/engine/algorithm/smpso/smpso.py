@@ -98,8 +98,8 @@ class SMPSO:
     --------
     Basic usage:
 
-    >>> from vamos.engine.api import SMPSOConfig
-    >>> config = SMPSOConfig().pop_size(100).archive_size(100).fixed()
+    >>> from vamos.algorithms import SMPSOConfig
+    >>> config = SMPSOConfig.builder().pop_size(100).archive_size(100).build()
     >>> smpso = SMPSO(config, kernel)
     >>> result = smpso.run(problem, ("n_eval", 10000), seed=42)
 
@@ -114,15 +114,15 @@ class SMPSO:
     >>> result = smpso.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: "KernelBackend"):
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend):
         self.cfg = config
         self.kernel = kernel
         self._st: SMPSOState | None = None
-        self._live_cb: "LiveVisualization | None" = None
-        self._eval_strategy: "EvaluationBackend | None" = None
+        self._live_cb: LiveVisualization | None = None
+        self._eval_strategy: EvaluationBackend | None = None
         self._max_eval: int = 0
         self._hv_tracker: HVTracker | None = None
-        self._problem: "ProblemProtocol | None" = None
+        self._problem: ProblemProtocol | None = None
 
     # -------------------------------------------------------------------------
     # Main run method (batch mode)
@@ -130,11 +130,11 @@ class SMPSO:
 
     def run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
         """Run SMPSO optimization loop.
 
@@ -201,11 +201,11 @@ class SMPSO:
 
     def initialize(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop.
 
@@ -326,7 +326,7 @@ class SMPSO:
     def tell(
         self,
         eval_result: Any,
-        problem: "ProblemProtocol | None" = None,
+        problem: ProblemProtocol | None = None,
     ) -> bool:
         """Receive evaluated offspring and update swarm.
 

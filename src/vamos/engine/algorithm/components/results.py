@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def build_result(
-    state: "AlgorithmState",
+    state: AlgorithmState,
     hv_reached: bool = False,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:

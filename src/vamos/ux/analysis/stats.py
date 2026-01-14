@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Sequence, List, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
+from collections.abc import Sequence
 
 import numpy as np
 from scipy import stats as spstats  # type: ignore[import-untyped]
@@ -73,7 +74,7 @@ def pairwise_wilcoxon(
     algo_names: Sequence[str],
     higher_is_better: bool = True,
     alpha: float = 0.05,
-) -> List[WilcoxonResult]:
+) -> list[WilcoxonResult]:
     """
     Pairwise Wilcoxon signed-rank tests across algorithms.
     """
@@ -83,7 +84,7 @@ def pairwise_wilcoxon(
     n_algos = scores.shape[1]
     if len(algo_names) != n_algos:
         raise ValueError("algo_names length must match number of algorithms.")
-    results: List[WilcoxonResult] = []
+    results: list[WilcoxonResult] = []
     for i in range(n_algos):
         for j in range(i + 1, n_algos):
             a = scores[:, i]

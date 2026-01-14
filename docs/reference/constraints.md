@@ -29,6 +29,21 @@ X = np.array([[0.2, 0.3], [0.9, 0.4]])
 G = eval_constraints(X)  # shape (n_points, n_constraints), <=0 is satisfied
 ```
 
+Notes:
+- Constants in expressions must be scalar numbers (int/float/numpy scalar or 0-d array).
+- Vector constants (lists/tuples/ndarrays with shape (n,)) are not supported; expand them into separate constraints.
+
+Example (vector constants are not supported):
+
+```python
+# Not supported:
+# cm.add(x0 <= np.array([1.0, 2.0]))
+
+# Supported:
+cm.add(x0 <= 1.0)
+cm.add(x1 <= 2.0)
+```
+
 Autodiff (JAX)
 --------------
 

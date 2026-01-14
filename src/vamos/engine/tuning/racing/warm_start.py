@@ -8,7 +8,8 @@ fidelity levels when tuning multi-objective algorithms.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any
+from collections.abc import Callable
 
 import numpy as np
 
@@ -27,27 +28,25 @@ class WarmStartEvaluator:
 
     ```python
     from vamos.engine.tuning.racing import WarmStartEvaluator, EvalContext
-    from vamos import optimize, OptimizeConfig, NSGAIIConfig
+    from vamos import optimize
+    from vamos.algorithms import NSGAIIConfig
 
     def run_algorithm(config: dict, ctx: EvalContext, checkpoint: Any = None):
         # Build algorithm config
-        algo_cfg = NSGAIIConfig() \\
+        algo_cfg = NSGAIIConfig.builder() \\
             .pop_size(config["pop_size"]) \\
             .crossover("sbx", prob=config["crossover_prob"]) \\
-            .fixed()
+            .build()
 
-        opt_cfg = OptimizeConfig(
-            problem=ctx.instance.name,
-            algorithm=algo_cfg,
-            max_evaluations=ctx.budget,
+        # If we have a checkpoint, pass it into your algorithm wiring here.
+
+        result = optimize(
+            ctx.instance.name,
+            algorithm="nsgaii",
+            algorithm_config=algo_cfg,
+            termination=("n_eval", ctx.budget),
             seed=ctx.seed,
         )
-
-        # If we have a checkpoint, use it as initial population
-        if checkpoint is not None:
-            opt_cfg = opt_cfg.with_initial_population(checkpoint["X"])
-
-        result = optimize(opt_cfg)
 
         # Return result and checkpoint for next level
         new_checkpoint = {"X": result.X, "F": result.F}
@@ -64,7 +63,7 @@ class WarmStartEvaluator:
     ```
     """
 
-    run_fn: Callable[[Dict[str, Any], EvalContext, Optional[Any]], Tuple[Any, Any]]
+    run_fn: Callable[[dict[str, Any], EvalContext, Any | None], tuple[Any, Any]]
     """
     Function that runs the algorithm.
 
@@ -90,11 +89,11 @@ class WarmStartEvaluator:
     """
 
     # Optional: track global bounds for normalization
-    global_min: Optional[np.ndarray] = None
-    global_max: Optional[np.ndarray] = None
+    global_min: np.ndarray | None = None
+    global_max: np.ndarray | None = None
     _objectives_seen: bool = field(default=False, init=False)
 
-    def __call__(self, config: Dict[str, Any], ctx: EvalContext) -> Tuple[float, Any]:
+    def __call__(self, config: dict[str, Any], ctx: EvalContext) -> tuple[float, Any]:
         """
         Execute the algorithm and return (score, checkpoint) tuple.
 

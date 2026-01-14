@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 import math
 import random
 
@@ -18,7 +18,7 @@ class HVConvergenceConfig:
     epsilon_mode: EpsilonMode = "rel"
     statistic: Statistic = "median"
     min_points: int = 25
-    confidence: Optional[float] = None  # e.g., 0.95
+    confidence: float | None = None  # e.g., 0.95
     bootstrap_samples: int = 300
     rng_seed: int = 0
 
@@ -29,8 +29,8 @@ class HVDecision:
     reason: str
     evals: int
     hv: float
-    hv_delta: Optional[float]
-    extra: Dict[str, Any] = field(default_factory=dict)
+    hv_delta: float | None
+    extra: dict[str, Any] = field(default_factory=dict)
 
 
 class HVConvergenceMonitor:
@@ -49,8 +49,8 @@ class HVConvergenceMonitor:
         if cfg.min_points < cfg.window + 2:
             raise ValueError("min_points must be at least window+2")
         self.cfg = cfg
-        self._evals: List[int] = []
-        self._hv: List[float] = []
+        self._evals: list[int] = []
+        self._hv: list[float] = []
         self._last_checked_idx: int = -1
         self._bad_streak: int = 0
         self._stopped: bool = False
@@ -128,8 +128,8 @@ class HVConvergenceMonitor:
     def stopped(self) -> bool:
         return self._stopped
 
-    def trace_rows(self) -> List[Dict[str, Any]]:
-        rows: List[Dict[str, Any]] = []
+    def trace_rows(self) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
         for i in range(len(self._hv)):
             delta = None
             if i >= self.cfg.window:
@@ -152,12 +152,12 @@ class HVConvergenceMonitor:
         scale = max(abs(hv_ref), 1e-12)
         return float(self.cfg.epsilon) * scale
 
-    def _window_delta(self, idx: int) -> Optional[float]:
+    def _window_delta(self, idx: int) -> float | None:
         if idx < self.cfg.window:
             return None
         return self._hv[idx] - self._hv[idx - self.cfg.window]
 
-    def _recent_window_deltas(self, idx: int) -> List[float]:
+    def _recent_window_deltas(self, idx: int) -> list[float]:
         # collect deltas over last 'window' checks
         W = self.cfg.window
         deltas = []
@@ -168,7 +168,7 @@ class HVConvergenceMonitor:
                 deltas.append(d)
         return deltas
 
-    def _statistic_over_recent_deltas(self, idx: int) -> Optional[float]:
+    def _statistic_over_recent_deltas(self, idx: int) -> float | None:
         deltas = self._recent_window_deltas(idx)
         if not deltas:
             return None
@@ -181,7 +181,7 @@ class HVConvergenceMonitor:
         mid = len(s) // 2
         return s[mid] if len(s) % 2 == 1 else 0.5 * (s[mid - 1] + s[mid])
 
-    def _bootstrap_ci_upper_recent(self, idx: int, conf: float) -> Optional[float]:
+    def _bootstrap_ci_upper_recent(self, idx: int, conf: float) -> float | None:
         deltas = self._recent_window_deltas(idx)
         if len(deltas) < 5:
             return None

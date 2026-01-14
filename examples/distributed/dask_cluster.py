@@ -99,12 +99,12 @@ def run_distributed(problem, budget: int, scheduler: str | None = None):
 
     print("Running DISTRIBUTED evaluation...")
     start = time.perf_counter()
-    from vamos import OptimizeConfig, optimize
-    from vamos.engine.api import NSGAIIConfig
+    from vamos import optimize
+    from vamos.algorithms import NSGAIIConfig
 
     algo_cfg = NSGAIIConfig.default(pop_size=50, n_var=problem.n_var)
-    config = OptimizeConfig(
-        problem=problem,
+    result = optimize(
+        problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
         termination=("n_eval", budget),
@@ -112,7 +112,6 @@ def run_distributed(problem, budget: int, scheduler: str | None = None):
         engine="numpy",
         eval_strategy=backend,
     )
-    result = optimize(config)
 
     elapsed = time.perf_counter() - start
     print(f"  Time: {elapsed:.2f}s")

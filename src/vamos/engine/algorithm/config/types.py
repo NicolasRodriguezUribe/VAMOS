@@ -3,16 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Protocol, TypedDict, TypeAlias, runtime_checkable
-
-
-class AlgorithmConfigDict(TypedDict, total=False):
-    pop_size: int
-    n_var: int
-    n_obj: int
-    result_mode: str
-    archive_type: str
-    archive: dict[str, object]
+from typing import Protocol, TypeAlias, runtime_checkable
 
 
 AlgorithmConfigMapping: TypeAlias = Mapping[str, object]
@@ -24,7 +15,6 @@ class AlgorithmConfigProtocol(Protocol):
 
 
 __all__ = [
-    "AlgorithmConfigDict",
     "AlgorithmConfigMapping",
     "AlgorithmConfigProtocol",
 ]

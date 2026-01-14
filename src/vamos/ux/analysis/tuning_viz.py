@@ -5,7 +5,8 @@ Uses only NumPy/Pandas/Matplotlib.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Sequence
+from typing import Any
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -91,13 +92,13 @@ def plot_reduced_front(
         return plt.gca()
     if F_red.shape[1] >= 3:
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        ax.scatter(F_red[:, 0], F_red[:, 1], F_red[:, 2], color="tab:orange", alpha=0.8)
-        ax.set_xlabel(labels[0])
-        ax.set_ylabel(labels[1])
-        ax.set_zlabel(labels[2])
+        ax3d: Any = fig.add_subplot(111, projection="3d")
+        ax3d.scatter(F_red[:, 0], F_red[:, 1], F_red[:, 2], color="tab:orange", alpha=0.8)
+        ax3d.set_xlabel(labels[0])
+        ax3d.set_ylabel(labels[1])
+        ax3d.set_zlabel(labels[2])
         fig.tight_layout()
-        return ax
+        return ax3d
     raise ValueError("Reduced front must have at least 2 objectives.")
 
 

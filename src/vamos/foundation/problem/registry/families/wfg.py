@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from ...wfg import (
     WFG1Problem,
@@ -16,7 +16,7 @@ from ...wfg import (
 from ..common import ProblemSpec
 
 
-def _wfg_factory(cls: Callable[..., object], n_var: int, n_obj: Optional[int]) -> object:
+def _wfg_factory(cls: Callable[..., object], n_var: int, n_obj: int | None) -> object:
     return cls(n_var=n_var, n_obj=n_obj if n_obj is not None else 3)
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 import numpy as np
@@ -21,7 +21,7 @@ def _data_dir() -> Path:
     return project_root / "data" / "tsplib"
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_tsplib_coords(name: str) -> np.ndarray:
     """
     Parse a TSPLIB .tsp file and return coordinates as a NumPy array.

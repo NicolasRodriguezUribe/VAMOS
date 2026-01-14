@@ -12,7 +12,7 @@ implementation with modular components:
 Example:
     >>> from vamos.engine.algorithm.nsgaii import NSGAII
     >>> from vamos.engine.algorithm.config import NSGAIIConfig
-    >>> config = NSGAIIConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+    >>> config = NSGAIIConfig.builder().pop_size(100).crossover("sbx", prob=0.9).build()
     >>> algo = NSGAII(config.to_dict(), kernel)
     >>> result = algo.run(problem, ("n_eval", 10000), seed=42)
 """

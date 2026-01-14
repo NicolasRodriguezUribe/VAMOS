@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional, Protocol, Sequence
+from typing import Any, Protocol
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -30,7 +31,7 @@ class QualityIndicator(Protocol):
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **kwargs: Any,
     ) -> IndicatorResult: ...
@@ -55,13 +56,13 @@ def _to_minimization(front: np.ndarray, maximise: bool | Sequence[bool] | None) 
 
 @dataclass
 class HVIndicator(QualityIndicator):
-    reference_point: Optional[np.ndarray] = None
+    reference_point: np.ndarray | None = None
     name: str = "hv"
 
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **_: Any,
     ) -> IndicatorResult:
@@ -74,13 +75,13 @@ class HVIndicator(QualityIndicator):
 
 @dataclass
 class HVContributionsIndicator(QualityIndicator):
-    reference_point: Optional[np.ndarray] = None
+    reference_point: np.ndarray | None = None
     name: str = "hv_contributions"
 
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **_: Any,
     ) -> IndicatorResult:
@@ -99,7 +100,7 @@ class IGDIndicator(QualityIndicator):
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **_: Any,
     ) -> IndicatorResult:
@@ -118,7 +119,7 @@ class IGDPlusIndicator(QualityIndicator):
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **_: Any,
     ) -> IndicatorResult:
@@ -137,7 +138,7 @@ class EpsilonAdditiveIndicator(QualityIndicator):
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **_: Any,
     ) -> IndicatorResult:
@@ -156,7 +157,7 @@ class EpsilonMultiplicativeIndicator(QualityIndicator):
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **_: Any,
     ) -> IndicatorResult:
@@ -175,7 +176,7 @@ class AvgHausdorffIndicator(QualityIndicator):
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **kwargs: Any,
     ) -> IndicatorResult:
@@ -189,13 +190,13 @@ class AvgHausdorffIndicator(QualityIndicator):
 
 @dataclass
 class HVApproxIndicator(QualityIndicator):
-    reference_point: Optional[np.ndarray] = None
+    reference_point: np.ndarray | None = None
     name: str = "hv_approx"
 
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **kwargs: Any,
     ) -> IndicatorResult:
@@ -209,14 +210,14 @@ class HVApproxIndicator(QualityIndicator):
 
 @dataclass
 class WHVRectIndicator(QualityIndicator):
-    reference_point: Optional[np.ndarray] = None
-    rectangles: Optional[np.ndarray] = None
+    reference_point: np.ndarray | None = None
+    rectangles: np.ndarray | None = None
     name: str = "whv_rect"
 
     def compute(
         self,
         front: np.ndarray,
-        reference_front: Optional[np.ndarray] = None,
+        reference_front: np.ndarray | None = None,
         maximise: bool | Sequence[bool] | None = None,
         **kwargs: Any,
     ) -> IndicatorResult:

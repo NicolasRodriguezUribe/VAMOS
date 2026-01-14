@@ -4,31 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import comb
-from typing import Any, TypedDict
+from typing import Any
 
 from .base import _SerializableConfig, _require_fields
 
 
-class NSGAIIIConfigDict(TypedDict):
-    pop_size: int
-    crossover: tuple[str, dict[str, Any]]
-    mutation: tuple[str, dict[str, Any]]
-    selection: tuple[str, dict[str, Any]]
-    reference_directions: dict[str, int | str | None]
-    enforce_ref_dirs: bool
-    pop_size_auto: bool
-    constraint_mode: str
-    repair: tuple[str, dict[str, Any]] | None
-    initializer: dict[str, Any] | None
-    mutation_prob_factor: float | None
-    track_genealogy: bool
-    result_mode: str | None
-    archive: dict[str, Any] | None
-    archive_type: str | None
-
-
 @dataclass(frozen=True)
-class NSGAIIIConfigData(_SerializableConfig["NSGAIIIConfigDict"]):
+class NSGAIIIConfig(_SerializableConfig):
     pop_size: int
     crossover: tuple[str, dict[str, Any]]
     mutation: tuple[str, dict[str, Any]]
@@ -45,26 +27,13 @@ class NSGAIIIConfigData(_SerializableConfig["NSGAIIIConfigDict"]):
     archive: dict[str, Any] | None = None
     archive_type: str | None = None
 
-
-class NSGAIIIConfig:
-    """
-    Declarative configuration holder for NSGA-III settings.
-
-    Examples:
-        cfg = NSGAIIIConfig.default(n_obj=3)
-        cfg = NSGAIIIConfig().pop_size(92).crossover("sbx", prob=1.0).fixed()
-    """
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
     @classmethod
     def default(
         cls,
         pop_size: int | None = None,
         n_var: int | None = None,
         n_obj: int = 3,
-    ) -> "NSGAIIIConfigData":
+    ) -> NSGAIIIConfig:
         """
         Create a default NSGA-III configuration.
 
@@ -78,29 +47,46 @@ class NSGAIIIConfig:
         if pop_size is None:
             pop_size = comb(divisions + n_obj - 1, n_obj - 1)
         return (
-            cls()
+            cls.builder()
             .pop_size(pop_size)
             .crossover("sbx", prob=1.0, eta=30.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("tournament")
             .reference_directions(divisions=divisions)
             .pop_size_auto(True)
-            .fixed()
+            .build()
         )
 
-    def pop_size(self, value: int) -> "NSGAIIIConfig":
+    @classmethod
+    def builder(cls) -> _NSGAIIIConfigBuilder:
+        return _NSGAIIIConfigBuilder()
+
+
+class _NSGAIIIConfigBuilder:
+    """
+    Declarative configuration holder for NSGA-III settings.
+
+    Examples:
+        cfg = NSGAIIIConfig.default(n_obj=3)
+        cfg = NSGAIIIConfig.builder().pop_size(92).crossover("sbx", prob=1.0).build()
+    """
+
+    def __init__(self) -> None:
+        self._cfg: dict[str, Any] = {}
+
+    def pop_size(self, value: int) -> _NSGAIIIConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
+    def crossover(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
+    def mutation(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
+    def selection(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["selection"] = (method, kwargs)
         return self
 
@@ -109,43 +95,43 @@ class NSGAIIIConfig:
         *,
         path: str | None = None,
         divisions: int | None = None,
-    ) -> "NSGAIIIConfig":
+    ) -> _NSGAIIIConfigBuilder:
         self._cfg["reference_directions"] = {"path": path, "divisions": divisions}
         return self
 
-    def enforce_ref_dirs(self, enabled: bool = True) -> "NSGAIIIConfig":
+    def enforce_ref_dirs(self, enabled: bool = True) -> _NSGAIIIConfigBuilder:
         self._cfg["enforce_ref_dirs"] = bool(enabled)
         return self
 
-    def pop_size_auto(self, enabled: bool = True) -> "NSGAIIIConfig":
+    def pop_size_auto(self, enabled: bool = True) -> _NSGAIIIConfigBuilder:
         self._cfg["pop_size_auto"] = bool(enabled)
         return self
 
-    def constraint_mode(self, value: str) -> "NSGAIIIConfig":
+    def constraint_mode(self, value: str) -> _NSGAIIIConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
+    def repair(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> "NSGAIIIConfig":
+    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def mutation_prob_factor(self, value: float) -> "NSGAIIIConfig":
+    def mutation_prob_factor(self, value: float) -> _NSGAIIIConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def track_genealogy(self, enabled: bool = True) -> "NSGAIIIConfig":
+    def track_genealogy(self, enabled: bool = True) -> _NSGAIIIConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> "NSGAIIIConfig":
+    def result_mode(self, value: str) -> _NSGAIIIConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs: Any) -> "NSGAIIIConfig":
+    def archive(self, size: int, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         """
         Configure an external archive.
 
@@ -163,19 +149,19 @@ class NSGAIIIConfig:
         self._cfg["archive"] = archive_cfg
         return self
 
-    def archive_type(self, value: str) -> "NSGAIIIConfig":
+    def archive_type(self, value: str) -> _NSGAIIIConfigBuilder:
         """Set archive pruning strategy."""
         self._cfg["archive_type"] = str(value)
         return self
 
-    def fixed(self) -> NSGAIIIConfigData:
+    def build(self) -> NSGAIIIConfig:
         _require_fields(
             self._cfg,
             ("pop_size", "crossover", "mutation", "selection"),
             "NSGA-III",
         )
         ref_dirs = self._cfg.get("reference_directions", {})
-        return NSGAIIIConfigData(
+        return NSGAIIIConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],

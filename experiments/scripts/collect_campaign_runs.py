@@ -7,10 +7,10 @@ import math
 import re
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
-def read_json(p: Path) -> Dict[str, Any]:
+def read_json(p: Path) -> dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
@@ -28,7 +28,7 @@ def try_parse_float(s: str) -> float | None:
         return None
 
 
-def flatten(prefix: str, obj: Any, out: Dict[str, Any]) -> None:
+def flatten(prefix: str, obj: Any, out: dict[str, Any]) -> None:
     if isinstance(obj, dict):
         for k, v in obj.items():
             key = f"{prefix}.{k}" if prefix else str(k)
@@ -46,8 +46,8 @@ def is_nan(x: float) -> bool:
     return x != x
 
 
-def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
-    rows: List[List[float]] = []
+def read_csv_matrix(p: Path) -> tuple[int, int, list[list[float]]]:
+    rows: list[list[float]] = []
     import csv
 
     with p.open("r", encoding="utf-8", newline="") as f:
@@ -57,7 +57,7 @@ def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
                 continue
             if len(r) == 1 and (" " in r[0] or "\t" in r[0]):
                 r = re.split(r"[,\s]+", r[0].strip())
-            vals: List[float] = []
+            vals: list[float] = []
             for x in r:
                 x = x.strip()
                 if x == "":
@@ -76,14 +76,14 @@ def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
     return nrows, ncols, rows
 
 
-def col_min_max(mat: List[List[float]], j: int) -> Tuple[float | None, float | None]:
+def col_min_max(mat: list[list[float]], j: int) -> tuple[float | None, float | None]:
     vals = [r[j] for r in mat if j < len(r) and not is_nan(r[j])]
     if not vals:
         return None, None
     return min(vals), max(vals)
 
 
-def infer_from_seed_dir(sd: Path) -> Dict[str, str]:
+def infer_from_seed_dir(sd: Path) -> dict[str, str]:
     # expected: .../<suite>/<algo>/<engine>/seed_<k>
     return {
         "suite": sd.parents[2].name if len(sd.parents) >= 3 else "",
@@ -92,8 +92,8 @@ def infer_from_seed_dir(sd: Path) -> Dict[str, str]:
     }
 
 
-def row_from_seed_dir(sd: Path, campaign: str) -> Dict[str, Any]:
-    r: Dict[str, Any] = {}
+def row_from_seed_dir(sd: Path, campaign: str) -> dict[str, Any]:
+    r: dict[str, Any] = {}
     r["run_path"] = sd.as_posix()
     r["campaign"] = campaign
 
@@ -118,7 +118,7 @@ def row_from_seed_dir(sd: Path, campaign: str) -> Dict[str, Any]:
                 r[k] = meta[k]
         # backend_info + metrics flattened
         if "backend_info" in meta and isinstance(meta["backend_info"], dict):
-            tmp: Dict[str, Any] = {}
+            tmp: dict[str, Any] = {}
             flatten("backend_info", meta["backend_info"], tmp)
             r.update(tmp)
         if "metrics" in meta and isinstance(meta["metrics"], dict):
@@ -155,7 +155,7 @@ def row_from_seed_dir(sd: Path, campaign: str) -> Dict[str, Any]:
     return r
 
 
-def read_index(index_path: Path) -> List[Dict[str, Any]]:
+def read_index(index_path: Path) -> list[dict[str, Any]]:
     rows = []
     with index_path.open("r", encoding="utf-8") as f:
         for line in f:
@@ -188,7 +188,7 @@ def main() -> int:
     sample_out.parent.mkdir(parents=True, exist_ok=True)
 
     index_path = results_root / "runs_index.jsonl"
-    seed_dirs: List[Path] = []
+    seed_dirs: list[Path] = []
 
     if index_path.exists():
         idx = read_index(index_path)
@@ -215,7 +215,7 @@ def main() -> int:
         print("ERROR: no runs found.")
         return 3
 
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     keys: set[str] = set()
     for sd in seed_dirs:
         r = row_from_seed_dir(sd, args.campaign)

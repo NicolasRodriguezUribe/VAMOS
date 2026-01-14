@@ -66,8 +66,8 @@ class SMSEMOA:
     --------
     Basic usage:
 
-    >>> from vamos.engine.api import SMSEMOAConfig
-    >>> config = SMSEMOAConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+    >>> from vamos.algorithms import SMSEMOAConfig
+    >>> config = SMSEMOAConfig.builder().pop_size(100).crossover("sbx", prob=0.9).build()
     >>> smsemoa = SMSEMOA(config, kernel)
     >>> result = smsemoa.run(problem, ("n_eval", 10000), seed=42)
 
@@ -82,15 +82,15 @@ class SMSEMOA:
     >>> result = smsemoa.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: "KernelBackend"):
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend):
         self.cfg = config
         self.kernel = kernel
         self._st: SMSEMOAState | None = None
-        self._live_cb: "LiveVisualization | None" = None
-        self._eval_strategy: "EvaluationBackend | None" = None
+        self._live_cb: LiveVisualization | None = None
+        self._eval_strategy: EvaluationBackend | None = None
         self._max_eval: int = 0
         self._hv_tracker: HVTracker | None = None
-        self._problem: "ProblemProtocol | None" = None
+        self._problem: ProblemProtocol | None = None
 
     # -------------------------------------------------------------------------
     # Main run method (batch mode)
@@ -98,11 +98,11 @@ class SMSEMOA:
 
     def run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
         """Run SMS-EMOA optimization loop.
 
@@ -228,9 +228,9 @@ class SMSEMOA:
 
     def _evaluate_offspring(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         X: np.ndarray,
-        eval_strategy: "EvaluationBackend",
+        eval_strategy: EvaluationBackend,
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
@@ -245,11 +245,11 @@ class SMSEMOA:
 
     def initialize(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> None:
         """Initialize algorithm for ask/tell loop.
 

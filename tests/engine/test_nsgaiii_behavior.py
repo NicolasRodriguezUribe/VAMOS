@@ -10,13 +10,13 @@ from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 def _make_config(pop_size=10, divisions=3, prob="1/n"):
     return (
-        NSGAIIIConfig()
+        NSGAIIIConfig.builder()
         .pop_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob=prob, eta=20.0)
         .selection("tournament", pressure=2)
         .reference_directions(divisions=divisions)
-        .fixed()
+        .build()
     ).to_dict()
 
 
@@ -31,13 +31,13 @@ def test_nsgaiii_survival_preserves_population_size_with_odd_pop():
 
 def test_reference_directions_truncate_when_excess():
     cfg = (
-        NSGAIIIConfig()
+        NSGAIIIConfig.builder()
         .pop_size(6)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .reference_directions(divisions=10)  # generates more than pop_size
-        .fixed()
+        .build()
     ).to_dict()
     alg = NSGAIII(cfg, kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=6)

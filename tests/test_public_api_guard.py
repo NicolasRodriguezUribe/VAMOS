@@ -7,12 +7,12 @@ from pathlib import Path
 ALLOWED_PREFIXES = (
     "vamos.api",
     "vamos.foundation.",
-    "vamos.engine.api",
+    "vamos.algorithms",
     "vamos.ux.api",
 )
 PUBLIC_FACADES = (
     "src/vamos/api.py",
-    "src/vamos/engine/api.py",
+    "src/vamos/algorithms.py",
     "src/vamos/ux/api.py",
 )
 MAX_ALL_SIZE = 25

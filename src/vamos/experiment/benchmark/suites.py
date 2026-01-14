@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from difflib import get_close_matches
-from typing import Any, Dict, List
+from typing import Any
 
 _BENCH_DOCS = "docs/guide/cli.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
@@ -32,10 +32,10 @@ def _format_unknown_suite(name: str, options: list[str]) -> str:
 @dataclass
 class BenchmarkExperiment:
     problem_name: str
-    problem_params: Dict[str, Any] = field(default_factory=dict)
+    problem_params: dict[str, Any] = field(default_factory=dict)
     evaluation_budget: int | None = None
     max_generations: int | None = None
-    seeds: List[int] = field(default_factory=list)
+    seeds: list[int] = field(default_factory=list)
 
     def resolved_budget(self, population_size: int | None = None) -> int:
         """
@@ -53,14 +53,14 @@ class BenchmarkExperiment:
 @dataclass
 class BenchmarkSuite:
     name: str
-    experiments: List[BenchmarkExperiment]
-    default_algorithms: List[str]
-    default_metrics: List[str]
+    experiments: list[BenchmarkExperiment]
+    default_algorithms: list[str]
+    default_metrics: list[str]
     description: str = ""
-    default_seeds: List[int] = field(default_factory=lambda: list(range(5)))
+    default_seeds: list[int] = field(default_factory=lambda: list(range(5)))
 
 
-_SUITES: Dict[str, BenchmarkSuite] = {}
+_SUITES: dict[str, BenchmarkSuite] = {}
 
 
 def _register_suite(suite: BenchmarkSuite) -> None:
@@ -81,7 +81,7 @@ def get_benchmark_suite(name: str) -> BenchmarkSuite:
         raise KeyError(_format_unknown_suite(name, list_benchmark_suites())) from exc
 
 
-def list_benchmark_suites() -> List[str]:
+def list_benchmark_suites() -> list[str]:
     _ensure_default_suites()
     return sorted(_SUITES.keys())
 

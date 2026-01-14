@@ -5,7 +5,8 @@ Configuration helpers for adaptive operator selection (AOS).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Mapping
+from typing import Any
+from collections.abc import Mapping
 
 DEFAULT_REWARD_WEIGHTS = {
     "survival": 0.5,
@@ -64,7 +65,7 @@ class AdaptiveOperatorSelectionConfig:
     floor_prob: float = 0.0
 
     @classmethod
-    def from_dict(cls, config: Mapping[str, Any] | None) -> "AdaptiveOperatorSelectionConfig":
+    def from_dict(cls, config: Mapping[str, Any] | None) -> AdaptiveOperatorSelectionConfig:
         """
         Create a config instance from a dictionary.
         """

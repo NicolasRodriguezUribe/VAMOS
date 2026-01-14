@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
 
 from ...binary import BinaryFeatureSelectionProblem, BinaryKnapsackProblem, BinaryQUBOProblem
 from ...integer import IntegerJobAssignmentProblem, IntegerResourceAllocationProblem
@@ -9,12 +8,12 @@ from ...tsp import TSPProblem
 from ..common import ProblemFactory, ProblemSpec
 
 
-def _tsp_factory(n_var: int, _ignored: Optional[int] = None) -> TSPProblem:
+def _tsp_factory(n_var: int, _ignored: int | None = None) -> TSPProblem:
     return TSPProblem(n_cities=n_var)
 
 
 def _tsplib_tsp_factory(dataset: str) -> ProblemFactory:
-    def _factory(_n_var: int, _ignored: Optional[int] = None) -> TSPProblem:
+    def _factory(_n_var: int, _ignored: int | None = None) -> TSPProblem:
         return TSPProblem(dataset=dataset)
 
     return _factory

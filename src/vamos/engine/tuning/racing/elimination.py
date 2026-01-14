@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -13,12 +13,12 @@ if TYPE_CHECKING:
     from .tuning_task import TuningTask
 
 
-def compute_aggregated_scores(configs: List[ConfigState], task: "TuningTask") -> Tuple[List[int], np.ndarray]:
+def compute_aggregated_scores(configs: list[ConfigState], task: TuningTask) -> tuple[list[int], np.ndarray]:
     """
     Compute aggregated scores for all alive configs that have at least one score.
     """
-    alive_indices: List[int] = []
-    agg_values: List[float] = []
+    alive_indices: list[int] = []
+    agg_values: list[float] = []
     for idx, state in enumerate(configs):
         if not state.alive or not state.scores:
             continue
@@ -30,12 +30,12 @@ def compute_aggregated_scores(configs: List[ConfigState], task: "TuningTask") ->
 
 
 def rank_based_elimination(
-    configs: List[ConfigState],
-    alive_indices: List[int],
+    configs: list[ConfigState],
+    alive_indices: list[int],
     agg_scores: np.ndarray,
     *,
-    task: "TuningTask",
-    scenario: "Scenario",
+    task: TuningTask,
+    scenario: Scenario,
 ) -> bool:
     n_alive = len(alive_indices)
     if n_alive <= 1:
@@ -49,7 +49,7 @@ def rank_based_elimination(
     )
     target_keep = max(1, min(target_keep, n_alive))
 
-    keep_rows = set(int(idx) for idx in order[:target_keep])
+    keep_rows = {int(idx) for idx in order[:target_keep]}
     eliminated_any = False
     for row_idx, cfg_idx in enumerate(alive_indices):
         if row_idx not in keep_rows:
@@ -60,11 +60,11 @@ def rank_based_elimination(
 
 
 def force_keep_top_k(
-    configs: List[ConfigState],
-    alive_indices: List[int],
+    configs: list[ConfigState],
+    alive_indices: list[int],
     agg_scores: np.ndarray,
     *,
-    task: "TuningTask",
+    task: TuningTask,
     k: int,
 ) -> bool:
     """Ensure that at least k configs remain alive by keeping the k best."""
@@ -73,7 +73,7 @@ def force_keep_top_k(
         return False
 
     order = np.argsort(-agg_scores if task.maximize else agg_scores)
-    keep_rows = set(int(idx) for idx in order[:k])
+    keep_rows = {int(idx) for idx in order[:k]}
 
     eliminated_any = False
     for row_idx, cfg_idx in enumerate(alive_indices):
@@ -84,7 +84,7 @@ def force_keep_top_k(
     return eliminated_any
 
 
-def eliminate_configs(configs: List[ConfigState], *, task: "TuningTask", scenario: "Scenario") -> bool:
+def eliminate_configs(configs: list[ConfigState], *, task: TuningTask, scenario: Scenario) -> bool:
     """
     Eliminate configurations based on the current scores.
     """
@@ -171,12 +171,12 @@ def eliminate_configs(configs: List[ConfigState], *, task: "TuningTask", scenari
 
 
 def update_elite_archive(
-    configs: List[ConfigState],
+    configs: list[ConfigState],
     *,
-    task: "TuningTask",
-    scenario: "Scenario",
-    elite_archive: List[EliteEntry],
-) -> List[EliteEntry]:
+    task: TuningTask,
+    scenario: Scenario,
+    elite_archive: list[EliteEntry],
+) -> list[EliteEntry]:
     """
     Update the elite archive based on the current alive configurations.
     """
@@ -198,7 +198,7 @@ def update_elite_archive(
     else:
         order = np.argsort(agg_scores)
 
-    elite_entries: List[EliteEntry] = []
+    elite_entries: list[EliteEntry] = []
     for rank in range(min(k, n_alive)):
         row_idx = int(order[rank])
         cfg_idx = indices[row_idx]

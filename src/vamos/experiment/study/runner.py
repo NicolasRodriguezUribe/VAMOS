@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 import inspect
-from typing import Callable, Iterable, List, Sequence, Any
+from typing import Any
+from collections.abc import Callable, Iterable, Sequence
 
 import numpy as np
 
@@ -46,13 +47,13 @@ class StudyRunner:
         tasks: Sequence[StudyTask],
         *,
         run_single_fn: Callable[..., dict[str, Any]] | None = None,
-    ) -> List[StudyResult]:
+    ) -> list[StudyResult]:
         if not tasks:
             return []
         if run_single_fn is None:
             raise ValueError("run_single_fn is required to execute StudyRunner tasks.")
 
-        results: List[StudyResult] = []
+        results: list[StudyResult] = []
         run_sig = inspect.signature(run_single_fn)
         for idx, task in enumerate(tasks, start=1):
             if self.verbose:

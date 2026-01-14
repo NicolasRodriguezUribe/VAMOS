@@ -12,22 +12,22 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.api import OptimizeConfig, optimize
-from vamos.foundation.problems_registry import HyperparameterTuningProblem
+from vamos import optimize
+from vamos.foundation.problem.real_world.hyperparam import HyperparameterTuningProblem
 from vamos.ux.api import plot_pareto_front_2d
-from vamos.engine.api import NSGAIIConfig, NSGAIIConfigData
+from vamos.algorithms import NSGAIIConfig
 
 
-def build_config(pop_size: int = 24) -> NSGAIIConfigData:
+def build_config(pop_size: int = 24) -> NSGAIIConfig:
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .result_mode("population")
-        .fixed()
+        .build()
     )
     return cfg
 
@@ -42,14 +42,12 @@ def main(seed: int = 17) -> None:
 
     cfg = build_config(pop_size=20)
     result = optimize(
-        OptimizeConfig(
-            problem=problem,
-            algorithm="nsgaii",
-            algorithm_config=cfg,
-            termination=("n_eval", 150),
-            seed=seed,
-            engine="numpy",
-        )
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 150),
+        seed=seed,
+        engine="numpy",
     )
     F = result.F
     X = result.X

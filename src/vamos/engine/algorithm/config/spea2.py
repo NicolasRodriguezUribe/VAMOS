@@ -3,30 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import Any
 
 from .base import _SerializableConfig, _require_fields
 
 
-class SPEA2ConfigDict(TypedDict):
-    pop_size: int
-    archive_size: int
-    crossover: tuple[str, dict[str, Any]]
-    mutation: tuple[str, dict[str, Any]]
-    selection: tuple[str, dict[str, Any]]
-    k_neighbors: int | None
-    repair: tuple[str, dict[str, Any]] | None
-    initializer: dict[str, Any] | None
-    mutation_prob_factor: float | None
-    constraint_mode: str
-    track_genealogy: bool
-    result_mode: str | None
-    archive: dict[str, Any] | None
-    archive_type: str | None
-
-
 @dataclass(frozen=True)
-class SPEA2ConfigData(_SerializableConfig["SPEA2ConfigDict"]):
+class SPEA2Config(_SerializableConfig):
     pop_size: int
     archive_size: int  # Internal archive (part of SPEA2 algorithm)
     crossover: tuple[str, dict[str, Any]]
@@ -42,86 +25,90 @@ class SPEA2ConfigData(_SerializableConfig["SPEA2ConfigDict"]):
     archive: dict[str, Any] | None = None  # External archive for results
     archive_type: str | None = None
 
-
-class SPEA2Config:
-    """
-    Declarative configuration holder for SPEA2 settings.
-
-    Examples:
-        cfg = SPEA2Config.default()
-        cfg = SPEA2Config().pop_size(100).archive_size(100).fixed()
-    """
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
     @classmethod
     def default(
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-    ) -> "SPEA2ConfigData":
+    ) -> SPEA2Config:
         """Create a default SPEA2 configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
         return (
-            cls()
+            cls.builder()
             .pop_size(pop_size)
             .archive_size(pop_size)
             .crossover("sbx", prob=1.0, eta=20.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("tournament")
-            .fixed()
+            .build()
         )
 
-    def pop_size(self, value: int) -> "SPEA2Config":
+    @classmethod
+    def builder(cls) -> _SPEA2ConfigBuilder:
+        return _SPEA2ConfigBuilder()
+
+
+class _SPEA2ConfigBuilder:
+    """
+    Declarative configuration holder for SPEA2 settings.
+
+    Examples:
+        cfg = SPEA2Config.default()
+        cfg = SPEA2Config.builder().pop_size(100).archive_size(100).build()
+    """
+
+    def __init__(self) -> None:
+        self._cfg: dict[str, Any] = {}
+
+    def pop_size(self, value: int) -> _SPEA2ConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def archive_size(self, value: int) -> "SPEA2Config":
+    def archive_size(self, value: int) -> _SPEA2ConfigBuilder:
         self._cfg["archive_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> "SPEA2Config":
+    def crossover(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> "SPEA2Config":
+    def mutation(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs: Any) -> "SPEA2Config":
+    def selection(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["selection"] = (method, kwargs)
         return self
 
-    def k_neighbors(self, value: int) -> "SPEA2Config":
+    def k_neighbors(self, value: int) -> _SPEA2ConfigBuilder:
         self._cfg["k_neighbors"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> "SPEA2Config":
+    def repair(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> "SPEA2Config":
+    def initializer(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def mutation_prob_factor(self, value: float) -> "SPEA2Config":
+    def mutation_prob_factor(self, value: float) -> _SPEA2ConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> "SPEA2Config":
+    def constraint_mode(self, value: str) -> _SPEA2ConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
-    def track_genealogy(self, enabled: bool = True) -> "SPEA2Config":
+    def track_genealogy(self, enabled: bool = True) -> _SPEA2ConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> "SPEA2Config":
+    def result_mode(self, value: str) -> _SPEA2ConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs: Any) -> "SPEA2Config":
+    def archive(self, size: int, **kwargs: Any) -> _SPEA2ConfigBuilder:
         """
         Configure an external archive for result storage.
 
@@ -141,18 +128,18 @@ class SPEA2Config:
         self._cfg["archive"] = archive_cfg
         return self
 
-    def external_archive_type(self, value: str) -> "SPEA2Config":
+    def external_archive_type(self, value: str) -> _SPEA2ConfigBuilder:
         """Set external archive pruning strategy."""
         self._cfg["archive_type"] = str(value)
         return self
 
-    def fixed(self) -> SPEA2ConfigData:
+    def build(self) -> SPEA2Config:
         _require_fields(
             self._cfg,
             ("pop_size", "archive_size", "crossover", "mutation", "selection"),
             "SPEA2",
         )
-        return SPEA2ConfigData(
+        return SPEA2Config(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],
             crossover=self._cfg["crossover"],

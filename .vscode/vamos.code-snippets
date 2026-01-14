@@ -44,7 +44,7 @@
             "    .selection(\"tournament\", pressure=${7:2})",
             "    .survival(\"nsga2\")",
             "    .engine(\"${8:numpy}\")",
-            "    .fixed())"
+            "    .build())"
         ],
         "description": "VAMOS NSGA-II config builder"
     },

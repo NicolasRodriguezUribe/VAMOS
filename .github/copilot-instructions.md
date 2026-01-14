@@ -58,7 +58,7 @@ cfg = (NSGAIIConfig()
     .selection("tournament", pressure=2)
     .survival("nsga2")
     .engine("numpy")
-    .fixed())
+    .build())
 ```
 
 ### Running Experiments
@@ -75,7 +75,7 @@ cfg = (NSGAIIConfig()
     .selection("tournament", pressure=2)
     .survival("nsga2")
     .engine("numpy")
-    .fixed())
+    .build())
 result = optimize(
     OptimizeConfig(
         problem=problem,

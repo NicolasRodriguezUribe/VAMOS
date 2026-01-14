@@ -1,13 +1,13 @@
 import time
 import pytest
-from typing import Dict, Any
+from typing import Any
 from src.vamos.engine.tuning.racing.core import RacingTuner
 from src.vamos.engine.tuning.racing.scenario import Scenario
 from src.vamos.engine.tuning.racing.tuning_task import TuningTask, Instance, EvalContext
 from src.vamos.engine.tuning.racing.param_space import ParamSpace, Real
 
 
-def slow_eval_fn(config: Dict[str, Any], ctx: EvalContext) -> float:
+def slow_eval_fn(config: dict[str, Any], ctx: EvalContext) -> float:
     """A mock eval function that sleeps to simulate work."""
     time.sleep(0.5)
     # Simple objective: target x=0.5

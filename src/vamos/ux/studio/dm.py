@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -9,14 +10,14 @@ from vamos.ux.analysis.mcdm import weighted_sum_scores, tchebycheff_scores, knee
 from vamos.ux.studio.data import FrontRecord, normalize_objectives
 
 
-SolutionDecoder = Callable[[np.ndarray], Dict[str, Any]]
+SolutionDecoder = Callable[[np.ndarray], dict[str, Any]]
 
 
-def default_decoder(var: np.ndarray) -> Dict[str, Any]:
+def default_decoder(var: np.ndarray) -> dict[str, Any]:
     return {f"x{i}": float(val) for i, val in enumerate(var)}
 
 
-def build_decoder(_problem_name: str, metadata: Dict[str, Any] | None = None) -> SolutionDecoder:
+def build_decoder(_problem_name: str, metadata: dict[str, Any] | None = None) -> SolutionDecoder:
     # Placeholder for richer problem-specific decoding; metadata can be extended later.
     return default_decoder
 
@@ -27,8 +28,8 @@ def compute_mcdm_scores(
     weights: np.ndarray | None = None,
     reference_point: np.ndarray | None = None,
     methods: Sequence[str] = ("weighted_sum", "tchebycheff", "knee"),
-) -> Dict[str, np.ndarray]:
-    scores: Dict[str, np.ndarray] = {}
+) -> dict[str, np.ndarray]:
+    scores: dict[str, np.ndarray] = {}
     if weights is None:
         weights = np.ones(F.shape[1]) / F.shape[1]
     for method in methods:
@@ -55,9 +56,9 @@ def compute_mcdm_scores(
 class DecisionView:
     front: FrontRecord
     normalized_F: np.ndarray
-    decoded_X: List[Dict[str, Any]] | None
+    decoded_X: list[dict[str, Any]] | None
     constraints: np.ndarray | None
-    mcdm_scores: Dict[str, np.ndarray] = field(default_factory=dict)
+    mcdm_scores: dict[str, np.ndarray] = field(default_factory=dict)
 
 
 def build_decision_view(

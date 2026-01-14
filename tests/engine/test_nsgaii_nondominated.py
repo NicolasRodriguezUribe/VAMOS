@@ -16,13 +16,13 @@ def test_nsgaii_result_contains_only_nondominated():
     """
     pop_size = 20
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=10)
@@ -48,13 +48,13 @@ def test_nsgaii_population_key_contains_full_population():
     """Verify that result['population'] contains the full population."""
     pop_size = 15
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
     )
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=8)

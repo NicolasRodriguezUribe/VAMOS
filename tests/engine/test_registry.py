@@ -1,4 +1,4 @@
-from vamos.engine.algorithms_registry import available_crossover_methods, available_mutation_methods
+from vamos.algorithms import available_crossover_methods, available_mutation_methods
 
 
 def test_available_crossover_methods_real():
@@ -52,10 +52,7 @@ def test_available_crossover_methods_default():
 
 def test_invalid_encoding():
     # For now it just returns empty tuple or raises keyerror depending on implementation
-    # Based on implementation, it uses dict.get returning default empty dict keys?
-    # Actually, registry used:
-    # if encoding == "real": ...
-    # else: algorithms_registry.py imported dicts.
+    # Implementation is a simple encoding switch over operator registries.
     # Let's check what happens for invalid encoding.
     # It attempts key access on dictionaries for other encodings.
     # Wait, the implementation was:

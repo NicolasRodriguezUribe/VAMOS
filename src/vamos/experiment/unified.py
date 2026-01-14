@@ -9,16 +9,18 @@ into one flexible function.
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping, Sequence
-from typing import overload
+import numbers
+from collections.abc import Mapping
+from typing import cast, overload
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.experiment.optimize import (
     OptimizeConfig,
     OptimizationResult,
-    optimize_config as _optimize_config,
+    _run_config,
     _build_algorithm_config,
 )
+from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.logging import configure_vamos_logging
 from vamos.foundation.problem.types import ProblemProtocol
@@ -29,13 +31,37 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-@overload
-def optimize(
-    problem: OptimizeConfig,
-    *,
-    engine: str | None = None,
-    verbose: bool = False,
-) -> OptimizationResult: ...
+_ALLOWED_EVAL_STRATEGIES = {"serial", "multiprocessing", "dask"}
+
+
+def _coerce_int(name: str, value: object, *, min_value: int | None = None) -> int:
+    if isinstance(value, bool) or not isinstance(value, numbers.Integral):
+        raise TypeError(f"{name} must be an integer.")
+    parsed = int(value)
+    if min_value is not None and parsed < min_value:
+        if min_value == 1:
+            raise ValueError(f"{name} must be a positive integer.")
+        raise ValueError(f"{name} must be >= {min_value}.")
+    return parsed
+
+
+def _resolve_problem_label(problem: object, instance: ProblemProtocol) -> str:
+    if isinstance(problem, str):
+        return problem
+    for attr in ("name", "key", "label"):
+        label = getattr(instance, attr, None)
+        if isinstance(label, str) and label.strip():
+            return label
+    return instance.__class__.__name__
+
+
+def _extract_budget(termination: object) -> int | None:
+    if not isinstance(termination, tuple) or len(termination) != 2:
+        return None
+    kind, value = cast(tuple[object, object], termination)
+    if isinstance(kind, str) and kind == "n_eval":
+        return _coerce_int("termination budget", value, min_value=1)
+    return None
 
 
 @overload
@@ -52,6 +78,9 @@ def optimize(
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
+    termination: tuple[str, object] | None = None,
+    eval_strategy: EvaluationBackend | str | None = None,
+    live_viz: object | None = None,
 ) -> OptimizationResult: ...
 
 
@@ -69,11 +98,14 @@ def optimize(
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
+    termination: tuple[str, object] | None = None,
+    eval_strategy: EvaluationBackend | str | None = None,
+    live_viz: object | None = None,
 ) -> list[OptimizationResult]: ...
 
 
 def optimize(
-    problem: str | ProblemProtocol | OptimizeConfig,
+    problem: str | ProblemProtocol,
     *,
     algorithm: str = "auto",
     budget: int | None = None,
@@ -85,18 +117,21 @@ def optimize(
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
+    termination: tuple[str, object] | None = None,
+    eval_strategy: EvaluationBackend | str | None = None,
+    live_viz: object | None = None,
 ) -> OptimizationResult | list[OptimizationResult]:
     """
     Unified entry point for VAMOS optimization.
 
     This function consolidates multiple APIs into a single powerful interface:
-    - Accepts problem names (strings), instances, or OptimizeConfig
+    - Accepts problem names (strings) or instances
     - Supports AutoML with algorithm="auto"
     - Handles multi-run studies with seed=[0,1,2,...]
-    - Prefer config objects (OptimizeConfig + algorithm config builders).
+    - Prefer optimize(...) for all runs (explicit options are available).
 
     Args:
-        problem: Problem name (e.g., "zdt1"), problem instance, or OptimizeConfig.
+        problem: Problem name (e.g., "zdt1") or problem instance.
         algorithm: Algorithm name or "auto" for automatic selection.
         budget: Maximum function evaluations. Auto-determined if None.
         pop_size: Population size. Auto-determined if None.
@@ -107,6 +142,9 @@ def optimize(
         n_obj: Override objective count when using a string problem key.
         problem_kwargs: Extra kwargs forwarded to problem instantiation for string problems.
         algorithm_config: Optional algorithm config object.
+        termination: Optional termination tuple; overrides budget if provided.
+        eval_strategy: Evaluation backend name or instance (e.g., "serial", "dask").
+        live_viz: Optional live visualization callback.
 
     Returns:
         OptimizationResult for single seed, or list[OptimizationResult] for multiple seeds.
@@ -118,62 +156,48 @@ def optimize(
         # Specify algorithm
         >>> result = vamos.optimize("zdt1", algorithm="moead", budget=5000)
 
-        # Multi-seed study (prefer optimize_many for clarity)
+        # Multi-seed study
         >>> results = vamos.optimize("zdt1", seed=[0, 1, 2, 3, 4])
-
-        # Explicit multi-seed helper
-        >>> results = vamos.optimize_many("zdt1", seeds=[0, 1, 2, 3, 4])
-
-        # Full control with OptimizeConfig
-        >>> result = vamos.optimize(my_config)
     """
-    # Case 1: OptimizeConfig passed directly
-    if isinstance(problem, OptimizeConfig):
-        if verbose:
-            configure_vamos_logging()
-        return _optimize_config(problem, engine=engine)
-
-    # Case 2: Multi-seed mode
+    # Multi-seed mode
     if isinstance(seed, (list, tuple)):
-        return optimize_many(
-            problem,
-            algorithm=algorithm,
-            budget=budget,
-            pop_size=pop_size,
-            engine=engine,
-            seeds=seed,
-            verbose=verbose,
-            n_var=n_var,
-            n_obj=n_obj,
-            problem_kwargs=problem_kwargs,
-            algorithm_config=algorithm_config,
-        )
+        return [
+            _run_single(
+                problem,
+                algorithm,
+                budget,
+                pop_size,
+                engine,
+                single_seed,
+                verbose,
+                n_var,
+                n_obj,
+                problem_kwargs,
+                algorithm_config,
+                termination,
+                eval_strategy,
+                live_viz,
+            )
+            for single_seed in seed
+        ]
 
-    # Case 3: Single run
-    return _run_single(problem, algorithm, budget, pop_size, engine, seed, verbose, n_var, n_obj, problem_kwargs, algorithm_config)
-
-
-def optimize_many(
-    problem: str | ProblemProtocol,
-    *,
-    algorithm: str = "auto",
-    budget: int | None = None,
-    pop_size: int | None = None,
-    engine: str | None = None,
-    seeds: Sequence[int],
-    verbose: bool = False,
-    n_var: int | None = None,
-    n_obj: int | None = None,
-    problem_kwargs: Mapping[str, object] | None = None,
-    algorithm_config: AlgorithmConfigProtocol | None = None,
-) -> list[OptimizationResult]:
-    """Run optimization for multiple seeds; always returns a list."""
-    if isinstance(problem, OptimizeConfig):
-        raise TypeError("optimize_many() expects a problem, not OptimizeConfig; use optimize_config in a loop instead.")
-    return [
-        _run_single(problem, algorithm, budget, pop_size, engine, seed, verbose, n_var, n_obj, problem_kwargs, algorithm_config)
-        for seed in seeds
-    ]
+    # Single run
+    return _run_single(
+        problem,
+        algorithm,
+        budget,
+        pop_size,
+        engine,
+        seed,
+        verbose,
+        n_var,
+        n_obj,
+        problem_kwargs,
+        algorithm_config,
+        termination,
+        eval_strategy,
+        live_viz,
+    )
 
 
 def _run_single(
@@ -188,10 +212,41 @@ def _run_single(
     n_obj: int | None,
     problem_kwargs: Mapping[str, object] | None,
     algorithm_config: AlgorithmConfigProtocol | None,
+    termination: tuple[str, object] | None,
+    eval_strategy: EvaluationBackend | str | None,
+    live_viz: object | None,
 ) -> OptimizationResult:
     """Execute a single optimization run."""
+    if problem_kwargs is not None and not isinstance(problem_kwargs, Mapping):
+        raise TypeError("problem_kwargs must be a mapping of keyword arguments.")
+    if n_var is not None:
+        n_var = _coerce_int("n_var", n_var, min_value=1)
+    if n_obj is not None:
+        n_obj = _coerce_int("n_obj", n_obj, min_value=1)
+    if pop_size is not None:
+        pop_size = _coerce_int("pop_size", pop_size, min_value=1)
+    if budget is not None:
+        budget = _coerce_int("budget", budget, min_value=1)
+    if isinstance(seed, bool) or not isinstance(seed, numbers.Integral):
+        raise TypeError("seed must be an integer.")
+    if termination is not None:
+        if not isinstance(termination, tuple) or len(termination) != 2:
+            raise TypeError("termination must be a (kind, value) tuple.")
+        term_kind, term_value = termination
+        if not isinstance(term_kind, str):
+            raise TypeError("termination kind must be a string.")
+        if term_kind == "hv" and not isinstance(term_value, Mapping):
+            raise TypeError("termination=('hv', ...) requires a mapping payload.")
+    if isinstance(eval_strategy, str):
+        eval_key = eval_strategy.lower()
+        if eval_key not in _ALLOWED_EVAL_STRATEGIES:
+            choices = ", ".join(sorted(_ALLOWED_EVAL_STRATEGIES))
+            raise ValueError(f"eval_strategy must be one of: {choices}.")
+
     if verbose:
         configure_vamos_logging()
+
+    algorithm_was_auto = algorithm == "auto"
 
     # Resolve problem
     problem_instance = _resolve_problem(problem, n_var=n_var, n_obj=n_obj, problem_kwargs=problem_kwargs)
@@ -212,7 +267,18 @@ def _run_single(
 
     # Auto-determine hyperparameters if not specified
     effective_pop_size = pop_size if pop_size else _compute_pop_size(n_var, n_obj)
-    effective_budget = budget if budget else _compute_budget(n_var, n_obj)
+    term_budget = _extract_budget(termination) if termination is not None else None
+    if termination is not None and budget is not None:
+        if term_budget is None:
+            raise ValueError("budget can only be combined with termination=('n_eval', budget).")
+        if term_budget != budget:
+            raise ValueError(f"budget={budget} conflicts with termination={termination}.")
+    if termination is not None:
+        effective_budget = term_budget
+        effective_termination = termination
+    else:
+        effective_budget = budget if budget is not None else _compute_budget(n_var, n_obj)
+        effective_termination = ("n_eval", effective_budget)
     effective_engine = engine or "numpy"
 
     if verbose:
@@ -234,20 +300,73 @@ def _run_single(
         )
     else:
         if not isinstance(algorithm_config, AlgorithmConfigProtocol):
-            raise TypeError("algorithm_config must be a config object (e.g., NSGAIIConfig().fixed()).")
+            raise TypeError(
+                "algorithm_config must be a config object (e.g., NSGAIIConfig.default(...), or GenericAlgorithmConfig for plugin algorithms)."
+            )
+        cfg_dict = dict(algorithm_config.to_dict())
         if pop_size is not None:
-            raise TypeError("pop_size must be set on algorithm_config when passing a config object.")
+            cfg_pop_size = cfg_dict.get("pop_size")
+            if cfg_pop_size is None:
+                raise TypeError(
+                    "pop_size cannot be provided unless algorithm_config defines 'pop_size'; set it on algorithm_config instead."
+                )
+            if isinstance(cfg_pop_size, bool):
+                raise TypeError("algorithm_config 'pop_size' must be an int.")
+            if isinstance(cfg_pop_size, int):
+                cfg_pop_size_int = cfg_pop_size
+            elif isinstance(cfg_pop_size, str):
+                try:
+                    cfg_pop_size_int = int(cfg_pop_size)
+                except ValueError as exc:
+                    raise TypeError("algorithm_config 'pop_size' must be an int.") from exc
+            else:
+                raise TypeError("algorithm_config 'pop_size' must be an int.")
+            if int(pop_size) != cfg_pop_size_int:
+                raise ValueError(
+                    f"Conflicting pop_size: pop_size={pop_size} but algorithm_config.pop_size={cfg_pop_size_int}. "
+                    "Set pop_size on algorithm_config (single source of truth)."
+                )
         algo_cfg = algorithm_config
+
+    algo_cfg_dict = dict(algo_cfg.to_dict())
+    resolved_pop_size = algo_cfg_dict.get("pop_size")
+    if resolved_pop_size is None and algorithm_config is None:
+        resolved_pop_size = effective_pop_size
 
     config = OptimizeConfig(
         problem=problem_instance,
         algorithm=algorithm,
         algorithm_config=algo_cfg,
-        termination=("n_eval", effective_budget),
+        termination=effective_termination,
         seed=seed,
         engine=effective_engine,
+        eval_strategy=eval_strategy,
+        live_viz=live_viz,
     )
-    return _optimize_config(config)
+    result = _run_config(config)
+    problem_label = _resolve_problem_label(problem, problem_instance)
+    resolved_config = {
+        "problem": problem_label,
+        "algorithm": algorithm,
+        "engine": effective_engine,
+        "pop_size": resolved_pop_size,
+        "budget": effective_budget,
+        "seed": seed,
+        "n_var": n_var,
+        "n_obj": n_obj,
+        "encoding": encoding,
+    }
+    pop_size_source = "config" if algorithm_config is not None else ("explicit" if pop_size is not None else "auto")
+    budget_source = "explicit" if termination is not None or budget is not None else "auto"
+    result.meta["resolved_config"] = resolved_config
+    result.meta["default_sources"] = {
+        "algorithm": "auto" if algorithm_was_auto else "explicit",
+        "pop_size": pop_size_source,
+        "budget": budget_source,
+        "engine": "auto" if engine is None else "explicit",
+        "algorithm_config": "auto" if algorithm_config is None else "explicit",
+    }
+    return result
 
 
-__all__ = ["optimize", "optimize_many"]
+__all__ = ["optimize"]

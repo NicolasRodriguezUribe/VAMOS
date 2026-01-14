@@ -3,29 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import Any
 
 from .base import _SerializableConfig, _require_fields
 
 
-class SMSEMOAConfigDict(TypedDict):
-    pop_size: int
-    crossover: tuple[str, dict[str, Any]]
-    mutation: tuple[str, dict[str, Any]]
-    selection: tuple[str, dict[str, Any]]
-    reference_point: dict[str, Any]
-    constraint_mode: str
-    repair: tuple[str, dict[str, Any]] | None
-    initializer: dict[str, Any] | None
-    mutation_prob_factor: float | None
-    track_genealogy: bool
-    result_mode: str | None
-    archive_type: str | None
-    archive: dict[str, Any] | None
-
-
 @dataclass(frozen=True)
-class SMSEMOAConfigData(_SerializableConfig["SMSEMOAConfigDict"]):
+class SMSEMOAConfig(_SerializableConfig):
     pop_size: int
     crossover: tuple[str, dict[str, Any]]
     mutation: tuple[str, dict[str, Any]]
@@ -40,50 +24,54 @@ class SMSEMOAConfigData(_SerializableConfig["SMSEMOAConfigDict"]):
     archive_type: str | None = None
     archive: dict[str, Any] | None = None
 
-
-class SMSEMOAConfig:
-    """
-    Declarative configuration holder for SMS-EMOA settings.
-
-    Examples:
-        cfg = SMSEMOAConfig.default()
-        cfg = SMSEMOAConfig().pop_size(100).crossover("sbx", prob=1.0).fixed()
-    """
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
     @classmethod
     def default(
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-    ) -> "SMSEMOAConfigData":
+    ) -> SMSEMOAConfig:
         """Create a default SMS-EMOA configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
         return (
-            cls()
+            cls.builder()
             .pop_size(pop_size)
             .crossover("sbx", prob=1.0, eta=20.0)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("random")
             .reference_point(adaptive=True)
-            .fixed()
+            .build()
         )
 
-    def pop_size(self, value: int) -> "SMSEMOAConfig":
+    @classmethod
+    def builder(cls) -> _SMSEMOAConfigBuilder:
+        return _SMSEMOAConfigBuilder()
+
+
+class _SMSEMOAConfigBuilder:
+    """
+    Declarative configuration holder for SMS-EMOA settings.
+
+    Examples:
+        cfg = SMSEMOAConfig.default()
+        cfg = SMSEMOAConfig.builder().pop_size(100).crossover("sbx", prob=1.0).build()
+    """
+
+    def __init__(self) -> None:
+        self._cfg: dict[str, Any] = {}
+
+    def pop_size(self, value: int) -> _SMSEMOAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
+    def crossover(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
+    def mutation(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
+    def selection(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["selection"] = (method, kwargs)
         return self
 
@@ -93,7 +81,7 @@ class SMSEMOAConfig:
         vector: Any = None,
         offset: float = 1.0,
         adaptive: bool = True,
-    ) -> "SMSEMOAConfig":
+    ) -> _SMSEMOAConfigBuilder:
         self._cfg["reference_point"] = {
             "vector": vector,
             "offset": offset,
@@ -101,36 +89,36 @@ class SMSEMOAConfig:
         }
         return self
 
-    def constraint_mode(self, value: str) -> "SMSEMOAConfig":
+    def constraint_mode(self, value: str) -> _SMSEMOAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
+    def repair(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> "SMSEMOAConfig":
+    def initializer(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def mutation_prob_factor(self, value: float) -> "SMSEMOAConfig":
+    def mutation_prob_factor(self, value: float) -> _SMSEMOAConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def track_genealogy(self, enabled: bool = True) -> "SMSEMOAConfig":
+    def track_genealogy(self, enabled: bool = True) -> _SMSEMOAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> "SMSEMOAConfig":
+    def result_mode(self, value: str) -> _SMSEMOAConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive_type(self, value: str) -> "SMSEMOAConfig":
+    def archive_type(self, value: str) -> _SMSEMOAConfigBuilder:
         """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
         self._cfg["archive_type"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs: Any) -> "SMSEMOAConfig":
+    def archive(self, size: int, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         """
         Configure an external archive.
 
@@ -149,14 +137,14 @@ class SMSEMOAConfig:
         self._cfg.setdefault("result_mode", "external_archive")
         return self
 
-    def fixed(self) -> SMSEMOAConfigData:
+    def build(self) -> SMSEMOAConfig:
         _require_fields(
             self._cfg,
             ("pop_size", "crossover", "mutation", "selection"),
             "SMS-EMOA",
         )
         reference_point = self._cfg.get("reference_point", {"offset": 1.0, "adaptive": True})
-        return SMSEMOAConfigData(
+        return SMSEMOAConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],

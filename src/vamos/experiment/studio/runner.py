@@ -29,19 +29,19 @@ def run_focused_optimization(
     budget: int,
 ) -> tuple[np.ndarray, np.ndarray | None]:
     from vamos.engine.algorithm.config import NSGAIIConfig
-    from vamos.experiment.optimize import OptimizeConfig, optimize_config
+    from vamos.experiment.optimize import OptimizeConfig, _run_config
     from vamos.foundation.problem.registry import make_problem_selection
 
     selection = make_problem_selection(problem)
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(40)
         .offspring_size(40)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .result_mode("population")
-        .fixed()
+        .build()
     )
     run_cfg = OptimizeConfig(
         problem=selection.instantiate(),
@@ -51,7 +51,7 @@ def run_focused_optimization(
         seed=0,
         engine="numpy",
     )
-    result = optimize_config(run_cfg)
+    result = _run_config(run_cfg)
     F = result.F
     if F is None:
         raise RuntimeError("Focused optimization returned no objectives.")
@@ -68,11 +68,11 @@ def run_with_history(
     problem_name: str,
     config: dict[str, Any],
     budget: int,
-) -> tuple["OptimizationResult", list[np.ndarray]]:
+) -> tuple[OptimizationResult, list[np.ndarray]]:
     from vamos.engine.algorithm.config import NSGAIIConfig
     from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
     from vamos.experiment.optimize import _build_algorithm_config
-    from vamos.experiment.optimize import OptimizeConfig, optimize_config
+    from vamos.experiment.optimize import OptimizeConfig, _run_config
     from vamos.engine.config.variation import normalize_operator_tuple
     from vamos.foundation.problem.registry import make_problem_selection
 
@@ -93,12 +93,12 @@ def run_with_history(
         if isinstance(cfg, AlgorithmConfigProtocol):
             return cfg
         if not isinstance(cfg, dict):
-            raise TypeError("algorithm_config must be a config object (e.g., NSGAIIConfig().fixed()).")
+            raise TypeError("algorithm_config must be a config object (e.g., NSGAIIConfig.default(...)).")
 
         if algo_name.lower() != "nsgaii":
             raise TypeError("algorithm_config dict coercion is only supported for NSGA-II; pass a config object instead.")
 
-        builder = NSGAIIConfig()
+        builder = NSGAIIConfig.builder()
         if cfg.get("pop_size") is not None:
             builder.pop_size(int(cfg["pop_size"]))
         if cfg.get("offspring_size") is not None:
@@ -150,7 +150,7 @@ def run_with_history(
                 raise TypeError("adaptive_operator_selection must be a dict or null.")
             builder.adaptive_operator_selection(aos_raw)
 
-        return builder.fixed()
+        return builder.build()
 
     algo_cfg = _coerce_algo_config(algo_cfg_raw)
 
@@ -166,7 +166,7 @@ def run_with_history(
         live_viz=callback,
     )
 
-    result = optimize_config(run_cfg)
+    result = _run_config(run_cfg)
     return result, callback.history
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 import math
 
 import numpy as np
@@ -13,11 +13,11 @@ if TYPE_CHECKING:
     from .scenario import Scenario
 
 
-def make_neighbor_config(base_config: Dict[str, Any], param_space: ParamSpace, rng: np.random.Generator) -> Dict[str, Any]:
+def make_neighbor_config(base_config: dict[str, Any], param_space: ParamSpace, rng: np.random.Generator) -> dict[str, Any]:
     """
     Create a new configuration by applying small perturbations to a base configuration.
     """
-    cfg: Dict[str, Any] = dict(base_config)
+    cfg: dict[str, Any] = dict(base_config)
 
     for name, spec in param_space.params.items():
         if name not in base_config:
@@ -91,12 +91,12 @@ def make_neighbor_config(base_config: Dict[str, Any], param_space: ParamSpace, r
 
 
 def refill_population(
-    configs: List[ConfigState],
+    configs: list[ConfigState],
     *,
-    scenario: "Scenario",
+    scenario: Scenario,
     param_space: ParamSpace,
     sampler: Sampler,
-    elite_archive: List[EliteEntry],
+    elite_archive: list[EliteEntry],
     target_population_size: int,
     rng: np.random.Generator,
     next_config_id: int,
@@ -119,7 +119,7 @@ def refill_population(
     n_neighbors = max(0, min(n_neighbors, n_to_spawn))
     n_fresh = n_to_spawn - n_neighbors
 
-    elite_configs: List[Dict[str, Any]] = [e.config for e in elite_archive]
+    elite_configs: list[dict[str, Any]] = [e.config for e in elite_archive]
     if not elite_configs:
         elite_configs = [c.config for c in alive_states]
 

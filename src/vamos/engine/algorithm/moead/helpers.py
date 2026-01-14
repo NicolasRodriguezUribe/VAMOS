@@ -192,7 +192,7 @@ def compute_neighbors(weights: np.ndarray, neighbor_size: int) -> np.ndarray:
 
 
 def update_neighborhood(
-    st: "MOEADState",
+    st: MOEADState,
     idx: int,
     child: np.ndarray,
     child_f: np.ndarray,

@@ -6,7 +6,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 
 def load_yaml(path: Path) -> dict:
@@ -42,7 +42,7 @@ def merge_dict(dst: dict, src: dict) -> dict:
     return dst
 
 
-def flatten_seed_rule(rule: dict) -> List[int]:
+def flatten_seed_rule(rule: dict) -> list[int]:
     start = int(rule.get("start", 1))
     count = int(rule.get("count", 1))
     step = int(rule.get("step", 1))
@@ -57,8 +57,8 @@ def infer_suite(problem_key: str) -> str:
     return (m.group(1) if m else "unknown").upper()
 
 
-def load_success_set(index_path: Path) -> Set[str]:
-    ok: Set[str] = set()
+def load_success_set(index_path: Path) -> set[str]:
+    ok: set[str] = set()
     if not index_path.exists():
         return ok
     for line in index_path.read_text(encoding="utf-8").splitlines():
@@ -145,7 +145,7 @@ def main() -> int:
     ensure_dir(cfg_root)
     ensure_dir(log_root)
 
-    runs: List[RunSpec] = []
+    runs: list[RunSpec] = []
     for v in variants:
         vname = v["name"]
         if f_variants and vname not in f_variants:

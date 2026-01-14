@@ -349,7 +349,7 @@ def nsgaiii_survival(
 
 
 def evaluate_population_with_constraints(
-    problem: "ProblemProtocol",
+    problem: ProblemProtocol,
     X: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray | None]:
     """Evaluate population and compute constraints if present.

@@ -47,13 +47,13 @@ __all__ = [
 
 def initialize_nsgaiii_run(
     config: dict[str, Any],
-    kernel: "KernelBackend",
-    problem: "ProblemProtocol",
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
     termination: tuple[str, Any],
     seed: int,
-    eval_strategy: "EvaluationBackend | None" = None,
-    live_viz: "LiveVisualization | None" = None,
-) -> tuple["NSGAIIIState", Any, Any, int, Any]:
+    eval_strategy: EvaluationBackend | None = None,
+    live_viz: LiveVisualization | None = None,
+) -> tuple[NSGAIIIState, Any, Any, int, Any]:
     """Initialize NSGA-III run and create state.
 
     Parameters
@@ -231,7 +231,7 @@ def initialize_population(
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-    problem: "ProblemProtocol",
+    problem: ProblemProtocol,
     constraint_mode: str,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     """Initialize population based on encoding.

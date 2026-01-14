@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, List, Sequence, Tuple
+from typing import Any
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -13,7 +14,7 @@ def build_schedule(
     instance_order_random: bool,
     seed_order_random: bool,
     rng: np.random.Generator,
-) -> List[Tuple[int, int]]:
+) -> list[tuple[int, int]]:
     """
     Build a list of (instance_index, seed_index) pairs defining evaluation order.
     """
@@ -34,7 +35,7 @@ def build_schedule(
     stage1_instances = inst_indices[:k]
     remaining_instances = inst_indices[k:]
 
-    schedule: List[Tuple[int, int]] = []
+    schedule: list[tuple[int, int]] = []
 
     # Stage 1: restricted set of instances
     for seed_idx in seed_indices:

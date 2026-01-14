@@ -12,7 +12,7 @@ from vamos.foundation.problem.tsp import TSPProblem
 
 def _run_moead(problem, cross, mut, pop_size=12, n_eval=60):
     cfg = (
-        MOEADConfig()
+        MOEADConfig.builder()
         .pop_size(pop_size)
         .neighbor_size(min(5, pop_size))
         .delta(0.9)
@@ -21,7 +21,7 @@ def _run_moead(problem, cross, mut, pop_size=12, n_eval=60):
         .mutation(mut[0], **mut[1])
         .aggregation("tchebycheff")
         .result_mode("population")
-    ).fixed()
+    ).build()
     algo = MOEAD(cfg.to_dict(), kernel=NumPyKernel())
     res = algo.run(problem, termination=("n_eval", n_eval), seed=0)
     assert "F" in res and res["F"].shape[0] == pop_size
@@ -30,14 +30,14 @@ def _run_moead(problem, cross, mut, pop_size=12, n_eval=60):
 
 def _run_smsemoa(problem, cross, mut, pop_size=10, n_eval=40):
     cfg = (
-        SMSEMOAConfig()
+        SMSEMOAConfig.builder()
         .pop_size(pop_size)
         .crossover(cross[0], **cross[1])
         .mutation(mut[0], **mut[1])
         .selection("tournament", pressure=2)
         .reference_point(offset=0.1, adaptive=True)
         .result_mode("population")
-    ).fixed()
+    ).build()
     algo = SMSEMOA(cfg.to_dict(), kernel=NumPyKernel())
     res = algo.run(problem, termination=("n_eval", n_eval), seed=0)
     assert "F" in res and res["F"].shape[0] == pop_size
@@ -46,13 +46,13 @@ def _run_smsemoa(problem, cross, mut, pop_size=10, n_eval=40):
 
 def _run_nsgaiii(problem, cross, mut, pop_size=12, n_eval=60):
     cfg = (
-        NSGAIIIConfig()
+        NSGAIIIConfig.builder()
         .pop_size(pop_size)
         .crossover(cross[0], **cross[1])
         .mutation(mut[0], **mut[1])
         .selection("tournament", pressure=2)
         .reference_directions(path=None)
-    ).fixed()
+    ).build()
     algo = NSGAIII(cfg.to_dict(), kernel=NumPyKernel())
     res = algo.run(problem, termination=("n_eval", n_eval), seed=0)
     assert "F" in res and res["F"].shape[0] >= pop_size

@@ -27,7 +27,7 @@ def _ensure_project_root_on_path() -> None:
 def main() -> None:
     _ensure_project_root_on_path()
     from vamos.experiment.cli import parse_args
-    from vamos.experiment.runner import run_experiments_from_args
+    from vamos.experiment.presentation import run_experiments_from_args
     from vamos.foundation.core.experiment_config import ExperimentConfig
 
     _configure_cli_logging()

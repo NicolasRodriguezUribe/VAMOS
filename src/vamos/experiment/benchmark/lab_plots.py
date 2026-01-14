@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from vamos.experiment.benchmark.report_utils import ensure_dir, import_pandas
 
 
-def _load_matplotlib() -> Tuple[Any | None, Any | None]:
+def _load_matplotlib() -> tuple[Any | None, Any | None]:
     try:  # pragma: no cover - optional heavy dep
         import matplotlib
 
@@ -17,13 +17,13 @@ def _load_matplotlib() -> Tuple[Any | None, Any | None]:
     return matplotlib, plt
 
 
-def generate_boxplots(summary: Any, output_dir: Path) -> Dict[str, List[Path]]:
+def generate_boxplots(summary: Any, output_dir: Path) -> dict[str, list[Path]]:
     pd = import_pandas()
     _, plt = _load_matplotlib()
     if plt is None:
         return {}
     output_dir = ensure_dir(output_dir)
-    created: Dict[str, List[Path]] = {}
+    created: dict[str, list[Path]] = {}
 
     algorithms = pd.unique(summary["Algorithm"])
     problems = pd.unique(summary["Problem"])
@@ -31,7 +31,7 @@ def generate_boxplots(summary: Any, output_dir: Path) -> Dict[str, List[Path]]:
 
     for indicator_name in indicators:
         data = summary[summary["IndicatorName"] == indicator_name]
-        paths: List[Path] = []
+        paths: list[Path] = []
         for problem in problems:
             data_to_plot = []
             for alg in algorithms:

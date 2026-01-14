@@ -4,7 +4,8 @@ import csv
 import logging
 from pathlib import Path
 from shutil import copy2
-from typing import Iterable, Protocol, Sequence
+from typing import Protocol
+from collections.abc import Iterable, Sequence
 
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.experiment.study.types import StudyResult

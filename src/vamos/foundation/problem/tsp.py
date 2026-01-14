@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import math
-from typing import Iterable, Sequence, Optional
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 
@@ -40,7 +40,7 @@ class TSPProblem:
 
     def __init__(
         self,
-        n_cities: Optional[int] = None,
+        n_cities: int | None = None,
         coordinates: Sequence[Sequence[float]] | None = None,
         dataset: str | None = None,
     ) -> None:

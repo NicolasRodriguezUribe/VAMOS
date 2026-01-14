@@ -5,10 +5,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from vamos.api import OptimizeConfig, OptimizationResult, optimize
-from vamos.engine.api import MOEADConfig, NSGAIIConfig
+from vamos.api import OptimizationResult, optimize
+from vamos.algorithms import MOEADConfig, NSGAIIConfig
 from vamos.foundation.exceptions import InvalidAlgorithmError
-from vamos.foundation.problems_registry import ZDT1
+from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 
 
 class TestOptimizeConvenience:
@@ -101,18 +101,17 @@ class TestUnifiedBackendParameter:
 
     @pytest.mark.smoke
     def test_optimize_engine_override(self):
-        """optimize() should accept engine parameter override."""
+        """optimize() should accept engine parameter with explicit configs."""
         problem = ZDT1(n_var=10)
-        cfg = OptimizeConfig(
-            problem=problem,
+        cfg = NSGAIIConfig.default(pop_size=20, n_var=10)
+        result = optimize(
+            problem,
             algorithm="nsgaii",
-            algorithm_config=NSGAIIConfig.default(pop_size=20, n_var=10),
+            algorithm_config=cfg,
             termination=("n_eval", 500),
             seed=42,
+            engine="numpy",
         )
-
-        # Pass engine as override
-        result = optimize(cfg, engine="numpy")
 
         assert result.F is not None
         assert result.F.shape[0] > 0

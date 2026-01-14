@@ -8,7 +8,7 @@ Showcases the power of `vamos.optimize()`:
 """
 
 from __future__ import annotations
-from vamos.api import optimize
+from vamos import optimize
 
 
 def demo_automl():

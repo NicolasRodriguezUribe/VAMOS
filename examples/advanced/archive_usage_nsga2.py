@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.api import OptimizeConfig, optimize
-from vamos.foundation.problems_registry import ZDT1
-from vamos.engine.api import NSGAIIConfig
+from vamos import optimize
+from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
+from vamos.algorithms import NSGAIIConfig
 
 
 def build_config(archive_type: str = "hypervolume") -> NSGAIIConfig:
@@ -27,7 +27,7 @@ def build_config(archive_type: str = "hypervolume") -> NSGAIIConfig:
     archive_type: "hypervolume" (default, prefers high HV) or "crowding" (spread)
     """
     return (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(80)
         .offspring_size(80)
         .crossover("sbx", prob=0.9, eta=20.0)
@@ -35,7 +35,7 @@ def build_config(archive_type: str = "hypervolume") -> NSGAIIConfig:
         .selection("tournament", pressure=2)
         .archive(100)
         .archive_type(archive_type)
-        .fixed()
+        .build()
     )
 
 
@@ -44,14 +44,12 @@ def main() -> None:
     cfg = build_config(archive_type="hypervolume")
 
     result = optimize(
-        OptimizeConfig(
-            problem=problem,
-            algorithm="nsgaii",
-            algorithm_config=cfg,
-            termination=("n_eval", 8000),
-            seed=11,
-            engine="numpy",
-        )
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 8000),
+        seed=11,
+        engine="numpy",
     )
 
     F = result.F

@@ -54,31 +54,30 @@ result = optimize(
 
 front = result.front()
 print(f"Non-dominated solutions: {len(front) if front is not None else 0}")
+# print(result.explain_defaults())  # Inspect auto-resolved defaults
 # result.plot()  # Quick Pareto front plot
 ```
 
-Need full control? Build an explicit `OptimizeConfig`:
+Need full control? Use explicit args + config objects:
 
 ```python
-from vamos import OptimizeConfig, make_problem_selection, optimize
-from vamos.engine.api import NSGAIIConfig
+from vamos import make_problem_selection, optimize
+from vamos.algorithms import NSGAIIConfig
 
 problem = make_problem_selection("zdt1").instantiate()
 algo = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var)
 
-config = OptimizeConfig(
-    problem=problem,
+result = optimize(
+    problem,
     algorithm="nsgaii",
     algorithm_config=algo,
     termination=("n_eval", 10000),
     seed=42,
     engine="numpy",
 )
-
-result = optimize(config)
 ```
 
-Tip: Prefer config objects (`OptimizeConfig` + algorithm config builders). Raw dict configs are no longer accepted.
+Tip: Start with the unified `optimize(...)` API. Use algorithm config objects for reproducible, fully-specified runs; plain dict configs are intentionally not accepted (use `GenericAlgorithmConfig` for plugin algorithms).
 
 ## Notes
 

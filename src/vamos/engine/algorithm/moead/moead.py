@@ -73,8 +73,8 @@ class MOEAD:
 
     Examples
     --------
-    >>> from vamos.engine.api import MOEADConfig
-    >>> config = MOEADConfig().pop_size(100).crossover("sbx", prob=0.9).fixed()
+    >>> from vamos.algorithms import MOEADConfig
+    >>> config = MOEADConfig.builder().pop_size(100).crossover("sbx", prob=0.9).build()
     >>> moead = MOEAD(config, kernel)
     >>> result = moead.run(problem, ("n_eval", 10000), seed=42)
 
@@ -86,18 +86,18 @@ class MOEAD:
     ...     moead.tell(EvalResult(F=F_off, G=None))
     """
 
-    def __init__(self, config: dict[str, Any], kernel: "KernelBackend") -> None:
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:
         self.cfg = config
         self.kernel = kernel
         self._st: MOEADState | None = None
 
     def run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
         """
         Run the MOEA/D algorithm.
@@ -150,11 +150,11 @@ class MOEAD:
 
     def _initialize_run(
         self,
-        problem: "ProblemProtocol",
+        problem: ProblemProtocol,
         termination: tuple[str, Any],
         seed: int,
-        eval_strategy: "EvaluationBackend | None" = None,
-        live_viz: "LiveVisualization | None" = None,
+        eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> tuple[Any, Any, int, Any]:
         """Initialize algorithm state for a run."""
         self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_moead_run(
@@ -232,7 +232,7 @@ class MOEAD:
 
         return children
 
-    def tell(self, eval_result: Any, problem: "ProblemProtocol | None" = None) -> bool:
+    def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
         """
         Receive evaluated offspring and update algorithm state.
 

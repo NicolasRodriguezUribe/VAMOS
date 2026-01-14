@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import List
 
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
@@ -49,11 +48,11 @@ def _run_backend_check(engine: str, *, pop_size: int = 6, max_eval: int = 20) ->
         return CheckResult(name=f"nsgaii-{engine}", status="failed", detail=str(exc))
 
 
-def run_self_check(verbose: bool = False) -> List[CheckResult]:
+def run_self_check(verbose: bool = False) -> list[CheckResult]:
     """
     Run a minimal set of checks. Always runs NumPy; Numba/MooCore are optional.
     """
-    checks: List[CheckResult] = []
+    checks: list[CheckResult] = []
     for engine in ("numpy", "numba", "moocore"):
         result = _run_backend_check(engine)
         checks.append(result)

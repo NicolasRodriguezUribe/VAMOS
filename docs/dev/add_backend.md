@@ -49,20 +49,20 @@ Add a backend-marked smoke test (skip if dependency missing):
 import pytest
 from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
-from vamos.engine.api import NSGAIIConfig
+from vamos.algorithms import NSGAIIConfig
 from vamos.engine.algorithm.nsgaii import NSGAII
 
 @pytest.mark.mybackend
 def test_mybackend_smoke():
     kernel = resolve_kernel("mybackend")
     cfg = (
-        NSGAIIConfig()
+        NSGAIIConfig.builder()
         .pop_size(6)
         .offspring_size(6)
         .crossover("sbx", prob=1.0, eta=15)
         .mutation("pm", prob="1/n", eta=20)
         .selection("tournament", pressure=2)
-        .fixed()
+        .build()
         .to_dict()
     )
     cfg["engine"] = "mybackend"

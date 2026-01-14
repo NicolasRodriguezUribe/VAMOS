@@ -3,35 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import Any
 
 from vamos.foundation.data import weight_path
 
 from .base import _SerializableConfig, _require_fields
 
 
-class MOEADConfigDict(TypedDict):
-    pop_size: int
-    batch_size: int
-    neighbor_size: int
-    delta: float
-    replace_limit: int
-    crossover: tuple[str, dict[str, Any]]
-    mutation: tuple[str, dict[str, Any]]
-    aggregation: tuple[str, dict[str, Any]]
-    weight_vectors: dict[str, int | str | None] | None
-    constraint_mode: str
-    repair: tuple[str, dict[str, Any]] | None
-    initializer: dict[str, Any] | None
-    mutation_prob_factor: float | None
-    track_genealogy: bool
-    result_mode: str | None
-    archive_type: str | None
-    archive: dict[str, Any] | None
-
-
 @dataclass(frozen=True)
-class MOEADConfigData(_SerializableConfig["MOEADConfigDict"]):
+class MOEADConfig(_SerializableConfig):
     pop_size: int
     batch_size: int
     neighbor_size: int
@@ -50,36 +30,20 @@ class MOEADConfigData(_SerializableConfig["MOEADConfigDict"]):
     archive_type: str | None = None
     archive: dict[str, Any] | None = None
 
-
-class MOEADConfig:
-    """
-    Declarative configuration holder for MOEA/D settings.
-
-    Examples:
-        # Fluent builder
-        cfg = MOEADConfig().pop_size(100).neighbor_size(20).fixed()
-
-        # Quick default configuration
-        cfg = MOEADConfig.default()
-    """
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
     @classmethod
     def default(
         cls,
         pop_size: int | None = None,
         n_var: int | None = None,
         n_obj: int = 3,
-    ) -> "MOEADConfigData":
+    ) -> MOEADConfig:
         """Create a default MOEA/D configuration with sensible defaults."""
         if pop_size is None:
             pop_size = 91 if n_obj == 3 else 100
         mut_prob = 1.0 / n_var if n_var else 0.1
         weights_dir = weight_path("W3D_91.dat").parent
         return (
-            cls()
+            cls.builder()
             .pop_size(pop_size)
             .batch_size(1)
             .neighbor_size(20)
@@ -89,75 +53,95 @@ class MOEADConfig:
             .mutation("pm", prob=mut_prob, eta=20.0)
             .aggregation("pbi", theta=5.0)
             .weight_vectors(path=str(weights_dir))
-            .fixed()
+            .build()
         )
 
-    def pop_size(self, value: int) -> "MOEADConfig":
+    @classmethod
+    def builder(cls) -> _MOEADConfigBuilder:
+        return _MOEADConfigBuilder()
+
+
+class _MOEADConfigBuilder:
+    """
+    Declarative configuration holder for MOEA/D settings.
+
+    Examples:
+        # Fluent builder
+        cfg = MOEADConfig.builder().pop_size(100).neighbor_size(20).build()
+
+        # Quick default configuration
+        cfg = MOEADConfig.default()
+    """
+
+    def __init__(self) -> None:
+        self._cfg: dict[str, Any] = {}
+
+    def pop_size(self, value: int) -> _MOEADConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def batch_size(self, value: int) -> "MOEADConfig":
+    def batch_size(self, value: int) -> _MOEADConfigBuilder:
         self._cfg["batch_size"] = value
         return self
 
-    def neighbor_size(self, value: int) -> "MOEADConfig":
+    def neighbor_size(self, value: int) -> _MOEADConfigBuilder:
         self._cfg["neighbor_size"] = value
         return self
 
-    def delta(self, value: float) -> "MOEADConfig":
+    def delta(self, value: float) -> _MOEADConfigBuilder:
         self._cfg["delta"] = value
         return self
 
-    def replace_limit(self, value: int) -> "MOEADConfig":
+    def replace_limit(self, value: int) -> _MOEADConfigBuilder:
         self._cfg["replace_limit"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> "MOEADConfig":
+    def crossover(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> "MOEADConfig":
+    def mutation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def aggregation(self, method: str, **kwargs: Any) -> "MOEADConfig":
+    def aggregation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["aggregation"] = (method, kwargs)
         return self
 
-    def weight_vectors(self, *, path: str | None = None, divisions: int | None = None) -> "MOEADConfig":
+    def weight_vectors(self, *, path: str | None = None, divisions: int | None = None) -> _MOEADConfigBuilder:
         self._cfg["weight_vectors"] = {"path": path, "divisions": divisions}
         return self
 
-    def constraint_mode(self, value: str) -> "MOEADConfig":
+    def constraint_mode(self, value: str) -> _MOEADConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> "MOEADConfig":
+    def repair(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> "MOEADConfig":
+    def initializer(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def mutation_prob_factor(self, value: float) -> "MOEADConfig":
+    def mutation_prob_factor(self, value: float) -> _MOEADConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def track_genealogy(self, enabled: bool = True) -> "MOEADConfig":
+    def track_genealogy(self, enabled: bool = True) -> _MOEADConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> "MOEADConfig":
+    def result_mode(self, value: str) -> _MOEADConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive_type(self, value: str) -> "MOEADConfig":
+    def archive_type(self, value: str) -> _MOEADConfigBuilder:
         """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
         self._cfg["archive_type"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs: Any) -> "MOEADConfig":
+    def archive(self, size: int, **kwargs: Any) -> _MOEADConfigBuilder:
         """
         Configure an external archive.
 
@@ -176,7 +160,7 @@ class MOEADConfig:
         self._cfg.setdefault("result_mode", "external_archive")
         return self
 
-    def fixed(self) -> MOEADConfigData:
+    def build(self) -> MOEADConfig:
         _require_fields(
             self._cfg,
             (
@@ -190,7 +174,7 @@ class MOEADConfig:
             ),
             "MOEA/D",
         )
-        return MOEADConfigData(
+        return MOEADConfig(
             pop_size=self._cfg["pop_size"],
             batch_size=int(self._cfg.get("batch_size", 1)),
             neighbor_size=self._cfg["neighbor_size"],

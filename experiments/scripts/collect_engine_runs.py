@@ -7,10 +7,11 @@ import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any
+from collections.abc import Iterable
 
 
-def read_json(p: Path) -> Dict[str, Any]:
+def read_json(p: Path) -> dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
@@ -29,7 +30,7 @@ def try_parse_float(s: str) -> float | None:
         return None
 
 
-def flatten(prefix: str, obj: Any, out: Dict[str, Any]) -> None:
+def flatten(prefix: str, obj: Any, out: dict[str, Any]) -> None:
     """Flatten nested dicts into dot-keys; ignore huge lists/structures."""
     if isinstance(obj, dict):
         for k, v in obj.items():
@@ -45,7 +46,7 @@ def flatten(prefix: str, obj: Any, out: Dict[str, Any]) -> None:
             out[prefix] = f"<{type(obj).__name__}>"
 
 
-def safe_get(d: Dict[str, Any], key: str) -> Any:
+def safe_get(d: dict[str, Any], key: str) -> Any:
     return d.get(key, None)
 
 
@@ -66,8 +67,8 @@ def find_first_key_recursively(obj: Any, wanted: str) -> Any:
     return None
 
 
-def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
-    rows: List[List[float]] = []
+def read_csv_matrix(p: Path) -> tuple[int, int, list[list[float]]]:
+    rows: list[list[float]] = []
     with p.open("r", encoding="utf-8", newline="") as f:
         reader = csv.reader(f)
         for r in reader:
@@ -76,7 +77,7 @@ def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
             # Some outputs may be space-separated; handle single-cell with spaces.
             if len(r) == 1 and (" " in r[0] or "\t" in r[0]):
                 r = re.split(r"[,\s]+", r[0].strip())
-            vals: List[float] = []
+            vals: list[float] = []
             for x in r:
                 x = x.strip()
                 if x == "":
@@ -97,14 +98,14 @@ def read_csv_matrix(p: Path) -> Tuple[int, int, List[List[float]]]:
     return nrows, ncols, rows
 
 
-def col_min_max(mat: List[List[float]], j: int) -> Tuple[float | None, float | None]:
+def col_min_max(mat: list[list[float]], j: int) -> tuple[float | None, float | None]:
     vals = [r[j] for r in mat if j < len(r) and not math.isnan(r[j])]
     if not vals:
         return None, None
     return min(vals), max(vals)
 
 
-def infer_from_path(seed_dir: Path) -> Dict[str, str]:
+def infer_from_path(seed_dir: Path) -> dict[str, str]:
     # expected: .../<suite>/<algorithm>/<engine>/seed_<k>
     parts = seed_dir.parts
     # Find last occurrence of "results" then pick relative pieces if possible
@@ -138,11 +139,11 @@ def main() -> int:
         print("ERROR: no seed dirs found under:", inp)
         return 3
 
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     all_keys: set[str] = set()
 
     for sd in seed_dirs:
-        r: Dict[str, Any] = {}
+        r: dict[str, Any] = {}
         r["run_path"] = sd.as_posix()
         r["campaign"] = args.campaign
 
@@ -164,7 +165,7 @@ def main() -> int:
         if "backend" in meta:
             r["backend"] = meta["backend"]
         if "backend_info" in meta and isinstance(meta["backend_info"], dict):
-            tmp: Dict[str, Any] = {}
+            tmp: dict[str, Any] = {}
             flatten("backend_info", meta["backend_info"], tmp)
             r.update(tmp)
 
@@ -181,7 +182,7 @@ def main() -> int:
 
         # metrics passthrough (flatten)
         if "metrics" in meta and isinstance(meta["metrics"], dict):
-            tmp: Dict[str, Any] = {}
+            tmp: dict[str, Any] = {}
             flatten("metrics", meta["metrics"], tmp)
             r.update(tmp)
 

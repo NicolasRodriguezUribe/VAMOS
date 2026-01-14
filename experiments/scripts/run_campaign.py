@@ -6,7 +6,8 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any
+from collections.abc import Iterable
 
 
 def load_yaml(path: Path) -> dict:
@@ -33,7 +34,7 @@ def deep_copy(x: Any) -> Any:
     return json.loads(json.dumps(x))
 
 
-def flatten_seed_rule(rule: dict) -> List[int]:
+def flatten_seed_rule(rule: dict) -> list[int]:
     start = int(rule.get("start", 1))
     count = int(rule.get("count", 1))
     step = int(rule.get("step", 1))
@@ -110,7 +111,7 @@ def build_config(
     aos_enabled: bool,
     algo_keys: set[str],
     operator_block: dict,
-    track_genealogy: Optional[bool],
+    track_genealogy: bool | None,
 ) -> dict:
     cfg = base_template()
     cfg["defaults"] = {
@@ -190,7 +191,7 @@ def main() -> int:
     ensure_dir(log_root)
     ensure_dir(output_root)
 
-    runs: List[RunSpec] = []
+    runs: list[RunSpec] = []
     for algo in algos:
         algo_keys = set(algo_keys_map.get(algo, []))
         for engine in engines:

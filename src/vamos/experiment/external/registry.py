@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 from difflib import get_close_matches
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from vamos.foundation.problem.registry import ProblemSelection
 
@@ -10,7 +11,7 @@ from .jmetalpy import _run_jmetalpy_nsga2, _run_jmetalpy_perm_nsga2
 from .pymoo import _run_pymoo_nsga2, _run_pymoo_perm_nsga2
 from .pygmo import _run_pygmo_nsga2
 
-_EXTERNAL_ALGORITHM_ADAPTERS: dict[str, "ExternalAlgorithmAdapter"] | None = None
+_EXTERNAL_ALGORITHM_ADAPTERS: dict[str, ExternalAlgorithmAdapter] | None = None
 _EXTERNAL_DOCS = "docs/reference/algorithms.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
 

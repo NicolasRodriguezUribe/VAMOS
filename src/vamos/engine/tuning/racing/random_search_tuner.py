@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
+from collections.abc import Callable
 
 import numpy as np
 
@@ -17,9 +18,9 @@ def _logger() -> logging.Logger:
 @dataclass
 class TrialResult:
     trial_id: int
-    config: Dict[str, Any]
+    config: dict[str, Any]
     score: float
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -32,7 +33,7 @@ class RandomSearchTuner:
     max_trials: int
     seed: int = 0
     rng: np.random.Generator = field(init=False)
-    sampler: Optional[Sampler] = None
+    sampler: Sampler | None = None
 
     def __post_init__(self) -> None:
         self.rng = np.random.default_rng(self.seed)
@@ -41,12 +42,12 @@ class RandomSearchTuner:
 
     def run(
         self,
-        eval_fn: Callable[[Dict[str, Any], EvalContext], float],
+        eval_fn: Callable[[dict[str, Any], EvalContext], float],
         verbose: bool = True,
-    ) -> Tuple[Dict[str, Any], List[TrialResult]]:
-        history: List[TrialResult] = []
-        best_score: Optional[float] = None
-        best_config: Optional[Dict[str, Any]] = None
+    ) -> tuple[dict[str, Any], list[TrialResult]]:
+        history: list[TrialResult] = []
+        best_score: float | None = None
+        best_config: dict[str, Any] | None = None
         assert self.sampler is not None
 
         for trial_id in range(self.max_trials):

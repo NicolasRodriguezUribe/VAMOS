@@ -8,6 +8,7 @@ crowding distance) on CPU/GPU/TPU with auto-vectorization and JIT compilation.
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Callable, Mapping
 from typing import Any, Literal, TypeVar, cast, overload
 
@@ -124,18 +125,26 @@ class JaxKernel(KernelBackend):
     Kernel backend using JAX for hardware acceleration.
 
     Features:
-    - JIT-compiled non-dominated sorting (domination check)
-    - JIT-compiled crowding distance
+    - JIT-compiled domination checks (approximate ranking when enabled)
     - GPU/TPU support automatically provided by JAX
+    - Strict ranking fallback for exact Pareto fronts
     """
 
     name = "jax"
 
-    def __init__(self) -> None:
+    def __init__(self, strict_ranking: bool | None = None) -> None:
         jax, jnp, jit = _import_jax()
         self._jax = jax
         self._jnp = jnp
         self._fast_non_dominated_sort, self._crowding_distance = _build_jax_kernels(jnp, jit)
+        if strict_ranking is None:
+            env_flag = os.environ.get("VAMOS_JAX_STRICT_RANKING", "1").strip().lower()
+            strict_ranking = env_flag not in {"0", "false", "no", "off"}
+        self._strict_ranking = bool(strict_ranking)
+        if not self._strict_ranking:
+            _logger().warning(
+                "JaxKernel strict ranking disabled; domination counts are used as a rank proxy.",
+            )
         _logger().info("JaxKernel initialized. Devices: %s", jax.devices())
 
     def update_archive(
@@ -179,6 +188,8 @@ class JaxKernel(KernelBackend):
         """
         Compute dominance ranks and crowding distance using JAX.
         """
+        if self._strict_ranking:
+            return NumPyKernel().nsga2_ranking(np.asarray(F))
         F_jax = self._jnp.asarray(F)
 
         # 1. Ranking

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -24,7 +25,7 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def _eval_worker(eval_fn: Callable[[Dict[str, Any], EvalContext], float], config: Dict[str, Any], ctx: EvalContext) -> float:
+def _eval_worker(eval_fn: Callable[[dict[str, Any], EvalContext], float], config: dict[str, Any], ctx: EvalContext) -> float:
     return float(eval_fn(config, ctx))
 
 
@@ -37,17 +38,17 @@ class RacingTuner:
         scenario: Scenario,
         seed: int = 0,
         max_initial_configs: int = 20,
-        sampler: Optional[Sampler] = None,
-        initial_configs: Optional[List[Dict[str, Any]]] = None,
+        sampler: Sampler | None = None,
+        initial_configs: list[dict[str, Any]] | None = None,
     ) -> None:
         self.task = task
         self.scenario = scenario
         self.rng = np.random.default_rng(seed)
         self.max_initial_configs = max_initial_configs
         self._stage_index: int = 0
-        self._elite_archive: List[EliteEntry] = []
+        self._elite_archive: list[EliteEntry] = []
         self._next_config_id: int = 0  # Re-indexed below
-        self._best_score_history: List[float] = []  # For convergence detection
+        self._best_score_history: list[float] = []  # For convergence detection
 
         # Injection of default/user configurations
         self.initial_configs_payload = initial_configs or []
@@ -61,7 +62,7 @@ class RacingTuner:
         else:
             self.sampler = sampler
 
-        self._schedule: List[Tuple[int, int]] = build_schedule(
+        self._schedule: list[tuple[int, int]] = build_schedule(
             self.instances,
             self.seeds,
             start_instances=self.scenario.start_instances,
@@ -70,8 +71,8 @@ class RacingTuner:
             rng=self.rng,
         )
 
-    def _sample_initial_configs(self) -> List[ConfigState]:
-        configs: List[ConfigState] = []
+    def _sample_initial_configs(self) -> list[ConfigState]:
+        configs: list[ConfigState] = []
         config_id_counter = 0
 
         # 1. Add injected configs
@@ -115,9 +116,9 @@ class RacingTuner:
 
     def run(
         self,
-        eval_fn: Callable[[Dict[str, Any], EvalContext], float],
-        verbose: Optional[bool] = None,
-    ) -> Tuple[Dict[str, Any], List[TrialResult]]:
+        eval_fn: Callable[[dict[str, Any], EvalContext], float],
+        verbose: bool | None = None,
+    ) -> tuple[dict[str, Any], list[TrialResult]]:
         # Dispatch to multi-fidelity if enabled
         if self.scenario.use_multi_fidelity:
             return _run_multi_fidelity(self, eval_fn, verbose)
@@ -125,7 +126,7 @@ class RacingTuner:
         verbose_flag = self.scenario.verbose if verbose is None else verbose
 
         schedule = list(self._schedule)
-        configs: List[ConfigState] = self._sample_initial_configs()
+        configs: list[ConfigState] = self._sample_initial_configs()
         num_experiments = 0
 
         for inst_idx, seed_idx in schedule:
@@ -221,10 +222,10 @@ class RacingTuner:
 
     def _run_stage(
         self,
-        configs: List[ConfigState],
+        configs: list[ConfigState],
         inst_idx: int,
         seed_idx: int,
-        eval_fn: Callable[[Dict[str, Any], EvalContext], float],
+        eval_fn: Callable[[dict[str, Any], EvalContext], float],
     ) -> None:
         instance = self.instances[inst_idx]
         seed = self.seeds[seed_idx]
@@ -255,16 +256,16 @@ class RacingTuner:
             for i, score in enumerate(results):
                 configs[indices[i]].scores.append(score)
 
-    def _count_new_experiments(self, configs: List[ConfigState]) -> int:
+    def _count_new_experiments(self, configs: list[ConfigState]) -> int:
         """Count how many alive configs were evaluated in the last stage."""
         return self._num_alive(configs)
 
-    def _num_alive(self, configs: List[ConfigState]) -> int:
+    def _num_alive(self, configs: list[ConfigState]) -> int:
         return sum(1 for c in configs if c.alive)
 
-    def _get_current_best_score(self, configs: List[ConfigState]) -> Optional[float]:
+    def _get_current_best_score(self, configs: list[ConfigState]) -> float | None:
         """Get the current best aggregated score among alive configs."""
-        best: Optional[float] = None
+        best: float | None = None
         for state in configs:
             if not state.alive or not state.scores:
                 continue
@@ -301,10 +302,10 @@ class RacingTuner:
 
         return improvement < self.scenario.convergence_threshold
 
-    def _finalize_results(self, configs: List[ConfigState]) -> Tuple[Optional[EliteEntry], List[TrialResult]]:
-        history: List[TrialResult] = []
-        best_state: Optional[EliteEntry] = None
-        best_score: Optional[float] = None
+    def _finalize_results(self, configs: list[ConfigState]) -> tuple[EliteEntry | None, list[TrialResult]]:
+        history: list[TrialResult] = []
+        best_state: EliteEntry | None = None
+        best_score: float | None = None
 
         for state in configs:
             if not state.scores:

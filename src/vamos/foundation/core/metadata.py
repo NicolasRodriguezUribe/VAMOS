@@ -7,12 +7,12 @@ from __future__ import annotations
 import subprocess
 from datetime import datetime, UTC
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from vamos.foundation.version import get_version
 
 
-def git_revision(project_root: Path) -> Optional[str]:
+def git_revision(project_root: Path) -> str | None:
     """
     Return current git commit hash if available, otherwise None.
     Safe to call in packaged installations without git.

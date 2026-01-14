@@ -6,10 +6,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 
-def load_experiment_spec(path: str) -> Dict[str, Any]:
+def load_experiment_spec(path: str) -> dict[str, Any]:
     """
     Load a YAML or JSON experiment specification.
     """
@@ -23,6 +23,6 @@ def load_experiment_spec(path: str) -> Dict[str, Any]:
         except ImportError as exc:  # pragma: no cover - optional dependency
             raise ImportError("YAML config requested but PyYAML is not installed. Install with 'pip install pyyaml'.") from exc
         with spec_path.open("r", encoding="utf-8") as fh:
-            return cast(Dict[str, Any], yaml.safe_load(fh) or {})
+            return cast(dict[str, Any], yaml.safe_load(fh) or {})
     with spec_path.open("r", encoding="utf-8") as fh:
-        return cast(Dict[str, Any], json.load(fh))
+        return cast(dict[str, Any], json.load(fh))

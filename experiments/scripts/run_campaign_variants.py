@@ -6,7 +6,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any
 
 
 def load_yaml(path: Path) -> dict:
@@ -37,7 +37,7 @@ def deep_copy(value: Any) -> Any:
     return json.loads(json.dumps(value))
 
 
-def flatten_seed_rule(rule: dict) -> List[int]:
+def flatten_seed_rule(rule: dict) -> list[int]:
     start = int(rule.get("start", 1))
     count = int(rule.get("count", 1))
     step = int(rule.get("step", 1))
@@ -82,7 +82,7 @@ def build_config_base(
     output_root: Path,
     algo_keys: set[str],
     operator_block: dict,
-    track_genealogy: Optional[bool],
+    track_genealogy: bool | None,
 ) -> dict:
     cfg = {"defaults": {}, "problems": {}}
     cfg["defaults"] = {
@@ -170,7 +170,7 @@ def main() -> int:
     ensure_dir(log_root)
     ensure_dir(output_root_base)
 
-    runs: List[RunSpec] = []
+    runs: list[RunSpec] = []
     for variant in variants:
         vname = variant["name"]
         vpatch = variant.get("patch", {}) or {}

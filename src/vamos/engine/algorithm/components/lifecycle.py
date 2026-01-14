@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 def setup_initial_population(
-    problem: "ProblemProtocol",
+    problem: ProblemProtocol,
     eval_strategy: EvaluationBackend,
     rng: np.random.Generator,
     pop_size: int,

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Optional, Tuple
+from collections.abc import Callable
 
-ProblemFactory = Callable[[int, Optional[int]], object]
+ProblemFactory = Callable[[int, int | None], object]
 DefaultNVarFn = Callable[[int], int]
 
 
@@ -17,11 +17,11 @@ class ProblemSpec:
     default_n_obj: int
     allow_n_obj_override: bool
     factory: ProblemFactory
-    default_n_var_fn: Optional[DefaultNVarFn] = None
+    default_n_var_fn: DefaultNVarFn | None = None
     description: str = ""
     encoding: str = "continuous"
 
-    def resolve_dimensions(self, *, n_var: Optional[int], n_obj: Optional[int]) -> Tuple[int, int]:
+    def resolve_dimensions(self, *, n_var: int | None, n_obj: int | None) -> tuple[int, int]:
         """
         Apply default dimensions and enforce override rules.
         """

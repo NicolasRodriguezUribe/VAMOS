@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Protocol, Dict
+from typing import Protocol
 
 import numpy as np
 
@@ -13,41 +13,41 @@ IndividualID = int
 class GenealogyRecord:
     individual_id: IndividualID
     generation: int
-    parents: List[IndividualID]
-    operator_name: Optional[str]
-    algorithm_name: Optional[str]
-    fitness: Optional[np.ndarray] = None
+    parents: list[IndividualID]
+    operator_name: str | None
+    algorithm_name: str | None
+    fitness: np.ndarray | None = None
     is_final_front: bool = False
 
 
 class GenealogyTracker(Protocol):
-    records: Dict[IndividualID, GenealogyRecord]
+    records: dict[IndividualID, GenealogyRecord]
     next_id: int
 
     def new_individual(
         self,
         generation: int,
-        parents: List[IndividualID],
+        parents: list[IndividualID],
         operator_name: str | None,
         algorithm_name: str | None,
-        fitness: Optional[np.ndarray] = None,
+        fitness: np.ndarray | None = None,
     ) -> IndividualID: ...
 
-    def mark_final_front(self, ids: List[IndividualID]) -> None: ...
+    def mark_final_front(self, ids: list[IndividualID]) -> None: ...
 
 
 @dataclass
 class DefaultGenealogyTracker:
-    records: Dict[IndividualID, GenealogyRecord] = field(default_factory=dict)
+    records: dict[IndividualID, GenealogyRecord] = field(default_factory=dict)
     next_id: int = 0
 
     def new_individual(
         self,
         generation: int,
-        parents: List[IndividualID],
+        parents: list[IndividualID],
         operator_name: str | None,
         algorithm_name: str | None,
-        fitness: Optional[np.ndarray] = None,
+        fitness: np.ndarray | None = None,
     ) -> IndividualID:
         idx = self.next_id
         self.next_id += 1
@@ -61,32 +61,32 @@ class DefaultGenealogyTracker:
         )
         return idx
 
-    def mark_final_front(self, ids: List[IndividualID]) -> None:
+    def mark_final_front(self, ids: list[IndividualID]) -> None:
         for i in ids:
             if i in self.records:
                 self.records[i].is_final_front = True
 
 
 class NoOpGenealogyTracker:
-    records: Dict[IndividualID, GenealogyRecord] = {}
+    records: dict[IndividualID, GenealogyRecord] = {}
     next_id: int = 0
 
     def new_individual(
         self,
         generation: int,
-        parents: List[IndividualID],
+        parents: list[IndividualID],
         operator_name: str | None,
         algorithm_name: str | None,
-        fitness: Optional[np.ndarray] = None,
+        fitness: np.ndarray | None = None,
     ) -> IndividualID:
         return -1
 
-    def mark_final_front(self, ids: List[IndividualID]) -> None:
+    def mark_final_front(self, ids: list[IndividualID]) -> None:
         return None
 
 
-def get_lineage(tracker: GenealogyTracker, individual_id: IndividualID) -> List[GenealogyRecord]:
-    lineage: List[GenealogyRecord] = []
+def get_lineage(tracker: GenealogyTracker, individual_id: IndividualID) -> list[GenealogyRecord]:
+    lineage: list[GenealogyRecord] = []
     stack = [individual_id]
     visited = set()
     while stack:

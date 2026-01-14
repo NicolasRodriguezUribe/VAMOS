@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from difflib import get_close_matches
-from typing import Optional
 
 from .specs import ProblemSpec, get_problem_specs
 from typing import cast
@@ -48,7 +47,7 @@ def _format_unknown_problem(name: str, options: list[str]) -> str:
     return " ".join(parts)
 
 
-def make_problem_selection(key: str, *, n_var: Optional[int] = None, n_obj: Optional[int] = None) -> ProblemSelection:
+def make_problem_selection(key: str, *, n_var: int | None = None, n_obj: int | None = None) -> ProblemSelection:
     specs = get_problem_specs()
     try:
         spec = specs[key]

@@ -125,7 +125,7 @@ def _extract_optional_dependencies_from_text(text: str) -> dict[str, list[str]]:
         if not in_optional:
             continue
         if "=" in line and not in_list:
-            group, rest = [part.strip() for part in line.split("=", 1)]
+            group, rest = (part.strip() for part in line.split("=", 1))
             current_group = group
             if "[" in rest:
                 in_list = True

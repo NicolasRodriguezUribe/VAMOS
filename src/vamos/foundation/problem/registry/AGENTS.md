@@ -60,7 +60,7 @@ Layering rules (project-wide):
 
 Public surface discipline:
 - `vamos/__init__.py` stays minimal.
-- Use facades: `vamos.api`, `vamos.engine.api`, `vamos.ux.api`,
+- Use facades: `vamos.api`, `vamos.algorithms`, `vamos.ux.api`,
   `vamos.experiment.quick`.
 
 ## Part III — Health checks before opening a PR

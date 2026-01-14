@@ -6,7 +6,8 @@ supporting continuous, binary, and integer encodings.
 
 from __future__ import annotations
 
-from typing import Any, Callable, TypeAlias
+from typing import Any, TypeAlias
+from collections.abc import Callable
 
 import numpy as np
 

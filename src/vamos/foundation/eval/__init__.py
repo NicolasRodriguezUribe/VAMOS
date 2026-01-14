@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -11,7 +11,7 @@ class EvaluationResult:
     """Container for objective/constraint evaluation outputs."""
 
     F: np.ndarray
-    G: Optional[np.ndarray] = None
+    G: np.ndarray | None = None
 
 
 class EvaluationBackend(Protocol):

@@ -5,7 +5,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 def load_yaml(path: Path) -> dict:
@@ -67,10 +67,10 @@ def main() -> int:
     cfg_root.mkdir(parents=True, exist_ok=True)
     log_root.mkdir(parents=True, exist_ok=True)
 
-    engines: List[str] = spec["matrix"]["engines"]
-    algos: List[str] = spec["matrix"]["algorithms"]
-    seeds: List[int] = spec["matrix"]["seeds"]
-    problems: List[dict] = spec["matrix"]["problems"]
+    engines: list[str] = spec["matrix"]["engines"]
+    algos: list[str] = spec["matrix"]["algorithms"]
+    seeds: list[int] = spec["matrix"]["seeds"]
+    problems: list[dict] = spec["matrix"]["problems"]
 
     aos_enabled = bool(spec.get("common", {}).get("aos_enabled", False))
     selection_pressure = int(spec.get("common", {}).get("selection_pressure", 2))

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -17,7 +18,7 @@ class Instance:
 
     name: str
     n_var: int
-    kwargs: Dict[str, Any] = field(default_factory=dict)
+    kwargs: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -38,8 +39,8 @@ class EvalContext:
     seed: int
     budget: int
     fidelity_level: int = 0
-    previous_budget: Optional[int] = None
-    checkpoint: Optional[Any] = None
+    previous_budget: int | None = None
+    checkpoint: Any | None = None
 
 
 @dataclass
@@ -54,23 +55,23 @@ class TuningTask:
     """
 
     name: str
-    param_space: "ParamSpace"
+    param_space: ParamSpace
     instances: Sequence[Instance]
     seeds: Sequence[int]
     budget_per_run: int
     maximize: bool = True
-    aggregator: Callable[[List[float]], float] = np.mean
+    aggregator: Callable[[list[float]], float] = np.mean
 
     def eval_config(
         self,
-        config: Dict[str, Any],
-        eval_fn: Callable[[Dict[str, Any], EvalContext], float],
+        config: dict[str, Any],
+        eval_fn: Callable[[dict[str, Any], EvalContext], float],
     ) -> float:
         """
         Evaluate a configuration across all (instance, seed) combinations
         and aggregate the scores into a single scalar.
         """
-        scores: List[float] = []
+        scores: list[float] = []
         for inst in self.instances:
             for seed in self.seeds:
                 ctx = EvalContext(instance=inst, seed=seed, budget=self.budget_per_run)

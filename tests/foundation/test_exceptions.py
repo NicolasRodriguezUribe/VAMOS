@@ -221,9 +221,9 @@ class TestExceptionUsage:
     @pytest.mark.smoke
     def test_optimize_invalid_algorithm(self):
         """optimize() should raise InvalidAlgorithmError."""
-        from vamos.api import optimize
+        from vamos import optimize
         from vamos.foundation.exceptions import InvalidAlgorithmError
-        from vamos.foundation.problems_registry import ZDT1
+        from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 
         problem = ZDT1(n_var=10)
         with pytest.raises(InvalidAlgorithmError) as exc_info:

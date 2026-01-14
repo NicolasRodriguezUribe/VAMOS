@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from vamos.archive import BoundedArchiveConfig
 from vamos.monitoring import HVConvergenceConfig
 
 
-def build_hv_stop_cfg(d: Dict[str, Any]) -> HVConvergenceConfig:
+def build_hv_stop_cfg(d: dict[str, Any]) -> HVConvergenceConfig:
     base = HVConvergenceConfig()
     data = dict(base.__dict__)
     data.update({k: v for k, v in (d or {}).items() if k in data})
     return HVConvergenceConfig(**data)
 
 
-def build_archive_cfg(d: Dict[str, Any]) -> BoundedArchiveConfig:
+def build_archive_cfg(d: dict[str, Any]) -> BoundedArchiveConfig:
     base = BoundedArchiveConfig()
     data = dict(base.__dict__)
     data.update({k: v for k, v in (d or {}).items() if k in data})
     return BoundedArchiveConfig(**data)
 
 
-def _extract_block(spec: Dict[str, Any], key: str, problem_key: Optional[str]) -> Dict[str, Any]:
-    block: Dict[str, Any] = {}
+def _extract_block(spec: dict[str, Any], key: str, problem_key: str | None) -> dict[str, Any]:
+    block: dict[str, Any] = {}
     if isinstance(spec.get(key), dict):
         block = dict(spec[key])
     defaults = spec.get("defaults")
@@ -39,7 +39,7 @@ def _extract_block(spec: Dict[str, Any], key: str, problem_key: Optional[str]) -
     return block
 
 
-def parse_stopping_archive(spec: Dict[str, Any], problem_key: Optional[str] = None) -> Dict[str, Any]:
+def parse_stopping_archive(spec: dict[str, Any], problem_key: str | None = None) -> dict[str, Any]:
     """
     Reads an experiment spec dict and returns:
       stopping_enabled, stop_cfg, archive_enabled, archive_cfg, hv_ref_point

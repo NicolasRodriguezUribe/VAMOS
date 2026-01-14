@@ -1,4 +1,4 @@
-from vamos.engine.algorithms_registry import available_crossover_methods, available_mutation_methods
+from vamos.algorithms import available_crossover_methods, available_mutation_methods
 
 encodings = ["real", "binary", "permutation", "integer", "mixed"]
 

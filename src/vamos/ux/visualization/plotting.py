@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime
-from typing import Any, Iterable
+from typing import Any, cast
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -69,10 +70,12 @@ def plot_pareto_front(
         return None
 
     dims = 3 if n_obj >= 3 else 2
+    ax3d: Any | None = None
     if dims == 3:
         fig = plt.figure(figsize=(8, 6))
-        ax = fig.add_subplot(111, projection="3d")
-        ax.set_zlabel("Objective 3")
+        ax3d = cast(Any, fig.add_subplot(111, projection="3d"))
+        ax = ax3d
+        ax3d.set_zlabel("Objective 3")
     else:
         fig, ax = plt.subplots(figsize=(7, 5))
     ax.set_xlabel("Objective 1")
@@ -83,7 +86,8 @@ def plot_pareto_front(
         coords = values[:, :dims]
         color = cmap(idx)
         if dims == 3:
-            ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2], label=label, s=22, alpha=0.7, color=color)
+            assert ax3d is not None
+            ax3d.scatter(coords[:, 0], coords[:, 1], coords[:, 2], label=label, s=22, alpha=0.7, color=color)
         else:
             ax.scatter(coords[:, 0], coords[:, 1], label=label, s=35, alpha=0.8, color=color)
 
@@ -102,7 +106,8 @@ def plot_pareto_front(
                 label="Pareto front (union)",
             )
         else:
-            ax.scatter(
+            assert ax3d is not None
+            ax3d.scatter(
                 projected[:, 0],
                 projected[:, 1],
                 projected[:, 2],

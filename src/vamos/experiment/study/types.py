@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -24,17 +24,17 @@ class StudyTask:
     selection_pressure: int = 2
     external_archive_size: int | None = None
     archive_type: str = "hypervolume"
-    nsgaii_variation: Dict[str, Any] | None = None
-    config_overrides: Dict[str, Any] | None = None
+    nsgaii_variation: dict[str, Any] | None = None
+    config_overrides: dict[str, Any] | None = None
 
 
 @dataclass
 class StudyResult:
     task: StudyTask
     selection: ProblemSelection
-    metrics: Dict[str, Any]
+    metrics: dict[str, Any]
 
-    def to_row(self) -> Dict[str, Any]:
+    def to_row(self) -> dict[str, Any]:
         hv_ref = self.metrics.get("hv_reference")
         hv_ref_str = " ".join(f"{val:.6f}" for val in hv_ref) if isinstance(hv_ref, np.ndarray) else ""
         row = {

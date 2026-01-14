@@ -15,7 +15,7 @@ from pymoo.problems import get_problem
 from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PM
 
-from vamos import optimize, OptimizeConfig, make_problem_selection
+from vamos import optimize, make_problem_selection
 from vamos.engine.algorithm.config import NSGAIIConfig
 
 try:
@@ -50,17 +50,16 @@ for seed in range(5):
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
         .mutation("pm", prob=1.0 / N_VAR, eta=MUTATION_ETA)
         .selection("tournament")
-        .fixed()
+        .build()
     )
-    config = OptimizeConfig(
-        problem=problem,
+    result = optimize(
+        problem,
         algorithm="nsgaii",
         algorithm_config=algo_config,
         termination=("n_eval", N_EVALS),
         seed=seed,
         engine="numpy",
     )
-    result = optimize(config)
     hv_vamos = compute_hv(result.F, PROBLEM_NAME)
     vamos_results.append(hv_vamos)
     print(f"  VAMOS: HV={hv_vamos:.6f}")

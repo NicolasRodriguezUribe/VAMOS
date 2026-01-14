@@ -70,7 +70,7 @@ def resolve_prob_expression(
 
 
 def resolve_bounds_array(
-    problem: "ProblemProtocol",
+    problem: ProblemProtocol,
     encoding: EncodingLike = "real",
 ) -> tuple[np.ndarray, np.ndarray]:
     """

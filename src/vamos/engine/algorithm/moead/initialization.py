@@ -40,13 +40,13 @@ from vamos.foundation.observer import RunContext
 
 def initialize_moead_run(
     cfg: dict[str, Any],
-    kernel: "KernelBackend",
-    problem: "ProblemProtocol",
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
     termination: tuple[str, Any],
     seed: int,
-    eval_strategy: "EvaluationBackend | None" = None,
-    live_viz: "LiveVisualization | None" = None,
-) -> tuple[MOEADState, Any, Any, int, "HVTracker"]:
+    eval_strategy: EvaluationBackend | None = None,
+    live_viz: LiveVisualization | None = None,
+) -> tuple[MOEADState, Any, Any, int, HVTracker]:
     """Initialize all components for a MOEA/D run.
 
     Parameters
@@ -191,7 +191,7 @@ def initialize_population(
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
-    problem: "ProblemProtocol",
+    problem: ProblemProtocol,
     constraint_mode: str,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     """Initialize population based on encoding.

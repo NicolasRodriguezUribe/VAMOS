@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 
 
 def get_live_viz(
-    live_viz: "LiveVisualization | None",
-) -> "LiveVisualization":
+    live_viz: LiveVisualization | None,
+) -> LiveVisualization:
     """
     Get live visualization callback, defaulting to no-op.
 
@@ -43,8 +43,8 @@ def get_live_viz(
 
 
 def notify_generation(
-    live_cb: "LiveVisualization",
-    kernel: "KernelBackend",
+    live_cb: LiveVisualization,
+    kernel: KernelBackend,
     generation: int,
     F: np.ndarray,
     stats: dict[str, Any] | None = None,
@@ -80,7 +80,7 @@ def notify_generation(
     return live_should_stop(live_cb)
 
 
-def live_should_stop(live_cb: "LiveVisualization") -> bool:
+def live_should_stop(live_cb: LiveVisualization) -> bool:
     should_stop = getattr(live_cb, "should_stop", None)
     if not callable(should_stop):
         return False
@@ -95,7 +95,7 @@ def setup_genealogy(
     F: np.ndarray,
     track_genealogy: bool,
     algorithm_name: str = "algorithm",
-) -> tuple["GenealogyTracker | None", np.ndarray | None]:
+) -> tuple[GenealogyTracker | None, np.ndarray | None]:
     """
     Initialize genealogy tracking if enabled.
 
@@ -134,7 +134,7 @@ def setup_genealogy(
 
 
 def track_offspring_genealogy(
-    state: "AlgorithmState",
+    state: AlgorithmState,
     parent_idx: np.ndarray,
     offspring_count: int,
     operator_name: str = "variation",
@@ -183,8 +183,8 @@ def track_offspring_genealogy(
 
 def finalize_genealogy(
     result: dict[str, Any],
-    state: "AlgorithmState",
-    kernel: "KernelBackend",
+    state: AlgorithmState,
+    kernel: KernelBackend,
 ) -> None:
     """
     Finalize genealogy tracking and add to result.

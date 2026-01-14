@@ -2,7 +2,7 @@
 
 ## Executive summary
 - Operators are split into `src/vamos/operators/impl` (implementations) and `src/vamos/operators/policies` (algorithm wiring), and an architecture boundary test now guards layer inversions; foundation->engine and engine->ux edges are removed.
-- Import graph is cleaner, but `experiment.runner` and `experiment.study.runner` form a static cycle; coupling is concentrated in experiment->engine/ux and a small foundation->operators dependency for kernels.
+- Import graph is cleaner; experiment import cycles are now guarded, while coupling remains concentrated in experiment->engine/ux and a small foundation->operators dependency for kernels.
 - Experiment orchestration modules (runner/quick/CLI) remain large and mix execution, IO, and presentation, creating monolith risk.
 - Algorithm classes are large but mostly cohesive; variation pipeline and config classes remain heavy and will be hard to evolve without stronger interfaces.
 - Public API remains broad; optimize/runner now live under experiment while foundation core API is primitives-only.
@@ -33,7 +33,7 @@ Entry points (from `pyproject.toml`):
 - `vamos-benchmark` -> `src/vamos/experiment/benchmark/cli.py`
 - `vamos-studio` -> `src/vamos/experiment/studio/app.py`
 - `vamos-zoo` -> `src/vamos/experiment/zoo/cli.py`
-- `vamos-tune` -> `src/vamos/engine/tuning/cli.py`
+- `vamos-tune` -> `src/vamos/experiment/cli/tune.py`
 
 Primary public APIs:
 - `src/vamos/__init__.py` reexports high-level functions, configs, plotting, and problem registries.
@@ -109,7 +109,7 @@ Utility modules that are growing:
 Static import graph summary:
 - Internal modules scanned: 276
 - Internal import edges: 563
-- Module-level cycles detected: 1 (`experiment.runner` <-> `experiment.study.runner` via an import inside `run_study`)
+- Module-level cycles detected: 0 (guarded by `tests/architecture/test_experiment_import_cycles.py`)
 
 Cross-layer edges by count (top-level package segment):
 - engine -> foundation: 71
@@ -125,11 +125,11 @@ Cross-layer edges by count (top-level package segment):
 Examples of risky couplings:
 - `src/vamos/experiment/runner.py` imports `vamos.engine.algorithm.factory` and `vamos.engine.config.*` (experiment -> engine).
 - `src/vamos/experiment/runner.py` imports `vamos.ux.visualization.plotting` and `LiveParetoPlot` (experiment -> ux).
-- `src/vamos/experiment/study/runner.py` imports `run_single` from `vamos.experiment.runner`, while `run_study` in runner imports `StudyRunner` (static cycle).
+- `run_study` now lives in `src/vamos/experiment/study/api.py`, so experiment orchestration no longer imports the study runner directly.
 - `src/vamos/foundation/kernel/numpy_backend.py` imports `vamos.operators.impl.real.*` (foundation -> operators; shared package, still a tight dependency).
 - `src/vamos/experiment/studio/app.py` imports `vamos.engine.algorithm.config.NSGAIIConfig` (experiment -> engine).
 
-There is a single static cycle between `experiment.runner` and `experiment.study.runner`; otherwise, foundation->engine/ux and engine->ux edges are cleared, improving backend modularity and UX replaceability.
+No static cycles remain in `experiment` modules; foundation->engine/ux and engine->ux edges are cleared, improving backend modularity and UX replaceability.
 
 ## Engineering hygiene findings
 Packaging:
@@ -166,10 +166,10 @@ Performance boundaries:
 - Multiple kernel backends (NumPy, Numba, MooCore) exist; kernels depend on the shared operators package but not engine, improving backend modularity.
 
 ## Prioritized recommendations (ranked)
-1) High - Split the experiment runner/CLI pipeline and remove the `experiment.runner` <-> `experiment.study.runner` cycle.
-Evidence: `src/vamos/experiment/runner.py`, `src/vamos/experiment/study/runner.py`, `src/vamos/experiment/cli/parser.py`.
-Refactor plan: extract shared execution logic (e.g., `src/vamos/experiment/execution.py`), make `StudyRunner` depend on an execution interface, and move CLI defaults/validation into dedicated `cli/args.py` and `cli/validation.py`; eliminate mutual imports via dependency inversion.
-Suggested tests: add a lightweight import-cycle check for experiment modules; unit tests for config override resolution; integration tests that CLI parsing matches programmatic calls.
+1) Done - Split experiment runner/CLI wiring and remove the `experiment.runner` <-> `experiment.study.runner` cycle.
+Evidence: `src/vamos/experiment/study/api.py`, `src/vamos/experiment/execution.py`, `src/vamos/experiment/cli/*`.
+Refactor summary: shared execution lives in `experiment/execution.py`, CLI defaults/validation live in `cli/args.py` + `cli/validation.py`, and study orchestration is routed through `study/api.py`.
+Suggested tests: import-cycle check for experiment modules (added), plus config override and CLI parity tests.
 
 2) High - Separate result presentation (plotting, saving, printing) from core API results.
 Evidence: `src/vamos/experiment/optimization_result.py`.
@@ -232,8 +232,8 @@ Dependency inversion suggestions:
 - Testing strategy by layer (unit, integration, optional backends)
 
 ## Next 2 PRs (high leverage, well scoped)
-1) PR: Split experiment runner/CLI responsibilities and break the `experiment.runner` <-> `experiment.study.runner` cycle.
-Scope: extract shared execution logic into `src/vamos/experiment/execution.py`, move CLI defaults/validation into dedicated modules, and add a small import-cycle guard for experiment modules.
+1) PR: Split experiment runner/CLI responsibilities and break experiment import cycles (completed).
+Scope: shared execution in `src/vamos/experiment/execution.py`, CLI defaults/validation in dedicated modules, and import-cycle guard for experiment modules.
 
 2) PR: Separate output/presentation from optimize/quick and standardize logging.
 Scope: move plot/save/summary helpers into `src/vamos/experiment/output.py` or `src/vamos/ux/`, replace runtime `print` calls with structured logging, and add tests covering output helpers.

@@ -25,7 +25,7 @@ def build_variation_pipeline(
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
-    problem: "ProblemProtocol",
+    problem: ProblemProtocol,
 ) -> VariationPipeline:
     """Build variation pipeline for IBEA.
 

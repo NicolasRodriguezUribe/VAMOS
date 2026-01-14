@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Callable, Iterator, Literal, Sequence
+from typing import Literal
+from collections.abc import Callable, Iterator, Sequence
 
 import numpy as np
 
@@ -21,49 +22,49 @@ class Expr:
         self.op = op
         self.args: list[Expr | Var | float] = list(args)
 
-    def _coerce(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
-        if isinstance(other, (int, float, np.ndarray)):
+    def _coerce(self, other: Expr | Var | float | int | np.number) -> Expr:
+        if isinstance(other, (int, float, np.number)):
             return Expr("const", [float(other)])
         if isinstance(other, Var):
             return Expr("var", [other])
         if isinstance(other, Expr):
             return other
-        raise TypeError(f"Unsupported operand type {type(other)}")
+        raise TypeError(f"Unsupported operand type (scalar expected): {type(other)}")
 
-    def __add__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
+    def __add__(self, other: Expr | Var | float | int | np.number) -> Expr:
         return Expr("add", [self, self._coerce(other)])
 
-    def __radd__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
+    def __radd__(self, other: Expr | Var | float | int | np.number) -> Expr:
         return self._coerce(other).__add__(self)
 
-    def __sub__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
+    def __sub__(self, other: Expr | Var | float | int | np.number) -> Expr:
         return Expr("sub", [self, self._coerce(other)])
 
-    def __rsub__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
+    def __rsub__(self, other: Expr | Var | float | int | np.number) -> Expr:
         return self._coerce(other).__sub__(self)
 
-    def __mul__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
+    def __mul__(self, other: Expr | Var | float | int | np.number) -> Expr:
         return Expr("mul", [self, self._coerce(other)])
 
-    def __rmul__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
+    def __rmul__(self, other: Expr | Var | float | int | np.number) -> Expr:
         return self._coerce(other).__mul__(self)
 
-    def __truediv__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
+    def __truediv__(self, other: Expr | Var | float | int | np.number) -> Expr:
         return Expr("div", [self, self._coerce(other)])
 
-    def __rtruediv__(self, other: Expr | Var | float | int | np.ndarray) -> Expr:
+    def __rtruediv__(self, other: Expr | Var | float | int | np.number) -> Expr:
         return Expr("div", [self._coerce(other), self])
 
-    def __pow__(self, power: Expr | Var | float | int | np.ndarray, modulo: object | None = None) -> Expr:
+    def __pow__(self, power: Expr | Var | float | int | np.number, modulo: object | None = None) -> Expr:
         return Expr("pow", [self, self._coerce(power)])
 
-    def __le__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:
+    def __le__(self, other: Expr | Var | float | int | np.number) -> Constraint:
         return Constraint(lhs=self, rhs=self._coerce(other), sense="<=")
 
-    def __ge__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:
+    def __ge__(self, other: Expr | Var | float | int | np.number) -> Constraint:
         return Constraint(lhs=self, rhs=self._coerce(other), sense=">=")
 
-    def __eq__(self, other: Expr | Var | float | int | np.ndarray) -> Constraint:  # type: ignore[override]
+    def __eq__(self, other: Expr | Var | float | int | np.number) -> Constraint:  # type: ignore[override]
         return Constraint(lhs=self, rhs=self._coerce(other), sense="==")
 
 
