@@ -1,17 +1,13 @@
 """
-Experiment spec validation derived from the CLI parser + config dataclasses.
-
-This keeps the YAML/JSON spec format in sync with the actual CLI flags and
-algorithm config structures without maintaining a separate hard-coded whitelist.
+Schema validation helpers for experiment YAML/JSON specs.
 """
 
 from __future__ import annotations
 
-import argparse
 from collections.abc import Iterable, Mapping
 from dataclasses import fields
 from difflib import get_close_matches
-from typing import Any, cast
+from typing import TypedDict, cast
 
 from vamos.archive.bounded_archive import BoundedArchiveConfig
 from vamos.engine.algorithm.config import (
@@ -27,8 +23,17 @@ from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import available_problem_names
 from vamos.monitoring.hv_convergence import HVConvergenceConfig
 
-from .spec_args import parser_spec_keys
-from .spec_types import ExperimentSpec
+
+SpecBlock = dict[str, object]
+ProblemOverrides = dict[str, SpecBlock | None]
+
+
+class ExperimentSpec(TypedDict, total=False):
+    version: str
+    defaults: SpecBlock
+    problems: ProblemOverrides
+    stopping: SpecBlock
+    archive: SpecBlock
 
 
 EXPERIMENT_SPEC_VERSION = "1"
@@ -46,7 +51,23 @@ _ALGORITHM_BLOCKS: dict[str, type] = {
 _OPERATOR_SPEC_KEYS = ("crossover", "mutation", "selection", "repair", "aggregation")
 
 
-def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -> ExperimentSpec:
+def allowed_override_keys(extra_keys: Iterable[str] | None = None) -> set[str]:
+    """
+    Build the allowed override keys for defaults/problem blocks.
+
+    Pass CLI-derived keys (argument spec keys) via `extra_keys`.
+    """
+    keys = set(extra_keys or [])
+    keys.update(_dataclass_field_names(ExperimentConfig))
+    keys.update(_ALGORITHM_BLOCKS.keys())
+    keys.update({"stopping", "archive"})
+    return keys
+
+
+def validate_experiment_spec(spec: object, *, allowed_overrides: Iterable[str]) -> ExperimentSpec:
+    """
+    Validate an experiment spec and return a normalized mapping.
+    """
     spec_dict = _as_str_dict(spec, path="Experiment spec")
 
     unknown = _unknown_keys(spec_dict, {"version", "defaults", "problems", "stopping", "archive"})
@@ -60,8 +81,9 @@ def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -
     if version_str != EXPERIMENT_SPEC_VERSION:
         raise ValueError(f"Unsupported experiment spec version. Expected version={EXPERIMENT_SPEC_VERSION!r}, got {version_str!r}.")
 
+    override_keys = allowed_override_keys(allowed_overrides)
     defaults = _as_str_dict(spec_dict.get("defaults"), path="Experiment spec 'defaults'")
-    _validate_overrides_block(defaults, path="defaults", parser=parser)
+    _validate_overrides_block(defaults, path="defaults", allowed_keys=override_keys)
 
     problems = _as_str_dict(spec_dict.get("problems"), path="Experiment spec 'problems'")
     known_problems = sorted(available_problem_names())
@@ -76,7 +98,7 @@ def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -
         if value is None:
             continue
         overrides = _as_str_dict(value, path=f"Experiment spec 'problems.{key}'")
-        _validate_overrides_block(overrides, path=f"problems.{key}", parser=parser)
+        _validate_overrides_block(overrides, path=f"problems.{key}", allowed_keys=override_keys)
 
     if "stopping" in spec_dict:
         _validate_stopping_block(spec_dict.get("stopping"), path="stopping")
@@ -86,9 +108,8 @@ def validate_experiment_spec(spec: object, *, parser: argparse.ArgumentParser) -
     return cast(ExperimentSpec, spec_dict)
 
 
-def _validate_overrides_block(block: dict[str, Any], *, path: str, parser: argparse.ArgumentParser) -> None:
-    allowed = _allowed_override_keys(parser)
-    unknown = _unknown_keys(block, allowed)
+def _validate_overrides_block(block: SpecBlock, *, path: str, allowed_keys: set[str]) -> None:
+    unknown = _unknown_keys(block, allowed_keys)
     if unknown:
         raise ValueError(f"Unknown keys in '{path}': {', '.join(unknown)}")
 
@@ -107,15 +128,7 @@ def _validate_overrides_block(block: dict[str, Any], *, path: str, parser: argpa
         _validate_archive_block(block.get("archive"), path=f"{path}.archive")
 
 
-def _allowed_override_keys(parser: argparse.ArgumentParser) -> set[str]:
-    keys = set(parser_spec_keys(parser))
-    keys.update(_dataclass_field_names(ExperimentConfig))
-    keys.update(_ALGORITHM_BLOCKS.keys())
-    keys.update({"stopping", "archive"})
-    return keys
-
-
-def _validate_algorithm_block(block: dict[str, Any], *, config_cls: type, path: str) -> None:
+def _validate_algorithm_block(block: SpecBlock, *, config_cls: type, path: str) -> None:
     allowed = set(_dataclass_field_names(config_cls))
     unknown = _unknown_keys(block, allowed)
     if unknown:
@@ -201,7 +214,7 @@ def _dataclass_field_names(cls: object) -> list[str]:
     return [field.name for field in fields(cls)]  # type: ignore[arg-type]
 
 
-def _unknown_keys(d: Mapping[str, Any], allowed: Iterable[str]) -> list[str]:
+def _unknown_keys(d: Mapping[str, object], allowed: Iterable[str]) -> list[str]:
     allowed_set = set(allowed)
     return sorted(key for key in d.keys() if key not in allowed_set)
 
@@ -210,14 +223,24 @@ def _is_number(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def _as_str_dict(value: object, *, path: str) -> dict[str, Any]:
+def _as_str_dict(value: object, *, path: str) -> SpecBlock:
     if value is None:
         return {}
     if not isinstance(value, Mapping):
         raise TypeError(f"{path} must be a mapping (YAML/JSON object).")
-    out: dict[str, Any] = {}
+    out: SpecBlock = {}
     for key, item in value.items():
         if not isinstance(key, str) or not key:
             raise TypeError(f"{path} keys must be non-empty strings.")
         out[key] = item
     return out
+
+
+__all__ = [
+    "EXPERIMENT_SPEC_VERSION",
+    "ExperimentSpec",
+    "ProblemOverrides",
+    "SpecBlock",
+    "allowed_override_keys",
+    "validate_experiment_spec",
+]

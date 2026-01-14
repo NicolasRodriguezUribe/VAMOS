@@ -143,6 +143,20 @@ module = "vamos.engine.algorithm.config"
 strict = true
 
 [[tool.mypy.overrides]]
+module = [
+  "vamos.engine.config.spec",
+  "vamos.experiment.optimize",
+  "vamos.experiment.optimization_result",
+  "vamos.experiment.unified",
+  "vamos.experiment.cli.*",
+  "vamos.experiment.services.*",
+  "vamos.ux.analysis.*",
+  "vamos.ux.studio.*",
+  "vamos.ux.results",
+]
+strict = true
+
+[[tool.mypy.overrides]]
 module = "vamos.engine.algorithm.registry"
 disallow_untyped_defs = true
 

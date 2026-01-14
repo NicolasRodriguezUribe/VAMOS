@@ -8,13 +8,16 @@ VAMOS prioritizes **user-friendly APIs**. Always prefer the clean public interfa
 
 ```python
 # ✅ PREFERRED - Clean public API
-from vamos import (
-    optimize, OptimizeConfig, NSGAIIConfig,
-    ZDT1, make_problem_selection,
-    FeatureSelectionProblem, HyperparameterTuningProblem,
-    plot_pareto_front_2d, weighted_sum_scores,
-    ParamSpace, RandomSearchTuner, RacingTuner,
+from vamos import optimize, make_problem_selection
+from vamos.algorithms import NSGAIIConfig
+from vamos.problems import (
+    ZDT1,
+    FeatureSelectionProblem,
+    HyperparameterTuningProblem,
+    WeldedBeamDesignProblem,
 )
+from vamos.ux.api import plot_pareto_front_2d, weighted_sum_scores
+from vamos.engine.tuning.api import ParamSpace, RandomSearchTuner, RacingTuner
 
 # ❌ AVOID - Internal paths (for contributors only)
 from vamos.engine.algorithm.config import NSGAIIConfig
@@ -37,7 +40,8 @@ Algorithms use **array-based populations** (X=decision vars, F=objectives, G=con
 ### Problem Creation
 ```python
 # User-friendly public API
-from vamos import make_problem_selection, ZDT1, FeatureSelectionProblem
+from vamos import make_problem_selection
+from vamos.problems import ZDT1, FeatureSelectionProblem
 
 # Via registry
 selection = make_problem_selection("zdt1", n_var=30)
@@ -50,7 +54,7 @@ problem = FeatureSelectionProblem(dataset="breast_cancer")
 
 ### Algorithm Configuration (Builder Pattern)
 ```python
-from vamos import NSGAIIConfig
+from vamos.algorithms import NSGAIIConfig
 cfg = (NSGAIIConfig()
     .pop_size(100)
     .crossover("sbx", prob=0.9, eta=20.0)
@@ -63,10 +67,11 @@ cfg = (NSGAIIConfig()
 
 ### Running Experiments
 ```python
-from vamos import optimize, OptimizeConfig, NSGAIIConfig, make_problem_selection
+from vamos import optimize
+from vamos.algorithms import NSGAIIConfig
+from vamos.problems import ZDT1
 
-selection = make_problem_selection("zdt1", n_var=30)
-problem = selection.instantiate()
+problem = ZDT1(n_var=30)
 
 cfg = (NSGAIIConfig()
     .pop_size(100)
@@ -77,13 +82,11 @@ cfg = (NSGAIIConfig()
     .engine("numpy")
     .build())
 result = optimize(
-    OptimizeConfig(
-        problem=problem,
-        algorithm="nsgaii",
-        algorithm_config=cfg,
-        termination=("n_eval", 10000),
-        seed=42,
-    )
+    problem,
+    algorithm="nsgaii",
+    algorithm_config=cfg,
+    termination=("n_eval", 10000),
+    seed=42,
 )
 print(f"Found {result.F.shape[0]} solutions")
 ```
@@ -106,7 +109,7 @@ run_single(
 ### Racing-Style Tuning
 Hyperparameter tuning with racing (irace-inspired):
 ```python
-from vamos import ParamSpace, Real, Int, Categorical, RandomSearchTuner, RacingTuner
+from vamos.engine.tuning.api import ParamSpace, Real, Int, Categorical, RandomSearchTuner, RacingTuner
 
 space = ParamSpace(params={
     "crossover_prob": Real(0.7, 1.0),

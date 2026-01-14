@@ -28,30 +28,31 @@ This file explains how to set up the environment, how the project is structured,
 
 VAMOS prioritizes ease of use:
 
-1.  **Unified Entry Point**: Prefer `vamos.optimize(...)` for user-facing examples; use `OptimizeConfig` only when you need full control.
+1.  **Unified Entry Point**: Prefer `vamos.optimize(...)` for user-facing examples; use algorithm config objects for full control.
     ```python
     from vamos import optimize
 
     result = optimize("zdt1", algorithm="nsgaii", budget=2000, pop_size=100, seed=42)
     ```
     ```python
-    from vamos import OptimizeConfig, make_problem_selection, optimize
-    from vamos.engine.api import NSGAIIConfig
+    from vamos import optimize
+    from vamos.algorithms import NSGAIIConfig
+    from vamos.problems import ZDT1
 
-    problem = make_problem_selection("zdt1").instantiate()
-    cfg = OptimizeConfig(
-        problem=problem,
+    problem = ZDT1(n_var=30)
+    cfg = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var, engine="numpy")
+    result = optimize(
+        problem,
         algorithm="nsgaii",
-        algorithm_config=NSGAIIConfig.default(pop_size=100, n_var=problem.n_var, engine="numpy"),
+        algorithm_config=cfg,
         termination=("n_eval", 2000),
         seed=42,
     )
-    result = optimize(cfg)
     ```
 
-2.  **Interactive Results**: Use `result.explore()` for immediate visualization in notebooks.
-3.  **Publication Ready**: Use `result.to_latex()` for generating tables directly from code.
-4.  **No Internal Imports**: Avoid deep internal modules (`vamos.engine.algorithm...`, `vamos.foundation...`). Use the public facades: `vamos`, `vamos.engine.api`, and `vamos.ux.api`.
+2.  **Interactive Results**: Use `explore_result_front(result)` for immediate visualization in notebooks.
+3.  **Publication Ready**: Use `result_to_latex(result)` for generating tables directly from code.
+4.  **No Internal Imports**: Avoid deep internal modules (`vamos.engine.algorithm...`, `vamos.foundation...`). Use the public facades: `vamos`, `vamos.algorithms`, `vamos.problems`, and `vamos.ux.api`.
 
 ---
 
@@ -72,8 +73,8 @@ VAMOS prioritizes ease of use:
 
 - **Library imports (user-facing)**:
   ```python
-  from vamos import optimize, OptimizeConfig, make_problem_selection
-  from vamos.engine.api import NSGAIIConfig
+  from vamos import optimize, make_problem_selection
+  from vamos.algorithms import NSGAIIConfig
   from vamos.ux.api import plot_pareto_front_2d, weighted_sum_scores
   ```
 - **Library imports (contributors)**: Layered packages for internal work:
@@ -90,7 +91,7 @@ VAMOS prioritizes ease of use:
 - `engine`: evolutionary/search machinery — algorithms, operators, hyperheuristics, tuning pipelines, and algorithm configs.
 - `experiment`: orchestration and entry points — CLI, StudyRunner, benchmark suites, diagnostics, and zoo presets.
 - `ux`: user-facing analysis/visualization (including MCDM/stats) and Studio surfaces.
-- The `vamos` package root re-exports a curated public API (see `vamos.api`, `vamos.engine.api`, `vamos.ux.api`, and `vamos.plotting`); use these for user-facing examples.
+- The `vamos` package root re-exports a curated public API (see `vamos.api`, `vamos.algorithms`, `vamos.problems`, and `vamos.ux.api`); use these for user-facing examples.
 - Standard results layout under `results/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`. All experiment runners (CLI/benchmark/zoo) must write to this schema; UX helpers (`vamos.ux.analysis.results`) read it.
 ---
 
@@ -101,7 +102,7 @@ VAMOS prioritizes ease of use:
   - `engine/` - algorithms, operators, hyperheuristics, tuning stacks, variation/config helpers.
   - `experiment/` - CLI entrypoints, study runner, benchmark/reporting, diagnostics, zoo presets. Includes `experiment_context.py` and `quick.py`.
   - `ux/` - analysis/MCDM/stats helpers, visualization, Studio.
-  - `api.py` - Root facade. Other facades (`algorithms`, `problems`) are now internal.
+  - `api.py` - Root facade. Other facades (`algorithms`, `problems`, `ux.api`) are public.
 - `tests/` - pytest suite (operators, algorithms, CLI/study integration, examples/notebooks when enabled).
 - `examples/`, `notebooks/` - runnable examples and exploratory notebooks.
 - `notebooks/90_paper_benchmarking.ipynb` includes SAES-style critical distance plots (toggle with `CD_STYLE`).

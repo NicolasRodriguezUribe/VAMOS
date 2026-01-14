@@ -13,7 +13,7 @@ import numpy as np
 
 from vamos import optimize
 from vamos.engine.tuning.api import Int, Instance, ParamSpace, RacingTuner, Real, Scenario, TuningTask
-from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
+from vamos.problems import ZDT1
 from vamos.algorithms import NSGAIIConfig
 
 

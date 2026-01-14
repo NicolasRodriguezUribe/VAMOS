@@ -4,11 +4,11 @@ Shared helpers and operator registries for variation pipelines.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.registry import Registry
-from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName
+from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairName
 from vamos.operators.impl.binary import (
     one_point_crossover,
     two_point_crossover,
@@ -278,6 +278,24 @@ def validate_operator_support(encoding: EncodingLike, crossover: CrossoverName, 
             raise ValueError(f"Unsupported mutation '{mutation}' for real encoding.")
 
 
+def ensure_supported_operator_names(
+    encoding: EncodingLike,
+    crossover: str,
+    mutation: str,
+) -> tuple[CrossoverName, MutationName]:
+    cross_name = cast(CrossoverName, crossover)
+    mut_name = cast(MutationName, mutation)
+    validate_operator_support(encoding, cross_name, mut_name)
+    return cross_name, mut_name
+
+
+def ensure_supported_repair_name(encoding: EncodingLike, repair: str) -> RepairName:
+    normalized = normalize_encoding(encoding)
+    if normalized != "real":
+        raise ValueError("Repair operators are only supported for real encoding.")
+    return cast(RepairName, repair)
+
+
 def __getattr__(name: str) -> Registry[Any]:
     if name in _REGISTRY_LABELS:
         _populate_defaults()
@@ -289,6 +307,8 @@ __all__ = [
     "resolve_prob_expression",
     "prepare_mutation_params",
     "validate_operator_support",
+    "ensure_supported_operator_names",
+    "ensure_supported_repair_name",
     "PERM_CROSSOVER",
     "PERM_MUTATION",
     "BINARY_CROSSOVER",

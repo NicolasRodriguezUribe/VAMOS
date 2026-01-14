@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
-from vamos.engine.config.variation import normalize_variation_config
-
-VariationConfig = dict[str, Any]
+from vamos.engine.config.variation import VariationConfig, normalize_variation_config
 
 
 def normalize_variations(
@@ -34,3 +30,6 @@ def normalize_variations(
         normalize_variation_config(ibea_variation),
         normalize_variation_config(smpso_variation),
     )
+
+
+__all__ = ["VariationConfig", "normalize_variation_config", "normalize_variations"]

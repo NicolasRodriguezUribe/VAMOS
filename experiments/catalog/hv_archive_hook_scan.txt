@@ -42,7 +42,7 @@ src\vamos\foundation\metrics\hypervolume.py:65: hv += width * height
 src\vamos\hooks\hv_archive_hooks.py:10: from vamos.archive import BoundedArchive, BoundedArchiveConfig
 src\vamos\hooks\hv_archive_hooks.py:11: from vamos.foundation.metrics.hypervolume import compute_hypervolume
 src\vamos\hooks\hv_archive_hooks.py:13: from vamos.monitoring import HVConvergenceConfig, HVConvergenceMonitor, HVDecision
-src\vamos\hooks\hv_archive_hooks.py:30: def _try_compute_hv(F: np.ndarray, ref: Optional[List[float]] = None) -> Optional[float]:
+src\vamos\hooks\hv_archive_hooks.py:30: def _try_compute_hv(F: np.ndarray, ref: list[float] | None = None) -> float | None:
 src\vamos\hooks\hv_archive_hooks.py:32: Best-effort HV computation:
 src\vamos\hooks\hv_archive_hooks.py:33: - For 2D minimization: exact via compute_hypervolume
 src\vamos\hooks\hv_archive_hooks.py:45: return float(compute_hypervolume(F, ref))
@@ -116,13 +116,13 @@ src\vamos\archive\bounded_archive.py:8: PrunePolicy = Literal["crowding", "hv_co
 src\vamos\archive\bounded_archive.py:12: class BoundedArchiveConfig:
 src\vamos\archive\bounded_archive.py:14: archive_type: ArchiveType = "size_cap"
 src\vamos\archive\bounded_archive.py:21: # HV contribution pruning
-src\vamos\archive\bounded_archive.py:22: hv_ref_point: Optional[List[float]] = None
+src\vamos\archive\bounded_archive.py:22: hv_ref_point: list[float] | None = None
 src\vamos\archive\bounded_archive.py:23: hv_samples: int = 20000  # for Monte Carlo contributions (m>2 fallback)
 src\vamos\archive\bounded_archive.py:28: class ArchiveUpdate:
 src\vamos\monitoring\hv_convergence.py:13: class HVConvergenceConfig:
 src\vamos\monitoring\hv_convergence.py:27: class HVDecision:
 src\vamos\monitoring\hv_convergence.py:31: hv: float
-src\vamos\monitoring\hv_convergence.py:32: hv_delta: Optional[float]
+src\vamos\monitoring\hv_convergence.py:32: hv_delta: float | None
 src\vamos\monitoring\hv_convergence.py:36: class HVConvergenceMonitor:
 src\vamos\monitoring\hv_convergence.py:38: Algorithm-agnostic monitor: you feed (evals, hv) samples; it returns stop decisions.
 src\vamos\monitoring\hv_convergence.py:39: Logging is done by caller using `trace_rows()`.

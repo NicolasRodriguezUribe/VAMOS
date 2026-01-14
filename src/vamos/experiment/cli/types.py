@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+
+from vamos.engine.config.spec import ExperimentSpec, ProblemOverrides, SpecBlock
 
 
 @dataclass(frozen=True)
 class SpecDefaults:
-    spec: dict[str, Any]
-    problem_overrides: dict[str, Any]
-    experiment_defaults: dict[str, Any]
-    nsgaii_defaults: dict[str, Any]
-    moead_defaults: dict[str, Any]
-    smsemoa_defaults: dict[str, Any]
-    nsgaiii_defaults: dict[str, Any]
+    spec: ExperimentSpec
+    problem_overrides: ProblemOverrides
+    experiment_defaults: SpecBlock
+    nsgaii_defaults: SpecBlock
+    moead_defaults: SpecBlock
+    smsemoa_defaults: SpecBlock
+    nsgaiii_defaults: SpecBlock

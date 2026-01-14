@@ -1,55 +1,80 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import cast
 
 from vamos.engine.config.loader import load_experiment_spec
+from vamos.engine.config.spec import ExperimentSpec, ProblemOverrides, SpecBlock
 
 from .types import SpecDefaults
 
 
+def _as_spec_block(value: object) -> SpecBlock:
+    if isinstance(value, dict):
+        return cast(SpecBlock, value)
+    return {}
+
+
+def _as_problem_overrides(value: object) -> ProblemOverrides:
+    if isinstance(value, dict):
+        return cast(ProblemOverrides, value)
+    return {}
+
+
 def load_spec_defaults(config_path: str | None) -> SpecDefaults:
     """Load YAML/JSON spec if provided and return defaults per algorithm and problems."""
-    spec: dict[str, Any] = {}
-    problem_overrides: dict[str, Any] = {}
-    experiment_defaults: dict[str, Any] = {}
-    nsgaii_defaults: dict[str, Any] = {}
-    moead_defaults: dict[str, Any] = {}
-    smsemoa_defaults: dict[str, Any] = {}
-    nsgaiii_defaults: dict[str, Any] = {}
+    spec: ExperimentSpec = {}
+    problem_overrides: ProblemOverrides = {}
+    experiment_defaults: SpecBlock = {}
+    nsgaii_defaults: SpecBlock = {}
+    moead_defaults: SpecBlock = {}
+    smsemoa_defaults: SpecBlock = {}
+    nsgaiii_defaults: SpecBlock = {}
     if config_path:
         raw = load_experiment_spec(config_path)
         if raw is None:
             raw = {}
         if not isinstance(raw, dict):
             raise TypeError("Experiment spec must be a mapping (YAML/JSON object).")
-        spec = raw
+        spec = cast(ExperimentSpec, raw)
 
         problems = spec.get("problems", {})
         if problems is None:
             problems = {}
         if not isinstance(problems, dict):
             raise ValueError("Experiment spec 'problems' must be a mapping of problem_key -> overrides.")
-        problem_overrides = problems
+        problem_overrides = _as_problem_overrides(problems)
 
         defaults = spec.get("defaults", {})
         if defaults is None:
             defaults = {}
         if not isinstance(defaults, dict):
             raise ValueError("Experiment spec 'defaults' must be a mapping when provided.")
-        experiment_defaults = defaults
+        experiment_defaults = _as_spec_block(defaults)
 
-        nsgaii_defaults = experiment_defaults.get("nsgaii", {}) or {}
-        if not isinstance(nsgaii_defaults, dict):
+        nsgaii_raw = experiment_defaults.get("nsgaii", {})
+        if nsgaii_raw is None:
+            nsgaii_raw = {}
+        if not isinstance(nsgaii_raw, dict):
             raise ValueError("Experiment spec 'defaults.nsgaii' must be a mapping when provided.")
-        moead_defaults = experiment_defaults.get("moead", {}) or {}
-        if not isinstance(moead_defaults, dict):
+        nsgaii_defaults = cast(SpecBlock, nsgaii_raw)
+        moead_raw = experiment_defaults.get("moead", {})
+        if moead_raw is None:
+            moead_raw = {}
+        if not isinstance(moead_raw, dict):
             raise ValueError("Experiment spec 'defaults.moead' must be a mapping when provided.")
-        smsemoa_defaults = experiment_defaults.get("smsemoa", {}) or {}
-        if not isinstance(smsemoa_defaults, dict):
+        moead_defaults = cast(SpecBlock, moead_raw)
+        smsemoa_raw = experiment_defaults.get("smsemoa", {})
+        if smsemoa_raw is None:
+            smsemoa_raw = {}
+        if not isinstance(smsemoa_raw, dict):
             raise ValueError("Experiment spec 'defaults.smsemoa' must be a mapping when provided.")
-        nsgaiii_defaults = experiment_defaults.get("nsgaiii", {}) or {}
-        if not isinstance(nsgaiii_defaults, dict):
+        smsemoa_defaults = cast(SpecBlock, smsemoa_raw)
+        nsgaiii_raw = experiment_defaults.get("nsgaiii", {})
+        if nsgaiii_raw is None:
+            nsgaiii_raw = {}
+        if not isinstance(nsgaiii_raw, dict):
             raise ValueError("Experiment spec 'defaults.nsgaiii' must be a mapping when provided.")
+        nsgaiii_defaults = cast(SpecBlock, nsgaiii_raw)
     return SpecDefaults(
         spec=spec,
         problem_overrides=problem_overrides,

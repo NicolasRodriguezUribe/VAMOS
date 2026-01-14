@@ -22,15 +22,11 @@ Requirements:
 from __future__ import annotations
 
 # Use the public API facades for user-friendly imports
-from vamos import (
-    NSGAIIConfig,
-    OptimizeConfig,
-    optimize,
-    make_problem_selection,
-    plot_pareto_front_2d,
-)
+from vamos import optimize, make_problem_selection
+from vamos.algorithms import NSGAIIConfig
+from vamos.ux.api import plot_pareto_front_2d
 # For real-world problems:
-# from vamos import FeatureSelectionProblem, HyperparameterTuningProblem, WeldedBeamDesignProblem
+# from vamos.problems import FeatureSelectionProblem, HyperparameterTuningProblem, WeldedBeamDesignProblem
 
 def main():
     # 1. Setup problem
@@ -48,13 +44,11 @@ def main():
     
     # 3. Run optimization
     result = optimize(
-        OptimizeConfig(
-            problem=problem,
-            algorithm="nsgaii",
-            algorithm_config=cfg,
-            termination=("n_eval", 10000),
-            seed=42,
-        )
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", 10000),
+        seed=42,
     )
     
     # 4. Output/visualize
@@ -80,10 +74,10 @@ if __name__ == "__main__":
 Prefer the user-friendly public API over deep internal imports:
 ```python
 # GOOD - User-friendly public API
-from vamos import optimize, OptimizeConfig, NSGAIIConfig
-from vamos import ZDT1, make_problem_selection
-from vamos import plot_pareto_front_2d, plot_pareto_front_3d
-from vamos import FeatureSelectionProblem, HyperparameterTuningProblem
+from vamos import optimize, make_problem_selection
+from vamos.algorithms import NSGAIIConfig
+from vamos.problems import ZDT1, FeatureSelectionProblem, HyperparameterTuningProblem
+from vamos.ux.api import plot_pareto_front_2d, plot_pareto_front_3d
 
 # AVOID - Deep internal imports (for advanced/extension work only)
 from vamos.engine.algorithm.config import NSGAIIConfig
@@ -94,37 +88,37 @@ from vamos.foundation.problem.real_world.feature_selection import FeatureSelecti
 ## Available Public API Imports
 ```python
 # Core optimization
-from vamos import optimize, OptimizeConfig, OptimizationResult, ExperimentConfig
+from vamos import optimize, OptimizationResult, available_problem_names, make_problem_selection
 
 # Algorithms and configs
-from vamos import (
-    NSGAII, NSGAIIConfig,
-    MOEAD, MOEADConfig,
-    SMSEMOA, SMSEMOAConfig,
-    SPEA2, SPEA2Config,
-    IBEA, IBEAConfig,
-    SMPSO, SMPSOConfig,
-    NSGAIII, NSGAIIIConfig,
+from vamos.algorithms import (
+    NSGAIIConfig,
+    MOEADConfig,
+    SMSEMOAConfig,
+    SPEA2Config,
+    IBEAConfig,
+    SMPSOConfig,
+    NSGAIIIConfig,
 )
 
 # Benchmark problems
-from vamos import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
-from vamos import DTLZ1, DTLZ2, DTLZ3, DTLZ4
-from vamos import WFG1
+from vamos.problems import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
+from vamos.problems import DTLZ1, DTLZ2, DTLZ3, DTLZ4
+from vamos.problems import WFG1
 from vamos import make_problem_selection, available_problem_names
 
 # Real-world problems
-from vamos import FeatureSelectionProblem, HyperparameterTuningProblem, WeldedBeamDesignProblem
+from vamos.problems import FeatureSelectionProblem, HyperparameterTuningProblem, WeldedBeamDesignProblem
 
 # Tuning
-from vamos import ParamSpace, RandomSearchTuner, RacingTuner
+from vamos.engine.tuning.api import ParamSpace, RandomSearchTuner, RacingTuner
 
 # Visualization
-from vamos import plot_pareto_front_2d, plot_pareto_front_3d, plot_hv_convergence
+from vamos.ux.api import plot_pareto_front_2d, plot_pareto_front_3d, plot_hv_convergence
 
 # MCDM / decision-making
-from vamos import weighted_sum_scores, tchebycheff_scores, knee_point_scores
+from vamos.ux.api import weighted_sum_scores, tchebycheff_scores, knee_point_scores
 
 # Statistics
-from vamos import friedman_test, pairwise_wilcoxon, plot_critical_distance
+from vamos.ux.api import friedman_test, pairwise_wilcoxon, plot_critical_distance
 ```

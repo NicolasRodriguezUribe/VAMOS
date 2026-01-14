@@ -74,16 +74,23 @@ class TestOptimizeConvenience:
 
     @pytest.mark.smoke
     def test_result_has_helper_methods(self):
-        """Result should have all helper methods."""
+        """Result should expose selection helpers and UX helpers should be importable."""
+        from vamos.ux.api import (
+            plot_result_front,
+            result_summary_text,
+            result_to_dataframe,
+            save_result,
+        )
+
         problem = ZDT1(n_var=10)
         result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20)
 
-        # Check helper methods exist
-        assert hasattr(result, "summary")
         assert hasattr(result, "best")
-        assert hasattr(result, "plot")
-        assert hasattr(result, "to_dataframe")
-        assert hasattr(result, "save")
+        assert hasattr(result, "front")
+        assert callable(result_summary_text)
+        assert callable(plot_result_front)
+        assert callable(result_to_dataframe)
+        assert callable(save_result)
 
     @pytest.mark.smoke
     def test_run_with_different_seeds(self):

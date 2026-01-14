@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos import optimize
-from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
+from vamos.problems import FeatureSelectionProblem
 from vamos.algorithms import NSGAIIConfig
 
 

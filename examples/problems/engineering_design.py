@@ -15,7 +15,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos import optimize
-from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
+from vamos.problems import WeldedBeamDesignProblem
 from vamos.algorithms import NSGAIIConfig
 
 

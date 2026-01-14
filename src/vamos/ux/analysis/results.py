@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 from collections.abc import Iterable
 
 import numpy as np
@@ -40,7 +39,7 @@ class RunData:
     archive_F: np.ndarray | None
     archive_X: np.ndarray | None
     archive_G: np.ndarray | None
-    metadata: dict[str, Any]
+    metadata: dict[str, object]
 
 
 def _coerce_array(arr: np.ndarray | float | int) -> np.ndarray:
@@ -132,7 +131,7 @@ def load_run_data(run: RunInfo) -> RunData:
     )
 
 
-def aggregate_results(runs: Iterable[RunInfo]) -> Any:
+def aggregate_results(runs: Iterable[RunInfo]) -> object:
     """
     Aggregate metadata/metrics for a collection of runs.
     Returns a pandas DataFrame if pandas is installed, otherwise a list of dicts.

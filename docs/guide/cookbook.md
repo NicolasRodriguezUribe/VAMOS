@@ -8,9 +8,10 @@ The `optimize(...)` API is the fastest way to run experiments in Python.
 
 ```python
 from vamos import optimize
+from vamos.ux.api import result_summary_text
 
 result = optimize("zdt1", algorithm="nsgaii", budget=5000, pop_size=100, seed=0)
-print(result.summary_text())
+print(result_summary_text(result))
 ```
 
 ## 1. Custom Problem Definition
@@ -19,10 +20,9 @@ Define a problem by implementing `ProblemProtocol` (attributes plus `evaluate`):
 
 ```python
 import numpy as np
-from vamos.foundation.problem.types import ProblemProtocol
 
 
-class MyProblem(ProblemProtocol):
+class MyProblem:
     def __init__(self) -> None:
         self.n_var = 2
         self.n_obj = 2
@@ -132,10 +132,11 @@ Pass a list of seeds to run a small study in one call.
 
 ```python
 from vamos import optimize
+from vamos.ux.api import result_summary_text
 
 results = optimize("zdt1", algorithm="nsgaii", budget=4000, seed=[0, 1, 2, 3])
 for idx, res in enumerate(results):
-    print(idx, res.summary_text())
+    print(idx, result_summary_text(res))
 ```
 
 ## 10. Algorithm Config Objects (Reproducible Runs)
@@ -191,9 +192,10 @@ Persist results to a folder for later inspection.
 
 ```python
 from vamos import optimize
+from vamos.ux.api import save_result
 
 result = optimize("zdt1", algorithm="nsgaii", budget=5000)
-result.save("results/zdt1_nsgaii")
+save_result(result, "results/zdt1_nsgaii")
 ```
 
 ## 14. Select a Single Solution from the Front

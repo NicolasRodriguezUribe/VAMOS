@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import argparse
 
+from vamos.engine.config.spec import allowed_override_keys, validate_experiment_spec
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
 from .args import build_parser, build_pre_parser
 from .common import collect_nsgaii_variation_args, _collect_generic_variation
 from .loaders import load_spec_defaults
-from .spec_validation import validate_experiment_spec
+from .spec_args import parser_spec_keys
 from .validation import finalize_args
 
 
@@ -34,7 +35,9 @@ def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
     )
     if pre_args.config:
         try:
-            validate_experiment_spec(spec_defaults.spec, parser=parser)
+            spec_keys = parser_spec_keys(parser)
+            allowed_keys = allowed_override_keys(spec_keys)
+            validate_experiment_spec(spec_defaults.spec, allowed_overrides=allowed_keys)
         except Exception as exc:
             pre_parser.error(str(exc))
         if getattr(pre_args, "validate_config", False):

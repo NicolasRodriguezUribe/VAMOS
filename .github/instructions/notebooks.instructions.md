@@ -31,15 +31,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # User-friendly public API
-from vamos import (
-    optimize, OptimizeConfig, NSGAIIConfig,
-    make_problem_selection,
-    plot_pareto_front_2d,
-)
+from vamos import optimize, make_problem_selection
+from vamos.algorithms import NSGAIIConfig
+from vamos.ux.api import plot_pareto_front_2d
 ```
 
 ## Visualization
-- Use `plot_pareto_front_2d()` from `vamos` for 2D fronts
+- Use `plot_pareto_front_2d()` from `vamos.ux.api` for 2D fronts
 - Keep figures self-contained with titles and labels
 - Save figures to `results/` if needed for reports
 
@@ -51,7 +49,7 @@ Keep evaluation budgets small for fast iteration:
 ## Seeds
 Always set seeds for reproducibility:
 ```python
-from vamos import OptimizeConfig, NSGAIIConfig
+from vamos.algorithms import NSGAIIConfig
 
 cfg = (NSGAIIConfig()
     .pop_size(100)
@@ -62,12 +60,10 @@ cfg = (NSGAIIConfig()
     .engine("numpy")
     .build())
 result = optimize(
-    OptimizeConfig(
-        problem=problem,
-        algorithm="nsgaii",
-        algorithm_config=cfg,
-        termination=("n_eval", 5000),
-        seed=42,
-    )
+    problem,
+    algorithm="nsgaii",
+    algorithm_config=cfg,
+    termination=("n_eval", 5000),
+    seed=42,
 )
 ```

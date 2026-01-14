@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos import optimize
-from vamos.foundation.problem.real_world.hyperparam import HyperparameterTuningProblem
+from vamos.problems import HyperparameterTuningProblem
 from vamos.ux.api import plot_pareto_front_2d
 from vamos.algorithms import NSGAIIConfig
 

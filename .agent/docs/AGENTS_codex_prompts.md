@@ -11,13 +11,11 @@ Assumptions:
 
 ```python
 # USER-FACING CODE (examples, notebooks, documentation)
-from vamos import (
-    optimize, OptimizeConfig, NSGAIIConfig,
-    ZDT1, make_problem_selection,
-    FeatureSelectionProblem, HyperparameterTuningProblem,
-    plot_pareto_front_2d, weighted_sum_scores,
-    ParamSpace, RandomSearchTuner, RacingTuner,
-)
+from vamos import optimize, make_problem_selection
+from vamos.algorithms import NSGAIIConfig
+from vamos.problems import ZDT1, FeatureSelectionProblem, HyperparameterTuningProblem
+from vamos.ux.api import plot_pareto_front_2d, weighted_sum_scores
+from vamos.engine.tuning.api import ParamSpace, RandomSearchTuner, RacingTuner
 
 # INTERNAL/CONTRIBUTOR CODE ONLY
 from vamos.engine.algorithm.config import NSGAIIConfig
@@ -48,7 +46,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 > - Locate ZDT1 under `src/vamos/foundation/problem/` and NSGA-II under `src/vamos/engine/algorithm/`.  
 > - Add a tiny example (script or notebook-style module) under `examples/` or `notebooks/` that runs `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations <small>` (and optionally `--engine moocore`). Keep budgets CI-friendly.  
 > - Add a smoke test (e.g., `tests/study/test_zdt1_baseline.py`) asserting the final front is non-empty and finite.  
-> - **For user-facing snippets, use the public API**: `from vamos import optimize, OptimizeConfig, NSGAIIConfig, ZDT1`.  
+> - **For user-facing snippets, use the public API**: `from vamos import optimize; from vamos.algorithms import NSGAIIConfig; from vamos.problems import ZDT1`.  
 > Follow all dependency/style rules; show diffs/new files and how to run the example/test.
 
 ---

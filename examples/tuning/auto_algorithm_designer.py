@@ -15,13 +15,13 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import Any, cast
+from typing import Any
 from collections.abc import Callable
 
 import numpy as np
 
 from vamos import optimize
-from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.algorithms import NSGAIIConfig
 from vamos.foundation.encoding import normalize_encoding
 from vamos.engine.tuning.api import (
     Categorical,
@@ -40,8 +40,7 @@ from vamos.engine.config.variation import (
     get_mutation_names,
     get_operators_for_encoding,
 )
-from vamos.foundation.problem.registry import get_problem_specs
-from vamos.foundation.problem.types import ProblemProtocol
+from vamos import available_problem_names, make_problem_selection
 
 
 # =============================================================================
@@ -213,11 +212,10 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfig:
 
 def make_evaluator(problem_name: str, encoding: str) -> Callable[[dict[str, Any], EvalContext], float]:
     """Create an evaluation function for the tuner."""
-    specs = get_problem_specs()
 
     def evaluate_config(config: dict[str, Any], ctx: EvalContext) -> float:
-        spec = specs[problem_name]
-        problem = cast(ProblemProtocol, spec.factory(spec.default_n_var, spec.default_n_obj))
+        selection = make_problem_selection(problem_name)
+        problem = selection.instantiate()
 
         algo_cfg = make_algo_config(config, encoding)
 
@@ -266,22 +264,22 @@ Examples:
     logger = _logger()
 
     # Load problem and detect encoding
-    specs = get_problem_specs()
-    if args.problem not in specs:
+    available = available_problem_names()
+    if args.problem not in available:
         logger.error("Problem '%s' not found in registry.", args.problem)
-        logger.info("Available: %s...", ", ".join(sorted(specs.keys())[:20]))
+        logger.info("Available: %s...", ", ".join(sorted(available)[:20]))
         sys.exit(1)
 
-    spec = specs[args.problem]
-    problem = spec.factory(spec.default_n_var, spec.default_n_obj)
-    encoding = normalize_encoding(getattr(problem, "encoding", spec.encoding if hasattr(spec, "encoding") else "real"))
+    selection = make_problem_selection(args.problem)
+    problem = selection.instantiate()
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
 
     logger.info("%s", "=" * 60)
     logger.info(" VAMOS Generic Auto-Solver: Meta-Learning Framework")
     logger.info("%s", "=" * 60)
     logger.info("  Problem: %s", args.problem)
     logger.info("  Encoding: %s", encoding)
-    logger.info("  Variables: %s, Objectives: %s", spec.default_n_var, spec.default_n_obj)
+    logger.info("  Variables: %s, Objectives: %s", selection.n_var, selection.n_obj)
     logger.info("%s", "=" * 60)
 
     # Build dynamic parameter space
@@ -297,7 +295,7 @@ Examples:
     task = TuningTask(
         name=f"auto_{args.problem}",
         param_space=param_space,
-        instances=[Instance(name=args.problem, n_var=spec.default_n_var)],
+        instances=[Instance(name=args.problem, n_var=selection.n_var)],
         seeds=[0, 1],
         budget_per_run=args.budget,
         maximize=False,

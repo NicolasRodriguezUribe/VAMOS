@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
-
 from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.foundation.problem.types import ProblemProtocol
+from vamos.engine.config.variation import VariationConfig
 from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.engine.algorithm.builders import (
     build_nsgaii_algorithm,
@@ -20,23 +21,23 @@ from vamos.engine.algorithm.builders import (
 def build_algorithm(
     algorithm_name: str,
     engine_name: str,
-    problem: Any,
+    problem: ProblemProtocol,
     config: ExperimentConfig,
     *,
     external_archive_size: int | None = None,
     archive_type: str = "hypervolume",
     selection_pressure: int = 2,
-    nsgaii_variation: dict[str, Any] | None = None,
-    moead_variation: dict[str, Any] | None = None,
-    smsemoa_variation: dict[str, Any] | None = None,
-    nsgaiii_variation: dict[str, Any] | None = None,
-    spea2_variation: dict[str, Any] | None = None,
-    ibea_variation: dict[str, Any] | None = None,
-    smpso_variation: dict[str, Any] | None = None,
-    agemoea_variation: dict[str, Any] | None = None,
-    rvea_variation: dict[str, Any] | None = None,
+    nsgaii_variation: VariationConfig | None = None,
+    moead_variation: VariationConfig | None = None,
+    smsemoa_variation: VariationConfig | None = None,
+    nsgaiii_variation: VariationConfig | None = None,
+    spea2_variation: VariationConfig | None = None,
+    ibea_variation: VariationConfig | None = None,
+    smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     track_genealogy: bool = False,
-) -> tuple[Any, Any]:
+) -> tuple[object, AlgorithmConfigProtocol]:
     """
     Factory to build the algorithm instance.
     """

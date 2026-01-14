@@ -7,6 +7,7 @@ from optimization results.
 
 from __future__ import annotations
 from vamos import optimize
+from vamos.ux.api import explore_result_front, result_to_latex
 
 
 def main():
@@ -15,7 +16,7 @@ def main():
 
     # 1. Generate LaTeX table
     print("\n=== LaTeX Table ===")
-    latex_code = result.to_latex(caption="NSGA-II Performance on ZDT1", label="tab:zdt1_nsgaii")
+    latex_code = result_to_latex(result, caption="NSGA-II Performance on ZDT1", label="tab:zdt1_nsgaii")
     print(latex_code)
 
     # Save to file
@@ -25,7 +26,7 @@ def main():
 
     # 2. Interactive Exploration (uncomment to launch browser)
     # print("\nLaunching interactive dashboard...")
-    # result.explore(title="ZDT1 Interactive Analysis")
+    # explore_result_front(result, title="ZDT1 Interactive Analysis")
 
 
 if __name__ == "__main__":

@@ -5,8 +5,8 @@ Uses only NumPy/Pandas/Matplotlib.
 
 from __future__ import annotations
 
-from typing import Any
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Protocol, cast
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,24 @@ import matplotlib.pyplot as plt
 from vamos.ux.analysis.core_objective_reduction import reduce_objectives
 
 
-def tuning_result_to_dataframe(tuning_result: Any, param_names: Sequence[str] | None = None) -> pd.DataFrame:
+class TuningResultLike(Protocol):
+    def __getitem__(self, index: int) -> object: ...
+
+
+class _SpecLike(Protocol):
+    key: str
+
+
+class _SelectionLike(Protocol):
+    spec: _SpecLike
+
+
+class StudyResultLike(Protocol):
+    selection: _SelectionLike
+    metrics: Mapping[str, object]
+
+
+def tuning_result_to_dataframe(tuning_result: TuningResultLike, param_names: Sequence[str] | None = None) -> pd.DataFrame:
     """
     Convert a TuningResult-like object to a DataFrame.
 
@@ -31,10 +48,14 @@ def tuning_result_to_dataframe(tuning_result: Any, param_names: Sequence[str] | 
         F_attr = getattr(tuning_result, "F_nd", None)
     F = F_attr if F_attr is not None else tuning_result[1]
 
-    assignments = getattr(tuning_result, "assignments", None)
-    if assignments is None:
-        assignments = getattr(tuning_result, "configs", None)
-    assignments = assignments or []
+    assignments_raw = getattr(tuning_result, "assignments", None)
+    if assignments_raw is None:
+        assignments_raw = getattr(tuning_result, "configs", None)
+    assignments: Sequence[object]
+    if isinstance(assignments_raw, Sequence) and not isinstance(assignments_raw, (str, bytes)):
+        assignments = assignments_raw
+    else:
+        assignments = []
     X = np.asarray(X)
     F = np.asarray(F)
     if param_names is None:
@@ -50,7 +71,7 @@ def tuning_result_to_dataframe(tuning_result: Any, param_names: Sequence[str] | 
     return pd.DataFrame(rows)
 
 
-def plot_tuning_scatter(df: pd.DataFrame, x_param: str, y_param: str, color_by: str = "obj_0") -> Any:
+def plot_tuning_scatter(df: pd.DataFrame, x_param: str, y_param: str, color_by: str = "obj_0") -> object:
     """Scatter plot of hyperparameters colored by an objective/metric."""
     plt.figure()
     sc = plt.scatter(df[x_param], df[y_param], c=df[color_by], cmap="viridis", edgecolor="k", alpha=0.8)
@@ -62,7 +83,7 @@ def plot_tuning_scatter(df: pd.DataFrame, x_param: str, y_param: str, color_by: 
     return plt.gca()
 
 
-def plot_objective_tradeoff(df: pd.DataFrame, obj_x: str = "obj_0", obj_y: str = "obj_1") -> Any:
+def plot_objective_tradeoff(df: pd.DataFrame, obj_x: str = "obj_0", obj_y: str = "obj_1") -> object:
     """Plot objective trade-off scatter."""
     plt.figure()
     plt.scatter(df[obj_x], df[obj_y], color="tab:blue", edgecolor="k", alpha=0.8)
@@ -77,7 +98,7 @@ def plot_reduced_front(
     labels: Sequence[str] | None = None,
     target_dim: int = 2,
     method: str = "angle",
-) -> Any:
+) -> object:
     """
     Reduce a front to 2D/3D and plot it.
     """
@@ -92,7 +113,7 @@ def plot_reduced_front(
         return plt.gca()
     if F_red.shape[1] >= 3:
         fig = plt.figure()
-        ax3d: Any = fig.add_subplot(111, projection="3d")
+        ax3d = cast(Any, fig.add_subplot(111, projection="3d"))
         ax3d.scatter(F_red[:, 0], F_red[:, 1], F_red[:, 2], color="tab:orange", alpha=0.8)
         ax3d.set_xlabel(labels[0])
         ax3d.set_ylabel(labels[1])
@@ -102,7 +123,7 @@ def plot_reduced_front(
     raise ValueError("Reduced front must have at least 2 objectives.")
 
 
-def study_results_to_dataframe(study_results: Iterable[Any]) -> pd.DataFrame:
+def study_results_to_dataframe(study_results: Iterable[StudyResultLike]) -> pd.DataFrame:
     """
     Convert StudyRunner results to a tidy DataFrame.
     Expects each entry with .selection.spec.key, .metrics dict fields.

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
-
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 from vamos.hooks import LiveVisualization
 from vamos.experiment.execution import run_single as execute_run_single
+from vamos.engine.config.spec import ExperimentSpec, SpecBlock
 
 from vamos.experiment.services.config import VariationConfig, normalize_variations
 from vamos.experiment.services.factory import build_algorithm_from_spec
@@ -27,16 +26,16 @@ def run_single(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
-    hv_stop_config: dict[str, Any] | None = None,
-    evaluator: Any | None = None,
-    termination: tuple[str, Any] | None = None,
+    hv_stop_config: dict[str, object] | None = None,
+    evaluator: object | None = None,
+    termination: tuple[str, object] | None = None,
     config_source: str | None = None,
-    config_spec: dict[str, Any] | None = None,
-    problem_override: dict[str, Any] | None = None,
+    config_spec: ExperimentSpec | None = None,
+    problem_override: SpecBlock | None = None,
     track_genealogy: bool = False,
     autodiff_constraints: bool = False,
     live_viz: LiveVisualization | None = None,
-) -> dict[str, Any]:
+) -> dict[str, object]:
     problem = selection.instantiate()
     (
         nsgaii_variation,

@@ -30,7 +30,7 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - foundation must not import engine/ux/experiment.
 - engine may depend on foundation and hooks only.
 - experiment and ux may depend on foundation and engine.
-- Facades: prefer `vamos.api`, `vamos.algorithms`, `vamos.ux.api`.
+- Facades: prefer `vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.ux.api`.
 
 ## Optional Dependencies Policy
 - foundation/** and engine/**: no top-level imports of optional/heavy deps.

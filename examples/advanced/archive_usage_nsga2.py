@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos import optimize
-from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
+from vamos.problems import ZDT1
 from vamos.algorithms import NSGAIIConfig
 
 

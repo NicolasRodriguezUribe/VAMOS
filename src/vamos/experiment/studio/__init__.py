@@ -1,8 +1,7 @@
-"""VAMOS Studio application (Streamlit).
+"""VAMOS Studio entrypoints.
 
-This package intentionally lives under `vamos.experiment` because it orchestrates
-optimization runs and consumes experiment artifacts. The reusable analysis
-helpers still live under `vamos.ux.*`.
+The Streamlit UI and supporting services live under `vamos.ux.studio`.
+This package provides the CLI wrappers used by the entry points.
 """
 
 __all__ = []

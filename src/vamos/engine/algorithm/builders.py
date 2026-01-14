@@ -4,6 +4,7 @@ Algorithm-specific builder helpers to keep the factory slim.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any, cast
 
 from vamos.foundation.encoding import normalize_encoding
@@ -23,7 +24,16 @@ from vamos.engine.algorithm.config import (
     RVEAConfig,
 )
 from vamos.engine.algorithm.registry import resolve_algorithm
-from vamos.engine.config.variation import merge_variation_overrides, resolve_default_variation_config
+from vamos.engine.algorithm.components.variation.helpers import ensure_supported_repair_name
+from vamos.engine.config.variation import ensure_operator_tuple, merge_variation_overrides, resolve_default_variation_config
+
+
+def _as_int(value: object) -> int:
+    return int(cast(int | float | str, value))
+
+
+def _as_float(value: object) -> float:
+    return float(cast(float | int | str, value))
 
 
 def build_nsgaii_algorithm(
@@ -47,23 +57,26 @@ def build_nsgaii_algorithm(
     builder.result_mode("population")
 
     if "crossover" in var_cfg:
-        c_name, c_kwargs = var_cfg["crossover"]
+        c_name, c_kwargs = ensure_operator_tuple(var_cfg["crossover"], key="crossover")
         builder.crossover(c_name, **c_kwargs)
     if "mutation" in var_cfg:
-        m_name, m_kwargs = var_cfg["mutation"]
+        m_name, m_kwargs = ensure_operator_tuple(var_cfg["mutation"], key="mutation")
         builder.mutation(m_name, **m_kwargs)
     if "selection" in var_cfg:
-        s_name, s_kwargs = var_cfg["selection"]
+        s_name, s_kwargs = ensure_operator_tuple(var_cfg["selection"], key="selection")
         builder.selection(s_name, **s_kwargs)
     else:
         builder.selection("tournament", pressure=selection_pressure)
 
     if "repair" in var_cfg:
-        r_name, r_kwargs = var_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
     if "adaptive_operator_selection" in var_cfg:
-        builder.adaptive_operator_selection(var_cfg["adaptive_operator_selection"])
+        aos_cfg = var_cfg["adaptive_operator_selection"]
+        if not isinstance(aos_cfg, Mapping):
+            raise ValueError("adaptive_operator_selection must be a mapping.")
+        builder.adaptive_operator_selection(dict(aos_cfg))
 
     if external_archive_size:
         builder.archive(external_archive_size)
@@ -115,19 +128,19 @@ def build_moead_algorithm(
     else:
         builder.weight_vectors(path=str(weight_path("W3D_91.dat").parent))
 
-    c_name, c_kwargs = var_cfg["crossover"]
+    c_name, c_kwargs = ensure_operator_tuple(var_cfg["crossover"], key="crossover")
     builder.crossover(c_name, **c_kwargs)
 
-    m_name, m_kwargs = var_cfg["mutation"]
+    m_name, m_kwargs = ensure_operator_tuple(var_cfg["mutation"], key="mutation")
     builder.mutation(m_name, **m_kwargs)
 
     if "aggregation" in var_cfg:
-        a_name, a_kwargs = var_cfg["aggregation"]
+        a_name, a_kwargs = ensure_operator_tuple(var_cfg["aggregation"], key="aggregation")
         builder.aggregation(a_name, **a_kwargs)
 
     if "repair" in var_cfg:
-        r_name, r_kwargs = var_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("moead")
@@ -151,19 +164,19 @@ def build_smsemoa_algorithm(
     builder = SMSEMOAConfig.builder()
     builder.pop_size(pop_size)
 
-    c_name, c_kwargs = var_cfg["crossover"]
+    c_name, c_kwargs = ensure_operator_tuple(var_cfg["crossover"], key="crossover")
     builder.crossover(c_name, **c_kwargs)
 
-    m_name, m_kwargs = var_cfg["mutation"]
+    m_name, m_kwargs = ensure_operator_tuple(var_cfg["mutation"], key="mutation")
     builder.mutation(m_name, **m_kwargs)
 
     # SMS-EMOA typically uses random selection for steady-state
-    s_name, s_kwargs = var_cfg.get("selection", ("random", {}))
+    s_name, s_kwargs = ensure_operator_tuple(var_cfg.get("selection", ("random", {})), key="selection")
     builder.selection(s_name, **s_kwargs)
 
     if "repair" in var_cfg:
-        r_name, r_kwargs = var_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("smsemoa")
@@ -188,18 +201,21 @@ def build_nsgaiii_algorithm(
     builder = NSGAIIIConfig.builder()
     builder.pop_size(pop_size)
 
-    c_name, c_kwargs = var_cfg["crossover"]
+    c_name, c_kwargs = ensure_operator_tuple(var_cfg["crossover"], key="crossover")
     builder.crossover(c_name, **c_kwargs)
 
-    m_name, m_kwargs = var_cfg["mutation"]
+    m_name, m_kwargs = ensure_operator_tuple(var_cfg["mutation"], key="mutation")
     builder.mutation(m_name, **m_kwargs)
 
-    s_name, s_kwargs = var_cfg.get("selection", ("tournament", {"pressure": selection_pressure}))
+    s_name, s_kwargs = ensure_operator_tuple(
+        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        key="selection",
+    )
     builder.selection(s_name, **s_kwargs)
 
     if "repair" in var_cfg:
-        r_name, r_kwargs = var_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("nsgaiii")
@@ -225,22 +241,28 @@ def build_spea2_algorithm(
     builder = SPEA2Config.builder()
     builder.pop_size(pop_size)
     archive_override = var_cfg.get("archive_size")
-    builder.archive_size(int(archive_override) if archive_override is not None else (external_archive_size or pop_size))
+    builder.archive_size(_as_int(archive_override) if archive_override is not None else (external_archive_size or pop_size))
     if "k_neighbors" in var_cfg and var_cfg["k_neighbors"] is not None:
-        builder.k_neighbors(int(var_cfg["k_neighbors"]))
+        builder.k_neighbors(_as_int(var_cfg["k_neighbors"]))
 
-    c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 1.0, "eta": 20.0}))
+    c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {"prob": 1.0, "eta": 20.0})), key="crossover")
     builder.crossover(c_name, **c_kwargs)
 
-    m_name, m_kwargs = var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
+    m_name, m_kwargs = ensure_operator_tuple(
+        var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
+        key="mutation",
+    )
     builder.mutation(m_name, **m_kwargs)
 
-    sel_name, sel_kwargs = var_cfg.get("selection", ("tournament", {"pressure": selection_pressure}))
+    sel_name, sel_kwargs = ensure_operator_tuple(
+        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        key="selection",
+    )
     builder.selection(sel_name, **sel_kwargs)
 
     if "repair" in var_cfg:
-        r_name, r_kwargs = var_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("spea2")
@@ -264,17 +286,29 @@ def build_ibea_algorithm(
 
     builder = IBEAConfig.builder()
     builder.pop_size(pop_size)
-    c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {"prob": 1.0, "eta": 20.0}))
+    c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {"prob": 1.0, "eta": 20.0})), key="crossover")
     builder.crossover(c_name, **c_kwargs)
-    m_name, m_kwargs = var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
+    m_name, m_kwargs = ensure_operator_tuple(
+        var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
+        key="mutation",
+    )
     builder.mutation(m_name, **m_kwargs)
-    sel_name, sel_kwargs = var_cfg.get("selection", ("tournament", {"pressure": selection_pressure}))
+    sel_name, sel_kwargs = ensure_operator_tuple(
+        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        key="selection",
+    )
     builder.selection(sel_name, **sel_kwargs)
-    builder.indicator(var_cfg.get("indicator") or "eps")
-    builder.kappa(float(var_cfg.get("kappa", 1.0)))
+    indicator = var_cfg.get("indicator")
+    if indicator is None:
+        builder.indicator("eps")
+    elif isinstance(indicator, str):
+        builder.indicator(indicator)
+    else:
+        raise ValueError("IBEA indicator must be a string.")
+    builder.kappa(_as_float(var_cfg.get("kappa", 1.0)))
     if "repair" in var_cfg:
-        r_name, r_kwargs = var_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("ibea")
     cfg_dict = cfg_data.to_dict()
@@ -289,6 +323,7 @@ def build_smpso_algorithm(
     external_archive_size: int | None,
     smpso_variation: dict[str, Any] | None,
 ) -> tuple[Any, AlgorithmConfigProtocol]:
+    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     mut_cfg = merge_variation_overrides(
         {
             "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
@@ -298,19 +333,22 @@ def build_smpso_algorithm(
     builder = SMPSOConfig.builder()
     builder.pop_size(pop_size)
     builder.archive_size(pop_size if external_archive_size is None else external_archive_size)
-    m_name, m_kwargs = mut_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}))
+    m_name, m_kwargs = ensure_operator_tuple(
+        mut_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
+        key="mutation",
+    )
     builder.mutation(m_name, **m_kwargs)
     if "inertia" in mut_cfg:
-        builder.inertia(float(mut_cfg["inertia"]))
+        builder.inertia(_as_float(mut_cfg["inertia"]))
     if "c1" in mut_cfg:
-        builder.c1(float(mut_cfg["c1"]))
+        builder.c1(_as_float(mut_cfg["c1"]))
     if "c2" in mut_cfg:
-        builder.c2(float(mut_cfg["c2"]))
+        builder.c2(_as_float(mut_cfg["c2"]))
     if "vmax_fraction" in mut_cfg:
-        builder.vmax_fraction(float(mut_cfg["vmax_fraction"]))
+        builder.vmax_fraction(_as_float(mut_cfg["vmax_fraction"]))
     if "repair" in mut_cfg:
-        r_name, r_kwargs = mut_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(mut_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("smpso")
     cfg_dict = cfg_data.to_dict()
@@ -347,15 +385,15 @@ def build_agemoea_algorithm(
     builder = AGEMOEAConfig.builder()
     builder.pop_size(pop_size)
 
-    c_name, c_kwargs = var_cfg["crossover"]
+    c_name, c_kwargs = ensure_operator_tuple(var_cfg["crossover"], key="crossover")
     builder.crossover(c_name, **c_kwargs)
 
-    m_name, m_kwargs = var_cfg["mutation"]
+    m_name, m_kwargs = ensure_operator_tuple(var_cfg["mutation"], key="mutation")
     builder.mutation(m_name, **m_kwargs)
 
     if "repair" in var_cfg:
-        r_name, r_kwargs = var_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("agemoea")
@@ -391,15 +429,15 @@ def build_rvea_algorithm(
     else:
         builder.adapt_freq(0.1)
 
-    c_name, c_kwargs = var_cfg["crossover"]
+    c_name, c_kwargs = ensure_operator_tuple(var_cfg["crossover"], key="crossover")
     builder.crossover(c_name, **c_kwargs)
 
-    m_name, m_kwargs = var_cfg["mutation"]
+    m_name, m_kwargs = ensure_operator_tuple(var_cfg["mutation"], key="mutation")
     builder.mutation(m_name, **m_kwargs)
 
     if "repair" in var_cfg:
-        r_name, r_kwargs = var_cfg["repair"]
-        builder.repair(r_name, **r_kwargs)
+        r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
+        builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("rvea")

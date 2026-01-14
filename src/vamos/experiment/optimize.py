@@ -64,7 +64,8 @@ def _run_config(
                 If provided, overrides config.engine.
 
     Returns:
-        OptimizationResult with Pareto front and helper methods
+        OptimizationResult with Pareto front data and selection helpers.
+        Use `vamos.ux.api` for summaries, plotting, and export helpers.
 
     Examples:
         # Standard usage
