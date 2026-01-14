@@ -133,6 +133,11 @@ result = optimize("zdt1")
 print(result.explain_defaults())
 ```
 
+The output includes:
+
+- `resolved_config`: resolved problem/algorithm/engine/budget/pop size
+- `default_sources`: which values were inferred (`auto`) vs set explicitly
+
 ## 8. Operator Facade Access
 
 Import common operators directly from `vamos.operators`.

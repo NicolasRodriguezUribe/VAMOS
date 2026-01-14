@@ -78,6 +78,33 @@ class TestOptimizationResultSummary:
         assert "Objectives: 2" in caplog.text
 
 
+class TestOptimizationResultDefaults:
+    """Test explain_defaults() metadata helper."""
+
+    def test_explain_defaults_returns_meta(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        F = np.array([[0.1, 0.9], [0.5, 0.5]])
+        meta = {
+            "resolved_config": {"problem": "zdt1", "algorithm": "nsgaii"},
+            "default_sources": {"algorithm": "explicit", "budget": "auto"},
+        }
+        result = OptimizationResult({"F": F}, meta=meta)
+
+        explained = result.explain_defaults()
+
+        assert explained["resolved_config"]["problem"] == "zdt1"
+        assert explained["default_sources"]["budget"] == "auto"
+
+    def test_explain_defaults_handles_missing_meta(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        F = np.array([[0.1, 0.9]])
+        result = OptimizationResult({"F": F})
+
+        assert result.explain_defaults() == {}
+
+
 class TestOptimizationResultBest:
     """Test best() method."""
 

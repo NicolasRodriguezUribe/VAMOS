@@ -129,5 +129,22 @@ class OptimizationResult:
             "front_index": front_pos,
         }
 
+    def explain_defaults(self) -> dict[str, object]:
+        """
+        Return resolved configuration and default sources, if available.
+
+        The unified optimize() API records metadata about which settings were
+        inferred vs provided. This method surfaces that metadata in a stable
+        dict form for reporting or debugging.
+        """
+        explained: dict[str, object] = {}
+        resolved = self.meta.get("resolved_config")
+        sources = self.meta.get("default_sources")
+        if resolved is not None:
+            explained["resolved_config"] = resolved
+        if sources is not None:
+            explained["default_sources"] = sources
+        return explained
+
 
 __all__ = ["BestResult", "OptimizationResult"]

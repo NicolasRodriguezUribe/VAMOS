@@ -17,12 +17,12 @@ def build_pre_parser() -> argparse.ArgumentParser:
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument(
         "--config",
-        help="Path to a YAML/JSON experiment specification. CLI arguments override file values.",
+        help="Path to a YAML/JSON experiment specification. CLI arguments override file values; use --validate-config to check and exit.",
     )
     pre_parser.add_argument(
         "--validate-config",
         action="store_true",
-        help="Validate --config and exit (does not run any experiments).",
+        help="Validate --config and exit (does not run any experiments; exits with status 0).",
     )
     return pre_parser
 

@@ -48,7 +48,7 @@ def add_core_arguments(
         "--engine",
         choices=tuple(EXPERIMENT_BACKENDS),
         default=spec_default(experiment_defaults, "engine", DEFAULT_ENGINE),
-        help="Kernel backend to use (default: numpy).",
+        help="Kernel backend to use (default: numpy). JAX strict ranking falls back to NumPy for exact fronts.",
     )
     add_spec_argument(
         parser,
@@ -61,28 +61,28 @@ def add_core_arguments(
         "--eval-strategy",
         choices=("serial", "multiprocessing"),
         default=spec_default(experiment_defaults, "eval_strategy", "serial"),
-        help="Evaluation strategy to use (default: serial).",
+        help="Evaluation strategy to use (default: serial). Multiprocessing uses --n-workers.",
     )
     add_spec_argument(
         parser,
         "--n-workers",
         type=int,
         default=experiment_defaults.get("n_workers"),
-        help="Number of workers for multiprocessing evaluation backend.",
+        help="Number of workers for multiprocessing evaluation backend (ignored for serial).",
     )
     add_spec_argument(
         parser,
         "--autodiff-constraints",
         action="store_true",
         default=bool(experiment_defaults.get("autodiff_constraints", False)),
-        help="Attempt to build JAX-based constraint evaluators when a ConstraintModel is available.",
+        help="Attempt to build JAX-based constraint evaluators when a ConstraintModel is available (requires autodiff extra).",
     )
     add_spec_argument(
         parser,
         "--problem",
         choices=available_problem_names(),
         default=spec_default(experiment_defaults, "problem", DEFAULT_PROBLEM),
-        help="Benchmark problem to solve.",
+        help="Benchmark problem to solve (see available_problem_names() or vamos-zoo list).",
     )
     add_spec_argument(
         parser,
