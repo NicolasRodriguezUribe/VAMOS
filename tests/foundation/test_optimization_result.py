@@ -66,12 +66,13 @@ class TestOptimizationResultSummary:
     def test_summary_runs(self, caplog):
         """summary() should log without error."""
         from vamos.experiment.optimize import OptimizationResult
+        from vamos.ux.api import log_result_summary
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
 
-        caplog.set_level(logging.INFO, logger="vamos.experiment.optimize")
-        result.summary()
+        caplog.set_level(logging.INFO, logger="vamos.ux.results")
+        log_result_summary(result)
         assert "Optimization Result" in caplog.text
         assert "Solutions: 3" in caplog.text
         assert "Objectives: 2" in caplog.text
@@ -170,22 +171,24 @@ class TestOptimizationResultPlot:
     def test_plot_2d(self):
         """plot() should work for 2D fronts."""
         from vamos.experiment.optimize import OptimizationResult
+        from vamos.ux.api import plot_result_front
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
 
-        ax = result.plot(show=False)
+        ax = plot_result_front(result, show=False)
         assert ax is not None
 
     @pytest.mark.skipif(not _has_matplotlib(), reason="matplotlib not installed")
     def test_plot_3d(self):
         """plot() should work for 3D fronts."""
         from vamos.experiment.optimize import OptimizationResult
+        from vamos.ux.api import plot_result_front
 
         F = np.array([[0.1, 0.8, 0.1], [0.5, 0.3, 0.2], [0.8, 0.1, 0.1]])
         result = OptimizationResult({"F": F})
 
-        ax = result.plot(show=False)
+        ax = plot_result_front(result, show=False)
         assert ax is not None
 
     def test_plot_no_matplotlib(self):
@@ -201,12 +204,13 @@ class TestOptimizationResultDataFrame:
     def test_to_dataframe_basic(self):
         """to_dataframe() should create valid DataFrame."""
         from vamos.experiment.optimize import OptimizationResult
+        from vamos.ux.api import result_to_dataframe
 
         F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
         X = np.array([[1, 2], [3, 4], [5, 6]])
         result = OptimizationResult({"F": F, "X": X})
 
-        df = result.to_dataframe()
+        df = result_to_dataframe(result)
 
         assert len(df) == 3
         assert "f1" in df.columns
@@ -218,11 +222,12 @@ class TestOptimizationResultDataFrame:
     def test_to_dataframe_no_x(self):
         """to_dataframe() should work without X."""
         from vamos.experiment.optimize import OptimizationResult
+        from vamos.ux.api import result_to_dataframe
 
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         result = OptimizationResult({"F": F})
 
-        df = result.to_dataframe()
+        df = result_to_dataframe(result)
 
         assert len(df) == 2
         assert "f1" in df.columns
@@ -235,13 +240,14 @@ class TestOptimizationResultSave:
     def test_save_creates_files(self, tmp_path):
         """save() should create expected files."""
         from vamos.experiment.optimize import OptimizationResult
+        from vamos.ux.api import save_result
 
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         X = np.array([[1, 2], [3, 4]])
         result = OptimizationResult({"F": F, "X": X})
 
         out_dir = tmp_path / "test_results"
-        result.save(str(out_dir))
+        save_result(result, str(out_dir))
 
         assert (out_dir / "FUN.csv").exists()
         assert (out_dir / "X.csv").exists()

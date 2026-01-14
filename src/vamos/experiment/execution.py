@@ -34,6 +34,9 @@ from vamos.hooks import (
     LiveVisualization,
 )
 from vamos.hooks.config_parse import parse_stopping_archive
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.config.spec import ExperimentSpec, SpecBlock
+from vamos.engine.config.variation import VariationConfig
 
 
 def _project_root() -> Path:
@@ -45,7 +48,6 @@ def _logger() -> logging.Logger:
 
 
 Metrics = dict[str, Any]
-VariationConfig = dict[str, Any]
 
 
 class CompositeObserver(Observer):
@@ -131,7 +133,7 @@ def run_single(
     config: ExperimentConfig,
     *,
     algorithm: Any,
-    cfg_data: dict[str, Any],
+    cfg_data: AlgorithmConfigProtocol,
     problem: Any | None = None,
     external_archive_size: int | None = None,
     archive_type: str = "hypervolume",
@@ -147,8 +149,8 @@ def run_single(
     evaluator: Any | None = None,
     termination: tuple[str, Any] | None = None,
     config_source: str | None = None,
-    config_spec: dict[str, Any] | None = None,
-    problem_override: dict[str, Any] | None = None,
+    config_spec: ExperimentSpec | None = None,
+    problem_override: SpecBlock | None = None,
     track_genealogy: bool = False,
     autodiff_constraints: bool = False,
     live_viz: LiveVisualization | None = None,
@@ -212,10 +214,10 @@ def run_single(
 
     # Hooks
     hook_mgr = None
-    if isinstance(config_spec, dict):
+    if config_spec is not None:
         try:
             hook_cfg = parse_stopping_archive(config_spec, problem_key=selection.spec.key)
-            if hook_cfg.get("stopping_enabled") or hook_cfg.get("archive_enabled"):
+            if hook_cfg["stopping_enabled"] or hook_cfg["archive_enabled"]:
                 hook_mgr = HookManager(
                     out_dir=Path(output_dir),
                     cfg=HookManagerConfig(
@@ -223,7 +225,7 @@ def run_single(
                         stop_cfg=hook_cfg["stop_cfg"],
                         archive_enabled=hook_cfg["archive_enabled"],
                         archive_cfg=hook_cfg["archive_cfg"],
-                        hv_ref_point=hook_cfg.get("hv_ref_point"),
+                        hv_ref_point=hook_cfg["hv_ref_point"],
                     ),
                 )
                 observers.append(hook_mgr)
@@ -367,8 +369,8 @@ def execute_problem_suite(
     smpso_variation: VariationConfig | None = None,
     include_external: bool = False,
     config_source: str | None = None,
-    config_spec: dict[str, Any] | None = None,
-    problem_override: dict[str, Any] | None = None,
+    config_spec: ExperimentSpec | None = None,
+    problem_override: SpecBlock | None = None,
     track_genealogy: bool = False,
     autodiff_constraints: bool = False,
     live_viz_factory: Callable[..., LiveVisualization | None] | None = None,

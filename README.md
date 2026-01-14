@@ -13,7 +13,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 - **Unified Archiving**: Consistent external archive configuration `.archive(size, type="epsilon_grid")` across all algorithms.
 - **Multi-Fidelity Tuning**: Hyperband-style racing with warm-start checkpoints for sample-efficient algorithm configuration.
 - **Performance Driven**: Vectorized kernels, GPU acceleration (JAX), and optional Numba JIT compilation.
-- **Interactive Analysis**: Built-in dashboards with `result.explore()` and publication-ready LaTeX tables.
+- **Interactive Analysis**: Built-in dashboards with `explore_result_front(result)` and publication-ready LaTeX tables.
 - **Extensible**: Standardized protocols for adding custom problems, operators, and algorithms.
 
 ## 📦 Quick Install
@@ -54,17 +54,18 @@ result = optimize(
 
 front = result.front()
 print(f"Non-dominated solutions: {len(front) if front is not None else 0}")
-# print(result.explain_defaults())  # Inspect auto-resolved defaults
-# result.plot()  # Quick Pareto front plot
+# from vamos.ux.api import plot_result_front
+# plot_result_front(result)  # Quick Pareto front plot
 ```
 
 Need full control? Use explicit args + config objects:
 
 ```python
-from vamos import make_problem_selection, optimize
+from vamos import optimize
 from vamos.algorithms import NSGAIIConfig
+from vamos.problems import ZDT1
 
-problem = make_problem_selection("zdt1").instantiate()
+problem = ZDT1(n_var=30)
 algo = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var)
 
 result = optimize(

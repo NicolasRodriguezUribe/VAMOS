@@ -215,7 +215,6 @@ VAMOS is fast because it's **vectorized**. Define problems using NumPy operation
 
 ```python
 import numpy as np
-from vamos.foundation.problem.registry import ProblemSpec
 
 class MyVectorizedProblem:
     # 30 decision variables, 2 objectives

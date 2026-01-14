@@ -4,10 +4,10 @@ VAMOS provides a suite of tools for responding to the "Now what?" question after
 
 ## Statistics
 
-The `vamos.ux.analysis.stats` module includes non-parametric tests suitable for evolutionary algorithm comparison.
+The `vamos.ux.api` facade exposes non-parametric tests suitable for evolutionary algorithm comparison.
 
 ```python
-from vamos.ux.analysis.stats import friedman_test, pairwise_wilcoxon, perform_statistical_tests
+from vamos.ux.api import friedman_test, pairwise_wilcoxon
 
 # metric_dict maps {algorithm_name: [list_of_scores_across_seeds]}
 results = {
@@ -25,29 +25,19 @@ p_values, reject = pairwise_wilcoxon(results)
 
 ## Landscape Analysis
 
-Understanding problem difficulty often requires analyzing the fitness landscape.
+For landscape analysis workflows (random walks, autocorrelation, ruggedness), see:
 
-```python
-from vamos.analysis.landscape import perform_random_walk, compute_autocorrelation
-
-# Perform a random walk on the problem instance
-f_values = perform_random_walk(problem, n_steps=1000)
-
-# Compute autocorrelation (measure of rugosity)
-corr = compute_autocorrelation(f_values, lag=1)
-print(f"Lag-1 Autocorrelation: {corr:.2f}")
-# Closer to 1.0 = smooth; Closer to 0.0 (or negative) = rugged
-```
+- `notebooks/2_advanced/25_landscape_analysis.ipynb`
 
 ## Visualization
 
-Helper functions in `vamos.ux.analysis.plotting` (and `vamos.plotting`) simplify common tasks.
+Helper functions in `vamos.ux.api` simplify common tasks.
 
 ### Critical Distance Plots
 Visualize statistical significance groups following the Friedman/Nemenyi post-hoc style.
 
 ```python
-from vamos.ux.analysis.stats import plot_critical_distance
+from vamos.ux.api import plot_critical_distance
 
 plot_critical_distance(
     avg_ranks, 
@@ -59,7 +49,7 @@ plot_critical_distance(
 ### Pareto Fronts
 
 ```python
-from vamos.plotting import plot_pareto_front_2d
+from vamos.ux.api import plot_pareto_front_2d
 
 # F is an (N, 2) array of objectives
 plot_pareto_front_2d(F, title="ZDT1 Result", filename="front.png")
@@ -67,15 +57,16 @@ plot_pareto_front_2d(F, title="ZDT1 Result", filename="front.png")
 
 ## MCDM (Multi-Criteria Decision Making)
 
-Select specific solutions from a Pareto front using `vamos.mcdm`.
+Select specific solutions from a Pareto front using `vamos.ux.api`.
 
 - **Weighted Sum**: `weighted_sum_scores(F, weights)`
 - **TOPSIS**: `topsis_scores(F, weights)`
 - **Knee Point**: Find the "knee" of the curve.
 
 ```python
-from vamos.mcdm import weighted_sum_selection
+from vamos.ux.api import weighted_sum_scores
 
-best_idx = weighted_sum_selection(F, weights=[0.5, 0.5])
+scores = weighted_sum_scores(F, weights=[0.5, 0.5]).scores
+best_idx = int(scores.argmin())
 best_solution = X[best_idx]
 ```

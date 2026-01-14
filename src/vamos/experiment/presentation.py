@@ -9,7 +9,7 @@ from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 from vamos.experiment.runner_utils import run_output_dir
 
-from .runner import run_from_args
+from .cli.orchestration import run_from_args
 
 if TYPE_CHECKING:
     from vamos.hooks import LiveVisualization

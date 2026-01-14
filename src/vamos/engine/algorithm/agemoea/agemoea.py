@@ -15,7 +15,15 @@ import numpy as np
 
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
 from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
-from vamos.engine.config.variation import resolve_default_variation_config
+from vamos.engine.algorithm.components.variation.helpers import (
+    ensure_supported_operator_names,
+    ensure_supported_repair_name,
+)
+from vamos.engine.config.variation import (
+    ensure_operator_tuple,
+    ensure_operator_tuple_optional,
+    resolve_default_variation_config,
+)
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.kernel.backend import KernelBackend
@@ -244,14 +252,19 @@ class AGEMOEA:
             explicit_overrides["repair"] = self.config["repair"]
 
         var_cfg = resolve_default_variation_config(encoding, explicit_overrides)
-        c_name, c_kwargs = var_cfg.get("crossover", ("sbx", {}))
-        m_name, m_kwargs = var_cfg.get("mutation", ("pm", {}))
-        repair_cfg = var_cfg.get("repair")
+        c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {})), key="crossover")
+        m_name, m_kwargs = ensure_operator_tuple(var_cfg.get("mutation", ("pm", {})), key="mutation")
+        repair_tuple = ensure_operator_tuple_optional(var_cfg.get("repair"), key="repair")
+        cross_name, mut_name = ensure_supported_operator_names(encoding, c_name, m_name)
+        repair_cfg = None
+        if repair_tuple is not None:
+            repair_name, repair_params = repair_tuple
+            repair_cfg = (ensure_supported_repair_name(encoding, repair_name), repair_params)
 
         variation = VariationPipeline(
             encoding=encoding,
-            cross_method=c_name,
-            mut_method=m_name,
+            cross_method=cross_name,
+            mut_method=mut_name,
             cross_params=c_kwargs,
             mut_params=m_kwargs,
             xl=xl,

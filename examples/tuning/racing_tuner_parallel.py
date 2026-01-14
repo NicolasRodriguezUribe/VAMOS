@@ -15,7 +15,7 @@ import numpy as np
 from vamos import optimize
 from vamos.algorithms import NSGAIIConfig
 from vamos.engine.tuning.api import Instance, Int, ParamSpace, RacingTuner, Real, Scenario, TuningTask
-from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
+from vamos.problems import ZDT1
 
 
 def evaluate_config(config: dict, ctx) -> float:

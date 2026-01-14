@@ -30,6 +30,15 @@ from vamos.ux.visualization import (
     plot_pareto_front_2d,
     plot_pareto_front_3d,
 )
+from vamos.ux.results import (
+    explore_result_front,
+    log_result_summary,
+    plot_result_front,
+    result_summary_text,
+    result_to_dataframe,
+    result_to_latex,
+    save_result,
+)
 
 __all__ = [
     # Objective reduction
@@ -54,4 +63,12 @@ __all__ = [
     "plot_pareto_front_3d",
     "plot_parallel_coordinates",
     "plot_hv_convergence",
+    # Result helpers
+    "result_summary_text",
+    "log_result_summary",
+    "plot_result_front",
+    "explore_result_front",
+    "result_to_dataframe",
+    "result_to_latex",
+    "save_result",
 ]

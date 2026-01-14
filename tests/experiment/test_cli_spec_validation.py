@@ -2,8 +2,9 @@ import pytest
 
 from vamos.experiment.cli.args import build_parser, build_pre_parser
 from vamos.experiment.cli.loaders import load_spec_defaults
-from vamos.experiment.cli.spec_validation import validate_experiment_spec
+from vamos.engine.config.spec import allowed_override_keys, validate_experiment_spec
 from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.experiment.cli.spec_args import parser_spec_keys
 
 
 def _build_parser() -> object:
@@ -17,50 +18,48 @@ def _build_parser() -> object:
     )
 
 
-def test_validate_experiment_spec_accepts_minimal_spec() -> None:
+def _allowed_override_keys() -> set[str]:
     parser = _build_parser()
+    return allowed_override_keys(parser_spec_keys(parser))
+
+
+def test_validate_experiment_spec_accepts_minimal_spec() -> None:
     spec = {"version": "1"}
-    validated = validate_experiment_spec(spec, parser=parser)
+    validated = validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
     assert validated["version"] == "1"
 
 
 def test_validate_experiment_spec_rejects_unknown_top_level_key() -> None:
-    parser = _build_parser()
     spec = {"version": "1", "surprise": {}}
     with pytest.raises(ValueError, match="Unknown top-level keys"):
-        validate_experiment_spec(spec, parser=parser)
+        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
 
 
 def test_validate_experiment_spec_rejects_unknown_problem_key() -> None:
-    parser = _build_parser()
     spec = {"version": "1", "problems": {"zdt999": {}}}
     with pytest.raises(ValueError, match="Unknown problem key"):
-        validate_experiment_spec(spec, parser=parser)
+        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
 
 
 def test_validate_experiment_spec_rejects_invalid_operator_spec() -> None:
-    parser = _build_parser()
     spec = {"version": "1", "defaults": {"nsgaii": {"crossover": ["sbx"]}}}
     with pytest.raises(ValueError, match="tuple/list form must have exactly 2 elements"):
-        validate_experiment_spec(spec, parser=parser)
+        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
 
 
 def test_validate_experiment_spec_rejects_invalid_hv_ref_point() -> None:
-    parser = _build_parser()
     spec = {"version": "1", "stopping": {"hv_convergence": {"ref_point": ["bad"]}}}
     with pytest.raises(ValueError, match="ref_point"):
-        validate_experiment_spec(spec, parser=parser)
+        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
 
 
 def test_validate_experiment_spec_rejects_non_mapping_defaults() -> None:
-    parser = _build_parser()
     spec = {"version": "1", "defaults": 123}
     with pytest.raises(TypeError, match="defaults"):
-        validate_experiment_spec(spec, parser=parser)
+        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
 
 
 def test_validate_experiment_spec_rejects_invalid_aos_block() -> None:
-    parser = _build_parser()
     spec = {"version": "1", "defaults": {"nsgaii": {"adaptive_operator_selection": []}}}
     with pytest.raises(ValueError, match="adaptive_operator_selection"):
-        validate_experiment_spec(spec, parser=parser)
+        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())

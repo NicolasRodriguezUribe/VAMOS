@@ -80,6 +80,17 @@ def test_nsgaiii_permutation_encoding_defaults(mock_kernel):
     assert mutation[0] == "swap"
 
 
+def test_repair_override_rejected_for_binary_encoding(mock_kernel):
+    problem = MockBinaryProblem()
+    with pytest.raises(ValueError, match="Repair operators are only supported for real encoding"):
+        build_moead_algorithm(
+            kernel=mock_kernel,
+            problem=problem,
+            pop_size=100,
+            moead_variation={"repair": ("clip", {})},
+        )
+
+
 # Updated tests for new builders
 def test_agemoea_builder_legacy_variation(mock_kernel):
     """Test build_agemoea_algorithm correctly handles legacy tuple variation."""

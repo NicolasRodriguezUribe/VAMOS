@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
-
 from vamos.engine.algorithm.factory import build_algorithm
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.experiment.services.config import VariationConfig
 
@@ -10,7 +10,7 @@ from vamos.experiment.services.config import VariationConfig
 def build_algorithm_from_spec(
     algorithm_name: str,
     engine_name: str,
-    problem: Any,
+    problem: ProblemProtocol,
     config: ExperimentConfig,
     *,
     external_archive_size: int | None = None,
@@ -24,7 +24,7 @@ def build_algorithm_from_spec(
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
     track_genealogy: bool = False,
-) -> tuple[Any, dict[str, Any]]:
+) -> tuple[object, AlgorithmConfigProtocol]:
     return build_algorithm(
         algorithm_name,
         engine_name,

@@ -1,97 +1,63 @@
 {
   "targets": [
     {
-      "path": "src\\vamos\\operators\\real\\crossover.py",
+      "path": "src\\vamos\\operators\\impl\\real\\crossover.py",
       "loop_candidates": [
         {
           "kind": "method",
           "name": "SBXCrossover.__call__",
           "score": 11,
-          "lineno": 69,
-          "snippet": "   63: \n   64:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:\n   65:         if self.workspace is None:\n   66:             return np.empty(shape, dtype=dtype)\n   67:         return self.workspace.request(key, shape, dtype)\n   68: \n   69:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n   70:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n   71:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n   72:         n_pairs, _, _ = offspring.shape\n   73:         if n_pairs == 0:\n   74:             return offspring\n   75:         self._check_bounds_match(offspring[:, 0, :], self.lower)"
+          "lineno": 70,
+          "snippet": "   64: \n   65:     def _buffer(self, key: str, shape: tuple[int, ...], dtype: Any) -> np.ndarray:\n   66:         if self.workspace is None:\n   67:             return np.empty(shape, dtype=dtype)\n   68:         return self.workspace.request(key, shape, dtype)\n   69: \n   70:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n   71:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n   72:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n   73:         n_pairs, _, _ = offspring.shape\n   74:         if n_pairs == 0:\n   75:             return offspring\n   76:         self._check_bounds_match(offspring[:, 0, :], self.lower)"
         },
         {
           "kind": "function",
           "name": "__call__",
           "score": 11,
-          "lineno": 69,
-          "snippet": "   63: \n   64:     def _buffer(self, key: str, shape: tuple[int, ...], dtype) -> np.ndarray:\n   65:         if self.workspace is None:\n   66:             return np.empty(shape, dtype=dtype)\n   67:         return self.workspace.request(key, shape, dtype)\n   68: \n   69:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n   70:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n   71:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n   72:         n_pairs, _, _ = offspring.shape\n   73:         if n_pairs == 0:\n   74:             return offspring\n   75:         self._check_bounds_match(offspring[:, 0, :], self.lower)"
+          "lineno": 70,
+          "snippet": "   64: \n   65:     def _buffer(self, key: str, shape: tuple[int, ...], dtype: Any) -> np.ndarray:\n   66:         if self.workspace is None:\n   67:             return np.empty(shape, dtype=dtype)\n   68:         return self.workspace.request(key, shape, dtype)\n   69: \n   70:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n   71:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n   72:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n   73:         n_pairs, _, _ = offspring.shape\n   74:         if n_pairs == 0:\n   75:             return offspring\n   76:         self._check_bounds_match(offspring[:, 0, :], self.lower)"
         },
         {
           "kind": "method",
           "name": "BLXAlphaCrossover.__call__",
           "score": 8,
-          "lineno": 233,
-          "snippet": "  227:             self._repair_reflect(child)\n  228:         elif self.repair == \"round\":\n  229:             self._repair_round(child)\n  230:         else:\n  231:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  232: \n  233:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  234:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  235:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  236:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  237:         n_pairs = offspring.shape[0]\n  238:         if n_pairs == 0:\n  239:             return offspring"
+          "lineno": 234,
+          "snippet": "  228:             self._repair_reflect(child)\n  229:         elif self.repair == \"round\":\n  230:             self._repair_round(child)\n  231:         else:\n  232:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  233: \n  234:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  235:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  236:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  237:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  238:         n_pairs = offspring.shape[0]\n  239:         if n_pairs == 0:\n  240:             return offspring"
         },
         {
           "kind": "function",
           "name": "__call__",
           "score": 8,
-          "lineno": 233,
-          "snippet": "  227:             self._repair_reflect(child)\n  228:         elif self.repair == \"round\":\n  229:             self._repair_round(child)\n  230:         else:\n  231:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  232: \n  233:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  234:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  235:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  236:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  237:         n_pairs = offspring.shape[0]\n  238:         if n_pairs == 0:\n  239:             return offspring"
+          "lineno": 234,
+          "snippet": "  228:             self._repair_reflect(child)\n  229:         elif self.repair == \"round\":\n  230:             self._repair_round(child)\n  231:         else:\n  232:             raise ValueError(f\"Unsupported BLX repair strategy '{self.repair}'.\")\n  233: \n  234:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  235:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  236:         offspring = parents_arr if self.allow_inplace else parents_arr.copy()\n  237:         self._check_bounds_match(offspring[:, 0, :], self.lower)\n  238:         n_pairs = offspring.shape[0]\n  239:         if n_pairs == 0:\n  240:             return offspring"
         },
         {
           "kind": "method",
           "name": "ArithmeticCrossover.__call__",
           "score": 9,
-          "lineno": 272,
-          "snippet": "  266: class ArithmeticCrossover(Crossover):\n  267:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  268: \n  269:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  270:         self.prob = float(prob_crossover)\n  271: \n  272:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  273:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  274:         offspring = parents_arr.copy()\n  275:         n_pairs = offspring.shape[0]\n  276:         if n_pairs == 0:\n  277:             return offspring\n  278: "
+          "lineno": 281,
+          "snippet": "  275:         upper: ArrayLike | None = None,\n  276:         workspace: VariationWorkspace | None = None,\n  277:         allow_inplace: bool = False,\n  278:     ) -> None:\n  279:         self.prob = float(prob_crossover)\n  280: \n  281:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  282:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  283:         offspring = parents_arr.copy()\n  284:         n_pairs = offspring.shape[0]\n  285:         if n_pairs == 0:\n  286:             return offspring\n  287: "
         },
         {
           "kind": "function",
           "name": "__call__",
           "score": 9,
-          "lineno": 272,
-          "snippet": "  266: class ArithmeticCrossover(Crossover):\n  267:     \"\"\"Arithmetic crossover mixing parents through random convex combinations.\"\"\"\n  268: \n  269:     def __init__(self, prob_crossover: float = 0.9) -> None:\n  270:         self.prob = float(prob_crossover)\n  271: \n  272:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  273:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  274:         offspring = parents_arr.copy()\n  275:         n_pairs = offspring.shape[0]\n  276:         if n_pairs == 0:\n  277:             return offspring\n  278: "
+          "lineno": 281,
+          "snippet": "  275:         upper: ArrayLike | None = None,\n  276:         workspace: VariationWorkspace | None = None,\n  277:         allow_inplace: bool = False,\n  278:     ) -> None:\n  279:         self.prob = float(prob_crossover)\n  280: \n  281:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  282:         parents_arr = self._as_matings(parents, copy=False, name=\"parents\")\n  283:         offspring = parents_arr.copy()\n  284:         n_pairs = offspring.shape[0]\n  285:         if n_pairs == 0:\n  286:             return offspring\n  287: "
         },
         {
           "kind": "method",
           "name": "UNDXCrossover.__call__",
           "score": 12,
-          "lineno": 389,
-          "snippet": "  383:     ) -> None:\n  384:         self.prob = float(prob_crossover)\n  385:         self.zeta = float(zeta)\n  386:         self.eta = float(eta)\n  387:         self.lower, self.upper = _ensure_bounds(lower, upper)\n  388: \n  389:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  390:         groups = self._as_matings(parents, expected_parents=3, copy=False)\n  391:         n_groups, _, n_vars = groups.shape\n  392:         if n_groups == 0:\n  393:             return np.empty((0, 2, n_vars), dtype=groups.dtype)\n  394:         offspring = np.empty((n_groups, 2, n_vars), dtype=groups.dtype)\n  395:         for i in range(n_groups):"
+          "lineno": 403,
+          "snippet": "  397:     ) -> None:\n  398:         self.prob = float(prob_crossover)\n  399:         self.zeta = float(zeta)\n  400:         self.eta = float(eta)\n  401:         self.lower, self.upper = _ensure_bounds(lower, upper)\n  402: \n  403:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  404:         groups = self._as_matings(parents, expected_parents=3, copy=False)\n  405:         n_groups, _, n_vars = groups.shape\n  406:         if n_groups == 0:\n  407:             return np.empty((0, 2, n_vars), dtype=groups.dtype)\n  408:         offspring = np.empty((n_groups, 2, n_vars), dtype=groups.dtype)\n  409:         for i in range(n_groups):"
         },
         {
           "kind": "function",
           "name": "__call__",
           "score": 12,
-          "lineno": 389,
-          "snippet": "  383:     ) -> None:\n  384:         self.prob = float(prob_crossover)\n  385:         self.zeta = float(zeta)\n  386:         self.eta = float(eta)\n  387:         self.lower, self.upper = _ensure_bounds(lower, upper)\n  388: \n  389:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  390:         groups = self._as_matings(parents, expected_parents=3, copy=False)\n  391:         n_groups, _, n_vars = groups.shape\n  392:         if n_groups == 0:\n  393:             return np.empty((0, 2, n_vars), dtype=groups.dtype)\n  394:         offspring = np.empty((n_groups, 2, n_vars), dtype=groups.dtype)\n  395:         for i in range(n_groups):"
-        }
-      ],
-      "write_hits": []
-    },
-    {
-      "path": "src\\vamos\\engine\\algorithm\\components\\variation\\pipeline.py",
-      "loop_candidates": [
-        {
-          "kind": "method",
-          "name": "VariationPipeline.produce_offspring",
-          "score": 12,
-          "lineno": 189,
-          "snippet": "  183:             return cast(np.ndarray, population[parent_idx])\n  184:         shape = (parent_idx.size, population.shape[1])\n  185:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n  186:         np.take(population, parent_idx, axis=0, out=buffer)\n  187:         return buffer\n  188: \n  189:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  190:         # Non-real encoding path (handled by dedicated operators).\n  191:         if self.encoding != \"real\":\n  192:             return self._produce_offspring_nonreal(parents, rng)\n  193: \n  194:         # Pipeline execution for Real encoding\n  195:         n_var = parents.shape[1]"
-        },
-        {
-          "kind": "method",
-          "name": "VariationPipeline._produce_offspring_nonreal",
-          "score": 16,
-          "lineno": 230,
-          "snippet": "  224:             flat = offspring.reshape(-1, offspring.shape[-1])\n  225:             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))\n  226:             offspring = repaired.reshape(offspring.shape)\n  227: \n  228:         return offspring\n  229: \n  230:     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  231:         # Dedicated logic for non-real encodings.\n  232:         encoding = self.encoding\n  233:         cross_params = self.cross_params\n  234:         mut_params = self.mut_params\n  235:         xl, xu = self.xl, self.xu\n  236: "
-        },
-        {
-          "kind": "function",
-          "name": "produce_offspring",
-          "score": 12,
-          "lineno": 189,
-          "snippet": "  183:             return cast(np.ndarray, population[parent_idx])\n  184:         shape = (parent_idx.size, population.shape[1])\n  185:         buffer = self.workspace.request(\"parent_buffer\", shape, population.dtype)\n  186:         np.take(population, parent_idx, axis=0, out=buffer)\n  187:         return buffer\n  188: \n  189:     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  190:         # Non-real encoding path (handled by dedicated operators).\n  191:         if self.encoding != \"real\":\n  192:             return self._produce_offspring_nonreal(parents, rng)\n  193: \n  194:         # Pipeline execution for Real encoding\n  195:         n_var = parents.shape[1]"
-        },
-        {
-          "kind": "function",
-          "name": "_produce_offspring_nonreal",
-          "score": 16,
-          "lineno": 230,
-          "snippet": "  224:             flat = offspring.reshape(-1, offspring.shape[-1])\n  225:             repaired = cast(np.ndarray, self.repair_op(flat, self.xl, self.xu, rng))\n  226:             offspring = repaired.reshape(offspring.shape)\n  227: \n  228:         return offspring\n  229: \n  230:     def _produce_offspring_nonreal(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:\n  231:         # Dedicated logic for non-real encodings.\n  232:         encoding = self.encoding\n  233:         cross_params = self.cross_params\n  234:         mut_params = self.mut_params\n  235:         xl, xu = self.xl, self.xu\n  236: "
+          "lineno": 403,
+          "snippet": "  397:     ) -> None:\n  398:         self.prob = float(prob_crossover)\n  399:         self.zeta = float(zeta)\n  400:         self.eta = float(eta)\n  401:         self.lower, self.upper = _ensure_bounds(lower, upper)\n  402: \n  403:     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:\n  404:         groups = self._as_matings(parents, expected_parents=3, copy=False)\n  405:         n_groups, _, n_vars = groups.shape\n  406:         if n_groups == 0:\n  407:             return np.empty((0, 2, n_vars), dtype=groups.dtype)\n  408:         offspring = np.empty((n_groups, 2, n_vars), dtype=groups.dtype)\n  409:         for i in range(n_groups):"
         }
       ],
       "write_hits": []
@@ -103,22 +69,42 @@
           "kind": "function",
           "name": "_fast_non_dominated_sort_ranks",
           "score": 16,
-          "lineno": 12,
-          "snippet": "    6: \n    7: from .backend import KernelBackend\n    8: from .numpy_backend import NumPyKernel as _NumPyKernel\n    9: \n   10: \n   11: @njit(cache=True)\n   12: def _fast_non_dominated_sort_ranks(F: np.ndarray) -> np.ndarray:\n   13:     N = F.shape[0]\n   14:     if N == 0:\n   15:         return np.empty(0, dtype=np.int64)\n   16: \n   17:     M = F.shape[1]\n   18:     dom_matrix = np.zeros((N, N), dtype=np.bool_)"
+          "lineno": 23,
+          "snippet": "   17: def njit(*args: Any, **kwargs: Any) -> Callable[[_F], _F]:\n   18:     \"\"\"Typed wrapper around numba.njit to keep mypy happy.\"\"\"\n   19:     return cast(Callable[[_F], _F], _numba_njit(*args, **kwargs))\n   20: \n   21: \n   22: @njit(cache=True)\n   23: def _fast_non_dominated_sort_ranks(F: np.ndarray) -> np.ndarray:\n   24:     N = F.shape[0]\n   25:     if N == 0:\n   26:         return np.empty(0, dtype=np.int64)\n   27: \n   28:     M = F.shape[1]\n   29:     dom_matrix = np.zeros((N, N), dtype=np.bool_)"
         },
         {
           "kind": "function",
           "name": "_compute_crowding_numba",
           "score": 14,
-          "lineno": 72,
-          "snippet": "   66:         level += 1\n   67: \n   68:     return ranks\n   69: \n   70: \n   71: @njit(cache=True)\n   72: def _compute_crowding_numba(F: np.ndarray, ranks: np.ndarray) -> np.ndarray:\n   73:     N = F.shape[0]\n   74:     crowding = np.zeros(N, dtype=np.float64)\n   75:     if N == 0:\n   76:         return crowding\n   77: \n   78:     M = F.shape[1]"
+          "lineno": 83,
+          "snippet": "   77:         level += 1\n   78: \n   79:     return ranks\n   80: \n   81: \n   82: @njit(cache=True)\n   83: def _compute_crowding_numba(F: np.ndarray, ranks: np.ndarray) -> np.ndarray:\n   84:     N = F.shape[0]\n   85:     crowding = np.zeros(N, dtype=np.float64)\n   86:     if N == 0:\n   87:         return crowding\n   88: \n   89:     M = F.shape[1]"
         },
         {
           "kind": "function",
           "name": "_select_nsga2_indices",
           "score": 12,
-          "lineno": 124,
-          "snippet": "  118:             crowding[front_idx[i]] = distances[i]\n  119: \n  120:     return crowding\n  121: \n  122: \n  123: @njit(cache=True)\n  124: def _select_nsga2_indices(ranks: np.ndarray, crowding: np.ndarray, pop_size: int) -> np.ndarray:\n  125:     N = ranks.shape[0]\n  126:     selected = np.empty(pop_size, dtype=np.int64)\n  127:     if pop_size == 0 or N == 0:\n  128:         return selected\n  129: \n  130:     max_rank = 0"
+          "lineno": 135,
+          "snippet": "  129:             crowding[front_idx[i]] = distances[i]\n  130: \n  131:     return crowding\n  132: \n  133: \n  134: @njit(cache=True)\n  135: def _select_nsga2_indices(ranks: np.ndarray, crowding: np.ndarray, pop_size: int) -> np.ndarray:\n  136:     N = ranks.shape[0]\n  137:     selected = np.empty(pop_size, dtype=np.int64)\n  138:     if pop_size == 0 or N == 0:\n  139:         return selected\n  140: \n  141:     max_rank = 0"
+        }
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\engine\\algorithm\\components\\variation\\strategies.py",
+      "loop_candidates": [
+        {
+          "kind": "method",
+          "name": "IntegerEncodingStrategy.build_mutation",
+          "score": 9,
+          "lineno": 212,
+          "snippet": "  206:             if eta is not None:\n  207:                 return cast(np.ndarray, cross_fn(parents, cross_prob, float(eta), xl, xu, rng))\n  208:             return cast(np.ndarray, cross_fn(parents, cross_prob, rng))\n  209: \n  210:         return crossover\n  211: \n  212:     def build_mutation(self, method: MutationName, params: dict[str, Any]) -> MutationOperator:\n  213:         mut_prob = float(params.get(\"prob\", 0.0))\n  214:         mut_fn = cast(Any, INT_MUTATION[method])\n  215:         xl, xu = self.ctx.xl, self.ctx.xu\n  216:         if method == \"creep\":\n  217:             step = int(params.get(\"step\", 1))\n  218:             eta = None"
+        },
+        {
+          "kind": "function",
+          "name": "build_mutation",
+          "score": 9,
+          "lineno": 212,
+          "snippet": "  206:             if eta is not None:\n  207:                 return cast(np.ndarray, cross_fn(parents, cross_prob, float(eta), xl, xu, rng))\n  208:             return cast(np.ndarray, cross_fn(parents, cross_prob, rng))\n  209: \n  210:         return crossover\n  211: \n  212:     def build_mutation(self, method: MutationName, params: dict[str, Any]) -> MutationOperator:\n  213:         mut_prob = float(params.get(\"prob\", 0.0))\n  214:         mut_fn = cast(Any, INT_MUTATION[method])\n  215:         xl, xu = self.ctx.xl, self.ctx.xu\n  216:         if method == \"creep\":\n  217:             step = int(params.get(\"step\", 1))\n  218:             eta = None"
         }
       ],
       "write_hits": []
@@ -131,14 +117,14 @@
           "name": "MOEAD.run",
           "score": 10,
           "lineno": 94,
-          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: \"ProblemProtocol\",\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_strategy: \"EvaluationBackend | None\" = None,\n  100:         live_viz: \"LiveVisualization | None\" = None,"
+          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: ProblemProtocol,\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_strategy: EvaluationBackend | None = None,\n  100:         live_viz: LiveVisualization | None = None,"
         },
         {
           "kind": "function",
           "name": "run",
           "score": 10,
           "lineno": 94,
-          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: \"KernelBackend\") -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: \"ProblemProtocol\",\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_strategy: \"EvaluationBackend | None\" = None,\n  100:         live_viz: \"LiveVisualization | None\" = None,"
+          "snippet": "   88: \n   89:     def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:\n   90:         self.cfg = config\n   91:         self.kernel = kernel\n   92:         self._st: MOEADState | None = None\n   93: \n   94:     def run(\n   95:         self,\n   96:         problem: ProblemProtocol,\n   97:         termination: tuple[str, Any],\n   98:         seed: int,\n   99:         eval_strategy: EvaluationBackend | None = None,\n  100:         live_viz: LiveVisualization | None = None,"
         }
       ],
       "write_hits": []
@@ -150,15 +136,15 @@
           "kind": "function",
           "name": "operator_success_stats",
           "score": 8,
-          "lineno": 102,
-          "snippet": "   96:         matches = np.where(np.all(combined_X == row, axis=1))[0]\n   97:         if matches.size:\n   98:             new_ids[i] = combined_ids[matches[0]]\n   99:     return new_ids\n  100: \n  101: \n  102: def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:\n  103:     final_ancestors = set()\n  104:     for fid in final_ids:\n  105:         for rec in get_lineage(tracker, fid):\n  106:             final_ancestors.add(rec.individual_id)\n  107:     totals = {}\n  108:     finals = {}"
+          "lineno": 132,
+          "snippet": "  126:         matches = np.where(np.all(combined_X == row, axis=1))[0]\n  127:         if matches.size:\n  128:             new_ids[i] = combined_ids[matches[0]]\n  129:     return new_ids\n  130: \n  131: \n  132: def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict[str, object]]:\n  133:     final_ancestors = set()\n  134:     for fid in final_ids:\n  135:         for rec in get_lineage(tracker, fid):\n  136:             final_ancestors.add(rec.individual_id)\n  137:     totals: dict[str, int] = {}\n  138:     finals: dict[str, int] = {}"
         },
         {
           "kind": "function",
           "name": "generation_contributions",
           "score": 12,
-          "lineno": 130,
-          "snippet": "  124:                 \"ratio\": (good / cnt) if cnt else 0.0,\n  125:             }\n  126:         )\n  127:     return rows\n  128: \n  129: \n  130: def generation_contributions(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict]:\n  131:     final_ancestors = set()\n  132:     for fid in final_ids:\n  133:         for rec in get_lineage(tracker, fid):\n  134:             final_ancestors.add(rec.individual_id)\n  135:     gen_totals = {}\n  136:     gen_final = {}"
+          "lineno": 160,
+          "snippet": "  154:                 \"ratio\": (good / cnt) if cnt else 0.0,\n  155:             }\n  156:         )\n  157:     return rows\n  158: \n  159: \n  160: def generation_contributions(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict[str, object]]:\n  161:     final_ancestors = set()\n  162:     for fid in final_ids:\n  163:         for rec in get_lineage(tracker, fid):\n  164:             final_ancestors.add(rec.individual_id)\n  165:     gen_totals: dict[int, int] = {}\n  166:     gen_final: dict[int, int] = {}"
         }
       ],
       "write_hits": []
@@ -190,15 +176,15 @@
           "kind": "method",
           "name": "RVEA.run",
           "score": 8,
-          "lineno": 119,
-          "snippet": "  113: \n  114:     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):\n  115:         self.config = config\n  116:         self.kernel = kernel or NumPyKernel()\n  117:         self._state = None\n  118: \n  119:     def run(\n  120:         self,\n  121:         problem: ProblemProtocol,\n  122:         termination: Tuple[str, Any],\n  123:         seed: int,\n  124:         eval_strategy: EvaluationBackend | None = None,\n  125:         live_viz: Any | None = None,"
+          "lineno": 120,
+          "snippet": "  114: \n  115:     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):\n  116:         self.config = config\n  117:         self.kernel = kernel or NumPyKernel()\n  118:         self._state = None\n  119: \n  120:     def run(\n  121:         self,\n  122:         problem: ProblemProtocol,\n  123:         termination: tuple[str, Any],\n  124:         seed: int,\n  125:         eval_strategy: EvaluationBackend | None = None,\n  126:         live_viz: Any | None = None,"
         },
         {
           "kind": "function",
           "name": "run",
           "score": 8,
-          "lineno": 119,
-          "snippet": "  113: \n  114:     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):\n  115:         self.config = config\n  116:         self.kernel = kernel or NumPyKernel()\n  117:         self._state = None\n  118: \n  119:     def run(\n  120:         self,\n  121:         problem: ProblemProtocol,\n  122:         termination: Tuple[str, Any],\n  123:         seed: int,\n  124:         eval_strategy: EvaluationBackend | None = None,\n  125:         live_viz: Any | None = None,"
+          "lineno": 120,
+          "snippet": "  114: \n  115:     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):\n  116:         self.config = config\n  117:         self.kernel = kernel or NumPyKernel()\n  118:         self._state = None\n  119: \n  120:     def run(\n  121:         self,\n  122:         problem: ProblemProtocol,\n  123:         termination: tuple[str, Any],\n  124:         seed: int,\n  125:         eval_strategy: EvaluationBackend | None = None,\n  126:         live_viz: Any | None = None,"
         }
       ],
       "write_hits": []
@@ -210,15 +196,15 @@
           "kind": "method",
           "name": "SPEA2.run",
           "score": 10,
-          "lineno": 121,
-          "snippet": "  115:         self._live_cb = None\n  116:         self._eval_strategy = None\n  117:         self._max_eval = None\n  118:         self._hv_tracker = None\n  119:         self._problem = None\n  120: \n  121:     def run(\n  122:         self,\n  123:         problem: \"ProblemProtocol\",\n  124:         termination: tuple[str, Any],\n  125:         seed: int,\n  126:         eval_strategy: \"EvaluationBackend | None\" = None,\n  127:         live_viz: \"LiveVisualization | None\" = None,"
+          "lineno": 122,
+          "snippet": "  116:         self._live_cb: LiveVisualization | None = None\n  117:         self._eval_strategy: EvaluationBackend | None = None\n  118:         self._max_eval: int = 0\n  119:         self._hv_tracker: HVTracker | None = None\n  120:         self._problem: ProblemProtocol | None = None\n  121: \n  122:     def run(\n  123:         self,\n  124:         problem: ProblemProtocol,\n  125:         termination: tuple[str, Any],\n  126:         seed: int,\n  127:         eval_strategy: EvaluationBackend | None = None,\n  128:         live_viz: LiveVisualization | None = None,"
         },
         {
           "kind": "function",
           "name": "run",
           "score": 10,
-          "lineno": 121,
-          "snippet": "  115:         self._live_cb = None\n  116:         self._eval_strategy = None\n  117:         self._max_eval = None\n  118:         self._hv_tracker = None\n  119:         self._problem = None\n  120: \n  121:     def run(\n  122:         self,\n  123:         problem: \"ProblemProtocol\",\n  124:         termination: tuple[str, Any],\n  125:         seed: int,\n  126:         eval_strategy: \"EvaluationBackend | None\" = None,\n  127:         live_viz: \"LiveVisualization | None\" = None,"
+          "lineno": 122,
+          "snippet": "  116:         self._live_cb: LiveVisualization | None = None\n  117:         self._eval_strategy: EvaluationBackend | None = None\n  118:         self._max_eval: int = 0\n  119:         self._hv_tracker: HVTracker | None = None\n  120:         self._problem: ProblemProtocol | None = None\n  121: \n  122:     def run(\n  123:         self,\n  124:         problem: ProblemProtocol,\n  125:         termination: tuple[str, Any],\n  126:         seed: int,\n  127:         eval_strategy: EvaluationBackend | None = None,\n  128:         live_viz: LiveVisualization | None = None,"
         }
       ],
       "write_hits": []
@@ -230,15 +216,15 @@
           "kind": "method",
           "name": "ModelBasedSampler.update",
           "score": 10,
-          "lineno": 80,
-          "snippet": "   74:     \"\"\"\n   75: \n   76:     _cat_models: Dict[str, Dict[str, Any]] = field(default_factory=dict)\n   77:     _real_models: Dict[str, Dict[str, float]] = field(default_factory=dict)\n   78:     _int_models: Dict[str, Dict[str, float]] = field(default_factory=dict)\n   79: \n   80:     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:\n   81:         \"\"\"\n   82:         Update the internal marginal model from a collection of 'good' configs.\n   83: \n   84:         If the number of good_configs is below min_samples_to_model, the internal\n   85:         model is cleared and only uniform sampling will be used.\n   86:         \"\"\""
+          "lineno": 81,
+          "snippet": "   75:     \"\"\"\n   76: \n   77:     _cat_models: dict[str, dict[str, Any]] = field(default_factory=dict)\n   78:     _real_models: dict[str, dict[str, float]] = field(default_factory=dict)\n   79:     _int_models: dict[str, dict[str, float]] = field(default_factory=dict)\n   80: \n   81:     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:\n   82:         \"\"\"\n   83:         Update the internal marginal model from a collection of 'good' configs.\n   84: \n   85:         If the number of good_configs is below min_samples_to_model, the internal\n   86:         model is cleared and only uniform sampling will be used.\n   87:         \"\"\""
         },
         {
           "kind": "function",
           "name": "update",
           "score": 10,
-          "lineno": 80,
-          "snippet": "   74:     \"\"\"\n   75: \n   76:     _cat_models: Dict[str, Dict[str, Any]] = field(default_factory=dict)\n   77:     _real_models: Dict[str, Dict[str, float]] = field(default_factory=dict)\n   78:     _int_models: Dict[str, Dict[str, float]] = field(default_factory=dict)\n   79: \n   80:     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:\n   81:         \"\"\"\n   82:         Update the internal marginal model from a collection of 'good' configs.\n   83: \n   84:         If the number of good_configs is below min_samples_to_model, the internal\n   85:         model is cleared and only uniform sampling will be used.\n   86:         \"\"\""
+          "lineno": 81,
+          "snippet": "   75:     \"\"\"\n   76: \n   77:     _cat_models: dict[str, dict[str, Any]] = field(default_factory=dict)\n   78:     _real_models: dict[str, dict[str, float]] = field(default_factory=dict)\n   79:     _int_models: dict[str, dict[str, float]] = field(default_factory=dict)\n   80: \n   81:     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:\n   82:         \"\"\"\n   83:         Update the internal marginal model from a collection of 'good' configs.\n   84: \n   85:         If the number of good_configs is below min_samples_to_model, the internal\n   86:         model is cleared and only uniform sampling will be used.\n   87:         \"\"\""
         }
       ],
       "write_hits": []
@@ -251,36 +237,17 @@
           "name": "compute_operator_success_stats",
           "score": 8,
           "lineno": 71,
-          "snippet": "   65:             continue\n   66:         lineage.append(rec)\n   67:         stack.extend(rec.parents)\n   68:     return lineage\n   69: \n   70: \n   71: def compute_operator_success_stats(tracker: GenealogyTracker):\n   72:     import pandas as pd\n   73: \n   74:     total: Dict[str, int] = {}\n   75:     final: Dict[str, int] = {}\n   76:     final_ids = [rid for rid, rec in tracker.records.items() if rec.is_final_front]\n   77:     final_ancestors = set()"
+          "snippet": "   65:             continue\n   66:         lineage.append(rec)\n   67:         stack.extend(rec.parents)\n   68:     return lineage\n   69: \n   70: \n   71: def compute_operator_success_stats(tracker: GenealogyTracker) -> Any:\n   72:     import pandas as pd\n   73: \n   74:     total: dict[str, int] = {}\n   75:     final: dict[str, int] = {}\n   76:     final_ids = [rid for rid, rec in tracker.records.items() if rec.is_final_front]\n   77:     final_ancestors = set()"
         },
         {
           "kind": "function",
           "name": "compute_generation_contributions",
           "score": 12,
           "lineno": 100,
-          "snippet": "   94:                 \"ratio\": (final.get(op, 0) / cnt) if cnt else 0.0,\n   95:             }\n   96:         )\n   97:     return pd.DataFrame(rows)\n   98: \n   99: \n  100: def compute_generation_contributions(tracker: GenealogyTracker):\n  101:     import pandas as pd\n  102: \n  103:     final_ids = [rid for rid, rec in tracker.records.items() if rec.is_final_front]\n  104:     final_ancestors = set()\n  105:     for fid in final_ids:\n  106:         for rec in get_lineage(tracker, fid):"
+          "snippet": "   94:                 \"ratio\": (final.get(op, 0) / cnt) if cnt else 0.0,\n   95:             }\n   96:         )\n   97:     return pd.DataFrame(rows)\n   98: \n   99: \n  100: def compute_generation_contributions(tracker: GenealogyTracker) -> Any:\n  101:     import pandas as pd\n  102: \n  103:     final_ids = [rid for rid, rec in tracker.records.items() if rec.is_final_front]\n  104:     final_ancestors = set()\n  105:     for fid in final_ids:\n  106:         for rec in get_lineage(tracker, fid):"
         }
       ],
       "write_hits": []
-    },
-    {
-      "path": "src\\vamos\\ux\\studio\\app.py",
-      "loop_candidates": [
-        {
-          "kind": "function",
-          "name": "main",
-          "score": 12,
-          "lineno": 135,
-          "snippet": "  129:     )\n  130: \n  131:     result = optimize_config(run_cfg)\n  132:     return result, callback.history\n  133: \n  134: \n  135: def main(argv: List[str] | None = None) -> None:\n  136:     parser = argparse.ArgumentParser(description=\"Launch VAMOS Studio (Streamlit).\")\n  137:     parser.add_argument(\"--study-dir\", help=\"Path to a StudyRunner output directory.\", default=\"results\")\n  138:     args, _ = parser.parse_known_args(argv)\n  139: \n  140:     st = _import_streamlit()\n  141:     px = _import_plotly()"
-        }
-      ],
-      "write_hits": [
-        {
-          "lineno": 108,
-          "line": "# If the config came from resolved_config.json, it might have \"termination\"",
-          "snippet": "  102:     # Instantiate problem\n  103:     selection = make_problem_selection(problem_name)\n  104:     problem = selection.instantiate()\n  105: \n  106:     # Adjust config for budget if needed, or assume fixed budget\n  107:     # We respect the passed config but might override budget\n  108:     # If the config came from resolved_config.json, it might have \"termination\"\n  109: \n  110:     # Clean config for usage\n  111:     algo_name = config.get(\"algorithm\", \"nsgaii\")\n  112:     algo_cfg = config.get(\"algorithm_config\", {})\n  113:     if not algo_cfg:\n  114:         # Fallback to defaults if empty"
-        }
-      ]
     },
     {
       "path": "src\\vamos\\engine\\algorithm\\nsgaiii\\helpers.py",
@@ -315,8 +282,8 @@
           "kind": "function",
           "name": "_run_multi_fidelity",
           "score": 8,
-          "lineno": 30,
-          "snippet": "   24:     warm_start: bool,\n   25: ) -> Any:\n   26:     result = eval_fn(config, ctx)\n   27:     return result\n   28: \n   29: \n   30: def _run_multi_fidelity(\n   31:     tuner: \"RacingTuner\",\n   32:     eval_fn: Callable[[Dict[str, Any], EvalContext], float],\n   33:     verbose: Optional[bool] = None,\n   34: ) -> Tuple[Dict[str, Any], List[TrialResult]]:\n   35:     verbose_flag = tuner.scenario.verbose if verbose is None else verbose\n   36:     fidelity_levels = list(tuner.scenario.fidelity_levels)"
+          "lineno": 31,
+          "snippet": "   25:     warm_start: bool,\n   26: ) -> Any:\n   27:     result = eval_fn(config, ctx)\n   28:     return result\n   29: \n   30: \n   31: def _run_multi_fidelity(\n   32:     tuner: RacingTuner,\n   33:     eval_fn: Callable[[dict[str, Any], EvalContext], float],\n   34:     verbose: bool | None = None,\n   35: ) -> tuple[dict[str, Any], list[TrialResult]]:\n   36:     verbose_flag = tuner.scenario.verbose if verbose is None else verbose\n   37:     fidelity_levels = list(tuner.scenario.fidelity_levels)"
         }
       ],
       "write_hits": []
@@ -328,8 +295,8 @@
           "kind": "function",
           "name": "build_schedule",
           "score": 8,
-          "lineno": 6,
-          "snippet": "    1: from __future__ import annotations\n    2: \n    3: from typing import List, Sequence, Tuple\n    4: \n    5: \n    6: def build_schedule(\n    7:     instances: Sequence,\n    8:     seeds: Sequence[int],\n    9:     *,\n   10:     start_instances: int,\n   11:     instance_order_random: bool,\n   12:     seed_order_random: bool,"
+          "lineno": 9,
+          "snippet": "    3: from typing import Any\n    4: from collections.abc import Sequence\n    5: \n    6: import numpy as np\n    7: \n    8: \n    9: def build_schedule(\n   10:     instances: Sequence[Any],\n   11:     seeds: Sequence[int],\n   12:     *,\n   13:     start_instances: int,\n   14:     instance_order_random: bool,\n   15:     seed_order_random: bool,"
         }
       ],
       "write_hits": []
@@ -342,7 +309,7 @@
           "name": "write_wilcoxon_tables",
           "score": 8,
           "lineno": 52,
-          "snippet": "   46:             table.to_csv(path, sep=\"\\t\", encoding=\"utf-8\")\n   47:             created[f\"{label}-{indicator_name}\"] = path\n   48: \n   49:     return created\n   50: \n   51: \n   52: def write_wilcoxon_tables(summary, output_dir: Path, *, alpha: float = 0.05) -> Dict[str, Path]:\n   53:     pd = import_pandas()\n   54:     try:\n   55:         from scipy import stats as spstats  # type: ignore\n   56:     except Exception:  # pragma: no cover - optional\n   57:         return {}\n   58: "
+          "snippet": "   46:             table.to_csv(path, sep=\"\\t\", encoding=\"utf-8\")\n   47:             created[f\"{label}-{indicator_name}\"] = path\n   48: \n   49:     return created\n   50: \n   51: \n   52: def write_wilcoxon_tables(summary: Any, output_dir: Path, *, alpha: float = 0.05) -> dict[str, Path]:\n   53:     pd = import_pandas()\n   54:     try:\n   55:         from scipy import stats as spstats  # type: ignore[import-untyped]\n   56:     except Exception:  # pragma: no cover - optional\n   57:         return {}\n   58: "
         }
       ],
       "write_hits": []
@@ -354,8 +321,8 @@
           "kind": "function",
           "name": "finalize_args",
           "score": 14,
-          "lineno": 11,
-          "snippet": "    5: from vamos.foundation.problem.resolver import resolve_reference_front_path\n    6: \n    7: from .common import _normalize_operator_args, collect_nsgaii_variation_args\n    8: from .types import SpecDefaults\n    9: \n   10: \n   11: def finalize_args(\n   12:     parser: argparse.ArgumentParser,\n   13:     args: argparse.Namespace,\n   14:     *,\n   15:     spec_defaults: SpecDefaults,\n   16:     config_path: str | None,\n   17: ) -> argparse.Namespace:"
+          "lineno": 12,
+          "snippet": "    6: from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS\n    7: \n    8: from .common import _normalize_operator_args, collect_nsgaii_variation_args\n    9: from .types import SpecDefaults\n   10: \n   11: \n   12: def finalize_args(\n   13:     parser: argparse.ArgumentParser,\n   14:     args: argparse.Namespace,\n   15:     *,\n   16:     spec_defaults: SpecDefaults,\n   17:     config_path: str | None,\n   18: ) -> argparse.Namespace:"
         }
       ],
       "write_hits": []
@@ -367,8 +334,8 @@
           "kind": "function",
           "name": "execute_problem_suite",
           "score": 12,
-          "lineno": 355,
-          "snippet": "  349:             f\"{res['evals_per_sec']:>12.1f} {hv_txt:>12} {spread_txt:>12}\",\n  350:         )\n  351:     ref_txt = np.array2string(hv_ref_point, precision=3, suppress_small=True)\n  352:     _logger().info(\"Hypervolume reference point: %s\", ref_txt)\n  353: \n  354: \n  355: def execute_problem_suite(\n  356:     args: Namespace,\n  357:     problem_selection: ProblemSelection,\n  358:     config: ExperimentConfig,\n  359:     *,\n  360:     run_single_fn: Callable[..., Metrics],\n  361:     hv_stop_config: dict[str, Any] | None = None,"
+          "lineno": 357,
+          "snippet": "  351:             f\"{res['evals_per_sec']:>12.1f} {hv_txt:>12} {spread_txt:>12}\",\n  352:         )\n  353:     ref_txt = np.array2string(hv_ref_point, precision=3, suppress_small=True)\n  354:     _logger().info(\"Hypervolume reference point: %s\", ref_txt)\n  355: \n  356: \n  357: def execute_problem_suite(\n  358:     args: Namespace,\n  359:     problem_selection: ProblemSelection,\n  360:     config: ExperimentConfig,\n  361:     *,\n  362:     run_single_fn: Callable[..., Metrics],\n  363:     hv_stop_config: dict[str, Any] | None = None,"
         }
       ],
       "write_hits": []
@@ -380,101 +347,71 @@
           "kind": "function",
           "name": "sbx_crossover_numba",
           "score": 18,
-          "lineno": 60,
-          "snippet": "   54:                     y = yu\n   55: \n   56:                 X[i, j] = y\n   57: \n   58: \n   59: @njit(cache=True)\n   60: def sbx_crossover_numba(\n   61:     X_parents: np.ndarray,\n   62:     prob: float,\n   63:     eta: float,\n   64:     lower: np.ndarray,\n   65:     upper: np.ndarray,\n   66:     prob_var: float = 0.5,"
+          "lineno": 70,
+          "snippet": "   64:                     y = yu\n   65: \n   66:                 X[i, j] = y\n   67: \n   68: \n   69: @njit(cache=True)\n   70: def sbx_crossover_numba(\n   71:     X_parents: np.ndarray,\n   72:     prob: float,\n   73:     eta: float,\n   74:     lower: np.ndarray,\n   75:     upper: np.ndarray,\n   76:     prob_var: float = 0.5,"
         }
       ],
       "write_hits": []
     },
     {
-      "path": "src\\vamos\\experiment\\results.py",
-      "loop_candidates": [],
-      "write_hits": [
+      "path": "src\\vamos\\operators\\impl\\mixed.py",
+      "loop_candidates": [
         {
-          "lineno": 6,
-          "line": "FUN.csv",
-          "snippet": "    1: \"\"\"\n    2: Shared result layout helpers for experiment outputs.\n    3: \n    4: Standard layout (relative to `output_root`, defaults to `results/`):\n    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt"
-        },
-        {
-          "lineno": 9,
-          "line": "ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)",
-          "snippet": "    3: \n    4: Standard layout (relative to `output_root`, defaults to `results/`):\n    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: \n   15: from __future__ import annotations"
-        },
-        {
-          "lineno": 10,
-          "line": "metadata.json",
-          "snippet": "    4: Standard layout (relative to `output_root`, defaults to `results/`):\n    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: \n   15: from __future__ import annotations\n   16: "
-        },
-        {
-          "lineno": 11,
-          "line": "resolved_config.json",
-          "snippet": "    5:     <problem_label>/<algorithm>/<engine>/seed_<seed>/\n    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: \n   15: from __future__ import annotations\n   16: \n   17: from pathlib import Path"
-        },
-        {
-          "lineno": 12,
-          "line": "time.txt",
-          "snippet": "    6:         FUN.csv\n    7:         X.csv (optional)\n    8:         G.csv (optional)\n    9:         ARCHIVE_FUN.csv / ARCHIVE_X.csv / ARCHIVE_G.csv (optional)\n   10:         metadata.json\n   11:         resolved_config.json\n   12:         time.txt\n   13: \"\"\"\n   14: \n   15: from __future__ import annotations\n   16: \n   17: from pathlib import Path\n   18: "
-        },
-        {
-          "lineno": 20,
-          "line": "\"fun\": \"FUN.csv\",",
-          "snippet": "   14: \n   15: from __future__ import annotations\n   16: \n   17: from pathlib import Path\n   18: \n   19: RESULT_FILES = {\n   20:     \"fun\": \"FUN.csv\",\n   21:     \"x\": \"X.csv\",\n   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\","
-        },
-        {
-          "lineno": 23,
-          "line": "\"archive_fun\": \"ARCHIVE_FUN.csv\",",
-          "snippet": "   17: from pathlib import Path\n   18: \n   19: RESULT_FILES = {\n   20:     \"fun\": \"FUN.csv\",\n   21:     \"x\": \"X.csv\",\n   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\",\n   27:     \"resolved_config\": \"resolved_config.json\",\n   28:     \"time\": \"time.txt\",\n   29: }"
-        },
-        {
-          "lineno": 26,
-          "line": "\"metadata\": \"metadata.json\",",
-          "snippet": "   20:     \"fun\": \"FUN.csv\",\n   21:     \"x\": \"X.csv\",\n   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\",\n   27:     \"resolved_config\": \"resolved_config.json\",\n   28:     \"time\": \"time.txt\",\n   29: }\n   30: \n   31: \n   32: def standard_run_dir("
-        },
-        {
-          "lineno": 27,
-          "line": "\"resolved_config\": \"resolved_config.json\",",
-          "snippet": "   21:     \"x\": \"X.csv\",\n   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\",\n   27:     \"resolved_config\": \"resolved_config.json\",\n   28:     \"time\": \"time.txt\",\n   29: }\n   30: \n   31: \n   32: def standard_run_dir(\n   33:     *,"
-        },
-        {
-          "lineno": 28,
-          "line": "\"time\": \"time.txt\",",
-          "snippet": "   22:     \"g\": \"G.csv\",\n   23:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   24:     \"archive_x\": \"ARCHIVE_X.csv\",\n   25:     \"archive_g\": \"ARCHIVE_G.csv\",\n   26:     \"metadata\": \"metadata.json\",\n   27:     \"resolved_config\": \"resolved_config.json\",\n   28:     \"time\": \"time.txt\",\n   29: }\n   30: \n   31: \n   32: def standard_run_dir(\n   33:     *,\n   34:     problem_label: str,"
+          "kind": "function",
+          "name": "mixed_crossover",
+          "score": 14,
+          "lineno": 39,
+          "snippet": "   33:     if cat_idx.size:\n   34:         cats = [rng.integers(0, int(cat_cardinality[i]), size=pop_size, dtype=np.int32) for i in range(cat_idx.size)]\n   35:         X[:, cat_idx] = np.stack(cats, axis=1)\n   36:     return X\n   37: \n   38: \n   39: def mixed_crossover(\n   40:     X_parents: np.ndarray,\n   41:     prob: float,\n   42:     spec: dict[str, np.ndarray],\n   43:     rng: np.random.Generator,\n   44: ) -> np.ndarray:\n   45:     \"\"\""
         }
-      ]
+      ],
+      "write_hits": []
+    },
+    {
+      "path": "src\\vamos\\ux\\studio\\app.py",
+      "loop_candidates": [
+        {
+          "kind": "function",
+          "name": "main",
+          "score": 10,
+          "lineno": 47,
+          "snippet": "   41: ) -> FrontRecord | None:\n   42:     if primary_algo is None:\n   43:         return None\n   44:     return next((f for f in fronts if f.problem_name == problem and f.algorithm_name == primary_algo), None)\n   45: \n   46: \n   47: def main(argv: list[str] | None = None) -> None:\n   48:     parser = argparse.ArgumentParser(description=\"Launch VAMOS Studio (Streamlit).\")\n   49:     parser.add_argument(\"--study-dir\", help=\"Path to a StudyRunner output directory.\", default=\"results\")\n   50:     args, _ = parser.parse_known_args(argv)\n   51: \n   52:     st = _import_streamlit()\n   53:     px = _import_plotly()"
+        }
+      ],
+      "write_hits": []
     },
     {
       "path": "src\\vamos\\ux\\studio\\data.py",
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 46,
+          "lineno": 47,
           "line": "fun_path = run_dir / \"FUN.csv\"",
-          "snippet": "   40: \n   41: def load_run_from_directory(run_dir: Path) -> RunRecord:\n   42:     \"\"\"\n   43:     Load a single run (FUN/VAR/metadata) produced by run_single/StudyRunner.\n   44:     \"\"\"\n   45:     run_dir = run_dir.resolve()\n   46:     fun_path = run_dir / \"FUN.csv\"\n   47:     if not fun_path.exists():\n   48:         raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")\n   49:     fun = _load_csv(fun_path)\n   50:     var_path = run_dir / \"VAR.csv\"\n   51:     var = _load_csv(var_path) if var_path.exists() else None\n   52:     archive_path = run_dir / \"ARCHIVE_FUN.csv\""
+          "snippet": "   41: \n   42: def load_run_from_directory(run_dir: Path) -> RunRecord:\n   43:     \"\"\"\n   44:     Load a single run (FUN/VAR/metadata) produced by run_single/StudyRunner.\n   45:     \"\"\"\n   46:     run_dir = run_dir.resolve()\n   47:     fun_path = run_dir / \"FUN.csv\"\n   48:     if not fun_path.exists():\n   49:         raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")\n   50:     fun = _load_csv(fun_path)\n   51:     var_path = run_dir / \"VAR.csv\"\n   52:     var = _load_csv(var_path) if var_path.exists() else None\n   53:     archive_path = run_dir / \"ARCHIVE_FUN.csv\""
         },
         {
-          "lineno": 48,
+          "lineno": 49,
           "line": "raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")",
-          "snippet": "   42:     \"\"\"\n   43:     Load a single run (FUN/VAR/metadata) produced by run_single/StudyRunner.\n   44:     \"\"\"\n   45:     run_dir = run_dir.resolve()\n   46:     fun_path = run_dir / \"FUN.csv\"\n   47:     if not fun_path.exists():\n   48:         raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")\n   49:     fun = _load_csv(fun_path)\n   50:     var_path = run_dir / \"VAR.csv\"\n   51:     var = _load_csv(var_path) if var_path.exists() else None\n   52:     archive_path = run_dir / \"ARCHIVE_FUN.csv\"\n   53:     archive_fun = _load_csv(archive_path) if archive_path.exists() else None\n   54:     metadata_path = run_dir / \"metadata.json\""
+          "snippet": "   43:     \"\"\"\n   44:     Load a single run (FUN/VAR/metadata) produced by run_single/StudyRunner.\n   45:     \"\"\"\n   46:     run_dir = run_dir.resolve()\n   47:     fun_path = run_dir / \"FUN.csv\"\n   48:     if not fun_path.exists():\n   49:         raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")\n   50:     fun = _load_csv(fun_path)\n   51:     var_path = run_dir / \"VAR.csv\"\n   52:     var = _load_csv(var_path) if var_path.exists() else None\n   53:     archive_path = run_dir / \"ARCHIVE_FUN.csv\"\n   54:     archive_fun = _load_csv(archive_path) if archive_path.exists() else None\n   55:     metadata_path = run_dir / \"metadata.json\""
         },
         {
-          "lineno": 52,
+          "lineno": 53,
           "line": "archive_path = run_dir / \"ARCHIVE_FUN.csv\"",
-          "snippet": "   46:     fun_path = run_dir / \"FUN.csv\"\n   47:     if not fun_path.exists():\n   48:         raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")\n   49:     fun = _load_csv(fun_path)\n   50:     var_path = run_dir / \"VAR.csv\"\n   51:     var = _load_csv(var_path) if var_path.exists() else None\n   52:     archive_path = run_dir / \"ARCHIVE_FUN.csv\"\n   53:     archive_fun = _load_csv(archive_path) if archive_path.exists() else None\n   54:     metadata_path = run_dir / \"metadata.json\"\n   55:     metadata: Dict[str, Any] = {}\n   56:     if metadata_path.exists():\n   57:         metadata = json.loads(metadata_path.read_text(encoding=\"utf-8\"))\n   58: "
+          "snippet": "   47:     fun_path = run_dir / \"FUN.csv\"\n   48:     if not fun_path.exists():\n   49:         raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")\n   50:     fun = _load_csv(fun_path)\n   51:     var_path = run_dir / \"VAR.csv\"\n   52:     var = _load_csv(var_path) if var_path.exists() else None\n   53:     archive_path = run_dir / \"ARCHIVE_FUN.csv\"\n   54:     archive_fun = _load_csv(archive_path) if archive_path.exists() else None\n   55:     metadata_path = run_dir / \"metadata.json\"\n   56:     metadata: dict[str, Any] = {}\n   57:     if metadata_path.exists():\n   58:         metadata = json.loads(metadata_path.read_text(encoding=\"utf-8\"))\n   59: "
         },
         {
-          "lineno": 54,
+          "lineno": 55,
           "line": "metadata_path = run_dir / \"metadata.json\"",
-          "snippet": "   48:         raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")\n   49:     fun = _load_csv(fun_path)\n   50:     var_path = run_dir / \"VAR.csv\"\n   51:     var = _load_csv(var_path) if var_path.exists() else None\n   52:     archive_path = run_dir / \"ARCHIVE_FUN.csv\"\n   53:     archive_fun = _load_csv(archive_path) if archive_path.exists() else None\n   54:     metadata_path = run_dir / \"metadata.json\"\n   55:     metadata: Dict[str, Any] = {}\n   56:     if metadata_path.exists():\n   57:         metadata = json.loads(metadata_path.read_text(encoding=\"utf-8\"))\n   58: \n   59:     config_path = run_dir / \"resolved_config.json\"\n   60:     if config_path.exists():"
+          "snippet": "   49:         raise FileNotFoundError(f\"Missing FUN.csv in {run_dir}\")\n   50:     fun = _load_csv(fun_path)\n   51:     var_path = run_dir / \"VAR.csv\"\n   52:     var = _load_csv(var_path) if var_path.exists() else None\n   53:     archive_path = run_dir / \"ARCHIVE_FUN.csv\"\n   54:     archive_fun = _load_csv(archive_path) if archive_path.exists() else None\n   55:     metadata_path = run_dir / \"metadata.json\"\n   56:     metadata: dict[str, Any] = {}\n   57:     if metadata_path.exists():\n   58:         metadata = json.loads(metadata_path.read_text(encoding=\"utf-8\"))\n   59: \n   60:     config_path = run_dir / \"resolved_config.json\"\n   61:     if config_path.exists():"
         },
         {
-          "lineno": 59,
+          "lineno": 60,
           "line": "config_path = run_dir / \"resolved_config.json\"",
-          "snippet": "   53:     archive_fun = _load_csv(archive_path) if archive_path.exists() else None\n   54:     metadata_path = run_dir / \"metadata.json\"\n   55:     metadata: Dict[str, Any] = {}\n   56:     if metadata_path.exists():\n   57:         metadata = json.loads(metadata_path.read_text(encoding=\"utf-8\"))\n   58: \n   59:     config_path = run_dir / \"resolved_config.json\"\n   60:     if config_path.exists():\n   61:         try:\n   62:             metadata[\"config\"] = json.loads(config_path.read_text(encoding=\"utf-8\"))\n   63:         except Exception:\n   64:             pass\n   65: "
+          "snippet": "   54:     archive_fun = _load_csv(archive_path) if archive_path.exists() else None\n   55:     metadata_path = run_dir / \"metadata.json\"\n   56:     metadata: dict[str, Any] = {}\n   57:     if metadata_path.exists():\n   58:         metadata = json.loads(metadata_path.read_text(encoding=\"utf-8\"))\n   59: \n   60:     config_path = run_dir / \"resolved_config.json\"\n   61:     if config_path.exists():\n   62:         try:\n   63:             metadata[\"config\"] = json.loads(config_path.read_text(encoding=\"utf-8\"))\n   64:         except Exception:\n   65:             pass\n   66: "
         },
         {
-          "lineno": 97,
+          "lineno": 98,
           "line": "for fun_path in study_dir.rglob(\"FUN.csv\"):",
-          "snippet": "   91:         metadata=metadata,\n   92:     )\n   93: \n   94: \n   95: def _iter_run_dirs(study_dir: Path) -> Iterable[Path]:\n   96:     # Expect structure results/PROBLEM/ALGO/ENGINE/seed_x\n   97:     for fun_path in study_dir.rglob(\"FUN.csv\"):\n   98:         yield fun_path.parent\n   99: \n  100: \n  101: def load_runs_from_study(study_dir: Path) -> List[RunRecord]:\n  102:     \"\"\"\n  103:     Load all run directories underneath a study root."
+          "snippet": "   92:         metadata=metadata,\n   93:     )\n   94: \n   95: \n   96: def _iter_run_dirs(study_dir: Path) -> Iterable[Path]:\n   97:     # Expect structure results/PROBLEM/ALGO/ENGINE/seed_x\n   98:     for fun_path in study_dir.rglob(\"FUN.csv\"):\n   99:         yield fun_path.parent\n  100: \n  101: \n  102: def load_runs_from_study(study_dir: Path) -> list[RunRecord]:\n  103:     \"\"\"\n  104:     Load all run directories underneath a study root."
         }
       ]
     },
@@ -483,61 +420,29 @@
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 37,
-          "line": "fun_path = output_dir / \"FUN.csv\"",
-          "snippet": "   31:     Returns:\n   32:         dict: artifact names keyed by a short label for metadata wiring.\n   33:     \"\"\"\n   34:     out = {}\n   35:     output_dir = ensure_dir(output_dir)\n   36: \n   37:     fun_path = output_dir / \"FUN.csv\"\n   38:     np.savetxt(fun_path, F, delimiter=\",\")\n   39:     out[\"fun\"] = fun_path.name\n   40: \n   41:     if X is not None:\n   42:         x_path = output_dir / \"X.csv\"\n   43:         np.savetxt(x_path, X, delimiter=\",\")"
+          "lineno": 14,
+          "line": "\"fun\": \"FUN.csv\",",
+          "snippet": "    8: from pathlib import Path\n    9: from typing import Any\n   10: \n   11: import numpy as np\n   12: \n   13: RESULT_FILES = {\n   14:     \"fun\": \"FUN.csv\",\n   15:     \"x\": \"X.csv\",\n   16:     \"g\": \"G.csv\",\n   17:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   18:     \"archive_x\": \"ARCHIVE_X.csv\",\n   19:     \"archive_g\": \"ARCHIVE_G.csv\",\n   20:     \"metadata\": \"metadata.json\","
         },
         {
-          "lineno": 56,
-          "line": "archive_fun = output_dir / \"ARCHIVE_FUN.csv\"",
-          "snippet": "   50: \n   51:     if archive is not None:\n   52:         archive_F = archive.get(\"F\")\n   53:         archive_X = archive.get(\"X\")\n   54:         archive_G = archive.get(\"G\")\n   55:         if archive_F is not None:\n   56:             archive_fun = output_dir / \"ARCHIVE_FUN.csv\"\n   57:             np.savetxt(archive_fun, archive_F, delimiter=\",\")\n   58:             out[\"archive_fun\"] = archive_fun.name\n   59:         if archive_X is not None:\n   60:             archive_x = output_dir / \"ARCHIVE_X.csv\"\n   61:             np.savetxt(archive_x, archive_X, delimiter=\",\")\n   62:             out[\"archive_x\"] = archive_x.name"
+          "lineno": 17,
+          "line": "\"archive_fun\": \"ARCHIVE_FUN.csv\",",
+          "snippet": "   11: import numpy as np\n   12: \n   13: RESULT_FILES = {\n   14:     \"fun\": \"FUN.csv\",\n   15:     \"x\": \"X.csv\",\n   16:     \"g\": \"G.csv\",\n   17:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   18:     \"archive_x\": \"ARCHIVE_X.csv\",\n   19:     \"archive_g\": \"ARCHIVE_G.csv\",\n   20:     \"metadata\": \"metadata.json\",\n   21:     \"resolved_config\": \"resolved_config.json\",\n   22:     \"time\": \"time.txt\",\n   23: }"
         },
         {
-          "lineno": 73,
-          "line": "with (output_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:",
-          "snippet": "   67: \n   68:     return out\n   69: \n   70: \n   71: def write_metadata(output_dir: str | Path, metadata: dict, resolved_cfg: dict) -> None:\n   72:     output_dir = ensure_dir(output_dir)\n   73:     with (output_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:\n   74:         json.dump(metadata, f, indent=2, sort_keys=True)\n   75:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   76:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   77: \n   78: \n   79: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:"
+          "lineno": 20,
+          "line": "\"metadata\": \"metadata.json\",",
+          "snippet": "   14:     \"fun\": \"FUN.csv\",\n   15:     \"x\": \"X.csv\",\n   16:     \"g\": \"G.csv\",\n   17:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   18:     \"archive_x\": \"ARCHIVE_X.csv\",\n   19:     \"archive_g\": \"ARCHIVE_G.csv\",\n   20:     \"metadata\": \"metadata.json\",\n   21:     \"resolved_config\": \"resolved_config.json\",\n   22:     \"time\": \"time.txt\",\n   23: }\n   24: \n   25: \n   26: def ensure_dir(path: str | Path) -> Path:"
         },
         {
-          "lineno": 75,
-          "line": "with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:",
-          "snippet": "   69: \n   70: \n   71: def write_metadata(output_dir: str | Path, metadata: dict, resolved_cfg: dict) -> None:\n   72:     output_dir = ensure_dir(output_dir)\n   73:     with (output_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:\n   74:         json.dump(metadata, f, indent=2, sort_keys=True)\n   75:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   76:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   77: \n   78: \n   79: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:\n   80:     output_dir = ensure_dir(output_dir)\n   81:     with (output_dir / \"time.txt\").open(\"w\", encoding=\"utf-8\") as f:"
+          "lineno": 21,
+          "line": "\"resolved_config\": \"resolved_config.json\",",
+          "snippet": "   15:     \"x\": \"X.csv\",\n   16:     \"g\": \"G.csv\",\n   17:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   18:     \"archive_x\": \"ARCHIVE_X.csv\",\n   19:     \"archive_g\": \"ARCHIVE_G.csv\",\n   20:     \"metadata\": \"metadata.json\",\n   21:     \"resolved_config\": \"resolved_config.json\",\n   22:     \"time\": \"time.txt\",\n   23: }\n   24: \n   25: \n   26: def ensure_dir(path: str | Path) -> Path:\n   27:     path = Path(path)"
         },
         {
-          "lineno": 81,
-          "line": "with (output_dir / \"time.txt\").open(\"w\", encoding=\"utf-8\") as f:",
-          "snippet": "   75:     with (output_dir / \"resolved_config.json\").open(\"w\", encoding=\"utf-8\") as f:\n   76:         json.dump(resolved_cfg, f, indent=2, sort_keys=True)\n   77: \n   78: \n   79: def write_timing(output_dir: str | Path, total_time_ms: float) -> None:\n   80:     output_dir = ensure_dir(output_dir)\n   81:     with (output_dir / \"time.txt\").open(\"w\", encoding=\"utf-8\") as f:\n   82:         f.write(f\"{total_time_ms:.2f}\\n\")\n   83: \n   84: \n   85: __all__ = [\"write_population\", \"write_metadata\", \"write_timing\", \"ensure_dir\"]"
-        }
-      ]
-    },
-    {
-      "path": "src\\vamos\\experiment\\optimization_result.py",
-      "loop_candidates": [],
-      "write_hits": [
-        {
-          "lineno": 210,
-          "line": "np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")",
-          "snippet": "  204:         from pathlib import Path\n  205: \n  206:         out_dir = Path(path)\n  207:         out_dir.mkdir(parents=True, exist_ok=True)\n  208: \n  209:         if self.F is not None:\n  210:             np.savetxt(out_dir / \"FUN.csv\", self.F, delimiter=\",\")\n  211:         if self.X is not None:\n  212:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  213: \n  214:         metadata = {\n  215:             \"n_solutions\": len(self),\n  216:             \"n_objectives\": self.n_objectives,"
-        },
-        {
-          "lineno": 218,
-          "line": "with open(out_dir / \"metadata.json\", \"w\") as f:",
-          "snippet": "  212:             np.savetxt(out_dir / \"X.csv\", self.X, delimiter=\",\")\n  213: \n  214:         metadata = {\n  215:             \"n_solutions\": len(self),\n  216:             \"n_objectives\": self.n_objectives,\n  217:         }\n  218:         with open(out_dir / \"metadata.json\", \"w\") as f:\n  219:             json.dump(metadata, f, indent=2)\n  220: \n  221:         _logger().info(\"Results saved to %s\", out_dir)\n  222: \n  223:     def explore(self, title: str = \"Pareto Front Explorer\") -> Any:\n  224:         \"\"\""
-        }
-      ]
-    },
-    {
-      "path": "src\\vamos\\experiment\\quick\\io.py",
-      "loop_candidates": [],
-      "write_hits": [
-        {
-          "lineno": 31,
-          "line": "np.savetxt(out_dir / \"FUN.csv\", F, delimiter=\",\")",
-          "snippet": "   25:     seed: int,\n   26: ) -> None:\n   27:     \"\"\"Save quick results to a directory with CSV data and JSON metadata.\"\"\"\n   28:     out_dir = Path(path)\n   29:     out_dir.mkdir(parents=True, exist_ok=True)\n   30: \n   31:     np.savetxt(out_dir / \"FUN.csv\", F, delimiter=\",\")\n   32:     if X is not None:\n   33:         np.savetxt(out_dir / \"X.csv\", X, delimiter=\",\")\n   34: \n   35:     metadata: dict[str, Any] = {\n   36:         \"algorithm\": algorithm,\n   37:         \"n_evaluations\": n_evaluations,"
-        },
-        {
-          "lineno": 43,
-          "line": "with open(out_dir / \"metadata.json\", \"w\") as f:",
-          "snippet": "   37:         \"n_evaluations\": n_evaluations,\n   38:         \"seed\": seed,\n   39:         \"n_solutions\": int(F.shape[0]),\n   40:         \"n_objectives\": int(F.shape[1]) if F.ndim > 1 else 1,\n   41:         \"problem\": type(problem).__name__,\n   42:     }\n   43:     with open(out_dir / \"metadata.json\", \"w\") as f:\n   44:         json.dump(metadata, f, indent=2)\n   45: \n   46:     _logger().info(\"Results saved to %s\", out_dir)"
+          "lineno": 22,
+          "line": "\"time\": \"time.txt\",",
+          "snippet": "   16:     \"g\": \"G.csv\",\n   17:     \"archive_fun\": \"ARCHIVE_FUN.csv\",\n   18:     \"archive_x\": \"ARCHIVE_X.csv\",\n   19:     \"archive_g\": \"ARCHIVE_G.csv\",\n   20:     \"metadata\": \"metadata.json\",\n   21:     \"resolved_config\": \"resolved_config.json\",\n   22:     \"time\": \"time.txt\",\n   23: }\n   24: \n   25: \n   26: def ensure_dir(path: str | Path) -> Path:\n   27:     path = Path(path)\n   28:     path.mkdir(parents=True, exist_ok=True)"
         }
       ]
     },
@@ -546,14 +451,30 @@
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 30,
+          "lineno": 31,
           "line": "Mirror per-run artifacts (like FUN.csv) to a consolidated directory.",
-          "snippet": "   24:         Save the aggregated results (e.g. to a CSV file).\n   25:         \"\"\"\n   26:         ...\n   27: \n   28:     def mirror_artifacts(self, result: StudyResult) -> None:\n   29:         \"\"\"\n   30:         Mirror per-run artifacts (like FUN.csv) to a consolidated directory.\n   31:         \"\"\"\n   32:         ...\n   33: \n   34: \n   35: class CSVPersister:\n   36:     \"\"\""
+          "snippet": "   25:         Save the aggregated results (e.g. to a CSV file).\n   26:         \"\"\"\n   27:         ...\n   28: \n   29:     def mirror_artifacts(self, result: StudyResult) -> None:\n   30:         \"\"\"\n   31:         Mirror per-run artifacts (like FUN.csv) to a consolidated directory.\n   32:         \"\"\"\n   33:         ...\n   34: \n   35: \n   36: class CSVPersister:\n   37:     \"\"\""
         },
         {
-          "lineno": 97,
+          "lineno": 98,
           "line": "for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):",
-          "snippet": "   91:                 dst = target_root / relative\n   92:             else:\n   93:                 dst = target_root / src_dir.name\n   94:             if dst.resolve() == src_dir:\n   95:                 continue\n   96:             dst.mkdir(parents=True, exist_ok=True)\n   97:             for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):\n   98:                 src_file = src_dir / name\n   99:                 if src_file.exists():\n  100:                     copy2(src_file, dst / name)"
+          "snippet": "   92:                 dst = target_root / relative\n   93:             else:\n   94:                 dst = target_root / src_dir.name\n   95:             if dst.resolve() == src_dir:\n   96:                 continue\n   97:             dst.mkdir(parents=True, exist_ok=True)\n   98:             for name in (\"FUN.csv\", \"ARCHIVE_FUN.csv\", \"time.txt\", \"metadata.json\"):\n   99:                 src_file = src_dir / name\n  100:                 if src_file.exists():\n  101:                     copy2(src_file, dst / name)"
+        }
+      ]
+    },
+    {
+      "path": "src\\vamos\\ux\\results.py",
+      "loop_candidates": [],
+      "write_hits": [
+        {
+          "lineno": 158,
+          "line": "np.savetxt(out_dir / \"FUN.csv\", F, delimiter=\",\")",
+          "snippet": "  152:     out_dir = Path(path)\n  153:     out_dir.mkdir(parents=True, exist_ok=True)\n  154: \n  155:     F = result.F\n  156:     X = result.X\n  157:     if F is not None:\n  158:         np.savetxt(out_dir / \"FUN.csv\", F, delimiter=\",\")\n  159:     if X is not None:\n  160:         np.savetxt(out_dir / \"X.csv\", X, delimiter=\",\")\n  161: \n  162:     n_solutions = int(F.shape[0]) if F is not None and len(F) > 0 else 0\n  163:     n_objectives = int(F.shape[1]) if F is not None and len(F) > 0 else 0\n  164:     metadata = {"
+        },
+        {
+          "lineno": 168,
+          "line": "with (out_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:",
+          "snippet": "  162:     n_solutions = int(F.shape[0]) if F is not None and len(F) > 0 else 0\n  163:     n_objectives = int(F.shape[1]) if F is not None and len(F) > 0 else 0\n  164:     metadata = {\n  165:         \"n_solutions\": n_solutions,\n  166:         \"n_objectives\": n_objectives,\n  167:     }\n  168:     with (out_dir / \"metadata.json\").open(\"w\", encoding=\"utf-8\") as f:\n  169:         json.dump(metadata, f, indent=2)\n  170: \n  171:     _logger().info(\"Results saved to %s\", out_dir)\n  172: \n  173: \n  174: def explore_result_front(result: ResultLike, title: str = \"Pareto Front Explorer\") -> Any:"
         }
       ]
     },
@@ -562,9 +483,9 @@
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 179,
+          "lineno": 180,
           "line": "\"time_ms\": \"time.txt\",",
-          "snippet": "  173:             \"archive_x\": artifacts.get(\"archive_x\"),\n  174:             \"archive_g\": artifacts.get(\"archive_g\"),\n  175:             \"genealogy\": artifacts.get(\"genealogy\"),\n  176:             \"autodiff_constraints\": artifacts.get(\"autodiff_constraints\"),\n  177:             \"aos_trace\": artifacts.get(\"aos_trace\"),\n  178:             \"aos_summary\": artifacts.get(\"aos_summary\"),\n  179:             \"time_ms\": \"time.txt\",\n  180:         }\n  181:         hv_trace = self.output_dir / \"hv_trace.csv\"\n  182:         if hv_trace.exists():\n  183:             artifact_entries[\"hv_trace\"] = hv_trace.name\n  184:         archive_stats = self.output_dir / \"archive_stats.csv\"\n  185:         if archive_stats.exists():"
+          "snippet": "  174:             \"archive_x\": artifacts.get(\"archive_x\"),\n  175:             \"archive_g\": artifacts.get(\"archive_g\"),\n  176:             \"genealogy\": artifacts.get(\"genealogy\"),\n  177:             \"autodiff_constraints\": artifacts.get(\"autodiff_constraints\"),\n  178:             \"aos_trace\": artifacts.get(\"aos_trace\"),\n  179:             \"aos_summary\": artifacts.get(\"aos_summary\"),\n  180:             \"time_ms\": \"time.txt\",\n  181:         }\n  182:         hv_trace = self.output_dir / \"hv_trace.csv\"\n  183:         if hv_trace.exists():\n  184:             artifact_entries[\"hv_trace\"] = hv_trace.name\n  185:         archive_stats = self.output_dir / \"archive_stats.csv\"\n  186:         if archive_stats.exists():"
         }
       ]
     },
@@ -573,9 +494,9 @@
       "loop_candidates": [],
       "write_hits": [
         {
-          "lineno": 65,
+          "lineno": 66,
           "line": "Recursively locate run directories by scanning for metadata.json files.",
-          "snippet": "   59:         return None\n   60:     return _coerce_array(np.asarray(data))\n   61: \n   62: \n   63: def discover_runs(base_dir: str | Path = \"results\") -> List[RunInfo]:\n   64:     \"\"\"\n   65:     Recursively locate run directories by scanning for metadata.json files.\n   66:     \"\"\"\n   67:     base = Path(base_dir)\n   68:     runs: list[RunInfo] = []\n   69:     for meta_path in base.rglob(RESULT_FILES[\"metadata\"]):\n   70:         try:\n   71:             metadata = json.loads(meta_path.read_text(encoding=\"utf-8\"))"
+          "snippet": "   60:         return None\n   61:     return _coerce_array(np.asarray(data))\n   62: \n   63: \n   64: def discover_runs(base_dir: str | Path = \"results\") -> list[RunInfo]:\n   65:     \"\"\"\n   66:     Recursively locate run directories by scanning for metadata.json files.\n   67:     \"\"\"\n   68:     base = Path(base_dir)\n   69:     runs: list[RunInfo] = []\n   70:     for meta_path in base.rglob(RESULT_FILES[\"metadata\"]):\n   71:         try:\n   72:             metadata = json.loads(meta_path.read_text(encoding=\"utf-8\"))"
         }
       ]
     }

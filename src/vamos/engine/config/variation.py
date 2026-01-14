@@ -5,7 +5,7 @@ Shared helpers for variation/default handling across CLI, runner, and factories.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, TypedDict, TypeAlias
 
 from vamos.foundation.encoding import normalize_encoding
 
@@ -14,9 +14,40 @@ from vamos.foundation.encoding import normalize_encoding
 # Operator Registry by Encoding
 # =============================================================================
 
-OperatorParams = dict[str, Any]
-OperatorTuple = tuple[str, OperatorParams]
-VariationConfig = dict[str, Any]
+OperatorParams: TypeAlias = dict[str, Any]
+OperatorTuple: TypeAlias = tuple[str, OperatorParams]
+
+
+class OperatorSpecDict(TypedDict, total=False):
+    method: str
+    name: str
+
+
+OperatorSpecInput: TypeAlias = str | OperatorTuple | OperatorSpecDict | Mapping[str, object]
+
+
+class VariationOverrides(TypedDict, total=False):
+    crossover: OperatorSpecInput
+    mutation: OperatorSpecInput
+    selection: OperatorSpecInput
+    repair: OperatorSpecInput
+    aggregation: OperatorSpecInput
+    adaptive_operator_selection: Mapping[str, object]
+    weight_vectors: Mapping[str, object] | str
+    archive_size: int
+    k_neighbors: int
+    indicator: str
+    kappa: float
+    inertia: float
+    c1: float
+    c2: float
+    vmax_fraction: float
+    n_partitions: int
+    alpha: float
+    adapt_freq: float
+
+
+VariationConfig: TypeAlias = dict[str, object]
 
 OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
     "real": {
@@ -106,7 +137,9 @@ def normalize_operator_tuple(spec: object) -> OperatorTuple | None:
     """
     if spec is None:
         return None
-    if isinstance(spec, tuple):
+    if isinstance(spec, (tuple, list)):
+        if len(spec) != 2:
+            return None
         name, params_raw = spec
         if isinstance(params_raw, Mapping):
             return (str(name), dict(params_raw))
@@ -117,12 +150,25 @@ def normalize_operator_tuple(spec: object) -> OperatorTuple | None:
         method = spec.get("method") or spec.get("name")
         if not method:
             return None
-        op_params: dict[str, Any] = {str(k): v for k, v in spec.items() if k not in {"method", "name"} and v is not None}
+        op_params: OperatorParams = {str(k): v for k, v in spec.items() if k not in {"method", "name"} and v is not None}
         return (str(method), op_params)
     return None
 
 
-def normalize_variation_config(raw: VariationConfig | None) -> VariationConfig | None:
+def ensure_operator_tuple(spec: object, *, key: str) -> OperatorTuple:
+    op = normalize_operator_tuple(spec)
+    if op is None:
+        raise ValueError(f"Invalid operator spec for '{key}': {spec!r}")
+    return op
+
+
+def ensure_operator_tuple_optional(spec: object, *, key: str) -> OperatorTuple | None:
+    if spec is None:
+        return None
+    return ensure_operator_tuple(spec, key=key)
+
+
+def normalize_variation_config(raw: Mapping[str, object] | None) -> VariationConfig | None:
     """
     Normalize variation configuration dictionaries into operator tuples where applicable.
     """
@@ -142,11 +188,12 @@ def normalize_variation_config(raw: VariationConfig | None) -> VariationConfig |
     return normalized or None
 
 
-def resolve_default_variation_config(encoding: str, overrides: VariationConfig | None) -> VariationConfig:
+def resolve_default_variation_config(encoding: str, overrides: Mapping[str, object] | None) -> VariationConfig:
     """
     Default variation configuration by encoding, merged with user overrides.
     """
     normalized = normalize_encoding(encoding)
+    base: VariationConfig
     if normalized == "real":
         base = {
             "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
@@ -193,7 +240,7 @@ def resolve_default_variation_config(encoding: str, overrides: VariationConfig |
     return base
 
 
-def merge_variation_overrides(base: VariationConfig | None, override: VariationConfig | None) -> VariationConfig:
+def merge_variation_overrides(base: Mapping[str, object] | None, override: Mapping[str, object] | None) -> VariationConfig:
     base = base or {}
     if not override:
         return dict(base)

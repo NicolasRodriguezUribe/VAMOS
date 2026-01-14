@@ -1,153 +1,16 @@
 from __future__ import annotations
 
-import logging
-from argparse import Namespace
-from copy import deepcopy
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
-from vamos.engine.config.variation import merge_variation_overrides
 from vamos.foundation.core.experiment_config import ExperimentConfig
-from vamos.foundation.core.hv_stop import build_hv_stop_config
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.foundation.problem.resolver import resolve_problem_selections
 from vamos.hooks import LiveVisualization
 
-from vamos.experiment.services.config import normalize_variations
 from vamos.experiment.services.orchestrator import run_single
 
 from vamos.experiment.execution import execute_problem_suite
 from vamos.experiment.study.api import run_study
-
-
-def _logger() -> logging.Logger:
-    return logging.getLogger(__name__)
-
-
-def run_from_args(
-    args: Namespace,
-    config: ExperimentConfig,
-    *,
-    live_viz_factory: Callable[..., LiveVisualization | None] | None = None,
-    plotter: Callable[..., Any] | None = None,
-) -> None:
-    selections = list(resolve_problem_selections(args))
-    multiple = len(selections) > 1
-    base_variation = getattr(args, "nsgaii_variation", None)
-    overrides: dict[str, Any] = getattr(args, "problem_overrides", {}) or {}
-    config_source = getattr(args, "config_path", None)
-    config_spec: dict[str, Any] | None = getattr(args, "config_spec", None)
-
-    for idx, selection in enumerate(selections, start=1):
-        override: dict[str, Any] = overrides.get(selection.spec.key, {}) or {}
-        effective_selection = selection
-        if override.get("n_var") is not None or override.get("n_obj") is not None:
-            effective_selection = make_problem_selection(
-                selection.spec.key,
-                n_var=override.get("n_var", selection.n_var),
-                n_obj=override.get("n_obj", selection.n_obj),
-            )
-        effective_config = ExperimentConfig(
-            title=override.get("title", config.title),
-            output_root=override.get("output_root", config.output_root),
-            population_size=override.get("population_size", config.population_size),
-            offspring_population_size=override.get("offspring_population_size", config.offspring_population_size),
-            max_evaluations=override.get("max_evaluations", config.max_evaluations),
-            seed=override.get("seed", config.seed),
-            eval_strategy=override.get("eval_strategy", getattr(config, "eval_strategy", "serial")),
-            n_workers=override.get("n_workers", getattr(config, "n_workers", None)),
-            live_viz=override.get("live_viz", getattr(config, "live_viz", False)),
-            live_viz_interval=override.get("live_viz_interval", getattr(config, "live_viz_interval", 5)),
-            live_viz_max_points=override.get("live_viz_max_points", getattr(config, "live_viz_max_points", 1000)),
-        )
-        effective_args = deepcopy(args)
-        for key in (
-            "algorithm",
-            "engine",
-            "experiment",
-            "include_external",
-            "external_problem_source",
-        ):
-            if override.get(key) is not None:
-                setattr(effective_args, key, override[key])
-        effective_args.selection_pressure = override.get("selection_pressure", args.selection_pressure)
-        effective_args.external_archive_size = override.get("external_archive_size", args.external_archive_size)
-        effective_args.hv_threshold = override.get("hv_threshold", args.hv_threshold)
-        effective_args.hv_reference_front = override.get("hv_reference_front", args.hv_reference_front)
-        effective_args.n_var = override.get("n_var", args.n_var)
-        effective_args.n_obj = override.get("n_obj", args.n_obj)
-        effective_args.eval_strategy = override.get("eval_strategy", args.eval_strategy)
-        effective_args.n_workers = override.get("n_workers", args.n_workers)
-        effective_args.live_viz = override.get("live_viz", args.live_viz)
-        effective_args.live_viz_interval = override.get("live_viz_interval", args.live_viz_interval)
-        effective_args.live_viz_max_points = override.get("live_viz_max_points", args.live_viz_max_points)
-        effective_args.track_genealogy = override.get("track_genealogy", getattr(args, "track_genealogy", False))
-        effective_args.autodiff_constraints = override.get("autodiff_constraints", getattr(args, "autodiff_constraints", False))
-        effective_args.nsgaii_variation = merge_variation_overrides(base_variation, override.get("nsgaii"))
-        effective_args.moead_variation = merge_variation_overrides(getattr(args, "moead_variation", None), override.get("moead"))
-        effective_args.smsemoa_variation = merge_variation_overrides(getattr(args, "smsemoa_variation", None), override.get("smsemoa"))
-        effective_args.nsgaiii_variation = merge_variation_overrides(getattr(args, "nsgaiii_variation", None), override.get("nsgaiii"))
-        effective_args.spea2_variation = merge_variation_overrides(getattr(args, "spea2_variation", None), override.get("spea2"))
-        effective_args.ibea_variation = merge_variation_overrides(getattr(args, "ibea_variation", None), override.get("ibea"))
-        effective_args.smpso_variation = merge_variation_overrides(getattr(args, "smpso_variation", None), override.get("smpso"))
-        effective_args.effective_problem_override = override
-
-        (
-            effective_args.nsgaii_variation,
-            effective_args.moead_variation,
-            effective_args.smsemoa_variation,
-            effective_args.nsgaiii_variation,
-            effective_args.spea2_variation,
-            effective_args.ibea_variation,
-            effective_args.smpso_variation,
-        ) = normalize_variations(
-            nsgaii_variation=effective_args.nsgaii_variation,
-            moead_variation=effective_args.moead_variation,
-            smsemoa_variation=effective_args.smsemoa_variation,
-            nsgaiii_variation=effective_args.nsgaiii_variation,
-            spea2_variation=effective_args.spea2_variation,
-            ibea_variation=effective_args.ibea_variation,
-            smpso_variation=effective_args.smpso_variation,
-        )
-
-        if multiple:
-            _logger().info("%s", "\n" + "#" * 80)
-            _logger().info(
-                "Problem %s/%s: %s (%s)",
-                idx,
-                len(selections),
-                effective_selection.spec.label,
-                effective_selection.spec.key,
-            )
-            _logger().info("%s", "#" * 80 + "\n")
-
-        hv_stop_config = None
-        if effective_args.hv_threshold is not None:
-            hv_stop_config = build_hv_stop_config(
-                effective_args.hv_threshold,
-                effective_args.hv_reference_front,
-                effective_selection.spec.key,
-            )
-        nsgaii_variation = getattr(effective_args, "nsgaii_variation", None)
-        execute_problem_suite(
-            effective_args,
-            effective_selection,
-            effective_config,
-            run_single_fn=run_single,
-            hv_stop_config=hv_stop_config,
-            nsgaii_variation=nsgaii_variation,
-            spea2_variation=effective_args.spea2_variation,
-            ibea_variation=effective_args.ibea_variation,
-            smpso_variation=effective_args.smpso_variation,
-            include_external=effective_args.include_external,
-            config_source=config_source,
-            config_spec=config_spec,
-            problem_override=override,
-            track_genealogy=effective_args.track_genealogy,
-            autodiff_constraints=effective_args.autodiff_constraints,
-            live_viz_factory=live_viz_factory,
-            plotter=plotter,
-        )
 
 
 def run_experiment(
@@ -187,7 +50,6 @@ def run_experiment(
 __all__ = [
     "run_single",
     "execute_problem_suite",
-    "run_from_args",
     "run_experiment",
     "run_study",
 ]

@@ -6,6 +6,7 @@
     "configure_logging",
     "make_problem_selection",
     "optimize",
+    "problems",
     "run_self_check"
   ],
   "vamos.algorithms": [
@@ -39,16 +40,23 @@
     "ObjectiveReductionConfig",
     "WilcoxonResult",
     "compute_ranks",
+    "explore_result_front",
     "friedman_test",
     "knee_point_scores",
+    "log_result_summary",
     "pairwise_wilcoxon",
     "plot_critical_distance",
     "plot_hv_convergence",
     "plot_parallel_coordinates",
     "plot_pareto_front_2d",
     "plot_pareto_front_3d",
+    "plot_result_front",
     "reduce_objectives",
     "reference_point_scores",
+    "result_summary_text",
+    "result_to_dataframe",
+    "result_to_latex",
+    "save_result",
     "tchebycheff_scores",
     "weighted_sum_scores"
   ]

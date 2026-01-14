@@ -17,18 +17,17 @@ VAMOS is designed to be **user-friendly**. When writing code, examples, or docum
 
 ```python
 # USER-FACING CODE (examples, notebooks, scripts)
-from vamos import (
-    optimize, OptimizeConfig, NSGAIIConfig,
-    ZDT1, make_problem_selection,
-    plot_pareto_front_2d, weighted_sum_scores,
-)
+from vamos import optimize, make_problem_selection
+from vamos.algorithms import NSGAIIConfig
+from vamos.problems import ZDT1
+from vamos.ux.api import plot_pareto_front_2d, weighted_sum_scores
 
 # CONTRIBUTOR CODE (internal modules, tests)
 from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.foundation.problem.registry import PROBLEM_SPECS
 ```
 
-User-facing imports should go through the root facades (`vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.plotting`, `vamos.mcdm`, `vamos.stats`, `vamos.tuning`). Contributor work can target the layered packages (`foundation`, `engine`, `experiment`, `ux`) directly. All experiment outputs should follow the standard layout: `<output_root>/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`.
+User-facing imports should go through the public facades (`vamos`, `vamos.algorithms`, `vamos.problems`, `vamos.ux.api`, `vamos.engine.tuning.api`). Contributor work can target the layered packages (`foundation`, `engine`, `experiment`, `ux`) directly. All experiment outputs should follow the standard layout: `<output_root>/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`.
 When working on the paper benchmarking notebook (`notebooks/90_paper_benchmarking.ipynb`), keep the SAES-style critical distance plot toggle (`CD_STYLE`) intact.
 Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, and `tests/integration` for cross-layer checks. Markers: `smoke`, `slow`, `backends`, `notebooks`, `examples`, `cli`, `numba`, `moocore`, `studio`, `autodiff`. Use `pytest -m "smoke"` for quick verification.
 

@@ -35,19 +35,20 @@ Python API
 
 ```python
 from vamos import optimize
+from vamos.ux.api import result_summary_text
 
 result = optimize("zdt1", algorithm="nsgaii", budget=10_000, pop_size=100, seed=42, verbose=True)
-print(result.summary_text())
-print(result.explain_defaults())
+print(result_summary_text(result))
 ```
 
 **2. Full control (explicit args + config objects):**
 
 ```python
-from vamos import make_problem_selection, optimize
+from vamos import optimize
 from vamos.algorithms import NSGAIIConfig
+from vamos.problems import ZDT1
 
-problem = make_problem_selection("zdt1", n_var=30).instantiate()
+problem = ZDT1(n_var=30)
 algo_cfg = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var)
 
 result = optimize(

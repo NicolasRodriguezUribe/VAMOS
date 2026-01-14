@@ -7,8 +7,8 @@
 - Algorithm classes are large but mostly cohesive; variation pipeline and config classes remain heavy and will be hard to evolve without stronger interfaces.
 - Public API remains broad; optimize/runner now live under experiment while foundation core API is primitives-only.
 - Logging is still inconsistent: many `print` statements exist in experiment runtime modules instead of structured logging.
-- Config specs are flexible but lack explicit schema/versioning and centralized validation outside the CLI.
-- Highest leverage next steps: split experiment runner/CLI wiring, separate result presentation from optimize/quick, and formalize config schema.
+- Config specs are flexible; validation is now centralized in `src/vamos/engine/config/spec.py`, but schema/versioning is still minimal.
+- Highest leverage next steps: formalize the config schema; runner/CLI split and result presentation separation are done.
 
 ## Repository architecture map
 Key directories (concise):
@@ -70,6 +70,8 @@ Top 20 largest Python files under `src/vamos/` by non-blank LOC (static scan):
 | `src/vamos/engine/algorithm/nsgaiii/helpers.py` | 291 | NSGA-III helper routines | Low/Medium: helper module scale |
 | `src/vamos/engine/algorithm/nsgaii/state.py` | 291 | NSGA-II state, result building, genealogy/archives | Medium: algorithm + instrumentation coupling |
 | `src/vamos/engine/algorithm/spea2/spea2.py` | 284 | SPEA2 algorithm loop and helpers | Medium: large but cohesive |
+
+Update note: result presentation moved to `src/vamos/ux/results.py`, and the Studio UI moved to `src/vamos/ux/studio/app.py`; the size rankings above predate that refactor.
 
 God-class candidates (top by LOC/method count):
 - `src/vamos/engine/algorithm/nsgaiii/nsgaiii.py` `NSGAIII` (~352 LOC, 10 methods)
@@ -171,20 +173,20 @@ Evidence: `src/vamos/experiment/study/api.py`, `src/vamos/experiment/execution.p
 Refactor summary: shared execution lives in `experiment/execution.py`, CLI defaults/validation live in `cli/args.py` + `cli/validation.py`, and study orchestration is routed through `study/api.py`.
 Suggested tests: import-cycle check for experiment modules (added), plus config override and CLI parity tests.
 
-2) High - Separate result presentation (plotting, saving, printing) from core API results.
-Evidence: `src/vamos/experiment/optimization_result.py`.
-Refactor plan: keep `OptimizationResult` as a data container; move `plot`, `save`, and `summary` to `src/vamos/ux/` and wire them from CLI/UX.
-Suggested tests: unit tests for output helpers; integration tests for CLI output parity.
+2) Done - Separate result presentation (plotting, saving, printing) from core API results.
+Evidence: `src/vamos/experiment/optimization_result.py`, `src/vamos/ux/results.py`, `src/vamos/ux/api.py`.
+Refactor summary: `OptimizationResult` is a data container; summary/plot/export helpers live in `src/vamos/ux/results.py` and are re-exported via `src/vamos/ux/api.py`.
+Tests: `tests/foundation/test_optimization_result.py`, `tests/foundation/test_run_optimization.py`.
 
 3) Medium - Split external baseline integrations into per-library modules.
 Evidence: `src/vamos/foundation/core/external/base.py`.
 Refactor plan: move pymoo/jmetalpy/pygmo adapters to `src/vamos/experiment/benchmark/external/` modules; make `resolve_external_algorithm` a registry in that package; keep imports lazy and outputs structured (no prints).
 Suggested tests: dependency-missing tests that verify informative error messages; functional tests for one baseline when optional deps are available.
 
-4) Medium - Break up the Streamlit Studio app into UI and service layers.
-Evidence: `src/vamos/experiment/studio/app.py`.
-Refactor plan: keep UI layout in `app.py`; move data loading, focused runs, and dynamics capture into `src/vamos/ux/studio/services.py` and reuse existing `data.py`.
-Suggested tests: unit tests for data loading and focused-optimization logic (pure functions) without UI.
+4) Done - Break up the Streamlit Studio app into UI and service layers.
+Evidence: `src/vamos/ux/studio/app.py`, `src/vamos/ux/studio/services.py`, `src/vamos/experiment/studio/app.py`.
+Refactor summary: UI and service logic now live in `src/vamos/ux/studio`; `src/vamos/experiment/studio/app.py` is a CLI wrapper.
+Suggested tests: unit tests for service helpers (data loading, focused optimization) without UI.
 
 5) Medium - Replace `print` usage in experiment/runtime modules with structured logging.
 Evidence: widespread `print` in `src/vamos/experiment/runner.py`, `src/vamos/experiment/optimize.py`, `src/vamos/experiment/quick.py`, `src/vamos/engine/tuning/*`.

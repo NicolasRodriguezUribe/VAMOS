@@ -22,10 +22,8 @@ import time
 
 import numpy as np
 
-from vamos.foundation.problem.types import ProblemProtocol
 
-
-class ExpensiveProblem(ProblemProtocol):
+class ExpensiveProblem:
     """
     Simple ZDT1-like problem with an artificial per-individual delay.
 

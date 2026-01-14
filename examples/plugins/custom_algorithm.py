@@ -13,7 +13,6 @@ import numpy as np
 from vamos.engine.algorithm.registry import ALGORITHMS, AlgorithmLike
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.foundation.kernel.backend import KernelBackend
-from vamos.foundation.problem.types import ProblemProtocol
 
 
 class RandomSearchAlgorithm:
@@ -30,7 +29,7 @@ class RandomSearchAlgorithm:
 
     def run(
         self,
-        problem: ProblemProtocol,
+        problem: Any,
         termination: tuple[str, Any],
         seed: int,
         eval_strategy: Any | None = None,
