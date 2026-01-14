@@ -113,7 +113,7 @@ def add_algorithm_arguments(
         "--nsgaii-mutation-prob",
         type=str,
         default=_as_str(nsgaii_mutation.get("prob")),
-        help="Mutation probability for NSGA-II operators (allow expressions like 1/n).",
+        help="Mutation probability for NSGA-II operators (allow expressions like 1/n; uses n_var).",
     )
     parser.add_argument(
         "--nsgaii-mutation-eta",
@@ -159,7 +159,7 @@ def add_algorithm_arguments(
     parser.add_argument(
         "--moead-mutation-prob",
         default=_as_str(moead_mutation.get("prob")),
-        help="Mutation probability for MOEA/D (allow expressions like 1/n).",
+        help="Mutation probability for MOEA/D (allow expressions like 1/n; uses n_var).",
     )
     parser.add_argument(
         "--moead-mutation-eta",
@@ -204,7 +204,7 @@ def add_algorithm_arguments(
     parser.add_argument(
         "--smsemoa-mutation-prob",
         default=_as_str(smsemoa_mutation.get("prob")),
-        help="Mutation probability for SMS-EMOA (allow expressions like 1/n).",
+        help="Mutation probability for SMS-EMOA (allow expressions like 1/n; uses n_var).",
     )
     parser.add_argument(
         "--smsemoa-mutation-eta",
@@ -244,7 +244,7 @@ def add_algorithm_arguments(
     parser.add_argument(
         "--nsga3-mutation-prob",
         default=_as_str(nsgaiii_mutation.get("prob")),
-        help="Mutation probability for NSGA-III.",
+        help="Mutation probability for NSGA-III (allow expressions like 1/n; uses n_var).",
     )
     parser.add_argument(
         "--nsga3-mutation-eta",

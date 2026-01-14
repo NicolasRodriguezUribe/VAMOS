@@ -247,3 +247,35 @@ result = optimize("zdt1", algorithm="nsgaii", engine="jax", budget=5000)
 ```
 
 Set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking if you want maximum speed (may not match the exact Pareto front).
+
+## 16. Reproduce a Run from resolved_config.json
+
+If you ran via the CLI, each run stores a `resolved_config.json`. You can replay it:
+
+```python
+import json
+from pathlib import Path
+
+from vamos import optimize
+
+resolved = json.loads(Path("results/zdt1/nsgaii/numpy/seed_7/resolved_config.json").read_text())
+
+result = optimize(
+    resolved["problem"],
+    algorithm=resolved["algorithm"],
+    engine=resolved["engine"],
+    pop_size=resolved["pop_size"],
+    budget=resolved["budget"],
+    seed=resolved["seed"],
+    n_var=resolved.get("n_var"),
+    n_obj=resolved.get("n_obj"),
+)
+```
+
+## 17. Validate a Config File (CLI)
+
+Check a YAML/JSON experiment spec before running:
+
+```bash
+vamos --config configs/experiment.yaml --validate-config
+```
