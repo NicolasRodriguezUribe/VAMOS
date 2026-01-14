@@ -53,6 +53,27 @@ Box constraints are handled via `xl` and `xu`. For other constraints, fill `out[
         out["G"] = g1.reshape(-1, 1)
 ```
 
+### Constraint DSL (symbolic)
+
+When you want a reusable constraint evaluator, build it symbolically:
+
+```python
+import numpy as np
+from vamos.foundation.constraints.dsl import constraint_model, build_constraint_evaluator
+
+with constraint_model(n_vars=2) as cm:
+    x0, x1 = cm.vars("x0", "x1")
+    cm.add(x0 + x1 <= 1.0)
+    cm.add(x0 >= 0.0)
+
+eval_constraints = build_constraint_evaluator(cm)
+G = eval_constraints(np.array([[0.2, 0.3], [0.9, 0.4]]))
+```
+
+Notes:
+- Constants must be scalar values (including 0-d arrays like `np.array(1.0)`).
+- Vector constants are not supported; expand them into separate constraints.
+
 ## 3. Visualization Callback
 
 Use `live_viz` to see progress or save frames.
@@ -220,4 +241,4 @@ from vamos import optimize
 result = optimize("zdt1", algorithm="nsgaii", engine="jax", budget=5000)
 ```
 
-Set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking if you want maximum speed.
+Set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking if you want maximum speed (may not match the exact Pareto front).

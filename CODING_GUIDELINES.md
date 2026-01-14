@@ -8,8 +8,10 @@ VAMOS is designed to be **user-friendly first**. Every design decision should co
 
 1. **Clean public API**: Export stable symbols from `vamos` root. Users should write:
    ```python
-   from vamos import optimize, ZDT1, plot_pareto_front_2d
+   from vamos import optimize
    from vamos.algorithms import NSGAIIConfig
+   from vamos.problems import ZDT1
+   from vamos.ux.api import plot_pareto_front_2d
    ```
    Not internal paths like `from vamos.engine.algorithm.config import NSGAIIConfig`.
 
@@ -33,7 +35,7 @@ VAMOS is designed to be **user-friendly first**. Every design decision should co
 - `engine`: search machinery — algorithms, operators, hyperheuristics, tuning pipelines, and algorithm configs.
 - `experiment`: orchestration — CLI entrypoints, StudyRunner, benchmark/reporting code, diagnostics, and zoo presets.
 - `ux`: user-facing analysis/analytics, visualization, Studio, and MCDM/stats helpers.
-- Dependency rules: `ux` → `experiment`/`engine`/`foundation`; `experiment` → `engine`/`foundation`; `engine` → `foundation`; keep `foundation` free of upward dependencies and place cross-layer facades intentionally.
+- Dependency rules: `ux` -> `experiment`/`engine`/`foundation`; `experiment` -> `engine`/`foundation`; `engine` -> `foundation`; keep `foundation` free of upward dependencies and place cross-layer facades intentionally.
 
 ## Development workflow
 - Target Python **3.10+** (match `pyproject.toml`) and keep contributions inside `src/vamos` to preserve the single import root.

@@ -6,7 +6,7 @@ All VAMOS-specific exceptions inherit from VAMOSError for easy catching.
 
 Example:
     try:
-        result = optimize(config)
+        result = optimize("zdt1", algorithm="nsgaii", budget=1000)
     except VAMOSError as e:
         print(f"Optimization failed: {e}")
         print(f"Suggestion: {e.suggestion}")

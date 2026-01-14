@@ -30,7 +30,7 @@ class OptimizationResult:
         meta: Metadata such as algorithm, engine, seed, and termination
 
     Examples:
-        >>> result = optimize(config)
+        >>> result = optimize("zdt1", algorithm="nsgaii", budget=1000)
         >>> from vamos.ux.api import log_result_summary, plot_result_front
         >>> log_result_summary(result)  # Log quick overview
         >>> plot_result_front(result)  # Visualize Pareto front

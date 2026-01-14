@@ -30,7 +30,7 @@ G = eval_constraints(X)  # shape (n_points, n_constraints), <=0 is satisfied
 ```
 
 Notes:
-- Constants in expressions must be scalar numbers (int/float/numpy scalar or 0-d array).
+- Constants in expressions must be scalar numbers (int/float/numpy scalar or 0-d array like `np.array(1.0)`).
 - Vector constants (lists/tuples/ndarrays with shape (n,)) are not supported; expand them into separate constraints.
 
 Example (vector constants are not supported):

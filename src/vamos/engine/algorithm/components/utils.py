@@ -31,7 +31,7 @@ def resolve_prob_expression(
         Probability value. Can be:
         - None: returns default
         - float: returned as-is (clamped to [0, 1])
-        - str ending with "/n": numerator divided by n_var (e.g., "1/n" → 1/n_var)
+        - str ending with "/n": numerator divided by n_var (e.g., "1/n" -> 1/n_var)
     n_var : int
         Number of decision variables (used for "X/n" expressions).
     default : float

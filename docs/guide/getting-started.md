@@ -63,6 +63,18 @@ result = optimize(
 
 Prefer the unified `optimize(...)` API; use algorithm config objects for reproducible, fully-specified runs. For plugin algorithms, wrap free-form mappings in `GenericAlgorithmConfig`.
 
+API decision guide
+------------------
+
+Use the lightest interface that still makes the run reproducible.
+
+| Goal | Use | Example |
+| --- | --- | --- |
+| Quick scripts, notebooks | Unified `optimize(...)` | `optimize("zdt1", algorithm="nsgaii", budget=5000)` |
+| Reproducible configs | `algorithm_config` + explicit termination | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, termination=("n_eval", 5000))` |
+| Plugin algorithms | `GenericAlgorithmConfig` | `optimize(problem, algorithm="my_algo", algorithm_config=GenericAlgorithmConfig({...}))` |
+| Small study in one call | `seed=[...]` | `optimize("zdt1", seed=[0, 1, 2])` |
+
 Benchmarks and studies
 ----------------------
 

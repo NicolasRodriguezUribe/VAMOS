@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+import numbers
 from dataclasses import dataclass, fields, replace
-from typing import Any, cast
+from typing import Any, TYPE_CHECKING, cast
 
 from vamos.engine.algorithm.registry import resolve_algorithm, get_algorithms_registry
 from vamos.foundation.kernel.registry import resolve_kernel
@@ -12,18 +13,18 @@ from vamos.foundation.eval.backends import resolve_eval_strategy
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.exceptions import InvalidAlgorithmError
 
+if TYPE_CHECKING:
+    from .optimization_result import OptimizationResult
+
 
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-from .optimization_result import OptimizationResult
-
-
 @dataclass
-class OptimizeConfig:
+class _OptimizeConfig:
     """
-    Canonical configuration for a single optimization run.
+    Internal configuration container for a single optimization run.
     """
 
     problem: ProblemProtocol
@@ -40,6 +41,36 @@ def _normalize_cfg(cfg: AlgorithmConfigProtocol) -> dict[str, object]:
     return dict(cfg.to_dict())
 
 
+def _parse_positive_int(value: object, *, label: str) -> int:
+    if isinstance(value, bool):
+        raise TypeError(f"{label} must be an integer.")
+    if isinstance(value, numbers.Integral):
+        parsed = int(value)
+    elif isinstance(value, str):
+        try:
+            parsed = int(value)
+        except ValueError as exc:
+            raise TypeError(f"{label} must be an integer.") from exc
+    else:
+        raise TypeError(f"{label} must be an integer.")
+    if parsed <= 0:
+        raise ValueError(f"{label} must be a positive integer.")
+    return parsed
+
+
+def _validate_positive_int_field(cfg: dict[str, object], key: str) -> None:
+    value = cfg.get(key)
+    if value is None:
+        return
+    label = f"algorithm_config.{key}"
+    cfg[key] = _parse_positive_int(value, label=label)
+
+
+def _validate_algorithm_config(cfg: dict[str, object]) -> None:
+    for key in ("pop_size", "offspring_size", "batch_size", "neighbor_size", "replace_limit", "n_partitions"):
+        _validate_positive_int_field(cfg, key)
+
+
 def _with_result_mode(cfg_data: Any, result_mode: str) -> Any:
     try:
         allowed = {field.name for field in fields(cfg_data)}
@@ -51,7 +82,7 @@ def _with_result_mode(cfg_data: Any, result_mode: str) -> Any:
 
 
 def _run_config(
-    config: OptimizeConfig,
+    config: _OptimizeConfig,
     *,
     engine: str | None = None,
 ) -> OptimizationResult:
@@ -59,7 +90,7 @@ def _run_config(
     Run a single optimization for the provided problem/config pair.
 
     Args:
-        config: OptimizeConfig with problem, algorithm, and settings
+        config: Internal config with problem, algorithm, and settings
         engine: Override backend engine ('numpy', 'numba', 'moocore').
                 If provided, overrides config.engine.
 
@@ -68,24 +99,22 @@ def _run_config(
         Use `vamos.ux.api` for summaries, plotting, and export helpers.
 
     Examples:
-        # Standard usage
+        # Standard usage (internal)
         result = _run_config(config)
-
-        # Override engine at call time
-        result = _run_config(config, engine="numba")
     """
-    if not isinstance(config, OptimizeConfig):
-        raise TypeError("_run_config() expects an OptimizeConfig instance.")
+    if not isinstance(config, _OptimizeConfig):
+        raise TypeError("_run_config() expects an internal optimize config instance.")
     cfg = config
 
     cfg_dict = _normalize_cfg(cfg.algorithm_config)
+    _validate_algorithm_config(cfg_dict)
     if "engine" in cfg_dict:
-        raise ValueError("engine must be configured via OptimizeConfig.engine (or _run_config(engine=...)), not algorithm_config.")
+        raise ValueError("engine must be configured via optimize(engine=...) rather than algorithm_config.")
     algorithm_raw = cfg.algorithm or ""
     algorithm_name = algorithm_raw.lower()
     available = sorted(get_algorithms_registry().keys())
     if not algorithm_name:
-        raise ValueError(f"OptimizeConfig.algorithm must be specified. Available: {', '.join(available)}.")
+        raise ValueError(f"algorithm must be specified. Available: {', '.join(available)}.")
     registry = get_algorithms_registry()
     if algorithm_name not in registry:
         raise InvalidAlgorithmError(algorithm_raw, available=available)
@@ -111,6 +140,8 @@ def _run_config(
         "live_viz": cfg.live_viz,
     }
     result = run_fn(**kwargs)
+    from .optimization_result import OptimizationResult
+
     return OptimizationResult(
         result,
         meta={
@@ -159,4 +190,4 @@ def _build_algorithm_config(
     raise InvalidAlgorithmError(algorithm, available=available)
 
 
-__all__ = ["OptimizeConfig", "OptimizationResult"]
+__all__: list[str] = []
