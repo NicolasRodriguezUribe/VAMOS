@@ -131,7 +131,7 @@ def add_algorithm_arguments(
         "--nsgaii-repair",
         choices=("clip", "reflect", "random", "resample", "round", "none"),
         default=_as_str(nsgaii_defaults.get("repair")),
-        help="Repair strategy for NSGA-II (continuous encoding).",
+        help="Repair strategy for NSGA-II (continuous encoding; use 'none' to disable).",
     )
     parser.add_argument(
         "--moead-crossover",
@@ -176,7 +176,7 @@ def add_algorithm_arguments(
     parser.add_argument(
         "--moead-aggregation",
         default=_as_str(moead_defaults.get("aggregation")),
-        help="Aggregation method for MOEA/D (e.g., tchebycheff, weighted_sum, pbi).",
+        help="Aggregation method for MOEA/D (tchebycheff, weighted_sum, pbi).",
     )
     parser.add_argument(
         "--smsemoa-crossover",
@@ -216,7 +216,7 @@ def add_algorithm_arguments(
         "--smsemoa-mutation-step",
         type=int,
         default=_as_int(smsemoa_mutation.get("step")),
-        help="Integer creep step for SMS-EMOA (real encoding).",
+        help="Integer creep step for SMS-EMOA (integer encoding).",
     )
     parser.add_argument(
         "--nsga3-crossover",
