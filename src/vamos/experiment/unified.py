@@ -14,12 +14,8 @@ from collections.abc import Mapping
 from typing import cast, overload
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
-from vamos.experiment.optimize import (
-    OptimizeConfig,
-    OptimizationResult,
-    _run_config,
-    _build_algorithm_config,
-)
+from vamos.experiment.optimization_result import OptimizationResult
+from vamos.experiment.optimize import _OptimizeConfig, _run_config, _build_algorithm_config
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.logging import configure_vamos_logging
@@ -333,7 +329,7 @@ def _run_single(
     if resolved_pop_size is None and algorithm_config is None:
         resolved_pop_size = effective_pop_size
 
-    config = OptimizeConfig(
+    config = _OptimizeConfig(
         problem=problem_instance,
         algorithm=algorithm,
         algorithm_config=algo_cfg,

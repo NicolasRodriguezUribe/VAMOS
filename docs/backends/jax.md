@@ -60,5 +60,5 @@ print(jax.devices())  # Should show GPU
 
 - First call triggers JIT compilation (slower)
 - Strict ranking falls back to NumPy for exact Pareto fronts (default; may reduce speed)
-- Approximate ranking uses domination counts (set `VAMOS_JAX_STRICT_RANKING=0`)
+- Approximate ranking uses domination counts (set `VAMOS_JAX_STRICT_RANKING=0`) and may not match the exact Pareto front
 - Complex archive operations fall back to NumPy

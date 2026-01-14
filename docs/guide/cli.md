@@ -64,6 +64,27 @@ Include external baselines (ZDT1 only):
 vamos --problem zdt1 --algorithm both --include-external --external-problem-source native
 ```
 
+Walkthrough: run and inspect outputs
+------------------------------------
+
+1) Run a single optimization:
+
+```bash
+vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --seed 7
+```
+
+2) Inspect artifacts under `results/` (default):
+
+- `FUN.csv`: objective values (Pareto front)
+- `X.csv`: decision variables (if exported)
+- `metadata.json`: run configuration and timings
+
+3) Save plots in the same folder:
+
+```bash
+vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --seed 7 --plot
+```
+
 Key flags
 ---------
 

@@ -36,7 +36,7 @@ Entry points (from `pyproject.toml`):
 - `vamos-tune` -> `src/vamos/experiment/cli/tune.py`
 
 Primary public APIs:
-- `src/vamos/__init__.py` reexports high-level functions, configs, plotting, and problem registries.
+- `src/vamos/__init__.py` reexports high-level functions and the problem registry; algorithm configs live in `src/vamos/algorithms`, analysis/visualization helpers in `src/vamos/ux/api.py`.
 - `src/vamos/api.py` is the main programmatic entrypoint; `src/vamos/foundation/core/api.py` exposes primitives only, while `src/vamos/engine/api.py` and `src/vamos/ux/api.py` provide focused facades.
 
 Core layers and responsibilities (observed):
