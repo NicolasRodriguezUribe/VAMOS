@@ -164,3 +164,10 @@ def add_core_arguments(
         default=bool(experiment_defaults.get("quiet", False)),
         help="Suppress informational logging (only WARNING+).",
     )
+    add_spec_argument(
+        parser,
+        "--no-preflight",
+        action="store_true",
+        default=bool(spec_default(experiment_defaults, "no_preflight", False)),
+        help="Skip optional dependency warnings (useful for scripted runs).",
+    )

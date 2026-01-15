@@ -39,16 +39,20 @@ plugins:
 nav:
   - Home: index.md
   - Guide:
+    - Minimal Python Track: guide/minimal-python.md
     - Quick Start Guide: guide/zero_to_hero.md
     - Getting Started: guide/getting-started.md
     - CLI & Config: guide/cli.md
     - VAMOS Studio: guide/studio.md
     - Cookbook: guide/cookbook.md
+    - Troubleshooting: guide/troubleshooting.md
   - Reference:
     - API Reference: reference/api_reference.md
     - Algorithms & Backends: reference/algorithms.md
+    - JAX Backend: backends/jax.md
     - Problems: reference/problems.md
     - Constraints & Autodiff: reference/constraints.md
+    - Stopping & Archive: experiment/stopping_and_archive.md
   - Topics:
     - Hyperparameter Tuning: topics/tuning.md
     - Analysis & Viz: topics/analysis.md
@@ -56,17 +60,7 @@ nav:
     - Plugin Guide: topics/plugin_guide.md
     - Engineering Audit: topics/engineering_audit.md
     - AOS Method: paper/aos-method.md
-  - Examples:
-    - Index: notebooks/INDEX.ipynb
-    - Basic: 
-      - Quickstart: notebooks/0_basic/01_quickstart.ipynb
-      - API Comparison: notebooks/0_basic/00_api_comparison.ipynb
-    - Intermediate:
-      - Real World: notebooks/1_intermediate/12_real_world_problems.ipynb
-      - Interactive: notebooks/1_intermediate/16_interactive_explorer.ipynb
-    - Advanced:
-      - Paper Benchmarking: notebooks/2_advanced/30_paper_benchmarking.ipynb
-      - AOS: notebooks/2_advanced/31_adaptive_operator_selection.ipynb
+    - Scaling with Dask: scaling/dask.md
   - Developer Guides:
     - Add a Problem: dev/add_problem.md
     - Add an Algorithm: dev/add_algorithm.md

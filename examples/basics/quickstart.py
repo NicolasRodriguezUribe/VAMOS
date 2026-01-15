@@ -3,6 +3,8 @@ Minimal VAMOS quickstart example.
 
 Runs NSGA-II on the ZDT1 benchmark problem and displays the Pareto front.
 Uses the Unified API (`vamos.optimize`) for conciseness.
+For a no-code option, try the CLI wizard: `vamos quickstart`.
+Use `vamos quickstart --template list` to explore domain templates.
 
 Usage:
     python examples/quickstart.py

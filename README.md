@@ -58,7 +58,34 @@ print(f"Non-dominated solutions: {len(front) if front is not None else 0}")
 # plot_result_front(result)  # Quick Pareto front plot
 ```
 
-Need full control? Use explicit args + config objects:
+Prefer a guided CLI? Run:
+
+```bash
+vamos quickstart
+```
+
+This wizard writes a reusable config and stores results under `results/quickstart/`.
+
+Use `vamos quickstart --template list` to see domain templates.
+
+New to Python? Start with the Minimal Python Track: `docs/guide/minimal-python.md`.
+
+After a run, summarize results with:
+
+```bash
+vamos summarize --results results/quickstart
+```
+
+New CLI helpers:
+
+- `vamos quickstart`: guided wizard that writes a config
+- `vamos summarize`: table/JSON summary of recent runs
+- `vamos open-results`: print or open the latest run folder
+
+Preferred path: start with `optimize(...)`. Use config objects only when you need fully specified, reproducible runs or plugin algorithms.
+See `docs/guide/getting-started.md` for a short decision guide.
+
+Advanced path (explicit config objects):
 
 ```python
 from vamos import optimize
@@ -78,7 +105,7 @@ result = optimize(
 )
 ```
 
-Tip: Start with the unified `optimize(...)` API. Use algorithm config objects for reproducible, fully-specified runs; plain dict configs are intentionally not accepted (use `GenericAlgorithmConfig` for plugin algorithms).
+Reminder: plain dict configs are intentionally not accepted (use `GenericAlgorithmConfig` for plugin algorithms).
 
 ## Notes
 
