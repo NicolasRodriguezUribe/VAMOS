@@ -5,6 +5,7 @@ Common recipes and patterns for using VAMOS.
 ## Recommended path (optimize)
 
 The `optimize(...)` API is the fastest way to run experiments in Python.
+See the API decision guide in `docs/guide/getting-started.md` if you need explicit config objects.
 
 ```python
 from vamos import optimize

@@ -1,6 +1,9 @@
 """
 End-to-end hyperparameter tuning example using the built-in SVM problem.
 
+Note: This example uses explicit config objects for reproducibility and tuning control.
+For quick runs, prefer the unified optimize(...) API.
+
 Usage:
     python examples/hyperparam_tuning.py
 

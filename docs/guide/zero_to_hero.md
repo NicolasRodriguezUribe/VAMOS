@@ -1,11 +1,13 @@
 # Zero to Hero: VAMOS in 15 Minutes
 
 Welcome to VAMOS! This guide will take you from an empty environment to a publication-ready Multi-Objective Evolutionary Algorithm (MOEA) study in under 15 minutes.
+If you are new to Python, start with `docs/guide/minimal-python.md`.
 
 We will cover:
 1.  **Flash Hero:** Installing and running your first optimization in 30 seconds.
 2.  **The "Wow" Moment:** Running a parallel benchmark (NSGA-II vs MOEA/D vs SMS-EMOA) and generating LaTeX tables.
 3.  **Advanced Science:** Tuning an algorithm with `RacingTuner` and defining a custom vectorized problem to unlock massive speedups.
+4.  **From CLI to Analysis:** Running reproducible CLI studies and loading results for analysis.
 
 ---
 
@@ -16,6 +18,10 @@ First, install VAMOS (assuming you are in the repository root):
 ```bash
 pip install -e .
 ```
+
+Prefer a guided CLI? Run `vamos quickstart` for prompts and a ready-made config file.
+Use `vamos quickstart --template list` to explore domain-flavored templates.
+After a run, use `vamos summarize` to list recent results.
 
 Now, let's solve the classic **ZDT1** problem (2 objectives, 30 variables) using **NSGA-II**. Create a file `hello_vamos.py`:
 
@@ -56,7 +62,8 @@ Create `benchmark.py`:
 ```python
 import pandas as pd
 from vamos import optimize
-from vamos.ux.analysis.stats import friedman_test, compute_ranks
+from vamos.foundation.metrics import compute_normalized_hv
+from vamos.ux.analysis.stats import friedman_test
 
 # 1. Define the study
 algorithms = ["nsgaii", "moead", "smsemoa"]
@@ -66,38 +73,37 @@ n_seeds = 5  # In a real paper, use 30+
 print(f"Running benchmark on {problem_name} with {algorithms}...")
 
 # 2. Run in PARALLEL
-# VAMOS supports parallel evaluation of seeds/algorithms out of the box if you wrap this loop.
+# VAMOS supports parallel evaluation of seeds/algorithms if you wrap this loop.
 # For simplicity here, we run sequentially but show how fast it is.
-# Pro-tip: Use 'joblib' or VAMOS's upcoming 'ExperimentRunner' for massive scale.
+# Pro-tip: Use StudyRunner or the `vamos-benchmark` CLI for full sweeps.
 
 results = {}
 for algo in algorithms:
     print(f"  -> Running {algo}...", end="")
-    # Collect hypervolume (HV) for each seed
+    # Collect normalized hypervolume (HV) for each seed
     hvs = []
     for seed in range(n_seeds):
         res = optimize(problem_name, algorithm=algo, budget=5000, seed=seed)
-        # Assuming we have a helper or just use the last HV for now
-        # VAMOS 'optimize' returns the final population. For HV, we'd typically use a metric.
-        # Let's fake a metric for this quick demo or use a simple sum as a proxy for 'quality'
-        # In real code: from vamos.foundation.metrics import hypervolume
-        hv_score = -res.F.sum() # Dummy 'higher is better' proxy for demo simplicity
+        # compute_normalized_hv uses ZDT reference fronts.
+        # For other problems, call compute_hypervolume with an explicit reference point.
+        hv_score = compute_normalized_hv(res.F, problem_name)
         hvs.append(hv_score)
     results[algo] = hvs
     print(" Done.")
 
 # 3. Create a DataFrame
 df = pd.DataFrame(results)
-print("\nRaw Hypervolume (Proxy) Scores:")
+print("\nNormalized Hypervolume Scores:")
 print(df)
 
 # 4. Statistical Analysis (Friedman Test)
 # We treat each seed as a separate 'problem instance' or aggregated block for the test
 # Usually you test across multiple problems. Here we test across seeds (just for mechanics demo).
 friedman = friedman_test(df.values, higher_is_better=True)
+mean_ranks = friedman.ranks.mean(axis=0)
 
 print(f"\nFriedman Test p-value: {friedman.p_value:.4e}")
-print(f"Ranks: {friedman.ranks.mean(axis=0)}")
+print("Mean ranks:", dict(zip(df.columns, mean_ranks)))
 
 # 5. Export to LaTeX
 # This is what goes into your Overleaf paper!
@@ -108,7 +114,7 @@ print(latex_table)
 
 **Why this matters:**
 *   **Consistency:** The same API (`optimize`) switches algorithms seamlessly.
-*   **Analysis params:** Dedicated stats module (`vamos.ux.analysis`) automates the math.
+*   **Analysis tools:** Dedicated stats module (`vamos.ux.analysis`) automates the math.
 *   **Publication Ready:** Pandas integration means you go from Python to LaTeX in seconds.
 
 ---
@@ -196,13 +202,13 @@ print(best_config)
 **How it works:**
 ```
 Fidelity 1 (budget=1000):  30 configs evaluated cheaply
-                           → Top 9 promoted
+                           -> Top 9 promoted
 
 Fidelity 2 (budget=3000):  9 configs continue from checkpoint (+2000 evals)
-                           → Top 3 promoted
+                           -> Top 3 promoted
 
 Fidelity 3 (budget=10000): 3 configs continue from checkpoint (+7000 evals)
-                           → Best returned
+                           -> Best returned
 ```
 
 **Benefits over irace:**
@@ -246,8 +252,39 @@ class MyVectorizedProblem:
 
 ---
 
+## 4. From CLI to Analysis: Reproducible Runs
+
+When you need reproducible runs with clean artifacts, the CLI writes a standard layout under `results/`.
+
+Run a short sweep (three seeds) into a dedicated folder:
+
+```bash
+for seed in 1 2 3; do
+  vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --seed $seed --output-dir results/cli_demo
+done
+```
+
+Load and aggregate the results:
+
+```python
+from vamos.ux.analysis.results import discover_runs, load_run_data, aggregate_results
+
+runs = discover_runs("results/cli_demo")
+summary = aggregate_results(runs)
+print(summary)
+
+# Inspect one run's final population.
+first = load_run_data(runs[0])
+print(first.F.shape)
+```
+
+If pandas is installed, `aggregate_results` returns a DataFrame; otherwise it returns a list of dicts.
+
+---
+
 ## Next Steps
 
 *   Check out the [Cookbook](cookbook.md) for deeper recipes.
+*   Browse the [CLI Guide](cli.md) for full command reference.
 *   Read the [AOS Method](../paper/aos-method.md) to understand the adaptive operator selection.
 *   Explore [VAMOS Studio](studio.md) for interactive dashboards.

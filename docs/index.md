@@ -16,6 +16,10 @@ pip install -e ".[compute,research,dev]"
 python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000
 ```
 
+New to Python? Start here:
+- Minimal Python Track: `docs/guide/minimal-python.md`
+- Guided wizard: `vamos quickstart`
+
 Docs roadmap:
 - `Guide`: Getting Started, CLI, Studio, Cookbook, Troubleshooting
 - `Reference`: API docs, algorithms, problems, and constraints

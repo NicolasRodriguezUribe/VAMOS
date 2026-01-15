@@ -23,6 +23,7 @@ Smoke tests
 -----------
 
 - Core check: `python -m vamos.experiment.diagnostics.self_check` or `vamos-self-check`
+- Guided quickstart: `vamos quickstart` (use `--template list` to see domain templates)
 - Quick NSGA-II run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
 - Full test suite (core): `pytest`
 - With extras installed: `pytest -m "not slow"`
@@ -30,6 +31,10 @@ Smoke tests
 
 Python API
 ----------
+
+Preferred path: start with `optimize(...)`. Reach for config objects only when you need fully specified, reproducible runs or plugin algorithms.
+If you are new to Python, start with `docs/guide/minimal-python.md`.
+For a quick comparison, see `notebooks/0_basic/00_api_comparison.ipynb`.
 
 **1. One-liner (Unified API):**
 
@@ -41,7 +46,7 @@ result = optimize("zdt1", algorithm="nsgaii", budget=10_000, pop_size=100, seed=
 print(result_summary_text(result))
 ```
 
-**2. Full control (explicit args + config objects):**
+**2. Advanced control (explicit args + config objects):**
 
 ```python
 from vamos import optimize
@@ -61,7 +66,7 @@ result = optimize(
 )
 ```
 
-Prefer the unified `optimize(...)` API; use algorithm config objects for reproducible, fully-specified runs. For plugin algorithms, wrap free-form mappings in `GenericAlgorithmConfig`.
+Prefer the unified `optimize(...)` API; use algorithm config objects for reproducible, fully specified runs. For plugin algorithms, wrap free-form mappings in `GenericAlgorithmConfig`.
 
 API decision guide
 ------------------
@@ -71,7 +76,7 @@ Use the lightest interface that still makes the run reproducible.
 | Goal | Use | Example |
 | --- | --- | --- |
 | Quick scripts, notebooks | Unified `optimize(...)` | `optimize("zdt1", algorithm="nsgaii", budget=5000)` |
-| Reproducible configs | `algorithm_config` + explicit termination | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, termination=("n_eval", 5000))` |
+| Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit termination | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, termination=("n_eval", 5000))` |
 | Plugin algorithms | `GenericAlgorithmConfig` | `optimize(problem, algorithm="my_algo", algorithm_config=GenericAlgorithmConfig({...}))` |
 | Small study in one call | `seed=[...]` | `optimize("zdt1", seed=[0, 1, 2])` |
 

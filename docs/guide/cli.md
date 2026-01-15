@@ -1,5 +1,64 @@
 # CLI and config files
 
+Quickstart wizard
+-----------------
+
+Run an interactive wizard that writes a config file and executes a single run:
+
+```bash
+vamos quickstart
+```
+
+If you are new to Python, start with `docs/guide/minimal-python.md`.
+
+List available templates:
+
+```bash
+vamos quickstart --template list
+```
+
+Run a template non-interactively:
+
+```bash
+vamos quickstart --template physics_design --yes --no-plot
+```
+
+Skip optional dependency warnings:
+
+```bash
+vamos quickstart --no-preflight
+```
+
+Template keys (short list):
+
+- `demo`: quick benchmark demo (ZDT1)
+- `physics_design`: mixed-variable structural design (welded beam)
+- `bio_feature_selection`: real-data feature selection (requires `examples` extra)
+- `chem_hyperparam_tuning`: SVM hyperparameter tuning (requires `examples` extra)
+
+The config is saved under `results/quickstart/` and can be re-run with `vamos --config <path>`.
+
+Results helpers
+---------------
+
+Summarize recent runs:
+
+```bash
+vamos summarize --results results
+```
+
+Show only the latest run:
+
+```bash
+vamos summarize --latest
+```
+
+Open the latest run folder:
+
+```bash
+vamos open-results --open
+```
+
 Main runner
 -----------
 
@@ -95,6 +154,7 @@ Key flags
 - `--problem-set`: predefined sets (e.g., `families`)
 - `--validate-config`: validate `--config` and exit
 - `--output-root`: directory for run artifacts (default: `results/`)
+- `--no-preflight`: skip optional dependency warnings
 - `--population-size`, `--offspring-population-size`
 - `--max-evaluations`
 - `--hv-threshold` and `--hv-reference-front`

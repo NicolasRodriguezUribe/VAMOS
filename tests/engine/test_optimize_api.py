@@ -72,3 +72,34 @@ def test_optimize_rejects_legacy_signature():
         optimize(problem, algorithm="nsgaii", budget=4, algorithm_config={})  # type: ignore[arg-type]
     with pytest.raises(TypeError):
         optimize(problem, _nsgaii_cfg(), ("n_eval", 6), 3)  # type: ignore[arg-type]
+
+
+def test_optimize_resolves_pop_size_consistently() -> None:
+    problem = ZDT1Problem(n_var=6)
+    pop_size = 10
+    budget = 12
+
+    result_direct = optimize(
+        problem,
+        algorithm="nsgaii",
+        budget=budget,
+        pop_size=pop_size,
+        seed=1,
+        engine="numpy",
+    )
+    cfg = NSGAIIConfig.default(pop_size=pop_size, n_var=problem.n_var)
+    result_cfg = optimize(
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("n_eval", budget),
+        seed=1,
+        engine="numpy",
+    )
+
+    direct_defaults = result_direct.explain_defaults()
+    cfg_defaults = result_cfg.explain_defaults()
+    assert "resolved_config" in direct_defaults
+    assert "resolved_config" in cfg_defaults
+    assert direct_defaults["resolved_config"]["pop_size"] == cfg_defaults["resolved_config"]["pop_size"] == pop_size
+    assert direct_defaults["resolved_config"]["budget"] == cfg_defaults["resolved_config"]["budget"] == budget

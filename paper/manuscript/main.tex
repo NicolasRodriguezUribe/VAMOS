@@ -138,6 +138,9 @@ Adaptive operator selection (AOS) dynamically allocates sampling probability acr
   \item \textbf{Experiment}: CLI, benchmarking utilities, visualization, and reporting.
 \end{enumerate}
 
+The primary user entry point is a unified \texttt{optimize(...)} API; explicit configuration objects are reserved for fully specified, reproducible runs and advanced algorithm customization.
+For minimal-code users, a guided CLI quickstart generates a reusable config file, with domain-flavored templates that map to common workflows.
+
 The core design choice is to represent a population as a pair of dense arrays: decision variables $X \in \mathbb{R}^{N \times n}$ and objective values $F \in \mathbb{R}^{N \times m}$ for population size $N$, $n$ decision variables, and $m$ objectives. Variation and survival operate on these arrays (or views thereof), enabling vectorized operations (NumPy) and compilation of hot loops (Numba) without per-individual Python objects.
 
 \begin{figure}[htbp]

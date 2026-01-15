@@ -4,6 +4,9 @@ External archive demo with NSGA-II on ZDT1.
 Shows how to configure a hypervolume/crowding archive, access its contents,
 and plot the archived Pareto set alongside the final population.
 
+Note: This example uses explicit config objects for advanced control.
+For quick runs, prefer the unified optimize(...) API.
+
 Usage:
     python examples/archive_usage_nsga2.py
 

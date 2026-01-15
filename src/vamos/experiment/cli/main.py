@@ -24,13 +24,38 @@ def _ensure_project_root_on_path() -> None:
             sys.path.insert(0, project_root_str)
 
 
+def _dispatch_subcommand(argv: list[str]) -> bool:
+    if not argv:
+        return False
+    command = argv[0]
+    if command in {"quickstart", "--quickstart"}:
+        from vamos.experiment.cli.quickstart import run_quickstart
+
+        run_quickstart(argv[1:])
+        return True
+    if command in {"summarize", "summary"}:
+        from vamos.experiment.cli.results_cli import run_summarize
+
+        run_summarize(argv[1:])
+        return True
+    if command in {"open-results", "open_results"}:
+        from vamos.experiment.cli.results_cli import run_open_results
+
+        run_open_results(argv[1:])
+        return True
+    return False
+
+
 def main() -> None:
     _ensure_project_root_on_path()
+    _configure_cli_logging()
+    if _dispatch_subcommand(sys.argv[1:]):
+        return
     from vamos.experiment.cli import parse_args
+    from vamos.experiment.cli.preflight import run_preflight_checks
     from vamos.experiment.presentation import run_experiments_from_args
     from vamos.foundation.core.experiment_config import ExperimentConfig
 
-    _configure_cli_logging()
     default_config = ExperimentConfig()
     args = parse_args(default_config)
     if getattr(args, "quiet", False):
@@ -50,6 +75,8 @@ def main() -> None:
         live_viz_interval=args.live_viz_interval,
         live_viz_max_points=args.live_viz_max_points,
     )
+    if not getattr(args, "no_preflight", False):
+        run_preflight_checks(args)
     run_experiments_from_args(args, config)
 
 

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import argparse
 
+from collections.abc import Sequence
+
 from vamos.engine.config.spec import allowed_override_keys, validate_experiment_spec
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
@@ -17,9 +19,9 @@ from .validation import finalize_args
 
 
 # Config-file aware parser.
-def parse_args(default_config: ExperimentConfig) -> argparse.Namespace:
+def parse_args(default_config: ExperimentConfig, argv: Sequence[str] | None = None) -> argparse.Namespace:
     pre_parser = build_pre_parser()
-    pre_args, remaining = pre_parser.parse_known_args()
+    pre_args, remaining = pre_parser.parse_known_args(argv)
 
     if getattr(pre_args, "validate_config", False) and not getattr(pre_args, "config", None):
         pre_parser.error("--validate-config requires --config.")
