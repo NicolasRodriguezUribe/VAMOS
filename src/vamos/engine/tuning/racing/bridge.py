@@ -22,6 +22,7 @@ from .param_space import (
     Real,
     Int,
     Categorical,
+    Boolean,
     ParamType,
     ConditionalBlock,
 )
@@ -38,10 +39,12 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
         Real("mutation_eta", 5.0, 40.0),
         Categorical("selection", ["tournament"]),
         Int("selection_pressure", 2, 4),
+        Boolean("use_external_archive"),
     ]
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
         ConditionalBlock("crossover", "blx_alpha", [Real("crossover_alpha", 0.1, 0.8)]),
+        ConditionalBlock("use_external_archive", True, [Categorical("archive_type", ["hypervolume", "crowding"])]),
     ]
     return AlgorithmConfigSpace("nsgaii", params, conditionals)
 
@@ -166,6 +169,12 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
             mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
         builder.mutation(mut, **mut_params)
         builder.selection(str(assignment.get("selection", "tournament")), pressure=int(assignment["selection_pressure"]))
+
+        use_external_archive = bool(assignment.get("use_external_archive", False))
+        if use_external_archive:
+            archive_type = str(assignment.get("archive_type", "hypervolume"))
+            builder.archive_type(archive_type)
+            builder.archive(int(assignment["pop_size"]))
         return builder.build()
     if algo == "moead":
         builder = MOEADConfig.builder()
