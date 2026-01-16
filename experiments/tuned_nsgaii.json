@@ -1,0 +1,11 @@
+{
+  "crossover": "sbx",
+  "crossover_eta": 29.01528364614782,
+  "crossover_prob": 0.9859262198347306,
+  "mutation": "non_uniform",
+  "mutation_eta": 16.912826311811806,
+  "mutation_prob_factor": 0.5028710343597436,
+  "pop_size": 183,
+  "selection": "tournament",
+  "selection_pressure": 2
+}
