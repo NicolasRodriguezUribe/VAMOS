@@ -189,7 +189,7 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
     tune_n_evals = _as_int_env("VAMOS_TUNER_N_EVALS", 20000)
     tune_n_seeds = _as_int_env("VAMOS_TUNER_N_SEEDS", 10)
     tune_max_experiments = _as_int_env("VAMOS_TUNER_MAX_EXPERIMENTS", 8000)
-    tune_n_jobs = _as_int_env("VAMOS_TUNER_N_JOBS", 1)
+    tune_n_jobs = _as_int_env("VAMOS_TUNER_N_JOBS", max(1, (os.cpu_count() or 2) - 1))
     tune_max_initial_configs = _as_int_env("VAMOS_TUNER_MAX_INITIAL_CONFIGS", 60)
     tune_repeats = _as_int_env("VAMOS_TUNER_REPEATS", 5)
     tune_pick = _as_str_env("VAMOS_TUNER_PICK", "best").strip().lower()

@@ -5,7 +5,7 @@ Helpers for building run metadata and operator summaries.
 from __future__ import annotations
 
 import subprocess
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -60,7 +60,7 @@ def build_run_metadata(
     """
     Assemble the metadata payload for a single run.
     """
-    timestamp = datetime.now(UTC).isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     problem = selection.instantiate()
     spec = getattr(selection, "spec", None)
     label = getattr(spec, "label", None) or getattr(spec, "key", "unknown")
