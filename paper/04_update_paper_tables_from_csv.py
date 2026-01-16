@@ -4,9 +4,9 @@ VAMOS Paper Table Update Script
 Reads benchmark CSV results and updates LaTeX tables in main.tex.
 
 Usage:
-  python update_paper_tables_from_csv.py
-  python update_paper_tables_from_csv.py --csv path\to\benchmark_paper.csv
-  python update_paper_tables_from_csv.py --compile
+  python paper/04_update_paper_tables_from_csv.py
+  python paper/04_update_paper_tables_from_csv.py --csv path\to\benchmark_paper.csv
+  python paper/04_update_paper_tables_from_csv.py --compile
 """
 
 from __future__ import annotations
@@ -45,6 +45,10 @@ def get_family(problem_name: str) -> str:
     return "Other"
 
 
+def _backend_display_name(backend: str) -> str:
+    return {"numpy": "NumPy", "numba": "Numba", "moocore": "MooCore"}.get(backend, backend)
+
+
 def make_latex_table_a1(df_table: pd.DataFrame) -> str:
     """Table A.1: backends with row-wise minimum bolded."""
     # Requested order: Numba, Moocore, NumPy
@@ -53,7 +57,7 @@ def make_latex_table_a1(df_table: pd.DataFrame) -> str:
     # Check which exist
     valid_backends = [b for b in backend_order if b in df_table.columns]
 
-    header_cols = [f"\\textbf{{{b.capitalize() if b != 'moocore' else 'Moocore'}}}" for b in valid_backends]
+    header_cols = [f"\\textbf{{{_backend_display_name(b)}}}" for b in valid_backends]
 
     lines = [
         r"\begin{table}[htbp]",
@@ -207,8 +211,7 @@ def make_latex_table_3(vamos_fam: pd.DataFrame) -> str:
             else:
                 row_str.append(f"{v:.2f}")
 
-        backend_name = backend.capitalize() if backend != "moocore" else "Moocore"
-        lines.append(f"{backend_name} & {' & '.join(row_str)} \\\\")
+        lines.append(f"{_backend_display_name(backend)} & {' & '.join(row_str)} \\\\")
 
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     return "\n".join(lines)

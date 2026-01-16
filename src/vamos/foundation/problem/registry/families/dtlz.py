@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from ...dtlz import DTLZ1Problem, DTLZ2Problem, DTLZ3Problem, DTLZ4Problem, DTLZ7Problem
+from ...dtlz import (
+    DTLZ1Problem,
+    DTLZ2Problem,
+    DTLZ3Problem,
+    DTLZ4Problem,
+    DTLZ5Problem,
+    DTLZ6Problem,
+    DTLZ7Problem,
+)
 from ..common import ProblemSpec
 
 
@@ -69,6 +77,26 @@ def get_specs() -> dict[str, ProblemSpec]:
                 default_n_var_fn=_dtlz_k10_n_var,
                 description="DTLZ4 with configurable objectives (defaults to 3).",
                 factory=lambda n_var, n_obj: _dtlz_factory(DTLZ4Problem, n_var, n_obj),
+            ),
+            "dtlz5": ProblemSpec(
+                key="dtlz5",
+                label="DTLZ5",
+                default_n_var=12,
+                default_n_obj=3,
+                allow_n_obj_override=True,
+                default_n_var_fn=_dtlz_k10_n_var,
+                description="DTLZ5 with configurable objectives (degenerate Pareto front).",
+                factory=lambda n_var, n_obj: _dtlz_factory(DTLZ5Problem, n_var, n_obj),
+            ),
+            "dtlz6": ProblemSpec(
+                key="dtlz6",
+                label="DTLZ6",
+                default_n_var=12,
+                default_n_obj=3,
+                allow_n_obj_override=True,
+                default_n_var_fn=_dtlz_k10_n_var,
+                description="DTLZ6 with configurable objectives (degenerate Pareto front, biased distance).",
+                factory=lambda n_var, n_obj: _dtlz_factory(DTLZ6Problem, n_var, n_obj),
             ),
             "dtlz7": ProblemSpec(
                 key="dtlz7",

@@ -27,6 +27,8 @@ compute = [
 research = [
   "pymoo>=0.6",
   "jmetalpy>=1.5",
+  "deap>=1.4",
+  "platypus-opt>=1.0.4",
   "pygmo>=2.19",
 ]
 analysis = [
@@ -86,6 +88,8 @@ all = [
   "dask[distributed]>=2023.5.0",
   "pymoo>=0.6",
   "jmetalpy>=1.5",
+  "deap>=1.4",
+  "platypus-opt>=1.0.4",
   "pygmo>=2.19",
   "pandas>=1.5",
   "matplotlib>=3.7",

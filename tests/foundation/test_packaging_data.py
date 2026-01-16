@@ -12,6 +12,13 @@ def test_reference_front_packaged_and_accessible():
     assert len(data) > 0
 
 
+def test_reference_front_zdt5_packaged_and_accessible():
+    path = reference_front_path("zdt5")
+    assert path.is_file()
+    data = path.read_text().splitlines()
+    assert len(data) == 31
+
+
 def test_weight_file_packaged_and_accessible():
     path = weight_path("zdt1problem_2obj_pop100.csv")
     assert path.is_file()

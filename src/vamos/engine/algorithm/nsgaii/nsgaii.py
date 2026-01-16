@@ -345,6 +345,7 @@ class NSGAII:
         combined_ids = self._combine_ids(st)
         parent_count = st.X.shape[0]
         selected_idx = None
+        prev_F = st.F
 
         # Survival selection
         if st.G is None or G_off is None or st.constraint_mode == "none":
@@ -368,6 +369,34 @@ class NSGAII:
         st.pending_offspring_ids = None
 
         if aos_controller is not None and selected_idx is not None and st.aos_last_op_id is not None:
+            hv_delta_rate = 0.0
+            try:
+                reward_weights = getattr(aos_controller.config, "reward_weights", {}) or {}
+                hv_weight = float(reward_weights.get("hv_delta", 0.0))
+                reward_scope = str(getattr(aos_controller.config, "reward_scope", "combined") or "combined").lower()
+                wants_hv = hv_weight > 0.0 or reward_scope in {"hv", "hv_delta", "hypervolume"}
+                if wants_hv:
+                    hv_delta_rate = 0.5
+                if (
+                    wants_hv
+                    and prev_F is not None
+                    and new_F is not None
+                    and prev_F.ndim == 2
+                    and new_F.ndim == 2
+                    and prev_F.shape[1] == 2
+                    and new_F.shape[1] == 2
+                    and prev_F.size > 0
+                    and new_F.size > 0
+                ):
+                    ref = np.maximum(np.max(prev_F, axis=0), np.max(new_F, axis=0)) + 1.0
+                    hv_prev = float(self.kernel.hypervolume(prev_F, ref))
+                    hv_new = float(self.kernel.hypervolume(new_F, ref))
+                    denom = abs(hv_prev) if abs(hv_prev) > 1e-12 else 1e-12
+                    ratio = (hv_new - hv_prev) / denom
+                    hv_delta_rate = float(0.5 + 0.5 * np.tanh(ratio))
+            except Exception:
+                hv_delta_rate = 0.0
+
             try:
                 ranks, _ = self.kernel.nsga2_ranking(st.F)
                 nd_mask = ranks == ranks.min(initial=0)
@@ -379,7 +408,7 @@ class NSGAII:
             n_nd_insertions = int(np.sum(is_offspring & nd_mask))
             aos_controller.observe_survivors(st.aos_last_op_id, n_survivors)
             aos_controller.observe_nd_insertions(st.aos_last_op_id, n_nd_insertions)
-            trace_rows = aos_controller.finalize_generation(st.aos_step or 0)
+            trace_rows = aos_controller.finalize_generation(st.aos_step or 0, hv_delta_rate=hv_delta_rate)
             for row in trace_rows:
                 st.aos_trace_rows.append(
                     {

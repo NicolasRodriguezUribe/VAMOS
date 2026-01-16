@@ -5,6 +5,7 @@ from ...zdt1 import ZDT1Problem
 from ...zdt2 import ZDT2Problem
 from ...zdt3 import ZDT3Problem
 from ...zdt4 import ZDT4Problem
+from ...zdt5 import ZDT5Problem
 from ...zdt6 import ZDT6Problem
 from ..common import ProblemSpec
 
@@ -56,6 +57,16 @@ def get_specs() -> dict[str, ProblemSpec]:
                 allow_n_obj_override=False,
                 description="ZDT benchmark with multimodal landscape and mixed bounds.",
                 factory=lambda n_var, _n_obj: ZDT4Problem(n_var=n_var),
+            ),
+            "zdt5": ProblemSpec(
+                key="zdt5",
+                label="ZDT5",
+                default_n_var=80,
+                default_n_obj=2,
+                allow_n_obj_override=False,
+                description="Binary-coded ZDT benchmark (bitstring decision variables).",
+                factory=lambda n_var, _n_obj: ZDT5Problem(n_var=n_var),
+                encoding="binary",
             ),
             "zdt6": ProblemSpec(
                 key="zdt6",

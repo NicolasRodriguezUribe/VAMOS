@@ -17,7 +17,7 @@ from vamos.foundation.problem.registry import (
 PROBLEM_SET_PRESETS: dict[str, Sequence[str]] = {
     "families": ("zdt1", "dtlz2", "wfg4", "tsp6"),
     "zdt": ("zdt1", "zdt2", "zdt3", "zdt4", "zdt6"),
-    "dtlz": ("dtlz1", "dtlz2", "dtlz3", "dtlz4"),
+    "dtlz": ("dtlz1", "dtlz2", "dtlz3", "dtlz4", "dtlz5", "dtlz6", "dtlz7"),
     "wfg": ("wfg1", "wfg2", "wfg3", "wfg4", "wfg5", "wfg6", "wfg7", "wfg8", "wfg9"),
     "lz": ("lz09_f1", "lz09_f2", "lz09_f3", "lz09_f4", "lz09_f5", "lz09_f6", "lz09_f7", "lz09_f8", "lz09_f9"),
     "cec": ("cec2009_uf1", "cec2009_uf2", "cec2009_uf3", "cec2009_cf1"),

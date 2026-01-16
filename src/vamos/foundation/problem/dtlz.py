@@ -171,6 +171,92 @@ class DTLZ4Problem(DTLZBase):
             out["F"] = F_res
 
 
+class DTLZ5Problem(DTLZBase):
+    """DTLZ5: Degenerate Pareto front with theta transformation."""
+
+    def __init__(self, n_var: int | None = None, n_obj: int = 3) -> None:
+        if n_var is None:
+            n_var = n_obj + 9  # Standard k=10
+        super().__init__(n_var, n_obj)
+
+        # Validate standard configuration
+        k = n_var - n_obj + 1
+        if k != 10:
+            warnings.warn(
+                f"Non-standard DTLZ5 configuration: k={k} (standard k=10). Consider using n_var={n_obj + 9} for standard benchmark.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+    def _evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
+        g = np.sum((X[:, self.n_obj - 1 :] - 0.5) ** 2, axis=1)
+
+        theta = np.empty((X.shape[0], self.n_obj - 1), dtype=float)
+        theta[:, 0] = X[:, 0] * np.pi / 2.0
+        if self.n_obj > 2:
+            t = (np.pi / (4.0 * (1.0 + g)))[:, None]
+            theta[:, 1:] = t * (1.0 + 2.0 * g[:, None] * X[:, 1 : self.n_obj - 1])
+
+        F = np.ones((X.shape[0], self.n_obj), dtype=float)
+        for i in range(self.n_obj):
+            f = np.ones(X.shape[0], dtype=float)
+            for j in range(self.n_obj - i - 1):
+                f *= np.cos(theta[:, j])
+            if i > 0:
+                idx = self.n_obj - i - 1
+                f *= np.sin(theta[:, idx])
+            F[:, i] = f
+
+        F_res = (1.0 + g[:, None]) * F
+        if "F" in out and out["F"] is not None:
+            out["F"][:] = F_res
+        else:
+            out["F"] = F_res
+
+
+class DTLZ6Problem(DTLZBase):
+    """DTLZ6: Degenerate Pareto front with biased distance function."""
+
+    def __init__(self, n_var: int | None = None, n_obj: int = 3) -> None:
+        if n_var is None:
+            n_var = n_obj + 9  # Standard k=10
+        super().__init__(n_var, n_obj)
+
+        # Validate standard configuration
+        k = n_var - n_obj + 1
+        if k != 10:
+            warnings.warn(
+                f"Non-standard DTLZ6 configuration: k={k} (standard k=10). Consider using n_var={n_obj + 9} for standard benchmark.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+    def _evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
+        g = np.sum(np.power(X[:, self.n_obj - 1 :], 0.1), axis=1)
+
+        theta = np.empty((X.shape[0], self.n_obj - 1), dtype=float)
+        theta[:, 0] = X[:, 0] * np.pi / 2.0
+        if self.n_obj > 2:
+            t = (np.pi / (4.0 * (1.0 + g)))[:, None]
+            theta[:, 1:] = t * (1.0 + 2.0 * g[:, None] * X[:, 1 : self.n_obj - 1])
+
+        F = np.ones((X.shape[0], self.n_obj), dtype=float)
+        for i in range(self.n_obj):
+            f = np.ones(X.shape[0], dtype=float)
+            for j in range(self.n_obj - i - 1):
+                f *= np.cos(theta[:, j])
+            if i > 0:
+                idx = self.n_obj - i - 1
+                f *= np.sin(theta[:, idx])
+            F[:, i] = f
+
+        F_res = (1.0 + g[:, None]) * F
+        if "F" in out and out["F"] is not None:
+            out["F"][:] = F_res
+        else:
+            out["F"] = F_res
+
+
 class DTLZ7Problem(DTLZBase):
     """DTLZ7: Problem with disconnected Pareto-optimal regions."""
 

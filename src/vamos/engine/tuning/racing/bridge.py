@@ -32,9 +32,9 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
         Int("pop_size", 20, 200, log=True),
         Int("offspring_size", 20, 200, log=True),
         Categorical("crossover", ["sbx", "blx_alpha"]),
-        Real("crossover_prob", 0.6, 0.95),
+        Real("crossover_prob", 0.6, 1.0),
         Categorical("mutation", ["pm", "non_uniform"]),
-        Real("mutation_prob", 0.01, 0.5),
+        Real("mutation_prob_factor", 0.5, 3.0),
         Real("mutation_eta", 5.0, 40.0),
         Categorical("selection", ["tournament"]),
         Int("selection_pressure", 2, 4),
@@ -158,7 +158,10 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
             cross_params["alpha"] = float(assignment.get("crossover_alpha", 0.5))
         builder.crossover(cross, **cross_params)
         mut = assignment["mutation"]
-        mut_params = {"prob": float(assignment["mutation_prob"])}
+        mut_factor = assignment.get("mutation_prob_factor")
+        mut_params = {"prob": float(assignment.get("mutation_prob", 0.1))}
+        if mut_factor is not None:
+            builder.mutation_prob_factor(float(mut_factor))
         if mut == "pm":
             mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
         builder.mutation(mut, **mut_params)

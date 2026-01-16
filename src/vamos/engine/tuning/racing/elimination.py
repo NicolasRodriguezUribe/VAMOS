@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -127,7 +128,13 @@ def eliminate_configs(configs: list[ConfigState], *, task: TuningTask, scenario:
             # friedmanchisquare takes arguments as *samples
             # each sample is an array of measurements for one subject (here config)
             # We must pass rows of the score matrix
-            stat, p_friedman = friedmanchisquare(*[scores[i, :] for i in range(scores.shape[0])])
+            with warnings.catch_warnings():
+                # SciPy may emit RuntimeWarning for degenerate tie-correction cases.
+                # In that case the p-value can become NaN; treat it as "test not applicable".
+                warnings.simplefilter("ignore", RuntimeWarning)
+                stat, p_friedman = friedmanchisquare(*[scores[i, :] for i in range(scores.shape[0])])
+            if not np.isfinite(p_friedman):
+                raise ValueError("Friedman test produced non-finite p-value.")
 
             # If p-value is high, we cannot reject the null hypothesis that all configs are equivalent.
             # Thus, we should NOT eliminate anyone yet.
