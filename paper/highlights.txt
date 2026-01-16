@@ -1,0 +1,5 @@
+Vectorized MOEA core with pluggable NumPy/Numba/C/JAX kernels.
+Cross-framework benchmarking with semantic configuration alignment.
+Order-of-magnitude runtime gains with competitive normalized hypervolume.
+Adaptive modules: bandit-based operator selection and racing-based tuning.
+Reproducible pipeline with fixed reference fronts for normalized HV.

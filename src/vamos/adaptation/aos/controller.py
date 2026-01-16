@@ -103,7 +103,7 @@ class AOSController:
     def observe_nd_insertions(self, op_id: str, n: int) -> None:
         self._add_count(self._gen_nd_insertions, op_id, n)
 
-    def finalize_generation(self, step: int, evals: int | None = None) -> list[TraceRow]:
+    def finalize_generation(self, step: int, evals: int | None = None, hv_delta_rate: float = 0.0) -> list[TraceRow]:
         if self._current_step is None:
             raise RuntimeError("start_generation() must be called before finalize_generation().")
         if int(step) != self._current_step:
@@ -122,7 +122,7 @@ class AOSController:
                 self.config.reward_scope,
                 surv_rate,
                 nd_rate,
-                hv_delta_rate=0.0,
+                hv_delta_rate=float(hv_delta_rate),
                 weights=self.config.reward_weights,
             )
             reward_by_arm[idx] = summary

@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from src.vamos.engine.tuning.racing.stats import select_configs_by_paired_test
 from src.vamos.engine.tuning.racing.elimination import eliminate_configs
 from src.vamos.engine.tuning.racing.state import ConfigState
@@ -186,3 +187,37 @@ def test_friedman_precheck_allows_elimination():
     assert eliminated is True
     assert not c2.alive  # Bad one should die
     assert c1.alive  # Good one stays
+
+
+def test_friedman_precheck_suppresses_degenerate_runtime_warning():
+    """
+    Degenerate cases with complete ties can trigger RuntimeWarning in SciPy's
+    Friedman test implementation (e.g., tie-correction divide by zero). Ensure
+    we suppress it and proceed without failing.
+    """
+    pytest.importorskip("scipy")
+
+    # Three configs with identical scores across blocks => complete ties.
+    scores = [0.0] * 10
+
+    c1 = ConfigState(0, {}, True)
+    c1.scores = list(scores)
+    c2 = ConfigState(1, {}, True)
+    c2.scores = list(scores)
+    c3 = ConfigState(2, {}, True)
+    c3.scores = list(scores)
+
+    configs = [c1, c2, c3]
+    task = MockTask(maximize=True)
+    scenario = MockScenario()
+
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        eliminated = eliminate_configs(configs, task=task, scenario=scenario)
+
+    assert eliminated is False
+    assert c1.alive
+    assert c2.alive
+    assert c3.alive

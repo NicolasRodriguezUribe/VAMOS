@@ -15,7 +15,7 @@ REF_EPS = 1e-6
 REF_MODE = os.environ.get("VAMOS_HV_REF_MODE", "pf").strip().lower()
 
 _ZDT_N_VAR = {"zdt1": 30, "zdt2": 30, "zdt3": 30, "zdt4": 10, "zdt6": 10}
-_DTLZ_N_VAR = {"dtlz1": 7, "dtlz2": 12, "dtlz3": 12, "dtlz4": 12, "dtlz7": 22}
+_DTLZ_N_VAR = {"dtlz1": 7, "dtlz2": 12, "dtlz3": 12, "dtlz4": 12, "dtlz5": 12, "dtlz6": 12, "dtlz7": 22}
 _DTLZ_N_OBJ = 3
 
 
@@ -45,7 +45,7 @@ def _bounds_reference_point(problem_name: str) -> np.ndarray:
         g_max = 225.0 * k
         f_max = 0.5 * (1.0 + g_max)
         return np.full(_DTLZ_N_OBJ, f_max * 1.1, dtype=float)
-    if name in {"dtlz2", "dtlz4"}:
+    if name in {"dtlz2", "dtlz4", "dtlz5"}:
         k = _DTLZ_N_VAR[name] - _DTLZ_N_OBJ + 1
         g_max = 0.25 * k
         f_max = 1.0 + g_max
@@ -53,6 +53,11 @@ def _bounds_reference_point(problem_name: str) -> np.ndarray:
     if name == "dtlz3":
         k = _DTLZ_N_VAR[name] - _DTLZ_N_OBJ + 1
         g_max = 225.0 * k
+        f_max = 1.0 + g_max
+        return np.full(_DTLZ_N_OBJ, f_max * 1.1, dtype=float)
+    if name == "dtlz6":
+        k = _DTLZ_N_VAR[name] - _DTLZ_N_OBJ + 1
+        g_max = float(k)
         f_max = 1.0 + g_max
         return np.full(_DTLZ_N_OBJ, f_max * 1.1, dtype=float)
     if name == "dtlz7":

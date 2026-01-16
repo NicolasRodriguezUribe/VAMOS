@@ -6,7 +6,7 @@ This script compares execution time across frameworks for solving
 multi-objective optimization problems.
 
 Usage:
-    python benchmark_frameworks.py --problems zdt1 zdt2 dtlz2 --evals 50000 --seeds 5
+    python benchmark_frameworks.py --problems zdt1 zdt2 dtlz2 --evals 100000 --seeds 30
 """
 
 from __future__ import annotations
@@ -234,8 +234,8 @@ def run_benchmarks(
 def main():
     parser = argparse.ArgumentParser(description="Benchmark MOEA frameworks")
     parser.add_argument("--problems", nargs="+", default=["zdt1", "zdt2", "dtlz2"])
-    parser.add_argument("--evals", type=int, default=50000)
-    parser.add_argument("--seeds", type=int, default=5)
+    parser.add_argument("--evals", type=int, default=100000)
+    parser.add_argument("--seeds", type=int, default=30)
     parser.add_argument("--frameworks", nargs="+", default=["vamos-numpy", "vamos-numba", "pymoo", "jmetalpy"])
     parser.add_argument("--output", type=str, default="benchmark_results.csv")
     args = parser.parse_args()

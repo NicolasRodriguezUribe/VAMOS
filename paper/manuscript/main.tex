@@ -1,12 +1,20 @@
 % VAMOS Paper: Swarm and Evolutionary Computation (Elsevier)
 % -----------------------------------------------------------------------------
-% NOTE: Several tables in this manuscript are auto-generated from
-% `experiments/benchmark_paper.csv`:
-%   - `paper/update_paper_tables_from_csv.py` updates runtime tables
-%     (`tab:backends`, `tab:frameworks_perf`, `tab:detailed_backends`,
-%      `tab:detailed_comparison`).
-%   - `paper/run_statistical_tests.py` updates Wilcoxon tables
-%     (`tab:stats_runtime`, `tab:stats_hypervolume`).
+% NOTE: Several tables in this manuscript are auto-generated from CSV artifacts:
+%   - `experiments/benchmark_paper.csv`:
+%       - `paper/04_update_paper_tables_from_csv.py` updates runtime tables
+%         (`tab:backends`, `tab:frameworks_perf`, `tab:detailed_backends`,
+%          `tab:detailed_comparison`).
+%       - `paper/05_run_statistical_tests.py` updates Wilcoxon tables
+%         (`tab:stats_runtime`, `tab:stats_hypervolume`, `tab:hv_equivalence_summary`,
+%          `tab:hv_robustness_summary`, `tab:hv_equivalence_ci`).
+%   - `experiments/ablation_aos_racing_tuner.csv`:
+%       - `paper/06_update_ablation_tables_from_csv.py` updates ablation tables
+%         (`tab:ablation_runtime`, `tab:ablation_hypervolume`).
+%   - `experiments/scaling_vectorization.csv`:
+%       - `paper/07_update_scaling_tables_from_csv.py` updates scaling tables
+%         (`tab:scaling_pop_speedup`, `tab:scaling_obj_speedup`, `tab:numba_jit_warm`,
+%          `tab:numba_jit_cold`).
 % -----------------------------------------------------------------------------
 \documentclass[preprint,12pt]{elsarticle}
 
@@ -61,6 +69,14 @@
 Python has become the de facto platform for empirical studies in multi-objective optimization, yet most multi-objective evolutionary algorithm (MOEA) libraries remain dominated by object-oriented designs that incur substantial interpreter overhead in the inner loop. We introduce \VAMOS{} (Vectorized Architecture for Multiobjective Optimization Studies), a research-oriented framework that represents populations as contiguous numerical arrays and factors algorithmic logic from numerical kernels. \VAMOS{} provides interchangeable compute backends (NumPy, Numba JIT, and optional C/JAX accelerators), a unified configuration API, and nine MOEAs (NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, and RVEA). Two adaptive modules complement the core algorithms: (i) an irace-inspired racing tuner with optional multi-fidelity (Hyperband-style) warm-starting, and (ii) bandit-based adaptive operator selection for configurable operator portfolios. We also release a reproducible benchmarking pipeline that aligns problem definitions and operator settings across common Python frameworks and reports runtime and \emph{normalized} hypervolume computed with fixed reference Pareto fronts. Across the ZDT, DTLZ, and WFG suites, \VAMOS{} achieves up to an order-of-magnitude reduction in runtime relative to established libraries while maintaining competitive solution quality.
 \end{abstract}
 
+\begin{highlights}
+\item Vectorized MOEA core with pluggable NumPy/Numba/C/JAX kernels.
+\item Cross-framework benchmarking with semantic configuration alignment.
+\item Order-of-magnitude runtime gains with competitive normalized hypervolume.
+\item Adaptive modules: bandit-based operator selection and racing-based tuning.
+\item Reproducible pipeline with fixed reference fronts for normalized HV.
+\end{highlights}
+
 \begin{keyword}
 Multi-objective optimization \sep Evolutionary algorithms \sep Benchmarking \sep Hypervolume \sep Python framework \sep Vectorization
 \end{keyword}
@@ -86,6 +102,15 @@ The contributions of this work are:
   \item \textbf{Reproducible benchmarking}: a pipeline that aligns cross-framework configurations and computes \emph{normalized} hypervolume against fixed reference Pareto fronts distributed with the repository.
 \end{enumerate}
 
+Figure~\ref{fig:at_glance} summarizes the high-level architecture, execution backends, and experimental pipeline that structure the remainder of the paper.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/AT_GLANCE.png}
+  \caption{\VAMOS{} at a glance: architecture layers, execution backends, benchmark pipeline, and main experimental artifacts.}
+  \label{fig:at_glance}
+\end{figure}
+
 %==============================================================================
 \section{Related Work}
 \label{sec:related}
@@ -93,7 +118,7 @@ The contributions of this work are:
 
 \subsection{Python MOEA frameworks}
 
-Several mature Python libraries exist for MOEAs. \textbf{pymoo}~\cite{blank2020pymoo} provides a rich collection of algorithms and operators with an emphasis on modularity. \textbf{DEAP}~\cite{fortin2012deap} is a general evolutionary computation toolkit; while flexible, users typically assemble MOEAs manually. \textbf{jMetalPy}~\cite{benitez2019jmetalpy} ports the jMetal architecture to Python and emphasizes end-to-end experimentation (observer-driven progress/visualization, a ``laboratory'' workflow, and built-in statistical post-processing with LaTeX export), but it relies on object-centric representations and does not address cross-toolkit semantic drift. We build upon this methodological focus on rigorous experimental studies and complement it with an array-based execution model and a fairness-oriented benchmarking protocol that aligns problem definitions and operator semantics across toolkits. \textbf{Platypus}~\cite{hadka2015platypus} provides a lightweight API and a set of classic MOEAs.
+Several mature Python libraries exist for MOEAs. \textbf{pymoo}~\cite{blank2020pymoo} provides a rich collection of algorithms and operators with an emphasis on modularity. \textbf{DEAP}~\cite{fortin2012deap} is a general evolutionary computation toolkit; while flexible, users typically assemble MOEAs manually. \textbf{jMetalPy}~\cite{benitez2019jmetalpy} ports the jMetal architecture to Python and emphasizes end-to-end experimentation (observer-driven progress/visualization, a ``laboratory'' workflow, and built-in statistical post-processing with LaTeX export). It additionally offers modules for constrained, dynamic, and preference-based variants, as well as parallel evaluation via Spark/Dask. However, it relies on object-centric representations and does not address cross-toolkit semantic drift. We build upon this methodological focus on rigorous experimental studies and complement it with an array-based execution model and a fairness-oriented benchmarking protocol that aligns problem definitions and operator semantics across toolkits. \textbf{Platypus}~\cite{hadka2015platypus} provides a lightweight API and a set of classic MOEAs.
 
 Table~\ref{tab:frameworks} summarizes high-level differences relevant to this work. The main distinction is the internal representation: \VAMOS{} consistently uses dense arrays for populations and objectives, while most alternatives operate on per-solution objects. This difference enables kernel-based acceleration and reduces Python overhead in the inner loop.
 
@@ -101,27 +126,35 @@ Table~\ref{tab:frameworks} summarizes high-level differences relevant to this wo
 \centering
 \caption{Comparison of Python multi-objective optimization frameworks (high-level capabilities).}
 \label{tab:frameworks}
-\small
+{\scriptsize
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Framework} & \textbf{MOEAs} & \textbf{Array-based core} & \textbf{Accelerated kernels} & \textbf{Auto-config} & \textbf{AOS} \\
+\textbf{Framework} & \textbf{MOEAs} & \textbf{Array core} & \textbf{Accel. kernels} & \textbf{Auto-conf.} & \textbf{AOS} \\
 \midrule
 pymoo~\cite{blank2020pymoo} & 8+ & Partial & No & No & No \\
 DEAP~\cite{fortin2012deap} & Custom & No & No & No & No \\
-jMetalPy~\cite{benitez2019jmetalpy} & 11+ & No & No & No & Limited \\
+jMetalPy~\cite{benitez2019jmetalpy} & 11+ & No & No & No & No \\
 Platypus~\cite{hadka2015platypus} & 8+ & No & No & No & No \\
 \VAMOS{} & 9 & Yes & Numba/C/JAX & Yes & Yes \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \subsection{Automatic algorithm configuration}
 
-Automatic algorithm configuration (AAC) aims to select hyperparameters that maximize performance on a target distribution of instances. irace~\cite{lopez2016irace} popularized iterated racing with non-parametric tests to discard poorly performing configurations early. Multi-fidelity methods such as successive halving and Hyperband evaluate many configurations with small budgets before promoting a subset to larger budgets, improving sample efficiency. \VAMOS{} combines racing with optional multi-fidelity evaluation and warm-start checkpoints to reduce redundant computation between fidelity levels.
+Automatic algorithm configuration (AAC), also known as algorithm configuration or hyperparameter optimization, seeks a parameter vector $\theta \in \Theta$ that optimizes expected performance on a target distribution of problem instances and random seeds. In evolutionary multi-objective optimization, $\Theta$ typically includes categorical choices (e.g., operator families), continuous parameters (e.g., SBX/PM distribution indices), and budget-related settings (e.g., population size), and performance is commonly defined by a quality indicator under a fixed evaluation budget or by time-to-target.
+
+Because evaluating a configuration requires running a stochastic algorithm, AAC methods aim to allocate most of the budget to promising candidates while discarding clearly inferior ones early. Racing approaches are widely used in evolutionary computation: configurations are evaluated on an increasing number of instance$\times$seed blocks and are progressively eliminated using non-parametric tests. irace~\cite{lopez2016irace} popularized \emph{iterated} racing, where new configurations are sampled from adaptive distributions learned around elites across successive iterations.
+
+Multi-fidelity strategies further improve sample efficiency by treating the evaluation budget (number of evaluations, wall-clock time, or problem size) as a fidelity level. Successive halving and Hyperband~\cite{li2017hyperband} evaluate many candidates cheaply and promote only a fraction to larger budgets, yielding strong anytime behavior. \VAMOS{} adopts an irace-inspired racing loop and optionally integrates Hyperband-style promotion; when fidelity is increased, runs can be continued from warm-start checkpoints to reduce redundant computation between levels.
 
 \subsection{Adaptive operator selection}
 
-Adaptive operator selection (AOS) dynamically allocates sampling probability across operators based on online feedback~\cite{fialho2010analyzing}. Bandit-based approaches are attractive because they explicitly manage the exploration--exploitation trade-off and can be implemented with minimal assumptions. \VAMOS{} provides a portfolio-driven AOS interface and integrates bandit policies into NSGA-II, using reward signals derived from survival and non-dominated insertions.
+Adaptive operator selection (AOS) addresses the complementary problem of \emph{online} adaptation: instead of selecting a single static configuration $\theta$ before a run, the algorithm chooses among a set of operators while the search progresses. AOS mechanisms are typically characterized by (i) an operator pool, (ii) a credit assignment scheme that maps an operator application to a reward signal, and (iii) a selection policy that updates operator probabilities based on accumulated credit.
+
+Multi-armed bandit formulations are popular because they directly manage the exploration--exploitation trade-off and yield simple, robust policies such as $\epsilon$-greedy and UCB variants~\cite{fialho2010analyzing}. In multi-objective settings, rewards cannot rely solely on a single scalar fitness and are often based on inexpensive proxies (e.g., survival, dominance relations, or archive updates) rather than expensive indicators. \VAMOS{} provides a portfolio-driven AOS interface and integrates bandit policies into NSGA-II, using reward signals derived from survival and non-dominated insertions.
 
 %==============================================================================
 \section{VAMOS Framework}
@@ -223,11 +256,52 @@ The framework includes optional external archives (with configurable pruning str
 
 \subsection{Adaptive operator selection (AOS)}
 
-AOS in \VAMOS{} is portfolio-based: users specify an operator pool (e.g., multiple SBX/PM parameterizations) and a bandit method that selects one operator per generation. The NSGA-II integration supports $\epsilon$-greedy, UCB, EXP3, Thompson sampling, and sliding-window UCB~\cite{fialho2010analyzing}, with an optional exploration floor that mixes uniform sampling. Rewards are computed from survival rate and non-dominated insertions, with support for weighted combinations.
+Adaptive operator selection aims to reduce the need for a single, globally optimal operator setting by adapting variation operators online as the search progresses. In practice, different operators can be beneficial at different stages (e.g., exploration early vs.\ exploitation near convergence) or on different regions of the Pareto front. The goal of \VAMOS{}' AOS module is to provide a lightweight, reproducible mechanism that improves robustness across problems and reduces manual trial-and-error in operator tuning.
+
+In \VAMOS{}, AOS is portfolio-based: users specify an \emph{operator pool} (a finite set of \emph{arms}, where each arm is a crossover--mutation pipeline with fixed hyperparameters) and a \emph{selection policy} that chooses which arm to apply during the run. We model this decision as a non-stationary multi-armed bandit problem and implement several standard policies ($\epsilon$-greedy, UCB variants, EXP3, Thompson sampling, and sliding-window UCB)~\cite{fialho2010analyzing}. To ensure continued exploration and avoid premature lock-in, policies can enforce an exploration floor by mixing learned probabilities with uniform sampling. Importantly, AOS does not modify the operator implementations themselves; it only changes \emph{which} predefined operator pipeline is applied over time.
+
+In the NSGA-II integration used in this paper, the controller selects one arm per generation and applies it to generate the entire offspring batch for that generation. After survival selection, the chosen arm receives credit based on inexpensive, generation-level signals. The default signals are (i) the offspring survival rate and (ii) the rate of non-dominated insertions; optionally, a small hypervolume-change term can be included when it is cheap to compute (two objectives). These rewards update the policy and thereby the arm-selection probabilities for subsequent generations. This design keeps the AOS overhead small relative to the variation and survival kernels and avoids dependence on expensive indicators in the inner loop.
+
+\begin{algorithm}[htbp]
+\caption{Adaptive operator selection loop (NSGA-II integration in \VAMOS{}).}
+\label{alg:aos}
+\begin{algorithmic}[1]
+\Require Operator pool (arms) $\mathcal{A}=\{a_1,\dots,a_K\}$, bandit policy $\pi$, reward weights $w=(w_s,w_d,w_h)$
+\State Initialize population $(X,F)$
+\For{generation $t=0,1,\dots$ until termination}
+  \State Select arm $a_t \gets \pi.\textsc{SelectArm}()$
+  \State Generate offspring using $a_t$: $(X',F') \gets \textsc{VariationAndEvaluate}(X; a_t)$
+  \State Survival selection: $(X,F) \gets \textsc{NSGA2Survival}((X,F),(X',F'))$
+  \State Credit signals: $s_t \gets \#\text{offspring survivors}/\#\text{offspring}$, $d_t \gets \#\text{offspring in ND}/\#\text{offspring}$
+  \State Optional indicator proxy (two objectives): $h_t \gets \textsc{Normalize}(\Delta \HV)$; otherwise $h_t \gets 0$
+  \State Aggregate reward: $r_t \gets w_s s_t + w_d d_t + w_h h_t$ \Comment{$r_t$ clipped to $[0,1]$}
+  \State Update policy: $\pi.\textsc{Update}(a_t, r_t)$
+\EndFor
+\State \Return final population (and derived non-dominated set)
+\end{algorithmic}
+\end{algorithm}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/AOS.png}
+  \caption{Adaptive operator selection (AOS) in \VAMOS{}. Each arm corresponds to a predefined crossover--mutation pipeline; the bandit policy selects an arm each generation, applies it to generate offspring, and updates its selection probabilities using reward feedback. Reward components can combine survival and non-dominated insertion rates and an optional hypervolume-change proxy when inexpensive (two objectives), e.g., $r=w_s\,\text{survival}+w_d\,\text{ND-insertions}+w_h\,\Delta \HV$.}
+  \label{fig:aos}
+\end{figure}
 
 \subsection{Racing-based hyperparameter tuning}
 
-\VAMOS{} provides an irace-inspired racing tuner~\cite{lopez2016irace} for automatic algorithm configuration. Candidates are evaluated across instances and seeds; underperforming configurations are eliminated as evidence accumulates. At each fidelity level we evaluate all remaining configurations on the same instance $\times$ seed blocks, and promotions are based on scores from the current level only. For sample efficiency, the tuner optionally uses a multi-fidelity strategy (Hyperband-style successive halving~\cite{li2017hyperband}) and can pass warm-start checkpoints between fidelity levels to reuse computation.
+Automatic algorithm configuration targets the complementary \emph{offline} problem: before running an algorithm at scale, select a configuration $\theta$ (operator families and their parameters, population size, and other hyperparameters) that performs well on a representative set of problem instances. The goal of \VAMOS{}' racing tuner is to make this process reproducible and sample-efficient by concentrating evaluations on promising configurations while quickly discarding clearly inferior ones.
+
+\VAMOS{} provides an irace-inspired racing tuner~\cite{lopez2016irace} that iteratively samples candidate configurations and evaluates them across instance$\times$seed blocks. Racing proceeds in rounds: all surviving candidates are evaluated on the same additional blocks, and statistical elimination is used to remove candidates whose performance is consistently worse than the current elites. Using common blocks yields paired comparisons and reduces variance from stochasticity. The output is the best configuration under the chosen performance metric (e.g., normalized hypervolume under a fixed evaluation budget), along with a full evaluation history suitable for audit and reporting.
+
+For sample efficiency, the tuner optionally supports a multi-fidelity strategy (Hyperband-style successive halving~\cite{li2017hyperband}) by treating the evaluation budget as a fidelity level. Candidates are first evaluated at low budgets; only the top fraction is promoted to higher budgets. When fidelity increases, \VAMOS{} can warm-start from checkpoints of lower-fidelity runs, reusing partial trajectories instead of restarting from scratch. Figure~\ref{fig:racing_tuner} summarizes the workflow.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/RACING.png}
+  \caption{Racing-based hyperparameter tuning in \VAMOS{}: sample candidate configurations, evaluate them on instance$\times$seed blocks, eliminate underperformers via racing, optionally promote survivors to higher budgets (with warm-start checkpoints), and output the best configuration and a complete history.}
+  \label{fig:racing_tuner}
+\end{figure}
 
 %==============================================================================
 \section{Experimental Evaluation}
@@ -236,7 +310,16 @@ AOS in \VAMOS{} is portfolio-based: users specify an operator pool (e.g., multip
 
 \subsection{Benchmark suite and configuration alignment}
 
-We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives), DTLZ1--4 and DTLZ7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2/3/4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$). Non-standard DTLZ dimensionalities are permitted but explicitly flagged to avoid accidental comparisons against canonical settings.
+We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives), DTLZ1--7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2/3/4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$). Non-standard DTLZ dimensionalities are permitted but explicitly flagged to avoid accidental comparisons against canonical settings.
+
+Figure~\ref{fig:protocol} summarizes the benchmark protocol and semantic-alignment workflow used to ensure cross-framework fairness and to support the ``same quality, faster'' claim.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/PROTOCOL.png}
+  \caption{Benchmark protocol and semantic alignment: map equivalent NSGA-II settings across frameworks, validate objective definitions by sampling decision vectors within bounds, run independent seeds under a fixed evaluation budget, compute normalized hypervolume using fixed reference fronts, and apply corrected statistical analysis (Holm, equivalence, robustness).}
+  \label{fig:protocol}
+\end{figure}
 
 To ensure comparability across frameworks, we standardize the algorithmic settings of NSGA-II: population size $N=100$, SBX crossover probability $p_c=1.0$ and distribution index $\eta_c=20$, polynomial mutation distribution index $\eta_m=20$ and mutation probability $p_m=1/n$, tournament selection, and rank--crowding survival. For each framework we map these settings to the closest available implementation.
 
@@ -244,11 +327,51 @@ This workflow follows standard practice in comparative MOEA studies (independent
 
 Crucially, we align \emph{semantics} (not only parameter names) and enforce consistent benchmark definitions. Two examples illustrate why this matters. First, in \textbf{pymoo} the polynomial mutation operator exposes both an individual-level probability (\texttt{prob}) and a per-variable probability (\texttt{prob\_var}); to match the standard ``$p_m=1/n$ per decision variable'' setting used by DEAP/jMetalPy, we set \texttt{prob}=1 and \texttt{prob\_var}=1/n. Second, some libraries ship benchmark problems under canonical names but with library-specific domains; for instance, Platypus' built-in ZDT base class uses $[0,1]^n$, whereas ZDT4 is defined with $x_1\in[0,1]$ and $x_{2..n}\in[-5,5]$.
 
-Therefore, for toolkits or APIs where problem definitions differ (notably DEAP and Platypus for ZDT4), we evaluate individuals using a shared reference implementation of the benchmark function and bounds (validated against pymoo) while still using each framework's NSGA-II implementation and operators. For WFG in Platypus we similarly wrap pymoo's WFG definitions to avoid definition drift. While full equivalence cannot be guaranteed due to framework-specific details (tie-breaking, boundary handling, duplicate elimination, etc.), these choices aim to make the comparison as fair as possible by removing confounders unrelated to algorithmic overhead and numerical kernels.
+Therefore, for toolkits or APIs where problem definitions differ (notably DEAP and Platypus for ZDT4), we evaluate individuals using a shared reference implementation of the benchmark function and bounds (validated against pymoo) while still using each framework's NSGA-II implementation and operators. For WFG we adopt pymoo's canonical parameterization for two objectives ($k=4$, $l=20$ for $n=24$) and pass parameters explicitly when a toolkit exposes different defaults; in Platypus we wrap pymoo's WFG definitions to avoid definition drift. While full equivalence cannot be guaranteed due to framework-specific details (tie-breaking, boundary handling, duplicate elimination, etc.), these choices aim to make the comparison as fair as possible by removing confounders unrelated to algorithmic overhead and numerical kernels.
+
+As an additional validity check, we sample 64 random decision vectors per problem uniformly within the specified bounds and verify that objective values match across implementations within a numerical tolerance ($\mathrm{rtol}=10^{-6}$, $\mathrm{atol}=10^{-8}$). This guards against silent benchmark-definition drift (e.g., differing domains or parameterizations) that could invalidate hypervolume comparisons.
 
 \subsection{Runtime measurement}
 
 All runtimes are measured wall-clock using high-resolution timers and include algorithm overhead and objective evaluations. We report medians across 30 independent seeds and provide per-problem and per-family summaries.
+
+For Numba-accelerated backends, we distinguish two timing policies. \textbf{Warm} timings exclude JIT compilation by performing a short warmup run in the same process before starting the timer (2{,}000 warmup evaluations; not counted in the reported time). \textbf{Cold} timings measure the first run from a fresh process and therefore include JIT compilation overhead. We report warm timings in the main benchmark tables and summarize warm vs.\ cold behavior for representative problems in Tables~\ref{tab:numba_jit_warm} and~\ref{tab:numba_jit_cold}.
+
+Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H CPU (16 cores, 22 logical processors) and 32\,GB RAM, running Microsoft Windows 11 Home (build 26200). We used Python 3.12.3 and evaluated \VAMOS{} 0.1.0 (NumPy 2.3.5 with OpenBLAS 0.3.30; Numba 0.63.1) against pymoo 0.6.1.6 and DEAP 1.4.3. jMetalPy and Platypus were evaluated from local source checkouts at commits \texttt{fecb85c} and \texttt{fe7aeff}, respectively.
+
+\begin{table}[htbp]
+\centering
+\caption{Numba timing policy (warm): median runtime (seconds) for representative problems, measured after a 2{,}000-evaluation warmup run in the same process (30 seeds; $100{,}000$ evaluations per run). Generated by \texttt{paper/07\_update\_scaling\_tables\_from\_csv.py}.}
+\label{tab:numba_jit_warm}
+\begin{tabular}{l|r}
+\toprule
+\textbf{Problem} & \textbf{Median runtime (s)} \\
+\midrule
+zdt4 & 5.12 \\
+dtlz2 & 5.54 \\
+wfg2 & 5.83 \\
+\midrule
+\textbf{Average} & 5.49 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Numba timing policy (cold): median runtime (seconds) for representative problems, measured from a fresh process (includes JIT compilation; 30 seeds; $100{,}000$ evaluations per run). Generated by \texttt{paper/07\_update\_scaling\_tables\_from\_csv.py}.}
+\label{tab:numba_jit_cold}
+\begin{tabular}{l|r}
+\toprule
+\textbf{Problem} & \textbf{Median runtime (s)} \\
+\midrule
+zdt4 & 6.16 \\
+dtlz2 & 6.44 \\
+wfg2 & 6.94 \\
+\midrule
+\textbf{Average} & 6.51 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Normalized hypervolume protocol}
 \label{sec:hv}
@@ -278,9 +401,53 @@ Table~\ref{tab:backends} reports median runtime for \VAMOS{} backends aggregated
 \toprule
 \textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Numba & \textbf{7.72} & \textbf{6.85} & \textbf{7.91} & \textbf{7.50} \\
-Moocore & 7.80 & 7.79 & 8.08 & 7.89 \\
-Numpy & 13.33 & 13.56 & 13.41 & 13.44 \\
+Numba & \textbf{5.79} & \textbf{5.51} & 7.54 & \textbf{6.28} \\
+MooCore & 6.15 & 5.81 & \textbf{7.42} & 6.46 \\
+NumPy & 10.50 & 10.50 & 12.57 & 11.19 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling study: population size and objectives}
+\label{sec:scaling}
+
+To characterize when array-based acceleration yields the largest gains, we run a scaling study within \VAMOS{} comparing the NumPy and Numba backends under identical NSGA-II settings. In contrast to the cross-framework experiment, this study isolates the effect of the evaluation backend: the problem implementation, operators, and seeding protocol are held constant and only the numerical kernels differ.
+
+For each configuration we perform 30 independent runs with a fixed evaluation budget of $100{,}000$ evaluations. We measure wall-clock time per run and normalize by the evaluation budget to obtain a runtime-per-evaluation $\tau_{b,p,s} = t_{b,p,s} / n_{\text{evals}}$, where $b$ denotes the backend, $p$ the problem, and $s$ the seed. We report speedup as the median across seeds of $\tau_{\text{NumPy}} / \tau_{\text{Numba}}$ (higher is better). For Numba runs we follow the warm timing policy described above (Section~\ref{sec:experiments}), so the reported speedups reflect steady-state throughput rather than one-time JIT compilation overhead.
+
+Table~\ref{tab:scaling_pop_speedup} varies population size on representative problems from the main benchmark suite (\texttt{zdt4}, \texttt{dtlz2}, \texttt{wfg2}). Table~\ref{tab:scaling_obj_speedup} varies the number of objectives on DTLZ2, using the canonical dimensionality $n=m+9$ (with $k=10$) and a population size scaled as $N=25m$.
+
+In the population-scaling study we additionally compute normalized hypervolume at the end of each run as a sanity check that backend changes do not materially affect the solution sets produced under the same seeds. (These values are not tabulated because the backends execute the same algorithmic logic and are expected to yield comparable quality; the primary goal of this study is to quantify where kernel acceleration improves per-evaluation throughput.)
+
+\begin{table}[htbp]
+\centering
+\caption{Scaling study: speedup of \VAMOS{} (Numba) relative to \VAMOS{} (NumPy) as a function of population size (median across seeds; higher is better). Generated by \texttt{paper/07\_update\_scaling\_tables\_from\_csv.py}.}
+\label{tab:scaling_pop_speedup}
+\begin{tabular}{r|rrr|r}
+\toprule
+\textbf{Pop.\ size} & \textbf{zdt4} & \textbf{dtlz2} & \textbf{wfg2} & \textbf{Average} \\
+\midrule
+50 & 1.42 & 1.79 & 1.73 & 1.64 \\
+100 & 2.08 & 1.95 & 1.73 & 1.92 \\
+200 & 3.13 & 2.37 & 2.71 & 2.73 \\
+400 & 4.57 & 4.09 & 4.36 & 4.34 \\
+800 & \textbf{6.88} & \textbf{5.52} & \textbf{6.33} & \textbf{6.24} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Scaling study: speedup of \VAMOS{} (Numba) relative to \VAMOS{} (NumPy) as a function of objectives on DTLZ2 (canonical $n=m+9$; median across seeds; higher is better). Generated by \texttt{paper/07\_update\_scaling\_tables\_from\_csv.py}.}
+\label{tab:scaling_obj_speedup}
+\begin{tabular}{r|rr|r}
+\toprule
+\textbf{$m$} & \textbf{$n$} & \textbf{Pop.\ size} & \textbf{Speedup} \\
+\midrule
+2 & 11 & 50 & 1.63 \\
+3 & 12 & 75 & 1.92 \\
+5 & 14 & 125 & 2.12 \\
+8 & 17 & 200 & \textbf{2.69} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -297,11 +464,11 @@ Table~\ref{tab:frameworks_perf} compares \VAMOS{} against other Python framework
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-VAMOS & \textbf{7.72} & \textbf{6.85} & \textbf{7.91} & \textbf{7.50} \\
-pymoo & 12.04 & 10.87 & 11.33 & 11.41 \\
-DEAP & 38.36 & 42.93 & 76.02 & 52.44 \\
-jMetalPy & 25.82 & 23.80 & 75.05 & 41.56 \\
-Platypus & 50.82 & 40.38 & 84.89 & 58.69 \\
+VAMOS & \textbf{5.79} & \textbf{5.51} & \textbf{7.54} & \textbf{6.28} \\
+pymoo & 7.09 & 7.57 & 7.99 & 7.55 \\
+DEAP & 34.69 & 37.70 & 71.36 & 47.92 \\
+jMetalPy & 28.71 & 26.43 & 71.53 & 42.22 \\
+Platypus & 48.07 & 50.43 & 84.09 & 60.87 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -311,64 +478,144 @@ Platypus & 50.82 & 40.38 & 84.89 & 58.69 \\
 
 We use the Wilcoxon signed-rank test~\cite{wilcoxon1945} at significance level $\alpha=0.05$ to compare paired performance distributions across seeds, per problem. Runtime is treated as a \emph{minimization} metric, and normalized hypervolume as a \emph{maximization} metric. While jMetalPy~\cite{benitez2019jmetalpy} illustrates both frequentist and Bayesian statistical workflows (and exemplifies Wilcoxon rank-sum tests in a multi-algorithm setting), our design is explicitly paired by construction (shared seeds), so we report the signed-rank variant as a minimal, widely used test under this protocol.
 
+Because we perform per-problem hypothesis tests, we apply Holm's step-down correction to control the family-wise error rate over the set of comparisons in each table. To support a stronger ``same quality'' claim (as opposed to merely ``no significant difference''), we additionally perform equivalence testing for normalized hypervolume using a practical margin of $\pm 1\%$ relative difference. We estimate 90\% confidence intervals for the paired relative HV difference via bootstrap resampling of seeds; equivalence is declared when the confidence interval lies entirely within the margin. Finally, we report robustness using the interquartile range (IQR) and the fraction of seeds reaching a near-best threshold, defined per problem as $0.99$ times the best median HV observed among frameworks.
+
 \begin{table}[htbp]
 \centering
-\caption{Runtime comparison with Wilcoxon signed-rank test results.}
+\caption{Runtime comparison with Wilcoxon signed-rank test results (Holm-corrected).}
 \label{tab:stats_runtime}
 \begin{tabular}{l|rr|r|l}
 \toprule
 \textbf{Problem} & \textbf{VAMOS (numba)} & \textbf{pymoo} & \textbf{p-value} & \textbf{Sig.} \\
 \midrule
-zdt1 & \textbf{7.47} & 12.49 & 0.0000 & $\checkmark$ \\
-zdt2 & \textbf{6.99} & 10.36 & 0.0000 & $\checkmark$ \\
-zdt3 & \textbf{7.98} & 12.39 & 0.0000 & $\checkmark$ \\
-zdt4 & \textbf{8.05} & 12.59 & 0.0000 & $\checkmark$ \\
-zdt6 & \textbf{7.60} & 16.02 & 0.0000 & $\checkmark$ \\
-dtlz1 & \textbf{7.86} & 11.51 & 0.0000 & $\checkmark$ \\
-dtlz2 & \textbf{7.56} & 12.00 & 0.0000 & $\checkmark$ \\
-dtlz3 & \textbf{5.60} & 9.86 & 0.0000 & $\checkmark$ \\
-dtlz4 & \textbf{6.09} & 10.97 & 0.0000 & $\checkmark$ \\
-dtlz7 & \textbf{6.07} & 8.76 & 0.0000 & $\checkmark$ \\
-wfg1 & \textbf{6.96} & 9.47 & 0.0000 & $\checkmark$ \\
-wfg2 & \textbf{6.92} & 9.26 & 0.0000 & $\checkmark$ \\
-wfg3 & \textbf{7.95} & 11.85 & 0.0000 & $\checkmark$ \\
-wfg4 & \textbf{7.52} & 10.42 & 0.0000 & $\checkmark$ \\
-wfg5 & \textbf{6.48} & 9.07 & 0.0000 & $\checkmark$ \\
-wfg6 & \textbf{7.56} & 10.08 & 0.0000 & $\checkmark$ \\
-wfg7 & \textbf{8.06} & 9.11 & 0.0000 & $\checkmark$ \\
-wfg8 & \textbf{8.33} & 12.89 & 0.0000 & $\checkmark$ \\
-wfg9 & \textbf{9.38} & 11.87 & 0.0000 & $\checkmark$ \\
+zdt1 & \textbf{5.88} & 6.58 & <0.0001 & $\checkmark$ \\
+zdt2 & \textbf{5.94} & 6.88 & <0.0001 & $\checkmark$ \\
+zdt3 & \textbf{5.51} & 8.06 & <0.0001 & $\checkmark$ \\
+zdt4 & \textbf{5.10} & 6.58 & 0.001 & $\checkmark$ \\
+zdt6 & \textbf{6.57} & 12.47 & <0.0001 & $\checkmark$ \\
+dtlz1 & \textbf{5.22} & 6.45 & 0.001 & $\checkmark$ \\
+dtlz2 & \textbf{5.46} & 6.86 & <0.0001 & $\checkmark$ \\
+dtlz3 & \textbf{5.40} & 6.64 & 0.001 & $\checkmark$ \\
+dtlz4 & \textbf{5.77} & 8.80 & 0.000 & $\checkmark$ \\
+dtlz5 & \textbf{6.10} & 7.47 & 0.000 & $\checkmark$ \\
+dtlz6 & \textbf{5.66} & 8.21 & <0.0001 & $\checkmark$ \\
+dtlz7 & \textbf{5.63} & 6.49 & 0.009 & $\checkmark$ \\
+wfg1 & \textbf{6.20} & 7.33 & 0.004 & $\checkmark$ \\
+wfg2 & 7.63 & \textbf{6.95} & 0.104 &  \\
+wfg3 & 7.44 & \textbf{7.03} & 0.104 &  \\
+wfg4 & \textbf{6.75} & 8.48 & 0.003 & $\checkmark$ \\
+wfg5 & \textbf{7.33} & 8.63 & 0.015 & $\checkmark$ \\
+wfg6 & \textbf{6.61} & 7.56 & 0.000 & $\checkmark$ \\
+wfg7 & 7.58 & \textbf{6.67} & 0.299 &  \\
+wfg8 & \textbf{7.63} & 7.82 & 0.027 & $\checkmark$ \\
+wfg9 & 10.02 & \textbf{9.60} & 0.025 & $\checkmark$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\caption{Normalized hypervolume comparison with Wilcoxon signed-rank test results.}
+\caption{Normalized hypervolume comparison with Wilcoxon signed-rank test results (Holm-corrected).}
 \label{tab:stats_hypervolume}
 \begin{tabular}{l|rr|r|l}
 \toprule
 \textbf{Problem} & \textbf{VAMOS (numba)} & \textbf{pymoo} & \textbf{p-value} & \textbf{Sig.} \\
 \midrule
-zdt1 & 0.99 & \textbf{0.99} & 0.005 & $\checkmark$ \\
-zdt2 & 0.98 & \textbf{0.98} & 0.036 & $\checkmark$ \\
-zdt3 & 1.00 & \textbf{1.00} & 0.001 & $\checkmark$ \\
-zdt4 & 0.99 & \textbf{0.99} & 0.129 &  \\
-zdt6 & 0.98 & \textbf{0.98} & 0.0000 & $\checkmark$ \\
-dtlz1 & \textbf{0.92} & 0.91 & 0.404 &  \\
-dtlz2 & 0.79 & \textbf{0.79} & 0.146 &  \\
-dtlz3 & 0.79 & \textbf{0.79} & 0.584 &  \\
-dtlz4 & 0.79 & \textbf{0.80} & 0.012 & $\checkmark$ \\
-dtlz7 & \textbf{0.89} & 0.88 & 0.871 &  \\
-wfg1 & 0.59 & \textbf{0.62} & 0.158 &  \\
-wfg2 & 0.99 & \textbf{0.99} & 0.213 &  \\
-wfg3 & \textbf{0.98} & 0.98 & 0.871 &  \\
-wfg4 & 0.97 & \textbf{0.97} & 0.004 & $\checkmark$ \\
-wfg5 & 0.83 & \textbf{0.83} & 0.020 & $\checkmark$ \\
-wfg6 & 0.84 & \textbf{0.85} & 0.073 &  \\
-wfg7 & 0.97 & \textbf{0.97} & 0.100 &  \\
-wfg8 & 0.76 & \textbf{0.76} & 0.221 &  \\
-wfg9 & \textbf{0.81} & 0.71 & 0.205 &  \\
+zdt1 & \textbf{0.991} & 0.991 & 1.000 &  \\
+zdt2 & \textbf{0.982} & 0.982 & 1.000 &  \\
+zdt3 & \textbf{0.996} & 0.996 & 1.000 &  \\
+zdt4 & 0.991 & \textbf{0.991} & 1.000 &  \\
+zdt6 & 0.981 & \textbf{0.983} & <0.0001 & $\checkmark$ \\
+dtlz1 & 0.916 & \textbf{0.916} & 1.000 &  \\
+dtlz2 & \textbf{0.789} & 0.788 & 1.000 &  \\
+dtlz3 & \textbf{0.795} & 0.787 & 0.471 &  \\
+dtlz4 & 0.794 & \textbf{0.797} & 1.000 &  \\
+dtlz5 & \textbf{0.964} & 0.964 & 1.000 &  \\
+dtlz6 & \textbf{0.547} & 0.514 & 1.000 &  \\
+dtlz7 & 0.882 & \textbf{0.891} & 0.142 &  \\
+wfg1 & 0.616 & \textbf{0.629} & 1.000 &  \\
+wfg2 & 0.985 & \textbf{0.986} & 1.000 &  \\
+wfg3 & \textbf{0.978} & 0.978 & 1.000 &  \\
+wfg4 & 0.966 & \textbf{0.967} & 1.000 &  \\
+wfg5 & 0.827 & \textbf{0.827} & 1.000 &  \\
+wfg6 & 0.841 & \textbf{0.850} & 1.000 &  \\
+wfg7 & 0.969 & \textbf{0.970} & 0.729 &  \\
+wfg8 & 0.755 & \textbf{0.755} & 1.000 &  \\
+wfg9 & \textbf{0.938} & 0.714 & 1.000 &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Normalized hypervolume equivalence summary (paired bootstrap 90\% CI; equivalence margin $\pm 1\%$ relative). Generated by \texttt{paper/05\_run\_statistical\_tests.py}.}
+\label{tab:hv_equivalence_summary}
+\begin{tabular}{l|rrr}
+\toprule
+\textbf{Framework} & \textbf{Eq.\ problems} & \textbf{Non-inf.\ problems} & \textbf{Median $\Delta$HV (\%)} \\
+\midrule
+pymoo & 13/21 & 15/21 & -0.05 \\
+DEAP & 13/21 & 15/21 & -0.01 \\
+jMetalPy & 16/21 & 16/21 & -0.01 \\
+Platypus & 13/21 & 16/21 & -0.10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Robustness summary for normalized hypervolume across seeds (median across problems). ``Near-best'' is defined per problem as HV $\ge 0.99 \cdot \max$ median(HV) among frameworks. Generated by \texttt{paper/05\_run\_statistical\_tests.py}.}
+\label{tab:hv_robustness_summary}
+\begin{tabular}{l|rr}
+\toprule
+\textbf{Framework} & \textbf{Median IQR(HV)} & \textbf{Median \% seeds near-best} \\
+\midrule
+VAMOS (numba) & 0.003 & 93.3 \\
+pymoo & 0.003 & 100.0 \\
+DEAP & 0.003 & 100.0 \\
+jMetalPy & 0.004 & 86.7 \\
+Platypus & 0.003 & 100.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: AOS and racing tuner}
+\label{sec:ablation}
+
+To evaluate the practical impact of \VAMOS{}' optional adaptation modules beyond the cross-framework baseline, we run an internal ablation study on the same benchmark suite and evaluation budgets as the runtime experiments. We compare three \VAMOS{} variants of NSGA-II:
+\begin{enumerate}
+  \item \textbf{Baseline}: the fixed-operator configuration used in the cross-framework benchmark (SBX crossover and polynomial mutation).
+  \item \textbf{Baseline + AOS}: the same configuration augmented with adaptive operator selection (AOS), where an $\epsilon$-greedy bandit selects between a small portfolio of real-coded variation pipelines (SBX+PM vs.\ BLX-$\alpha$+PM). Rewards combine survival and non-dominated insertion rates with a lightweight per-generation hypervolume-change term (computed for two-objective problems only) to reduce the risk of selecting operators that improve selection statistics while degrading Pareto-front quality.
+  \item \textbf{Racing-tuned}: a single tuned NSGA-II configuration obtained by the racing tuner on a broader training set (\texttt{zdt4}, \texttt{zdt6}, \texttt{dtlz2}, \texttt{dtlz6}, \texttt{dtlz7}, \texttt{wfg1}, \texttt{wfg9}) using multi-fidelity racing up to the full evaluation budget (20k $\rightarrow$ 60k $\rightarrow$ 100k evaluations). The search space is constrained to enforce $\texttt{pop\_size}\ge 100$ and $\texttt{offspring\_size}=\texttt{pop\_size}$, and uses a dimension-normalized mutation probability factor for better cross-problem transfer. To reduce variance, we tune on 10 training seeds and repeat the entire race 5 times with different tuner seeds, selecting a single configuration by the final-fidelity score and evaluating it on the full benchmark suite without per-problem re-tuning.
+\end{enumerate}
+All variants are evaluated for 30 independent seeds and reported using the same normalized hypervolume protocol (Section~\ref{sec:hv}) and wall-clock runtime measurement setup. Tables~\ref{tab:ablation_runtime} and~\ref{tab:ablation_hypervolume} summarize the ablation outcomes aggregated by benchmark family.
+
+\begin{table}[htbp]
+\centering
+\caption{Ablation study: median runtime (seconds) by problem family for \VAMOS{} variants (generated by \texttt{paper/06\_update\_ablation\_tables\_from\_csv.py}).}
+\label{tab:ablation_runtime}
+\begin{tabular}{l|rrr|r}
+\toprule
+\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\midrule
+Baseline & \textbf{4.55} & 5.32 & 6.31 & \textbf{5.40} \\
+Baseline + AOS & 5.25 & \textbf{5.32} & \textbf{5.99} & 5.52 \\
+Racing-tuned & 7.08 & 6.63 & 8.47 & 7.39 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Ablation study: median normalized hypervolume by problem family for \VAMOS{} variants (generated by \texttt{paper/06\_update\_ablation\_tables\_from\_csv.py}).}
+\label{tab:ablation_hypervolume}
+\begin{tabular}{l|rrr|r}
+\toprule
+\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\midrule
+Baseline & 0.991 & 0.804 & \textbf{0.938} & 0.911 \\
+Baseline + AOS & 0.991 & \textbf{0.885} & 0.877 & \textbf{0.917} \\
+Racing-tuned & \textbf{0.992} & 0.820 & 0.863 & 0.892 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -381,11 +628,13 @@ The observed speedups are primarily due to (i) the array-based representation th
 
 Despite careful alignment of dimensions, budgets, problem definitions, and operator settings, cross-framework comparisons remain subject to several threats: (i) operator implementations may differ in subtle details (e.g., boundary handling, duplicate elimination, tie-breaking in survival), (ii) random number generation and seeding semantics vary across libraries, and (iii) library-specific overheads (data conversion, object materialization) may affect measured runtime. We mitigate major sources of unfairness by enforcing consistent benchmark bounds (e.g., ZDT4) and matching operator semantics where APIs differ (e.g., mutation probability in pymoo).
 
+Our cross-framework comparison is deliberately scoped to Python MOEA libraries whose inner loops are predominantly executed in Python. Some libraries (e.g., PyGMO, which provides Python bindings to the C++ PaGMO2 library) are performance-oriented but are not directly comparable under our primary research question, which targets reductions in interpreter overhead via array-based representations and kernel acceleration. In PyGMO, both algorithms and benchmark problems may execute fully in C++, while user-defined problems can also be evaluated via callbacks into Python; these modes yield materially different runtime profiles and can shift the dominant cost to foreign-function or language-boundary overhead. In addition, PyGMO supports island-model parallelism and asynchronous execution; accounting for these features would require additional normalization beyond the single-process budgeted protocol used here. For these reasons, we treat PyGMO and PaGMO2 as an orthogonal C++ baseline and leave their inclusion to future work with an explicit language/runtime study design.
+
 For hypervolume, reference fronts for problems without closed-form Pareto fronts are necessarily approximations; while we generate them densely and fix them across runs, remaining discrepancies can affect absolute normalized values, especially on WFG problems. We therefore treat normalized HV primarily as a comparative metric under a fixed protocol, and we report distributions across multiple seeds rather than relying on single-run outcomes.
 
 \subsection{Reproducibility}
 
-All experiments in this paper are reproducible from the repository. Benchmarks are executed via \path{python -m paper.run_paper_benchmark}. We control the number of seeds and workers with \texttt{VAMOS\_N\_SEEDS} and \texttt{VAMOS\_N\_JOBS}; unless otherwise stated, we use \texttt{VAMOS\_N\_SEEDS=30}. LaTeX tables are regenerated by \path{python paper/update_paper_tables_from_csv.py} (runtime tables) and \path{python paper/run_statistical_tests.py} (Wilcoxon tables). Benchmark reports also emit jMetalPy-compatible laboratory outputs (QualityIndicatorSummary.csv, Wilcoxon tables, and boxplots) under \path{summary/lab/} for interoperable post-processing. Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
+All experiments in this paper are reproducible from the repository. The cross-framework benchmark is executed via \texttt{python}\ \path{paper/01_run_paper_benchmark.py}, the AOS/racing-tuner ablation via \texttt{python}\ \path{paper/02_run_ablation_aos_racing_tuner.py}, and the scaling study via \texttt{python}\ \path{paper/03_run_scaling_experiment.py}. We control the number of seeds, evaluation budget, and workers with \path{VAMOS_N_SEEDS}, \path{VAMOS_N_EVALS}, and \path{VAMOS_N_JOBS}; unless otherwise stated, we use \path{VAMOS_N_SEEDS=30} and \path{VAMOS_N_EVALS=100000}. LaTeX runtime tables are regenerated by \texttt{python}\ \path{paper/04_update_paper_tables_from_csv.py}; Wilcoxon tables by \texttt{python}\ \path{paper/05_run_statistical_tests.py}; ablation tables by \texttt{python}\ \path{paper/06_update_ablation_tables_from_csv.py}; and scaling tables by \texttt{python}\ \path{paper/07_update_scaling_tables_from_csv.py}. Benchmark reports also emit jMetalPy-compatible laboratory outputs (QualityIndicatorSummary.csv, Wilcoxon tables, and boxplots) under \path{summary/lab/} for interoperable post-processing, following the laboratory summary format described by jMetalPy~\cite{benitez2019jmetalpy}. Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
 
 \subsection{LLM-assisted development workflow}
 
@@ -428,29 +677,31 @@ Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-
 \label{tab:detailed_backends}
 \begin{tabular}{l|rrr}
 \toprule
-\textbf{Problem} & \textbf{Numba} & \textbf{Moocore} & \textbf{Numpy} \\
+\textbf{Problem} & \textbf{Numba} & \textbf{MooCore} & \textbf{NumPy} \\
 \midrule
-dtlz1 & \textbf{7.86} & 8.19 & 15.52 \\
-dtlz2 & \textbf{7.56} & 8.33 & 14.32 \\
-dtlz3 & \textbf{5.60} & 6.41 & 12.22 \\
-dtlz4 & \textbf{6.09} & 7.05 & 11.88 \\
-dtlz7 & \textbf{6.07} & 8.63 & 14.15 \\
-wfg1 & \textbf{6.96} & 8.20 & 11.75 \\
-wfg2 & 6.92 & \textbf{6.75} & 11.52 \\
-wfg3 & \textbf{7.95} & 8.23 & 11.60 \\
-wfg4 & 7.52 & \textbf{7.31} & 11.17 \\
-wfg5 & \textbf{6.48} & 7.89 & 13.84 \\
-wfg6 & \textbf{7.56} & 7.73 & 12.29 \\
-wfg7 & 8.06 & \textbf{6.99} & 11.60 \\
-wfg8 & 8.33 & \textbf{7.85} & 15.55 \\
-wfg9 & \textbf{9.38} & 9.77 & 14.00 \\
-zdt1 & 7.47 & \textbf{7.38} & 12.56 \\
-zdt2 & \textbf{6.99} & 7.25 & 12.23 \\
-zdt3 & \textbf{7.98} & 8.69 & 13.81 \\
-zdt4 & 8.05 & \textbf{7.88} & 15.09 \\
-zdt6 & 7.60 & \textbf{6.45} & 11.81 \\
+dtlz1 & \textbf{5.22} & 5.51 & 10.49 \\
+dtlz2 & \textbf{5.46} & 5.99 & 10.84 \\
+dtlz3 & \textbf{5.40} & 5.48 & 10.85 \\
+dtlz4 & \textbf{5.77} & 5.81 & 10.32 \\
+dtlz5 & \textbf{6.10} & 6.28 & 10.09 \\
+dtlz6 & \textbf{5.66} & 5.83 & 12.06 \\
+dtlz7 & \textbf{5.63} & 5.86 & 10.22 \\
+wfg1 & 6.20 & \textbf{6.04} & 10.83 \\
+wfg2 & \textbf{7.63} & 7.64 & 11.04 \\
+wfg3 & 7.44 & \textbf{5.87} & 14.06 \\
+wfg4 & \textbf{6.75} & 7.57 & 13.44 \\
+wfg5 & \textbf{7.33} & 7.40 & 13.99 \\
+wfg6 & \textbf{6.61} & 6.63 & 11.55 \\
+wfg7 & 7.58 & \textbf{7.34} & 10.27 \\
+wfg8 & 7.63 & \textbf{7.52} & 11.16 \\
+wfg9 & 10.02 & \textbf{9.86} & 15.48 \\
+zdt1 & 5.88 & \textbf{5.47} & 10.17 \\
+zdt2 & \textbf{5.94} & 6.38 & 10.83 \\
+zdt3 & \textbf{5.51} & 5.82 & 13.70 \\
+zdt4 & \textbf{5.10} & 5.34 & 10.42 \\
+zdt6 & \textbf{6.57} & 6.77 & 10.46 \\
 \midrule
-\textbf{Average} & \textbf{7.39} & 7.74 & 12.99 \\
+\textbf{Average} & \textbf{6.45} & 6.50 & 11.54 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -464,27 +715,63 @@ zdt6 & 7.60 & \textbf{6.45} & 11.81 \\
 \toprule
 \textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{DEAP} & \textbf{jMetalPy} & \textbf{Platypus} \\
 \midrule
-dtlz1 & \textbf{7.86} & 11.51 & 44.64 & 27.83 & 43.81 \\
-dtlz2 & \textbf{7.56} & 12.00 & 43.21 & 24.46 & 44.41 \\
-dtlz3 & \textbf{5.60} & 9.86 & 41.05 & 23.88 & 35.31 \\
-dtlz4 & \textbf{6.09} & 10.97 & 42.52 & 22.39 & 41.10 \\
-dtlz7 & \textbf{6.07} & 8.76 & 38.96 & 20.74 & 38.68 \\
-wfg1 & \textbf{6.96} & 9.47 & 47.04 & 55.68 & 57.42 \\
-wfg2 & \textbf{6.92} & 9.26 & 87.82 & 76.53 & 83.89 \\
-wfg3 & \textbf{7.95} & 11.85 & 96.22 & 76.52 & 85.23 \\
-wfg4 & \textbf{7.52} & 10.42 & 43.31 & 42.71 & 55.68 \\
-wfg5 & \textbf{6.48} & 9.07 & 43.87 & 37.57 & 73.03 \\
-wfg6 & \textbf{7.56} & 10.08 & 200.89 & 223.06 & 241.54 \\
-wfg7 & \textbf{8.06} & 9.11 & 60.41 & 47.03 & 70.96 \\
-wfg8 & \textbf{8.33} & 12.89 & 172.66 & 150.11 & 160.46 \\
-wfg9 & \textbf{9.38} & 11.87 & 364.86 & 413.85 & 373.63 \\
-zdt1 & \textbf{7.47} & 12.49 & 38.91 & 27.92 & 51.50 \\
-zdt2 & \textbf{6.99} & 10.36 & 35.39 & 24.08 & 46.55 \\
-zdt3 & \textbf{7.98} & 12.39 & 43.52 & 29.38 & 62.73 \\
-zdt4 & \textbf{8.05} & 12.59 & 49.89 & 27.07 & 43.81 \\
-zdt6 & \textbf{7.60} & 16.02 & 38.17 & 28.58 & 60.10 \\
+dtlz1 & \textbf{5.22} & 6.45 & 35.65 & 24.50 & 57.55 \\
+dtlz2 & \textbf{5.46} & 6.86 & 35.01 & 33.48 & 49.78 \\
+dtlz3 & \textbf{5.40} & 6.64 & 46.49 & 36.12 & 44.33 \\
+dtlz4 & \textbf{5.77} & 8.80 & 34.50 & 28.96 & 49.11 \\
+dtlz5 & \textbf{6.10} & 7.47 & 49.19 & 25.04 & 51.36 \\
+dtlz6 & \textbf{5.66} & 8.21 & 39.20 & 25.58 & 49.27 \\
+dtlz7 & \textbf{5.63} & 6.49 & 33.17 & 26.67 & 59.91 \\
+wfg1 & \textbf{6.20} & 7.33 & 46.57 & 60.59 & 58.51 \\
+wfg2 & 7.63 & \textbf{6.95} & 86.03 & 72.47 & 82.75 \\
+wfg3 & 7.44 & \textbf{7.03} & 69.07 & 70.19 & 99.92 \\
+wfg4 & \textbf{6.75} & 8.48 & 42.25 & 47.81 & 56.27 \\
+wfg5 & \textbf{7.33} & 8.63 & 42.75 & 48.17 & 56.26 \\
+wfg6 & \textbf{6.61} & 7.56 & 187.08 & 183.38 & 279.57 \\
+wfg7 & 7.58 & \textbf{6.67} & 56.52 & 57.42 & 70.09 \\
+wfg8 & \textbf{7.63} & 7.82 & 168.45 & 129.67 & 180.77 \\
+wfg9 & 10.02 & \textbf{9.60} & 333.88 & 363.89 & 373.07 \\
+zdt1 & \textbf{5.88} & 6.58 & 34.38 & 28.55 & 48.65 \\
+zdt2 & \textbf{5.94} & 6.88 & 35.09 & 28.84 & 48.81 \\
+zdt3 & \textbf{5.51} & 8.06 & 33.75 & 26.82 & 48.00 \\
+zdt4 & \textbf{5.10} & 6.58 & 32.41 & 28.70 & 36.85 \\
+zdt6 & \textbf{6.57} & 12.47 & 26.74 & 31.70 & 40.27 \\
 \midrule
-\textbf{Average} & \textbf{7.39} & 11.10 & 80.70 & 72.60 & 87.89 \\
+\textbf{Average} & \textbf{6.45} & 7.69 & 69.91 & 65.65 & 87.67 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}[htbp]
+\tiny
+\centering
+\caption{Per-problem paired bootstrap 90\% confidence intervals (CI) for the relative normalized hypervolume difference $\Delta = (\HV_{\VAMOS} - \HV_{\text{fw}})/\HV_{\text{fw}}$, reported in percent. Equivalence margin is $\pm 1\%$. Generated by \texttt{paper/05\_run\_statistical\_tests.py}.}
+\label{tab:hv_equivalence_ci}
+\begin{tabular}{l|rrrr}
+\toprule
+\textbf{Problem} & \textbf{pymoo CI} & \textbf{DEAP CI} & \textbf{jMetalPy CI} & \textbf{Platypus CI} \\
+\midrule
+dtlz1 & $[-0.35,+0.58]$ & $[-0.39,+0.50]$ & $[-0.55,+0.51]$ & $[-0.15,+0.41]$ \\
+dtlz2 & $[-1.03,+0.89]$ & $[-1.75,+0.15]$ & $[-0.77,+0.59]$ & $[-1.25,+0.38]$ \\
+dtlz3 & $[+0.07,+1.94]$ & $[-0.53,+1.68]$ & $[-1.09,+1.17]$ & $[-0.66,+1.09]$ \\
+dtlz4 & $[-1.49,+0.86]$ & $[-2.11,-0.25]$ & $[-0.70,+0.02]$ & $[-0.61,+83.89]$ \\
+dtlz5 & $[-0.10,+0.19]$ & $[-0.10,+0.10]$ & $[-0.14,+0.06]$ & $[-0.20,-0.05]$ \\
+dtlz6 & $[-3.53,+12.57]$ & $[-13.39,+11.65]$ & $[-3.80,+22.60]$ & $[-14.07,+5.30]$ \\
+dtlz7 & $[-1.23,-0.84]$ & $[-1.16,-0.56]$ & $[-1.36,+0.02]$ & $[-1.14,+21.70]$ \\
+wfg1 & $[-7.95,+4.90]$ & $[-6.56,+1.68]$ & $[-5.10,+5.56]$ & $[+16.65,+27.56]$ \\
+wfg2 & $[-0.13,+0.04]$ & $[-0.07,+0.05]$ & $[-0.06,+0.07]$ & $[-0.12,-0.02]$ \\
+wfg3 & $[-0.16,+0.11]$ & $[-0.12,+0.13]$ & $[-0.16,+0.16]$ & $[-0.35,-0.18]$ \\
+wfg4 & $[-0.18,-0.01]$ & $[-0.20,-0.09]$ & $[-0.11,+0.16]$ & $[-0.56,-0.30]$ \\
+wfg5 & $[-0.15,+0.06]$ & $[-0.19,+0.07]$ & $[-0.12,-0.02]$ & $[-0.27,-0.11]$ \\
+wfg6 & $[-1.21,+0.30]$ & $[-1.24,+1.69]$ & $[-2.20,+0.76]$ & $[-1.91,+0.93]$ \\
+wfg7 & $[-0.20,+0.00]$ & $[-0.19,+0.00]$ & $[-0.14,+0.05]$ & $[-0.36,-0.06]$ \\
+wfg8 & $[-0.56,+0.42]$ & $[-0.32,+0.75]$ & $[-0.54,+0.64]$ & $[-4.01,-3.40]$ \\
+wfg9 & $[-0.16,+1.61]$ & $[+0.10,+32.24]$ & $[-0.22,+0.64]$ & $[-0.27,+0.70]$ \\
+zdt1 & $[-0.00,+0.03]$ & $[-0.02,+0.03]$ & $[-0.02,+0.02]$ & $[-0.08,-0.03]$ \\
+zdt2 & $[-0.01,+0.06]$ & $[-0.04,+0.02]$ & $[-0.03,+0.04]$ & $[-0.13,-0.06]$ \\
+zdt3 & $[-0.01,+0.01]$ & $[-0.01,+0.00]$ & $[-0.00,+0.02]$ & $[-0.03,-0.02]$ \\
+zdt4 & $[-0.02,+0.02]$ & $[-0.03,+0.03]$ & $[-0.04,+0.03]$ & $[-0.04,-0.01]$ \\
+zdt6 & $[-0.25,-0.20]$ & $[+0.16,+0.21]$ & $[+0.10,+0.17]$ & $[-0.34,-0.27]$ \\
 \bottomrule
 \end{tabular}
 \end{table*}

@@ -11,6 +11,21 @@ def test_problem_selection_defaults_and_encoding():
     assert getattr(problem, "encoding", "continuous") == "continuous"
 
 
+def test_problem_selection_zdt5_binary_encoding():
+    selection = make_problem_selection("zdt5")
+    assert selection.n_var == 80
+    assert selection.n_obj == 2
+    problem = selection.instantiate()
+    assert getattr(problem, "encoding", "") == "binary"
+
+
+@pytest.mark.parametrize("name", ["dtlz5", "dtlz6"])
+def test_problem_selection_dtlz56_defaults(name: str):
+    selection = make_problem_selection(name)
+    assert selection.n_var == 12
+    assert selection.n_obj == 3
+
+
 def test_tsplib_selection_encoding():
     selection = make_problem_selection("kroa100")
     assert selection.n_var == 100

@@ -12,7 +12,7 @@ DATA_OUT_DIR = ROOT_DIR / "data" / "reference_fronts"
 PACKAGE_OUT_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
 
 ZDT_PROBLEMS = ["zdt1", "zdt2", "zdt3", "zdt4", "zdt6"]
-DTLZ_PROBLEMS = ["dtlz1", "dtlz2", "dtlz3", "dtlz4", "dtlz7"]
+DTLZ_PROBLEMS = ["dtlz1", "dtlz2", "dtlz3", "dtlz4", "dtlz5", "dtlz6", "dtlz7"]
 WFG_PROBLEMS = ["wfg1", "wfg2", "wfg3", "wfg4", "wfg5", "wfg6", "wfg7", "wfg8", "wfg9"]
 
 ZDT_POINTS = int(os.environ.get("VAMOS_REF_ZDT_POINTS", "200000"))
@@ -101,6 +101,17 @@ def _dtlz_front(problem: str, n_partitions: int, dtlz7_grid: int) -> np.ndarray:
             axis=1,
         )
         f3 = (1.0 + DTLZ7_G) * h
+        return np.column_stack([f1, f2, f3])
+
+    if problem in {"dtlz5", "dtlz6"}:
+        # For n_obj=3 the Pareto front is a 1D curve (g=0 => theta2=pi/4):
+        #   f1 = f2 = cos(theta) / sqrt(2), f3 = sin(theta), theta in [0, pi/2].
+        n_points = (n_partitions + 2) * (n_partitions + 1) // 2
+        theta = np.linspace(0.0, np.pi / 2.0, num=n_points)
+        c = np.cos(theta)
+        f1 = c / np.sqrt(2.0)
+        f2 = f1
+        f3 = np.sin(theta)
         return np.column_stack([f1, f2, f3])
 
     ref_dirs = _dtlz_ref_dirs(n_partitions)

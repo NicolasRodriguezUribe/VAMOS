@@ -8,8 +8,8 @@ Use `--problem <key>` or `--problem-set <preset>`. Override dimensions with `--n
 Continuous benchmarks
 ---------------------
 
-- ZDT: zdt1, zdt2, zdt3, zdt4, zdt6 (bi-objective).
-- DTLZ: dtlz1, dtlz2, dtlz3, dtlz4 (default 3 objectives, override allowed).
+- ZDT: zdt1, zdt2, zdt3, zdt4, zdt6 (bi-objective, continuous).
+- DTLZ: dtlz1-dtlz7 (default 3 objectives, override allowed).
 - WFG: wfg1-9 (requires `research` extra, override objectives allowed).
 - LZ09: lz09_f1-f9.
 - CEC2009: cec2009_uf1, cec2009_uf2, cec2009_uf3, cec2009_cf1.
@@ -17,7 +17,11 @@ Continuous benchmarks
 DTLZ benchmarks note
 --------------------
 
-For DTLZ1-4, the standard benchmark uses `n_var = n_obj + 9` (e.g., `n_obj=3` -> `n_var=12`, `k=10`).
+Standard DTLZ settings use:
+- DTLZ1: `n_var = n_obj + 4` (`k=5`)
+- DTLZ2-6: `n_var = n_obj + 9` (`k=10`)
+- DTLZ7: `n_var = n_obj + 19` (`k=20`)
+
 Non-standard `n_var` values are allowed, but VAMOS will warn so results are not accidentally compared against the canonical setting.
 
 Permutation benchmarks
@@ -29,6 +33,7 @@ Permutation benchmarks
 Binary benchmarks
 -----------------
 
+- zdt5 (bi-objective, binary).
 - bin_feat (feature selection surrogate)
 - bin_knapsack
 - bin_qubo
@@ -55,4 +60,4 @@ Presets
 Reference fronts
 ----------------
 
-Built-in CSVs exist for ZDT problems. For custom problems set `--hv-reference-front` (CSV with two columns) when using `--hv-threshold`.
+Built-in CSVs exist for ZDT problems (including `zdt5`). For custom problems set `--hv-reference-front` (CSV with two columns) when using `--hv-threshold`.

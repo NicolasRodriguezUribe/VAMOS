@@ -8,6 +8,10 @@ from vamos.foundation.metrics.hypervolume import hypervolume
 def get_zdt_reference_front(name: str, n_points: int = 1000) -> np.ndarray:
     """Return an approximate Pareto front for ZDT problems (analytic for 1,2,3,4,6)."""
     name = name.lower()
+    if name == "zdt5":
+        f1 = np.arange(1.0, 32.0, dtype=float)
+        f2 = 10.0 / f1
+        return np.column_stack((f1, f2))
     t = np.linspace(0.0, 1.0, num=n_points)
     if name == "zdt1":
         f1 = t
@@ -37,6 +41,8 @@ def get_zdt_reference_point(name: str) -> np.ndarray:
         return np.array([1.1, 1.1], dtype=float)
     if name == "zdt4":
         return np.array([1.5, 4.0], dtype=float)
+    if name == "zdt5":
+        return np.array([32.0, 61.0], dtype=float)
     if name == "zdt6":
         return np.array([1.1, 1.1], dtype=float)
     raise ValueError(f"Unsupported ZDT problem '{name}'.")

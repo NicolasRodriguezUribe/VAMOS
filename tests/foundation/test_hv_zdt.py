@@ -9,3 +9,11 @@ def test_normalized_hv_handles_points_above_default_reference():
     hv = compute_normalized_hv(F, "zdt1")
     assert hv >= 0.0
     assert hv <= 1.0 + 1e-6
+
+
+def test_normalized_hv_zdt5_reference_front_is_one():
+    from vamos.foundation.metrics.hv_zdt import get_zdt_reference_front
+
+    pf = get_zdt_reference_front("zdt5")
+    hv = compute_normalized_hv(pf, "zdt5")
+    assert np.isclose(hv, 1.0)

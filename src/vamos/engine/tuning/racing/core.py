@@ -308,17 +308,27 @@ class RacingTuner:
         best_score: float | None = None
 
         for state in configs:
-            if not state.scores:
+            scores = state.scores
+            details = {"num_evals": len(state.scores), "alive": state.alive}
+            if self.scenario.use_multi_fidelity:
+                final_level = len(self.scenario.fidelity_levels) - 1
+                final_scores = state.fidelity_scores.get(final_level) or []
+                details["final_fidelity_level"] = int(final_level)
+                details["num_final_evals"] = int(len(final_scores))
+                if final_scores:
+                    scores = final_scores
+
+            if not scores:
                 agg_score = float("nan")
             else:
-                agg_score = float(self.task.aggregator(state.scores))
+                agg_score = float(self.task.aggregator(scores))
 
             history.append(
                 TrialResult(
                     trial_id=state.config_id,
                     config=state.config,
                     score=agg_score,
-                    details={"num_evals": len(state.scores), "alive": state.alive},
+                    details=details,
                 )
             )
 
