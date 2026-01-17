@@ -1,0 +1,32 @@
+{
+  "adaptive_operator_selection": null,
+  "archive": null,
+  "archive_type": null,
+  "constraint_mode": "feasibility",
+  "crossover": [
+    "sbx",
+    {
+      "eta": 29.01528364614782,
+      "prob": 0.9859262198347306
+    }
+  ],
+  "initializer": null,
+  "mutation": [
+    "non_uniform",
+    {
+      "prob": 0.1
+    }
+  ],
+  "mutation_prob_factor": 0.5028710343597436,
+  "offspring_size": 183,
+  "pop_size": 183,
+  "repair": null,
+  "result_mode": "non_dominated",
+  "selection": [
+    "tournament",
+    {
+      "pressure": 2
+    }
+  ],
+  "track_genealogy": false
+}
