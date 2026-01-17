@@ -38,6 +38,8 @@ Tuner controls (optional):
       (default: 20000,60000,100000)
   - VAMOS_TUNER_FIDELITY_WARM_START: 1/0 warm-start between fidelity levels (default: 0)
   - VAMOS_TUNER_OUTPUT_JSON: tuned config path (default: experiments/tuned_nsgaii.json)
+  - VAMOS_TUNER_OUTPUT_RESOLVED_JSON: resolved NSGA-II config path
+      (default: experiments/tuned_nsgaii_resolved.json)
   - VAMOS_TUNER_HISTORY_CSV: tuner history CSV (default: experiments/tuner_history.csv)
   - VAMOS_TUNER_RUNS_CSV: tuning repeats summary CSV (default: experiments/tuned_nsgaii_runs.csv)
 """
@@ -344,6 +346,16 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
     out_cfg = Path(os.environ.get("VAMOS_TUNER_OUTPUT_JSON", str(ROOT_DIR / "experiments" / "tuned_nsgaii.json")))
     out_cfg.parent.mkdir(parents=True, exist_ok=True)
     out_cfg.write_text(json.dumps(best_cfg, indent=2, sort_keys=True), encoding="utf-8")
+
+    out_resolved = Path(
+        os.environ.get(
+            "VAMOS_TUNER_OUTPUT_RESOLVED_JSON",
+            str(out_cfg.with_name(f"{out_cfg.stem}_resolved.json")),
+        )
+    )
+    out_resolved.parent.mkdir(parents=True, exist_ok=True)
+    resolved_cfg = config_from_assignment("nsgaii", best_cfg)
+    out_resolved.write_text(json.dumps(resolved_cfg.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
 
     out_hist_csv = Path(os.environ.get("VAMOS_TUNER_HISTORY_CSV", str(ROOT_DIR / "experiments" / "tuner_history.csv")))
     out_hist_json = out_hist_csv.with_suffix(".json")
