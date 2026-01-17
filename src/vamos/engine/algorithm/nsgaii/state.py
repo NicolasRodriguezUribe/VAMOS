@@ -15,7 +15,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
+from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive, UnboundedArchive
 from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.hooks.genealogy import GenealogyTracker
@@ -57,7 +57,7 @@ class NSGAIIState:
     archive_size: int | None = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
-    archive_manager: CrowdingDistanceArchive | None = None
+    archive_manager: CrowdingDistanceArchive | UnboundedArchive | None = None
     archive_via_kernel: bool = False
     result_archive: HypervolumeArchive | CrowdingDistanceArchive | None = None
     result_mode: str = "population"
@@ -318,7 +318,13 @@ def track_offspring_genealogy(
     state.pending_offspring_ids = np.asarray(child_ids[:n_offspring], dtype=int)
 
 
-def update_archives(state: NSGAIIState, kernel: Any) -> None:
+def update_archives(
+    state: NSGAIIState,
+    kernel: Any,
+    *,
+    X: np.ndarray | None = None,
+    F: np.ndarray | None = None,
+) -> None:
     """Update result archive and external archive.
 
     Parameters
@@ -327,12 +333,24 @@ def update_archives(state: NSGAIIState, kernel: Any) -> None:
         Current algorithm state (modified in place).
     kernel : KernelBackend
         Kernel backend (may have update_archive method).
+    X : np.ndarray | None
+        Candidate decision variables to insert (defaults to state.X).
+    F : np.ndarray | None
+        Candidate objectives to insert (defaults to state.F).
     """
+    X_use = state.X if X is None else X
+    F_use = state.F if F is None else F
     if state.result_archive is not None:
-        state.result_archive.update(state.X, state.F)
+        state.result_archive.update(X_use, F_use)
 
     if state.archive_size:
         if state.archive_via_kernel:
-            state.archive_X, state.archive_F = kernel.update_archive(state.archive_X, state.archive_F, state.X, state.F, state.archive_size)
+            state.archive_X, state.archive_F = kernel.update_archive(
+                state.archive_X,
+                state.archive_F,
+                X_use,
+                F_use,
+                state.archive_size,
+            )
         elif state.archive_manager is not None:
-            state.archive_X, state.archive_F = state.archive_manager.update(state.X, state.F)
+            state.archive_X, state.archive_F = state.archive_manager.update(X_use, F_use)
