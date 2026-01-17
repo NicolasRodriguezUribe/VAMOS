@@ -55,6 +55,15 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+def _resolve_archive_settings(cfg: dict[str, Any], *, pop_size: int) -> tuple[int | None, bool]:
+    archive_cfg = cfg.get("archive") or cfg.get("external_archive") or {}
+    unbounded = bool(archive_cfg.get("unbounded", False)) if isinstance(archive_cfg, dict) else False
+    size = resolve_archive_size(cfg)
+    if unbounded and not size:
+        size = pop_size
+    return size, unbounded
+
+
 class NSGAII:
     """
     Vectorized/SOA-style NSGA-II evolutionary core.
@@ -210,9 +219,16 @@ class NSGAII:
         live_cb.on_start(ctx)
         hv_tracker = HVTracker(hv_config, self.kernel)
 
-        archive_size = resolve_archive_size(self.cfg)
+        archive_size, archive_unbounded = _resolve_archive_settings(self.cfg, pop_size=pop_size)
         archive_X, archive_F, archive_manager, archive_via_kernel = setup_archive(
-            self.kernel, X, F, n_var, problem.n_obj, X.dtype, archive_size
+            self.kernel,
+            X,
+            F,
+            n_var,
+            problem.n_obj,
+            X.dtype,
+            archive_size,
+            unbounded=archive_unbounded,
         )
 
         track_genealogy = bool(self.cfg.get("track_genealogy", False))
@@ -248,7 +264,15 @@ class NSGAII:
 
         result_mode = self.cfg.get("result_mode", "non_dominated")
         archive_type = self.cfg.get("archive_type", "hypervolume")
-        result_archive = setup_result_archive(result_mode, archive_type, archive_size, n_var, problem.n_obj, X.dtype)
+        result_archive = setup_result_archive(
+            result_mode,
+            archive_type,
+            archive_size,
+            n_var,
+            problem.n_obj,
+            X.dtype,
+            unbounded=archive_unbounded,
+        )
 
         self._st = NSGAIIState(
             X=X,
@@ -424,7 +448,8 @@ class NSGAII:
                     }
                 )
 
-        update_archives(st, self.kernel)
+        combined_F = np.vstack([prev_F, F_off])
+        update_archives(st, self.kernel, X=combined_X, F=combined_F)
 
         hv_reached = st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points_fn())
 

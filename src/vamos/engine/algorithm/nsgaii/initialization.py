@@ -15,7 +15,11 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive
+from vamos.engine.algorithm.components.archive import (
+    CrowdingDistanceArchive,
+    HypervolumeArchive,
+    UnboundedArchive,
+)
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
 from vamos.foundation.encoding import normalize_encoding
 from vamos.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
@@ -110,7 +114,9 @@ def setup_archive(
     n_obj: int,
     dtype: np.dtype,
     archive_size: int | None,
-) -> tuple[np.ndarray | None, np.ndarray | None, CrowdingDistanceArchive | None, bool]:
+    *,
+    unbounded: bool = False,
+) -> tuple[np.ndarray | None, np.ndarray | None, CrowdingDistanceArchive | UnboundedArchive | None, bool]:
     """Initialize archive if configured.
 
     Parameters
@@ -138,13 +144,19 @@ def setup_archive(
     if not archive_size:
         return None, None, None, False
 
+    manager: CrowdingDistanceArchive | UnboundedArchive
+    if unbounded:
+        manager = UnboundedArchive(n_var=n_var, n_obj=n_obj, dtype=dtype)
+        archive_X, archive_F = manager.update(X, F)
+        return archive_X, archive_F, manager, False
+
     if hasattr(kernel, "update_archive"):
         archive_X, archive_F = kernel.update_archive(None, None, X, F, archive_size)
         return archive_X, archive_F, None, True
     else:
-        archive_manager = CrowdingDistanceArchive(archive_size, n_var, n_obj, dtype)
-        archive_X, archive_F = archive_manager.update(X, F)
-        return archive_X, archive_F, archive_manager, False
+        manager = CrowdingDistanceArchive(archive_size, n_var, n_obj, dtype)
+        archive_X, archive_F = manager.update(X, F)
+        return archive_X, archive_F, manager, False
 
 
 def setup_genealogy(
@@ -220,6 +232,8 @@ def setup_result_archive(
     n_var: int,
     n_obj: int,
     dtype: np.dtype,
+    *,
+    unbounded: bool = False,
 ) -> HypervolumeArchive | CrowdingDistanceArchive | None:
     """Create result archive if configured for external_archive mode.
 
@@ -243,7 +257,7 @@ def setup_result_archive(
     HypervolumeArchive | CrowdingDistanceArchive | None
         The result archive, or None if not configured.
     """
-    if result_mode != "external_archive" or not archive_size:
+    if result_mode != "external_archive" or not archive_size or unbounded:
         return None
 
     if archive_type == "crowding":

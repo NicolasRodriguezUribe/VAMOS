@@ -44,7 +44,11 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
         ConditionalBlock("crossover", "blx_alpha", [Real("crossover_alpha", 0.1, 0.8)]),
-        ConditionalBlock("use_external_archive", True, [Categorical("archive_type", ["hypervolume", "crowding"])]),
+        ConditionalBlock(
+            "use_external_archive",
+            True,
+            [Categorical("archive_type", ["hypervolume", "crowding", "unbounded"])],
+        ),
     ]
     return AlgorithmConfigSpace("nsgaii", params, conditionals)
 
@@ -173,8 +177,11 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         use_external_archive = bool(assignment.get("use_external_archive", False))
         if use_external_archive:
             archive_type = str(assignment.get("archive_type", "hypervolume"))
-            builder.archive_type(archive_type)
-            builder.archive(int(assignment["pop_size"]))
+            if archive_type == "unbounded":
+                builder.archive(int(assignment["pop_size"]), unbounded=True)
+            else:
+                builder.archive_type(archive_type)
+                builder.archive(int(assignment["pop_size"]))
         return builder.build()
     if algo == "moead":
         builder = MOEADConfig.builder()

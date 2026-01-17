@@ -189,4 +189,121 @@ class HypervolumeArchive(_BaseArchive):
         return _hv_contributions(F, ref)
 
 
-__all__ = ["HypervolumeArchive", "CrowdingDistanceArchive", "_single_front_crowding", "_hv_contributions"]
+class UnboundedArchive:
+    """
+    External archive that keeps all non-dominated solutions without a size limit.
+
+    This is useful when you want the final archive to reflect the union of all
+    non-dominated solutions encountered during the run. Unlike the bounded
+    archives above, no trimming is performed.
+    """
+
+    def __init__(
+        self,
+        n_var: int,
+        n_obj: int,
+        dtype: Any,
+        *,
+        objective_tolerance: float = 1e-10,
+        initial_capacity: int = 256,
+    ) -> None:
+        self._dtype = np.dtype(dtype)
+        self._n_var = int(n_var)
+        self._n_obj = int(n_obj)
+        self._objective_tolerance = float(objective_tolerance)
+        self._size = 0
+
+        capacity = max(1, int(initial_capacity))
+        self._X = np.empty((capacity, self._n_var), dtype=self._dtype)
+        self._F = np.empty((capacity, self._n_obj), dtype=float)
+
+    def update(
+        self,
+        population_X: np.ndarray,
+        population_F: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        pop_X = np.asarray(population_X, dtype=self._dtype, order="C")
+        pop_F = np.asarray(population_F, dtype=float, order="C")
+        if pop_X.size == 0:
+            return self._snapshot()
+
+        for i in range(pop_X.shape[0]):
+            x = pop_X[i]
+            f = pop_F[i]
+            if self._size == 0:
+                self._append(x, f)
+                continue
+            if self._is_dominated(f):
+                continue
+            if self._is_duplicate(f):
+                continue
+            self._remove_dominated(f)
+            self._append(x, f)
+
+        return self._snapshot()
+
+    def contents(self) -> tuple[np.ndarray, np.ndarray]:
+        return self._snapshot()
+
+    def _snapshot(self) -> tuple[np.ndarray, np.ndarray]:
+        return self._X[: self._size], self._F[: self._size]
+
+    def _append(self, x: np.ndarray, f: np.ndarray) -> None:
+        self._ensure_storage(self._size + 1)
+        np.copyto(self._X[self._size], x)
+        np.copyto(self._F[self._size], f)
+        self._size += 1
+
+    def _ensure_storage(self, min_rows: int) -> None:
+        if self._X.shape[0] >= min_rows:
+            return
+        new_rows = max(min_rows, int(self._X.shape[0] * 1.5) + 1)
+        new_X = np.empty((new_rows, self._n_var), dtype=self._dtype)
+        new_F = np.empty((new_rows, self._n_obj), dtype=float)
+        if self._size:
+            new_X[: self._size] = self._X[: self._size]
+            new_F[: self._size] = self._F[: self._size]
+        self._X = new_X
+        self._F = new_F
+
+    def _is_dominated(self, f: np.ndarray) -> bool:
+        if self._size == 0:
+            return False
+        existing = self._F[: self._size]
+        return bool(_BaseArchive._dominates(existing, f).any())
+
+    def _is_duplicate(self, f: np.ndarray) -> bool:
+        if self._size == 0:
+            return False
+        existing = self._F[: self._size]
+        diff = np.abs(existing - f)
+        return bool(np.any(np.all(diff <= self._objective_tolerance, axis=1)))
+
+    def _remove_dominated(self, f: np.ndarray) -> None:
+        if self._size == 0:
+            return
+        existing = self._F[: self._size]
+        f_leq_existing = f <= existing
+        f_lt_existing = f < existing
+        dominated_by_f = np.all(f_leq_existing, axis=1) & np.any(f_lt_existing, axis=1)
+        if not dominated_by_f.any():
+            return
+
+        keep_mask = ~dominated_by_f
+        write = 0
+        for read in range(self._size):
+            if keep_mask[read]:
+                if write != read:
+                    self._X[write] = self._X[read]
+                    self._F[write] = self._F[read]
+                write += 1
+        self._size = write
+
+
+__all__ = [
+    "HypervolumeArchive",
+    "CrowdingDistanceArchive",
+    "UnboundedArchive",
+    "_single_front_crowding",
+    "_hv_contributions",
+]
