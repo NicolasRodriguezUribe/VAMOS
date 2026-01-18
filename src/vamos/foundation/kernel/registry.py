@@ -34,7 +34,7 @@ def _load_moocore() -> KernelBackend:
         return cast(KernelBackend, module.MooCoreKernel())
     except ImportError as exc:
         raise ImportError(
-            "Kernel 'moocore' requires the [compute] extra (moocore>=0.4). Install with `pip install -e \".[compute]\"`."
+            "Kernel 'moocore' requires the [compute] extra (moocore>=0.2.0). Install with `pip install -e \".[compute]\"`."
         ) from exc
 
 

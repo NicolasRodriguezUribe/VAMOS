@@ -21,7 +21,7 @@ readme = "README.md"
 # Simplified core groups (preferred)
 compute = [
   "numba>=0.57",
-  "moocore>=0.1.10,<1.0",
+  "moocore>=0.2.0,<1.0",
   "dask[distributed]>=2023.5.0",
 ]
 research = [
@@ -84,7 +84,7 @@ dev = [
 ]
 all = [
   "numba>=0.57",
-  "moocore>=0.1.10,<1.0",
+  "moocore>=0.2.0,<1.0",
   "dask[distributed]>=2023.5.0",
   "pymoo>=0.6",
   "jmetalpy>=1.5",
