@@ -8,15 +8,12 @@ import numpy as np
 
 try:  # pragma: no cover - optional dependency
     import moocore as _moocore
-
-    _MC = _moocore._moocore
 except Exception:  # pragma: no cover - optional dependency
     _moocore = None
-    _MC = None
 
 
 def has_moocore() -> bool:
-    return _MC is not None
+    return _moocore is not None
 
 
 @dataclass
@@ -42,16 +39,31 @@ def _require_moocore() -> None:
         raise ImportError("MooCore is required for this indicator but is not installed.")
 
 
-def _to_minimization(front: np.ndarray, maximise: bool | Sequence[bool] | None) -> np.ndarray:
-    if maximise is None:
-        return front
-    arr = np.asarray(front, dtype=float)
+def _normalize_maximise(maximise: bool | Sequence[bool] | None) -> bool | Sequence[bool]:
+    return False if maximise is None else maximise
+
+
+def _maximise_mask(maximise: bool | Sequence[bool], n_obj: int) -> np.ndarray:
     if isinstance(maximise, bool):
-        return -arr if maximise else arr
+        return np.full(n_obj, maximise, dtype=bool)
     mask = np.asarray(maximise, dtype=bool)
-    flipped = arr.copy()
-    flipped[:, mask] = -flipped[:, mask]
-    return flipped
+    if mask.ndim != 1 or mask.shape[0] != n_obj:
+        raise ValueError("maximise must be a bool or a sequence with one entry per objective.")
+    return mask
+
+
+def _default_reference_point(front: np.ndarray, maximise: bool | Sequence[bool]) -> np.ndarray:
+    arr = np.asarray(front, dtype=float)
+    if arr.ndim != 2 or arr.shape[0] == 0:
+        raise ValueError("front must be a non-empty 2D array.")
+    n_obj = arr.shape[1]
+    mask = _maximise_mask(maximise, n_obj)
+    mins = np.min(arr, axis=0)
+    maxs = np.max(arr, axis=0)
+    ref = np.empty(n_obj, dtype=float)
+    ref[mask] = mins[mask] - 1.0
+    ref[~mask] = maxs[~mask] + 1.0
+    return ref
 
 
 @dataclass
@@ -67,9 +79,16 @@ class HVIndicator(QualityIndicator):
         **_: Any,
     ) -> IndicatorResult:
         _require_moocore()
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
-        ref = np.asarray(self.reference_point if self.reference_point is not None else np.max(F, axis=0) + 1.0, dtype=float)
-        val = float(_MC.hypervolume(F, ref=ref))
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
+        ref = np.asarray(
+            self.reference_point if self.reference_point is not None else _default_reference_point(F, maximise_flag),
+            dtype=float,
+        )
+        val = float(moocore.hypervolume(F, ref=ref, maximise=maximise_flag))
         return IndicatorResult(value=val, details={"reference_point": ref})
 
 
@@ -86,9 +105,16 @@ class HVContributionsIndicator(QualityIndicator):
         **_: Any,
     ) -> IndicatorResult:
         _require_moocore()
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
-        ref = np.asarray(self.reference_point if self.reference_point is not None else np.max(F, axis=0) + 1.0, dtype=float)
-        contrib = np.asarray(_MC.hv_contributions(F, ref=ref), dtype=float)
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
+        ref = np.asarray(
+            self.reference_point if self.reference_point is not None else _default_reference_point(F, maximise_flag),
+            dtype=float,
+        )
+        contrib = np.asarray(moocore.hv_contributions(F, ref=ref, maximise=maximise_flag), dtype=float)
         return IndicatorResult(value=contrib, details={"reference_point": ref})
 
 
@@ -105,9 +131,13 @@ class IGDIndicator(QualityIndicator):
         **_: Any,
     ) -> IndicatorResult:
         _require_moocore()
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
-        val = float(_MC.igd(ref, F))
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
+        val = float(moocore.igd(F, ref=ref, maximise=maximise_flag))
         return IndicatorResult(value=val, details={"reference_front": ref})
 
 
@@ -124,9 +154,13 @@ class IGDPlusIndicator(QualityIndicator):
         **_: Any,
     ) -> IndicatorResult:
         _require_moocore()
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
-        val = float(_MC.igd_plus(ref, F))
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
+        val = float(moocore.igd_plus(F, ref=ref, maximise=maximise_flag))
         return IndicatorResult(value=val, details={"reference_front": ref})
 
 
@@ -143,9 +177,13 @@ class EpsilonAdditiveIndicator(QualityIndicator):
         **_: Any,
     ) -> IndicatorResult:
         _require_moocore()
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
-        val = float(_MC.epsilon_additive(ref, F))
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
+        val = float(moocore.epsilon_additive(F, ref=ref, maximise=maximise_flag))
         return IndicatorResult(value=val, details={"reference_front": ref})
 
 
@@ -162,9 +200,13 @@ class EpsilonMultiplicativeIndicator(QualityIndicator):
         **_: Any,
     ) -> IndicatorResult:
         _require_moocore()
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
-        val = float(_MC.epsilon_mult(ref, F))
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
+        val = float(moocore.epsilon_mult(F, ref=ref, maximise=maximise_flag))
         return IndicatorResult(value=val, details={"reference_front": ref})
 
 
@@ -181,10 +223,14 @@ class AvgHausdorffIndicator(QualityIndicator):
         **kwargs: Any,
     ) -> IndicatorResult:
         _require_moocore()
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
         ref = np.asarray(reference_front if reference_front is not None else self.reference_front, dtype=float)
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
         p = kwargs.get("p", 1.0)
-        val = float(_MC.avg_hausdorff_dist(ref, F, p=p))
+        val = float(moocore.avg_hausdorff_dist(F, ref, maximise=maximise_flag, p=p))
         return IndicatorResult(value=val, details={"reference_front": ref, "p": p})
 
 
@@ -201,10 +247,17 @@ class HVApproxIndicator(QualityIndicator):
         **kwargs: Any,
     ) -> IndicatorResult:
         _require_moocore()
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
-        ref = np.asarray(self.reference_point if self.reference_point is not None else np.max(F, axis=0) + 1.0, dtype=float)
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
+        ref = np.asarray(
+            self.reference_point if self.reference_point is not None else _default_reference_point(F, maximise_flag),
+            dtype=float,
+        )
         samples = int(kwargs.get("samples", 10000))
-        val = float(_MC.hv_approx(F, ref=ref, maximise=False, nsamples=samples))
+        val = float(moocore.hv_approx(F, ref=ref, maximise=maximise_flag, nsamples=samples))
         return IndicatorResult(value=val, details={"reference_point": ref, "samples": samples})
 
 
@@ -222,12 +275,22 @@ class WHVRectIndicator(QualityIndicator):
         **kwargs: Any,
     ) -> IndicatorResult:
         _require_moocore()
-        F = _to_minimization(np.asarray(front, dtype=float), maximise)
-        ref = np.asarray(self.reference_point if self.reference_point is not None else np.max(F, axis=0) + 1.0, dtype=float)
-        rects = np.asarray(self.rectangles if self.rectangles is not None else kwargs.get("rectangles"), dtype=float)
-        if rects is None or rects.size == 0:
+        moocore = _moocore  # local alias for typing
+        assert moocore is not None  # guarded by _require_moocore()
+
+        F = np.ascontiguousarray(front, dtype=float)
+        maximise_flag = _normalize_maximise(maximise)
+        ref = np.asarray(
+            self.reference_point if self.reference_point is not None else _default_reference_point(F, maximise_flag),
+            dtype=float,
+        )
+        rects_source = self.rectangles if self.rectangles is not None else kwargs.get("rectangles")
+        if rects_source is None:
             raise ValueError("whv_rect requires rectangles to be provided.")
-        val = float(_MC.whv_rect(F, rects, ref=ref, maximise=False))
+        rects = np.asarray(rects_source, dtype=float)
+        if rects.size == 0:
+            raise ValueError("whv_rect requires rectangles to be provided.")
+        val = float(moocore.whv_rect(F, rects, ref=ref, maximise=maximise_flag))
         return IndicatorResult(value=val, details={"reference_point": ref})
 
 
