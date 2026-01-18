@@ -25,11 +25,12 @@ DEFAULT_CSV = ROOT_DIR / "experiments" / "ablation_aos_racing_tuner.csv"
 DEFAULT_MAIN_TEX = MANUSCRIPT_DIR / "main.tex"
 
 _FAMILY_ORDER = ("ZDT", "DTLZ", "WFG")
-_VARIANT_ORDER = ("baseline", "aos", "tuned")
+_VARIANT_ORDER = ("baseline", "aos", "tuned", "tuned_aos")
 _VARIANT_DISPLAY = {
     "baseline": "Baseline",
     "aos": "Baseline + AOS",
     "tuned": "Racing-tuned",
+    "tuned_aos": "Racing-tuned + AOS",
 }
 
 
@@ -71,6 +72,7 @@ def make_placeholder_table(*, caption: str, label: str) -> str:
         r"Baseline & -- & -- & -- & -- \\",
         r"Baseline + AOS & -- & -- & -- & -- \\",
         r"Racing-tuned & -- & -- & -- & -- \\",
+        r"Racing-tuned + AOS & -- & -- & -- & -- \\",
         r"\bottomrule",
         r"\end{tabular}",
         r"\end{table}",
