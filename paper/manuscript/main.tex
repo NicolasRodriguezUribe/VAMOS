@@ -260,7 +260,7 @@ Adaptive operator selection aims to reduce the need for a single, globally optim
 
 In \VAMOS{}, AOS is portfolio-based: users specify an \emph{operator pool} (a finite set of \emph{arms}, where each arm is a crossover--mutation pipeline with fixed hyperparameters) and a \emph{selection policy} that chooses which arm to apply during the run. We model this decision as a non-stationary multi-armed bandit problem and implement several standard policies ($\epsilon$-greedy, UCB variants, EXP3, Thompson sampling, and sliding-window UCB)~\cite{fialho2010analyzing}. To ensure continued exploration and avoid premature lock-in, policies can enforce an exploration floor by mixing learned probabilities with uniform sampling. Importantly, AOS does not modify the operator implementations themselves; it only changes \emph{which} predefined operator pipeline is applied over time.
 
-In the NSGA-II integration used in this paper, the controller selects one arm per generation and applies it to generate the entire offspring batch for that generation. After survival selection, the chosen arm receives credit based on inexpensive, generation-level signals. The default signals are (i) the offspring survival rate and (ii) the rate of non-dominated insertions; optionally, a small hypervolume-change term can be included when it is cheap to compute (two objectives). These rewards update the policy and thereby the arm-selection probabilities for subsequent generations. This design keeps the AOS overhead small relative to the variation and survival kernels and avoids dependence on expensive indicators in the inner loop.
+In the NSGA-II integration used in this paper, the controller selects one arm per generation and applies it to generate the entire offspring batch for that generation. After survival selection, the chosen arm receives credit based on inexpensive, generation-level signals. The default signals are (i) the offspring survival rate and (ii) the rate of non-dominated insertions; optionally, a small hypervolume-change term can be included when it is inexpensive to compute (up to three objectives in our implementation). These rewards update the policy and thereby the arm-selection probabilities for subsequent generations. This design keeps the AOS overhead small relative to the variation and survival kernels and avoids dependence on expensive indicators in the inner loop.
 
 \begin{algorithm}[htbp]
 \caption{Adaptive operator selection loop (NSGA-II integration in \VAMOS{}).}
@@ -284,7 +284,7 @@ In the NSGA-II integration used in this paper, the controller selects one arm pe
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.98\textwidth]{figures/AOS.png}
-  \caption{Adaptive operator selection (AOS) in \VAMOS{}. Each arm corresponds to a predefined crossover--mutation pipeline; the bandit policy selects an arm each generation, applies it to generate offspring, and updates its selection probabilities using reward feedback. Reward components can combine survival and non-dominated insertion rates and an optional hypervolume-change proxy when inexpensive (two objectives), e.g., $r=w_s\,\text{survival}+w_d\,\text{ND-insertions}+w_h\,\Delta \HV$.}
+  \caption{Adaptive operator selection (AOS) in \VAMOS{}. Each arm corresponds to a predefined crossover--mutation pipeline; the bandit policy selects an arm each generation, applies it to generate offspring, and updates its selection probabilities using reward feedback. Reward components can combine survival and non-dominated insertion rates and an optional hypervolume-change proxy when inexpensive (up to three objectives), e.g., $r=w_s\,\text{survival}+w_d\,\text{ND-insertions}+w_h\,\Delta \HV$.}
   \label{fig:aos}
 \end{figure}
 
@@ -582,13 +582,16 @@ Platypus & 0.003 & 100.0 \\
 \subsection{Ablation: AOS and racing tuner}
 \label{sec:ablation}
 
-To evaluate the practical impact of \VAMOS{}' optional adaptation modules beyond the cross-framework baseline, we run an internal ablation study on the same benchmark suite and evaluation budgets as the runtime experiments. We compare three \VAMOS{} variants of NSGA-II:
+To evaluate the practical impact of \VAMOS{}' optional adaptation modules beyond the cross-framework baseline, we run an internal ablation study on the same benchmark suite and evaluation budgets as the runtime experiments. We compare four \VAMOS{} variants of NSGA-II in a $2\times2$ factorial design (tuned vs.\ untuned) $\times$ (AOS disabled vs.\ enabled):
 \begin{enumerate}
   \item \textbf{Baseline}: the fixed-operator configuration used in the cross-framework benchmark (SBX crossover and polynomial mutation).
-  \item \textbf{Baseline + AOS}: the same configuration augmented with adaptive operator selection (AOS), where an $\epsilon$-greedy bandit selects between a small portfolio of real-coded variation pipelines (SBX+PM vs.\ BLX-$\alpha$+PM). Rewards combine survival and non-dominated insertion rates with a lightweight per-generation hypervolume-change term (computed for two-objective problems only) to reduce the risk of selecting operators that improve selection statistics while degrading Pareto-front quality.
+  \item \textbf{Baseline + AOS}: the same configuration augmented with adaptive operator selection (AOS), where an $\epsilon$-greedy bandit selects between a small portfolio of real-coded variation pipelines (SBX+PM vs.\ BLX-$\alpha$+PM). Rewards combine survival and non-dominated insertion rates with a lightweight per-generation hypervolume-change term (computed when inexpensive, up to three objectives) to reduce the risk of selecting operators that improve selection statistics while degrading Pareto-front quality.
   \item \textbf{Racing-tuned}: a single tuned NSGA-II configuration obtained by the racing tuner on a broader training set (\texttt{zdt4}, \texttt{zdt6}, \texttt{dtlz2}, \texttt{dtlz6}, \texttt{dtlz7}, \texttt{wfg1}, \texttt{wfg9}) using multi-fidelity racing up to the full evaluation budget (20k $\rightarrow$ 60k $\rightarrow$ 100k evaluations). The search space is constrained to enforce $\texttt{pop\_size}\ge 100$ and $\texttt{offspring\_size}=\texttt{pop\_size}$, and uses a dimension-normalized mutation probability factor for better cross-problem transfer. To reduce variance, we tune on 10 training seeds and repeat the entire race 5 times with different tuner seeds, selecting a single configuration by the final-fidelity score and evaluating it on the full benchmark suite without per-problem re-tuning.
+  \item \textbf{Racing-tuned + AOS}: the racing-tuned configuration augmented with the same AOS portfolio and bandit policy, to quantify whether online operator adaptation provides additional benefit beyond offline tuning.
 \end{enumerate}
-The selected racing-tuned configuration is exported for reproducibility (\path{experiments/tuned_nsgaii_resolved.json}) and summarized in Table~\ref{tab:racing_tuned_config}. All variants are evaluated for 30 independent seeds and reported using the same normalized hypervolume protocol (Section~\ref{sec:hv}) and wall-clock runtime measurement setup. Tables~\ref{tab:ablation_runtime} and~\ref{tab:ablation_hypervolume} summarize the ablation outcomes aggregated by benchmark family.
+The selected racing-tuned configuration is exported for reproducibility (\path{experiments/tuned_nsgaii_resolved.json}) and summarized in Table~\ref{tab:racing_tuned_config}. All variants are evaluated for 30 independent seeds and reported using the same normalized hypervolume protocol (Section~\ref{sec:hv}) and wall-clock runtime measurement setup. Tables~\ref{tab:ablation_runtime} and~\ref{tab:ablation_hypervolume} summarize the final-budget ablation outcomes aggregated by benchmark family.
+
+To better capture online adaptation effects under large evaluation budgets, we additionally report anytime performance by recording normalized hypervolume at fixed evaluation checkpoints (5k, 10k, 20k, 50k, 100k evaluations). From these checkpoints we compute (i) AUC(HV vs.\ evals), and (ii) a time-to-target metric defined as the earliest checkpoint at which HV reaches $0.99\times$ the baseline-final median HV for that problem, along with the corresponding success rate by the full budget. Tables~\ref{tab:anytime_auc}--\ref{tab:anytime_ttt_success} summarize these metrics aggregated by benchmark family.
 
 \begin{table}[htbp]
 \centering
@@ -616,9 +619,10 @@ External archive & disabled \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & 1.77 & 1.80 & 1.93 & 1.84 \\
-Baseline + AOS & 1.87 & 1.85 & 2.02 & 1.91 \\
-Racing-tuned & \textbf{1.65} & \textbf{1.71} & \textbf{1.74} & \textbf{1.70} \\
+Baseline & -- & -- & -- & -- \\
+Baseline + AOS & -- & -- & -- & -- \\
+Racing-tuned & -- & -- & -- & -- \\
+Racing-tuned + AOS & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -631,9 +635,58 @@ Racing-tuned & \textbf{1.65} & \textbf{1.71} & \textbf{1.74} & \textbf{1.70} \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & 0.991 & 0.804 & \textbf{0.938} & 0.911 \\
-Baseline + AOS & 0.991 & 0.885 & 0.877 & 0.917 \\
-Racing-tuned & \textbf{0.992} & \textbf{0.935} & 0.870 & \textbf{0.932} \\
+Baseline & -- & -- & -- & -- \\
+Baseline + AOS & -- & -- & -- & -- \\
+Racing-tuned & -- & -- & -- & -- \\
+Racing-tuned + AOS & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Anytime ablation: median AUC of normalized hypervolume over evaluations (HV checkpoints integrated over the evaluation budget; generated by \texttt{paper/10\_update\_anytime\_tables\_from\_csv.py}).}
+\label{tab:anytime_auc}
+\begin{tabular}{l|rrr|r}
+\toprule
+\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\midrule
+Baseline & -- & -- & -- & -- \\
+Baseline + AOS & -- & -- & -- & -- \\
+Racing-tuned & -- & -- & -- & -- \\
+Racing-tuned + AOS & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Anytime ablation: median evaluations to reach $0.99\times$ the baseline-final HV target (per problem), aggregated by family; generated by \texttt{paper/10\_update\_anytime\_tables\_from\_csv.py}.}
+\label{tab:anytime_ttt_evals}
+\begin{tabular}{l|rrr|r}
+\toprule
+\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\midrule
+Baseline & -- & -- & -- & -- \\
+Baseline + AOS & -- & -- & -- & -- \\
+Racing-tuned & -- & -- & -- & -- \\
+Racing-tuned + AOS & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Anytime ablation: success rate (\%) reaching the $0.99\times$ baseline-final HV target by the full budget, aggregated by family; generated by \texttt{paper/10\_update\_anytime\_tables\_from\_csv.py}.}
+\label{tab:anytime_ttt_success}
+\begin{tabular}{l|rrr|r}
+\toprule
+\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\midrule
+Baseline & -- & -- & -- & -- \\
+Baseline + AOS & -- & -- & -- & -- \\
+Racing-tuned & -- & -- & -- & -- \\
+Racing-tuned + AOS & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -652,7 +705,7 @@ For hypervolume, reference fronts for problems without closed-form Pareto fronts
 
 \subsection{Reproducibility}
 
-All experiments in this paper are reproducible from the repository. The cross-framework benchmark is executed via \texttt{python}\ \path{paper/01_run_paper_benchmark.py}, the AOS/racing-tuner ablation via \texttt{python}\ \path{paper/02_run_ablation_aos_racing_tuner.py}, and the scaling study via \texttt{python}\ \path{paper/03_run_scaling_experiment.py}. We control the number of seeds, evaluation budget, and workers with \path{VAMOS_N_SEEDS}, \path{VAMOS_N_EVALS}, and \path{VAMOS_N_JOBS}; unless otherwise stated, we use \path{VAMOS_N_SEEDS=30} and \path{VAMOS_N_EVALS=100000}. LaTeX runtime tables are regenerated by \texttt{python}\ \path{paper/04_update_paper_tables_from_csv.py}; Wilcoxon tables by \texttt{python}\ \path{paper/05_run_statistical_tests.py}; ablation tables by \texttt{python}\ \path{paper/06_update_ablation_tables_from_csv.py}; scaling tables by \texttt{python}\ \path{paper/07_update_scaling_tables_from_csv.py}; and the tuned-configuration summary by \texttt{python}\ \path{paper/09_update_tuned_config_from_json.py}. Benchmark reports also emit jMetalPy-compatible laboratory outputs (QualityIndicatorSummary.csv, Wilcoxon tables, and boxplots) under \path{summary/lab/} for interoperable post-processing, following the laboratory summary format described by jMetalPy~\cite{benitez2019jmetalpy}. Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
+All experiments in this paper are reproducible from the repository. The cross-framework benchmark is executed via \texttt{python}\ \path{paper/01_run_paper_benchmark.py}, the AOS/racing-tuner ablation via \texttt{python}\ \path{paper/02_run_ablation_aos_racing_tuner.py}, and the scaling study via \texttt{python}\ \path{paper/03_run_scaling_experiment.py}. We control the number of seeds, evaluation budget, and workers with \path{VAMOS_N_SEEDS}, \path{VAMOS_N_EVALS}, and \path{VAMOS_N_JOBS}; unless otherwise stated, we use \path{VAMOS_N_SEEDS=30} and \path{VAMOS_N_EVALS=100000}. LaTeX runtime tables are regenerated by \texttt{python}\ \path{paper/04_update_paper_tables_from_csv.py}; Wilcoxon tables by \texttt{python}\ \path{paper/05_run_statistical_tests.py}; final-budget ablation tables by \texttt{python}\ \path{paper/06_update_ablation_tables_from_csv.py}; scaling tables by \texttt{python}\ \path{paper/07_update_scaling_tables_from_csv.py}; anytime ablation tables by \texttt{python}\ \path{paper/10_update_anytime_tables_from_csv.py}; and the tuned-configuration summary by \texttt{python}\ \path{paper/09_update_tuned_config_from_json.py}. Benchmark reports also emit jMetalPy-compatible laboratory outputs (QualityIndicatorSummary.csv, Wilcoxon tables, and boxplots) under \path{summary/lab/} for interoperable post-processing, following the laboratory summary format described by jMetalPy~\cite{benitez2019jmetalpy}. Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
 
 \subsection{LLM-assisted development workflow}
 

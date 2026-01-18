@@ -407,8 +407,8 @@ class NSGAII:
                     and new_F is not None
                     and prev_F.ndim == 2
                     and new_F.ndim == 2
-                    and prev_F.shape[1] == 2
-                    and new_F.shape[1] == 2
+                    and prev_F.shape[1] == new_F.shape[1]
+                    and prev_F.shape[1] <= 3
                     and prev_F.size > 0
                     and new_F.size > 0
                 ):

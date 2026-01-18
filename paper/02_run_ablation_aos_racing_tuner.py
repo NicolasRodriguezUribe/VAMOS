@@ -16,9 +16,13 @@ Environment variables:
   - VAMOS_N_JOBS: joblib workers (default: CPU count - 1)
   - VAMOS_ABLATION_ENGINE: VAMOS engine for evaluation runs (default: numba)
   - VAMOS_ABLATION_VARIANTS: comma-separated variants to run
-      (default: baseline,aos,tuned)
+      (default: baseline,aos,tuned,tuned_aos)
   - VAMOS_ABLATION_OUTPUT_CSV: output CSV path
       (default: experiments/ablation_aos_racing_tuner.csv)
+  - VAMOS_ABLATION_ANYTIME_CSV: optional checkpoint CSV output path
+      (default: experiments/ablation_aos_anytime.csv; set empty/0 to disable)
+  - VAMOS_ABLATION_CHECKPOINTS: comma-separated evaluation checkpoints for anytime HV
+      (default: 5000,10000,20000,50000,100000)
 
 Tuner controls (optional):
   - VAMOS_TUNER_ENABLE: 1/0 (default: 1 if "tuned" variant requested)
@@ -50,7 +54,7 @@ import json
 import os
 import sys
 import time
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -144,6 +148,61 @@ def _maybe_dataclass_to_dict(value: object) -> object:
 # =============================================================================
 
 
+class HVCheckpointRecorder:
+    def __init__(self, *, problem_name: str, checkpoints: list[int], start_time: float):
+        self.problem_name = str(problem_name).lower()
+        self.checkpoints = sorted(set(int(c) for c in checkpoints))
+        self._start_time = float(start_time)
+        self._next_idx = 0
+        self._records: list[dict[str, float]] = []
+        self._last_front = None
+
+    def on_start(self, ctx: object | None = None) -> None:
+        return None
+
+    def on_generation(
+        self,
+        generation: int,
+        F=None,
+        X=None,
+        stats: dict[str, Any] | None = None,
+    ) -> None:
+        if self._next_idx >= len(self.checkpoints):
+            return
+        if stats is None:
+            return
+        evals = stats.get("evals")
+        if evals is None:
+            return
+        try:
+            evals_int = int(evals)
+        except Exception:
+            return
+        if F is not None:
+            self._last_front = F
+        while self._next_idx < len(self.checkpoints) and evals_int >= self.checkpoints[self._next_idx]:
+            front = F if F is not None else self._last_front
+            hv = compute_hv(front, self.problem_name) if front is not None else 0.0
+            seconds = time.perf_counter() - self._start_time
+            self._records.append({"evals": float(self.checkpoints[self._next_idx]), "seconds": float(seconds), "hypervolume": float(hv)})
+            self._next_idx += 1
+
+    def on_end(self, final_F=None, final_stats: dict[str, Any] | None = None) -> None:
+        if self._next_idx >= len(self.checkpoints):
+            return
+        front = final_F if final_F is not None else self._last_front
+        if front is None:
+            return
+        seconds = time.perf_counter() - self._start_time
+        hv = compute_hv(front, self.problem_name)
+        while self._next_idx < len(self.checkpoints):
+            self._records.append({"evals": float(self.checkpoints[self._next_idx]), "seconds": float(seconds), "hypervolume": float(hv)})
+            self._next_idx += 1
+
+    def records(self) -> list[dict[str, float]]:
+        return list(self._records)
+
+
 def make_aos_cfg(*, seed: int, n_var: int) -> dict[str, Any]:
     """
     Minimal, reproducible AOS configuration:
@@ -153,15 +212,20 @@ def make_aos_cfg(*, seed: int, n_var: int) -> dict[str, Any]:
     """
     return {
         "enabled": True,
-        "method": "epsilon_greedy",
-        "epsilon": float(os.environ.get("VAMOS_AOS_EPSILON", "0.1")),
-        "min_usage": int(os.environ.get("VAMOS_AOS_MIN_USAGE", "1")),
+        # Epsilon-greedy provides conservative exploration and avoids forcing
+        # every arm early, which can be harmful when some operators are highly
+        # problem-dependent.
+        "method": str(os.environ.get("VAMOS_AOS_METHOD", "epsilon_greedy")),
+        "epsilon": float(os.environ.get("VAMOS_AOS_EPSILON", "0.05")),
+        "c": float(os.environ.get("VAMOS_AOS_UCB_C", "1.0")),
+        "window_size": int(os.environ.get("VAMOS_AOS_WINDOW_SIZE", "50")),
+        "min_usage": int(os.environ.get("VAMOS_AOS_MIN_USAGE", "0")),
         "rng_seed": int(seed),
         "reward_scope": "combined",
         "reward_weights": {
-            "survival": float(os.environ.get("VAMOS_AOS_W_SURVIVAL", "0.45")),
-            "nd_insertions": float(os.environ.get("VAMOS_AOS_W_ND", "0.45")),
-            "hv_delta": float(os.environ.get("VAMOS_AOS_W_HV_DELTA", "0.10")),
+            "survival": float(os.environ.get("VAMOS_AOS_W_SURVIVAL", "0.40")),
+            "nd_insertions": float(os.environ.get("VAMOS_AOS_W_ND", "0.40")),
+            "hv_delta": float(os.environ.get("VAMOS_AOS_W_HV_DELTA", "0.20")),
         },
         "operator_pool": [
             {
@@ -169,7 +233,7 @@ def make_aos_cfg(*, seed: int, n_var: int) -> dict[str, Any]:
                 "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
             },
             {
-                "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.5}),
+                "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.2}),
                 "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
             },
         ],
@@ -402,14 +466,29 @@ def build_config(*, variant: str, seed: int, n_var: int, tuned_cfg: dict[str, An
         if tuned_cfg is None:
             raise ValueError("tuned variant requested but tuned_cfg is None")
         return config_from_assignment("nsgaii", tuned_cfg)
+    if variant == "tuned_aos":
+        if tuned_cfg is None:
+            raise ValueError("tuned_aos variant requested but tuned_cfg is None")
+        tuned = config_from_assignment("nsgaii", tuned_cfg)
+        return replace(tuned, adaptive_operator_selection=make_aos_cfg(seed=seed, n_var=n_var))
     raise ValueError(f"Unknown variant '{variant}'")
 
 
-def run_single(variant: str, problem_name: str, seed: int, *, n_evals: int, engine: str, tuned_cfg: dict[str, Any] | None) -> dict[str, Any]:
+def run_single(
+    variant: str,
+    problem_name: str,
+    seed: int,
+    *,
+    n_evals: int,
+    engine: str,
+    tuned_cfg: dict[str, Any] | None,
+    checkpoints: list[int] | None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     n_var, n_obj = problem_dims(problem_name)
     problem = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj).instantiate()
     algo_cfg = build_config(variant=variant, seed=seed, n_var=n_var, tuned_cfg=tuned_cfg)
     start = time.perf_counter()
+    recorder = HVCheckpointRecorder(problem_name=problem_name, checkpoints=checkpoints, start_time=start) if checkpoints else None
     res = optimize(
         problem,
         algorithm="nsgaii",
@@ -417,10 +496,12 @@ def run_single(variant: str, problem_name: str, seed: int, *, n_evals: int, engi
         termination=("n_eval", n_evals),
         seed=seed,
         engine=engine,
+        live_viz=recorder,
     )
     elapsed = time.perf_counter() - start
     hv = compute_hv(res.F, problem_name) if res.F is not None else float("nan")
-    return {
+
+    final_row = {
         "variant": variant,
         "problem": problem_name,
         "algorithm": "NSGA-II",
@@ -433,20 +514,61 @@ def run_single(variant: str, problem_name: str, seed: int, *, n_evals: int, engi
         "algorithm_config": json.dumps(_maybe_dataclass_to_dict(algo_cfg), sort_keys=True),
     }
 
+    chk_rows: list[dict[str, Any]] = []
+    if recorder is not None:
+        for r in recorder.records():
+            chk_rows.append(
+                {
+                    "variant": variant,
+                    "problem": problem_name,
+                    "engine": engine,
+                    "n_evals": int(n_evals),
+                    "seed": int(seed),
+                    "evals": int(r["evals"]),
+                    "runtime_seconds": float(r["seconds"]),
+                    "hypervolume": float(r["hypervolume"]),
+                }
+            )
+
+    return final_row, chk_rows
+
 
 def main() -> None:
     problems = [*ZDT_PROBLEMS, *DTLZ_PROBLEMS, *WFG_PROBLEMS]
+    problems_raw = os.environ.get("VAMOS_ABLATION_PROBLEMS")
+    if problems_raw:
+        problems = _parse_csv_list(problems_raw)
+        unknown = [p for p in problems if p not in {*ZDT_PROBLEMS, *DTLZ_PROBLEMS, *WFG_PROBLEMS}]
+        if unknown:
+            raise ValueError(f"Unknown problems in VAMOS_ABLATION_PROBLEMS: {unknown}")
 
     n_evals = _as_int_env("VAMOS_N_EVALS", 100000)
     n_seeds = _as_int_env("VAMOS_N_SEEDS", 30)
     engine = _as_str_env("VAMOS_ABLATION_ENGINE", "numba")
     output_csv = Path(_as_str_env("VAMOS_ABLATION_OUTPUT_CSV", str(ROOT_DIR / "experiments" / "ablation_aos_racing_tuner.csv")))
 
-    variants = _parse_csv_list(_as_str_env("VAMOS_ABLATION_VARIANTS", "baseline,aos,tuned"))
+    anytime_csv_raw = os.environ.get("VAMOS_ABLATION_ANYTIME_CSV")
+    if anytime_csv_raw is None:
+        anytime_csv_raw = str(ROOT_DIR / "experiments" / "ablation_aos_anytime.csv")
+    anytime_csv_raw = str(anytime_csv_raw).strip()
+    anytime_csv: Path | None = None
+    if anytime_csv_raw and anytime_csv_raw not in {"0", "false", "False"}:
+        anytime_csv = Path(anytime_csv_raw)
+
+    checkpoints: list[int] | None = None
+    if anytime_csv is not None:
+        raw = _as_str_env("VAMOS_ABLATION_CHECKPOINTS", "5000,10000,20000,50000,100000")
+        checkpoints = sorted(set(int(x) for x in _parse_int_list(raw) if int(x) > 0))
+        if not checkpoints:
+            raise ValueError("VAMOS_ABLATION_CHECKPOINTS must contain at least one positive integer checkpoint.")
+        if checkpoints[-1] != n_evals:
+            checkpoints.append(int(n_evals))
+
+    variants = _parse_csv_list(_as_str_env("VAMOS_ABLATION_VARIANTS", "baseline,aos,tuned,tuned_aos"))
     variants = [v.strip().lower() for v in variants]
     for v in variants:
-        if v not in {"baseline", "aos", "tuned"}:
-            raise ValueError(f"Unsupported variant '{v}'. Supported: baseline,aos,tuned")
+        if v not in {"baseline", "aos", "tuned", "tuned_aos"}:
+            raise ValueError(f"Unsupported variant '{v}'. Supported: baseline,aos,tuned,tuned_aos")
 
     n_jobs = int(os.environ.get("VAMOS_N_JOBS", max(1, (os.cpu_count() or 2) - 1)))
 
@@ -456,9 +578,13 @@ def main() -> None:
     print(f"Seeds: {n_seeds}")
     print(f"Engine: {engine}")
     print(f"Parallel workers: {n_jobs}")
+    if anytime_csv is not None:
+        print(f"Anytime checkpoints: {checkpoints}")
+        print(f"Anytime CSV: {anytime_csv}")
 
     tuned_cfg: dict[str, Any] | None = None
-    if "tuned" in variants:
+    needs_tuned = any(v in variants for v in ("tuned", "tuned_aos"))
+    if needs_tuned:
         enable = _as_int_env("VAMOS_TUNER_ENABLE", 1)
         if enable != 0:
             train_default = "zdt4,zdt6,dtlz2,dtlz6,dtlz7,wfg1,wfg9"
@@ -480,22 +606,52 @@ def main() -> None:
 
     if n_jobs <= 1:
         bar = ProgressBar(total=len(tasks), desc="Ablation runs")
-        rows = []
+        final_rows: list[dict[str, Any]] = []
+        anytime_rows: list[dict[str, Any]] = []
         for variant, problem, seed in tasks:
-            rows.append(run_single(variant, problem, seed, n_evals=n_evals, engine=engine, tuned_cfg=tuned_cfg))
+            final_row, chk = run_single(
+                variant,
+                problem,
+                seed,
+                n_evals=n_evals,
+                engine=engine,
+                tuned_cfg=tuned_cfg,
+                checkpoints=checkpoints,
+            )
+            final_rows.append(final_row)
+            anytime_rows.extend(chk)
             bar.update(1)
         bar.close()
     else:
         with joblib_progress(total=len(tasks), desc="Ablation runs"):
-            rows = Parallel(n_jobs=n_jobs)(
-                delayed(run_single)(variant, problem, seed, n_evals=n_evals, engine=engine, tuned_cfg=tuned_cfg)
+            results = Parallel(n_jobs=n_jobs)(
+                delayed(run_single)(
+                    variant,
+                    problem,
+                    seed,
+                    n_evals=n_evals,
+                    engine=engine,
+                    tuned_cfg=tuned_cfg,
+                    checkpoints=checkpoints,
+                )
                 for variant, problem, seed in tasks
             )
+        final_rows = []
+        anytime_rows = []
+        for final_row, chk in results:
+            final_rows.append(final_row)
+            anytime_rows.extend(chk)
 
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(final_rows)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_csv, index=False)
     print(f"Wrote {len(df)} rows to {output_csv}")
+
+    if anytime_csv is not None:
+        anytime_csv.parent.mkdir(parents=True, exist_ok=True)
+        df_any = pd.DataFrame(anytime_rows)
+        df_any.to_csv(anytime_csv, index=False)
+        print(f"Wrote {len(df_any)} rows to {anytime_csv}")
 
 
 if __name__ == "__main__":

@@ -73,5 +73,11 @@ dist/
 build/
 *.egg-info/
 
+# --- Local ablation scratch outputs (do not version) ---
+experiments/ablation_aos_check*.csv
+experiments/ablation_aos_subset*.csv
+experiments/ablation_aos_trial*.csv
+experiments/ablation_smoke*.csv
+
 # --- Notebooks (keep local unless explicitly tracked) ---
 # *.ipynb
