@@ -155,7 +155,7 @@ Multi-fidelity strategies further improve sample efficiency by treating the eval
 
 Adaptive operator selection (AOS) addresses the complementary problem of \emph{online} adaptation: instead of selecting a single static configuration $\theta$ before a run, the algorithm chooses among a set of operators while the search progresses. AOS mechanisms are typically characterized by (i) an operator pool, (ii) a credit assignment scheme that maps an operator application to a reward signal, and (iii) a selection policy that updates operator probabilities based on accumulated credit.
 
-Multi-armed bandit formulations are popular because they directly manage the exploration--exploitation trade-off and yield simple, robust policies such as $\epsilon$-greedy and UCB variants~\cite{fialho2010analyzing}. In multi-objective settings, rewards cannot rely solely on a single scalar fitness and are often based on inexpensive proxies (e.g., survival, dominance relations, or archive updates) rather than expensive indicators. \VAMOS{} provides a portfolio-driven AOS interface and integrates bandit policies into NSGA-II, using reward signals derived from survival and non-dominated insertions.
+Multi-armed bandit formulations are popular because they directly manage the exploration--exploitation trade-off and yield simple, robust policies such as $\epsilon$-greedy~\cite{sutton2018reinforcement}, UCB variants~\cite{auer2002finite}, EXP3~\cite{auer2002nonstochastic}, and Thompson sampling~\cite{thompson1933likelihood}. In multi-objective settings, rewards cannot rely solely on a single scalar fitness and are often based on inexpensive proxies (e.g., survival, dominance relations, or archive updates) rather than expensive indicators. \VAMOS{} provides a portfolio-driven AOS interface and integrates bandit policies into NSGA-II, using reward signals derived from survival and non-dominated insertions~\cite{fialho2010analyzing}.
 
 %==============================================================================
 \section{VAMOS Framework}
@@ -259,7 +259,34 @@ The framework includes optional external archives (with configurable pruning str
 
 Adaptive operator selection aims to reduce the need for a single, globally optimal operator setting by adapting variation operators online as the search progresses. In practice, different operators can be beneficial at different stages (e.g., exploration early vs.\ exploitation near convergence) or on different regions of the Pareto front. The goal of \VAMOS{}' AOS module is to provide a lightweight, reproducible mechanism that improves robustness across problems and reduces manual trial-and-error in operator tuning.
 
-In \VAMOS{}, AOS is portfolio-based: users specify an \emph{operator pool} (a finite set of \emph{arms}, where each arm is a crossover--mutation pipeline with fixed hyperparameters) and a \emph{selection policy} that chooses which arm to apply during the run. We model this decision as a non-stationary multi-armed bandit problem and implement several standard policies ($\epsilon$-greedy, UCB variants, EXP3, Thompson sampling, and sliding-window UCB)~\cite{fialho2010analyzing}. To ensure continued exploration and avoid premature lock-in, policies can enforce an exploration floor by mixing learned probabilities with uniform sampling. Importantly, AOS does not modify the operator implementations themselves; it only changes \emph{which} predefined operator pipeline is applied over time.
+In \VAMOS{}, AOS is portfolio-based: users specify an \emph{operator pool} (a finite set of \emph{arms}, where each arm is a crossover--mutation pipeline with fixed hyperparameters) and a \emph{selection policy} that chooses which arm to apply during the run. We model this decision as a non-stationary multi-armed bandit problem and implement several standard policies: $\epsilon$-greedy~\cite{sutton2018reinforcement}, UCB1~\cite{auer2002finite} (and a sliding-window variant for non-stationary rewards~\cite{garivier2011ucb}), EXP3~\cite{auer2002nonstochastic}, and Thompson sampling~\cite{thompson1933likelihood}. To ensure continued exploration and avoid premature lock-in, policies can enforce an exploration floor by mixing learned probabilities with uniform sampling. Importantly, AOS does not modify the operator implementations themselves; it only changes \emph{which} predefined operator pipeline is applied over time.
+
+\begin{table}[htbp]
+\centering
+\caption{Bandit selection policies available for AOS in \VAMOS{} (bounded rewards $r_t \in [0,1]$). $\hat{\mu}_i$ denotes the empirical mean reward of arm $i$, $n_i$ the pull count, $t$ the total pulls, and $K$ the number of arms.}
+\label{tab:aos_policies}
+\begin{tabular}{l|p{0.58\linewidth}|p{0.25\linewidth}}
+\toprule
+\textbf{Policy} & \textbf{Selection / update (sketch)} & \textbf{Key hyperparameters} \\
+\midrule
+$\epsilon$-greedy~\cite{sutton2018reinforcement} &
+With probability $\epsilon$, sample an arm uniformly; otherwise select $a=\arg\max_i \hat{\mu}_i$. Update $\hat{\mu}_a$ by incremental mean. &
+$\epsilon$; warm-up min-usage $m$ \\
+UCB1~\cite{auer2002finite} &
+Select $a=\arg\max_i \hat{\mu}_i + c\,\sqrt{\log(t)/n_i}$; update $\hat{\mu}_a$ by incremental mean. &
+$c$; warm-up min-usage $m$ \\
+Sliding-window UCB~\cite{garivier2011ucb} &
+As UCB1, but compute $\hat{\mu}_i$ and $n_i$ from the last $W$ rewards per arm (non-stationary setting). &
+$c$; window size $W$; min-usage $m$ \\
+EXP3~\cite{auer2002nonstochastic} &
+Maintain weights $w_i$ and sample $a$ from $p_i=(1-\gamma)\frac{w_i}{\sum_j w_j}+\frac{\gamma}{K}$. Update $w_a \leftarrow w_a \exp\!\left(\frac{\gamma}{K}\frac{r_t}{p_a}\right)$. &
+$\gamma$ \\
+Thompson sampling~\cite{thompson1933likelihood} &
+For each arm, sample $\theta_i \sim \mathrm{Beta}(\alpha_i,\beta_i)$ with $(\alpha_i,\beta_i)$ derived from reward history; select $a=\arg\max_i \theta_i$. (Optionally use a sliding window.) &
+min-usage $m$; optional window size $W$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 In the NSGA-II integration used in this paper, the controller selects one arm per generation and applies it to generate the entire offspring batch for that generation. After survival selection, the chosen arm receives credit based on inexpensive, generation-level signals. The default signals are (i) the offspring survival rate and (ii) the rate of non-dominated insertions; optionally, a small hypervolume-change term can be included when it is inexpensive to compute (up to three objectives in our implementation). These rewards update the policy and thereby the arm-selection probabilities for subsequent generations. This design keeps the AOS overhead small relative to the variation and survival kernels and avoids dependence on expensive indicators in the inner loop.
 
@@ -293,7 +320,9 @@ In the NSGA-II integration used in this paper, the controller selects one arm pe
 
 Automatic algorithm configuration targets the complementary \emph{offline} problem: before running an algorithm at scale, select a configuration $\theta$ (operator families and their parameters, population size, and other hyperparameters) that performs well on a representative set of problem instances. The goal of \VAMOS{}' racing tuner is to make this process reproducible and sample-efficient by concentrating evaluations on promising configurations while quickly discarding clearly inferior ones.
 
-\VAMOS{} provides an irace-inspired racing tuner~\cite{lopez2016irace} that iteratively samples candidate configurations and evaluates them across instance$\times$seed blocks. Racing proceeds in rounds: all surviving candidates are evaluated on the same additional blocks, and statistical elimination is used to remove candidates whose performance is consistently worse than the current elites. Using common blocks yields paired comparisons and reduces variance from stochasticity. The output is the best configuration under the chosen performance metric (e.g., normalized hypervolume under a fixed evaluation budget), along with a full evaluation history suitable for audit and reporting.
+\VAMOS{} provides an irace-inspired racing tuner~\cite{lopez2016irace} that iteratively samples candidate configurations and evaluates them across \emph{instance$\times$seed blocks}. A block is defined as one training instance paired with one random seed; in each stage, every surviving configuration is evaluated on the same next block (``common random numbers''), producing a score $s(\theta; i, \xi, B)$ for configuration $\theta$ on instance $i$ with seed $\xi$ under an evaluation budget $B$. Scores are aggregated across the blocks seen so far (mean aggregation by default) to obtain an estimate of expected performance, $\hat{S}(\theta)$. Racing then repeatedly eliminates clearly inferior candidates while ensuring that at least a minimum number of survivors remain. Using shared blocks yields paired comparisons, reduces noise from stochasticity, and makes elimination decisions more stable than unpaired evaluation.
+
+In \VAMOS{}, elimination is staged and conservative: if too few blocks have been observed, or if score histories are not aligned across candidates, the tuner falls back to rank-based elimination that discards a fixed fraction of the worst candidates. Once enough common blocks have been evaluated, the tuner can apply a statistical gate to avoid premature pruning: first, a global test checks whether any performance differences are detectable across candidates; if so, paired tests against the incumbent best configuration are performed with multiple-comparison correction (Holm step-down), eliminating only candidates that are significantly worse. This design mirrors the ``evaluate on shared blocks $\rightarrow$ eliminate'' structure of irace while keeping the implementation simple and reproducible.
 
 For sample efficiency, the tuner optionally supports a multi-fidelity strategy (Hyperband-style successive halving~\cite{li2017hyperband}) by treating the evaluation budget as a fidelity level. Candidates are first evaluated at low budgets; only the top fraction is promoted to higher budgets. When fidelity increases, \VAMOS{} can warm-start from checkpoints of lower-fidelity runs, reusing partial trajectories instead of restarting from scratch. Figure~\ref{fig:racing_tuner} summarizes the workflow.
 
@@ -303,6 +332,32 @@ For sample efficiency, the tuner optionally supports a multi-fidelity strategy (
   \caption{Racing-based hyperparameter tuning in \VAMOS{}: sample candidate configurations, evaluate them on instance$\times$seed blocks, eliminate underperformers via racing, optionally promote survivors to higher budgets (with warm-start checkpoints), and output the best configuration and a complete history.}
   \label{fig:racing_tuner}
 \end{figure}
+
+\begin{algorithm}[htbp]
+\caption{Racing-based tuning with optional multi-fidelity.}
+\label{alg:racing}
+\begin{algorithmic}[1]
+\Require Parameter space $\Theta$, training instances $\mathcal{I}$, training seeds $\Xi$, budgets $B_1 < \dots < B_L$ (or $L{=}1$), max initial candidates $N_0$, total experiment budget $E_{\max}$, promotion ratio $\rho$, minimum survivors per fidelity $N_{\min}$, elimination fraction $\phi$, significance level $\alpha$
+\State Sample initial candidates $\mathcal{C} \gets \{\theta_1,\dots,\theta_{N_0}\}$ from $\Theta$ (optionally including injected defaults)
+\State Build a randomized block schedule $\mathcal{B} \gets$ permutations of $(i,\xi) \in \mathcal{I}\times\Xi$
+\State Initialize score histories $H(\theta) \gets [\ ]$ for all $\theta\in\mathcal{C}$
+\For{$\ell = 1,\dots,L$} \Comment{Fidelity levels (successive halving when $L>1$)}
+  \For{each block $(i,\xi)\in\mathcal{B}$}
+    \For{each alive $\theta \in \mathcal{C}$ \textbf{in parallel}}
+      \State Evaluate and record: $H(\theta) \mathrel{+}= s(\theta; i,\xi,B_\ell)$ (optionally warm-start from checkpoints)
+    \EndFor
+    \State Stop if total evaluations exceed $E_{\max}$
+  \EndFor
+  \State Aggregate per candidate: $\hat{S}(\theta) \gets \textsc{Aggregate}(H(\theta))$ (mean by default)
+  \If{$L>1$ and $\ell < L$} \Comment{Multi-fidelity promotion}
+    \State Keep top $\max(\lceil\rho|\mathcal{C}|\rceil, N_{\min})$ candidates by $\hat{S}$; eliminate the rest
+  \Else \Comment{Single-fidelity racing (or final fidelity)}
+    \State Eliminate conservatively using rank-based pruning and/or paired tests vs the incumbent with Holm correction (subject to a minimum number of common blocks)
+  \EndIf
+\EndFor
+\State \Return selected $\theta^\star = \arg\max_{\theta\in\mathcal{C}} \hat{S}(\theta)$ and full history $\{H(\theta)\}$
+\end{algorithmic}
+\end{algorithm}
 
 %==============================================================================
 \section{Experimental Evaluation}
@@ -586,8 +641,8 @@ Platypus & 0.003 & 100.0 \\
 To evaluate the practical impact of \VAMOS{}' optional adaptation modules beyond the cross-framework baseline, we run an internal ablation study on the same benchmark suite and evaluation budgets as the runtime experiments. We compare four \VAMOS{} variants of NSGA-II in a $2\times2$ factorial design (tuned vs.\ untuned) $\times$ (AOS disabled vs.\ enabled):
 \begin{enumerate}
   \item \textbf{Baseline}: the fixed-operator configuration used in the cross-framework benchmark (SBX crossover and polynomial mutation).
-  \item \textbf{Baseline + AOS}: the same configuration augmented with adaptive operator selection (AOS), where an $\epsilon$-greedy bandit selects between a small portfolio of real-coded variation pipelines (SBX+PM vs.\ BLX-$\alpha$+PM). Rewards combine survival and non-dominated insertion rates with a lightweight per-generation hypervolume-change term (computed when inexpensive, up to three objectives) to reduce the risk of selecting operators that improve selection statistics while degrading Pareto-front quality.
-  \item \textbf{Racing-tuned}: a single tuned NSGA-II configuration obtained by the racing tuner on a broader training set (\texttt{zdt4}, \texttt{zdt6}, \texttt{dtlz2}, \texttt{dtlz6}, \texttt{dtlz7}, \texttt{wfg1}, \texttt{wfg9}) using multi-fidelity racing up to the full evaluation budget (20k $\rightarrow$ 60k $\rightarrow$ 100k evaluations). The search space is constrained to enforce $\texttt{pop\_size}\ge 100$ and $\texttt{offspring\_size}=\texttt{pop\_size}$, and uses a dimension-normalized mutation probability factor for better cross-problem transfer. To reduce variance, we tune on 10 training seeds and repeat the entire race 5 times with different tuner seeds, selecting a single configuration by the final-fidelity score and evaluating it on the full benchmark suite without per-problem re-tuning.
+  \item \textbf{Baseline + AOS}: the same configuration augmented with adaptive operator selection (AOS), where an $\epsilon$-greedy bandit~\cite{sutton2018reinforcement} selects between a small portfolio of real-coded variation pipelines (SBX+PM vs.\ BLX-$\alpha$+PM). Unless otherwise stated, we use $\epsilon=0.05$ with a deterministic per-run RNG seed. Rewards combine survival and non-dominated insertion rates with a lightweight per-generation hypervolume-change term (computed when inexpensive, up to three objectives) to reduce the risk of selecting operators that improve selection statistics while degrading Pareto-front quality.
+  \item \textbf{Racing-tuned}: a single tuned NSGA-II configuration obtained by the racing tuner on a broader training set (\texttt{zdt4}, \texttt{zdt6}, \texttt{dtlz2}, \texttt{dtlz6}, \texttt{dtlz7}, \texttt{wfg1}, \texttt{wfg9}) using multi-fidelity racing up to the full evaluation budget (20k $\rightarrow$ 60k $\rightarrow$ 100k evaluations). The search space enforces $\texttt{pop\_size}\ge 100$ and sets offspring size as a fraction of population size via $\texttt{offspring\_ratio}\in\{0.25,0.5,0.75,1.0\}$ (thus $\texttt{offspring\_size}\le\texttt{pop\_size}$), and uses a dimension-normalized mutation probability factor for better cross-problem transfer. To reduce variance, we tune on 10 training seeds and repeat the entire race 5 times with different tuner seeds, selecting a single configuration by the final-fidelity score and evaluating it on the full benchmark suite without per-problem re-tuning.
   \item \textbf{Racing-tuned + AOS}: the racing-tuned configuration augmented with the same AOS portfolio and bandit policy, to quantify whether online operator adaptation provides additional benefit beyond offline tuning.
 \end{enumerate}
 The selected racing-tuned configuration is exported for reproducibility and summarized in Table~\ref{tab:racing_tuned_config}. All variants are evaluated for 30 independent seeds and reported using the same normalized hypervolume protocol (Section~\ref{sec:hv}) and wall-clock runtime measurement setup. Tables~\ref{tab:ablation_runtime} and \ref{tab:ablation_hypervolume} summarize the final-budget ablation outcomes aggregated by benchmark family.
@@ -920,6 +975,31 @@ J. Mach. Learn. Res. 18~(185) (2017) 1--52.
 {\'A}.~Fialho, M.~Schoenauer, M.~Sebag,
 Analyzing bandit-based adaptive operator selection mechanisms,
 Ann. Math. Artif. Intell. 60 (2010) 25--64.
+
+\bibitem{sutton2018reinforcement}
+R.~S. Sutton, A.~G. Barto,
+Reinforcement Learning: An Introduction,
+MIT Press, 2018.
+
+\bibitem{auer2002finite}
+P.~Auer, N.~Cesa-Bianchi, P.~Fischer,
+Finite-time analysis of the multiarmed bandit problem,
+Mach. Learn. 47 (2002) 235--256.
+
+\bibitem{auer2002nonstochastic}
+P.~Auer, N.~Cesa-Bianchi, Y.~Freund, R.~E. Schapire,
+The nonstochastic multiarmed bandit problem,
+SIAM J. Comput. 32~(1) (2002) 48--77.
+
+\bibitem{thompson1933likelihood}
+W.~R. Thompson,
+On the likelihood that one unknown probability exceeds another in view of the evidence of two samples,
+Biometrika 25 (1933) 285--294.
+
+\bibitem{garivier2011ucb}
+A.~Garivier, E.~Moulines,
+On upper-confidence bound policies for switching bandit problems,
+in: Proc. Algorithmic Learning Theory (ALT), 2011, pp.~174--188.
 
 \bibitem{lam2015numba}
 S.~K. Lam, et~al.,
