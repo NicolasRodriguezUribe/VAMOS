@@ -1,13 +1,16 @@
 {
   "adaptive_operator_selection": null,
-  "archive": null,
+  "archive": {
+    "size": 180,
+    "unbounded": true
+  },
   "archive_type": null,
   "constraint_mode": "feasibility",
   "crossover": [
     "sbx",
     {
-      "eta": 29.01528364614782,
-      "prob": 0.9859262198347306
+      "eta": 6.815888470431881,
+      "prob": 0.9860925683349502
     }
   ],
   "initializer": null,
@@ -17,15 +20,15 @@
       "prob": 0.1
     }
   ],
-  "mutation_prob_factor": 0.5028710343597436,
-  "offspring_size": 183,
-  "pop_size": 183,
+  "mutation_prob_factor": 1.0342180485763703,
+  "offspring_size": 180,
+  "pop_size": 180,
   "repair": null,
-  "result_mode": "non_dominated",
+  "result_mode": "external_archive",
   "selection": [
     "tournament",
     {
-      "pressure": 2
+      "pressure": 4
     }
   ],
   "track_genealogy": false
