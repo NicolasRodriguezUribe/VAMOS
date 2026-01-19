@@ -59,5 +59,5 @@ def test_nsgaii_config_space_builds_and_constructs_config():
     assignment = space.sample(rng)
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.pop_size > 0
-    assert cfg.crossover[0] in ("sbx", "blx_alpha")
-    assert cfg.mutation[0] in ("pm", "non_uniform")
+    assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
+    assert cfg.mutation[0] in ("pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform")

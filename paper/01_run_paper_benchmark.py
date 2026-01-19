@@ -112,7 +112,10 @@ print(f"Total runs: {len(PROBLEMS) * len(FRAMEWORKS) * N_SEEDS}")
 from joblib import Parallel, delayed
 
 # Use all cores minus 1
+# joblib supports negative n_jobs (e.g., -1 = all cores). Only n_jobs==1 is truly sequential.
 N_JOBS = int(os.environ.get("VAMOS_N_JOBS", max(1, os.cpu_count() - 1)))
+if N_JOBS == 0:
+    raise ValueError("VAMOS_N_JOBS cannot be 0 (joblib expects 1, -1, or another non-zero integer).")
 print(f"Using {N_JOBS} parallel workers")
 
 from vamos.foundation.problem.registry import make_problem_selection
@@ -770,7 +773,7 @@ print(f"Total: {len(parallel_jobs) + len(sequential_jobs)}")
 # Run parallel jobs first
 print(f"\nRunning {len(parallel_jobs)} parallel jobs...")
 if parallel_jobs:
-    if N_JOBS <= 1:
+    if N_JOBS == 1:
         bar = ProgressBar(total=len(parallel_jobs), desc="Paper benchmark")
         results_list = []
         for p, s, b in parallel_jobs:
@@ -779,7 +782,7 @@ if parallel_jobs:
         bar.close()
     else:
         with joblib_progress(total=len(parallel_jobs), desc="Paper benchmark"):
-            results_list = Parallel(n_jobs=N_JOBS)(delayed(run_single_benchmark)(p, s, b) for p, s, b in parallel_jobs)
+            results_list = Parallel(n_jobs=N_JOBS, batch_size=1)(delayed(run_single_benchmark)(p, s, b) for p, s, b in parallel_jobs)
 else:
     results_list = []
 

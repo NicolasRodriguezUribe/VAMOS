@@ -25,7 +25,7 @@ OUTPUT_DIR = Path(__file__).parent / "manuscript"
 INPUT_CSV = DATA_DIR / "benchmark_paper.csv"
 
 ALPHA = 0.05  # Significance level
-HV_EQ_MARGIN_REL = 0.01  # ±1% relative margin for equivalence on normalized HV
+HV_EQ_MARGIN_REL = 0.01  # +/-1% relative margin for equivalence on normalized HV
 BOOTSTRAP_N = 5000  # paired bootstrap replicates for CI
 BOOTSTRAP_CI = 0.90  # 90% CI (equivalence via CI-in-margin criterion)
 
