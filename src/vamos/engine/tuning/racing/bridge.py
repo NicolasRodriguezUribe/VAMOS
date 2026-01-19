@@ -4,6 +4,7 @@ Bridge from sampled hyperparameters to concrete algorithm configs.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -31,14 +32,17 @@ from .param_space import (
 def build_nsgaii_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
-        Int("offspring_size", 20, 200, log=True),
+        Categorical(
+            "offspring_ratio",
+            [0.25, 0.5, 0.75, 1.0],
+        ),
         Categorical("crossover", ["sbx", "blx_alpha"]),
         Real("crossover_prob", 0.6, 1.0),
         Categorical("mutation", ["pm", "non_uniform"]),
         Real("mutation_prob_factor", 0.5, 3.0),
         Real("mutation_eta", 5.0, 40.0),
         Categorical("selection", ["tournament"]),
-        Int("selection_pressure", 2, 4),
+        Int("selection_pressure", 2, 10),
         Boolean("use_external_archive"),
     ]
     conditionals = [
@@ -85,7 +89,7 @@ def build_nsgaiii_config_space() -> AlgorithmConfigSpace:
         Categorical("mutation", ["pm"]),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
-        Int("selection_pressure", 2, 4),
+        Int("selection_pressure", 2, 10),
     ]
     return AlgorithmConfigSpace("nsgaiii", params, [])
 
@@ -99,7 +103,7 @@ def build_smsemoa_config_space() -> AlgorithmConfigSpace:
         Categorical("mutation", ["pm"]),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
-        Int("selection_pressure", 2, 4),
+        Int("selection_pressure", 2, 10),
     ]
     return AlgorithmConfigSpace("smsemoa", params, [])
 
@@ -114,7 +118,7 @@ def build_spea2_config_space() -> AlgorithmConfigSpace:
         Categorical("mutation", ["pm"]),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
-        Int("selection_pressure", 2, 4),
+        Int("selection_pressure", 2, 10),
         Int("k_neighbors", 1, 25),
     ]
     return AlgorithmConfigSpace("spea2", params, [])
@@ -129,7 +133,7 @@ def build_ibea_config_space() -> AlgorithmConfigSpace:
         Categorical("mutation", ["pm"]),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
-        Int("selection_pressure", 2, 4),
+        Int("selection_pressure", 2, 10),
         Categorical("indicator", ["eps", "hypervolume"]),
         Real("kappa", 0.01, 0.2),
     ]
@@ -158,8 +162,22 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
     algo = algorithm_name.lower()
     if algo == "nsgaii":
         builder = NSGAIIConfig.builder()
-        builder.pop_size(int(assignment["pop_size"]))
-        builder.offspring_size(int(assignment.get("offspring_size", assignment["pop_size"])))
+        pop_size = int(assignment["pop_size"])
+        builder.pop_size(pop_size)
+
+        raw_offspring_size = assignment.get("offspring_size")
+        if raw_offspring_size is not None:
+            offspring_size = int(raw_offspring_size)
+        else:
+            ratio = assignment.get("offspring_ratio", 1.0)
+            try:
+                ratio_f = float(ratio)
+            except (TypeError, ValueError):
+                ratio_f = 1.0
+            ratio_f = max(0.0, min(1.0, ratio_f))
+            offspring_size = int(math.floor(pop_size * ratio_f + 0.5))
+        offspring_size = max(1, min(pop_size, int(offspring_size)))
+        builder.offspring_size(offspring_size)
         cross = assignment["crossover"]
         cross_params = {"prob": float(assignment["crossover_prob"])}
         if cross == "sbx":

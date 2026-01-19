@@ -294,9 +294,7 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
     else:  # pragma: no cover
         raise TypeError(f"Unexpected pop_size param type: {type(pop_param)}")
 
-    # Constrain NSGA-II to the common setting offspring_size = pop_size.
-    # (This keeps the tuning space smaller and avoids pathological settings.)
-    param_space.params.pop("offspring_size", None)
+    # Offspring size is controlled via offspring_ratio (<= pop_size) in the tuning space.
 
     instances: list[Instance] = []
     for problem in train_problems:
