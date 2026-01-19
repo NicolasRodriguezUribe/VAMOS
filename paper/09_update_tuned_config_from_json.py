@@ -115,12 +115,15 @@ def make_latex_config_table(cfg: NSGAIIConfig, *, caption: str, label: str) -> s
 
     offspring_size = cfg.offspring_size if cfg.offspring_size is not None else cfg.pop_size
 
+    repair = "disabled" if cfg.repair is None else _format_operator(cfg.repair)
+
     rows = [
         (r"\texttt{pop\_size}", str(int(cfg.pop_size))),
         (r"\texttt{offspring\_size}", str(int(offspring_size))),
         ("Crossover", crossover),
         ("Mutation", mutation),
         ("Selection", selection),
+        ("Repair", repair),
         ("External archive", _external_archive_summary(cfg)),
     ]
 
@@ -229,4 +232,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

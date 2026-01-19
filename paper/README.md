@@ -19,8 +19,12 @@ Install dependencies (includes benchmark frameworks used in the paper):
 Regenerate LaTeX tables from the committed CSVs:
 - Runtime tables: `python paper/04_update_paper_tables_from_csv.py`
 - Wilcoxon tables: `python paper/05_run_statistical_tests.py`
-- Ablation tables: `python paper/06_update_ablation_tables_from_csv.py --empty`
-- Scaling + Numba JIT tables: `python paper/07_update_scaling_tables_from_csv.py --empty`
+- Ablation tables: `python paper/06_update_ablation_tables_from_csv.py`
+- Scaling + Numba JIT tables:
+  - Generate `experiments/scaling_vectorization.csv`: `python paper/03_run_scaling_experiment.py`
+  - Update LaTeX: `python paper/07_update_scaling_tables_from_csv.py`
+
+Use `--empty` on the table-update scripts to write placeholder tables when the corresponding CSV is not available yet.
 
 ## Re-run the paper benchmark (expensive)
 

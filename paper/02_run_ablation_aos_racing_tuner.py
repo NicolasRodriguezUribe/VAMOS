@@ -31,9 +31,9 @@ Tuner controls (optional):
   - VAMOS_TUNER_N_EVALS: evaluations per tuning run (default: 20000; used only if multi-fidelity is disabled)
   - VAMOS_TUNER_N_SEEDS: number of seeds per tuning block (default: 10)
   - VAMOS_TUNER_SEED0: first seed for tuning (default: 1)
-  - VAMOS_TUNER_MAX_EXPERIMENTS: max config×instance×seed blocks (default: 8000)
+  - VAMOS_TUNER_MAX_EXPERIMENTS: max config×instance×seed blocks (default: auto-estimated)
   - VAMOS_TUNER_N_JOBS: parallel jobs for tuner evaluations (default: 1)
-  - VAMOS_TUNER_MAX_INITIAL_CONFIGS: number of configurations sampled per tuning run (default: 60)
+  - VAMOS_TUNER_MAX_INITIAL_CONFIGS: number of configurations sampled per tuning run (default: auto-estimated)
   - VAMOS_TUNER_REPEATS: repeat tuning runs with different tuner seeds (default: 5)
   - VAMOS_TUNER_PICK: which repeated run to select ("best" or "median"; default: best)
   - VAMOS_TUNER_MIN_POP_SIZE: minimum pop_size considered during tuning (default: 100)
@@ -51,6 +51,7 @@ Tuner controls (optional):
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 import time
@@ -254,14 +255,19 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
     """
     tune_n_evals = _as_int_env("VAMOS_TUNER_N_EVALS", 20000)
     tune_n_seeds = _as_int_env("VAMOS_TUNER_N_SEEDS", 10)
-    tune_max_experiments = _as_int_env("VAMOS_TUNER_MAX_EXPERIMENTS", 8000)
     tune_n_jobs = _as_int_env("VAMOS_TUNER_N_JOBS", max(1, (os.cpu_count() or 2) - 1))
-    tune_max_initial_configs = _as_int_env("VAMOS_TUNER_MAX_INITIAL_CONFIGS", 60)
     tune_repeats = _as_int_env("VAMOS_TUNER_REPEATS", 5)
     tune_pick = _as_str_env("VAMOS_TUNER_PICK", "best").strip().lower()
     min_pop_size = _as_int_env("VAMOS_TUNER_MIN_POP_SIZE", 100)
     use_multi_fidelity = _as_int_env("VAMOS_TUNER_USE_MULTI_FIDELITY", 1) != 0
     warm_start = _as_int_env("VAMOS_TUNER_FIDELITY_WARM_START", 0) != 0
+
+    # Optionally auto-tune the tuning budget (max_initial_configs/max_experiments)
+    # based on the search space and the number of instance×seed blocks.
+    max_experiments_env = os.environ.get("VAMOS_TUNER_MAX_EXPERIMENTS")
+    max_initial_env = os.environ.get("VAMOS_TUNER_MAX_INITIAL_CONFIGS")
+    tune_max_experiments = _as_int_env("VAMOS_TUNER_MAX_EXPERIMENTS", 0)
+    tune_max_initial_configs = _as_int_env("VAMOS_TUNER_MAX_INITIAL_CONFIGS", 0)
 
     fidelity_levels: list[int] = []
     if use_multi_fidelity:
@@ -275,15 +281,49 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
         if len(fidelity_levels) < 2:
             raise ValueError("VAMOS_TUNER_FIDELITY_LEVELS must contain at least two increasing budgets.")
 
+    algo_space = build_nsgaii_config_space()
+    param_space = algo_space.to_param_space()
+
+    def _choices_count(name: str) -> int:
+        param = param_space.params.get(name)
+        choices = getattr(param, "choices", None)
+        return int(len(choices)) if choices is not None else 1
+
+    if max_initial_env is None or tune_max_initial_configs <= 0:
+        n_cross = _choices_count("crossover")
+        n_mut = _choices_count("mutation")
+        n_offspring = _choices_count("offspring_ratio")
+        n_repair = _choices_count("repair")
+        n_init = _choices_count("initializer")
+        n_operator_combos = max(1, int(n_cross) * int(n_mut) * int(n_offspring) * int(n_repair) * int(n_init))
+        tune_max_initial_configs = int(max(60, min(250, round(0.6 * n_operator_combos))))
+
+    if tune_max_experiments <= 0:
+        n_blocks = max(1, len(train_problems) * tune_n_seeds)
+        if use_multi_fidelity:
+            promo = 0.3
+            mf_factor = sum(promo**i for i in range(len(fidelity_levels)))
+        else:
+            mf_factor = 1.0
+        min_budget = float(tune_max_initial_configs) * float(n_blocks) * float(mf_factor)
+        suggested = int(math.ceil(min_budget * 1.2))
+        tune_max_experiments = suggested
+
+        print(
+            "[tuner] Estimated minimum max_experiments ≈ "
+            f"{int(math.ceil(min_budget))} (configs={tune_max_initial_configs}, blocks={n_blocks}, factor={mf_factor:.2f}); "
+            f"using {tune_max_experiments}."
+        )
+
     if tune_max_initial_configs < 1:
         raise ValueError("VAMOS_TUNER_MAX_INITIAL_CONFIGS must be >= 1.")
+    if tune_max_experiments < 1:
+        raise ValueError("VAMOS_TUNER_MAX_EXPERIMENTS must be >= 1.")
     if tune_repeats < 1:
         raise ValueError("VAMOS_TUNER_REPEATS must be >= 1.")
     if tune_pick not in {"best", "median"}:
         raise ValueError("VAMOS_TUNER_PICK must be either 'best' or 'median'.")
 
-    algo_space = build_nsgaii_config_space()
-    param_space = algo_space.to_param_space()
     if "pop_size" not in param_space.params:
         raise KeyError("pop_size not found in NSGA-II tuning space")
     pop_param = param_space.params["pop_size"]
@@ -568,7 +608,10 @@ def main() -> None:
         if v not in {"baseline", "aos", "tuned", "tuned_aos"}:
             raise ValueError(f"Unsupported variant '{v}'. Supported: baseline,aos,tuned,tuned_aos")
 
+    # joblib supports negative n_jobs (e.g., -1 = all cores). Only n_jobs==1 is truly sequential.
     n_jobs = int(os.environ.get("VAMOS_N_JOBS", max(1, (os.cpu_count() or 2) - 1)))
+    if n_jobs == 0:
+        raise ValueError("VAMOS_N_JOBS cannot be 0 (joblib expects 1, -1, or another non-zero integer).")
 
     print(f"Problems: {len(problems)}")
     print(f"Variants: {variants}")
@@ -602,7 +645,7 @@ def main() -> None:
     tasks = [(variant, problem, seed) for variant in variants for problem in problems for seed in range(n_seeds)]
     print(f"Total runs: {len(tasks)}")
 
-    if n_jobs <= 1:
+    if n_jobs == 1:
         bar = ProgressBar(total=len(tasks), desc="Ablation runs")
         final_rows: list[dict[str, Any]] = []
         anytime_rows: list[dict[str, Any]] = []
@@ -622,7 +665,7 @@ def main() -> None:
         bar.close()
     else:
         with joblib_progress(total=len(tasks), desc="Ablation runs"):
-            results = Parallel(n_jobs=n_jobs)(
+            results = Parallel(n_jobs=n_jobs, batch_size=1)(
                 delayed(run_single)(
                     variant,
                     problem,

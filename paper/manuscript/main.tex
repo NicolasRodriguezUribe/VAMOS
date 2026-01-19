@@ -25,7 +25,7 @@
 \usepackage{hyperref}
 \hypersetup{hypertexnames=false}
 \makeatletter
-\g@addto@macro\UrlBreaks{\do\.\do\_\do\-}
+\g@addto@macro\UrlBreaks{\do\.\do\_\do\-\do\/}
 \makeatother
 \usepackage{listings}
 \usepackage{xcolor}
@@ -66,7 +66,8 @@
 \address[uma]{Department of Computer Science, University, Country}
 
 \begin{abstract}
-Python has become the de facto platform for empirical studies in multi-objective optimization, yet most multi-objective evolutionary algorithm (MOEA) libraries remain dominated by object-oriented designs that incur substantial interpreter overhead in the inner loop. We introduce \VAMOS{} (Vectorized Architecture for Multiobjective Optimization Studies), a research-oriented framework that represents populations as contiguous numerical arrays and factors algorithmic logic from numerical kernels. \VAMOS{} provides interchangeable compute backends (NumPy, Numba JIT, and optional C/JAX accelerators), a unified configuration API, and nine MOEAs (NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, and RVEA). Two adaptive modules complement the core algorithms: (i) an irace-inspired racing tuner with optional multi-fidelity (Hyperband-style) warm-starting, and (ii) bandit-based adaptive operator selection for configurable operator portfolios. We also release a reproducible benchmarking pipeline that aligns problem definitions and operator settings across common Python frameworks and reports runtime and \emph{normalized} hypervolume computed with fixed reference Pareto fronts. Across the ZDT, DTLZ, and WFG suites, \VAMOS{} achieves up to an order-of-magnitude reduction in runtime relative to established libraries while maintaining competitive solution quality.
+\sloppy
+Python has become the de facto platform for empirical studies in multi-objective optimization, yet most multi-objective evolutionary algorithm (MOEA) libraries remain dominated by object-oriented designs that incur substantial interpreter overhead in the inner loop. We introduce \VAMOS{} (Vectorized Architecture for Multiobjective Optimization Studies), a research-oriented framework that represents populations as contiguous numerical arrays and factors algorithmic logic from numerical kernels. \VAMOS{} provides interchangeable compute backends (NumPy, Numba JIT, and optional C and JAX accelerators), a unified configuration API, and nine MOEAs (NSGA-II and NSGA-III, MOEA/\allowbreak D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, and RVEA). Two adaptive modules complement the core algorithms: (i) an irace-inspired racing tuner with optional multi-fidelity (Hyperband-style) warm-starting, and (ii) bandit-based adaptive operator selection for configurable operator portfolios. We also release a reproducible benchmarking pipeline that aligns problem definitions and operator settings across common Python frameworks and reports runtime and \emph{normalized} hypervolume computed with fixed reference Pareto fronts. Across the ZDT, DTLZ, and WFG suites, \VAMOS{} achieves up to an order-of-magnitude reduction in runtime relative to established libraries while maintaining competitive solution quality.
 \end{abstract}
 
 \begin{highlights}
@@ -589,7 +590,7 @@ To evaluate the practical impact of \VAMOS{}' optional adaptation modules beyond
   \item \textbf{Racing-tuned}: a single tuned NSGA-II configuration obtained by the racing tuner on a broader training set (\texttt{zdt4}, \texttt{zdt6}, \texttt{dtlz2}, \texttt{dtlz6}, \texttt{dtlz7}, \texttt{wfg1}, \texttt{wfg9}) using multi-fidelity racing up to the full evaluation budget (20k $\rightarrow$ 60k $\rightarrow$ 100k evaluations). The search space is constrained to enforce $\texttt{pop\_size}\ge 100$ and $\texttt{offspring\_size}=\texttt{pop\_size}$, and uses a dimension-normalized mutation probability factor for better cross-problem transfer. To reduce variance, we tune on 10 training seeds and repeat the entire race 5 times with different tuner seeds, selecting a single configuration by the final-fidelity score and evaluating it on the full benchmark suite without per-problem re-tuning.
   \item \textbf{Racing-tuned + AOS}: the racing-tuned configuration augmented with the same AOS portfolio and bandit policy, to quantify whether online operator adaptation provides additional benefit beyond offline tuning.
 \end{enumerate}
-The selected racing-tuned configuration is exported for reproducibility (\path{experiments/tuned_nsgaii_resolved.json}) and summarized in Table~\ref{tab:racing_tuned_config}. All variants are evaluated for 30 independent seeds and reported using the same normalized hypervolume protocol (Section~\ref{sec:hv}) and wall-clock runtime measurement setup. Tables~\ref{tab:ablation_runtime} and~\ref{tab:ablation_hypervolume} summarize the final-budget ablation outcomes aggregated by benchmark family.
+The selected racing-tuned configuration is exported for reproducibility and summarized in Table~\ref{tab:racing_tuned_config}. All variants are evaluated for 30 independent seeds and reported using the same normalized hypervolume protocol (Section~\ref{sec:hv}) and wall-clock runtime measurement setup. Tables~\ref{tab:ablation_runtime} and \ref{tab:ablation_hypervolume} summarize the final-budget ablation outcomes aggregated by benchmark family.
 
 To better capture online adaptation effects under large evaluation budgets, we additionally report anytime performance by recording normalized hypervolume at fixed evaluation checkpoints (5k, 10k, 20k, 50k, 100k evaluations). From these checkpoints we compute (i) AUC(HV vs.\ evals), and (ii) a time-to-target metric defined as the earliest checkpoint at which HV reaches $0.99\times$ the baseline-final median HV for that problem, along with the corresponding success rate by the full budget. Tables~\ref{tab:anytime_auc}--\ref{tab:anytime_ttt_success} summarize these metrics aggregated by benchmark family.
 
@@ -705,7 +706,29 @@ For hypervolume, reference fronts for problems without closed-form Pareto fronts
 
 \subsection{Reproducibility}
 
-All experiments in this paper are reproducible from the repository. The cross-framework benchmark is executed via \texttt{python}\ \path{paper/01_run_paper_benchmark.py}, the AOS/racing-tuner ablation via \texttt{python}\ \path{paper/02_run_ablation_aos_racing_tuner.py}, and the scaling study via \texttt{python}\ \path{paper/03_run_scaling_experiment.py}. We control the number of seeds, evaluation budget, and workers with \path{VAMOS_N_SEEDS}, \path{VAMOS_N_EVALS}, and \path{VAMOS_N_JOBS}; unless otherwise stated, we use \path{VAMOS_N_SEEDS=30} and \path{VAMOS_N_EVALS=100000}. LaTeX runtime tables are regenerated by \texttt{python}\ \path{paper/04_update_paper_tables_from_csv.py}; Wilcoxon tables by \texttt{python}\ \path{paper/05_run_statistical_tests.py}; final-budget ablation tables by \texttt{python}\ \path{paper/06_update_ablation_tables_from_csv.py}; scaling tables by \texttt{python}\ \path{paper/07_update_scaling_tables_from_csv.py}; anytime ablation tables by \texttt{python}\ \path{paper/10_update_anytime_tables_from_csv.py}; and the tuned-configuration summary by \texttt{python}\ \path{paper/09_update_tuned_config_from_json.py}. Benchmark reports also emit jMetalPy-compatible laboratory outputs (QualityIndicatorSummary.csv, Wilcoxon tables, and boxplots) under \path{summary/lab/} for interoperable post-processing, following the laboratory summary format described by jMetalPy~\cite{benitez2019jmetalpy}. Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
+All experiments in this paper are reproducible from the repository:
+\begin{itemize}
+  \item Cross-framework benchmark:\newline \texttt{python}\ \path{paper/01_run_paper_benchmark.py}
+  \item AOS/racing-tuner ablation:\newline \texttt{python}\ \path{paper/02_run_ablation_aos_racing_tuner.py}
+  \item Scaling study:\newline \texttt{python}\ \path{paper/03_run_scaling_experiment.py}
+\end{itemize}
+
+We control the number of seeds, evaluation budget, and workers with \path{VAMOS_N_SEEDS}, \path{VAMOS_N_EVALS}, and \path{VAMOS_N_JOBS}; unless otherwise stated, we use \path{VAMOS_N_SEEDS=30} and \path{VAMOS_N_EVALS=100000}.
+
+Paper tables are regenerated by:
+\begin{itemize}
+  \item Runtime tables:\newline \texttt{python}\ \path{paper/04_update_paper_tables_from_csv.py}
+  \item Wilcoxon tables:\newline \texttt{python}\ \path{paper/05_run_statistical_tests.py}
+  \item Ablation tables:\newline \texttt{python}\ \path{paper/06_update_ablation_tables_from_csv.py}
+  \item Scaling tables:\newline \texttt{python}\ \path{paper/07_update_scaling_tables_from_csv.py}
+  \item Anytime ablation tables:\newline \texttt{python}\ \path{paper/10_update_anytime_tables_from_csv.py}
+  \item Tuned-configuration summary:\newline \texttt{python}\ \path{paper/09_update_tuned_config_from_json.py}
+\end{itemize}
+
+The tuned configuration used in the ablation study is stored at:\newline \path{experiments/tuned_nsgaii_resolved.json}.
+
+Benchmark reports also emit jMetalPy-compatible laboratory outputs (\path{QualityIndicatorSummary.csv}, Wilcoxon tables, and boxplots) under:\newline \path{summary/lab/}, following the laboratory summary format described by jMetalPy~\cite{benitez2019jmetalpy}.
+Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
 
 \subsection{LLM-assisted development workflow}
 
