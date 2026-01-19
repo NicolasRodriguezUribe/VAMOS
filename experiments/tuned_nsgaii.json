@@ -1,11 +1,14 @@
 {
+  "archive_size_factor": 5,
+  "archive_type": "unbounded",
   "crossover": "sbx",
-  "crossover_eta": 29.01528364614782,
-  "crossover_prob": 0.9859262198347306,
+  "crossover_eta": 6.815888470431881,
+  "crossover_prob": 0.9860925683349502,
   "mutation": "non_uniform",
-  "mutation_eta": 16.912826311811806,
-  "mutation_prob_factor": 0.5028710343597436,
-  "pop_size": 183,
+  "mutation_eta": 24.074393851030145,
+  "mutation_prob_factor": 1.0342180485763703,
+  "pop_size": 180,
   "selection": "tournament",
-  "selection_pressure": 2
+  "selection_pressure": 4,
+  "use_external_archive": true
 }
