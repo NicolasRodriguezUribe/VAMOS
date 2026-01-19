@@ -40,7 +40,9 @@ Generates `experiments/benchmark_paper.csv`:
 5) Update Wilcoxon tables: `python paper/05_run_statistical_tests.py`
 6) Update ablation tables: `python paper/06_update_ablation_tables_from_csv.py`
 7) Update scaling tables: `python paper/07_update_scaling_tables_from_csv.py`
-8) Compile PDF: `python paper/08_compile_manuscript_pdf.py`
+8) Compile PDF + sync sources to Overleaf (excludes `main.pdf`): `python paper/08_compile_manuscript_pdf.py`
+   - Compile only (no sync): `python paper/08_compile_manuscript_pdf.py --no-sync` (or `--no-sync-overleaf`)
+     - Sync requires the Overleaf git remote (default name: `overleaf`) and saved credentials (Git auth token).
 
 Controls:
 - `VAMOS_N_EVALS` (default `100000`), `VAMOS_N_SEEDS` (default `30`), `VAMOS_N_JOBS`
