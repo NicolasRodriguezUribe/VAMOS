@@ -23,6 +23,8 @@ Environment variables:
       (default: experiments/ablation_aos_anytime.csv; set empty/0 to disable)
   - VAMOS_ABLATION_CHECKPOINTS: comma-separated evaluation checkpoints for anytime HV
       (default: 5000,10000,20000,50000,100000)
+  - VAMOS_CHECKPOINT_INTERVAL_MIN: time-based checkpoint interval in minutes
+      (default: 30; also saves at end of each seed)
 
 Tuner controls (optional):
   - VAMOS_TUNER_ENABLE: 1/0 (default: 1 if "tuned" variant requested)
@@ -34,12 +36,12 @@ Tuner controls (optional):
   - VAMOS_TUNER_MAX_EXPERIMENTS: max config×instance×seed blocks (default: auto-estimated)
   - VAMOS_TUNER_N_JOBS: parallel jobs for tuner evaluations (default: 1)
   - VAMOS_TUNER_MAX_INITIAL_CONFIGS: number of configurations sampled per tuning run (default: auto-estimated)
-  - VAMOS_TUNER_REPEATS: repeat tuning runs with different tuner seeds (default: 5)
+  - VAMOS_TUNER_REPEATS: repeat tuning runs with different tuner seeds (default: 1)
   - VAMOS_TUNER_PICK: which repeated run to select ("best" or "median"; default: best)
   - VAMOS_TUNER_MIN_POP_SIZE: minimum pop_size considered during tuning (default: 100)
   - VAMOS_TUNER_USE_MULTI_FIDELITY: 1/0 enable multi-fidelity tuning (default: 1)
   - VAMOS_TUNER_FIDELITY_LEVELS: comma-separated budgets for multi-fidelity tuning
-      (default: 20000,60000,100000)
+      (default: 10000,30000,50000)
   - VAMOS_TUNER_FIDELITY_WARM_START: 1/0 warm-start between fidelity levels (default: 0)
   - VAMOS_TUNER_OUTPUT_JSON: tuned config path (default: experiments/tuned_nsgaii.json)
   - VAMOS_TUNER_OUTPUT_RESOLVED_JSON: resolved NSGA-II config path
@@ -256,7 +258,7 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
     tune_n_evals = _as_int_env("VAMOS_TUNER_N_EVALS", 20000)
     tune_n_seeds = _as_int_env("VAMOS_TUNER_N_SEEDS", 10)
     tune_n_jobs = _as_int_env("VAMOS_TUNER_N_JOBS", max(1, (os.cpu_count() or 2) - 1))
-    tune_repeats = _as_int_env("VAMOS_TUNER_REPEATS", 5)
+    tune_repeats = _as_int_env("VAMOS_TUNER_REPEATS", 1)
     tune_pick = _as_str_env("VAMOS_TUNER_PICK", "best").strip().lower()
     min_pop_size = _as_int_env("VAMOS_TUNER_MIN_POP_SIZE", 100)
     use_multi_fidelity = _as_int_env("VAMOS_TUNER_USE_MULTI_FIDELITY", 1) != 0
@@ -271,7 +273,7 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
 
     fidelity_levels: list[int] = []
     if use_multi_fidelity:
-        raw_levels = _as_str_env("VAMOS_TUNER_FIDELITY_LEVELS", "20000,60000,100000")
+        raw_levels = _as_str_env("VAMOS_TUNER_FIDELITY_LEVELS", "10000,30000,50000")
         fidelity_levels = _parse_int_list(raw_levels)
         if not fidelity_levels:
             raise ValueError("VAMOS_TUNER_FIDELITY_LEVELS must contain at least one integer budget.")
@@ -645,11 +647,57 @@ def main() -> None:
     tasks = [(variant, problem, seed) for variant in variants for problem in problems for seed in range(n_seeds)]
     print(f"Total runs: {len(tasks)}")
 
+    # Incremental write: append after each completed run to avoid losing progress
+    output_csv.parent.mkdir(parents=True, exist_ok=True)
+    if anytime_csv is not None:
+        anytime_csv.parent.mkdir(parents=True, exist_ok=True)
+
+    # Check if resuming from existing files
+    written_final = 0
+    written_anytime = 0
+    if output_csv.exists():
+        existing_df = pd.read_csv(output_csv)
+        written_final = len(existing_df)
+        print(f"Resuming: found {written_final} existing rows in {output_csv}")
+    if anytime_csv is not None and anytime_csv.exists():
+        existing_any = pd.read_csv(anytime_csv)
+        written_anytime = len(existing_any)
+
+    # Time-based checkpointing (default: every 30 minutes)
+    checkpoint_interval_sec = float(_as_int_env("VAMOS_CHECKPOINT_INTERVAL_MIN", 30)) * 60.0
+    last_checkpoint_time = time.perf_counter()
+    pending_final: list[dict[str, Any]] = []
+    pending_anytime: list[dict[str, Any]] = []
+
+    def _flush_pending() -> None:
+        nonlocal written_final, written_anytime, pending_final, pending_anytime, last_checkpoint_time
+        if pending_final:
+            df_batch = pd.DataFrame(pending_final)
+            df_batch.to_csv(output_csv, mode="a", header=(written_final == 0), index=False)
+            written_final += len(pending_final)
+            pending_final = []
+        if anytime_csv is not None and pending_anytime:
+            df_batch = pd.DataFrame(pending_anytime)
+            df_batch.to_csv(anytime_csv, mode="a", header=(written_anytime == 0), index=False)
+            written_anytime += len(pending_anytime)
+            pending_anytime = []
+        last_checkpoint_time = time.perf_counter()
+
+    def _append_results(final_row: dict[str, Any], chk_rows: list[dict[str, Any]], *, force_flush: bool = False) -> None:
+        nonlocal last_checkpoint_time
+        pending_final.append(final_row)
+        pending_anytime.extend(chk_rows)
+        
+        elapsed = time.perf_counter() - last_checkpoint_time
+        # Flush if: forced, or time elapsed >= interval
+        if force_flush or elapsed >= checkpoint_interval_sec:
+            _flush_pending()
+            if not force_flush:
+                print(f"[checkpoint] Saved {written_final} rows after {elapsed/60:.1f} min")
+
     if n_jobs == 1:
         bar = ProgressBar(total=len(tasks), desc="Ablation runs")
-        final_rows: list[dict[str, Any]] = []
-        anytime_rows: list[dict[str, Any]] = []
-        for variant, problem, seed in tasks:
+        for i, (variant, problem, seed) in enumerate(tasks):
             final_row, chk = run_single(
                 variant,
                 problem,
@@ -659,11 +707,15 @@ def main() -> None:
                 tuned_cfg=tuned_cfg,
                 checkpoints=checkpoints,
             )
-            final_rows.append(final_row)
-            anytime_rows.extend(chk)
+            # Force flush at end of each seed (seed changes or last task)
+            is_last = (i == len(tasks) - 1)
+            next_seed = tasks[i + 1][2] if not is_last else None
+            force = is_last or (next_seed != seed)
+            _append_results(final_row, chk, force_flush=force)
             bar.update(1)
         bar.close()
     else:
+        # For parallel execution, collect batch results and write periodically
         with joblib_progress(total=len(tasks), desc="Ablation runs"):
             results = Parallel(n_jobs=n_jobs, batch_size=1)(
                 delayed(run_single)(
@@ -677,22 +729,14 @@ def main() -> None:
                 )
                 for variant, problem, seed in tasks
             )
-        final_rows = []
-        anytime_rows = []
+        # Write all results after parallel batch completes
         for final_row, chk in results:
-            final_rows.append(final_row)
-            anytime_rows.extend(chk)
+            _append_results(final_row, chk, force_flush=False)
+        _flush_pending()  # Final flush
 
-    df = pd.DataFrame(final_rows)
-    output_csv.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_csv, index=False)
-    print(f"Wrote {len(df)} rows to {output_csv}")
-
+    print(f"Wrote {written_final} total rows to {output_csv}")
     if anytime_csv is not None:
-        anytime_csv.parent.mkdir(parents=True, exist_ok=True)
-        df_any = pd.DataFrame(anytime_rows)
-        df_any.to_csv(anytime_csv, index=False)
-        print(f"Wrote {len(df_any)} rows to {anytime_csv}")
+        print(f"Wrote {written_anytime} total rows to {anytime_csv}")
 
 
 if __name__ == "__main__":
