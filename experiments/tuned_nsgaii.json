@@ -1,16 +1,14 @@
 {
+  "archive_size_factor": 5,
+  "archive_type": "unbounded",
   "crossover": "sbx",
-  "crossover_eta": 11.893250407575696,
-  "crossover_prob": 0.9047735260204497,
-  "gaussian_sigma": 0.3701113337002766,
-  "initializer": "lhs",
-  "mutation": "gaussian",
-  "mutation_eta": 38.4965970106179,
-  "mutation_prob_factor": 1.3877341489816415,
-  "offspring_ratio": 0.75,
-  "pop_size": 182,
-  "repair": "clip",
+  "crossover_eta": 6.815888470431881,
+  "crossover_prob": 0.9860925683349502,
+  "mutation": "non_uniform",
+  "mutation_eta": 24.074393851030145,
+  "mutation_prob_factor": 1.0342180485763703,
+  "pop_size": 180,
   "selection": "tournament",
   "selection_pressure": 4,
-  "use_external_archive": false
+  "use_external_archive": true
 }
