@@ -1,5 +1,4 @@
 {
-  "archive_size_factor": 5,
   "archive_type": "unbounded",
   "cauchy_gamma": 0.16054081338482856,
   "crossover": "sbx",

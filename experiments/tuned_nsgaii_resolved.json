@@ -4,7 +4,6 @@
     "size": 153,
     "unbounded": true
   },
-  "archive_type": null,
   "constraint_mode": "feasibility",
   "crossover": [
     "sbx",
