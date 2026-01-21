@@ -47,6 +47,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Update anytime ablation tables in main.tex from checkpoint CSV results.")
     parser.add_argument("--csv", type=Path, default=DEFAULT_CSV, help="Path to anytime (checkpoint) ablation CSV.")
     parser.add_argument("--main-tex", type=Path, default=DEFAULT_MAIN_TEX, help="Path to main.tex.")
+    parser.add_argument(
+        "--n-evals",
+        type=int,
+        default=0,
+        help="Filter to this evaluation budget (default: auto-select max n_evals in CSV).",
+    )
     parser.add_argument("--compile", action="store_true", help="Compile main.tex with pdflatex after updating.")
     parser.add_argument("--empty", action="store_true", help="Write placeholder tables (ignores CSV).")
     return parser.parse_args()
@@ -263,7 +269,20 @@ def main() -> None:
         df["evals"] = df["evals"].astype(int)
         df["n_evals"] = df["n_evals"].astype(int)
 
-        max_evals = int(df["n_evals"].max())
+        available = sorted(int(x) for x in df["n_evals"].dropna().unique())
+        if not available:
+            raise SystemExit("No n_evals values found in CSV.")
+        target = int(args.n_evals) if int(args.n_evals) > 0 else int(max(available))
+        if target not in available:
+            raise SystemExit(f"Requested --n-evals={target} not present in CSV (available: {available}).")
+        if len(available) > 1:
+            print(f"Filtering anytime CSV to n_evals={target} (available: {available})")
+        df = df[df["n_evals"] == target].copy()
+
+        # Guard against mismatched checkpoints (e.g., evals > n_evals) when merging runs.
+        df = df[df["evals"] <= df["n_evals"]].copy()
+
+        max_evals = int(target)
 
         # ----------------------------
         # AUC per (variant,problem,seed)
@@ -388,4 +407,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
