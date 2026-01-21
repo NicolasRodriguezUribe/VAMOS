@@ -11,10 +11,11 @@ Usage:
   python paper/02_run_ablation_aos_racing_tuner.py
 
 Environment variables:
-  - VAMOS_N_EVALS: evaluations per run (default: 100000)
+  - VAMOS_N_EVALS: evaluations per run (default: 50000)
   - VAMOS_N_SEEDS: number of seeds (default: 30)
   - VAMOS_N_JOBS: joblib workers (default: CPU count - 1)
   - VAMOS_ABLATION_ENGINE: VAMOS engine for evaluation runs (default: numba)
+  - VAMOS_ABLATION_RESUME: 1/0 resume into existing CSVs (default: 0, start fresh)
   - VAMOS_ABLATION_VARIANTS: comma-separated variants to run
       (default: baseline,aos,tuned,tuned_aos)
   - VAMOS_ABLATION_OUTPUT_CSV: output CSV path
@@ -22,7 +23,7 @@ Environment variables:
   - VAMOS_ABLATION_ANYTIME_CSV: optional checkpoint CSV output path
       (default: experiments/ablation_aos_anytime.csv; set empty/0 to disable)
   - VAMOS_ABLATION_CHECKPOINTS: comma-separated evaluation checkpoints for anytime HV
-      (default: 5000,10000,20000,50000,100000)
+      (default: 5000,10000,20000,50000)
   - VAMOS_CHECKPOINT_INTERVAL_MIN: time-based checkpoint interval in minutes
       (default: 30; also saves at end of each seed)
 
@@ -39,6 +40,8 @@ Tuner controls (optional):
   - VAMOS_TUNER_REPEATS: repeat tuning runs with different tuner seeds (default: 1)
   - VAMOS_TUNER_PICK: which repeated run to select ("best" or "median"; default: best)
   - VAMOS_TUNER_MIN_POP_SIZE: minimum pop_size considered during tuning (default: 100)
+  - VAMOS_TUNER_FIXED_POP_SIZE: force pop_size to this value
+      (default: 100 when external archive is disabled; set 0 to tune pop_size even without an external archive)
   - VAMOS_TUNER_USE_MULTI_FIDELITY: 1/0 enable multi-fidelity tuning (default: 1)
   - VAMOS_TUNER_FIDELITY_LEVELS: comma-separated budgets for multi-fidelity tuning
       (default: 10000,30000,50000)
@@ -261,6 +264,7 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
     tune_repeats = _as_int_env("VAMOS_TUNER_REPEATS", 1)
     tune_pick = _as_str_env("VAMOS_TUNER_PICK", "best").strip().lower()
     min_pop_size = _as_int_env("VAMOS_TUNER_MIN_POP_SIZE", 100)
+    fixed_pop_size_no_archive = _as_int_env("VAMOS_TUNER_FIXED_POP_SIZE", POP_SIZE)
     use_multi_fidelity = _as_int_env("VAMOS_TUNER_USE_MULTI_FIDELITY", 1) != 0
     warm_start = _as_int_env("VAMOS_TUNER_FIDELITY_WARM_START", 0) != 0
 
@@ -333,10 +337,30 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
         pop_param.low = max(int(pop_param.low), int(min_pop_size))
         if int(pop_param.high) < int(pop_param.low):
             raise ValueError(f"Invalid pop_size range after applying min={min_pop_size}: [{pop_param.low}, {pop_param.high}]")
+        if fixed_pop_size_no_archive > 0:
+            if fixed_pop_size_no_archive < int(min_pop_size):
+                raise ValueError(
+                    f"VAMOS_TUNER_FIXED_POP_SIZE={fixed_pop_size_no_archive} must be >= VAMOS_TUNER_MIN_POP_SIZE={min_pop_size}."
+                )
+            if not (int(pop_param.low) <= int(fixed_pop_size_no_archive) <= int(pop_param.high)):
+                raise ValueError(
+                    f"VAMOS_TUNER_FIXED_POP_SIZE={fixed_pop_size_no_archive} must be within the tuned pop_size range [{pop_param.low}, {pop_param.high}]."
+                )
     else:  # pragma: no cover
         raise TypeError(f"Unexpected pop_size param type: {type(pop_param)}")
 
     # Offspring size is controlled via offspring_ratio (<= pop_size) in the tuning space.
+
+    class _PopSizePolicySampler:
+        def __init__(self, space: Any, *, fixed_pop_size_no_archive: int) -> None:
+            self._space = space
+            self._fixed = int(fixed_pop_size_no_archive)
+
+        def sample(self, rng: Any) -> dict[str, Any]:
+            cfg = self._space.sample(rng)
+            if self._fixed > 0 and not bool(cfg.get("use_external_archive", False)):
+                cfg["pop_size"] = int(self._fixed)
+            return cfg
 
     instances: list[Instance] = []
     for problem in train_problems:
@@ -387,11 +411,13 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
             return 0.0
 
     def _run_once(*, tuner_seed: int) -> tuple[dict[str, Any], list[Any]]:
+        sampler = _PopSizePolicySampler(param_space, fixed_pop_size_no_archive=fixed_pop_size_no_archive)
         tuner = RacingTuner(
             task=task,
             scenario=scenario,
             seed=int(tuner_seed),
             max_initial_configs=int(tune_max_initial_configs),
+            sampler=sampler,
         )
 
         desc = f"Tuning (seed={tuner_seed})"
@@ -445,6 +471,8 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
         chosen = runs_sorted[0]
 
     best_cfg = chosen["best_cfg"]
+    if fixed_pop_size_no_archive > 0 and not bool(best_cfg.get("use_external_archive", False)):
+        best_cfg["pop_size"] = int(fixed_pop_size_no_archive)
     history = chosen["history"]
 
     out_cfg = Path(os.environ.get("VAMOS_TUNER_OUTPUT_JSON", str(ROOT_DIR / "experiments" / "tuned_nsgaii.json")))
@@ -582,7 +610,7 @@ def main() -> None:
         if unknown:
             raise ValueError(f"Unknown problems in VAMOS_ABLATION_PROBLEMS: {unknown}")
 
-    n_evals = _as_int_env("VAMOS_N_EVALS", 100000)
+    n_evals = _as_int_env("VAMOS_N_EVALS", 50000)
     n_seeds = _as_int_env("VAMOS_N_SEEDS", 30)
     engine = _as_str_env("VAMOS_ABLATION_ENGINE", "numba")
     output_csv = Path(_as_str_env("VAMOS_ABLATION_OUTPUT_CSV", str(ROOT_DIR / "experiments" / "ablation_aos_racing_tuner.csv")))
@@ -597,12 +625,13 @@ def main() -> None:
 
     checkpoints: list[int] | None = None
     if anytime_csv is not None:
-        raw = _as_str_env("VAMOS_ABLATION_CHECKPOINTS", "5000,10000,20000,50000,100000")
-        checkpoints = sorted(set(int(x) for x in _parse_int_list(raw) if int(x) > 0))
+        raw = _as_str_env("VAMOS_ABLATION_CHECKPOINTS", "5000,10000,20000,50000")
+        checkpoints = sorted(set(int(x) for x in _parse_int_list(raw) if 0 < int(x) <= n_evals))
         if not checkpoints:
             raise ValueError("VAMOS_ABLATION_CHECKPOINTS must contain at least one positive integer checkpoint.")
-        if checkpoints[-1] != n_evals:
+        if n_evals not in checkpoints:
             checkpoints.append(int(n_evals))
+        checkpoints = sorted(set(checkpoints))
 
     variants = _parse_csv_list(_as_str_env("VAMOS_ABLATION_VARIANTS", "baseline,aos,tuned,tuned_aos"))
     variants = [v.strip().lower() for v in variants]
@@ -625,6 +654,8 @@ def main() -> None:
         print(f"Anytime checkpoints: {checkpoints}")
         print(f"Anytime CSV: {anytime_csv}")
 
+    resume = int(os.environ.get("VAMOS_ABLATION_RESUME", "0")) != 0
+
     tuned_cfg: dict[str, Any] | None = None
     needs_tuned = any(v in variants for v in ("tuned", "tuned_aos"))
     if needs_tuned:
@@ -645,23 +676,53 @@ def main() -> None:
             print(f"Loaded tuned config from {cfg_path}")
 
     tasks = [(variant, problem, seed) for variant in variants for problem in problems for seed in range(n_seeds)]
-    print(f"Total runs: {len(tasks)}")
 
     # Incremental write: append after each completed run to avoid losing progress
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     if anytime_csv is not None:
         anytime_csv.parent.mkdir(parents=True, exist_ok=True)
 
-    # Check if resuming from existing files
+    if not resume:
+        if output_csv.exists():
+            output_csv.unlink()
+        if anytime_csv is not None and anytime_csv.exists():
+            anytime_csv.unlink()
+
     written_final = 0
     written_anytime = 0
-    if output_csv.exists():
+
+    done: set[tuple[str, str, int]] = set()
+    if resume and output_csv.exists():
         existing_df = pd.read_csv(output_csv)
-        written_final = len(existing_df)
-        print(f"Resuming: found {written_final} existing rows in {output_csv}")
-    if anytime_csv is not None and anytime_csv.exists():
-        existing_any = pd.read_csv(anytime_csv)
-        written_anytime = len(existing_any)
+        written_final = int(len(existing_df))
+        if {"variant", "problem", "seed"}.issubset(existing_df.columns):
+            if "n_evals" in existing_df.columns:
+                existing_df["n_evals"] = existing_df["n_evals"].astype(int)
+                existing_df = existing_df[existing_df["n_evals"] == n_evals]
+            if "engine" in existing_df.columns:
+                existing_df["engine"] = existing_df["engine"].astype(str).str.strip().str.lower()
+                existing_df = existing_df[existing_df["engine"] == str(engine).strip().lower()]
+            existing_df["variant"] = existing_df["variant"].astype(str).str.strip().str.lower()
+            existing_df["problem"] = existing_df["problem"].astype(str).str.strip().str.lower()
+            existing_df["seed"] = existing_df["seed"].astype(int)
+            done = set(zip(existing_df["variant"], existing_df["problem"], existing_df["seed"]))
+            if done:
+                print(f"Resume enabled: skipping {len(done)} completed runs from {output_csv}")
+
+    if resume and anytime_csv is not None and anytime_csv.exists():
+        try:
+            existing_any = pd.read_csv(anytime_csv)
+            written_anytime = int(len(existing_any))
+        except Exception:
+            written_anytime = 0
+
+    if done:
+        tasks = [t for t in tasks if t not in done]
+
+    print(f"Total runs: {len(tasks)}")
+    if resume and not tasks:
+        print("Nothing to do: all requested runs already exist in the output CSV.")
+        return
 
     # Time-based checkpointing (default: every 30 minutes)
     checkpoint_interval_sec = float(_as_int_env("VAMOS_CHECKPOINT_INTERVAL_MIN", 30)) * 60.0
@@ -715,9 +776,11 @@ def main() -> None:
             bar.update(1)
         bar.close()
     else:
-        # For parallel execution, collect batch results and write periodically
+        # For parallel execution, consume results as they complete so we can
+        # checkpoint progress to disk and avoid mixing runs on subsequent calls.
         with joblib_progress(total=len(tasks), desc="Ablation runs"):
-            results = Parallel(n_jobs=n_jobs, batch_size=1)(
+            parallel = Parallel(n_jobs=n_jobs, batch_size=1, return_as="generator")
+            for final_row, chk in parallel(
                 delayed(run_single)(
                     variant,
                     problem,
@@ -728,10 +791,8 @@ def main() -> None:
                     checkpoints=checkpoints,
                 )
                 for variant, problem, seed in tasks
-            )
-        # Write all results after parallel batch completes
-        for final_row, chk in results:
-            _append_results(final_row, chk, force_flush=False)
+            ):
+                _append_results(final_row, chk, force_flush=False)
         _flush_pending()  # Final flush
 
     print(f"Wrote {written_final} total rows to {output_csv}")

@@ -66,7 +66,7 @@ def _format_number(value: Any) -> str:
     if isinstance(value, int):
         return str(value)
     if isinstance(value, float):
-        return f"{value:.4g}"
+        return f"{value:.2f}"
     return str(value)
 
 

@@ -657,13 +657,13 @@ To better capture online adaptation effects under large evaluation budgets, we a
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-\texttt{pop\_size} & 180 \\
-\texttt{offspring\_size} & 180 \\
-Crossover & \texttt{sbx(eta=6.816, prob=0.9861)} \\
-Mutation & \texttt{non\_uniform(perturbation=0.5, prob=0.1, prob\_factor=1.034)} \\
+\texttt{pop\_size} & 182 \\
+\texttt{offspring\_size} & 137 \\
+Crossover & \texttt{sbx(eta=11.89, prob=0.90)} \\
+Mutation & \texttt{gaussian(prob=0.10, prob\_factor=1.39, sigma=0.37)} \\
 Selection & \texttt{tournament(pressure=4)} \\
-Repair & disabled \\
-External archive & \texttt{unbounded (size=180)} \\
+Repair & \texttt{clip} \\
+External archive & disabled \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -676,10 +676,10 @@ External archive & \texttt{unbounded (size=180)} \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & 1.40 & 1.43 & \textbf{1.62} & 1.48 \\
-Baseline + AOS & \textbf{1.33} & \textbf{1.43} & 1.65 & \textbf{1.47} \\
-Racing-tuned & 5.67 & 5.69 & 3.88 & 5.08 \\
-Racing-tuned + AOS & 9.25 & 10.35 & 4.15 & 7.91 \\
+Baseline & \textbf{1.75} & 1.90 & \textbf{1.95} & \textbf{1.87} \\
+Baseline + AOS & 1.79 & \textbf{1.87} & 1.97 & 1.88 \\
+Racing-tuned & 76.15 & 74.57 & 17.92 & 56.21 \\
+Racing-tuned + AOS & 37.01 & 68.77 & 18.89 & 41.56 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -692,10 +692,10 @@ Racing-tuned + AOS & 9.25 & 10.35 & 4.15 & 7.91 \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & 0.990 & 0.802 & \textbf{0.937} & 0.910 \\
-Baseline + AOS & 0.990 & 0.822 & 0.936 & 0.916 \\
-Racing-tuned & \textbf{0.994} & \textbf{0.932} & 0.873 & \textbf{0.933} \\
-Racing-tuned + AOS & 0.993 & 0.914 & 0.889 & 0.932 \\
+Baseline & 0.991 & 0.804 & \textbf{0.938} & 0.911 \\
+Baseline + AOS & 0.990 & 0.828 & 0.937 & 0.918 \\
+Racing-tuned & \textbf{0.995} & \textbf{0.934} & 0.858 & 0.929 \\
+Racing-tuned + AOS & 0.995 & 0.921 & 0.906 & \textbf{0.941} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -710,8 +710,8 @@ Racing-tuned + AOS & 0.993 & 0.914 & 0.889 & 0.932 \\
 \midrule
 Baseline & 0.909 & 0.763 & \textbf{0.900} & 0.857 \\
 Baseline + AOS & 0.900 & 0.772 & 0.899 & 0.857 \\
-Racing-tuned & \textbf{0.947} & \textbf{0.826} & 0.813 & \textbf{0.862} \\
-Racing-tuned + AOS & 0.895 & 0.820 & 0.843 & 0.853 \\
+Racing-tuned & \textbf{0.942} & \textbf{0.830} & 0.814 & \textbf{0.862} \\
+Racing-tuned + AOS & 0.899 & 0.820 & 0.865 & 0.862 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -724,10 +724,10 @@ Racing-tuned + AOS & 0.895 & 0.820 & 0.843 & 0.853 \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & 20000 & 50000 & 50000 & 40000 \\
-Baseline + AOS & 20000 & 50000 & 50000 & 40000 \\
-Racing-tuned & \textbf{10000} & \textbf{10000} & 50000 & 23333 \\
-Racing-tuned + AOS & 20000 & 20000 & \textbf{20000} & \textbf{20000} \\
+Baseline & \textbf{20000} & 50000 & 50000 & 40000 \\
+Baseline + AOS & \textbf{20000} & 50000 & 50000 & 40000 \\
+Racing-tuned & \textbf{20000} & \textbf{10000} & 50000 & \textbf{26667} \\
+Racing-tuned + AOS & 50000 & 20000 & \textbf{20000} & 30000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -740,10 +740,10 @@ Racing-tuned + AOS & 20000 & 20000 & \textbf{20000} & \textbf{20000} \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & \textbf{100.0} & 95.2 & 91.9 & 95.7 \\
-Baseline + AOS & \textbf{100.0} & 97.6 & 88.1 & 95.3 \\
-Racing-tuned & \textbf{100.0} & 98.1 & 88.9 & 95.7 \\
-Racing-tuned + AOS & \textbf{100.0} & \textbf{100.0} & \textbf{95.9} & \textbf{98.6} \\
+Baseline & \textbf{100.0} & 88.6 & 86.7 & 91.7 \\
+Baseline + AOS & \textbf{100.0} & 93.3 & 85.6 & 93.0 \\
+Racing-tuned & \textbf{100.0} & 96.7 & 78.9 & 91.9 \\
+Racing-tuned + AOS & \textbf{100.0} & \textbf{100.0} & \textbf{91.1} & \textbf{97.0} \\
 \bottomrule
 \end{tabular}
 \end{table}

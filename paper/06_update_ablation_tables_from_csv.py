@@ -38,6 +38,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Update ablation tables in main.tex from ablation CSV results.")
     parser.add_argument("--csv", type=Path, default=DEFAULT_CSV, help="Path to ablation CSV.")
     parser.add_argument("--main-tex", type=Path, default=DEFAULT_MAIN_TEX, help="Path to main.tex.")
+    parser.add_argument(
+        "--n-evals",
+        type=int,
+        default=0,
+        help="Filter to this evaluation budget (default: auto-select max n_evals in CSV).",
+    )
     parser.add_argument("--compile", action="store_true", help="Compile main.tex with pdflatex after updating.")
     parser.add_argument("--empty", action="store_true", help="Write placeholder tables (ignores CSV).")
     return parser.parse_args()
@@ -216,6 +222,18 @@ def main() -> None:
         df = pd.read_csv(csv_path)
         if df.empty:
             raise SystemExit(f"No rows in CSV: {csv_path}")
+
+        if "n_evals" in df.columns:
+            df["n_evals"] = df["n_evals"].astype(int)
+            available = sorted(int(x) for x in df["n_evals"].dropna().unique())
+            if not available:
+                raise SystemExit("CSV contains n_evals column but no values.")
+            target = int(args.n_evals) if int(args.n_evals) > 0 else int(max(available))
+            if target not in available:
+                raise SystemExit(f"Requested --n-evals={target} not present in CSV (available: {available}).")
+            if len(available) > 1:
+                print(f"Filtering ablation CSV to n_evals={target} (available: {available})")
+            df = df[df["n_evals"] == target].copy()
 
         df["variant"] = df["variant"].astype(str).str.strip().str.lower()
         df["family"] = df["problem"].astype(str).str.strip().str.lower().apply(get_family)
