@@ -210,7 +210,10 @@ def main() -> None:
         raise SystemExit(f"Expected NSGAIIConfig, got: {type(cfg)}")
 
     args.resolved_json.parent.mkdir(parents=True, exist_ok=True)
-    args.resolved_json.write_text(json.dumps(cfg.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
+    resolved_dict = cfg.to_dict()
+    if resolved_dict.get("archive_type") is None:
+        resolved_dict.pop("archive_type", None)
+    args.resolved_json.write_text(json.dumps(resolved_dict, indent=2, sort_keys=True), encoding="utf-8")
 
     caption = (
         r"Racing-tuned NSGA-II configuration used in the ablation study "

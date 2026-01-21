@@ -1,0 +1,134 @@
+[
+  {
+    "config": {
+      "archive_type": "unbounded",
+      "cauchy_gamma": 0.16054081338482856,
+      "crossover": "sbx",
+      "crossover_eta": 7.940106701788785,
+      "crossover_prob": 0.9731243643028019,
+      "initializer": "scatter",
+      "mutation": "cauchy",
+      "mutation_eta": 20.137926365419126,
+      "mutation_prob_factor": 1.73342157310447,
+      "offspring_ratio": 1.0,
+      "pop_size": 153,
+      "repair": "clip",
+      "scatter_base_size_factor": 0.3,
+      "selection": "tournament",
+      "selection_pressure": 4,
+      "use_external_archive": true
+    },
+    "details": {
+      "alive": true,
+      "final_fidelity_level": 2,
+      "num_evals": 210,
+      "num_final_evals": 70
+    },
+    "score": 0.8642877707096978,
+    "trial_id": 74
+  },
+  {
+    "config": {
+      "crossover": "sbx",
+      "crossover_eta": 5.713148864136313,
+      "crossover_prob": 0.9260080562813461,
+      "initializer": "random",
+      "mutation": "non_uniform",
+      "mutation_eta": 24.51046251504984,
+      "mutation_prob_factor": 0.99381949289741,
+      "nonuniform_perturbation": 0.08569924226562098,
+      "offspring_ratio": 0.25,
+      "pop_size": 100,
+      "repair": "clip",
+      "selection": "tournament",
+      "selection_pressure": 8,
+      "use_external_archive": false
+    },
+    "details": {
+      "alive": true,
+      "final_fidelity_level": 2,
+      "num_evals": 210,
+      "num_final_evals": 70
+    },
+    "score": 0.8478003100907991,
+    "trial_id": 224
+  },
+  {
+    "config": {
+      "crossover": "sbx",
+      "crossover_eta": 11.893250407575696,
+      "crossover_prob": 0.9047735260204497,
+      "gaussian_sigma": 0.3701113337002766,
+      "initializer": "lhs",
+      "mutation": "gaussian",
+      "mutation_eta": 38.4965970106179,
+      "mutation_prob_factor": 1.3877341489816415,
+      "offspring_ratio": 0.75,
+      "pop_size": 100,
+      "repair": "clip",
+      "selection": "tournament",
+      "selection_pressure": 4,
+      "use_external_archive": false
+    },
+    "details": {
+      "alive": true,
+      "final_fidelity_level": 2,
+      "num_evals": 210,
+      "num_final_evals": 70
+    },
+    "score": 0.8364034209722843,
+    "trial_id": 222
+  },
+  {
+    "config": {
+      "archive_size_factor": 2,
+      "archive_type": "hypervolume",
+      "crossover": "sbx",
+      "crossover_eta": 14.594612200869399,
+      "crossover_prob": 0.6058470106115779,
+      "initializer": "lhs",
+      "mutation": "linked_polynomial",
+      "mutation_eta": 12.868514502297138,
+      "mutation_prob_factor": 1.9043956932502568,
+      "offspring_ratio": 0.25,
+      "pop_size": 161,
+      "repair": "none",
+      "selection": "tournament",
+      "selection_pressure": 2,
+      "use_external_archive": true
+    },
+    "details": {
+      "alive": false,
+      "final_fidelity_level": 2,
+      "num_evals": 210,
+      "num_final_evals": 70
+    },
+    "score": 0.8362799969491316,
+    "trial_id": 75
+  },
+  {
+    "config": {
+      "crossover": "sbx",
+      "crossover_eta": 16.474819137656368,
+      "crossover_prob": 0.8761418705912731,
+      "initializer": "lhs",
+      "mutation": "linked_polynomial",
+      "mutation_eta": 22.916042388501204,
+      "mutation_prob_factor": 0.5960073448958167,
+      "offspring_ratio": 0.75,
+      "pop_size": 100,
+      "repair": "random",
+      "selection": "tournament",
+      "selection_pressure": 7,
+      "use_external_archive": false
+    },
+    "details": {
+      "alive": false,
+      "final_fidelity_level": 2,
+      "num_evals": 210,
+      "num_final_evals": 70
+    },
+    "score": 0.8359936573951483,
+    "trial_id": 91
+  }
+]

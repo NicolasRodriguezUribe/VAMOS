@@ -638,16 +638,16 @@ Platypus & 0.003 & 100.0 \\
 \subsection{Ablation: AOS and racing tuner}
 \label{sec:ablation}
 
-To evaluate the practical impact of \VAMOS{}' optional adaptation modules beyond the cross-framework baseline, we run an internal ablation study on the same benchmark suite and evaluation budgets as the runtime experiments. We compare four \VAMOS{} variants of NSGA-II in a $2\times2$ factorial design (tuned vs.\ untuned) $\times$ (AOS disabled vs.\ enabled):
+To evaluate the practical impact of \VAMOS{}' optional adaptation modules beyond the cross-framework baseline, we run an internal ablation study on the same benchmark suite as the runtime experiments, using a 50k evaluation budget per run. We compare four \VAMOS{} variants of NSGA-II in a $2\times2$ factorial design (tuned vs.\ untuned) $\times$ (AOS disabled vs.\ enabled):
 \begin{enumerate}
   \item \textbf{Baseline}: the fixed-operator configuration used in the cross-framework benchmark (SBX crossover and polynomial mutation).
   \item \textbf{Baseline + AOS}: the same configuration augmented with adaptive operator selection (AOS), where an $\epsilon$-greedy bandit~\cite{sutton2018reinforcement} selects between a small portfolio of real-coded variation pipelines (SBX+PM vs.\ BLX-$\alpha$+PM). Unless otherwise stated, we use $\epsilon=0.05$ with a deterministic per-run RNG seed. Rewards combine survival and non-dominated insertion rates with a lightweight per-generation hypervolume-change term (computed when inexpensive, up to three objectives) to reduce the risk of selecting operators that improve selection statistics while degrading Pareto-front quality.
-  \item \textbf{Racing-tuned}: a single tuned NSGA-II configuration obtained by the racing tuner on a broader training set (\texttt{zdt4}, \texttt{zdt6}, \texttt{dtlz2}, \texttt{dtlz6}, \texttt{dtlz7}, \texttt{wfg1}, \texttt{wfg9}) using multi-fidelity racing up to the full evaluation budget (20k $\rightarrow$ 60k $\rightarrow$ 100k evaluations). The search space enforces $\texttt{pop\_size}\ge 100$ and sets offspring size as a fraction of population size via $\texttt{offspring\_ratio}\in\{0.25,0.5,0.75,1.0\}$ (thus $\texttt{offspring\_size}\le\texttt{pop\_size}$), and uses a dimension-normalized mutation probability factor for better cross-problem transfer. To reduce variance, we tune on 10 training seeds and repeat the entire race 5 times with different tuner seeds, selecting a single configuration by the final-fidelity score and evaluating it on the full benchmark suite without per-problem re-tuning.
-  \item \textbf{Racing-tuned + AOS}: the racing-tuned configuration augmented with the same AOS portfolio and bandit policy, to quantify whether online operator adaptation provides additional benefit beyond offline tuning.
+  \item \textbf{Racing-tuned}: a single tuned NSGA-II configuration obtained by the racing tuner on a broader training set (\texttt{zdt4}, \texttt{zdt6}, \texttt{dtlz2}, \texttt{dtlz6}, \texttt{dtlz7}, \texttt{wfg1}, \texttt{wfg9}) using multi-fidelity racing up to the full evaluation budget (10k $\rightarrow$ 30k $\rightarrow$ 50k evaluations). The search space enforces $\texttt{pop\_size}\ge 100$ and sets offspring size as a fraction of population size via $\texttt{offspring\_ratio}\in\{0.25,0.5,0.75,1.0\}$ (thus $\texttt{offspring\_size}\le\texttt{pop\_size}$), and uses a dimension-normalized mutation probability factor for better cross-problem transfer. We tune on 10 training seeds, selecting a single configuration by the final-fidelity score and evaluating it on the full benchmark suite without per-problem re-tuning.
+  \item \textbf{Racing-tuned + AOS}: the racing-tuned configuration augmented with adaptive operator selection (AOS), where the operator portfolio includes the tuned variation pipeline plus additional variation pipelines derived from the top-5 tuner candidates, to quantify whether online operator adaptation provides additional benefit beyond offline tuning.
 \end{enumerate}
 The selected racing-tuned configuration is exported for reproducibility and summarized in Table~\ref{tab:racing_tuned_config}. All variants are evaluated for 30 independent seeds and reported using the same normalized hypervolume protocol (Section~\ref{sec:hv}) and wall-clock runtime measurement setup. Tables~\ref{tab:ablation_runtime} and \ref{tab:ablation_hypervolume} summarize the final-budget ablation outcomes aggregated by benchmark family.
 
-To better capture online adaptation effects under large evaluation budgets, we additionally report anytime performance by recording normalized hypervolume at fixed evaluation checkpoints (5k, 10k, 20k, 50k, 100k evaluations). From these checkpoints we compute (i) AUC(HV vs.\ evals), and (ii) a time-to-target metric defined as the earliest checkpoint at which HV reaches $0.99\times$ the baseline-final median HV for that problem, along with the corresponding success rate by the full budget. Tables~\ref{tab:anytime_auc}--\ref{tab:anytime_ttt_success} summarize these metrics aggregated by benchmark family.
+To better capture online adaptation effects under large evaluation budgets, we additionally report anytime performance by recording normalized hypervolume at fixed evaluation checkpoints (5k, 10k, 20k, 50k evaluations). To make early-budget differences explicit, we report median normalized hypervolume at 10k and 20k evaluations (Tables~\ref{tab:anytime_hv_10000} and \ref{tab:anytime_hv_20000}). From the same checkpoints we compute (i) AUC(HV vs.\ evals), and (ii) a time-to-target metric defined as the earliest checkpoint at which HV reaches $0.99\times$ the baseline-final median HV for that problem, along with the corresponding success rate by the full budget. In evaluation-dominated scenarios, lower evaluations-to-target translates into wall-clock savings. Tables~\ref{tab:anytime_auc}--\ref{tab:anytime_ttt_success} summarize these metrics aggregated by benchmark family.
 
 \begin{table}[htbp]
 \centering
@@ -657,13 +657,13 @@ To better capture online adaptation effects under large evaluation budgets, we a
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-\texttt{pop\_size} & 182 \\
-\texttt{offspring\_size} & 137 \\
-Crossover & \texttt{sbx(eta=11.89, prob=0.90)} \\
-Mutation & \texttt{gaussian(prob=0.10, prob\_factor=1.39, sigma=0.37)} \\
+\texttt{pop\_size} & 153 \\
+\texttt{offspring\_size} & 153 \\
+Crossover & \texttt{sbx(eta=7.94, prob=0.97)} \\
+Mutation & \texttt{cauchy(gamma=0.16, prob=0.10, prob\_factor=1.73)} \\
 Selection & \texttt{tournament(pressure=4)} \\
 Repair & \texttt{clip} \\
-External archive & disabled \\
+External archive & \texttt{unbounded (size=153)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -676,10 +676,10 @@ External archive & disabled \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & \textbf{1.75} & 1.90 & \textbf{1.95} & \textbf{1.87} \\
-Baseline + AOS & 1.79 & \textbf{1.87} & 1.97 & 1.88 \\
-Racing-tuned & 76.15 & 74.57 & 17.92 & 56.21 \\
-Racing-tuned + AOS & 37.01 & 68.77 & 18.89 & 41.56 \\
+Baseline & \textbf{0.88} & \textbf{0.94} & \textbf{0.98} & \textbf{0.93} \\
+Baseline + AOS & 0.89 & 1.72 & 1.00 & 1.20 \\
+Racing-tuned & 11.03 & 11.28 & 5.62 & 9.31 \\
+Racing-tuned + AOS & 6.55 & 11.68 & 4.77 & 7.67 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -692,10 +692,42 @@ Racing-tuned + AOS & 37.01 & 68.77 & 18.89 & 41.56 \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & 0.991 & 0.804 & \textbf{0.938} & 0.911 \\
-Baseline + AOS & 0.990 & 0.828 & 0.937 & 0.918 \\
-Racing-tuned & \textbf{0.995} & \textbf{0.934} & 0.858 & 0.929 \\
-Racing-tuned + AOS & 0.995 & 0.921 & 0.906 & \textbf{0.941} \\
+Baseline & 0.990 & 0.799 & 0.934 & 0.908 \\
+Baseline + AOS & 0.989 & 0.816 & 0.931 & 0.912 \\
+Racing-tuned & \textbf{0.993} & \textbf{0.917} & \textbf{0.947} & \textbf{0.952} \\
+Racing-tuned + AOS & 0.991 & 0.839 & 0.937 & 0.922 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Anytime ablation: median normalized hypervolume at 10,000 evaluations (generated by \texttt{paper/10\_update\_anytime\_tables\_from\_csv.py}).}
+\label{tab:anytime_hv_10000}
+\begin{tabular}{l|rrr|r}
+\toprule
+\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\midrule
+Baseline & 0.890 & 0.729 & 0.890 & 0.836 \\
+Baseline + AOS & 0.817 & 0.757 & 0.885 & 0.820 \\
+Racing-tuned & \textbf{0.985} & \textbf{0.804} & \textbf{0.895} & \textbf{0.895} \\
+Racing-tuned + AOS & 0.808 & 0.732 & 0.881 & 0.807 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Anytime ablation: median normalized hypervolume at 20,000 evaluations (generated by \texttt{paper/10\_update\_anytime\_tables\_from\_csv.py}).}
+\label{tab:anytime_hv_20000}
+\begin{tabular}{l|rrr|r}
+\toprule
+\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\midrule
+Baseline & 0.976 & 0.788 & 0.921 & 0.895 \\
+Baseline + AOS & 0.976 & 0.797 & 0.913 & 0.896 \\
+Racing-tuned & \textbf{0.989} & \textbf{0.832} & \textbf{0.926} & \textbf{0.916} \\
+Racing-tuned + AOS & 0.974 & 0.825 & 0.908 & 0.902 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -708,10 +740,10 @@ Racing-tuned + AOS & 0.995 & 0.921 & 0.906 & \textbf{0.941} \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & 0.909 & 0.763 & \textbf{0.900} & 0.857 \\
-Baseline + AOS & 0.900 & 0.772 & 0.899 & 0.857 \\
-Racing-tuned & \textbf{0.942} & \textbf{0.830} & 0.814 & \textbf{0.862} \\
-Racing-tuned + AOS & 0.899 & 0.820 & 0.865 & 0.862 \\
+Baseline & 0.836 & 0.732 & 0.863 & 0.810 \\
+Baseline + AOS & 0.817 & 0.743 & 0.863 & 0.808 \\
+Racing-tuned & \textbf{0.913} & \textbf{0.778} & \textbf{0.874} & \textbf{0.855} \\
+Racing-tuned + AOS & 0.810 & 0.752 & 0.861 & 0.808 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -724,10 +756,10 @@ Racing-tuned + AOS & 0.899 & 0.820 & 0.865 & 0.862 \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & \textbf{20000} & 50000 & 50000 & 40000 \\
-Baseline + AOS & \textbf{20000} & 50000 & 50000 & 40000 \\
-Racing-tuned & \textbf{20000} & \textbf{10000} & 50000 & \textbf{26667} \\
-Racing-tuned + AOS & 50000 & 20000 & \textbf{20000} & 30000 \\
+Baseline & 20000 & 50000 & 50000 & 40000 \\
+Baseline + AOS & 20000 & 50000 & 50000 & 40000 \\
+Racing-tuned & \textbf{10000} & \textbf{10000} & \textbf{20000} & \textbf{13333} \\
+Racing-tuned + AOS & 20000 & 20000 & \textbf{20000} & 20000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -740,10 +772,10 @@ Racing-tuned + AOS & 50000 & 20000 & \textbf{20000} & 30000 \\
 \toprule
 \textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & \textbf{100.0} & 88.6 & 86.7 & 91.7 \\
-Baseline + AOS & \textbf{100.0} & 93.3 & 85.6 & 93.0 \\
-Racing-tuned & \textbf{100.0} & 96.7 & 78.9 & 91.9 \\
-Racing-tuned + AOS & \textbf{100.0} & \textbf{100.0} & \textbf{91.1} & \textbf{97.0} \\
+Baseline & \textbf{100.0} & 81.0 & 85.2 & 88.7 \\
+Baseline + AOS & \textbf{100.0} & \textbf{92.4} & 84.8 & \textbf{92.4} \\
+Racing-tuned & \textbf{100.0} & 86.2 & 89.6 & 91.9 \\
+Racing-tuned + AOS & \textbf{100.0} & 85.2 & \textbf{91.5} & 92.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -51,6 +51,11 @@ Tuner controls (optional):
       (default: experiments/tuned_nsgaii_resolved.json)
   - VAMOS_TUNER_HISTORY_CSV: tuner history CSV (default: experiments/tuner_history.csv)
   - VAMOS_TUNER_RUNS_CSV: tuning repeats summary CSV (default: experiments/tuned_nsgaii_runs.csv)
+  - VAMOS_TUNER_TOPK: export top-k configs from tuner history (default: 5)
+  - VAMOS_TUNER_TOPK_JSON: top-k JSON output path (default: experiments/tuned_nsgaii_topk.json)
+
+  AOS portfolio (tuned + AOS):
+  - VAMOS_AOS_TOPK_ARMS: max number of operator arms sourced from the top-k list (default: 5)
 """
 
 from __future__ import annotations
@@ -149,6 +154,39 @@ def _maybe_dataclass_to_dict(value: object) -> object:
     return asdict(value) if is_dataclass(value) else value
 
 
+def _export_topk_from_history_json(history_json: Path, out_json: Path, k: int) -> list[dict[str, Any]]:
+    if k <= 0:
+        return []
+    raw = json.loads(history_json.read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        raise ValueError(f"Expected list in {history_json}, got {type(raw)}")
+
+    def _score(entry: dict[str, Any]) -> float:
+        try:
+            return float(entry.get("score", float("-inf")))
+        except Exception:
+            return float("-inf")
+
+    sorted_entries = sorted((e for e in raw if isinstance(e, dict)), key=_score, reverse=True)
+    topk: list[dict[str, Any]] = []
+    for entry in sorted_entries[:k]:
+        cfg = dict(entry.get("config") or {})
+        if bool(cfg.get("use_external_archive", False)) and str(cfg.get("archive_type", "")).strip().lower() == "unbounded":
+            cfg.pop("archive_size_factor", None)
+        topk.append(
+            {
+                "trial_id": entry.get("trial_id"),
+                "score": entry.get("score"),
+                "config": cfg,
+                "details": entry.get("details"),
+            }
+        )
+
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(json.dumps(topk, indent=2, sort_keys=True), encoding="utf-8")
+    return topk
+
+
 # =============================================================================
 # AOS setup
 # =============================================================================
@@ -209,13 +247,24 @@ class HVCheckpointRecorder:
         return list(self._records)
 
 
-def make_aos_cfg(*, seed: int, n_var: int) -> dict[str, Any]:
+def make_aos_cfg(*, seed: int, n_var: int, operator_pool: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """
     Minimal, reproducible AOS configuration:
     - enabled
     - deterministic RNG seeded per run
     - small operator portfolio (>=2 arms, otherwise AOS is a no-op)
     """
+    if operator_pool is None:
+        operator_pool = [
+            {
+                "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": CROSSOVER_ETA}),
+                "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
+            },
+            {
+                "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.2}),
+                "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
+            },
+        ]
     return {
         "enabled": True,
         # Epsilon-greedy provides conservative exploration and avoids forcing
@@ -233,16 +282,7 @@ def make_aos_cfg(*, seed: int, n_var: int) -> dict[str, Any]:
             "nd_insertions": float(os.environ.get("VAMOS_AOS_W_ND", "0.40")),
             "hv_delta": float(os.environ.get("VAMOS_AOS_W_HV_DELTA", "0.20")),
         },
-        "operator_pool": [
-            {
-                "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": CROSSOVER_ETA}),
-                "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
-            },
-            {
-                "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.2}),
-                "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
-            },
-        ],
+        "operator_pool": operator_pool,
     }
 
 
@@ -473,6 +513,9 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
     best_cfg = chosen["best_cfg"]
     if fixed_pop_size_no_archive > 0 and not bool(best_cfg.get("use_external_archive", False)):
         best_cfg["pop_size"] = int(fixed_pop_size_no_archive)
+    if bool(best_cfg.get("use_external_archive", False)) and str(best_cfg.get("archive_type", "")).strip().lower() == "unbounded":
+        # archive_size_factor is ignored for unbounded archives; keep JSON minimal.
+        best_cfg.pop("archive_size_factor", None)
     history = chosen["history"]
 
     out_cfg = Path(os.environ.get("VAMOS_TUNER_OUTPUT_JSON", str(ROOT_DIR / "experiments" / "tuned_nsgaii.json")))
@@ -487,12 +530,20 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
     )
     out_resolved.parent.mkdir(parents=True, exist_ok=True)
     resolved_cfg = config_from_assignment("nsgaii", best_cfg)
-    out_resolved.write_text(json.dumps(resolved_cfg.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
+    resolved_dict = resolved_cfg.to_dict()
+    if resolved_dict.get("archive_type") is None:
+        resolved_dict.pop("archive_type", None)
+    out_resolved.write_text(json.dumps(resolved_dict, indent=2, sort_keys=True), encoding="utf-8")
 
     out_hist_csv = Path(os.environ.get("VAMOS_TUNER_HISTORY_CSV", str(ROOT_DIR / "experiments" / "tuner_history.csv")))
     out_hist_json = out_hist_csv.with_suffix(".json")
     save_history_csv(history, param_space, out_hist_csv)
     save_history_json(history, param_space, out_hist_json)
+
+    topk = _as_int_env("VAMOS_TUNER_TOPK", 5)
+    out_topk_json = Path(os.environ.get("VAMOS_TUNER_TOPK_JSON", str(out_cfg.with_name(f"{out_cfg.stem}_topk.json"))))
+    if topk > 0:
+        _export_topk_from_history_json(out_hist_json, out_topk_json, topk)
 
     out_runs_csv = Path(os.environ.get("VAMOS_TUNER_RUNS_CSV", str(ROOT_DIR / "experiments" / "tuned_nsgaii_runs.csv")))
     out_runs_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -538,7 +589,41 @@ def build_config(*, variant: str, seed: int, n_var: int, tuned_cfg: dict[str, An
         if tuned_cfg is None:
             raise ValueError("tuned_aos variant requested but tuned_cfg is None")
         tuned = config_from_assignment("nsgaii", tuned_cfg)
-        return replace(tuned, adaptive_operator_selection=make_aos_cfg(seed=seed, n_var=n_var))
+
+        def _sig(entry: dict[str, Any]) -> str:
+            return json.dumps(entry, sort_keys=True)
+
+        operator_pool: list[dict[str, Any]] = [{"crossover": tuned.crossover, "mutation": tuned.mutation}]
+        seen = {_sig(operator_pool[0])}
+
+        topk_path = Path(os.environ.get("VAMOS_TUNER_TOPK_JSON", str(ROOT_DIR / "experiments" / "tuned_nsgaii_topk.json")))
+        max_arms = _as_int_env("VAMOS_AOS_TOPK_ARMS", 5)
+        if max_arms > 1 and topk_path.exists():
+            try:
+                topk_raw = json.loads(topk_path.read_text(encoding="utf-8"))
+                if isinstance(topk_raw, list):
+                    for item in topk_raw:
+                        if not isinstance(item, dict):
+                            continue
+                        cfg = item.get("config")
+                        if not isinstance(cfg, dict):
+                            continue
+                        resolved = config_from_assignment("nsgaii", cfg)
+                        entry = {"crossover": resolved.crossover, "mutation": resolved.mutation}
+                        sig = _sig(entry)
+                        if sig in seen:
+                            continue
+                        operator_pool.append(entry)
+                        seen.add(sig)
+                        if len(operator_pool) >= max_arms:
+                            break
+            except Exception:
+                pass
+
+        if len(operator_pool) < 2:
+            operator_pool.append({"crossover": tuned.crossover, "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA})})
+
+        return replace(tuned, adaptive_operator_selection=make_aos_cfg(seed=seed, n_var=n_var, operator_pool=operator_pool))
     raise ValueError(f"Unknown variant '{variant}'")
 
 
@@ -674,6 +759,13 @@ def main() -> None:
             cfg_path = Path(os.environ.get("VAMOS_TUNER_OUTPUT_JSON", str(ROOT_DIR / "experiments" / "tuned_nsgaii.json")))
             tuned_cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
             print(f"Loaded tuned config from {cfg_path}")
+            topk = _as_int_env("VAMOS_TUNER_TOPK", 5)
+            if topk > 0:
+                hist_csv = Path(os.environ.get("VAMOS_TUNER_HISTORY_CSV", str(ROOT_DIR / "experiments" / "tuner_history.csv")))
+                hist_json = hist_csv.with_suffix(".json")
+                out_topk_json = Path(os.environ.get("VAMOS_TUNER_TOPK_JSON", str(cfg_path.with_name(f"{cfg_path.stem}_topk.json"))))
+                if not out_topk_json.exists() and hist_json.exists():
+                    _export_topk_from_history_json(hist_json, out_topk_json, topk)
 
     tasks = [(variant, problem, seed) for variant in variants for problem in problems for seed in range(n_seeds)]
 
