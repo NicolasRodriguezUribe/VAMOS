@@ -1,9 +1,9 @@
 [
   {
     "trial_id": 0,
-    "score": 0.16999221216429927,
+    "score": 0.1585685271893764,
     "config": {
-      "pop_size": 169,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -29,7 +29,7 @@
   },
   {
     "trial_id": 1,
-    "score": 0.21243576646026197,
+    "score": 0.212435766460264,
     "config": {
       "pop_size": 143,
       "offspring_ratio": 0.5,
@@ -55,7 +55,7 @@
   },
   {
     "trial_id": 2,
-    "score": 0.3378800265398792,
+    "score": 0.3378800265398947,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.75,
@@ -85,7 +85,7 @@
   },
   {
     "trial_id": 3,
-    "score": 0.18312570044318896,
+    "score": 0.18312570044319007,
     "config": {
       "pop_size": 140,
       "offspring_ratio": 0.5,
@@ -115,9 +115,9 @@
   },
   {
     "trial_id": 4,
-    "score": 0.8415580763646902,
+    "score": 0.827076053345052,
     "config": {
-      "pop_size": 132,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -141,7 +141,7 @@
   },
   {
     "trial_id": 5,
-    "score": 0.18802511841268563,
+    "score": 0.1880251184126878,
     "config": {
       "pop_size": 120,
       "offspring_ratio": 1.0,
@@ -170,7 +170,7 @@
   },
   {
     "trial_id": 6,
-    "score": 0.27484475816462706,
+    "score": 0.27484475816463455,
     "config": {
       "pop_size": 171,
       "offspring_ratio": 1.0,
@@ -198,7 +198,7 @@
   },
   {
     "trial_id": 7,
-    "score": 0.16112590084923975,
+    "score": 0.16112590084924056,
     "config": {
       "pop_size": 180,
       "offspring_ratio": 1.0,
@@ -226,7 +226,7 @@
   },
   {
     "trial_id": 8,
-    "score": 0.6228700022240896,
+    "score": 0.583172315419023,
     "config": {
       "pop_size": 130,
       "offspring_ratio": 0.5,
@@ -247,7 +247,7 @@
       "archive_size_factor": 10
     },
     "details": {
-      "num_evals": 140,
+      "num_evals": 70,
       "alive": false,
       "final_fidelity_level": 2,
       "num_final_evals": 0
@@ -255,9 +255,9 @@
   },
   {
     "trial_id": 9,
-    "score": 0.24387800191649137,
+    "score": 0.26495459015848716,
     "config": {
-      "pop_size": 102,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -280,7 +280,7 @@
   },
   {
     "trial_id": 10,
-    "score": 0.8288782463855291,
+    "score": 0.8288782463855313,
     "config": {
       "pop_size": 153,
       "offspring_ratio": 0.75,
@@ -308,9 +308,9 @@
   },
   {
     "trial_id": 11,
-    "score": 0.44725110601038187,
+    "score": 0.44934641603891406,
     "config": {
-      "pop_size": 174,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -336,9 +336,9 @@
   },
   {
     "trial_id": 12,
-    "score": 0.8156724325997383,
+    "score": 0.816177174893595,
     "config": {
-      "pop_size": 101,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -362,7 +362,7 @@
   },
   {
     "trial_id": 13,
-    "score": 0.20009874248391818,
+    "score": 0.20009874248392007,
     "config": {
       "pop_size": 190,
       "offspring_ratio": 0.25,
@@ -389,9 +389,9 @@
   },
   {
     "trial_id": 14,
-    "score": 0.14607244077906084,
+    "score": 0.14597891665398693,
     "config": {
-      "pop_size": 169,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -415,9 +415,9 @@
   },
   {
     "trial_id": 15,
-    "score": 0.21939256299179372,
+    "score": 0.19998098282324944,
     "config": {
-      "pop_size": 150,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "blx_alpha",
@@ -441,9 +441,9 @@
   },
   {
     "trial_id": 16,
-    "score": 0.4857474798162862,
+    "score": 0.5075512514959585,
     "config": {
-      "pop_size": 175,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "undx",
@@ -467,9 +467,9 @@
   },
   {
     "trial_id": 17,
-    "score": 0.16891889668393062,
+    "score": 0.16781888966530875,
     "config": {
-      "pop_size": 141,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "pcx",
@@ -494,9 +494,9 @@
   },
   {
     "trial_id": 18,
-    "score": 0.20888390902099815,
+    "score": 0.19100446252218467,
     "config": {
-      "pop_size": 178,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "arithmetic",
@@ -519,7 +519,7 @@
   },
   {
     "trial_id": 19,
-    "score": 0.49566239137330836,
+    "score": 0.4956623913733118,
     "config": {
       "pop_size": 122,
       "offspring_ratio": 0.25,
@@ -549,9 +549,9 @@
   },
   {
     "trial_id": 20,
-    "score": 0.7062355948382881,
+    "score": 0.7039487026554251,
     "config": {
-      "pop_size": 160,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -574,7 +574,7 @@
   },
   {
     "trial_id": 21,
-    "score": 0.24896832321829193,
+    "score": 0.24896832321829523,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 1.0,
@@ -602,7 +602,7 @@
   },
   {
     "trial_id": 22,
-    "score": 0.3588387341041228,
+    "score": 0.3588387341041389,
     "config": {
       "pop_size": 131,
       "offspring_ratio": 0.75,
@@ -632,7 +632,7 @@
   },
   {
     "trial_id": 23,
-    "score": 0.25232491735465284,
+    "score": 0.25232491735466045,
     "config": {
       "pop_size": 134,
       "offspring_ratio": 0.25,
@@ -660,9 +660,9 @@
   },
   {
     "trial_id": 24,
-    "score": 0.8234495914891442,
+    "score": 0.7259770060653435,
     "config": {
-      "pop_size": 112,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "undx",
@@ -679,15 +679,15 @@
       "uniform_perturb": 0.240979022334015
     },
     "details": {
-      "num_evals": 210,
+      "num_evals": 140,
       "alive": false,
       "final_fidelity_level": 2,
-      "num_final_evals": 70
+      "num_final_evals": 0
     }
   },
   {
     "trial_id": 25,
-    "score": 0.6238096227668402,
+    "score": 0.5772042720238044,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 0.5,
@@ -707,7 +707,7 @@
       "archive_size_factor": 1
     },
     "details": {
-      "num_evals": 140,
+      "num_evals": 70,
       "alive": false,
       "final_fidelity_level": 2,
       "num_final_evals": 0
@@ -715,9 +715,9 @@
   },
   {
     "trial_id": 26,
-    "score": 0.45328899669571165,
+    "score": 0.43758859741917355,
     "config": {
-      "pop_size": 160,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "undx",
@@ -743,9 +743,9 @@
   },
   {
     "trial_id": 27,
-    "score": 0.20517542624855464,
+    "score": 0.1767791681287316,
     "config": {
-      "pop_size": 178,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -767,7 +767,7 @@
   },
   {
     "trial_id": 28,
-    "score": 0.20099422208816367,
+    "score": 0.20099422208816559,
     "config": {
       "pop_size": 155,
       "offspring_ratio": 1.0,
@@ -794,7 +794,7 @@
   },
   {
     "trial_id": 29,
-    "score": 0.7347548036673174,
+    "score": 0.7347548036673206,
     "config": {
       "pop_size": 117,
       "offspring_ratio": 0.25,
@@ -822,7 +822,7 @@
   },
   {
     "trial_id": 30,
-    "score": 0.14311428690348912,
+    "score": 0.14311428690348993,
     "config": {
       "pop_size": 112,
       "offspring_ratio": 1.0,
@@ -851,9 +851,9 @@
   },
   {
     "trial_id": 31,
-    "score": 0.6431756799102815,
+    "score": 0.6372930276451679,
     "config": {
-      "pop_size": 129,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "random",
       "crossover": "undx",
@@ -878,9 +878,9 @@
   },
   {
     "trial_id": 32,
-    "score": 0.30678175808351743,
+    "score": 0.3175479826183569,
     "config": {
-      "pop_size": 118,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -906,7 +906,7 @@
   },
   {
     "trial_id": 33,
-    "score": 0.8318444499514656,
+    "score": 0.8318444499514668,
     "config": {
       "pop_size": 157,
       "offspring_ratio": 1.0,
@@ -934,9 +934,9 @@
   },
   {
     "trial_id": 34,
-    "score": 0.5261911625516351,
+    "score": 0.7007890647745131,
     "config": {
-      "pop_size": 183,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "arithmetic",
@@ -952,7 +952,7 @@
       "scatter_base_size_factor": 0.2
     },
     "details": {
-      "num_evals": 70,
+      "num_evals": 140,
       "alive": false,
       "final_fidelity_level": 2,
       "num_final_evals": 0
@@ -960,7 +960,7 @@
   },
   {
     "trial_id": 35,
-    "score": 0.4125344084179996,
+    "score": 0.41253440841799116,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 1.0,
@@ -989,7 +989,7 @@
   },
   {
     "trial_id": 36,
-    "score": 0.19829377050201916,
+    "score": 0.19829377050202104,
     "config": {
       "pop_size": 188,
       "offspring_ratio": 0.25,
@@ -1016,9 +1016,9 @@
   },
   {
     "trial_id": 37,
-    "score": 0.3997447468041331,
+    "score": 0.40825678558633205,
     "config": {
-      "pop_size": 111,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "simplex",
@@ -1042,7 +1042,7 @@
   },
   {
     "trial_id": 38,
-    "score": 0.16354509613270773,
+    "score": 0.16354509613270918,
     "config": {
       "pop_size": 116,
       "offspring_ratio": 0.5,
@@ -1068,7 +1068,7 @@
   },
   {
     "trial_id": 39,
-    "score": 0.5006045652949619,
+    "score": 0.5006045652949523,
     "config": {
       "pop_size": 104,
       "offspring_ratio": 1.0,
@@ -1098,9 +1098,9 @@
   },
   {
     "trial_id": 40,
-    "score": 0.27885911802059865,
+    "score": 0.3277550441826042,
     "config": {
-      "pop_size": 165,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "undx",
@@ -1124,7 +1124,7 @@
   },
   {
     "trial_id": 41,
-    "score": 0.20314483327856558,
+    "score": 0.20314483327856755,
     "config": {
       "pop_size": 181,
       "offspring_ratio": 0.75,
@@ -1151,9 +1151,9 @@
   },
   {
     "trial_id": 42,
-    "score": 0.14490695574035126,
+    "score": 0.1427503201946965,
     "config": {
-      "pop_size": 170,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -1177,9 +1177,9 @@
   },
   {
     "trial_id": 43,
-    "score": 0.16322961294331675,
+    "score": 0.16097534268047353,
     "config": {
-      "pop_size": 131,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "scatter",
       "crossover": "simplex",
@@ -1203,7 +1203,7 @@
   },
   {
     "trial_id": 44,
-    "score": 0.27554287352908247,
+    "score": 0.2755428735290902,
     "config": {
       "pop_size": 131,
       "offspring_ratio": 0.25,
@@ -1231,9 +1231,9 @@
   },
   {
     "trial_id": 45,
-    "score": 0.17480430691279603,
+    "score": 0.17045232790125928,
     "config": {
-      "pop_size": 200,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "scatter",
       "crossover": "arithmetic",
@@ -1256,9 +1256,9 @@
   },
   {
     "trial_id": 46,
-    "score": 0.68417447627619,
+    "score": 0.7045063144548724,
     "config": {
-      "pop_size": 122,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -1283,9 +1283,9 @@
   },
   {
     "trial_id": 47,
-    "score": 0.8189817417156461,
+    "score": 0.820112565635098,
     "config": {
-      "pop_size": 104,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -1308,7 +1308,7 @@
   },
   {
     "trial_id": 48,
-    "score": 0.3650926672794628,
+    "score": 0.36509266727945333,
     "config": {
       "pop_size": 108,
       "offspring_ratio": 0.25,
@@ -1336,9 +1336,9 @@
   },
   {
     "trial_id": 49,
-    "score": 0.229552914483197,
+    "score": 0.22261286099632643,
     "config": {
-      "pop_size": 121,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "pcx",
@@ -1362,9 +1362,9 @@
   },
   {
     "trial_id": 50,
-    "score": 0.20912521569428083,
+    "score": 0.1998249255315826,
     "config": {
-      "pop_size": 140,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -1386,7 +1386,7 @@
   },
   {
     "trial_id": 51,
-    "score": 0.7588024269913313,
+    "score": 0.7588024269913319,
     "config": {
       "pop_size": 166,
       "offspring_ratio": 1.0,
@@ -1414,7 +1414,7 @@
   },
   {
     "trial_id": 52,
-    "score": 0.6875871829361369,
+    "score": 0.687587182936141,
     "config": {
       "pop_size": 158,
       "offspring_ratio": 1.0,
@@ -1441,9 +1441,9 @@
   },
   {
     "trial_id": 53,
-    "score": 0.5003872521404953,
+    "score": 0.49440520470394345,
     "config": {
-      "pop_size": 129,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -1468,9 +1468,9 @@
   },
   {
     "trial_id": 54,
-    "score": 0.7126931684163058,
+    "score": 0.8342337640511266,
     "config": {
-      "pop_size": 187,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -1488,15 +1488,15 @@
       "scatter_base_size_factor": 1.0
     },
     "details": {
-      "num_evals": 140,
+      "num_evals": 210,
       "alive": false,
       "final_fidelity_level": 2,
-      "num_final_evals": 0
+      "num_final_evals": 70
     }
   },
   {
     "trial_id": 55,
-    "score": 0.6542309575260576,
+    "score": 0.6542309575260554,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.25,
@@ -1525,9 +1525,9 @@
   },
   {
     "trial_id": 56,
-    "score": 0.1701360152382876,
+    "score": 0.17025918640866397,
     "config": {
-      "pop_size": 104,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "scatter",
       "crossover": "arithmetic",
@@ -1550,9 +1550,9 @@
   },
   {
     "trial_id": 57,
-    "score": 0.15812231884486513,
+    "score": 0.16257980625267132,
     "config": {
-      "pop_size": 199,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -1577,7 +1577,7 @@
   },
   {
     "trial_id": 58,
-    "score": 0.22170354763936545,
+    "score": 0.22170354763936764,
     "config": {
       "pop_size": 197,
       "offspring_ratio": 0.75,
@@ -1603,7 +1603,7 @@
   },
   {
     "trial_id": 59,
-    "score": 0.1532713507206016,
+    "score": 0.15327135072060244,
     "config": {
       "pop_size": 156,
       "offspring_ratio": 0.5,
@@ -1630,7 +1630,7 @@
   },
   {
     "trial_id": 60,
-    "score": 0.6564834062888112,
+    "score": 0.6564834062888147,
     "config": {
       "pop_size": 156,
       "offspring_ratio": 0.75,
@@ -1659,9 +1659,9 @@
   },
   {
     "trial_id": 61,
-    "score": 0.5658705989054883,
+    "score": 0.551950842171047,
     "config": {
-      "pop_size": 138,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -1684,9 +1684,9 @@
   },
   {
     "trial_id": 62,
-    "score": 0.6781259207299958,
+    "score": 0.7073406235012065,
     "config": {
-      "pop_size": 168,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "undx",
@@ -1711,7 +1711,7 @@
   },
   {
     "trial_id": 63,
-    "score": 0.26550881810193344,
+    "score": 0.2655088181019384,
     "config": {
       "pop_size": 183,
       "offspring_ratio": 1.0,
@@ -1740,9 +1740,9 @@
   },
   {
     "trial_id": 64,
-    "score": 0.2127855594548813,
+    "score": 0.20535148772170886,
     "config": {
-      "pop_size": 125,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -1767,7 +1767,7 @@
   },
   {
     "trial_id": 65,
-    "score": 0.17153223135724338,
+    "score": 0.17153223135724494,
     "config": {
       "pop_size": 115,
       "offspring_ratio": 0.5,
@@ -1797,9 +1797,9 @@
   },
   {
     "trial_id": 66,
-    "score": 0.14441025753571532,
+    "score": 0.13949526388438474,
     "config": {
-      "pop_size": 138,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -1821,9 +1821,9 @@
   },
   {
     "trial_id": 67,
-    "score": 0.6443910857665551,
+    "score": 0.6643931242203114,
     "config": {
-      "pop_size": 143,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "pcx",
@@ -1848,9 +1848,9 @@
   },
   {
     "trial_id": 68,
-    "score": 0.16365715939050082,
+    "score": 0.15822579933229008,
     "config": {
-      "pop_size": 171,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -1872,9 +1872,9 @@
   },
   {
     "trial_id": 69,
-    "score": 0.6762930931588966,
+    "score": 0.6515987197362259,
     "config": {
-      "pop_size": 193,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -1898,9 +1898,9 @@
   },
   {
     "trial_id": 70,
-    "score": 0.35963931545025474,
+    "score": 0.4223512244565482,
     "config": {
-      "pop_size": 170,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "blx_alpha",
@@ -1924,7 +1924,7 @@
   },
   {
     "trial_id": 71,
-    "score": 0.2371521006356991,
+    "score": 0.2371521006357019,
     "config": {
       "pop_size": 177,
       "offspring_ratio": 0.25,
@@ -1952,7 +1952,7 @@
   },
   {
     "trial_id": 72,
-    "score": 0.8313250195411167,
+    "score": 0.8313250195411188,
     "config": {
       "pop_size": 119,
       "offspring_ratio": 1.0,
@@ -1980,9 +1980,9 @@
   },
   {
     "trial_id": 73,
-    "score": 0.14862621010277663,
+    "score": 0.1499217115303116,
     "config": {
-      "pop_size": 104,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -2004,7 +2004,7 @@
   },
   {
     "trial_id": 74,
-    "score": 0.8642877707096953,
+    "score": 0.8642877707096978,
     "config": {
       "pop_size": 153,
       "offspring_ratio": 1.0,
@@ -2033,7 +2033,7 @@
   },
   {
     "trial_id": 75,
-    "score": 0.8362799969491295,
+    "score": 0.8362799969491316,
     "config": {
       "pop_size": 161,
       "offspring_ratio": 0.25,
@@ -2060,9 +2060,9 @@
   },
   {
     "trial_id": 76,
-    "score": 0.6362695272507772,
+    "score": 0.6503104724532118,
     "config": {
-      "pop_size": 115,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -2085,7 +2085,7 @@
   },
   {
     "trial_id": 77,
-    "score": 0.16165587799588071,
+    "score": 0.16165587799588169,
     "config": {
       "pop_size": 127,
       "offspring_ratio": 1.0,
@@ -2115,9 +2115,9 @@
   },
   {
     "trial_id": 78,
-    "score": 0.7119662458968388,
+    "score": 0.7095825946440601,
     "config": {
-      "pop_size": 103,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -2140,7 +2140,7 @@
   },
   {
     "trial_id": 79,
-    "score": 0.6653771836081868,
+    "score": 0.665377183608191,
     "config": {
       "pop_size": 179,
       "offspring_ratio": 0.25,
@@ -2169,7 +2169,7 @@
   },
   {
     "trial_id": 80,
-    "score": 0.6674271534148352,
+    "score": 0.6674271534148346,
     "config": {
       "pop_size": 125,
       "offspring_ratio": 0.25,
@@ -2197,7 +2197,7 @@
   },
   {
     "trial_id": 81,
-    "score": 0.2171454135902163,
+    "score": 0.21714541359021844,
     "config": {
       "pop_size": 130,
       "offspring_ratio": 0.5,
@@ -2225,7 +2225,7 @@
   },
   {
     "trial_id": 82,
-    "score": 0.40062940658038076,
+    "score": 0.4006294065803714,
     "config": {
       "pop_size": 101,
       "offspring_ratio": 0.25,
@@ -2255,9 +2255,9 @@
   },
   {
     "trial_id": 83,
-    "score": 0.16088328399882051,
+    "score": 0.1550089210535392,
     "config": {
-      "pop_size": 171,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "simplex",
@@ -2280,9 +2280,9 @@
   },
   {
     "trial_id": 84,
-    "score": 0.5682809483461941,
+    "score": 0.5752662514592348,
     "config": {
-      "pop_size": 194,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "pcx",
@@ -2307,7 +2307,7 @@
   },
   {
     "trial_id": 85,
-    "score": 0.2392940159558657,
+    "score": 0.23929401595586544,
     "config": {
       "pop_size": 130,
       "offspring_ratio": 0.5,
@@ -2333,9 +2333,9 @@
   },
   {
     "trial_id": 86,
-    "score": 0.39480783309087447,
+    "score": 0.3923355426385998,
     "config": {
-      "pop_size": 135,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -2360,7 +2360,7 @@
   },
   {
     "trial_id": 87,
-    "score": 0.21614207896264745,
+    "score": 0.21614207896264956,
     "config": {
       "pop_size": 136,
       "offspring_ratio": 1.0,
@@ -2387,7 +2387,7 @@
   },
   {
     "trial_id": 88,
-    "score": 0.6548373186092019,
+    "score": 0.654837318609205,
     "config": {
       "pop_size": 116,
       "offspring_ratio": 0.25,
@@ -2415,9 +2415,9 @@
   },
   {
     "trial_id": 89,
-    "score": 0.2725471631791185,
+    "score": 0.3152529236180183,
     "config": {
-      "pop_size": 125,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -2440,9 +2440,9 @@
   },
   {
     "trial_id": 90,
-    "score": 0.15389610521792765,
+    "score": 0.15962996236804355,
     "config": {
-      "pop_size": 135,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "blx_alpha",
@@ -2466,9 +2466,9 @@
   },
   {
     "trial_id": 91,
-    "score": 0.8405951868334028,
+    "score": 0.8359936573951483,
     "config": {
-      "pop_size": 124,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -2491,7 +2491,7 @@
   },
   {
     "trial_id": 92,
-    "score": 0.1544355463302672,
+    "score": 0.1544355463302684,
     "config": {
       "pop_size": 131,
       "offspring_ratio": 0.75,
@@ -2520,7 +2520,7 @@
   },
   {
     "trial_id": 93,
-    "score": 0.5255966888841832,
+    "score": 0.52559668888418,
     "config": {
       "pop_size": 149,
       "offspring_ratio": 1.0,
@@ -2547,9 +2547,9 @@
   },
   {
     "trial_id": 94,
-    "score": 0.15677248226654975,
+    "score": 0.15550433651467968,
     "config": {
-      "pop_size": 152,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "undx",
@@ -2575,7 +2575,7 @@
   },
   {
     "trial_id": 95,
-    "score": 0.3833938330531062,
+    "score": 0.3833938330531206,
     "config": {
       "pop_size": 105,
       "offspring_ratio": 1.0,
@@ -2604,7 +2604,7 @@
   },
   {
     "trial_id": 96,
-    "score": 0.8132865092830672,
+    "score": 0.8132865092830684,
     "config": {
       "pop_size": 109,
       "offspring_ratio": 0.25,
@@ -2631,9 +2631,9 @@
   },
   {
     "trial_id": 97,
-    "score": 0.8320888424396277,
+    "score": 0.7552966617620925,
     "config": {
-      "pop_size": 175,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -2649,17 +2649,17 @@
       "blx_repair": "round"
     },
     "details": {
-      "num_evals": 210,
+      "num_evals": 140,
       "alive": false,
       "final_fidelity_level": 2,
-      "num_final_evals": 70
+      "num_final_evals": 0
     }
   },
   {
     "trial_id": 98,
-    "score": 0.26178319045093434,
+    "score": 0.25595340889090323,
     "config": {
-      "pop_size": 164,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "random",
       "crossover": "simplex",
@@ -2712,9 +2712,9 @@
   },
   {
     "trial_id": 100,
-    "score": 0.4093363567385152,
+    "score": 0.43507292214450227,
     "config": {
-      "pop_size": 154,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "blx_alpha",
@@ -2739,7 +2739,7 @@
   },
   {
     "trial_id": 101,
-    "score": 0.16194350604106775,
+    "score": 0.16194350604106858,
     "config": {
       "pop_size": 141,
       "offspring_ratio": 0.75,
@@ -2767,9 +2767,9 @@
   },
   {
     "trial_id": 102,
-    "score": 0.43104443088187483,
+    "score": 0.4284455869848613,
     "config": {
-      "pop_size": 103,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -2795,7 +2795,7 @@
   },
   {
     "trial_id": 103,
-    "score": 0.15341663869939934,
+    "score": 0.15341663869940017,
     "config": {
       "pop_size": 115,
       "offspring_ratio": 0.5,
@@ -2823,9 +2823,9 @@
   },
   {
     "trial_id": 104,
-    "score": 0.39566308389041155,
+    "score": 0.44410595346126064,
     "config": {
-      "pop_size": 136,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -2848,9 +2848,9 @@
   },
   {
     "trial_id": 105,
-    "score": 0.41081754189901476,
+    "score": 0.36216504867374094,
     "config": {
-      "pop_size": 107,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "undx",
@@ -2874,9 +2874,9 @@
   },
   {
     "trial_id": 106,
-    "score": 0.8329680045736695,
+    "score": 0.8249146933019393,
     "config": {
-      "pop_size": 145,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "sbx",
@@ -2901,9 +2901,9 @@
   },
   {
     "trial_id": 107,
-    "score": 0.42596511630270356,
+    "score": 0.41832149097800103,
     "config": {
-      "pop_size": 132,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "random",
       "crossover": "pcx",
@@ -2928,7 +2928,7 @@
   },
   {
     "trial_id": 108,
-    "score": 0.15715251659883442,
+    "score": 0.15715251659883525,
     "config": {
       "pop_size": 132,
       "offspring_ratio": 0.25,
@@ -2955,9 +2955,9 @@
   },
   {
     "trial_id": 109,
-    "score": 0.17621843106305757,
+    "score": 0.17182546321606312,
     "config": {
-      "pop_size": 114,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "undx",
@@ -2983,9 +2983,9 @@
   },
   {
     "trial_id": 110,
-    "score": 0.21544957022761038,
+    "score": 0.21499580303145793,
     "config": {
-      "pop_size": 111,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -3010,7 +3010,7 @@
   },
   {
     "trial_id": 111,
-    "score": 0.6442644596388795,
+    "score": 0.644264459638878,
     "config": {
       "pop_size": 139,
       "offspring_ratio": 0.75,
@@ -3039,9 +3039,9 @@
   },
   {
     "trial_id": 112,
-    "score": 0.8470995199235689,
+    "score": 0.8315106708222079,
     "config": {
-      "pop_size": 137,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -3067,9 +3067,9 @@
   },
   {
     "trial_id": 113,
-    "score": 0.691226645136052,
+    "score": 0.7166369209008235,
     "config": {
-      "pop_size": 175,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -3092,9 +3092,9 @@
   },
   {
     "trial_id": 114,
-    "score": 0.38113175219311923,
+    "score": 0.47830828212338444,
     "config": {
-      "pop_size": 166,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "undx",
@@ -3119,9 +3119,9 @@
   },
   {
     "trial_id": 115,
-    "score": 0.520665427938042,
+    "score": 0.5178869126813835,
     "config": {
-      "pop_size": 172,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -3145,9 +3145,9 @@
   },
   {
     "trial_id": 116,
-    "score": 0.6910253540089475,
+    "score": 0.7098565948244381,
     "config": {
-      "pop_size": 109,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "undx",
@@ -3171,7 +3171,7 @@
   },
   {
     "trial_id": 117,
-    "score": 0.1789540058845076,
+    "score": 0.1789540058845092,
     "config": {
       "pop_size": 154,
       "offspring_ratio": 0.5,
@@ -3198,9 +3198,9 @@
   },
   {
     "trial_id": 118,
-    "score": 0.655625651052702,
+    "score": 0.6597834334799766,
     "config": {
-      "pop_size": 103,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -3226,9 +3226,9 @@
   },
   {
     "trial_id": 119,
-    "score": 0.6656000618571253,
+    "score": 0.664027457683866,
     "config": {
-      "pop_size": 108,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -3251,9 +3251,9 @@
   },
   {
     "trial_id": 120,
-    "score": 0.40816661349503175,
+    "score": 0.42325697166238807,
     "config": {
-      "pop_size": 141,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -3276,7 +3276,7 @@
   },
   {
     "trial_id": 121,
-    "score": 0.254224973560285,
+    "score": 0.25422497356028995,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.25,
@@ -3303,9 +3303,9 @@
   },
   {
     "trial_id": 122,
-    "score": 0.23152499033972118,
+    "score": 0.21232860990134161,
     "config": {
-      "pop_size": 162,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -3328,9 +3328,9 @@
   },
   {
     "trial_id": 123,
-    "score": 0.4004003486468588,
+    "score": 0.39828797382703424,
     "config": {
-      "pop_size": 102,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "pcx",
@@ -3355,7 +3355,7 @@
   },
   {
     "trial_id": 124,
-    "score": 0.2716561813918235,
+    "score": 0.2716561813918304,
     "config": {
       "pop_size": 143,
       "offspring_ratio": 0.25,
@@ -3383,7 +3383,7 @@
   },
   {
     "trial_id": 125,
-    "score": 0.6959409881546895,
+    "score": 0.6959409881546912,
     "config": {
       "pop_size": 104,
       "offspring_ratio": 0.75,
@@ -3410,9 +3410,9 @@
   },
   {
     "trial_id": 126,
-    "score": 0.24809157234451049,
+    "score": 0.24554996004837615,
     "config": {
-      "pop_size": 128,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "undx",
@@ -3436,9 +3436,9 @@
   },
   {
     "trial_id": 127,
-    "score": 0.3894996437141497,
+    "score": 0.38747030411896277,
     "config": {
-      "pop_size": 167,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -3460,7 +3460,7 @@
   },
   {
     "trial_id": 128,
-    "score": 0.497376523273313,
+    "score": 0.4973765232733223,
     "config": {
       "pop_size": 175,
       "offspring_ratio": 1.0,
@@ -3487,9 +3487,9 @@
   },
   {
     "trial_id": 129,
-    "score": 0.1530878397014643,
+    "score": 0.15082497389610106,
     "config": {
-      "pop_size": 106,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "random",
       "crossover": "sbx",
@@ -3512,9 +3512,9 @@
   },
   {
     "trial_id": 130,
-    "score": 0.3444026309706493,
+    "score": 0.38468493151466365,
     "config": {
-      "pop_size": 143,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "undx",
@@ -3540,9 +3540,9 @@
   },
   {
     "trial_id": 131,
-    "score": 0.395497366047936,
+    "score": 0.36368658316481345,
     "config": {
-      "pop_size": 155,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "scatter",
       "crossover": "sbx",
@@ -3567,7 +3567,7 @@
   },
   {
     "trial_id": 132,
-    "score": 0.179283854280836,
+    "score": 0.17928385428083715,
     "config": {
       "pop_size": 134,
       "offspring_ratio": 0.75,
@@ -3597,9 +3597,9 @@
   },
   {
     "trial_id": 133,
-    "score": 0.1764681459196523,
+    "score": 0.16529484468472508,
     "config": {
-      "pop_size": 119,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "random",
       "crossover": "simplex",
@@ -3622,9 +3622,9 @@
   },
   {
     "trial_id": 134,
-    "score": 0.268125135122491,
+    "score": 0.2766033958072282,
     "config": {
-      "pop_size": 113,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "random",
       "crossover": "undx",
@@ -3649,7 +3649,7 @@
   },
   {
     "trial_id": 135,
-    "score": 0.531416117054393,
+    "score": 0.5314161170543936,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3676,9 +3676,9 @@
   },
   {
     "trial_id": 136,
-    "score": 0.5494589796020556,
+    "score": 0.5476357938825878,
     "config": {
-      "pop_size": 122,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -3703,7 +3703,7 @@
   },
   {
     "trial_id": 137,
-    "score": 0.27799362834191055,
+    "score": 0.27799362834192143,
     "config": {
       "pop_size": 138,
       "offspring_ratio": 0.25,
@@ -3731,7 +3731,7 @@
   },
   {
     "trial_id": 138,
-    "score": 0.2701138246705644,
+    "score": 0.2701138246705677,
     "config": {
       "pop_size": 175,
       "offspring_ratio": 1.0,
@@ -3759,9 +3759,9 @@
   },
   {
     "trial_id": 139,
-    "score": 0.6696280134110887,
+    "score": 0.6693511191460754,
     "config": {
-      "pop_size": 184,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "sbx",
@@ -3785,9 +3785,9 @@
   },
   {
     "trial_id": 140,
-    "score": 0.13700521538429578,
+    "score": 0.12956296972801817,
     "config": {
-      "pop_size": 141,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -3810,7 +3810,7 @@
   },
   {
     "trial_id": 141,
-    "score": 0.2165235256752144,
+    "score": 0.21652352567521657,
     "config": {
       "pop_size": 175,
       "offspring_ratio": 0.25,
@@ -3838,7 +3838,7 @@
   },
   {
     "trial_id": 142,
-    "score": 0.2383276485007235,
+    "score": 0.23832764850072613,
     "config": {
       "pop_size": 151,
       "offspring_ratio": 0.75,
@@ -3867,9 +3867,9 @@
   },
   {
     "trial_id": 143,
-    "score": 0.47728251722840215,
+    "score": 0.47584661702854436,
     "config": {
-      "pop_size": 164,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "undx",
@@ -3895,7 +3895,7 @@
   },
   {
     "trial_id": 144,
-    "score": 0.3250695891505122,
+    "score": 0.325069589150506,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 1.0,
@@ -3922,7 +3922,7 @@
   },
   {
     "trial_id": 145,
-    "score": 0.560966590386776,
+    "score": 0.5609665903867624,
     "config": {
       "pop_size": 114,
       "offspring_ratio": 1.0,
@@ -3952,9 +3952,9 @@
   },
   {
     "trial_id": 146,
-    "score": 0.15756332689464328,
+    "score": 0.1527136759021072,
     "config": {
-      "pop_size": 168,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "simplex",
@@ -3977,9 +3977,9 @@
   },
   {
     "trial_id": 147,
-    "score": 0.25918249876491295,
+    "score": 0.2449199617796922,
     "config": {
-      "pop_size": 167,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "simplex",
@@ -4003,7 +4003,7 @@
   },
   {
     "trial_id": 148,
-    "score": 0.16366633383802823,
+    "score": 0.1636663338380293,
     "config": {
       "pop_size": 111,
       "offspring_ratio": 1.0,
@@ -4032,9 +4032,9 @@
   },
   {
     "trial_id": 149,
-    "score": 0.33006168581093215,
+    "score": 0.35898272551971316,
     "config": {
-      "pop_size": 186,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "undx",
@@ -4060,9 +4060,9 @@
   },
   {
     "trial_id": 150,
-    "score": 0.5678194076886028,
+    "score": 0.6438074616498527,
     "config": {
-      "pop_size": 175,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "arithmetic",
@@ -4077,7 +4077,7 @@
       "nonuniform_perturbation": 0.2838704780956043
     },
     "details": {
-      "num_evals": 70,
+      "num_evals": 140,
       "alive": false,
       "final_fidelity_level": 2,
       "num_final_evals": 0
@@ -4085,9 +4085,9 @@
   },
   {
     "trial_id": 151,
-    "score": 0.8257809436818547,
+    "score": 0.8149506246121769,
     "config": {
-      "pop_size": 113,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -4112,9 +4112,9 @@
   },
   {
     "trial_id": 152,
-    "score": 0.6589188613706835,
+    "score": 0.6576161858742697,
     "config": {
-      "pop_size": 104,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "random",
       "crossover": "blx_alpha",
@@ -4139,9 +4139,9 @@
   },
   {
     "trial_id": 153,
-    "score": 0.30011557939555517,
+    "score": 0.3867234580002442,
     "config": {
-      "pop_size": 152,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "undx",
@@ -4166,9 +4166,9 @@
   },
   {
     "trial_id": 154,
-    "score": 0.6783092272432613,
+    "score": 0.690154644931283,
     "config": {
-      "pop_size": 104,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "undx",
@@ -4193,7 +4193,7 @@
   },
   {
     "trial_id": 155,
-    "score": 0.4282984185937111,
+    "score": 0.4282984185937158,
     "config": {
       "pop_size": 122,
       "offspring_ratio": 0.25,
@@ -4222,7 +4222,7 @@
   },
   {
     "trial_id": 156,
-    "score": 0.18365775862677103,
+    "score": 0.1836577586267726,
     "config": {
       "pop_size": 167,
       "offspring_ratio": 0.75,
@@ -4249,9 +4249,9 @@
   },
   {
     "trial_id": 157,
-    "score": 0.667891748449673,
+    "score": 0.6651230732977416,
     "config": {
-      "pop_size": 142,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "undx",
@@ -4277,9 +4277,9 @@
   },
   {
     "trial_id": 158,
-    "score": 0.4622100407985544,
+    "score": 0.4626852058571963,
     "config": {
-      "pop_size": 121,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -4301,9 +4301,9 @@
   },
   {
     "trial_id": 159,
-    "score": 0.6616543231960618,
+    "score": 0.6528067023343076,
     "config": {
-      "pop_size": 120,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -4329,7 +4329,7 @@
   },
   {
     "trial_id": 160,
-    "score": 0.175055036070458,
+    "score": 0.1750550360704591,
     "config": {
       "pop_size": 183,
       "offspring_ratio": 0.75,
@@ -4358,7 +4358,7 @@
   },
   {
     "trial_id": 161,
-    "score": 0.8266401032631826,
+    "score": 0.8266401032631843,
     "config": {
       "pop_size": 145,
       "offspring_ratio": 0.5,
@@ -4386,7 +4386,7 @@
   },
   {
     "trial_id": 162,
-    "score": 0.20099124865279597,
+    "score": 0.20099124865279785,
     "config": {
       "pop_size": 125,
       "offspring_ratio": 0.5,
@@ -4412,7 +4412,7 @@
   },
   {
     "trial_id": 163,
-    "score": 0.16304581186172182,
+    "score": 0.1630458118617227,
     "config": {
       "pop_size": 135,
       "offspring_ratio": 0.75,
@@ -4440,7 +4440,7 @@
   },
   {
     "trial_id": 164,
-    "score": 0.2196076054221106,
+    "score": 0.2196076054221128,
     "config": {
       "pop_size": 186,
       "offspring_ratio": 1.0,
@@ -4467,7 +4467,7 @@
   },
   {
     "trial_id": 165,
-    "score": 0.6927447287476426,
+    "score": 0.6927447287476457,
     "config": {
       "pop_size": 139,
       "offspring_ratio": 0.75,
@@ -4497,9 +4497,9 @@
   },
   {
     "trial_id": 166,
-    "score": 0.6466091420388647,
+    "score": 0.6365547222034538,
     "config": {
-      "pop_size": 161,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "pcx",
@@ -4524,9 +4524,9 @@
   },
   {
     "trial_id": 167,
-    "score": 0.34353388490192055,
+    "score": 0.39773278552138613,
     "config": {
-      "pop_size": 197,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "pcx",
@@ -4550,7 +4550,7 @@
   },
   {
     "trial_id": 168,
-    "score": 0.22933520905767,
+    "score": 0.22933520905767243,
     "config": {
       "pop_size": 151,
       "offspring_ratio": 0.75,
@@ -4578,9 +4578,9 @@
   },
   {
     "trial_id": 169,
-    "score": 0.6539280306771647,
+    "score": 0.6465968086376169,
     "config": {
-      "pop_size": 157,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "undx",
@@ -4605,7 +4605,7 @@
   },
   {
     "trial_id": 170,
-    "score": 0.6509160357907487,
+    "score": 0.6509160357907523,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.75,
@@ -4634,7 +4634,7 @@
   },
   {
     "trial_id": 171,
-    "score": 0.3661460646093995,
+    "score": 0.3661460646093928,
     "config": {
       "pop_size": 127,
       "offspring_ratio": 1.0,
@@ -4662,9 +4662,9 @@
   },
   {
     "trial_id": 172,
-    "score": 0.2564046834549773,
+    "score": 0.25006524992674745,
     "config": {
-      "pop_size": 151,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -4689,7 +4689,7 @@
   },
   {
     "trial_id": 173,
-    "score": 0.6328975006336175,
+    "score": 0.6328975006336155,
     "config": {
       "pop_size": 126,
       "offspring_ratio": 0.75,
@@ -4718,7 +4718,7 @@
   },
   {
     "trial_id": 174,
-    "score": 0.4639503264899194,
+    "score": 0.46395032648992335,
     "config": {
       "pop_size": 107,
       "offspring_ratio": 0.75,
@@ -4748,7 +4748,7 @@
   },
   {
     "trial_id": 175,
-    "score": 0.16414945815714962,
+    "score": 0.1641494581571505,
     "config": {
       "pop_size": 141,
       "offspring_ratio": 0.75,
@@ -4776,7 +4776,7 @@
   },
   {
     "trial_id": 176,
-    "score": 0.16298446909043504,
+    "score": 0.16298446909043587,
     "config": {
       "pop_size": 101,
       "offspring_ratio": 0.75,
@@ -4803,7 +4803,7 @@
   },
   {
     "trial_id": 177,
-    "score": 0.1575346764507486,
+    "score": 0.1575346764507494,
     "config": {
       "pop_size": 146,
       "offspring_ratio": 0.25,
@@ -4832,7 +4832,7 @@
   },
   {
     "trial_id": 178,
-    "score": 0.5493645868523696,
+    "score": 0.5493645868523533,
     "config": {
       "pop_size": 157,
       "offspring_ratio": 1.0,
@@ -4861,9 +4861,9 @@
   },
   {
     "trial_id": 179,
-    "score": 0.6532419910758591,
+    "score": 0.6629284969525245,
     "config": {
-      "pop_size": 153,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -4888,9 +4888,9 @@
   },
   {
     "trial_id": 180,
-    "score": 0.36433173665214286,
+    "score": 0.3702265640047027,
     "config": {
-      "pop_size": 101,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -4914,7 +4914,7 @@
   },
   {
     "trial_id": 181,
-    "score": 0.16763408944593514,
+    "score": 0.16763408944593602,
     "config": {
       "pop_size": 150,
       "offspring_ratio": 0.5,
@@ -4942,7 +4942,7 @@
   },
   {
     "trial_id": 182,
-    "score": 0.7139241747371762,
+    "score": 0.7139241747371786,
     "config": {
       "pop_size": 142,
       "offspring_ratio": 0.5,
@@ -4970,9 +4970,9 @@
   },
   {
     "trial_id": 183,
-    "score": 0.6877740740453927,
+    "score": 0.6882620230143368,
     "config": {
-      "pop_size": 104,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "scatter",
       "crossover": "arithmetic",
@@ -4996,9 +4996,9 @@
   },
   {
     "trial_id": 184,
-    "score": 0.3785560737000279,
+    "score": 0.6310981837704028,
     "config": {
-      "pop_size": 191,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -5015,7 +5015,7 @@
       "cauchy_gamma": 0.34356448540244644
     },
     "details": {
-      "num_evals": 70,
+      "num_evals": 140,
       "alive": false,
       "final_fidelity_level": 2,
       "num_final_evals": 0
@@ -5023,9 +5023,9 @@
   },
   {
     "trial_id": 185,
-    "score": 0.6283986476104302,
+    "score": 0.659964251265558,
     "config": {
-      "pop_size": 149,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "undx",
@@ -5051,9 +5051,9 @@
   },
   {
     "trial_id": 186,
-    "score": 0.18654298280705237,
+    "score": 0.17971595022666953,
     "config": {
-      "pop_size": 150,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -5079,7 +5079,7 @@
   },
   {
     "trial_id": 187,
-    "score": 0.6824465375215971,
+    "score": 0.6824465375216023,
     "config": {
       "pop_size": 168,
       "offspring_ratio": 0.75,
@@ -5107,9 +5107,9 @@
   },
   {
     "trial_id": 188,
-    "score": 0.48093503444709557,
+    "score": 0.5549095276949048,
     "config": {
-      "pop_size": 177,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -5134,9 +5134,9 @@
   },
   {
     "trial_id": 189,
-    "score": 0.18695356233062602,
+    "score": 0.16361543405130807,
     "config": {
-      "pop_size": 188,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -5158,7 +5158,7 @@
   },
   {
     "trial_id": 190,
-    "score": 0.13744734476181117,
+    "score": 0.1374473447618122,
     "config": {
       "pop_size": 115,
       "offspring_ratio": 0.25,
@@ -5185,7 +5185,7 @@
   },
   {
     "trial_id": 191,
-    "score": 0.17033586180475607,
+    "score": 0.1703358618047571,
     "config": {
       "pop_size": 105,
       "offspring_ratio": 0.75,
@@ -5213,7 +5213,7 @@
   },
   {
     "trial_id": 192,
-    "score": 0.42078967345063284,
+    "score": 0.42078967345064155,
     "config": {
       "pop_size": 165,
       "offspring_ratio": 1.0,
@@ -5242,9 +5242,9 @@
   },
   {
     "trial_id": 193,
-    "score": 0.3965759996290091,
+    "score": 0.5190334050256684,
     "config": {
-      "pop_size": 199,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "sbx",
@@ -5268,9 +5268,9 @@
   },
   {
     "trial_id": 194,
-    "score": 0.16477630838766016,
+    "score": 0.16206322357149436,
     "config": {
-      "pop_size": 182,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -5292,9 +5292,9 @@
   },
   {
     "trial_id": 195,
-    "score": 0.2376473142058779,
+    "score": 0.2314529546344308,
     "config": {
-      "pop_size": 137,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "simplex",
@@ -5319,7 +5319,7 @@
   },
   {
     "trial_id": 196,
-    "score": 0.5339254662241901,
+    "score": 0.5339254662241929,
     "config": {
       "pop_size": 130,
       "offspring_ratio": 0.5,
@@ -5349,7 +5349,7 @@
   },
   {
     "trial_id": 197,
-    "score": 0.826932317244197,
+    "score": 0.8269323172441991,
     "config": {
       "pop_size": 111,
       "offspring_ratio": 0.5,
@@ -5377,7 +5377,7 @@
   },
   {
     "trial_id": 198,
-    "score": 0.47803179843350724,
+    "score": 0.47803179843350135,
     "config": {
       "pop_size": 150,
       "offspring_ratio": 0.5,
@@ -5405,9 +5405,9 @@
   },
   {
     "trial_id": 199,
-    "score": 0.6296138462238408,
+    "score": 0.577541744260413,
     "config": {
-      "pop_size": 167,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -5424,7 +5424,7 @@
       "scatter_base_size_factor": 0.1
     },
     "details": {
-      "num_evals": 140,
+      "num_evals": 70,
       "alive": false,
       "final_fidelity_level": 2,
       "num_final_evals": 0
@@ -5432,9 +5432,9 @@
   },
   {
     "trial_id": 200,
-    "score": 0.17400510473766695,
+    "score": 0.16438547520202476,
     "config": {
-      "pop_size": 104,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "random",
       "crossover": "simplex",
@@ -5458,7 +5458,7 @@
   },
   {
     "trial_id": 201,
-    "score": 0.7278006035023464,
+    "score": 0.72780060350235,
     "config": {
       "pop_size": 179,
       "offspring_ratio": 0.75,
@@ -5485,9 +5485,9 @@
   },
   {
     "trial_id": 202,
-    "score": 0.3217460895921258,
+    "score": 0.37677108589743397,
     "config": {
-      "pop_size": 115,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "scatter",
       "crossover": "arithmetic",
@@ -5511,9 +5511,9 @@
   },
   {
     "trial_id": 203,
-    "score": 0.1512760305760798,
+    "score": 0.15729461686705482,
     "config": {
-      "pop_size": 140,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "blx_alpha",
@@ -5538,7 +5538,7 @@
   },
   {
     "trial_id": 204,
-    "score": 0.1681642912946402,
+    "score": 0.1681642912946417,
     "config": {
       "pop_size": 145,
       "offspring_ratio": 0.25,
@@ -5566,9 +5566,9 @@
   },
   {
     "trial_id": 205,
-    "score": 0.7610772339563687,
+    "score": 0.8248237249340754,
     "config": {
-      "pop_size": 155,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -5585,17 +5585,17 @@
       "scatter_base_size_factor": 0.3
     },
     "details": {
-      "num_evals": 140,
+      "num_evals": 210,
       "alive": false,
       "final_fidelity_level": 2,
-      "num_final_evals": 0
+      "num_final_evals": 70
     }
   },
   {
     "trial_id": 206,
-    "score": 0.15566127155189116,
+    "score": 0.15579118788651825,
     "config": {
-      "pop_size": 133,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "random",
       "crossover": "simplex",
@@ -5618,7 +5618,7 @@
   },
   {
     "trial_id": 207,
-    "score": 0.4548377214279632,
+    "score": 0.45483772142796397,
     "config": {
       "pop_size": 170,
       "offspring_ratio": 0.25,
@@ -5647,7 +5647,7 @@
   },
   {
     "trial_id": 208,
-    "score": 0.16448007246008414,
+    "score": 0.16448007246008503,
     "config": {
       "pop_size": 118,
       "offspring_ratio": 0.75,
@@ -5676,7 +5676,7 @@
   },
   {
     "trial_id": 209,
-    "score": 0.3176258965439443,
+    "score": 0.31762589654395623,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 0.75,
@@ -5704,7 +5704,7 @@
   },
   {
     "trial_id": 210,
-    "score": 0.2722253061739782,
+    "score": 0.2722253061739814,
     "config": {
       "pop_size": 151,
       "offspring_ratio": 0.5,
@@ -5732,7 +5732,7 @@
   },
   {
     "trial_id": 211,
-    "score": 0.16247143001567832,
+    "score": 0.16247143001567932,
     "config": {
       "pop_size": 103,
       "offspring_ratio": 0.5,
@@ -5761,7 +5761,7 @@
   },
   {
     "trial_id": 212,
-    "score": 0.557367589159223,
+    "score": 0.5573675891592189,
     "config": {
       "pop_size": 162,
       "offspring_ratio": 0.25,
@@ -5789,9 +5789,9 @@
   },
   {
     "trial_id": 213,
-    "score": 0.8321982919730059,
+    "score": 0.8083231023094775,
     "config": {
-      "pop_size": 189,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "blx_alpha",
@@ -5817,7 +5817,7 @@
   },
   {
     "trial_id": 214,
-    "score": 0.2553868962576718,
+    "score": 0.25538689625767447,
     "config": {
       "pop_size": 176,
       "offspring_ratio": 0.5,
@@ -5846,9 +5846,9 @@
   },
   {
     "trial_id": 215,
-    "score": 0.17006589238554065,
+    "score": 0.16276367384863638,
     "config": {
-      "pop_size": 187,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "sbx",
@@ -5873,9 +5873,9 @@
   },
   {
     "trial_id": 216,
-    "score": 0.6590931905421323,
+    "score": 0.6620195125473576,
     "config": {
-      "pop_size": 125,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "undx",
@@ -5899,9 +5899,9 @@
   },
   {
     "trial_id": 217,
-    "score": 0.3875997849369387,
+    "score": 0.4602539707678251,
     "config": {
-      "pop_size": 170,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -5924,7 +5924,7 @@
   },
   {
     "trial_id": 218,
-    "score": 0.5466097436164643,
+    "score": 0.5466097436164682,
     "config": {
       "pop_size": 106,
       "offspring_ratio": 1.0,
@@ -5951,9 +5951,9 @@
   },
   {
     "trial_id": 219,
-    "score": 0.6747241419866664,
+    "score": 0.7007127545280649,
     "config": {
-      "pop_size": 149,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -5978,9 +5978,9 @@
   },
   {
     "trial_id": 220,
-    "score": 0.165673742680691,
+    "score": 0.16914702761771008,
     "config": {
-      "pop_size": 109,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "sbx",
@@ -6004,9 +6004,9 @@
   },
   {
     "trial_id": 221,
-    "score": 0.5574730600612279,
+    "score": 0.5724313399501169,
     "config": {
-      "pop_size": 135,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -6032,9 +6032,9 @@
   },
   {
     "trial_id": 222,
-    "score": 0.8714461357725307,
+    "score": 0.8364034209722843,
     "config": {
-      "pop_size": 182,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "lhs",
       "crossover": "sbx",
@@ -6058,7 +6058,7 @@
   },
   {
     "trial_id": 223,
-    "score": 0.17302231040269409,
+    "score": 0.1730223104026952,
     "config": {
       "pop_size": 103,
       "offspring_ratio": 0.25,
@@ -6085,9 +6085,9 @@
   },
   {
     "trial_id": 224,
-    "score": 0.8482673602995786,
+    "score": 0.8478003100907991,
     "config": {
-      "pop_size": 123,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "sbx",
@@ -6111,7 +6111,7 @@
   },
   {
     "trial_id": 225,
-    "score": 0.19575099661813986,
+    "score": 0.19575099661814183,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 0.75,
@@ -6139,7 +6139,7 @@
   },
   {
     "trial_id": 226,
-    "score": 0.16144178626059005,
+    "score": 0.1614417862605909,
     "config": {
       "pop_size": 125,
       "offspring_ratio": 0.25,
@@ -6169,7 +6169,7 @@
   },
   {
     "trial_id": 227,
-    "score": 0.8346721122796382,
+    "score": 0.8346721122796397,
     "config": {
       "pop_size": 115,
       "offspring_ratio": 0.25,
@@ -6196,7 +6196,7 @@
   },
   {
     "trial_id": 228,
-    "score": 0.15625459031677813,
+    "score": 0.15625459031677896,
     "config": {
       "pop_size": 125,
       "offspring_ratio": 0.25,
@@ -6223,9 +6223,9 @@
   },
   {
     "trial_id": 229,
-    "score": 0.6399600850838679,
+    "score": 0.6335057676855468,
     "config": {
-      "pop_size": 160,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "lhs",
       "crossover": "pcx",
@@ -6250,7 +6250,7 @@
   },
   {
     "trial_id": 230,
-    "score": 0.6767327107905385,
+    "score": 0.6767327107905418,
     "config": {
       "pop_size": 137,
       "offspring_ratio": 0.75,
@@ -6280,7 +6280,7 @@
   },
   {
     "trial_id": 231,
-    "score": 0.7174610788808331,
+    "score": 0.7174610788808355,
     "config": {
       "pop_size": 132,
       "offspring_ratio": 1.0,
@@ -6307,9 +6307,9 @@
   },
   {
     "trial_id": 232,
-    "score": 0.703826754441088,
+    "score": 0.7027339845695475,
     "config": {
-      "pop_size": 120,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "random",
       "crossover": "blx_alpha",
@@ -6334,9 +6334,9 @@
   },
   {
     "trial_id": 233,
-    "score": 0.7169267069256383,
+    "score": 0.704622751152998,
     "config": {
-      "pop_size": 113,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -6362,7 +6362,7 @@
   },
   {
     "trial_id": 234,
-    "score": 0.18071795901936774,
+    "score": 0.18071795901936935,
     "config": {
       "pop_size": 181,
       "offspring_ratio": 0.75,
@@ -6388,9 +6388,9 @@
   },
   {
     "trial_id": 235,
-    "score": 0.676084779517528,
+    "score": 0.6812757241256436,
     "config": {
-      "pop_size": 131,
+      "pop_size": 100,
       "offspring_ratio": 0.75,
       "initializer": "scatter",
       "crossover": "pcx",
@@ -6416,7 +6416,7 @@
   },
   {
     "trial_id": 236,
-    "score": 0.20230342555727976,
+    "score": 0.20230342555728167,
     "config": {
       "pop_size": 121,
       "offspring_ratio": 0.25,
@@ -6443,9 +6443,9 @@
   },
   {
     "trial_id": 237,
-    "score": 0.494364728357072,
+    "score": 0.5218378337289942,
     "config": {
-      "pop_size": 123,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "undx",
@@ -6471,7 +6471,7 @@
   },
   {
     "trial_id": 238,
-    "score": 0.17245232771115304,
+    "score": 0.17245232771115418,
     "config": {
       "pop_size": 152,
       "offspring_ratio": 0.75,
@@ -6501,7 +6501,7 @@
   },
   {
     "trial_id": 239,
-    "score": 0.5024011950022017,
+    "score": 0.5024011950022109,
     "config": {
       "pop_size": 196,
       "offspring_ratio": 0.5,
@@ -6528,9 +6528,9 @@
   },
   {
     "trial_id": 240,
-    "score": 0.16541043028952487,
+    "score": 0.15745476590330895,
     "config": {
-      "pop_size": 169,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "lhs",
       "crossover": "pcx",
@@ -6555,9 +6555,9 @@
   },
   {
     "trial_id": 241,
-    "score": 0.6898895002011707,
+    "score": 0.6644065517531328,
     "config": {
-      "pop_size": 193,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "sbx",
@@ -6582,9 +6582,9 @@
   },
   {
     "trial_id": 242,
-    "score": 0.17538541789327394,
+    "score": 0.16906665867312176,
     "config": {
-      "pop_size": 112,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "simplex",
@@ -6609,9 +6609,9 @@
   },
   {
     "trial_id": 243,
-    "score": 0.22440586862241796,
+    "score": 0.31591320462193834,
     "config": {
-      "pop_size": 141,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "random",
       "crossover": "arithmetic",
@@ -6633,7 +6633,7 @@
   },
   {
     "trial_id": 244,
-    "score": 0.2587394804248712,
+    "score": 0.2587394804248721,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.75,
@@ -6662,9 +6662,9 @@
   },
   {
     "trial_id": 245,
-    "score": 0.3972870249309908,
+    "score": 0.449472461481779,
     "config": {
-      "pop_size": 146,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "lhs",
       "crossover": "blx_alpha",
@@ -6689,9 +6689,9 @@
   },
   {
     "trial_id": 246,
-    "score": 0.3631520615612908,
+    "score": 0.40973132315970434,
     "config": {
-      "pop_size": 111,
+      "pop_size": 100,
       "offspring_ratio": 0.25,
       "initializer": "scatter",
       "crossover": "undx",
@@ -6716,9 +6716,9 @@
   },
   {
     "trial_id": 247,
-    "score": 0.2191827409799736,
+    "score": 0.20529090292618205,
     "config": {
-      "pop_size": 176,
+      "pop_size": 100,
       "offspring_ratio": 0.5,
       "initializer": "scatter",
       "crossover": "arithmetic",
@@ -6741,7 +6741,7 @@
   },
   {
     "trial_id": 248,
-    "score": 0.661370843761606,
+    "score": 0.6613708437616032,
     "config": {
       "pop_size": 128,
       "offspring_ratio": 0.25,
@@ -6769,9 +6769,9 @@
   },
   {
     "trial_id": 249,
-    "score": 0.3003779580580598,
+    "score": 0.2944998073466654,
     "config": {
-      "pop_size": 125,
+      "pop_size": 100,
       "offspring_ratio": 1.0,
       "initializer": "random",
       "crossover": "undx",
