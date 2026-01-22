@@ -403,11 +403,11 @@ Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H CPU
 \toprule
 \textbf{Problem} & \textbf{Median runtime (s)} \\
 \midrule
-zdt4 & 5.12 \\
-dtlz2 & 5.54 \\
-wfg2 & 5.83 \\
+zdt4 & -- \\
+dtlz2 & -- \\
+wfg2 & -- \\
 \midrule
-\textbf{Average} & 5.49 \\
+\textbf{Average} & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -420,11 +420,11 @@ wfg2 & 5.83 \\
 \toprule
 \textbf{Problem} & \textbf{Median runtime (s)} \\
 \midrule
-zdt4 & 6.16 \\
-dtlz2 & 6.44 \\
-wfg2 & 6.94 \\
+zdt4 & -- \\
+dtlz2 & -- \\
+wfg2 & -- \\
 \midrule
-\textbf{Average} & 6.51 \\
+\textbf{Average} & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -457,9 +457,9 @@ Table~\ref{tab:backends} reports median runtime for \VAMOS{} backends aggregated
 \toprule
 \textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Numba & \textbf{5.79} & \textbf{5.51} & 7.54 & \textbf{6.28} \\
-MooCore & 6.15 & 5.81 & \textbf{7.42} & 6.46 \\
-NumPy & 10.50 & 10.50 & 12.57 & 11.19 \\
+Numba & \textbf{7.09} & \textbf{6.58} & \textbf{7.14} & \textbf{6.94} \\
+MooCore & 7.26 & 6.70 & 7.30 & 7.09 \\
+NumPy & 13.68 & 12.58 & 12.63 & 12.96 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -483,11 +483,11 @@ In the population-scaling study we additionally compute normalized hypervolume a
 \toprule
 \textbf{Pop.\ size} & \textbf{zdt4} & \textbf{dtlz2} & \textbf{wfg2} & \textbf{Average} \\
 \midrule
-50 & 1.42 & 1.79 & 1.73 & 1.64 \\
-100 & 2.08 & 1.95 & 1.73 & 1.92 \\
-200 & 3.13 & 2.37 & 2.71 & 2.73 \\
-400 & 4.57 & 4.09 & 4.36 & 4.34 \\
-800 & \textbf{6.88} & \textbf{5.52} & \textbf{6.33} & \textbf{6.24} \\
+50 & -- & -- & -- & -- \\
+100 & -- & -- & -- & -- \\
+200 & -- & -- & -- & -- \\
+400 & -- & -- & -- & -- \\
+800 & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -500,10 +500,10 @@ In the population-scaling study we additionally compute normalized hypervolume a
 \toprule
 \textbf{$m$} & \textbf{$n$} & \textbf{Pop.\ size} & \textbf{Speedup} \\
 \midrule
-2 & 11 & 50 & 1.63 \\
-3 & 12 & 75 & 1.92 \\
-5 & 14 & 125 & 2.12 \\
-8 & 17 & 200 & \textbf{2.69} \\
+2 & -- & -- & -- \\
+3 & -- & -- & -- \\
+5 & -- & -- & -- \\
+8 & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -520,11 +520,11 @@ Table~\ref{tab:frameworks_perf} compares \VAMOS{} against other Python framework
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-VAMOS & \textbf{5.79} & \textbf{5.51} & \textbf{7.54} & \textbf{6.28} \\
-pymoo & 7.09 & 7.57 & 7.99 & 7.55 \\
-DEAP & 34.69 & 37.70 & 71.36 & 47.92 \\
-jMetalPy & 28.71 & 26.43 & 71.53 & 42.22 \\
-Platypus & 48.07 & 50.43 & 84.09 & 60.87 \\
+VAMOS & \textbf{7.09} & \textbf{6.58} & \textbf{7.14} & \textbf{6.94} \\
+pymoo & 9.10 & 8.19 & 8.29 & 8.53 \\
+DEAP & 41.25 & 44.48 & 78.69 & 54.81 \\
+jMetalPy & 33.96 & 29.87 & 78.64 & 47.49 \\
+Platypus & 54.90 & 56.69 & 91.31 & 67.63 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -641,13 +641,34 @@ Platypus & 0.003 & 100.0 \\
 To evaluate the practical impact of \VAMOS{}' optional adaptation modules beyond the cross-framework baseline, we run an internal ablation study on the same benchmark suite as the runtime experiments, using a 50k evaluation budget per run. We compare four \VAMOS{} variants of NSGA-II in a $2\times2$ factorial design (tuned vs.\ untuned) $\times$ (AOS disabled vs.\ enabled):
 \begin{enumerate}
   \item \textbf{Baseline}: the fixed-operator configuration used in the cross-framework benchmark (SBX crossover and polynomial mutation).
-  \item \textbf{Baseline + AOS}: the same configuration augmented with adaptive operator selection (AOS), where an $\epsilon$-greedy bandit~\cite{sutton2018reinforcement} selects between a small portfolio of real-coded variation pipelines (SBX+PM vs.\ BLX-$\alpha$+PM). Unless otherwise stated, we use $\epsilon=0.05$ with a deterministic per-run RNG seed. Rewards combine survival and non-dominated insertion rates with a lightweight per-generation hypervolume-change term (computed when inexpensive, up to three objectives) to reduce the risk of selecting operators that improve selection statistics while degrading Pareto-front quality.
+  \item \textbf{Baseline + AOS}: the same configuration augmented with adaptive operator selection (AOS), where an $\epsilon$-greedy bandit~\cite{sutton2018reinforcement} selects between a small portfolio of diverse real-coded variation pipelines (e.g., SBX+PM, PCX+PM, UNDX+Gaussian, Simplex+UniformReset, BLX-$\alpha$+Cauchy). Unless otherwise stated, we use $\epsilon=0.05$ with a deterministic per-run RNG seed. Rewards combine survival and non-dominated insertion rates with a lightweight per-generation hypervolume-change term aligned with our normalized HV protocol (fixed reference point and normalization) to reduce the risk of selecting operators that improve selection statistics while degrading Pareto-front quality.
   \item \textbf{Racing-tuned}: a single tuned NSGA-II configuration obtained by the racing tuner on a broader training set (\texttt{zdt4}, \texttt{zdt6}, \texttt{dtlz2}, \texttt{dtlz6}, \texttt{dtlz7}, \texttt{wfg1}, \texttt{wfg9}) using multi-fidelity racing up to the full evaluation budget (10k $\rightarrow$ 30k $\rightarrow$ 50k evaluations). The search space enforces $\texttt{pop\_size}\ge 100$ and sets offspring size as a fraction of population size via $\texttt{offspring\_ratio}\in\{0.25,0.5,0.75,1.0\}$ (thus $\texttt{offspring\_size}\le\texttt{pop\_size}$), and uses a dimension-normalized mutation probability factor for better cross-problem transfer. We tune on 10 training seeds, selecting a single configuration by the final-fidelity score and evaluating it on the full benchmark suite without per-problem re-tuning.
   \item \textbf{Racing-tuned + AOS}: the racing-tuned configuration augmented with adaptive operator selection (AOS), where the operator portfolio includes the tuned variation pipeline plus additional variation pipelines derived from the top-5 tuner candidates, to quantify whether online operator adaptation provides additional benefit beyond offline tuning.
 \end{enumerate}
 The selected racing-tuned configuration is exported for reproducibility and summarized in Table~\ref{tab:racing_tuned_config}. All variants are evaluated for 30 independent seeds and reported using the same normalized hypervolume protocol (Section~\ref{sec:hv}) and wall-clock runtime measurement setup. Tables~\ref{tab:ablation_runtime} and \ref{tab:ablation_hypervolume} summarize the final-budget ablation outcomes aggregated by benchmark family.
 
 To better capture online adaptation effects under large evaluation budgets, we additionally report anytime performance by recording normalized hypervolume at fixed evaluation checkpoints (5k, 10k, 20k, 50k evaluations). To make early-budget differences explicit, we report median normalized hypervolume at 10k and 20k evaluations (Tables~\ref{tab:anytime_hv_10000} and \ref{tab:anytime_hv_20000}). From the same checkpoints we compute (i) AUC(HV vs.\ evals), and (ii) a time-to-target metric defined as the earliest checkpoint at which HV reaches $0.99\times$ the baseline-final median HV for that problem, along with the corresponding success rate by the full budget. In evaluation-dominated scenarios, lower evaluations-to-target translates into wall-clock savings. Tables~\ref{tab:anytime_auc}--\ref{tab:anytime_ttt_success} summarize these metrics aggregated by benchmark family.
+
+We additionally log per-generation AOS arm selections and summarize stage-wise operator usage for representative problems to illustrate operator switching during the search (Figure~\ref{fig:aos_switching}).
+
+\begin{figure}[htbp]
+\centering
+\small
+% BEGIN AOS_SWITCHING_TABLE
+\textbf{Racing-tuned + AOS}\\
+\begin{tabular}{l|ccc}
+\toprule
+\textbf{Problem} & \textbf{$\le 10k$} & \textbf{$10k\!-\!20k$} & \textbf{$20k\!-\!50k$} \\
+\midrule
+\texttt{zdt4} & -- & -- & -- \\
+\texttt{dtlz3} & -- & -- & -- \\
+\texttt{wfg9} & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+% END AOS_SWITCHING_TABLE
+\caption{Stage-wise AOS operator usage (median selection fraction across seeds) for representative problems (generated by \texttt{paper/10\_update\_anytime\_tables\_from\_csv.py} from \texttt{experiments/ablation\_aos\_trace.csv}).}
+\label{fig:aos_switching}
+\end{figure}
 
 \begin{table}[htbp]
 \centering
@@ -861,29 +882,29 @@ Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-
 \toprule
 \textbf{Problem} & \textbf{Numba} & \textbf{MooCore} & \textbf{NumPy} \\
 \midrule
-dtlz1 & \textbf{5.22} & 5.51 & 10.49 \\
-dtlz2 & \textbf{5.46} & 5.99 & 10.84 \\
-dtlz3 & \textbf{5.40} & 5.48 & 10.85 \\
-dtlz4 & \textbf{5.77} & 5.81 & 10.32 \\
-dtlz5 & \textbf{6.10} & 6.28 & 10.09 \\
-dtlz6 & \textbf{5.66} & 5.83 & 12.06 \\
-dtlz7 & \textbf{5.63} & 5.86 & 10.22 \\
-wfg1 & 6.20 & \textbf{6.04} & 10.83 \\
-wfg2 & \textbf{7.63} & 7.64 & 11.04 \\
-wfg3 & 7.44 & \textbf{5.87} & 14.06 \\
-wfg4 & \textbf{6.75} & 7.57 & 13.44 \\
-wfg5 & \textbf{7.33} & 7.40 & 13.99 \\
-wfg6 & \textbf{6.61} & 6.63 & 11.55 \\
-wfg7 & 7.58 & \textbf{7.34} & 10.27 \\
-wfg8 & 7.63 & \textbf{7.52} & 11.16 \\
-wfg9 & 10.02 & \textbf{9.86} & 15.48 \\
-zdt1 & 5.88 & \textbf{5.47} & 10.17 \\
-zdt2 & \textbf{5.94} & 6.38 & 10.83 \\
-zdt3 & \textbf{5.51} & 5.82 & 13.70 \\
-zdt4 & \textbf{5.10} & 5.34 & 10.42 \\
-zdt6 & \textbf{6.57} & 6.77 & 10.46 \\
+dtlz1 & 7.40 & \textbf{7.24} & 14.04 \\
+dtlz2 & \textbf{6.75} & 6.98 & 13.04 \\
+dtlz3 & 6.05 & \textbf{5.94} & 11.62 \\
+dtlz4 & \textbf{6.29} & 6.38 & 11.39 \\
+dtlz5 & \textbf{6.02} & 7.03 & 11.35 \\
+dtlz6 & \textbf{6.14} & 6.54 & 11.42 \\
+dtlz7 & \textbf{6.61} & 6.93 & 12.92 \\
+wfg1 & \textbf{6.35} & 6.49 & 12.44 \\
+wfg2 & 6.61 & \textbf{6.60} & 13.64 \\
+wfg3 & \textbf{7.20} & 7.23 & 12.10 \\
+wfg4 & \textbf{6.21} & 6.40 & 11.47 \\
+wfg5 & 6.75 & \textbf{6.46} & 11.70 \\
+wfg6 & \textbf{7.36} & 7.75 & 12.86 \\
+wfg7 & \textbf{6.33} & 6.38 & 11.15 \\
+wfg8 & \textbf{7.05} & 7.23 & 12.57 \\
+wfg9 & \textbf{9.02} & 9.29 & 14.37 \\
+zdt1 & \textbf{6.63} & 6.76 & 12.13 \\
+zdt2 & 6.58 & \textbf{6.46} & 11.97 \\
+zdt3 & \textbf{7.09} & 7.36 & 13.40 \\
+zdt4 & \textbf{7.10} & 7.38 & 14.26 \\
+zdt6 & \textbf{7.72} & 7.87 & 15.14 \\
 \midrule
-\textbf{Average} & \textbf{6.45} & 6.50 & 11.54 \\
+\textbf{Average} & \textbf{6.82} & 6.99 & 12.62 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -897,29 +918,29 @@ zdt6 & \textbf{6.57} & 6.77 & 10.46 \\
 \toprule
 \textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{DEAP} & \textbf{jMetalPy} & \textbf{Platypus} \\
 \midrule
-dtlz1 & \textbf{5.22} & 6.45 & 35.65 & 24.50 & 57.55 \\
-dtlz2 & \textbf{5.46} & 6.86 & 35.01 & 33.48 & 49.78 \\
-dtlz3 & \textbf{5.40} & 6.64 & 46.49 & 36.12 & 44.33 \\
-dtlz4 & \textbf{5.77} & 8.80 & 34.50 & 28.96 & 49.11 \\
-dtlz5 & \textbf{6.10} & 7.47 & 49.19 & 25.04 & 51.36 \\
-dtlz6 & \textbf{5.66} & 8.21 & 39.20 & 25.58 & 49.27 \\
-dtlz7 & \textbf{5.63} & 6.49 & 33.17 & 26.67 & 59.91 \\
-wfg1 & \textbf{6.20} & 7.33 & 46.57 & 60.59 & 58.51 \\
-wfg2 & 7.63 & \textbf{6.95} & 86.03 & 72.47 & 82.75 \\
-wfg3 & 7.44 & \textbf{7.03} & 69.07 & 70.19 & 99.92 \\
-wfg4 & \textbf{6.75} & 8.48 & 42.25 & 47.81 & 56.27 \\
-wfg5 & \textbf{7.33} & 8.63 & 42.75 & 48.17 & 56.26 \\
-wfg6 & \textbf{6.61} & 7.56 & 187.08 & 183.38 & 279.57 \\
-wfg7 & 7.58 & \textbf{6.67} & 56.52 & 57.42 & 70.09 \\
-wfg8 & \textbf{7.63} & 7.82 & 168.45 & 129.67 & 180.77 \\
-wfg9 & 10.02 & \textbf{9.60} & 333.88 & 363.89 & 373.07 \\
-zdt1 & \textbf{5.88} & 6.58 & 34.38 & 28.55 & 48.65 \\
-zdt2 & \textbf{5.94} & 6.88 & 35.09 & 28.84 & 48.81 \\
-zdt3 & \textbf{5.51} & 8.06 & 33.75 & 26.82 & 48.00 \\
-zdt4 & \textbf{5.10} & 6.58 & 32.41 & 28.70 & 36.85 \\
-zdt6 & \textbf{6.57} & 12.47 & 26.74 & 31.70 & 40.27 \\
+dtlz1 & \textbf{7.40} & 8.41 & 46.99 & 30.91 & 53.90 \\
+dtlz2 & \textbf{6.75} & 8.40 & 47.69 & 30.38 & 59.61 \\
+dtlz3 & \textbf{6.05} & 7.11 & 42.14 & 33.87 & 48.50 \\
+dtlz4 & \textbf{6.29} & 7.23 & 46.02 & 26.55 & 54.57 \\
+dtlz5 & \textbf{6.02} & 7.24 & 39.78 & 27.92 & 65.19 \\
+dtlz6 & \textbf{6.14} & 8.69 & 36.32 & 29.76 & 53.42 \\
+dtlz7 & \textbf{6.61} & 7.83 & 41.02 & 30.23 & 58.68 \\
+wfg1 & \textbf{6.35} & 7.92 & 49.57 & 47.81 & 63.58 \\
+wfg2 & \textbf{6.61} & 7.54 & 79.63 & 81.15 & 91.84 \\
+wfg3 & \textbf{7.20} & 8.38 & 77.25 & 78.64 & 92.21 \\
+wfg4 & \textbf{6.21} & 7.51 & 47.06 & 49.50 & 61.41 \\
+wfg5 & \textbf{6.75} & 7.53 & 47.32 & 45.05 & 78.77 \\
+wfg6 & \textbf{7.36} & 8.49 & 204.99 & 199.94 & 245.75 \\
+wfg7 & \textbf{6.33} & 7.09 & 77.91 & 62.51 & 75.33 \\
+wfg8 & \textbf{7.05} & 8.04 & 130.44 & 140.45 & 159.21 \\
+wfg9 & \textbf{9.02} & 10.35 & 363.28 & 383.58 & 381.14 \\
+zdt1 & \textbf{6.63} & 7.79 & 41.06 & 32.33 & 60.09 \\
+zdt2 & \textbf{6.58} & 7.94 & 38.21 & 35.32 & 53.61 \\
+zdt3 & \textbf{7.09} & 9.13 & 44.47 & 35.05 & 62.99 \\
+zdt4 & \textbf{7.10} & 9.34 & 46.36 & 34.36 & 52.15 \\
+zdt6 & \textbf{7.72} & 13.92 & 36.49 & 33.45 & 56.82 \\
 \midrule
-\textbf{Average} & \textbf{6.45} & 7.69 & 69.91 & 65.65 & 87.67 \\
+\textbf{Average} & \textbf{6.82} & 8.37 & 75.43 & 69.94 & 91.85 \\
 \bottomrule
 \end{tabular}
 \end{table*}

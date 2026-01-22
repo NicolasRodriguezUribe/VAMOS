@@ -24,6 +24,12 @@ Environment variables:
       (default: experiments/ablation_aos_anytime.csv; set empty/0 to disable)
   - VAMOS_ABLATION_CHECKPOINTS: comma-separated evaluation checkpoints for anytime HV
       (default: 5000,10000,20000,50000)
+  - VAMOS_ABLATION_AOS_TRACE_CSV: optional per-generation AOS trace CSV path
+      (default: disabled; set empty/0 to disable)
+  - VAMOS_ABLATION_AOS_TRACE_VARIANTS: comma-separated variants to export traces for
+      (default: tuned_aos)
+  - VAMOS_ABLATION_AOS_TRACE_PROBLEMS: comma-separated problems to export traces for
+      (default: zdt4,dtlz3,wfg9)
   - VAMOS_CHECKPOINT_INTERVAL_MIN: time-based checkpoint interval in minutes
       (default: 30; also saves at end of each seed)
 
@@ -91,9 +97,9 @@ from vamos.engine.tuning import (
 from vamos.foundation.problem.registry import make_problem_selection
 
 try:
-    from .benchmark_utils import compute_hv
+    from .benchmark_utils import compute_hv, _reference_hv, _reference_point
 except ImportError:  # pragma: no cover
-    from benchmark_utils import compute_hv
+    from benchmark_utils import compute_hv, _reference_hv, _reference_point
 
 try:
     from .progress_utils import ProgressBar, joblib_progress
@@ -247,7 +253,13 @@ class HVCheckpointRecorder:
         return list(self._records)
 
 
-def make_aos_cfg(*, seed: int, n_var: int, operator_pool: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def make_aos_cfg(
+    *,
+    seed: int,
+    n_var: int,
+    operator_pool: list[dict[str, Any]] | None = None,
+    problem_name: str | None = None,
+) -> dict[str, Any]:
     """
     Minimal, reproducible AOS configuration:
     - enabled
@@ -261,10 +273,35 @@ def make_aos_cfg(*, seed: int, n_var: int, operator_pool: list[dict[str, Any]] |
                 "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
             },
             {
-                "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.2}),
+                "crossover": ("pcx", {"prob": CROSSOVER_PROB, "sigma_eta": 0.1, "sigma_zeta": 0.1}),
                 "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
             },
+            {
+                "crossover": ("undx", {"prob": CROSSOVER_PROB, "zeta": 0.5, "eta": 0.35}),
+                "mutation": ("gaussian", {"prob": 1.0 / n_var, "sigma": 0.1}),
+            },
+            {
+                "crossover": ("simplex", {"prob": CROSSOVER_PROB, "epsilon": 0.5}),
+                "mutation": ("uniform_reset", {"prob": 1.0 / n_var}),
+            },
+            {
+                "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.5, "repair": "random"}),
+                "mutation": ("cauchy", {"prob": 1.0 / n_var, "gamma": 0.1}),
+            },
         ]
+    hv_reference_point: list[float] | None = None
+    hv_reference_hv: float | None = None
+    if problem_name:
+        try:
+            ref = _reference_point(problem_name)
+            hv_reference_point = [float(x) for x in ref.tolist()]
+            hv_reference_hv = float(_reference_hv(problem_name))
+            if hv_reference_hv <= 0.0:
+                hv_reference_point = None
+                hv_reference_hv = None
+        except Exception:
+            hv_reference_point = None
+            hv_reference_hv = None
     return {
         "enabled": True,
         # Epsilon-greedy provides conservative exploration and avoids forcing
@@ -282,6 +319,8 @@ def make_aos_cfg(*, seed: int, n_var: int, operator_pool: list[dict[str, Any]] |
             "nd_insertions": float(os.environ.get("VAMOS_AOS_W_ND", "0.40")),
             "hv_delta": float(os.environ.get("VAMOS_AOS_W_HV_DELTA", "0.20")),
         },
+        "hv_reference_point": hv_reference_point,
+        "hv_reference_hv": hv_reference_hv,
         "operator_pool": operator_pool,
     }
 
@@ -568,7 +607,7 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
 # =============================================================================
 
 
-def build_config(*, variant: str, seed: int, n_var: int, tuned_cfg: dict[str, Any] | None) -> NSGAIIConfig:
+def build_config(*, variant: str, seed: int, n_var: int, tuned_cfg: dict[str, Any] | None, problem_name: str) -> NSGAIIConfig:
     base = (
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
@@ -580,7 +619,7 @@ def build_config(*, variant: str, seed: int, n_var: int, tuned_cfg: dict[str, An
     if variant == "baseline":
         return base.build()
     if variant == "aos":
-        return base.adaptive_operator_selection(make_aos_cfg(seed=seed, n_var=n_var)).build()
+        return base.adaptive_operator_selection(make_aos_cfg(seed=seed, n_var=n_var, problem_name=problem_name)).build()
     if variant == "tuned":
         if tuned_cfg is None:
             raise ValueError("tuned variant requested but tuned_cfg is None")
@@ -623,7 +662,10 @@ def build_config(*, variant: str, seed: int, n_var: int, tuned_cfg: dict[str, An
         if len(operator_pool) < 2:
             operator_pool.append({"crossover": tuned.crossover, "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA})})
 
-        return replace(tuned, adaptive_operator_selection=make_aos_cfg(seed=seed, n_var=n_var, operator_pool=operator_pool))
+        return replace(
+            tuned,
+            adaptive_operator_selection=make_aos_cfg(seed=seed, n_var=n_var, operator_pool=operator_pool, problem_name=problem_name),
+        )
     raise ValueError(f"Unknown variant '{variant}'")
 
 
@@ -636,10 +678,11 @@ def run_single(
     engine: str,
     tuned_cfg: dict[str, Any] | None,
     checkpoints: list[int] | None,
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    capture_aos_trace: bool = False,
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     n_var, n_obj = problem_dims(problem_name)
     problem = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj).instantiate()
-    algo_cfg = build_config(variant=variant, seed=seed, n_var=n_var, tuned_cfg=tuned_cfg)
+    algo_cfg = build_config(variant=variant, seed=seed, n_var=n_var, tuned_cfg=tuned_cfg, problem_name=problem_name)
     start = time.perf_counter()
     recorder = HVCheckpointRecorder(problem_name=problem_name, checkpoints=checkpoints, start_time=start) if checkpoints else None
     res = optimize(
@@ -683,7 +726,43 @@ def run_single(
                 }
             )
 
-    return final_row, chk_rows
+    trace_rows: list[dict[str, Any]] = []
+    if capture_aos_trace:
+        try:
+            aos_payload = res.data.get("aos")
+            if isinstance(aos_payload, dict):
+                raw = aos_payload.get("trace_rows")
+                if isinstance(raw, list):
+                    pop_size = int(getattr(algo_cfg, "pop_size", POP_SIZE))
+                    offspring_size = int(getattr(algo_cfg, "offspring_size", None) or pop_size)
+                    for row in raw:
+                        if not isinstance(row, dict):
+                            continue
+                        step = int(row.get("step", 0))
+                        batch_size = int(row.get("batch_size") or offspring_size)
+                        evals_after = pop_size + int((step + 1) * batch_size)
+                        trace_rows.append(
+                            {
+                                "variant": variant,
+                                "problem": str(problem_name).lower(),
+                                "engine": str(engine).lower(),
+                                "n_evals": int(n_evals),
+                                "seed": int(seed),
+                                "step": step,
+                                "evals": int(evals_after),
+                                "op_id": row.get("op_id"),
+                                "op_name": row.get("op_name"),
+                                "batch_size": int(batch_size),
+                                "reward": float(row.get("reward", 0.0)),
+                                "reward_survival": float(row.get("reward_survival", 0.0)),
+                                "reward_nd_insertions": float(row.get("reward_nd_insertions", 0.0)),
+                                "reward_hv_delta": float(row.get("reward_hv_delta", 0.0)),
+                            }
+                        )
+        except Exception:
+            trace_rows = []
+
+    return final_row, chk_rows, trace_rows
 
 
 def main() -> None:
@@ -707,6 +786,13 @@ def main() -> None:
     anytime_csv: Path | None = None
     if anytime_csv_raw and anytime_csv_raw not in {"0", "false", "False"}:
         anytime_csv = Path(anytime_csv_raw)
+
+    aos_trace_csv_raw = str(os.environ.get("VAMOS_ABLATION_AOS_TRACE_CSV", "")).strip()
+    aos_trace_csv: Path | None = None
+    if aos_trace_csv_raw and aos_trace_csv_raw not in {"0", "false", "False"}:
+        aos_trace_csv = Path(aos_trace_csv_raw)
+    trace_variants = set(v.strip().lower() for v in _parse_csv_list(_as_str_env("VAMOS_ABLATION_AOS_TRACE_VARIANTS", "tuned_aos")))
+    trace_problems = set(p.strip().lower() for p in _parse_csv_list(_as_str_env("VAMOS_ABLATION_AOS_TRACE_PROBLEMS", "zdt4,dtlz3,wfg9")))
 
     checkpoints: list[int] | None = None
     if anytime_csv is not None:
@@ -738,6 +824,10 @@ def main() -> None:
     if anytime_csv is not None:
         print(f"Anytime checkpoints: {checkpoints}")
         print(f"Anytime CSV: {anytime_csv}")
+    if aos_trace_csv is not None:
+        print(f"AOS trace CSV: {aos_trace_csv}")
+        print(f"AOS trace variants: {sorted(trace_variants)}")
+        print(f"AOS trace problems: {sorted(trace_problems)}")
 
     resume = int(os.environ.get("VAMOS_ABLATION_RESUME", "0")) != 0
 
@@ -773,15 +863,20 @@ def main() -> None:
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     if anytime_csv is not None:
         anytime_csv.parent.mkdir(parents=True, exist_ok=True)
+    if aos_trace_csv is not None:
+        aos_trace_csv.parent.mkdir(parents=True, exist_ok=True)
 
     if not resume:
         if output_csv.exists():
             output_csv.unlink()
         if anytime_csv is not None and anytime_csv.exists():
             anytime_csv.unlink()
+        if aos_trace_csv is not None and aos_trace_csv.exists():
+            aos_trace_csv.unlink()
 
     written_final = 0
     written_anytime = 0
+    written_trace = 0
 
     done: set[tuple[str, str, int]] = set()
     if resume and output_csv.exists():
@@ -808,6 +903,13 @@ def main() -> None:
         except Exception:
             written_anytime = 0
 
+    if resume and aos_trace_csv is not None and aos_trace_csv.exists():
+        try:
+            existing_trace = pd.read_csv(aos_trace_csv)
+            written_trace = int(len(existing_trace))
+        except Exception:
+            written_trace = 0
+
     if done:
         tasks = [t for t in tasks if t not in done]
 
@@ -821,9 +923,10 @@ def main() -> None:
     last_checkpoint_time = time.perf_counter()
     pending_final: list[dict[str, Any]] = []
     pending_anytime: list[dict[str, Any]] = []
+    pending_trace: list[dict[str, Any]] = []
 
     def _flush_pending() -> None:
-        nonlocal written_final, written_anytime, pending_final, pending_anytime, last_checkpoint_time
+        nonlocal written_final, written_anytime, written_trace, pending_final, pending_anytime, pending_trace, last_checkpoint_time
         if pending_final:
             df_batch = pd.DataFrame(pending_final)
             df_batch.to_csv(output_csv, mode="a", header=(written_final == 0), index=False)
@@ -834,13 +937,25 @@ def main() -> None:
             df_batch.to_csv(anytime_csv, mode="a", header=(written_anytime == 0), index=False)
             written_anytime += len(pending_anytime)
             pending_anytime = []
+        if aos_trace_csv is not None and pending_trace:
+            df_batch = pd.DataFrame(pending_trace)
+            df_batch.to_csv(aos_trace_csv, mode="a", header=(written_trace == 0), index=False)
+            written_trace += len(pending_trace)
+            pending_trace = []
         last_checkpoint_time = time.perf_counter()
 
-    def _append_results(final_row: dict[str, Any], chk_rows: list[dict[str, Any]], *, force_flush: bool = False) -> None:
+    def _append_results(
+        final_row: dict[str, Any],
+        chk_rows: list[dict[str, Any]],
+        trace_rows: list[dict[str, Any]],
+        *,
+        force_flush: bool = False,
+    ) -> None:
         nonlocal last_checkpoint_time
         pending_final.append(final_row)
         pending_anytime.extend(chk_rows)
-        
+        pending_trace.extend(trace_rows)
+
         elapsed = time.perf_counter() - last_checkpoint_time
         # Flush if: forced, or time elapsed >= interval
         if force_flush or elapsed >= checkpoint_interval_sec:
@@ -851,7 +966,8 @@ def main() -> None:
     if n_jobs == 1:
         bar = ProgressBar(total=len(tasks), desc="Ablation runs")
         for i, (variant, problem, seed) in enumerate(tasks):
-            final_row, chk = run_single(
+            capture = aos_trace_csv is not None and variant in trace_variants and str(problem).lower() in trace_problems
+            final_row, chk, trace_rows = run_single(
                 variant,
                 problem,
                 seed,
@@ -859,12 +975,13 @@ def main() -> None:
                 engine=engine,
                 tuned_cfg=tuned_cfg,
                 checkpoints=checkpoints,
+                capture_aos_trace=capture,
             )
             # Force flush at end of each seed (seed changes or last task)
             is_last = (i == len(tasks) - 1)
             next_seed = tasks[i + 1][2] if not is_last else None
             force = is_last or (next_seed != seed)
-            _append_results(final_row, chk, force_flush=force)
+            _append_results(final_row, chk, trace_rows, force_flush=force)
             bar.update(1)
         bar.close()
     else:
@@ -872,7 +989,7 @@ def main() -> None:
         # checkpoint progress to disk and avoid mixing runs on subsequent calls.
         with joblib_progress(total=len(tasks), desc="Ablation runs"):
             parallel = Parallel(n_jobs=n_jobs, batch_size=1, return_as="generator")
-            for final_row, chk in parallel(
+            for final_row, chk, trace_rows in parallel(
                 delayed(run_single)(
                     variant,
                     problem,
@@ -881,15 +998,18 @@ def main() -> None:
                     engine=engine,
                     tuned_cfg=tuned_cfg,
                     checkpoints=checkpoints,
+                    capture_aos_trace=(aos_trace_csv is not None and variant in trace_variants and str(problem).lower() in trace_problems),
                 )
                 for variant, problem, seed in tasks
             ):
-                _append_results(final_row, chk, force_flush=False)
+                _append_results(final_row, chk, trace_rows, force_flush=False)
         _flush_pending()  # Final flush
 
     print(f"Wrote {written_final} total rows to {output_csv}")
     if anytime_csv is not None:
         print(f"Wrote {written_anytime} total rows to {anytime_csv}")
+    if aos_trace_csv is not None:
+        print(f"Wrote {written_trace} total rows to {aos_trace_csv}")
 
 
 if __name__ == "__main__":

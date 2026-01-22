@@ -5,6 +5,7 @@ Configuration helpers for adaptive operator selection (AOS).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 from typing import Any
 from collections.abc import Mapping
 
@@ -25,6 +26,8 @@ AOS_CONFIG_KEYS = {
     "window_size",
     "reward_scope",
     "reward_weights",
+    "hv_reference_point",
+    "hv_reference_hv",
     "floor_prob",
     "operator_pool",
 }
@@ -62,6 +65,8 @@ class AdaptiveOperatorSelectionConfig:
     window_size: int = 0  # For sliding window policies; 0 = disabled
     reward_scope: str = "combined"
     reward_weights: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_REWARD_WEIGHTS))
+    hv_reference_point: tuple[float, ...] | None = None
+    hv_reference_hv: float | None = None
     floor_prob: float = 0.0
 
     @classmethod
@@ -80,6 +85,19 @@ class AdaptiveOperatorSelectionConfig:
         window_size = int(config.get("window_size", 0))
         if window_size < 0:
             raise ValueError("window_size must be >= 0.")
+        hv_ref_point = config.get("hv_reference_point")
+        if hv_ref_point is None:
+            hv_reference_point = None
+        else:
+            if not isinstance(hv_ref_point, (list, tuple)):
+                raise TypeError("hv_reference_point must be a list or tuple of floats.")
+            hv_reference_point = tuple(float(x) for x in hv_ref_point)
+            if not hv_reference_point or any(not math.isfinite(x) for x in hv_reference_point):
+                raise ValueError("hv_reference_point must contain finite floats.")
+        hv_ref_hv = config.get("hv_reference_hv")
+        hv_reference_hv = None if hv_ref_hv is None else float(hv_ref_hv)
+        if hv_reference_hv is not None and hv_reference_hv <= 0.0:
+            raise ValueError("hv_reference_hv must be > 0 when provided.")
         return cls(
             enabled=bool(config.get("enabled", False)),
             method=str(config.get("method", "epsilon_greedy")).lower(),
@@ -91,6 +109,8 @@ class AdaptiveOperatorSelectionConfig:
             window_size=window_size,
             reward_scope=str(config.get("reward_scope", "combined")).lower(),
             reward_weights=_normalize_reward_weights(config.get("reward_weights")),
+            hv_reference_point=hv_reference_point,
+            hv_reference_hv=hv_reference_hv,
             floor_prob=floor_prob,
         )
 
@@ -109,6 +129,8 @@ class AdaptiveOperatorSelectionConfig:
             "window_size": self.window_size,
             "reward_scope": self.reward_scope,
             "reward_weights": dict(self.reward_weights),
+            "hv_reference_point": list(self.hv_reference_point) if self.hv_reference_point is not None else None,
+            "hv_reference_hv": self.hv_reference_hv,
             "floor_prob": self.floor_prob,
         }
 

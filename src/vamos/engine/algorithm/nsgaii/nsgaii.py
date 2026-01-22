@@ -20,6 +20,8 @@ from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.metrics.hypervolume import hypervolume
+from vamos.foundation.metrics.pareto import pareto_filter
 from .initialization import (
     parse_termination,
     setup_population,
@@ -393,6 +395,20 @@ class NSGAII:
         st.pending_offspring_ids = None
 
         if aos_controller is not None and selected_idx is not None and st.aos_last_op_id is not None:
+            def _normalized_hv(F: np.ndarray | None, ref: np.ndarray, hv_ref: float) -> float:
+                if F is None:
+                    return 0.0
+                front = pareto_filter(np.asarray(F, dtype=float))
+                if front is None or front.size == 0:
+                    return 0.0
+                if front.ndim != 2 or ref.ndim != 1 or front.shape[1] != ref.shape[0]:
+                    return 0.0
+                front = front[np.all(front <= ref, axis=1)]
+                if front.size == 0:
+                    return 0.0
+                hv = float(hypervolume(front, ref, allow_ref_expand=False))
+                return hv / hv_ref if hv_ref > 0.0 else 0.0
+
             hv_delta_rate = 0.0
             try:
                 reward_weights = getattr(aos_controller.config, "reward_weights", {}) or {}
@@ -401,7 +417,17 @@ class NSGAII:
                 wants_hv = hv_weight > 0.0 or reward_scope in {"hv", "hv_delta", "hypervolume"}
                 if wants_hv:
                     hv_delta_rate = 0.5
-                if (
+                hv_ref_point = getattr(aos_controller.config, "hv_reference_point", None)
+                hv_ref_hv = getattr(aos_controller.config, "hv_reference_hv", None)
+                if wants_hv and hv_ref_point is not None and hv_ref_hv is not None:
+                    ref = np.asarray(hv_ref_point, dtype=float)
+                    hv_ref = float(hv_ref_hv)
+                    hv_prev = _normalized_hv(prev_F, ref, hv_ref)
+                    hv_new = _normalized_hv(new_F, ref, hv_ref)
+                    denom = abs(hv_prev) if abs(hv_prev) > 1e-12 else 1e-12
+                    ratio = (hv_new - hv_prev) / denom
+                    hv_delta_rate = float(0.5 + 0.5 * np.tanh(ratio))
+                elif (
                     wants_hv
                     and prev_F is not None
                     and new_F is not None
