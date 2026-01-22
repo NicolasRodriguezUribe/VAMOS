@@ -25,9 +25,9 @@ Environment variables:
   - VAMOS_ABLATION_CHECKPOINTS: comma-separated evaluation checkpoints for anytime HV
       (default: 5000,10000,20000,50000)
   - VAMOS_ABLATION_AOS_TRACE_CSV: optional per-generation AOS trace CSV path
-      (default: disabled; set empty/0 to disable)
+      (default: experiments/ablation_aos_trace.csv; set empty/0 to disable)
   - VAMOS_ABLATION_AOS_TRACE_VARIANTS: comma-separated variants to export traces for
-      (default: tuned_aos)
+      (default: aos,tuned_aos)
   - VAMOS_ABLATION_AOS_TRACE_PROBLEMS: comma-separated problems to export traces for
       (default: zdt4,dtlz3,wfg9)
   - VAMOS_CHECKPOINT_INTERVAL_MIN: time-based checkpoint interval in minutes
@@ -787,11 +787,14 @@ def main() -> None:
     if anytime_csv_raw and anytime_csv_raw not in {"0", "false", "False"}:
         anytime_csv = Path(anytime_csv_raw)
 
-    aos_trace_csv_raw = str(os.environ.get("VAMOS_ABLATION_AOS_TRACE_CSV", "")).strip()
+    aos_trace_csv_raw = os.environ.get("VAMOS_ABLATION_AOS_TRACE_CSV")
+    if aos_trace_csv_raw is None:
+        aos_trace_csv_raw = str(ROOT_DIR / "experiments" / "ablation_aos_trace.csv")
+    aos_trace_csv_raw = str(aos_trace_csv_raw).strip()
     aos_trace_csv: Path | None = None
     if aos_trace_csv_raw and aos_trace_csv_raw not in {"0", "false", "False"}:
         aos_trace_csv = Path(aos_trace_csv_raw)
-    trace_variants = set(v.strip().lower() for v in _parse_csv_list(_as_str_env("VAMOS_ABLATION_AOS_TRACE_VARIANTS", "tuned_aos")))
+    trace_variants = set(v.strip().lower() for v in _parse_csv_list(_as_str_env("VAMOS_ABLATION_AOS_TRACE_VARIANTS", "aos,tuned_aos")))
     trace_problems = set(p.strip().lower() for p in _parse_csv_list(_as_str_env("VAMOS_ABLATION_AOS_TRACE_PROBLEMS", "zdt4,dtlz3,wfg9")))
 
     checkpoints: list[int] | None = None
