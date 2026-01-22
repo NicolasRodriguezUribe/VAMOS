@@ -1,7 +1,7 @@
 [
   {
     "trial_id": 0,
-    "score": 0.1585685271893764,
+    "score": 0.1585685271893754,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -29,7 +29,7 @@
   },
   {
     "trial_id": 1,
-    "score": 0.212435766460264,
+    "score": 0.21243576646026197,
     "config": {
       "pop_size": 143,
       "offspring_ratio": 0.5,
@@ -55,7 +55,7 @@
   },
   {
     "trial_id": 2,
-    "score": 0.3378800265398947,
+    "score": 0.3378800265398792,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.75,
@@ -85,7 +85,7 @@
   },
   {
     "trial_id": 3,
-    "score": 0.18312570044319007,
+    "score": 0.18312570044318896,
     "config": {
       "pop_size": 140,
       "offspring_ratio": 0.5,
@@ -115,7 +115,7 @@
   },
   {
     "trial_id": 4,
-    "score": 0.827076053345052,
+    "score": 0.8270760533450499,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -141,7 +141,7 @@
   },
   {
     "trial_id": 5,
-    "score": 0.1880251184126878,
+    "score": 0.18802511841268563,
     "config": {
       "pop_size": 120,
       "offspring_ratio": 1.0,
@@ -170,7 +170,7 @@
   },
   {
     "trial_id": 6,
-    "score": 0.27484475816463455,
+    "score": 0.27484475816462706,
     "config": {
       "pop_size": 171,
       "offspring_ratio": 1.0,
@@ -198,7 +198,7 @@
   },
   {
     "trial_id": 7,
-    "score": 0.16112590084924056,
+    "score": 0.16112590084923975,
     "config": {
       "pop_size": 180,
       "offspring_ratio": 1.0,
@@ -226,7 +226,7 @@
   },
   {
     "trial_id": 8,
-    "score": 0.583172315419023,
+    "score": 0.5831723154190221,
     "config": {
       "pop_size": 130,
       "offspring_ratio": 0.5,
@@ -255,7 +255,7 @@
   },
   {
     "trial_id": 9,
-    "score": 0.26495459015848716,
+    "score": 0.26495459015848744,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -280,7 +280,7 @@
   },
   {
     "trial_id": 10,
-    "score": 0.8288782463855313,
+    "score": 0.8288782463855291,
     "config": {
       "pop_size": 153,
       "offspring_ratio": 0.75,
@@ -308,7 +308,7 @@
   },
   {
     "trial_id": 11,
-    "score": 0.44934641603891406,
+    "score": 0.44934641603892067,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -336,7 +336,7 @@
   },
   {
     "trial_id": 12,
-    "score": 0.816177174893595,
+    "score": 0.8161771748935933,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -362,7 +362,7 @@
   },
   {
     "trial_id": 13,
-    "score": 0.20009874248392007,
+    "score": 0.20009874248391818,
     "config": {
       "pop_size": 190,
       "offspring_ratio": 0.25,
@@ -389,7 +389,7 @@
   },
   {
     "trial_id": 14,
-    "score": 0.14597891665398693,
+    "score": 0.14597891665398616,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -415,7 +415,7 @@
   },
   {
     "trial_id": 15,
-    "score": 0.19998098282324944,
+    "score": 0.199980982823247,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -441,7 +441,7 @@
   },
   {
     "trial_id": 16,
-    "score": 0.5075512514959585,
+    "score": 0.5075512514959534,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -467,7 +467,7 @@
   },
   {
     "trial_id": 17,
-    "score": 0.16781888966530875,
+    "score": 0.16781888966530795,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -494,7 +494,7 @@
   },
   {
     "trial_id": 18,
-    "score": 0.19100446252218467,
+    "score": 0.191004462522183,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -519,7 +519,7 @@
   },
   {
     "trial_id": 19,
-    "score": 0.4956623913733118,
+    "score": 0.49566239137330836,
     "config": {
       "pop_size": 122,
       "offspring_ratio": 0.25,
@@ -549,7 +549,7 @@
   },
   {
     "trial_id": 20,
-    "score": 0.7039487026554251,
+    "score": 0.7039487026554249,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -574,7 +574,7 @@
   },
   {
     "trial_id": 21,
-    "score": 0.24896832321829523,
+    "score": 0.24896832321829193,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 1.0,
@@ -602,7 +602,7 @@
   },
   {
     "trial_id": 22,
-    "score": 0.3588387341041389,
+    "score": 0.3588387341041228,
     "config": {
       "pop_size": 131,
       "offspring_ratio": 0.75,
@@ -632,7 +632,7 @@
   },
   {
     "trial_id": 23,
-    "score": 0.25232491735466045,
+    "score": 0.25232491735465284,
     "config": {
       "pop_size": 134,
       "offspring_ratio": 0.25,
@@ -660,7 +660,7 @@
   },
   {
     "trial_id": 24,
-    "score": 0.7259770060653435,
+    "score": 0.7259770060653423,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -687,7 +687,7 @@
   },
   {
     "trial_id": 25,
-    "score": 0.5772042720238044,
+    "score": 0.5772042720238022,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 0.5,
@@ -715,7 +715,7 @@
   },
   {
     "trial_id": 26,
-    "score": 0.43758859741917355,
+    "score": 0.43758859741917955,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -743,7 +743,7 @@
   },
   {
     "trial_id": 27,
-    "score": 0.1767791681287316,
+    "score": 0.1767791681287302,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -767,7 +767,7 @@
   },
   {
     "trial_id": 28,
-    "score": 0.20099422208816559,
+    "score": 0.20099422208816367,
     "config": {
       "pop_size": 155,
       "offspring_ratio": 1.0,
@@ -794,7 +794,7 @@
   },
   {
     "trial_id": 29,
-    "score": 0.7347548036673206,
+    "score": 0.7347548036673174,
     "config": {
       "pop_size": 117,
       "offspring_ratio": 0.25,
@@ -822,7 +822,7 @@
   },
   {
     "trial_id": 30,
-    "score": 0.14311428690348993,
+    "score": 0.14311428690348912,
     "config": {
       "pop_size": 112,
       "offspring_ratio": 1.0,
@@ -851,7 +851,7 @@
   },
   {
     "trial_id": 31,
-    "score": 0.6372930276451679,
+    "score": 0.6372930276451655,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -878,7 +878,7 @@
   },
   {
     "trial_id": 32,
-    "score": 0.3175479826183569,
+    "score": 0.3175479826183514,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -906,7 +906,7 @@
   },
   {
     "trial_id": 33,
-    "score": 0.8318444499514668,
+    "score": 0.8318444499514656,
     "config": {
       "pop_size": 157,
       "offspring_ratio": 1.0,
@@ -934,7 +934,7 @@
   },
   {
     "trial_id": 34,
-    "score": 0.7007890647745131,
+    "score": 0.7007890647745142,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -960,7 +960,7 @@
   },
   {
     "trial_id": 35,
-    "score": 0.41253440841799116,
+    "score": 0.4125344084179996,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 1.0,
@@ -989,7 +989,7 @@
   },
   {
     "trial_id": 36,
-    "score": 0.19829377050202104,
+    "score": 0.19829377050201916,
     "config": {
       "pop_size": 188,
       "offspring_ratio": 0.25,
@@ -1016,7 +1016,7 @@
   },
   {
     "trial_id": 37,
-    "score": 0.40825678558633205,
+    "score": 0.4082567855863302,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1042,7 +1042,7 @@
   },
   {
     "trial_id": 38,
-    "score": 0.16354509613270918,
+    "score": 0.16354509613270773,
     "config": {
       "pop_size": 116,
       "offspring_ratio": 0.5,
@@ -1068,7 +1068,7 @@
   },
   {
     "trial_id": 39,
-    "score": 0.5006045652949523,
+    "score": 0.5006045652949619,
     "config": {
       "pop_size": 104,
       "offspring_ratio": 1.0,
@@ -1098,7 +1098,7 @@
   },
   {
     "trial_id": 40,
-    "score": 0.3277550441826042,
+    "score": 0.32775504418260437,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -1124,7 +1124,7 @@
   },
   {
     "trial_id": 41,
-    "score": 0.20314483327856755,
+    "score": 0.20314483327856558,
     "config": {
       "pop_size": 181,
       "offspring_ratio": 0.75,
@@ -1151,7 +1151,7 @@
   },
   {
     "trial_id": 42,
-    "score": 0.1427503201946965,
+    "score": 0.1427503201946957,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1177,7 +1177,7 @@
   },
   {
     "trial_id": 43,
-    "score": 0.16097534268047353,
+    "score": 0.1609753426804726,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -1203,7 +1203,7 @@
   },
   {
     "trial_id": 44,
-    "score": 0.2755428735290902,
+    "score": 0.27554287352908247,
     "config": {
       "pop_size": 131,
       "offspring_ratio": 0.25,
@@ -1231,7 +1231,7 @@
   },
   {
     "trial_id": 45,
-    "score": 0.17045232790125928,
+    "score": 0.1704523279012583,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -1256,7 +1256,7 @@
   },
   {
     "trial_id": 46,
-    "score": 0.7045063144548724,
+    "score": 0.7045063144548699,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -1283,7 +1283,7 @@
   },
   {
     "trial_id": 47,
-    "score": 0.820112565635098,
+    "score": 0.8201125656350965,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -1308,7 +1308,7 @@
   },
   {
     "trial_id": 48,
-    "score": 0.36509266727945333,
+    "score": 0.3650926672794628,
     "config": {
       "pop_size": 108,
       "offspring_ratio": 0.25,
@@ -1336,7 +1336,7 @@
   },
   {
     "trial_id": 49,
-    "score": 0.22261286099632643,
+    "score": 0.22261286099632424,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -1362,7 +1362,7 @@
   },
   {
     "trial_id": 50,
-    "score": 0.1998249255315826,
+    "score": 0.19982492553158074,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1386,7 +1386,7 @@
   },
   {
     "trial_id": 51,
-    "score": 0.7588024269913319,
+    "score": 0.7588024269913313,
     "config": {
       "pop_size": 166,
       "offspring_ratio": 1.0,
@@ -1414,7 +1414,7 @@
   },
   {
     "trial_id": 52,
-    "score": 0.687587182936141,
+    "score": 0.6875871829361369,
     "config": {
       "pop_size": 158,
       "offspring_ratio": 1.0,
@@ -1441,7 +1441,7 @@
   },
   {
     "trial_id": 53,
-    "score": 0.49440520470394345,
+    "score": 0.4944052047039369,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1468,7 +1468,7 @@
   },
   {
     "trial_id": 54,
-    "score": 0.8342337640511266,
+    "score": 0.8342337640511253,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1496,7 +1496,7 @@
   },
   {
     "trial_id": 55,
-    "score": 0.6542309575260554,
+    "score": 0.6542309575260576,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.25,
@@ -1525,7 +1525,7 @@
   },
   {
     "trial_id": 56,
-    "score": 0.17025918640866397,
+    "score": 0.17025918640866286,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -1550,7 +1550,7 @@
   },
   {
     "trial_id": 57,
-    "score": 0.16257980625267132,
+    "score": 0.16257980625267046,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -1577,7 +1577,7 @@
   },
   {
     "trial_id": 58,
-    "score": 0.22170354763936764,
+    "score": 0.22170354763936545,
     "config": {
       "pop_size": 197,
       "offspring_ratio": 0.75,
@@ -1603,7 +1603,7 @@
   },
   {
     "trial_id": 59,
-    "score": 0.15327135072060244,
+    "score": 0.1532713507206016,
     "config": {
       "pop_size": 156,
       "offspring_ratio": 0.5,
@@ -1630,7 +1630,7 @@
   },
   {
     "trial_id": 60,
-    "score": 0.6564834062888147,
+    "score": 0.6564834062888112,
     "config": {
       "pop_size": 156,
       "offspring_ratio": 0.75,
@@ -1659,7 +1659,7 @@
   },
   {
     "trial_id": 61,
-    "score": 0.551950842171047,
+    "score": 0.5519508421710454,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1684,7 +1684,7 @@
   },
   {
     "trial_id": 62,
-    "score": 0.7073406235012065,
+    "score": 0.7073406235012059,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -1711,7 +1711,7 @@
   },
   {
     "trial_id": 63,
-    "score": 0.2655088181019384,
+    "score": 0.26550881810193344,
     "config": {
       "pop_size": 183,
       "offspring_ratio": 1.0,
@@ -1740,7 +1740,7 @@
   },
   {
     "trial_id": 64,
-    "score": 0.20535148772170886,
+    "score": 0.20535148772170667,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -1767,7 +1767,7 @@
   },
   {
     "trial_id": 65,
-    "score": 0.17153223135724494,
+    "score": 0.17153223135724338,
     "config": {
       "pop_size": 115,
       "offspring_ratio": 0.5,
@@ -1797,7 +1797,7 @@
   },
   {
     "trial_id": 66,
-    "score": 0.13949526388438474,
+    "score": 0.1394952638843841,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1821,7 +1821,7 @@
   },
   {
     "trial_id": 67,
-    "score": 0.6643931242203114,
+    "score": 0.6643931242203124,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -1848,7 +1848,7 @@
   },
   {
     "trial_id": 68,
-    "score": 0.15822579933229008,
+    "score": 0.15822579933228922,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1872,7 +1872,7 @@
   },
   {
     "trial_id": 69,
-    "score": 0.6515987197362259,
+    "score": 0.6515987197362224,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1898,7 +1898,7 @@
   },
   {
     "trial_id": 70,
-    "score": 0.4223512244565482,
+    "score": 0.4223512244565315,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -1924,7 +1924,7 @@
   },
   {
     "trial_id": 71,
-    "score": 0.2371521006357019,
+    "score": 0.2371521006356991,
     "config": {
       "pop_size": 177,
       "offspring_ratio": 0.25,
@@ -1952,7 +1952,7 @@
   },
   {
     "trial_id": 72,
-    "score": 0.8313250195411188,
+    "score": 0.8313250195411167,
     "config": {
       "pop_size": 119,
       "offspring_ratio": 1.0,
@@ -1980,7 +1980,7 @@
   },
   {
     "trial_id": 73,
-    "score": 0.1499217115303116,
+    "score": 0.1499217115303105,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -2004,7 +2004,7 @@
   },
   {
     "trial_id": 74,
-    "score": 0.8642877707096978,
+    "score": 0.8642877707096953,
     "config": {
       "pop_size": 153,
       "offspring_ratio": 1.0,
@@ -2032,7 +2032,7 @@
   },
   {
     "trial_id": 75,
-    "score": 0.8362799969491316,
+    "score": 0.8362799969491295,
     "config": {
       "pop_size": 161,
       "offspring_ratio": 0.25,
@@ -2059,7 +2059,7 @@
   },
   {
     "trial_id": 76,
-    "score": 0.6503104724532118,
+    "score": 0.6503104724532109,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -2084,7 +2084,7 @@
   },
   {
     "trial_id": 77,
-    "score": 0.16165587799588169,
+    "score": 0.16165587799588071,
     "config": {
       "pop_size": 127,
       "offspring_ratio": 1.0,
@@ -2114,7 +2114,7 @@
   },
   {
     "trial_id": 78,
-    "score": 0.7095825946440601,
+    "score": 0.709582594644058,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -2139,7 +2139,7 @@
   },
   {
     "trial_id": 79,
-    "score": 0.665377183608191,
+    "score": 0.6653771836081868,
     "config": {
       "pop_size": 179,
       "offspring_ratio": 0.25,
@@ -2168,7 +2168,7 @@
   },
   {
     "trial_id": 80,
-    "score": 0.6674271534148346,
+    "score": 0.6674271534148352,
     "config": {
       "pop_size": 125,
       "offspring_ratio": 0.25,
@@ -2196,7 +2196,7 @@
   },
   {
     "trial_id": 81,
-    "score": 0.21714541359021844,
+    "score": 0.2171454135902163,
     "config": {
       "pop_size": 130,
       "offspring_ratio": 0.5,
@@ -2224,7 +2224,7 @@
   },
   {
     "trial_id": 82,
-    "score": 0.4006294065803714,
+    "score": 0.40062940658038076,
     "config": {
       "pop_size": 101,
       "offspring_ratio": 0.25,
@@ -2254,7 +2254,7 @@
   },
   {
     "trial_id": 83,
-    "score": 0.1550089210535392,
+    "score": 0.15500892105353845,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -2279,7 +2279,7 @@
   },
   {
     "trial_id": 84,
-    "score": 0.5752662514592348,
+    "score": 0.5752662514592459,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -2306,7 +2306,7 @@
   },
   {
     "trial_id": 85,
-    "score": 0.23929401595586544,
+    "score": 0.2392940159558657,
     "config": {
       "pop_size": 130,
       "offspring_ratio": 0.5,
@@ -2332,7 +2332,7 @@
   },
   {
     "trial_id": 86,
-    "score": 0.3923355426385998,
+    "score": 0.3923355426386115,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -2359,7 +2359,7 @@
   },
   {
     "trial_id": 87,
-    "score": 0.21614207896264956,
+    "score": 0.21614207896264745,
     "config": {
       "pop_size": 136,
       "offspring_ratio": 1.0,
@@ -2386,7 +2386,7 @@
   },
   {
     "trial_id": 88,
-    "score": 0.654837318609205,
+    "score": 0.6548373186092019,
     "config": {
       "pop_size": 116,
       "offspring_ratio": 0.25,
@@ -2414,7 +2414,7 @@
   },
   {
     "trial_id": 89,
-    "score": 0.3152529236180183,
+    "score": 0.31525292361802265,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -2439,7 +2439,7 @@
   },
   {
     "trial_id": 90,
-    "score": 0.15962996236804355,
+    "score": 0.1596299623680427,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -2465,7 +2465,7 @@
   },
   {
     "trial_id": 91,
-    "score": 0.8359936573951483,
+    "score": 0.8359936573951469,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -2490,7 +2490,7 @@
   },
   {
     "trial_id": 92,
-    "score": 0.1544355463302684,
+    "score": 0.1544355463302672,
     "config": {
       "pop_size": 131,
       "offspring_ratio": 0.75,
@@ -2519,7 +2519,7 @@
   },
   {
     "trial_id": 93,
-    "score": 0.52559668888418,
+    "score": 0.5255966888841832,
     "config": {
       "pop_size": 149,
       "offspring_ratio": 1.0,
@@ -2546,7 +2546,7 @@
   },
   {
     "trial_id": 94,
-    "score": 0.15550433651467968,
+    "score": 0.15550433651467874,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -2574,7 +2574,7 @@
   },
   {
     "trial_id": 95,
-    "score": 0.3833938330531206,
+    "score": 0.3833938330531062,
     "config": {
       "pop_size": 105,
       "offspring_ratio": 1.0,
@@ -2603,7 +2603,7 @@
   },
   {
     "trial_id": 96,
-    "score": 0.8132865092830684,
+    "score": 0.8132865092830672,
     "config": {
       "pop_size": 109,
       "offspring_ratio": 0.25,
@@ -2630,7 +2630,7 @@
   },
   {
     "trial_id": 97,
-    "score": 0.7552966617620925,
+    "score": 0.7552966617620945,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -2656,7 +2656,7 @@
   },
   {
     "trial_id": 98,
-    "score": 0.25595340889090323,
+    "score": 0.2559534088908996,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -2711,7 +2711,7 @@
   },
   {
     "trial_id": 100,
-    "score": 0.43507292214450227,
+    "score": 0.43507292214451215,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -2738,7 +2738,7 @@
   },
   {
     "trial_id": 101,
-    "score": 0.16194350604106858,
+    "score": 0.16194350604106775,
     "config": {
       "pop_size": 141,
       "offspring_ratio": 0.75,
@@ -2766,7 +2766,7 @@
   },
   {
     "trial_id": 102,
-    "score": 0.4284455869848613,
+    "score": 0.42844558698486707,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -2794,7 +2794,7 @@
   },
   {
     "trial_id": 103,
-    "score": 0.15341663869940017,
+    "score": 0.15341663869939934,
     "config": {
       "pop_size": 115,
       "offspring_ratio": 0.5,
@@ -2822,7 +2822,7 @@
   },
   {
     "trial_id": 104,
-    "score": 0.44410595346126064,
+    "score": 0.4441059534612495,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -2847,7 +2847,7 @@
   },
   {
     "trial_id": 105,
-    "score": 0.36216504867374094,
+    "score": 0.36216504867373117,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -2873,7 +2873,7 @@
   },
   {
     "trial_id": 106,
-    "score": 0.8249146933019393,
+    "score": 0.8249146933019375,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -2900,7 +2900,7 @@
   },
   {
     "trial_id": 107,
-    "score": 0.41832149097800103,
+    "score": 0.41832149097800475,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -2927,7 +2927,7 @@
   },
   {
     "trial_id": 108,
-    "score": 0.15715251659883525,
+    "score": 0.15715251659883442,
     "config": {
       "pop_size": 132,
       "offspring_ratio": 0.25,
@@ -2954,7 +2954,7 @@
   },
   {
     "trial_id": 109,
-    "score": 0.17182546321606312,
+    "score": 0.17182546321606207,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -2982,7 +2982,7 @@
   },
   {
     "trial_id": 110,
-    "score": 0.21499580303145793,
+    "score": 0.2149958030314559,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3009,7 +3009,7 @@
   },
   {
     "trial_id": 111,
-    "score": 0.644264459638878,
+    "score": 0.6442644596388795,
     "config": {
       "pop_size": 139,
       "offspring_ratio": 0.75,
@@ -3038,7 +3038,7 @@
   },
   {
     "trial_id": 112,
-    "score": 0.8315106708222079,
+    "score": 0.8315106708222064,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -3066,7 +3066,7 @@
   },
   {
     "trial_id": 113,
-    "score": 0.7166369209008235,
+    "score": 0.7166369209008222,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -3091,7 +3091,7 @@
   },
   {
     "trial_id": 114,
-    "score": 0.47830828212338444,
+    "score": 0.47830828212338394,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -3118,7 +3118,7 @@
   },
   {
     "trial_id": 115,
-    "score": 0.5178869126813835,
+    "score": 0.5178869126813768,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -3144,7 +3144,7 @@
   },
   {
     "trial_id": 116,
-    "score": 0.7098565948244381,
+    "score": 0.7098565948244374,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -3170,7 +3170,7 @@
   },
   {
     "trial_id": 117,
-    "score": 0.1789540058845092,
+    "score": 0.1789540058845076,
     "config": {
       "pop_size": 154,
       "offspring_ratio": 0.5,
@@ -3197,7 +3197,7 @@
   },
   {
     "trial_id": 118,
-    "score": 0.6597834334799766,
+    "score": 0.6597834334799758,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3225,7 +3225,7 @@
   },
   {
     "trial_id": 119,
-    "score": 0.664027457683866,
+    "score": 0.6640274576838644,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -3250,7 +3250,7 @@
   },
   {
     "trial_id": 120,
-    "score": 0.42325697166238807,
+    "score": 0.42325697166238674,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3275,7 +3275,7 @@
   },
   {
     "trial_id": 121,
-    "score": 0.25422497356028995,
+    "score": 0.254224973560285,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.25,
@@ -3302,7 +3302,7 @@
   },
   {
     "trial_id": 122,
-    "score": 0.21232860990134161,
+    "score": 0.212328609901336,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -3327,7 +3327,7 @@
   },
   {
     "trial_id": 123,
-    "score": 0.39828797382703424,
+    "score": 0.39828797382704517,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -3354,7 +3354,7 @@
   },
   {
     "trial_id": 124,
-    "score": 0.2716561813918304,
+    "score": 0.2716561813918235,
     "config": {
       "pop_size": 143,
       "offspring_ratio": 0.25,
@@ -3382,7 +3382,7 @@
   },
   {
     "trial_id": 125,
-    "score": 0.6959409881546912,
+    "score": 0.6959409881546895,
     "config": {
       "pop_size": 104,
       "offspring_ratio": 0.75,
@@ -3409,7 +3409,7 @@
   },
   {
     "trial_id": 126,
-    "score": 0.24554996004837615,
+    "score": 0.24554996004837357,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -3435,7 +3435,7 @@
   },
   {
     "trial_id": 127,
-    "score": 0.38747030411896277,
+    "score": 0.3874703041189744,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3459,7 +3459,7 @@
   },
   {
     "trial_id": 128,
-    "score": 0.4973765232733223,
+    "score": 0.497376523273313,
     "config": {
       "pop_size": 175,
       "offspring_ratio": 1.0,
@@ -3486,7 +3486,7 @@
   },
   {
     "trial_id": 129,
-    "score": 0.15082497389610106,
+    "score": 0.15082497389610028,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3511,7 +3511,7 @@
   },
   {
     "trial_id": 130,
-    "score": 0.38468493151466365,
+    "score": 0.38468493151464744,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -3539,7 +3539,7 @@
   },
   {
     "trial_id": 131,
-    "score": 0.36368658316481345,
+    "score": 0.3636865831648168,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -3566,7 +3566,7 @@
   },
   {
     "trial_id": 132,
-    "score": 0.17928385428083715,
+    "score": 0.179283854280836,
     "config": {
       "pop_size": 134,
       "offspring_ratio": 0.75,
@@ -3596,7 +3596,7 @@
   },
   {
     "trial_id": 133,
-    "score": 0.16529484468472508,
+    "score": 0.1652948446847238,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -3621,7 +3621,7 @@
   },
   {
     "trial_id": 134,
-    "score": 0.2766033958072282,
+    "score": 0.27660339580722676,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3648,7 +3648,7 @@
   },
   {
     "trial_id": 135,
-    "score": 0.5314161170543936,
+    "score": 0.531416117054393,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3675,7 +3675,7 @@
   },
   {
     "trial_id": 136,
-    "score": 0.5476357938825878,
+    "score": 0.5476357938825962,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -3702,7 +3702,7 @@
   },
   {
     "trial_id": 137,
-    "score": 0.27799362834192143,
+    "score": 0.27799362834191055,
     "config": {
       "pop_size": 138,
       "offspring_ratio": 0.25,
@@ -3730,7 +3730,7 @@
   },
   {
     "trial_id": 138,
-    "score": 0.2701138246705677,
+    "score": 0.2701138246705644,
     "config": {
       "pop_size": 175,
       "offspring_ratio": 1.0,
@@ -3758,7 +3758,7 @@
   },
   {
     "trial_id": 139,
-    "score": 0.6693511191460754,
+    "score": 0.6693511191460714,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -3784,7 +3784,7 @@
   },
   {
     "trial_id": 140,
-    "score": 0.12956296972801817,
+    "score": 0.12956296972801745,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -3809,7 +3809,7 @@
   },
   {
     "trial_id": 141,
-    "score": 0.21652352567521657,
+    "score": 0.2165235256752144,
     "config": {
       "pop_size": 175,
       "offspring_ratio": 0.25,
@@ -3837,7 +3837,7 @@
   },
   {
     "trial_id": 142,
-    "score": 0.23832764850072613,
+    "score": 0.2383276485007235,
     "config": {
       "pop_size": 151,
       "offspring_ratio": 0.75,
@@ -3866,7 +3866,7 @@
   },
   {
     "trial_id": 143,
-    "score": 0.47584661702854436,
+    "score": 0.4758466170285399,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -3894,7 +3894,7 @@
   },
   {
     "trial_id": 144,
-    "score": 0.325069589150506,
+    "score": 0.3250695891505122,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 1.0,
@@ -3921,7 +3921,7 @@
   },
   {
     "trial_id": 145,
-    "score": 0.5609665903867624,
+    "score": 0.560966590386776,
     "config": {
       "pop_size": 114,
       "offspring_ratio": 1.0,
@@ -3951,7 +3951,7 @@
   },
   {
     "trial_id": 146,
-    "score": 0.1527136759021072,
+    "score": 0.15271367590210644,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -3976,7 +3976,7 @@
   },
   {
     "trial_id": 147,
-    "score": 0.2449199617796922,
+    "score": 0.24491996177968717,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -4002,7 +4002,7 @@
   },
   {
     "trial_id": 148,
-    "score": 0.1636663338380293,
+    "score": 0.16366633383802823,
     "config": {
       "pop_size": 111,
       "offspring_ratio": 1.0,
@@ -4031,7 +4031,7 @@
   },
   {
     "trial_id": 149,
-    "score": 0.35898272551971316,
+    "score": 0.3589827255196964,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -4059,7 +4059,7 @@
   },
   {
     "trial_id": 150,
-    "score": 0.6438074616498527,
+    "score": 0.6438074616498526,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -4084,7 +4084,7 @@
   },
   {
     "trial_id": 151,
-    "score": 0.8149506246121769,
+    "score": 0.8149506246121755,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -4111,7 +4111,7 @@
   },
   {
     "trial_id": 152,
-    "score": 0.6576161858742697,
+    "score": 0.6576161858742672,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -4138,7 +4138,7 @@
   },
   {
     "trial_id": 153,
-    "score": 0.3867234580002442,
+    "score": 0.3867234580002545,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -4165,7 +4165,7 @@
   },
   {
     "trial_id": 154,
-    "score": 0.690154644931283,
+    "score": 0.6901546449312828,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -4192,7 +4192,7 @@
   },
   {
     "trial_id": 155,
-    "score": 0.4282984185937158,
+    "score": 0.4282984185937111,
     "config": {
       "pop_size": 122,
       "offspring_ratio": 0.25,
@@ -4221,7 +4221,7 @@
   },
   {
     "trial_id": 156,
-    "score": 0.1836577586267726,
+    "score": 0.18365775862677103,
     "config": {
       "pop_size": 167,
       "offspring_ratio": 0.75,
@@ -4248,7 +4248,7 @@
   },
   {
     "trial_id": 157,
-    "score": 0.6651230732977416,
+    "score": 0.6651230732977378,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -4276,7 +4276,7 @@
   },
   {
     "trial_id": 158,
-    "score": 0.4626852058571963,
+    "score": 0.4626852058571929,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -4300,7 +4300,7 @@
   },
   {
     "trial_id": 159,
-    "score": 0.6528067023343076,
+    "score": 0.6528067023343058,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -4328,7 +4328,7 @@
   },
   {
     "trial_id": 160,
-    "score": 0.1750550360704591,
+    "score": 0.175055036070458,
     "config": {
       "pop_size": 183,
       "offspring_ratio": 0.75,
@@ -4357,7 +4357,7 @@
   },
   {
     "trial_id": 161,
-    "score": 0.8266401032631843,
+    "score": 0.8266401032631826,
     "config": {
       "pop_size": 145,
       "offspring_ratio": 0.5,
@@ -4385,7 +4385,7 @@
   },
   {
     "trial_id": 162,
-    "score": 0.20099124865279785,
+    "score": 0.20099124865279597,
     "config": {
       "pop_size": 125,
       "offspring_ratio": 0.5,
@@ -4411,7 +4411,7 @@
   },
   {
     "trial_id": 163,
-    "score": 0.1630458118617227,
+    "score": 0.16304581186172182,
     "config": {
       "pop_size": 135,
       "offspring_ratio": 0.75,
@@ -4439,7 +4439,7 @@
   },
   {
     "trial_id": 164,
-    "score": 0.2196076054221128,
+    "score": 0.2196076054221106,
     "config": {
       "pop_size": 186,
       "offspring_ratio": 1.0,
@@ -4466,7 +4466,7 @@
   },
   {
     "trial_id": 165,
-    "score": 0.6927447287476457,
+    "score": 0.6927447287476426,
     "config": {
       "pop_size": 139,
       "offspring_ratio": 0.75,
@@ -4496,7 +4496,7 @@
   },
   {
     "trial_id": 166,
-    "score": 0.6365547222034538,
+    "score": 0.6365547222034547,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -4523,7 +4523,7 @@
   },
   {
     "trial_id": 167,
-    "score": 0.39773278552138613,
+    "score": 0.3977327855213933,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -4549,7 +4549,7 @@
   },
   {
     "trial_id": 168,
-    "score": 0.22933520905767243,
+    "score": 0.22933520905767,
     "config": {
       "pop_size": 151,
       "offspring_ratio": 0.75,
@@ -4577,7 +4577,7 @@
   },
   {
     "trial_id": 169,
-    "score": 0.6465968086376169,
+    "score": 0.6465968086376137,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -4604,7 +4604,7 @@
   },
   {
     "trial_id": 170,
-    "score": 0.6509160357907523,
+    "score": 0.6509160357907487,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.75,
@@ -4633,7 +4633,7 @@
   },
   {
     "trial_id": 171,
-    "score": 0.3661460646093928,
+    "score": 0.3661460646093995,
     "config": {
       "pop_size": 127,
       "offspring_ratio": 1.0,
@@ -4661,7 +4661,7 @@
   },
   {
     "trial_id": 172,
-    "score": 0.25006524992674745,
+    "score": 0.25006524992673596,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -4688,7 +4688,7 @@
   },
   {
     "trial_id": 173,
-    "score": 0.6328975006336155,
+    "score": 0.6328975006336175,
     "config": {
       "pop_size": 126,
       "offspring_ratio": 0.75,
@@ -4717,7 +4717,7 @@
   },
   {
     "trial_id": 174,
-    "score": 0.46395032648992335,
+    "score": 0.4639503264899194,
     "config": {
       "pop_size": 107,
       "offspring_ratio": 0.75,
@@ -4747,7 +4747,7 @@
   },
   {
     "trial_id": 175,
-    "score": 0.1641494581571505,
+    "score": 0.16414945815714962,
     "config": {
       "pop_size": 141,
       "offspring_ratio": 0.75,
@@ -4775,7 +4775,7 @@
   },
   {
     "trial_id": 176,
-    "score": 0.16298446909043587,
+    "score": 0.16298446909043504,
     "config": {
       "pop_size": 101,
       "offspring_ratio": 0.75,
@@ -4802,7 +4802,7 @@
   },
   {
     "trial_id": 177,
-    "score": 0.1575346764507494,
+    "score": 0.1575346764507486,
     "config": {
       "pop_size": 146,
       "offspring_ratio": 0.25,
@@ -4831,7 +4831,7 @@
   },
   {
     "trial_id": 178,
-    "score": 0.5493645868523533,
+    "score": 0.5493645868523696,
     "config": {
       "pop_size": 157,
       "offspring_ratio": 1.0,
@@ -4860,7 +4860,7 @@
   },
   {
     "trial_id": 179,
-    "score": 0.6629284969525245,
+    "score": 0.6629284969525285,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -4887,7 +4887,7 @@
   },
   {
     "trial_id": 180,
-    "score": 0.3702265640047027,
+    "score": 0.3702265640046979,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -4913,7 +4913,7 @@
   },
   {
     "trial_id": 181,
-    "score": 0.16763408944593602,
+    "score": 0.16763408944593514,
     "config": {
       "pop_size": 150,
       "offspring_ratio": 0.5,
@@ -4941,7 +4941,7 @@
   },
   {
     "trial_id": 182,
-    "score": 0.7139241747371786,
+    "score": 0.7139241747371762,
     "config": {
       "pop_size": 142,
       "offspring_ratio": 0.5,
@@ -4969,7 +4969,7 @@
   },
   {
     "trial_id": 183,
-    "score": 0.6882620230143368,
+    "score": 0.688262023014339,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -4995,7 +4995,7 @@
   },
   {
     "trial_id": 184,
-    "score": 0.6310981837704028,
+    "score": 0.6310981837704024,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -5022,7 +5022,7 @@
   },
   {
     "trial_id": 185,
-    "score": 0.659964251265558,
+    "score": 0.6599642512655571,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -5050,7 +5050,7 @@
   },
   {
     "trial_id": 186,
-    "score": 0.17971595022666953,
+    "score": 0.17971595022666842,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -5078,7 +5078,7 @@
   },
   {
     "trial_id": 187,
-    "score": 0.6824465375216023,
+    "score": 0.6824465375215971,
     "config": {
       "pop_size": 168,
       "offspring_ratio": 0.75,
@@ -5106,7 +5106,7 @@
   },
   {
     "trial_id": 188,
-    "score": 0.5549095276949048,
+    "score": 0.5549095276949167,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -5133,7 +5133,7 @@
   },
   {
     "trial_id": 189,
-    "score": 0.16361543405130807,
+    "score": 0.16361543405130682,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -5157,7 +5157,7 @@
   },
   {
     "trial_id": 190,
-    "score": 0.1374473447618122,
+    "score": 0.13744734476181117,
     "config": {
       "pop_size": 115,
       "offspring_ratio": 0.25,
@@ -5184,7 +5184,7 @@
   },
   {
     "trial_id": 191,
-    "score": 0.1703358618047571,
+    "score": 0.17033586180475607,
     "config": {
       "pop_size": 105,
       "offspring_ratio": 0.75,
@@ -5212,7 +5212,7 @@
   },
   {
     "trial_id": 192,
-    "score": 0.42078967345064155,
+    "score": 0.42078967345063284,
     "config": {
       "pop_size": 165,
       "offspring_ratio": 1.0,
@@ -5241,7 +5241,7 @@
   },
   {
     "trial_id": 193,
-    "score": 0.5190334050256684,
+    "score": 0.5190334050256586,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -5267,7 +5267,7 @@
   },
   {
     "trial_id": 194,
-    "score": 0.16206322357149436,
+    "score": 0.16206322357149355,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -5291,7 +5291,7 @@
   },
   {
     "trial_id": 195,
-    "score": 0.2314529546344308,
+    "score": 0.23145295463442653,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -5318,7 +5318,7 @@
   },
   {
     "trial_id": 196,
-    "score": 0.5339254662241929,
+    "score": 0.5339254662241901,
     "config": {
       "pop_size": 130,
       "offspring_ratio": 0.5,
@@ -5348,7 +5348,7 @@
   },
   {
     "trial_id": 197,
-    "score": 0.8269323172441991,
+    "score": 0.826932317244197,
     "config": {
       "pop_size": 111,
       "offspring_ratio": 0.5,
@@ -5376,7 +5376,7 @@
   },
   {
     "trial_id": 198,
-    "score": 0.47803179843350135,
+    "score": 0.47803179843350724,
     "config": {
       "pop_size": 150,
       "offspring_ratio": 0.5,
@@ -5404,7 +5404,7 @@
   },
   {
     "trial_id": 199,
-    "score": 0.577541744260413,
+    "score": 0.5775417442604242,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -5431,7 +5431,7 @@
   },
   {
     "trial_id": 200,
-    "score": 0.16438547520202476,
+    "score": 0.16438547520202343,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -5457,7 +5457,7 @@
   },
   {
     "trial_id": 201,
-    "score": 0.72780060350235,
+    "score": 0.7278006035023464,
     "config": {
       "pop_size": 179,
       "offspring_ratio": 0.75,
@@ -5484,7 +5484,7 @@
   },
   {
     "trial_id": 202,
-    "score": 0.37677108589743397,
+    "score": 0.3767710858974379,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -5510,7 +5510,7 @@
   },
   {
     "trial_id": 203,
-    "score": 0.15729461686705482,
+    "score": 0.157294616867054,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -5537,7 +5537,7 @@
   },
   {
     "trial_id": 204,
-    "score": 0.1681642912946417,
+    "score": 0.1681642912946402,
     "config": {
       "pop_size": 145,
       "offspring_ratio": 0.25,
@@ -5565,7 +5565,7 @@
   },
   {
     "trial_id": 205,
-    "score": 0.8248237249340754,
+    "score": 0.8248237249340742,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -5592,7 +5592,7 @@
   },
   {
     "trial_id": 206,
-    "score": 0.15579118788651825,
+    "score": 0.1557911878865175,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -5617,7 +5617,7 @@
   },
   {
     "trial_id": 207,
-    "score": 0.45483772142796397,
+    "score": 0.4548377214279632,
     "config": {
       "pop_size": 170,
       "offspring_ratio": 0.25,
@@ -5646,7 +5646,7 @@
   },
   {
     "trial_id": 208,
-    "score": 0.16448007246008503,
+    "score": 0.16448007246008414,
     "config": {
       "pop_size": 118,
       "offspring_ratio": 0.75,
@@ -5675,7 +5675,7 @@
   },
   {
     "trial_id": 209,
-    "score": 0.31762589654395623,
+    "score": 0.3176258965439443,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 0.75,
@@ -5703,7 +5703,7 @@
   },
   {
     "trial_id": 210,
-    "score": 0.2722253061739814,
+    "score": 0.2722253061739782,
     "config": {
       "pop_size": 151,
       "offspring_ratio": 0.5,
@@ -5731,7 +5731,7 @@
   },
   {
     "trial_id": 211,
-    "score": 0.16247143001567932,
+    "score": 0.16247143001567832,
     "config": {
       "pop_size": 103,
       "offspring_ratio": 0.5,
@@ -5760,7 +5760,7 @@
   },
   {
     "trial_id": 212,
-    "score": 0.5573675891592189,
+    "score": 0.557367589159223,
     "config": {
       "pop_size": 162,
       "offspring_ratio": 0.25,
@@ -5788,7 +5788,7 @@
   },
   {
     "trial_id": 213,
-    "score": 0.8083231023094775,
+    "score": 0.8083231023094758,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -5816,7 +5816,7 @@
   },
   {
     "trial_id": 214,
-    "score": 0.25538689625767447,
+    "score": 0.2553868962576718,
     "config": {
       "pop_size": 176,
       "offspring_ratio": 0.5,
@@ -5845,7 +5845,7 @@
   },
   {
     "trial_id": 215,
-    "score": 0.16276367384863638,
+    "score": 0.16276367384863544,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -5872,7 +5872,7 @@
   },
   {
     "trial_id": 216,
-    "score": 0.6620195125473576,
+    "score": 0.6620195125473547,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -5898,7 +5898,7 @@
   },
   {
     "trial_id": 217,
-    "score": 0.4602539707678251,
+    "score": 0.4602539707678235,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -5923,7 +5923,7 @@
   },
   {
     "trial_id": 218,
-    "score": 0.5466097436164682,
+    "score": 0.5466097436164643,
     "config": {
       "pop_size": 106,
       "offspring_ratio": 1.0,
@@ -5950,7 +5950,7 @@
   },
   {
     "trial_id": 219,
-    "score": 0.7007127545280649,
+    "score": 0.7007127545280623,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -5977,7 +5977,7 @@
   },
   {
     "trial_id": 220,
-    "score": 0.16914702761771008,
+    "score": 0.16914702761770906,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -6003,7 +6003,7 @@
   },
   {
     "trial_id": 221,
-    "score": 0.5724313399501169,
+    "score": 0.5724313399501272,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -6031,7 +6031,7 @@
   },
   {
     "trial_id": 222,
-    "score": 0.8364034209722843,
+    "score": 0.8364034209722822,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -6057,7 +6057,7 @@
   },
   {
     "trial_id": 223,
-    "score": 0.1730223104026952,
+    "score": 0.17302231040269409,
     "config": {
       "pop_size": 103,
       "offspring_ratio": 0.25,
@@ -6084,7 +6084,7 @@
   },
   {
     "trial_id": 224,
-    "score": 0.8478003100907991,
+    "score": 0.8478003100907973,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -6110,7 +6110,7 @@
   },
   {
     "trial_id": 225,
-    "score": 0.19575099661814183,
+    "score": 0.19575099661813986,
     "config": {
       "pop_size": 110,
       "offspring_ratio": 0.75,
@@ -6138,7 +6138,7 @@
   },
   {
     "trial_id": 226,
-    "score": 0.1614417862605909,
+    "score": 0.16144178626059005,
     "config": {
       "pop_size": 125,
       "offspring_ratio": 0.25,
@@ -6168,7 +6168,7 @@
   },
   {
     "trial_id": 227,
-    "score": 0.8346721122796397,
+    "score": 0.8346721122796382,
     "config": {
       "pop_size": 115,
       "offspring_ratio": 0.25,
@@ -6195,7 +6195,7 @@
   },
   {
     "trial_id": 228,
-    "score": 0.15625459031677896,
+    "score": 0.15625459031677813,
     "config": {
       "pop_size": 125,
       "offspring_ratio": 0.25,
@@ -6222,7 +6222,7 @@
   },
   {
     "trial_id": 229,
-    "score": 0.6335057676855468,
+    "score": 0.6335057676855461,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,
@@ -6249,7 +6249,7 @@
   },
   {
     "trial_id": 230,
-    "score": 0.6767327107905418,
+    "score": 0.6767327107905385,
     "config": {
       "pop_size": 137,
       "offspring_ratio": 0.75,
@@ -6279,7 +6279,7 @@
   },
   {
     "trial_id": 231,
-    "score": 0.7174610788808355,
+    "score": 0.7174610788808331,
     "config": {
       "pop_size": 132,
       "offspring_ratio": 1.0,
@@ -6306,7 +6306,7 @@
   },
   {
     "trial_id": 232,
-    "score": 0.7027339845695475,
+    "score": 0.702733984569545,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -6333,7 +6333,7 @@
   },
   {
     "trial_id": 233,
-    "score": 0.704622751152998,
+    "score": 0.7046227511529988,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -6361,7 +6361,7 @@
   },
   {
     "trial_id": 234,
-    "score": 0.18071795901936935,
+    "score": 0.18071795901936774,
     "config": {
       "pop_size": 181,
       "offspring_ratio": 0.75,
@@ -6387,7 +6387,7 @@
   },
   {
     "trial_id": 235,
-    "score": 0.6812757241256436,
+    "score": 0.6812757241256423,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.75,
@@ -6415,7 +6415,7 @@
   },
   {
     "trial_id": 236,
-    "score": 0.20230342555728167,
+    "score": 0.20230342555727976,
     "config": {
       "pop_size": 121,
       "offspring_ratio": 0.25,
@@ -6442,7 +6442,7 @@
   },
   {
     "trial_id": 237,
-    "score": 0.5218378337289942,
+    "score": 0.5218378337289892,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -6470,7 +6470,7 @@
   },
   {
     "trial_id": 238,
-    "score": 0.17245232771115418,
+    "score": 0.17245232771115304,
     "config": {
       "pop_size": 152,
       "offspring_ratio": 0.75,
@@ -6500,7 +6500,7 @@
   },
   {
     "trial_id": 239,
-    "score": 0.5024011950022109,
+    "score": 0.5024011950022017,
     "config": {
       "pop_size": 196,
       "offspring_ratio": 0.5,
@@ -6527,7 +6527,7 @@
   },
   {
     "trial_id": 240,
-    "score": 0.15745476590330895,
+    "score": 0.15745476590330815,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -6554,7 +6554,7 @@
   },
   {
     "trial_id": 241,
-    "score": 0.6644065517531328,
+    "score": 0.6644065517531292,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -6581,7 +6581,7 @@
   },
   {
     "trial_id": 242,
-    "score": 0.16906665867312176,
+    "score": 0.16906665867312065,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -6608,7 +6608,7 @@
   },
   {
     "trial_id": 243,
-    "score": 0.31591320462193834,
+    "score": 0.31591320462194916,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -6632,7 +6632,7 @@
   },
   {
     "trial_id": 244,
-    "score": 0.2587394804248721,
+    "score": 0.2587394804248712,
     "config": {
       "pop_size": 173,
       "offspring_ratio": 0.75,
@@ -6661,7 +6661,7 @@
   },
   {
     "trial_id": 245,
-    "score": 0.449472461481779,
+    "score": 0.4494724614817736,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -6688,7 +6688,7 @@
   },
   {
     "trial_id": 246,
-    "score": 0.40973132315970434,
+    "score": 0.4097313231596948,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.25,
@@ -6715,7 +6715,7 @@
   },
   {
     "trial_id": 247,
-    "score": 0.20529090292618205,
+    "score": 0.20529090292618013,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 0.5,
@@ -6740,7 +6740,7 @@
   },
   {
     "trial_id": 248,
-    "score": 0.6613708437616032,
+    "score": 0.661370843761606,
     "config": {
       "pop_size": 128,
       "offspring_ratio": 0.25,
@@ -6768,7 +6768,7 @@
   },
   {
     "trial_id": 249,
-    "score": 0.2944998073466654,
+    "score": 0.2944998073466516,
     "config": {
       "pop_size": 100,
       "offspring_ratio": 1.0,

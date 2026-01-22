@@ -24,7 +24,7 @@
       "num_evals": 210,
       "num_final_evals": 70
     },
-    "score": 0.8642877707096978,
+    "score": 0.8642877707096953,
     "trial_id": 74
   },
   {
@@ -50,7 +50,7 @@
       "num_evals": 210,
       "num_final_evals": 70
     },
-    "score": 0.8478003100907991,
+    "score": 0.8478003100907973,
     "trial_id": 224
   },
   {
@@ -76,7 +76,7 @@
       "num_evals": 210,
       "num_final_evals": 70
     },
-    "score": 0.8364034209722843,
+    "score": 0.8364034209722822,
     "trial_id": 222
   },
   {
@@ -103,7 +103,7 @@
       "num_evals": 210,
       "num_final_evals": 70
     },
-    "score": 0.8362799969491316,
+    "score": 0.8362799969491295,
     "trial_id": 75
   },
   {
@@ -128,7 +128,7 @@
       "num_evals": 210,
       "num_final_evals": 70
     },
-    "score": 0.8359936573951483,
+    "score": 0.8359936573951469,
     "trial_id": 91
   }
 ]
