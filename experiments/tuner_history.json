@@ -2021,8 +2021,7 @@
       "crossover_eta": 7.940106701788785,
       "cauchy_gamma": 0.16054081338482856,
       "scatter_base_size_factor": 0.3,
-      "archive_type": "unbounded",
-      "archive_size_factor": 5
+      "archive_type": "unbounded"
     },
     "details": {
       "num_evals": 210,
