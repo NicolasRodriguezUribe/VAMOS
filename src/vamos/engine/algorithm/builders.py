@@ -147,6 +147,9 @@ def build_moead_algorithm(
         a_name, a_kwargs = ensure_operator_tuple(var_cfg["aggregation"], key="aggregation")
         builder.aggregation(a_name, **a_kwargs)
 
+    if "use_numba_variation" in var_cfg:
+        builder.use_numba_variation(bool(var_cfg["use_numba_variation"]))
+
     if "repair" in var_cfg:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)

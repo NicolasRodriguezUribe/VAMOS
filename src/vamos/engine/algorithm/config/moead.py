@@ -25,6 +25,7 @@ class MOEADConfig(_SerializableConfig):
     repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
+    use_numba_variation: bool | None = None
     track_genealogy: bool = False
     result_mode: str | None = None
     archive_type: str | None = None
@@ -128,6 +129,10 @@ class _MOEADConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
+    def use_numba_variation(self, enabled: bool = True) -> _MOEADConfigBuilder:
+        self._cfg["use_numba_variation"] = bool(enabled)
+        return self
+
     def track_genealogy(self, enabled: bool = True) -> _MOEADConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
@@ -188,6 +193,7 @@ class _MOEADConfigBuilder:
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
+            use_numba_variation=self._cfg.get("use_numba_variation"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
             archive_type=self._cfg.get("archive_type"),

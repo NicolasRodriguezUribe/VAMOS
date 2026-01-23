@@ -7,7 +7,7 @@ from typing import Any
 from collections.abc import Sequence
 
 from vamos.experiment.benchmark.suites import BenchmarkSuite, BenchmarkExperiment
-from vamos.foundation.core.experiment_config import DEFAULT_ENGINE
+from vamos.foundation.core.experiment_config import resolve_engine
 from vamos.experiment.study.runner import StudyRunner, StudyTask, StudyResult
 from vamos.experiment.study.persistence import CSVPersister
 from vamos.experiment.runner import run_single
@@ -77,7 +77,7 @@ def _prepare_tasks(
                 tasks.append(
                     StudyTask(
                         algorithm=algo,
-                        engine=overrides.get("engine", DEFAULT_ENGINE),
+                        engine=resolve_engine(overrides.get("engine"), algorithm=algo),
                         problem=exp.problem_name,
                         n_var=exp.problem_params.get("n_var"),
                         n_obj=exp.problem_params.get("n_obj"),
