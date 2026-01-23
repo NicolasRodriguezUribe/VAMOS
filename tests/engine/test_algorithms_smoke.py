@@ -78,6 +78,38 @@ def test_smsemoa_smoke_runs_with_small_population():
     assert result["population"]["F"].shape == (pop_size, problem.n_obj)
 
 
+def test_smsemoa_uses_eval_strategy():
+    pop_size = 8
+    cfg = (
+        SMSEMOAConfig.builder()
+        .pop_size(pop_size)
+        .crossover("sbx", prob=0.9, eta=20.0)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .selection("random")
+        .reference_point(offset=1.0, adaptive=True)
+        .build()
+    )
+    algorithm = SMSEMOA(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT2Problem(n_var=6)
+
+    class CountingBackend:
+        def __init__(self) -> None:
+            self.calls: list[int] = []
+
+        def evaluate(self, X, problem):  # noqa: ANN001 - protocol-style test double
+            from vamos.foundation.eval import EvaluationResult
+
+            self.calls.append(int(X.shape[0]))
+            F = np.full((X.shape[0], problem.n_obj), 0.1, dtype=float)
+            return EvaluationResult(F=F, G=None)
+
+    backend = CountingBackend()
+    algorithm.run(problem, termination=("n_eval", pop_size + 3), seed=4, eval_strategy=backend)
+
+    assert backend.calls[0] == pop_size  # initial population
+    assert backend.calls[1:] == [1, 1, 1]  # steady-state offspring evaluations
+
+
 def test_moead_smoke_runs_without_weight_files():
     pop_size = 6
     cfg = (

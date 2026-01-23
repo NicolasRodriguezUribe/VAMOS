@@ -44,6 +44,9 @@ class SMSEMOAState(AlgorithmState):
     crossover_fn: Callable[[np.ndarray], np.ndarray] | None = None
     mutation_fn: Callable[[np.ndarray], np.ndarray] | None = None
 
+    # Workspace buffers (avoid per-iteration allocations in steady-state SMS-EMOA)
+    _survival_F: np.ndarray | None = field(default=None, repr=False, compare=False)
+
 
 def build_smsemoa_result(
     state: SMSEMOAState,

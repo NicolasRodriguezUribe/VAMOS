@@ -116,40 +116,56 @@ def survival_selection(
     kernel : KernelBackend
         Backend for ranking operations.
     """
-    # Combine population with child
-    X_comb = np.vstack([st.X, X_child])
-    F_comb = np.vstack([st.F, F_child])
-    G_comb = np.vstack([st.G, G_child]) if st.G is not None and G_child is not None else None
+    pop_n = int(st.X.shape[0])
+    if pop_n == 0:
+        raise ValueError("Cannot perform survival selection with an empty population.")
 
-    # Combine ids if genealogy is enabled
-    ids_comb = None
-    if st.ids is not None and st.pending_offspring_ids is not None:
-        ids_comb = np.concatenate([st.ids, st.pending_offspring_ids])
+    if X_child.shape[0] != 1 or F_child.shape[0] != 1:
+        raise ValueError("survival_selection expects exactly one offspring (shape (1, ...)).")
 
-    # Update reference point if adaptive
+    # Build combined objective matrix in a reusable buffer to avoid per-iteration allocations.
+    F_work = st._survival_F
+    if F_work is None or F_work.shape != (pop_n + 1, st.F.shape[1]):
+        F_work = np.empty((pop_n + 1, st.F.shape[1]), dtype=st.F.dtype)
+        st._survival_F = F_work
+    F_work[:pop_n] = st.F
+    F_work[pop_n] = F_child[0]
+
+    # Update reference point if adaptive (kept consistent with the previous implementation:
+    # computed on the combined (pop + child) set, before removal).
     if st.ref_adaptive:
-        st.ref_point = update_reference_point(st.ref_point, F_comb, st.ref_offset)
+        st.ref_point = update_reference_point(st.ref_point, F_work, st.ref_offset)
 
-    # Non-dominated ranking
-    ranks, _ = kernel.nsga2_ranking(F_comb)
+    # Non-dominated ranking (on combined set)
+    ranks, _ = kernel.nsga2_ranking(F_work)
     worst_rank = ranks.max()
     worst_idx = np.flatnonzero(ranks == worst_rank)
 
     if worst_idx.size == 1:
-        remove_idx = worst_idx[0]
+        remove_idx = int(worst_idx[0])
     else:
-        # Remove solution with smallest HV contribution
-        contribs = hypervolume_contributions(F_comb[worst_idx], st.ref_point)
-        remove_idx = worst_idx[np.argmin(contribs)]
+        contribs = hypervolume_contributions(F_work[worst_idx], st.ref_point)
+        remove_idx = int(worst_idx[int(np.argmin(contribs))])
 
-    # Keep all except removed
-    keep = np.delete(np.arange(F_comb.shape[0]), remove_idx)
-    st.X = X_comb[keep][: st.pop_size]
-    st.F = F_comb[keep][: st.pop_size]
-    if G_comb is not None:
-        st.G = G_comb[keep][: st.pop_size]
-    if ids_comb is not None:
-        st.ids = ids_comb[keep][: st.pop_size]
+    # If the offspring is removed, population remains unchanged.
+    if remove_idx == pop_n:
+        return
+
+    # Remove an existing individual and append the child at the end, preserving order.
+    if remove_idx < pop_n - 1:
+        st.X[remove_idx : pop_n - 1] = st.X[remove_idx + 1 : pop_n]
+        st.F[remove_idx : pop_n - 1] = st.F[remove_idx + 1 : pop_n]
+        if st.G is not None and G_child is not None:
+            st.G[remove_idx : pop_n - 1] = st.G[remove_idx + 1 : pop_n]
+        if st.ids is not None and st.pending_offspring_ids is not None:
+            st.ids[remove_idx : pop_n - 1] = st.ids[remove_idx + 1 : pop_n]
+
+    st.X[pop_n - 1] = X_child[0]
+    st.F[pop_n - 1] = F_child[0]
+    if st.G is not None and G_child is not None:
+        st.G[pop_n - 1] = G_child[0]
+    if st.ids is not None and st.pending_offspring_ids is not None:
+        st.ids[pop_n - 1] = st.pending_offspring_ids[0]
 
 
 def evaluate_population_with_constraints(
@@ -171,11 +187,11 @@ def evaluate_population_with_constraints(
         (F, G) where F is objective values and G is constraint values (or None).
     """
     n_obj = problem.n_obj
-    n_con = getattr(problem, "n_con", 0) or 0
+    n_constr = getattr(problem, "n_constr", getattr(problem, "n_con", 0)) or 0
 
     out: dict[str, np.ndarray] = {"F": np.empty((X.shape[0], n_obj), dtype=np.float64)}
-    if n_con > 0:
-        out["G"] = np.empty((X.shape[0], n_con), dtype=np.float64)
+    if n_constr > 0:
+        out["G"] = np.empty((X.shape[0], n_constr), dtype=np.float64)
 
     # Support both in-place and "replace out['F']" problem implementations.
     problem.evaluate(X, out)

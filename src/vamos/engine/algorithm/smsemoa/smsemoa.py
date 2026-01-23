@@ -21,7 +21,6 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from .helpers import (
-    evaluate_population_with_constraints,
     survival_selection,
 )
 from .initialization import initialize_smsemoa_run
@@ -154,14 +153,17 @@ class SMSEMOA:
             st.n_eval += X_child.shape[0]
 
             # Survival selection (one child at a time for SMS-EMOA)
-            for i in range(X_child.shape[0]):
-                survival_selection(
-                    st,
-                    X_child[i : i + 1],
-                    F_child[i : i + 1],
-                    G_child[i : i + 1] if G_child is not None else None,
-                    self.kernel,
-                )
+            if X_child.shape[0] == 1:
+                survival_selection(st, X_child, F_child, G_child, self.kernel)
+            else:  # pragma: no cover - steady-state SMS-EMOA typically uses 1 offspring
+                for i in range(X_child.shape[0]):
+                    survival_selection(
+                        st,
+                        X_child[i : i + 1],
+                        F_child[i : i + 1],
+                        G_child[i : i + 1] if G_child is not None else None,
+                        self.kernel,
+                    )
 
             st.generation += 1
 
@@ -234,7 +236,8 @@ class SMSEMOA:
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
-        F, G = evaluate_population_with_constraints(problem, X)
+        eval_result = eval_strategy.evaluate(X, problem)
+        F, G = eval_result.F, eval_result.G
         if constraint_mode == "none":
             G = None
         return F, G
@@ -336,9 +339,12 @@ class SMSEMOA:
         st.pending_offspring = None
 
         # Survival selection for each child
-        for i in range(X.shape[0]):
-            G_i = G[i : i + 1] if G is not None else None
-            survival_selection(st, X[i : i + 1], F[i : i + 1], G_i, self.kernel)
+        if X.shape[0] == 1:
+            survival_selection(st, X, F, G, self.kernel)
+        else:  # pragma: no cover - steady-state SMS-EMOA typically uses 1 offspring
+            for i in range(X.shape[0]):
+                G_i = G[i : i + 1] if G is not None else None
+                survival_selection(st, X[i : i + 1], F[i : i + 1], G_i, self.kernel)
 
         st.n_eval += X.shape[0]
         st.generation += 1
