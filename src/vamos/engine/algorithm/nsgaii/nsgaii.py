@@ -44,6 +44,10 @@ from .helpers import (
     build_mating_pool,
     feasible_nsga2_survival,
     match_ids,
+    fronts_from_ranks,
+    compute_crowding,
+    incremental_insert_fronts,
+    select_nsga2,
 )
 from vamos.operators.impl.real import VariationWorkspace
 from vamos.foundation.eval.backends import SerialEvalBackend, EvaluationBackend
@@ -116,26 +120,50 @@ class NSGAII:
         signal.signal(signal.SIGINT, _handle_interrupt)
 
         generation = 0
+        step = 0
+        replacements = 0
         stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
         hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn())
 
         try:
             while n_eval < max_eval and not hv_reached and not stop_requested and not interrupted:
                 st.generation = generation
+                st.step = step
+                st.replacements = replacements
                 X_off = self.ask()
                 eval_off = eval_strategy.evaluate(X_off, problem)
                 hv_reached = self.tell(eval_off, st.pop_size)
                 n_eval += X_off.shape[0]
+                replacements += X_off.shape[0]
 
-                generation += 1
-                st.generation = generation
-                stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
-                if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
-                    hv_reached = True
+                step += 1
+                st.step = step
+                st.replacements = replacements
 
-                # Checkpointing
-                if checkpoint_dir and generation % checkpoint_interval == 0:
-                    self._save_checkpoint(checkpoint_dir, seed, generation, n_eval)
+                if st.steady_state:
+                    if not stop_requested:
+                        stop_requested = live_should_stop(live_cb)
+                    new_generation = replacements // st.pop_size
+                    if new_generation != generation:
+                        generation = new_generation
+                        st.generation = generation
+                        stop_requested = stop_requested or self._notify_generation(live_cb, generation, st.F, evals=n_eval)
+                        if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
+                            hv_reached = True
+
+                        # Checkpointing (steady-state: per effective generation)
+                        if checkpoint_dir and generation % checkpoint_interval == 0:
+                            self._save_checkpoint(checkpoint_dir, seed, generation, n_eval)
+                else:
+                    generation += 1
+                    st.generation = generation
+                    stop_requested = self._notify_generation(live_cb, generation, st.F, evals=n_eval)
+                    if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
+                        hv_reached = True
+
+                    # Checkpointing
+                    if checkpoint_dir and generation % checkpoint_interval == 0:
+                        self._save_checkpoint(checkpoint_dir, seed, generation, n_eval)
         finally:
             # Restore original signal handler
             signal.signal(signal.SIGINT, original_handler)
@@ -199,13 +227,41 @@ class NSGAII:
         rng = np.random.default_rng(seed)
 
         pop_size = int(self.cfg["pop_size"])
-        offspring_size = int(self.cfg.get("offspring_size") or pop_size)
-        if offspring_size <= 0:
-            raise ValueError("offspring size must be positive.")
+        steady_state = bool(self.cfg.get("steady_state", False))
+        raw_offspring_size = self.cfg.get("offspring_size")
+        replacement_size = self.cfg.get("replacement_size")
+
+        if steady_state:
+            if replacement_size is None:
+                if raw_offspring_size is not None and int(raw_offspring_size) != pop_size:
+                    replacement_size = raw_offspring_size
+                else:
+                    replacement_size = 1
+            replacement_size = int(replacement_size)
+            if replacement_size <= 0:
+                raise ValueError("replacement size must be positive.")
+            if replacement_size > pop_size:
+                raise ValueError("replacement size must be <= population size.")
+            offspring_size = replacement_size
+        else:
+            offspring_size = int(raw_offspring_size or pop_size)
+            if offspring_size <= 0:
+                raise ValueError("offspring size must be positive.")
+            replacement_size = 1
 
         constraint_mode = self.cfg.get("constraint_mode", "feasibility")
         initializer_cfg = self.cfg.get("initializer")
         X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
+
+        incremental_enabled = bool(steady_state and replacement_size == 1 and constraint_mode == "none" and G is None)
+        if incremental_enabled and getattr(self.kernel, "name", "") == "jax" and getattr(self.kernel, "_strict_ranking", True) is False:
+            incremental_enabled = False
+
+        ranks = crowding = None
+        fronts = None
+        if incremental_enabled:
+            ranks, crowding = self.kernel.nsga2_ranking(F)
+            fronts = fronts_from_ranks(ranks)
 
         encoding = normalize_encoding(getattr(problem, "encoding", "real"))
         n_var = problem.n_var
@@ -288,6 +344,8 @@ class NSGAII:
             pressure=pressure,
             pop_size=pop_size,
             offspring_size=offspring_size,
+            replacement_size=replacement_size,
+            steady_state=steady_state,
             constraint_mode=constraint_mode,
             archive_size=archive_size,
             archive_X=archive_X,
@@ -301,6 +359,10 @@ class NSGAII:
             genealogy_tracker=genealogy_tracker,
             ids=ids,
             aos_controller=aos_controller,
+            fronts=fronts,
+            ranks=ranks,
+            crowding=crowding,
+            incremental_enabled=incremental_enabled,
         )
         return live_cb, eval_strategy, max_eval, n_eval, hv_tracker
 
@@ -311,16 +373,24 @@ class NSGAII:
             raise RuntimeError("ask() called before initialization.")
 
         if st.aos_controller is not None:
-            st.aos_controller.start_generation(st.generation)
+            aos_step = st.step
+            st.aos_controller.start_generation(aos_step)
             arm = st.aos_controller.select_arm(mating_id=0, batch_size=st.offspring_size)
             idx = st.aos_controller.portfolio.index_of(arm.op_id)
             st.variation = st.operator_pool[idx]
             st.aos_last_op_id = arm.op_id
             st.aos_last_op_name = arm.name
             st.aos_last_batch_size = st.offspring_size
-            st.aos_step = st.generation
+            st.aos_step = aos_step
 
-        ranks, crowding = compute_selection_metrics(self.kernel, st.F, st.G, st.constraint_mode)
+        if st.incremental_enabled and st.ranks is not None and st.crowding is not None and st.G is None and st.constraint_mode == "none":
+            ranks, crowding = st.ranks, st.crowding
+        else:
+            ranks, crowding = compute_selection_metrics(self.kernel, st.F, st.G, st.constraint_mode)
+            if st.steady_state:
+                st.ranks = ranks
+                st.crowding = crowding
+                st.fronts = fronts_from_ranks(ranks)
         parents_per_group = st.variation.parents_per_group
         children_per_group = st.variation.children_per_group
         parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
@@ -368,13 +438,77 @@ class NSGAII:
 
         # Combine IDs for genealogy
         combined_X = np.vstack([st.X, X_off])
+        combined_F = np.vstack([st.F, F_off])
         combined_ids = self._combine_ids(st)
         parent_count = st.X.shape[0]
         selected_idx = None
         prev_F = st.F
+        used_incremental = False
+
+        early_reject = False
+        if (
+            st.steady_state
+            and st.fronts is not None
+            and st.constraint_mode == "none"
+            and st.G is None
+            and G_off is None
+            and F_off is not None
+        ):
+            worst_front = st.fronts[-1] if st.fronts else []
+            if worst_front:
+                F_worst = st.F[np.asarray(worst_front, dtype=int)]
+                F_off_arr = np.asarray(F_off, dtype=float)
+                if F_off_arr.ndim == 1:
+                    F_off_arr = F_off_arr.reshape(1, -1)
+                less_equal = F_worst[:, None, :] <= F_off_arr[None, :, :]
+                strictly_less = F_worst[:, None, :] < F_off_arr[None, :, :]
+                dominates = np.all(less_equal, axis=2) & np.any(strictly_less, axis=2)
+                dominated_by_worst = np.any(dominates, axis=0)
+                if dominated_by_worst.size and bool(np.all(dominated_by_worst)):
+                    early_reject = True
 
         # Survival selection
-        if st.G is None or G_off is None or st.constraint_mode == "none":
+        use_incremental = (
+            st.incremental_enabled
+            and st.replacement_size == 1
+            and st.constraint_mode == "none"
+            and st.G is None
+            and G_off is None
+            and X_off.shape[0] == 1
+        )
+        if early_reject:
+            new_X = st.X
+            new_F = st.F
+            new_G = st.G
+            if aos_controller is not None:
+                selected_idx = np.arange(parent_count, dtype=int)
+            used_incremental = True
+        elif use_incremental:
+            if st.fronts is None or st.ranks is None or st.crowding is None:
+                ranks, crowding = self.kernel.nsga2_ranking(st.F)
+                st.ranks = ranks
+                st.crowding = crowding
+                st.fronts = fronts_from_ranks(ranks)
+
+            fronts = [list(front) for front in (st.fronts or [])]
+            ranks = np.concatenate([st.ranks or np.empty(0, dtype=int), np.array([-1], dtype=int)])
+            incremental_insert_fronts(fronts, ranks, combined_F, combined_F.shape[0] - 1)
+            crowding = compute_crowding(combined_F, fronts)
+
+            selected_idx = select_nsga2(fronts, crowding, pop_size)
+            new_X = combined_X[selected_idx]
+            new_F = combined_F[selected_idx]
+            new_G = None
+
+            new_ranks = ranks[selected_idx]
+            new_fronts = fronts_from_ranks(new_ranks)
+            new_crowding = compute_crowding(new_F, new_fronts)
+
+            st.fronts = new_fronts
+            st.ranks = new_ranks
+            st.crowding = new_crowding
+            used_incremental = True
+        elif st.G is None or G_off is None or st.constraint_mode == "none":
             if aos_controller is not None:
                 new_X, new_F, selected_idx = self.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size, return_indices=True)
             else:
@@ -393,6 +527,12 @@ class NSGAII:
 
         st.X, st.F, st.G = new_X, new_F, new_G
         st.pending_offspring_ids = None
+
+        if st.incremental_enabled and not used_incremental:
+            ranks, crowding = self.kernel.nsga2_ranking(st.F)
+            st.ranks = ranks
+            st.crowding = crowding
+            st.fronts = fronts_from_ranks(ranks)
 
         if aos_controller is not None and selected_idx is not None and st.aos_last_op_id is not None:
             def _normalized_hv(F: np.ndarray | None, ref: np.ndarray, hv_ref: float) -> float:
@@ -474,8 +614,10 @@ class NSGAII:
                     }
                 )
 
-        combined_F = np.vstack([prev_F, F_off])
-        update_archives(st, self.kernel, X=combined_X, F=combined_F)
+        if early_reject:
+            update_archives(st, self.kernel, X=st.X, F=st.F)
+        else:
+            update_archives(st, self.kernel, X=combined_X, F=combined_F)
 
         hv_reached = st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points_fn())
 

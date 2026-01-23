@@ -33,7 +33,10 @@ class VariationOverrides(TypedDict, total=False):
     repair: OperatorSpecInput
     aggregation: OperatorSpecInput
     adaptive_operator_selection: Mapping[str, object]
+    steady_state: bool
+    replacement_size: int
     weight_vectors: Mapping[str, object] | str
+    use_numba_variation: bool
     archive_size: int
     k_neighbors: int
     indicator: str

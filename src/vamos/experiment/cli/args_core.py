@@ -4,7 +4,6 @@ import argparse
 
 from vamos.foundation.core.experiment_config import (
     DEFAULT_ALGORITHM,
-    DEFAULT_ENGINE,
     DEFAULT_PROBLEM,
     ENABLED_ALGORITHMS,
     EXPERIMENT_BACKENDS,
@@ -47,8 +46,11 @@ def add_core_arguments(
         parser,
         "--engine",
         choices=tuple(EXPERIMENT_BACKENDS),
-        default=spec_default(experiment_defaults, "engine", DEFAULT_ENGINE),
-        help="Kernel backend to use (default: numpy). JAX strict ranking falls back to NumPy for exact fronts.",
+        default=spec_default(experiment_defaults, "engine", None),
+        help=(
+            "Kernel backend to use. Default auto-prefers numba for NSGA-II/MOEA-D when available; "
+            "otherwise falls back to numpy. JAX strict ranking falls back to NumPy for exact fronts."
+        ),
     )
     add_spec_argument(
         parser,

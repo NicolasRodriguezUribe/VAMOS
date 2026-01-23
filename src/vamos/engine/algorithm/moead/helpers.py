@@ -20,6 +20,31 @@ if TYPE_CHECKING:
 
 AggregatorFn: TypeAlias = Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]
 
+# Aggregation IDs for optional JIT path.
+AGG_TCHEBYCHEFF = 0
+AGG_WEIGHTED_SUM = 1
+AGG_PBI = 2
+AGG_MODIFIED_TCHEBYCHEFF = 3
+
+_AGGREGATION_IDS: dict[str, int] = {
+    "tchebycheff": AGG_TCHEBYCHEFF,
+    "tchebychef": AGG_TCHEBYCHEFF,
+    "tschebyscheff": AGG_TCHEBYCHEFF,
+    "weighted_sum": AGG_WEIGHTED_SUM,
+    "weightedsum": AGG_WEIGHTED_SUM,
+    "penaltyboundaryintersection": AGG_PBI,
+    "penalty_boundary_intersection": AGG_PBI,
+    "pbi": AGG_PBI,
+    "modifiedtchebycheff": AGG_MODIFIED_TCHEBYCHEFF,
+    "modified_tchebycheff": AGG_MODIFIED_TCHEBYCHEFF,
+}
+
+_UPDATE_NEIGHBORHOOD_JIT: Callable[..., int] | None = None
+_UPDATE_NEIGHBORHOOD_DISABLED = False
+_DUMMY_G = np.empty((0, 0), dtype=float)
+_DUMMY_CV = np.empty(0, dtype=float)
+_DUMMY_CHILD_G = np.empty(0, dtype=float)
+
 
 # =============================================================================
 # Aggregation / Scalarization Functions
@@ -166,6 +191,162 @@ def build_aggregator(name: str, params: Mapping[str, object]) -> AggregatorFn:
     raise ValueError(f"Unsupported aggregation method '{name}'.")
 
 
+def resolve_aggregation_spec(name: str, params: Mapping[str, object]) -> tuple[int, float, float]:
+    """Resolve aggregation ID and parameters for fast paths."""
+    method = name.lower()
+    agg_id = _AGGREGATION_IDS.get(method, -1)
+
+    theta_raw = params.get("theta", 5.0)
+    theta = float(theta_raw) if isinstance(theta_raw, (int, float, str)) else 5.0
+
+    rho_raw = params.get("rho", 0.001)
+    rho = float(rho_raw) if isinstance(rho_raw, (int, float, str)) else 0.001
+
+    return agg_id, theta, rho
+
+
+def _use_numba_moead() -> bool:
+    import os
+
+    return os.environ.get("VAMOS_USE_NUMBA_MOEAD", "").lower() in {"1", "true", "yes"}
+
+
+def _get_update_neighborhood_numba() -> Callable[..., int] | None:
+    global _UPDATE_NEIGHBORHOOD_JIT, _UPDATE_NEIGHBORHOOD_DISABLED
+    if _UPDATE_NEIGHBORHOOD_DISABLED:
+        return None
+    if _UPDATE_NEIGHBORHOOD_JIT is not None:
+        return _UPDATE_NEIGHBORHOOD_JIT
+    if not _use_numba_moead():
+        _UPDATE_NEIGHBORHOOD_DISABLED = True
+        return None
+    try:
+        from numba import njit
+    except ImportError:
+        _UPDATE_NEIGHBORHOOD_DISABLED = True
+        return None
+
+    @njit(cache=True)  # type: ignore[untyped-decorator]
+    def _update_neighborhood_numba(
+        X: np.ndarray,
+        F: np.ndarray,
+        G: np.ndarray,
+        cv: np.ndarray,
+        weights: np.ndarray,
+        weights_safe: np.ndarray,
+        weights_unit: np.ndarray,
+        ideal: np.ndarray,
+        child: np.ndarray,
+        child_f: np.ndarray,
+        child_g: np.ndarray,
+        child_cv: float,
+        candidate_order: np.ndarray,
+        replace_limit: int,
+        agg_id: int,
+        agg_theta: float,
+        agg_rho: float,
+        use_constraints: int,
+    ) -> int:
+        replacements = 0
+        n_obj = ideal.shape[0]
+        for idx in range(candidate_order.shape[0]):
+            k = int(candidate_order[idx])
+
+            # Compute aggregation for current and child.
+            if agg_id == AGG_TCHEBYCHEFF:
+                current_val = -1.0
+                child_val = -1.0
+                for j in range(n_obj):
+                    diff_c = abs(F[k, j] - ideal[j])
+                    diff_child = abs(child_f[j] - ideal[j])
+                    w_eff = weights_safe[k, j]
+                    val_c = w_eff * diff_c
+                    val_child = w_eff * diff_child
+                    if val_c > current_val:
+                        current_val = val_c
+                    if val_child > child_val:
+                        child_val = val_child
+            elif agg_id == AGG_WEIGHTED_SUM:
+                current_val = 0.0
+                child_val = 0.0
+                for j in range(n_obj):
+                    w = weights[k, j]
+                    current_val += w * F[k, j]
+                    child_val += w * child_f[j]
+            elif agg_id == AGG_PBI:
+                d1 = 0.0
+                for j in range(n_obj):
+                    d1 += (F[k, j] - ideal[j]) * weights_unit[k, j]
+                d1 = abs(d1)
+
+                d1_child = 0.0
+                for j in range(n_obj):
+                    d1_child += (child_f[j] - ideal[j]) * weights_unit[k, j]
+                d1_child = abs(d1_child)
+
+                d2 = 0.0
+                d2_child = 0.0
+                for j in range(n_obj):
+                    w_unit = weights_unit[k, j]
+                    diff_c = (F[k, j] - ideal[j]) - d1 * w_unit
+                    diff_child = (child_f[j] - ideal[j]) - d1_child * w_unit
+                    d2 += diff_c * diff_c
+                    d2_child += diff_child * diff_child
+                d2 = np.sqrt(d2)
+                d2_child = np.sqrt(d2_child)
+                current_val = d1 + agg_theta * d2
+                child_val = d1_child + agg_theta * d2_child
+            else:  # AGG_MODIFIED_TCHEBYCHEFF
+                current_val = -1.0
+                child_val = -1.0
+                sum_c = 0.0
+                sum_child = 0.0
+                for j in range(n_obj):
+                    diff_c = abs(F[k, j] - ideal[j])
+                    diff_child = abs(child_f[j] - ideal[j])
+                    w_eff = weights_safe[k, j]
+                    val_c = w_eff * diff_c
+                    val_child = w_eff * diff_child
+                    if val_c > current_val:
+                        current_val = val_c
+                    if val_child > child_val:
+                        child_val = val_child
+                    sum_c += val_c
+                    sum_child += val_child
+                current_val = current_val + agg_rho * sum_c
+                child_val = child_val + agg_rho * sum_child
+
+            replace = False
+            if use_constraints == 1:
+                current_cv = cv[k]
+                feas_child = child_cv <= 0.0
+                feas_curr = current_cv <= 0.0
+                if (not feas_curr) and feas_child:
+                    replace = True
+                elif feas_child and feas_curr:
+                    replace = child_val < current_val
+                else:
+                    replace = child_cv < current_cv
+            else:
+                replace = child_val < current_val
+
+            if not replace:
+                continue
+
+            X[k] = child
+            F[k] = child_f
+            if use_constraints == 1:
+                G[k] = child_g
+                cv[k] = child_cv
+            replacements += 1
+            if replacements >= replace_limit:
+                break
+        return replacements
+
+    _UPDATE_NEIGHBORHOOD_JIT = _update_neighborhood_numba
+    return _UPDATE_NEIGHBORHOOD_JIT
+
+
 # =============================================================================
 # Neighborhood Management
 # =============================================================================
@@ -227,23 +408,82 @@ def update_neighborhood(
     constraint_mode = st.constraint_mode
     if constraint_mode == "none" or st.G is None or child_g is None:
         constraint_mode = "none"
+    use_constraints = constraint_mode != "none"
 
     if candidate_order is None:
         candidate_order = st.neighbors[idx]
     if candidate_order.size == 0:
         return
     assert st.aggregator is not None
-    replacements = 0
     child_cv = cv_penalty if constraint_mode != "none" else 0.0
 
+    if st.aggregation_id >= 0:
+        updater = _get_update_neighborhood_numba()
+        if updater is not None and (not use_constraints or st.cv is not None):
+            updater(
+                st.X,
+                st.F,
+                st.G if st.G is not None else _DUMMY_G,
+                st.cv if st.cv is not None else _DUMMY_CV,
+                st.weights,
+                st.weights_safe,
+                st.weights_unit,
+                st.ideal,
+                child,
+                child_f,
+                child_g if child_g is not None else _DUMMY_CHILD_G,
+                float(child_cv),
+                candidate_order,
+                int(st.replace_limit),
+                int(st.aggregation_id),
+                float(st.aggregation_theta),
+                float(st.aggregation_rho),
+                1 if use_constraints else 0,
+            )
+            return
+
+    weights_safe = st.weights_safe if st.weights_safe.size else None
+    weights_unit = st.weights_unit if st.weights_unit.size else None
+    replacements = 0
+
     for k in candidate_order:
-        weight = st.weights[k]
-        current_val = float(np.asarray(st.aggregator(st.F[k], weight, st.ideal)).reshape(-1)[0])
-        child_val = float(np.asarray(st.aggregator(child_f, weight, st.ideal)).reshape(-1)[0])
+        if st.aggregation_id == AGG_TCHEBYCHEFF and weights_safe is not None:
+            diff = np.abs(st.F[k] - st.ideal)
+            current_val = float(np.max(weights_safe[k] * diff))
+            diff_child = np.abs(child_f - st.ideal)
+            child_val = float(np.max(weights_safe[k] * diff_child))
+        elif st.aggregation_id == AGG_WEIGHTED_SUM:
+            weight = st.weights[k]
+            current_val = float(np.dot(weight, st.F[k]))
+            child_val = float(np.dot(weight, child_f))
+        elif st.aggregation_id == AGG_PBI and weights_unit is not None:
+            w_unit = weights_unit[k]
+            diff = st.F[k] - st.ideal
+            d1 = abs(float(np.dot(diff, w_unit)))
+            d2 = float(np.linalg.norm(diff - d1 * w_unit))
+            diff_child = child_f - st.ideal
+            d1_child = abs(float(np.dot(diff_child, w_unit)))
+            d2_child = float(np.linalg.norm(diff_child - d1_child * w_unit))
+            current_val = d1 + float(st.aggregation_theta) * d2
+            child_val = d1_child + float(st.aggregation_theta) * d2_child
+        elif st.aggregation_id == AGG_MODIFIED_TCHEBYCHEFF and weights_safe is not None:
+            diff = np.abs(st.F[k] - st.ideal)
+            weighted = weights_safe[k] * diff
+            current_val = float(np.max(weighted) + float(st.aggregation_rho) * np.sum(weighted))
+            diff_child = np.abs(child_f - st.ideal)
+            weighted_child = weights_safe[k] * diff_child
+            child_val = float(np.max(weighted_child) + float(st.aggregation_rho) * np.sum(weighted_child))
+        else:
+            weight = st.weights[k]
+            current_val = float(np.asarray(st.aggregator(st.F[k], weight, st.ideal)).reshape(-1)[0])
+            child_val = float(np.asarray(st.aggregator(child_f, weight, st.ideal)).reshape(-1)[0])
 
         replace = False
         if constraint_mode != "none":
-            current_cv = compute_violation(st.G[k : k + 1])[0] if st.G is not None else 0.0
+            if st.cv is not None:
+                current_cv = float(st.cv[k])
+            else:
+                current_cv = compute_violation(st.G[k : k + 1])[0] if st.G is not None else 0.0
             feas_child = child_cv <= 0.0
             feas_curr = current_cv <= 0.0
             if not feas_curr and feas_child:
@@ -262,6 +502,8 @@ def update_neighborhood(
         st.F[k] = child_f
         if st.G is not None and child_g is not None:
             st.G[k] = child_g
+            if st.cv is not None:
+                st.cv[k] = child_cv
         replacements += 1
         if replacements >= st.replace_limit:
             break
@@ -273,6 +515,7 @@ __all__ = [
     "pbi",
     "modified_tchebycheff",
     "build_aggregator",
+    "resolve_aggregation_spec",
     "compute_neighbors",
     "update_neighborhood",
 ]

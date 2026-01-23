@@ -54,6 +54,29 @@ def test_nsgaii_hv_termination_hits_target():
     assert result["population"]["F"].shape == (pop_size, problem.n_obj)
 
 
+def test_nsgaii_steady_state_runs():
+    pop_size = 12
+    cfg = (
+        NSGAIIConfig.builder()
+        .pop_size(pop_size)
+        .steady_state(True)
+        .replacement_size(1)
+        .crossover("sbx", prob=0.9, eta=15.0)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .selection("tournament", pressure=2)
+        .build()
+    )
+    algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT1Problem(n_var=6)
+    budget = pop_size + 5
+
+    result = algorithm.run(problem, termination=("n_eval", budget), seed=11)
+
+    assert result["evaluations"] == budget
+    assert result["F"].shape[0] <= pop_size
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)
+
+
 def test_smsemoa_smoke_runs_with_small_population():
     pop_size = 8
     cfg = (

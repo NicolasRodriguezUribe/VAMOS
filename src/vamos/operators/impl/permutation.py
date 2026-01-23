@@ -6,6 +6,8 @@ from collections.abc import Callable
 import numpy as np
 from numpy.typing import NDArray
 
+from .flags import should_use_numba_variation
+
 PermArray: TypeAlias = NDArray[np.integer[Any]]
 PermVec: TypeAlias = PermArray
 PermPop: TypeAlias = PermArray
@@ -20,9 +22,7 @@ _SWAP_ROWS_JIT_DISABLED = False
 
 
 def _use_numba_variation() -> bool:
-    import os
-
-    return os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
+    return should_use_numba_variation()
 
 
 def _get_swap_rows_jit() -> Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], None] | None:
@@ -32,7 +32,6 @@ def _get_swap_rows_jit() -> Callable[[np.ndarray, np.ndarray, np.ndarray, np.nda
     if _SWAP_ROWS_JIT is not None:
         return _SWAP_ROWS_JIT
     if not _use_numba_variation():
-        _SWAP_ROWS_JIT_DISABLED = True
         return None
     try:
         from numba import njit
