@@ -18,11 +18,10 @@ Install dependencies (includes benchmark frameworks used in the paper):
 
 Regenerate LaTeX tables from the committed CSVs:
 - Runtime tables: `python paper/04_update_paper_tables_from_csv.py`
-- Wilcoxon tables: `python paper/05_run_statistical_tests.py`
+- Statistical tables (HV + equivalence/robustness): `python paper/05_run_statistical_tests.py`
 - Ablation tables: `python paper/06_update_ablation_tables_from_csv.py`
-- Scaling + Numba JIT tables:
-  - Generate `experiments/scaling_vectorization.csv`: `python paper/03_run_scaling_experiment.py`
-  - Update LaTeX: `python paper/07_update_scaling_tables_from_csv.py`
+- Anytime ablation tables: `python paper/10_update_anytime_tables_from_csv.py`
+- Tuned-configuration summary: `python paper/09_update_tuned_config_from_json.py`
 
 Use `--empty` on the table-update scripts to write placeholder tables when the corresponding CSV is not available yet.
 
@@ -35,11 +34,11 @@ Generates `experiments/benchmark_paper.csv`:
 
 1) Benchmark (cross-framework): `python paper/01_run_paper_benchmark.py`
 2) Ablation (VAMOS-only): `python paper/02_run_ablation_aos_racing_tuner.py`
-3) Scaling (VAMOS-only): `python paper/03_run_scaling_experiment.py`
-4) Update runtime tables: `python paper/04_update_paper_tables_from_csv.py`
-5) Update Wilcoxon tables: `python paper/05_run_statistical_tests.py`
-6) Update ablation tables: `python paper/06_update_ablation_tables_from_csv.py`
-7) Update scaling tables: `python paper/07_update_scaling_tables_from_csv.py`
+3) Update runtime tables: `python paper/04_update_paper_tables_from_csv.py`
+4) Update statistical tables: `python paper/05_run_statistical_tests.py`
+5) Update ablation tables: `python paper/06_update_ablation_tables_from_csv.py`
+6) Update anytime ablation tables: `python paper/10_update_anytime_tables_from_csv.py`
+7) Update tuned-config table: `python paper/09_update_tuned_config_from_json.py`
 8) Compile PDF + sync sources to Overleaf (excludes `main.pdf`): `python paper/08_compile_manuscript_pdf.py`
    - Compile only (no sync): `python paper/08_compile_manuscript_pdf.py --no-sync` (or `--no-sync-overleaf`)
      - Sync requires the Overleaf git remote (default name: `overleaf`) and saved credentials (Git auth token).
