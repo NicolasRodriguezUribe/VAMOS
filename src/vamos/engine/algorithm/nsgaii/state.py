@@ -49,6 +49,8 @@ class NSGAIIState:
     # Sizes
     pop_size: int = 100
     offspring_size: int = 100
+    replacement_size: int = 1
+    steady_state: bool = False
 
     # Constraints
     constraint_mode: str = "feasibility"
@@ -72,6 +74,14 @@ class NSGAIIState:
 
     # Generation tracking
     generation: int = 0
+    step: int = 0
+    replacements: int = 0
+
+    # Cached selection metrics (steady-state incremental)
+    fronts: list[list[int]] | None = None
+    ranks: np.ndarray | None = None
+    crowding: np.ndarray | None = None
+    incremental_enabled: bool = False
 
     # Adaptive operator selection (AOS)
     aos_controller: AOSController | None = None

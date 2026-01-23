@@ -53,15 +53,23 @@ class MOEADState(AlgorithmState):
 
     # MOEA/D-specific fields
     weights: np.ndarray = field(default_factory=lambda: np.array([]))
+    weights_safe: np.ndarray = field(default_factory=lambda: np.array([]))
+    weights_unit: np.ndarray = field(default_factory=lambda: np.array([]))
     neighbors: np.ndarray = field(default_factory=lambda: np.array([]))
     ideal: np.ndarray = field(default_factory=lambda: np.array([]))
     aggregator: Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray] | None = None
+    aggregation_id: int = -1
+    aggregation_theta: float = 5.0
+    aggregation_rho: float = 0.001
     neighbor_size: int = 20
     delta: float = 0.9
     replace_limit: int = 2
     batch_size: int = 1
     subproblem_order: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
     subproblem_cursor: int = 0
+
+    # Cached constraint violation (sum of positive parts), when constraints are enabled.
+    cv: np.ndarray | None = None
 
     # Variation operators (as callables for flexibility across encodings)
     crossover_fn: Callable[[np.ndarray, np.random.Generator], np.ndarray] | None = None

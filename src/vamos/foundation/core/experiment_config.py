@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from importlib.util import find_spec
 
 # Constants moved from runner.py
 TITLE = "VAMOS Experiment Runner"
@@ -19,6 +20,31 @@ EXPERIMENT_BACKENDS = (
     "numba",
     "moocore",
 )
+
+_PREFER_NUMBA_ALGORITHMS = {"nsgaii", "moead"}
+
+
+def _has_numba() -> bool:
+    return find_spec("numba") is not None
+
+
+def resolve_engine(engine: str | None, *, algorithm: str | None = None) -> str:
+    """
+    Resolve the effective engine for a run.
+
+    If engine is None or "auto", prefer numba for selected algorithms when available;
+    otherwise fall back to DEFAULT_ENGINE.
+    """
+    if engine is None:
+        if algorithm and algorithm.lower() in _PREFER_NUMBA_ALGORITHMS and _has_numba():
+            return "numba"
+        return DEFAULT_ENGINE
+    engine_name = str(engine).lower()
+    if engine_name == "auto":
+        if algorithm and algorithm.lower() in _PREFER_NUMBA_ALGORITHMS and _has_numba():
+            return "numba"
+        return DEFAULT_ENGINE
+    return engine_name
 
 
 @dataclass

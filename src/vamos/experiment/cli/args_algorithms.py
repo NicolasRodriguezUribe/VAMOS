@@ -29,6 +29,12 @@ def _as_int(value: object) -> int | None:
     return value
 
 
+def _as_bool(value: object) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    return None
+
+
 def add_algorithm_arguments(
     parser: argparse.ArgumentParser,
     *,
@@ -132,6 +138,18 @@ def add_algorithm_arguments(
         choices=("clip", "reflect", "random", "resample", "round", "none"),
         default=_as_str(nsgaii_defaults.get("repair")),
         help="Repair strategy for NSGA-II (continuous encoding; use 'none' to disable).",
+    )
+    parser.add_argument(
+        "--nsgaii-steady-state",
+        action="store_true",
+        default=bool(_as_bool(nsgaii_defaults.get("steady_state")) or False),
+        help="Enable steady-state NSGA-II (incremental replacement).",
+    )
+    parser.add_argument(
+        "--nsgaii-replacement-size",
+        type=int,
+        default=_as_int(nsgaii_defaults.get("replacement_size")),
+        help="Replacement size per steady-state step (implies steady-state when set).",
     )
     parser.add_argument(
         "--moead-crossover",

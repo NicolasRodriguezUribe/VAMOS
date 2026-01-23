@@ -248,7 +248,10 @@ def run_quickstart(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--template", help="Template key (use --template list to see options).")
     parser.add_argument("--problem", help="Problem name (default: zdt1).")
     parser.add_argument("--algorithm", help="Algorithm name (default: nsgaii).")
-    parser.add_argument("--engine", help="Backend engine (default: numpy).")
+    parser.add_argument(
+        "--engine",
+        help="Backend engine. Default auto-prefers numba for NSGA-II/MOEA-D when available; otherwise numpy.",
+    )
     parser.add_argument("--budget", "--max-evaluations", dest="budget", type=int, help="Max evaluations (default: 5000).")
     parser.add_argument("--pop-size", "--population-size", dest="pop_size", type=int, help="Population size (default: 100).")
     parser.add_argument("--seed", type=int, help="Random seed (default: 42).")
