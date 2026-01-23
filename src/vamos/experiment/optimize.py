@@ -67,7 +67,7 @@ def _validate_positive_int_field(cfg: dict[str, object], key: str) -> None:
 
 
 def _validate_algorithm_config(cfg: dict[str, object]) -> None:
-    for key in ("pop_size", "offspring_size", "batch_size", "neighbor_size", "replace_limit", "n_partitions"):
+    for key in ("pop_size", "offspring_size", "replacement_size", "batch_size", "neighbor_size", "replace_limit", "n_partitions"):
         _validate_positive_int_field(cfg, key)
 
 

@@ -78,6 +78,15 @@ def build_nsgaii_algorithm(
             raise ValueError("adaptive_operator_selection must be a mapping.")
         builder.adaptive_operator_selection(dict(aos_cfg))
 
+    steady_state = bool(var_cfg.get("steady_state", False))
+    replacement_size = var_cfg.get("replacement_size")
+    if replacement_size is not None and not steady_state:
+        steady_state = True
+    if steady_state:
+        builder.steady_state(True)
+    if replacement_size is not None:
+        builder.replacement_size(_as_int(replacement_size))
+
     if external_archive_size:
         builder.archive(external_archive_size)
         builder.archive_type(archive_type)
