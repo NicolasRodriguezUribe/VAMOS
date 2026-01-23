@@ -22,7 +22,6 @@ from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from .helpers import (
-    evaluate_population_with_constraints,
     initialize_reference_point,
 )
 from vamos.operators.policies.smsemoa import build_variation_operators
@@ -103,7 +102,7 @@ def initialize_smsemoa_run(
     ref_cfg = config.get("reference_point", {}) or {}
 
     # Initialize population
-    X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
+    X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode, eval_strategy)
     n_eval = pop_size
 
     # Setup genealogy tracking
@@ -175,6 +174,7 @@ def initialize_population(
     rng: np.random.Generator,
     problem: ProblemProtocol,
     constraint_mode: str,
+    eval_strategy: EvaluationBackend,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     """Initialize population based on encoding.
 
@@ -210,7 +210,8 @@ def initialize_population(
     else:
         X = rng.uniform(xl, xu, size=(pop_size, n_var))
 
-    F, G = evaluate_population_with_constraints(problem, X)
+    eval_result = eval_strategy.evaluate(X, problem)
+    F, G = eval_result.F, eval_result.G
     if constraint_mode == "none":
         G = None
     return X, F, G
