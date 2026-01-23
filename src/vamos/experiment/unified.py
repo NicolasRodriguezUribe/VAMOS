@@ -19,6 +19,7 @@ from vamos.experiment.optimize import _OptimizeConfig, _run_config, _build_algor
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.logging import configure_vamos_logging
+from vamos.foundation.core.experiment_config import resolve_engine
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.experiment.auto import _resolve_problem, _select_algorithm, _compute_pop_size, _compute_budget
 
@@ -275,7 +276,7 @@ def _run_single(
     else:
         effective_budget = budget if budget is not None else _compute_budget(n_var, n_obj)
         effective_termination = ("n_eval", effective_budget)
-    effective_engine = engine or "numpy"
+    effective_engine = resolve_engine(engine, algorithm=algorithm)
 
     if verbose:
         _logger().info("[vamos] Problem: n_var=%s, n_obj=%s, encoding=%s", n_var, n_obj, encoding)

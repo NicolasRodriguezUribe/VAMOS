@@ -36,6 +36,7 @@ class VariationOverrides(TypedDict, total=False):
     steady_state: bool
     replacement_size: int
     weight_vectors: Mapping[str, object] | str
+    use_numba_variation: bool
     archive_size: int
     k_neighbors: int
     indicator: str

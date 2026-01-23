@@ -81,7 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_p = sub.add_parser("run", help="Quick run a problem with defaults")
     run_p.add_argument("problem")
     run_p.add_argument("--algorithm", default="nsgaii")
-    run_p.add_argument("--engine", default="numpy")
+    run_p.add_argument("--engine", default=None)
     run_p.add_argument("--budget", type=int, default=5000)
     run_p.add_argument("--pop-size", type=int, default=50)
     run_p.add_argument("--seed", type=int, default=0)

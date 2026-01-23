@@ -17,6 +17,7 @@ from vamos.foundation.core.experiment_config import (
     EXTERNAL_ALGORITHM_NAMES,
     OPTIONAL_ALGORITHMS,
     ExperimentConfig,
+    resolve_engine,
 )
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.core.io_utils import ensure_dir
@@ -378,7 +379,11 @@ def execute_problem_suite(
 ) -> None:
     from vamos.experiment import external  # local import to keep runner decoupled
 
-    engines: Iterable[str] = EXPERIMENT_BACKENDS if args.experiment == "backends" else (args.engine,)
+    engines: Iterable[str | None]
+    if args.experiment == "backends":
+        engines = EXPERIMENT_BACKENDS
+    else:
+        engines = (getattr(args, "engine", None),)
     algorithms = list(ENABLED_ALGORITHMS) if args.algorithm == "both" else [args.algorithm]
     use_native_external_problem = args.external_problem_source == "native"
 
@@ -400,14 +405,16 @@ def execute_problem_suite(
         for algorithm_name in internal_algorithms:
             live_viz = None
             if live_viz_factory is not None:
+                engine_name = resolve_engine(engine, algorithm=algorithm_name)
                 live_viz = live_viz_factory(
                     problem_selection,
                     algorithm_name,
-                    engine,
+                    engine_name,
                     config,
                 )
+            engine_name = resolve_engine(engine, algorithm=algorithm_name)
             metrics = run_single_fn(
-                engine,
+                engine_name,
                 algorithm_name,
                 problem_selection,
                 config,
@@ -432,14 +439,16 @@ def execute_problem_suite(
         for algorithm_name in optional_algorithms:
             live_viz = None
             if live_viz_factory is not None:
+                engine_name = resolve_engine(engine, algorithm=algorithm_name)
                 live_viz = live_viz_factory(
                     problem_selection,
                     algorithm_name,
-                    engine,
+                    engine_name,
                     config,
                 )
+            engine_name = resolve_engine(engine, algorithm=algorithm_name)
             metrics = run_single_fn(
-                engine,
+                engine_name,
                 algorithm_name,
                 problem_selection,
                 config,

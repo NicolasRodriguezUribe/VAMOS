@@ -266,6 +266,7 @@ class MOEAD:
 
         F_child = eval_result.F
         G_child = eval_result.G if st.constraint_mode != "none" else None
+        cv_child = compute_violation(G_child) if G_child is not None else None
         batch_size = children.shape[0]
         st.n_eval += batch_size
 
@@ -285,7 +286,7 @@ class MOEAD:
             child = children[pos]
             child_f = F_child[pos]
             child_g = G_child[pos] if G_child is not None else None
-            cv_penalty = compute_violation(G_child)[pos] if G_child is not None else 0.0
+            cv_penalty = float(cv_child[pos]) if cv_child is not None else 0.0
             if use_neighbors[pos]:
                 candidate_order = st.neighbors[i]
             else:

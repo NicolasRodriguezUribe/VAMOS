@@ -18,14 +18,16 @@ from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
+from vamos.foundation.constraints.utils import compute_violation
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.operators.impl.binary import random_binary_population
 from vamos.operators.impl.integer import random_integer_population
 from vamos.operators.impl.permutation import random_permutation_population
+from vamos.operators.impl.flags import set_numba_variation
 
-from .helpers import build_aggregator, compute_neighbors
+from .helpers import build_aggregator, compute_neighbors, resolve_aggregation_spec
 from vamos.operators.policies.moead import build_variation_operators
 from .state import MOEADState
 
@@ -90,6 +92,7 @@ def initialize_moead_run(
     # Initialize population
     X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
     n_eval = pop_size
+    cv = compute_violation(G) if constraint_mode != "none" and G is not None else None
 
     # Setup weight vectors and neighborhoods
     weight_cfg = cfg.get("weight_vectors", {}) or {}
@@ -100,6 +103,10 @@ def initialize_moead_run(
         divisions=weight_cfg.get("divisions"),
         mode="jmetalpy",
     )
+    weights_safe = np.where(weights == 0, 0.0001, weights)
+    weight_norms = np.linalg.norm(weights, axis=1)
+    weight_norms = np.where(weight_norms > 0, weight_norms, 1.0)
+    weights_unit = weights / weight_norms[:, None]
 
     neighbor_size = cfg.get("neighbor_size", min(20, pop_size))
     neighbor_size = max(2, min(neighbor_size, pop_size))
@@ -109,6 +116,11 @@ def initialize_moead_run(
     aggregation = cfg.get("aggregation", ("pbi", {"theta": 5.0}))
     agg_method, agg_params = aggregation
     aggregator = build_aggregator(agg_method, agg_params)
+    agg_id, agg_theta, agg_rho = resolve_aggregation_spec(agg_method, agg_params)
+
+    numba_variation = cfg.get("use_numba_variation")
+    if numba_variation is not None:
+        set_numba_variation(bool(numba_variation))
 
     # Build variation operators
     crossover_fn, mutation_fn = build_variation_operators(cfg, encoding, n_var, xl, xu, rng)
@@ -154,15 +166,21 @@ def initialize_moead_run(
         n_eval=n_eval,
         # MOEA/D-specific
         weights=weights,
+        weights_safe=weights_safe,
+        weights_unit=weights_unit,
         neighbors=neighbors,
         ideal=F.min(axis=0),
         aggregator=aggregator,
+        aggregation_id=agg_id,
+        aggregation_theta=agg_theta,
+        aggregation_rho=agg_rho,
         neighbor_size=neighbor_size,
         delta=float(cfg.get("delta", 0.9)),
         replace_limit=max(1, int(cfg.get("replace_limit", 2))),
         batch_size=batch_size,
         subproblem_order=subproblem_order,
         subproblem_cursor=0,
+        cv=cv,
         crossover_fn=crossover_fn,
         mutation_fn=mutation_fn,
         xl=xl,

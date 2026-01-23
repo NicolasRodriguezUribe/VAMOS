@@ -5,14 +5,14 @@ from collections.abc import Callable
 
 import numpy as np
 
+from .flags import should_use_numba_variation
+
 _BIT_FLIP_MASKED_JIT: Callable[[np.ndarray, np.ndarray], None] | None = None
 _BIT_FLIP_MASKED_DISABLED = False
 
 
 def _use_numba_variation() -> bool:
-    import os
-
-    return os.environ.get("VAMOS_USE_NUMBA_VARIATION", "").lower() in {"1", "true", "yes"}
+    return should_use_numba_variation()
 
 
 def _get_bit_flip_masked() -> Callable[[np.ndarray, np.ndarray], None] | None:
@@ -22,7 +22,6 @@ def _get_bit_flip_masked() -> Callable[[np.ndarray, np.ndarray], None] | None:
     if _BIT_FLIP_MASKED_JIT is not None:
         return _BIT_FLIP_MASKED_JIT
     if not _use_numba_variation():
-        _BIT_FLIP_MASKED_DISABLED = True
         return None
     try:
         from numba import njit
