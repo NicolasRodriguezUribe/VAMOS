@@ -50,6 +50,17 @@ class _NSGAIIConfigBuilder:
         self._cfg["offspring_size"] = value
         return self
 
+    def steady_state(self, enabled: bool = True) -> _NSGAIIConfigBuilder:
+        """Enable steady-state mode (incremental replacement)."""
+        self._cfg["steady_state"] = bool(enabled)
+        return self
+
+    def replacement_size(self, value: int) -> _NSGAIIConfigBuilder:
+        if value <= 0:
+            raise ValueError("replacement size must be positive.")
+        self._cfg["replacement_size"] = value
+        return self
+
     def repair(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
@@ -123,6 +134,8 @@ class _NSGAIIConfigBuilder:
             mutation=self._cfg["mutation"],
             selection=self._cfg["selection"],
             offspring_size=self._cfg.get("offspring_size"),
+            steady_state=bool(self._cfg.get("steady_state", False)),
+            replacement_size=self._cfg.get("replacement_size"),
             repair=self._cfg.get("repair"),
             archive=archive_cfg,
             initializer=self._cfg.get("initializer"),
@@ -142,6 +155,8 @@ class NSGAIIConfig(_SerializableConfig):
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
     offspring_size: int | None = None
+    steady_state: bool = False
+    replacement_size: int | None = None
     repair: tuple[str, dict[str, Any]] | None = None
     archive: dict[str, Any] | None = None
     initializer: dict[str, Any] | None = None

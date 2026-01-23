@@ -41,6 +41,11 @@ def finalize_args(
         args.offspring_population_size = args.population_size
     if args.offspring_population_size <= 0:
         parser.error("--offspring-population-size must be positive.")
+    if getattr(args, "nsgaii_replacement_size", None) is not None:
+        if args.nsgaii_replacement_size <= 0:
+            parser.error("--nsgaii-replacement-size must be a positive integer.")
+        if args.nsgaii_replacement_size > args.population_size:
+            parser.error("--nsgaii-replacement-size must be <= --population-size.")
     if args.selection_pressure <= 0:
         parser.error("--selection-pressure must be a positive integer.")
     if args.external_archive_size is not None and args.external_archive_size <= 0:
