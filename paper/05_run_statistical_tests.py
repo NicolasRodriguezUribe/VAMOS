@@ -254,16 +254,7 @@ def generate_latex_stats_table(
 print("\n" + "=" * 60)
 print("LATEX TABLE - Runtime Statistics")
 print("=" * 60)
-latex_runtime = generate_latex_stats_table(
-    runtime_comparison,
-    fw1="VAMOS (numba)",
-    fw2="pymoo",
-    caption="Runtime comparison with Wilcoxon signed-rank test results (Holm-corrected).",
-    label="tab:stats_runtime",
-    higher_is_better=False,
-    value_decimals=2,
-)
-print(latex_runtime)
+print("Note: runtime significance tables are no longer included in main.tex; runtime is reported descriptively.")
 
 # =============================================================================
 # SUMMARY STATISTICS
@@ -604,7 +595,6 @@ if MAIN_TEX.exists():
     original_len = len(content)
 
     # Replace statistical tables
-    content, replaced_runtime = replace_table_in_tex(content, "tab:stats_runtime", latex_runtime)
     replaced_hv = False
     if latex_hv:
         content, replaced_hv = replace_table_in_tex(content, "tab:stats_hypervolume", latex_hv)
@@ -624,7 +614,7 @@ if MAIN_TEX.exists():
         if latex_ci:
             content, replaced_ci = replace_table_in_tex(content, "tab:hv_equivalence_ci", latex_ci)
 
-    if replaced_runtime or replaced_hv or replaced_eq or replaced_rob or replaced_ci:
+    if replaced_hv or replaced_eq or replaced_rob or replaced_ci:
         if len(content) >= original_len * 0.9:
             MAIN_TEX.write_text(content, encoding="utf-8")
             print(f"main.tex updated ({len(content)} bytes)")
@@ -640,8 +630,6 @@ if MAIN_TEX.exists():
 else:
     print(f"Warning: {MAIN_TEX} not found")
     print("\nAdd these tables to your LaTeX document:")
-    print("\n--- Runtime Statistics Table ---")
-    print(latex_runtime)
     if latex_hv:
         print("\n--- Hypervolume Statistics Table ---")
         print(latex_hv)
