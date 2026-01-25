@@ -41,6 +41,7 @@ class SMSEMOAState(AlgorithmState):
     ref_offset: float = 0.1
     ref_adaptive: bool = True
     pressure: int = 2
+    eliminate_duplicates: bool = False
     crossover_fn: Callable[[np.ndarray], np.ndarray] | None = None
     mutation_fn: Callable[[np.ndarray], np.ndarray] | None = None
 
