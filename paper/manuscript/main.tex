@@ -381,6 +381,10 @@ Figure~\ref{fig:protocol} summarizes the benchmark protocol and semantic-alignme
 
 To ensure comparability across frameworks, we standardize the algorithmic settings of NSGA-II: population size $N=100$, SBX crossover probability $p_c=1.0$ and distribution index $\eta_c=20$, polynomial mutation distribution index $\eta_m=20$ and mutation probability $p_m=1/n$, tournament selection, and rank--crowding survival. For each framework we map these settings to the closest available implementation.
 
+For SMS-EMOA we follow the same protocol and align what we can: population size $N=100$, SBX ($p_c=1.0$, $\eta_c=20$), polynomial mutation ($p_m=1/n$, $\eta_m=20$), random parent selection, and a steady-state $(\mu+1)$ loop (one offspring per iteration). However, the hypervolume-contribution reference point is not defined consistently across toolkits: \VAMOS{} and jMetalPy compute contributions in raw objective space with an adaptive reference point $r = \max(F) + 1$, while pymoo normalizes objectives and uses a fixed shifted reference point $r = \mathbf{1} + \epsilon$ (we set $\epsilon=1$). We therefore report the cross-framework SMS-EMOA comparison with this caveat.
+
+For MOEA/D we align population size $N=100$, weight vectors (uniform for two objectives; a shared $W3D\_100$ set for three objectives), neighborhood size $T=20$, neighborhood selection probability $\delta=0.9$, and replacement limit $\eta=20$ (effectively unrestricted, matching pymoo's update rule). We use PBI scalarization with $\theta=5$ and a DE/current/1/bin-style crossover ($CR=1.0$, $F=0.5$) followed by polynomial mutation ($p_m=1/n$, $\eta_m=20$), mapping these settings to the closest available implementation in each toolkit.
+
 This workflow follows standard practice in comparative MOEA studies (independent runs, indicator computation, and statistical testing) and is consistent with the experimentation methodology described in jMetalPy~\cite{benitez2019jmetalpy}. Our main extension is to make the \emph{inputs} to this workflow comparable across toolkits by enforcing semantic alignment of both problem definitions and operator probabilities.
 
 Crucially, we align \emph{semantics} (not only parameter names) and enforce consistent benchmark definitions. Two examples illustrate why this matters. First, in \textbf{pymoo} the polynomial mutation operator exposes both an individual-level probability (\texttt{prob}) and a per-variable probability (\texttt{prob\_var}); to match the standard ``$p_m=1/n$ per decision variable'' setting used by DEAP/jMetalPy, we set \texttt{prob}=1 and \texttt{prob\_var}=1/n. Second, some libraries ship benchmark problems under canonical names but with library-specific domains; for instance, Platypus' built-in ZDT base class uses $[0,1]^n$, whereas ZDT4 is defined with $x_1\in[0,1]$ and $x_{2..n}\in[-5,5]$.
@@ -425,9 +429,9 @@ Table~\ref{tab:backends} reports median runtime for \VAMOS{} backends aggregated
 \toprule
 \textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Numba & \textbf{7.09} & \textbf{6.58} & \textbf{7.14} & \textbf{6.94} \\
-MooCore & 7.26 & 6.70 & 7.30 & 7.09 \\
-NumPy & 13.68 & 12.58 & 12.63 & 12.96 \\
+Numba & \textbf{6.49} & \textbf{6.02} & \textbf{3.52} & \textbf{5.34} \\
+MooCore & 6.92 & 6.15 & 3.63 & 5.57 \\
+NumPy & 12.77 & 12.02 & 6.47 & 10.42 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -444,11 +448,11 @@ Table~\ref{tab:frameworks_perf} compares \VAMOS{} against other Python framework
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-VAMOS & \textbf{7.09} & \textbf{6.58} & \textbf{7.14} & \textbf{6.94} \\
-pymoo & 9.10 & 8.19 & 8.29 & 8.53 \\
-DEAP & 41.25 & 44.48 & 78.69 & 54.81 \\
-jMetalPy & 33.96 & 29.87 & 78.64 & 47.49 \\
-Platypus & 54.90 & 56.69 & 91.31 & 67.63 \\
+VAMOS & \textbf{6.49} & \textbf{6.02} & \textbf{3.52} & \textbf{5.34} \\
+pymoo & 8.77 & 7.86 & 4.24 & 6.96 \\
+DEAP & 39.70 & 41.50 & 42.64 & 41.28 \\
+jMetalPy & 31.15 & 29.01 & 42.80 & 34.32 \\
+Platypus & 55.73 & 52.92 & 50.11 & 52.92 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -468,27 +472,27 @@ Because we perform per-problem hypothesis tests, we apply Holm's step-down corre
 \toprule
 \textbf{Problem} & \textbf{VAMOS (numba)} & \textbf{pymoo} & \textbf{p-value} & \textbf{Sig.} \\
 \midrule
-zdt1 & \textbf{0.991} & 0.991 & 1.000 &  \\
+zdt1 & 0.991 & \textbf{0.991} & 1.000 &  \\
 zdt2 & \textbf{0.982} & 0.982 & 1.000 &  \\
-zdt3 & \textbf{0.996} & 0.996 & 1.000 &  \\
-zdt4 & 0.991 & \textbf{0.991} & 1.000 &  \\
-zdt6 & 0.981 & \textbf{0.983} & <0.0001 & $\checkmark$ \\
-dtlz1 & 0.916 & \textbf{0.916} & 1.000 &  \\
-dtlz2 & \textbf{0.789} & 0.788 & 1.000 &  \\
-dtlz3 & \textbf{0.795} & 0.787 & 0.471 &  \\
-dtlz4 & 0.794 & \textbf{0.797} & 1.000 &  \\
-dtlz5 & \textbf{0.964} & 0.964 & 1.000 &  \\
-dtlz6 & \textbf{0.547} & 0.514 & 1.000 &  \\
-dtlz7 & 0.882 & \textbf{0.891} & 0.142 &  \\
-wfg1 & 0.616 & \textbf{0.629} & 1.000 &  \\
-wfg2 & 0.985 & \textbf{0.986} & 1.000 &  \\
-wfg3 & \textbf{0.978} & 0.978 & 1.000 &  \\
-wfg4 & 0.966 & \textbf{0.967} & 1.000 &  \\
-wfg5 & 0.827 & \textbf{0.827} & 1.000 &  \\
-wfg6 & 0.841 & \textbf{0.850} & 1.000 &  \\
-wfg7 & 0.969 & \textbf{0.970} & 0.729 &  \\
-wfg8 & 0.755 & \textbf{0.755} & 1.000 &  \\
-wfg9 & \textbf{0.938} & 0.714 & 1.000 &  \\
+zdt3 & 0.996 & \textbf{0.996} & 1.000 &  \\
+zdt4 & 0.990 & \textbf{0.990} & 1.000 &  \\
+zdt6 & 0.980 & \textbf{0.983} & <0.0001 & $\checkmark$ \\
+dtlz1 & \textbf{0.915} & 0.914 & 1.000 &  \\
+dtlz2 & 0.786 & \textbf{0.790} & 0.527 &  \\
+dtlz3 & \textbf{0.707} & 0.651 & 1.000 &  \\
+dtlz4 & \textbf{0.799} & 0.792 & 1.000 &  \\
+dtlz5 & 0.964 & \textbf{0.964} & 1.000 &  \\
+dtlz6 & 0.408 & \textbf{0.440} & 1.000 &  \\
+dtlz7 & 0.883 & \textbf{0.888} & 1.000 &  \\
+wfg1 & 0.437 & \textbf{0.457} & 1.000 &  \\
+wfg2 & 0.982 & \textbf{0.983} & 1.000 &  \\
+wfg3 & 0.974 & \textbf{0.974} & 1.000 &  \\
+wfg4 & 0.960 & \textbf{0.961} & 1.000 &  \\
+wfg5 & 0.826 & \textbf{0.827} & 0.291 &  \\
+wfg6 & 0.833 & \textbf{0.846} & 1.000 &  \\
+wfg7 & 0.966 & \textbf{0.966} & 1.000 &  \\
+wfg8 & 0.744 & \textbf{0.745} & 1.000 &  \\
+wfg9 & \textbf{0.934} & 0.714 & 1.000 &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -501,9 +505,9 @@ wfg9 & \textbf{0.938} & 0.714 & 1.000 &  \\
 \toprule
 \textbf{Framework} & \textbf{Eq.\ problems} & \textbf{Non-inf.\ problems} & \textbf{Median $\Delta$HV (\%)} \\
 \midrule
-pymoo & 13/21 & 15/21 & -0.05 \\
-DEAP & 13/21 & 15/21 & -0.01 \\
-jMetalPy & 16/21 & 16/21 & -0.01 \\
+pymoo & 14/21 & 16/21 & -0.03 \\
+DEAP & 14/21 & 16/21 & -0.04 \\
+jMetalPy & 15/21 & 16/21 & -0.04 \\
 Platypus & 13/21 & 16/21 & -0.10 \\
 \bottomrule
 \end{tabular}
@@ -517,11 +521,11 @@ Platypus & 13/21 & 16/21 & -0.10 \\
 \toprule
 \textbf{Framework} & \textbf{Median IQR(HV)} & \textbf{Median \% seeds near-best} \\
 \midrule
-VAMOS (numba) & 0.003 & 93.3 \\
-pymoo & 0.003 & 100.0 \\
-DEAP & 0.003 & 100.0 \\
-jMetalPy & 0.004 & 86.7 \\
-Platypus & 0.003 & 100.0 \\
+VAMOS (numba) & 0.005 & 86.7 \\
+pymoo & 0.006 & 93.3 \\
+DEAP & 0.004 & 100.0 \\
+jMetalPy & 0.006 & 90.0 \\
+Platypus & 0.004 & 96.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -730,29 +734,29 @@ Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-
 \toprule
 \textbf{Problem} & \textbf{Numba} & \textbf{MooCore} & \textbf{NumPy} \\
 \midrule
-dtlz1 & 7.40 & \textbf{7.24} & 14.04 \\
-dtlz2 & \textbf{6.75} & 6.98 & 13.04 \\
-dtlz3 & 6.05 & \textbf{5.94} & 11.62 \\
-dtlz4 & \textbf{6.29} & 6.38 & 11.39 \\
-dtlz5 & \textbf{6.02} & 7.03 & 11.35 \\
-dtlz6 & \textbf{6.14} & 6.54 & 11.42 \\
-dtlz7 & \textbf{6.61} & 6.93 & 12.92 \\
-wfg1 & \textbf{6.35} & 6.49 & 12.44 \\
-wfg2 & 6.61 & \textbf{6.60} & 13.64 \\
-wfg3 & \textbf{7.20} & 7.23 & 12.10 \\
-wfg4 & \textbf{6.21} & 6.40 & 11.47 \\
-wfg5 & 6.75 & \textbf{6.46} & 11.70 \\
-wfg6 & \textbf{7.36} & 7.75 & 12.86 \\
-wfg7 & \textbf{6.33} & 6.38 & 11.15 \\
-wfg8 & \textbf{7.05} & 7.23 & 12.57 \\
-wfg9 & \textbf{9.02} & 9.29 & 14.37 \\
-zdt1 & \textbf{6.63} & 6.76 & 12.13 \\
-zdt2 & 6.58 & \textbf{6.46} & 11.97 \\
-zdt3 & \textbf{7.09} & 7.36 & 13.40 \\
-zdt4 & \textbf{7.10} & 7.38 & 14.26 \\
-zdt6 & \textbf{7.72} & 7.87 & 15.14 \\
+dtlz1 & 6.71 & \textbf{6.54} & 12.92 \\
+dtlz2 & \textbf{6.63} & 7.14 & 12.72 \\
+dtlz3 & \textbf{6.20} & 6.69 & 12.92 \\
+dtlz4 & \textbf{6.47} & 6.82 & 12.78 \\
+dtlz5 & 5.84 & \textbf{5.41} & 11.31 \\
+dtlz6 & 3.40 & \textbf{3.38} & 6.60 \\
+dtlz7 & \textbf{3.43} & 3.55 & 6.58 \\
+wfg1 & 3.34 & \textbf{3.33} & 6.34 \\
+wfg2 & \textbf{3.43} & 3.54 & 6.50 \\
+wfg3 & 3.51 & \textbf{3.51} & 6.31 \\
+wfg4 & \textbf{3.38} & 3.48 & 6.21 \\
+wfg5 & \textbf{3.30} & 3.45 & 6.23 \\
+wfg6 & \textbf{3.96} & 4.04 & 6.98 \\
+wfg7 & \textbf{3.40} & 3.47 & 6.26 \\
+wfg8 & \textbf{3.94} & 3.95 & 6.72 \\
+wfg9 & \textbf{4.96} & 5.06 & 7.70 \\
+zdt1 & \textbf{6.94} & 7.26 & 12.68 \\
+zdt2 & \textbf{6.67} & 6.87 & 13.02 \\
+zdt3 & \textbf{6.67} & 7.15 & 12.85 \\
+zdt4 & \textbf{6.09} & 6.80 & 13.12 \\
+zdt6 & \textbf{6.21} & 6.73 & 12.44 \\
 \midrule
-\textbf{Average} & \textbf{6.82} & 6.99 & 12.62 \\
+\textbf{Average} & \textbf{4.97} & 5.15 & 9.49 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -766,29 +770,29 @@ zdt6 & \textbf{7.72} & 7.87 & 15.14 \\
 \toprule
 \textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{DEAP} & \textbf{jMetalPy} & \textbf{Platypus} \\
 \midrule
-dtlz1 & \textbf{7.40} & 8.41 & 46.99 & 30.91 & 53.90 \\
-dtlz2 & \textbf{6.75} & 8.40 & 47.69 & 30.38 & 59.61 \\
-dtlz3 & \textbf{6.05} & 7.11 & 42.14 & 33.87 & 48.50 \\
-dtlz4 & \textbf{6.29} & 7.23 & 46.02 & 26.55 & 54.57 \\
-dtlz5 & \textbf{6.02} & 7.24 & 39.78 & 27.92 & 65.19 \\
-dtlz6 & \textbf{6.14} & 8.69 & 36.32 & 29.76 & 53.42 \\
-dtlz7 & \textbf{6.61} & 7.83 & 41.02 & 30.23 & 58.68 \\
-wfg1 & \textbf{6.35} & 7.92 & 49.57 & 47.81 & 63.58 \\
-wfg2 & \textbf{6.61} & 7.54 & 79.63 & 81.15 & 91.84 \\
-wfg3 & \textbf{7.20} & 8.38 & 77.25 & 78.64 & 92.21 \\
-wfg4 & \textbf{6.21} & 7.51 & 47.06 & 49.50 & 61.41 \\
-wfg5 & \textbf{6.75} & 7.53 & 47.32 & 45.05 & 78.77 \\
-wfg6 & \textbf{7.36} & 8.49 & 204.99 & 199.94 & 245.75 \\
-wfg7 & \textbf{6.33} & 7.09 & 77.91 & 62.51 & 75.33 \\
-wfg8 & \textbf{7.05} & 8.04 & 130.44 & 140.45 & 159.21 \\
-wfg9 & \textbf{9.02} & 10.35 & 363.28 & 383.58 & 381.14 \\
-zdt1 & \textbf{6.63} & 7.79 & 41.06 & 32.33 & 60.09 \\
-zdt2 & \textbf{6.58} & 7.94 & 38.21 & 35.32 & 53.61 \\
-zdt3 & \textbf{7.09} & 9.13 & 44.47 & 35.05 & 62.99 \\
-zdt4 & \textbf{7.10} & 9.34 & 46.36 & 34.36 & 52.15 \\
-zdt6 & \textbf{7.72} & 13.92 & 36.49 & 33.45 & 56.82 \\
+dtlz1 & \textbf{6.71} & 8.70 & 43.72 & 29.56 & 50.92 \\
+dtlz2 & \textbf{6.63} & 8.65 & 41.46 & 29.21 & 61.24 \\
+dtlz3 & \textbf{6.20} & 8.48 & 46.27 & 30.74 & 56.30 \\
+dtlz4 & \textbf{6.47} & 8.32 & 42.39 & 29.94 & 60.63 \\
+dtlz5 & \textbf{5.84} & 6.75 & 25.09 & 21.00 & 38.73 \\
+dtlz6 & \textbf{3.40} & 4.41 & 22.09 & 15.76 & 30.08 \\
+dtlz7 & \textbf{3.43} & 4.20 & 21.08 & 16.68 & 31.50 \\
+wfg1 & \textbf{3.34} & 4.17 & 27.98 & 27.17 & 35.50 \\
+wfg2 & \textbf{3.43} & 4.23 & 43.77 & 44.07 & 50.44 \\
+wfg3 & \textbf{3.51} & 4.12 & 42.80 & 42.89 & 51.17 \\
+wfg4 & \textbf{3.38} & 4.07 & 25.97 & 24.10 & 34.31 \\
+wfg5 & \textbf{3.30} & 4.13 & 26.01 & 24.46 & 34.86 \\
+wfg6 & \textbf{3.96} & 4.59 & 114.42 & 112.25 & 120.87 \\
+wfg7 & \textbf{3.40} & 4.06 & 34.60 & 34.92 & 43.41 \\
+wfg8 & \textbf{3.94} & 4.45 & 72.66 & 78.70 & 78.91 \\
+wfg9 & \textbf{4.96} & 5.59 & 201.31 & 213.85 & 211.07 \\
+zdt1 & \textbf{6.94} & 8.73 & 39.76 & 33.56 & 57.69 \\
+zdt2 & \textbf{6.67} & 8.60 & 39.90 & 32.22 & 57.38 \\
+zdt3 & \textbf{6.67} & 8.69 & 40.82 & 32.42 & 59.13 \\
+zdt4 & \textbf{6.09} & 8.38 & 40.27 & 29.36 & 46.21 \\
+zdt6 & \textbf{6.21} & 10.08 & 37.49 & 27.81 & 49.90 \\
 \midrule
-\textbf{Average} & \textbf{6.82} & 8.37 & 75.43 & 69.94 & 91.85 \\
+\textbf{Average} & \textbf{4.97} & 6.35 & 49.04 & 44.32 & 60.01 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -802,27 +806,27 @@ zdt6 & \textbf{7.72} & 13.92 & 36.49 & 33.45 & 56.82 \\
 \toprule
 \textbf{Problem} & \textbf{pymoo CI} & \textbf{DEAP CI} & \textbf{jMetalPy CI} & \textbf{Platypus CI} \\
 \midrule
-dtlz1 & $[-0.35,+0.58]$ & $[-0.39,+0.50]$ & $[-0.55,+0.51]$ & $[-0.15,+0.41]$ \\
-dtlz2 & $[-1.03,+0.89]$ & $[-1.75,+0.15]$ & $[-0.77,+0.59]$ & $[-1.25,+0.38]$ \\
-dtlz3 & $[+0.07,+1.94]$ & $[-0.53,+1.68]$ & $[-1.09,+1.17]$ & $[-0.66,+1.09]$ \\
-dtlz4 & $[-1.49,+0.86]$ & $[-2.11,-0.25]$ & $[-0.70,+0.02]$ & $[-0.61,+83.89]$ \\
-dtlz5 & $[-0.10,+0.19]$ & $[-0.10,+0.10]$ & $[-0.14,+0.06]$ & $[-0.20,-0.05]$ \\
-dtlz6 & $[-3.53,+12.57]$ & $[-13.39,+11.65]$ & $[-3.80,+22.60]$ & $[-14.07,+5.30]$ \\
-dtlz7 & $[-1.23,-0.84]$ & $[-1.16,-0.56]$ & $[-1.36,+0.02]$ & $[-1.14,+21.70]$ \\
-wfg1 & $[-7.95,+4.90]$ & $[-6.56,+1.68]$ & $[-5.10,+5.56]$ & $[+16.65,+27.56]$ \\
-wfg2 & $[-0.13,+0.04]$ & $[-0.07,+0.05]$ & $[-0.06,+0.07]$ & $[-0.12,-0.02]$ \\
-wfg3 & $[-0.16,+0.11]$ & $[-0.12,+0.13]$ & $[-0.16,+0.16]$ & $[-0.35,-0.18]$ \\
-wfg4 & $[-0.18,-0.01]$ & $[-0.20,-0.09]$ & $[-0.11,+0.16]$ & $[-0.56,-0.30]$ \\
-wfg5 & $[-0.15,+0.06]$ & $[-0.19,+0.07]$ & $[-0.12,-0.02]$ & $[-0.27,-0.11]$ \\
-wfg6 & $[-1.21,+0.30]$ & $[-1.24,+1.69]$ & $[-2.20,+0.76]$ & $[-1.91,+0.93]$ \\
-wfg7 & $[-0.20,+0.00]$ & $[-0.19,+0.00]$ & $[-0.14,+0.05]$ & $[-0.36,-0.06]$ \\
-wfg8 & $[-0.56,+0.42]$ & $[-0.32,+0.75]$ & $[-0.54,+0.64]$ & $[-4.01,-3.40]$ \\
-wfg9 & $[-0.16,+1.61]$ & $[+0.10,+32.24]$ & $[-0.22,+0.64]$ & $[-0.27,+0.70]$ \\
-zdt1 & $[-0.00,+0.03]$ & $[-0.02,+0.03]$ & $[-0.02,+0.02]$ & $[-0.08,-0.03]$ \\
-zdt2 & $[-0.01,+0.06]$ & $[-0.04,+0.02]$ & $[-0.03,+0.04]$ & $[-0.13,-0.06]$ \\
-zdt3 & $[-0.01,+0.01]$ & $[-0.01,+0.00]$ & $[-0.00,+0.02]$ & $[-0.03,-0.02]$ \\
-zdt4 & $[-0.02,+0.02]$ & $[-0.03,+0.03]$ & $[-0.04,+0.03]$ & $[-0.04,-0.01]$ \\
-zdt6 & $[-0.25,-0.20]$ & $[+0.16,+0.21]$ & $[+0.10,+0.17]$ & $[-0.34,-0.27]$ \\
+dtlz1 & $[-0.43,+0.29]$ & $[-0.48,+0.05]$ & $[-0.72,+0.29]$ & $[-0.07,+0.85]$ \\
+dtlz2 & $[-1.17,+0.11]$ & $[-1.31,-0.51]$ & $[-1.16,+0.30]$ & $[-0.94,+0.38]$ \\
+dtlz3 & $[+1.98,+26.42]$ & $[-6.27,+12.61]$ & $[-10.86,+9.93]$ & $[+9.90,+40.20]$ \\
+dtlz4 & $[-0.35,+1.10]$ & $[-0.77,+0.03]$ & $[-0.91,+0.78]$ & $[-1.02,+84.30]$ \\
+dtlz5 & $[-0.09,+0.08]$ & $[-0.07,+0.11]$ & $[-0.15,+0.11]$ & $[-0.19,+0.02]$ \\
+dtlz6 & $[-16.50,-3.07]$ & $[-20.05,+6.16]$ & $[-14.09,+19.49]$ & $[-36.54,-15.09]$ \\
+dtlz7 & $[-1.08,+0.21]$ & $[-0.67,-0.22]$ & $[-0.82,+0.57]$ & $[-1.02,+21.20]$ \\
+wfg1 & $[-10.74,+6.15]$ & $[-13.93,+1.49]$ & $[-5.66,+3.29]$ & $[+41.87,+81.97]$ \\
+wfg2 & $[-0.21,+0.11]$ & $[-0.14,+0.08]$ & $[-0.11,+0.16]$ & $[-0.23,+0.05]$ \\
+wfg3 & $[-0.15,+0.03]$ & $[-0.19,+0.08]$ & $[-0.19,+0.41]$ & $[-0.28,-0.12]$ \\
+wfg4 & $[-0.32,-0.04]$ & $[-0.34,-0.02]$ & $[-0.29,+0.03]$ & $[-0.64,-0.29]$ \\
+wfg5 & $[-0.22,+0.04]$ & $[-0.11,+0.04]$ & $[-0.11,+0.03]$ & $[-0.43,-0.24]$ \\
+wfg6 & $[-1.09,+0.30]$ & $[-1.59,+1.52]$ & $[-2.31,+0.46]$ & $[-1.85,+0.97]$ \\
+wfg7 & $[-0.10,+0.08]$ & $[-0.21,+0.03]$ & $[-0.13,+0.09]$ & $[-0.20,-0.08]$ \\
+wfg8 & $[-0.54,+0.47]$ & $[+0.23,+1.07]$ & $[-0.44,+0.53]$ & $[-3.75,-3.09]$ \\
+wfg9 & $[-0.13,+0.61]$ & $[+0.09,+31.54]$ & $[-0.28,+1.11]$ & $[-0.58,+1.75]$ \\
+zdt1 & $[-0.03,+0.00]$ & $[-0.04,+0.01]$ & $[-0.02,+0.01]$ & $[-0.09,-0.06]$ \\
+zdt2 & $[-0.01,+0.02]$ & $[-0.06,-0.02]$ & $[-0.03,+0.04]$ & $[-0.13,-0.08]$ \\
+zdt3 & $[-0.01,+0.00]$ & $[-0.02,+0.01]$ & $[-0.01,+0.01]$ & $[-0.03,-0.02]$ \\
+zdt4 & $[-0.10,+0.04]$ & $[-0.09,+0.10]$ & $[-0.05,+0.08]$ & $[-0.02,+0.05]$ \\
+zdt6 & $[-0.30,-0.20]$ & $[+0.11,+0.19]$ & $[+0.06,+0.15]$ & $[-0.40,-0.32]$ \\
 \bottomrule
 \end{tabular}
 \end{table*}

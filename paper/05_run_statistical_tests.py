@@ -5,11 +5,12 @@ Performs Wilcoxon signed-rank tests and generates statistical comparison tables.
 
 Usage: python paper/05_run_statistical_tests.py
 
-Reads: experiments/benchmark_paper.csv
+Reads: experiments/benchmark_paper*.csv (controlled by VAMOS_PAPER_ALGORITHM)
 """
 
 from __future__ import annotations
 
+import os
 import pandas as pd
 import numpy as np
 import hashlib
@@ -22,12 +23,35 @@ from scipy import stats
 
 DATA_DIR = Path(__file__).parent.parent / "experiments"
 OUTPUT_DIR = Path(__file__).parent / "manuscript"
-INPUT_CSV = DATA_DIR / "benchmark_paper.csv"
+
+_algo_env = os.environ.get("VAMOS_PAPER_ALGORITHM", "nsgaii").strip().lower()
+if _algo_env in {"nsgaii", "nsga2", "nsga-ii", "nsga_ii"}:
+    ALGORITHM = "nsgaii"
+elif _algo_env in {"smsemoa", "sms-emoa", "sms_emoa"}:
+    ALGORITHM = "smsemoa"
+elif _algo_env in {"moead", "moea/d", "moea-d", "moea_d"}:
+    ALGORITHM = "moead"
+else:
+    raise ValueError(f"Unsupported VAMOS_PAPER_ALGORITHM='{_algo_env}'. Expected 'nsgaii', 'smsemoa', or 'moead'.")
+
+ALGORITHM_DISPLAY = {"nsgaii": "NSGA-II", "smsemoa": "SMS-EMOA", "moead": "MOEA/D"}[ALGORITHM]
+
+if ALGORITHM == "nsgaii":
+    _default_input = DATA_DIR / "benchmark_paper.csv"
+elif ALGORITHM == "smsemoa":
+    _default_input = DATA_DIR / "benchmark_paper_smsemoa.csv"
+else:
+    _default_input = DATA_DIR / "benchmark_paper_moead.csv"
+INPUT_CSV = Path(os.environ.get("VAMOS_PAPER_INPUT_CSV") or os.environ.get("VAMOS_PAPER_OUTPUT_CSV") or str(_default_input))
 
 ALPHA = 0.05  # Significance level
 HV_EQ_MARGIN_REL = 0.01  # +/-1% relative margin for equivalence on normalized HV
 BOOTSTRAP_N = 5000  # paired bootstrap replicates for CI
 BOOTSTRAP_CI = 0.90  # 90% CI (equivalence via CI-in-margin criterion)
+
+BASELINE_FRAMEWORK = "VAMOS (numba)"
+DEFAULT_UPDATE_MAIN_TEX = "1" if ALGORITHM == "nsgaii" else "0"
+UPDATE_MAIN_TEX = bool(int(os.environ.get("VAMOS_PAPER_UPDATE_MAIN_TEX", DEFAULT_UPDATE_MAIN_TEX)))
 
 # =============================================================================
 # LOAD DATA
@@ -35,7 +59,10 @@ BOOTSTRAP_CI = 0.90  # 90% CI (equivalence via CI-in-margin criterion)
 
 print("Loading benchmark data...")
 df = pd.read_csv(INPUT_CSV)
+if "algorithm" in df.columns:
+    df = df[df["algorithm"] == ALGORITHM_DISPLAY].copy()
 print(f"Loaded {len(df)} results")
+print(f"Algorithm: {ALGORITHM_DISPLAY} ({ALGORITHM})")
 print(f"Problems: {df['problem'].nunique()}")
 print(f"Seeds: {df['seed'].nunique()}")
 print(f"Frameworks: {df['framework'].unique().tolist()}")
@@ -108,7 +135,7 @@ def stable_seed(*parts: str) -> int:
     return int.from_bytes(h.digest(), "little", signed=False)
 
 
-def compare_frameworks(df, metric, fw1, fw2, *, higher_is_better: bool):
+def compare_frameworks(df, metric, fw1, fw2, *, higher_is_better: bool) -> pd.DataFrame:
     """Compare two frameworks across all problems using Wilcoxon test."""
     results = []
 
@@ -131,8 +158,10 @@ def compare_frameworks(df, metric, fw1, fw2, *, higher_is_better: bool):
         results.append(
             {
                 "problem": problem,
-                f"{fw1}_median": m1,
-                f"{fw2}_median": m2,
+                "fw1": fw1,
+                "fw2": fw2,
+                "fw1_median": m1,
+                "fw2_median": m2,
                 "p_value_raw": p_value,
                 "effect_size": effect,
                 "winner": winner,
@@ -143,38 +172,61 @@ def compare_frameworks(df, metric, fw1, fw2, *, higher_is_better: bool):
 
 
 print("\n" + "=" * 60)
-print("RUNTIME COMPARISON: VAMOS (numba) vs pymoo")
+print(f"RUNTIME COMPARISON: {BASELINE_FRAMEWORK} vs baselines")
 print("=" * 60)
 
-runtime_comparison = compare_frameworks(df, "runtime_seconds", "VAMOS (numba)", "pymoo", higher_is_better=False)
-runtime_comparison["p_value_adj"] = holm_adjust(runtime_comparison["p_value_raw"].tolist())
-runtime_comparison["significant"] = runtime_comparison["p_value_adj"].apply(lambda p: bool(np.isfinite(p) and p < ALPHA))
-print(runtime_comparison.to_string())
+if BASELINE_FRAMEWORK not in set(df["framework"].unique()):
+    raise ValueError(f"Missing baseline framework '{BASELINE_FRAMEWORK}' in input CSV: {INPUT_CSV}")
 
-# Count wins
-vamos_wins = (runtime_comparison["winner"] == "VAMOS (numba)").sum()
-pymoo_wins = (runtime_comparison["winner"] == "pymoo").sum()
-significant_count = runtime_comparison["significant"].sum()
+if ALGORITHM == "smsemoa":
+    competitors = ["pymoo", "jMetalPy"]
+elif ALGORITHM == "moead":
+    competitors = ["pymoo", "jMetalPy", "Platypus"]
+else:
+    competitors = ["pymoo"]
+competitors = [f for f in competitors if f in set(df["framework"].unique())]
 
-print(f"\nVAMOS wins: {vamos_wins}/{len(runtime_comparison)}")
-print(f"pymoo wins: {pymoo_wins}/{len(runtime_comparison)}")
-print(f"Significant differences: {significant_count}/{len(runtime_comparison)}")
+runtime_comparisons: list[pd.DataFrame] = []
+for fw in competitors:
+    print("\n" + "-" * 60)
+    print(f"RUNTIME: {BASELINE_FRAMEWORK} vs {fw}")
+    print("-" * 60)
+    comp = compare_frameworks(df, "runtime_seconds", BASELINE_FRAMEWORK, fw, higher_is_better=False)
+    comp["metric"] = "runtime_seconds"
+    comp["p_value_adj"] = holm_adjust(comp["p_value_raw"].tolist())
+    comp["significant"] = comp["p_value_adj"].apply(lambda p: bool(np.isfinite(p) and p < ALPHA))
+    runtime_comparisons.append(comp)
+    print(comp.to_string())
+
+    # Count wins
+    base_wins = (comp["winner"] == BASELINE_FRAMEWORK).sum()
+    other_wins = (comp["winner"] == fw).sum()
+    significant_count = comp["significant"].sum()
+    print(f"\n{BASELINE_FRAMEWORK} wins: {base_wins}/{len(comp)}")
+    print(f"{fw} wins: {other_wins}/{len(comp)}")
+    print(f"Significant differences: {significant_count}/{len(comp)}")
 
 print("\n" + "=" * 60)
-print("HYPERVOLUME COMPARISON: VAMOS (numba) vs pymoo")
+print(f"HYPERVOLUME COMPARISON: {BASELINE_FRAMEWORK} vs baselines")
 print("=" * 60)
 
+hv_comparisons: list[pd.DataFrame] = []
 if "hypervolume" in df.columns:
-    hv_comparison = compare_frameworks(df, "hypervolume", "VAMOS (numba)", "pymoo", higher_is_better=True)
-    hv_comparison["p_value_adj"] = holm_adjust(hv_comparison["p_value_raw"].tolist())
-    hv_comparison["significant"] = hv_comparison["p_value_adj"].apply(lambda p: bool(np.isfinite(p) and p < ALPHA))
-    print(hv_comparison.to_string())
+    for fw in competitors:
+        print("\n" + "-" * 60)
+        print(f"HV: {BASELINE_FRAMEWORK} vs {fw}")
+        print("-" * 60)
+        comp = compare_frameworks(df, "hypervolume", BASELINE_FRAMEWORK, fw, higher_is_better=True)
+        comp["metric"] = "hypervolume"
+        comp["p_value_adj"] = holm_adjust(comp["p_value_raw"].tolist())
+        comp["significant"] = comp["p_value_adj"].apply(lambda p: bool(np.isfinite(p) and p < ALPHA))
+        hv_comparisons.append(comp)
+        print(comp.to_string())
 
-    vamos_hv_wins = (hv_comparison["winner"] == "VAMOS (numba)").sum()
-    pymoo_hv_wins = (hv_comparison["winner"] == "pymoo").sum()
-
-    print(f"\nHV: VAMOS better: {vamos_hv_wins}/{len(hv_comparison)}")
-    print(f"HV: pymoo better: {pymoo_hv_wins}/{len(hv_comparison)}")
+        base_wins = (comp["winner"] == BASELINE_FRAMEWORK).sum()
+        other_wins = (comp["winner"] == fw).sum()
+        print(f"\nHV: {BASELINE_FRAMEWORK} better: {base_wins}/{len(comp)}")
+        print(f"HV: {fw} better: {other_wins}/{len(comp)}")
 else:
     print("No hypervolume data found")
 
@@ -227,8 +279,8 @@ def generate_latex_stats_table(
 
     for _, row in comparison_df.iterrows():
         problem = row["problem"]
-        v1 = float(row[f"{fw1}_median"])
-        v2 = float(row[f"{fw2}_median"])
+        v1 = float(row["fw1_median"])
+        v2 = float(row["fw2_median"])
         p = row.get("p_value_adj", row.get("p_value_raw", float("nan")))
         sig = r"$\checkmark$" if row["significant"] else ""
 
@@ -265,12 +317,14 @@ print("SUMMARY STATISTICS")
 print("=" * 60)
 
 # Overall speedup
-vamos_times = df[df["framework"] == "VAMOS (numba)"]["runtime_seconds"]
-pymoo_times = df[df["framework"] == "pymoo"]["runtime_seconds"]
-
-print(f"\nVAMOS (numba) median runtime: {vamos_times.median():.2f}s")
-print(f"pymoo median runtime: {pymoo_times.median():.2f}s")
-print(f"Overall speedup: {pymoo_times.median() / vamos_times.median():.1f}x")
+base_times = df[df["framework"] == BASELINE_FRAMEWORK]["runtime_seconds"]
+print(f"\n{BASELINE_FRAMEWORK} median runtime: {base_times.median():.2f}s")
+for fw in competitors:
+    other_times = df[df["framework"] == fw]["runtime_seconds"]
+    if other_times.size == 0 or base_times.median() <= 0:
+        continue
+    print(f"{fw} median runtime: {other_times.median():.2f}s")
+    print(f"Overall speedup ({fw} / {BASELINE_FRAMEWORK}): {other_times.median() / base_times.median():.1f}x")
 
 
 # By family
@@ -288,24 +342,37 @@ df["family"] = df["problem"].apply(get_family)
 
 print("\nSpeedup by family:")
 for family in ["ZDT", "DTLZ", "WFG"]:
-    v = df[(df["framework"] == "VAMOS (numba)") & (df["family"] == family)]["runtime_seconds"].median()
-    p = df[(df["framework"] == "pymoo") & (df["family"] == family)]["runtime_seconds"].median()
-    if v > 0:
-        print(f"  {family}: {p / v:.1f}x")
+    v = df[(df["framework"] == BASELINE_FRAMEWORK) & (df["family"] == family)]["runtime_seconds"].median()
+    if not (np.isfinite(v) and v > 0):
+        continue
+    for fw in competitors:
+        other = df[(df["framework"] == fw) & (df["family"] == family)]["runtime_seconds"].median()
+        if np.isfinite(other):
+            print(f"  {family}: {fw} / {BASELINE_FRAMEWORK} = {other / v:.1f}x")
 
 # =============================================================================
 # SAVE RESULTS
 # =============================================================================
 
-output_csv = DATA_DIR / "statistical_tests.csv"
-runtime_comparison.to_csv(output_csv, index=False)
+comparisons_out = pd.concat(runtime_comparisons, ignore_index=True) if runtime_comparisons else pd.DataFrame()
+if "hypervolume" in df.columns and competitors:
+    hv_out = pd.concat(hv_comparisons, ignore_index=True) if hv_comparisons else pd.DataFrame()
+    if not hv_out.empty:
+        comparisons_out = pd.concat([comparisons_out, hv_out], ignore_index=True)
+
+if ALGORITHM == "nsgaii":
+    output_csv = DATA_DIR / "statistical_tests.csv"
+elif ALGORITHM == "smsemoa":
+    output_csv = DATA_DIR / "statistical_tests_smsemoa.csv"
+else:
+    output_csv = DATA_DIR / "statistical_tests_moead.csv"
+comparisons_out.to_csv(output_csv, index=False)
 print(f"\nSaved statistical results to {output_csv}")
 
 # =============================================================================
 # UPDATE MAIN.TEX
 # =============================================================================
 
-import re
 import subprocess
 
 MAIN_TEX = OUTPUT_DIR / "main.tex"
@@ -374,18 +441,33 @@ def compile_latex(tex_path: Path) -> bool:
 
 
 # Generate HV table if available
+latex_hv = ""
+latex_hv_export = ""
 if "hypervolume" in df.columns:
-    latex_hv = generate_latex_stats_table(
-        hv_comparison,
-        fw1="VAMOS (numba)",
-        fw2="pymoo",
-        caption="Normalized hypervolume comparison with Wilcoxon signed-rank test results (Holm-corrected).",
-        label="tab:stats_hypervolume",
-        higher_is_better=True,
-        value_decimals=3,
-    )
-else:
-    latex_hv = ""
+    hv_primary_fw = "pymoo" if "pymoo" in competitors else (competitors[0] if competitors else None)
+    if hv_primary_fw is not None:
+        hv_primary = compare_frameworks(df, "hypervolume", BASELINE_FRAMEWORK, hv_primary_fw, higher_is_better=True)
+        hv_primary["p_value_adj"] = holm_adjust(hv_primary["p_value_raw"].tolist())
+        hv_primary["significant"] = hv_primary["p_value_adj"].apply(lambda p: bool(np.isfinite(p) and p < ALPHA))
+        hv_caption = "Normalized hypervolume comparison with Wilcoxon signed-rank test results (Holm-corrected)."
+        latex_hv = generate_latex_stats_table(
+            hv_primary,
+            fw1=BASELINE_FRAMEWORK,
+            fw2=hv_primary_fw,
+            caption=hv_caption,
+            label="tab:stats_hypervolume",
+            higher_is_better=True,
+            value_decimals=3,
+        )
+        latex_hv_export = generate_latex_stats_table(
+            hv_primary,
+            fw1=BASELINE_FRAMEWORK,
+            fw2=hv_primary_fw,
+            caption=f"{ALGORITHM_DISPLAY}. {hv_caption}",
+            label=f"tab:stats_hypervolume_{ALGORITHM}",
+            higher_is_better=True,
+            value_decimals=3,
+        )
 
 
 # =============================================================================
@@ -410,13 +492,15 @@ def build_hv_equivalence_details(df_in: pd.DataFrame) -> pd.DataFrame:
 
     for fw in targets:
         for problem in problems:
-            a = df_in[(df_in["framework"] == "VAMOS (numba)") & (df_in["problem"] == problem)]["hypervolume"].to_numpy()
+            a = df_in[(df_in["framework"] == BASELINE_FRAMEWORK) & (df_in["problem"] == problem)]["hypervolume"].to_numpy()
             b = df_in[(df_in["framework"] == fw) & (df_in["problem"] == problem)]["hypervolume"].to_numpy()
             if a.size == 0 or b.size == 0 or a.size != b.size:
                 continue
 
             rel = _relative_diff(a, b)
-            lo, hi = paired_bootstrap_ci(rel, stat_fn=np.median, ci=BOOTSTRAP_CI, n_boot=BOOTSTRAP_N, seed=stable_seed(fw, problem, "hv_eq"))
+            lo, hi = paired_bootstrap_ci(
+                rel, stat_fn=np.median, ci=BOOTSTRAP_CI, n_boot=BOOTSTRAP_N, seed=stable_seed(fw, problem, "hv_eq")
+            )
 
             eq = bool(np.isfinite(lo) and np.isfinite(hi) and lo >= -HV_EQ_MARGIN_REL and hi <= HV_EQ_MARGIN_REL)
             noninf = bool(np.isfinite(lo) and lo >= -HV_EQ_MARGIN_REL)
@@ -459,7 +543,7 @@ def build_hv_equivalence_summary(df_details: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_hv_robustness_summary(df_in: pd.DataFrame) -> pd.DataFrame:
-    frameworks = ["VAMOS (numba)", "pymoo", "DEAP", "jMetalPy", "Platypus"]
+    frameworks = [BASELINE_FRAMEWORK, "pymoo", "DEAP", "jMetalPy", "Platypus"]
     frameworks = [f for f in frameworks if f in set(df_in["framework"].unique())]
     problems = sorted(df_in["problem"].unique().tolist())
 
@@ -497,12 +581,12 @@ def build_hv_robustness_summary(df_in: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def generate_latex_hv_equivalence_table(df_eq: pd.DataFrame) -> str:
+def generate_latex_hv_equivalence_table(df_eq: pd.DataFrame, *, label: str = "tab:hv_equivalence_summary") -> str:
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
         r"\caption{Normalized hypervolume equivalence summary (paired bootstrap 90\% CI; equivalence margin $\pm 1\%$ relative). Generated by \texttt{paper/05\_run\_statistical\_tests.py}.}",
-        r"\label{tab:hv_equivalence_summary}",
+        rf"\label{{{label}}}",
         r"\begin{tabular}{l|rrr}",
         r"\toprule",
         r"\textbf{Framework} & \textbf{Eq.\ problems} & \textbf{Non-inf.\ problems} & \textbf{Median $\Delta$HV (\%)} \\",
@@ -524,12 +608,12 @@ def generate_latex_hv_equivalence_table(df_eq: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
-def generate_latex_hv_robustness_table(df_rob: pd.DataFrame) -> str:
+def generate_latex_hv_robustness_table(df_rob: pd.DataFrame, *, label: str = "tab:hv_robustness_summary") -> str:
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
         r"\caption{Robustness summary for normalized hypervolume across seeds (median across problems). ``Near-best'' is defined per problem as HV $\ge 0.99 \cdot \max$ median(HV) among frameworks. Generated by \texttt{paper/05\_run\_statistical\_tests.py}.}",
-        r"\label{tab:hv_robustness_summary}",
+        rf"\label{{{label}}}",
         r"\begin{tabular}{l|rr}",
         r"\toprule",
         r"\textbf{Framework} & \textbf{Median IQR(HV)} & \textbf{Median \% seeds near-best} \\",
@@ -548,7 +632,7 @@ def generate_latex_hv_robustness_table(df_rob: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
-def generate_latex_hv_equivalence_ci_table(df_details: pd.DataFrame) -> str:
+def generate_latex_hv_equivalence_ci_table(df_details: pd.DataFrame, *, label: str = "tab:hv_equivalence_ci") -> str:
     targets = ["pymoo", "DEAP", "jMetalPy", "Platypus"]
     targets = [t for t in targets if t in set(df_details["framework"].unique())]
 
@@ -560,7 +644,7 @@ def generate_latex_hv_equivalence_ci_table(df_details: pd.DataFrame) -> str:
         r"\tiny",
         r"\centering",
         r"\caption{Per-problem paired bootstrap 90\% confidence intervals (CI) for the relative normalized hypervolume difference $\Delta = (\HV_{\VAMOS} - \HV_{\text{fw}})/\HV_{\text{fw}}$, reported in percent. Equivalence margin is $\pm 1\%$. Generated by \texttt{paper/05\_run\_statistical\_tests.py}.}",
-        r"\label{tab:hv_equivalence_ci}",
+        rf"\label{{{label}}}",
         r"\begin{tabular}{l|" + "r" * len(targets) + "}",
         r"\toprule",
         r"\textbf{Problem} & " + " & ".join([rf"\textbf{{{fw} CI}}" for fw in targets]) + r" \\",
@@ -586,11 +670,51 @@ def generate_latex_hv_equivalence_ci_table(df_details: pd.DataFrame) -> str:
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table*}"])
     return "\n".join(lines)
 
+
+latex_eq = ""
+latex_rob = ""
+latex_ci = ""
+latex_eq_export = ""
+latex_rob_export = ""
+latex_ci_export = ""
+eq_details = pd.DataFrame()
+if "hypervolume" in df.columns:
+    eq_details = build_hv_equivalence_details(df)
+    eq_summary = build_hv_equivalence_summary(eq_details)
+    rob_summary = build_hv_robustness_summary(df)
+    latex_eq = generate_latex_hv_equivalence_table(eq_summary, label="tab:hv_equivalence_summary")
+    latex_rob = generate_latex_hv_robustness_table(rob_summary, label="tab:hv_robustness_summary")
+    latex_ci = generate_latex_hv_equivalence_ci_table(eq_details, label="tab:hv_equivalence_ci") if not eq_details.empty else ""
+
+    _suffix = f"_{ALGORITHM}"
+    latex_eq_export = generate_latex_hv_equivalence_table(eq_summary, label=f"tab:hv_equivalence_summary{_suffix}")
+    latex_rob_export = generate_latex_hv_robustness_table(rob_summary, label=f"tab:hv_robustness_summary{_suffix}")
+    latex_ci_export = (
+        generate_latex_hv_equivalence_ci_table(eq_details, label=f"tab:hv_equivalence_ci{_suffix}") if not eq_details.empty else ""
+    )
+
 print("\n" + "=" * 60)
 print("UPDATING MAIN.TEX")
 print("=" * 60)
 
-if MAIN_TEX.exists():
+if not UPDATE_MAIN_TEX:
+    export_tex = OUTPUT_DIR / f"stats_{ALGORITHM}.tex"
+    parts = [
+        "% Auto-generated by paper/05_run_statistical_tests.py",
+        f"% Algorithm: {ALGORITHM_DISPLAY} ({ALGORITHM})",
+        f"% Source CSV: {INPUT_CSV}",
+        "%",
+        f"% Include from main.tex with: \\input{{{export_tex.name}}}",
+        "",
+    ]
+
+    tables = [t for t in [latex_hv_export, latex_eq_export, latex_rob_export, latex_ci_export] if t]
+    if tables:
+        export_tex.write_text("\n\n".join(parts + tables) + "\n", encoding="utf-8")
+        print(f"Skipping main.tex update (VAMOS_PAPER_UPDATE_MAIN_TEX=0). Wrote LaTeX tables to {export_tex}.")
+    else:
+        print("Skipping main.tex update (VAMOS_PAPER_UPDATE_MAIN_TEX=0). No LaTeX tables generated (missing hypervolume data?).")
+elif MAIN_TEX.exists():
     content = MAIN_TEX.read_text(encoding="utf-8")
     original_len = len(content)
 
@@ -602,17 +726,12 @@ if MAIN_TEX.exists():
     replaced_eq = False
     replaced_rob = False
     replaced_ci = False
-    if "hypervolume" in df.columns:
-        eq_details = build_hv_equivalence_details(df)
-        eq_summary = build_hv_equivalence_summary(eq_details)
-        rob_summary = build_hv_robustness_summary(df)
-        latex_eq = generate_latex_hv_equivalence_table(eq_summary)
-        latex_rob = generate_latex_hv_robustness_table(rob_summary)
-        latex_ci = generate_latex_hv_equivalence_ci_table(eq_details) if not eq_details.empty else ""
+    if latex_eq:
         content, replaced_eq = replace_table_in_tex(content, "tab:hv_equivalence_summary", latex_eq)
+    if latex_rob:
         content, replaced_rob = replace_table_in_tex(content, "tab:hv_robustness_summary", latex_rob)
-        if latex_ci:
-            content, replaced_ci = replace_table_in_tex(content, "tab:hv_equivalence_ci", latex_ci)
+    if latex_ci:
+        content, replaced_ci = replace_table_in_tex(content, "tab:hv_equivalence_ci", latex_ci)
 
     if replaced_hv or replaced_eq or replaced_rob or replaced_ci:
         if len(content) >= original_len * 0.9:
@@ -633,5 +752,14 @@ else:
     if latex_hv:
         print("\n--- Hypervolume Statistics Table ---")
         print(latex_hv)
+    if latex_eq:
+        print("\n--- Hypervolume Equivalence Summary ---")
+        print(latex_eq)
+    if latex_rob:
+        print("\n--- Hypervolume Robustness Summary ---")
+        print(latex_rob)
+    if latex_ci:
+        print("\n--- Hypervolume Equivalence CI Table ---")
+        print(latex_ci)
 
 print("\nDone!")
