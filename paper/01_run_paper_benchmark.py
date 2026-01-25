@@ -8,11 +8,13 @@ Usage: python paper/01_run_paper_benchmark.py
 Use 04_update_paper_tables_from_csv.py to generate and inject LaTeX tables.
 
 Environment variables:
-  - VAMOS_N_EVALS: evaluations per run (default: 100000)
+  - VAMOS_PAPER_ALGORITHM: all (default), nsgaii, smsemoa, moead, or a comma list (e.g., smsemoa,moead)
+  - VAMOS_PAPER_ALGORITHMS: comma-separated list to run sequentially (e.g., nsgaii,smsemoa,moead)
+  - VAMOS_N_EVALS: evaluations per run (default: 50000)
   - VAMOS_N_SEEDS: number of seeds (default: 30)
   - VAMOS_N_JOBS: joblib workers (default: CPU count - 1)
   - VAMOS_PAPER_FRAMEWORKS: comma-separated framework keys (default: all)
-  - VAMOS_PAPER_OUTPUT_CSV: output CSV path (default: experiments/benchmark_paper.csv)
+  - VAMOS_PAPER_OUTPUT_CSV: output CSV path (default: experiments/benchmark_paper*.csv)
   - VAMOS_NUMBA_WARMUP_EVALS: warmup evaluations before timing Numba runs (default: 2000)
   - VAMOS_OBJECTIVE_ALIGNMENT_CHECK: 1/0 run objective-alignment preflight (default: 1)
   - VAMOS_OBJECTIVE_ALIGNMENT_SAMPLES: random points per problem (default: 64)
@@ -23,6 +25,7 @@ Environment variables:
 import os
 import sys
 from pathlib import Path
+import subprocess
 
 ROOT_DIR = Path(__file__).parent.parent
 
@@ -41,11 +44,67 @@ import time
 import pandas as pd
 import numpy as np
 
+from vamos.foundation.data import weight_path
+
+
+def _normalize_algorithm(value: str) -> str:
+    algo = value.strip().lower()
+    if algo in {"nsgaii", "nsga2", "nsga-ii", "nsga_ii"}:
+        return "nsgaii"
+    if algo in {"smsemoa", "sms-emoa", "sms_emoa"}:
+        return "smsemoa"
+    if algo in {"moead", "moea/d", "moea-d", "moea_d"}:
+        return "moead"
+    raise ValueError(f"Unsupported algorithm '{value}'. Expected nsgaii, smsemoa, or moead.")
+
+
+_algo_list_env = os.environ.get("VAMOS_PAPER_ALGORITHMS")
+if not _algo_list_env:
+    _algo_single_raw = os.environ.get("VAMOS_PAPER_ALGORITHM")
+    _algo_single = (_algo_single_raw or "").strip().lower()
+    if not _algo_single:
+        _algo_list_env = "nsgaii,smsemoa,moead"
+    elif "," in _algo_single:
+        _algo_list_env = _algo_single
+    elif _algo_single in {"sms-moead", "smsemoa+moead", "smsemoa_moead", "moead+smsemoa", "moead-smsemoa"}:
+        _algo_list_env = "smsemoa,moead"
+    elif _algo_single in {"all", "full", "paper"}:
+        _algo_list_env = "nsgaii,smsemoa,moead"
+
+if _algo_list_env:
+    raw_list = [item.strip() for item in _algo_list_env.split(",") if item.strip()]
+    if not raw_list:
+        raise ValueError("VAMOS_PAPER_ALGORITHMS is set but empty.")
+    normalized = []
+    seen = set()
+    for item in raw_list:
+        algo = _normalize_algorithm(item)
+        if algo not in seen:
+            normalized.append(algo)
+            seen.add(algo)
+
+    print(f"Launching sequential benchmarks: {normalized}")
+    for algo in normalized:
+        env = os.environ.copy()
+        env["VAMOS_PAPER_ALGORITHM"] = algo
+        env.pop("VAMOS_PAPER_ALGORITHMS", None)
+        print("\n" + "=" * 60)
+        print(f"RUNNING {algo.upper()}")
+        print("=" * 60)
+        subprocess.run([sys.executable, __file__], env=env, check=True)
+    raise SystemExit(0)
+
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
 
 DATA_DIR = Path(__file__).parent.parent / "experiments"
+
+# Algorithm to benchmark: "nsgaii", "smsemoa", or "moead".
+_algo_env = os.environ.get("VAMOS_PAPER_ALGORITHM", "nsgaii")
+ALGORITHM = _normalize_algorithm(_algo_env)
+
+ALGORITHM_DISPLAY = {"nsgaii": "NSGA-II", "smsemoa": "SMS-EMOA", "moead": "MOEA/D"}[ALGORITHM]
 
 # Problems to benchmark (by family)
 ZDT_PROBLEMS = ["zdt1", "zdt2", "zdt3", "zdt4", "zdt6"]
@@ -56,9 +115,15 @@ USE_ZDT = True
 USE_DTLZ = True
 USE_WFG = True
 
-N_EVALS = int(os.environ.get("VAMOS_N_EVALS", "100000"))
+N_EVALS = int(os.environ.get("VAMOS_N_EVALS", "50000"))
 N_SEEDS = int(os.environ.get("VAMOS_N_SEEDS", "30"))
-OUTPUT_CSV = Path(os.environ.get("VAMOS_PAPER_OUTPUT_CSV", str(DATA_DIR / "benchmark_paper.csv")))
+if ALGORITHM == "nsgaii":
+    _default_output = DATA_DIR / "benchmark_paper.csv"
+elif ALGORITHM == "smsemoa":
+    _default_output = DATA_DIR / "benchmark_paper_smsemoa.csv"
+else:
+    _default_output = DATA_DIR / "benchmark_paper_moead.csv"
+OUTPUT_CSV = Path(os.environ.get("VAMOS_PAPER_OUTPUT_CSV", str(_default_output)))
 NUMBA_WARMUP_EVALS = int(os.environ.get("VAMOS_NUMBA_WARMUP_EVALS", "2000"))
 ALIGN_CHECK_ENABLED = bool(int(os.environ.get("VAMOS_OBJECTIVE_ALIGNMENT_CHECK", "1")))
 ALIGN_CHECK_SAMPLES = int(os.environ.get("VAMOS_OBJECTIVE_ALIGNMENT_SAMPLES", "64"))
@@ -69,6 +134,12 @@ POP_SIZE = 100
 CROSSOVER_PROB = 1.0
 CROSSOVER_ETA = 20.0
 MUTATION_ETA = 20.0
+MOEAD_NEIGHBOR_SIZE = 20
+MOEAD_DELTA = 0.9
+MOEAD_REPLACE_LIMIT = MOEAD_NEIGHBOR_SIZE
+MOEAD_DE_CR = 1.0
+MOEAD_DE_F = 0.5
+MOEAD_PBI_THETA = 5.0
 
 ZDT_N_VAR = {"zdt1": 30, "zdt2": 30, "zdt3": 30, "zdt4": 10, "zdt6": 10}
 DTLZ_N_VAR = {"dtlz1": 7, "dtlz2": 12, "dtlz3": 12, "dtlz4": 12, "dtlz5": 12, "dtlz6": 12, "dtlz7": 22}
@@ -76,9 +147,10 @@ WFG_N_VAR = 24
 ZDT_N_OBJ = 2
 DTLZ_N_OBJ = 3
 WFG_N_OBJ = 2
+MOEAD_WEIGHTS_DIR = weight_path("W3D_100.dat").parent
 
 # Frameworks to benchmark
-DEFAULT_FRAMEWORKS = [
+DEFAULT_FRAMEWORKS_NS = [
     "vamos-numpy",
     "vamos-numba",
     "vamos-moocore",  # VAMOS backends
@@ -87,6 +159,27 @@ DEFAULT_FRAMEWORKS = [
     "jmetalpy",  # jMetalPy
     "platypus",  # Platypus
 ]
+DEFAULT_FRAMEWORKS_SMS = [
+    "vamos-numpy",
+    "vamos-numba",
+    "vamos-moocore",  # VAMOS backends
+    "pymoo",
+    "jmetalpy",
+]
+DEFAULT_FRAMEWORKS_MOEAD = [
+    "vamos-numpy",
+    "vamos-numba",
+    "vamos-moocore",  # VAMOS backends
+    "pymoo",
+    "jmetalpy",
+    "platypus",
+]
+if ALGORITHM == "nsgaii":
+    DEFAULT_FRAMEWORKS = DEFAULT_FRAMEWORKS_NS
+elif ALGORITHM == "smsemoa":
+    DEFAULT_FRAMEWORKS = DEFAULT_FRAMEWORKS_SMS
+else:
+    DEFAULT_FRAMEWORKS = DEFAULT_FRAMEWORKS_MOEAD
 _frameworks_env = os.environ.get("VAMOS_PAPER_FRAMEWORKS")
 FRAMEWORKS = [f.strip() for f in _frameworks_env.split(",") if f.strip()] if _frameworks_env else DEFAULT_FRAMEWORKS
 
@@ -100,6 +193,7 @@ if USE_WFG:
     PROBLEMS.extend(WFG_PROBLEMS)
 
 print(f"Configured {len(PROBLEMS)} problems: {PROBLEMS}")
+print(f"Algorithm: {ALGORITHM_DISPLAY} ({ALGORITHM})")
 print(f"Frameworks: {FRAMEWORKS}")
 print(f"Evaluations per run: {N_EVALS:,}")
 print(f"Seeds: {N_SEEDS}")
@@ -120,7 +214,7 @@ print(f"Using {N_JOBS} parallel workers")
 
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos import optimize
-from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.algorithm.config import MOEADConfig, NSGAIIConfig, SMSEMOAConfig
 
 try:
     from .benchmark_utils import compute_hv
@@ -145,6 +239,22 @@ def problem_dims(problem_name: str) -> tuple[int, int]:
     if problem_name in WFG_PROBLEMS:
         return WFG_N_VAR, WFG_N_OBJ
     raise ValueError(f"Unknown problem dimensions for '{problem_name}'")
+
+
+def load_moead_weights(n_obj: int, pop_size: int) -> np.ndarray:
+    if n_obj <= 1:
+        return np.ones((pop_size, max(1, n_obj)), dtype=float)
+    if n_obj == 2:
+        vals = np.linspace(0.0, 1.0, pop_size, dtype=float)
+        return np.column_stack([vals, 1.0 - vals])
+    weight_file = MOEAD_WEIGHTS_DIR / f"W{n_obj}D_{pop_size}.dat"
+    if not weight_file.exists():
+        raise FileNotFoundError(f"MOEA/D weight file not found: {weight_file}")
+    weights = np.loadtxt(weight_file)
+    weights = np.atleast_2d(weights).astype(float, copy=False)
+    if weights.shape[0] != pop_size or weights.shape[1] != n_obj:
+        raise ValueError(f"Expected weights shape ({pop_size}, {n_obj}) in {weight_file}, got {weights.shape}.")
+    return weights
 
 
 # =============================================================================
@@ -386,20 +496,50 @@ def run_single_benchmark(problem_name, seed, framework):
         backend = framework.replace("vamos-", "")
         try:
             problem = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj).instantiate()
-            algo_config = (
-                NSGAIIConfig.builder()
-                .pop_size(POP_SIZE)
-                .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-                .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
-                .selection("tournament")
-                .build()
-            )
+            if ALGORITHM == "nsgaii":
+                algo_id = "nsgaii"
+                algo_config = (
+                    NSGAIIConfig.builder()
+                    .pop_size(POP_SIZE)
+                    .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
+                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .selection("tournament")
+                    .build()
+                )
+            elif ALGORITHM == "smsemoa":
+                algo_id = "smsemoa"
+                algo_config = (
+                    SMSEMOAConfig.builder()
+                    .pop_size(POP_SIZE)
+                    .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
+                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .selection("random")
+                    .reference_point(offset=1.0, adaptive=True)
+                    .build()
+                )
+            elif ALGORITHM == "moead":
+                algo_id = "moead"
+                algo_config = (
+                    MOEADConfig.builder()
+                    .pop_size(POP_SIZE)
+                    .batch_size(1)
+                    .neighbor_size(MOEAD_NEIGHBOR_SIZE)
+                    .delta(MOEAD_DELTA)
+                    .replace_limit(MOEAD_REPLACE_LIMIT)
+                    .crossover("de", cr=MOEAD_DE_CR, f=MOEAD_DE_F)
+                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .aggregation("pbi", theta=MOEAD_PBI_THETA)
+                    .weight_vectors(path=str(MOEAD_WEIGHTS_DIR))
+                    .build()
+                )
+            else:
+                raise ValueError(f"Unsupported algorithm '{ALGORITHM}'.")
 
             if backend == "numba" and NUMBA_WARMUP_EVALS > 0:
                 warmup_budget = min(int(NUMBA_WARMUP_EVALS), int(N_EVALS))
                 _ = optimize(
                     problem,
-                    algorithm="nsgaii",
+                    algorithm=algo_id,
                     algorithm_config=algo_config,
                     termination=("n_eval", warmup_budget),
                     seed=seed,
@@ -409,7 +549,7 @@ def run_single_benchmark(problem_name, seed, framework):
             start = time.perf_counter()
             result = optimize(
                 problem,
-                algorithm="nsgaii",
+                algorithm=algo_id,
                 algorithm_config=algo_config,
                 termination=("n_eval", N_EVALS),
                 seed=seed,
@@ -420,7 +560,7 @@ def run_single_benchmark(problem_name, seed, framework):
             result_entry = {
                 "framework": f"VAMOS ({backend})",
                 "problem": problem_name,
-                "algorithm": "NSGA-II",
+                "algorithm": ALGORITHM_DISPLAY,
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
@@ -435,22 +575,83 @@ def run_single_benchmark(problem_name, seed, framework):
     elif framework == "pymoo":
         try:
             from pymoo.algorithms.moo.nsga2 import NSGA2
+            from pymoo.algorithms.moo.sms import SMSEMOA, LeastHypervolumeContributionSurvival
             from pymoo.optimize import minimize
             from pymoo.termination import get_termination
             from pymoo.problems import get_problem
             from pymoo.operators.crossover.sbx import SBX
             from pymoo.operators.mutation.pm import PM
+            from pymoo.operators.selection.rnd import RandomSelection
 
             if problem_name.startswith("zdt"):
                 pymoo_problem = get_problem(problem_name, n_var=n_var)
             else:
                 pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
 
-            algorithm = NSGA2(
-                pop_size=POP_SIZE,
-                crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
-                mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
-            )
+            if ALGORITHM == "nsgaii":
+                algorithm = NSGA2(
+                    pop_size=POP_SIZE,
+                    crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
+                    mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
+                )
+            elif ALGORITHM == "smsemoa":
+                algorithm = SMSEMOA(
+                    pop_size=POP_SIZE,
+                    n_offsprings=1,
+                    selection=RandomSelection(),
+                    crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
+                    mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
+                    survival=LeastHypervolumeContributionSurvival(eps=1.0),
+                    eliminate_duplicates=True,
+                    normalize=True,
+                )
+            else:
+                from pymoo.algorithms.moo.moead import MOEAD
+                from pymoo.operators.crossover.dex import DEX
+                from pymoo.decomposition.pbi import PBI
+                from pymoo.core.selection import Selection
+
+                ref_dirs = load_moead_weights(n_obj, POP_SIZE)
+
+                class NeighborhoodSelectionWithCurrent(Selection):
+                    def __init__(self, prob: float = 1.0) -> None:
+                        super().__init__()
+                        self.prob = float(prob)
+
+                    def _do(self, problem, pop, n_select, n_parents, neighbors=None, random_state=None, **kwargs):
+                        assert n_select == len(neighbors)
+                        P = np.full((n_select, n_parents), -1, dtype=int)
+
+                        for k in range(n_select):
+                            neighbor_idx = np.asarray(neighbors[k], dtype=int)
+                            if neighbor_idx.size == 0:
+                                neighbor_idx = np.arange(len(pop))
+                            current = int(neighbor_idx[0])
+
+                            if random_state.random() < self.prob:
+                                pool = neighbor_idx
+                            else:
+                                pool = np.arange(len(pop))
+
+                            pool = pool[pool != current]
+                            if pool.size < n_parents - 1:
+                                pool = np.setdiff1d(np.arange(len(pop)), [current])
+
+                            chosen = random_state.choice(pool, n_parents - 1, replace=False)
+                            P[k, 0] = current
+                            P[k, 1:] = chosen
+
+                        return P
+
+                algorithm = MOEAD(
+                    ref_dirs=ref_dirs,
+                    n_neighbors=MOEAD_NEIGHBOR_SIZE,
+                    decomposition=PBI(theta=MOEAD_PBI_THETA),
+                    prob_neighbor_mating=MOEAD_DELTA,
+                    crossover=DEX(CR=MOEAD_DE_CR, F=MOEAD_DE_F, variant="bin"),
+                    mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
+                )
+                algorithm.selection = NeighborhoodSelectionWithCurrent(prob=MOEAD_DELTA)
             termination = get_termination("n_eval", N_EVALS)
 
             start = time.perf_counter()
@@ -460,7 +661,7 @@ def run_single_benchmark(problem_name, seed, framework):
             result_entry = {
                 "framework": "pymoo",
                 "problem": problem_name,
-                "algorithm": "NSGA-II",
+                "algorithm": ALGORITHM_DISPLAY,
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
@@ -473,6 +674,8 @@ def run_single_benchmark(problem_name, seed, framework):
 
     # DEAP
     elif framework == "deap":
+        if ALGORITHM != "nsgaii":
+            raise ValueError("DEAP baseline is only implemented for NSGA-II.")
         try:
             from deap import base, creator, tools
             import copy
@@ -547,7 +750,7 @@ def run_single_benchmark(problem_name, seed, framework):
             result_entry = {
                 "framework": "DEAP",
                 "problem": problem_name,
-                "algorithm": "NSGA-II",
+                "algorithm": ALGORITHM_DISPLAY,
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
@@ -562,8 +765,11 @@ def run_single_benchmark(problem_name, seed, framework):
     elif framework == "jmetalpy":
         try:
             from jmetal.algorithm.multiobjective import NSGAII
-            from jmetal.operator.crossover import SBXCrossover
+            from jmetal.algorithm.multiobjective.smsemoa import SMSEMOA
+            from jmetal.algorithm.multiobjective.moead import MOEAD
+            from jmetal.operator.crossover import DifferentialEvolutionCrossover, SBXCrossover
             from jmetal.operator.mutation import PolynomialMutation
+            from jmetal.util.aggregation_function import PenaltyBoundaryIntersection
             from jmetal.util.termination_criterion import StoppingByEvaluations
             from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
             from jmetal.problem import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ5, DTLZ6, DTLZ7
@@ -572,6 +778,12 @@ def run_single_benchmark(problem_name, seed, framework):
 
             random.seed(seed)
             np.random.seed(seed)
+            try:
+                from jmetal.util.random_generator import PRNG
+
+                PRNG.seed(seed)
+            except Exception:
+                pass
 
             # Align WFG parameterization with VAMOS/pymoo defaults (k=4 for m=2).
             wfg_k = 4 if WFG_N_OBJ == 2 else 2 * (WFG_N_OBJ - 1)
@@ -606,14 +818,36 @@ def run_single_benchmark(problem_name, seed, framework):
 
             jmetal_problem = problem_map[problem_name]
 
-            algorithm = NSGAII(
-                problem=jmetal_problem,
-                population_size=POP_SIZE,
-                offspring_population_size=POP_SIZE,
-                mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
-                crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
-                termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
-            )
+            if ALGORITHM == "nsgaii":
+                algorithm = NSGAII(
+                    problem=jmetal_problem,
+                    population_size=POP_SIZE,
+                    offspring_population_size=POP_SIZE,
+                    mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+                    crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
+                    termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
+                )
+            elif ALGORITHM == "smsemoa":
+                algorithm = SMSEMOA(
+                    problem=jmetal_problem,
+                    population_size=POP_SIZE,
+                    mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+                    crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
+                    termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
+                )
+            else:
+                algorithm = MOEAD(
+                    problem=jmetal_problem,
+                    population_size=POP_SIZE,
+                    mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+                    crossover=DifferentialEvolutionCrossover(CR=MOEAD_DE_CR, F=MOEAD_DE_F, K=0.5),
+                    aggregation_function=PenaltyBoundaryIntersection(n_obj, theta=MOEAD_PBI_THETA),
+                    neighbourhood_selection_probability=MOEAD_DELTA,
+                    max_number_of_replaced_solutions=MOEAD_REPLACE_LIMIT,
+                    neighbor_size=MOEAD_NEIGHBOR_SIZE,
+                    weight_files_path=MOEAD_WEIGHTS_DIR.as_posix(),
+                    termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
+                )
 
             start = time.perf_counter()
             algorithm.run()
@@ -626,7 +860,7 @@ def run_single_benchmark(problem_name, seed, framework):
             result_entry = {
                 "framework": "jMetalPy",
                 "problem": problem_name,
-                "algorithm": "NSGA-II",
+                "algorithm": ALGORITHM_DISPLAY,
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
@@ -639,9 +873,12 @@ def run_single_benchmark(problem_name, seed, framework):
 
     # Platypus
     elif framework == "platypus":
+        if ALGORITHM not in {"nsgaii", "moead"}:
+            raise ValueError("Platypus baseline is only implemented for NSGA-II and MOEA/D.")
         try:
+            from platypus import MOEAD as PlatypusMOEAD
             from platypus import NSGAII as PlatypusNSGAII, Problem, Real
-            from platypus import GAOperator, PM, SBX, TournamentSelector
+            from platypus import DifferentialEvolution, GAOperator, PM, SBX, TournamentSelector, pbi
             import random
 
             random.seed(seed)
@@ -712,16 +949,40 @@ def run_single_benchmark(problem_name, seed, framework):
 
             platypus_problem = problem_map[problem_name]
 
-            variator = GAOperator(
-                SBX(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
-                PM(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
-            )
-            algorithm = PlatypusNSGAII(
-                platypus_problem,
-                population_size=POP_SIZE,
-                selector=TournamentSelector(2),
-                variator=variator,
-            )
+            if ALGORITHM == "nsgaii":
+                variator = GAOperator(
+                    SBX(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
+                    PM(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+                )
+                algorithm = PlatypusNSGAII(
+                    platypus_problem,
+                    population_size=POP_SIZE,
+                    selector=TournamentSelector(2),
+                    variator=variator,
+                )
+            else:
+
+                def _weight_generator(nobjs, population_size=POP_SIZE):
+                    weights = load_moead_weights(nobjs, population_size)
+                    return weights.tolist()
+
+                def _pbi_scalarization(solution, ideal_point, weights, theta=MOEAD_PBI_THETA):
+                    return pbi(solution, ideal_point, weights, theta=theta)
+
+                variator = GAOperator(
+                    DifferentialEvolution(crossover_rate=MOEAD_DE_CR, step_size=MOEAD_DE_F),
+                    PM(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+                )
+                algorithm = PlatypusMOEAD(
+                    platypus_problem,
+                    neighborhood_size=MOEAD_NEIGHBOR_SIZE,
+                    delta=MOEAD_DELTA,
+                    eta=MOEAD_REPLACE_LIMIT,
+                    variator=variator,
+                    weight_generator=_weight_generator,
+                    scalarizing_function=_pbi_scalarization,
+                    population_size=POP_SIZE,
+                )
 
             start = time.perf_counter()
             algorithm.run(N_EVALS)
@@ -733,7 +994,7 @@ def run_single_benchmark(problem_name, seed, framework):
             result_entry = {
                 "framework": "Platypus",
                 "problem": problem_name,
-                "algorithm": "NSGA-II",
+                "algorithm": ALGORITHM_DISPLAY,
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
