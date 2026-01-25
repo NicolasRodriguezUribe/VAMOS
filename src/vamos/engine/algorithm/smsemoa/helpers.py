@@ -29,6 +29,12 @@ __all__ = [
 ]
 
 
+def _is_duplicate_row(matrix: np.ndarray, row: np.ndarray) -> bool:
+    if matrix.size == 0:
+        return False
+    return bool(np.any(np.all(matrix == row, axis=1)))
+
+
 def initialize_reference_point(
     F: np.ndarray,
     ref_cfg: Mapping[str, object],
@@ -122,6 +128,12 @@ def survival_selection(
 
     if X_child.shape[0] != 1 or F_child.shape[0] != 1:
         raise ValueError("survival_selection expects exactly one offspring (shape (1, ...)).")
+
+    if st.eliminate_duplicates:
+        child_x = X_child[0]
+        child_f = F_child[0]
+        if _is_duplicate_row(st.X, child_x) or _is_duplicate_row(st.F, child_f):
+            return
 
     # Build combined objective matrix in a reusable buffer to avoid per-iteration allocations.
     F_work = st._survival_F

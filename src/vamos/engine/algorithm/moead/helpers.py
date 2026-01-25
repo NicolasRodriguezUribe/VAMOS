@@ -208,7 +208,10 @@ def resolve_aggregation_spec(name: str, params: Mapping[str, object]) -> tuple[i
 def _use_numba_moead() -> bool:
     import os
 
-    return os.environ.get("VAMOS_USE_NUMBA_MOEAD", "").lower() in {"1", "true", "yes"}
+    flag = os.environ.get("VAMOS_USE_NUMBA_MOEAD")
+    if flag is None or flag == "":
+        return True
+    return flag.lower() in {"1", "true", "yes", "on"}
 
 
 def _get_update_neighborhood_numba() -> Callable[..., int] | None:
@@ -417,96 +420,33 @@ def update_neighborhood(
     assert st.aggregator is not None
     child_cv = cv_penalty if constraint_mode != "none" else 0.0
 
-    if st.aggregation_id >= 0:
-        updater = _get_update_neighborhood_numba()
-        if updater is not None and (not use_constraints or st.cv is not None):
-            updater(
-                st.X,
-                st.F,
-                st.G if st.G is not None else _DUMMY_G,
-                st.cv if st.cv is not None else _DUMMY_CV,
-                st.weights,
-                st.weights_safe,
-                st.weights_unit,
-                st.ideal,
-                child,
-                child_f,
-                child_g if child_g is not None else _DUMMY_CHILD_G,
-                float(child_cv),
-                candidate_order,
-                int(st.replace_limit),
-                int(st.aggregation_id),
-                float(st.aggregation_theta),
-                float(st.aggregation_rho),
-                1 if use_constraints else 0,
-            )
-            return
+    if use_constraints and st.cv is None and st.G is not None:
+        st.cv = compute_violation(st.G)
 
-    weights_safe = st.weights_safe if st.weights_safe.size else None
-    weights_unit = st.weights_unit if st.weights_unit.size else None
-    replacements = 0
+    updater = _get_update_neighborhood_numba()
+    if updater is None:
+        raise RuntimeError("MOEA/D requires numba for neighborhood updates. Install numba to run MOEA/D.")
 
-    for k in candidate_order:
-        if st.aggregation_id == AGG_TCHEBYCHEFF and weights_safe is not None:
-            diff = np.abs(st.F[k] - st.ideal)
-            current_val = float(np.max(weights_safe[k] * diff))
-            diff_child = np.abs(child_f - st.ideal)
-            child_val = float(np.max(weights_safe[k] * diff_child))
-        elif st.aggregation_id == AGG_WEIGHTED_SUM:
-            weight = st.weights[k]
-            current_val = float(np.dot(weight, st.F[k]))
-            child_val = float(np.dot(weight, child_f))
-        elif st.aggregation_id == AGG_PBI and weights_unit is not None:
-            w_unit = weights_unit[k]
-            diff = st.F[k] - st.ideal
-            d1 = abs(float(np.dot(diff, w_unit)))
-            d2 = float(np.linalg.norm(diff - d1 * w_unit))
-            diff_child = child_f - st.ideal
-            d1_child = abs(float(np.dot(diff_child, w_unit)))
-            d2_child = float(np.linalg.norm(diff_child - d1_child * w_unit))
-            current_val = d1 + float(st.aggregation_theta) * d2
-            child_val = d1_child + float(st.aggregation_theta) * d2_child
-        elif st.aggregation_id == AGG_MODIFIED_TCHEBYCHEFF and weights_safe is not None:
-            diff = np.abs(st.F[k] - st.ideal)
-            weighted = weights_safe[k] * diff
-            current_val = float(np.max(weighted) + float(st.aggregation_rho) * np.sum(weighted))
-            diff_child = np.abs(child_f - st.ideal)
-            weighted_child = weights_safe[k] * diff_child
-            child_val = float(np.max(weighted_child) + float(st.aggregation_rho) * np.sum(weighted_child))
-        else:
-            weight = st.weights[k]
-            current_val = float(np.asarray(st.aggregator(st.F[k], weight, st.ideal)).reshape(-1)[0])
-            child_val = float(np.asarray(st.aggregator(child_f, weight, st.ideal)).reshape(-1)[0])
-
-        replace = False
-        if constraint_mode != "none":
-            if st.cv is not None:
-                current_cv = float(st.cv[k])
-            else:
-                current_cv = compute_violation(st.G[k : k + 1])[0] if st.G is not None else 0.0
-            feas_child = child_cv <= 0.0
-            feas_curr = current_cv <= 0.0
-            if not feas_curr and feas_child:
-                replace = True
-            elif feas_child and feas_curr:
-                replace = child_val < current_val
-            elif (not feas_child) and (not feas_curr):
-                replace = child_cv < current_cv
-        else:
-            replace = child_val < current_val
-
-        if not replace:
-            continue
-
-        st.X[k] = child
-        st.F[k] = child_f
-        if st.G is not None and child_g is not None:
-            st.G[k] = child_g
-            if st.cv is not None:
-                st.cv[k] = child_cv
-        replacements += 1
-        if replacements >= st.replace_limit:
-            break
+    updater(
+        st.X,
+        st.F,
+        st.G if st.G is not None else _DUMMY_G,
+        st.cv if st.cv is not None else _DUMMY_CV,
+        st.weights,
+        st.weights_safe,
+        st.weights_unit,
+        st.ideal,
+        child,
+        child_f,
+        child_g if child_g is not None else _DUMMY_CHILD_G,
+        float(child_cv),
+        candidate_order,
+        int(st.replace_limit),
+        int(st.aggregation_id),
+        float(st.aggregation_theta),
+        float(st.aggregation_rho),
+        1 if use_constraints else 0,
+    )
 
 
 __all__ = [

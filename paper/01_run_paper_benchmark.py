@@ -515,6 +515,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
                     .selection("random")
                     .reference_point(offset=1.0, adaptive=True)
+                    .eliminate_duplicates(True)
                     .build()
                 )
             elif ALGORITHM == "moead":
@@ -603,7 +604,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
                     survival=LeastHypervolumeContributionSurvival(eps=1.0),
                     eliminate_duplicates=True,
-                    normalize=True,
+                    normalize=False,
                 )
             else:
                 from pymoo.algorithms.moo.moead import MOEAD

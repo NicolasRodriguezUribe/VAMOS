@@ -15,6 +15,7 @@ class SMSEMOAConfig(_SerializableConfig):
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
     reference_point: dict[str, Any]
+    eliminate_duplicates: bool = False
     constraint_mode: str = "feasibility"
     repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
@@ -73,6 +74,10 @@ class _SMSEMOAConfigBuilder:
 
     def selection(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["selection"] = (method, kwargs)
+        return self
+
+    def eliminate_duplicates(self, enabled: bool = True) -> _SMSEMOAConfigBuilder:
+        self._cfg["eliminate_duplicates"] = bool(enabled)
         return self
 
     def reference_point(
@@ -150,6 +155,7 @@ class _SMSEMOAConfigBuilder:
             mutation=self._cfg["mutation"],
             selection=self._cfg["selection"],
             reference_point=reference_point,
+            eliminate_duplicates=bool(self._cfg.get("eliminate_duplicates", False)),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),

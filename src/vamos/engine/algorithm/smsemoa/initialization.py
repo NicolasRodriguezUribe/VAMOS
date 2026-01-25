@@ -97,6 +97,7 @@ def initialize_smsemoa_run(
     # Selection pressure
     sel_method, sel_params = config["selection"]
     pressure = sel_params.get("pressure", 2) if sel_method == "tournament" else 2
+    eliminate_duplicates = bool(config.get("eliminate_duplicates", False))
 
     # Reference point config
     ref_cfg = config.get("reference_point", {}) or {}
@@ -146,6 +147,7 @@ def initialize_smsemoa_run(
         ref_offset=ref_offset,
         ref_adaptive=ref_adaptive,
         pressure=pressure,
+        eliminate_duplicates=eliminate_duplicates,
         crossover_fn=crossover_fn,
         mutation_fn=mutation_fn,
         # Archive
