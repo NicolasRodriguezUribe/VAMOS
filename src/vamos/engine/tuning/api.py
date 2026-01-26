@@ -13,6 +13,11 @@ For full control, import from `vamos.engine.tuning.*`.
 """
 
 from vamos.engine.tuning import (
+    # Ablation planning
+    AblationPlan,
+    AblationTask,
+    AblationVariant,
+    build_ablation_plan,
     # Tuners
     AlgorithmConfigSpace,
     RandomSearchTuner,
@@ -42,6 +47,11 @@ from vamos.engine.tuning import (
 )
 
 __all__ = [
+    # Ablation planning
+    "AblationPlan",
+    "AblationTask",
+    "AblationVariant",
+    "build_ablation_plan",
     # Tuners
     "AlgorithmConfigSpace",
     "RandomSearchTuner",

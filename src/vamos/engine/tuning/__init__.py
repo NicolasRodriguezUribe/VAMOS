@@ -10,6 +10,7 @@ Also provides RandomSearchTuner, RacingTuner, AlgorithmConfigSpace,
 and config space builders for each algorithm.
 """
 
+from .ablation import AblationPlan, AblationTask, AblationVariant, build_ablation_plan
 from .racing import (
     # Parameter types
     ParamSpace,
@@ -59,6 +60,11 @@ from .racing import (
 
 
 __all__ = [
+    # Ablation planning
+    "AblationPlan",
+    "AblationTask",
+    "AblationVariant",
+    "build_ablation_plan",
     # Parameter types
     "ParamSpace",
     "Real",

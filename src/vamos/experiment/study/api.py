@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 from vamos.experiment.services.orchestrator import run_single
+from vamos.engine.tuning.ablation import AblationPlan
 
 from .persistence import CSVPersister
 from .runner import StudyRunner, StudyResult, StudyTask
@@ -45,5 +46,59 @@ def run_study(
         tasks = _apply_overrides(tasks, overrides)
     return runner.run(list(tasks), run_single_fn=run_single)
 
+def build_study_tasks_from_ablation_plan(
+    plan: AblationPlan,
+    *,
+    algorithm: str,
+    base_config: Mapping[str, Any] | None = None,
+    nsgaii_variations: Mapping[str, Mapping[str, Any]] | None = None,
+    engine: str | None = None,
+) -> tuple[list[StudyTask], list[str]]:
+    tasks: list[StudyTask] = []
+    variant_names: list[str] = []
+    base_cfg = base_config or {}
 
-__all__ = ["run_study"]
+    for ablation_task in plan.tasks:
+        overrides = ablation_task.variant.apply(base_cfg)
+        overrides["max_evaluations"] = ablation_task.max_evals
+        task_engine = engine or ablation_task.engine or plan.engine or "numpy"
+        nsgaii_variation = None
+        if nsgaii_variations is not None:
+            nsgaii_variation = nsgaii_variations.get(ablation_task.variant.name)
+        tasks.append(
+            StudyTask(
+                algorithm=algorithm,
+                engine=task_engine,
+                problem=ablation_task.problem,
+                seed=ablation_task.seed,
+                config_overrides=overrides,
+                nsgaii_variation=nsgaii_variation,
+            )
+        )
+        variant_names.append(ablation_task.variant.name)
+
+    return tasks, variant_names
+
+
+def run_ablation_plan(
+    plan: AblationPlan,
+    *,
+    algorithm: str,
+    base_config: Mapping[str, Any] | None = None,
+    nsgaii_variations: Mapping[str, Mapping[str, Any]] | None = None,
+    engine: str | None = None,
+    config_overrides: dict[str, Any] | None = None,
+    mirror_output_roots: Sequence[str] | None = ("results",),
+) -> tuple[list[StudyResult], list[str]]:
+    tasks, variant_names = build_study_tasks_from_ablation_plan(
+        plan,
+        algorithm=algorithm,
+        base_config=base_config,
+        nsgaii_variations=nsgaii_variations,
+        engine=engine,
+    )
+    results = run_study(tasks, config_overrides=config_overrides, mirror_output_roots=mirror_output_roots)
+    return results, variant_names
+
+
+__all__ = ["run_study", "build_study_tasks_from_ablation_plan", "run_ablation_plan"]

@@ -45,6 +45,7 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 | T8      | Add to benchmarking CLI                     | `vamos-benchmark --suite ... --output ...`          |
 | T9      | Extend diagnostics / self-check             | `python -m vamos.experiment.diagnostics.self_check`            |
 | T10     | Create Interactive Tools / Studio           | `vamos-studio` / Streamlit / Dash                   |
+| T11     | Build ablation planning pipelines           | `vamos.engine.tuning.ablation` + `vamos.experiment.study`     |
 
 ---
 
@@ -205,6 +206,24 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 - Expose via `vamos-studio --study-dir <path>`.
 
 **Avoid**: Mixing UI code with core algorithms (keep strictly separate in `vamos.ux`).
+
+---
+
+## 11. Build ablation planning pipelines
+
+**Goal**: Define ablation variants and create a reproducible task grid for
+component contribution analysis.
+
+**Context**: `src/vamos/engine/tuning/ablation/` for planning types and
+`src/vamos/experiment/study/` for execution.
+
+**Steps**
+- Define `AblationVariant` entries with `config_overrides` (same algorithm, toggled components).
+- Build the plan with `build_ablation_plan` (problems × variants × seeds × budgets).
+- Convert plan tasks to `StudyTask` and execute via `run_study` or `StudyRunner`.
+- Summarize contributions with deltas vs the baseline variant (median across seeds).
+
+**Avoid**: Experiment-layer imports inside `engine/tuning/ablation/`.
 
 ---
 

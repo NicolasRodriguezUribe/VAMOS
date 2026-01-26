@@ -61,3 +61,14 @@ def test_nsgaii_config_space_builds_and_constructs_config():
     assert cfg.pop_size > 0
     assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
     assert cfg.mutation[0] in ("pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform")
+
+
+def test_nsgaii_archive_unbounded_disables_archive_params():
+    space = build_nsgaii_config_space()
+    param_space = space.to_param_space()
+    cfg = {"use_external_archive": True, "archive_unbounded": True}
+    assert not param_space.is_active("archive_type", cfg)
+    assert not param_space.is_active("archive_size_factor", cfg)
+    cfg_bounded = {"use_external_archive": True, "archive_unbounded": False}
+    assert param_space.is_active("archive_type", cfg_bounded)
+    assert param_space.is_active("archive_size_factor", cfg_bounded)
