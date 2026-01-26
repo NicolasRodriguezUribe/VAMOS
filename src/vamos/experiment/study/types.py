@@ -25,6 +25,8 @@ class StudyTask:
     external_archive_size: int | None = None
     archive_type: str = "hypervolume"
     nsgaii_variation: dict[str, Any] | None = None
+    moead_variation: dict[str, Any] | None = None
+    smsemoa_variation: dict[str, Any] | None = None
     config_overrides: dict[str, Any] | None = None
 
 

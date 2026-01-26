@@ -112,3 +112,58 @@ To execute an ablation plan with the experiment layer, see:
 
 Interpreting contributions: compare median final metrics (e.g., HV at full budget)
 and compute deltas vs the baseline variant.
+
+### Ablation config schema (CLI)
+
+Use `vamos ablation --config <path>` with a YAML/JSON config. Required fields:
+- `problems`: list of problem keys
+- `variants`: list of variant blocks (each has a `name`)
+- `seeds`: list of integer seeds
+- `default_max_evals`: per-run evaluation budget
+
+Optional fields:
+- `algorithm` (default: nsgaii)
+- `engine`
+- `base_config` (merged into every variant before running)
+- `output_root` (base output root; per-variant subfolders are created by default)
+- `per_variant_output_root` (default: true)
+- `output_root_by_variant` (map of variant name -> output root override)
+- `budget_by_problem`, `budget_by_variant`, `budget_overrides`
+- `nsgaii_variation`, `moead_variation`, `smsemoa_variation` per variant (algorithm-specific)
+- `summary_dir` or `summary_path` (CSV output; default: `<output_root>/summary/ablation_metrics.csv`)
+
+Example:
+
+```yaml
+algorithm: nsgaii
+engine: numpy
+output_root: results/ablation_demo
+default_max_evals: 2000
+problems: [zdt1]
+seeds: [1, 2]
+base_config:
+  population_size: 60
+variants:
+  - name: baseline
+  - name: aos
+    nsgaii_variation:
+      adaptive_operator_selection:
+        enabled: true
+summary_dir: results/ablation_demo/summary
+```
+
+Algorithm-specific variations live inside each variant block:
+
+```yaml
+variants:
+  - name: moead_pbi
+    moead_variation:
+      aggregation:
+        method: pbi
+        theta: 5.0
+  - name: smsemoa_fast
+    smsemoa_variation:
+      mutation:
+        method: pm
+        prob: "1/n"
+```

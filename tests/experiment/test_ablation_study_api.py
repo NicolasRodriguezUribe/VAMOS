@@ -16,12 +16,16 @@ def test_build_study_tasks_from_ablation_plan_sets_overrides():
     )
     base_config = {"population_size": 50}
     nsgaii_variations = {"tuned": {"adaptive_operator_selection": {"enabled": True}}}
+    moead_variations = {"tuned": {"aggregation": {"method": "pbi", "theta": 5.0}}}
+    smsemoa_variations = {"tuned": {"mutation": {"method": "pm", "prob": "1/n"}}}
 
     tasks, variant_names = build_study_tasks_from_ablation_plan(
         plan,
         algorithm="nsgaii",
         base_config=base_config,
         nsgaii_variations=nsgaii_variations,
+        moead_variations=moead_variations,
+        smsemoa_variations=smsemoa_variations,
     )
 
     assert len(tasks) == len(plan.tasks)
@@ -34,6 +38,10 @@ def test_build_study_tasks_from_ablation_plan_sets_overrides():
         if name == "tuned":
             assert overrides["population_size"] == 80
             assert task.nsgaii_variation == nsgaii_variations["tuned"]
+            assert task.moead_variation == moead_variations["tuned"]
+            assert task.smsemoa_variation == smsemoa_variations["tuned"]
         else:
             assert overrides["population_size"] == 50
             assert task.nsgaii_variation is None
+            assert task.moead_variation is None
+            assert task.smsemoa_variation is None

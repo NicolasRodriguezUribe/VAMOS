@@ -38,6 +38,11 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
 
         run_summarize(argv[1:])
         return True
+    if command in {"ablation"}:
+        from vamos.experiment.cli.ablation import run_ablation
+
+        run_ablation(argv[1:])
+        return True
     if command in {"open-results", "open_results"}:
         from vamos.experiment.cli.results_cli import run_open_results
 

@@ -1,0 +1,24 @@
+algorithm: nsgaii
+engine: numpy
+output_root: results/ablation_demo
+default_max_evals: 2000
+problems:
+  - zdt1
+seeds: [1, 2, 3]
+base_config:
+  population_size: 60
+  offspring_population_size: 60
+variants:
+  - name: baseline
+    label: Baseline
+  - name: aos
+    label: AOS
+    nsgaii_variation:
+      adaptive_operator_selection:
+        enabled: true
+  - name: tuned
+    label: Tuned
+    config_overrides:
+      population_size: 80
+      offspring_population_size: 80
+summary_dir: results/ablation_demo/summary
