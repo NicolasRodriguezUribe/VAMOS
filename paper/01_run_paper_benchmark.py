@@ -8,8 +8,10 @@ Usage: python paper/01_run_paper_benchmark.py
 Use 04_update_paper_tables_from_csv.py to generate and inject LaTeX tables.
 
 Environment variables:
-  - VAMOS_PAPER_ALGORITHM: all (default), nsgaii, smsemoa, moead, or a comma list (e.g., smsemoa,moead)
-  - VAMOS_PAPER_ALGORITHMS: comma-separated list to run sequentially (e.g., nsgaii,smsemoa,moead)
+  - VAMOS_PAPER_ALGORITHM: all (default), nsgaii, nsgaii-ss, nsgaii-archive, smsemoa, moead,
+    or a comma list (e.g., nsgaii-ss,smsemoa)
+  - VAMOS_PAPER_ALGORITHMS: comma-separated list to run sequentially
+    (e.g., nsgaii,nsgaii-ss,nsgaii-archive,smsemoa,moead)
   - VAMOS_N_EVALS: evaluations per run (default: 50000)
   - VAMOS_N_SEEDS: number of seeds (default: 30)
   - VAMOS_N_JOBS: joblib workers (default: CPU count - 1)
@@ -51,11 +53,35 @@ def _normalize_algorithm(value: str) -> str:
     algo = value.strip().lower()
     if algo in {"nsgaii", "nsga2", "nsga-ii", "nsga_ii"}:
         return "nsgaii"
+    if algo in {
+        "nsgaii_ss",
+        "nsgaii-ss",
+        "nsga2-ss",
+        "nsga2_ss",
+        "nsgaii_steady",
+        "nsgaii-steady",
+        "nsgaii_steady_state",
+        "nsgaii-steady-state",
+    }:
+        return "nsgaii_ss"
+    if algo in {
+        "nsgaii_archive",
+        "nsgaii-archive",
+        "nsga2-archive",
+        "nsga2_archive",
+        "nsgaii_external_archive",
+        "nsgaii-external-archive",
+        "nsgaii_unbounded_archive",
+        "nsgaii-unbounded-archive",
+    }:
+        return "nsgaii_archive"
     if algo in {"smsemoa", "sms-emoa", "sms_emoa"}:
         return "smsemoa"
     if algo in {"moead", "moea/d", "moea-d", "moea_d"}:
         return "moead"
-    raise ValueError(f"Unsupported algorithm '{value}'. Expected nsgaii, smsemoa, or moead.")
+    raise ValueError(
+        f"Unsupported algorithm '{value}'. Expected nsgaii, nsgaii-ss, nsgaii-archive, smsemoa, or moead."
+    )
 
 
 _algo_list_env = os.environ.get("VAMOS_PAPER_ALGORITHMS")
@@ -63,13 +89,13 @@ if not _algo_list_env:
     _algo_single_raw = os.environ.get("VAMOS_PAPER_ALGORITHM")
     _algo_single = (_algo_single_raw or "").strip().lower()
     if not _algo_single:
-        _algo_list_env = "nsgaii,smsemoa,moead"
+        _algo_list_env = "nsgaii,nsgaii_ss,nsgaii_archive,smsemoa,moead"
     elif "," in _algo_single:
         _algo_list_env = _algo_single
     elif _algo_single in {"sms-moead", "smsemoa+moead", "smsemoa_moead", "moead+smsemoa", "moead-smsemoa"}:
         _algo_list_env = "smsemoa,moead"
     elif _algo_single in {"all", "full", "paper"}:
-        _algo_list_env = "nsgaii,smsemoa,moead"
+        _algo_list_env = "nsgaii,nsgaii_ss,nsgaii_archive,smsemoa,moead"
 
 if _algo_list_env:
     raw_list = [item.strip() for item in _algo_list_env.split(",") if item.strip()]
@@ -100,11 +126,17 @@ if _algo_list_env:
 
 DATA_DIR = Path(__file__).parent.parent / "experiments"
 
-# Algorithm to benchmark: "nsgaii", "smsemoa", or "moead".
+# Algorithm to benchmark: "nsgaii", "nsgaii_ss", "nsgaii_archive", "smsemoa", or "moead".
 _algo_env = os.environ.get("VAMOS_PAPER_ALGORITHM", "nsgaii")
 ALGORITHM = _normalize_algorithm(_algo_env)
 
-ALGORITHM_DISPLAY = {"nsgaii": "NSGA-II", "smsemoa": "SMS-EMOA", "moead": "MOEA/D"}[ALGORITHM]
+ALGORITHM_DISPLAY = {
+    "nsgaii": "NSGA-II",
+    "nsgaii_ss": "NSGA-II (steady-state)",
+    "nsgaii_archive": "NSGA-II (ext. archive)",
+    "smsemoa": "SMS-EMOA",
+    "moead": "MOEA/D",
+}[ALGORITHM]
 
 # Problems to benchmark (by family)
 ZDT_PROBLEMS = ["zdt1", "zdt2", "zdt3", "zdt4", "zdt6"]
@@ -119,6 +151,10 @@ N_EVALS = int(os.environ.get("VAMOS_N_EVALS", "50000"))
 N_SEEDS = int(os.environ.get("VAMOS_N_SEEDS", "30"))
 if ALGORITHM == "nsgaii":
     _default_output = DATA_DIR / "benchmark_paper.csv"
+elif ALGORITHM == "nsgaii_ss":
+    _default_output = DATA_DIR / "benchmark_paper_nsgaii_ss.csv"
+elif ALGORITHM == "nsgaii_archive":
+    _default_output = DATA_DIR / "benchmark_paper_nsgaii_archive.csv"
 elif ALGORITHM == "smsemoa":
     _default_output = DATA_DIR / "benchmark_paper_smsemoa.csv"
 else:
@@ -159,6 +195,23 @@ DEFAULT_FRAMEWORKS_NS = [
     "jmetalpy",  # jMetalPy
     "platypus",  # Platypus
 ]
+DEFAULT_FRAMEWORKS_NS_SS = [
+    "vamos-numpy",
+    "vamos-numba",
+    "vamos-moocore",  # VAMOS backends
+    "pymoo",
+    "deap",
+    "jmetalpy",
+]
+DEFAULT_FRAMEWORKS_NS_ARCHIVE = [
+    "vamos-numpy",
+    "vamos-numba",
+    "vamos-moocore",  # VAMOS backends
+    "pymoo",
+    "deap",
+    "jmetalpy",
+    "platypus",
+]
 DEFAULT_FRAMEWORKS_SMS = [
     "vamos-numpy",
     "vamos-numba",
@@ -176,6 +229,10 @@ DEFAULT_FRAMEWORKS_MOEAD = [
 ]
 if ALGORITHM == "nsgaii":
     DEFAULT_FRAMEWORKS = DEFAULT_FRAMEWORKS_NS
+elif ALGORITHM == "nsgaii_ss":
+    DEFAULT_FRAMEWORKS = DEFAULT_FRAMEWORKS_NS_SS
+elif ALGORITHM == "nsgaii_archive":
+    DEFAULT_FRAMEWORKS = DEFAULT_FRAMEWORKS_NS_ARCHIVE
 elif ALGORITHM == "smsemoa":
     DEFAULT_FRAMEWORKS = DEFAULT_FRAMEWORKS_SMS
 else:
@@ -496,16 +553,20 @@ def run_single_benchmark(problem_name, seed, framework):
         backend = framework.replace("vamos-", "")
         try:
             problem = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj).instantiate()
-            if ALGORITHM == "nsgaii":
+            if ALGORITHM in {"nsgaii", "nsgaii_ss", "nsgaii_archive"}:
                 algo_id = "nsgaii"
-                algo_config = (
+                builder = (
                     NSGAIIConfig.builder()
                     .pop_size(POP_SIZE)
                     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
                     .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
                     .selection("tournament")
-                    .build()
                 )
+                if ALGORITHM == "nsgaii_ss":
+                    builder = builder.steady_state(True).offspring_size(1).replacement_size(1)
+                elif ALGORITHM == "nsgaii_archive":
+                    builder = builder.archive(POP_SIZE, unbounded=True)
+                algo_config = builder.build()
             elif ALGORITHM == "smsemoa":
                 algo_id = "smsemoa"
                 algo_config = (
@@ -557,7 +618,16 @@ def run_single_benchmark(problem_name, seed, framework):
                 engine=backend,
             )
             elapsed = time.perf_counter() - start
-            hv = compute_hv(result.F, problem_name) if result.F is not None else float("nan")
+            hv_source = result.F
+            n_solutions = result.X.shape[0] if result.X is not None else 0
+            if ALGORITHM == "nsgaii_archive":
+                archive_payload = result.data.get("archive") if hasattr(result, "data") else None
+                if isinstance(archive_payload, dict):
+                    archive_F = archive_payload.get("F")
+                    if archive_F is not None:
+                        hv_source = archive_F
+                        n_solutions = int(archive_F.shape[0])
+            hv = compute_hv(hv_source, problem_name) if hv_source is not None else float("nan")
             result_entry = {
                 "framework": f"VAMOS ({backend})",
                 "problem": problem_name,
@@ -565,7 +635,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
-                "n_solutions": result.X.shape[0] if result.X is not None else 0,
+                "n_solutions": n_solutions,
                 "hypervolume": hv,
             }
             print(f"  {problem_name} VAMOS({backend}) seed={seed}: {elapsed:.2f}s")
@@ -589,12 +659,41 @@ def run_single_benchmark(problem_name, seed, framework):
             else:
                 pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
 
-            if ALGORITHM == "nsgaii":
+            archive_cb = None
+            if ALGORITHM in {"nsgaii", "nsgaii_ss", "nsgaii_archive"}:
+                n_offsprings = 1 if ALGORITHM == "nsgaii_ss" else None
                 algorithm = NSGA2(
                     pop_size=POP_SIZE,
+                    n_offsprings=n_offsprings,
                     crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
                     mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
                 )
+                if ALGORITHM == "nsgaii_archive":
+                    from pymoo.core.callback import Callback
+                    from vamos.engine.algorithm.components.archive import UnboundedArchive
+
+                    class ArchiveCallback(Callback):
+                        def __init__(self, n_var_cb: int, n_obj_cb: int) -> None:
+                            super().__init__()
+                            self.archive = UnboundedArchive(n_var_cb, n_obj_cb, float)
+
+                        def _update_archive(self, pop):
+                            if pop is None:
+                                return
+                            X = pop.get("X")
+                            F = pop.get("F")
+                            if X is None or F is None:
+                                return
+                            self.archive.update(X, F)
+
+                        def initialize(self, algorithm):  # type: ignore[override]
+                            self._update_archive(getattr(algorithm, "pop", None))
+
+                        def notify(self, algorithm):  # type: ignore[override]
+                            self._update_archive(getattr(algorithm, "pop", None))
+                            self._update_archive(getattr(algorithm, "off", None))
+
+                    archive_cb = ArchiveCallback(n_var, n_obj)
             elif ALGORITHM == "smsemoa":
                 algorithm = SMSEMOA(
                     pop_size=POP_SIZE,
@@ -656,9 +755,24 @@ def run_single_benchmark(problem_name, seed, framework):
             termination = get_termination("n_eval", N_EVALS)
 
             start = time.perf_counter()
-            res = minimize(pymoo_problem, algorithm, termination, seed=seed, verbose=False)
+            minimize_kwargs = {"seed": seed, "verbose": False}
+            if archive_cb is not None:
+                minimize_kwargs["callback"] = archive_cb
+            res = minimize(
+                pymoo_problem,
+                algorithm,
+                termination,
+                **minimize_kwargs,
+            )
             elapsed = time.perf_counter() - start
-            hv = compute_hv(res.F, problem_name) if res.F is not None else float("nan")
+            hv_source = res.F
+            n_solutions = res.X.shape[0] if res.X is not None else 0
+            if ALGORITHM == "nsgaii_archive" and archive_cb is not None:
+                _, archive_F = archive_cb.archive.contents()
+                if archive_F is not None:
+                    hv_source = archive_F
+                    n_solutions = int(archive_F.shape[0])
+            hv = compute_hv(hv_source, problem_name) if hv_source is not None else float("nan")
             result_entry = {
                 "framework": "pymoo",
                 "problem": problem_name,
@@ -666,7 +780,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
-                "n_solutions": res.X.shape[0] if res.X is not None else 0,
+                "n_solutions": n_solutions,
                 "hypervolume": hv,
             }
             print(f"  {problem_name} pymoo seed={seed}: {elapsed:.2f}s")
@@ -675,8 +789,8 @@ def run_single_benchmark(problem_name, seed, framework):
 
     # DEAP
     elif framework == "deap":
-        if ALGORITHM != "nsgaii":
-            raise ValueError("DEAP baseline is only implemented for NSGA-II.")
+        if ALGORITHM not in {"nsgaii", "nsgaii_ss", "nsgaii_archive"}:
+            raise ValueError("DEAP baseline is only implemented for NSGA-II variants.")
         try:
             from deap import base, creator, tools
             import copy
@@ -711,6 +825,13 @@ def run_single_benchmark(problem_name, seed, framework):
             random.seed(seed)
             pop = toolbox.population(n=POP_SIZE)
             n_gen = max(0, (N_EVALS - POP_SIZE) // POP_SIZE)
+            n_offspring = max(0, N_EVALS - POP_SIZE)
+            use_archive = ALGORITHM == "nsgaii_archive"
+            archive = None
+            if use_archive:
+                from vamos.engine.algorithm.components.archive import UnboundedArchive
+
+                archive = UnboundedArchive(n_var, n_obj, float)
 
             start = time.perf_counter()
 
@@ -722,31 +843,65 @@ def run_single_benchmark(problem_name, seed, framework):
             # Assign crowding distance
             pop = toolbox.select(pop, len(pop))
 
-            for _ in range(n_gen):
-                offspring = toolbox.select_tournament(pop, len(pop))
-                offspring = list(map(toolbox.clone, offspring))
+            if use_archive and archive is not None:
+                X_pop = np.array([list(ind) for ind in pop], dtype=float)
+                F_pop = np.array([ind.fitness.values for ind in pop], dtype=float)
+                archive.update(X_pop, F_pop)
 
-                for i in range(0, len(offspring), 2):
+            if ALGORITHM == "nsgaii_ss":
+                for _ in range(n_offspring):
+                    parents = toolbox.select_tournament(pop, 4)
+                    child1, child2 = map(toolbox.clone, parents[:2])
                     if random.random() <= CROSSOVER_PROB:
-                        toolbox.mate(offspring[i], offspring[i + 1])
+                        toolbox.mate(child1, child2)
+                    child = child1
+                    toolbox.mutate(child)
+                    if hasattr(child, "fitness"):
+                        try:
+                            del child.fitness.values
+                        except Exception:
+                            pass
+                    child.fitness.values = toolbox.evaluate(child)
+                    if use_archive and archive is not None:
+                        archive.update(np.array([list(child)], dtype=float), np.array([child.fitness.values], dtype=float))
+                    pop = toolbox.select(pop + [child], POP_SIZE)
+            else:
+                for _ in range(n_gen):
+                    offspring = toolbox.select_tournament(pop, len(pop))
+                    offspring = list(map(toolbox.clone, offspring))
+
+                    for i in range(0, len(offspring), 2):
+                        if random.random() <= CROSSOVER_PROB:
+                            toolbox.mate(offspring[i], offspring[i + 1])
                         del offspring[i].fitness.values
                         del offspring[i + 1].fitness.values
 
-                for mutant in offspring:
-                    toolbox.mutate(mutant)
-                    del mutant.fitness.values
+                    for mutant in offspring:
+                        toolbox.mutate(mutant)
+                        del mutant.fitness.values
 
-                invalid = [ind for ind in offspring if not ind.fitness.valid]
-                for ind in invalid:
-                    ind.fitness.values = toolbox.evaluate(ind)
+                    invalid = [ind for ind in offspring if not ind.fitness.valid]
+                    for ind in invalid:
+                        ind.fitness.values = toolbox.evaluate(ind)
 
-                pop = toolbox.select(pop + offspring, POP_SIZE)
+                    if use_archive and archive is not None:
+                        X_off = np.array([list(ind) for ind in offspring], dtype=float)
+                        F_off = np.array([ind.fitness.values for ind in offspring], dtype=float)
+                        archive.update(X_off, F_off)
+
+                    pop = toolbox.select(pop + offspring, POP_SIZE)
 
             elapsed = time.perf_counter() - start
 
-            fronts = tools.sortNondominated(pop, len(pop), first_front_only=True)
-            F = np.array([ind.fitness.values for ind in fronts[0]])
-            hv = compute_hv(F, problem_name)
+            if use_archive and archive is not None:
+                _, F = archive.contents()
+                hv = compute_hv(F, problem_name)
+                n_solutions = int(F.shape[0]) if F is not None else 0
+            else:
+                fronts = tools.sortNondominated(pop, len(pop), first_front_only=True)
+                F = np.array([ind.fitness.values for ind in fronts[0]])
+                hv = compute_hv(F, problem_name)
+                n_solutions = len(fronts[0])
 
             result_entry = {
                 "framework": "DEAP",
@@ -755,7 +910,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
-                "n_solutions": len(fronts[0]),
+                "n_solutions": n_solutions,
                 "hypervolume": hv,
             }
             print(f"  {problem_name} DEAP seed={seed}: {elapsed:.2f}s")
@@ -819,15 +974,44 @@ def run_single_benchmark(problem_name, seed, framework):
 
             jmetal_problem = problem_map[problem_name]
 
-            if ALGORITHM == "nsgaii":
-                algorithm = NSGAII(
-                    problem=jmetal_problem,
-                    population_size=POP_SIZE,
-                    offspring_population_size=POP_SIZE,
-                    mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
-                    crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
-                    termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
-                )
+            archive = None
+            if ALGORITHM in {"nsgaii", "nsgaii_ss", "nsgaii_archive"}:
+                offspring_size = 1 if ALGORITHM == "nsgaii_ss" else POP_SIZE
+                if ALGORITHM == "nsgaii_archive":
+                    from vamos.engine.algorithm.components.archive import UnboundedArchive
+
+                    class NSGAIIArchive(NSGAII):
+                        def __init__(self, *args, archive_ref, **kwargs):
+                            super().__init__(*args, **kwargs)
+                            self._archive_ref = archive_ref
+
+                        def evaluate(self, solutions):
+                            evaluated = super().evaluate(solutions)
+                            if evaluated:
+                                X_vals = np.array([s.variables for s in evaluated], dtype=float)
+                                F_vals = np.array([s.objectives for s in evaluated], dtype=float)
+                                self._archive_ref.update(X_vals, F_vals)
+                            return evaluated
+
+                    archive = UnboundedArchive(n_var, n_obj, float)
+                    algorithm = NSGAIIArchive(
+                        problem=jmetal_problem,
+                        population_size=POP_SIZE,
+                        offspring_population_size=offspring_size,
+                        mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+                        crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
+                        termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
+                        archive_ref=archive,
+                    )
+                else:
+                    algorithm = NSGAII(
+                        problem=jmetal_problem,
+                        population_size=POP_SIZE,
+                        offspring_population_size=offspring_size,
+                        mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+                        crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
+                        termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
+                    )
             elif ALGORITHM == "smsemoa":
                 algorithm = SMSEMOA(
                     problem=jmetal_problem,
@@ -854,9 +1038,15 @@ def run_single_benchmark(problem_name, seed, framework):
             algorithm.run()
             elapsed = time.perf_counter() - start
 
-            solutions = algorithm.result()  # result() is a method, not property
-            F = np.array([s.objectives for s in solutions])
-            hv = compute_hv(F, problem_name)
+            if ALGORITHM == "nsgaii_archive" and archive is not None:
+                _, F = archive.contents()
+                hv = compute_hv(F, problem_name)
+                n_solutions = int(F.shape[0]) if F is not None else 0
+            else:
+                solutions = algorithm.result()  # result() is a method, not property
+                F = np.array([s.objectives for s in solutions])
+                hv = compute_hv(F, problem_name)
+                n_solutions = len(solutions)
 
             result_entry = {
                 "framework": "jMetalPy",
@@ -865,7 +1055,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
-                "n_solutions": len(solutions),
+                "n_solutions": n_solutions,
                 "hypervolume": hv,
             }
             print(f"  {problem_name} jMetalPy seed={seed}: {elapsed:.2f}s")
@@ -874,12 +1064,12 @@ def run_single_benchmark(problem_name, seed, framework):
 
     # Platypus
     elif framework == "platypus":
-        if ALGORITHM not in {"nsgaii", "moead"}:
-            raise ValueError("Platypus baseline is only implemented for NSGA-II and MOEA/D.")
+        if ALGORITHM not in {"nsgaii", "nsgaii_archive", "moead"}:
+            raise ValueError("Platypus baseline is only implemented for NSGA-II variants and MOEA/D.")
         try:
             from platypus import MOEAD as PlatypusMOEAD
             from platypus import NSGAII as PlatypusNSGAII, Problem, Real
-            from platypus import DifferentialEvolution, GAOperator, PM, SBX, TournamentSelector, pbi
+            from platypus import Archive, DifferentialEvolution, GAOperator, PM, SBX, TournamentSelector, pbi
             import random
 
             random.seed(seed)
@@ -950,7 +1140,8 @@ def run_single_benchmark(problem_name, seed, framework):
 
             platypus_problem = problem_map[problem_name]
 
-            if ALGORITHM == "nsgaii":
+            if ALGORITHM in {"nsgaii", "nsgaii_archive"}:
+                archive = Archive() if ALGORITHM == "nsgaii_archive" else None
                 variator = GAOperator(
                     SBX(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
                     PM(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
@@ -960,6 +1151,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     population_size=POP_SIZE,
                     selector=TournamentSelector(2),
                     variator=variator,
+                    archive=archive,
                 )
             else:
 
@@ -989,7 +1181,8 @@ def run_single_benchmark(problem_name, seed, framework):
             algorithm.run(N_EVALS)
             elapsed = time.perf_counter() - start
 
-            F = np.array([s.objectives for s in algorithm.result])
+            result_solutions = list(algorithm.result)
+            F = np.array([s.objectives for s in result_solutions])
             hv = compute_hv(F, problem_name)
 
             result_entry = {
@@ -999,7 +1192,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "n_evals": N_EVALS,
                 "seed": seed,
                 "runtime_seconds": elapsed,
-                "n_solutions": len(algorithm.result),
+                "n_solutions": len(result_solutions),
                 "hypervolume": hv,
             }
             print(f"  {problem_name} Platypus seed={seed}: {elapsed:.2f}s")
