@@ -221,6 +221,31 @@ Other CLIs
 - Self-check: `vamos-self-check`
 - Benchmarking: `vamos-benchmark --list` and `vamos-benchmark ZDT_small --algorithms nsgaii moead --output report/`
 - Tuning: `vamos-tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 20000 --n-jobs 4`
+- Ablation plans: `vamos ablation --config configs/ablation.yaml`
 - Profiling: `vamos-profile --problem zdt1 --engines numpy,numba --budget 2000 --output report/profile.csv`
 - Problem zoo: `vamos-zoo list`, `vamos-zoo info zdt1`, `vamos-zoo run zdt1 --algorithm nsgaii --budget 3000`
 - Studio (interactive, needs `studio` extra): `vamos-studio --study-dir results`
+
+Ablation config example
+-----------------------
+
+```yaml
+algorithm: nsgaii
+engine: numpy
+output_root: results/ablation_demo
+default_max_evals: 2000
+problems: [zdt1]
+seeds: [1, 2, 3]
+base_config:
+  population_size: 60
+  offspring_population_size: 60
+variants:
+  - name: baseline
+  - name: aos
+    nsgaii_variation:
+      adaptive_operator_selection:
+        enabled: true
+summary_dir: results/ablation_demo/summary
+```
+
+The CLI writes a summary CSV by default to `<output_root>/summary/ablation_metrics.csv` (override with `summary_path` or `summary_dir`).

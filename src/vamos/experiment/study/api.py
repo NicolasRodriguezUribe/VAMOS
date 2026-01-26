@@ -27,6 +27,8 @@ def _apply_overrides(tasks: Iterable[StudyTask], overrides: dict[str, Any]) -> l
                 external_archive_size=task.external_archive_size,
                 archive_type=task.archive_type,
                 nsgaii_variation=task.nsgaii_variation,
+                moead_variation=task.moead_variation,
+                smsemoa_variation=task.smsemoa_variation,
                 config_overrides=merged,
             )
         )
@@ -52,6 +54,8 @@ def build_study_tasks_from_ablation_plan(
     algorithm: str,
     base_config: Mapping[str, Any] | None = None,
     nsgaii_variations: Mapping[str, Mapping[str, Any]] | None = None,
+    moead_variations: Mapping[str, Mapping[str, Any]] | None = None,
+    smsemoa_variations: Mapping[str, Mapping[str, Any]] | None = None,
     engine: str | None = None,
 ) -> tuple[list[StudyTask], list[str]]:
     tasks: list[StudyTask] = []
@@ -65,6 +69,12 @@ def build_study_tasks_from_ablation_plan(
         nsgaii_variation = None
         if nsgaii_variations is not None:
             nsgaii_variation = nsgaii_variations.get(ablation_task.variant.name)
+        moead_variation = None
+        if moead_variations is not None:
+            moead_variation = moead_variations.get(ablation_task.variant.name)
+        smsemoa_variation = None
+        if smsemoa_variations is not None:
+            smsemoa_variation = smsemoa_variations.get(ablation_task.variant.name)
         tasks.append(
             StudyTask(
                 algorithm=algorithm,
@@ -73,6 +83,8 @@ def build_study_tasks_from_ablation_plan(
                 seed=ablation_task.seed,
                 config_overrides=overrides,
                 nsgaii_variation=nsgaii_variation,
+                moead_variation=moead_variation,
+                smsemoa_variation=smsemoa_variation,
             )
         )
         variant_names.append(ablation_task.variant.name)
@@ -86,6 +98,8 @@ def run_ablation_plan(
     algorithm: str,
     base_config: Mapping[str, Any] | None = None,
     nsgaii_variations: Mapping[str, Mapping[str, Any]] | None = None,
+    moead_variations: Mapping[str, Mapping[str, Any]] | None = None,
+    smsemoa_variations: Mapping[str, Mapping[str, Any]] | None = None,
     engine: str | None = None,
     config_overrides: dict[str, Any] | None = None,
     mirror_output_roots: Sequence[str] | None = ("results",),
@@ -95,6 +109,8 @@ def run_ablation_plan(
         algorithm=algorithm,
         base_config=base_config,
         nsgaii_variations=nsgaii_variations,
+        moead_variations=moead_variations,
+        smsemoa_variations=smsemoa_variations,
         engine=engine,
     )
     results = run_study(tasks, config_overrides=config_overrides, mirror_output_roots=mirror_output_roots)
