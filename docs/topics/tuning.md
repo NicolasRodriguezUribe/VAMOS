@@ -61,6 +61,7 @@ This will run a racing tuner to find the best hyperparameters for NSGA-II on ZDT
 
 Notes:
 - The MOEA/D tuner explores both SBX and DE crossovers, and can select PBI aggregation (with a tunable theta). These settings align with the jMetalPy default configuration when chosen.
+- The NSGA-II tuner includes external archive controls. When `archive_unbounded=True`, the archive is unbounded, `archive_type`/`archive_size_factor` are inactive, and the archive size is treated as the initial capacity (defaults to `pop_size`).
 
 ### Options
 
@@ -69,3 +70,45 @@ Notes:
 - `--budget`: Total tuning budget (evaluations).
 - `--n-jobs`: Number of parallel workers.
 - `--output`: Directory to save the best configuration (JSON).
+
+## Ablation Planning
+
+Use the ablation planning helpers to define variants (same algorithm, different configuration toggles)
+and build a reproducible task matrix.
+
+```python
+from vamos.engine.tuning.api import AblationVariant, build_ablation_plan
+
+variants = [
+    AblationVariant(name="baseline"),
+    AblationVariant(name="aos"),
+    AblationVariant(name="tuned", config_overrides={"population_size": 80}),
+]
+
+plan = build_ablation_plan(
+    problems=["zdt1", "dtlz2"],
+    variants=variants,
+    seeds=[1, 2, 3],
+    default_max_evals=20000,
+    engine="numpy",
+)
+```
+
+To convert the plan into runnable study tasks (or run directly), use the study helpers:
+
+```python
+from vamos.experiment.study.api import run_ablation_plan
+
+results, variant_names = run_ablation_plan(
+    plan,
+    algorithm="nsgaii",
+    base_config={"population_size": 50},
+)
+```
+
+To execute an ablation plan with the experiment layer, see:
+- `examples/tuning/ablation_runner.py`
+- `notebooks/2_advanced/32_ablation_planning.ipynb`
+
+Interpreting contributions: compare median final metrics (e.g., HV at full budget)
+and compute deltas vs the baseline variant.

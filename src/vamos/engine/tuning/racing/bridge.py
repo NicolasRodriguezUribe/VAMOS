@@ -24,6 +24,7 @@ from .param_space import (
     Int,
     Categorical,
     Boolean,
+    Condition,
     ParamType,
     ConditionalBlock,
 )
@@ -46,7 +47,10 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
         Int("selection_pressure", 2, 10),
         Categorical("repair", ["none", "clip", "reflect", "random", "round"]),
         Boolean("use_external_archive"),
+        Boolean("archive_unbounded"),
     ]
+    archive_type_param = Categorical("archive_type", ["hypervolume", "crowding"])
+    archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
         ConditionalBlock(
@@ -89,12 +93,16 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
             "use_external_archive",
             True,
             [
-                Categorical("archive_type", ["hypervolume", "crowding", "unbounded"]),
-                Categorical("archive_size_factor", [1, 2, 5, 10]),
+                archive_type_param,
+                archive_size_factor_param,
             ],
         ),
     ]
-    return AlgorithmConfigSpace("nsgaii", params, conditionals)
+    conditions = [
+        Condition("archive_type", "cfg['archive_unbounded'] == False"),
+        Condition("archive_size_factor", "cfg['archive_unbounded'] == False"),
+    ]
+    return AlgorithmConfigSpace("nsgaii", params, conditionals, conditions)
 
 
 def build_moead_config_space() -> AlgorithmConfigSpace:
@@ -273,10 +281,14 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
 
         use_external_archive = bool(assignment.get("use_external_archive", False))
         if use_external_archive:
-            archive_type = str(assignment.get("archive_type", "hypervolume"))
-            if archive_type == "unbounded":
+            archive_type_raw = assignment.get("archive_type", "hypervolume")
+            archive_unbounded = bool(assignment.get("archive_unbounded", False))
+            if str(archive_type_raw).strip().lower() == "unbounded":
+                archive_unbounded = True
+            if archive_unbounded:
                 builder.archive(int(assignment["pop_size"]), unbounded=True)
             else:
+                archive_type = str(archive_type_raw)
                 archive_size_factor = int(assignment.get("archive_size_factor", 1))
                 if archive_size_factor < 1:
                     raise ValueError("archive_size_factor must be >= 1.")

@@ -22,13 +22,28 @@ class AlgorithmConfigSpace:
     algorithm_name: str
     params: list[ParamType]
     conditionals: list[ConditionalBlock] | None = None
+    conditions: list[Condition] | None = None
 
-    def _active_conditionals(self, assignment: dict[str, Any]) -> list[ConditionalBlock]:
-        active: list[ConditionalBlock] = []
+    def _conditional_params(self) -> list[ParamType]:
+        params: list[ParamType] = []
+        seen = {p.name for p in self.params}
         for block in self.conditionals or []:
-            if assignment.get(block.parent_name) == block.parent_value:
-                active.append(block)
-        return active
+            for p in block.params:
+                if p.name in seen:
+                    continue
+                params.append(p)
+                seen.add(p.name)
+        return params
+
+    def _combined_conditions(self) -> list[Condition]:
+        conditions: list[Condition] = []
+        for block in self.conditionals or []:
+            expr = f"cfg['{block.parent_name}'] == {block.parent_value!r}"
+            for p in block.params:
+                conditions.append(Condition(p.name, expr))
+        if self.conditions:
+            conditions.extend(self.conditions)
+        return conditions
 
     def flatten(self, assignment: dict[str, Any] | None = None) -> list[ParamType]:
         """
@@ -38,8 +53,10 @@ class AlgorithmConfigSpace:
         if assignment is None:
             return list(self.params)
         active = list(self.params)
-        for block in self._active_conditionals(assignment):
-            active.extend(block.params)
+        param_space = self.to_param_space()
+        for p in self._conditional_params():
+            if param_space.is_active(p.name, assignment):
+                active.append(p)
         return active
 
     def sample(self, rng: np.random.Generator) -> dict[str, Any]:
@@ -49,8 +66,9 @@ class AlgorithmConfigSpace:
         assignment: dict[str, Any] = {}
         for p in self.params:
             assignment[p.name] = p.sample(rng)
-        for block in self._active_conditionals(assignment):
-            for p in block.params:
+        param_space = self.to_param_space()
+        for p in self._conditional_params():
+            if param_space.is_active(p.name, assignment):
                 assignment[p.name] = p.sample(rng)
         return assignment
 
@@ -61,8 +79,9 @@ class AlgorithmConfigSpace:
         values: list[float] = []
         for p in self.params:
             values.append(float(p.to_unit(assignment[p.name])))
-        for block in self._active_conditionals(assignment):
-            for p in block.params:
+        param_space = self.to_param_space()
+        for p in self._conditional_params():
+            if param_space.is_active(p.name, assignment):
                 values.append(float(p.to_unit(assignment[p.name])))
         return np.asarray(values, dtype=float)
 
@@ -75,8 +94,9 @@ class AlgorithmConfigSpace:
         for p in self.params:
             assignment[p.name] = p.from_unit(float(u[idx]))
             idx += 1
-        for block in self._active_conditionals(assignment):
-            for p in block.params:
+        param_space = self.to_param_space()
+        for p in self._conditional_params():
+            if param_space.is_active(p.name, assignment):
                 assignment[p.name] = p.from_unit(float(u[idx]))
                 idx += 1
         return assignment
@@ -86,14 +106,17 @@ class AlgorithmConfigSpace:
         Convert this config space into a ParamSpace suitable for the racing pipeline.
         """
         params: dict[str, ParamType] = {p.name: p for p in self.params}
-        conditions: list[Condition] = []
+        conditions = self._combined_conditions()
 
         for block in self.conditionals or []:
-            expr = f"cfg['{block.parent_name}'] == {block.parent_value!r}"
             for p in block.params:
                 if p.name in params and params[p.name] is not p:
                     raise ValueError(f"Duplicate parameter '{p.name}' in conditional blocks.")
                 params[p.name] = p
-                conditions.append(Condition(p.name, expr))
+
+        if self.conditions:
+            for cond in self.conditions:
+                if cond.param_name not in params:
+                    raise ValueError(f"Condition references unknown parameter '{cond.param_name}'.")
 
         return ParamSpace(params=params, conditions=conditions)
