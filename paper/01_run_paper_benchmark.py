@@ -8,8 +8,8 @@ Usage: python paper/01_run_paper_benchmark.py
 Use 04_update_paper_tables_from_csv.py to generate and inject LaTeX tables.
 
 Environment variables:
-  - VAMOS_PAPER_ALGORITHM: all (default), nsgaii, nsgaii-ss, nsgaii-archive, smsemoa, moead,
-    or a comma list (e.g., nsgaii-ss,smsemoa)
+  - VAMOS_PAPER_ALGORITHM: nsgaii, nsgaii-ss, nsgaii-archive, smsemoa, moead,
+    or a comma list (e.g., nsgaii-ss,smsemoa). If unset, runs nsgaii-ss + nsgaii-archive.
   - VAMOS_PAPER_ALGORITHMS: comma-separated list to run sequentially
     (e.g., nsgaii,nsgaii-ss,nsgaii-archive,smsemoa,moead)
   - VAMOS_N_EVALS: evaluations per run (default: 50000)
@@ -89,13 +89,13 @@ if not _algo_list_env:
     _algo_single_raw = os.environ.get("VAMOS_PAPER_ALGORITHM")
     _algo_single = (_algo_single_raw or "").strip().lower()
     if not _algo_single:
-        _algo_list_env = "nsgaii,nsgaii_ss,nsgaii_archive,smsemoa,moead"
+        _algo_list_env = "nsgaii_ss,nsgaii_archive"
     elif "," in _algo_single:
         _algo_list_env = _algo_single
     elif _algo_single in {"sms-moead", "smsemoa+moead", "smsemoa_moead", "moead+smsemoa", "moead-smsemoa"}:
         _algo_list_env = "smsemoa,moead"
     elif _algo_single in {"all", "full", "paper"}:
-        _algo_list_env = "nsgaii,nsgaii_ss,nsgaii_archive,smsemoa,moead"
+        _algo_list_env = "nsgaii_ss,nsgaii_archive"
 
 if _algo_list_env:
     raw_list = [item.strip() for item in _algo_list_env.split(",") if item.strip()]
@@ -264,10 +264,11 @@ from joblib import Parallel, delayed
 
 # Use all cores minus 1
 # joblib supports negative n_jobs (e.g., -1 = all cores). Only n_jobs==1 is truly sequential.
-N_JOBS = int(os.environ.get("VAMOS_N_JOBS", max(1, os.cpu_count() - 1)))
+N_JOBS = int(os.environ.get("VAMOS_N_JOBS", "8"))
 if N_JOBS == 0:
     raise ValueError("VAMOS_N_JOBS cannot be 0 (joblib expects 1, -1, or another non-zero integer).")
 print(f"Using {N_JOBS} parallel workers")
+SAVE_EVERY = int(os.environ.get("VAMOS_PAPER_SAVE_EVERY", "50"))
 
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos import optimize
@@ -1202,6 +1203,13 @@ def run_single_benchmark(problem_name, seed, framework):
     return result_entry
 
 
+def _save_partial(results_list):
+    """Persist intermediate results to CSV (overwrites with latest state)."""
+    filtered = [r for r in results_list if r is not None]
+    df = pd.DataFrame(filtered)
+    df.to_csv(OUTPUT_CSV, index=False)
+
+
 # Preflight objective alignment (guards against definition drift)
 run_objective_alignment_checks()
 
@@ -1233,11 +1241,26 @@ if parallel_jobs:
         results_list = []
         for p, s, b in parallel_jobs:
             results_list.append(run_single_benchmark(p, s, b))
+            if SAVE_EVERY > 0 and len(results_list) % SAVE_EVERY == 0:
+                _save_partial(results_list)
             bar.update(1)
         bar.close()
     else:
-        with joblib_progress(total=len(parallel_jobs), desc="Paper benchmark"):
-            results_list = Parallel(n_jobs=N_JOBS, batch_size=1)(delayed(run_single_benchmark)(p, s, b) for p, s, b in parallel_jobs)
+        results_list = []
+        if SAVE_EVERY > 0:
+            for i in range(0, len(parallel_jobs), SAVE_EVERY):
+                chunk = parallel_jobs[i : i + SAVE_EVERY]
+                with joblib_progress(total=len(chunk), desc="Paper benchmark"):
+                    chunk_results = Parallel(n_jobs=N_JOBS, batch_size=1)(
+                        delayed(run_single_benchmark)(p, s, b) for p, s, b in chunk
+                    )
+                results_list.extend(chunk_results)
+                _save_partial(results_list)
+        else:
+            with joblib_progress(total=len(parallel_jobs), desc="Paper benchmark"):
+                results_list = Parallel(n_jobs=N_JOBS, batch_size=1)(
+                    delayed(run_single_benchmark)(p, s, b) for p, s, b in parallel_jobs
+                )
 else:
     results_list = []
 
@@ -1248,6 +1271,8 @@ for p, s, b in sequential_jobs:
     result = run_single_benchmark(p, s, b)
     if result:
         results_list.append(result)
+        if SAVE_EVERY > 0 and len(results_list) % SAVE_EVERY == 0:
+            _save_partial(results_list)
     if seq_bar is not None:
         seq_bar.update(1)
 if seq_bar is not None:
