@@ -1228,13 +1228,19 @@ run_objective_alignment_checks()
 PARALLEL_FRAMEWORKS = ["vamos-numpy", "vamos-numba", "vamos-moocore", "pymoo", "deap", "jmetalpy", "platypus"]
 SEQUENTIAL_FRAMEWORKS = []
 
+SCHEDULE = os.environ.get("VAMOS_PAPER_SCHEDULE", "by_job").strip().lower()
+if SCHEDULE not in {"by_job", "by_framework"}:
+    raise ValueError("VAMOS_PAPER_SCHEDULE must be 'by_job' or 'by_framework'.")
+
 parallel_jobs = []
 sequential_jobs = []
+jobs_by_framework: dict[str, list[tuple[str, int, str]]] = {fw: [] for fw in FRAMEWORKS}
 
 for problem_name in PROBLEMS:
     for seed in range(N_SEEDS):
         for framework in FRAMEWORKS:
             job = (problem_name, seed, framework)
+            jobs_by_framework[framework].append(job)
             if framework in SEQUENTIAL_FRAMEWORKS:
                 sequential_jobs.append(job)
             else:
@@ -1246,7 +1252,43 @@ print(f"Total: {len(parallel_jobs) + len(sequential_jobs)}")
 
 # Run parallel jobs first
 print(f"\nRunning {len(parallel_jobs)} parallel jobs...")
-if parallel_jobs:
+if SCHEDULE == "by_framework":
+    results_list = []
+    for fw in FRAMEWORKS:
+        fw_jobs = jobs_by_framework.get(fw, [])
+        if not fw_jobs:
+            continue
+        print(f"\nRunning {len(fw_jobs)} jobs for framework '{fw}'...")
+
+        # Always run "sequential frameworks" sequentially, regardless of N_JOBS.
+        if fw in SEQUENTIAL_FRAMEWORKS or N_JOBS == 1:
+            bar = ProgressBar(total=len(fw_jobs), desc=f"Paper benchmark ({fw})")
+            for p, s, b in fw_jobs:
+                results_list.append(run_single_benchmark(p, s, b))
+                if SAVE_EVERY > 0 and len(results_list) % SAVE_EVERY == 0:
+                    _save_partial(results_list)
+                bar.update(1)
+            bar.close()
+        else:
+            if SAVE_EVERY > 0:
+                for i in range(0, len(fw_jobs), SAVE_EVERY):
+                    chunk = fw_jobs[i : i + SAVE_EVERY]
+                    with joblib_progress(total=len(chunk), desc=f"Paper benchmark ({fw})"):
+                        chunk_results = Parallel(n_jobs=N_JOBS, batch_size=1)(
+                            delayed(run_single_benchmark)(p, s, b) for p, s, b in chunk
+                        )
+                    results_list.extend(chunk_results)
+                    _save_partial(results_list)
+            else:
+                with joblib_progress(total=len(fw_jobs), desc=f"Paper benchmark ({fw})"):
+                    fw_results = Parallel(n_jobs=N_JOBS, batch_size=1)(
+                        delayed(run_single_benchmark)(p, s, b) for p, s, b in fw_jobs
+                    )
+                results_list.extend(fw_results)
+
+        # Extra safety: flush after each framework block completes.
+        _save_partial(results_list)
+elif parallel_jobs:
     if N_JOBS == 1:
         bar = ProgressBar(total=len(parallel_jobs), desc="Paper benchmark")
         results_list = []
