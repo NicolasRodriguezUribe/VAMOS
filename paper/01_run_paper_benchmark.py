@@ -240,6 +240,11 @@ else:
 _frameworks_env = os.environ.get("VAMOS_PAPER_FRAMEWORKS")
 FRAMEWORKS = [f.strip() for f in _frameworks_env.split(",") if f.strip()] if _frameworks_env else DEFAULT_FRAMEWORKS
 
+# Platypus is not supported for the steady-state NSGA-II baseline.
+# Ensure it's not present when running the steady-state experiment.
+if ALGORITHM == "nsgaii_ss":
+    FRAMEWORKS = [f for f in FRAMEWORKS if f != "platypus"]
+
 # Build problem list
 PROBLEMS = []
 if USE_ZDT:
