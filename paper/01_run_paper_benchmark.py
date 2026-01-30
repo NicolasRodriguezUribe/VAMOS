@@ -249,6 +249,17 @@ if USE_DTLZ:
 if USE_WFG:
     PROBLEMS.extend(WFG_PROBLEMS)
 
+_problems_env = os.environ.get("VAMOS_PAPER_PROBLEMS")
+if _problems_env:
+    requested = [p.strip().lower() for p in _problems_env.split(",") if p.strip()]
+    if not requested:
+        raise ValueError("VAMOS_PAPER_PROBLEMS is set but empty.")
+    requested_set = set(requested)
+    unknown = [p for p in requested if p not in set(p.lower() for p in PROBLEMS)]
+    if unknown:
+        raise ValueError(f"Unknown problems in VAMOS_PAPER_PROBLEMS: {unknown}")
+    PROBLEMS = [p for p in PROBLEMS if p.lower() in requested_set]
+
 print(f"Configured {len(PROBLEMS)} problems: {PROBLEMS}")
 print(f"Algorithm: {ALGORITHM_DISPLAY} ({ALGORITHM})")
 print(f"Frameworks: {FRAMEWORKS}")
