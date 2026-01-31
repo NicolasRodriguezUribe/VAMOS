@@ -285,6 +285,7 @@ if N_JOBS == 0:
     raise ValueError("VAMOS_N_JOBS cannot be 0 (joblib expects 1, -1, or another non-zero integer).")
 print(f"Using {N_JOBS} parallel workers")
 SAVE_EVERY = int(os.environ.get("VAMOS_PAPER_SAVE_EVERY", "50"))
+RESUME = os.environ.get("VAMOS_PAPER_RESUME", "1").strip().lower() not in {"0", "false", "no"}
 
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos import optimize
@@ -1222,7 +1223,22 @@ def run_single_benchmark(problem_name, seed, framework):
 def _save_partial(results_list):
     """Persist intermediate results to CSV (overwrites with latest state)."""
     filtered = [r for r in results_list if r is not None]
-    df = pd.DataFrame(filtered)
+    if not filtered:
+        return
+    df_new = pd.DataFrame(filtered)
+    if OUTPUT_CSV.exists() and RESUME:
+        try:
+            df_old = pd.read_csv(OUTPUT_CSV)
+        except Exception as exc:
+            print(f"Warning: failed to read existing CSV for resume ({OUTPUT_CSV}): {exc}")
+            df = df_new
+        else:
+            df = pd.concat([df_old, df_new], ignore_index=True)
+            key_cols = [c for c in ["framework", "problem", "algorithm", "n_evals", "seed"] if c in df.columns]
+            if key_cols:
+                df = df.drop_duplicates(subset=key_cols, keep="last")
+    else:
+        df = df_new
     df.to_csv(OUTPUT_CSV, index=False)
 
 
@@ -1241,9 +1257,50 @@ parallel_jobs = []
 sequential_jobs = []
 jobs_by_framework: dict[str, list[tuple[str, int, str]]] = {fw: [] for fw in FRAMEWORKS}
 
+def _framework_result_name(framework: str) -> str:
+    if framework.startswith("vamos-"):
+        backend = framework.replace("vamos-", "")
+        return f"VAMOS ({backend})"
+    if framework == "jmetalpy":
+        return "jMetalPy"
+    if framework == "deap":
+        return "DEAP"
+    if framework == "platypus":
+        return "Platypus"
+    return framework
+
+completed_keys: set[tuple[str, str, str, int, int]] = set()
+if RESUME and OUTPUT_CSV.exists():
+    try:
+        existing = pd.read_csv(OUTPUT_CSV)
+    except Exception as exc:
+        print(f"Warning: could not load existing CSV for resume ({OUTPUT_CSV}): {exc}")
+    else:
+        expected_cols = {"framework", "problem", "algorithm", "n_evals", "seed"}
+        if expected_cols.issubset(existing.columns):
+            existing["problem"] = existing["problem"].astype(str).str.lower()
+            # Only resume within the same algorithm/budget to avoid mixing runs.
+            existing = existing[(existing["algorithm"] == ALGORITHM_DISPLAY) & (existing["n_evals"] == N_EVALS)]
+            completed_keys = {
+                (
+                    str(row.framework),
+                    str(row.problem).lower(),
+                    str(row.algorithm),
+                    int(row.n_evals),
+                    int(row.seed),
+                )
+                for row in existing.itertuples(index=False)
+            }
+            print(f"Resume enabled: found {len(completed_keys)} completed runs in {OUTPUT_CSV}")
+        else:
+            print(f"Warning: resume is enabled but {OUTPUT_CSV} lacks required columns: {sorted(expected_cols)}")
+
 for problem_name in PROBLEMS:
     for seed in range(N_SEEDS):
         for framework in FRAMEWORKS:
+            result_fw = _framework_result_name(framework)
+            if completed_keys and (result_fw, problem_name, ALGORITHM_DISPLAY, N_EVALS, seed) in completed_keys:
+                continue
             job = (problem_name, seed, framework)
             jobs_by_framework[framework].append(job)
             if framework in SEQUENTIAL_FRAMEWORKS:
@@ -1340,7 +1397,6 @@ if seq_bar is not None:
 results = [r for r in results_list if r is not None]
 
 # Save results
-df = pd.DataFrame(results)
-df.to_csv(OUTPUT_CSV, index=False)
-print(f"\nSaved {len(df)} results to {OUTPUT_CSV}")
+_save_partial(results)
+print(f"\nSaved results to {OUTPUT_CSV}")
 print("\nDone!")
