@@ -439,7 +439,7 @@ NumPy & 2.08 & 2.07 & 2.03 & 2.06 \\
 \subsection{Cross-framework comparison}
 
 Table~\ref{tab:frameworks_perf} compares \VAMOS{} against other Python frameworks on runtime. \VAMOS{} is evaluated with its accelerated backend (Numba) for the headline comparison, while additional backends are reported in the appendix.
-We repeat the same runtime protocol for SMS-EMOA (steady-state, one offspring per iteration) and MOEA/D (decomposition with differential-evolution variation), reported in Tables~\ref{tab:frameworks_perf_smsemoa} and~\ref{tab:frameworks_perf_moead}.
+We repeat the same runtime protocol for NSGA-II variants (steady-state and external archive), SMS-EMOA (steady-state, one offspring per iteration), and MOEA/D (decomposition with differential-evolution variation), reported in Tables~\ref{tab:frameworks_perf_nsgaii_ss} and~\ref{tab:frameworks_perf_nsgaii_archive} and Tables~\ref{tab:frameworks_perf_smsemoa} and~\ref{tab:frameworks_perf_moead}.
 
 \begin{table}[htbp]
 \centering
@@ -457,6 +457,21 @@ Platypus & 10.86 & 11.31 & 16.38 & 12.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\paragraph{Steady-state NSGA-II.}
+Some toolkits expose a steady-state (incremental-replacement) variant of NSGA-II, typically implemented as a $(\mu+1)$ loop with one offspring per iteration and one survivor replaced.
+We benchmark this mode by aligning NSGA-II settings across frameworks and setting the offspring batch size to~1.
+In \VAMOS{}, we configure steady-state mode with \texttt{offspring\_size}=1 and \texttt{replacement\_size}=1; in pymoo we set \texttt{n\_offsprings}=1; in jMetalPy we set \texttt{offspring\_population\_size}=1; and for DEAP we implement the corresponding one-offspring loop around \texttt{selNSGA2}.
+Platypus does not provide an equivalent steady-state NSGA-II API, so we omit it from this comparison.
+
+\input{frameworks_perf_nsgaii_ss.tex}
+
+\paragraph{NSGA-II with external archive.}
+To assess the overhead of maintaining an external elite set, we also benchmark NSGA-II with an \emph{unbounded} external archive that accumulates non-dominated solutions throughout the run.
+For this variant, we compute normalized hypervolume on the archive contents (rather than the final population) to reflect the larger retained approximation set.
+In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo and DEAP we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook; and in Platypus we pass an \texttt{Archive()} object.
+
+\input{frameworks_perf_nsgaii_archive.tex}
 
 \input{frameworks_perf_smsemoa.tex}
 \input{frameworks_perf_moead.tex}
