@@ -11,6 +11,8 @@ Reads: experiments/benchmark_paper*.csv (controlled by VAMOS_PAPER_ALGORITHM)
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 import pandas as pd
 import numpy as np
 import hashlib
@@ -25,6 +27,19 @@ DATA_DIR = Path(__file__).parent.parent / "experiments"
 OUTPUT_DIR = Path(__file__).parent / "manuscript"
 
 _algo_env = os.environ.get("VAMOS_PAPER_ALGORITHM", "nsgaii").strip().lower()
+
+if _algo_env in {"all", "*"}:
+    # Convenience mode: run the analysis for all algorithms used in the paper.
+    # - NSGA-II updates main.tex by default.
+    # - SMS-EMOA and MOEA/D write their LaTeX tables into manuscript/ without touching main.tex.
+    for _algo in ["nsgaii", "smsemoa", "moead"]:
+        _env = os.environ.copy()
+        _env["VAMOS_PAPER_ALGORITHM"] = _algo
+        if _algo != "nsgaii":
+            _env.setdefault("VAMOS_PAPER_UPDATE_MAIN_TEX", "0")
+        subprocess.run([sys.executable, __file__], check=True, env=_env)
+    raise SystemExit(0)
+
 if _algo_env in {"nsgaii", "nsga2", "nsga-ii", "nsga_ii"}:
     ALGORITHM = "nsgaii"
 elif _algo_env in {"smsemoa", "sms-emoa", "sms_emoa"}:

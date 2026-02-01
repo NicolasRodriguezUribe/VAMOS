@@ -30,6 +30,7 @@
     "clip",
     {}
   ],
+  "replacement_size": null,
   "result_mode": "external_archive",
   "selection": [
     "tournament",
@@ -37,5 +38,6 @@
       "pressure": 4
     }
   ],
+  "steady_state": false,
   "track_genealogy": false
 }

@@ -18,6 +18,7 @@ Install dependencies (includes benchmark frameworks used in the paper):
 
 Regenerate LaTeX tables from the committed CSVs:
 - Runtime tables: `python paper/04_update_paper_tables_from_csv.py`
+- Variant runtime tables (NSGA-II variants, SMS-EMOA, MOEA/D): `python paper/14_update_frameworks_perf_variant_tables_from_csv.py`
 - Statistical tables (HV + equivalence/robustness): `python paper/05_run_statistical_tests.py`
 - Ablation tables: `python paper/06_update_ablation_tables_from_csv.py`
 - Anytime ablation tables: `python paper/10_update_anytime_tables_from_csv.py`
@@ -35,17 +36,19 @@ Generates `experiments/benchmark_paper.csv`:
 1) Benchmark (cross-framework): `python paper/01_run_paper_benchmark.py`
 2) Ablation (VAMOS-only): `python paper/02_run_ablation_aos_racing_tuner.py`
 3) Update runtime tables: `python paper/04_update_paper_tables_from_csv.py`
-4) Update statistical tables: `python paper/05_run_statistical_tests.py`
-5) Update ablation tables: `python paper/06_update_ablation_tables_from_csv.py`
-6) Update anytime ablation tables: `python paper/10_update_anytime_tables_from_csv.py`
-7) Update tuned-config table: `python paper/09_update_tuned_config_from_json.py`
-8) Compile PDF + sync sources to Overleaf (excludes `main.pdf`): `python paper/08_compile_manuscript_pdf.py`
+4) Update variant runtime tables: `python paper/14_update_frameworks_perf_variant_tables_from_csv.py`
+5) Update statistical tables: `python paper/05_run_statistical_tests.py`
+6) Update ablation tables: `python paper/06_update_ablation_tables_from_csv.py`
+7) Update anytime ablation tables: `python paper/10_update_anytime_tables_from_csv.py`
+8) Update tuned-config table: `python paper/09_update_tuned_config_from_json.py`
+9) Compile PDF + sync sources to Overleaf (excludes `main.pdf`): `python paper/08_compile_manuscript_pdf.py`
    - Compile only (no sync): `python paper/08_compile_manuscript_pdf.py --no-sync` (or `--no-sync-overleaf`)
      - Sync requires the Overleaf git remote (default name: `overleaf`) and saved credentials (Git auth token).
 
 Controls:
 - `VAMOS_N_EVALS` (default `100000`), `VAMOS_N_SEEDS` (default `30`), `VAMOS_N_JOBS`
 - `VAMOS_PAPER_FRAMEWORKS` (comma-separated: `vamos-numpy,vamos-numba,vamos-moocore,pymoo,deap,jmetalpy,platypus`)
+- `VAMOS_PAPER_ALGORITHM` (`nsgaii`, `smsemoa`, `moead`, or `all`) and `VAMOS_PAPER_UPDATE_MAIN_TEX` (`0`/`1`, defaults to `1` for NSGA-II)
 
 ## Submission packaging (Elsevier / SwEvo)
 
