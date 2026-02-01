@@ -10,6 +10,7 @@ except ImportError:  # pragma: no cover - optional dependency
     _moocore = None
 
 from vamos.foundation.kernel.numpy_backend import _compute_crowding
+from vamos.foundation.metrics.pareto import pareto_filter
 
 
 def _single_front_crowding(F: np.ndarray) -> np.ndarray:
@@ -227,18 +228,37 @@ class UnboundedArchive:
         if pop_X.size == 0:
             return self._snapshot()
 
-        for i in range(pop_X.shape[0]):
-            x = pop_X[i]
-            f = pop_F[i]
-            if self._size == 0:
-                self._append(x, f)
-                continue
-            if self._is_dominated(f):
-                continue
-            if self._is_duplicate(f):
-                continue
-            self._remove_dominated(f)
-            self._append(x, f)
+        if self._size == 0:
+            X_comb = pop_X
+            F_comb = pop_F
+        else:
+            total = self._size + pop_X.shape[0]
+            X_comb = np.empty((total, self._n_var), dtype=self._dtype)
+            F_comb = np.empty((total, self._n_obj), dtype=float)
+            X_comb[: self._size] = self._X[: self._size]
+            F_comb[: self._size] = self._F[: self._size]
+            X_comb[self._size :] = pop_X
+            F_comb[self._size :] = pop_F
+
+        F_comb = np.asarray(F_comb, dtype=float, order="C")
+        if _moocore is not None:
+            nd_mask = np.asarray(_moocore.is_nondominated(F_comb), dtype=bool)
+            X_nd = X_comb[nd_mask]
+            F_nd = F_comb[nd_mask]
+        else:
+            _, nd_idx = pareto_filter(F_comb, return_indices=True)
+            X_nd = X_comb[nd_idx]
+            F_nd = F_comb[nd_idx]
+
+        X_nd, F_nd = self._dedupe(X_nd, F_nd)
+        new_size = int(F_nd.shape[0])
+        if self._X.shape[0] < new_size:
+            self._X = np.empty((new_size, self._n_var), dtype=self._dtype)
+            self._F = np.empty((new_size, self._n_obj), dtype=float)
+        self._size = new_size
+        if self._size:
+            np.copyto(self._X[: self._size], X_nd)
+            np.copyto(self._F[: self._size], F_nd)
 
         return self._snapshot()
 
@@ -298,6 +318,41 @@ class UnboundedArchive:
                     self._F[write] = self._F[read]
                 write += 1
         self._size = write
+
+    def _dedupe(self, X: np.ndarray, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        tol = float(self._objective_tolerance)
+        if tol <= 0.0 or F.shape[0] <= 1:
+            return X, F
+
+        max_abs = float(np.max(np.abs(F)))
+        if max_abs == 0.0:
+            return X[:1], F[:1]
+
+        max_int = np.iinfo(np.int64).max
+        if max_abs / tol <= max_int:
+            keys = np.round(F / tol).astype(np.int64, copy=False)
+            _, unique_idx = np.unique(keys, axis=0, return_index=True)
+            if unique_idx.size == F.shape[0]:
+                return X, F
+            unique_idx.sort()
+            return X[unique_idx], F[unique_idx]
+
+        order = np.argsort(F[:, 0], kind="mergesort")
+        keep = np.ones(F.shape[0], dtype=bool)
+        for i in range(order.size):
+            idx = int(order[i])
+            if not keep[idx]:
+                continue
+            base = F[idx]
+            j = i + 1
+            while j < order.size:
+                cand = int(order[j])
+                if (F[cand, 0] - base[0]) > tol:
+                    break
+                if np.all(np.abs(F[cand] - base) <= tol):
+                    keep[cand] = False
+                j += 1
+        return X[keep], F[keep]
 
 
 __all__ = [
