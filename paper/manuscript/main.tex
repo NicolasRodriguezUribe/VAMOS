@@ -222,12 +222,15 @@ AGE-MOEA follows the adaptive geometry estimation survival scheme of Panichella~
 
 Algorithms in \VAMOS{} expose a uniform \texttt{run(problem, termination, seed, eval\_backend, live\_viz)} interface, and several algorithms also support an \emph{ask--tell} loop for streaming or interactive use. Objective evaluations are dispatched through a small evaluation-backend protocol, enabling serial evaluation for controlled benchmarking and parallel evaluation (e.g., multiprocessing or Dask-based) when objective functions are expensive. Separating evaluation from algorithmic state keeps the algorithm core deterministic under a fixed random seed and reduces the risk of framework-specific parallelism becoming a confounder in empirical comparisons.
 
+Algorithm~\ref{alg:nsgaii} highlights how the canonical NSGA-II loop is expressed in \VAMOS{} over dense array state. The population is represented as a decision matrix $X \in \mathbb{R}^{N\times n}$ and objective matrix $F \in \mathbb{R}^{N\times m}$; selection produces an index vector $P$; variation applies array-oriented operators to $X_P$ to generate offspring $X'$; and survival selects survivors by computing ranks/crowding on concatenated arrays and returning survivor indices. This index-and-kernel execution avoids per-solution Python objects in the hot loop and enables backend swapping (NumPy/Numba/C/JAX), while keeping the underlying algorithm semantics unchanged. Figure~\ref{fig:representation} contrasts this array-centric representation with object-centric populations in other Python frameworks.
+
 \begin{algorithm}[htbp]
 \caption{Vectorized NSGA-II execution in \VAMOS{} (high-level).}
 \label{alg:nsgaii}
 \begin{algorithmic}[1]
 \State Sample initial population $X \in \mathbb{R}^{N \times n}$ within bounds
 \State Evaluate objectives $F \gets f(X)$
+\State Compute initial ranks and crowding distances
 \While{termination criterion not met}
   \State Select mating indices $P$ via tournament on (rank, crowding)
   \State Generate offspring $X' \gets \mathcal{V}(X_P)$ (crossover, mutation, repair)
@@ -321,10 +324,7 @@ Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H CPU
 \subsection{Normalized hypervolume protocol}
 \label{sec:hv}
 
-Hypervolume (HV) measures the Lebesgue measure of the region dominated by an approximation set $A$ with respect to a reference point $r$ (for minimization)~\cite{zitzler2003performance}:
-\begin{equation}
-  \HV(A, r) = \lambda\left(\bigcup_{a \in A} [a_1, r_1] \times \cdots \times [a_m, r_m]\right).
-\end{equation}
+Hypervolume (HV), denoted $\HV(A,r)$, measures the Lebesgue measure of the region dominated by an approximation set $A$ with respect to a reference point $r$ (for minimization)~\cite{zitzler2003performance}.
 Because HV is scale-dependent and sensitive to the choice of $r$, naive implementations can produce values that are not comparable across runs (e.g., if $r$ is expanded per run) and can be misleading when dominated solutions are included. To ensure a stable and comparable quality metric, we adopt the following protocol:
 \begin{enumerate}
   \item \textbf{Non-dominated filtering}: for every framework we compute HV on the final non-dominated set only.
@@ -427,36 +427,6 @@ Despite careful alignment of dimensions, budgets, problem definitions, and opera
 Our cross-framework comparison is deliberately scoped to Python MOEA libraries whose inner loops are predominantly executed in Python. Some libraries (e.g., PyGMO, which provides Python bindings to the C++ PaGMO2 library) are performance-oriented but are not directly comparable under our primary research question, which targets reductions in interpreter overhead via array-based representations and kernel acceleration. In PyGMO, both algorithms and benchmark problems may execute fully in C++, while user-defined problems can also be evaluated via callbacks into Python; these modes yield materially different runtime profiles and can shift the dominant cost to foreign-function or language-boundary overhead. In addition, PyGMO supports island-model parallelism and asynchronous execution; accounting for these features would require additional normalization beyond the single-process budgeted protocol used here. For these reasons, we treat PyGMO and PaGMO2 as an orthogonal C++ baseline and leave their inclusion to future work with an explicit language/runtime study design.
 
 For hypervolume, reference fronts for problems without closed-form Pareto fronts are necessarily approximations; while we generate them densely and fix them across runs, remaining discrepancies can affect absolute normalized values, especially on WFG problems. We therefore treat normalized HV primarily as a comparative metric under a fixed protocol, and we report distributions across multiple seeds rather than relying on single-run outcomes.
-
-\subsection{Reproducibility}
-
-All experiments in this paper are reproducible from the repository:
-\begin{itemize}
-  \item Cross-framework benchmark:\newline \texttt{python}\ \path{paper/01_run_paper_benchmark.py}
-\end{itemize}
-
-We control the number of seeds, evaluation budget, and workers with \path{VAMOS_N_SEEDS}, \path{VAMOS_N_EVALS}, and \path{VAMOS_N_JOBS}; unless otherwise stated, we use \path{VAMOS_N_SEEDS=30} and \path{VAMOS_N_EVALS=50000}.
-
-Paper tables are regenerated by:
-\begin{itemize}
-  \item Runtime tables:\newline \texttt{python}\ \path{paper/04_update_paper_tables_from_csv.py}
-  \item Framework-variant runtime tables:\newline \texttt{python}\ \path{paper/14_update_frameworks_perf_variant_tables_from_csv.py}
-\end{itemize}
-
-Benchmark reports also emit jMetalPy-compatible laboratory outputs (e.g., \path{QualityIndicatorSummary.csv} and boxplots) under:\newline \path{summary/lab/}, following the laboratory summary format described by jMetalPy~\cite{benitez2019jmetalpy}.
-Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
-
-\paragraph{Development workflow.}
-Figure~\ref{fig:methodology_pro} summarizes the propose--apply--verify loop we used to keep changes auditable while building the benchmark runner and table-generation pipeline.
-
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.98\textwidth]{figures/methodology_pro.png}
-  \caption{Agentic propose--apply--verify loop used during development: propose a targeted change, implement a patch, run fast-fail checks, execute the benchmark pipeline, and iterate until gates pass.}
-  \label{fig:methodology_pro}
-\end{figure}
-
-As a development aid within this workflow, we used a large language model (LLM) to accelerate mechanical refactors and surface configuration mismatches across frameworks; proposed changes were applied as explicit diffs, reviewed by the authors, and accepted only if they passed automated checks. This does not affect the experimental results, which are produced solely by the released code and fixed reference data.
 
 %==============================================================================
 \section{Conclusions and Future Work}
