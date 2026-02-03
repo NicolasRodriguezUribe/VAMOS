@@ -72,7 +72,7 @@ def _get_family(problem_name: str) -> str:
 
 
 def _sorted_frameworks(frameworks: list[str]) -> list[str]:
-    order_map = {"VAMOS": 0, "pymoo": 1, "DEAP": 2, "jMetalPy": 3, "Platypus": 4}
+    order_map = {"VAMOS": 0, "pymoo": 1, "jMetalPy": 2, "DEAP": 3, "Platypus": 4}
 
     def sort_key(name: str) -> int:
         for k, v in order_map.items():

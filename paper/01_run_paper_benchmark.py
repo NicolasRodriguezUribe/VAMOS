@@ -191,8 +191,8 @@ DEFAULT_FRAMEWORKS_NS = [
     "vamos-numba",
     "vamos-moocore",  # VAMOS backends
     "pymoo",  # pymoo
-    "deap",  # DEAP
     "jmetalpy",  # jMetalPy
+    "deap",  # DEAP
     "platypus",  # Platypus
 ]
 DEFAULT_FRAMEWORKS_NS_SS = [
@@ -200,16 +200,16 @@ DEFAULT_FRAMEWORKS_NS_SS = [
     "vamos-numba",
     "vamos-moocore",  # VAMOS backends
     "pymoo",
-    "deap",
     "jmetalpy",
+    "deap",
 ]
 DEFAULT_FRAMEWORKS_NS_ARCHIVE = [
     "vamos-numpy",
     "vamos-numba",
     "vamos-moocore",  # VAMOS backends
     "pymoo",
-    "deap",
     "jmetalpy",
+    "deap",
     "platypus",
 ]
 DEFAULT_FRAMEWORKS_SMS = [
@@ -1246,7 +1246,7 @@ def _save_partial(results_list):
 run_objective_alignment_checks()
 
 # Build list of all jobs - split by thread-safety
-PARALLEL_FRAMEWORKS = ["vamos-numpy", "vamos-numba", "vamos-moocore", "pymoo", "deap", "jmetalpy", "platypus"]
+PARALLEL_FRAMEWORKS = ["vamos-numpy", "vamos-numba", "vamos-moocore", "pymoo", "jmetalpy", "deap", "platypus"]
 SEQUENTIAL_FRAMEWORKS = []
 
 SCHEDULE = os.environ.get("VAMOS_PAPER_SCHEDULE", "by_job").strip().lower()

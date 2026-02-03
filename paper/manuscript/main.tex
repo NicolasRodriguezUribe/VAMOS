@@ -86,7 +86,7 @@ Multi-objective optimization \sep Evolutionary algorithms \sep Benchmarking \sep
 
 Multi-objective optimization problems (MOPs) arise whenever trade-offs exist between conflicting objectives, requiring the computation of a diverse approximation of the Pareto-optimal set rather than a single optimum~\cite{coello2007evolutionary}. Multi-objective evolutionary algorithms (MOEAs) remain a dominant approach due to their robustness, anytime behavior, and ability to return sets of non-dominated solutions.
 
-In Python, practical benchmarking of MOEAs is often constrained by two friction points. First, the ecosystem is fragmented: libraries differ in problem APIs, operator configuration, result formats, and runtime instrumentation~\cite{blank2020pymoo,fortin2012deap,benitez2019jmetalpy}. Second, many implementations rely on per-solution objects and Python-level loops inside selection, variation, and survival, making the overhead of the interpreter comparable to (or larger than) the cost of typical benchmark functions. This limitation becomes acute for large-scale studies with many seeds, large populations, and repeated indicator computation and reporting.
+In Python, practical benchmarking of MOEAs is often constrained by two friction points. First, the ecosystem is fragmented: libraries differ in problem APIs, operator configuration, result formats, and runtime instrumentation~\cite{blank2020pymoo,benitez2019jmetalpy,fortin2012deap}. Second, many implementations rely on per-solution objects and Python-level loops inside selection, variation, and survival, making the overhead of the interpreter comparable to (or larger than) the cost of typical benchmark functions. This limitation becomes acute for large-scale studies with many seeds, large populations, and repeated indicator computation and reporting.
 
 \VAMOS{} is designed to address both issues with a single guiding principle: \emph{keep algorithm state in dense arrays and push hot loops into vectorized kernels}. The framework also targets reproducibility in experimental methodology: we provide a benchmark runner that standardizes problem dimensions and operators across multiple Python frameworks, and a hypervolume protocol with fixed reference Pareto fronts so that solution-quality metrics are comparable across runs and frameworks.
 
@@ -107,7 +107,7 @@ The remainder of the paper reviews related work, presents the \VAMOS{} framework
 
 \subsection{Python MOEA frameworks}
 
-Several mature Python libraries exist for MOEAs. \textbf{pymoo}~\cite{blank2020pymoo} provides a rich collection of algorithms and operators with an emphasis on modularity. \textbf{DEAP}~\cite{fortin2012deap} is a general evolutionary computation toolkit; while flexible, users typically assemble MOEAs manually. \textbf{jMetalPy}~\cite{benitez2019jmetalpy} ports the jMetal architecture to Python and emphasizes end-to-end experimentation (observer-driven progress/visualization, a ``laboratory'' workflow, and built-in statistical post-processing with LaTeX export). It additionally offers modules for constrained, dynamic, and preference-based variants, as well as parallel evaluation via Spark/Dask. However, it relies on object-centric representations and does not address cross-toolkit semantic drift. We build upon this methodological focus on rigorous experimental studies and complement it with an array-based execution model and a fairness-oriented benchmarking protocol that aligns problem definitions and operator semantics across toolkits. \textbf{Platypus}~\cite{hadka2015platypus} provides a lightweight API and a set of classic MOEAs.
+Several mature Python libraries exist for MOEAs. \textbf{pymoo}~\cite{blank2020pymoo} provides a rich collection of algorithms and operators with an emphasis on modularity. \textbf{jMetalPy}~\cite{benitez2019jmetalpy} ports the jMetal architecture to Python and emphasizes end-to-end experimentation (observer-driven progress/visualization, a ``laboratory'' workflow, and built-in statistical post-processing with LaTeX export). It additionally offers modules for constrained, dynamic, and preference-based variants, as well as parallel evaluation via Spark/Dask. However, it relies on object-centric representations and does not address cross-toolkit semantic drift. We build upon this methodological focus on rigorous experimental studies and complement it with an array-based execution model and a fairness-oriented benchmarking protocol that aligns problem definitions and operator semantics across toolkits. \textbf{DEAP}~\cite{fortin2012deap} is a general evolutionary computation toolkit; while flexible, users typically assemble MOEAs manually. \textbf{Platypus}~\cite{hadka2015platypus} provides a lightweight API and a set of classic MOEAs.
 
 Table~\ref{tab:frameworks} summarizes high-level differences relevant to this work. The main distinction is the internal representation: \VAMOS{} consistently uses dense arrays for populations and objectives, while most alternatives operate on per-solution objects. This difference enables kernel-based acceleration and reduces Python overhead in the inner loop.
 
@@ -121,11 +121,11 @@ Table~\ref{tab:frameworks} summarizes high-level differences relevant to this wo
 \toprule
 \textbf{Framework} & \textbf{MOEAs} & \textbf{Array core} & \textbf{Accel. kernels} & \textbf{Auto-conf.} \\
 \midrule
-pymoo~\cite{blank2020pymoo} & 8+ & Partial & No & No \\
-DEAP~\cite{fortin2012deap} & Custom & No & No & No \\
-jMetalPy~\cite{benitez2019jmetalpy} & 11+ & No & No & No \\
-Platypus~\cite{hadka2015platypus} & 8+ & No & No & No \\
 \VAMOS{} & 9 & Yes & Numba/C/JAX & Yes \\
+pymoo~\cite{blank2020pymoo} & 8+ & Partial & No & No \\
+jMetalPy~\cite{benitez2019jmetalpy} & 11+ & No & No & No \\
+DEAP~\cite{fortin2012deap} & Custom & No & No & No \\
+Platypus~\cite{hadka2015platypus} & 8+ & No & No & No \\
 \bottomrule
 \end{tabular}
 }
@@ -300,7 +300,7 @@ For MOEA/D we align population size $N=100$, weight vectors (uniform for two obj
 
 This workflow follows standard practice in comparative MOEA studies (independent runs, indicator computation, and structured reporting) and is consistent with the experimentation methodology described in jMetalPy~\cite{benitez2019jmetalpy}. Our main extension is to make the \emph{inputs} to this workflow comparable across toolkits by enforcing semantic alignment of both problem definitions and operator probabilities.
 
-Crucially, we align \emph{semantics} (not only parameter names) and enforce consistent benchmark definitions. Two examples illustrate why this matters. First, in \textbf{pymoo} the polynomial mutation operator exposes both an individual-level probability (\texttt{prob}) and a per-variable probability (\texttt{prob\_var}); to match the standard ``$p_m=1/n$ per decision variable'' setting used by DEAP/jMetalPy, we set \texttt{prob}=1 and \texttt{prob\_var}=1/n. Second, some libraries ship benchmark problems under canonical names but with library-specific domains; for instance, Platypus' built-in ZDT base class uses $[0,1]^n$, whereas ZDT4 is defined with $x_1\in[0,1]$ and $x_{2..n}\in[-5,5]$.
+Crucially, we align \emph{semantics} (not only parameter names) and enforce consistent benchmark definitions. Two examples illustrate why this matters. First, in \textbf{pymoo} the polynomial mutation operator exposes both an individual-level probability (\texttt{prob}) and a per-variable probability (\texttt{prob\_var}); to match the standard ``$p_m=1/n$ per decision variable'' setting used by jMetalPy and DEAP, we set \texttt{prob}=1 and \texttt{prob\_var}=1/n. Second, some libraries ship benchmark problems under canonical names but with library-specific domains; for instance, Platypus' built-in ZDT base class uses $[0,1]^n$, whereas ZDT4 is defined with $x_1\in[0,1]$ and $x_{2..n}\in[-5,5]$.
 
 Therefore, for toolkits or APIs where problem definitions differ (notably DEAP and Platypus for ZDT4), we evaluate individuals using a shared reference implementation of the benchmark function and bounds (validated against pymoo) while still using each framework's NSGA-II implementation and operators. For WFG we adopt pymoo's canonical parameterization for two objectives ($k=4$, $l=20$ for $n=24$) and pass parameters explicitly when a toolkit exposes different defaults; in Platypus we wrap pymoo's WFG definitions to avoid definition drift. While full equivalence cannot be guaranteed due to framework-specific details (tie-breaking, boundary handling, duplicate elimination, etc.), these choices aim to make the comparison as fair as possible by removing confounders unrelated to algorithmic overhead and numerical kernels.
 
@@ -312,7 +312,7 @@ All runtimes are measured wall-clock using high-resolution timers and include al
 
 For Numba-accelerated backends, we distinguish two timing policies. \textbf{Warm} timings exclude one-time JIT compilation by performing a short warmup run in the same process before starting the timer (2{,}000 warmup evaluations; not counted in the reported time). \textbf{Cold} timings measure the first run from a fresh process and therefore include JIT compilation overhead. Unless otherwise stated, we report warm timings to reflect steady-state throughput; cold-start costs can be reproduced with the provided scripts.
 
-Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H CPU (16 cores, 22 logical processors) and 32\,GB RAM, running Microsoft Windows 11 Home (build 26200). We used Python 3.12.3 and evaluated \VAMOS{} 0.1.0 (NumPy 2.3.5 with OpenBLAS 0.3.30; Numba 0.63.1) against pymoo 0.6.1.6 and DEAP 1.4.3. jMetalPy and Platypus were evaluated from local source checkouts at commits \texttt{fecb85c} and \texttt{fe7aeff}, respectively.
+Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H CPU (16 cores, 22 logical processors) and 32\,GB RAM, running Microsoft Windows 11 Home (build 26200). We used Python 3.12.3 and evaluated \VAMOS{} 0.1.0 (NumPy 2.3.5 with OpenBLAS 0.3.30; Numba 0.63.1) against pymoo 0.6.1.6, jMetalPy (local source checkout at commit \texttt{fecb85c}), DEAP 1.4.3, and Platypus (local source checkout at commit \texttt{fe7aeff}).
 
 \subsection{Normalized hypervolume protocol}
 \label{sec:hv}
@@ -361,8 +361,8 @@ We repeat the same runtime protocol for NSGA-II variants (steady-state and exter
 \midrule
 VAMOS & \textbf{2.62} & \textbf{3.46} & \textbf{4.03} & \textbf{3.37} \\
 pymoo & 3.22 & 3.86 & 4.56 & 3.88 \\
-DEAP & 14.99 & 21.42 & 43.72 & 26.71 \\
 jMetalPy & 11.55 & 14.91 & 43.94 & 23.47 \\
+DEAP & 14.99 & 21.42 & 43.72 & 26.71 \\
 Platypus & 20.28 & 29.01 & 50.16 & 33.15 \\
 \bottomrule
 \end{tabular}
@@ -379,7 +379,7 @@ Platypus does not provide an equivalent steady-state NSGA-II API, so we omit it 
 \paragraph{NSGA-II with external archive.}
 To assess the overhead of maintaining an external elite set, we also benchmark NSGA-II with an \emph{unbounded} external archive that accumulates non-dominated solutions throughout the run.
 For this variant, we compute normalized hypervolume on the archive contents (rather than the final population) to reflect the larger retained approximation set.
-In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo and DEAP we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook; and in Platypus we pass an \texttt{Archive()} object.
+In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook; for DEAP we maintain an equivalent separate unbounded archive; and in Platypus we pass an \texttt{Archive()} object.
 
 \input{frameworks_perf_nsgaii_archive.tex}
 
@@ -400,8 +400,8 @@ Table~\ref{tab:frameworks_hv} summarizes normalized hypervolume for the NSGA-II 
 \midrule
 VAMOS & \textbf{0.990 (0.008)} & 0.799 (0.153) & \textbf{0.934 (0.140)} & \textbf{0.934 (0.181)} \\
 pymoo & \textbf{0.990 (0.008)} & 0.792 (0.180) & 0.846 (0.222) & 0.914 (0.192) \\
-DEAP & \textbf{0.990 (0.008)} & \textbf{0.802 (0.170)} & 0.839 (0.226) & 0.917 (0.186) \\
 jMetalPy & \textbf{0.990 (0.009)} & 0.797 (0.155) & 0.846 (0.224) & 0.915 (0.192) \\
+DEAP & \textbf{0.990 (0.008)} & \textbf{0.802 (0.170)} & 0.839 (0.226) & 0.917 (0.186) \\
 Platypus & \textbf{0.990 (0.008)} & 0.786 (0.209) & 0.920 (0.139) & 0.920 (0.196) \\
 \bottomrule
 \end{tabular}
@@ -491,31 +491,31 @@ zdt6 & \textbf{2.44} & 2.51 & 5.16 \\
 \label{tab:detailed_comparison}
 \begin{tabular}{l|rrrrr}
 \toprule
-\textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{DEAP} & \textbf{jMetalPy} & \textbf{Platypus} \\
+\textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{jMetalPy} & \textbf{DEAP} & \textbf{Platypus} \\
 \midrule
-dtlz1 & \textbf{2.67} & 3.21 & 16.91 & 11.39 & 19.82 \\
-dtlz2 & \textbf{3.01} & 3.38 & 17.62 & 12.23 & 25.72 \\
-dtlz3 & \textbf{3.60} & 4.44 & 24.92 & 16.82 & 31.03 \\
-dtlz4 & \textbf{3.72} & 3.84 & 22.67 & 15.15 & 29.29 \\
-dtlz5 & \textbf{3.74} & 4.03 & 21.78 & 14.65 & 30.89 \\
-dtlz6 & \textbf{3.90} & 4.52 & 22.82 & 15.28 & 30.98 \\
-dtlz7 & \textbf{3.90} & 4.22 & 20.99 & 16.41 & 30.35 \\
-wfg1 & \textbf{4.17} & 4.76 & 31.37 & 30.35 & 38.26 \\
-wfg2 & \textbf{3.90} & 4.55 & 46.68 & 48.26 & 54.91 \\
-wfg3 & \textbf{3.81} & 4.18 & 44.07 & 44.80 & 50.92 \\
-wfg4 & \textbf{3.93} & 4.42 & 26.17 & 24.93 & 33.42 \\
-wfg5 & \textbf{4.31} & 4.61 & 28.82 & 25.57 & 41.68 \\
-wfg6 & \textbf{4.40} & 4.91 & 125.18 & 122.00 & 133.25 \\
-wfg7 & \textbf{3.85} & 4.31 & 37.17 & 37.01 & 45.73 \\
-wfg8 & \textbf{4.18} & 4.68 & 79.09 & 86.14 & 83.92 \\
-wfg9 & \textbf{3.85} & 4.75 & 166.45 & 179.86 & 169.99 \\
-zdt1 & \textbf{2.63} & 2.93 & 14.43 & 11.54 & 20.77 \\
-zdt2 & \textbf{2.79} & 3.28 & 15.40 & 12.01 & 21.46 \\
-zdt3 & \textbf{2.76} & 3.08 & 15.54 & 11.81 & 21.94 \\
-zdt4 & \textbf{2.41} & 3.12 & 15.41 & 11.23 & 17.52 \\
-zdt6 & \textbf{2.44} & 3.51 & 14.46 & 10.39 & 18.20 \\
+dtlz1 & \textbf{2.67} & 3.21 & 11.39 & 16.91 & 19.82 \\
+dtlz2 & \textbf{3.01} & 3.38 & 12.23 & 17.62 & 25.72 \\
+dtlz3 & \textbf{3.60} & 4.44 & 16.82 & 24.92 & 31.03 \\
+dtlz4 & \textbf{3.72} & 3.84 & 15.15 & 22.67 & 29.29 \\
+dtlz5 & \textbf{3.74} & 4.03 & 14.65 & 21.78 & 30.89 \\
+dtlz6 & \textbf{3.90} & 4.52 & 15.28 & 22.82 & 30.98 \\
+dtlz7 & \textbf{3.90} & 4.22 & 16.41 & 20.99 & 30.35 \\
+wfg1 & \textbf{4.17} & 4.76 & 30.35 & 31.37 & 38.26 \\
+wfg2 & \textbf{3.90} & 4.55 & 48.26 & 46.68 & 54.91 \\
+wfg3 & \textbf{3.81} & 4.18 & 44.80 & 44.07 & 50.92 \\
+wfg4 & \textbf{3.93} & 4.42 & 24.93 & 26.17 & 33.42 \\
+wfg5 & \textbf{4.31} & 4.61 & 25.57 & 28.82 & 41.68 \\
+wfg6 & \textbf{4.40} & 4.91 & 122.00 & 125.18 & 133.25 \\
+wfg7 & \textbf{3.85} & 4.31 & 37.01 & 37.17 & 45.73 \\
+wfg8 & \textbf{4.18} & 4.68 & 86.14 & 79.09 & 83.92 \\
+wfg9 & \textbf{3.85} & 4.75 & 179.86 & 166.45 & 169.99 \\
+zdt1 & \textbf{2.63} & 2.93 & 11.54 & 14.43 & 20.77 \\
+zdt2 & \textbf{2.79} & 3.28 & 12.01 & 15.40 & 21.46 \\
+zdt3 & \textbf{2.76} & 3.08 & 11.81 & 15.54 & 21.94 \\
+zdt4 & \textbf{2.41} & 3.12 & 11.23 & 15.41 & 17.52 \\
+zdt6 & \textbf{2.44} & 3.51 & 10.39 & 14.46 & 18.20 \\
 \midrule
-\textbf{Average} & \textbf{3.52} & 4.03 & 38.47 & 36.09 & 45.24 \\
+\textbf{Average} & \textbf{3.52} & 4.03 & 36.09 & 38.47 & 45.24 \\
 \bottomrule
 \end{tabular}
 \end{table*}
