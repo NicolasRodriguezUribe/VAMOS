@@ -499,7 +499,7 @@ def _relative_diff(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 def build_hv_equivalence_details(df_in: pd.DataFrame) -> pd.DataFrame:
-    targets = ["pymoo", "DEAP", "jMetalPy", "Platypus"]
+    targets = ["pymoo", "jMetalPy", "DEAP", "Platypus"]
     targets = [t for t in targets if t in set(df_in["framework"].unique())]
 
     problems = sorted(df_in["problem"].unique().tolist())
@@ -551,14 +551,14 @@ def build_hv_equivalence_summary(df_details: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
 
-    order = {"pymoo": 0, "DEAP": 1, "jMetalPy": 2, "Platypus": 3}
+    order = {"pymoo": 0, "jMetalPy": 1, "DEAP": 2, "Platypus": 3}
     summary["__ord"] = summary["framework"].map(lambda x: order.get(str(x), 99))
     summary = summary.sort_values("__ord").drop(columns=["__ord"])
     return summary
 
 
 def build_hv_robustness_summary(df_in: pd.DataFrame) -> pd.DataFrame:
-    frameworks = [BASELINE_FRAMEWORK, "pymoo", "DEAP", "jMetalPy", "Platypus"]
+    frameworks = [BASELINE_FRAMEWORK, "pymoo", "jMetalPy", "DEAP", "Platypus"]
     frameworks = [f for f in frameworks if f in set(df_in["framework"].unique())]
     problems = sorted(df_in["problem"].unique().tolist())
 
@@ -648,7 +648,7 @@ def generate_latex_hv_robustness_table(df_rob: pd.DataFrame, *, label: str = "ta
 
 
 def generate_latex_hv_equivalence_ci_table(df_details: pd.DataFrame, *, label: str = "tab:hv_equivalence_ci") -> str:
-    targets = ["pymoo", "DEAP", "jMetalPy", "Platypus"]
+    targets = ["pymoo", "jMetalPy", "DEAP", "Platypus"]
     targets = [t for t in targets if t in set(df_details["framework"].unique())]
 
     problems = sorted(df_details["problem"].unique().tolist())

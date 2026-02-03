@@ -101,14 +101,14 @@ def make_latex_table_a2(df_table: pd.DataFrame) -> str:
     # df_table indices are problems (or Average). Columns are frameworks.
 
     # Sort columns to have VAMOS variants first, then others
-    # Explicit order requested: VAMOS, pymoo, DEAP, jMetalPy, Platypus
+    # Explicit order requested: VAMOS, pymoo, jMetalPy, DEAP, Platypus
     cols = df_table.columns.tolist()
 
     order_map = {
         "VAMOS": 0,
         "pymoo": 1,
-        "DEAP": 2,
-        "jMetalPy": 3,
+        "jMetalPy": 2,
+        "DEAP": 3,
         "Platypus": 4,
         "VAMOS (numba)": 0,  # Handle alias if needed
     }
@@ -224,7 +224,7 @@ def make_latex_table_4(family_df: pd.DataFrame) -> str:
     # Sort frameworks
     idx_list = sorted(family_df.index.tolist())
 
-    order_map = {"VAMOS": 0, "pymoo": 1, "DEAP": 2, "jMetalPy": 3, "Platypus": 4}
+    order_map = {"VAMOS": 0, "pymoo": 1, "jMetalPy": 2, "DEAP": 3, "Platypus": 4}
 
     def sort_key(c):
         for k, v in order_map.items():
@@ -282,7 +282,7 @@ def make_latex_table_hv_summary(median_df: pd.DataFrame, iqr_df: pd.DataFrame) -
     families = [col for col in ["ZDT", "DTLZ", "WFG"] if col in median_df.columns]
     cols = families + ["Overall"]
 
-    order_map = {"VAMOS": 0, "pymoo": 1, "DEAP": 2, "jMetalPy": 3, "Platypus": 4}
+    order_map = {"VAMOS": 0, "pymoo": 1, "jMetalPy": 2, "DEAP": 3, "Platypus": 4}
 
     def sort_key(c: str) -> int:
         for k, v in order_map.items():

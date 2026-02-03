@@ -38,7 +38,7 @@ Generates `experiments/benchmark_paper.csv`:
 
 Controls:
 - `VAMOS_N_EVALS` (default `50000`), `VAMOS_N_SEEDS` (default `30`), `VAMOS_N_JOBS`
-- `VAMOS_PAPER_FRAMEWORKS` (comma-separated: `vamos-numpy,vamos-numba,vamos-moocore,pymoo,deap,jmetalpy,platypus`)
+- `VAMOS_PAPER_FRAMEWORKS` (comma-separated: `vamos-numpy,vamos-numba,vamos-moocore,pymoo,jmetalpy,deap,platypus`)
 - `VAMOS_PAPER_ALGORITHM` (`nsgaii`, `smsemoa`, `moead`, or `all`) and `VAMOS_PAPER_UPDATE_MAIN_TEX` (`0`/`1`, defaults to `1` for NSGA-II)
 
 ## Submission packaging (Elsevier / SwEvo)
