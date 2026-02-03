@@ -98,14 +98,7 @@ The contributions of this work are:
   \item \textbf{Comprehensive empirical comparison}: backend-level and cross-framework runtime comparisons, paired with descriptive normalized-hypervolume summaries under a fixed protocol.
 \end{enumerate}
 
-Figure~\ref{fig:at_glance} summarizes the high-level architecture, execution backends, and experimental pipeline that structure the remainder of the paper.
-
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.98\textwidth]{figures/AT_GLANCE.png}
-  \caption{\VAMOS{} at a glance: architecture layers, execution backends, benchmark pipeline, and main experimental artifacts.}
-  \label{fig:at_glance}
-\end{figure}
+The remainder of the paper reviews related work, presents the \VAMOS{} framework, and reports a cross-framework empirical comparison.
 
 %==============================================================================
 \section{Related Work}
@@ -142,7 +135,7 @@ Figure~\ref{fig:representation} provides an intuitive view of how these framewor
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.98\textwidth]{figures/Representation.png}
+  \includegraphics[width=0.98\textwidth]{figures/representation_population.png}
   \caption{Illustration of population representation differences: \VAMOS{} stores the full population in dense arrays and applies operators via array-oriented kernels (NumPy/Numba/C/JAX), while object-centric frameworks manage collections of per-solution records and perform selection/variation/survival through object/container-level workflows.}
   \label{fig:representation}
 \end{figure}
@@ -269,7 +262,7 @@ Figure~\ref{fig:protocol} summarizes the benchmark protocol and semantic-alignme
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.98\textwidth]{figures/PROTOCOL.png}
+  \includegraphics[width=0.98\textwidth]{figures/protocol.png}
   \caption{Benchmark protocol and semantic alignment: map equivalent NSGA-II settings across frameworks, validate objective definitions by sampling decision vectors within bounds, run independent seeds under a fixed evaluation budget, and compute normalized hypervolume using fixed reference fronts.}
   \label{fig:protocol}
 \end{figure}
