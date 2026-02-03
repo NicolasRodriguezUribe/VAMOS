@@ -4,7 +4,8 @@
 %   - `experiments/benchmark_paper.csv`:
 %       - `paper/04_update_paper_tables_from_csv.py` updates runtime tables
 %         (`tab:backends`, `tab:frameworks_perf`, `tab:detailed_backends`,
-%          `tab:detailed_comparison`).
+%          `tab:detailed_comparison`) and the normalized-HV summary table
+%         (`tab:frameworks_hv`).
 %       - `paper/14_update_frameworks_perf_variant_tables_from_csv.py` updates
 %         framework-variant runtime tables (`tab:frameworks_perf_nsgaii_ss`,
 %         `tab:frameworks_perf_nsgaii_archive`, `tab:frameworks_perf_smsemoa`,
@@ -68,7 +69,7 @@ Python has become the de facto platform for empirical studies in multi-objective
 \item Vectorized MOEA core with pluggable NumPy/Numba/C/JAX kernels.
 \item Fair cross-framework benchmarking via semantic configuration alignment.
 \item Backend and cross-framework runtime comparison across multiple MOEA variants.
-\item Competitive normalized hypervolume under a fixed-reference-front protocol with corrected statistics.
+\item Competitive normalized hypervolume under a fixed-reference-front protocol.
 \item Reproducible pipeline with scripts and versioned artifacts.
 \end{highlights}
 
@@ -85,7 +86,7 @@ Multi-objective optimization \sep Evolutionary algorithms \sep Benchmarking \sep
 
 Multi-objective optimization problems (MOPs) arise whenever trade-offs exist between conflicting objectives, requiring the computation of a diverse approximation of the Pareto-optimal set rather than a single optimum~\cite{coello2007evolutionary}. Multi-objective evolutionary algorithms (MOEAs) remain a dominant approach due to their robustness, anytime behavior, and ability to return sets of non-dominated solutions.
 
-In Python, practical benchmarking of MOEAs is often constrained by two friction points. First, the ecosystem is fragmented: libraries differ in problem APIs, operator configuration, result formats, and runtime instrumentation~\cite{blank2020pymoo,fortin2012deap,benitez2019jmetalpy}. Second, many implementations rely on per-solution objects and Python-level loops inside selection, variation, and survival, making the overhead of the interpreter comparable to (or larger than) the cost of typical benchmark functions. This limitation becomes acute for large-scale studies with many seeds, large populations, and repeated statistical tests.
+In Python, practical benchmarking of MOEAs is often constrained by two friction points. First, the ecosystem is fragmented: libraries differ in problem APIs, operator configuration, result formats, and runtime instrumentation~\cite{blank2020pymoo,fortin2012deap,benitez2019jmetalpy}. Second, many implementations rely on per-solution objects and Python-level loops inside selection, variation, and survival, making the overhead of the interpreter comparable to (or larger than) the cost of typical benchmark functions. This limitation becomes acute for large-scale studies with many seeds, large populations, and repeated indicator computation and reporting.
 
 \VAMOS{} is designed to address both issues with a single guiding principle: \emph{keep algorithm state in dense arrays and push hot loops into vectorized kernels}. The framework also targets reproducibility in experimental methodology: we provide a benchmark runner that standardizes problem dimensions and operators across multiple Python frameworks, and a hypervolume protocol with fixed reference Pareto fronts so that solution-quality metrics are comparable across runs and frameworks.
 
@@ -94,7 +95,7 @@ The contributions of this work are:
   \item \textbf{Vectorized MOEA core}: a unified, array-based internal representation with pluggable compute kernels (NumPy/Numba/C/JAX) for selection, variation, and survival.
   \item \textbf{Modular algorithm suite}: nine MOEAs implemented on top of shared components (termination, archives, evaluation backends, and metrics).
   \item \textbf{Cross-framework benchmarking pipeline}: a reproducible runner that enforces semantic alignment of problems and operator settings across common Python frameworks and computes \emph{normalized} hypervolume against fixed reference Pareto fronts distributed with the repository.
-  \item \textbf{Comprehensive empirical comparison}: backend-level and cross-framework runtime comparisons, paired with statistical analysis of normalized hypervolume under a fixed protocol.
+  \item \textbf{Comprehensive empirical comparison}: backend-level and cross-framework runtime comparisons, paired with descriptive normalized-hypervolume summaries under a fixed protocol.
 \end{enumerate}
 
 Figure~\ref{fig:at_glance} summarizes the high-level architecture, execution backends, and experimental pipeline that structure the remainder of the paper.
@@ -137,9 +138,18 @@ Platypus~\cite{hadka2015platypus} & 8+ & No & No & No \\
 }
 \end{table}
 
+Figure~\ref{fig:representation} provides an intuitive view of how these frameworks represent and manipulate a population. In \VAMOS{}, the population state is stored in dense arrays ($X \in \mathbb{R}^{N\times n}$ and $F \in \mathbb{R}^{N\times m}$), and selection/variation/survival primarily operate by computing index arrays and applying array kernels. In contrast, pymoo and jMetalPy typically manage the population as a collection of solution objects; array computations may still be used internally, but more of the algorithmic control flow involves object/container manipulation.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/Representation.png}
+  \caption{Illustration of population representation differences: \VAMOS{} stores the full population in dense arrays and applies operators via array-oriented kernels (NumPy/Numba/C/JAX), while object-centric frameworks manage collections of per-solution records and perform selection/variation/survival through object/container-level workflows.}
+  \label{fig:representation}
+\end{figure}
+
 \subsection{Benchmarking and indicator reporting}
 
-Comparative MOEA studies typically combine independent runs, indicator computation, and statistical tests. However, cross-framework results are sensitive to hidden defaults and semantic mismatches: benchmark implementations may differ in bounds or parameterizations, and operators may interpret probabilities at different levels (e.g., per-individual vs.\ per-variable mutation). Toolkits such as jMetalPy~\cite{benitez2019jmetalpy} provide laboratory-style reporting and statistical post-processing, but they do not by themselves resolve cross-toolkit semantic drift. Our work complements these methodological efforts by making semantic alignment an explicit first-class step and by reporting normalized hypervolume under a fixed reference-front protocol, enabling more reliable cross-framework comparisons.
+Comparative MOEA studies typically combine independent runs, indicator computation, and structured post-processing (e.g., summary tables and plots). However, cross-framework results are sensitive to hidden defaults and semantic mismatches: benchmark implementations may differ in bounds or parameterizations, and operators may interpret probabilities at different levels (e.g., per-individual vs.\ per-variable mutation). Toolkits such as jMetalPy~\cite{benitez2019jmetalpy} provide laboratory-style reporting and post-processing, but they do not by themselves resolve cross-toolkit semantic drift. Our work complements these methodological efforts by making semantic alignment an explicit first-class step and by reporting normalized hypervolume under a fixed reference-front protocol, enabling more reliable cross-framework comparisons.
 
 %==============================================================================
 \section{VAMOS Framework}
@@ -250,6 +260,7 @@ The experiment layer includes a benchmark runner that executes standardized stud
 \subsection{Benchmark suite and configuration alignment}
 
 We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives), DTLZ1--7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2/3/4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$). Non-standard DTLZ dimensionalities are permitted but explicitly flagged to avoid accidental comparisons against canonical settings.
+Unless otherwise stated, each (problem, framework) configuration is executed for 50{,}000 objective evaluations with 30 independent seeds.
 
 Figure~\ref{fig:protocol} summarizes the benchmark protocol and semantic-alignment workflow used to ensure cross-framework fairness and to support the ``same quality, faster'' claim.
 
@@ -273,7 +284,7 @@ Table~\ref{tab:alignment_checklist} summarizes the key semantic-alignment constr
 \textbf{Item} & \textbf{Enforced alignment} \\
 \midrule
 Benchmark definitions & Shared bounds/parameterizations; validated via random decision-vector sampling across implementations. \\
-Budget & Fixed number of objective evaluations (same across frameworks). \\
+Budget & Fixed number of objective evaluations (50{,}000 per run; same across frameworks). \\
 Operators & SBX ($p_c{=}1.0$, $\eta_c{=}20$) and polynomial mutation ($\eta_m{=}20$) with per-variable semantics ($p_m{=}1/n$), mapped explicitly when APIs differ. \\
 Selection / survival & Tournament selection; rank--crowding survival (non-dominated sorting + crowding distance). \\
 Timing & Wall-clock time (median over seeds); Numba warm timings exclude one-time JIT compilation via a short warmup run. \\
@@ -283,13 +294,15 @@ Quality metric & Normalized hypervolume on the final non-dominated set using fix
 }
 \end{table}
 
+Although \VAMOS{} implements nine MOEAs, our cross-framework comparison focuses on algorithms with the closest semantic matches across libraries: NSGA-II (baseline plus steady-state and archive variants), SMS-EMOA, and MOEA/D. This scope avoids confounding effects from missing implementations or materially different operator and termination semantics in specific toolkits.
+
 To ensure comparability across frameworks, we standardize the algorithmic settings of NSGA-II: population size $N=100$, SBX crossover probability $p_c=1.0$ and distribution index $\eta_c=20$, polynomial mutation distribution index $\eta_m=20$ and mutation probability $p_m=1/n$, tournament selection, and rank--crowding survival. For each framework we map these settings to the closest available implementation.
 
 For SMS-EMOA we follow the same protocol and align what we can: population size $N=100$, SBX ($p_c=1.0$, $\eta_c=20$), polynomial mutation ($p_m=1/n$, $\eta_m=20$), random parent selection, and a steady-state $(\mu+1)$ loop (one offspring per iteration). However, the hypervolume-contribution reference point is not defined consistently across toolkits: \VAMOS{} and jMetalPy compute contributions in raw objective space with an adaptive reference point $r = \max(F) + 1$, while pymoo normalizes objectives and uses a fixed shifted reference point $r = \mathbf{1} + \epsilon$ (we set $\epsilon=1$). We therefore report the cross-framework SMS-EMOA comparison with this caveat.
 
 For MOEA/D we align population size $N=100$, weight vectors (uniform for two objectives; a shared $W3D\_100$ set for three objectives), neighborhood size $T=20$, neighborhood selection probability $\delta=0.9$, and replacement limit $\eta=20$ (effectively unrestricted, matching pymoo's update rule). We use PBI scalarization with $\theta=5$ and a DE/current/1/bin-style crossover ($CR=1.0$, $F=0.5$) followed by polynomial mutation ($p_m=1/n$, $\eta_m=20$), mapping these settings to the closest available implementation in each toolkit.
 
-This workflow follows standard practice in comparative MOEA studies (independent runs, indicator computation, and statistical testing) and is consistent with the experimentation methodology described in jMetalPy~\cite{benitez2019jmetalpy}. Our main extension is to make the \emph{inputs} to this workflow comparable across toolkits by enforcing semantic alignment of both problem definitions and operator probabilities.
+This workflow follows standard practice in comparative MOEA studies (independent runs, indicator computation, and structured reporting) and is consistent with the experimentation methodology described in jMetalPy~\cite{benitez2019jmetalpy}. Our main extension is to make the \emph{inputs} to this workflow comparable across toolkits by enforcing semantic alignment of both problem definitions and operator probabilities.
 
 Crucially, we align \emph{semantics} (not only parameter names) and enforce consistent benchmark definitions. Two examples illustrate why this matters. First, in \textbf{pymoo} the polynomial mutation operator exposes both an individual-level probability (\texttt{prob}) and a per-variable probability (\texttt{prob\_var}); to match the standard ``$p_m=1/n$ per decision variable'' setting used by DEAP/jMetalPy, we set \texttt{prob}=1 and \texttt{prob\_var}=1/n. Second, some libraries ship benchmark problems under canonical names but with library-specific domains; for instance, Platypus' built-in ZDT base class uses $[0,1]^n$, whereas ZDT4 is defined with $x_1\in[0,1]$ and $x_{2..n}\in[-5,5]$.
 
@@ -299,7 +312,7 @@ As an additional validity check, we sample 64 random decision vectors per proble
 
 \subsection{Runtime measurement}
 
-All runtimes are measured wall-clock using high-resolution timers and include algorithm overhead and objective evaluations. We report medians across 30 independent seeds and provide per-problem and per-family summaries.
+All runtimes are measured wall-clock using high-resolution timers and include algorithm overhead and objective evaluations. Unless otherwise stated, we use a fixed budget of 50{,}000 objective evaluations per run and report medians across 30 independent seeds, with per-problem and per-family summaries.
 
 For Numba-accelerated backends, we distinguish two timing policies. \textbf{Warm} timings exclude one-time JIT compilation by performing a short warmup run in the same process before starting the timer (2{,}000 warmup evaluations; not counted in the reported time). \textbf{Cold} timings measure the first run from a fresh process and therefore include JIT compilation overhead. Unless otherwise stated, we report warm timings to reflect steady-state throughput; cold-start costs can be reproduced with the provided scripts.
 
@@ -380,9 +393,32 @@ In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size
 \input{frameworks_perf_smsemoa.tex}
 \input{frameworks_perf_moead.tex}
 
+\subsection{Solution quality summary}
+
+Table~\ref{tab:frameworks_hv} summarizes normalized hypervolume for the NSGA-II baseline across frameworks, aggregated by benchmark family. We report per-problem medians across seeds, and summarize these per-problem medians using median and interquartile range (IQR) within each family, yielding a descriptive view of solution quality under the fixed normalization protocol (Section~\ref{sec:hv}).
+
+\begin{table}[htbp]
+\centering
+\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks.}
+\label{tab:frameworks_hv}
+\begin{tabular}{l|rrr|r}
+\toprule
+\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall} \\
+\midrule
+VAMOS & \textbf{0.990 (0.008)} & 0.799 (0.153) & \textbf{0.934 (0.140)} & \textbf{0.934 (0.181)} \\
+pymoo & \textbf{0.990 (0.008)} & 0.792 (0.180) & 0.846 (0.222) & 0.914 (0.192) \\
+DEAP & \textbf{0.990 (0.008)} & \textbf{0.802 (0.170)} & 0.839 (0.226) & 0.917 (0.186) \\
+jMetalPy & \textbf{0.990 (0.009)} & 0.797 (0.155) & 0.846 (0.224) & 0.915 (0.192) \\
+Platypus & \textbf{0.990 (0.008)} & 0.786 (0.209) & 0.920 (0.139) & 0.920 (0.196) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Across ZDT, all frameworks attain nearly identical normalized HV, suggesting that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks, while WFG exhibits the largest dispersion; \VAMOS{} achieves the highest median on WFG and overall. Together with the runtime results, these summaries support improved throughput without degraded final quality under the fixed-reference-front protocol.
+
 \subsection{Discussion}
 
-The observed speedups are primarily due to (i) the array-based representation that removes per-solution Python overhead, and (ii) JIT compilation of hot operators and utilities in the Numba backend. The normalized hypervolume protocol ensures that performance gains are not obtained at the expense of solution quality and avoids artifacts caused by run-dependent reference points.
+The observed speedups are primarily due to (i) the array-based representation that removes per-solution Python overhead, and (ii) JIT compilation of hot operators and utilities in the Numba backend. Table~\ref{tab:frameworks_hv} summarizes that these performance gains are not obtained at the expense of final solution quality under the fixed-reference-front normalized-HV protocol, avoiding artifacts caused by run-dependent reference points.
 
 \subsection{Threats to validity}
 
@@ -399,7 +435,7 @@ All experiments in this paper are reproducible from the repository:
   \item Cross-framework benchmark:\newline \texttt{python}\ \path{paper/01_run_paper_benchmark.py}
 \end{itemize}
 
-We control the number of seeds, evaluation budget, and workers with \path{VAMOS_N_SEEDS}, \path{VAMOS_N_EVALS}, and \path{VAMOS_N_JOBS}; unless otherwise stated, we use \path{VAMOS_N_SEEDS=30} and \path{VAMOS_N_EVALS=100000}.
+We control the number of seeds, evaluation budget, and workers with \path{VAMOS_N_SEEDS}, \path{VAMOS_N_EVALS}, and \path{VAMOS_N_JOBS}; unless otherwise stated, we use \path{VAMOS_N_SEEDS=30} and \path{VAMOS_N_EVALS=50000}.
 
 Paper tables are regenerated by:
 \begin{itemize}
@@ -410,14 +446,24 @@ Paper tables are regenerated by:
 Benchmark reports also emit jMetalPy-compatible laboratory outputs (e.g., \path{QualityIndicatorSummary.csv} and boxplots) under:\newline \path{summary/lab/}, following the laboratory summary format described by jMetalPy~\cite{benitez2019jmetalpy}.
 Reference Pareto fronts used for normalized hypervolume are stored in \path{data/reference_fronts/} and can be regenerated with the provided scripts under \path{experiments/scripts/} (front density is configurable via environment variables, e.g., \path{VAMOS_REF_WFG2_POINTS}).
 
-As a development aid, we used a large language model (LLM) to accelerate mechanical refactors and surface configuration mismatches across frameworks; proposed changes were applied as explicit diffs, reviewed by the authors, and accepted only if they passed automated checks. This does not affect the experimental results, which are produced solely by the released code and fixed reference data.
+\paragraph{Development workflow.}
+Figure~\ref{fig:methodology_pro} summarizes the propose--apply--verify loop we used to keep changes auditable while building the benchmark runner and table-generation pipeline.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/methodology_pro.png}
+  \caption{Agentic propose--apply--verify loop used during development: propose a targeted change, implement a patch, run fast-fail checks, execute the benchmark pipeline, and iterate until gates pass.}
+  \label{fig:methodology_pro}
+\end{figure}
+
+As a development aid within this workflow, we used a large language model (LLM) to accelerate mechanical refactors and surface configuration mismatches across frameworks; proposed changes were applied as explicit diffs, reviewed by the authors, and accepted only if they passed automated checks. This does not affect the experimental results, which are produced solely by the released code and fixed reference data.
 
 %==============================================================================
 \section{Conclusions and Future Work}
 \label{sec:conclusions}
 %==============================================================================
 
-We presented \VAMOS{}, a high-performance Python framework for multi-objective optimization studies. By combining a vectorized core with pluggable compute kernels, \VAMOS{} reduces inner-loop overhead and enables scalable benchmarking. We also release a reproducible cross-framework benchmarking pipeline with semantic alignment and fixed reference Pareto fronts for normalized hypervolume reporting.
+We presented \VAMOS{}, a high-performance Python framework for multi-objective optimization studies. By combining a vectorized core with pluggable compute kernels, \VAMOS{} reduces inner-loop overhead and enables scalable benchmarking. We also release a reproducible cross-framework benchmarking pipeline with semantic alignment and fixed reference Pareto fronts for normalized hypervolume reporting. Under this protocol, \VAMOS{} achieves competitive normalized hypervolume (Table~\ref{tab:frameworks_hv}) while substantially reducing runtime (Tables~\ref{tab:frameworks_perf}--\ref{tab:frameworks_perf_moead}).
 
 \subsection{Future Work}
 \begin{itemize}
@@ -425,6 +471,10 @@ We presented \VAMOS{}, a high-performance Python framework for multi-objective o
   \item \textbf{Deeper GPU integration}: expand JAX-based kernels and enable GPU-friendly operators.
   \item \textbf{Broader comparisons}: extend the benchmark suite to additional MOEAs and frameworks and include time-to-target and other indicators alongside normalized HV.
 \end{itemize}
+
+\section*{Data and code availability}
+All data and code supporting the findings of this study (benchmark scripts, reference Pareto fronts, and CSV artifacts used to regenerate tables) are available in the \VAMOS{} repository:\newline
+\url{https://github.com/NicolasRodriguezUribe/VAMOS}.
 
 %==============================================================================
 \appendix
@@ -542,46 +592,6 @@ Swarm Evol. Comput. 51 (2019) 100598, doi:10.1016/j.swevo.2019.100598.
 D.~Hadka,
 Platypus: a free and open source Python library for multiobjective optimization,
 \url{https://github.com/Project-Platypus/Platypus}, accessed 2026.
-
-\bibitem{lopez2016irace}
-M.~L{\'o}pez-Ib{\'a}{\~n}ez, et~al.,
-The irace package: Iterated racing for automatic algorithm configuration,
-Oper. Res. Perspect. 3 (2016) 43--58.
-
-\bibitem{li2017hyperband}
-L.~Li, K.~Jamieson, G.~DeSalvo, A.~Rostamizadeh, A.~Talwalkar,
-Hyperband: A novel bandit-based approach to hyperparameter optimization,
-J. Mach. Learn. Res. 18~(185) (2017) 1--52.
-
-\bibitem{fialho2010analyzing}
-{\'A}.~Fialho, M.~Schoenauer, M.~Sebag,
-Analyzing bandit-based adaptive operator selection mechanisms,
-Ann. Math. Artif. Intell. 60 (2010) 25--64.
-
-\bibitem{sutton2018reinforcement}
-R.~S. Sutton, A.~G. Barto,
-Reinforcement Learning: An Introduction,
-MIT Press, 2018.
-
-\bibitem{auer2002finite}
-P.~Auer, N.~Cesa-Bianchi, P.~Fischer,
-Finite-time analysis of the multiarmed bandit problem,
-Mach. Learn. 47 (2002) 235--256.
-
-\bibitem{auer2002nonstochastic}
-P.~Auer, N.~Cesa-Bianchi, Y.~Freund, R.~E. Schapire,
-The nonstochastic multiarmed bandit problem,
-SIAM J. Comput. 32~(1) (2002) 48--77.
-
-\bibitem{thompson1933likelihood}
-W.~R. Thompson,
-On the likelihood that one unknown probability exceeds another in view of the evidence of two samples,
-Biometrika 25 (1933) 285--294.
-
-\bibitem{garivier2011ucb}
-A.~Garivier, E.~Moulines,
-On upper-confidence bound policies for switching bandit problems,
-in: Proc. Algorithmic Learning Theory (ALT), 2011, pp.~174--188.
 
 \bibitem{lam2015numba}
 S.~K. Lam, et~al.,

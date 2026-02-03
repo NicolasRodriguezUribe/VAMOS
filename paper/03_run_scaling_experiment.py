@@ -12,7 +12,7 @@ Usage:
   python paper/03_run_scaling_experiment.py
 
 Environment variables:
-  - VAMOS_N_EVALS: evaluations per run (default: 100000)
+  - VAMOS_N_EVALS: evaluations per run (default: 50000)
   - VAMOS_N_SEEDS: number of seeds (default: 30)
   - VAMOS_N_JOBS: joblib workers (default: CPU count - 1)
   - VAMOS_SCALING_ENGINES: comma-separated engines (default: numpy,numba)
@@ -237,7 +237,7 @@ def _run_numba_jit_policy(
 
 
 def main() -> None:
-    n_evals = _as_int_env("VAMOS_N_EVALS", 100000)
+    n_evals = _as_int_env("VAMOS_N_EVALS", 50000)
     n_seeds = _as_int_env("VAMOS_N_SEEDS", 30)
     n_jobs = int(os.environ.get("VAMOS_N_JOBS", max(1, (os.cpu_count() or 2) - 1)))
 
