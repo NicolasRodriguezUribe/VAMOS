@@ -273,6 +273,68 @@ def make_latex_table_4(family_df: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
+def make_latex_table_hv_summary(median_df: pd.DataFrame, iqr_df: pd.DataFrame) -> str:
+    """Table 10: Normalized hypervolume summary (median (IQR)) by family.
+
+    We compute per-problem median(HV) across seeds, then summarize these per-problem medians
+    using the median and interquartile range (IQR) across problems within each family.
+    """
+    families = [col for col in ["ZDT", "DTLZ", "WFG"] if col in median_df.columns]
+    cols = families + ["Overall"]
+
+    order_map = {"VAMOS": 0, "pymoo": 1, "DEAP": 2, "jMetalPy": 3, "Platypus": 4}
+
+    def sort_key(c: str) -> int:
+        for k, v in order_map.items():
+            if k.lower() == c.lower():
+                return v
+            if k in c:
+                return v
+        return 99
+
+    idx_list = sorted(median_df.index.tolist(), key=sort_key)
+
+    # Bold best (max) median per column, but use the displayed precision to avoid
+    # confusing cases where values tie after rounding.
+    best_median_rounded = {
+        col: round(float(median_df[col].max()), 3) for col in cols if col in median_df.columns
+    }
+
+    def fmt_cell(med: float, iqr: float, bold: bool) -> str:
+        s = f"{med:.3f} ({iqr:.3f})"
+        return f"\\textbf{{{s}}}" if bold else s
+
+    lines = [
+        r"\begin{table}[htbp]",
+        r"\centering",
+        r"\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks.}",
+        r"\label{tab:frameworks_hv}",
+        r"\begin{tabular}{l|" + "r" * len(families) + "|r}",
+        r"\toprule",
+    ]
+
+    header = " & ".join([f"\\textbf{{{c}}}" for c in families]) + " & \\textbf{Overall}"
+    lines.append(f"\\textbf{{Framework}} & {header} \\\\")
+    lines.append(r"\midrule")
+
+    for fw in idx_list:
+        row_parts: list[str] = []
+        for col in cols:
+            med = median_df.at[fw, col] if col in median_df.columns else float("nan")
+            iqr = iqr_df.at[fw, col] if col in iqr_df.columns else float("nan")
+            if pd.isna(med) or pd.isna(iqr):
+                row_parts.append("-")
+                continue
+            bold = round(float(med), 3) == best_median_rounded[col]
+            row_parts.append(fmt_cell(float(med), float(iqr), bold=bold))
+
+        # Insert column separator before Overall
+        lines.append(f"{fw} & {' & '.join(row_parts[:-1])} & {row_parts[-1]} \\\\")
+
+    lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
+    return "\n".join(lines)
+
+
 def _find_table_bounds(content: str, label: str) -> tuple[int, int, str, str] | None:
     label_token = f"\\label{{{label}}}"
     label_pos = content.find(label_token)
@@ -382,6 +444,33 @@ def main() -> None:
     # Remove other VAMOS rows
     family_filtered = family_filtered.loc[~family_filtered.index.str.contains(r"VAMOS \(")]
 
+    # --- TABLE 10 Data Preparation (Normalized HV summary) ---
+    # We summarize solution quality without hypothesis tests: per-problem median(HV) across seeds,
+    # then median and IQR of these per-problem medians within each family.
+    df_hv = df.copy()
+    if "VAMOS (numba)" in set(df_hv["framework"]):
+        df_hv.loc[df_hv["framework"] == "VAMOS (numba)", "framework"] = "VAMOS"
+    df_hv = df_hv.loc[~df_hv["framework"].str.startswith("VAMOS (")]
+
+    hv_problem = (
+        df_hv.groupby(["framework", "family", "problem"])["hypervolume"]
+        .median()
+        .reset_index()
+    )
+
+    hv_median = hv_problem.groupby(["framework", "family"])["hypervolume"].median().unstack()
+    hv_q1 = hv_problem.groupby(["framework", "family"])["hypervolume"].quantile(0.25).unstack()
+    hv_q3 = hv_problem.groupby(["framework", "family"])["hypervolume"].quantile(0.75).unstack()
+    hv_iqr = hv_q3 - hv_q1
+
+    overall_median = hv_problem.groupby("framework")["hypervolume"].median()
+    overall_iqr = hv_problem.groupby("framework")["hypervolume"].quantile(0.75) - hv_problem.groupby("framework")[
+        "hypervolume"
+    ].quantile(0.25)
+
+    hv_median["Overall"] = overall_median
+    hv_iqr["Overall"] = overall_iqr
+
     # --- TABLE A.2 (Comparison) Data Preparation ---
     comparison_detail = detail.T.copy()
 
@@ -405,6 +494,7 @@ def main() -> None:
 
     table_3_latex = make_latex_table_3(vamos_family) if not vamos_family.empty else ""
     table_4_latex = make_latex_table_4(family_filtered) if not family_filtered.empty else ""
+    table_10_latex = make_latex_table_hv_summary(hv_median, hv_iqr) if not hv_median.empty else ""
     table_a1_latex = make_latex_table_a1(backends_detail) if not missing_backends else ""
     table_a2_latex = make_latex_table_a2(comparison_detail) if not comparison_detail.empty else ""
 
@@ -417,6 +507,11 @@ def main() -> None:
     print("TABLE 4 - Frameworks by Family")
     print("=" * 60)
     print(table_4_latex)
+    print()
+    print("=" * 60)
+    print("TABLE 10 - Normalized HV Summary")
+    print("=" * 60)
+    print(table_10_latex)
     print()
     print("=" * 60)
     print("TABLE A.1 - Backends")
@@ -435,6 +530,7 @@ def main() -> None:
     for label, table in [
         ("tab:backends", table_3_latex),
         ("tab:frameworks_perf", table_4_latex),
+        ("tab:frameworks_hv", table_10_latex),
         ("tab:detailed_backends", table_a1_latex),
         ("tab:detailed_comparison", table_a2_latex),
     ]:
