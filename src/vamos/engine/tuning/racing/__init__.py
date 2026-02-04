@@ -31,9 +31,12 @@ from .bridge import (
     build_ibea_config_space,
     build_smpso_config_space,
     build_moead_config_space,
+    build_moead_permutation_config_space,
     build_nsgaiii_config_space,
     build_smsemoa_config_space,
     build_nsgaii_config_space,
+    build_nsgaii_permutation_config_space,
+    build_nsgaii_mixed_config_space,
     config_from_assignment,
 )
 
@@ -86,8 +89,11 @@ __all__ = [
     "build_ibea_config_space",
     "build_smpso_config_space",
     "build_moead_config_space",
+    "build_moead_permutation_config_space",
     "build_nsgaiii_config_space",
     "build_smsemoa_config_space",
     "build_nsgaii_config_space",
+    "build_nsgaii_permutation_config_space",
+    "build_nsgaii_mixed_config_space",
     "config_from_assignment",
 ]

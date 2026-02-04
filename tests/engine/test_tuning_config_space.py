@@ -9,6 +9,9 @@ from vamos.engine.tuning.racing.param_space import (
 from vamos.engine.tuning.racing.config_space import AlgorithmConfigSpace
 from vamos.engine.tuning.racing.bridge import (
     build_nsgaii_config_space,
+    build_nsgaii_permutation_config_space,
+    build_nsgaii_mixed_config_space,
+    build_moead_permutation_config_space,
     config_from_assignment,
 )
 
@@ -72,3 +75,33 @@ def test_nsgaii_archive_unbounded_disables_archive_params():
     cfg_bounded = {"use_external_archive": True, "archive_unbounded": False}
     assert param_space.is_active("archive_type", cfg_bounded)
     assert param_space.is_active("archive_size_factor", cfg_bounded)
+
+
+def test_nsgaii_permutation_config_space_builds_and_constructs_config():
+    rng = np.random.default_rng(3)
+    space = build_nsgaii_permutation_config_space()
+    assignment = space.sample(rng)
+    cfg = config_from_assignment("nsgaii_permutation", assignment)
+    assert cfg.pop_size > 0
+    assert cfg.crossover[0] in ("ox", "pmx", "edge", "cycle", "position")
+    assert cfg.mutation[0] in ("swap", "insert", "scramble", "inversion", "displacement")
+
+
+def test_nsgaii_mixed_config_space_builds_and_constructs_config():
+    rng = np.random.default_rng(4)
+    space = build_nsgaii_mixed_config_space()
+    assignment = space.sample(rng)
+    cfg = config_from_assignment("nsgaii_mixed", assignment)
+    assert cfg.pop_size > 0
+    assert cfg.crossover[0] in ("mixed", "uniform")
+    assert cfg.mutation[0] in ("mixed", "gaussian")
+
+
+def test_moead_permutation_config_space_builds_and_constructs_config():
+    rng = np.random.default_rng(5)
+    space = build_moead_permutation_config_space()
+    assignment = space.sample(rng)
+    cfg = config_from_assignment("moead_permutation", assignment)
+    assert cfg.pop_size > 0
+    assert cfg.crossover[0] in ("ox", "pmx", "edge", "cycle", "position")
+    assert cfg.mutation[0] in ("swap", "insert", "scramble", "inversion", "displacement")

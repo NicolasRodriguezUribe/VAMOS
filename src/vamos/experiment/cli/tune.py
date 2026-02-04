@@ -20,7 +20,10 @@ from vamos.engine.tuning import (
     EvalContext,
     # Builders
     build_nsgaii_config_space,
+    build_nsgaii_permutation_config_space,
+    build_nsgaii_mixed_config_space,
     build_moead_config_space,
+    build_moead_permutation_config_space,
     build_nsgaiii_config_space,
     build_spea2_config_space,
     build_ibea_config_space,
@@ -32,7 +35,10 @@ from vamos.engine.tuning import (
 
 BUILDERS: dict[str, Callable[[], AlgorithmConfigSpace | ParamSpace]] = {
     "nsgaii": build_nsgaii_config_space,
+    "nsgaii_permutation": build_nsgaii_permutation_config_space,
+    "nsgaii_mixed": build_nsgaii_mixed_config_space,
     "moead": build_moead_config_space,
+    "moead_permutation": build_moead_permutation_config_space,
     "nsgaiii": build_nsgaiii_config_space,
     "spea2": build_spea2_config_space,
     "ibea": build_ibea_config_space,
@@ -53,6 +59,14 @@ def _configure_cli_logging(level: int = logging.INFO) -> None:
     handler.setFormatter(logging.Formatter("%(message)s"))
     root.addHandler(handler)
     root.setLevel(level)
+
+
+def _canonical_algorithm_name(name: str) -> str:
+    if name in {"nsgaii_permutation", "nsgaii_mixed"}:
+        return "nsgaii"
+    if name == "moead_permutation":
+        return "moead"
+    return name
 
 
 def parse_args() -> argparse.Namespace:
@@ -115,13 +129,14 @@ def make_evaluator(
 
             # Use the unified bridge to build the AlgorithmConfig object
             cfg = config_from_assignment(algorithm_name, start_config)
+            algo_name = _canonical_algorithm_name(algorithm_name)
 
             # 2. Run the algorithm
             selection = make_problem_selection(problem_key, n_var=n_var, n_obj=n_obj)
 
             result = optimize(
                 selection.instantiate(),
-                algorithm=algorithm_name,
+                algorithm=algo_name,
                 algorithm_config=cfg,
                 termination=("n_eval", ctx.budget),
                 seed=ctx.seed,

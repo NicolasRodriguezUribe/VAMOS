@@ -77,3 +77,39 @@ def test_mixed_initialize_and_variation():
     assert np.all(children[:, spec["int_idx"]] >= spec["int_lower"])
     assert np.all(children[:, spec["int_idx"]] <= spec["int_upper"])
     assert np.all((children[:, spec["cat_idx"]] >= 0) & (children[:, spec["cat_idx"]] < spec["cat_cardinality"]))
+
+
+def test_mixed_with_permutation_segment():
+    rng = np.random.default_rng(3)
+    perm_idx = np.array([0, 1, 2, 3, 4])
+    spec = {
+        "perm_idx": perm_idx,
+        "int_idx": np.array([5]),
+        "real_idx": np.array([6, 7]),
+        "real_lower": np.array([-1.0, 0.0]),
+        "real_upper": np.array([1.0, 2.0]),
+        "int_lower": np.array([1]),
+        "int_upper": np.array([3]),
+        "perm_crossover": "ox",
+        "perm_mutation": "swap",
+    }
+    n_var = 8
+    X = mixed_initialize(6, n_var, spec, rng)
+    assert X.shape == (6, n_var)
+
+    expected = set(range(perm_idx.size))
+    for row in X[:, perm_idx]:
+        assert set(row.astype(int)) == expected
+
+    parents = np.vstack([X[:4], X[:4]]).reshape(-1, 2, n_var)
+    children = mixed_crossover(parents.reshape(-1, n_var), prob=1.0, spec=spec, rng=rng)
+    assert children.shape == parents.reshape(-1, n_var).shape
+
+    for row in children[:, perm_idx]:
+        assert set(row.astype(int)) == expected
+
+    mixed_mutation(children, prob=1.0, spec=spec, rng=rng)
+    for row in children[:, perm_idx]:
+        assert set(row.astype(int)) == expected
+    assert np.all(children[:, spec["int_idx"]] >= spec["int_lower"])
+    assert np.all(children[:, spec["int_idx"]] <= spec["int_upper"])

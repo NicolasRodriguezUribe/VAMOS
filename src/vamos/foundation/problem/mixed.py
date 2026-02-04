@@ -123,9 +123,10 @@ class MixedDesignProblem:
         real_idx = np.asarray(spec["real_idx"], dtype=int)
         int_idx = np.asarray(spec["int_idx"], dtype=int)
         cat_idx = np.asarray(spec["cat_idx"], dtype=int)
-        if real_idx.ndim != 1 or int_idx.ndim != 1 or cat_idx.ndim != 1:
+        perm_idx = np.asarray(spec.get("perm_idx", []), dtype=int)
+        if real_idx.ndim != 1 or int_idx.ndim != 1 or cat_idx.ndim != 1 or perm_idx.ndim != 1:
             raise ValueError("mixed_spec indices must be 1D arrays.")
-        all_idx = np.concatenate([real_idx, int_idx, cat_idx])
+        all_idx = np.concatenate([real_idx, int_idx, cat_idx, perm_idx])
         if np.unique(all_idx).size != all_idx.size:
             raise ValueError("mixed_spec indices must be non-overlapping.")
         if all_idx.size == 0:

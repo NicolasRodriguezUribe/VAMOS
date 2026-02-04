@@ -4,6 +4,83 @@ from typing import Any
 
 import numpy as np
 
+from .permutation import (
+    order_crossover,
+    pmx_crossover,
+    cycle_crossover,
+    position_based_crossover,
+    edge_recombination_crossover,
+    swap_mutation,
+    insert_mutation,
+    scramble_mutation,
+    inversion_mutation,
+    displacement_mutation,
+)
+
+
+_PERM_CROSSOVER = {
+    "ox": order_crossover,
+    "order": order_crossover,
+    "oxd": order_crossover,
+    "pmx": pmx_crossover,
+    "cycle": cycle_crossover,
+    "cx": cycle_crossover,
+    "position": position_based_crossover,
+    "position_based": position_based_crossover,
+    "pos": position_based_crossover,
+    "edge": edge_recombination_crossover,
+    "edge_recombination": edge_recombination_crossover,
+    "erx": edge_recombination_crossover,
+}
+
+_PERM_MUTATION = {
+    "swap": swap_mutation,
+    "insert": insert_mutation,
+    "scramble": scramble_mutation,
+    "inversion": inversion_mutation,
+    "displacement": displacement_mutation,
+}
+
+
+def _extract_index_array(spec: dict[str, np.ndarray], key: str) -> np.ndarray:
+    raw = spec.get(key) if spec.get(key) is not None else []
+    return np.asarray(raw, dtype=int)
+
+
+def _validate_mixed_spec(spec: dict[str, np.ndarray], n_var: int) -> None:
+    indices = {
+        "perm_idx": _extract_index_array(spec, "perm_idx"),
+        "real_idx": _extract_index_array(spec, "real_idx"),
+        "int_idx": _extract_index_array(spec, "int_idx"),
+        "cat_idx": _extract_index_array(spec, "cat_idx"),
+    }
+    if not any(idx.size for idx in indices.values()):
+        return
+    all_idx = np.concatenate([idx for idx in indices.values() if idx.size])
+    if np.any(all_idx < 0) or np.any(all_idx >= n_var):
+        raise ValueError("mixed_spec indices must be within [0, n_var).")
+    unique = np.unique(all_idx)
+    if unique.size != all_idx.size:
+        raise ValueError("mixed_spec indices must be disjoint across segments.")
+
+
+def _resolve_perm_crossover(spec: dict[str, np.ndarray]) -> Any:
+    method = str(spec.get("perm_crossover", "ox")).lower()
+    try:
+        return _PERM_CROSSOVER[method]
+    except KeyError as exc:
+        available = ", ".join(sorted(_PERM_CROSSOVER))
+        raise ValueError(f"Unknown perm_crossover '{method}'. Available: {available}") from exc
+
+
+def _resolve_perm_mutation(spec: dict[str, np.ndarray]) -> Any:
+    method = str(spec.get("perm_mutation", "swap")).lower()
+    try:
+        return _PERM_MUTATION[method]
+    except KeyError as exc:
+        available = ", ".join(sorted(_PERM_MUTATION))
+        raise ValueError(f"Unknown perm_mutation '{method}'. Available: {available}") from exc
+
 
 def mixed_initialize(
     pop_size: int,
@@ -16,9 +93,11 @@ def mixed_initialize(
     """
     if pop_size <= 0 or n_var <= 0:
         raise ValueError("pop_size and n_var must be positive.")
-    real_idx = np.asarray(spec.get("real_idx") if spec.get("real_idx") is not None else [], dtype=int)
-    int_idx = np.asarray(spec.get("int_idx") if spec.get("int_idx") is not None else [], dtype=int)
-    cat_idx = np.asarray(spec.get("cat_idx") if spec.get("cat_idx") is not None else [], dtype=int)
+    _validate_mixed_spec(spec, n_var)
+    perm_idx = _extract_index_array(spec, "perm_idx")
+    real_idx = _extract_index_array(spec, "real_idx")
+    int_idx = _extract_index_array(spec, "int_idx")
+    cat_idx = _extract_index_array(spec, "cat_idx")
     real_lower = np.asarray(spec.get("real_lower") if spec.get("real_lower") is not None else [], dtype=float)
     real_upper = np.asarray(spec.get("real_upper") if spec.get("real_upper") is not None else [], dtype=float)
     int_lower = np.asarray(spec.get("int_lower") if spec.get("int_lower") is not None else [], dtype=int)
@@ -26,6 +105,10 @@ def mixed_initialize(
     cat_cardinality = np.asarray(spec.get("cat_cardinality") if spec.get("cat_cardinality") is not None else [], dtype=int)
 
     X = np.zeros((pop_size, n_var), dtype=float)
+    if perm_idx.size:
+        keys = rng.random((pop_size, perm_idx.size))
+        perms = np.argsort(keys, axis=1).astype(np.int32, copy=False)
+        X[:, perm_idx] = perms
     if real_idx.size:
         X[:, real_idx] = rng.uniform(real_lower, real_upper, size=(pop_size, real_idx.size))
     if int_idx.size:
@@ -43,7 +126,8 @@ def mixed_crossover(
     rng: np.random.Generator,
 ) -> np.ndarray:
     """
-    Simple mixed crossover: arithmetic mean for real vars, uniform swap for int/cat.
+    Mixed crossover: permutation crossover for perm_idx, arithmetic mean for real,
+    uniform swap for int/cat.
     """
     Np, D = X_parents.shape
     if Np == 0:
@@ -61,9 +145,12 @@ def mixed_crossover(
             offspring = offspring[:n_original]
         return offspring
 
-    real_idx = np.asarray(spec.get("real_idx") if spec.get("real_idx") is not None else [], dtype=int)
-    int_idx = np.asarray(spec.get("int_idx") if spec.get("int_idx") is not None else [], dtype=int)
-    cat_idx = np.asarray(spec.get("cat_idx") if spec.get("cat_idx") is not None else [], dtype=int)
+    _validate_mixed_spec(spec, D)
+    perm_idx = _extract_index_array(spec, "perm_idx")
+    real_idx = _extract_index_array(spec, "real_idx")
+    int_idx = _extract_index_array(spec, "int_idx")
+    cat_idx = _extract_index_array(spec, "cat_idx")
+    perm_crossover = _resolve_perm_crossover(spec) if perm_idx.size else None
 
     active = rng.random(pairs.shape[0]) <= prob
     act_idx = np.flatnonzero(active)
@@ -77,6 +164,11 @@ def mixed_crossover(
         p1, p2 = pairs[row, 0], pairs[row, 1]
         child1 = p1.copy()
         child2 = p2.copy()
+        if perm_idx.size:
+            parents_perm = np.stack([p1[perm_idx], p2[perm_idx]], axis=0).astype(np.int32, copy=True)
+            perm_children = perm_crossover(parents_perm, 1.0, rng)
+            child1[perm_idx] = perm_children[0]
+            child2[perm_idx] = perm_children[1]
         if real_idx.size:
             mean_vals = 0.5 * (p1[real_idx] + p2[real_idx])
             child1[real_idx] = mean_vals
@@ -103,7 +195,8 @@ def mixed_mutation(
     rng: np.random.Generator,
 ) -> None:
     """
-    Mixed mutation: Gaussian perturb for real, random reset for int/cat.
+    Mixed mutation: permutation mutation for perm_idx, Gaussian perturb for real,
+    random reset for int/cat.
     """
     if X.size == 0:
         return
@@ -111,14 +204,22 @@ def mixed_mutation(
     if prob <= 0.0:
         return
 
-    real_idx = np.asarray(spec.get("real_idx") if spec.get("real_idx") is not None else [], dtype=int)
-    int_idx = np.asarray(spec.get("int_idx") if spec.get("int_idx") is not None else [], dtype=int)
-    cat_idx = np.asarray(spec.get("cat_idx") if spec.get("cat_idx") is not None else [], dtype=int)
+    _validate_mixed_spec(spec, X.shape[1])
+    perm_idx = _extract_index_array(spec, "perm_idx")
+    real_idx = _extract_index_array(spec, "real_idx")
+    int_idx = _extract_index_array(spec, "int_idx")
+    cat_idx = _extract_index_array(spec, "cat_idx")
     real_lower = np.asarray(spec.get("real_lower") if spec.get("real_lower") is not None else [], dtype=float)
     real_upper = np.asarray(spec.get("real_upper") if spec.get("real_upper") is not None else [], dtype=float)
     int_lower = np.asarray(spec.get("int_lower") if spec.get("int_lower") is not None else [], dtype=int)
     int_upper = np.asarray(spec.get("int_upper") if spec.get("int_upper") is not None else [], dtype=int)
     cat_cardinality = np.asarray(spec.get("cat_cardinality") if spec.get("cat_cardinality") is not None else [], dtype=int)
+    perm_mutation = _resolve_perm_mutation(spec) if perm_idx.size else None
+
+    if perm_idx.size:
+        perm_view = X[:, perm_idx].astype(np.int32, copy=True)
+        perm_mutation(perm_view, prob, rng)
+        X[:, perm_idx] = perm_view
 
     if real_idx.size:
         span = np.maximum(real_upper - real_lower, 1e-6)
