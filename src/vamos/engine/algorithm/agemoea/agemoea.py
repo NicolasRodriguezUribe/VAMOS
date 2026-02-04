@@ -235,7 +235,12 @@ class AGEMOEA:
 
         pop_size = int(self.config.get("pop_size", 100))
         term_key, term_val = termination
-        max_evals = term_val if term_key == "n_eval" else int(term_val) * pop_size
+        if term_key == "max_evaluations":
+            max_evals = int(term_val)
+        elif term_key == "n_gen":
+            max_evals = int(term_val) * pop_size
+        else:
+            raise ValueError("Unsupported termination criterion for AGE-MOEA.")
 
         encoding = normalize_encoding(getattr(problem, "encoding", "real"))
         xl, xu = resolve_bounds(problem, encoding)

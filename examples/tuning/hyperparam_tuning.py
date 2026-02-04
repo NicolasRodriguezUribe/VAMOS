@@ -34,7 +34,7 @@ def main():
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("n_eval", 60),
+        termination=("max_evaluations", 60),
         seed=1,
         engine="numpy",
     )

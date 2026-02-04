@@ -49,7 +49,7 @@ def test_plugin_registration_and_usage():
         problem,
         algorithm=algo_key,
         algorithm_config=DummyConfig(),
-        termination=("n_eval", 10),
+        termination=("max_evaluations", 10),
         seed=1,
         engine="numpy",
     )

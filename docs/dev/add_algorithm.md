@@ -42,7 +42,7 @@ def test_my_algorithm_smoke():
     algo_ctor = resolve_algorithm("my_algorithm")
     algo = algo_ctor({"pop_size": 4}, kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=4)
-    res = algo.run(problem, termination=("n_eval", 8), seed=1)
+    res = algo.run(problem, termination=("max_evaluations", 8), seed=1)
     assert "F" in res and res["F"].shape[1] == problem.n_obj
 ```
 

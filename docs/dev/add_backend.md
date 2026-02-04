@@ -67,6 +67,6 @@ def test_mybackend_smoke():
     )
     cfg["engine"] = "mybackend"
     algo = NSGAII(cfg, kernel=kernel)
-    res = algo.run(ZDT1Problem(n_var=4), termination=("n_eval", 8), seed=0)
+    res = algo.run(ZDT1Problem(n_var=4), termination=("max_evaluations", 8), seed=0)
     assert res["F"].shape[0] > 0
 ```

@@ -23,7 +23,7 @@ def _run_moead(problem, cross, mut, pop_size=12, n_eval=60):
         .result_mode("population")
     ).build()
     algo = MOEAD(cfg.to_dict(), kernel=NumPyKernel())
-    res = algo.run(problem, termination=("n_eval", n_eval), seed=0)
+    res = algo.run(problem, termination=("max_evaluations", n_eval), seed=0)
     assert "F" in res and res["F"].shape[0] == pop_size
     assert np.isfinite(res["F"]).all()
 
@@ -39,7 +39,7 @@ def _run_smsemoa(problem, cross, mut, pop_size=10, n_eval=40):
         .result_mode("population")
     ).build()
     algo = SMSEMOA(cfg.to_dict(), kernel=NumPyKernel())
-    res = algo.run(problem, termination=("n_eval", n_eval), seed=0)
+    res = algo.run(problem, termination=("max_evaluations", n_eval), seed=0)
     assert "F" in res and res["F"].shape[0] == pop_size
     assert np.isfinite(res["F"]).all()
 
@@ -54,7 +54,7 @@ def _run_nsgaiii(problem, cross, mut, pop_size=12, n_eval=60):
         .reference_directions(path=None)
     ).build()
     algo = NSGAIII(cfg.to_dict(), kernel=NumPyKernel())
-    res = algo.run(problem, termination=("n_eval", n_eval), seed=0)
+    res = algo.run(problem, termination=("max_evaluations", n_eval), seed=0)
     assert "F" in res and res["F"].shape[0] >= pop_size
     assert np.isfinite(res["F"]).all()
 

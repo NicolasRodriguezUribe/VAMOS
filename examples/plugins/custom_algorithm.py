@@ -96,6 +96,6 @@ if __name__ == "__main__":
     # Demo usage
     import vamos
 
-    result = vamos.optimize("zdt1", algorithm="random_search", budget=1000, pop_size=100, seed=42)
+    result = vamos.optimize("zdt1", algorithm="random_search", max_evaluations=1000, pop_size=100, seed=42)
     print(f"Found {result.F.shape[0]} solutions")
     print(f"Best f1: {result.F[:, 0].min():.4f}")

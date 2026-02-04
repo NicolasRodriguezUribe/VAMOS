@@ -26,7 +26,7 @@ def test_optimize_explicit_algorithm_nsga2():
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("n_eval", 12),
+        termination=("max_evaluations", 12),
         seed=1,
         engine="numpy",
     )
@@ -52,7 +52,7 @@ def test_optimize_explicit_algorithm_moead():
         problem,
         algorithm="moead",
         algorithm_config=cfg_data,
-        termination=("n_eval", 8),
+        termination=("max_evaluations", 8),
         seed=2,
         engine="numpy",
     )
@@ -63,26 +63,26 @@ def test_optimize_explicit_algorithm_moead():
 def test_optimize_unknown_algorithm_errors():
     problem = ZDT1Problem(n_var=4)
     with pytest.raises(InvalidAlgorithmError, match="Unknown algorithm"):
-        optimize(problem, algorithm="unknown_algo", budget=4, pop_size=6)
+        optimize(problem, algorithm="unknown_algo", max_evaluations=4, pop_size=6)
 
 
 def test_optimize_rejects_legacy_signature():
     problem = ZDT1Problem(n_var=4)
     with pytest.raises(TypeError, match="algorithm_config"):
-        optimize(problem, algorithm="nsgaii", budget=4, algorithm_config={})  # type: ignore[arg-type]
+        optimize(problem, algorithm="nsgaii", max_evaluations=4, algorithm_config={})  # type: ignore[arg-type]
     with pytest.raises(TypeError):
-        optimize(problem, _nsgaii_cfg(), ("n_eval", 6), 3)  # type: ignore[arg-type]
+        optimize(problem, _nsgaii_cfg(), ("max_evaluations", 6), 3)  # type: ignore[arg-type]
 
 
 def test_optimize_resolves_pop_size_consistently() -> None:
     problem = ZDT1Problem(n_var=6)
     pop_size = 10
-    budget = 12
+    max_evaluations = 12
 
     result_direct = optimize(
         problem,
         algorithm="nsgaii",
-        budget=budget,
+        max_evaluations=max_evaluations,
         pop_size=pop_size,
         seed=1,
         engine="numpy",
@@ -92,7 +92,7 @@ def test_optimize_resolves_pop_size_consistently() -> None:
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("n_eval", budget),
+        termination=("max_evaluations", max_evaluations),
         seed=1,
         engine="numpy",
     )
@@ -102,4 +102,36 @@ def test_optimize_resolves_pop_size_consistently() -> None:
     assert "resolved_config" in direct_defaults
     assert "resolved_config" in cfg_defaults
     assert direct_defaults["resolved_config"]["pop_size"] == cfg_defaults["resolved_config"]["pop_size"] == pop_size
-    assert direct_defaults["resolved_config"]["budget"] == cfg_defaults["resolved_config"]["budget"] == budget
+    assert (
+        direct_defaults["resolved_config"]["max_evaluations"]
+        == cfg_defaults["resolved_config"]["max_evaluations"]
+        == max_evaluations
+    )
+
+
+def test_optimize_accepts_max_evaluations() -> None:
+    problem = ZDT1Problem(n_var=6)
+    result = optimize(
+        problem,
+        algorithm="nsgaii",
+        max_evaluations=12,
+        pop_size=6,
+        seed=1,
+        engine="numpy",
+    )
+    defaults = result.explain_defaults()
+    assert defaults["resolved_config"]["max_evaluations"] == 12
+
+
+def test_optimize_accepts_max_evaluations_termination() -> None:
+    problem = ZDT1Problem(n_var=6)
+    result = optimize(
+        problem,
+        algorithm="nsgaii",
+        pop_size=6,
+        termination=("max_evaluations", 12),
+        seed=1,
+        engine="numpy",
+    )
+    defaults = result.explain_defaults()
+    assert defaults["resolved_config"]["max_evaluations"] == 12

@@ -36,5 +36,5 @@ def test_nsga2_with_adaptive_operator_selector_runs():
     }
     algo = NSGAII(cfg, NumPyKernel())
     problem = DummyProblem()
-    result = algo.run(problem, termination=("n_eval", 30), seed=0)
+    result = algo.run(problem, termination=("max_evaluations", 30), seed=0)
     assert "F" in result and result["F"].shape[0] == cfg["pop_size"]

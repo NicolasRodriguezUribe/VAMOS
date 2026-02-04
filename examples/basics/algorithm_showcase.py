@@ -11,7 +11,7 @@ from vamos import optimize
 def run_agemoea():
     print("\n=== AGE-MOEA on ZDT1 ===")
     # AGE-MOEA is good for adaptive geometry estimation
-    result = optimize("zdt1", algorithm="agemoea", pop_size=100, budget=10000, seed=1, verbose=True)
+    result = optimize("zdt1", algorithm="agemoea", pop_size=100, max_evaluations=10000, seed=1, verbose=True)
     print(f"AGE-MOEA found {len(result)} solutions")
     return result
 
@@ -24,7 +24,7 @@ def run_rvea():
         algorithm="rvea",
         n_obj=3,
         pop_size=105,  # H=14 for M=3 -> 105 refs
-        budget=10000,
+        max_evaluations=10000,
         seed=1,
         verbose=True,
     )

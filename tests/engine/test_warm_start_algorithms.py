@@ -45,20 +45,20 @@ def test_nsgaii_warm_start_matches_full_run() -> None:
 
     full = NSGAII(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
-        termination=("n_eval", budget_full),
+        termination=("max_evaluations", budget_full),
         seed=42,
     )
 
     stage1 = NSGAII(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
-        termination=("n_eval", budget_stage1),
+        termination=("max_evaluations", budget_stage1),
         seed=42,
     )
     checkpoint = stage1["checkpoint"]
 
     resumed = NSGAII(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
-        termination=("n_eval", budget_full),
+        termination=("max_evaluations", budget_full),
         seed=123,
         checkpoint=checkpoint,
     )
@@ -78,20 +78,20 @@ def test_moead_warm_start_matches_full_run() -> None:
 
     full = MOEAD(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
-        termination=("n_eval", budget_full),
+        termination=("max_evaluations", budget_full),
         seed=7,
     )
 
     stage1 = MOEAD(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
-        termination=("n_eval", budget_stage1),
+        termination=("max_evaluations", budget_stage1),
         seed=7,
     )
     checkpoint = stage1["checkpoint"]
 
     resumed = MOEAD(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
-        termination=("n_eval", budget_full),
+        termination=("max_evaluations", budget_full),
         seed=99,
         checkpoint=checkpoint,
     )

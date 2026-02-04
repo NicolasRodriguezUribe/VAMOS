@@ -224,7 +224,7 @@ def make_evaluator(problem_name: str, encoding: str) -> Callable[[dict[str, Any]
                 problem,
                 algorithm="nsgaii",
                 algorithm_config=algo_cfg,
-                termination=("n_eval", ctx.budget),
+                termination=("max_evaluations", ctx.budget),
                 seed=ctx.seed,
                 engine="numpy",
             )

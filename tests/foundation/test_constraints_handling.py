@@ -42,7 +42,7 @@ def _make_nsgaii(cfg_mode: str):
 def test_feasibility_handling_prefers_feasible_solutions():
     problem = LinearConstraintProblem()
     algo = _make_nsgaii("feasibility")
-    result = algo.run(problem, termination=("n_eval", 40), seed=3)
+    result = algo.run(problem, termination=("max_evaluations", 40), seed=3)
     G = result.get("G")
     assert G is not None
     feas = is_feasible(G)
@@ -53,7 +53,7 @@ def test_feasibility_handling_prefers_feasible_solutions():
 def test_unconstrained_mode_can_keep_infeasible():
     problem = LinearConstraintProblem()
     algo = _make_nsgaii("none")
-    result = algo.run(problem, termination=("n_eval", 40), seed=4)
+    result = algo.run(problem, termination=("max_evaluations", 40), seed=4)
     G = result.get("G")
     assert G is None  # not tracked in none mode
 
@@ -73,7 +73,7 @@ def test_moead_penalty_reduces_violation():
         .build()
     )
     algo = MOEAD(cfg.to_dict(), kernel=NumPyKernel())
-    result = algo.run(problem, termination=("n_eval", 40), seed=5)
+    result = algo.run(problem, termination=("max_evaluations", 40), seed=5)
     G = result.get("G")
     assert G is not None
     cv = compute_violation(G)

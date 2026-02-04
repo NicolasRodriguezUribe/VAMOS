@@ -28,7 +28,7 @@ def test_nsgaii_result_contains_only_nondominated():
     problem = ZDT1Problem(n_var=10)
 
     # Run for enough generations to have mixed fronts in population
-    result = algorithm.run(problem, termination=("n_eval", pop_size * 3), seed=42)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size * 3), seed=42)
 
     F = result["F"]
     n_solutions = F.shape[0]
@@ -59,7 +59,7 @@ def test_nsgaii_population_key_contains_full_population():
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=8)
 
-    result = algorithm.run(problem, termination=("n_eval", pop_size * 2), seed=123)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size * 2), seed=123)
 
     # Full population should be exactly pop_size
     assert "population" in result

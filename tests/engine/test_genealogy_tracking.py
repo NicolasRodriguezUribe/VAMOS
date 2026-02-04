@@ -54,7 +54,7 @@ class TestGenealogyTracking:
             .build()
         )
         alg = NSGAII(cfg.to_dict(), kernel)
-        result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
+        result = alg.run(small_problem, termination=("max_evaluations", 30), seed=42)
 
         assert "genealogy" in result
         genealogy = result["genealogy"]
@@ -77,7 +77,7 @@ class TestGenealogyTracking:
             .build()
         )
         alg = MOEAD(cfg.to_dict(), kernel)
-        result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
+        result = alg.run(small_problem, termination=("max_evaluations", 30), seed=42)
 
         assert "genealogy" in result
         genealogy = result["genealogy"]
@@ -97,7 +97,7 @@ class TestGenealogyTracking:
             .build()
         )
         alg = SPEA2(cfg.to_dict(), kernel)
-        result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
+        result = alg.run(small_problem, termination=("max_evaluations", 30), seed=42)
 
         assert "genealogy" in result
         genealogy = result["genealogy"]
@@ -118,7 +118,7 @@ class TestGenealogyTracking:
             .build()
         )
         alg = IBEA(cfg.to_dict(), kernel)
-        result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
+        result = alg.run(small_problem, termination=("max_evaluations", 30), seed=42)
 
         assert "genealogy" in result
         genealogy = result["genealogy"]
@@ -137,7 +137,7 @@ class TestGenealogyTracking:
             .build()
         )
         alg = SMSEMOA(cfg.to_dict(), kernel)
-        result = alg.run(small_problem, termination=("n_eval", 20), seed=42)
+        result = alg.run(small_problem, termination=("max_evaluations", 20), seed=42)
 
         assert "genealogy" in result
         genealogy = result["genealogy"]
@@ -148,7 +148,7 @@ class TestGenealogyTracking:
         """Test SMPSO with genealogy tracking enabled."""
         cfg = SMPSOConfig.builder().pop_size(10).archive_size(10).mutation("pm", prob="1/n", eta=20.0).track_genealogy(True).build()
         alg = SMPSO(cfg.to_dict(), kernel)
-        result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
+        result = alg.run(small_problem, termination=("max_evaluations", 30), seed=42)
 
         assert "genealogy" in result
         genealogy = result["genealogy"]
@@ -168,7 +168,7 @@ class TestGenealogyTracking:
             .build()
         )
         alg = NSGAIII(cfg.to_dict(), kernel)
-        result = alg.run(many_obj_problem, termination=("n_eval", 36), seed=42)
+        result = alg.run(many_obj_problem, termination=("max_evaluations", 36), seed=42)
 
         assert "genealogy" in result
         genealogy = result["genealogy"]
@@ -187,7 +187,7 @@ class TestGenealogyTracking:
             .build()
         )
         alg = NSGAII(cfg.to_dict(), kernel)
-        result = alg.run(small_problem, termination=("n_eval", 30), seed=42)
+        result = alg.run(small_problem, termination=("max_evaluations", 30), seed=42)
 
         # Should not have genealogy when disabled
         assert result.get("genealogy") is None or "genealogy" not in result

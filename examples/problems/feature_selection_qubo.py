@@ -50,7 +50,7 @@ def main(seed: int = 5) -> None:
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("n_eval", 180),
+        termination=("max_evaluations", 180),
         seed=seed,
         engine="numpy",
     )

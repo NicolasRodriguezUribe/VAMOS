@@ -41,7 +41,7 @@ def parse_termination(
     ----------
     termination : tuple[str, Any]
         Termination criterion as (type, value). Supported types:
-        - "n_eval": value is the max number of evaluations
+        - "max_evaluations": value is the max number of evaluations
         - "hv": value is a dict with hypervolume config
     algorithm_name : str
         Algorithm name for error messages.
@@ -59,7 +59,7 @@ def parse_termination(
     term_type, term_val = termination
     hv_config = None
 
-    if term_type == "n_eval":
+    if term_type == "max_evaluations":
         max_eval = int(term_val)
     elif term_type == "hv":
         hv_config = dict(term_val)

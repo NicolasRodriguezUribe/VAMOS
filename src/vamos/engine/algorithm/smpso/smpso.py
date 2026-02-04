@@ -101,12 +101,12 @@ class SMPSO:
     >>> from vamos.algorithms import SMPSOConfig
     >>> config = SMPSOConfig.builder().pop_size(100).archive_size(100).build()
     >>> smpso = SMPSO(config, kernel)
-    >>> result = smpso.run(problem, ("n_eval", 10000), seed=42)
+    >>> result = smpso.run(problem, ("max_evaluations", 10000), seed=42)
 
     Ask/tell interface:
 
     >>> smpso = SMPSO(config, kernel)
-    >>> smpso.initialize(problem, ("n_eval", 10000), seed=42)
+    >>> smpso.initialize(problem, ("max_evaluations", 10000), seed=42)
     >>> while not smpso.should_terminate():
     ...     X = smpso.ask()
     ...     result = evaluate(X)

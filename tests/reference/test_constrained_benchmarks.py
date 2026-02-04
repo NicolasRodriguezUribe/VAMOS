@@ -86,7 +86,7 @@ class TestConstrainedBenchmarks:
 
         problem = SimpleConstrainedProblem()
 
-        result = vamos.optimize(problem, algorithm="nsgaii", budget=1000, pop_size=50, seed=42)
+        result = vamos.optimize(problem, algorithm="nsgaii", max_evaluations=1000, pop_size=50, seed=42)
 
         # Should find solutions
         assert len(result) > 0, "Should find at least some solutions"
@@ -101,7 +101,7 @@ class TestConstrainedBenchmarks:
 
         problem = OSYProblem()
 
-        result = vamos.optimize(problem, algorithm="nsgaii", budget=2000, pop_size=100, seed=42)
+        result = vamos.optimize(problem, algorithm="nsgaii", max_evaluations=2000, pop_size=100, seed=42)
 
         # Should find solutions
         assert len(result) > 0, "Should find solutions on OSY"
@@ -113,7 +113,7 @@ class TestConstrainedBenchmarks:
 
         problem = SimpleConstrainedProblem()
 
-        result = vamos.optimize(problem, algorithm="moead", budget=1000, seed=42)
+        result = vamos.optimize(problem, algorithm="moead", max_evaluations=1000, seed=42)
 
         assert len(result) > 0, "MOEA/D should find solutions"
 
@@ -124,7 +124,7 @@ class TestConstrainedBenchmarks:
         problem = SimpleConstrainedProblem()
 
         # Run optimization
-        result = vamos.optimize(problem, algorithm="nsgaii", budget=2000, pop_size=100, seed=42)
+        result = vamos.optimize(problem, algorithm="nsgaii", max_evaluations=2000, pop_size=100, seed=42)
 
         # Manual constraint check on returned solutions
         if result.X is not None and len(result.X) > 0:
@@ -145,6 +145,6 @@ def test_constrained_algorithm_comparison(algorithm):
 
     problem = SimpleConstrainedProblem()
 
-    result = vamos.optimize(problem, algorithm=algorithm, budget=500, seed=42)
+    result = vamos.optimize(problem, algorithm=algorithm, max_evaluations=500, seed=42)
 
     assert len(result) >= 0, f"{algorithm} should complete without error"

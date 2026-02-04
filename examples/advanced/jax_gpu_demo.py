@@ -16,7 +16,7 @@ from vamos import optimize
 def run_numpy(pop_size=1000):
     print(f"\n--- NumPy (CPU) | Pop: {pop_size} ---")
     start = time.time()
-    result = optimize("zdt1", algorithm="nsgaii", budget=10000, pop_size=pop_size, engine="numpy", verbose=False)
+    result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10000, pop_size=pop_size, engine="numpy", verbose=False)
     elapsed = time.time() - start
     print(f"Time: {elapsed:.2f}s | Solutions: {len(result)}")
     return elapsed
@@ -33,7 +33,7 @@ def run_jax(pop_size=1000):
         return 0
 
     start = time.time()
-    result = optimize("zdt1", algorithm="nsgaii", budget=10000, pop_size=pop_size, engine="jax", verbose=False)
+    result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10000, pop_size=pop_size, engine="jax", verbose=False)
     elapsed = time.time() - start
     print(f"Time: {elapsed:.2f}s | Solutions: {len(result)}")
     return elapsed

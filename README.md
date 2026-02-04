@@ -52,7 +52,7 @@ from vamos import optimize
 result = optimize(
     "zdt1",
     algorithm="nsgaii",
-    budget=10000,
+    max_evaluations=10000,
     pop_size=100,
     engine="numpy",
     seed=42,
@@ -105,7 +105,7 @@ result = optimize(
     problem,
     algorithm="nsgaii",
     algorithm_config=algo,
-    termination=("n_eval", 10000),
+    termination=("max_evaluations", 10000),
     seed=42,
     engine="numpy",
 )

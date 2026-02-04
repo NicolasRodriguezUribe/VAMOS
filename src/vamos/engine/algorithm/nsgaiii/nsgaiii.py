@@ -69,12 +69,12 @@ class NSGAIII:
     >>> from vamos.algorithms import NSGAIIIConfig
     >>> config = NSGA3Config().pop_size(92).divisions(12).build()
     >>> nsga3 = NSGAIII(config, kernel)
-    >>> result = nsga3.run(problem, ("n_eval", 20000), seed=42)
+    >>> result = nsga3.run(problem, ("max_evaluations", 20000), seed=42)
 
     Ask/tell interface:
 
     >>> nsga3 = NSGAIII(config, kernel)
-    >>> nsga3.initialize(problem, ("n_eval", 20000), seed=42)
+    >>> nsga3.initialize(problem, ("max_evaluations", 20000), seed=42)
     >>> while not nsga3.should_terminate():
     ...     X = nsga3.ask()
     ...     F = evaluate(X)
@@ -111,7 +111,7 @@ class NSGAIII:
         problem : ProblemProtocol
             Problem to optimize.
         termination : tuple
-            Termination criterion, e.g., ("n_eval", 10000).
+            Termination criterion, e.g., ("max_evaluations", 10000).
         seed : int
             Random seed for reproducibility.
         eval_strategy : EvaluationBackend, optional

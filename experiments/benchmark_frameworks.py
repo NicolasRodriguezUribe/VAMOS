@@ -47,7 +47,7 @@ def run_vamos_benchmark(problem: str, n_evals: int, seed: int, engine: str = "nu
     result = optimize(
         prob_instance,
         algorithm="nsgaii",
-        budget=n_evals,
+        max_evaluations=n_evals,
         pop_size=100,
         engine=engine,
         seed=seed,

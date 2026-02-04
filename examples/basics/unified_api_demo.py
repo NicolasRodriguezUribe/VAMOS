@@ -14,7 +14,7 @@ from vamos import optimize
 def demo_automl():
     print("\n=== 1. AutoML Mode ===")
     # Automatically selects algorithm based on problem traits (n_obj=2 -> NSGA-II usually)
-    result = optimize("zdt1", algorithm="auto", budget=2000, verbose=True)
+    result = optimize("zdt1", algorithm="auto", max_evaluations=2000, verbose=True)
     print(f"Auto-selected result: {len(result)} solutions")
 
 
@@ -24,7 +24,7 @@ def demo_multiseed():
     results = optimize(
         "zdt1",
         algorithm="nsgaii",
-        budget=2000,
+        max_evaluations=2000,
         seed=[0, 1, 2],  # 3 independent runs
         verbose=False,
     )
@@ -41,7 +41,7 @@ def demo_explicit():
         algorithm="moead",
         n_obj=3,  # Problem parameter
         pop_size=100,  # Algorithm parameter
-        budget=5000,
+        max_evaluations=5000,
         verbose=True,
     )
     print(f"MOEA/D result: {len(result)} solutions")

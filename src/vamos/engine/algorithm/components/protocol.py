@@ -82,7 +82,7 @@ class AlgorithmProtocol(Protocol):
         problem : ProblemProtocol
             The optimization problem to solve.
         termination : tuple[str, Any]
-            Termination criterion, e.g., ("n_eval", 10000) or ("hv", {...}).
+            Termination criterion, e.g., ("max_evaluations", 10000) or ("hv", {...}).
         seed : int
             Random seed for reproducibility.
         eval_strategy : Any | None

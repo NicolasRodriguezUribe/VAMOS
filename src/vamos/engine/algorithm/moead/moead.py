@@ -76,10 +76,10 @@ class MOEAD:
     >>> from vamos.algorithms import MOEADConfig
     >>> config = MOEADConfig.builder().pop_size(100).crossover("sbx", prob=0.9).build()
     >>> moead = MOEAD(config, kernel)
-    >>> result = moead.run(problem, ("n_eval", 10000), seed=42)
+    >>> result = moead.run(problem, ("max_evaluations", 10000), seed=42)
 
     Using ask/tell for external evaluation:
-    >>> moead._initialize_run(problem, ("n_eval", 10000), seed=42)
+    >>> moead._initialize_run(problem, ("max_evaluations", 10000), seed=42)
     >>> while moead._st.n_eval < 10000:
     ...     X_off = moead.ask()
     ...     F_off = my_external_evaluator(X_off)
@@ -108,7 +108,7 @@ class MOEAD:
         problem : ProblemProtocol
             The optimization problem to solve.
         termination : tuple[str, Any]
-            Termination criterion: ("n_eval", N) or ("hv", {...}).
+            Termination criterion: ("max_evaluations", N) or ("hv", {...}).
         seed : int
             Random seed for reproducibility.
         eval_strategy : EvaluationBackend | None

@@ -21,7 +21,7 @@ from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.logging import configure_vamos_logging
 from vamos.foundation.core.experiment_config import resolve_engine
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.experiment.auto import _resolve_problem, _select_algorithm, _compute_pop_size, _compute_budget
+from vamos.experiment.auto import _resolve_problem, _select_algorithm, _compute_pop_size, _compute_max_evaluations
 
 
 def _logger() -> logging.Logger:
@@ -52,12 +52,12 @@ def _resolve_problem_label(problem: object, instance: ProblemProtocol) -> str:
     return instance.__class__.__name__
 
 
-def _extract_budget(termination: object) -> int | None:
+def _extract_max_evaluations(termination: object) -> int | None:
     if not isinstance(termination, tuple) or len(termination) != 2:
         return None
     kind, value = cast(tuple[object, object], termination)
-    if isinstance(kind, str) and kind == "n_eval":
-        return _coerce_int("termination budget", value, min_value=1)
+    if isinstance(kind, str) and kind == "max_evaluations":
+        return _coerce_int("termination max_evaluations", value, min_value=1)
     return None
 
 
@@ -66,7 +66,7 @@ def optimize(
     problem: str | ProblemProtocol,
     *,
     algorithm: str = "auto",
-    budget: int | None = None,
+    max_evaluations: int | None = None,
     pop_size: int | None = None,
     engine: str | None = None,
     seed: int = 42,
@@ -87,7 +87,7 @@ def optimize(
     problem: str | ProblemProtocol,
     *,
     algorithm: str = "auto",
-    budget: int | None = None,
+    max_evaluations: int | None = None,
     pop_size: int | None = None,
     engine: str | None = None,
     seed: list[int] | tuple[int, ...],
@@ -107,7 +107,7 @@ def optimize(
     problem: str | ProblemProtocol,
     *,
     algorithm: str = "auto",
-    budget: int | None = None,
+    max_evaluations: int | None = None,
     pop_size: int | None = None,
     engine: str | None = None,
     seed: int | list[int] | tuple[int, ...] = 42,
@@ -133,7 +133,7 @@ def optimize(
     Args:
         problem: Problem name (e.g., "zdt1") or problem instance.
         algorithm: Algorithm name or "auto" for automatic selection.
-        budget: Maximum function evaluations. Auto-determined if None.
+        max_evaluations: Maximum function evaluations. Auto-determined if None.
         pop_size: Population size. Auto-determined if None.
         engine: Backend engine ("numpy", "numba", "moocore", "jax").
         seed: Random seed or list of seeds for multi-run mode.
@@ -142,7 +142,7 @@ def optimize(
         n_obj: Override objective count when using a string problem key.
         problem_kwargs: Extra kwargs forwarded to problem instantiation for string problems.
         algorithm_config: Optional algorithm config object.
-        termination: Optional termination tuple; overrides budget if provided.
+        termination: Optional termination tuple; overrides max_evaluations if provided.
         eval_strategy: Evaluation backend name or instance (e.g., "serial", "dask").
         live_viz: Optional live visualization callback.
         checkpoint: Optional checkpoint payload to warm-start compatible algorithms.
@@ -155,7 +155,7 @@ def optimize(
         >>> result = vamos.optimize("zdt1")
 
         # Specify algorithm
-        >>> result = vamos.optimize("zdt1", algorithm="moead", budget=5000)
+        >>> result = vamos.optimize("zdt1", algorithm="moead", max_evaluations=5000)
 
         # Multi-seed study
         >>> results = vamos.optimize("zdt1", seed=[0, 1, 2, 3, 4])
@@ -168,7 +168,7 @@ def optimize(
             _run_single(
                 problem,
                 algorithm,
-                budget,
+                max_evaluations,
                 pop_size,
                 engine,
                 single_seed,
@@ -189,7 +189,7 @@ def optimize(
     return _run_single(
         problem,
         algorithm,
-        budget,
+        max_evaluations,
         pop_size,
         engine,
         seed,
@@ -208,7 +208,7 @@ def optimize(
 def _run_single(
     problem: str | ProblemProtocol,
     algorithm: str,
-    budget: int | None,
+    max_evaluations: int | None,
     pop_size: int | None,
     engine: str | None,
     seed: int,
@@ -231,8 +231,8 @@ def _run_single(
         n_obj = _coerce_int("n_obj", n_obj, min_value=1)
     if pop_size is not None:
         pop_size = _coerce_int("pop_size", pop_size, min_value=1)
-    if budget is not None:
-        budget = _coerce_int("budget", budget, min_value=1)
+    if max_evaluations is not None:
+        max_evaluations = _coerce_int("max_evaluations", max_evaluations, min_value=1)
     if isinstance(seed, bool) or not isinstance(seed, numbers.Integral):
         raise TypeError("seed must be an integer.")
     if termination is not None:
@@ -273,27 +273,31 @@ def _run_single(
 
     # Auto-determine hyperparameters if not specified
     effective_pop_size = pop_size if pop_size else _compute_pop_size(n_var, n_obj)
-    term_budget = _extract_budget(termination) if termination is not None else None
-    if termination is not None and budget is not None:
-        if term_budget is None:
-            raise ValueError("budget can only be combined with termination=('n_eval', budget).")
-        if term_budget != budget:
-            raise ValueError(f"budget={budget} conflicts with termination={termination}.")
+    term_max_evaluations = _extract_max_evaluations(termination) if termination is not None else None
+    if termination is not None and max_evaluations is not None:
+        if term_max_evaluations is None:
+            raise ValueError(
+                "max_evaluations can only be combined with termination=('max_evaluations', max_evaluations)."
+            )
+        if term_max_evaluations != max_evaluations:
+            raise ValueError(f"max_evaluations={max_evaluations} conflicts with termination={termination}.")
     if termination is not None:
-        effective_budget = term_budget
+        effective_max_evaluations = term_max_evaluations
         effective_termination = termination
     else:
-        effective_budget = budget if budget is not None else _compute_budget(n_var, n_obj)
-        effective_termination = ("n_eval", effective_budget)
+        effective_max_evaluations = (
+            max_evaluations if max_evaluations is not None else _compute_max_evaluations(n_var, n_obj)
+        )
+        effective_termination = ("max_evaluations", effective_max_evaluations)
     effective_engine = resolve_engine(engine, algorithm=algorithm)
 
     if verbose:
         _logger().info("[vamos] Problem: n_var=%s, n_obj=%s, encoding=%s", n_var, n_obj, encoding)
         _logger().info(
-            "[vamos] Config: %s, pop_size=%s, budget=%s",
+            "[vamos] Config: %s, pop_size=%s, max_evaluations=%s",
             algorithm,
             effective_pop_size,
-            effective_budget,
+            effective_max_evaluations,
         )
 
     algo_cfg: AlgorithmConfigProtocol
@@ -357,19 +361,19 @@ def _run_single(
         "algorithm": algorithm,
         "engine": effective_engine,
         "pop_size": resolved_pop_size,
-        "budget": effective_budget,
+        "max_evaluations": effective_max_evaluations,
         "seed": seed,
         "n_var": n_var,
         "n_obj": n_obj,
         "encoding": encoding,
     }
     pop_size_source = "config" if algorithm_config is not None else ("explicit" if pop_size is not None else "auto")
-    budget_source = "explicit" if termination is not None or budget is not None else "auto"
+    max_evaluations_source = "explicit" if termination is not None or max_evaluations is not None else "auto"
     result.meta["resolved_config"] = resolved_config
     result.meta["default_sources"] = {
         "algorithm": "auto" if algorithm_was_auto else "explicit",
         "pop_size": pop_size_source,
-        "budget": budget_source,
+        "max_evaluations": max_evaluations_source,
         "engine": "auto" if engine is None else "explicit",
         "algorithm_config": "auto" if algorithm_config is None else "explicit",
     }

@@ -98,10 +98,10 @@ class SPEA2:
     >>> from vamos.algorithms import SPEA2Config
     >>> config = SPEA2Config.builder().pop_size(100).archive_size(100).build()
     >>> spea2 = SPEA2(config, kernel)
-    >>> result = spea2.run(problem, ("n_eval", 10000), seed=42)
+    >>> result = spea2.run(problem, ("max_evaluations", 10000), seed=42)
 
     Using ask/tell for external evaluation:
-    >>> spea2.initialize(problem, ("n_eval", 10000), seed=42)
+    >>> spea2.initialize(problem, ("max_evaluations", 10000), seed=42)
     >>> while not spea2.should_terminate():
     ...     X_off = spea2.ask()
     ...     F_off = problem.evaluate(X_off)
@@ -134,7 +134,7 @@ class SPEA2:
         problem : ProblemProtocol
             The optimization problem to solve.
         termination : tuple[str, Any]
-            Termination criterion: ("n_eval", N) or ("hv", {...}).
+            Termination criterion: ("max_evaluations", N) or ("hv", {...}).
         seed : int
             Random seed for reproducibility.
         eval_strategy : EvaluationBackend | None

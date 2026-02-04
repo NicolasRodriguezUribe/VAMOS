@@ -113,7 +113,7 @@ def resolve_bounds_array(
 
 def validate_termination(
     termination: tuple[str, Any],
-    supported_types: tuple[str, ...] = ("n_eval",),
+    supported_types: tuple[str, ...] = ("max_evaluations",),
 ) -> tuple[str, Any]:
     """
     Validate termination criterion.

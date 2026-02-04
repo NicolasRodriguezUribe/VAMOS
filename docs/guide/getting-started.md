@@ -42,7 +42,7 @@ For a quick comparison, see `notebooks/0_basic/00_api_comparison.ipynb`.
 from vamos import optimize
 from vamos.ux.api import result_summary_text
 
-result = optimize("zdt1", algorithm="nsgaii", budget=10_000, pop_size=100, seed=42, verbose=True)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10_000, pop_size=100, seed=42, verbose=True)
 print(result_summary_text(result))
 ```
 
@@ -60,7 +60,7 @@ result = optimize(
     problem,
     algorithm="nsgaii",
     algorithm_config=algo_cfg,
-    termination=("n_eval", 10_000),
+    termination=("max_evaluations", 10_000),
     seed=42,
     engine="numpy",
 )
@@ -75,8 +75,8 @@ Use the lightest interface that still makes the run reproducible.
 
 | Goal | Use | Example |
 | --- | --- | --- |
-| Quick scripts, notebooks | Unified `optimize(...)` | `optimize("zdt1", algorithm="nsgaii", budget=5000)` |
-| Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit termination | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, termination=("n_eval", 5000))` |
+| Quick scripts, notebooks | Unified `optimize(...)` | `optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)` |
+| Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit termination | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, termination=("max_evaluations", 5000))` |
 | Plugin algorithms | `GenericAlgorithmConfig` | `optimize(problem, algorithm="my_algo", algorithm_config=GenericAlgorithmConfig({...}))` |
 | Small study in one call | `seed=[...]` | `optimize("zdt1", seed=[0, 1, 2])` |
 

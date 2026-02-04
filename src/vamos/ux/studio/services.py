@@ -157,7 +157,7 @@ def run_focused_optimization(
         instance,
         algorithm=algo_name,
         algorithm_config=algo_cfg,
-        termination=("n_eval", budget),
+        termination=("max_evaluations", budget),
         seed=0,
         engine="numpy",
     )
@@ -261,7 +261,7 @@ def run_with_history(
         problem,
         algorithm=algo_name,
         algorithm_config=algo_cfg,
-        termination=("n_eval", budget),
+        termination=("max_evaluations", budget),
         seed=int(config.get("seed", 0)),
         engine=str(config.get("engine", "numpy")),
         live_viz=callback,

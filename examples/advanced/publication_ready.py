@@ -12,7 +12,7 @@ from vamos.ux.api import explore_result_front, result_to_latex
 
 def main():
     print("Running optimization...")
-    result = optimize("zdt1", algorithm="nsgaii", budget=3000, seed=42)
+    result = optimize("zdt1", algorithm="nsgaii", max_evaluations=3000, seed=42)
 
     # 1. Generate LaTeX table
     print("\n=== LaTeX Table ===")
