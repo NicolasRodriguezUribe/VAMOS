@@ -7,7 +7,7 @@ Usage:
 
 from __future__ import annotations
 
-from vamos.engine.tuning.api import AblationVariant, build_ablation_plan
+from vamos.engine.tuning import AblationVariant, build_ablation_plan
 
 
 def main() -> None:

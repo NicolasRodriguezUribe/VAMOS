@@ -13,7 +13,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from vamos.engine.tuning.api import AblationVariant, build_ablation_plan
+from vamos.engine.tuning import AblationVariant, build_ablation_plan
 from vamos.experiment.study import StudyTask
 from vamos.experiment.study.api import run_study
 

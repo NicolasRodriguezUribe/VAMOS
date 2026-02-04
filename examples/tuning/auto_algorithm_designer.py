@@ -23,7 +23,7 @@ import numpy as np
 from vamos import optimize
 from vamos.algorithms import NSGAIIConfig
 from vamos.foundation.encoding import normalize_encoding
-from vamos.engine.tuning.api import (
+from vamos.engine.tuning import (
     Categorical,
     Condition,
     EvalContext,

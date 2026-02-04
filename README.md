@@ -10,7 +10,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 
 - **Unified API**: A clear, fluent interface `vamos.optimize()` for all workflows.
 - **Battle-Tested Algorithms**: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA.
-- **Unified Archiving**: Consistent external archive configuration `.archive(size, type="epsilon_grid")` across all algorithms.
+- **Unified Archiving**: Consistent external archive configuration via `.archive(size=...).archive_type("crowding" | "hypervolume")`.
 - **Multi-Fidelity Tuning**: Hyperband-style racing with warm-start checkpoints for sample-efficient algorithm configuration.
 - **Performance Driven**: Vectorized kernels, GPU acceleration (JAX), and optional Numba JIT compilation.
 - **Interactive Analysis**: Built-in dashboards with `explore_result_front(result)` and publication-ready LaTeX tables.
