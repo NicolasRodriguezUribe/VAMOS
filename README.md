@@ -18,13 +18,19 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 
 ## 📦 Quick Install
 
+```bash
+pip install vamos
+```
+
+For development and extras:
+
 ```powershell
 # Create virtual environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
 # Install core + essential extras
-pip install -e ".[compute,research,analysis]"
+pip install "vamos[compute,research,analysis]"
 ```
 
 ```bash
@@ -33,7 +39,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install core + essential extras
-pip install -e ".[compute,research,analysis]"
+pip install "vamos[compute,research,analysis]"
 ```
 
 ## ⚡ Quickstart
@@ -150,6 +156,9 @@ We welcome contributions! Please see `CONTRIBUTING.md` for guidelines.
 - **Found a bug?** Open an issue.
 - **Want to add an algorithm?** Check `dev/add_algorithm.md` in the docs.
 - **Using AI tools?** Read `.agent/docs/AGENTS.md` for our AI coding standards.
+- **Troubleshooting**: `docs/guide/troubleshooting.md`.
+- **Security issues**: See `SECURITY.md` for private reporting.
+- **Contributors**: See `AUTHORS.md`.
 
 ---
 

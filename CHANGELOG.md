@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-02-04
+
 ### Added
 - **Unified API**: `vamos.optimize()` consolidates `study()` and `auto_optimize()` into a single powerful entry point.
 - **Performance Profiler**: `vamos-profile` CLI for benchmarking engines (NumPy, Numba, JAX) and algorithms.

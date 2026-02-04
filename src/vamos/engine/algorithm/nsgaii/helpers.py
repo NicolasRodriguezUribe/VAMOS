@@ -286,7 +286,7 @@ def incremental_insert_fronts(
             dom_mask = np.zeros(front_j_arr.shape[0], dtype=bool)
             for idx in displaced:
                 f_idx = F[idx]
-                dom_mask |= (np.all(f_idx <= f_front_j, axis=1) & np.any(f_idx < f_front_j, axis=1))
+                dom_mask |= np.all(f_idx <= f_front_j, axis=1) & np.any(f_idx < f_front_j, axis=1)
             dominated_j = front_j_arr[dom_mask].tolist()
             if dominated_j:
                 front_j = [idx for idx in front_j if idx not in dominated_j]

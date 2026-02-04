@@ -48,6 +48,13 @@ def run_study(
         tasks = _apply_overrides(tasks, overrides)
     return runner.run(list(tasks), run_single_fn=run_single)
 
+
+def _as_dict(value: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    return dict(value)
+
+
 def build_study_tasks_from_ablation_plan(
     plan: AblationPlan,
     *,
@@ -66,15 +73,9 @@ def build_study_tasks_from_ablation_plan(
         overrides = ablation_task.variant.apply(base_cfg)
         overrides["max_evaluations"] = ablation_task.max_evals
         task_engine = engine or ablation_task.engine or plan.engine or "numpy"
-        nsgaii_variation = None
-        if nsgaii_variations is not None:
-            nsgaii_variation = nsgaii_variations.get(ablation_task.variant.name)
-        moead_variation = None
-        if moead_variations is not None:
-            moead_variation = moead_variations.get(ablation_task.variant.name)
-        smsemoa_variation = None
-        if smsemoa_variations is not None:
-            smsemoa_variation = smsemoa_variations.get(ablation_task.variant.name)
+        nsgaii_variation = _as_dict(nsgaii_variations.get(ablation_task.variant.name) if nsgaii_variations is not None else None)
+        moead_variation = _as_dict(moead_variations.get(ablation_task.variant.name) if moead_variations is not None else None)
+        smsemoa_variation = _as_dict(smsemoa_variations.get(ablation_task.variant.name) if smsemoa_variations is not None else None)
         tasks.append(
             StudyTask(
                 algorithm=algorithm,

@@ -41,9 +41,20 @@ _AGGREGATION_IDS: dict[str, int] = {
 
 _UPDATE_NEIGHBORHOOD_JIT: Callable[..., int] | None = None
 _UPDATE_NEIGHBORHOOD_DISABLED = False
-_DUMMY_G = np.empty((0, 0), dtype=float)
-_DUMMY_CV = np.empty(0, dtype=float)
-_DUMMY_CHILD_G = np.empty(0, dtype=float)
+_DUMMY_G: np.ndarray | None = None
+_DUMMY_CV: np.ndarray | None = None
+_DUMMY_CHILD_G: np.ndarray | None = None
+
+
+def _dummy_buffers() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    global _DUMMY_G, _DUMMY_CV, _DUMMY_CHILD_G
+    if _DUMMY_G is None:
+        _DUMMY_G = np.empty((0, 0), dtype=float)
+    if _DUMMY_CV is None:
+        _DUMMY_CV = np.empty(0, dtype=float)
+    if _DUMMY_CHILD_G is None:
+        _DUMMY_CHILD_G = np.empty(0, dtype=float)
+    return _DUMMY_G, _DUMMY_CV, _DUMMY_CHILD_G
 
 
 # =============================================================================
@@ -427,18 +438,19 @@ def update_neighborhood(
     if updater is None:
         raise RuntimeError("MOEA/D requires numba for neighborhood updates. Install numba to run MOEA/D.")
 
+    dummy_g, dummy_cv, dummy_child_g = _dummy_buffers()
     updater(
         st.X,
         st.F,
-        st.G if st.G is not None else _DUMMY_G,
-        st.cv if st.cv is not None else _DUMMY_CV,
+        st.G if st.G is not None else dummy_g,
+        st.cv if st.cv is not None else dummy_cv,
         st.weights,
         st.weights_safe,
         st.weights_unit,
         st.ideal,
         child,
         child_f,
-        child_g if child_g is not None else _DUMMY_CHILD_G,
+        child_g if child_g is not None else dummy_child_g,
         float(child_cv),
         candidate_order,
         int(st.replace_limit),

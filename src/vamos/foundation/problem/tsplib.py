@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from functools import cache
-from pathlib import Path
+from importlib import resources
+from importlib.resources.abc import Traversable
 
 import numpy as np
 
@@ -15,10 +16,8 @@ _FILE_NAME_MAP = {
 }
 
 
-def _data_dir() -> Path:
-    here = Path(__file__).resolve()
-    project_root = here.parents[4]
-    return project_root / "data" / "tsplib"
+def _data_dir() -> Traversable:
+    return resources.files("vamos.foundation.data.tsplib")
 
 
 @cache
@@ -30,7 +29,7 @@ def load_tsplib_coords(name: str) -> np.ndarray:
     key = name.lower()
     filename = _FILE_NAME_MAP.get(key, f"{key}.tsp")
     path = _data_dir() / filename
-    if not path.exists():
+    if not path.is_file():
         raise FileNotFoundError(f"TSPLIB instance '{name}' not found at {path}")
 
     coords: list[tuple[float, float]] = []

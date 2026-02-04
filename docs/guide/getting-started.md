@@ -6,7 +6,7 @@ Install
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .\.venv\Scripts\Activate.ps1
-pip install -e ".[compute,research,dev]"
+pip install "vamos[compute,research,dev]"
 ```
 
 Useful extras:

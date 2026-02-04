@@ -46,9 +46,7 @@ def build_ablation_plan(
                 if budget_overrides and (problem, variant.name) in budget_overrides:
                     max_evals = budget_overrides[(problem, variant.name)]
                 if max_evals <= 0:
-                    raise ValueError(
-                        f"Invalid max_evals={max_evals} for problem={problem} variant={variant.name}."
-                    )
+                    raise ValueError(f"Invalid max_evals={max_evals} for problem={problem} variant={variant.name}.")
                 tasks.append(
                     AblationTask(
                         problem=problem,
