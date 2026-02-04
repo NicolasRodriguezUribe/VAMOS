@@ -40,6 +40,7 @@ class NSGAII:
         live_viz: LiveVisualization | None = None,
         checkpoint_dir: str | None = None,
         checkpoint_interval: int = 50,
+        checkpoint: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return run_nsgaii(
             self,
@@ -50,6 +51,7 @@ class NSGAII:
             live_viz=live_viz,
             checkpoint_dir=checkpoint_dir,
             checkpoint_interval=checkpoint_interval,
+            checkpoint=checkpoint,
         )
 
     def _save_checkpoint(self, checkpoint_dir: str, seed: int, generation: int, n_eval: int) -> None:
@@ -71,8 +73,9 @@ class NSGAII:
         seed: int,
         eval_strategy: EvaluationBackend | None,
         live_viz: LiveVisualization | None,
+        checkpoint: dict[str, Any] | None = None,
     ) -> tuple[LiveVisualization, EvaluationBackend, int, int, HVTracker]:
-        return initialize_run(self, problem, termination, seed, eval_strategy, live_viz)
+        return initialize_run(self, problem, termination, seed, eval_strategy, live_viz, checkpoint=checkpoint)
 
     def ask(self) -> np.ndarray:
         return ask_nsgaii(self)

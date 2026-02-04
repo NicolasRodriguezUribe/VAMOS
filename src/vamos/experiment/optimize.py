@@ -35,6 +35,7 @@ class _OptimizeConfig:
     engine: str = "numpy"
     eval_strategy: EvaluationBackend | str | None = None  # name or backend instance
     live_viz: Any = None
+    checkpoint: Any = None
 
 
 def _normalize_cfg(cfg: AlgorithmConfigProtocol) -> dict[str, object]:
@@ -139,6 +140,16 @@ def _run_config(
         "eval_strategy": backend,
         "live_viz": cfg.live_viz,
     }
+    if cfg.checkpoint is not None:
+        import inspect
+
+        sig = inspect.signature(run_fn)
+        if "checkpoint" in sig.parameters or any(
+            param.kind == inspect.Parameter.VAR_KEYWORD for param in sig.parameters.values()
+        ):
+            kwargs["checkpoint"] = cfg.checkpoint
+        else:
+            raise TypeError(f"Algorithm '{algorithm_name}' does not support checkpoints.")
     result = run_fn(**kwargs)
     from .optimization_result import OptimizationResult
 

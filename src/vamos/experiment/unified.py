@@ -78,6 +78,7 @@ def optimize(
     termination: tuple[str, object] | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
     live_viz: object | None = None,
+    checkpoint: object | None = None,
 ) -> OptimizationResult: ...
 
 
@@ -98,6 +99,7 @@ def optimize(
     termination: tuple[str, object] | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
     live_viz: object | None = None,
+    checkpoint: object | None = None,
 ) -> list[OptimizationResult]: ...
 
 
@@ -117,6 +119,7 @@ def optimize(
     termination: tuple[str, object] | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
     live_viz: object | None = None,
+    checkpoint: object | None = None,
 ) -> OptimizationResult | list[OptimizationResult]:
     """
     Unified entry point for VAMOS optimization.
@@ -142,6 +145,7 @@ def optimize(
         termination: Optional termination tuple; overrides budget if provided.
         eval_strategy: Evaluation backend name or instance (e.g., "serial", "dask").
         live_viz: Optional live visualization callback.
+        checkpoint: Optional checkpoint payload to warm-start compatible algorithms.
 
     Returns:
         OptimizationResult for single seed, or list[OptimizationResult] for multiple seeds.
@@ -158,6 +162,8 @@ def optimize(
     """
     # Multi-seed mode
     if isinstance(seed, (list, tuple)):
+        if checkpoint is not None:
+            raise ValueError("checkpoint is only supported for single-seed runs.")
         return [
             _run_single(
                 problem,
@@ -174,6 +180,7 @@ def optimize(
                 termination,
                 eval_strategy,
                 live_viz,
+                checkpoint,
             )
             for single_seed in seed
         ]
@@ -194,6 +201,7 @@ def optimize(
         termination,
         eval_strategy,
         live_viz,
+        checkpoint,
     )
 
 
@@ -212,6 +220,7 @@ def _run_single(
     termination: tuple[str, object] | None,
     eval_strategy: EvaluationBackend | str | None,
     live_viz: object | None,
+    checkpoint: object | None,
 ) -> OptimizationResult:
     """Execute a single optimization run."""
     if problem_kwargs is not None and not isinstance(problem_kwargs, Mapping):
@@ -339,6 +348,7 @@ def _run_single(
         engine=effective_engine,
         eval_strategy=eval_strategy,
         live_viz=live_viz,
+        checkpoint=checkpoint,
     )
     result = _run_config(config)
     problem_label = _resolve_problem_label(problem, problem_instance)

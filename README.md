@@ -147,6 +147,10 @@ VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
   ```bash
   vamos-tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5
   ```
+- Generic tuning example (script-based):
+  ```bash
+  python examples/tuning/racing_tuner_generic.py --algorithm nsgaii --multi-fidelity --fidelity-levels 500,1000,1500
+  ```
 - **`vamos-self-check`**: Verify your installation and backend availability.
 
 ## 🤝 Contributing

@@ -8,10 +8,22 @@ from vamos.engine.tuning.racing.param_space import (
 )
 from vamos.engine.tuning.racing.config_space import AlgorithmConfigSpace
 from vamos.engine.tuning.racing.bridge import (
+    build_agemoea_config_space,
+    build_rvea_config_space,
     build_nsgaii_config_space,
     build_nsgaii_permutation_config_space,
     build_nsgaii_mixed_config_space,
+    build_nsgaii_binary_config_space,
+    build_nsgaii_integer_config_space,
     build_moead_permutation_config_space,
+    build_moead_binary_config_space,
+    build_moead_integer_config_space,
+    build_nsgaiii_binary_config_space,
+    build_nsgaiii_integer_config_space,
+    build_smsemoa_binary_config_space,
+    build_smsemoa_integer_config_space,
+    build_ibea_binary_config_space,
+    build_ibea_integer_config_space,
     config_from_assignment,
 )
 
@@ -105,3 +117,153 @@ def test_moead_permutation_config_space_builds_and_constructs_config():
     assert cfg.pop_size > 0
     assert cfg.crossover[0] in ("ox", "pmx", "edge", "cycle", "position")
     assert cfg.mutation[0] in ("swap", "insert", "scramble", "inversion", "displacement")
+
+
+def test_agemoea_config_space_builds_and_constructs_config():
+    rng = np.random.default_rng(6)
+    space = build_agemoea_config_space()
+    assignment = space.sample(rng)
+    cfg = config_from_assignment("agemoea", assignment)
+    assert cfg.pop_size > 0
+    assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
+    assert cfg.mutation[0] in (
+        "pm",
+        "linked_polynomial",
+        "non_uniform",
+        "gaussian",
+        "uniform_reset",
+        "cauchy",
+        "uniform",
+    )
+
+
+def test_rvea_config_space_builds_and_constructs_config():
+    rng = np.random.default_rng(7)
+    space = build_rvea_config_space()
+    assignment = space.sample(rng)
+    assignment["n_obj"] = 3
+    cfg = config_from_assignment("rvea", assignment)
+    assert cfg.pop_size > 0
+    assert cfg.n_partitions == int(assignment["n_partitions"])
+    assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
+    assert cfg.mutation[0] in (
+        "pm",
+        "linked_polynomial",
+        "non_uniform",
+        "gaussian",
+        "uniform_reset",
+        "cauchy",
+        "uniform",
+    )
+
+
+def test_agemoea_external_archive_config():
+    rng = np.random.default_rng(8)
+    space = build_agemoea_config_space()
+    assignment = space.sample(rng)
+    assignment.update(
+        {
+            "use_external_archive": True,
+            "archive_type": "size_cap",
+            "archive_prune_policy": "crowding",
+            "archive_size_factor": 2,
+            "archive_epsilon": 0.01,
+        }
+    )
+    cfg = config_from_assignment("agemoea", assignment)
+    assert cfg.archive is not None
+    assert cfg.archive["size"] >= cfg.pop_size
+    assert cfg.result_mode == "archive"
+
+
+def test_rvea_external_archive_config():
+    rng = np.random.default_rng(9)
+    space = build_rvea_config_space()
+    assignment = space.sample(rng)
+    assignment.update(
+        {
+            "n_obj": 3,
+            "use_external_archive": True,
+            "archive_type": "size_cap",
+            "archive_prune_policy": "crowding",
+            "archive_size_factor": 2,
+            "archive_epsilon": 0.01,
+        }
+    )
+    cfg = config_from_assignment("rvea", assignment)
+    assert cfg.archive is not None
+    assert cfg.archive["size"] >= cfg.pop_size
+    assert cfg.result_mode == "archive"
+
+
+def test_binary_integer_config_spaces_build_and_construct_config():
+    cases = [
+        (
+            build_nsgaii_binary_config_space,
+            "nsgaii_binary",
+            {"hux", "uniform", "one_point", "two_point"},
+            {"bitflip"},
+        ),
+        (
+            build_nsgaii_integer_config_space,
+            "nsgaii_integer",
+            {"uniform", "arithmetic", "sbx"},
+            {"reset", "creep", "pm"},
+        ),
+        (
+            build_moead_binary_config_space,
+            "moead_binary",
+            {"one_point", "two_point", "uniform"},
+            {"bitflip"},
+        ),
+        (
+            build_moead_integer_config_space,
+            "moead_integer",
+            {"uniform", "arithmetic", "sbx"},
+            {"reset", "creep", "pm"},
+        ),
+        (
+            build_nsgaiii_binary_config_space,
+            "nsgaiii_binary",
+            {"hux", "uniform", "one_point", "two_point"},
+            {"bitflip"},
+        ),
+        (
+            build_nsgaiii_integer_config_space,
+            "nsgaiii_integer",
+            {"uniform", "arithmetic", "sbx"},
+            {"reset", "creep", "pm"},
+        ),
+        (
+            build_smsemoa_binary_config_space,
+            "smsemoa_binary",
+            {"one_point", "two_point", "uniform"},
+            {"bitflip"},
+        ),
+        (
+            build_smsemoa_integer_config_space,
+            "smsemoa_integer",
+            {"uniform", "arithmetic"},
+            {"reset", "creep"},
+        ),
+        (
+            build_ibea_binary_config_space,
+            "ibea_binary",
+            {"hux", "uniform", "one_point", "two_point"},
+            {"bitflip"},
+        ),
+        (
+            build_ibea_integer_config_space,
+            "ibea_integer",
+            {"uniform", "arithmetic", "sbx"},
+            {"reset", "creep", "pm"},
+        ),
+    ]
+
+    for idx, (builder, algo, cross_set, mut_set) in enumerate(cases):
+        rng = np.random.default_rng(100 + idx)
+        space = builder()
+        assignment = space.sample(rng)
+        cfg = config_from_assignment(algo, assignment)
+        assert cfg.crossover[0] in cross_set
+        assert cfg.mutation[0] in mut_set
