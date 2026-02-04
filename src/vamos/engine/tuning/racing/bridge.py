@@ -105,6 +105,76 @@ def build_nsgaii_config_space() -> AlgorithmConfigSpace:
     return AlgorithmConfigSpace("nsgaii", params, conditionals, conditions)
 
 
+def build_nsgaii_permutation_config_space() -> AlgorithmConfigSpace:
+    params: list[ParamType] = [
+        Int("pop_size", 20, 200, log=True),
+        Categorical(
+            "offspring_ratio",
+            [0.25, 0.5, 0.75, 1.0],
+        ),
+        Categorical("crossover", ["ox", "pmx", "edge", "cycle", "position"]),
+        Real("crossover_prob", 0.6, 1.0),
+        Categorical("mutation", ["swap", "insert", "scramble", "inversion", "displacement"]),
+        Real("mutation_prob_factor", 0.25, 3.0),
+        Categorical("selection", ["tournament"]),
+        Int("selection_pressure", 2, 10),
+        Boolean("use_external_archive"),
+        Boolean("archive_unbounded"),
+    ]
+    archive_type_param = Categorical("archive_type", ["hypervolume", "crowding"])
+    archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
+    conditionals = [
+        ConditionalBlock(
+            "use_external_archive",
+            True,
+            [
+                archive_type_param,
+                archive_size_factor_param,
+            ],
+        ),
+    ]
+    conditions = [
+        Condition("archive_type", "cfg['archive_unbounded'] == False"),
+        Condition("archive_size_factor", "cfg['archive_unbounded'] == False"),
+    ]
+    return AlgorithmConfigSpace("nsgaii_permutation", params, conditionals, conditions)
+
+
+def build_nsgaii_mixed_config_space() -> AlgorithmConfigSpace:
+    params: list[ParamType] = [
+        Int("pop_size", 20, 200, log=True),
+        Categorical(
+            "offspring_ratio",
+            [0.25, 0.5, 0.75, 1.0],
+        ),
+        Categorical("crossover", ["mixed", "uniform"]),
+        Real("crossover_prob", 0.6, 1.0),
+        Categorical("mutation", ["mixed", "gaussian"]),
+        Real("mutation_prob_factor", 0.25, 3.0),
+        Categorical("selection", ["tournament"]),
+        Int("selection_pressure", 2, 10),
+        Boolean("use_external_archive"),
+        Boolean("archive_unbounded"),
+    ]
+    archive_type_param = Categorical("archive_type", ["hypervolume", "crowding"])
+    archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
+    conditionals = [
+        ConditionalBlock(
+            "use_external_archive",
+            True,
+            [
+                archive_type_param,
+                archive_size_factor_param,
+            ],
+        ),
+    ]
+    conditions = [
+        Condition("archive_type", "cfg['archive_unbounded'] == False"),
+        Condition("archive_size_factor", "cfg['archive_unbounded'] == False"),
+    ]
+    return AlgorithmConfigSpace("nsgaii_mixed", params, conditionals, conditions)
+
+
 def build_moead_config_space() -> AlgorithmConfigSpace:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
@@ -123,6 +193,36 @@ def build_moead_config_space() -> AlgorithmConfigSpace:
         ConditionalBlock("aggregation", "pbi", [Real("pbi_theta", 1.0, 10.0)]),
     ]
     return AlgorithmConfigSpace("moead", params, conditionals)
+
+
+def build_moead_permutation_config_space() -> AlgorithmConfigSpace:
+    params: list[ParamType] = [
+        Int("pop_size", 20, 200, log=True),
+        Int("neighbor_size", 5, 40),
+        Real("delta", 0.5, 0.95),
+        Int("replace_limit", 1, 5),
+        Categorical("crossover", ["ox", "pmx", "edge", "cycle", "position"]),
+        Real("crossover_prob", 0.6, 1.0),
+        Categorical("mutation", ["swap", "insert", "scramble", "inversion", "displacement"]),
+        Real("mutation_prob", 0.01, 0.5),
+        Categorical("aggregation", ["tchebycheff", "weighted_sum", "pbi", "modified_tchebycheff"]),
+        Boolean("use_external_archive"),
+    ]
+    archive_type_param = Categorical("archive_type", ["hypervolume", "crowding"])
+    archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
+    conditionals = [
+        ConditionalBlock("aggregation", "pbi", [Real("pbi_theta", 1.0, 10.0)]),
+        ConditionalBlock("aggregation", "modified_tchebycheff", [Real("mtch_rho", 0.0001, 0.1)]),
+        ConditionalBlock(
+            "use_external_archive",
+            True,
+            [
+                archive_type_param,
+                archive_size_factor_param,
+            ],
+        ),
+    ]
+    return AlgorithmConfigSpace("moead_permutation", params, conditionals)
 
 
 def build_nsgaiii_config_space() -> AlgorithmConfigSpace:
@@ -205,7 +305,7 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
     """
     builder: Any
     algo = algorithm_name.lower()
-    if algo == "nsgaii":
+    if algo in {"nsgaii", "nsgaii_permutation", "nsgaii_mixed"}:
         builder = NSGAIIConfig.builder()
         pop_size = int(assignment["pop_size"])
         builder.pop_size(pop_size)
@@ -257,7 +357,7 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         builder.crossover(cross, **cross_params)
         mut = assignment["mutation"]
         mut_factor = assignment.get("mutation_prob_factor")
-        mut_params = {"prob": float(assignment.get("mutation_prob", 0.1))}
+        mut_params = {"prob": assignment.get("mutation_prob", 0.1)}
         if mut_factor is not None:
             builder.mutation_prob_factor(float(mut_factor))
         if mut in {"pm", "polynomial", "linked_polynomial"}:
@@ -326,6 +426,39 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
             builder.aggregation("pbi", theta=float(assignment.get("pbi_theta", 5.0)))
         else:
             builder.aggregation(aggregation)
+        return builder.build()
+    if algo == "moead_permutation":
+        builder = MOEADConfig.builder()
+        builder.pop_size(int(assignment["pop_size"]))
+        builder.neighbor_size(int(assignment["neighbor_size"]))
+        builder.delta(float(assignment["delta"]))
+        builder.replace_limit(int(assignment["replace_limit"]))
+        builder.crossover(
+            str(assignment["crossover"]),
+            prob=float(assignment.get("crossover_prob", 0.9)),
+        )
+        builder.mutation(
+            str(assignment["mutation"]),
+            prob=assignment.get("mutation_prob", 0.1),
+        )
+        aggregation = str(assignment["aggregation"])
+        if aggregation == "pbi":
+            builder.aggregation("pbi", theta=float(assignment.get("pbi_theta", 5.0)))
+        elif aggregation == "modified_tchebycheff":
+            builder.aggregation("modified_tchebycheff", rho=float(assignment.get("mtch_rho", 0.001)))
+        else:
+            builder.aggregation(aggregation)
+
+        use_external_archive = bool(assignment.get("use_external_archive", False))
+        if use_external_archive:
+            archive_type = str(assignment.get("archive_type", "crowding"))
+            archive_size_factor = int(assignment.get("archive_size_factor", 1))
+            if archive_size_factor < 1:
+                raise ValueError("archive_size_factor must be >= 1.")
+            pop_size = int(assignment["pop_size"])
+            archive_size = max(pop_size, pop_size * archive_size_factor)
+            builder.archive_type(archive_type)
+            builder.archive(archive_size)
         return builder.build()
     if algo == "nsgaiii":
         builder = NSGAIIIConfig.builder()

@@ -32,10 +32,15 @@ def validate_problem(problem: ProblemProtocol) -> None:
         if not hasattr(problem, "mixed_spec"):
             raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
         spec = getattr(problem, "mixed_spec")
-        required = {"real_idx", "int_idx", "cat_idx", "real_lower", "real_upper", "int_lower", "int_upper", "cat_cardinality"}
-        missing = required - set(spec.keys())
-        if missing:
-            raise ValueError(f"mixed_spec missing required fields: {', '.join(sorted(missing))}")
+        spec_keys = set(spec.keys())
+        if not {"perm_idx", "real_idx", "int_idx", "cat_idx"} & spec_keys:
+            raise ValueError("mixed_spec must define at least one of perm_idx, real_idx, int_idx, or cat_idx.")
+        if "real_idx" in spec_keys and not {"real_lower", "real_upper"} <= spec_keys:
+            raise ValueError("mixed_spec missing required fields: real_lower, real_upper.")
+        if "int_idx" in spec_keys and not {"int_lower", "int_upper"} <= spec_keys:
+            raise ValueError("mixed_spec missing required fields: int_lower, int_upper.")
+        if "cat_idx" in spec_keys and "cat_cardinality" not in spec_keys:
+            raise ValueError("mixed_spec missing required field: cat_cardinality.")
 
 
 def problem_output_dir(selection: ProblemSelection, config: ExperimentConfig) -> str:
