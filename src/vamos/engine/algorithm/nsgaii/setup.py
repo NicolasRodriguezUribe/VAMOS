@@ -4,7 +4,9 @@ Initialization helpers for NSGA-II.
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+import logging
+from typing import Any, TYPE_CHECKING, cast
+from collections.abc import Mapping
 
 import numpy as np
 
@@ -12,6 +14,7 @@ from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.checkpoint import restore_rng
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.observer import RunContext
 from vamos.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
@@ -43,6 +46,10 @@ def _resolve_archive_settings(cfg: dict[str, Any], *, pop_size: int) -> tuple[in
     return size, unbounded
 
 
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
+
 def initialize_run(
     algo: NSGAII,
     problem: Any,
@@ -50,6 +57,7 @@ def initialize_run(
     seed: int,
     eval_strategy: EvaluationBackend | None,
     live_viz: LiveVisualization | None,
+    checkpoint: Mapping[str, Any] | None = None,
 ) -> tuple[LiveVisualization, EvaluationBackend, int, int, HVTracker]:
     max_eval, hv_config = parse_termination(termination)
 
@@ -83,7 +91,65 @@ def initialize_run(
 
     constraint_mode = algo.cfg.get("constraint_mode", "feasibility")
     initializer_cfg = algo.cfg.get("initializer")
-    X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
+    X: np.ndarray
+    F: np.ndarray
+    G: np.ndarray | None
+    n_eval: int
+    generation = 0
+    step = 0
+    replacements = 0
+
+    checkpoint_archive_X: np.ndarray | None = None
+    checkpoint_archive_F: np.ndarray | None = None
+
+    if checkpoint is not None:
+        try:
+            X = np.asarray(checkpoint["X"])
+            F = np.asarray(checkpoint["F"])
+            if X.ndim != 2 or F.ndim != 2:
+                raise ValueError("Checkpoint X and F must be 2D arrays.")
+            if X.shape[0] != pop_size:
+                raise ValueError(f"Checkpoint pop_size={X.shape[0]} does not match config pop_size={pop_size}.")
+            if F.shape[0] != X.shape[0]:
+                raise ValueError("Checkpoint F row count must match X.")
+
+            G_raw = checkpoint.get("G")
+            G = np.asarray(G_raw) if G_raw is not None else None
+            if constraint_mode == "none":
+                G = None
+
+            n_eval = int(checkpoint.get("n_eval", X.shape[0]))
+            if n_eval < X.shape[0]:
+                n_eval = X.shape[0]
+
+            rng_state = checkpoint.get("rng_state")
+            if rng_state is not None:
+                try:
+                    restore_rng(rng, cast(dict[str, Any], rng_state))
+                except Exception as exc:  # pragma: no cover - defensive
+                    _logger().warning("Failed to restore RNG state from checkpoint: %s", exc)
+
+            generation = int(checkpoint.get("generation", 0))
+            extra = checkpoint.get("extra", {})
+            if isinstance(extra, Mapping):
+                step = int(extra.get("step", 0))
+                replacements = int(extra.get("replacements", max(0, n_eval - X.shape[0])))
+            else:
+                replacements = max(0, n_eval - X.shape[0])
+
+            archive_x_raw = checkpoint.get("archive_X")
+            archive_f_raw = checkpoint.get("archive_F")
+            if archive_x_raw is not None and archive_f_raw is not None:
+                checkpoint_archive_X = np.asarray(archive_x_raw)
+                checkpoint_archive_F = np.asarray(archive_f_raw)
+        except Exception as exc:
+            _logger().warning("Invalid checkpoint provided, reinitializing population: %s", exc)
+            X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
+            generation = 0
+            step = 0
+            replacements = 0
+    else:
+        X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
 
     incremental_enabled = bool(steady_state and replacement_size == 1 and constraint_mode == "none" and G is None)
     if incremental_enabled and getattr(algo.kernel, "name", "") == "jax" and getattr(algo.kernel, "_strict_ranking", True) is False:
@@ -120,6 +186,24 @@ def initialize_run(
         archive_size,
         unbounded=archive_unbounded,
     )
+
+    if checkpoint_archive_X is not None and checkpoint_archive_F is not None and archive_size:
+        try:
+            if archive_manager is not None:
+                archive_X, archive_F = archive_manager.update(checkpoint_archive_X, checkpoint_archive_F)
+            elif archive_via_kernel:
+                archive_X, archive_F = algo.kernel.update_archive(
+                    None,
+                    None,
+                    checkpoint_archive_X,
+                    checkpoint_archive_F,
+                    archive_size,
+                )
+            else:
+                archive_X = checkpoint_archive_X
+                archive_F = checkpoint_archive_F
+        except Exception as exc:  # pragma: no cover - defensive
+            _logger().warning("Failed to restore archive from checkpoint: %s", exc)
 
     track_genealogy = bool(algo.cfg.get("track_genealogy", False))
     genealogy_tracker, ids = setup_genealogy(pop_size, F, track_genealogy)
@@ -163,6 +247,13 @@ def initialize_run(
         X.dtype,
         unbounded=archive_unbounded,
     )
+    if result_archive is not None and checkpoint is not None:
+        try:
+            source_X = checkpoint_archive_X if checkpoint_archive_X is not None else X
+            source_F = checkpoint_archive_F if checkpoint_archive_F is not None else F
+            result_archive.update(source_X, source_F)
+        except Exception:  # pragma: no cover - defensive
+            pass
 
     algo._st = NSGAIIState(
         X=X,
@@ -195,6 +286,9 @@ def initialize_run(
         ranks=ranks,
         crowding=crowding,
         incremental_enabled=incremental_enabled,
+        generation=generation,
+        step=step,
+        replacements=replacements,
     )
     return live_cb, eval_strategy, max_eval, n_eval, hv_tracker
 

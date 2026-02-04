@@ -8,7 +8,9 @@ weight vectors, neighborhoods, and other setup tasks.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+import logging
+from typing import TYPE_CHECKING, Any, cast
+from collections.abc import Mapping
 
 import numpy as np
 
@@ -26,6 +28,7 @@ from vamos.operators.impl.binary import random_binary_population
 from vamos.operators.impl.integer import random_integer_population
 from vamos.operators.impl.permutation import random_permutation_population
 from vamos.operators.impl.flags import set_numba_variation
+from vamos.foundation.checkpoint import restore_rng
 
 from .helpers import build_aggregator, compute_neighbors, resolve_aggregation_spec
 from vamos.operators.policies.moead import build_variation_operators
@@ -40,6 +43,10 @@ from vamos.hooks.live_viz import LiveVisualization
 from vamos.foundation.observer import RunContext
 
 
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
+
 def initialize_moead_run(
     cfg: dict[str, Any],
     kernel: KernelBackend,
@@ -48,6 +55,7 @@ def initialize_moead_run(
     seed: int,
     eval_strategy: EvaluationBackend | None = None,
     live_viz: LiveVisualization | None = None,
+    checkpoint: Mapping[str, Any] | None = None,
 ) -> tuple[MOEADState, Any, Any, int, HVTracker]:
     """Initialize all components for a MOEA/D run.
 
@@ -89,9 +97,84 @@ def initialize_moead_run(
     n_var = problem.n_var
     n_obj = problem.n_obj
 
-    # Initialize population
-    X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
-    n_eval = pop_size
+    # Initialize or restore population
+    X: np.ndarray
+    F: np.ndarray
+    G: np.ndarray | None
+    n_eval: int
+    generation = 0
+    subproblem_order: np.ndarray
+    subproblem_cursor = 0
+    ideal_override: np.ndarray | None = None
+    checkpoint_archive_X: np.ndarray | None = None
+    checkpoint_archive_F: np.ndarray | None = None
+
+    if checkpoint is not None:
+        try:
+            X = np.asarray(checkpoint["X"])
+            F = np.asarray(checkpoint["F"])
+            if X.ndim != 2 or F.ndim != 2:
+                raise ValueError("Checkpoint X and F must be 2D arrays.")
+            if X.shape[0] != pop_size:
+                raise ValueError(f"Checkpoint pop_size={X.shape[0]} does not match config pop_size={pop_size}.")
+            if F.shape[0] != X.shape[0]:
+                raise ValueError("Checkpoint F row count must match X.")
+
+            G_raw = checkpoint.get("G")
+            G = np.asarray(G_raw) if G_raw is not None else None
+            if constraint_mode == "none":
+                G = None
+
+            n_eval = int(checkpoint.get("n_eval", X.shape[0]))
+            if n_eval < X.shape[0]:
+                n_eval = X.shape[0]
+
+            rng_state = checkpoint.get("rng_state")
+            if rng_state is not None:
+                try:
+                    restore_rng(rng, cast(dict[str, Any], rng_state))
+                except Exception as exc:  # pragma: no cover - defensive
+                    _logger().warning("Failed to restore RNG state from checkpoint: %s", exc)
+
+            generation = int(checkpoint.get("generation", 0))
+            extra = checkpoint.get("extra", {})
+            if isinstance(extra, Mapping):
+                order_raw = extra.get("subproblem_order")
+                if order_raw is not None:
+                    subproblem_order = np.asarray(order_raw, dtype=int)
+                    if subproblem_order.ndim != 1 or subproblem_order.shape[0] != pop_size:
+                        subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
+                else:
+                    subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
+                subproblem_cursor = int(extra.get("subproblem_cursor", 0))
+                if subproblem_cursor < 0 or subproblem_cursor >= pop_size:
+                    subproblem_cursor = 0
+                ideal_raw = extra.get("ideal")
+                if ideal_raw is not None:
+                    ideal_override = np.asarray(ideal_raw, dtype=float)
+                    if ideal_override.ndim != 1 or ideal_override.shape[0] != n_obj:
+                        ideal_override = None
+            else:
+                subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
+
+            archive_x_raw = checkpoint.get("archive_X")
+            archive_f_raw = checkpoint.get("archive_F")
+            if archive_x_raw is not None and archive_f_raw is not None:
+                checkpoint_archive_X = np.asarray(archive_x_raw)
+                checkpoint_archive_F = np.asarray(archive_f_raw)
+        except Exception as exc:
+            _logger().warning("Invalid checkpoint provided, reinitializing population: %s", exc)
+            X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
+            n_eval = pop_size
+            generation = 0
+            subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
+            subproblem_cursor = 0
+    else:
+        X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
+        n_eval = pop_size
+        subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
+        subproblem_cursor = 0
+
     cv = compute_violation(G) if constraint_mode != "none" and G is not None else None
 
     # Setup weight vectors and neighborhoods
@@ -152,8 +235,6 @@ def initialize_moead_run(
     if batch_size > pop_size:
         batch_size = pop_size
 
-    subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
-
     # Create state
     state = MOEADState(
         X=X,
@@ -169,7 +250,7 @@ def initialize_moead_run(
         weights_safe=weights_safe,
         weights_unit=weights_unit,
         neighbors=neighbors,
-        ideal=F.min(axis=0),
+        ideal=ideal_override if ideal_override is not None else F.min(axis=0),
         aggregator=aggregator,
         aggregation_id=agg_id,
         aggregation_theta=agg_theta,
@@ -179,7 +260,7 @@ def initialize_moead_run(
         replace_limit=max(1, int(cfg.get("replace_limit", 2))),
         batch_size=batch_size,
         subproblem_order=subproblem_order,
-        subproblem_cursor=0,
+        subproblem_cursor=subproblem_cursor,
         cv=cv,
         crossover_fn=crossover_fn,
         mutation_fn=mutation_fn,
@@ -198,6 +279,17 @@ def initialize_moead_run(
         ids=ids,
         result_mode=cfg.get("result_mode", "non_dominated"),
     )
+
+    state.generation = generation
+
+    if checkpoint_archive_X is not None and checkpoint_archive_F is not None and archive_size:
+        try:
+            if state.archive_manager is not None:
+                state.archive_X, state.archive_F = state.archive_manager.update(checkpoint_archive_X, checkpoint_archive_F)
+            else:
+                state.archive_X, state.archive_F = checkpoint_archive_X, checkpoint_archive_F
+        except Exception as exc:  # pragma: no cover - defensive
+            _logger().warning("Failed to restore archive from checkpoint: %s", exc)
 
     return state, live_cb, eval_strategy, max_eval, hv_tracker
 

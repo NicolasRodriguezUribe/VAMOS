@@ -1,3 +1,15 @@
+"""
+Generic racing tuner for multi-objective algorithms.
+
+This example selects the algorithm at runtime, builds the appropriate
+configuration space, and runs the racing tuner with optional multi-fidelity
+and warm-start support.
+
+Usage:
+    python examples/tuning/racing_tuner_generic.py --algorithm nsgaii
+    python examples/tuning/racing_tuner_generic.py --algorithm moead --multi-fidelity
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -6,45 +18,42 @@ from collections.abc import Callable, Mapping
 
 import numpy as np
 
-from vamos.foundation.problem.registry import make_problem_selection
-from vamos.experiment.unified import optimize
-from vamos.foundation.metrics.hypervolume import compute_hypervolume
-from vamos.engine.tuning.racing.config_space import AlgorithmConfigSpace
-from vamos.engine.tuning.racing.param_space import ParamSpace
-
-from vamos.engine.tuning import (
+from vamos import optimize
+from vamos.engine.tuning.api import (
+    AlgorithmConfigSpace,
+    Instance,
+    ParamSpace,
     RacingTuner,
     Scenario,
     TuningTask,
-    Instance,
-    EvalContext,
-    # Builders
-    build_nsgaii_config_space,
-    build_nsgaii_permutation_config_space,
-    build_nsgaii_mixed_config_space,
-    build_nsgaii_binary_config_space,
-    build_nsgaii_integer_config_space,
-    build_moead_config_space,
-    build_moead_permutation_config_space,
-    build_moead_binary_config_space,
-    build_moead_integer_config_space,
-    build_nsgaiii_config_space,
-    build_nsgaiii_binary_config_space,
-    build_nsgaiii_integer_config_space,
-    build_spea2_config_space,
     build_ibea_config_space,
     build_ibea_binary_config_space,
     build_ibea_integer_config_space,
-    build_smpso_config_space,
+    build_moead_config_space,
+    build_moead_binary_config_space,
+    build_moead_integer_config_space,
+    build_moead_permutation_config_space,
+    build_nsgaii_config_space,
+    build_nsgaii_binary_config_space,
+    build_nsgaii_integer_config_space,
+    build_nsgaii_mixed_config_space,
+    build_nsgaii_permutation_config_space,
+    build_nsgaiii_config_space,
+    build_nsgaiii_binary_config_space,
+    build_nsgaiii_integer_config_space,
+    build_agemoea_config_space,
+    build_rvea_config_space,
     build_smsemoa_config_space,
     build_smsemoa_binary_config_space,
     build_smsemoa_integer_config_space,
-    build_agemoea_config_space,
-    build_rvea_config_space,
-    # Bridge
+    build_smpso_config_space,
+    build_spea2_config_space,
     config_from_assignment,
 )
-from vamos.engine.tuning.racing import WarmStartEvaluator
+from vamos.engine.tuning.racing import EvalContext, WarmStartEvaluator
+from vamos.foundation.problem.registry import make_problem_selection
+from vamos.foundation.metrics.hypervolume import compute_hypervolume
+
 
 BUILDERS: dict[str, Callable[[], AlgorithmConfigSpace | ParamSpace]] = {
     "nsgaii": build_nsgaii_config_space,
@@ -120,20 +129,20 @@ def _parse_fidelity_levels(raw: str | None, parser: argparse.ArgumentParser) -> 
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="VAMOS Tuning CLI (vamos-tune)")
-    parser.add_argument("--problem", type=str, required=True, help="Problem ID (e.g., zdt1)")
+    parser = argparse.ArgumentParser(description="Generic VAMOS racing tuner")
+    parser.add_argument("--problem", type=str, default="zdt1", help="Problem ID (e.g., zdt1)")
     parser.add_argument("--algorithm", type=str, default="nsgaii", choices=list(BUILDERS.keys()), help="Algorithm to tune")
     parser.add_argument("--n-var", type=int, default=30, help="Number of variables")
     parser.add_argument("--n-obj", type=int, default=2, help="Number of objectives")
-    parser.add_argument("--budget", type=int, default=5000, help="Max evaluations per run")
+    parser.add_argument("--budget", type=int, default=1500, help="Max evaluations per run")
     parser.add_argument(
         "--tune-budget",
         type=int,
-        default=20000,
+        default=20,
         help="Max number of configuration evaluations (config x instance x seed)",
     )
     parser.add_argument("--seed", type=int, default=1, help="Random seed")
-    parser.add_argument("--n-seeds", type=int, default=5, help="Number of seeds to evaluate per config")
+    parser.add_argument("--n-seeds", type=int, default=3, help="Number of seeds to evaluate per config")
     parser.add_argument("--pop-size", type=int, default=100, help="Fixed population size (if not tuning it)")
     parser.add_argument("--n-jobs", type=int, default=1, help="Number of parallel jobs (-1 for all cores)")
     parser.add_argument("--ref-point", type=str, default=None, help="Reference point for HV (comma-separated, e.g. '1.1,1.1')")
@@ -157,18 +166,12 @@ def parse_args() -> argparse.Namespace:
         help="Minimum number of configs to keep at each fidelity level",
     )
     parser.add_argument(
-        "--fidelity-warm-start",
-        dest="fidelity_warm_start",
-        action="store_true",
-        help="Enable checkpoint passing between fidelity levels (NSGA-II/MOEA-D only)",
-    )
-    parser.add_argument(
-        "--no-fidelity-warm-start",
-        dest="fidelity_warm_start",
+        "--no-warm-start",
+        dest="warm_start",
         action="store_false",
-        help="Disable checkpoint passing between fidelity levels",
+        help="Disable warm-start even if the algorithm supports it",
     )
-    parser.set_defaults(fidelity_warm_start=None)
+    parser.set_defaults(warm_start=True)
     args = parser.parse_args()
     args.fidelity_levels = _parse_fidelity_levels(args.fidelity_levels, parser)
     return args
@@ -183,9 +186,6 @@ def make_evaluator(
     ref_point_str: str | None,
     warm_start: bool,
 ) -> Callable[[Mapping[str, object], EvalContext], float]:
-    """
-    Creates an evaluation function that runs the algorithm and returns the Hypervolume.
-    """
     # Parse reference point once
     ref_point: list[float]
     if ref_point_str:
@@ -201,7 +201,6 @@ def make_evaluator(
             _logger().warning("Error parsing --ref-point. Using default.")
             ref_point = [1.1] * n_obj
     else:
-        # Default fallback
         ref_point = [1.1] * n_obj
 
     def _score(result, ctx: EvalContext) -> float:
@@ -213,19 +212,16 @@ def make_evaluator(
 
     def _run_algorithm(config_dict: Mapping[str, object], ctx: EvalContext, checkpoint: object | None):
         try:
-            # 1. Prepare Configuration
             start_config: dict[str, object] = dict(config_dict)
             if algorithm_name == "rvea":
                 start_config["n_obj"] = n_obj
             elif "pop_size" not in start_config:
                 start_config["pop_size"] = fixed_pop_size
 
-            # Use the unified bridge to build the AlgorithmConfig object
             cfg = config_from_assignment(algorithm_name, start_config)
             algo_name = _canonical_algorithm_name(algorithm_name)
 
             selection = make_problem_selection(problem_key, n_var=n_var, n_obj=n_obj)
-
             result = optimize(
                 selection.instantiate(),
                 algorithm=algo_name,
@@ -235,7 +231,6 @@ def make_evaluator(
                 engine="numpy",
                 checkpoint=checkpoint,
             )
-
             return result, result.data.get("checkpoint")
         except Exception as exc:
             _logger().warning("Eval failed for %s: %s", algorithm_name, exc)
@@ -259,28 +254,20 @@ def main() -> None:
     _configure_cli_logging()
     args = parse_args()
 
-    # 1. Define Parameter Space
     builder = BUILDERS[args.algorithm]
-
     algo_space = builder()
-    if isinstance(algo_space, AlgorithmConfigSpace):
-        param_space = algo_space.to_param_space()
-    else:
-        param_space = algo_space
+    param_space = algo_space.to_param_space() if isinstance(algo_space, AlgorithmConfigSpace) else algo_space
 
-    _logger().info("Tuning %s on %s (Budget: %s)", args.algorithm, args.problem, args.tune_budget)
-    _logger().info("Parallel Jobs: %s", args.n_jobs)
-
-    # 2. Setup Scenario and Task
     fidelity_levels = args.fidelity_levels
-    fidelity_warm_start = True if args.fidelity_warm_start is None else bool(args.fidelity_warm_start)
-    if args.multi_fidelity and fidelity_warm_start and not _supports_warm_start(args.algorithm):
-        _logger().warning("Warm-start is not supported for %s; disabling warm-start.", args.algorithm)
-        fidelity_warm_start = False
-
     budget_per_run = args.budget
     if args.multi_fidelity and fidelity_levels is not None:
         budget_per_run = max(fidelity_levels)
+
+    warm_start = bool(args.warm_start)
+    if warm_start and not _supports_warm_start(args.algorithm):
+        _logger().warning("Warm-start is not supported for %s; disabling warm-start.", args.algorithm)
+        warm_start = False
+
     scenario_kwargs = {
         "max_experiments": args.tune_budget,
         "initial_budget_per_run": args.budget,
@@ -288,7 +275,7 @@ def main() -> None:
         "verbose": True,
         "n_jobs": args.n_jobs,
         "use_multi_fidelity": bool(args.multi_fidelity),
-        "fidelity_warm_start": fidelity_warm_start,
+        "fidelity_warm_start": warm_start,
     }
     if args.multi_fidelity:
         if fidelity_levels is not None:
@@ -297,44 +284,42 @@ def main() -> None:
             scenario_kwargs["fidelity_promotion_ratio"] = args.fidelity_promotion_ratio
         if args.fidelity_min_configs is not None:
             scenario_kwargs["fidelity_min_configs"] = args.fidelity_min_configs
+
     scenario = Scenario(**scenario_kwargs)
 
-    # Instance definition
     instances = [Instance(name=args.problem, n_var=args.n_var, kwargs={})]
-
-    # Seeds
     seeds = [args.seed + i for i in range(args.n_seeds)]
 
-    # Aggregator: Mean
     def _mean(scores: list[float]) -> float:
         return float(np.mean(scores))
-
-    aggregator = _mean
 
     task = TuningTask(
         name=f"tune_{args.problem}_{args.algorithm}",
         param_space=param_space,
         instances=instances,
         seeds=seeds,
-        aggregator=aggregator,
+        aggregator=_mean,
         budget_per_run=budget_per_run,
-        maximize=True,  # HV is maximization
+        maximize=True,
     )
 
-    # 3. Run Tuner
     tuner = RacingTuner(task=task, scenario=scenario, seed=args.seed)
-
-    use_warm_start = args.multi_fidelity and fidelity_warm_start
-    eval_fn = make_evaluator(args.problem, args.n_var, args.n_obj, args.algorithm, args.pop_size, args.ref_point, use_warm_start)
-
+    eval_fn = make_evaluator(
+        args.problem,
+        args.n_var,
+        args.n_obj,
+        args.algorithm,
+        args.pop_size,
+        args.ref_point,
+        warm_start and args.multi_fidelity,
+    )
     best_config, history = tuner.run(eval_fn)
 
-    _logger().info("--- Tuning Complete ---")
-    _logger().info("Best Configuration Found:")
+    best_score = max(trial.score for trial in history)
+    print("\nBest config found (higher is better):")
     for k, v in best_config.items():
-        _logger().info("  %s: %s", k, v)
-
-    _logger().info("Use these parameters in your scripts or CLI using --config!")
+        print(f"  {k}: {v}")
+    print(f"Score: {best_score:.6f}")
 
 
 if __name__ == "__main__":

@@ -98,6 +98,7 @@ class MOEAD:
         seed: int,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
+        checkpoint: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
         Run the MOEA/D algorithm.
@@ -114,17 +115,26 @@ class MOEAD:
             Optional evaluation backend for parallel evaluation.
         live_viz : LiveVisualization | None
             Optional live visualization callback.
+        checkpoint : dict[str, Any] | None
+            Optional checkpoint payload to warm-start the run.
 
         Returns
         -------
         dict[str, Any]
             Result dictionary with X, F, weights, evaluations, and optional archive.
         """
-        live_cb, eval_strategy, max_eval, hv_tracker = self._initialize_run(problem, termination, seed, eval_strategy, live_viz)
+        live_cb, eval_strategy, max_eval, hv_tracker = self._initialize_run(
+            problem,
+            termination,
+            seed,
+            eval_strategy,
+            live_viz,
+            checkpoint=checkpoint,
+        )
         st = self._st
         assert st is not None, "State not initialized"
 
-        generation = 0
+        generation = st.generation
         live_cb.on_generation(generation, F=st.F, stats={"evals": st.n_eval})
         stop_requested = live_should_stop(live_cb)
         hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points())
@@ -144,6 +154,23 @@ class MOEAD:
             stop_requested = notify_generation(live_cb, self.kernel, generation, st.F, stats={"evals": st.n_eval})
 
         result = build_moead_result(st, hv_reached, kernel=self.kernel)
+        result["checkpoint"] = {
+            "version": 1,
+            "algorithm": "moead",
+            "X": st.X,
+            "F": st.F,
+            "G": st.G,
+            "generation": st.generation,
+            "n_eval": st.n_eval,
+            "rng_state": st.rng.bit_generator.state,
+            "archive_X": st.archive_X,
+            "archive_F": st.archive_F,
+            "extra": {
+                "subproblem_order": st.subproblem_order,
+                "subproblem_cursor": st.subproblem_cursor,
+                "ideal": st.ideal,
+            },
+        }
         finalize_genealogy(result, st, self.kernel)
         live_cb.on_end(final_F=st.F)
         return result
@@ -155,10 +182,18 @@ class MOEAD:
         seed: int,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
+        checkpoint: dict[str, Any] | None = None,
     ) -> tuple[Any, Any, int, Any]:
         """Initialize algorithm state for a run."""
         self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_moead_run(
-            self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
+            self.cfg,
+            self.kernel,
+            problem,
+            termination,
+            seed,
+            eval_strategy,
+            live_viz,
+            checkpoint=checkpoint,
         )
         return live_cb, eval_strategy, max_eval, hv_tracker
 

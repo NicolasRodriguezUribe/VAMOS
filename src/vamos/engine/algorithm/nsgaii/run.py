@@ -65,6 +65,10 @@ def save_checkpoint(algo: NSGAII, checkpoint_dir: str, seed: int, generation: in
         G=st.G,
         archive_X=st.archive_X,
         archive_F=st.archive_F,
+        extra={
+            "step": st.step,
+            "replacements": st.replacements,
+        },
     )
     _logger().info("Checkpoint saved: %s", path)
 
@@ -78,11 +82,20 @@ def run_nsgaii(
     live_viz: LiveVisualization | None = None,
     checkpoint_dir: str | None = None,
     checkpoint_interval: int = 50,
+    checkpoint: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run the NSGA-II algorithm."""
     import signal
 
-    live_cb, eval_strategy, max_eval, n_eval, hv_tracker = initialize_run(algo, problem, termination, seed, eval_strategy, live_viz)
+    live_cb, eval_strategy, max_eval, n_eval, hv_tracker = initialize_run(
+        algo,
+        problem,
+        termination,
+        seed,
+        eval_strategy,
+        live_viz,
+        checkpoint=checkpoint,
+    )
     st = algo._st
     assert st is not None, "State not initialized"
 
@@ -96,9 +109,9 @@ def run_nsgaii(
 
     signal.signal(signal.SIGINT, _handle_interrupt)
 
-    generation = 0
-    step = 0
-    replacements = 0
+    generation = st.generation
+    step = st.step
+    replacements = st.replacements
     stop_requested = notify_generation(algo, live_cb, generation, st.F, evals=n_eval)
     hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn())
 
@@ -144,6 +157,22 @@ def run_nsgaii(
 
     result = build_result(st, n_eval, hv_reached, kernel=algo.kernel)
     result["interrupted"] = interrupted
+    result["checkpoint"] = {
+        "version": 1,
+        "algorithm": "nsgaii",
+        "X": st.X,
+        "F": st.F,
+        "G": st.G,
+        "generation": st.generation,
+        "n_eval": n_eval,
+        "rng_state": cast(dict[str, Any], st.rng.bit_generator.state),
+        "archive_X": st.archive_X,
+        "archive_F": st.archive_F,
+        "extra": {
+            "step": st.step,
+            "replacements": st.replacements,
+        },
+    }
     live_cb.on_end(final_F=st.F)
     finalize_genealogy(result, st, algo.kernel)
     return result

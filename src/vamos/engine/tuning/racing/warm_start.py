@@ -38,18 +38,17 @@ class WarmStartEvaluator:
             .crossover("sbx", prob=config["crossover_prob"]) \\
             .build()
 
-        # If we have a checkpoint, pass it into your algorithm wiring here.
-
         result = optimize(
             ctx.instance.name,
             algorithm="nsgaii",
             algorithm_config=algo_cfg,
             termination=("n_eval", ctx.budget),
             seed=ctx.seed,
+            checkpoint=checkpoint,
         )
 
         # Return result and checkpoint for next level
-        new_checkpoint = {"X": result.X, "F": result.F}
+        new_checkpoint = result.data.get("checkpoint")
         return result, new_checkpoint
 
     # Create evaluator
