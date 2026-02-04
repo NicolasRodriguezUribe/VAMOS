@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies (full extras)
         run: |
           python -m pip install -U pip
-          python -m pip install -e ".[dev,backends,benchmarks,notebooks,studio,autodiff,docs]"
+          python -m pip install -e ".[dev,compute,research,analysis,examples,studio,autodiff,docs]"
       - name: Lint (ruff)
         run: ruff check .
       - name: Type check (mypy)
@@ -94,7 +94,7 @@ jobs:
           import importlib.resources as res
           import vamos
           import vamos.api
-          path = res.files("vamos.data.reference_fronts") / "ZDT1.csv"
+          path = res.files("vamos.foundation.data.reference_fronts") / "ZDT1.csv"
           assert path.is_file(), "Reference front missing in wheel"
           print("Wheel smoke OK:", vamos.__version__)
           PY

@@ -1,6 +1,7 @@
 from importlib import resources
 
 from vamos.foundation.data import reference_front_path, weight_path
+from vamos.foundation.problem.tsplib import load_tsplib_coords
 from vamos.foundation.core.hv_stop import build_hv_stop_config
 from vamos.experiment.execution import _default_weight_path
 
@@ -33,3 +34,10 @@ def test_hv_stop_uses_packaged_reference_front():
     ref_path = cfg["reference_front_path"]
     assert "ZDT1" in ref_path.upper()
     assert resources.files("vamos.foundation.data.reference_fronts").joinpath("ZDT1.csv").is_file()
+
+
+def test_tsplib_packaged_and_accessible():
+    assert resources.files("vamos.foundation.data.tsplib").joinpath("kroA100.tsp").is_file()
+    coords = load_tsplib_coords("kroA100")
+    assert coords.ndim == 2
+    assert coords.shape[1] == 2

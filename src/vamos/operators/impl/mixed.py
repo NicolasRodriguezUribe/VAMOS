@@ -43,7 +43,9 @@ _PERM_MUTATION = {
 
 
 def _extract_index_array(spec: dict[str, np.ndarray], key: str) -> np.ndarray:
-    raw = spec.get(key) if spec.get(key) is not None else []
+    raw = spec.get(key)
+    if raw is None:
+        return np.asarray([], dtype=int)
     return np.asarray(raw, dtype=int)
 
 
@@ -166,6 +168,7 @@ def mixed_crossover(
         child2 = p2.copy()
         if perm_idx.size:
             parents_perm = np.stack([p1[perm_idx], p2[perm_idx]], axis=0).astype(np.int32, copy=True)
+            assert perm_crossover is not None
             perm_children = perm_crossover(parents_perm, 1.0, rng)
             child1[perm_idx] = perm_children[0]
             child2[perm_idx] = perm_children[1]
@@ -218,6 +221,7 @@ def mixed_mutation(
 
     if perm_idx.size:
         perm_view = X[:, perm_idx].astype(np.int32, copy=True)
+        assert perm_mutation is not None
         perm_mutation(perm_view, prob, rng)
         X[:, perm_idx] = perm_view
 

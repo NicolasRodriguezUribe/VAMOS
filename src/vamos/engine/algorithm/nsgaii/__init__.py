@@ -3,8 +3,10 @@ NSGA-II algorithm module.
 
 This package provides the NSGA-II (Non-dominated Sorting Genetic Algorithm II)
 implementation with modular components:
-- `core.py`: main NSGAII class (run/ask/tell loop)
+- `nsgaii.py`: main NSGAII class (thin orchestrator)
+- `run.py`: run loop + checkpoints + live-viz notifications
 - `setup.py`: initialization/config helpers
+- `ask_tell.py`: ask/tell operations
 - `state.py`: NSGAIIState + result/genealogy helpers
 - `operators/policies/nsgaii.py`: operator pool + adaptive selection wiring
 - `helpers.py`: mating pool + survival helpers

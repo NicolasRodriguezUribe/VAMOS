@@ -8,8 +8,9 @@ from collections.abc import Mapping
 def _deep_merge(base: Mapping[str, Any], overrides: Mapping[str, Any]) -> dict[str, Any]:
     merged: dict[str, Any] = dict(base)
     for key, value in overrides.items():
-        if isinstance(value, Mapping) and isinstance(merged.get(key), Mapping):
-            merged[key] = _deep_merge(merged[key], value)  # type: ignore[arg-type]
+        existing = merged.get(key)
+        if isinstance(value, Mapping) and isinstance(existing, Mapping):
+            merged[key] = _deep_merge(existing, value)
         else:
             merged[key] = value
     return merged

@@ -1,7 +1,7 @@
 site_name: VAMOS Docs
 site_description: Vectorized Architecture for Multiobjective Optimization Studies
-repo_url: https://github.com/google-deepmind/vamos/
-repo_name: google-deepmind/vamos
+repo_url: https://github.com/NicolasRodriguezUribe/VAMOS
+repo_name: NicolasRodriguezUribe/VAMOS
 theme:
   name: material
   palette: 
