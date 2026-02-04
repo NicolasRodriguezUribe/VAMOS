@@ -11,7 +11,7 @@ See the API decision guide in `docs/guide/getting-started.md` if you need explic
 from vamos import optimize
 from vamos.ux.api import result_summary_text
 
-result = optimize("zdt1", algorithm="nsgaii", budget=5000, pop_size=100, seed=0)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=5000, pop_size=100, seed=0)
 print(result_summary_text(result))
 ```
 
@@ -87,7 +87,7 @@ class MyCallback:
         print(f"Gen {algorithm.n_gen}: {len(algorithm.pop)} solutions")
         # Access population: algorithm.pop.get("F")
 
-optimize("zdt1", algorithm="nsgaii", budget=2000, live_viz=MyCallback())
+optimize("zdt1", algorithm="nsgaii", max_evaluations=2000, live_viz=MyCallback())
 ```
 
 ## 4. Re-using Algorithm State (Checkpointing)
@@ -103,7 +103,7 @@ Select a backend via `optimize(..., engine=...)`.
 ```python
 from vamos import optimize
 
-result = optimize("zdt1", algorithm="nsgaii", engine="numba", budget=5000)
+result = optimize("zdt1", algorithm="nsgaii", engine="numba", max_evaluations=5000)
 ```
 
 ## 6. Comparing Algorithms
@@ -114,8 +114,8 @@ Run multiple algorithms and plot their fronts together.
 import matplotlib.pyplot as plt
 from vamos import optimize
 
-res_nsga2 = optimize("zdt1", algorithm="nsgaii", budget=4000)
-res_moead = optimize("zdt1", algorithm="moead", budget=4000)
+res_nsga2 = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000)
+res_moead = optimize("zdt1", algorithm="moead", max_evaluations=4000)
 
 plt.scatter(res_nsga2.F[:, 0], res_nsga2.F[:, 1], label="NSGA-II")
 plt.scatter(res_moead.F[:, 0], res_moead.F[:, 1], label="MOEA/D")
@@ -161,7 +161,7 @@ Pass a list of seeds to run a small study in one call.
 from vamos import optimize
 from vamos.ux.api import result_summary_text
 
-results = optimize("zdt1", algorithm="nsgaii", budget=4000, seed=[0, 1, 2, 3])
+results = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2, 3])
 for idx, res in enumerate(results):
     print(idx, result_summary_text(res))
 ```
@@ -184,7 +184,7 @@ cfg = (
     .build()
 )
 
-result = optimize("zdt1", algorithm="nsgaii", algorithm_config=cfg, budget=8000, seed=7)
+result = optimize("zdt1", algorithm="nsgaii", algorithm_config=cfg, max_evaluations=8000, seed=7)
 ```
 
 ## 11. Multiprocessing Evaluation
@@ -196,7 +196,7 @@ from vamos import optimize
 from vamos.foundation.eval.backends import MultiprocessingEvalBackend
 
 backend = MultiprocessingEvalBackend(n_workers=4)
-result = optimize("zdt1", algorithm="nsgaii", budget=6000, eval_strategy=backend)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=6000, eval_strategy=backend)
 ```
 
 ## 12. Hypervolume-Based Early Stopping
@@ -221,7 +221,7 @@ Persist results to a folder for later inspection.
 from vamos import optimize
 from vamos.ux.api import save_result
 
-result = optimize("zdt1", algorithm="nsgaii", budget=5000)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)
 save_result(result, "results/zdt1_nsgaii")
 ```
 
@@ -232,7 +232,7 @@ Pick a knee point or a simple min objective.
 ```python
 from vamos import optimize
 
-result = optimize("zdt1", algorithm="nsgaii", budget=5000)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)
 choice = result.best("knee")
 print(choice["F"])
 ```
@@ -244,7 +244,7 @@ Use JAX for acceleration. Strict ranking is on by default and falls back to NumP
 ```python
 from vamos import optimize
 
-result = optimize("zdt1", algorithm="nsgaii", engine="jax", budget=5000)
+result = optimize("zdt1", algorithm="nsgaii", engine="jax", max_evaluations=5000)
 ```
 
 Set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking if you want maximum speed (may not match the exact Pareto front).
@@ -266,7 +266,7 @@ result = optimize(
     algorithm=resolved["algorithm"],
     engine=resolved["engine"],
     pop_size=resolved["pop_size"],
-    budget=resolved["budget"],
+    max_evaluations=resolved["max_evaluations"],
     seed=resolved["seed"],
     n_var=resolved.get("n_var"),
     n_obj=resolved.get("n_obj"),
@@ -289,7 +289,7 @@ Export results for analysis in pandas (requires the `analysis` extra).
 from vamos import optimize
 from vamos.ux.api import result_to_dataframe
 
-result = optimize("zdt1", algorithm="nsgaii", budget=4000)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000)
 df = result_to_dataframe(result)
 df.to_csv("results/zdt1_nsgaii_front.csv", index=False)
 ```
@@ -304,7 +304,7 @@ import numpy as np
 from vamos import optimize
 from vamos.foundation.metrics.pareto import pareto_filter
 
-results = optimize("zdt1", algorithm="nsgaii", budget=4000, seed=[0, 1, 2])
+results = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2])
 combined = np.vstack([res.F for res in results if res.F is not None])
 front = pareto_filter(combined, return_indices=False)
 ```
@@ -319,7 +319,7 @@ import numpy as np
 from vamos import optimize
 from vamos.foundation.metrics import compute_hypervolume
 
-result = optimize("zdt1", algorithm="nsgaii", budget=4000)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000)
 F = np.asarray(result.F)
 hv = compute_hypervolume(F, ref_point=[1.1, 1.1])
 print(hv)
@@ -335,7 +335,7 @@ import numpy as np
 from vamos import optimize
 from vamos.foundation.metrics import compute_normalized_hv
 
-result = optimize("zdt1", algorithm="nsgaii", budget=4000)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000)
 hv_norm = compute_normalized_hv(np.asarray(result.F), "zdt1")
 print(hv_norm)
 ```

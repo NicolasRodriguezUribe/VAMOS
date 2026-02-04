@@ -18,7 +18,7 @@ class TestOptimizeConvenience:
     def test_run_nsgaii_basic(self):
         """optimize() should work with NSGAII."""
         problem = ZDT1(n_var=10)
-        result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20)
+        result = optimize(problem, algorithm="nsgaii", max_evaluations=500, pop_size=20)
 
         assert result.F is not None
         assert result.F.shape[0] > 0
@@ -27,7 +27,7 @@ class TestOptimizeConvenience:
     @pytest.mark.smoke
     def test_run_string_problem_basic(self):
         """optimize() should work with a registry problem name + params."""
-        result = optimize("zdt1", algorithm="nsgaii", budget=200, pop_size=20, seed=42, n_var=10)
+        result = optimize("zdt1", algorithm="nsgaii", max_evaluations=200, pop_size=20, seed=42, n_var=10)
 
         assert result.F is not None
         assert result.X is not None
@@ -37,7 +37,7 @@ class TestOptimizeConvenience:
     def test_run_moead_basic(self):
         """optimize() should work with MOEAD."""
         problem = ZDT1(n_var=10)
-        result = optimize(problem, algorithm="moead", budget=500, pop_size=50)
+        result = optimize(problem, algorithm="moead", max_evaluations=500, pop_size=50)
 
         assert result.F is not None
         assert result.F.shape[0] > 0
@@ -46,7 +46,7 @@ class TestOptimizeConvenience:
     def test_run_spea2_basic(self):
         """optimize() should work with SPEA2."""
         problem = ZDT1(n_var=10)
-        result = optimize(problem, algorithm="spea2", budget=500, pop_size=20)
+        result = optimize(problem, algorithm="spea2", max_evaluations=500, pop_size=20)
 
         assert result.F is not None
         assert result.F.shape[0] > 0
@@ -55,7 +55,7 @@ class TestOptimizeConvenience:
     def test_run_smsemoa_basic(self):
         """optimize() should work with SMSEMOA."""
         problem = ZDT1(n_var=10)
-        result = optimize(problem, algorithm="smsemoa", budget=500, pop_size=20)
+        result = optimize(problem, algorithm="smsemoa", max_evaluations=500, pop_size=20)
 
         assert result.F is not None
         assert result.F.shape[0] > 0
@@ -64,13 +64,13 @@ class TestOptimizeConvenience:
         """optimize() with invalid algorithm should raise."""
         problem = ZDT1(n_var=10)
         with pytest.raises(InvalidAlgorithmError, match="Unknown algorithm"):
-            optimize(problem, algorithm="invalid_algo", budget=100, pop_size=20)
+            optimize(problem, algorithm="invalid_algo", max_evaluations=100, pop_size=20)
 
     def test_rejects_unknown_algorithm_kwargs(self):
         """optimize() should not silently ignore unknown algorithm kwargs."""
         problem = ZDT1(n_var=10)
         with pytest.raises(TypeError, match="unexpected keyword argument"):
-            optimize(problem, algorithm="nsgaii", budget=100, pop_size=20, unknown_param=1)
+            optimize(problem, algorithm="nsgaii", max_evaluations=100, pop_size=20, unknown_param=1)
 
     @pytest.mark.smoke
     def test_result_has_helper_methods(self):
@@ -83,7 +83,7 @@ class TestOptimizeConvenience:
         )
 
         problem = ZDT1(n_var=10)
-        result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20)
+        result = optimize(problem, algorithm="nsgaii", max_evaluations=500, pop_size=20)
 
         assert hasattr(result, "best")
         assert hasattr(result, "front")
@@ -96,8 +96,8 @@ class TestOptimizeConvenience:
     def test_run_with_different_seeds(self):
         """Different seeds should produce different results."""
         problem = ZDT1(n_var=10)
-        result1 = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20, seed=42)
-        result2 = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20, seed=123)
+        result1 = optimize(problem, algorithm="nsgaii", max_evaluations=500, pop_size=20, seed=42)
+        result2 = optimize(problem, algorithm="nsgaii", max_evaluations=500, pop_size=20, seed=123)
 
         # Results should differ (not exactly equal)
         assert result1.F.shape != result2.F.shape or not np.allclose(result1.F, result2.F)
@@ -115,7 +115,7 @@ class TestUnifiedBackendParameter:
             problem,
             algorithm="nsgaii",
             algorithm_config=cfg,
-            termination=("n_eval", 500),
+            termination=("max_evaluations", 500),
             seed=42,
             engine="numpy",
         )
@@ -127,7 +127,7 @@ class TestUnifiedBackendParameter:
     def test_optimize_engine_parameter(self):
         """optimize() should accept engine parameter."""
         problem = ZDT1(n_var=10)
-        result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20, engine="numpy")
+        result = optimize(problem, algorithm="nsgaii", max_evaluations=500, pop_size=20, engine="numpy")
 
         assert result.F is not None
 
@@ -151,7 +151,7 @@ class TestAPIConsistency:
     def test_optimize_returns_optimization_result(self):
         """optimize() should return OptimizationResult."""
         problem = ZDT1(n_var=10)
-        result = optimize(problem, algorithm="nsgaii", budget=500, pop_size=20)
+        result = optimize(problem, algorithm="nsgaii", max_evaluations=500, pop_size=20)
 
         assert isinstance(result, OptimizationResult)
 

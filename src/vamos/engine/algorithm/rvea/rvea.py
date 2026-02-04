@@ -147,9 +147,11 @@ class RVEA:
         if term_key == "n_gen":
             max_gen = max(1, int(term_val))
             max_evals = max_gen * pop_size
-        else:
+        elif term_key == "max_evaluations":
             max_evals = int(term_val)
             max_gen = max(1, int(math.ceil((max_evals - pop_size) / pop_size)))
+        else:
+            raise ValueError("Unsupported termination criterion for RVEA.")
 
         ref_dirs = _generate_reference_vectors(n_obj, n_partitions)
         if ref_dirs.shape[0] != pop_size:

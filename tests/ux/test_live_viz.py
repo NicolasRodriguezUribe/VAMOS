@@ -55,7 +55,7 @@ def test_live_viz_callbacks_invoked(monkeypatch, tmp_path):
     problem = DummyProblem()
     recorder = RecorderViz()
 
-    result = algo.run(problem, termination=("n_eval", 12), seed=1, live_viz=recorder)
+    result = algo.run(problem, termination=("max_evaluations", 12), seed=1, live_viz=recorder)
 
     assert result["F"].shape[0] == cfg.pop_size
     assert recorder.starts == 1

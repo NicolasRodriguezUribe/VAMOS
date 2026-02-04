@@ -62,7 +62,7 @@ def initialize_smsemoa_run(
     problem : ProblemProtocol
         Problem to optimize.
     termination : tuple
-        Termination criterion, e.g., ("n_eval", 10000).
+        Termination criterion, e.g., ("max_evaluations", 10000).
     seed : int
         Random seed for reproducibility.
     eval_strategy : EvaluationBackend, optional

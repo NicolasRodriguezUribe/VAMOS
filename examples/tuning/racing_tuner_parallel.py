@@ -49,7 +49,7 @@ def evaluate_config(config: dict, ctx) -> float:
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", ctx.budget),
+        termination=("max_evaluations", ctx.budget),
         seed=ctx.seed,
         engine="numpy",  # Use "numba" for better speed if available
     )

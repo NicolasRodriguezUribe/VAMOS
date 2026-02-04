@@ -52,7 +52,7 @@ def main() -> None:
     # 2. Run optimize directy with the instance
     # Note: Unified API handles instance dispatch automatically
     print("optimizing custom problem instance...")
-    result = optimize(problem, algorithm="nsgaii", budget=4000, seed=3, verbose=True)
+    result = optimize(problem, algorithm="nsgaii", max_evaluations=4000, seed=3, verbose=True)
 
     F = result.F
     print(f"\nSolutions: {len(F)}")

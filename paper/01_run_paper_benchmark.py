@@ -621,7 +621,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     problem,
                     algorithm=algo_id,
                     algorithm_config=algo_config,
-                    termination=("n_eval", warmup_budget),
+                    termination=("max_evaluations", warmup_budget),
                     seed=seed,
                     engine=backend,
                 )
@@ -631,7 +631,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 problem,
                 algorithm=algo_id,
                 algorithm_config=algo_config,
-                termination=("n_eval", N_EVALS),
+                termination=("max_evaluations", N_EVALS),
                 seed=seed,
                 engine=backend,
             )

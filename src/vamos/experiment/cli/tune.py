@@ -230,7 +230,7 @@ def make_evaluator(
                 selection.instantiate(),
                 algorithm=algo_name,
                 algorithm_config=cfg,
-                termination=("n_eval", ctx.budget),
+                termination=("max_evaluations", ctx.budget),
                 seed=ctx.seed,
                 engine="numpy",
                 checkpoint=checkpoint,

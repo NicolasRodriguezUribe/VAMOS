@@ -24,7 +24,7 @@ def test_nsgaiii_survival_preserves_population_size_with_odd_pop():
     cfg = _make_config(pop_size=15, divisions=4)
     alg = NSGAIII(cfg, kernel=NumPyKernel())
     problem = DTLZ2Problem(n_var=12, n_obj=3)
-    result = alg.run(problem, termination=("n_eval", 30), seed=7)
+    result = alg.run(problem, termination=("max_evaluations", 30), seed=7)
     assert result["X"].shape[0] == 15
     assert result["F"].shape[0] == 15
 
@@ -42,7 +42,7 @@ def test_reference_directions_truncate_when_excess():
     alg = NSGAIII(cfg, kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=6)
     with pytest.raises(ValueError, match="pop_size"):
-        alg.run(problem, termination=("n_eval", 12), seed=3)
+        alg.run(problem, termination=("max_evaluations", 12), seed=3)
 
 
 def test_association_handles_degenerate_front():

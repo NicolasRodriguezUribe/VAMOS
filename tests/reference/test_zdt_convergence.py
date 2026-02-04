@@ -29,7 +29,7 @@ def test_zdt1_nsgaii_convergence():
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", 10000),
+        termination=("max_evaluations", 10000),
         seed=42,  # Deterministic seed
         engine="numpy",
     )
@@ -64,7 +64,7 @@ def test_zdt1_moead_convergence():
         problem,
         algorithm="moead",
         algorithm_config=algo_cfg,
-        termination=("n_eval", 10000),
+        termination=("max_evaluations", 10000),
         seed=42,
         engine="numpy",
     )
@@ -96,7 +96,7 @@ def test_zdt2_nsgaii_convergence():
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", 10000),  # Slightly boosted budget
+        termination=("max_evaluations", 10000),  # Slightly boosted budget
         seed=42,
         engine="numpy",
     )

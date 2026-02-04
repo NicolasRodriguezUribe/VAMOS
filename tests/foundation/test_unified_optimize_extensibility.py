@@ -31,7 +31,7 @@ def test_unified_optimize_supports_registered_plugin_algorithm() -> None:
 
         ALGORITHMS.register(algo_key, _builder)
 
-    result = vamos.optimize("zdt1", algorithm=algo_key, budget=20, pop_size=7, seed=123, verbose=False)
+    result = vamos.optimize("zdt1", algorithm=algo_key, max_evaluations=20, pop_size=7, seed=123, verbose=False)
     assert result.F is not None
     assert result.F.shape == (7, 2)
 
@@ -60,7 +60,7 @@ def test_optimize_resolves_eval_strategy_string() -> None:
     result = optimize(
         problem,
         algorithm=algo_key,
-        budget=5,
+        max_evaluations=5,
         pop_size=2,
         seed=0,
         engine="numpy",

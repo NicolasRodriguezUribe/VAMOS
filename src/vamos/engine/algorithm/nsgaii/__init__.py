@@ -16,7 +16,7 @@ Example:
     >>> from vamos.engine.algorithm.config import NSGAIIConfig
     >>> config = NSGAIIConfig.builder().pop_size(100).crossover("sbx", prob=0.9).build()
     >>> algo = NSGAII(config.to_dict(), kernel)
-    >>> result = algo.run(problem, ("n_eval", 10000), seed=42)
+    >>> result = algo.run(problem, ("max_evaluations", 10000), seed=42)
 """
 
 from .nsgaii import NSGAII

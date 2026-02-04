@@ -61,7 +61,7 @@ result = optimize(
     problem,
     algorithm="nsgaii",
     algorithm_config=cfg,
-    termination=("n_eval", 10000),
+    termination=("max_evaluations", 10000),
     seed=42,
 )
 ```

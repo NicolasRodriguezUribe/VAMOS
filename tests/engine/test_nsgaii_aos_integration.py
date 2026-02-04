@@ -32,7 +32,7 @@ def test_nsgaii_aos_disabled_is_noop():
     cfg = _base_cfg()
     algo = NSGAII(cfg, NumPyKernel())
     problem = DummyProblem()
-    result = algo.run(problem, termination=("n_eval", 20), seed=0)
+    result = algo.run(problem, termination=("max_evaluations", 20), seed=0)
     assert "aos" not in result
     st = algo._st
     assert st is not None
@@ -61,7 +61,7 @@ def test_nsgaii_aos_enabled_produces_trace_rows():
     }
     algo = NSGAII(cfg, NumPyKernel())
     problem = DummyProblem()
-    result = algo.run(problem, termination=("n_eval", 30), seed=0)
+    result = algo.run(problem, termination=("max_evaluations", 30), seed=0)
     aos = result.get("aos")
     assert aos is not None
     rows = aos.get("trace_rows") or []

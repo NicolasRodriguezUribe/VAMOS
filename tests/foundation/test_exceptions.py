@@ -227,7 +227,7 @@ class TestExceptionUsage:
 
         problem = ZDT1(n_var=10)
         with pytest.raises(InvalidAlgorithmError) as exc_info:
-            optimize(problem, algorithm="invalid_algo", budget=100, pop_size=20)
+            optimize(problem, algorithm="invalid_algo", max_evaluations=100, pop_size=20)
 
         assert "invalid_algo" in str(exc_info.value)
         assert exc_info.value.suggestion is not None

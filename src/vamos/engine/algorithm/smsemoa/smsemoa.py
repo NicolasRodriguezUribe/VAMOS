@@ -68,12 +68,12 @@ class SMSEMOA:
     >>> from vamos.algorithms import SMSEMOAConfig
     >>> config = SMSEMOAConfig.builder().pop_size(100).crossover("sbx", prob=0.9).build()
     >>> smsemoa = SMSEMOA(config, kernel)
-    >>> result = smsemoa.run(problem, ("n_eval", 10000), seed=42)
+    >>> result = smsemoa.run(problem, ("max_evaluations", 10000), seed=42)
 
     Ask/tell interface:
 
     >>> smsemoa = SMSEMOA(config, kernel)
-    >>> smsemoa.initialize(problem, ("n_eval", 10000), seed=42)
+    >>> smsemoa.initialize(problem, ("max_evaluations", 10000), seed=42)
     >>> while not smsemoa.should_terminate():
     ...     X = smsemoa.ask()
     ...     F = evaluate(X)
@@ -110,7 +110,7 @@ class SMSEMOA:
         problem : ProblemProtocol
             Problem to optimize.
         termination : tuple
-            Termination criterion, e.g., ("n_eval", 10000).
+            Termination criterion, e.g., ("max_evaluations", 10000).
         seed : int
             Random seed for reproducibility.
         eval_strategy : EvaluationBackend, optional

@@ -37,7 +37,7 @@ def test_full_lifecycle_optimize_save_analyze(e2e_workspace):
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", 100),
+        termination=("max_evaluations", 100),
         seed=42,
         engine="numpy",
     )

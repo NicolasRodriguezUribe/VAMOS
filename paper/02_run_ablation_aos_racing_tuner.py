@@ -481,7 +481,7 @@ def tune_nsgaii(*, train_problems: list[str], seed0: int) -> dict[str, Any]:
                 problem,
                 algorithm="nsgaii",
                 algorithm_config=algo_cfg,
-                termination=("n_eval", ctx.budget),
+                termination=("max_evaluations", ctx.budget),
                 seed=ctx.seed,
                 engine="numpy",
             )
@@ -689,7 +689,7 @@ def run_single(
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", n_evals),
+        termination=("max_evaluations", n_evals),
         seed=seed,
         engine=engine,
         live_viz=recorder,

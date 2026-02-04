@@ -70,7 +70,7 @@ def test_nsgaii_steady_state_runs():
     problem = ZDT1Problem(n_var=6)
     budget = pop_size + 5
 
-    result = algorithm.run(problem, termination=("n_eval", budget), seed=11)
+    result = algorithm.run(problem, termination=("max_evaluations", budget), seed=11)
 
     assert result["evaluations"] == budget
     assert result["F"].shape[0] <= pop_size
@@ -91,7 +91,7 @@ def test_smsemoa_smoke_runs_with_small_population():
     algorithm = SMSEMOA(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT2Problem(n_var=6)
 
-    result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=4)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size + 6), seed=4)
 
     # Result contains only non-dominated solutions (may be <= pop_size)
     assert result["F"].shape[0] <= pop_size
@@ -127,7 +127,7 @@ def test_smsemoa_uses_eval_strategy():
             return EvaluationResult(F=F, G=None)
 
     backend = CountingBackend()
-    algorithm.run(problem, termination=("n_eval", pop_size + 3), seed=4, eval_strategy=backend)
+    algorithm.run(problem, termination=("max_evaluations", pop_size + 3), seed=4, eval_strategy=backend)
 
     assert backend.calls[0] == pop_size  # initial population
     assert backend.calls[1:] == [1, 1, 1]  # steady-state offspring evaluations
@@ -150,7 +150,7 @@ def test_moead_smoke_runs_without_weight_files():
     algorithm = MOEAD(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=8)
 
-    result = algorithm.run(problem, termination=("n_eval", pop_size + 4), seed=5)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size + 4), seed=5)
 
     # Result contains only non-dominated solutions (may be <= pop_size)
     assert result["F"].shape[0] <= pop_size
@@ -174,7 +174,7 @@ def test_spea2_smoke_runs_with_archive():
     algorithm = SPEA2(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=6)
 
-    result = algorithm.run(problem, termination=("n_eval", pop_size + 12), seed=7)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size + 12), seed=7)
 
     assert result["F"].shape[0] == cfg.archive_size
     assert result["F"].shape[1] == problem.n_obj
@@ -196,7 +196,7 @@ def test_ibea_smoke_indicator_eps():
     algorithm = IBEA(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT2Problem(n_var=6)
 
-    result = algorithm.run(problem, termination=("n_eval", pop_size + 10), seed=8)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size + 10), seed=8)
 
     # Result contains only non-dominated solutions (may be <= pop_size)
     assert result["F"].shape[0] <= pop_size
@@ -212,7 +212,7 @@ def test_smpso_smoke_runs():
     algorithm = SMPSO(cfg.to_dict(), kernel=NumPyKernel())
     problem = ZDT1Problem(n_var=5)
 
-    result = algorithm.run(problem, termination=("n_eval", pop_size * 2), seed=9)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size * 2), seed=9)
 
     assert result["F"].shape[0] > 0
     assert result["F"].shape[1] == problem.n_obj
@@ -235,7 +235,7 @@ def test_nsgaii_with_multiprocessing_eval_strategy():
     from vamos.foundation.eval.backends import MultiprocessingEvalBackend
 
     eval_strategy = MultiprocessingEvalBackend(n_workers=2)
-    result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=10, eval_strategy=eval_strategy)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size + 6), seed=10, eval_strategy=eval_strategy)
 
     # Result contains only non-dominated solutions (may be <= pop_size)
     assert result["F"].shape[0] <= pop_size
@@ -259,7 +259,7 @@ def test_nsgaii_permutation_smoke():
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     problem = TSPProblem(n_cities=7)
 
-    result = algorithm.run(problem, termination=("n_eval", pop_size + 6), seed=6)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size + 6), seed=6)
 
     X = result["X"]
     # Result contains only non-dominated solutions (may be <= pop_size)

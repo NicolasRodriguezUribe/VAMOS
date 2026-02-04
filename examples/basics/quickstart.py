@@ -24,7 +24,7 @@ def main():
     # - "nsgaii": Standard algorithm
     # - budget: Stopping criterion
     print("Running NSGA-II on ZDT1...")
-    result = optimize("zdt1", algorithm="nsgaii", budget=5000, seed=42)
+    result = optimize("zdt1", algorithm="nsgaii", max_evaluations=5000, seed=42)
 
     # 2. Analyze results
     F = result.F  # Pareto front objectives

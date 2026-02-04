@@ -48,7 +48,7 @@ class EvaluationsTermination:
 
     def resolve(self, config: ExperimentConfig) -> tuple[str, Any]:
         limit = self.max_evaluations if self.max_evaluations is not None else config.max_evaluations
-        return ("n_eval", int(limit))
+        return ("max_evaluations", int(limit))
 
 
 @dataclass(frozen=True)

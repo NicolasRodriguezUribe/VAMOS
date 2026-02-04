@@ -2,7 +2,7 @@
 Auto-optimization helpers for the unified optimize entry point.
 
 These utilities derive sensible defaults (algorithm, population size,
-evaluation budget) from lightweight problem metadata.
+max evaluations) from lightweight problem metadata.
 """
 
 from __future__ import annotations
@@ -89,8 +89,8 @@ def _compute_pop_size(n_var: int, n_obj: int) -> int:
     return min(base, 200)
 
 
-def _compute_budget(n_var: int, n_obj: int) -> int:
-    """Compute reasonable evaluation budget."""
+def _compute_max_evaluations(n_var: int, n_obj: int) -> int:
+    """Compute reasonable max evaluations."""
     base = max(1000, 100 * n_var)
     if n_obj >= 3:
         base = max(base, 5000)

@@ -20,7 +20,7 @@ def test_optimize_reproducible_with_seed():
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("n_eval", 30),
+        termination=("max_evaluations", 30),
         seed=42,
         engine="numpy",
     )
@@ -28,7 +28,7 @@ def test_optimize_reproducible_with_seed():
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("n_eval", 30),
+        termination=("max_evaluations", 30),
         seed=42,
         engine="numpy",
     )

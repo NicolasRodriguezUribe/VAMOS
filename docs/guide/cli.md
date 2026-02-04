@@ -84,7 +84,7 @@ Python equivalent (preferred for scripting):
 ```python
 from vamos import optimize
 
-result = optimize("zdt1", algorithm="nsgaii", budget=5000, pop_size=80, seed=7)
+result = optimize("zdt1", algorithm="nsgaii", max_evaluations=5000, pop_size=80, seed=7)
 ```
 
 Run a predefined problem set with both internal algorithms:

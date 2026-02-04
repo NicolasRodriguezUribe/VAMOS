@@ -140,7 +140,7 @@ def _run_single(
             problem,
             algorithm="nsgaii",
             algorithm_config=algo_cfg,
-            termination=("n_eval", warmup_budget),
+            termination=("max_evaluations", warmup_budget),
             seed=seed,
             engine=engine,
         )
@@ -150,7 +150,7 @@ def _run_single(
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", n_evals),
+        termination=("max_evaluations", n_evals),
         seed=seed,
         engine=engine,
     )
@@ -200,7 +200,7 @@ def _run_numba_jit_policy(
             problem,
             algorithm="nsgaii",
             algorithm_config=algo_cfg,
-            termination=("n_eval", warmup_budget),
+            termination=("max_evaluations", warmup_budget),
             seed=seed,
             engine="numba",
         )
@@ -210,7 +210,7 @@ def _run_numba_jit_policy(
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", n_evals),
+        termination=("max_evaluations", n_evals),
         seed=seed,
         engine="numba",
     )

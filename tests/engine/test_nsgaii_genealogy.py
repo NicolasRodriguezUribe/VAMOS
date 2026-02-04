@@ -17,7 +17,7 @@ def test_nsgaii_track_genealogy_runs_and_returns_stats():
         .build()
     )
     algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
-    result = algorithm.run(ZDT1Problem(n_var=6), termination=("n_eval", pop_size + 8), seed=0)
+    result = algorithm.run(ZDT1Problem(n_var=6), termination=("max_evaluations", pop_size + 8), seed=0)
 
     genealogy = result.get("genealogy")
     assert genealogy is not None

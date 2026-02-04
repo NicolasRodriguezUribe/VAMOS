@@ -28,7 +28,7 @@ def build_my_algorithm(cfg: dict, kernel: KernelBackend) -> AlgorithmLike:
 Then use it:
 ```python
 from vamos import optimize
-result = optimize("zdt1", algorithm="my_algorithm", budget=1_000, pop_size=100, seed=42)
+result = optimize("zdt1", algorithm="my_algorithm", max_evaluations=1_000, pop_size=100, seed=42)
 ```
 
 ## Custom Operator
@@ -76,5 +76,5 @@ class MyProblem(ProblemProtocol):
 Use it directly:
 ```python
 from vamos import optimize
-result = optimize(MyProblem(), algorithm="nsgaii", budget=1_000, pop_size=100, seed=42)
+result = optimize(MyProblem(), algorithm="nsgaii", max_evaluations=1_000, pop_size=100, seed=42)
 ```

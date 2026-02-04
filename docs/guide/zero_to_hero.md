@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 # 1. Run NSGA-II on ZDT1
 # The 'optimize' function is your main entry point.
 # It automatically selects a sane configuration for standard problems.
-res = optimize("zdt1", algorithm="nsgaii", budget=10000, seed=42)
+res = optimize("zdt1", algorithm="nsgaii", max_evaluations=10000, seed=42)
 
 # 2. Visualize immediately
 F = res.F  # Objective values (Pareto front approximation)
@@ -83,7 +83,7 @@ for algo in algorithms:
     # Collect normalized hypervolume (HV) for each seed
     hvs = []
     for seed in range(n_seeds):
-        res = optimize(problem_name, algorithm=algo, budget=5000, seed=seed)
+        res = optimize(problem_name, algorithm=algo, max_evaluations=5000, seed=seed)
         # compute_normalized_hv uses ZDT reference fronts.
         # For other problems, call compute_hypervolume with an explicit reference point.
         hv_score = compute_normalized_hv(res.F, problem_name)
@@ -153,7 +153,7 @@ def run_algorithm(config_dict, ctx: EvalContext, checkpoint=None):
         selection.instantiate(),
         algorithm="nsgaii",
         algorithm_config=algo_config,
-        termination=("n_eval", extra_budget),
+        termination=("max_evaluations", extra_budget),
         seed=ctx.seed,
     )
     

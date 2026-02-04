@@ -65,10 +65,10 @@ class IBEA:
     >>> from vamos.algorithms import IBEAConfig
     >>> config = IBEAConfig.builder().pop_size(100).indicator("epsilon").kappa(1.0).build()
     >>> ibea = IBEA(config, kernel)
-    >>> result = ibea.run(problem, ("n_eval", 10000), seed=42)
+    >>> result = ibea.run(problem, ("max_evaluations", 10000), seed=42)
 
     Ask/tell interface:
-    >>> ibea.initialize(problem, ("n_eval", 10000), seed=42)
+    >>> ibea.initialize(problem, ("max_evaluations", 10000), seed=42)
     >>> while not ibea.should_terminate():
     ...     X = ibea.ask()
     ...     F = evaluate(X)
@@ -105,7 +105,7 @@ class IBEA:
         problem : ProblemProtocol
             Problem to optimize.
         termination : tuple
-            Termination criterion, e.g., ("n_eval", 10000).
+            Termination criterion, e.g., ("max_evaluations", 10000).
         seed : int
             Random seed for reproducibility.
         eval_strategy : EvaluationBackend, optional

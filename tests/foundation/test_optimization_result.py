@@ -87,14 +87,14 @@ class TestOptimizationResultDefaults:
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         meta = {
             "resolved_config": {"problem": "zdt1", "algorithm": "nsgaii"},
-            "default_sources": {"algorithm": "explicit", "budget": "auto"},
+            "default_sources": {"algorithm": "explicit", "max_evaluations": "auto"},
         }
         result = OptimizationResult({"F": F}, meta=meta)
 
         explained = result.explain_defaults()
 
         assert explained["resolved_config"]["problem"] == "zdt1"
-        assert explained["default_sources"]["budget"] == "auto"
+        assert explained["default_sources"]["max_evaluations"] == "auto"
 
     def test_explain_defaults_handles_missing_meta(self):
         from vamos.experiment.optimization_result import OptimizationResult

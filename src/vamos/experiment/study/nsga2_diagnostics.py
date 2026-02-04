@@ -205,7 +205,7 @@ def _pymoo_reference(seed: int, n_var: int, max_eval: int) -> dict[str, np.ndarr
     res = minimize(
         pymoo_problem,
         algorithm,
-        ("n_eval", max_eval),
+        ("max_evaluations", max_eval),
         seed=seed,
         verbose=False,
     )

@@ -63,7 +63,7 @@ def run_serial(problem, budget: int):
 
     print("Running SERIAL evaluation...")
     start = time.perf_counter()
-    result = vamos.optimize(problem, algorithm="nsgaii", budget=budget, verbose=False)
+    result = vamos.optimize(problem, algorithm="nsgaii", max_evaluations=budget, verbose=False)
     elapsed = time.perf_counter() - start
     print(f"  Time: {elapsed:.2f}s")
     print(f"  Solutions: {len(result)}")
@@ -105,7 +105,7 @@ def run_distributed(problem, budget: int, scheduler: str | None = None):
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", budget),
+        termination=("max_evaluations", budget),
         seed=42,
         engine="numpy",
         eval_strategy=backend,

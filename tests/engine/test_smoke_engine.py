@@ -16,6 +16,6 @@ def test_engine_can_run_nsgaii_minimal():
         config,
         selection_pressure=2,
     )
-    termination = ("n_eval", 20)
+    termination = ("max_evaluations", 20)
     result = algorithm.run(selection.instantiate(), termination, seed=config.seed, eval_strategy=None, live_viz=None)
     assert result["F"].shape[0] > 0

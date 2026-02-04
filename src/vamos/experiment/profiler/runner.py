@@ -119,7 +119,7 @@ def run_profile(
 
         try:
             start = time.perf_counter()
-            result = optimize(problem, engine=engine, budget=budget, seed=seed, verbose=False)
+            result = optimize(problem, engine=engine, max_evaluations=budget, seed=seed, verbose=False)
             elapsed = time.perf_counter() - start
 
             n_solutions = len(result) if result else 0

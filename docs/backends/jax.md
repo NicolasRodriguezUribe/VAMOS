@@ -23,7 +23,7 @@ pip install -e ".[autodiff]"
 ## Usage
 
 ```python
-result = vamos.optimize("zdt1", engine="jax", budget=10000)
+result = vamos.optimize("zdt1", engine="jax", max_evaluations=10000)
 ```
 
 Note: JAX defaults to strict ranking, which falls back to NumPy for exact Pareto fronts.

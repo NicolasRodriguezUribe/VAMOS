@@ -384,7 +384,7 @@ def _run_single(
         problem,
         algorithm="nsgaii",
         algorithm_config=algo_cfg,
-        termination=("n_eval", n_evals),
+        termination=("max_evaluations", n_evals),
         seed=seed,
         engine=engine,
         live_viz=recorder,
