@@ -18,8 +18,8 @@ from collections.abc import Callable, Mapping
 
 import numpy as np
 
-from vamos import optimize
-from vamos.engine.tuning.api import (
+from vamos import optimize, make_problem_selection
+from vamos.engine.tuning import (
     AlgorithmConfigSpace,
     Instance,
     ParamSpace,
@@ -49,9 +49,9 @@ from vamos.engine.tuning.api import (
     build_smpso_config_space,
     build_spea2_config_space,
     config_from_assignment,
+    EvalContext,
+    WarmStartEvaluator,
 )
-from vamos.engine.tuning.racing import EvalContext, WarmStartEvaluator
-from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
 
 

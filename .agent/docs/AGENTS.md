@@ -40,7 +40,7 @@ VAMOS prioritizes ease of use:
     from vamos.problems import ZDT1
 
     problem = ZDT1(n_var=30)
-    cfg = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var, engine="numpy")
+    cfg = NSGAIIConfig.default(pop_size=100, n_var=problem.n_var)
     result = optimize(
         problem,
         algorithm="nsgaii",

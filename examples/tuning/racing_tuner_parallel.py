@@ -5,7 +5,7 @@ This example demonstrates how to use the RacingTuner to optimize NSGA-II paramet
 on the ZDT1 problem using parallel evaluation (n_jobs=4).
 
 Usage:
-    python examples/racing_tuner_parallel.py
+    python examples/tuning/racing_tuner_parallel.py
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import numpy as np
 
 from vamos import optimize
 from vamos.algorithms import NSGAIIConfig
-from vamos.engine.tuning.api import Instance, Int, ParamSpace, RacingTuner, Real, Scenario, TuningTask
+from vamos.engine.tuning import Instance, Int, ParamSpace, RacingTuner, Real, Scenario, TuningTask
 from vamos.problems import ZDT1
 
 
@@ -65,10 +65,13 @@ def evaluate_config(config: dict, ctx) -> float:
 
 def main():
     # 1. Define Parameter Space
-    space = ParamSpace()
-    space.add(Int("pop_size", 40, 200, log=True))
-    space.add(Real("crossover_prob", 0.7, 1.0))
-    space.add(Real("mutation_prob", 0.01, 0.2))
+    space = ParamSpace(
+        params={
+            "pop_size": Int("pop_size", 40, 200, log=True),
+            "crossover_prob": Real("crossover_prob", 0.7, 1.0),
+            "mutation_prob": Real("mutation_prob", 0.01, 0.2),
+        }
+    )
 
     # 2. Define Tuning Task
     task = TuningTask(
@@ -79,7 +82,6 @@ def main():
         ],
         seeds=[101, 102, 103, 104],  # Seeds to race over
         budget_per_run=2000,  # Evaluations per run
-        evaluator=evaluate_config,
         maximize=False,  # Minimize the score
     )
 
@@ -95,7 +97,7 @@ def main():
     # 4. Run Tuner
     print(f"Starting parallel tuning with n_jobs={scenario.n_jobs}...")
     tuner = RacingTuner(task, scenario)
-    best_config, history = tuner.tune()
+    best_config, history = tuner.run(evaluate_config)
 
     print("\n--- Tuning Complete ---")
     print("Best Configuration:")

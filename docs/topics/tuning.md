@@ -4,33 +4,46 @@ VAMOS provides powerful tools for tuning algorithm hyperparameters, from simple 
 
 ## Programmatic Tuning
 
-For full control, you can use the `vamos.engine.tuning.api` module directly in your scripts.
+For full control, you can use the `vamos.engine.tuning` module directly in your scripts.
 
 ### Basic Random Search
 
 ```python
-from vamos.engine.tuning.api import ParamSpace, RandomSearchTuner, TuningTask
+from vamos.engine.tuning import (
+    EvalContext,
+    Instance,
+    ParamSpace,
+    RandomSearchTuner,
+    Real,
+    TuningTask,
+)
 
 # 1. Define the parameter space
-space = ParamSpace()
-space.add_float("crossover_prob", 0.5, 1.0)
-space.add_float("mutation_eta", 5.0, 50.0)
+space = ParamSpace(
+    params={
+        "crossover_prob": Real("crossover_prob", 0.5, 1.0),
+        "mutation_eta": Real("mutation_eta", 5.0, 50.0),
+    }
+)
 
 # 2. Define the tuning task (objective function)
-def evaluate_config(config):
-    # Run your algorithm with 'config'
+def evaluate_config(config: dict[str, float], ctx: EvalContext) -> float:
+    # Run your algorithm with 'config' at ctx.budget and ctx.seed
     # Return a scalar quality metric (e.g., hypervolume)
     return -hypervolume  # minimize negative HV
 
 task = TuningTask(
-    evaluator=evaluate_config,
-    space=space,
-    budget=50
+    name="random_search_demo",
+    param_space=space,
+    instances=[Instance(name="zdt1", n_var=30)],
+    seeds=[0, 1],
+    budget_per_run=1000,
+    maximize=False,
 )
 
 # 3. Run the tuner
-tuner = RandomSearchTuner(task)
-best_config = tuner.tune()
+tuner = RandomSearchTuner(task=task, max_trials=50, seed=0)
+best_config, history = tuner.run(evaluate_config)
 ```
 
 ### Racing Tuner
@@ -38,15 +51,17 @@ best_config = tuner.tune()
 The `RacingTuner` is more efficient for stochastic algorithms. It evaluates configurations on multiple problem instances (or seeds) and discards poor performers early (statistical racing).
 
 ```python
-from vamos.engine.tuning.api import RacingTuner
+from vamos.engine.tuning import RacingTuner, Scenario
 
 tuner = RacingTuner(
     task,
-    n_initial=10,       # Initial pool of configurations
-    n_survivors=3,      # Number of configs to keep for final rounds
-    n_jobs=4            # Parallel execution
+    scenario=Scenario(
+        max_experiments=50,  # Total tuning budget (config evals)
+        min_survivors=3,
+        n_jobs=4,            # Parallel execution
+    ),
 )
-best_config = tuner.tune()
+best_config, history = tuner.run(evaluate_config)
 ```
 
 ## Command Line Interface (`vamos-tune`)
@@ -77,7 +92,7 @@ Use the ablation planning helpers to define variants (same algorithm, different 
 and build a reproducible task matrix.
 
 ```python
-from vamos.engine.tuning.api import AblationVariant, build_ablation_plan
+from vamos.engine.tuning import AblationVariant, build_ablation_plan
 
 variants = [
     AblationVariant(name="baseline"),
