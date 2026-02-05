@@ -1,0 +1,62 @@
+\section{Method}
+\label{sec:method}
+
+\subsection{Bandit formulation}
+Let $\mathcal{A} = \{1,\dots,K\}$ be a portfolio of $K$ candidate variation pipelines (arms).
+At each generation $t$, the algorithm selects one arm $a_t \in \mathcal{A}$, generates all offspring for that generation using that arm, observes a scalar reward $r_t \in [0,1]$, and updates its policy.
+The objective is to maximize cumulative reward, which serves as a proxy for improved search progress.
+
+\subsection{Operator portfolios}
+We define a small \emph{portfolio} of candidate variation pipelines, where each arm specifies one crossover operator and one mutation operator with fixed parameters.
+At generation $t$, NSGA-II selects exactly one arm and uses it to generate all offspring for that generation.
+This generation-level decision reduces reward noise (all offspring share the same operator) and keeps the online learning interface simple.
+It also mirrors how practitioners often tune operators: choosing a pipeline and running it for a while, rather than switching per mating event.
+
+\subsection{Reward signals}
+After survivor selection, we compute a reward that summarizes how useful the selected operator was for that generation.
+Let $n_{\mathrm{off}}$ be the offspring count, $n_{\mathrm{surv}}$ the number of offspring that survive into the next population, and $n_{\mathrm{nd}}$ the number of surviving offspring that are non-dominated in the next population.
+We define:
+\begin{align}
+  r_{\mathrm{surv}} &= \frac{n_{\mathrm{surv}}}{n_{\mathrm{off}}}, &
+  r_{\mathrm{nd}} &= \frac{n_{\mathrm{nd}}}{n_{\mathrm{off}}}.
+\end{align}
+Both rates are naturally bounded in $[0,1]$ and are available for any problem without requiring additional reference information.
+
+\paragraph{Optional hypervolume proxy.}
+When reference information is available, we include a bounded proxy for hypervolume improvement, $r_{\mathrm{hv}} \in [0,1]$.
+Let $\mathrm{HV}(F)$ be the normalized hypervolume of the current population front $F$, computed with a fixed reference point.
+We compute a relative improvement ratio
+\begin{align}
+  \rho_t = \frac{\mathrm{HV}(F_t) - \mathrm{HV}(F_{t-1})}{\max(|\mathrm{HV}(F_{t-1})|,\epsilon)},
+\end{align}
+and squash it to $[0,1]$ via $r_{\mathrm{hv}} = 0.5 + 0.5\tanh(\rho_t)$.
+This keeps the reward scale consistent across problems and avoids unbounded updates on early generations where absolute HV values can be small.
+
+The aggregate reward can be configured as a single component or as a convex combination:
+\begin{align}
+  r = w_{\mathrm{surv}} r_{\mathrm{surv}} + w_{\mathrm{nd}} r_{\mathrm{nd}} + w_{\mathrm{hv}} r_{\mathrm{hv}}.
+\end{align}
+In our implementation the weights are normalized to sum to one; if all are zero, we default to a balanced survival/ND reward.
+
+\subsection{Policies and practical details}
+We support several bandit policies (e.g., $\varepsilon$-greedy, UCB, EXP3, Thompson sampling) and two stabilization mechanisms:
+(i) a \emph{warmup} minimum-usage rule that forces each arm to be tried at least a given number of times, and (ii) an \emph{exploration floor} that mixes in a uniform arm draw with fixed probability.
+All random choices can be driven by an explicit policy RNG seed to support reproducibility.
+
+\paragraph{Credit timing.}
+Rewards are computed once per generation, after survivor selection has produced the next population.
+The policy is updated once per generation using the scalar reward, which matches the generation-level selection granularity.
+
+\begin{algorithm}[t]
+\caption{NSGA-II with generation-level AOS (sketch).}
+\label{alg:nsgaii_aos}
+\begin{algorithmic}[1]
+\For{$t = 1,2,\dots$}
+  \State Select arm $a_t$ using bandit policy (with optional warmup/floor).
+  \State Generate offspring using the variation pipeline of $a_t$.
+  \State Apply NSGA-II survivor selection to form next population.
+  \State Compute reward $r_t$ from survival/diversity signals (and optional HV proxy).
+  \State Update bandit policy with $(a_t, r_t)$.
+\EndFor
+\end{algorithmic}
+\end{algorithm}

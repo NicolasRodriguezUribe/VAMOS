@@ -1,0 +1,8 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We presented a bandit-based adaptive operator selection layer for NSGA-II that selects one variation pipeline per generation and updates an online policy from survival and diversity-oriented rewards.
+Across standard benchmark suites, AOS improves median normalized hypervolume on a subset of problems and substantially improves performance on DTLZ6, while incurring a median runtime overhead of \AOSRuntimeOverheadPct{}\%.
+
+Future work includes portfolio construction rules, more informative reward signals, non-stationary policies with explicit change detection, and cost-aware implementations that reduce controller overhead (e.g., by reusing selection statistics already computed by NSGA-II).
+

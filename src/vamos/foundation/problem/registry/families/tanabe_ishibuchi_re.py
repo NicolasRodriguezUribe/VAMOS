@@ -1,0 +1,198 @@
+from __future__ import annotations
+
+from ...real_world.tanabe_ishibuchi import (
+    RE21Problem,
+    RE22Problem,
+    RE23Problem,
+    RE24Problem,
+    RE25Problem,
+    RE31Problem,
+    RE32Problem,
+    RE33Problem,
+    RE34Problem,
+    RE35Problem,
+    RE36Problem,
+    RE37Problem,
+    RE41Problem,
+    RE42Problem,
+    RE61Problem,
+    RE91Problem,
+)
+from ..common import ProblemSpec
+
+
+SPECS: dict[str, ProblemSpec] = {}
+
+
+def get_specs() -> dict[str, ProblemSpec]:
+    if SPECS:
+        return SPECS
+
+    SPECS.update(
+        {
+            "re21": ProblemSpec(
+                key="re21",
+                label="RE21 (four bar truss)",
+                default_n_var=4,
+                default_n_obj=2,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE21 (RE2-4-1): four bar truss design surrogate.",
+                factory=lambda _n_var, _n_obj: RE21Problem(),
+            ),
+            "re22": ProblemSpec(
+                key="re22",
+                label="RE22 (RC beam)",
+                default_n_var=3,
+                default_n_obj=2,
+                allow_n_obj_override=False,
+                encoding="mixed",
+                description="Tanabe & Ishibuchi RE22 (RE2-3-2): reinforced concrete beam design (mixed variables).",
+                factory=lambda _n_var, _n_obj: RE22Problem(),
+            ),
+            "re23": ProblemSpec(
+                key="re23",
+                label="RE23 (pressure vessel)",
+                default_n_var=4,
+                default_n_obj=2,
+                allow_n_obj_override=False,
+                encoding="mixed",
+                description="Tanabe & Ishibuchi RE23 (RE2-4-3): pressure vessel design (mixed variables).",
+                factory=lambda _n_var, _n_obj: RE23Problem(),
+            ),
+            "re24": ProblemSpec(
+                key="re24",
+                label="RE24 (welded beam)",
+                default_n_var=4,
+                default_n_obj=2,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE24 (RE2-4-4): welded beam design surrogate.",
+                factory=lambda _n_var, _n_obj: RE24Problem(),
+            ),
+            "re25": ProblemSpec(
+                key="re25",
+                label="RE25 (speed reducer)",
+                default_n_var=3,
+                default_n_obj=2,
+                allow_n_obj_override=False,
+                encoding="mixed",
+                description="Tanabe & Ishibuchi RE25 (RE2-3-1): speed reducer design (mixed variables).",
+                factory=lambda _n_var, _n_obj: RE25Problem(),
+            ),
+            "re31": ProblemSpec(
+                key="re31",
+                label="RE31 (process design)",
+                default_n_var=3,
+                default_n_obj=3,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE31 (RE3-3-1): process design surrogate with constraint-violation objective.",
+                factory=lambda _n_var, _n_obj: RE31Problem(),
+            ),
+            "re32": ProblemSpec(
+                key="re32",
+                label="RE32 (gear train)",
+                default_n_var=4,
+                default_n_obj=3,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE32 (RE3-4-1): gear train design surrogate with constraint-violation objective.",
+                factory=lambda _n_var, _n_obj: RE32Problem(),
+            ),
+            "re33": ProblemSpec(
+                key="re33",
+                label="RE33 (mechanical design)",
+                default_n_var=4,
+                default_n_obj=3,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE33 (RE3-4-2): mechanical design surrogate with constraint-violation objective.",
+                factory=lambda _n_var, _n_obj: RE33Problem(),
+            ),
+            "re34": ProblemSpec(
+                key="re34",
+                label="RE34 (gear box)",
+                default_n_var=5,
+                default_n_obj=3,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE34 (RE3-5-1): gear box design surrogate with constraint-violation objective.",
+                factory=lambda _n_var, _n_obj: RE34Problem(),
+            ),
+            "re35": ProblemSpec(
+                key="re35",
+                label="RE35 (spring design)",
+                default_n_var=7,
+                default_n_obj=3,
+                allow_n_obj_override=False,
+                encoding="mixed",
+                description="Tanabe & Ishibuchi RE35 (RE3-7-1): spring design surrogate (mixed variables).",
+                factory=lambda _n_var, _n_obj: RE35Problem(),
+            ),
+            "re36": ProblemSpec(
+                key="re36",
+                label="RE36 (integer design)",
+                default_n_var=4,
+                default_n_obj=3,
+                allow_n_obj_override=False,
+                encoding="integer",
+                description="Tanabe & Ishibuchi RE36 (RE3-4-3): integer-variable design surrogate with constraint-violation objective.",
+                factory=lambda _n_var, _n_obj: RE36Problem(),
+            ),
+            "re37": ProblemSpec(
+                key="re37",
+                label="RE37 (rocket injector)",
+                default_n_var=4,
+                default_n_obj=3,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE37 (RE3-4-4): liquid-rocket injector surrogate.",
+                factory=lambda _n_var, _n_obj: RE37Problem(),
+            ),
+            "re41": ProblemSpec(
+                key="re41",
+                label="RE41 (car side impact)",
+                default_n_var=7,
+                default_n_obj=4,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE41 (RE4-7-1): car side impact design surrogate.",
+                factory=lambda _n_var, _n_obj: RE41Problem(),
+            ),
+            "re42": ProblemSpec(
+                key="re42",
+                label="RE42 (supply chain)",
+                default_n_var=6,
+                default_n_obj=4,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE42 (RE4-6-1): supply chain design surrogate with constraint-violation objective.",
+                factory=lambda _n_var, _n_obj: RE42Problem(),
+            ),
+            "re61": ProblemSpec(
+                key="re61",
+                label="RE61 (building design)",
+                default_n_var=3,
+                default_n_obj=6,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE61 (RE6-3-1): multi-criteria building design surrogate.",
+                factory=lambda _n_var, _n_obj: RE61Problem(),
+            ),
+            "re91": ProblemSpec(
+                key="re91",
+                label="RE91 (car cab)",
+                default_n_var=7,
+                default_n_obj=9,
+                allow_n_obj_override=False,
+                encoding="continuous",
+                description="Tanabe & Ishibuchi RE91 (RE9-7-1): car cab design surrogate (deterministic by default).",
+                factory=lambda _n_var, _n_obj: RE91Problem(stochastic=False),
+            ),
+        }
+    )
+    return SPECS
+
+
+__all__ = ["SPECS", "get_specs"]

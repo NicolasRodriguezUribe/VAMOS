@@ -1,0 +1,41 @@
+\section{Experimental setup}
+\label{sec:experiments}
+
+\subsection{Benchmarks and budget}
+We use standard multiobjective benchmark families: ZDT~\cite{zitzler2000zdt}, DTLZ~\cite{deb2002dtlz}, and WFG~\cite{huband2006wfg}.
+The suite contains 21 problems (ZDT1--4,6; DTLZ1--7; WFG1--9).
+Each run is terminated after a fixed evaluation budget of 50{,}000 function evaluations, using \AOSNSeeds independent seeds per problem.
+
+\subsection{Baseline and AOS configuration}
+The baseline is NSGA-II with a fixed SBX + polynomial mutation pipeline (commonly used default settings):
+SBX crossover probability 1.0 with distribution index $\eta_c=20$, and polynomial mutation probability $1/n_{\mathrm{var}}$ with $\eta_m=20$.
+The AOS variant enables a portfolio of five crossover+mutation arms (Appendix, Table~\ref{tab:portfolio}) and selects one arm per generation using an $\varepsilon$-greedy policy with $\varepsilon=0.05$.
+Rewards use a weighted combination of survival rate, non-dominated insertion rate, and a bounded hypervolume proxy with weights $(0.4,0.4,0.2)$.
+
+\subsection{Metrics}
+We report normalized hypervolume (higher is better) and wall-clock runtime (lower is better).
+Hypervolume is a standard indicator for multiobjective performance~\cite{zitzler2003perf}.
+To make results comparable across problems, we normalize hypervolume using a fixed reference front per benchmark problem and a reference point set to the front-wise maximum plus a small $\epsilon$ margin.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Key experimental settings (baseline vs.\ AOS).}
+\label{tab:settings}
+\begin{tabular}{l|l}
+\toprule
+Setting & Value \\
+\midrule
+Algorithm & NSGA-II \\
+Population / offspring & 100 / 100 \\
+Budget & 50{,}000 evaluations \\
+Seeds & \AOSNSeeds per problem \\
+Problems & \AOSNProblems (ZDT/DTLZ/WFG) \\
+Baseline operators & SBX($p=1.0$, $\eta_c=20$) + PM($p=1/n_{\mathrm{var}}$, $\eta_m=20$) \\
+AOS policy & $\varepsilon$-greedy ($\varepsilon=0.05$), 1 arm per generation \\
+AOS reward & $0.4\,r_{\mathrm{surv}} + 0.4\,r_{\mathrm{nd}} + 0.2\,r_{\mathrm{hv}}$ \\
+Portfolio & 5 arms (Table~\ref{tab:portfolio}) \\
+\bottomrule
+\end{tabular}
+\end{table}
+

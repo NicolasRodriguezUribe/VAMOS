@@ -1,0 +1,19 @@
+\section{Background and related work}
+\label{sec:background}
+
+\subsection{NSGA-II}
+NSGA-II~\cite{deb2002nsgaii} maintains a population and iteratively generates offspring via variation operators.
+Survivor selection is based on non-dominated sorting and crowding distance, promoting both convergence and diversity.
+Although the selection mechanism is parameter-light, practical performance depends on the chosen crossover/mutation pipeline and its hyperparameters, which are often selected by convention or tuned per problem.
+
+\subsection{Adaptive operator selection as bandits}
+In the multi-armed bandit (MAB) setting, a learner repeatedly selects an arm and observes a reward, aiming to maximize cumulative reward by balancing exploration and exploitation.
+Common policies include $\varepsilon$-greedy, upper-confidence bounds (UCB)~\cite{auer2002ucb1}, adversarial methods such as EXP3~\cite{auer2002exp3}, and Bayesian approaches such as Thompson sampling~\cite{thompson1933ts}.
+Bandit-based AOS~\cite{dacosta2008aosdmab} maps each operator (or operator pipeline) to an arm and uses online rewards to guide selection.
+
+\subsection{Credit assignment and non-stationarity}
+In evolutionary search, operator utility is inherently non-stationary: exploration-heavy operators can be useful early, while exploitation and local refinement become important as the population converges.
+This raises two practical design questions.
+First, how should rewards be defined so they are informative across problems and across stages?
+Second, which policies handle non-stationarity without over-reacting to noise?
+Sliding-window variants of classical bandit policies (e.g., UCB) and Bayesian policies with limited-memory reward histories are common approaches.

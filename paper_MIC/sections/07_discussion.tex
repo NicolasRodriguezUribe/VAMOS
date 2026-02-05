@@ -1,0 +1,18 @@
+\section{Discussion}
+\label{sec:discussion}
+
+The results indicate that a simple generation-level AOS layer can yield meaningful gains on some problems (notably on DTLZ6), but also that ``AOS by default'' is not guaranteed to dominate a well-chosen fixed operator pipeline.
+This is consistent with the non-stationary and problem-dependent nature of operator utility.
+
+\paragraph{Why can AOS underperform?}
+First, bandit policies can lock into an initially lucky arm when exploration is low, preventing later-stage switches.
+Second, a portfolio that contains aggressive or highly disruptive operators can incur large opportunity costs when selected at the wrong stage.
+Third, reward definitions that are only weakly correlated with final hypervolume (e.g., survival credit without diversity) can reinforce short-term improvements that do not translate to better final fronts.
+
+\paragraph{Practical improvements.}
+Several modifications can improve robustness without changing the overall framework:
+(i) enforce a small warmup (\texttt{min\_usage}$>0$) to prevent early lock-in,
+(ii) adopt non-stationary policies (e.g., sliding-window UCB) to react to stage changes,
+(iii) use a ``safer'' portfolio composed of parameter variations of a strong baseline (e.g., SBX+PM with multiple $\eta$ values) rather than mixing in highly disruptive mutations, and
+(iv) tune reward weights to emphasize non-dominated insertion when diversity is critical.
+

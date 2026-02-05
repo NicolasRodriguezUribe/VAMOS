@@ -144,9 +144,7 @@ def _run_config(
         import inspect
 
         sig = inspect.signature(run_fn)
-        if "checkpoint" in sig.parameters or any(
-            param.kind == inspect.Parameter.VAR_KEYWORD for param in sig.parameters.values()
-        ):
+        if "checkpoint" in sig.parameters or any(param.kind == inspect.Parameter.VAR_KEYWORD for param in sig.parameters.values()):
             kwargs["checkpoint"] = cfg.checkpoint
         else:
             raise TypeError(f"Algorithm '{algorithm_name}' does not support checkpoints.")

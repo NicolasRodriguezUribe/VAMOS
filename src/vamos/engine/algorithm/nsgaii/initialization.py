@@ -144,16 +144,19 @@ def setup_archive(
     if not archive_size:
         return None, None, None, False
 
+    archive_X: np.ndarray | None
+    archive_F: np.ndarray | None
+
     manager: CrowdingDistanceArchive | UnboundedArchive
     if unbounded:
         manager = UnboundedArchive(n_var=n_var, n_obj=n_obj, dtype=dtype)
         archive_X, archive_F = manager.update(X, F)
         return archive_X, archive_F, manager, False
 
-    if hasattr(kernel, "update_archive"):
+    try:
         archive_X, archive_F = kernel.update_archive(None, None, X, F, archive_size)
         return archive_X, archive_F, None, True
-    else:
+    except NotImplementedError:
         manager = CrowdingDistanceArchive(archive_size, n_var, n_obj, dtype)
         archive_X, archive_F = manager.update(X, F)
         return archive_X, archive_F, manager, False

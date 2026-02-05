@@ -1,0 +1,18 @@
+\section{Threats to validity}
+\label{sec:threats}
+
+\paragraph{Portfolio dependence.}
+Our conclusions depend on the chosen operator portfolio.
+A different set of arms (or different parameterizations) could shift both the magnitude and direction of the observed effects.
+
+\paragraph{Reward design.}
+We use a simple reward based on survival and non-dominated insertion, with an optional hypervolume proxy.
+More expressive credit assignment schemes (e.g., multi-step returns, per-offspring credit, or diversity-aware shaping) may produce different learning dynamics.
+
+\paragraph{Benchmark scope.}
+We evaluate continuous benchmark suites with standard dimensionalities.
+Results may not transfer directly to constrained problems, discrete encodings, or real-world objectives with expensive evaluations where overhead amortization differs.
+
+\paragraph{Runtime measurement.}
+Runtime overhead is measured in a vectorized engine, making controller overhead more visible.
+In other settings, the relative overhead of AOS may be smaller.

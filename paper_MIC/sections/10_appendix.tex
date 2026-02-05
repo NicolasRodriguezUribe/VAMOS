@@ -1,0 +1,27 @@
+\section{Additional details}
+\label{sec:appendix}
+
+\subsection{Operator portfolio}
+\begin{table}[t]
+\centering
+\scriptsize
+\caption{Operator portfolio used by AOS. Mutation probability is set to $1/n_{\mathrm{var}}$.}
+\label{tab:portfolio}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l|l|l}
+\toprule
+\textbf{Arm} & \textbf{Crossover} & \textbf{Mutation} \\
+\midrule
+1 & SBX ($p{=}1.0$, $\eta{=}20$) & Polynomial ($p{=}1/n_{\mathrm{var}}$, $\eta{=}20$) \\
+2 & PCX ($p{=}1.0$, $\sigma_\eta{=}0.1$, $\sigma_\zeta{=}0.1$) & Polynomial ($p{=}1/n_{\mathrm{var}}$, $\eta{=}20$) \\
+3 & UNDX ($p{=}1.0$, $\zeta{=}0.5$, $\eta{=}0.35$) & Gaussian ($p{=}1/n_{\mathrm{var}}$, $\sigma{=}0.1$) \\
+4 & Simplex ($p{=}1.0$, $\epsilon{=}0.5$) & Uniform reset ($p{=}1/n_{\mathrm{var}}$) \\
+5 & BLX-$\alpha$ ($p{=}0.9$, $\alpha{=}0.5$) & Cauchy ($p{=}1/n_{\mathrm{var}}$, $\gamma{=}0.1$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Per-problem tables}
+\input{tables/ablation_hv_per_problem}
+\input{tables/ablation_runtime_per_problem}
+

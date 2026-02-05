@@ -102,11 +102,7 @@ def test_optimize_resolves_pop_size_consistently() -> None:
     assert "resolved_config" in direct_defaults
     assert "resolved_config" in cfg_defaults
     assert direct_defaults["resolved_config"]["pop_size"] == cfg_defaults["resolved_config"]["pop_size"] == pop_size
-    assert (
-        direct_defaults["resolved_config"]["max_evaluations"]
-        == cfg_defaults["resolved_config"]["max_evaluations"]
-        == max_evaluations
-    )
+    assert direct_defaults["resolved_config"]["max_evaluations"] == cfg_defaults["resolved_config"]["max_evaluations"] == max_evaluations
 
 
 def test_optimize_accepts_max_evaluations() -> None:

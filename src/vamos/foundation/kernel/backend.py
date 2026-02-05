@@ -128,6 +128,22 @@ class KernelBackend(ABC):
 
     # -------- Quality indicator hooks --------
 
+    def update_archive(
+        self,
+        archive_X: np.ndarray | None,
+        archive_F: np.ndarray | None,
+        population_X: np.ndarray,
+        population_F: np.ndarray,
+        archive_size: int,
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
+        """
+        Optional external archive update implementation.
+
+        Backends that implement this method can be used by algorithms to maintain a
+        non-dominated archive inside the kernel for performance.
+        """
+        raise NotImplementedError(f"Backend '{self.__class__.__name__}' does not support update_archive.")
+
     def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
         """
         Optional hypervolume implementation. Backends that override this method

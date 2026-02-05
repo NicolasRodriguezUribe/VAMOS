@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 from collections.abc import Callable, Mapping
+from typing import Any
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from vamos.experiment.unified import optimize
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
 from vamos.engine.tuning.racing.config_space import AlgorithmConfigSpace
 from vamos.engine.tuning.racing.param_space import ParamSpace
+from vamos.engine.tuning.racing.eval_types import EvalFn
 
 from vamos.engine.tuning import (
     RacingTuner,
@@ -182,7 +184,7 @@ def make_evaluator(
     fixed_pop_size: int,
     ref_point_str: str | None,
     warm_start: bool,
-) -> Callable[[Mapping[str, object], EvalContext], float]:
+) -> EvalFn:
     """
     Creates an evaluation function that runs the algorithm and returns the Hypervolume.
     """
@@ -204,17 +206,21 @@ def make_evaluator(
         # Default fallback
         ref_point = [1.1] * n_obj
 
-    def _score(result, ctx: EvalContext) -> float:
+    def _score(result: Any, ctx: EvalContext) -> float:
         F = getattr(result, "F", None)
         if F is None or len(F) == 0:
             return 0.0
         hv = compute_hypervolume(F, ref_point)
         return float(hv)
 
-    def _run_algorithm(config_dict: Mapping[str, object], ctx: EvalContext, checkpoint: object | None):
+    def _run_algorithm(
+        config_dict: Mapping[str, object],
+        ctx: EvalContext,
+        checkpoint: object | None,
+    ) -> tuple[object, object | None]:
         try:
             # 1. Prepare Configuration
-            start_config: dict[str, object] = dict(config_dict)
+            start_config: dict[str, Any] = dict(config_dict)
             if algorithm_name == "rvea":
                 start_config["n_obj"] = n_obj
             elif "pop_size" not in start_config:
@@ -248,7 +254,7 @@ def make_evaluator(
     if warm_start:
         return WarmStartEvaluator(run_fn=_run_algorithm, score_fn=_score)
 
-    def eval_fn(config_dict: Mapping[str, object], ctx: EvalContext) -> float:
+    def eval_fn(config_dict: dict[str, Any], ctx: EvalContext) -> float:
         result, _ = _run_algorithm(config_dict, ctx, None)
         return _score(result, ctx)
 

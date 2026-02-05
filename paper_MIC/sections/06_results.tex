@@ -1,0 +1,56 @@
+\section{Results}
+\label{sec:results}
+
+We first summarize solution quality and runtime at the family level (ZDT/\allowbreak DTLZ/\allowbreak WFG), then inspect per-problem deltas, convergence behavior, and operator usage.
+Unless stated otherwise, we report medians over seeds.
+
+\subsection{Solution quality}
+Table~\ref{tab:hv_family} shows that AOS provides the largest benefits on the DTLZ family, while changes on ZDT are small and WFG shows a slight degradation on average.
+Across all problems, AOS improves per-problem median hypervolume on \AOSWins{} out of \AOSNProblems{} problems, with the largest gain on \texttt{\AOSBestProblem{}} ($\Delta$=\AOSBestDelta{}) and the largest loss on \texttt{\AOSWorstProblem{}} ($\Delta$=\AOSWorstDelta{}).
+
+\input{tables/ablation_hv_family}
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/hv_delta_by_problem.pdf}{
+  \includegraphics[width=\linewidth]{figures/hv_delta_by_problem.pdf}
+}{
+  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/hv\_delta\_by\_problem.pdf (run the asset script).\vspace{2mm}}}
+}
+\caption{Per-problem median hypervolume change (AOS minus baseline), sorted by $\Delta$.}
+\label{fig:hv_delta}
+\end{figure}
+
+\subsection{Runtime}
+Table~\ref{tab:runtime_family} reports median runtime by family.
+The median runtime overhead (overall) is \AOSRuntimeOverheadPct{}\%, which reflects extra policy updates, reward computation, and logging-related bookkeeping.
+In settings where objective evaluations are expensive, this overhead is expected to be less pronounced in relative terms.
+
+\input{tables/ablation_runtime_family}
+
+\subsection{Convergence and operator usage}
+Figure~\ref{fig:anytime} shows convergence in normalized hypervolume for representative problems.
+Figure~\ref{fig:usage} summarizes operator selection fractions by stage for the trace-exported problems.
+We observe that on some problems the policy quickly locks into a single arm (e.g., SBX+PM), while on others it maintains diversity in operator usage (e.g., mixing SBX+PM with UNDX+Gaussian).
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/anytime_hv_selected.pdf}{
+  \includegraphics[width=\linewidth]{figures/anytime_hv_selected.pdf}
+}{
+  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/anytime\_hv\_selected.pdf (run the asset script).\vspace{2mm}}}
+}
+\caption{Mean$\pm$std normalized hypervolume vs.\ evaluations for selected problems (baseline vs.\ AOS).}
+\label{fig:anytime}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/aos_operator_usage.pdf}{
+  \includegraphics[width=\linewidth]{figures/aos_operator_usage.pdf}
+}{
+  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/aos\_operator\_usage.pdf (run the asset script).\vspace{2mm}}}
+}
+\caption{Mean operator selection fractions by search stage for trace-exported problems (AOS variant).}
+\label{fig:usage}
+\end{figure}
