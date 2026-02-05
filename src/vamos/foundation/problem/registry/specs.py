@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .common import ProblemFactory, ProblemSpec
-from .families import cec, dtlz, lz09, misc, real_world, wfg, zdt
+from .families import cec, dtlz, lz09, misc, real_world, tanabe_ishibuchi_re, wfg, zapotecas_rwa, zdt
 
 _PROBLEM_SPECS: dict[str, ProblemSpec] | None = None
 
@@ -21,6 +21,8 @@ def _build_problem_specs() -> dict[str, ProblemSpec]:
         wfg.get_specs(),
         misc.get_specs(),
         real_world.get_specs(),
+        tanabe_ishibuchi_re.get_specs(),
+        zapotecas_rwa.get_specs(),
     ):
         specs.update(family)
     return specs

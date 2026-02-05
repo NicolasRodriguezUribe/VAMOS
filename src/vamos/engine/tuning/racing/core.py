@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
+from .eval_types import EvalFn
 from .scenario import Scenario
 from .tuning_task import TuningTask, Instance, EvalContext
 from .random_search_tuner import TrialResult
@@ -25,8 +26,11 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def _eval_worker(eval_fn: Callable[[dict[str, Any], EvalContext], float], config: dict[str, Any], ctx: EvalContext) -> float:
-    return float(eval_fn(config, ctx))
+def _eval_worker(eval_fn: EvalFn, config: dict[str, Any], ctx: EvalContext) -> float:
+    result = eval_fn(config, ctx)
+    if isinstance(result, tuple):
+        return float(result[0])
+    return float(result)
 
 
 class RacingTuner:
@@ -116,7 +120,7 @@ class RacingTuner:
 
     def run(
         self,
-        eval_fn: Callable[[dict[str, Any], EvalContext], float],
+        eval_fn: EvalFn,
         verbose: bool | None = None,
     ) -> tuple[dict[str, Any], list[TrialResult]]:
         # Dispatch to multi-fidelity if enabled
@@ -225,7 +229,7 @@ class RacingTuner:
         configs: list[ConfigState],
         inst_idx: int,
         seed_idx: int,
-        eval_fn: Callable[[dict[str, Any], EvalContext], float],
+        eval_fn: EvalFn,
     ) -> None:
         instance = self.instances[inst_idx]
         seed = self.seeds[seed_idx]
@@ -247,7 +251,8 @@ class RacingTuner:
         if self.scenario.n_jobs == 1:
             # Sequential execution (avoid overhead)
             for i, (cfg, ctx) in enumerate(tasks):
-                score = float(eval_fn(cfg, ctx))
+                result = eval_fn(cfg, ctx)
+                score = float(result[0]) if isinstance(result, tuple) else float(result)
                 configs[indices[i]].scores.append(score)
         else:
             # Parallel execution with joblib

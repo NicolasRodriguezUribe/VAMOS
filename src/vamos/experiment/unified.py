@@ -276,18 +276,14 @@ def _run_single(
     term_max_evaluations = _extract_max_evaluations(termination) if termination is not None else None
     if termination is not None and max_evaluations is not None:
         if term_max_evaluations is None:
-            raise ValueError(
-                "max_evaluations can only be combined with termination=('max_evaluations', max_evaluations)."
-            )
+            raise ValueError("max_evaluations can only be combined with termination=('max_evaluations', max_evaluations).")
         if term_max_evaluations != max_evaluations:
             raise ValueError(f"max_evaluations={max_evaluations} conflicts with termination={termination}.")
     if termination is not None:
         effective_max_evaluations = term_max_evaluations
         effective_termination = termination
     else:
-        effective_max_evaluations = (
-            max_evaluations if max_evaluations is not None else _compute_max_evaluations(n_var, n_obj)
-        )
+        effective_max_evaluations = max_evaluations if max_evaluations is not None else _compute_max_evaluations(n_var, n_obj)
         effective_termination = ("max_evaluations", effective_max_evaluations)
     effective_engine = resolve_engine(engine, algorithm=algorithm)
 

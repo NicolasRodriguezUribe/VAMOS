@@ -1,0 +1,30 @@
+\section{Introduction}
+\label{sec:intro}
+
+Multiobjective evolutionary algorithms (MOEAs) are a default choice for black-box optimization problems with conflicting objectives, including engineering design and automated decision support.
+Most MOEAs rely on a small number of variation operators (crossover and mutation) to balance exploration and exploitation.
+However, operator choice is a major source of performance variability: operators that work well on one problem can stall on another, and the most effective operator can change as the population approaches the Pareto front.
+This motivates \emph{adaptive operator selection} (AOS): selecting operators online based on feedback from the ongoing search, rather than relying on a single hand-tuned pipeline.
+
+Most AOS mechanisms can be seen as two coupled components: (i) credit assignment (how to score an operator based on recent offspring) and (ii) an adaptation rule (how to turn scores into future operator-selection decisions).
+Following the bandit view of AOS~\cite{dacosta2008aosdmab}, we model each candidate variation pipeline as an arm in a multi-armed bandit, and update an online policy from per-generation rewards.
+Compared to offline tuning, this approach aims to improve robustness across problems and reduce the need for manual operator configuration.
+
+This paper focuses on NSGA-II~\cite{deb2002nsgaii}, a widely used MOEA whose performance depends strongly on variation settings.
+We implement a generation-level AOS layer for NSGA-II in a vectorized optimization framework and evaluate it on standard benchmark suites.
+Our evaluation highlights both the potential benefits of online adaptation (substantial gains on some problems) and the practical costs (runtime overhead from bookkeeping and additional computations).
+
+\paragraph{Contributions.}
+This paper makes four contributions:
+\begin{itemize}
+  \item A simple, reproducible AOS interface for NSGA-II that selects exactly one variation pipeline per generation.
+  \item A reward design aligned with NSGA-II survivor selection, combining offspring survival and non-dominated insertion rates, with an optional bounded hypervolume-improvement proxy.
+  \item An analysis workflow that logs per-generation operator choices and rewards, enabling inspection of \emph{when} and \emph{how} the policy switches operators during search.
+  \item An empirical evaluation on classic MOEA benchmark suites~\cite{zitzler2000zdt,deb2002dtlz,huband2006wfg} (ZDT/\allowbreak DTLZ/\allowbreak WFG) showing that AOS can improve median normalized hypervolume on difficult instances, while incurring measurable runtime overhead.
+\end{itemize}
+
+\paragraph{Organization.}
+Section~\ref{sec:background} reviews NSGA-II and the bandit perspective on AOS.
+Section~\ref{sec:method} details the portfolio, reward signals, and policies.
+Section~\ref{sec:implementation} summarizes implementation and reproducibility details.
+Sections~\ref{sec:experiments}--\ref{sec:results} describe the experimental protocol and results, followed by discussion and threats to validity.

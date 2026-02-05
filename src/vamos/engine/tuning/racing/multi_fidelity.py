@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 from typing import Any, TYPE_CHECKING
-from collections.abc import Callable
 
 from joblib import Parallel, delayed  # type: ignore[import-untyped]
 
+from .eval_types import EvalFn, EvalResult
 from .state import ConfigState
 from .tuning_task import EvalContext
 from .random_search_tuner import TrialResult
@@ -19,18 +19,16 @@ def _logger() -> logging.Logger:
 
 
 def _eval_worker_warmstart(
-    eval_fn: Callable[[dict[str, Any], EvalContext], Any],
+    eval_fn: EvalFn,
     config: dict[str, Any],
     ctx: EvalContext,
-    warm_start: bool,
-) -> Any:
-    result = eval_fn(config, ctx)
-    return result
+) -> EvalResult:
+    return eval_fn(config, ctx)
 
 
 def _run_multi_fidelity(
     tuner: RacingTuner,
-    eval_fn: Callable[[dict[str, Any], EvalContext], float],
+    eval_fn: EvalFn,
     verbose: bool | None = None,
 ) -> tuple[dict[str, Any], list[TrialResult]]:
     verbose_flag = tuner.scenario.verbose if verbose is None else verbose
@@ -145,7 +143,7 @@ def _run_stage_with_budget(
     configs: list[ConfigState],
     inst_idx: int,
     seed_idx: int,
-    eval_fn: Callable[[dict[str, Any], EvalContext], float],
+    eval_fn: EvalFn,
     budget: int,
     fidelity_level: int = 0,
 ) -> None:
@@ -196,9 +194,7 @@ def _run_stage_with_budget(
             configs[idx].last_budget = budget
             configs[idx].last_budget_map[block_key] = budget
     else:
-        results = Parallel(n_jobs=tuner.scenario.n_jobs)(
-            delayed(_eval_worker_warmstart)(eval_fn, cfg, ctx, warm_start) for cfg, ctx, _ in tasks
-        )
+        results = Parallel(n_jobs=tuner.scenario.n_jobs)(delayed(_eval_worker_warmstart)(eval_fn, cfg, ctx) for cfg, ctx, _ in tasks)
         for i, result in enumerate(results):
             idx = tasks[i][2]
             if warm_start and isinstance(result, tuple) and len(result) == 2:
