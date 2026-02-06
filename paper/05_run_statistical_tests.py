@@ -100,6 +100,28 @@ def wilcoxon_test(group1, group2):
         return float("nan"), float("nan")
 
 
+def vargha_delaney_a12(group1, group2) -> float:
+    """Vargha-Delaney A12 effect size (probability that group1 > group2).
+
+    A12 > 0.5 means group1 tends to be larger; A12 < 0.5 means group2 tends
+    to be larger.  Thresholds (Vargha & Delaney 2000): negligible < 0.56,
+    small < 0.64, medium < 0.71, large >= 0.71 (symmetric around 0.5).
+    """
+    g1 = np.asarray(group1, dtype=float)
+    g2 = np.asarray(group2, dtype=float)
+    m, n = len(g1), len(g2)
+    if m == 0 or n == 0:
+        return float("nan")
+    count = 0.0
+    for x in g1:
+        for y in g2:
+            if x > y:
+                count += 1.0
+            elif x == y:
+                count += 0.5
+    return count / (m * n)
+
+
 def holm_adjust(p_values: list[float]) -> list[float]:
     """Holm step-down adjustment (controls FWER); NaNs are preserved."""
     p = np.asarray(p_values, dtype=float)
@@ -162,6 +184,7 @@ def compare_frameworks(df, metric, fw1, fw2, *, higher_is_better: bool) -> pd.Da
             continue
 
         p_value, effect = wilcoxon_test(data1, data2)
+        a12 = vargha_delaney_a12(data1, data2)
 
         m1 = float(np.median(data1))
         m2 = float(np.median(data2))
@@ -179,6 +202,7 @@ def compare_frameworks(df, metric, fw1, fw2, *, higher_is_better: bool) -> pd.Da
                 "fw2_median": m2,
                 "p_value_raw": p_value,
                 "effect_size": effect,
+                "a12": a12,
                 "winner": winner,
             }
         )
@@ -286,9 +310,9 @@ def generate_latex_stats_table(
         r"\centering",
         f"\\caption{{{caption}}}",
         f"\\label{{{label}}}",
-        r"\begin{tabular}{l|rr|r|l}",
+        r"\begin{tabular}{l|rr|r|r|l}",
         r"\toprule",
-        rf"\textbf{{Problem}} & \textbf{{{fw1}}} & \textbf{{{fw2}}} & \textbf{{p-value}} & \textbf{{Sig.}} \\",
+        rf"\textbf{{Problem}} & \textbf{{{fw1}}} & \textbf{{{fw2}}} & \textbf{{p-value}} & \textbf{{$\hat{{A}}_{{12}}$}} & \textbf{{Sig.}} \\",
         r"\midrule",
     ]
 
@@ -297,6 +321,7 @@ def generate_latex_stats_table(
         v1 = float(row["fw1_median"])
         v2 = float(row["fw2_median"])
         p = row.get("p_value_adj", row.get("p_value_raw", float("nan")))
+        a12 = row.get("a12", float("nan"))
         sig = r"$\checkmark$" if row["significant"] else ""
 
         # Bold the winner (minimize runtime, maximize quality metrics such as HV).
@@ -312,7 +337,8 @@ def generate_latex_stats_table(
             p_str = "nan"
         else:
             p_str = "<0.0001" if p < 0.0001 else f"{p:.3f}"
-        lines.append(f"{problem} & {v1_str} & {v2_str} & {p_str} & {sig} \\\\")
+        a12_str = "--" if not np.isfinite(a12) else f"{a12:.2f}"
+        lines.append(f"{problem} & {v1_str} & {v2_str} & {p_str} & {a12_str} & {sig} \\\\")
 
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     return "\n".join(lines)

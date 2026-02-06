@@ -14,31 +14,31 @@
 \centering
 \caption{MOEA/D. Normalized hypervolume comparison with Wilcoxon signed-rank test results (Holm-corrected).}
 \label{tab:stats_hypervolume_moead}
-\begin{tabular}{l|rr|r|l}
+\begin{tabular}{l|rr|r|r|l}
 \toprule
-\textbf{Problem} & \textbf{VAMOS (numba)} & \textbf{pymoo} & \textbf{p-value} & \textbf{Sig.} \\
+\textbf{Problem} & \textbf{VAMOS (numba)} & \textbf{pymoo} & \textbf{p-value} & \textbf{$\hat{A}_{12}$} & \textbf{Sig.} \\
 \midrule
-zdt1 & \textbf{0.976} & 0.957 & <0.0001 & $\checkmark$ \\
-zdt2 & \textbf{0.962} & 0.937 & <0.0001 & $\checkmark$ \\
-zdt3 & \textbf{0.977} & 0.954 & <0.0001 & $\checkmark$ \\
-zdt4 & \textbf{0.987} & 0.987 & 0.776 &  \\
-zdt6 & \textbf{0.988} & 0.947 & <0.0001 & $\checkmark$ \\
-dtlz1 & \textbf{0.930} & 0.926 & 1.000 &  \\
-dtlz2 & \textbf{0.789} & 0.730 & <0.0001 & $\checkmark$ \\
-dtlz3 & 0.000 & \textbf{0.000} & 0.052 &  \\
-dtlz4 & \textbf{0.765} & 0.752 & 1.000 &  \\
-dtlz5 & \textbf{0.877} & 0.877 & 1.000 &  \\
-dtlz6 & \textbf{0.882} & 0.875 & <0.0001 & $\checkmark$ \\
-dtlz7 & \textbf{0.783} & 0.755 & 0.052 &  \\
-wfg1 & \textbf{0.217} & 0.211 & <0.0001 & $\checkmark$ \\
-wfg2 & \textbf{0.870} & 0.852 & 1.000 &  \\
-wfg3 & \textbf{0.956} & 0.943 & <0.0001 & $\checkmark$ \\
-wfg4 & \textbf{0.759} & 0.744 & 0.024 & $\checkmark$ \\
-wfg5 & \textbf{0.810} & 0.792 & <0.0001 & $\checkmark$ \\
-wfg6 & \textbf{0.703} & 0.694 & 0.052 &  \\
-wfg7 & \textbf{0.891} & 0.858 & <0.0001 & $\checkmark$ \\
-wfg8 & \textbf{0.662} & 0.657 & 1.000 &  \\
-wfg9 & 0.712 & \textbf{0.838} & 0.022 & $\checkmark$ \\
+zdt1 & \textbf{0.976} & 0.957 & <0.0001 & 0.97 & $\checkmark$ \\
+zdt2 & \textbf{0.962} & 0.937 & <0.0001 & 0.89 & $\checkmark$ \\
+zdt3 & \textbf{0.977} & 0.954 & <0.0001 & 0.97 & $\checkmark$ \\
+zdt4 & \textbf{0.987} & 0.987 & 0.776 & 0.62 &  \\
+zdt6 & \textbf{0.988} & 0.947 & <0.0001 & 1.00 & $\checkmark$ \\
+dtlz1 & \textbf{0.930} & 0.926 & 1.000 & 0.60 &  \\
+dtlz2 & \textbf{0.789} & 0.730 & <0.0001 & 1.00 & $\checkmark$ \\
+dtlz3 & 0.000 & \textbf{0.000} & 0.052 & 0.64 &  \\
+dtlz4 & \textbf{0.765} & 0.752 & 1.000 & 0.52 &  \\
+dtlz5 & \textbf{0.877} & 0.877 & 1.000 & 0.49 &  \\
+dtlz6 & \textbf{0.882} & 0.875 & <0.0001 & 0.93 & $\checkmark$ \\
+dtlz7 & \textbf{0.783} & 0.755 & 0.052 & 0.77 &  \\
+wfg1 & \textbf{0.217} & 0.211 & <0.0001 & 0.95 & $\checkmark$ \\
+wfg2 & \textbf{0.870} & 0.852 & 1.000 & 0.51 &  \\
+wfg3 & \textbf{0.956} & 0.943 & <0.0001 & 0.91 & $\checkmark$ \\
+wfg4 & \textbf{0.759} & 0.744 & 0.024 & 0.78 & $\checkmark$ \\
+wfg5 & \textbf{0.810} & 0.792 & <0.0001 & 0.90 & $\checkmark$ \\
+wfg6 & \textbf{0.703} & 0.694 & 0.052 & 0.79 &  \\
+wfg7 & \textbf{0.891} & 0.858 & <0.0001 & 0.97 & $\checkmark$ \\
+wfg8 & \textbf{0.662} & 0.657 & 1.000 & 0.59 &  \\
+wfg9 & 0.712 & \textbf{0.838} & 0.022 & 0.31 & $\checkmark$ \\
 \bottomrule
 \end{tabular}
 \end{table}

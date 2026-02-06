@@ -84,7 +84,7 @@ ETSI Inform\'{a}tica, Campus de Teatinos, 29071 (M\'{a}laga), Spain}
 
 \begin{abstract}
 \sloppy
-Python has become the de facto platform for empirical studies in multi-objective optimization, yet most multi-objective evolutionary algorithm (MOEA) libraries remain dominated by object-oriented designs that incur substantial interpreter overhead in the inner loop. We introduce \VAMOS{} (Vectorized Architecture for Multiobjective Optimization Studies), a research-oriented framework that represents populations as contiguous numerical arrays and factors algorithmic logic from numerical kernels. \VAMOS{} provides interchangeable compute backends (NumPy, Numba JIT, and optional C and JAX accelerators), a unified configuration API, and nine MOEAs (NSGA-II and NSGA-III, MOEA/\allowbreak D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, and RVEA). We release a reproducible cross-framework benchmarking pipeline that aligns problem definitions and operator semantics across common Python frameworks and reports wall-clock runtime and \emph{normalized} hypervolume computed with fixed reference Pareto fronts. Across the ZDT, DTLZ, and WFG suites, \VAMOS{} achieves up to an order-of-magnitude reduction in runtime relative to established libraries while maintaining competitive solution quality.
+Python has become the de facto platform for empirical studies in multi-objective optimization, yet most multi-objective evolutionary algorithm (MOEA) libraries remain dominated by object-oriented designs that incur substantial interpreter overhead in the inner loop. We introduce \VAMOS{} (Vectorized Architecture for Multiobjective Optimization Studies), a research-oriented framework that represents populations as contiguous numerical arrays and separates algorithmic logic from numerical kernels. \VAMOS{} provides interchangeable compute backends (NumPy, Numba JIT, and optional C and JAX accelerators), a unified configuration API, and nine MOEAs (NSGA-II and NSGA-III, MOEA/\allowbreak D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, and RVEA). We release a reproducible cross-framework benchmarking pipeline that aligns problem definitions and operator semantics across common Python frameworks and reports wall-clock runtime and \emph{normalized} hypervolume computed with fixed reference Pareto fronts. Across the ZDT, DTLZ, and WFG suites, \VAMOS{} achieves up to an order-of-magnitude reduction in runtime relative to object-centric libraries (jMetalPy, DEAP, Platypus), with more moderate but consistent gains over pymoo, while maintaining statistically equivalent solution quality.
 \end{abstract}
 
 \begin{highlights}
@@ -110,9 +110,7 @@ Multi-objective optimization problems (MOPs) arise whenever trade-offs exist bet
 
 In Python, practical benchmarking of MOEAs is often constrained by two friction points. First, the ecosystem is fragmented: libraries differ in problem APIs, operator configuration, result formats, and runtime instrumentation~\cite{blank2020pymoo,benitez2019jmetalpy,fortin2012deap}. Second, many implementations rely on per-solution objects and Python-level loops inside selection, variation, and survival, making the overhead of the interpreter comparable to (or larger than) the cost of typical benchmark functions. This limitation becomes acute for large-scale studies with many seeds, large populations, and repeated indicator computation and reporting.
 
-\VAMOS{} is designed to address both issues with a single guiding principle: \emph{keep algorithm state in dense arrays and push hot loops into vectorized kernels}. The framework also targets reproducibility in experimental methodology: we provide a benchmark runner that standardizes problem dimensions and operators across multiple Python frameworks, and a hypervolume protocol with fixed reference Pareto fronts so that solution-quality metrics are comparable across runs and frameworks.
-
-The contributions of this work are:
+\VAMOS{} is designed to address both issues with a single guiding principle: \emph{keep algorithm state in dense arrays and push hot loops into vectorized kernels}. The framework also targets reproducibility in experimental methodology: we provide a benchmark runner that standardizes problem dimensions and operators across multiple Python frameworks, and a hypervolume protocol with fixed reference Pareto fronts so that solution-quality metrics are comparable across runs and frameworks. The contributions of this work are:
 \begin{enumerate}
   \item \textbf{Vectorized MOEA core}: a unified, array-based internal representation with pluggable compute kernels (NumPy/Numba/C/JAX) for selection, variation, and survival.
   \item \textbf{Modular algorithm suite}: nine MOEAs implemented on top of shared components (termination, archives, evaluation backends, and metrics).
@@ -120,14 +118,17 @@ The contributions of this work are:
   \item \textbf{Comprehensive empirical comparison}: backend-level and cross-framework runtime comparisons, paired with descriptive normalized-hypervolume summaries under a fixed protocol.
 \end{enumerate}
 
-The remainder of the paper reviews related work, presents the \VAMOS{} framework, and reports a cross-framework empirical comparison.
+The rest of the paper is organized as follows. Section~\ref{sec:related} reviews existing Python MOEA frameworks and benchmarking practices. Section~\ref{sec:framework} presents the \VAMOS{} framework, including its design goals, architecture, compute kernels, and algorithm suite. Section~\ref{sec:experiments} describes the experimental setup, reports backend-level and cross-framework runtime comparisons, and provides solution-quality summaries with statistical analyses. Finally, Section~\ref{sec:conclusions} draws conclusions and outlines directions for future work.
 
 %==============================================================================
 \section{Related Work}
 \label{sec:related}
 %==============================================================================
 
+We review the Python MOEA landscape along two axes: the frameworks themselves (Section~\ref{sec:related_frameworks}) and the methodological challenges of cross-framework benchmarking (Section~\ref{sec:related_benchmarking}).
+
 \subsection{Python MOEA frameworks}
+\label{sec:related_frameworks}
 
 Several mature Python libraries exist for MOEAs. \textbf{pymoo}~\cite{blank2020pymoo} provides a rich collection of algorithms and operators with an emphasis on modularity. \textbf{jMetalPy}~\cite{benitez2019jmetalpy} ports the jMetal architecture to Python and emphasizes end-to-end experimentation (observer-driven progress/visualization, a ``laboratory'' workflow, and built-in statistical post-processing with LaTeX export). It additionally offers modules for constrained, dynamic, and preference-based variants, as well as parallel evaluation via Spark/Dask. However, it relies on object-centric representations and does not address cross-toolkit semantic drift. We build upon this methodological focus on rigorous experimental studies and complement it with an array-based execution model and a fairness-oriented benchmarking protocol that aligns problem definitions and operator semantics across toolkits. \textbf{DEAP}~\cite{fortin2012deap} is a general evolutionary computation toolkit; while flexible, users typically assemble MOEAs manually. \textbf{Platypus}~\cite{hadka2015platypus} provides a lightweight API and a set of classic MOEAs.
 
@@ -139,15 +140,15 @@ Table~\ref{tab:frameworks} summarizes high-level differences relevant to this wo
 \label{tab:frameworks}
 {\scriptsize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Framework} & \textbf{MOEAs} & \textbf{Array core} & \textbf{Accel. kernels} & \textbf{Auto-conf.} \\
+\textbf{Framework} & \textbf{MOEAs} & \textbf{Array core} & \textbf{Accel. kernels} \\
 \midrule
-\VAMOS{} & 9 & Yes & Numba/C/JAX & Yes \\
-pymoo~\cite{blank2020pymoo} & 8+ & Partial & No & No \\
-jMetalPy~\cite{benitez2019jmetalpy} & 11+ & No & No & No \\
-DEAP~\cite{fortin2012deap} & Custom & No & No & No \\
-Platypus~\cite{hadka2015platypus} & 8+ & No & No & No \\
+\VAMOS{} & 9 & Yes & Numba/C/JAX \\
+pymoo~\cite{blank2020pymoo} (0.6) & 8+ & Partial & No \\
+jMetalPy~\cite{benitez2019jmetalpy} (2019) & 11+ & No & No \\
+DEAP~\cite{fortin2012deap} (1.4) & Custom & No & No \\
+Platypus~\cite{hadka2015platypus} & 8+ & No & No \\
 \bottomrule
 \end{tabular}
 }
@@ -157,12 +158,13 @@ Figure~\ref{fig:representation} provides an intuitive view of how these framewor
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.98\textwidth]{figures/representation_population.png}
-  \caption{Illustration of population representation differences: \VAMOS{} stores the full population in dense arrays and applies operators via array-oriented kernels (NumPy/Numba/C/JAX), while object-centric frameworks manage collections of per-solution records and perform selection/variation/survival through object/container-level workflows.}
+  \includegraphics[width=0.98\textwidth]{figures/Representation.png}
+  \caption{Comparing population representation across Python MOEA frameworks. \VAMOS{} (left) stores the full population in dense arrays ($X$, $F$) and applies operators via array-oriented kernels (NumPy/Numba/C/JAX). pymoo (center) uses a population container of individual objects backed by NumPy arrays, mixing array computation with object overhead. jMetalPy (right) manages a list of solution objects with per-solution method calls. All three implement the same selection--variation--survival loop, but differ in internal data model and hot-loop granularity.}
   \label{fig:representation}
 \end{figure}
 
 \subsection{Benchmarking and indicator reporting}
+\label{sec:related_benchmarking}
 
 Comparative MOEA studies typically combine independent runs, indicator computation, and structured post-processing (e.g., summary tables and plots). However, cross-framework results are sensitive to hidden defaults and semantic mismatches: benchmark implementations may differ in bounds or parameterizations, and operators may interpret probabilities at different levels (e.g., per-individual vs.\ per-variable mutation). Toolkits such as jMetalPy~\cite{benitez2019jmetalpy} provide laboratory-style reporting and post-processing, but they do not by themselves resolve cross-toolkit semantic drift. Our work complements these methodological efforts by making semantic alignment an explicit first-class step and by reporting normalized hypervolume under a fixed reference-front protocol, enabling more reliable cross-framework comparisons.
 
@@ -170,6 +172,43 @@ Comparative MOEA studies typically combine independent runs, indicator computati
 \section{VAMOS Framework}
 \label{sec:framework}
 %==============================================================================
+
+This section presents the \VAMOS{} framework. We first state the design goals that guided its development (Section~\ref{sec:design_goals}), then describe the architecture and data model, compute kernels, algorithm suite, execution model, variation pipeline, archives and metrics, and the benchmark runner.
+
+\subsection{Design goals}
+\label{sec:design_goals}
+
+The design of \VAMOS{} is motivated by three practical gaps identified in existing Python MOEA libraries.
+
+\paragraph{Minimal-boilerplate API.}
+Most frameworks require importing separate modules for the algorithm, problem, operators, and termination, then wiring them together (typically 10--15 lines for a standard NSGA-II run on a benchmark problem). \VAMOS{} exposes a single entry point that handles defaults, operator configuration, and termination:
+
+\begin{lstlisting}[caption={Minimal NSGA-II run on ZDT1 in \VAMOS{}.},label={lst:quickstart}]
+from vamos import optimize
+result = optimize("zdt1", algorithm="nsgaii",
+                  max_evaluations=50000, seed=42)
+\end{lstlisting}
+
+\noindent For comparison, the equivalent run in pymoo requires separate imports for the algorithm class, problem factory, crossover, and mutation operators, explicit operator construction, and a \texttt{minimize} wrapper (approximately 10 lines); jMetalPy additionally requires a termination-criterion object and explicit variable/objective counts (approximately 15 lines). When finer control is needed, \VAMOS{} provides a builder API for algorithm configuration:
+
+\begin{lstlisting}[caption={Builder API for fine-grained configuration.},label={lst:builder}]
+from vamos import optimize
+from vamos.algorithms import NSGAIIConfig
+cfg = (NSGAIIConfig.builder()
+       .pop_size(100)
+       .crossover("sbx", prob=1.0, eta=20)
+       .mutation("pm", prob="1/n", eta=20)
+       .build())
+result = optimize("zdt1", algorithm="nsgaii",
+                  algorithm_config=cfg,
+                  max_evaluations=50000, seed=42)
+\end{lstlisting}
+
+\paragraph{Pluggable computation.}
+Switching the compute backend is a single-parameter change (\texttt{engine="numba"}, \texttt{"numpy"}, etc.) that is transparent to algorithm code. No other Python MOEA framework allows swapping the entire computational substrate---from array operations to compiled kernels---without modifying the algorithm implementation. Similarly, evaluation strategies (serial, multiprocessing, or Dask-based distributed evaluation) are selected via configuration rather than code changes, and multi-seed studies are first-class: passing a list of seeds (\texttt{seed=[0,1,2]}) triggers automatic multi-run execution and returns a list of results. \VAMOS{} also provides automatic algorithm selection (\texttt{algorithm="auto"}) that maps problem traits (number of objectives, encoding type) to a suitable default algorithm, lowering the barrier for users unfamiliar with the MOEA landscape.
+
+\paragraph{Array-native performance.}
+The architectural consequence of the preceding goals is that the population state remains in dense arrays throughout the optimization loop, and hot-path computations are dispatched to vectorized or compiled kernels. Section~\ref{sec:experiments} demonstrates that this design yields substantial runtime reductions across multiple MOEA variants and benchmark families without degrading solution quality.
 
 \subsection{Architecture and data model}
 
@@ -180,10 +219,7 @@ Comparative MOEA studies typically combine independent runs, indicator computati
   \item \textbf{Experiment}: CLI, benchmarking utilities, visualization, and reporting.
 \end{enumerate}
 
-The primary user entry point is a unified \texttt{optimize(...)} API; explicit configuration objects are reserved for fully specified, reproducible runs and advanced algorithm customization.
-For minimal-code users, a guided CLI quickstart generates a reusable config file, with domain-flavored templates that map to common workflows.
-
-The core design choice is to represent a population as a pair of dense arrays: decision variables $X \in \mathbb{R}^{N \times n}$ and objective values $F \in \mathbb{R}^{N \times m}$ for population size $N$, $n$ decision variables, and $m$ objectives. Variation and survival operate on these arrays (or views thereof), enabling vectorized operations (NumPy) and compilation of hot loops (Numba) without per-individual Python objects.
+The user-facing API and configuration model are described in Section~\ref{sec:design_goals}. The core design choice is to represent a population as a pair of dense arrays: decision variables $X \in \mathbb{R}^{N \times n}$ and objective values $F \in \mathbb{R}^{N \times m}$ for population size $N$, $n$ decision variables, and $m$ objectives. Variation and survival operate on these arrays (or views thereof), enabling vectorized operations (NumPy) and compilation of hot loops (Numba) without per-individual Python objects.
 
 \begin{figure}[htbp]
 \centering
@@ -275,6 +311,8 @@ The experiment layer includes a benchmark runner that executes standardized stud
 \label{sec:experiments}
 %==============================================================================
 
+We evaluate \VAMOS{} along two dimensions: runtime efficiency across backends and frameworks, and solution quality measured by normalized hypervolume under a fixed-reference-front protocol. We first describe the benchmark suite and the semantic-alignment procedure that ensures cross-framework fairness, then report backend-level and cross-framework runtime comparisons, solution-quality summaries, and statistical analyses.
+
 \subsection{Benchmark suite and configuration alignment}
 
 We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives), DTLZ1--7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2/3/4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$). Non-standard DTLZ dimensionalities are permitted but explicitly flagged to avoid accidental comparisons against canonical settings.
@@ -334,7 +372,7 @@ All runtimes are measured wall-clock using high-resolution timers and include al
 
 For Numba-accelerated backends, we distinguish two timing policies. \textbf{Warm} timings exclude one-time JIT compilation by performing a short warmup run in the same process before starting the timer (2{,}000 warmup evaluations; not counted in the reported time). \textbf{Cold} timings measure the first run from a fresh process and therefore include JIT compilation overhead. Unless otherwise stated, we report warm timings to reflect steady-state throughput; cold-start costs can be reproduced with the provided scripts.
 
-Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H CPU (16 cores, 22 logical processors) and 32\,GB RAM, running Microsoft Windows 11 Home (build 26200). We used Python 3.12.3 and evaluated \VAMOS{} 0.1.0 (NumPy 2.3.5 with OpenBLAS 0.3.30; Numba 0.63.1) against pymoo 0.6.1.6, jMetalPy (local source checkout at commit \texttt{fecb85c}), DEAP 1.4.3, and Platypus (local source checkout at commit \texttt{fe7aeff}).
+Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H CPU (16 cores, 22 logical processors) and 32\,GB RAM, running Microsoft Windows 11 Home (build 26200). We used Python 3.12.3 and evaluated \VAMOS{} 0.1.0 (NumPy 2.3.5 with OpenBLAS 0.3.30; Numba 0.63.1) against pymoo 0.6.1.6, jMetalPy (local source checkout at commit \texttt{fecb85c}, accessed January 2026), DEAP 1.4.3, and Platypus (local source checkout at commit \texttt{fe7aeff}, accessed January 2026).
 
 \subsection{Normalized hypervolume protocol}
 \label{sec:hv}
@@ -355,11 +393,11 @@ Table~\ref{tab:backends} reports median runtime for \VAMOS{} backends aggregated
 
 \begin{table}[htbp]
 \centering
-\caption{VAMOS backend comparison: median runtime (seconds) by problem family.}
+\caption{VAMOS backend comparison: median runtime (seconds) by problem family.\protect\footnotemark}
 \label{tab:backends}
 \begin{tabular}{l|rrr|r}
 \toprule
-\textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average\textsuperscript{*}} \\
 \midrule
 Numba & \textbf{2.62} & \textbf{3.46} & \textbf{4.03} & \textbf{3.37} \\
 MooCore & 2.69 & 3.52 & 4.16 & 3.45 \\
@@ -367,6 +405,7 @@ NumPy & 5.18 & 6.82 & 7.37 & 6.46 \\
 \bottomrule
 \end{tabular}
 \end{table}
+\footnotetext{Average\textsuperscript{*} in summary tables denotes the mean of family-level medians (3 values). Per-problem averages over all 21 problems are reported in the appendix (Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison}).}
 
 \subsection{Cross-framework comparison}
 
@@ -375,11 +414,11 @@ We repeat the same runtime protocol for NSGA-II variants (steady-state and exter
 
 \begin{table}[htbp]
 \centering
-\caption{Median runtime (seconds) by problem family across all frameworks.}
+\caption{NSGA-II (generational). Median runtime (seconds) by problem family across all frameworks.}
 \label{tab:frameworks_perf}
 \begin{tabular}{l|rrr|r}
 \toprule
-\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average\textsuperscript{*}} \\
 \midrule
 VAMOS & \textbf{2.62} & \textbf{3.46} & \textbf{4.03} & \textbf{3.37} \\
 pymoo & 3.22 & 3.86 & 4.56 & 3.88 \\
@@ -414,11 +453,11 @@ Table~\ref{tab:frameworks_hv} summarizes normalized hypervolume for the NSGA-II 
 
 \begin{table}[htbp]
 \centering
-\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks.}
+\caption{NSGA-II. Normalized hypervolume summary (median (IQR)) by problem family across frameworks.}
 \label{tab:frameworks_hv}
 \begin{tabular}{l|rrr|r}
 \toprule
-\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall} \\
+\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall\textsuperscript{*}} \\
 \midrule
 VAMOS & \textbf{0.990 (0.008)} & 0.799 (0.153) & \textbf{0.934 (0.140)} & \textbf{0.934 (0.181)} \\
 pymoo & \textbf{0.990 (0.008)} & 0.792 (0.180) & 0.846 (0.222) & 0.914 (0.192) \\
@@ -431,15 +470,34 @@ Platypus & \textbf{0.990 (0.008)} & 0.786 (0.209) & 0.920 (0.139) & 0.920 (0.196
 
 Across ZDT, all frameworks attain nearly identical normalized HV, suggesting that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks, while WFG exhibits the largest dispersion; \VAMOS{} achieves the highest median on WFG and overall. Together with the runtime results, these summaries support improved throughput without degraded final quality under the fixed-reference-front protocol.
 
+\subsection{Statistical analysis}
+\label{sec:stats}
+
+To move beyond descriptive summaries, we apply Wilcoxon signed-rank tests (paired by seed) comparing VAMOS (Numba) against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). We report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{vargha2000critique} alongside each test ($\hat{A}_{12}>0.5$ favors VAMOS; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also report paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and we declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
+
+Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 21 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.3\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis across all frameworks: VAMOS is equivalent to pymoo on 14/21 problems and non-inferior on 16/21, with a median $\Delta$HV of $-0.03\%$. Similar patterns hold for jMetalPy, DEAP, and Platypus. Tables~\ref{tab:hv_robustness_summary_nsgaii} and~\ref{tab:hv_equivalence_ci_nsgaii} detail robustness and per-problem CIs. Corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
+
+\input{stats_nsgaii.tex}
+
 \subsection{Discussion}
 
 The observed speedups are primarily due to (i) the array-based representation that removes per-solution Python overhead, and (ii) JIT compilation of hot operators and utilities in the Numba backend. Table~\ref{tab:frameworks_hv} summarizes that these performance gains are not obtained at the expense of final solution quality under the fixed-reference-front normalized-HV protocol, avoiding artifacts caused by run-dependent reference points.
+
+The magnitude of the speedup varies across algorithm variants in a pattern consistent with this overhead model. Steady-state variants (Tables~\ref{tab:frameworks_perf_nsgaii_ss} and~\ref{tab:frameworks_perf_smsemoa}) show the largest relative speedups because they perform one selection--variation--survival cycle per offspring: frameworks with high per-iteration Python overhead incur that cost 50{,}000 times (one per evaluation) rather than 500 times (one per generation of 100 offspring). \VAMOS{}'s array-kernel dispatch amortizes this overhead more effectively, widening the gap.
+
+Not all comparisons favor \VAMOS{}. For MOEA/D on WFG problems (Table~\ref{tab:frameworks_perf_moead}), jMetalPy achieves lower median runtime (8.34\,s vs.\ 11.12\,s). This is attributable to differences in the decomposition inner loop: jMetalPy's MOEA/D processes one subproblem at a time with lightweight scalar operations, a pattern where Python-level overhead is modest and \VAMOS{}'s array-batching strategy does not yield the same advantage as in generational algorithms with population-wide survival.
+
+These speedups have direct practical implications. A 4--10$\times$ reduction in per-run wall-clock time means that the same compute budget can accommodate proportionally more independent seeds, larger population sizes, or denser hyperparameter sweeps---precisely the conditions required for statistically rigorous benchmarking studies.
+
+We also note that both \VAMOS{} and pymoo obtain zero normalized hypervolume on DTLZ3 under MOEA/D with 50{,}000 evaluations. This is a known difficulty: DTLZ3 is a multimodal problem designed to test convergence, and MOEA/D with PBI scalarization and the evaluation budget used here is insufficient to escape local fronts consistently. This outcome is not framework-specific but reflects the interaction between algorithm configuration and problem difficulty.
+
+A related observation concerns SMS-EMOA on DTLZ4 (Appendix~\ref{app:stats}): \VAMOS{} attains a median normalized HV of 0.898 versus 0.671 for pymoo, yet the Wilcoxon test reports $p=1.0$ after Holm correction. This reflects very high variance across seeds due to the deceptive density bias in DTLZ4, which causes many seeds to converge to a narrow region of the front. The high IQR makes the paired differences too noisy for the test to reject the null hypothesis despite the large median gap.
 
 \subsection{Threats to validity}
 
 Despite careful alignment of dimensions, budgets, problem definitions, and operator settings, cross-framework comparisons remain subject to several threats: (i) operator implementations may differ in subtle details (e.g., boundary handling, duplicate elimination, tie-breaking in survival), (ii) random number generation and seeding semantics vary across libraries, and (iii) library-specific overheads (data conversion, object materialization) may affect measured runtime. We mitigate major sources of unfairness by enforcing consistent benchmark bounds (e.g., ZDT4) and matching operator semantics where APIs differ (e.g., mutation probability in pymoo).
 
-Our cross-framework comparison is deliberately scoped to Python MOEA libraries whose inner loops are predominantly executed in Python. Some libraries (e.g., PyGMO, which provides Python bindings to the C++ PaGMO2 library) are performance-oriented but are not directly comparable under our primary research question, which targets reductions in interpreter overhead via array-based representations and kernel acceleration. In PyGMO, both algorithms and benchmark problems may execute fully in C++, while user-defined problems can also be evaluated via callbacks into Python; these modes yield materially different runtime profiles and can shift the dominant cost to foreign-function or language-boundary overhead. In addition, PyGMO supports island-model parallelism and asynchronous execution; accounting for these features would require additional normalization beyond the single-process budgeted protocol used here. For these reasons, we treat PyGMO and PaGMO2 as an orthogonal C++ baseline and leave their inclusion to future work with an explicit language/runtime study design.
+Our cross-framework comparison is deliberately scoped to Python MOEA libraries whose inner loops are predominantly executed in Python. Libraries such as PyGMO (Python bindings to the C++ PaGMO2 library) execute algorithms and benchmark functions fully in compiled code, yielding fundamentally different runtime profiles; we therefore treat them as an orthogonal C++ baseline and leave their inclusion to future work with an explicit language/runtime study design.
 
 For hypervolume, reference fronts for problems without closed-form Pareto fronts are necessarily approximations; while we generate them densely and fix them across runs, remaining discrepancies can affect absolute normalized values, especially on WFG problems. We therefore treat normalized HV primarily as a comparative metric under a fixed protocol, and we report distributions across multiple seeds rather than relying on single-run outcomes.
 
@@ -473,7 +531,7 @@ Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-
 
 \begin{table}[htbp]
 \centering
-\caption{Detailed VAMOS backend comparison: median runtime (seconds) per problem.}
+\caption{Detailed VAMOS backend comparison: median runtime (seconds) per problem. Average is computed over all 21 per-problem medians.}
 \label{tab:detailed_backends}
 \begin{tabular}{l|rrr}
 \toprule
@@ -509,7 +567,7 @@ zdt6 & \textbf{2.44} & 2.51 & 5.16 \\
 \begin{table*}[htbp]
 \tiny
 \centering
-\caption{Detailed comparison of median runtime (seconds) across all frameworks.}
+\caption{Detailed comparison of median runtime (seconds) across all frameworks. Average is computed over all 21 per-problem medians.}
 \label{tab:detailed_comparison}
 \begin{tabular}{l|rrrrr}
 \toprule
@@ -543,10 +601,23 @@ zdt6 & \textbf{2.44} & 3.51 & 10.39 & 14.46 & 18.20 \\
 \end{table*}
 
 %==============================================================================
+\section{Statistical analysis for SMS-EMOA and MOEA/D}
+\label{app:stats}
+%==============================================================================
+
+Tables in this appendix report Wilcoxon signed-rank tests, bootstrap equivalence analyses, and robustness summaries for SMS-EMOA and MOEA/D, following the same methodology as Section~\ref{sec:stats}.
+
+\subsection{SMS-EMOA}
+\input{stats_smsemoa.tex}
+
+\subsection{MOEA/D}
+\input{stats_moead.tex}
+
+%==============================================================================
 % Bibliography
 %==============================================================================
 \bibliographystyle{elsarticle-num}
-\begin{thebibliography}{32}
+\begin{thebibliography}{33}
 
 \bibitem{coello2007evolutionary}
 C.~A.~C. Coello, G.~B. Lamont, D.~A. Van~Veldhuizen,
@@ -564,12 +635,12 @@ pymoo: Multi-objective optimization in Python,
 IEEE Access 8 (2020) 89497--89509.
 
 \bibitem{fortin2012deap}
-F.-A. Fortin, et~al.,
+F.-A. Fortin, F.-M. De~Rainville, M.-A. Gardner, M.~Parizeau, C.~Gagn\'{e},
 DEAP: Evolutionary algorithms made easy,
 J. Mach. Learn. Res. 13 (2012) 2171--2175.
 
 \bibitem{benitez2019jmetalpy}
-A.~Ben{\'\i}tez-Hidalgo, et~al.,
+A.~Ben{\'\i}tez-Hidalgo, A.~J. Nebro, J.~Garc{\'\i}a-Nieto, I.~Oregi, J.~Del~Ser,
 jMetalPy: A Python framework for multi-objective optimization with metaheuristics,
 Swarm Evol. Comput. 51 (2019) 100598, doi:10.1016/j.swevo.2019.100598.
 
@@ -579,14 +650,14 @@ Platypus: a free and open source Python library for multiobjective optimization,
 \url{https://github.com/Project-Platypus/Platypus}, accessed 2026.
 
 \bibitem{lam2015numba}
-S.~K. Lam, et~al.,
+S.~K. Lam, A.~Pitrou, S.~Seibert,
 Numba: A LLVM-based Python JIT compiler,
 in: LLVM-HPC, 2015.
 
 \bibitem{jax2018github}
-J.~Bradbury, et~al.,
+J.~Bradbury, R.~Frostig, P.~Hawkins, M.~J. Johnson, C.~Leary, D.~Maclaurin, G.~Necula, A.~Paszke, J.~Vander{P}las, S.~Wanderman-{M}ilne, Q.~Zhang,
 JAX: composable transformations of Python+NumPy programs,
-\url{https://github.com/google/jax}, 2018.
+\url{https://github.com/google/jax}, accessed 2026.
 
 \bibitem{moocore}
 moocore: multi-objective optimization core library,
@@ -628,7 +699,7 @@ An adaptive evolutionary algorithm based on non-Euclidean geometry for many-obje
 in: GECCO, ACM, 2019, pp.~595--603.
 
 \bibitem{cheng2016reference}
-R.~Cheng, et~al.,
+R.~Cheng, Y.~Jin, M.~Olhofer, B.~Sendhoff,
 A reference vector guided evolutionary algorithm for many-objective optimization,
 IEEE Trans. Evol. Comput. 20~(5) (2016) 773--791.
 
@@ -651,6 +722,11 @@ IEEE Trans. Evol. Comput. 10~(5) (2006) 477--506.
 E.~Zitzler, L.~Thiele, M.~Laumanns, C.~M. Fonseca, V.~G. da Fonseca,
 Performance assessment of multiobjective optimizers: An analysis and review,
 IEEE Trans. Evol. Comput. 7~(2) (2003) 117--132.
+
+\bibitem{vargha2000critique}
+A.~Vargha, H.~D. Delaney,
+A critique and improvement of the CL common language effect size statistics of {M}c{G}raw and {W}ong,
+J. Educ. Behav. Stat. 25~(2) (2000) 101--132.
 
 \end{thebibliography}
 
