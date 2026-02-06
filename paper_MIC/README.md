@@ -30,3 +30,25 @@ Outputs:
   - `experiments/ablation_aos_trace.csv` (optional operator-usage plot)
 - Update author list, affiliations, and final wording in `paper_MIC/main.tex`.
 
+## 2x2 factorial experiment (Archive x AOS)
+
+To isolate causal effects, run:
+
+```powershell
+$env:VAMOS_MIC_VARIANTS="baseline,aos,baseline_archive,aos_archive"
+$env:VAMOS_MIC_OUTPUT_CSV="experiments/mic/mic_factorial_archive_aos.csv"
+$env:VAMOS_MIC_ANYTIME_CSV="experiments/mic/mic_factorial_archive_aos_anytime.csv"
+$env:VAMOS_MIC_TRACE_CSV="experiments/mic/mic_factorial_archive_aos_trace.csv"
+$env:VAMOS_MIC_TRACE_VARIANTS="aos,aos_archive"
+# Optional archive controls:
+# $env:VAMOS_MIC_ARCHIVE_SIZE="100"
+# $env:VAMOS_MIC_ARCHIVE_TYPE="hypervolume"   # or "crowding"
+# $env:VAMOS_MIC_ARCHIVE_UNBOUNDED="0"        # set "1" for unbounded archive
+.\.venv\Scripts\python.exe paper_MIC\scripts\02_run_mic_experiment.py
+```
+
+Then summarize factorial effects:
+
+```powershell
+.\.venv\Scripts\python.exe paper_MIC\scripts\03_analyze_archive_aos_factorial.py --csv experiments/mic/mic_factorial_archive_aos.csv
+```
