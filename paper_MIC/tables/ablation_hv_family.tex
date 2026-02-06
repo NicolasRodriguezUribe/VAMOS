@@ -1,13 +1,14 @@
 \begin{table}[t]
 \centering
-\caption{Median normalized hypervolume by problem family (baseline NSGA-II vs.\ baseline + AOS). Values computed from \texttt{experiments/ablation\_aos\_racing\_tuner.csv}.}
-\label{tab:hv_family}
-\begin{tabular}{l|rrr|r}
+\caption{Median normalized hypervolume by objective-count group (baseline vs.\ random arm vs.\ AOS).}
+\label{tab:hv_group}
+\begin{tabular}{l|rrrr|r}
 \toprule
-\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\textbf{Variant} & \textbf{2-obj} & \textbf{3-obj} & \textbf{4-obj} & \textbf{many-obj} & \textbf{Average} \\
 \midrule
-Baseline & 0.990 & 0.799 & \textbf{0.934} & 0.908 \\
-Baseline + AOS & \textbf{0.990} & \textbf{0.880} & 0.923 & \textbf{0.931} \\
+Baseline & 0.993 & 0.978 & 0.882 & \textbf{1.025} & \textbf{0.969} \\
+Random arm & \textbf{0.993} & 0.975 & \textbf{0.885} & 0.999 & 0.963 \\
+AOS & 0.992 & \textbf{0.978} & 0.883 & 1.016 & 0.967 \\
 \bottomrule
 \end{tabular}
 \end{table}

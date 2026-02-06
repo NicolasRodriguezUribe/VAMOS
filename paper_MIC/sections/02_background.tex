@@ -3,17 +3,30 @@
 
 \subsection{NSGA-II}
 NSGA-II~\cite{deb2002nsgaii} maintains a population and iteratively generates offspring via variation operators.
-Survivor selection is based on non-dominated sorting and crowding distance, promoting both convergence and diversity.
+Survivor selection is based on non-dominated sorting and crowding distance~\cite{zitzler2003perf}, promoting both convergence and diversity.
 Although the selection mechanism is parameter-light, practical performance depends on the chosen crossover/mutation pipeline and its hyperparameters, which are often selected by convention or tuned per problem.
+This sensitivity to operator choice is especially pronounced in real-world optimization, where problem landscapes are unknown and a single pipeline can stall on some problem instances while excelling on others.
 
-\subsection{Adaptive operator selection as bandits}
-In the multi-armed bandit (MAB) setting, a learner repeatedly selects an arm and observes a reward, aiming to maximize cumulative reward by balancing exploration and exploitation.
-Common policies include $\varepsilon$-greedy, upper-confidence bounds (UCB)~\cite{auer2002ucb1}, adversarial methods such as EXP3~\cite{auer2002exp3}, and Bayesian approaches such as Thompson sampling~\cite{thompson1933ts}.
-Bandit-based AOS~\cite{dacosta2008aosdmab} maps each operator (or operator pipeline) to an arm and uses online rewards to guide selection.
+\subsection{Adaptive operator selection}
+Adaptive operator selection (AOS) aims to automate operator choice during the search, treating it as an online learning problem.
+AOS sits between two broader families of techniques.
+On one side, \emph{parameter control}~\cite{karafotias2015paramcontrol} adapts continuous operator hyperparameters (e.g., crossover probability or distribution index) using deterministic, self-adaptive, or feedback-driven rules.
+On the other, \emph{hyperheuristics}~\cite{burke2013hyperheuristics} select among high-level search strategies and can involve sophisticated learning or generation mechanisms.
+AOS focuses specifically on selecting among a fixed set of discrete operator alternatives, which makes the problem a natural fit for multi-armed bandit models.
+
+\subsection{Bandit-based AOS}
+Da~Costa et al.~\cite{dacosta2008aosdmab} introduced the Dynamic Multi-Armed Bandit (DMAB) formulation for AOS, mapping each operator to a bandit arm and using statistical change-detection to handle non-stationarity.
+Fialho et al.~\cite{fialho2010aos} extended this line with adaptive pursuit strategies and systematic comparisons of credit-assignment schemes in the context of single-objective EAs.
+Li et al.~\cite{li2014aos_moea} applied AOS to multiobjective optimization, showing that bandit-based selection can improve performance on MOEA/D by adapting operators to the search stage.
+
+Common policies include $\varepsilon$-greedy, upper-confidence bounds (UCB)~\cite{auer2002ucb1}, the adversarial EXP3~\cite{auer2002exp3}, and Thompson sampling~\cite{thompson1933ts}, each balancing exploration and exploitation differently.
 
 \subsection{Credit assignment and non-stationarity}
 In evolutionary search, operator utility is inherently non-stationary: exploration-heavy operators can be useful early, while exploitation and local refinement become important as the population converges.
 This raises two practical design questions.
-First, how should rewards be defined so they are informative across problems and across stages?
+First, how should rewards be defined so they are informative across problems and across stages of search?
 Second, which policies handle non-stationarity without over-reacting to noise?
-Sliding-window variants of classical bandit policies (e.g., UCB) and Bayesian policies with limited-memory reward histories are common approaches.
+
+Prior work has proposed fitness-improvement credit~\cite{fialho2010aos}, rank-based credit, and dominance-based credit for multiobjective settings~\cite{li2014aos_moea}.
+Sliding-window variants of classical bandit policies (e.g., UCB with a finite memory window) and Bayesian policies with limited-memory reward histories are common approaches to tracking non-stationarity.
+Our work adopts a simpler but highly interpretable credit signal based on offspring survival and non-dominated insertion rates, which does not require any reference information about the true Pareto front.

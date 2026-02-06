@@ -1,36 +1,37 @@
 \begin{table}[t]
 \centering
 \scriptsize
-\caption{Per-problem median runtime (seconds) at the final budget. $\Delta$ denotes AOS minus baseline (medians over seeds).}
+\caption{Per-problem median runtime (seconds). $\Delta_{\text{base}}$: AOS $-$ baseline; $\Delta_{\text{rand}}$: AOS $-$ random arm.}
 \label{tab:runtime_per_problem}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{l|rrr}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{l|rrrrr}
 \toprule
-\textbf{Problem} & \textbf{Baseline} & \textbf{AOS} & $\Delta$ \\
+\textbf{Problem} & \textbf{Baseline} & \textbf{Random arm} & \textbf{AOS} & $\Delta_{\text{base}}$ & $\Delta_{\text{rand}}$ \\
 \midrule
-zdt1 & \textbf{1.18} & 1.40 & 0.22 \\
-zdt2 & \textbf{0.93} & 1.37 & 0.45 \\
-zdt3 & \textbf{0.89} & 1.37 & 0.48 \\
-zdt4 & \textbf{0.80} & 1.29 & 0.49 \\
-zdt6 & \textbf{0.80} & 1.28 & 0.48 \\
+re21 & \textbf{3.22} & 4.60 & 8.49 & 5.27 & 3.89 \\
+re24 & \textbf{2.22} & 4.82 & 5.83 & 3.61 & 1.01 \\
+rwa1 & \textbf{2.85} & 9.60 & 6.14 & 3.29 & -3.45 \\
 \midrule
-dtlz1 & \textbf{1.02} & 1.36 & 0.34 \\
-dtlz2 & \textbf{0.89} & 1.41 & 0.52 \\
-dtlz3 & \textbf{1.01} & 1.33 & 0.32 \\
-dtlz4 & \textbf{1.07} & 1.41 & 0.33 \\
-dtlz5 & \textbf{1.00} & 1.38 & 0.38 \\
-dtlz6 & \textbf{0.90} & 1.36 & 0.47 \\
-dtlz7 & \textbf{0.91} & 1.43 & 0.52 \\
+re31 & \textbf{2.38} & 5.12 & 6.59 & 4.20 & 1.47 \\
+re32 & \textbf{2.56} & 5.74 & 5.73 & 3.17 & -0.01 \\
+re33 & \textbf{2.47} & 4.89 & 5.99 & 3.52 & 1.09 \\
+re34 & \textbf{2.53} & 5.00 & 6.37 & 3.84 & 1.37 \\
+re37 & \textbf{2.54} & 4.94 & 6.66 & 4.12 & 1.72 \\
+rwa2 & \textbf{2.56} & 9.88 & 6.39 & 3.83 & -3.50 \\
+rwa3 & \textbf{2.57} & 9.65 & 6.25 & 3.68 & -3.40 \\
+rwa4 & \textbf{2.54} & 9.19 & 6.18 & 3.64 & -3.01 \\
+rwa5 & \textbf{2.83} & 10.71 & 6.59 & 3.76 & -4.12 \\
+rwa6 & \textbf{2.63} & 9.76 & 6.22 & 3.59 & -3.54 \\
+rwa7 & \textbf{2.56} & 10.11 & 6.16 & 3.59 & -3.96 \\
 \midrule
-wfg1 & \textbf{0.92} & 1.43 & 0.51 \\
-wfg2 & \textbf{1.02} & 1.44 & 0.42 \\
-wfg3 & \textbf{1.03} & 4.20 & 3.18 \\
-wfg4 & \textbf{1.00} & 1.41 & 0.42 \\
-wfg5 & \textbf{0.97} & 1.40 & 0.43 \\
-wfg6 & \textbf{1.19} & 1.99 & 0.80 \\
-wfg7 & \textbf{1.01} & 4.25 & 3.24 \\
-wfg8 & \textbf{1.14} & 1.93 & 0.79 \\
-wfg9 & \textbf{1.41} & 2.66 & 1.25 \\
+re41 & \textbf{2.67} & 5.08 & 7.56 & 4.88 & 2.48 \\
+re42 & \textbf{2.70} & 4.62 & 6.50 & 3.80 & 1.88 \\
+rwa8 & \textbf{2.84} & 10.31 & 6.29 & 3.46 & -4.02 \\
+\midrule
+rwa9 & \textbf{2.85} & 9.08 & 4.79 & 1.94 & -4.30 \\
+rwa10 & \textbf{2.92} & 6.95 & 5.69 & 2.77 & -1.26 \\
+re61 & \textbf{2.86} & 7.75 & 4.85 & 1.99 & -2.90 \\
+re91 & \textbf{4.10} & 9.21 & 5.77 & 1.67 & -3.44 \\
 \bottomrule
 \end{tabular}
 \end{table}

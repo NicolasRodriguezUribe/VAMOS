@@ -2,10 +2,18 @@
 \label{sec:appendix}
 
 \subsection{Operator portfolio}
+
+\paragraph{Design rationale.}
+The five arms were chosen to span three axes of variation:
+(i) \emph{crossover geometry}---SBX and BLX-$\alpha$ operate on two parents and produce offspring along the line between them, whereas PCX, UNDX, and Simplex use three or more parents to construct offspring in a subspace defined by the parent cloud, enabling broader exploration of the decision space;
+(ii) \emph{mutation tail weight}---polynomial mutation produces moderate perturbations, Gaussian mutation adds symmetric noise, Cauchy mutation occasionally injects large jumps that can escape local basins, and uniform reset resamples a variable entirely from its domain; and
+(iii) \emph{conservatism}---Arm~1 (SBX+PM) is the standard default in the MOEA literature, while Arms~3--5 introduce progressively more disruptive variation.
+This layered design ensures that at least one arm is likely to be effective at any stage of search, while keeping the portfolio small enough ($K{=}5$) for the bandit policy to learn meaningful reward estimates within a typical evaluation budget.
+
 \begin{table}[t]
 \centering
 \scriptsize
-\caption{Operator portfolio used by AOS. Mutation probability is set to $1/n_{\mathrm{var}}$.}
+\caption{Operator portfolio used by AOS and the random arm variant. Mutation probability is set to $1/n_{\mathrm{var}}$.}
 \label{tab:portfolio}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{l|l|l}
@@ -21,7 +29,45 @@
 \end{tabular}
 \end{table}
 
+\subsection{Benchmark problems}
+\begin{table}[t]
+\centering
+\scriptsize
+\caption{Summary of the 21 benchmark problems used in the experiments.}
+\label{tab:problems}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l|l|r|r|l}
+\toprule
+\textbf{Problem} & \textbf{Description} & \textbf{Vars} & \textbf{Obj} & \textbf{Source} \\
+\midrule
+RE21  & Four bar truss design        & 4  & 2 & RE \\
+RE24  & Welded beam surrogate        & 4  & 2 & RE \\
+RWA1  & Honeycomb heat sink          & 5  & 2 & RWA \\
+\midrule
+RE31  & Process design               & 3  & 3 & RE \\
+RE32  & Gear train design            & 4  & 3 & RE \\
+RE33  & Disc brake design            & 4  & 3 & RE \\
+RE34  & Gear box design              & 5  & 3 & RE \\
+RE37  & Rocket injector              & 4  & 3 & RE \\
+RWA2  & Vehicle crashworthiness      & 5  & 3 & RWA \\
+RWA3  & Synthesis gas production     & 3  & 3 & RWA \\
+RWA4  & Wire EDM                     & 5  & 3 & RWA \\
+RWA5  & Thermal storage              & 9  & 3 & RWA \\
+RWA6  & Milling parameters           & 4  & 3 & RWA \\
+RWA7  & Rocket injector (3-obj)      & 4  & 3 & RWA \\
+\midrule
+RE41  & Car side impact              & 7  & 4 & RE \\
+RE42  & Supply chain design          & 6  & 4 & RE \\
+RWA8  & Rocket injector (4-obj)      & 4  & 4 & RWA \\
+\midrule
+RWA9  & UWB antenna design           & 10 & 5 & RWA \\
+RWA10 & Repellent fabric             & 3  & 7 & RWA \\
+RE61  & Building design              & 3  & 6 & RE \\
+RE91  & Car cab design               & 7  & 9 & RE \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Per-problem tables}
 \input{tables/ablation_hv_per_problem}
 \input{tables/ablation_runtime_per_problem}
-

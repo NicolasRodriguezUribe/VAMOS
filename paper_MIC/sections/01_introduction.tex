@@ -11,7 +11,7 @@ Following the bandit view of AOS~\cite{dacosta2008aosdmab}, we model each candid
 Compared to offline tuning, this approach aims to improve robustness across problems and reduce the need for manual operator configuration.
 
 This paper focuses on NSGA-II~\cite{deb2002nsgaii}, a widely used MOEA whose performance depends strongly on variation settings.
-We implement a generation-level AOS layer for NSGA-II in a vectorized optimization framework and evaluate it on standard benchmark suites.
+We implement a generation-level AOS layer for NSGA-II in a vectorized optimization framework and evaluate it on real-world engineering surrogates from the RE and RWA benchmark suites.
 Our evaluation highlights both the potential benefits of online adaptation (substantial gains on some problems) and the practical costs (runtime overhead from bookkeeping and additional computations).
 
 \paragraph{Contributions.}
@@ -20,11 +20,11 @@ This paper makes four contributions:
   \item A simple, reproducible AOS interface for NSGA-II that selects exactly one variation pipeline per generation.
   \item A reward design aligned with NSGA-II survivor selection, combining offspring survival and non-dominated insertion rates, with an optional bounded hypervolume-improvement proxy.
   \item An analysis workflow that logs per-generation operator choices and rewards, enabling inspection of \emph{when} and \emph{how} the policy switches operators during search.
-  \item An empirical evaluation on classic MOEA benchmark suites~\cite{zitzler2000zdt,deb2002dtlz,huband2006wfg} (ZDT/\allowbreak DTLZ/\allowbreak WFG) showing that AOS can improve median normalized hypervolume on difficult instances, while incurring measurable runtime overhead.
+  \item An empirical evaluation on \AOSNProblems{} real-world engineering surrogates from the Tanabe--Ishibuchi RE~\cite{tanabe2020re} and Zapotecas-Mart\'{i}nez RWA~\cite{zapotecas2023rwa} benchmark suites, spanning 2--9 objectives, showing that AOS can improve median normalized hypervolume while incurring measurable runtime overhead.
 \end{itemize}
 
 \paragraph{Organization.}
 Section~\ref{sec:background} reviews NSGA-II and the bandit perspective on AOS.
-Section~\ref{sec:method} details the portfolio, reward signals, and policies.
+Section~\ref{sec:method} presents the method, beginning with a high-level overview of the five-stage AOS pipeline (Figure~\ref{fig:aos_overview}), followed by formal details on portfolios, rewards, and policies.
 Section~\ref{sec:implementation} summarizes implementation and reproducibility details.
 Sections~\ref{sec:experiments}--\ref{sec:results} describe the experimental protocol and results, followed by discussion and threats to validity.

@@ -1,18 +1,30 @@
 \section{Discussion}
 \label{sec:discussion}
 
-The results indicate that a simple generation-level AOS layer can yield meaningful gains on some problems (notably on DTLZ6), but also that ``AOS by default'' is not guaranteed to dominate a well-chosen fixed operator pipeline.
-This is consistent with the non-stationary and problem-dependent nature of operator utility.
+The results indicate that a simple generation-level AOS layer can yield meaningful gains on some problems, but also that ``AOS by default'' is not guaranteed to dominate a well-chosen fixed operator pipeline across every instance.
+This is consistent with the non-stationary and problem-dependent nature of operator utility in real-world engineering surrogates.
+
+\paragraph{The value of intelligent selection.}
+The three-way comparison design separates two effects: (a)~\emph{portfolio diversity} (baseline vs.\ random arm) and (b)~\emph{intelligent selection} (random arm vs.\ AOS).
+On 4-objective and many-objective problems, the random arm often underperforms both the baseline and AOS (e.g., RE41: random arm HV~0.774 vs.\ AOS~0.854; RWA9: random arm~0.758 vs.\ AOS~0.812), showing that blindly switching operators can be harmful, and that the bandit policy recovers this loss.
+Conversely, on well-conditioned 2--3 objective problems, all three methods perform similarly, suggesting that operator choice matters less when the landscape is benign.
 
 \paragraph{Why can AOS underperform?}
-First, bandit policies can lock into an initially lucky arm when exploration is low, preventing later-stage switches.
-Second, a portfolio that contains aggressive or highly disruptive operators can incur large opportunity costs when selected at the wrong stage.
-Third, reward definitions that are only weakly correlated with final hypervolume (e.g., survival credit without diversity) can reinforce short-term improvements that do not translate to better final fronts.
+First, bandit policies can lock into an initially lucky arm when exploration is low, preventing later-stage switches that might be beneficial as the population converges.
+Second, a portfolio that contains aggressive or highly disruptive operators can incur large opportunity costs when selected at the wrong stage of search.
+Third, for many-objective problems (5+ objectives) we disable hypervolume-based reward feedback to avoid computational overhead, which limits the information available to the policy.
+This explains the performance gap on RE91 ($\Delta = \AOSWorstDelta{}$), where the policy must rely solely on survival and non-dominated insertion signals.
+
+\paragraph{When does AOS help most?}
+Our results suggest that AOS is most beneficial on problems where (i)~the default SBX+PM pipeline stalls or (ii)~random operator switching is actively harmful.
+The largest gains appear on problems with moderate complexity (3--4 objectives) where alternative crossover strategies (PCX, UNDX, BLX-$\alpha$) can escape local basins that SBX cannot, and where the bandit policy learns to exploit these alternatives.
+On problems where the default pipeline is already near-optimal, AOS matches its performance with negligible degradation.
 
 \paragraph{Practical improvements.}
 Several modifications can improve robustness without changing the overall framework:
-(i) enforce a small warmup (\texttt{min\_usage}$>0$) to prevent early lock-in,
-(ii) adopt non-stationary policies (e.g., sliding-window UCB) to react to stage changes,
-(iii) use a ``safer'' portfolio composed of parameter variations of a strong baseline (e.g., SBX+PM with multiple $\eta$ values) rather than mixing in highly disruptive mutations, and
-(iv) tune reward weights to emphasize non-dominated insertion when diversity is critical.
+(i)~enforce a small warmup (\texttt{min\_usage}$>0$) to prevent early lock-in,
+(ii)~adopt non-stationary policies (e.g., sliding-window UCB) to react to stage changes,
+(iii)~use a ``safer'' portfolio composed of parameter variations of a strong baseline (e.g., SBX+PM with multiple $\eta$ values) rather than mixing in highly disruptive mutations,
+(iv)~tune reward weights to emphasize non-dominated insertion when diversity is critical, and
+(v)~develop scalable reward signals for many-objective problems (e.g., $R_2$-indicator proxies) to replace the costly hypervolume computation.
 

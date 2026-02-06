@@ -2,18 +2,19 @@
 \label{sec:implementation}
 
 \subsection{Integration into NSGA-II}
-The AOS layer is implemented as a controller that coordinates (i) a portfolio of named arms and (ii) a bandit policy.
-At the beginning of each generation, the controller selects an arm index and the algorithm uses the corresponding variation pipeline for all offspring of that generation.
-During the generation, the controller records the number of offspring created by the selected arm.
-After survivor selection, it computes reward components ($r_{\mathrm{surv}}$, $r_{\mathrm{nd}}$, and optionally $r_{\mathrm{hv}}$), updates the policy, and emits a trace row for logging.
+The five-stage pipeline described in Section~\ref{sec:aos_overview} is implemented as a lightweight controller that wraps the standard NSGA-II loop.
+At the beginning of each generation, the controller queries the bandit policy (Stage~2) and passes the selected arm index to the variation module.
+During the generation, it records the number of offspring created by the selected arm.
+After survivor selection, it computes reward components ($r_{\mathrm{surv}}$, $r_{\mathrm{nd}}$, and optionally $r_{\mathrm{hv}}$), updates the policy (Stage~5), and emits a trace row for logging.
+The controller adds no additional objective evaluations; its overhead comes solely from bookkeeping and the policy update.
 
 \subsection{Determinism}
 To support reproducibility, we separate (a) the global run seed that drives variation and selection randomness from (b) an optional policy RNG seed that drives the stochastic policy components (e.g., $\varepsilon$-greedy exploration).
 With fixed seeds, the operator-selection sequence and rewards are deterministic for a given configuration.
 
 \subsection{Logging}
-We log two types of artifacts for analysis:
-(i) a per-generation trace (selected operator, reward breakdown, and batch size), and
-(ii) a summary table (number of pulls and mean reward per arm).
-These logs support post-hoc analysis of operator switching and help diagnose when a policy locks into a single arm early.
+We log two types of artifacts for post-hoc analysis:
+(i) a per-generation trace (generation index, selected operator, reward breakdown, and batch size), and
+(ii) a summary table (number of pulls and mean reward per arm at the end of the run).
+These logs enable inspection of when the policy switches operators, whether it locks into a single arm, and how reward signals evolve over time.
 
