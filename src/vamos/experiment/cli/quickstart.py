@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 
@@ -37,10 +37,69 @@ def _print_list(label: str, items: list[str], *, width: int = 4) -> None:
 
 def _print_templates() -> None:
     print("Quickstart templates:")
-    for template in list_templates():
+    for template_key in available_templates():
+        template = get_template(template_key)
         req = f" (requires: {', '.join(template.requires)})" if template.requires else ""
         print(f"  {template.key}: {template.label}{req}")
         print(f"    {template.description}")
+
+
+def available_templates() -> list[str]:
+    """Return the available quickstart template keys in deterministic order."""
+    return sorted(template.key for template in list_templates())
+
+
+def generate_quickstart_config(template: str, overrides: dict[str, object] | None = None) -> dict[str, object]:
+    """Generate an ExperimentSpec v1 mapping from a quickstart template."""
+    template_key = template.strip().lower()
+    templates = available_templates()
+    if template_key not in templates:
+        available = ", ".join(templates)
+        raise ValueError(f"Unknown template '{template}'. Available: {available}.")
+    selected_template = get_template(template_key)
+    defaults = selected_template.defaults
+    spec_defaults: dict[str, object] = {
+        "title": f"Quickstart: {selected_template.label}",
+        "problem": defaults.problem,
+        "algorithm": defaults.algorithm,
+        "engine": defaults.engine,
+        "max_evaluations": defaults.budget,
+        "population_size": defaults.pop_size,
+        "seed": defaults.seed,
+        "output_root": DEFAULT_QUICKSTART_OUTPUT_ROOT,
+        "plot": defaults.plot,
+    }
+
+    safe_keys = {
+        "title",
+        "problem",
+        "algorithm",
+        "engine",
+        "max_evaluations",
+        "population_size",
+        "seed",
+        "output_root",
+        "plot",
+    }
+    if overrides:
+        for key, value in overrides.items():
+            if key == "defaults":
+                if not isinstance(value, Mapping):
+                    raise TypeError("Quickstart overrides['defaults'] must be a mapping when provided.")
+                for nested_key, nested_value in value.items():
+                    if nested_key not in safe_keys:
+                        raise ValueError(f"Unsupported quickstart override key: defaults.{nested_key}")
+                    spec_defaults[nested_key] = nested_value
+                continue
+            if key not in safe_keys:
+                raise ValueError(f"Unsupported quickstart override key: {key}")
+            spec_defaults[key] = value
+
+    spec: dict[str, object] = {
+        "version": EXPERIMENT_SPEC_VERSION,
+        "defaults": spec_defaults,
+    }
+    return spec
 
 
 def _prompt_text(prompt: str, default: str) -> str:
@@ -156,7 +215,7 @@ def _write_spec(
     plot: bool,
     config_path: str | None,
 ) -> Path:
-    spec = {
+    spec: dict[str, object] = {
         "version": EXPERIMENT_SPEC_VERSION,
         "defaults": {
             "title": title,
@@ -170,6 +229,10 @@ def _write_spec(
             "plot": plot,
         },
     }
+    return _write_spec_data(spec=spec, output_root=output_root, config_path=config_path)
+
+
+def _write_spec_data(*, spec: Mapping[str, object], output_root: str, config_path: str | None) -> Path:
     ensure_dir(output_root)
     if config_path:
         path = Path(config_path)
@@ -177,7 +240,7 @@ def _write_spec(
     else:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         path = Path(output_root) / f"quickstart_{timestamp}.json"
-    path.write_text(json.dumps(spec, indent=2, sort_keys=True), encoding="utf-8")
+    path.write_text(json.dumps(dict(spec), indent=2, sort_keys=True), encoding="utf-8")
     return path
 
 
@@ -278,18 +341,21 @@ def run_quickstart(argv: Sequence[str] | None = None) -> None:
     plot_default = defaults.plot if not args.no_plot else False
     plot = _pick_plot(plot_default, interactive=interactive)
 
-    config_path = _write_spec(
-        title=f"Quickstart: {template.label}",
-        problem=problem,
-        algorithm=algorithm,
-        engine=engine,
-        budget=budget,
-        pop_size=pop_size,
-        seed=seed,
-        output_root=output_root,
-        plot=plot,
-        config_path=args.config_path,
+    spec = generate_quickstart_config(
+        template.key,
+        overrides={
+            "title": f"Quickstart: {template.label}",
+            "problem": problem,
+            "algorithm": algorithm,
+            "engine": engine,
+            "max_evaluations": budget,
+            "population_size": pop_size,
+            "seed": seed,
+            "output_root": output_root,
+            "plot": plot,
+        },
     )
+    config_path = _write_spec_data(spec=spec, output_root=output_root, config_path=args.config_path)
 
     default_config = ExperimentConfig()
     parse_argv = ["--config", str(config_path)]
@@ -334,4 +400,4 @@ def run_quickstart(argv: Sequence[str] | None = None) -> None:
     )
 
 
-__all__ = ["run_quickstart", "list_templates", "get_template"]
+__all__ = ["run_quickstart", "list_templates", "get_template", "available_templates", "generate_quickstart_config"]
