@@ -1,13 +1,14 @@
 \begin{table}[t]
 \centering
-\caption{Median runtime (seconds) by problem family (baseline NSGA-II vs.\ baseline + AOS). Values computed from \texttt{experiments/ablation\_aos\_racing\_tuner.csv}.}
-\label{tab:runtime_family}
-\begin{tabular}{l|rrr|r}
+\caption{Median runtime (seconds) by objective-count group (baseline vs.\ random arm vs.\ AOS).}
+\label{tab:runtime_group}
+\begin{tabular}{l|rrrr|r}
 \toprule
-\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
+\textbf{Variant} & \textbf{2-obj} & \textbf{3-obj} & \textbf{4-obj} & \textbf{many-obj} & \textbf{Average} \\
 \midrule
-Baseline & \textbf{0.89} & \textbf{1.00} & \textbf{1.02} & \textbf{0.97} \\
-Baseline + AOS & 1.36 & 1.39 & 1.84 & 1.53 \\
+Baseline & \textbf{2.82} & \textbf{2.57} & \textbf{2.71} & \textbf{3.16} & \textbf{2.81} \\
+Random arm & 6.76 & 8.55 & 5.70 & 8.43 & 7.36 \\
+AOS & 6.16 & 6.33 & 6.52 & 5.61 & 6.16 \\
 \bottomrule
 \end{tabular}
 \end{table}

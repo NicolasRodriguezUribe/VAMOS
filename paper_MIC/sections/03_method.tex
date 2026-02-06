@@ -1,19 +1,98 @@
 \section{Method}
 \label{sec:method}
 
+Table~\ref{tab:notation} summarizes the main symbols used throughout the paper.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Notation summary.}
+\label{tab:notation}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l|l}
+\toprule
+\textbf{Symbol} & \textbf{Description} \\
+\midrule
+$\mathcal{A} = \{1,\dots,K\}$ & Portfolio of $K$ operator arms \\
+$a_t$ & Arm selected at generation $t$ \\
+$r_t \in [0,1]$ & Scalar reward observed at generation $t$ \\
+$n_{\mathrm{off}}$ & Number of offspring produced in a generation \\
+$n_{\mathrm{surv}}$ & Offspring that survive into the next population \\
+$n_{\mathrm{nd}}$ & Surviving offspring that are non-dominated \\
+$r_{\mathrm{surv}},\; r_{\mathrm{nd}},\; r_{\mathrm{hv}}$ & Reward components (survival, ND insertion, HV proxy) \\
+$w_{\mathrm{surv}},\; w_{\mathrm{nd}},\; w_{\mathrm{hv}}$ & Convex combination weights ($\sum w = 1$) \\
+$\rho_t$ & Relative hypervolume improvement ratio \\
+$\varepsilon$ & Exploration probability ($\varepsilon$-greedy) \\
+$p_{\mathrm{floor}}$ & Exploration floor probability \\
+$m_{\min}$ & Minimum pulls per arm during warmup \\
+$N$ & Population size \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Bandit formulation}
 Let $\mathcal{A} = \{1,\dots,K\}$ be a portfolio of $K$ candidate variation pipelines (arms).
 At each generation $t$, the algorithm selects one arm $a_t \in \mathcal{A}$, generates all offspring for that generation using that arm, observes a scalar reward $r_t \in [0,1]$, and updates its policy.
 The objective is to maximize cumulative reward, which serves as a proxy for improved search progress.
 
+\subsection{AOS pipeline overview}
+\label{sec:aos_overview}
+
+Figure~\ref{fig:aos_overview} illustrates the five-stage pipeline that our AOS layer executes at every generation of NSGA-II.
+The pipeline runs as a closed loop: the output of the last stage (the updated policy) feeds back into the second stage at the next generation.
+We now describe each stage so that the overall mechanism is clear before the formal details in the following subsections.
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/AOS.png}{
+  \includegraphics[width=\linewidth]{figures/AOS.png}
+}{
+  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/AOS.png (place the AOS overview infographic here).\vspace{2mm}}}
+}
+\caption{High-level overview of the Adaptive Operator Selection (AOS) pipeline. Each generation traverses the five stages from left to right; the updated policy feeds back into Stage~2 at the next generation.}
+\label{fig:aos_overview}
+\end{figure}
+
+\paragraph{Stage 1 --- Portfolio of operator arms.}
+The starting point is a fixed collection of $K$ candidate variation pipelines, called \emph{arms}.
+Each arm pairs one crossover operator with one mutation operator and stores its own hyperparameters (e.g., distribution index, crossover probability).
+Arms are registered once before the evolutionary run begins and remain available throughout the search.
+Concretely, each arm carries a unique identifier (\texttt{op\_id}) and a human-readable name (\texttt{op\_name}) so that logging and post-hoc analysis can trace which pipeline was used at every generation.
+A portfolio with diverse operator families (e.g., SBX, BLX-$\alpha$, differential evolution, uniform crossover) ensures that the search can draw on fundamentally different exploration strategies.
+
+\paragraph{Stage 2 --- Policy selection.}
+At the beginning of each generation $t$, a bandit policy inspects its internal state---accumulated rewards, pull counts, and confidence bounds---and selects exactly one arm $a_t$.
+The policy can be any of the classical multi-armed bandit strategies: $\varepsilon$-greedy (exploit the best arm most of the time, explore uniformly with probability $\varepsilon$), UCB (select the arm with the highest upper confidence bound), EXP3 (adversarial exponential-weight strategy), or Thompson sampling (sample each arm's expected reward from a posterior distribution).
+Sliding-window variants of UCB are also supported to handle the non-stationarity inherent in evolutionary search.
+Regardless of the policy, the output of this stage is a single integer arm index that determines which variation pipeline will produce all offspring for this generation.
+
+\paragraph{Stage 3 --- Variation and survival.}
+The selected arm's crossover and mutation operators are applied to the current parent population to produce a set of $n_{\mathrm{off}}$ offspring.
+These offspring are then combined with the parents and passed through NSGA-II's survivor selection, which retains the best $N$ individuals based on non-dominated sorting and crowding distance.
+The key bookkeeping step here is to \emph{record} which offspring survived and, among those survivors, which are non-dominated in the new population.
+These counts ($n_{\mathrm{surv}}$ and $n_{\mathrm{nd}}$) become the raw material for the reward signal in the next stage.
+
+\paragraph{Stage 4 --- Reward computation.}
+Immediately after survival, the AOS controller computes a scalar reward $r_t \in [0,1]$ that summarizes how ``useful'' the chosen arm was for this generation.
+The reward is computed from one or more components: the survival rate $r_{\mathrm{surv}}$ (fraction of offspring that survived), the non-dominated insertion rate $r_{\mathrm{nd}}$ (fraction of offspring that are non-dominated in the new front), and optionally a bounded hypervolume-improvement proxy $r_{\mathrm{hv}}$.
+These components are aggregated into a single scalar via a weighted sum.
+Because each generation uses exactly one arm, the reward is unambiguously attributed to that arm, avoiding the credit-assignment ambiguity that arises when multiple operators act simultaneously.
+
+\paragraph{Stage 5 --- Policy update and exploration floor.}
+The bandit policy receives the pair $(a_t, r_t)$ and updates its internal statistics---for instance, incrementing pull counts and recalculating running averages or posterior parameters.
+To prevent the policy from prematurely committing to a single arm, an \emph{exploration floor} mixes in a uniform random arm draw with a fixed probability $p_{\mathrm{floor}}$ at every selection step.
+This guarantees that every arm receives a minimum fraction of trials, which is especially important in early generations when reward estimates are noisy.
+All stochastic decisions inside the policy (exploration draws, Thompson samples) are driven by an explicit random seed, so that the entire operator-selection trajectory is deterministic and reproducible given the same configuration.
+
+After the update, the loop returns to Stage~2 for the next generation, creating a closed feedback cycle that continuously adapts the operator choice to the evolving search landscape.
+
 \subsection{Operator portfolios}
-We define a small \emph{portfolio} of candidate variation pipelines, where each arm specifies one crossover operator and one mutation operator with fixed parameters.
-At generation $t$, NSGA-II selects exactly one arm and uses it to generate all offspring for that generation.
-This generation-level decision reduces reward noise (all offspring share the same operator) and keeps the online learning interface simple.
-It also mirrors how practitioners often tune operators: choosing a pipeline and running it for a while, rather than switching per mating event.
+As introduced in Stage~1 above, each arm bundles one crossover and one mutation operator with fixed hyperparameters.
+All offspring in a given generation are produced by the same arm.
+This \emph{generation-level} granularity reduces reward noise (all offspring share the same operator) and mirrors how practitioners often tune operators: choosing a pipeline and running it for a while, rather than switching per individual mating event.
 
 \subsection{Reward signals}
-After survivor selection, we compute a reward that summarizes how useful the selected operator was for that generation.
+Stage~4 computes a scalar reward from the bookkeeping performed in Stage~3.
 Let $n_{\mathrm{off}}$ be the offspring count, $n_{\mathrm{surv}}$ the number of offspring that survive into the next population, and $n_{\mathrm{nd}}$ the number of surviving offspring that are non-dominated in the next population.
 We define:
 \begin{align}
@@ -39,24 +118,41 @@ The aggregate reward can be configured as a single component or as a convex comb
 In our implementation the weights are normalized to sum to one; if all are zero, we default to a balanced survival/ND reward.
 
 \subsection{Policies and practical details}
-We support several bandit policies (e.g., $\varepsilon$-greedy, UCB, EXP3, Thompson sampling) and two stabilization mechanisms:
-(i) a \emph{warmup} minimum-usage rule that forces each arm to be tried at least a given number of times, and (ii) an \emph{exploration floor} that mixes in a uniform arm draw with fixed probability.
-All random choices can be driven by an explicit policy RNG seed to support reproducibility.
-
-\paragraph{Credit timing.}
-Rewards are computed once per generation, after survivor selection has produced the next population.
-The policy is updated once per generation using the scalar reward, which matches the generation-level selection granularity.
+Beyond the policies listed in Stage~2 (Section~\ref{sec:aos_overview}), we provide two stabilization mechanisms:
+(i) a \emph{warmup} minimum-usage rule that forces each arm to be tried at least a configurable number of times before the policy is allowed to exploit, and
+(ii) the \emph{exploration floor} described in Stage~5, which guarantees a minimum pull fraction for every arm throughout the run.
+Both mechanisms are especially important in the early generations, when reward estimates are noisy and premature lock-in is most likely.
 
 \begin{algorithm}[t]
-\caption{NSGA-II with generation-level AOS (sketch).}
+\caption{NSGA-II with generation-level AOS.}
 \label{alg:nsgaii_aos}
 \begin{algorithmic}[1]
-\For{$t = 1,2,\dots$}
-  \State Select arm $a_t$ using bandit policy (with optional warmup/floor).
-  \State Generate offspring using the variation pipeline of $a_t$.
-  \State Apply NSGA-II survivor selection to form next population.
-  \State Compute reward $r_t$ from survival/diversity signals (and optional HV proxy).
-  \State Update bandit policy with $(a_t, r_t)$.
+\Require Portfolio $\mathcal{A}=\{1,\dots,K\}$; policy $\pi$; pop.\ size $N$; weights $w_{\mathrm{surv}}, w_{\mathrm{nd}}, w_{\mathrm{hv}}$; floor $p_{\mathrm{floor}}$; warmup $m_{\min}$; budget $B$
+\Ensure Final population $P$
+\State Initialize population $P_0$ of size $N$; set pull counts $c_k \gets 0$ for all $k \in \mathcal{A}$
+\For{$t = 1, 2, \dots, \lfloor B/N \rfloor$}
+  \Statex \hspace{\algorithmicindent}\textit{--- Stage 2: Arm selection (warmup $\to$ floor $\to$ policy) ---}
+  \If{$\exists\, k \in \mathcal{A}$ with $c_k < m_{\min}$} \Comment{Warmup}
+    \State $a_t \gets \arg\min_k c_k$ \hfill (break ties uniformly)
+  \ElsIf{$U(0,1) < p_{\mathrm{floor}}$} \Comment{Exploration floor}
+    \State $a_t \gets \mathrm{Uniform}(\mathcal{A})$
+  \Else \Comment{Policy exploitation}
+    \State $a_t \gets \pi.\mathrm{select}()$ \hfill ($\varepsilon$-greedy / UCB / EXP3 / TS)
+  \EndIf
+  \State $c_{a_t} \gets c_{a_t} + 1$
+  \Statex \hspace{\algorithmicindent}\textit{--- Stage 3: Variation and survival ---}
+  \State $O_t \gets \mathrm{Vary}(P_{t-1},\; \mathcal{A}[a_t])$ \Comment{Crossover + mutation, $|O_t|=n_{\mathrm{off}}$}
+  \State $P_t \gets \mathrm{NSGA\text{-}II\_Survive}(P_{t-1} \cup O_t,\; N)$
+  \State $n_{\mathrm{surv}} \gets |O_t \cap P_t|$ ;\; $n_{\mathrm{nd}} \gets |\{x \in O_t \cap P_t : x \text{ is non-dominated in } P_t\}|$
+  \Statex \hspace{\algorithmicindent}\textit{--- Stage 4: Reward computation ---}
+  \State $r_{\mathrm{surv}} \gets n_{\mathrm{surv}} / n_{\mathrm{off}}$ ;\;
+         $r_{\mathrm{nd}} \gets n_{\mathrm{nd}} / n_{\mathrm{off}}$
+  \State $\rho_t \gets (\mathrm{HV}(P_t) - \mathrm{HV}(P_{t-1})) \;/\; \max(|\mathrm{HV}(P_{t-1})|,\epsilon)$
+  \State $r_{\mathrm{hv}} \gets 0.5 + 0.5\,\tanh(\rho_t)$
+  \State $r_t \gets w_{\mathrm{surv}}\, r_{\mathrm{surv}} + w_{\mathrm{nd}}\, r_{\mathrm{nd}} + w_{\mathrm{hv}}\, r_{\mathrm{hv}}$
+  \Statex \hspace{\algorithmicindent}\textit{--- Stage 5: Policy update ---}
+  \State $\pi.\mathrm{update}(a_t,\; r_t)$
 \EndFor
+\State \Return $P_{\lfloor B/N \rfloor}$
 \end{algorithmic}
 \end{algorithm}
