@@ -42,6 +42,7 @@ nav:
     - Minimal Python Track: guide/minimal-python.md
     - Quick Start Guide: guide/zero_to_hero.md
     - Getting Started: guide/getting-started.md
+    - VAMOS Assist: assist.md
     - CLI & Config: guide/cli.md
     - VAMOS Studio: guide/studio.md
     - Cookbook: guide/cookbook.md
@@ -66,6 +67,7 @@ nav:
     - Add an Algorithm: dev/add_algorithm.md
     - Add a Backend: dev/add_backend.md
     - Architecture Health: dev/architecture_health.md
+    - Release Smoke Verification: release_smoke.md
     - Architecture Decisions:
       - ADR Index: dev/adr/index.md
       - 0001 Layering and Facades: dev/adr/0001-layering-and-facades.md
