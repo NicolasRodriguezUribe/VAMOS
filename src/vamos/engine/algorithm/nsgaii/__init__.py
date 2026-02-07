@@ -27,6 +27,7 @@ from .helpers import (
     match_ids,
     operator_success_stats,
 )
+from .injection import ImmigrationManager, ImmigrantCandidate, ImmigrationStats
 
 __all__ = [
     "NSGAII",
@@ -35,4 +36,7 @@ __all__ = [
     "match_ids",
     "operator_success_stats",
     "generation_contributions",
+    "ImmigrationManager",
+    "ImmigrantCandidate",
+    "ImmigrationStats",
 ]

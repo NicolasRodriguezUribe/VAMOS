@@ -22,16 +22,33 @@ def build_mating_pool(
     parent_count: int,
     group_size: int = 2,
     selection_method: str = "tournament",
+    candidate_indices: np.ndarray | None = None,
 ) -> np.ndarray:
     if parent_count <= 0:
         raise ValueError("parent_count must be positive.")
     if parent_count % group_size != 0:
         raise ValueError("parent_count must be divisible by group_size.")
     assert ranks.shape == crowding.shape, "ranks and crowding must align"
-    if selection_method == "random":
-        parent_indices = rng.integers(0, ranks.size, size=parent_count)
+    if candidate_indices is not None:
+        cand = np.asarray(candidate_indices, dtype=int)
+        cand = cand[(cand >= 0) & (cand < ranks.size)]
+        cand = np.unique(cand)
+        if cand.size == 0:
+            cand = np.arange(ranks.size, dtype=int)
     else:
-        parent_indices = kernel.tournament_selection(ranks, crowding, pressure, rng, n_parents=parent_count)
+        cand = np.arange(ranks.size, dtype=int)
+
+    if selection_method == "random":
+        parent_indices = rng.choice(cand, size=parent_count, replace=True)
+    else:
+        parent_local = kernel.tournament_selection(
+            ranks[cand],
+            crowding[cand],
+            pressure,
+            rng,
+            n_parents=parent_count,
+        )
+        parent_indices = cand[np.asarray(parent_local, dtype=int)]
     if parent_indices.size != parent_count:
         raise ValueError("Selection operator returned an unexpected number of parents.")
     return parent_indices.reshape(parent_count // group_size, group_size)
