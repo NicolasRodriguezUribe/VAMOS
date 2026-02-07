@@ -33,6 +33,26 @@ def combine_ids(st: NSGAIIState) -> np.ndarray | None:
     return cast(np.ndarray, np.concatenate([current_ids, pending_ids]))
 
 
+def _coerce_parent_candidates(raw: Any, size: int) -> np.ndarray | None:
+    if raw is None:
+        return None
+    arr = np.asarray(raw)
+    if arr.ndim != 1:
+        return None
+    if arr.dtype == bool:
+        if arr.size != size:
+            return None
+        return np.flatnonzero(arr)
+    try:
+        idx = arr.astype(int, copy=False)
+    except Exception:
+        return None
+    idx = idx[(idx >= 0) & (idx < size)]
+    if idx.size == 0:
+        return None
+    return np.unique(idx)
+
+
 def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     st = algo._st
     if st is None:
@@ -61,6 +81,31 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     children_per_group = st.variation.children_per_group
     parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
 
+    candidate_indices = np.arange(st.X.shape[0], dtype=int)
+    filter_fn = st.parent_selection_filter
+    if callable(filter_fn):
+        selected_raw: Any | None = None
+        try:
+            selected_raw = filter_fn(st, ranks, crowding)
+        except TypeError:
+            try:
+                selected_raw = filter_fn(st)
+            except Exception:
+                selected_raw = None
+        except Exception:
+            selected_raw = None
+        selected_idx = _coerce_parent_candidates(selected_raw, st.X.shape[0])
+        if selected_idx is not None and selected_idx.size > 0:
+            candidate_indices = selected_idx
+
+    if st.non_breeding_indices.size > 0:
+        blocked = np.asarray(st.non_breeding_indices, dtype=int)
+        blocked = blocked[(blocked >= 0) & (blocked < st.X.shape[0])]
+        if blocked.size > 0:
+            candidate_indices = candidate_indices[~np.isin(candidate_indices, blocked)]
+            if candidate_indices.size == 0:
+                candidate_indices = np.arange(st.X.shape[0], dtype=int)
+
     mating_pairs = build_mating_pool(
         algo.kernel,
         ranks,
@@ -70,8 +115,11 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
         parent_count,
         parents_per_group,
         st.sel_method,
+        candidate_indices=candidate_indices,
     )
     parent_idx = mating_pairs.reshape(-1)
+    if st.immigration_manager is not None:
+        st.immigration_manager.record_parent_indices(st.generation, parent_idx)
     X_parents = st.variation.gather_parents(st.X, parent_idx)
     X_off = st.variation.produce_offspring(X_parents, st.rng)
 

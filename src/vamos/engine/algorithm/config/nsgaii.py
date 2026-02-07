@@ -121,6 +121,31 @@ class _NSGAIIConfigBuilder:
             self._cfg["adaptive_operator_selection"] = dict(config)
         return self
 
+    def immigration(self, config: dict[str, Any] | None) -> _NSGAIIConfigBuilder:
+        if config is None:
+            self._cfg["immigration"] = None
+        else:
+            self._cfg["immigration"] = dict(config)
+        return self
+
+    def parent_selection_filter(self, fn: Any | None) -> _NSGAIIConfigBuilder:
+        self._cfg["parent_selection_filter"] = fn
+        return self
+
+    def live_callback_mode(self, mode: str) -> _NSGAIIConfigBuilder:
+        self._cfg["live_callback_mode"] = str(mode)
+        return self
+
+    def generation_callback(
+        self,
+        fn: Any | None,
+        *,
+        copy_arrays: bool = True,
+    ) -> _NSGAIIConfigBuilder:
+        self._cfg["generation_callback"] = fn
+        self._cfg["generation_callback_copy"] = bool(copy_arrays)
+        return self
+
     def build(self) -> NSGAIIConfig:
         _require_fields(
             self._cfg,
@@ -145,6 +170,11 @@ class _NSGAIIConfigBuilder:
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             adaptive_operator_selection=self._cfg.get("adaptive_operator_selection"),
+            immigration=self._cfg.get("immigration"),
+            parent_selection_filter=self._cfg.get("parent_selection_filter"),
+            live_callback_mode=self._cfg.get("live_callback_mode", "nd_only"),
+            generation_callback=self._cfg.get("generation_callback"),
+            generation_callback_copy=bool(self._cfg.get("generation_callback_copy", True)),
         )
 
 
@@ -166,6 +196,11 @@ class NSGAIIConfig(_SerializableConfig):
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
     adaptive_operator_selection: dict[str, Any] | None = None
+    immigration: dict[str, Any] | None = None
+    parent_selection_filter: Any | None = None
+    live_callback_mode: str = "nd_only"
+    generation_callback: Any | None = None
+    generation_callback_copy: bool = True
 
     @classmethod
     def default(
