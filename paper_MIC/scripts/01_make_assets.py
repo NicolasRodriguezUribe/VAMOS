@@ -1,8 +1,8 @@
 """
 Generate MIC paper assets (tables + figures) from the experiment CSVs.
 
-This version supports the three-way comparison (baseline vs random vs AOS)
-on 21 continuous RE + RWA engineering problems, grouped by objective count.
+Three-way comparison (baseline vs random vs AOS) on 21 standard MO
+benchmarks (ZDT / DTLZ / WFG), grouped by benchmark family.
 
 Usage:
   python paper_MIC/scripts/01_make_assets.py
@@ -31,7 +31,7 @@ FIGURES_DIR = PAPER_DIR / "figures"
 # Ordering constants
 # ---------------------------------------------------------------------------
 
-_OBJ_GROUP_ORDER = ("2-obj", "3-obj", "4-obj", "many-obj")
+_FAMILY_ORDER = ("ZDT", "DTLZ", "WFG")
 _VARIANT_ORDER = ("baseline", "random", "aos")
 _VARIANT_DISPLAY = {
     "baseline": "Baseline",
@@ -40,52 +40,31 @@ _VARIANT_DISPLAY = {
 }
 
 _PROBLEM_ORDER = (
-    # RE 2-obj
-    "re21", "re24",
-    # RWA 2-obj
-    "rwa1",
-    # RE 3-obj
-    "re31", "re32", "re33", "re34", "re37",
-    # RWA 3-obj
-    "rwa2", "rwa3", "rwa4", "rwa5", "rwa6", "rwa7",
-    # RE 4-obj
-    "re41", "re42",
-    # RWA 4-obj
-    "rwa8",
-    # Many-obj
-    "rwa9", "rwa10", "re61", "re91",
+    # ZDT (2-obj, 10-30 vars)
+    "zdt1", "zdt2", "zdt3", "zdt4", "zdt6",
+    # DTLZ (3-obj, 7-22 vars)
+    "dtlz1", "dtlz2", "dtlz3", "dtlz4", "dtlz5", "dtlz6", "dtlz7",
+    # WFG (3-obj, 24 vars)
+    "wfg1", "wfg2", "wfg3", "wfg4", "wfg5", "wfg6", "wfg7", "wfg8", "wfg9",
 )
 
 _N_OBJ: dict[str, int] = {
-    "re21": 2, "re24": 2,
-    "re31": 3, "re32": 3, "re33": 3, "re34": 3, "re37": 3,
-    "re41": 4, "re42": 4,
-    "re61": 6, "re91": 9,
-    "rwa1": 2,
-    "rwa2": 3, "rwa3": 3, "rwa4": 3, "rwa5": 3, "rwa6": 3, "rwa7": 3,
-    "rwa8": 4,
-    "rwa9": 5,
-    "rwa10": 7,
+    "zdt1": 2, "zdt2": 2, "zdt3": 2, "zdt4": 2, "zdt6": 2,
+    "dtlz1": 3, "dtlz2": 3, "dtlz3": 3, "dtlz4": 3,
+    "dtlz5": 3, "dtlz6": 3, "dtlz7": 3,
+    "wfg1": 3, "wfg2": 3, "wfg3": 3, "wfg4": 3, "wfg5": 3,
+    "wfg6": 3, "wfg7": 3, "wfg8": 3, "wfg9": 3,
 }
 
 
-def _obj_group(problem_name: str) -> str:
-    m = _N_OBJ.get(problem_name.strip().lower(), 0)
-    if m <= 2:
-        return "2-obj"
-    if m == 3:
-        return "3-obj"
-    if m == 4:
-        return "4-obj"
-    return "many-obj"
-
-
-def _source(problem_name: str) -> str:
+def _family(problem_name: str) -> str:
     name = problem_name.strip().lower()
-    if name.startswith("re"):
-        return "RE"
-    if name.startswith("rwa"):
-        return "RWA"
+    if name.startswith("zdt"):
+        return "ZDT"
+    if name.startswith("dtlz"):
+        return "DTLZ"
+    if name.startswith("wfg"):
+        return "WFG"
     return "Other"
 
 
@@ -116,7 +95,7 @@ def _bold_best(cells: list[float | None], *, higher_is_better: bool, decimals: i
 # Table generators
 # ---------------------------------------------------------------------------
 
-def _make_group_table(
+def _make_family_table(
     group_df: pd.DataFrame,
     *,
     caption: str,
@@ -124,9 +103,9 @@ def _make_group_table(
     higher_is_better: bool,
     decimals: int,
 ) -> str:
-    """Family-level table grouped by objective count."""
-    groups = [g for g in _OBJ_GROUP_ORDER if g in group_df.columns]
-    cols = [*groups, "Average"]
+    """Family-level table grouped by benchmark suite (ZDT / DTLZ / WFG)."""
+    families = [f for f in _FAMILY_ORDER if f in group_df.columns]
+    cols = [*families, "Average"]
 
     best_by_col: dict[str, float | None] = {}
     for col in cols:
@@ -144,10 +123,10 @@ def _make_group_table(
         r"\centering",
         rf"\caption{{{caption}}}",
         rf"\label{{{label}}}",
-        r"\begin{tabular}{l|" + "r" * len(groups) + r"|r}",
+        r"\begin{tabular}{l|" + "r" * len(families) + r"|r}",
         r"\toprule",
         r"\textbf{Variant} & "
-        + " & ".join([rf"\textbf{{{g}}}" for g in groups])
+        + " & ".join([rf"\textbf{{{f}}}" for f in families])
         + r" & \textbf{Average} \\",
         r"\midrule",
     ]
@@ -219,12 +198,12 @@ def _make_per_problem_table(
         r"\midrule",
     ]
 
-    last_group: str | None = None
+    last_family: str | None = None
     for problem in pivot.index:
-        grp = _obj_group(problem)
-        if last_group is not None and grp != last_group:
+        fam = _family(problem)
+        if last_family is not None and fam != last_family:
             lines.append(r"\midrule")
-        last_group = grp
+        last_family = fam
 
         values = [
             None if pd.isna(pivot.loc[problem].get(v)) else float(pivot.loc[problem][v])
@@ -256,7 +235,7 @@ def plot_delta_bars(
     ylabel: str,
     reference_variant: str = "baseline",
 ) -> None:
-    """Bar chart of HV delta (AOS − reference) per problem."""
+    """Bar chart of HV delta (AOS - reference) per problem."""
     df = per_problem.pivot(index="problem", columns="variant", values=value_col).copy()
     df = df.reindex(index=list(_PROBLEM_ORDER)).dropna(how="all")
     if "aos" not in df.columns or reference_variant not in df.columns:
@@ -283,7 +262,7 @@ def plot_delta_bars(
 
 
 def plot_anytime_hv(anytime_csv: Path, *, out_pdf: Path, problems: list[str]) -> None:
-    """Convergence curves (mean ± std) for selected problems."""
+    """Convergence curves (mean +/- std) for selected problems."""
     df = pd.read_csv(anytime_csv)
     if df.empty:
         raise ValueError(f"Empty CSV: {anytime_csv}")
@@ -341,6 +320,53 @@ def plot_anytime_hv(anytime_csv: Path, *, out_pdf: Path, problems: list[str]) ->
         ax.grid(True, alpha=0.25)
 
     axes[0].legend(loc="lower right", frameon=True, fontsize=9)
+    fig.tight_layout()
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_anytime_aggregate(anytime_csv: Path, *, out_pdf: Path) -> None:
+    """Aggregate convergence curve averaged across ALL problems."""
+    df = pd.read_csv(anytime_csv)
+    if df.empty:
+        return
+
+    df["variant"] = df["variant"].astype(str).str.strip().str.lower()
+    df = df[df["variant"].isin(_VARIANT_ORDER)].copy()
+    df["evals"] = df["evals"].astype(int)
+
+    agg = df.groupby(["variant", "evals"], as_index=False).agg(
+        mean_hv=("hypervolume", "mean"),
+        std_hv=("hypervolume", "std"),
+    )
+
+    style_map = {
+        "baseline": {"color": "#1f77b4", "linestyle": "-"},
+        "random": {"color": "#ff7f0e", "linestyle": "--"},
+        "aos": {"color": "#2ca02c", "linestyle": "-"},
+    }
+
+    fig, ax = plt.subplots(1, 1, figsize=(6.0, 3.5))
+    for variant in _VARIANT_ORDER:
+        sub = agg[agg["variant"] == variant].sort_values("evals")
+        if sub.empty:
+            continue
+        x = sub["evals"].to_numpy()
+        y = sub["mean_hv"].to_numpy()
+        yerr = sub["std_hv"].fillna(0.0).to_numpy()
+        st = style_map.get(variant, {})
+        ax.errorbar(
+            x, y, yerr=yerr,
+            marker="o", linewidth=2.0, capsize=3,
+            label=_VARIANT_DISPLAY.get(variant, variant),
+            **st,
+        )
+    ax.set_title("Mean normalized HV across all 21 problems")
+    ax.set_xlabel("Evaluations")
+    ax.set_ylabel("Mean normalized HV")
+    ax.legend(loc="lower right", frameon=True, fontsize=10)
+    ax.grid(True, alpha=0.25)
     fig.tight_layout()
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_pdf, bbox_inches="tight")
@@ -468,7 +494,6 @@ def _holm_bonferroni(p_values: list[float], alpha: float = 0.05) -> list[bool]:
         if p <= threshold:
             reject[orig_idx] = True
         else:
-            # Once we fail to reject, all remaining are also not rejected
             break
     return reject
 
@@ -493,7 +518,6 @@ def run_stat_tests(
         b_vals = df[(df["problem"] == problem) & (df["variant"] == variant_b)][value_col].to_numpy()
         if len(a_vals) == 0 or len(b_vals) == 0:
             continue
-        # Ensure same length (paired by seed order)
         n = min(len(a_vals), len(b_vals))
         a_vals, b_vals = a_vals[:n], b_vals[:n]
         diff = a_vals - b_vals
@@ -538,11 +562,11 @@ def run_stat_tests(
 
 @dataclass(frozen=True)
 class AblationSummary:
-    hv_group: pd.DataFrame
-    runtime_group: pd.DataFrame
+    hv_family: pd.DataFrame
+    runtime_family: pd.DataFrame
     hv_per_problem: pd.DataFrame
     runtime_per_problem: pd.DataFrame
-    hv_overall_median: dict[str, float]
+    hv_overall_mean: dict[str, float]
     runtime_overall_median: dict[str, float]
     n_problems: int
     n_seeds: int
@@ -556,12 +580,15 @@ class AblationSummary:
     # AOS vs random
     wins_vs_rand: int
     losses_vs_rand: int
-    # Statistical tests (populated by run_stat_tests)
+    # Convergence speed
+    hv_mean_at_10k: dict[str, float]
+    convergence_advantage_pct: float  # AOS vs baseline at 10k evals
+    # Statistical tests
     stat_vs_base: StatTestResult | None = field(default=None)
     stat_vs_rand: StatTestResult | None = field(default=None)
 
 
-def summarize_ablation(csv_path: Path, *, n_evals: int = 0) -> AblationSummary:
+def summarize_ablation(csv_path: Path, *, n_evals: int = 0, anytime_csv: Path | None = None) -> AblationSummary:
     df = pd.read_csv(csv_path)
     if df.empty:
         raise ValueError(f"No rows in CSV: {csv_path}")
@@ -581,25 +608,24 @@ def summarize_ablation(csv_path: Path, *, n_evals: int = 0) -> AblationSummary:
     df["problem"] = df["problem"].astype(str).str.strip().str.lower()
     df["seed"] = df["seed"].astype(int)
 
-    # Assign objective group
-    if "obj_group" not in df.columns:
-        df["obj_group"] = df["problem"].map(_obj_group)
+    # Assign family group
+    df["family"] = df["problem"].map(_family)
 
-    # Group-level medians
-    hv_group = df.groupby(["variant", "obj_group"])["hypervolume"].median().unstack()
-    hv_group["Average"] = hv_group.mean(axis=1)
-    hv_group = hv_group.reindex(index=list(_VARIANT_ORDER))
+    # Family-level means
+    hv_family = df.groupby(["variant", "family"])["hypervolume"].mean().unstack()
+    hv_family["Average"] = hv_family.mean(axis=1)
+    hv_family = hv_family.reindex(index=list(_VARIANT_ORDER))
 
-    runtime_group = df.groupby(["variant", "obj_group"])["runtime_seconds"].median().unstack()
-    runtime_group["Average"] = runtime_group.mean(axis=1)
-    runtime_group = runtime_group.reindex(index=list(_VARIANT_ORDER))
+    runtime_family = df.groupby(["variant", "family"])["runtime_seconds"].median().unstack()
+    runtime_family["Average"] = runtime_family.mean(axis=1)
+    runtime_family = runtime_family.reindex(index=list(_VARIANT_ORDER))
 
-    # Overall medians
-    hv_overall = df.groupby("variant")["hypervolume"].median().to_dict()
+    # Overall
+    hv_overall = df.groupby("variant")["hypervolume"].mean().to_dict()
     rt_overall = df.groupby("variant")["runtime_seconds"].median().to_dict()
 
-    # Per-problem medians
-    hv_pp = df.groupby(["variant", "problem"], as_index=False)["hypervolume"].median()
+    # Per-problem means
+    hv_pp = df.groupby(["variant", "problem"], as_index=False)["hypervolume"].mean()
     rt_pp = df.groupby(["variant", "problem"], as_index=False)["runtime_seconds"].median()
 
     # AOS vs baseline
@@ -617,16 +643,30 @@ def summarize_ablation(csv_path: Path, *, n_evals: int = 0) -> AblationSummary:
     wins_r = int((delta_rand > 0).sum()) if delta_rand.size else 0
     losses_r = int((delta_rand < 0).sum()) if delta_rand.size else 0
 
-    # Statistical tests (Wilcoxon + Holm-Bonferroni)
+    # Convergence speed from anytime data
+    hv_at_10k: dict[str, float] = {}
+    conv_adv = 0.0
+    if anytime_csv is not None and anytime_csv.is_file():
+        at = pd.read_csv(anytime_csv)
+        at["variant"] = at["variant"].astype(str).str.strip().str.lower()
+        at["evals"] = at["evals"].astype(int)
+        at_10k = at[at["evals"] == 10000]
+        if not at_10k.empty:
+            hv_at_10k = at_10k.groupby("variant")["hypervolume"].mean().to_dict()
+            bl_10k = hv_at_10k.get("baseline", 0.0)
+            ao_10k = hv_at_10k.get("aos", 0.0)
+            conv_adv = ((ao_10k - bl_10k) / max(bl_10k, 1e-12)) * 100.0
+
+    # Statistical tests
     stat_base = run_stat_tests(df, variant_a="aos", variant_b="baseline") if "aos" in df["variant"].values and "baseline" in df["variant"].values else None
     stat_rand = run_stat_tests(df, variant_a="aos", variant_b="random") if "aos" in df["variant"].values and "random" in df["variant"].values else None
 
     return AblationSummary(
-        hv_group=hv_group,
-        runtime_group=runtime_group,
+        hv_family=hv_family,
+        runtime_family=runtime_family,
         hv_per_problem=hv_pp,
         runtime_per_problem=rt_pp,
-        hv_overall_median={str(k): float(v) for k, v in hv_overall.items()},
+        hv_overall_mean={str(k): float(v) for k, v in hv_overall.items()},
         runtime_overall_median={str(k): float(v) for k, v in rt_overall.items()},
         n_problems=int(hv_wide.shape[0]),
         n_seeds=int(df["seed"].nunique()),
@@ -638,19 +678,25 @@ def summarize_ablation(csv_path: Path, *, n_evals: int = 0) -> AblationSummary:
         worst_delta_vs_base=worst_db,
         wins_vs_rand=wins_r,
         losses_vs_rand=losses_r,
+        hv_mean_at_10k=hv_at_10k,
+        convergence_advantage_pct=conv_adv,
         stat_vs_base=stat_base,
         stat_vs_rand=stat_rand,
     )
 
 
 def write_summary_macros(summary: AblationSummary, out_path: Path) -> None:
-    hv_base = float(summary.hv_overall_median.get("baseline", 0.0))
-    hv_rand = float(summary.hv_overall_median.get("random", 0.0))
-    hv_aos = float(summary.hv_overall_median.get("aos", 0.0))
+    hv_base = float(summary.hv_overall_mean.get("baseline", 0.0))
+    hv_rand = float(summary.hv_overall_mean.get("random", 0.0))
+    hv_aos = float(summary.hv_overall_mean.get("aos", 0.0))
     rt_base = float(summary.runtime_overall_median.get("baseline", 1.0))
     rt_rand = float(summary.runtime_overall_median.get("random", 1.0))
     rt_aos = float(summary.runtime_overall_median.get("aos", 1.0))
     rt_overhead = 100.0 * (rt_aos - rt_base) / max(rt_base, 1e-12)
+
+    # Convergence
+    hv_base_10k = float(summary.hv_mean_at_10k.get("baseline", 0.0))
+    hv_aos_10k = float(summary.hv_mean_at_10k.get("aos", 0.0))
 
     # Statistical test results
     sb = summary.stat_vs_base
@@ -670,9 +716,9 @@ def write_summary_macros(summary: AblationSummary, out_path: Path) -> None:
         rf"\newcommand{{\AOSLosses}}{{{summary.losses_vs_base}}}",
         rf"\newcommand{{\AOSWinsRand}}{{{summary.wins_vs_rand}}}",
         rf"\newcommand{{\AOSLossesRand}}{{{summary.losses_vs_rand}}}",
-        rf"\newcommand{{\AOSHVMedianBaseline}}{{{hv_base:.3f}}}",
-        rf"\newcommand{{\AOSHVMedianRandom}}{{{hv_rand:.3f}}}",
-        rf"\newcommand{{\AOSHVMedianAOS}}{{{hv_aos:.3f}}}",
+        rf"\newcommand{{\AOSHVMeanBaseline}}{{{hv_base:.3f}}}",
+        rf"\newcommand{{\AOSHVMeanRandom}}{{{hv_rand:.3f}}}",
+        rf"\newcommand{{\AOSHVMeanAOS}}{{{hv_aos:.3f}}}",
         rf"\newcommand{{\AOSRuntimeMedianBaseline}}{{{rt_base:.2f}}}",
         rf"\newcommand{{\AOSRuntimeMedianRandom}}{{{rt_rand:.2f}}}",
         rf"\newcommand{{\AOSRuntimeMedianAOS}}{{{rt_aos:.2f}}}",
@@ -681,6 +727,10 @@ def write_summary_macros(summary: AblationSummary, out_path: Path) -> None:
         rf"\newcommand{{\AOSBestDelta}}{{{summary.best_delta_vs_base:.3f}}}",
         rf"\newcommand{{\AOSWorstProblem}}{{{summary.worst_problem_vs_base}}}",
         rf"\newcommand{{\AOSWorstDelta}}{{{summary.worst_delta_vs_base:.3f}}}",
+        "% Convergence speed",
+        rf"\newcommand{{\AOSHVBaselineTenK}}{{{hv_base_10k:.3f}}}",
+        rf"\newcommand{{\AOSHVAOSTenK}}{{{hv_aos_10k:.3f}}}",
+        rf"\newcommand{{\AOSConvergenceAdvPct}}{{{summary.convergence_advantage_pct:.0f}}}",
         "% Statistical test results (Wilcoxon + Holm-Bonferroni)",
         rf"\newcommand{{\StatWinsBase}}{{{stat_wins_b}}}",
         rf"\newcommand{{\StatTiesBase}}{{{stat_ties_b}}}",
@@ -694,7 +744,7 @@ def write_summary_macros(summary: AblationSummary, out_path: Path) -> None:
 
 
 def write_stat_table(summary: AblationSummary, out_path: Path) -> None:
-    """Write the statistical significance table (auto-generated, not placeholder)."""
+    """Write the statistical significance table."""
     sb = summary.stat_vs_base
     sr = summary.stat_vs_rand
     w_b = sb.wins if sb else 0
@@ -724,7 +774,7 @@ def write_stat_table(summary: AblationSummary, out_path: Path) -> None:
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def plot_reward_evolution(trace_csv: Path, *, out_pdf: Path, problem: str = "re37", seed: int = 0) -> None:
+def plot_reward_evolution(trace_csv: Path, *, out_pdf: Path, problem: str = "dtlz1", seed: int = 0) -> None:
     """Plot per-generation reward and selected arm for a representative run."""
     df = pd.read_csv(trace_csv)
     if df.empty:
@@ -737,7 +787,6 @@ def plot_reward_evolution(trace_csv: Path, *, out_pdf: Path, problem: str = "re3
 
     sub = df[(df["problem"] == problem.lower()) & (df["seed"] == seed)].copy()
     if sub.empty:
-        # Try any available seed
         avail = df[df["problem"] == problem.lower()]["seed"].unique()
         if len(avail) == 0:
             print(f"  WARNING: no trace data for {problem}, skipping reward evolution")
@@ -753,16 +802,13 @@ def plot_reward_evolution(trace_csv: Path, *, out_pdf: Path, problem: str = "re3
     reward = sub["reward"].to_numpy(dtype=float) if "reward" in sub.columns else np.zeros(len(sub))
     op_names = sub["op_name"].astype(str).to_numpy()
 
-    # Map operator names to indices
     unique_ops = sorted(set(op_names))
     op_to_idx = {op: i for i, op in enumerate(unique_ops)}
     arm_idx = np.array([op_to_idx[op] for op in op_names])
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 4.5), sharex=True, gridspec_kw={"height_ratios": [2, 1]})
 
-    # Reward
     ax1.plot(evals, reward, color="#1f77b4", linewidth=0.7, alpha=0.8)
-    # Add smoothed line
     if len(reward) > 20:
         window = max(5, len(reward) // 20)
         smoothed = pd.Series(reward).rolling(window, min_periods=1, center=True).mean().to_numpy()
@@ -772,7 +818,6 @@ def plot_reward_evolution(trace_csv: Path, *, out_pdf: Path, problem: str = "re3
     ax1.set_title(f"Reward evolution and arm selection ({problem.upper()}, seed {seed})")
     ax1.grid(True, alpha=0.25)
 
-    # Selected arm
     colors = plt.cm.tab10(np.linspace(0, 1, max(len(unique_ops), 1)))
     for op, idx in op_to_idx.items():
         mask = arm_idx == idx
@@ -823,7 +868,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--problems",
         type=str,
-        default="re37,rwa2,rwa9",
+        default="zdt2,dtlz7,wfg1,wfg2",
         help="Comma-separated problems for convergence plots.",
     )
     return ap.parse_args()
@@ -837,32 +882,33 @@ def main() -> None:
     if not args.ablation_csv.is_file():
         raise FileNotFoundError(f"Missing ablation CSV: {args.ablation_csv}")
 
-    summary = summarize_ablation(args.ablation_csv, n_evals=int(args.n_evals))
+    anytime_path = args.anytime_csv if args.anytime_csv.is_file() else None
+    summary = summarize_ablation(args.ablation_csv, n_evals=int(args.n_evals), anytime_csv=anytime_path)
     write_summary_macros(summary, TABLES_DIR / "summary_macros.tex")
 
-    # --- Group-level tables ---
+    # --- Family-level tables ---
     hv_caption = (
-        r"Median normalized hypervolume by objective-count group "
-        r"(baseline vs.\ random arm vs.\ AOS)."
+        r"Mean normalized hypervolume by benchmark family "
+        r"(baseline vs.\ random arm vs.\ AOS, Thompson Sampling)."
     )
     runtime_caption = (
-        r"Median runtime (seconds) by objective-count group "
+        r"Median runtime (seconds) by benchmark family "
         r"(baseline vs.\ random arm vs.\ AOS)."
     )
 
-    hv_table = _make_group_table(
-        summary.hv_group,
+    hv_table = _make_family_table(
+        summary.hv_family,
         caption=hv_caption,
-        label="tab:hv_group",
+        label="tab:hv_family",
         higher_is_better=True,
         decimals=3,
     )
     (TABLES_DIR / "ablation_hv_family.tex").write_text(hv_table + "\n", encoding="utf-8")
 
-    runtime_table = _make_group_table(
-        summary.runtime_group,
+    runtime_table = _make_family_table(
+        summary.runtime_family,
         caption=runtime_caption,
-        label="tab:runtime_group",
+        label="tab:runtime_family",
         higher_is_better=False,
         decimals=2,
     )
@@ -870,7 +916,7 @@ def main() -> None:
 
     # --- Per-problem tables ---
     hv_pp_caption = (
-        r"Per-problem median normalized hypervolume. "
+        r"Per-problem mean normalized hypervolume. "
         r"$\Delta_{\text{base}}$: AOS $-$ baseline; "
         r"$\Delta_{\text{rand}}$: AOS $-$ random arm."
     )
@@ -900,21 +946,19 @@ def main() -> None:
     (TABLES_DIR / "ablation_runtime_per_problem.tex").write_text(rt_pp + "\n", encoding="utf-8")
 
     # --- Figures ---
-    # HV delta bars: AOS vs baseline
     plot_delta_bars(
         summary.hv_per_problem,
         value_col="hypervolume",
         out_pdf=FIGURES_DIR / "hv_delta_by_problem.pdf",
-        title="Median HV improvement by problem (AOS $-$ baseline)",
+        title="Mean HV improvement by problem (AOS $-$ baseline)",
         ylabel=r"$\Delta$ normalized HV",
         reference_variant="baseline",
     )
-    # HV delta bars: AOS vs random
     plot_delta_bars(
         summary.hv_per_problem,
         value_col="hypervolume",
         out_pdf=FIGURES_DIR / "hv_delta_vs_random.pdf",
-        title="Median HV improvement by problem (AOS $-$ random arm)",
+        title="Mean HV improvement by problem (AOS $-$ random arm)",
         ylabel=r"$\Delta$ normalized HV",
         reference_variant="random",
     )
@@ -924,14 +968,14 @@ def main() -> None:
 
     # Convergence plots
     problems = [p.strip() for p in str(args.problems).split(",") if p.strip()]
-    if args.anytime_csv.is_file():
-        plot_anytime_hv(args.anytime_csv, out_pdf=FIGURES_DIR / "anytime_hv_selected.pdf", problems=problems)
+    if anytime_path is not None:
+        plot_anytime_hv(anytime_path, out_pdf=FIGURES_DIR / "anytime_hv_selected.pdf", problems=problems)
+        plot_anytime_aggregate(anytime_path, out_pdf=FIGURES_DIR / "anytime_hv_aggregate.pdf")
 
     # Operator usage
     if args.trace_csv.is_file():
         plot_operator_usage(args.trace_csv, out_pdf=FIGURES_DIR / "aos_operator_usage.pdf")
-        # Reward evolution
-        plot_reward_evolution(args.trace_csv, out_pdf=FIGURES_DIR / "reward_evolution.pdf", problem="re37")
+        plot_reward_evolution(args.trace_csv, out_pdf=FIGURES_DIR / "reward_evolution.pdf", problem="dtlz1")
 
     print(f"Assets written to {TABLES_DIR} and {FIGURES_DIR}")
 

@@ -60,11 +60,6 @@ Li, K., Fialho, {\'A}., Kwong, S., Zhang, Q.: Adaptive operator selection with
   IEEE Transactions on Evolutionary Computation  \textbf{18}(1),  114--130
   (2014). \doi{10.1109/TEVC.2013.2239648}
 
-\bibitem{tanabe2020re}
-Tanabe, R., Ishibuchi, H.: An easy-to-use real-world multi-objective
-  optimization problem suite. Applied Soft Computing  \textbf{89},  106078
-  (2020). \doi{10.1016/j.asoc.2020.106078}
-
 \bibitem{thompson1933ts}
 Thompson, W.R.: On the likelihood that one unknown probability exceeds another
   in view of the evidence of two samples. Biometrika  \textbf{25}(3--4),
@@ -73,13 +68,6 @@ Thompson, W.R.: On the likelihood that one unknown probability exceeds another
 \bibitem{wilcoxon1945}
 Wilcoxon, F.: Individual comparisons by ranking methods. Biometrics Bulletin
   \textbf{1}(6),  80--83 (1945). \doi{10.2307/3001968}
-
-\bibitem{zapotecas2023rwa}
-Zapotecas-Mart{\'\i}nez, S., Ponsich, A., Aguirre, H., Tanaka, K.,
-  Coello~Coello, C.A.: A review of features and limitations of existing
-  scalable multiobjective test suites. IEEE Transactions on Evolutionary
-  Computation  \textbf{27}(1),  130--145 (2023).
-  \doi{10.1109/TEVC.2022.3173809}
 
 \bibitem{zitzler2000zdt}
 Zitzler, E., Deb, K., Thiele, L.: Comparison of multiobjective evolutionary
