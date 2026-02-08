@@ -62,9 +62,11 @@ class RealEncodingStrategy:
     encoding: Encoding = "real"
 
     def parents_per_group(self, cross_method: CrossoverName) -> int:
-        return 3 if cross_method in {"pcx", "undx", "simplex"} else 2
+        return 3 if cross_method in {"pcx", "undx", "simplex", "de"} else 2
 
     def children_per_group(self, cross_method: CrossoverName) -> int:
+        if cross_method == "de":
+            return 1
         if cross_method == "undx":
             return 2
         if cross_method in {"pcx", "simplex"}:

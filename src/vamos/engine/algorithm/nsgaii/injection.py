@@ -335,6 +335,7 @@ class ImmigrationManager:
         state: Any,
         kernel: Any,
         records: Sequence[ImmigrantCandidate],
+        track_active: bool = True,
     ) -> int:
         if not records:
             return 0
@@ -348,7 +349,7 @@ class ImmigrationManager:
         protected = self._active_indices.copy()
 
         for cand in records:
-            if self.max_in_pop > 0 and len(self._active) >= self.max_in_pop:
+            if track_active and self.max_in_pop > 0 and len(self._active) >= self.max_in_pop:
                 break
             if cand.F is None:
                 continue
@@ -363,14 +364,15 @@ class ImmigrationManager:
                     G[idx] = 0.0
                 else:
                     G[idx] = np.asarray(cand.G, dtype=float)
-            self._active.append(
-                _ActiveImmigrant(
-                    X=np.asarray(cand.X, dtype=float).copy(),
-                    F=np.asarray(cand.F, dtype=float).copy() if cand.F is not None else None,
-                    G=np.asarray(cand.G, dtype=float).copy() if cand.G is not None else None,
-                    tag=cand.tag,
+            if track_active:
+                self._active.append(
+                    _ActiveImmigrant(
+                        X=np.asarray(cand.X, dtype=float).copy(),
+                        F=np.asarray(cand.F, dtype=float).copy() if cand.F is not None else None,
+                        G=np.asarray(cand.G, dtype=float).copy() if cand.G is not None else None,
+                        tag=cand.tag,
+                    )
                 )
-            )
             inserted += 1
             st.replaced_indices.append(int(idx))
             st.replaced_pages.append(int(replaced_page))
@@ -427,6 +429,7 @@ class ImmigrationManager:
                     state=state,
                     kernel=kernel,
                     records=pool[:missing],
+                    track_active=False,
                 )
                 changed = changed or inserted > 0
 

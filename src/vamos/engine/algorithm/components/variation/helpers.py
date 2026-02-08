@@ -40,7 +40,7 @@ from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
 from vamos.operators.impl.registry import get_operator_registry
 
 
-_REAL_CROSSOVER_KEYS = ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
+_REAL_CROSSOVER_KEYS = ("sbx", "blx_alpha", "arithmetic", "de", "pcx", "undx", "simplex")
 _REAL_MUTATION_KEYS = (
     "pm",
     "polynomial",

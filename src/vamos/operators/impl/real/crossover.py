@@ -337,6 +337,87 @@ class DifferentialCrossover(Crossover):
         return _clip_population(trial, self.lower, self.upper)
 
 
+class DEMatingCrossover(Crossover):
+    """Differential Evolution crossover for 3-parent mating groups.
+
+    Implements DE/rand/1/bin compatible with the standard VariationPipeline.
+    Given groups of 3 parents ``(target, r1, r2)``, produces one trial vector
+    per group via::
+
+        mutant = target + F * (r1 - r2)
+        trial  = binomial_crossover(target, mutant, CR)
+
+    Unlike :class:`DifferentialCrossover` (which operates on the full
+    population), this class follows the same ``(n_groups, 3, n_var)`` mating
+    interface used by PCX, UNDX, and SPX, so it integrates cleanly into the
+    adaptive operator selection (AOS) portfolio.
+
+    Parameters
+    ----------
+    F : float
+        Scale factor for differential mutation (default 0.5).
+    CR : float
+        Crossover rate for binomial crossover (default 0.9).
+    lower, upper : array-like
+        Decision variable bounds.
+    """
+
+    def __init__(
+        self,
+        F: float = 0.5,
+        CR: float = 0.9,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        prob_crossover: float | None = None,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
+    ) -> None:
+        self.F = float(F)
+        self.CR = float(CR)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+
+    def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        """Produce trial vectors from 3-parent groups.
+
+        Parameters
+        ----------
+        parents : array-like, shape ``(n_groups, 3, n_vars)``
+            Mating groups where ``[:, 0, :]`` is the target vector and
+            ``[:, 1:, :]`` are the two donor vectors.
+        rng : numpy.random.Generator
+            Seeded random number generator.
+
+        Returns
+        -------
+        numpy.ndarray, shape ``(n_groups, 1, n_vars)``
+            One trial vector per group.
+        """
+        groups = self._as_matings(parents, expected_parents=3, copy=False)
+        n_groups, _, n_vars = groups.shape
+
+        target = groups[:, 0, :]  # (n_groups, n_vars)
+        r1 = groups[:, 1, :]     # (n_groups, n_vars)
+        r2 = groups[:, 2, :]     # (n_groups, n_vars)
+
+        # DE/rand/1 differential mutation
+        mutant = target + self.F * (r1 - r2)
+
+        # Binomial crossover
+        trial = target.copy()
+        cross_mask = rng.random((n_groups, n_vars)) < self.CR
+        # Ensure at least one dimension comes from mutant (j_rand)
+        j_rand = rng.integers(n_vars, size=n_groups)
+        cross_mask[np.arange(n_groups), j_rand] = True
+        trial[cross_mask] = mutant[cross_mask]
+
+        # Clip to bounds
+        np.clip(trial, self.lower, self.upper, out=trial)
+
+        # Return (n_groups, 1, n_vars) — 1 child per 3-parent group
+        return trial[:, np.newaxis, :]
+
+
 class PCXCrossover(Crossover):
     """Parent-Centric Crossover (PCX) using 3-parent groups."""
 
@@ -473,6 +554,7 @@ __all__ = [
     "ArithmeticCrossover",
     "BLXAlphaCrossover",
     "Crossover",
+    "DEMatingCrossover",
     "DifferentialCrossover",
     "PCXCrossover",
     "SPXCrossover",
