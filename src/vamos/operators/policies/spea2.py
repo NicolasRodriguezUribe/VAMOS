@@ -9,12 +9,17 @@ for different encodings.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import numpy as np
 
+from vamos.foundation.encoding import normalize_encoding
+from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
 from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
 from vamos.operators.impl.real import VariationWorkspace
+
+if TYPE_CHECKING:
+    from vamos.foundation.problem.types import ProblemProtocol
 
 
 VariationFn: TypeAlias = Callable[[np.ndarray, np.random.Generator], np.ndarray]
@@ -27,6 +32,7 @@ def build_variation_operators(
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
+    problem: ProblemProtocol | None = None,
 ) -> tuple[VariationFn, VariationFn]:
     """Build variation operators for SPEA2.
 
@@ -44,6 +50,8 @@ def build_variation_operators(
         Upper bounds.
     rng : np.random.Generator
         Random number generator.
+    problem : ProblemProtocol | None
+        Problem instance, required for mixed encoding via ``problem.mixed_spec``.
 
     Returns
     -------
@@ -70,10 +78,36 @@ def build_variation_operators(
     mut_prob = mut_params.get("prob", 1.0 / n_var)
     if isinstance(mut_prob, str):
         mut_prob = 1.0 / n_var if "1/n" in mut_prob else float(mut_prob)
+    mut_prob = float(mut_prob)
+
+    normalized = normalize_encoding(encoding)
+    if normalized == "mixed":
+        cross_name = str(cross_method).lower()
+        mut_name = str(mut_method).lower()
+        if cross_name != "mixed":
+            raise ValueError(f"Unsupported SPEA2 crossover '{cross_method}' for mixed encoding. Use 'mixed'.")
+        if mut_name != "mixed":
+            raise ValueError(f"Unsupported SPEA2 mutation '{mut_method}' for mixed encoding. Use 'mixed'.")
+        mixed_spec = getattr(problem, "mixed_spec", None) if problem is not None else None
+        if mixed_spec is None:
+            raise ValueError("SPEA2 mixed encoding requires problem.mixed_spec.")
+        cross_prob = float(cross_params.get("prob", 0.9))
+
+        def crossover_fn(parents: np.ndarray, rng: np.random.Generator = rng) -> np.ndarray:
+            parent_shape = parents.shape
+            parents_flat = parents.reshape(-1, parent_shape[-1])
+            offspring_flat = mixed_crossover(parents_flat, cross_prob, mixed_spec, rng)
+            return offspring_flat.reshape(parent_shape)
+
+        def mutation_fn(X_child: np.ndarray, rng: np.random.Generator = rng) -> np.ndarray:
+            mixed_mutation(X_child, mut_prob, mixed_spec, rng)
+            return X_child
+
+        return crossover_fn, mutation_fn
 
     workspace = VariationWorkspace()
 
-    # For now, use SBX+PM for all encodings
+    # Keep existing SPEA2 behavior for non-mixed encodings.
     crossover_operator = SBXCrossover(
         prob_crossover=cross_params.get("prob", 0.9),
         eta=cross_params.get("eta", 20.0),
@@ -83,7 +117,7 @@ def build_variation_operators(
         allow_inplace=True,
     )
     mutation_operator = PolynomialMutation(
-        prob_mutation=mut_prob,
+        prob_mutation=float(mut_prob),
         eta=mut_params.get("eta", 20.0),
         lower=xl,
         upper=xu,

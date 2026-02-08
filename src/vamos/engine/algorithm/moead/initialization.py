@@ -18,15 +18,15 @@ from vamos.engine.algorithm.components.archives import resolve_archive_size, set
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.population import (
+    initialize_population as initialize_decision_population,
+)
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.foundation.constraints.utils import compute_violation
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
-from vamos.operators.impl.binary import random_binary_population
-from vamos.operators.impl.integer import random_integer_population
-from vamos.operators.impl.permutation import random_permutation_population
 from vamos.operators.impl.flags import set_numba_variation
 from vamos.foundation.checkpoint import restore_rng
 
@@ -164,13 +164,33 @@ def initialize_moead_run(
                 checkpoint_archive_F = np.asarray(archive_f_raw)
         except Exception as exc:
             _logger().warning("Invalid checkpoint provided, reinitializing population: %s", exc)
-            X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
+            X, F, G = initialize_population(
+                encoding,
+                pop_size,
+                n_var,
+                xl,
+                xu,
+                rng,
+                problem,
+                constraint_mode,
+                initializer=cfg.get("initializer"),
+            )
             n_eval = pop_size
             generation = 0
             subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
             subproblem_cursor = 0
     else:
-        X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
+        X, F, G = initialize_population(
+            encoding,
+            pop_size,
+            n_var,
+            xl,
+            xu,
+            rng,
+            problem,
+            constraint_mode,
+            initializer=cfg.get("initializer"),
+        )
         n_eval = pop_size
         subproblem_order = rng.permutation(pop_size).astype(int, copy=False)
         subproblem_cursor = 0
@@ -206,7 +226,15 @@ def initialize_moead_run(
         set_numba_variation(bool(numba_variation))
 
     # Build variation operators
-    crossover_fn, mutation_fn = build_variation_operators(cfg, encoding, n_var, xl, xu, rng)
+    crossover_fn, mutation_fn = build_variation_operators(
+        cfg,
+        encoding,
+        n_var,
+        xl,
+        xu,
+        rng,
+        mixed_spec=getattr(problem, "mixed_spec", None),
+    )
 
     # Setup archive
     archive_size = resolve_archive_size(cfg)
@@ -303,6 +331,7 @@ def initialize_population(
     rng: np.random.Generator,
     problem: ProblemProtocol,
     constraint_mode: str,
+    initializer: Any | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     """Initialize population based on encoding.
 
@@ -330,15 +359,16 @@ def initialize_population(
     tuple[np.ndarray, np.ndarray, np.ndarray | None]
         (X, F, G) population arrays.
     """
-    normalized = normalize_encoding(encoding)
-    if normalized == "binary":
-        X = random_binary_population(pop_size, n_var, rng)
-    elif normalized == "integer":
-        X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
-    elif normalized == "permutation":
-        X = random_permutation_population(pop_size, n_var, rng)
-    else:
-        X = rng.uniform(xl, xu, size=(pop_size, n_var))
+    X = initialize_decision_population(
+        pop_size=pop_size,
+        n_var=n_var,
+        xl=xl,
+        xu=xu,
+        encoding=encoding,
+        rng=rng,
+        problem=problem,
+        initializer=initializer,
+    )
 
     F, G = evaluate_population_with_constraints(problem, X)
     if constraint_mode == "none":

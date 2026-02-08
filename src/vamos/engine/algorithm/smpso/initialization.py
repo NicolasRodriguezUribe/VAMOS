@@ -103,8 +103,8 @@ def initialize_smpso_run(
     mutation_every = int(config.get("mutation_every", 6))
 
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
-    if encoding != "real":
-        raise ValueError("SMPSO currently supports continuous/real encoding only.")
+    if encoding not in {"real", "mixed"}:
+        raise ValueError(f"SMPSO does not support encoding '{encoding}'.")
 
     n_var = int(problem.n_var)
     n_obj = int(problem.n_obj)
@@ -144,7 +144,7 @@ def initialize_smpso_run(
     genealogy_tracker, ids = setup_genealogy(pop_size, F, track_genealogy, "smpso")
 
     # Build operators
-    mutation_op = build_mutation_operator(config, encoding, n_var, xl, xu)
+    mutation_op = build_mutation_operator(config, encoding, n_var, xl, xu, problem=problem)
     repair_op = build_repair_operator(config)
 
     # HV tracker

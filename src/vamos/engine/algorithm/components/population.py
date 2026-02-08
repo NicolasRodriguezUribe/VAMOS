@@ -44,6 +44,11 @@ def initialize_population(
         return np.asarray(initializer(), dtype=float)
     if initializer is not None and isinstance(initializer, dict):
         init_type = initializer.get("type", "random").lower()
+        if init_type == "custom":
+            custom_fn = initializer.get("fn")
+            if callable(custom_fn):
+                return np.asarray(custom_fn(), dtype=float)
+            raise ValueError("Custom initializer requires a callable 'fn'.")
         if init_type == "lhs":
             return LatinHypercubeInitializer(pop_size, xl, xu, rng=rng)()
         if init_type in {"scatter", "scatter_search"}:
