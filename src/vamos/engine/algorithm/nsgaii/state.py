@@ -95,6 +95,16 @@ class NSGAIIState:
     pending_offspring: np.ndarray | None = None
     pending_offspring_ids: np.ndarray | None = None
 
+    # Optional extension hooks
+    immigration_manager: Any | None = None
+    parent_selection_filter: Any | None = None
+    non_breeding_indices: np.ndarray = field(
+        default_factory=lambda: np.zeros(0, dtype=int)
+    )
+    live_callback_mode: str = "nd_only"
+    generation_callback: Any | None = None
+    generation_callback_copy: bool = True
+
     # HV points function (computed lazily)
     _hv_points_fn: Callable[[], np.ndarray] | None = field(default=None, repr=False)
 
