@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import sys
 from functools import cache
 from importlib import resources
-from importlib.resources.abc import Traversable
 
 import numpy as np
+
+if sys.version_info >= (3, 11):
+    from importlib.resources.abc import Traversable
+else:
+    from importlib.abc import Traversable
 
 
 _FILE_NAME_MAP = {
