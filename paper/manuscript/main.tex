@@ -118,7 +118,7 @@ In Python, practical benchmarking of MOEAs is often constrained by two friction 
   \item \textbf{Comprehensive empirical comparison}: backend-level and cross-framework runtime comparisons, paired with descriptive normalized-hypervolume summaries under a fixed protocol.
 \end{enumerate}
 
-The rest of the paper is organized as follows. Section~\ref{sec:related} reviews existing Python MOEA frameworks and benchmarking practices. Section~\ref{sec:framework} presents the \VAMOS{} framework, including its design goals, architecture, compute kernels, and algorithm suite. Section~\ref{sec:experiments} describes the experimental setup, reports backend-level and cross-framework runtime comparisons, and provides solution-quality summaries with statistical analyses. Finally, Section~\ref{sec:conclusions} draws conclusions and outlines directions for future work.
+The rest of the paper is organized as follows. Section~\ref{sec:related} reviews existing Python MOEA frameworks and benchmarking practices. Section~\ref{sec:framework} presents the \VAMOS{} framework, including its design goals, architecture, compute kernels, and algorithm suite. Section~\ref{sec:experiments} describes the experimental setup, reports backend-level and cross-framework runtime comparisons including a scalability study of the vectorized architecture, and provides solution-quality summaries with statistical analyses. Finally, Section~\ref{sec:conclusions} draws conclusions and outlines directions for future work.
 
 %==============================================================================
 \section{Related Work}
@@ -173,7 +173,7 @@ Comparative MOEA studies typically combine independent runs, indicator computati
 \label{sec:framework}
 %==============================================================================
 
-This section presents the \VAMOS{} framework. We first state the design goals that guided its development (Section~\ref{sec:design_goals}), then describe the architecture and data model, compute kernels, algorithm suite, execution model, variation pipeline, archives and metrics, and the benchmark runner.
+This section presents the \VAMOS{} framework. We first state the design goals that guided its development (Section~\ref{sec:design_goals}), then describe the architecture and data model (Section~\ref{sec:architecture}), compute kernels, algorithm suite, execution model, variation pipeline, archives and metrics, and the benchmark runner.
 
 \subsection{Design goals}
 \label{sec:design_goals}
@@ -211,6 +211,7 @@ Switching the compute backend is a single-parameter change (\texttt{engine="numb
 The architectural consequence of the preceding goals is that the population state remains in dense arrays throughout the optimization loop, and hot-path computations are dispatched to vectorized or compiled kernels. Section~\ref{sec:experiments} demonstrates that this design yields substantial runtime reductions across multiple MOEA variants and benchmark families without degrading solution quality.
 
 \subsection{Architecture and data model}
+\label{sec:architecture}
 
 \VAMOS{} is organized into three layers:
 \begin{enumerate}
@@ -219,14 +220,16 @@ The architectural consequence of the preceding goals is that the population stat
   \item \textbf{Experiment}: CLI, benchmarking utilities, visualization, and reporting.
 \end{enumerate}
 
-The user-facing API and configuration model are described in Section~\ref{sec:design_goals}. The core design choice is to represent a population as a pair of dense arrays: decision variables $X \in \mathbb{R}^{N \times n}$ and objective values $F \in \mathbb{R}^{N \times m}$ for population size $N$, $n$ decision variables, and $m$ objectives. Variation and survival operate on these arrays (or views thereof), enabling vectorized operations (NumPy) and compilation of hot loops (Numba) without per-individual Python objects.
+Figure~\ref{fig:architecture} illustrates this layered organization: the Foundation layer provides problem definitions, compute kernels, metrics, and archives; the Engine layer implements nine MOEAs on top of shared components; and the Experiment layer exposes CLI tools, benchmarking utilities, and reporting.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/architecture.png}
-\caption{\VAMOS{} architecture.}
+\caption{\VAMOS{} three-layer architecture. The Foundation layer provides problem definitions, compute kernels (NumPy, Numba, C, JAX), metrics, and archives. The Engine layer implements nine MOEAs using shared selection, variation, and survival components. The Experiment layer exposes CLI tools, benchmarking runners, table/plot generation, and results analysis.}
 \label{fig:architecture}
 \end{figure}
+
+The user-facing API and configuration model are described in Section~\ref{sec:design_goals}. The core design choice is to represent a population as a pair of dense arrays: decision variables $X \in \mathbb{R}^{N \times n}$ and objective values $F \in \mathbb{R}^{N \times m}$ for population size $N$, $n$ decision variables, and $m$ objectives. Variation and survival operate on these arrays (or views thereof), enabling vectorized operations (NumPy) and compilation of hot loops (Numba) without per-individual Python objects.
 
 \subsection{Compute kernels}
 
@@ -311,7 +314,7 @@ The experiment layer includes a benchmark runner that executes standardized stud
 \label{sec:experiments}
 %==============================================================================
 
-We evaluate \VAMOS{} along two dimensions: runtime efficiency across backends and frameworks, and solution quality measured by normalized hypervolume under a fixed-reference-front protocol. We first describe the benchmark suite and the semantic-alignment procedure that ensures cross-framework fairness, then report backend-level and cross-framework runtime comparisons, solution-quality summaries, and statistical analyses.
+We evaluate \VAMOS{} along two dimensions: runtime efficiency across backends and frameworks, and solution quality measured by normalized hypervolume under a fixed-reference-front protocol. We first describe the benchmark suite and the semantic-alignment procedure that ensures cross-framework fairness, then report backend-level runtime comparisons and a scalability study of the vectorized architecture, followed by cross-framework runtime comparisons, solution-quality summaries, and statistical analyses.
 
 \subsection{Benchmark suite and configuration alignment}
 
@@ -407,6 +410,20 @@ NumPy & 5.18 & 6.82 & 7.37 & 6.46 \\
 \end{table}
 \footnotetext{Average\textsuperscript{*} in summary tables denotes the mean of family-level medians (3 values). Per-problem averages over all 21 problems are reported in the appendix (Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison}).}
 
+\subsection{Scalability of vectorized acceleration}
+\label{sec:scaling}
+
+To quantify how the array-native architecture scales, we measure wall-clock runtime of the Numba and NumPy backends as a function of population size on three representative problems (ZDT4, DTLZ2, WFG2) using NSGA-II with 50{,}000 evaluations and 5 independent seeds per configuration. Population sizes range from 50 to 800; all other settings match the main benchmark protocol.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/scalation.png}
+  \caption{Runtime scaling of \VAMOS{} backends (Numba vs.\ NumPy) as a function of population size on three representative problems. Shaded regions indicate the interquartile range across 5 seeds. NumPy runtime grows steeply with population size due to increasing Python-level overhead in per-generation operations, while Numba runtime remains nearly flat, demonstrating that JIT-compiled kernels amortize loop overhead effectively on larger arrays.}
+  \label{fig:scaling}
+\end{figure}
+
+Figure~\ref{fig:scaling} shows that the runtime gap between NumPy and Numba widens substantially as the population grows. At $N=50$ the two backends perform similarly (and NumPy is even marginally faster on ZDT4), but by $N=800$ the NumPy backend requires 30\,s on all three problems while Numba stays below 12\,s---a $3\text{--}5\times$ speedup. The effect is consistent across problem families despite their different dimensionalities ($n_{\text{var}}=10$, 12, and 24 for ZDT4, DTLZ2, and WFG2 respectively). Crucially, the Numba curve remains nearly flat across population sizes, confirming that the JIT-compiled kernels scale sub-linearly with array size in the per-evaluation cost, whereas NumPy's interpreted dispatch overhead accumulates with each generation cycle. These results reinforce the practical relevance of the vectorized design for large-scale benchmarking studies that require large populations or many independent seeds under a fixed compute budget.
+
 \subsection{Cross-framework comparison}
 
 Table~\ref{tab:frameworks_perf} compares \VAMOS{} against other Python frameworks on runtime. \VAMOS{} is evaluated with its accelerated backend (Numba) for the headline comparison, while additional backends are reported in the appendix.
@@ -428,6 +445,15 @@ Platypus & 20.28 & 29.01 & 50.16 & 33.15 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Figure~\ref{fig:runtime_comparison} visualizes these relative runtimes. Each bar represents the ratio of a competitor's median family-level runtime to \VAMOS{} (Numba); the dashed line at $2^0=1$ marks parity. Platypus, DEAP, and jMetalPy are consistently $4\text{--}12\times$ slower, with the largest gaps on WFG problems where per-solution overhead is amplified by higher dimensionality ($n=24$). pymoo is the closest competitor, staying within $1.1\text{--}1.2\times$ of \VAMOS{} on ZDT and DTLZ, though the gap widens on WFG. Error bars indicate variability across per-problem medians within each family.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/time_comparisson.png}
+  \caption{Runtime of each framework relative to \VAMOS{} (Numba) for generational NSGA-II, grouped by problem family ($\log_2$ scale). Bars above the dashed parity line ($2^0=1$) indicate that the competitor is slower. Error bars show variability across per-problem medians within each family. All runs use 50{,}000 evaluations and 30 seeds.}
+  \label{fig:runtime_comparison}
+\end{figure}
 
 \paragraph{Steady-state NSGA-II.}
 Some toolkits expose a steady-state (incremental-replacement) variant of NSGA-II, typically implemented as a $(\mu+1)$ loop with one offspring per iteration and one survivor replaced.
@@ -481,13 +507,13 @@ Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon resul
 
 \subsection{Discussion}
 
-The observed speedups are primarily due to (i) the array-based representation that removes per-solution Python overhead, and (ii) JIT compilation of hot operators and utilities in the Numba backend. Table~\ref{tab:frameworks_hv} summarizes that these performance gains are not obtained at the expense of final solution quality under the fixed-reference-front normalized-HV protocol, avoiding artifacts caused by run-dependent reference points.
+The observed speedups are primarily due to (i) the array-based representation that removes per-solution Python overhead, and (ii) JIT compilation of hot operators and utilities in the Numba backend. The scalability study (Figure~\ref{fig:scaling}) confirms this mechanism: the NumPy backend's runtime grows steeply with population size, reflecting per-generation interpreted overhead, while the Numba backend remains nearly flat. Table~\ref{tab:frameworks_hv} summarizes that these performance gains are not obtained at the expense of final solution quality under the fixed-reference-front normalized-HV protocol, avoiding artifacts caused by run-dependent reference points.
 
-The magnitude of the speedup varies across algorithm variants in a pattern consistent with this overhead model. Steady-state variants (Tables~\ref{tab:frameworks_perf_nsgaii_ss} and~\ref{tab:frameworks_perf_smsemoa}) show the largest relative speedups because they perform one selection--variation--survival cycle per offspring: frameworks with high per-iteration Python overhead incur that cost 50{,}000 times (one per evaluation) rather than 500 times (one per generation of 100 offspring). \VAMOS{}'s array-kernel dispatch amortizes this overhead more effectively, widening the gap.
+As Figure~\ref{fig:runtime_comparison} illustrates, the cross-framework gaps are problem-family dependent: WFG problems exhibit the largest relative slowdowns for object-centric libraries, consistent with their higher dimensionality amplifying per-solution overhead. The magnitude of the speedup also varies across algorithm variants in a pattern consistent with this overhead model. Steady-state variants (Tables~\ref{tab:frameworks_perf_nsgaii_ss} and~\ref{tab:frameworks_perf_smsemoa}) show the largest relative speedups because they perform one selection--variation--survival cycle per offspring: frameworks with high per-iteration Python overhead incur that cost 50{,}000 times (one per evaluation) rather than 500 times (one per generation of 100 offspring). \VAMOS{}'s array-kernel dispatch amortizes this overhead more effectively, widening the gap.
 
 Not all comparisons favor \VAMOS{}. For MOEA/D on WFG problems (Table~\ref{tab:frameworks_perf_moead}), jMetalPy achieves lower median runtime (8.34\,s vs.\ 11.12\,s). This is attributable to differences in the decomposition inner loop: jMetalPy's MOEA/D processes one subproblem at a time with lightweight scalar operations, a pattern where Python-level overhead is modest and \VAMOS{}'s array-batching strategy does not yield the same advantage as in generational algorithms with population-wide survival.
 
-These speedups have direct practical implications. A 4--10$\times$ reduction in per-run wall-clock time means that the same compute budget can accommodate proportionally more independent seeds, larger population sizes, or denser hyperparameter sweeps---precisely the conditions required for statistically rigorous benchmarking studies.
+These speedups have direct practical implications. A 4--10$\times$ reduction in per-run wall-clock time means that the same compute budget can accommodate proportionally more independent seeds, larger population sizes, or denser hyperparameter sweeps---precisely the conditions required for statistically rigorous benchmarking studies. Moreover, the scaling study (Section~\ref{sec:scaling}) shows that the advantage grows with population size, so the benefit is amplified in exactly the large-scale regimes where it matters most.
 
 We also note that both \VAMOS{} and pymoo obtain zero normalized hypervolume on DTLZ3 under MOEA/D with 50{,}000 evaluations. This is a known difficulty: DTLZ3 is a multimodal problem designed to test convergence, and MOEA/D with PBI scalarization and the evaluation budget used here is insufficient to escape local fronts consistently. This outcome is not framework-specific but reflects the interaction between algorithm configuration and problem difficulty.
 
@@ -513,6 +539,7 @@ We presented \VAMOS{}, a high-performance Python framework for multi-objective o
   \item \textbf{Many-objective benchmarking}: extend the experimental protocol beyond $m=3$ with scalable indicators.
   \item \textbf{Deeper GPU integration}: expand JAX-based kernels and enable GPU-friendly operators.
   \item \textbf{Broader comparisons}: extend the benchmark suite to additional MOEAs and frameworks and include time-to-target and other indicators alongside normalized HV.
+  \item \textbf{LLM-assisted experiment planning}: we are exploring an integrated assistant that maps a natural-language problem description to a validated experiment configuration, using either deterministic templates or an optional LLM provider, to further lower the barrier to entry for non-expert users.
 \end{itemize}
 
 \section*{Data and code availability}
@@ -608,9 +635,15 @@ zdt6 & \textbf{2.44} & 3.51 & 10.39 & 14.46 & 18.20 \\
 Tables in this appendix report Wilcoxon signed-rank tests, bootstrap equivalence analyses, and robustness summaries for SMS-EMOA and MOEA/D, following the same methodology as Section~\ref{sec:stats}.
 
 \subsection{SMS-EMOA}
+
+Tables~\ref{tab:stats_hypervolume_smsemoa}--\ref{tab:hv_equivalence_ci_smsemoa} present per-problem Wilcoxon tests, equivalence summaries, robustness summaries, and per-problem bootstrap confidence intervals for SMS-EMOA.
+
 \input{stats_smsemoa.tex}
 
 \subsection{MOEA/D}
+
+Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_equivalence_ci_moead} present the corresponding analyses for MOEA/D.
+
 \input{stats_moead.tex}
 
 %==============================================================================

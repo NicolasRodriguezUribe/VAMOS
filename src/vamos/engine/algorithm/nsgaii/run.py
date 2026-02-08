@@ -14,7 +14,7 @@ from vamos.foundation.eval.backends import EvaluationBackend
 from vamos.hooks.live_viz import LiveVisualization
 
 from .setup import initialize_run
-from .state import build_result, finalize_genealogy
+from .state import build_result, finalize_genealogy, get_archive_contents
 
 if TYPE_CHECKING:
     from .nsgaii import NSGAII
@@ -29,18 +29,118 @@ def notify_generation(
     live_cb: LiveVisualization,
     generation: int,
     F: np.ndarray,
+    problem: Any | None = None,
     evals: int | None = None,
 ) -> bool:
     """Notify live visualization of generation progress."""
+    st = algo._st
+    nd_mask = None
+    ranks = None
+    crowding = None
+    if st is not None and st.immigration_manager is not None and problem is not None:
+        changed = bool(
+            st.immigration_manager.apply_generation(
+                generation=int(generation),
+                state=st,
+                problem=problem,
+                kernel=algo.kernel,
+            )
+        )
+        if changed:
+            F = st.F
+            if st.steady_state:
+                st.ranks = None
+                st.crowding = None
+                st.fronts = None
+
     try:
         ranks, _ = algo.kernel.nsga2_ranking(F)
         nd_mask = ranks == ranks.min(initial=0)
-        stats = {"evals": int(evals)} if evals is not None else None
-        live_cb.on_generation(generation, F=F[nd_mask], stats=stats)
     except (ValueError, IndexError) as exc:
         _logger().debug("Failed to compute non-dominated front for viz: %s", exc)
-        stats = {"evals": int(evals)} if evals is not None else None
-        live_cb.on_generation(generation, F=F, stats=stats)
+        nd_mask = None
+
+    stats: dict[str, Any] = {"evals": int(evals)} if evals is not None else {}
+    if st is not None and st.immigration_manager is not None:
+        ig = st.immigration_manager.stats_for_generation(int(generation))
+        stats["immigration"] = {
+            "events": int(ig.events),
+            "inserted": int(ig.inserted),
+            "replaced_indices": list(int(i) for i in (ig.replaced_indices or [])),
+            "replaced_pages": list(int(p) for p in (ig.replaced_pages or [])),
+            "mating_participation": int(ig.mating_participation),
+        }
+
+    live_mode = str(getattr(st, "live_callback_mode", "nd_only")).lower() if st is not None else "nd_only"
+    if nd_mask is None:
+        live_F = F
+        live_X = st.X if st is not None else None
+    elif live_mode in {"population", "population_archive"}:
+        live_F = F
+        live_X = st.X if st is not None else None
+    else:
+        live_F = F[nd_mask]
+        live_X = st.X[nd_mask] if st is not None else None
+
+    if st is not None and live_mode == "population_archive":
+        archive_payload = get_archive_contents(st)
+        if archive_payload is not None:
+            stats["archive"] = {
+                "X": np.asarray(archive_payload.get("X")),
+                "F": np.asarray(archive_payload.get("F")),
+            }
+
+    if stats:
+        live_cb.on_generation(generation, F=live_F, X=live_X, stats=stats)
+    else:
+        live_cb.on_generation(generation, F=live_F, X=live_X, stats=None)
+
+    if st is not None and callable(st.generation_callback):
+        try:
+            copy_arrays = bool(st.generation_callback_copy)
+            payload: dict[str, Any] = {
+                "generation": int(generation),
+                "evaluations": int(evals) if evals is not None else None,
+                "population": {
+                    "X": np.asarray(st.X).copy() if copy_arrays else np.asarray(st.X),
+                    "F": np.asarray(st.F).copy() if copy_arrays else np.asarray(st.F),
+                    "G": (
+                        np.asarray(st.G).copy()
+                        if copy_arrays and isinstance(st.G, np.ndarray)
+                        else np.asarray(st.G) if isinstance(st.G, np.ndarray) else None
+                    ),
+                },
+                "nondominated": None,
+                "archive": None,
+                "stats": stats or None,
+            }
+            if nd_mask is not None:
+                payload["nondominated"] = {
+                    "X": (
+                        np.asarray(st.X[nd_mask]).copy()
+                        if copy_arrays
+                        else np.asarray(st.X[nd_mask])
+                    ),
+                    "F": (
+                        np.asarray(st.F[nd_mask]).copy()
+                        if copy_arrays
+                        else np.asarray(st.F[nd_mask])
+                    ),
+                }
+            archive_payload = get_archive_contents(st)
+            if archive_payload is not None:
+                x_arch = np.asarray(archive_payload.get("X"))
+                f_arch = np.asarray(archive_payload.get("F"))
+                payload["archive"] = {
+                    "X": x_arch.copy() if copy_arrays else x_arch,
+                    "F": f_arch.copy() if copy_arrays else f_arch,
+                }
+            callback_stop = bool(st.generation_callback(payload))
+            if callback_stop:
+                return True
+        except Exception as exc:
+            _logger().debug("generation_callback failed: %s", exc)
+
     return live_should_stop(live_cb)
 
 
@@ -112,7 +212,14 @@ def run_nsgaii(
     generation = st.generation
     step = st.step
     replacements = st.replacements
-    stop_requested = notify_generation(algo, live_cb, generation, st.F, evals=n_eval)
+    stop_requested = notify_generation(
+        algo,
+        live_cb,
+        generation,
+        st.F,
+        problem=problem,
+        evals=n_eval,
+    )
     hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn())
 
     try:
@@ -137,7 +244,14 @@ def run_nsgaii(
                 if new_generation != generation:
                     generation = new_generation
                     st.generation = generation
-                    stop_requested = stop_requested or notify_generation(algo, live_cb, generation, st.F, evals=n_eval)
+                    stop_requested = stop_requested or notify_generation(
+                        algo,
+                        live_cb,
+                        generation,
+                        st.F,
+                        problem=problem,
+                        evals=n_eval,
+                    )
                     if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
                         hv_reached = True
 
@@ -146,7 +260,14 @@ def run_nsgaii(
             else:
                 generation += 1
                 st.generation = generation
-                stop_requested = notify_generation(algo, live_cb, generation, st.F, evals=n_eval)
+                stop_requested = notify_generation(
+                    algo,
+                    live_cb,
+                    generation,
+                    st.F,
+                    problem=problem,
+                    evals=n_eval,
+                )
                 if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
                     hv_reached = True
 

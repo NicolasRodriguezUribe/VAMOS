@@ -22,6 +22,7 @@ from vamos.engine.algorithm.components.archives import resolve_archive_size, set
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
+from vamos.engine.algorithm.components.population import initialize_population as initialize_decision_population
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
@@ -29,8 +30,6 @@ from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from .helpers import evaluate_population_with_constraints
 from vamos.operators.policies.nsgaiii import build_variation_operators
 from .state import NSGAIIIState
-from vamos.operators.impl.binary import random_binary_population
-from vamos.operators.impl.integer import random_integer_population
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
@@ -98,7 +97,15 @@ def initialize_nsgaiii_run(
     result_mode = config.get("result_mode", "population")
 
     # Build variation operators
-    crossover_fn, mutation_fn = build_variation_operators(config, encoding, n_var, xl, xu, rng)
+    crossover_fn, mutation_fn = build_variation_operators(
+        config,
+        encoding,
+        n_var,
+        xl,
+        xu,
+        rng,
+        mixed_spec=getattr(problem, "mixed_spec", None),
+    )
 
     # Selection pressure
     sel_method, sel_params = config["selection"]
@@ -162,7 +169,17 @@ def initialize_nsgaiii_run(
     ref_dirs_norm[np.isnan(ref_dirs_norm)] = 0.0
 
     # Initialize population
-    X, F, G = initialize_population(encoding, pop_size, n_var, xl, xu, rng, problem, constraint_mode)
+    X, F, G = initialize_population(
+        encoding,
+        pop_size,
+        n_var,
+        xl,
+        xu,
+        rng,
+        problem,
+        constraint_mode,
+        initializer=config.get("initializer"),
+    )
     n_eval = pop_size
 
     # Setup genealogy tracking
@@ -233,6 +250,7 @@ def initialize_population(
     rng: np.random.Generator,
     problem: ProblemProtocol,
     constraint_mode: str,
+    initializer: dict[str, Any] | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     """Initialize population based on encoding.
 
@@ -261,12 +279,7 @@ def initialize_population(
         (X, F, G) initial population, objectives, and constraints.
     """
     normalized = normalize_encoding(encoding)
-    if normalized == "binary":
-        X = random_binary_population(pop_size, n_var, rng)
-    elif normalized == "integer":
-        X = random_integer_population(pop_size, n_var, xl.astype(int), xu.astype(int), rng)
-    else:
-        X = rng.uniform(xl, xu, size=(pop_size, n_var))
+    X = initialize_decision_population(pop_size, n_var, xl, xu, normalized, rng, problem, initializer=initializer)
 
     F, G = evaluate_population_with_constraints(problem, X)
     if constraint_mode == "none":

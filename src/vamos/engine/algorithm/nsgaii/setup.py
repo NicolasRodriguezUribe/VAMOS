@@ -22,6 +22,7 @@ from vamos.operators.impl.real import VariationWorkspace
 from vamos.operators.policies.nsgaii import build_operator_pool
 
 from .helpers import fronts_from_ranks
+from .injection import ImmigrationManager
 from .initialization import (
     parse_termination,
     resolve_archive_size,
@@ -255,6 +256,20 @@ def initialize_run(
         except Exception:  # pragma: no cover - defensive
             pass
 
+    immigration_cfg = algo.cfg.get("immigration")
+    immigration_manager = None
+    if isinstance(immigration_cfg, Mapping):
+        immigration_manager = ImmigrationManager(immigration_cfg)
+
+    parent_selection_filter = algo.cfg.get("parent_selection_filter")
+    live_callback_mode = str(algo.cfg.get("live_callback_mode", "nd_only")).lower()
+    if live_callback_mode not in {"nd_only", "population", "population_archive"}:
+        raise ValueError(
+            "live_callback_mode must be one of: nd_only, population, population_archive"
+        )
+    generation_callback = algo.cfg.get("generation_callback")
+    generation_callback_copy = bool(algo.cfg.get("generation_callback_copy", True))
+
     algo._st = NSGAIIState(
         X=X,
         F=F,
@@ -289,6 +304,11 @@ def initialize_run(
         generation=generation,
         step=step,
         replacements=replacements,
+        immigration_manager=immigration_manager,
+        parent_selection_filter=parent_selection_filter,
+        live_callback_mode=live_callback_mode,
+        generation_callback=generation_callback,
+        generation_callback_copy=generation_callback_copy,
     )
     return live_cb, eval_strategy, max_eval, n_eval, hv_tracker
 

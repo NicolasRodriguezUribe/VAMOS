@@ -1,7 +1,7 @@
 """SMS-EMOA operator registration and building.
 
 This module provides operator registries and factory functions for SMS-EMOA
-supporting continuous, binary, and integer encodings.
+supporting continuous, binary, integer, and mixed encodings.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from vamos.operators.impl.integer import (
     random_reset_mutation,
     uniform_integer_crossover,
 )
+from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
 from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
 from vamos.operators.impl.real import VariationWorkspace
 
@@ -90,6 +91,7 @@ def build_variation_operators(
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
+    mixed_spec: dict[str, np.ndarray] | None = None,
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build crossover and mutation operators for the given encoding.
 
@@ -98,7 +100,7 @@ def build_variation_operators(
     config : dict
         Algorithm configuration containing 'crossover' and 'mutation' keys.
     encoding : str
-        Variable encoding: "real", "binary", or "integer".
+        Variable encoding: "real", "binary", "integer", or "mixed".
     n_var : int
         Number of decision variables.
     xl : np.ndarray
@@ -144,6 +146,18 @@ def build_variation_operators(
         return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif normalized == "integer":
         return _build_integer_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
+    elif normalized == "mixed":
+        if mixed_spec is None:
+            raise ValueError("SMSEMOA mixed encoding requires problem.mixed_spec.")
+        return _build_mixed_operators(
+            cross_method,
+            cross_params,
+            mut_method,
+            mut_params,
+            n_var,
+            mixed_spec,
+            rng,
+        )
     elif normalized == "real":
         return _build_real_operators(cross_params, mut_params, n_var, xl, xu, rng)
     else:
@@ -256,5 +270,43 @@ def _build_real_operators(
 
     def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
         return pm(X_child, _rng)
+
+    return crossover, mutation
+
+
+def _build_mixed_operators(
+    cross_method: str,
+    cross_params: dict[str, Any],
+    mut_method: str,
+    mut_params: dict[str, Any],
+    n_var: int,
+    mixed_spec: dict[str, np.ndarray],
+    rng: np.random.Generator,
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
+    """Build variation operators for mixed encoding."""
+    if str(cross_method).lower() not in {"mixed", "uniform"}:
+        raise ValueError(
+            f"Unsupported SMSEMOA crossover '{cross_method}' for mixed encoding."
+        )
+    if str(mut_method).lower() not in {"mixed", "gaussian"}:
+        raise ValueError(
+            f"Unsupported SMSEMOA mutation '{mut_method}' for mixed encoding."
+        )
+
+    cross_prob = float(cross_params.get("prob", 0.9))
+    mut_prob = resolve_prob_expression(
+        mut_params.get("prob"),
+        n_var,
+        1.0 / max(1, n_var),
+    )
+
+    def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        parents_flat = parents.reshape(-1, parents.shape[-1])
+        offspring_flat = mixed_crossover(parents_flat, cross_prob, mixed_spec, _rng)
+        return offspring_flat.reshape(parents.shape)
+
+    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        mixed_mutation(X_child, mut_prob, mixed_spec, _rng)
+        return X_child
 
     return crossover, mutation

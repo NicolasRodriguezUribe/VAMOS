@@ -7,15 +7,19 @@ This module provides factory functions for building SMPSO operators:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from vamos.operators.impl.mixed import mixed_mutation
 from vamos.operators.impl.real import PolynomialMutation
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.operators.impl.real import VariationWorkspace
 from vamos.engine.algorithm.smpso.helpers import resolve_repair
 from vamos.foundation.encoding import normalize_encoding
+
+if TYPE_CHECKING:
+    from vamos.foundation.problem.types import ProblemProtocol
 
 
 __all__ = [
@@ -30,6 +34,7 @@ def build_mutation_operator(
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
+    problem: ProblemProtocol | None = None,
 ) -> Any:
     """Build the mutation (turbulence) operator for SMPSO.
 
@@ -41,7 +46,7 @@ def build_mutation_operator(
     config : dict
         Algorithm configuration with 'mutation' key.
     encoding : str
-        Variable encoding (must be continuous/real for SMPSO).
+        Variable encoding ("real" or "mixed").
     n_var : int
         Number of decision variables.
     xl : np.ndarray
@@ -51,7 +56,7 @@ def build_mutation_operator(
 
     Returns
     -------
-    PolynomialMutation
+    Any
         Configured mutation operator.
 
     Raises
@@ -59,12 +64,34 @@ def build_mutation_operator(
     ValueError
         If mutation type is not supported.
     """
+    normalized = normalize_encoding(encoding)
     mut_method, mut_params = config.get("mutation", ("pm", {}))
     mut_method = str(mut_method).lower()
+
+    if normalized == "mixed":
+        if mut_method != "mixed":
+            raise ValueError(f"Unsupported SMPSO mutation '{mut_method}' for mixed encoding. Use 'mixed'.")
+        mixed_spec = getattr(problem, "mixed_spec", None) if problem is not None else None
+        if mixed_spec is None:
+            raise ValueError("SMPSO mixed encoding requires problem.mixed_spec.")
+        mut_params = prepare_mutation_params(dict(mut_params or {}), normalized, n_var)
+        prob_raw = mut_params.get("prob")
+        prob = float(prob_raw) if prob_raw is not None else 1.0 / max(1, n_var)
+
+        class _MixedMutationOperator:
+            def __init__(self, mutation_prob: float, spec: dict[str, np.ndarray]) -> None:
+                self._prob = float(mutation_prob)
+                self._spec = spec
+
+            def __call__(self, X: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+                mixed_mutation(X, self._prob, self._spec, rng)
+                return X
+
+        return _MixedMutationOperator(prob, mixed_spec)
+
     if mut_method not in {"pm", "polynomial"}:
         raise ValueError(f"Unsupported SMPSO mutation '{mut_method}'.")
 
-    normalized = normalize_encoding(encoding)
     mut_params = prepare_mutation_params(dict(mut_params or {}), normalized, n_var)
     workspace = VariationWorkspace()
     prob_raw = mut_params.get("prob")
