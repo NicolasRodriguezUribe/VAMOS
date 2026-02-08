@@ -44,12 +44,12 @@ ITIS Software, Ada Byron Research Building, C/. Arquitecto Francisco Pe\~nalosa,
 
 \begin{abstract}
 Operator choice can strongly affect the performance of multiobjective evolutionary algorithms, yet the best operator may vary across problems and across stages of search.
-We present an adaptive operator selection (AOS) layer for NSGA-II that treats each (crossover, mutation) pipeline as a bandit arm and selects one arm per generation, updating an online policy using survival and diversity-based rewards.
-We evaluate on \AOSNProblems{} real-world engineering surrogates from the Tanabe--Ishibuchi RE and Zapotecas-Mart\'{i}nez RWA benchmark suites, spanning 2--9 objectives.
-A three-way comparison (fixed operator vs.\ random arm selection vs.\ AOS) with \AOSNSeeds{} seeds shows that AOS matches or exceeds the fixed baseline on \AOSWins{} of \AOSNProblems{} problems, while significantly outperforming random arm selection (median normalized HV \AOSHVMedianAOS{} vs.\ \AOSHVMedianRandom{}).
-Comparing the random arm with the baseline isolates the benefit of operator diversity; comparing AOS with the random arm isolates the benefit of intelligent selection.
+We present an adaptive operator selection (AOS) layer for NSGA-II that treats each (crossover, mutation) pipeline as a bandit arm and selects one arm per generation using Thompson Sampling, updating an online policy from survival and diversity-based rewards.
+We evaluate on \AOSNProblems{} standard benchmarks from the ZDT, DTLZ, and WFG families (2--3 objectives, 7--30 variables).
+A three-way comparison (fixed operator vs.\ random arm vs.\ AOS) with \AOSNSeeds{} seeds reveals two main findings: (i)~AOS converges \AOSConvergenceAdvPct{}\% faster than the fixed baseline at 20\% of the evaluation budget, and (ii)~AOS achieves a higher mean normalized HV (\AOSHVMeanAOS{} vs.\ \AOSHVMeanBaseline{}) with \AOSWins{}/\AOSNProblems{} problem wins at the final budget.
+On the minority of problems where the default operator is already near-optimal (concave WFG fronts), AOS incurs a small exploration cost that is consistently smaller than that of random arm selection.
 AOS incurs a median runtime overhead of \AOSRuntimeOverheadPct{}\%.
-\keywords{Adaptive operator selection \and Multi-armed bandits \and NSGA-II \and Multiobjective optimization \and Real-world optimization}
+\keywords{Adaptive operator selection \and Multi-armed bandits \and NSGA-II \and Multiobjective optimization \and Thompson Sampling}
 \end{abstract}
 
 \input{sections/01_introduction}

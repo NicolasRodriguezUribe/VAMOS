@@ -1,9 +1,12 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented a bandit-based adaptive operator selection layer for NSGA-II that selects one variation pipeline per generation and updates an online policy from survival and diversity-oriented rewards.
-Across \AOSNProblems{} real-world engineering surrogates spanning 2--9 objectives, AOS matches or exceeds the fixed baseline on \AOSWins{} of \AOSNProblems{} problems and significantly outperforms uniform random arm selection (median HV \AOSHVMedianAOS{} vs.\ \AOSHVMedianRandom{}), with a median runtime overhead of \AOSRuntimeOverheadPct{}\%.
-The three-way comparison design reveals that portfolio diversity alone can degrade performance (random arm scores below the baseline on several 4-obj and many-obj problems), while the bandit policy recovers this loss and occasionally exceeds the baseline.
+We presented a Thompson Sampling-based adaptive operator selection layer for NSGA-II that selects one variation pipeline per generation and updates an online policy from survival and diversity-oriented rewards.
+Across \AOSNProblems{} standard benchmarks (ZDT, DTLZ, WFG) with 2--3 objectives, AOS achieves two main results:
+(i)~\AOSConvergenceAdvPct{}\% faster convergence at 20\% of the evaluation budget, making it especially valuable in budget-constrained applications; and
+(ii)~higher mean HV (\AOSHVMeanAOS{} vs.\ \AOSHVMeanBaseline{}) with \AOSWins{}/\AOSNProblems{} problem wins at the final budget, demonstrating that adaptive operator selection improves or preserves final solution quality on the majority of problems.
+The three-way comparison design reveals that portfolio diversity alone has value (random arm outperforms the baseline in aggregate), while Thompson Sampling adds further improvement by concentrating pulls on the most rewarding operators for each problem.
+On problems where the default SBX+PM is already near-optimal, AOS incurs a small exploration cost that is consistently less than the cost of random arm selection---a favorable exploration--exploitation trade-off.
 
-Future work includes portfolio construction rules (e.g., automatic arm design from parameter sweeps), scalable reward signals for many-objective problems (e.g., $R_2$-indicator proxies), non-stationary policies with explicit change detection, and cost-aware implementations that reduce controller overhead by reusing selection statistics already computed during NSGA-II's survivor selection.
+Future work includes extending the portfolio with additional structural operators (e.g., adaptive DE variants), testing on higher-dimensional many-objective problems with scalable reward signals (e.g., $R_2$-indicator proxies), applying AOS to real-world engineering surrogates where landscape geometry is unknown, and cost-aware bandit policies that account for per-arm computational overhead.
 

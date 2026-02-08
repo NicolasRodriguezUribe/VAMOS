@@ -1,14 +1,14 @@
 \begin{table}[t]
 \centering
-\caption{Median normalized hypervolume by objective-count group (baseline vs.\ random arm vs.\ AOS).}
-\label{tab:hv_group}
-\begin{tabular}{l|rrrr|r}
+\caption{Mean normalized hypervolume by benchmark family (baseline vs.\ random arm vs.\ AOS, Thompson Sampling).}
+\label{tab:hv_family}
+\begin{tabular}{l|rrr|r}
 \toprule
-\textbf{Variant} & \textbf{2-obj} & \textbf{3-obj} & \textbf{4-obj} & \textbf{many-obj} & \textbf{Average} \\
+\textbf{Variant} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Baseline & 0.993 & 0.978 & 0.882 & \textbf{1.025} & \textbf{0.969} \\
-Random arm & \textbf{0.993} & 0.975 & \textbf{0.885} & 0.999 & 0.963 \\
-AOS & 0.992 & \textbf{0.978} & 0.883 & 1.016 & 0.967 \\
+Baseline & 0.988 & 0.793 & \textbf{0.802} & 0.861 \\
+Random arm & 0.989 & 0.845 & 0.785 & 0.873 \\
+AOS & \textbf{0.989} & \textbf{0.870} & 0.801 & \textbf{0.887} \\
 \bottomrule
 \end{tabular}
 \end{table}

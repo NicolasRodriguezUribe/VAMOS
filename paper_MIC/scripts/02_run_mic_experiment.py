@@ -8,14 +8,10 @@ Problem suites (select via VAMOS_MIC_SUITE):
   "realworld" — 21 RE / RWA engineering surrogates (2-10 vars, 2-9 obj)
   "all"       — both suites combined (42 problems)
 
-Common variants:
+Variants:
   (1) fixed NSGA-II (SBX + PM) — ``baseline``
   (2) random arm from the operator pool — ``random``
   (3) NSGA-II + AOS (Thompson Sampling, 5-arm pool) — ``aos``
-
-Factorial (2x2) variants for causal analysis:
-  (4) fixed NSGA-II + external archive — ``baseline_archive``
-  (5) NSGA-II + AOS + external archive — ``aos_archive``
 
 Usage
 -----
@@ -45,9 +41,6 @@ Environment variables (main experiment)
   VAMOS_MIC_AOS_WINDOW_SIZE Sliding-window size for sliding_ucb / thompson_sampling (default: 50)
   VAMOS_MIC_AOS_FLOOR_PROB Extra random-selection floor probability in [0,1] (default: 0.05)
   VAMOS_MIC_AOS_DISABLE_MANYOBJ 1/0: for variant=aos, fallback to baseline on >=5 objectives (default: 0)
-  VAMOS_MIC_ARCHIVE_SIZE  External archive size for *_archive variants (default: pop_size=100)
-  VAMOS_MIC_ARCHIVE_TYPE  Archive pruning policy for bounded archives (default: hypervolume)
-  VAMOS_MIC_ARCHIVE_UNBOUNDED 1/0: use unbounded archive for *_archive variants (default: 0)
   VAMOS_MIC_OUTPUT_CSV     Output CSV path
   VAMOS_MIC_ANYTIME_CSV    Anytime-checkpoint CSV (set 0 to disable)
   VAMOS_MIC_TRACE_CSV      AOS trace CSV (set 0 to disable)
@@ -402,27 +395,19 @@ def _make_aos_cfg(
 @dataclass(frozen=True)
 class VariantSpec:
     aos_kwargs: dict[str, Any] | None
-    use_archive: bool = False
 
 
 VARIANT_SPECS: dict[str, VariantSpec] = {
-    "baseline": VariantSpec(aos_kwargs=None, use_archive=False),
-    "random": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=1.0, min_usage=0), use_archive=False),
+    "baseline": VariantSpec(aos_kwargs=None),
+    "random": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=1.0, min_usage=0)),
     # AOS – Thompson Sampling with proper exploration
     "aos": VariantSpec(
         aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.05),
-        use_archive=False,
-    ),
-    # 2x2 factorial cells: archive off/on x AOS off/on
-    "baseline_archive": VariantSpec(aos_kwargs=None, use_archive=True),
-    "aos_archive": VariantSpec(
-        aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.05),
-        use_archive=True,
     ),
     # ---- Pilot variants ----
-    "aos_eps15": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.15, min_usage=5), use_archive=False),
-    "aos_swucb": VariantSpec(aos_kwargs=dict(method="sliding_ucb", c=1.0, min_usage=5, window_size=50, floor_prob=0.05), use_archive=False),
-    "aos_ts": VariantSpec(aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.05), use_archive=False),
+    "aos_eps15": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.15, min_usage=5)),
+    "aos_swucb": VariantSpec(aos_kwargs=dict(method="sliding_ucb", c=1.0, min_usage=5, window_size=50, floor_prob=0.05)),
+    "aos_ts": VariantSpec(aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.05)),
 }
 
 VALID_VARIANTS = set(VARIANT_SPECS.keys())
@@ -443,15 +428,6 @@ class AOSRuntimeOptions:
     disable_manyobj: bool = False
 
 
-@dataclass(frozen=True)
-class ArchiveRuntimeOptions:
-    """Runtime options for external-archive variants."""
-
-    size: int = POP_SIZE
-    archive_type: str = "hypervolume"
-    unbounded: bool = False
-
-
 def build_config(
     *,
     variant: str,
@@ -459,7 +435,6 @@ def build_config(
     n_var: int,
     problem_name: str,
     aos_options: AOSRuntimeOptions | None = None,
-    archive_options: ArchiveRuntimeOptions | None = None,
 ) -> NSGAIIConfig:
     """Build NSGAIIConfig for any supported variant."""
     if variant not in VARIANT_SPECS:
@@ -472,19 +447,11 @@ def build_config(
         .mutation("pm", prob=1.0 / max(n_var, 1), eta=MUTATION_ETA)
         .selection("tournament")
     )
-    if spec.use_archive:
-        opts = archive_options or ArchiveRuntimeOptions()
-        archive_size = int(opts.size)
-        if archive_size <= 0:
-            raise ValueError("Archive size must be positive for *_archive variants.")
-        base = base.archive(archive_size, unbounded=bool(opts.unbounded))
-        if not bool(opts.unbounded):
-            base = base.archive_type(opts.archive_type).result_mode("external_archive")
     kwargs = spec.aos_kwargs
     if kwargs is None:
         return base.build()
     # Allow runtime policy control for the canonical "aos" variant.
-    if variant in {"aos", "aos_archive"} and aos_options is not None:
+    if variant == "aos" and aos_options is not None:
         kwargs = {
             "method": aos_options.method,
             "epsilon": aos_options.epsilon,
@@ -648,19 +615,6 @@ def _load_aos_runtime_options() -> AOSRuntimeOptions:
     )
 
 
-def _load_archive_runtime_options() -> ArchiveRuntimeOptions:
-    """Parse archive runtime overrides from environment variables."""
-    size = _as_int_env("VAMOS_MIC_ARCHIVE_SIZE", POP_SIZE)
-    archive_type = _as_str_env("VAMOS_MIC_ARCHIVE_TYPE", "hypervolume").strip().lower()
-    unbounded = _as_bool_env("VAMOS_MIC_ARCHIVE_UNBOUNDED", False)
-
-    if size <= 0:
-        raise ValueError("VAMOS_MIC_ARCHIVE_SIZE must be > 0.")
-    if archive_type not in {"hypervolume", "crowding"}:
-        raise ValueError("VAMOS_MIC_ARCHIVE_TYPE must be one of: hypervolume,crowding.")
-
-    return ArchiveRuntimeOptions(size=size, archive_type=archive_type, unbounded=unbounded)
-
 # =============================================================================
 # Reference front generation
 # =============================================================================
@@ -756,7 +710,6 @@ def run_single(
     checkpoints: list[int] | None,
     capture_aos_trace: bool = False,
     aos_options: AOSRuntimeOptions | None = None,
-    archive_options: ArchiveRuntimeOptions | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     """Execute one (variant, problem, seed) run."""
     sel = make_problem_selection(problem_name)
@@ -769,7 +722,6 @@ def run_single(
         n_var=n_var,
         problem_name=problem_name,
         aos_options=aos_options,
-        archive_options=archive_options,
     )
     start = time.perf_counter()
     recorder = (
@@ -801,7 +753,6 @@ def run_single(
         "runtime_seconds": float(elapsed),
         "n_solutions": int(res.X.shape[0]) if res.X is not None else 0,
         "hypervolume": float(hv),
-        "archive_active": int((getattr(algo_cfg, "archive", None) or {}).get("size", 0) > 0),
         "aos_active": int(getattr(algo_cfg, "adaptive_operator_selection", None) is not None),
         "algorithm_config": json.dumps(_maybe_dataclass_to_dict(algo_cfg), sort_keys=True),
     }
@@ -920,9 +871,6 @@ def run_experiment() -> None:
     aos_options: AOSRuntimeOptions | None = None
     if any(v == "aos" or v.startswith("aos_") for v in variants):
         aos_options = _load_aos_runtime_options()
-    archive_options: ArchiveRuntimeOptions | None = None
-    if any(VARIANT_SPECS[v].use_archive for v in variants):
-        archive_options = _load_archive_runtime_options()
 
     problems = list(ALL_PROBLEMS)
     problems_raw = os.environ.get("VAMOS_MIC_PROBLEMS")
@@ -953,12 +901,6 @@ def run_experiment() -> None:
             f"gamma={aos_options.gamma}, min_usage={aos_options.min_usage}, "
             f"window_size={aos_options.window_size}, floor_prob={aos_options.floor_prob}, "
             f"disable_manyobj={int(aos_options.disable_manyobj)}"
-        )
-    if archive_options is not None:
-        print(
-            "Archive runtime options: "
-            f"size={archive_options.size}, type={archive_options.archive_type}, "
-            f"unbounded={int(archive_options.unbounded)}"
         )
     if anytime_csv:
         print(f"Anytime checkpoints: {checkpoints}")
@@ -1060,7 +1002,6 @@ def run_experiment() -> None:
                 n_evals=n_evals, engine=engine,
                 checkpoints=checkpoints, capture_aos_trace=capture,
                 aos_options=aos_options,
-                archive_options=archive_options,
             )
             is_last = (i == len(tasks) - 1)
             next_seed = tasks[i + 1][2] if not is_last else None
@@ -1078,7 +1019,6 @@ def run_experiment() -> None:
                     checkpoints=checkpoints,
                     capture_aos_trace=(trace_csv is not None and v in trace_variants and p in trace_problems),
                     aos_options=aos_options,
-                    archive_options=archive_options,
                 )
                 for v, p, s in tasks
             ):

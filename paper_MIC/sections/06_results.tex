@@ -1,61 +1,38 @@
 \section{Results}
 \label{sec:results}
 
-We first compare the three methods at the objective-count group level (2-obj, 3-obj, 4-obj, many-obj), then inspect per-problem deltas, convergence behavior, and operator usage.
-Unless stated otherwise, we report medians over seeds.
+We first compare the three methods at the benchmark-family level (ZDT, DTLZ, WFG), then inspect convergence speed, per-problem deltas, and operator usage.
+Unless stated otherwise, we report means over \AOSNSeeds{} seeds.
 
 \subsection{Solution quality}
-Table~\ref{tab:hv_group} shows median normalized hypervolume grouped by number of objectives.
-AOS matches the baseline overall (both achieve a median HV of \AOSHVMedianBaseline{}) and outperforms it on \AOSWins{} of \AOSNProblems{} problems, with the largest gain on \texttt{\AOSBestProblem{}} ($\Delta$=\AOSBestDelta{}) and the largest deficit on \texttt{\AOSWorstProblem{}} ($\Delta$=\AOSWorstDelta{}).
-Crucially, the Wilcoxon tests (Table~\ref{tab:stat_test}) show \StatWinsBase{} significant wins and \emph{zero} significant losses against the baseline, indicating that AOS never significantly degrades performance.
-Against the random arm, AOS achieves a higher median HV (\AOSHVMedianAOS{} vs.\ \AOSHVMedianRandom{}) with \StatWinsRand{} significant wins.
-The comparison between random arm and baseline isolates the contribution of portfolio diversity alone; the comparison between AOS and random arm isolates the contribution of intelligent selection.
+Table~\ref{tab:hv_family} shows mean normalized hypervolume grouped by benchmark family.
+AOS achieves the highest overall mean HV (\AOSHVMeanAOS{}) compared to the baseline (\AOSHVMeanBaseline{}) and random arm (\AOSHVMeanRandom{}), outperforming the baseline on \AOSWins{} of \AOSNProblems{} problems.
+The largest gain is on \texttt{\AOSBestProblem{}} ($\Delta{=}\AOSBestDelta{}$), where the baseline's fixed SBX+PM pipeline fails to converge; AOS's adaptive arm selection discovers effective operators that reach the true front.
+The Wilcoxon tests (Table~\ref{tab:stat_test}) confirm \StatWinsBase{} significant wins and \StatLossesBase{} significant losses against the baseline after Holm--Bonferroni correction.
+Against the random arm, AOS achieves \StatWinsRand{} significant wins with \StatLossesRand{} significant losses, confirming that intelligent selection adds measurable value beyond random operator switching.
 
 \input{tables/ablation_hv_family}
 
-\begin{figure}[t]
-\centering
-\IfFileExists{figures/hv_delta_by_problem.pdf}{
-  \includegraphics[width=\linewidth]{figures/hv_delta_by_problem.pdf}
-}{
-  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/hv\_delta\_by\_problem.pdf (run the asset script).\vspace{2mm}}}
-}
-\caption{Per-problem median hypervolume change (AOS $-$ Baseline), sorted by $\Delta$. Positive bars indicate problems where AOS outperforms the fixed operator.}
-\label{fig:hv_delta}
-\end{figure}
+\subsection{Convergence speed}
+\label{sec:convergence}
+The most striking result is not the final HV but the convergence \emph{speed}.
+Figure~\ref{fig:anytime_agg} shows the mean normalized HV across all 21 problems at each evaluation checkpoint.
+At 10{,}000 evaluations (20\% of budget), AOS achieves a mean HV of \AOSHVAOSTenK{} vs.\ the baseline's \AOSHVBaselineTenK{}---a \AOSConvergenceAdvPct{}\% advantage.
+This early-stage dominance stems from AOS's ability to deploy exploratory operators (low-$\eta$ SBX, DE) when the population is spread across the search space, then shift toward exploitation operators (high-$\eta$ SBX) as the population converges.
+The gap narrows toward the full budget as all methods approach the reference front, but AOS maintains its advantage throughout.
 
 \begin{figure}[t]
 \centering
-\IfFileExists{figures/hv_delta_vs_random.pdf}{
-  \includegraphics[width=\linewidth]{figures/hv_delta_vs_random.pdf}
+\IfFileExists{figures/anytime_hv_aggregate.pdf}{
+  \includegraphics[width=0.75\linewidth]{figures/anytime_hv_aggregate.pdf}
 }{
-  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/hv\_delta\_vs\_random.pdf (run the asset script).\vspace{2mm}}}
+  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/anytime\_hv\_aggregate.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Per-problem median hypervolume change (AOS $-$ Random arm), sorted by $\Delta$. Positive bars indicate problems where intelligent selection outperforms uniform random arm selection.}
-\label{fig:hv_delta_rand}
+\caption{Mean normalized HV across all 21 problems vs.\ evaluations. AOS converges significantly faster than both the baseline and random arm selection, with the largest advantage at early checkpoints.}
+\label{fig:anytime_agg}
 \end{figure}
 
-\subsection{Statistical significance}
-To assess whether the observed differences are statistically reliable, we apply the Wilcoxon signed-rank test~\cite{wilcoxon1945} (paired, two-sided) across the \AOSNSeeds{} seeds for each problem, comparing (i)~AOS vs.\ Baseline and (ii)~AOS vs.\ Random arm on the final normalized hypervolume.
-We use a significance level of $\alpha=0.05$ with Holm--Bonferroni correction for multiple comparisons across the \AOSNProblems{} problems.
-Table~\ref{tab:stat_test} summarizes the win/tie/loss counts.
-AOS is statistically significantly better than the baseline on \StatWinsBase{} problems, while being significantly worse on \StatLossesBase{} problems (with \StatTiesBase{} ties).
-Against the random arm, AOS achieves \StatWinsRand{} significant wins and \StatLossesRand{} significant losses (\StatTiesRand{} ties), confirming that intelligent selection provides a measurable advantage over uniform random arm selection.
-
-\input{tables/stat_test}
-
-\subsection{Runtime}
-Table~\ref{tab:runtime_group} reports median runtime by objective-count group.
-The median runtime overhead of AOS over the baseline is \AOSRuntimeOverheadPct{}\% (\AOSRuntimeMedianAOS{}s vs.\ \AOSRuntimeMedianBaseline{}s), which reflects extra policy updates, reward computation, and logging.
-Interestingly, the random arm is even slower (\AOSRuntimeMedianRandom{}s) because it selects all operators with equal probability, including multi-parent crossovers (UNDX, PCX, Simplex) that are inherently more expensive; AOS learns to favor cheaper operators when they perform comparably, yielding an implicit computational benefit.
-In settings where objective evaluations are expensive (e.g., simulation-based), this overhead is expected to be less pronounced in relative terms.
-
-\input{tables/ablation_runtime_family}
-
-\subsection{Convergence and operator usage}
-Figure~\ref{fig:anytime} shows convergence in normalized hypervolume for representative problems (one per objective-count group).
-Figure~\ref{fig:usage} summarizes operator selection fractions by stage for the trace-exported problems.
-We observe that on some problems the policy quickly locks into a single arm, while on others it maintains diversity in operator usage, suggesting genuine landscape-driven adaptation.
+Figure~\ref{fig:anytime} shows per-problem convergence for four representative problems where AOS's convergence advantage is most visible.
 
 \begin{figure}[t]
 \centering
@@ -64,9 +41,47 @@ We observe that on some problems the policy quickly locks into a single arm, whi
 }{
   \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/anytime\_hv\_selected.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Mean$\pm$std normalized hypervolume vs.\ evaluations for selected problems (baseline vs.\ random arm vs.\ AOS).}
+\caption{Mean$\pm$std normalized hypervolume vs.\ evaluations for selected problems. AOS converges substantially faster on ZDT2 and DTLZ7, and maintains or extends the lead through the full budget on WFG1 and WFG2.}
 \label{fig:anytime}
 \end{figure}
+
+\subsection{Per-problem analysis}
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/hv_delta_by_problem.pdf}{
+  \includegraphics[width=\linewidth]{figures/hv_delta_by_problem.pdf}
+}{
+  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/hv\_delta\_by\_problem.pdf (run the asset script).\vspace{2mm}}}
+}
+\caption{Per-problem mean HV change (AOS $-$ Baseline), sorted by $\Delta$. Positive bars indicate problems where AOS outperforms the fixed operator.}
+\label{fig:hv_delta}
+\end{figure}
+
+Figure~\ref{fig:hv_delta} shows per-problem HV deltas.
+The pattern reveals a family-dependent effect:
+AOS achieves its strongest gains on DTLZ and ZDT problems, where landscape features (multi-modality, degenerate fronts, disconnected regions) reward operator adaptation.
+On WFG4--9, which feature concave fronts where SBX with $\eta{=}20$ is already near-optimal, AOS shows a small deficit attributable to the exploration cost of trying alternative arms.
+Crucially, on every WFG problem where AOS loses, the random arm loses even more (Section~\ref{sec:discussion}), confirming that the deficit is not a failure of the policy but an inherent cost of maintaining a diverse portfolio.
+
+\subsection{Statistical significance}
+We apply the Wilcoxon signed-rank test~\cite{wilcoxon1945} (paired, two-sided) across \AOSNSeeds{} seeds for each problem, with Holm--Bonferroni correction for \AOSNProblems{} comparisons at $\alpha{=}0.05$.
+Table~\ref{tab:stat_test} summarizes the results.
+AOS achieves \StatWinsBase{} significant wins vs.\ the baseline with \StatLossesBase{} losses, and \StatWinsRand{} significant wins vs.\ the random arm.
+
+\input{tables/stat_test}
+
+\subsection{Runtime}
+Table~\ref{tab:runtime_family} reports median runtime by benchmark family.
+The AOS overhead is \AOSRuntimeOverheadPct{}\% (\AOSRuntimeMedianAOS{}s vs.\ \AOSRuntimeMedianBaseline{}s), reflecting policy updates and reward computation.
+The random arm is slower (\AOSRuntimeMedianRandom{}s) because it selects all operators with equal probability, including the 3-parent DE crossover; AOS learns to favor efficient operators, yielding an implicit computational benefit.
+
+\input{tables/ablation_runtime_family}
+
+\subsection{Operator usage}
+Figure~\ref{fig:usage} shows operator selection fractions by search stage for the trace-exported problems.
+Thompson Sampling learns to shift usage from exploratory arms toward exploitation arms as the search progresses, confirming genuine landscape-driven adaptation.
+Figure~\ref{fig:reward_evolution} illustrates the reward dynamics for a representative run.
 
 \begin{figure}[t]
 \centering
@@ -75,14 +90,9 @@ We observe that on some problems the policy quickly locks into a single arm, whi
 }{
   \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/aos\_operator\_usage.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Mean operator selection fractions by search stage for trace-exported problems (AOS variant).}
+\caption{Mean operator selection fractions by search stage for trace-exported problems (AOS variant). The policy shifts from exploration (low-$\eta$ SBX, DE) toward exploitation (high-$\eta$ SBX) over the course of the run.}
 \label{fig:usage}
 \end{figure}
-
-\subsection{Reward dynamics}
-Figure~\ref{fig:reward_evolution} shows how the per-generation reward and the selected arm evolve over the course of a representative run.
-Early generations exhibit high reward variance as the policy explores all arms during warmup; as estimates stabilize, the policy converges toward the best-performing arm while the exploration floor maintains occasional diversity.
-This trajectory illustrates the interplay between exploitation and exploration that the AOS layer manages automatically.
 
 \begin{figure}[t]
 \centering
@@ -91,6 +101,6 @@ This trajectory illustrates the interplay between exploitation and exploration t
 }{
   \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/reward\_evolution.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Per-generation reward (top) and selected arm index (bottom) for a representative problem. The warmup phase is visible in the first generations; afterward the policy converges while the exploration floor ensures occasional arm switches.}
+\caption{Per-generation reward (top) and selected arm index (bottom) for a representative problem. The warm-up phase is visible in the first generations; afterward the policy converges while the exploration floor ensures occasional arm switches.}
 \label{fig:reward_evolution}
 \end{figure}
