@@ -3,10 +3,11 @@
 
 We presented a Thompson Sampling-based adaptive operator selection layer for NSGA-II that selects one variation pipeline per generation and updates an online policy from survival and diversity-oriented rewards.
 Across \AOSNProblems{} standard benchmarks (ZDT, DTLZ, WFG) with 2--3 objectives, AOS achieves two main results:
-(i)~\AOSConvergenceAdvPct{}\% faster convergence at 20\% of the evaluation budget, making it especially valuable in budget-constrained applications; and
+(i)~\AOSConvergenceAdvPct{}\% faster convergence at 10\% of the evaluation budget, making it especially valuable in budget-constrained applications; and
 (ii)~higher mean HV (\AOSHVMeanAOS{} vs.\ \AOSHVMeanBaseline{}) with \AOSWins{}/\AOSNProblems{} problem wins at the final budget, demonstrating that adaptive operator selection improves or preserves final solution quality on the majority of problems.
 The three-way comparison design reveals that portfolio diversity alone has value (random arm outperforms the baseline in aggregate), while Thompson Sampling adds further improvement by concentrating pulls on the most rewarding operators for each problem.
 On problems where the default SBX+PM is already near-optimal, AOS incurs a small exploration cost that is consistently less than the cost of random arm selection---a favorable exploration--exploitation trade-off.
+With a 100{,}000-evaluation budget, AOS achieves both faster convergence and higher final quality, demonstrating that the early exploration investment pays off over longer runs.
 
 Future work includes extending the portfolio with additional structural operators (e.g., adaptive DE variants), testing on higher-dimensional many-objective problems with scalable reward signals (e.g., $R_2$-indicator proxies), applying AOS to real-world engineering surrogates where landscape geometry is unknown, and cost-aware bandit policies that account for per-arm computational overhead.
 
