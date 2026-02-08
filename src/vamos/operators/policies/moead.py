@@ -3,7 +3,7 @@
 Operator building for MOEA/D.
 
 This module handles the construction of variation operators (crossover and mutation)
-for different encodings (continuous, binary, integer).
+for different encodings (continuous, binary, integer, permutation, mixed).
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ from vamos.operators.impl.permutation import (
     inversion_mutation,
     displacement_mutation,
 )
+from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
 from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
 from vamos.operators.impl.real import VariationWorkspace
 
@@ -117,6 +118,7 @@ def build_variation_operators(
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
+    mixed_spec: dict[str, np.ndarray] | None = None,
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build crossover and mutation operators for the given encoding.
 
@@ -125,7 +127,7 @@ def build_variation_operators(
     cfg : dict[str, Any]
         Algorithm configuration with 'crossover' and 'mutation' keys.
     encoding : str
-        Problem encoding type: "real", "binary", "integer", or "permutation".
+        Problem encoding type: "real", "binary", "integer", "permutation", or "mixed".
     n_var : int
         Number of decision variables.
     xl : np.ndarray
@@ -161,6 +163,18 @@ def build_variation_operators(
         return _build_integer_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
     elif normalized == "permutation":
         return _build_permutation_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
+    elif normalized == "mixed":
+        if mixed_spec is None:
+            raise ValueError("MOEA/D mixed encoding requires problem.mixed_spec.")
+        return _build_mixed_operators(
+            cross_method,
+            cross_params,
+            mut_method,
+            mut_params,
+            n_var,
+            mixed_spec,
+            rng,
+        )
     elif normalized == "real":
         return _build_continuous_operators(cross_method, cross_params, mut_params, n_var, xl, xu, rng)
     else:
@@ -342,6 +356,44 @@ def _build_permutation_operators(
 
     def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
         mut_fn(X_child, mut_prob, _rng)
+        return X_child
+
+    return crossover, mutation
+
+
+def _build_mixed_operators(
+    cross_method: str,
+    cross_params: dict[str, Any],
+    mut_method: str,
+    mut_params: dict[str, Any],
+    n_var: int,
+    mixed_spec: dict[str, np.ndarray],
+    rng: np.random.Generator,
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
+    """Build variation operators for mixed encoding."""
+    if str(cross_method).lower() not in {"mixed", "uniform"}:
+        raise ValueError(
+            f"Unsupported MOEA/D crossover '{cross_method}' for mixed encoding."
+        )
+    if str(mut_method).lower() not in {"mixed", "gaussian"}:
+        raise ValueError(
+            f"Unsupported MOEA/D mutation '{mut_method}' for mixed encoding."
+        )
+
+    cross_prob = float(cross_params.get("prob", 0.9))
+    mut_prob = resolve_prob_expression(
+        mut_params.get("prob"),
+        n_var,
+        1.0 / max(1, n_var),
+    )
+
+    def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        parents_flat = parents.reshape(-1, parents.shape[-1])
+        offspring_flat = mixed_crossover(parents_flat, cross_prob, mixed_spec, _rng)
+        return offspring_flat.reshape(parents.shape)
+
+    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        mixed_mutation(X_child, mut_prob, mixed_spec, _rng)
         return X_child
 
     return crossover, mutation

@@ -116,7 +116,7 @@ def initialize_spea2_run(
     genealogy_tracker, ids = setup_genealogy(pop_size, F, track_genealogy, "spea2")
 
     # Build variation operators
-    crossover_fn, mutation_fn = build_variation_operators(cfg, encoding, n_var, xl, xu, rng)
+    crossover_fn, mutation_fn = build_variation_operators(cfg, encoding, n_var, xl, xu, rng, problem=problem)
 
     ctx = RunContext(
         problem=problem,
