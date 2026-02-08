@@ -113,3 +113,76 @@ def test_mixed_with_permutation_segment():
         assert set(row.astype(int)) == expected
     assert np.all(children[:, spec["int_idx"]] >= spec["int_lower"])
     assert np.all(children[:, spec["int_idx"]] <= spec["int_upper"])
+
+
+def test_mixed_segment_specific_probabilities_override_global_probability():
+    rng = np.random.default_rng(7)
+    perm_idx = np.array([0, 1, 2, 3], dtype=int)
+    int_idx = np.array([4, 5], dtype=int)
+    spec = {
+        "perm_idx": perm_idx,
+        "int_idx": int_idx,
+        "int_lower": np.array([0, 0], dtype=int),
+        "int_upper": np.array([9, 9], dtype=int),
+        "perm_crossover": "ox",
+        "perm_mutation": "swap",
+        "perm_crossover_prob": 0.0,
+        "int_crossover_prob": 1.0,
+        "perm_mutation_prob": 0.0,
+        "int_mutation_prob": 1.0,
+        "int_mutation": "reset",
+    }
+    parents = np.array(
+        [
+            [0, 1, 2, 3, 1, 8],
+            [3, 2, 1, 0, 7, 2],
+            [1, 0, 3, 2, 2, 6],
+            [2, 3, 0, 1, 8, 1],
+        ],
+        dtype=float,
+    )
+    children = mixed_crossover(parents, prob=0.0, spec=spec, rng=rng)
+    assert np.array_equal(children[:, perm_idx], parents[:, perm_idx])
+    assert np.any(children[:, int_idx] != parents[:, int_idx])
+
+    before_mutation = children.copy()
+    mixed_mutation(children, prob=0.0, spec=spec, rng=rng)
+    assert np.array_equal(children[:, perm_idx], before_mutation[:, perm_idx])
+    assert np.any(children[:, int_idx] != before_mutation[:, int_idx])
+    assert np.all(children[:, int_idx] >= spec["int_lower"])
+    assert np.all(children[:, int_idx] <= spec["int_upper"])
+
+
+def test_mixed_integer_segment_supports_arithmetic_crossover_and_creep_mutation():
+    rng = np.random.default_rng(11)
+    spec = {
+        "perm_idx": np.array([0, 1, 2], dtype=int),
+        "int_idx": np.array([3, 4], dtype=int),
+        "int_lower": np.array([0, 0], dtype=int),
+        "int_upper": np.array([10, 10], dtype=int),
+        "perm_crossover": "ox",
+        "perm_mutation": "swap",
+        "perm_crossover_prob": 0.0,
+        "int_crossover_prob": 1.0,
+        "int_crossover": "arithmetic",
+        "perm_mutation_prob": 0.0,
+        "int_mutation_prob": 1.0,
+        "int_mutation": "creep",
+        "int_mutation_step": 2,
+    }
+    parents = np.array(
+        [
+            [0, 1, 2, 2, 8],
+            [2, 1, 0, 8, 2],
+        ],
+        dtype=float,
+    )
+    children = mixed_crossover(parents, prob=1.0, spec=spec, rng=rng)
+    assert np.array_equal(children[:, :3], parents[:, :3])
+    assert np.array_equal(children[:, 3:], np.array([[5.0, 5.0], [5.0, 5.0]]))
+
+    before_mutation = children.copy()
+    mixed_mutation(children, prob=1.0, spec=spec, rng=rng)
+    assert np.array_equal(children[:, :3], before_mutation[:, :3])
+    deltas = np.abs(children[:, 3:] - before_mutation[:, 3:])
+    assert np.array_equal(deltas, np.full_like(deltas, 2.0))

@@ -24,6 +24,7 @@ def _get_registry() -> Registry[object]:
         SBXCrossover,
         PolynomialMutation,
         ArithmeticCrossover,
+        DEMatingCrossover,
         PCXCrossover,
         SPXCrossover,
         UNDXCrossover,
@@ -44,6 +45,7 @@ def _get_registry() -> Registry[object]:
     reg.register("sbx", SBXCrossover)
     reg.register("blx_alpha", BLXAlphaCrossover)
     reg.register("arithmetic", ArithmeticCrossover)
+    reg.register("de", DEMatingCrossover)
     reg.register("pcx", PCXCrossover)
     reg.register("undx", UNDXCrossover)
     reg.register("simplex", SPXCrossover)

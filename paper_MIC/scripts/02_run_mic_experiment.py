@@ -1,13 +1,17 @@
 """
-MIC Paper Experiment: AOS on Real-World Engineering Problems
-============================================================
-Comparisons on 21 continuous engineering surrogates from the Tanabe--Ishibuchi
-RE and Zapotecas-Martínez RWA benchmark suites.
+MIC Paper Experiment: Adaptive Operator Selection
+==================================================
+AOS ablation on standard MO benchmarks and real-world engineering problems.
+
+Problem suites (select via VAMOS_MIC_SUITE):
+  "standard"  — 21 ZDT / DTLZ / WFG problems (7-30 vars, 2-3 obj) [default]
+  "realworld" — 21 RE / RWA engineering surrogates (2-10 vars, 2-9 obj)
+  "all"       — both suites combined (42 problems)
 
 Common variants:
   (1) fixed NSGA-II (SBX + PM) — ``baseline``
-  (2) random arm from the same 5-operator pool — ``random``
-  (3) NSGA-II + AOS (ε-greedy, same pool) — ``aos``
+  (2) random arm from the operator pool — ``random``
+  (3) NSGA-II + AOS (Thompson Sampling, 5-arm pool) — ``aos``
 
 Factorial (2x2) variants for causal analysis:
   (4) fixed NSGA-II + external archive — ``baseline_archive``
@@ -16,26 +20,30 @@ Factorial (2x2) variants for causal analysis:
 Usage
 -----
   # Step 1: Generate reference fronts (one-time, ~hours)
-  python paper_MIC/scripts/02_run_mic_experiment.py --generate-ref-fronts
+  VAMOS_MIC_SUITE=standard python paper_MIC/scripts/02_run_mic_experiment.py --generate-ref-fronts
 
   # Step 2: Run the main experiment
-  python paper_MIC/scripts/02_run_mic_experiment.py
+  VAMOS_MIC_SUITE=standard python paper_MIC/scripts/02_run_mic_experiment.py
+
+  # Or run on real-world problems:
+  VAMOS_MIC_SUITE=realworld python paper_MIC/scripts/02_run_mic_experiment.py
 
 Environment variables (main experiment)
 ---------------------------------------
+  VAMOS_MIC_SUITE          Problem suite: standard|realworld|all (default: standard)
   VAMOS_MIC_N_EVALS        Evaluations per run (default: 50000)
   VAMOS_MIC_N_SEEDS        Seeds per (variant, problem) (default: 30)
   VAMOS_MIC_N_JOBS         Parallel workers (default: CPU count − 1)
   VAMOS_MIC_ENGINE         Engine backend (default: numba)
   VAMOS_MIC_RESUME         1/0 resume into existing CSVs (default: 0)
   VAMOS_MIC_VARIANTS       Comma-separated variants (default: baseline,random,aos)
-  VAMOS_MIC_AOS_METHOD     Policy for variant=aos (epsilon_greedy|ucb|sliding_ucb|exp3|thompson_sampling)
-  VAMOS_MIC_AOS_EPSILON    Epsilon for epsilon-greedy (default: 0.05)
+  VAMOS_MIC_AOS_METHOD     Policy for variant=aos (epsilon_greedy|ucb|sliding_ucb|exp3|thompson_sampling; default: thompson_sampling)
+  VAMOS_MIC_AOS_EPSILON    Epsilon for epsilon-greedy (default: 0.1)
   VAMOS_MIC_AOS_C          UCB exploration coefficient (default: 1.0)
   VAMOS_MIC_AOS_GAMMA      EXP3 gamma (default: 0.2)
-  VAMOS_MIC_AOS_MIN_USAGE  Warm-up pulls per arm (default: 0)
+  VAMOS_MIC_AOS_MIN_USAGE  Warm-up pulls per arm (default: 5)
   VAMOS_MIC_AOS_WINDOW_SIZE Sliding-window size for sliding_ucb / thompson_sampling (default: 50)
-  VAMOS_MIC_AOS_FLOOR_PROB Extra random-selection floor probability in [0,1] (default: 0.0)
+  VAMOS_MIC_AOS_FLOOR_PROB Extra random-selection floor probability in [0,1] (default: 0.05)
   VAMOS_MIC_AOS_DISABLE_MANYOBJ 1/0: for variant=aos, fallback to baseline on >=5 objectives (default: 0)
   VAMOS_MIC_ARCHIVE_SIZE  External archive size for *_archive variants (default: pop_size=100)
   VAMOS_MIC_ARCHIVE_TYPE  Archive pruning policy for bounded archives (default: hypervolume)
@@ -45,7 +53,7 @@ Environment variables (main experiment)
   VAMOS_MIC_TRACE_CSV      AOS trace CSV (set 0 to disable)
   VAMOS_MIC_CHECKPOINTS    Comma-separated eval checkpoints (default: 5000,10000,20000,50000)
   VAMOS_MIC_TRACE_VARIANTS Variants to capture traces for (default: aos)
-  VAMOS_MIC_TRACE_PROBLEMS Problems to capture traces for (default: re37,rwa2,rwa9)
+  VAMOS_MIC_TRACE_PROBLEMS Problems to capture traces for (default: auto per suite)
   VAMOS_CHECKPOINT_INTERVAL_MIN  Flush interval in minutes (default: 30)
 
 Reference-front generation (--generate-ref-fronts)
@@ -83,31 +91,66 @@ from vamos.foundation.problem.registry import make_problem_selection
 from progress_utils import ProgressBar, joblib_progress
 
 # =============================================================================
-# Problem suite: 21 continuous engineering surrogates
+# Problem suites
 # =============================================================================
+# Select via VAMOS_MIC_SUITE: "standard" (default), "realworld", or "all".
 
-# 11 continuous Tanabe-Ishibuchi RE problems
+# --- Standard MO benchmarks (21 problems, 7-30 vars, 2-3 obj) ---
+ZDT_PROBLEMS = [
+    "zdt1", "zdt2", "zdt3", "zdt4", "zdt6",       # 2-obj, 10-30 vars
+]
+DTLZ_PROBLEMS = [
+    "dtlz1", "dtlz2", "dtlz3", "dtlz4",           # 3-obj, 7-12 vars
+    "dtlz5", "dtlz6", "dtlz7",                     # 3-obj, 12-22 vars
+]
+WFG_PROBLEMS = [
+    "wfg1", "wfg2", "wfg3", "wfg4", "wfg5",       # 3-obj, 24 vars
+    "wfg6", "wfg7", "wfg8", "wfg9",
+]
+STANDARD_PROBLEMS = [*ZDT_PROBLEMS, *DTLZ_PROBLEMS, *WFG_PROBLEMS]
+
+# --- Real-world engineering surrogates (21 problems, 2-10 vars, 2-9 obj) ---
 RE_PROBLEMS = [
-    "re21", "re24",                               # 2-obj
-    "re31", "re32", "re33", "re34", "re37",        # 3-obj
-    "re41", "re42",                                # 4-obj
-    "re61",                                        # 6-obj
-    "re91",                                        # 9-obj
+    "re21", "re24",                                 # 2-obj
+    "re31", "re32", "re33", "re34", "re37",          # 3-obj
+    "re41", "re42",                                 # 4-obj
+    "re61",                                         # 6-obj
+    "re91",                                         # 9-obj
 ]
-
-# 10 continuous Zapotecas-Martínez RWA problems
 RWA_PROBLEMS = [
-    "rwa1",                                        # 2-obj
+    "rwa1",                                         # 2-obj
     "rwa2", "rwa3", "rwa4", "rwa5", "rwa6", "rwa7",  # 3-obj
-    "rwa8",                                        # 4-obj
-    "rwa9",                                        # 5-obj
-    "rwa10",                                       # 7-obj
+    "rwa8",                                         # 4-obj
+    "rwa9",                                         # 5-obj
+    "rwa10",                                        # 7-obj
 ]
+REALWORLD_PROBLEMS = [*RE_PROBLEMS, *RWA_PROBLEMS]
 
-ALL_PROBLEMS = [*RE_PROBLEMS, *RWA_PROBLEMS]
+# --- Suite selection ---
+_SUITES: dict[str, list[str]] = {
+    "standard": STANDARD_PROBLEMS,
+    "realworld": REALWORLD_PROBLEMS,
+    "all": [*STANDARD_PROBLEMS, *REALWORLD_PROBLEMS],
+}
+VALID_SUITES = set(_SUITES.keys())
 
-# Objective counts (from the registry specs)
+def _select_suite() -> list[str]:
+    suite = os.environ.get("VAMOS_MIC_SUITE", "standard").strip().lower()
+    if suite not in VALID_SUITES:
+        raise ValueError(f"Unknown VAMOS_MIC_SUITE '{suite}'. Supported: {sorted(VALID_SUITES)}")
+    return list(_SUITES[suite])
+
+ALL_PROBLEMS = _select_suite()
+
+# Objective counts (all suites)
 _N_OBJ: dict[str, int] = {
+    # Standard
+    "zdt1": 2, "zdt2": 2, "zdt3": 2, "zdt4": 2, "zdt6": 2,
+    "dtlz1": 3, "dtlz2": 3, "dtlz3": 3, "dtlz4": 3,
+    "dtlz5": 3, "dtlz6": 3, "dtlz7": 3,
+    "wfg1": 3, "wfg2": 3, "wfg3": 3, "wfg4": 3, "wfg5": 3,
+    "wfg6": 3, "wfg7": 3, "wfg8": 3, "wfg9": 3,
+    # Real-world
     "re21": 2, "re24": 2,
     "re31": 3, "re32": 3, "re33": 3, "re34": 3, "re37": 3,
     "re41": 4, "re42": 4,
@@ -119,18 +162,27 @@ _N_OBJ: dict[str, int] = {
     "rwa10": 7,
 }
 
-# Objective-count group label (for the paper tables)
+# Group label for paper tables
 def obj_group(problem: str) -> str:
-    m = _N_OBJ.get(problem, 0)
+    name = problem.lower()
+    if name.startswith("zdt"):
+        return "ZDT"
+    if name.startswith("dtlz"):
+        return "DTLZ"
+    if name.startswith("wfg"):
+        return "WFG"
+    if name.startswith("re"):
+        return "RE"
+    if name.startswith("rwa"):
+        return "RWA"
+    m = _N_OBJ.get(name, 0)
     if m <= 2:
         return "2-obj"
     if m == 3:
         return "3-obj"
-    if m == 4:
-        return "4-obj"
     return "many-obj"
 
-OBJ_GROUP_ORDER = ("2-obj", "3-obj", "4-obj", "many-obj")
+OBJ_GROUP_ORDER = ("ZDT", "DTLZ", "WFG", "RE", "RWA")
 
 # =============================================================================
 # Shared defaults
@@ -146,31 +198,41 @@ REF_EPS = 1e-6
 
 
 # =============================================================================
-# Operator portfolio (same 5 arms as the original paper)
+# Operator portfolio – 5-arm design with parameter + structural diversity
 # =============================================================================
+# Three SBX eta variants let AOS adapt exploration/exploitation intensity
+# over the run; BLX-alpha gives geometric diversity; DE/rand/1/bin adds a
+# fundamentally different search strategy that uses differential vectors
+# between population members.
+#
+# Arm 0: Broad exploration  – low eta pushes offspring far from parents.
+# Arm 1: Standard           – the classic NSGA-II default (eta=20).
+# Arm 2: Fine exploitation  – high eta keeps offspring near parents.
+# Arm 3: Structural variety – BLX-alpha covers a different search geometry.
+# Arm 4: Differential Evol. – DE/rand/1/bin, strong on real-world problems.
 
 def _operator_pool(n_var: int) -> list[dict[str, Any]]:
     mut_prob = 1.0 / max(n_var, 1)
     return [
-        {
+        {   # Arm 0 – exploration (low eta => wide spread)
+            "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": 5.0}),
+            "mutation": ("pm", {"prob": mut_prob, "eta": 5.0}),
+        },
+        {   # Arm 1 – standard NSGA-II default
             "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": CROSSOVER_ETA}),
             "mutation": ("pm", {"prob": mut_prob, "eta": MUTATION_ETA}),
         },
-        {
-            "crossover": ("pcx", {"prob": CROSSOVER_PROB, "sigma_eta": 0.1, "sigma_zeta": 0.1}),
+        {   # Arm 2 – exploitation (high eta => children near parents)
+            "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": 50.0}),
+            "mutation": ("pm", {"prob": mut_prob, "eta": 50.0}),
+        },
+        {   # Arm 3 – structural diversity (BLX-alpha + standard PM)
+            "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.5, "repair": "random"}),
             "mutation": ("pm", {"prob": mut_prob, "eta": MUTATION_ETA}),
         },
-        {
-            "crossover": ("undx", {"prob": CROSSOVER_PROB, "zeta": 0.5, "eta": 0.35}),
-            "mutation": ("gaussian", {"prob": mut_prob, "sigma": 0.1}),
-        },
-        {
-            "crossover": ("simplex", {"prob": CROSSOVER_PROB, "epsilon": 0.5}),
-            "mutation": ("uniform_reset", {"prob": mut_prob}),
-        },
-        {
-            "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.5, "repair": "random"}),
-            "mutation": ("cauchy", {"prob": mut_prob, "gamma": 0.1}),
+        {   # Arm 4 – DE/rand/1/bin (differential vectors + binomial crossover)
+            "crossover": ("de", {"prob": CROSSOVER_PROB, "F": 0.5, "CR": 0.9}),
+            "mutation": ("pm", {"prob": mut_prob, "eta": MUTATION_ETA}),
         },
     ]
 
@@ -217,7 +279,12 @@ def _load_reference_front(problem_name: str) -> np.ndarray:
     name = problem_name.lower()
     path = REFERENCE_FRONTS_DIR / f"{name}.csv"
     if not path.is_file():
-        raise FileNotFoundError(f"Missing reference front for '{name}': {path}")
+        # Try uppercase variant (e.g. ZDT1.csv)
+        path_upper = REFERENCE_FRONTS_DIR / f"{name.upper()}.csv"
+        if path_upper.is_file():
+            path = path_upper
+        else:
+            raise FileNotFoundError(f"Missing reference front for '{name}': {path}")
     return np.loadtxt(path, delimiter=",")
 
 
@@ -295,13 +362,13 @@ def _make_aos_cfg(
     seed: int,
     n_var: int,
     problem_name: str,
-    epsilon: float = 0.05,
-    method: str = "epsilon_greedy",
-    min_usage: int = 0,
+    epsilon: float = 0.1,
+    method: str = "thompson_sampling",
+    min_usage: int = 5,
     c: float = 1.0,
     gamma: float = 0.2,
-    window_size: int = 0,
-    floor_prob: float = 0.0,
+    window_size: int = 50,
+    floor_prob: float = 0.05,
 ) -> dict[str, Any]:
     """Build AOS config dict for any AOS variant."""
     hv_ref_pt, hv_ref_hv = _hv_reward_refs(problem_name)
@@ -341,15 +408,21 @@ class VariantSpec:
 VARIANT_SPECS: dict[str, VariantSpec] = {
     "baseline": VariantSpec(aos_kwargs=None, use_archive=False),
     "random": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=1.0, min_usage=0), use_archive=False),
-    # Original AOS (weak exploration)
-    "aos": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.05, min_usage=0), use_archive=False),
+    # AOS – Thompson Sampling with proper exploration
+    "aos": VariantSpec(
+        aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.05),
+        use_archive=False,
+    ),
     # 2x2 factorial cells: archive off/on x AOS off/on
     "baseline_archive": VariantSpec(aos_kwargs=None, use_archive=True),
-    "aos_archive": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.05, min_usage=0), use_archive=True),
+    "aos_archive": VariantSpec(
+        aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.05),
+        use_archive=True,
+    ),
     # ---- Pilot variants ----
-    "aos_eps15": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.15, min_usage=3), use_archive=False),
-    "aos_swucb": VariantSpec(aos_kwargs=dict(method="sliding_ucb", c=1.0, min_usage=3, window_size=50), use_archive=False),
-    "aos_ts": VariantSpec(aos_kwargs=dict(method="thompson_sampling", min_usage=3, window_size=50), use_archive=False),
+    "aos_eps15": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.15, min_usage=5), use_archive=False),
+    "aos_swucb": VariantSpec(aos_kwargs=dict(method="sliding_ucb", c=1.0, min_usage=5, window_size=50, floor_prob=0.05), use_archive=False),
+    "aos_ts": VariantSpec(aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.05), use_archive=False),
 }
 
 VALID_VARIANTS = set(VARIANT_SPECS.keys())
@@ -360,13 +433,13 @@ VALID_AOS_METHODS = {"epsilon_greedy", "ucb", "sliding_ucb", "exp3", "thompson_s
 class AOSRuntimeOptions:
     """Runtime overrides for the `aos` variant via environment variables."""
 
-    method: str = "epsilon_greedy"
-    epsilon: float = 0.05
+    method: str = "thompson_sampling"
+    epsilon: float = 0.1
     c: float = 1.0
     gamma: float = 0.2
-    min_usage: int = 0
+    min_usage: int = 5
     window_size: int = 50
-    floor_prob: float = 0.0
+    floor_prob: float = 0.05
     disable_manyobj: bool = False
 
 
@@ -533,15 +606,15 @@ def _maybe_dataclass_to_dict(value: object) -> object:
 
 def _load_aos_runtime_options() -> AOSRuntimeOptions:
     """Parse AOS runtime overrides from environment variables."""
-    method = _as_str_env("VAMOS_MIC_AOS_METHOD", "epsilon_greedy").strip().lower()
+    method = _as_str_env("VAMOS_MIC_AOS_METHOD", "thompson_sampling").strip().lower()
     if method not in VALID_AOS_METHODS:
         raise ValueError(f"Unsupported VAMOS_MIC_AOS_METHOD '{method}'. Supported: {sorted(VALID_AOS_METHODS)}")
 
-    epsilon = _as_float_env("VAMOS_MIC_AOS_EPSILON", 0.05)
+    epsilon = _as_float_env("VAMOS_MIC_AOS_EPSILON", 0.1)
     c = _as_float_env("VAMOS_MIC_AOS_C", 1.0)
     gamma = _as_float_env("VAMOS_MIC_AOS_GAMMA", 0.2)
-    min_usage = _as_int_env("VAMOS_MIC_AOS_MIN_USAGE", 0)
-    floor_prob = _as_float_env("VAMOS_MIC_AOS_FLOOR_PROB", 0.0)
+    min_usage = _as_int_env("VAMOS_MIC_AOS_MIN_USAGE", 5)
+    floor_prob = _as_float_env("VAMOS_MIC_AOS_FLOOR_PROB", 0.05)
     disable_manyobj = _as_bool_env("VAMOS_MIC_AOS_DISABLE_MANYOBJ", False)
 
     # Defaults tuned for non-stationary policies; harmless for others.
@@ -822,9 +895,11 @@ def run_experiment() -> None:
         v.strip().lower()
         for v in _parse_csv_list(_as_str_env("VAMOS_MIC_TRACE_VARIANTS", "aos"))
     )
+    # Default trace problems: pick 3 representative problems from active suite
+    _default_trace = "dtlz1,dtlz6,wfg1" if any(p.startswith(("zdt", "dtlz", "wfg")) for p in ALL_PROBLEMS) else "re37,rwa2,rwa9"
     trace_problems = set(
         p.strip().lower()
-        for p in _parse_csv_list(_as_str_env("VAMOS_MIC_TRACE_PROBLEMS", "re37,rwa2,rwa9"))
+        for p in _parse_csv_list(_as_str_env("VAMOS_MIC_TRACE_PROBLEMS", _default_trace))
     )
 
     checkpoints: list[int] | None = None
@@ -855,7 +930,9 @@ def run_experiment() -> None:
         problems = _parse_csv_list(problems_raw)
 
     # --- Verify reference fronts ---
-    missing = [p for p in problems if not (REFERENCE_FRONTS_DIR / f"{p}.csv").is_file()]
+    def _has_ref_front(name: str) -> bool:
+        return (REFERENCE_FRONTS_DIR / f"{name}.csv").is_file() or (REFERENCE_FRONTS_DIR / f"{name.upper()}.csv").is_file()
+    missing = [p for p in problems if not _has_ref_front(p)]
     if missing:
         raise FileNotFoundError(
             f"Missing reference fronts for: {missing}. "
