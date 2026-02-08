@@ -5,27 +5,28 @@ The results show that AOS with Thompson Sampling provides two distinct advantage
 We now analyze the mechanisms behind both the wins and the losses.
 
 \paragraph{Convergence speed is the primary benefit.}
-The aggregate anytime curves (Figure~\ref{fig:anytime_agg}) reveal that AOS's strongest advantage is in the first 20\% of the evaluation budget.
+The aggregate anytime curves (Figure~\ref{fig:anytime_agg}) reveal that AOS's strongest advantage is in the first 10\% of the evaluation budget.
 At 10{,}000 evaluations the mean HV advantage over the baseline is \AOSConvergenceAdvPct{}\%.
 This arises because Thompson Sampling actively explores the operator space during early generations---deploying low-$\eta$ SBX and DE to spread offspring broadly---then progressively shifts toward exploitation arms as reward estimates stabilize.
 The baseline, locked into a single moderate operator ($\eta{=}20$), converges more slowly when the initial population is far from the Pareto front.
+Crucially, AOS maintains a positive advantage throughout the full 100{,}000-evaluation budget (+2.3\% at termination), confirming that the early convergence gains are not simply ``borrowed'' from later stages.
 In practical applications where evaluation budgets are limited (e.g., simulation-based engineering design), this faster convergence translates directly into better solutions for a given computational cost.
 
 \paragraph{The exploration--exploitation trade-off on WFG.}
-AOS loses to the baseline on 5 of 9 WFG problems (WFG4, 5, 7, 8, 9).
+AOS loses to the baseline on 4 of 9 WFG problems (WFG4, 5, 7, 8).
 A deeper analysis reveals that these losses are inherent to the portfolio, not the policy:
-on every WFG problem where AOS loses, the random arm loses \emph{even more} (e.g., WFG8: AOS $-4.3\%$ vs.\ random $-6.0\%$; WFG7: AOS $-2.6\%$ vs.\ random $-4.0\%$).
+on every WFG problem where AOS loses, the random arm loses \emph{even more} (e.g., WFG8: AOS $-5.0\%$ vs.\ random $-7.4\%$; WFG7: AOS $-2.5\%$ vs.\ random $-3.8\%$).
 This means that \emph{any} departure from pure SBX+PM ($\eta{=}20$) hurts on these specific landscapes---concave fronts where the default operator happens to be near-optimal.
-AOS mitigates much of the portfolio cost through intelligent selection (the trace data shows $\sim$80\% of pulls going to SBX arms on WFG1), but even 10--20\% exploration time on weaker arms creates a deficit that cannot be fully recovered within 50{,}000 evaluations.
-This is a fundamental exploration cost: the portfolio pays a small tax ($\sim$2--5\%) on easy landscapes in exchange for large gains ($+9$--$102\%$) on hard ones.
+AOS mitigates much of the portfolio cost through intelligent selection (the trace data shows $\sim$80\% of pulls going to SBX arms on WFG problems), but even 10--20\% exploration time on weaker arms creates a small deficit.
+This is a fundamental exploration cost: the portfolio pays a small tax ($\sim$2--5\%) on easy landscapes in exchange for large gains ($+9$--$64\%$) on hard ones.
 
 \paragraph{Where AOS helps most.}
 The largest improvements occur on problems where the default SBX+PM pipeline stalls or converges slowly:
 \begin{itemize}
-  \item \textbf{DTLZ6} ($+102\%$): The baseline fails to traverse the degenerate, biased distance function; AOS's low-$\eta$ and DE arms explore the decision space more broadly.
+  \item \textbf{DTLZ6} ($+64\%$): The baseline struggles with the degenerate, biased distance function; AOS's low-$\eta$ and DE arms explore the decision space more broadly, reaching the true Pareto front.
   \item \textbf{WFG2} ($+9\%$): The disconnected, non-separable front benefits from structural diversity in the crossover operators.
-  \item \textbf{ZDT2, ZDT6}: Fast early convergence (AOS reaches 0.585 vs.\ baseline's 0.145 at 5K evals on ZDT2) from the exploratory arms, with final quality preserved.
-  \item \textbf{DTLZ7}: The disconnected 4-region front rewards operators that can maintain population spread across disjoint Pareto segments.
+  \item \textbf{DTLZ3} ($+1.8\%$) \textbf{and DTLZ7} ($+1.5\%$): Multi-modal landscapes and disconnected fronts reward operators that can maintain population spread.
+  \item \textbf{WFG1} ($+1.3\%$): The mixed convex/flat front benefits from AOS selecting appropriate operators for different convergence phases.
 \end{itemize}
 
 \paragraph{The value of intelligent selection.}
@@ -36,6 +37,6 @@ The statistical tests confirm this: AOS achieves \StatWinsRand{} significant win
 
 \paragraph{Practical implications.}
 Our results suggest a practical guideline: an AOS layer based on Thompson Sampling with a parameter-diverse SBX portfolio is a safe default for NSGA-II.
-On 12 of 21 standard benchmarks it improves over the fixed default, and on the remaining 9 the degradation is small and always less than what random switching would produce.
+On \AOSWins{} of \AOSNProblems{} standard benchmarks it improves over the fixed default, and on the remaining \AOSLosses{} the degradation is small and always less than what random switching would produce.
 The convergence speed advantage makes AOS particularly attractive in budget-constrained settings.
 For practitioners who know their landscape favors SBX with a specific $\eta$ (e.g., WFG-style concave fronts), the fixed operator remains a valid choice; otherwise, AOS provides automatic adaptation with a favorable risk--reward profile.

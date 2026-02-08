@@ -17,9 +17,9 @@ Against the random arm, AOS achieves \StatWinsRand{} significant wins with \Stat
 \label{sec:convergence}
 The most striking result is not the final HV but the convergence \emph{speed}.
 Figure~\ref{fig:anytime_agg} shows the mean normalized HV across all 21 problems at each evaluation checkpoint.
-At 10{,}000 evaluations (20\% of budget), AOS achieves a mean HV of \AOSHVAOSTenK{} vs.\ the baseline's \AOSHVBaselineTenK{}---a \AOSConvergenceAdvPct{}\% advantage.
+At 10{,}000 evaluations (10\% of budget), AOS achieves a mean HV of \AOSHVAOSTenK{} vs.\ the baseline's \AOSHVBaselineTenK{}---a \AOSConvergenceAdvPct{}\% advantage.
 This early-stage dominance stems from AOS's ability to deploy exploratory operators (low-$\eta$ SBX, DE) when the population is spread across the search space, then shift toward exploitation operators (high-$\eta$ SBX) as the population converges.
-The gap narrows toward the full budget as all methods approach the reference front, but AOS maintains its advantage throughout.
+The gap narrows toward the full budget as all methods approach the reference front, but AOS maintains a +2.3\% advantage at the final 100{,}000 evaluation mark.
 
 \begin{figure}[t]
 \centering
@@ -28,7 +28,7 @@ The gap narrows toward the full budget as all methods approach the reference fro
 }{
   \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/anytime\_hv\_aggregate.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Mean normalized HV across all 21 problems vs.\ evaluations. AOS converges significantly faster than both the baseline and random arm selection, with the largest advantage at early checkpoints.}
+\caption{Mean normalized HV across all 21 problems vs.\ evaluations. AOS converges significantly faster than both the baseline and random arm selection, with the largest advantage at early checkpoints and a sustained +2.3\% lead at 100K evaluations.}
 \label{fig:anytime_agg}
 \end{figure}
 
@@ -41,7 +41,7 @@ Figure~\ref{fig:anytime} shows per-problem convergence for four representative p
 }{
   \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/anytime\_hv\_selected.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Mean$\pm$std normalized hypervolume vs.\ evaluations for selected problems. AOS converges substantially faster on ZDT2 and DTLZ7, and maintains or extends the lead through the full budget on WFG1 and WFG2.}
+\caption{Mean$\pm$std normalized hypervolume vs.\ evaluations for selected problems. AOS converges substantially faster on DTLZ6 and DTLZ7, and maintains or extends the lead through the full budget on WFG1 and WFG2.}
 \label{fig:anytime}
 \end{figure}
 
@@ -60,8 +60,8 @@ Figure~\ref{fig:anytime} shows per-problem convergence for four representative p
 
 Figure~\ref{fig:hv_delta} shows per-problem HV deltas.
 The pattern reveals a family-dependent effect:
-AOS achieves its strongest gains on DTLZ and ZDT problems, where landscape features (multi-modality, degenerate fronts, disconnected regions) reward operator adaptation.
-On WFG4--9, which feature concave fronts where SBX with $\eta{=}20$ is already near-optimal, AOS shows a small deficit attributable to the exploration cost of trying alternative arms.
+AOS achieves its strongest gains on DTLZ problems (+7.4\% family average), where landscape features (multi-modality, degenerate fronts, disconnected regions) strongly reward operator adaptation.
+On WFG, AOS shows a mixed result: significant wins on WFG1--2 and WFG6, but losses on WFG4--5, WFG7--8, where concave fronts and SBX with $\eta{=}20$ are already near-optimal.
 Crucially, on every WFG problem where AOS loses, the random arm loses even more (Section~\ref{sec:discussion}), confirming that the deficit is not a failure of the policy but an inherent cost of maintaining a diverse portfolio.
 
 \subsection{Statistical significance}
