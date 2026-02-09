@@ -9,6 +9,7 @@ from typing import Any
 
 from vamos.ux.studio.problem_builder_backend import (
     _DEFAULT_TEMPLATE,
+    compile_constraint_function,
     compile_objective_function,
     example_objectives,
     generate_script,
@@ -27,13 +28,7 @@ _generate_script = generate_script
 # ------------------------------------------------------------------
 
 
-def _render_preview_plot(
-    st: Any,
-    px: Any,
-    F: Any,
-    n_obj: int,
-    problem_name: str,
-) -> None:
+def _render_preview_plot(st: Any, px: Any, F: Any, n_obj: int, problem_name: str) -> None:
     """Render the appropriate preview chart for the given objective count."""
     if n_obj == 2:
         import pandas as pd
@@ -49,7 +44,6 @@ def _render_preview_plot(
         fig.update_traces(marker=dict(size=7, opacity=0.8))
         fig.update_layout(height=480)
         st.plotly_chart(fig, use_container_width=True)
-
     elif n_obj == 3:
         import plotly.graph_objects as go
 
@@ -70,7 +64,6 @@ def _render_preview_plot(
             height=520,
         )
         st.plotly_chart(fig3d, use_container_width=True)
-
     else:
         import pandas as pd
 
@@ -100,6 +93,51 @@ def _render_summary_table(st: Any, F: Any, n_obj: int) -> None:
 
 
 # ------------------------------------------------------------------
+# Constraint builder UI
+# ------------------------------------------------------------------
+
+
+def _render_constraint_section(st: Any, template: dict[str, str]) -> tuple[str, int, Any, str | None]:
+    """Render the constraint builder and return (code, n_constraints, fn, error)."""
+    with st.expander("Constraints (optional)", expanded=bool(template.get("constraint_code"))):
+        st.caption("Constraints use the convention **g(x) <= 0 is feasible**. Return a list of constraint values.")
+        default_g = template.get("constraint_code", "")
+        default_n = int(template.get("n_constraints", "0")) if default_g else 0
+
+        n_constraints = st.number_input(
+            "Number of constraints",
+            min_value=0,
+            max_value=20,
+            value=default_n,
+            step=1,
+            help="How many inequality constraints (g(x) <= 0)?",
+        )
+
+        constraint_code = ""
+        constraint_fn: Any = None
+        constraint_error: str | None = None
+
+        if int(n_constraints) > 0:
+            constraint_code = st.text_area(
+                "Constraint code",
+                value=default_g,
+                height=120,
+                help="Return a list of constraint values. g(x) <= 0 means feasible.",
+            )
+            if constraint_code.strip():
+                try:
+                    constraint_fn = compile_constraint_function(constraint_code)
+                except SyntaxError as exc:
+                    constraint_error = f"Syntax error on line {exc.lineno}: {exc.msg}"
+                except Exception as exc:
+                    constraint_error = str(exc)
+                if constraint_error:
+                    st.error(f"Constraint error: {constraint_error}")
+
+    return constraint_code, int(n_constraints), constraint_fn, constraint_error
+
+
+# ------------------------------------------------------------------
 # Main Streamlit entry
 # ------------------------------------------------------------------
 
@@ -113,15 +151,32 @@ def render_problem_builder(st: Any, px: Any) -> None:
 
     # ---- template selector ----
     examples = example_objectives()
-    col_tmpl, _ = st.columns([2, 3])
+    col_tmpl, col_cat = st.columns([2, 2])
+    with col_cat:
+        categories = sorted({t.get("category", "other") for t in examples.values()})
+        cat_labels = {
+            "math": "Math benchmarks",
+            "engineering": "Engineering",
+            "ml": "Machine Learning",
+            "scheduling": "Scheduling",
+            "blank": "Blank",
+        }
+        selected_cat = st.selectbox(
+            "Domain",
+            ["all"] + categories,
+            format_func=lambda c: "All templates" if c == "all" else cat_labels.get(c, c.title()),
+            help="Filter templates by application domain.",
+        )
+    filtered = {k: v for k, v in examples.items() if selected_cat == "all" or v.get("category") == selected_cat}
     with col_tmpl:
+        default_idx = list(filtered.keys()).index(_DEFAULT_TEMPLATE) if _DEFAULT_TEMPLATE in filtered else 0
         template_name = st.selectbox(
             "Start from a template",
-            list(examples.keys()),
-            index=list(examples.keys()).index(_DEFAULT_TEMPLATE),
+            list(filtered.keys()),
+            index=default_idx,
             help="Pick a starting point. You can edit everything below.",
         )
-    template = examples[template_name]
+    template = filtered[template_name]
 
     # ---- form columns ----
     left, right = st.columns([1, 1], gap="large")
@@ -152,9 +207,10 @@ def render_problem_builder(st: Any, px: Any) -> None:
                 step=1,
                 help="How many objectives to minimize (must be >= 2).",
             )
+        default_bounds = template.get("bounds", "0.0, 1.0")
         bounds_text = st.text_area(
             "Variable bounds",
-            value="0.0, 1.0",
+            value=default_bounds,
             height=68,
             help="One line applies to ALL variables.  Or one 'lower, upper' per variable.",
         )
@@ -162,13 +218,13 @@ def render_problem_builder(st: Any, px: Any) -> None:
         code = st.text_area(
             "Objective code",
             value=template["code"],
-            height=220,
-            help=(
-                "Write Python code that uses `x` (1-D array of length n_var) "
-                "and returns a list of n_obj values.  `math` and `np` are available."
-            ),
+            height=200,
+            help="Write Python code that uses `x` and returns a list of n_obj values.",
             label_visibility="collapsed",
         )
+
+        # Constraint builder
+        constraint_code, n_constraints, constraint_fn, constraint_error = _render_constraint_section(st, template)
 
     with right:
         st.subheader("Optimization settings")
@@ -181,13 +237,7 @@ def render_problem_builder(st: Any, px: Any) -> None:
                 help="Which MOEA to use for the preview run.",
             )
         with col_seed:
-            seed = st.number_input(
-                "Seed",
-                min_value=0,
-                value=42,
-                step=1,
-                help="Random seed for reproducibility.",
-            )
+            seed = st.number_input("Seed", min_value=0, value=42, step=1, help="Random seed for reproducibility.")
         col_budget, col_pop = st.columns(2)
         with col_budget:
             budget = st.number_input(
@@ -229,8 +279,9 @@ def render_problem_builder(st: Any, px: Any) -> None:
         if compile_error:
             st.error(f"Code error: {compile_error}")
 
+        has_constraint_error = constraint_error is not None
         # Live preview
-        if run_clicked and fn is not None and bounds_ok and not compile_error:
+        if run_clicked and fn is not None and bounds_ok and not compile_error and not has_constraint_error:
             _run_and_show_preview(
                 st,
                 px,
@@ -243,12 +294,14 @@ def render_problem_builder(st: Any, px: Any) -> None:
                 budget=int(budget),
                 pop_size=int(pop_size),
                 seed=int(seed),
+                constraints=constraint_fn,
+                n_constraints=n_constraints,
             )
 
     # ---- export ----
     st.divider()
     st.subheader("Export")
-    if fn is not None and bounds_ok and not compile_error:
+    if fn is not None and bounds_ok and not compile_error and not has_constraint_error:
         script = generate_script(
             code,
             name=problem_name,
@@ -257,6 +310,8 @@ def render_problem_builder(st: Any, px: Any) -> None:
             bounds=bounds_ok,
             algorithm=str(algorithm),
             budget=int(budget),
+            constraint_code=constraint_code,
+            n_constraints=n_constraints,
         )
         st.download_button(
             "Download as Python script",
@@ -284,6 +339,8 @@ def _run_and_show_preview(
     budget: int,
     pop_size: int,
     seed: int,
+    constraints: Any = None,
+    n_constraints: int = 0,
 ) -> None:
     """Execute the preview optimization and render charts."""
     try:
@@ -297,6 +354,8 @@ def _run_and_show_preview(
                 budget=budget,
                 pop_size=pop_size,
                 seed=seed,
+                constraints=constraints,
+                n_constraints=n_constraints,
             )
         F = preview["F"]
         st.success(f"Found {len(F)} solutions in {preview['elapsed_ms']:.0f} ms")

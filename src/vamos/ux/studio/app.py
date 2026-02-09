@@ -2,7 +2,7 @@
 
 Thin entry point that orchestrates three tabs:
 
-1. **Welcome** -- onboarding wizard
+1. **Welcome** -- onboarding wizard (auto-shown on first launch)
 2. **Problem Builder** -- interactive problem definition
 3. **Explore Results** -- post-run comparison & MCDM
 """
@@ -31,12 +31,109 @@ def _import_plotly() -> Any:
 
 
 # ======================================================================
+# Theme / Accessibility CSS
+# ======================================================================
+
+_CUSTOM_CSS = """\
+<style>
+/* --- Dark-mode-aware palette --- */
+:root {
+    --vamos-accent: #4f8bf9;
+    --vamos-bg-card: rgba(255,255,255,0.04);
+    --vamos-border: rgba(128,128,128,0.2);
+}
+
+/* Keyboard shortcut badges */
+.kbd-hint {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    background: var(--vamos-bg-card);
+    border: 1px solid var(--vamos-border);
+    border-radius: 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* Walkthrough banner */
+.walkthrough-banner {
+    padding: 1.2rem 1.5rem;
+    border-left: 4px solid var(--vamos-accent);
+    background: var(--vamos-bg-card);
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1rem;
+}
+.walkthrough-banner h4 { margin: 0 0 0.5rem 0; }
+
+/* Better focus outlines for accessibility */
+button:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, [role="tab"]:focus-visible {
+    outline: 2px solid var(--vamos-accent) !important;
+    outline-offset: 2px;
+}
+
+/* Screen-reader-only utility */
+.sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
+}
+</style>
+"""
+
+
+def _inject_accessibility_css(st: Any) -> None:
+    """Inject custom CSS for dark mode awareness, focus outlines, and a11y."""
+    st.markdown(_CUSTOM_CSS, unsafe_allow_html=True)
+
+
+# ======================================================================
+# First-launch walkthrough
+# ======================================================================
+
+
+def _render_first_launch_walkthrough(st: Any) -> None:
+    """Show a guided walkthrough on the user's first visit.
+
+    Uses ``st.session_state`` to track dismissal so it only appears once
+    per session.  The user can dismiss it permanently.
+    """
+    if st.session_state.get("walkthrough_dismissed", False):
+        return
+
+    st.markdown(
+        '<div class="walkthrough-banner">'
+        "<h4>First time here? Quick guided tour</h4>"
+        "<ol>"
+        "<li><b>Problem Builder</b> -- define objectives visually and see the Pareto front live.</li>"
+        "<li><b>Explore Results</b> -- load optimization results and compare algorithms.</li>"
+        "<li><b>Keyboard shortcuts</b> -- press <code>R</code> to rerun, "
+        "<code>C</code> to clear cache.</li>"
+        "</ol>"
+        '<p style="margin-bottom:0">Pick a tab above to start, '
+        "or scroll down for quick-reference tables.</p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    if st.button("Got it -- dismiss this guide", key="dismiss_walkthrough"):
+        st.session_state["walkthrough_dismissed"] = True
+        st.rerun()
+
+
+# ======================================================================
 # Tab: Welcome / Onboarding
 # ======================================================================
 
 
 def _render_welcome_tab(st: Any) -> None:
     """Render the Welcome / Getting Started onboarding page."""
+    _render_first_launch_walkthrough(st)
+
     st.header("Welcome to VAMOS Studio")
     st.markdown("VAMOS Studio is your interactive workspace for multi-objective optimization. Here is how to get started:")
 
@@ -124,6 +221,15 @@ def _render_welcome_expanders(st: Any) -> None:
             "and SPEA2."
         )
 
+    with st.expander("Keyboard shortcuts (Streamlit defaults)", expanded=False):
+        st.markdown(
+            "| Key | Action |\n"
+            "|-----|--------|\n"
+            "| `R` | Rerun the app |\n"
+            "| `C` | Clear cache and rerun |\n"
+            "| `L` | Toggle light/dark theme |\n"
+        )
+
 
 # ======================================================================
 # Main entry point with tabs
@@ -148,6 +254,9 @@ def main(argv: list[str] | None = None) -> None:
         layout="wide",
         initial_sidebar_state="expanded",
     )
+
+    _inject_accessibility_css(st)
+
     st.title("VAMOS Studio")
 
     tab_welcome, tab_builder, tab_explore = st.tabs(["Welcome", "Problem Builder", "Explore Results"])

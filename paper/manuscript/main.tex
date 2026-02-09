@@ -140,15 +140,15 @@ Table~\ref{tab:frameworks} summarizes high-level differences relevant to this wo
 \label{tab:frameworks}
 {\scriptsize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Framework} & \textbf{MOEAs} & \textbf{Array core} & \textbf{Accel. kernels} \\
+\textbf{Framework} & \textbf{MOEAs} & \textbf{Array core} & \textbf{Accel. kernels} & \textbf{Interactive UI} \\
 \midrule
-\VAMOS{} & 9 & Yes & Numba/C/JAX \\
-pymoo~\cite{blank2020pymoo} (0.6) & 8+ & Partial & No \\
-jMetalPy~\cite{benitez2019jmetalpy} (2019) & 11+ & No & No \\
-DEAP~\cite{fortin2012deap} (1.4) & Custom & No & No \\
-Platypus~\cite{hadka2015platypus} & 8+ & No & No \\
+\VAMOS{} & 9 & Yes & Numba/C/JAX & Yes \\
+pymoo~\cite{blank2020pymoo} (0.6) & 8+ & Partial & No & No \\
+jMetalPy~\cite{benitez2019jmetalpy} (2019) & 11+ & No & No & No \\
+DEAP~\cite{fortin2012deap} (1.4) & Custom & No & No & No \\
+Platypus~\cite{hadka2015platypus} & 8+ & No & No & No \\
 \bottomrule
 \end{tabular}
 }
@@ -204,6 +204,20 @@ result = optimize("zdt1", algorithm="nsgaii",
                   max_evaluations=50000, seed=42)
 \end{lstlisting}
 
+\paragraph{Custom problem definition.}
+Beyond running built-in benchmarks, users frequently need to optimize their own objective functions. Most frameworks require subclassing a problem base class and overriding an evaluation method, which adds boilerplate and framework coupling. \VAMOS{} provides a convenience factory that turns any Python callable into a problem object:
+
+\begin{lstlisting}[caption={Defining and optimizing a custom problem in four lines.},label={lst:make_problem}]
+from vamos import make_problem, optimize
+problem = make_problem(
+    lambda x: [x[0], 1 - x[0]**0.5],
+    n_var=2, n_obj=2, bounds=[(0, 1), (0, 1)])
+result = optimize(problem, algorithm="nsgaii",
+                  max_evaluations=50000, seed=42)
+\end{lstlisting}
+
+\noindent The \texttt{make\_problem} factory accepts plain functions, supports optional constraint functions, and handles the adaptation to the internal problem protocol automatically. An interactive CLI wizard (\texttt{vamos create-problem}) can scaffold a ready-to-run script from a guided questionnaire, further lowering the entry barrier for new users.
+
 \paragraph{Pluggable computation.}
 Switching the compute backend is a single-parameter change (\texttt{engine="numba"}, \texttt{"numpy"}, etc.) that is transparent to algorithm code. No other Python MOEA framework allows swapping the entire computational substrate---from array operations to compiled kernels---without modifying the algorithm implementation. Similarly, evaluation strategies (serial, multiprocessing, or Dask-based distributed evaluation) are selected via configuration rather than code changes, and multi-seed studies are first-class: passing a list of seeds (\texttt{seed=[0,1,2]}) triggers automatic multi-run execution and returns a list of results. \VAMOS{} also provides automatic algorithm selection (\texttt{algorithm="auto"}) that maps problem traits (number of objectives, encoding type) to a suitable default algorithm, lowering the barrier for users unfamiliar with the MOEA landscape.
 
@@ -213,19 +227,20 @@ The architectural consequence of the preceding goals is that the population stat
 \subsection{Architecture and data model}
 \label{sec:architecture}
 
-\VAMOS{} is organized into three layers:
+\VAMOS{} is organized into four layers:
 \begin{enumerate}
   \item \textbf{Foundation}: problem definitions, kernels, metrics, and archives;
   \item \textbf{Engine}: algorithm implementations and shared components;
-  \item \textbf{Experiment}: CLI, benchmarking utilities, visualization, and reporting.
+  \item \textbf{Experiment}: CLI, benchmarking utilities, visualization, and reporting;
+  \item \textbf{UX}: interactive dashboard (\emph{VAMOS Studio}) with a visual problem builder and results explorer.
 \end{enumerate}
 
-Figure~\ref{fig:architecture} illustrates this layered organization: the Foundation layer provides problem definitions, compute kernels, metrics, and archives; the Engine layer implements nine MOEAs on top of shared components; and the Experiment layer exposes CLI tools, benchmarking utilities, and reporting.
+Figure~\ref{fig:architecture} illustrates the core layered organization: the Foundation layer provides problem definitions, compute kernels, metrics, and archives; the Engine layer implements nine MOEAs on top of shared components; the Experiment layer exposes CLI tools, benchmarking utilities, and reporting; and the UX layer provides VAMOS Studio, a Streamlit-based interactive environment for visual problem definition, live Pareto-front preview, and post-run analysis.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/architecture.png}
-\caption{\VAMOS{} three-layer architecture. The Foundation layer provides problem definitions, compute kernels (NumPy, Numba, C, JAX), metrics, and archives. The Engine layer implements nine MOEAs using shared selection, variation, and survival components. The Experiment layer exposes CLI tools, benchmarking runners, table/plot generation, and results analysis.}
+\caption{\VAMOS{} four-layer architecture. The Foundation layer provides problem definitions, compute kernels (NumPy, Numba, C, JAX), metrics, and archives. The Engine layer implements nine MOEAs using shared selection, variation, and survival components. The Experiment layer exposes CLI tools, benchmarking runners, table/plot generation, and results analysis. The UX layer provides VAMOS Studio, an interactive dashboard for visual problem building, onboarding, and results exploration.}
 \label{fig:architecture}
 \end{figure}
 
@@ -308,6 +323,10 @@ The framework includes optional external archives (with configurable pruning str
 \subsection{Benchmark runner and reporting}
 
 The experiment layer includes a benchmark runner that executes standardized studies under a shared protocol (fixed problem definitions, evaluation budgets, and seeds) and emits machine-readable artifacts (per-seed results and summary CSVs). Table generation scripts produce LaTeX-ready tables directly from these artifacts, reducing transcription errors and enabling end-to-end reproducibility.
+
+\subsection{Interactive dashboard and problem-definition tooling}
+
+The UX layer provides \emph{VAMOS Studio}, a Streamlit-based dashboard with three main views: (i)~a \textbf{Welcome} tab with a first-launch onboarding wizard and quick-reference tables for the CLI and Python API; (ii)~a \textbf{Problem Builder} that lets users write objective and constraint functions in the browser, adjust bounds and algorithm settings, and see the Pareto front update live after each preview run; and (iii)~an \textbf{Explore Results} tab for loading completed studies, comparing algorithms, and ranking solutions with MCDM methods. The Problem Builder ships with domain-specific templates (engineering design, machine learning, and scheduling) so that new users can start from a realistic example rather than a blank editor. Generated problems can be exported as standalone Python scripts or run directly through the \texttt{make\_problem} convenience API (Listing~\ref{lst:make_problem}).
 
 %==============================================================================
 \section{Experimental Evaluation}
@@ -539,7 +558,7 @@ We presented \VAMOS{}, a high-performance Python framework for multi-objective o
   \item \textbf{Many-objective benchmarking}: extend the experimental protocol beyond $m=3$ with scalable indicators.
   \item \textbf{Deeper GPU integration}: expand JAX-based kernels and enable GPU-friendly operators.
   \item \textbf{Broader comparisons}: extend the benchmark suite to additional MOEAs and frameworks and include time-to-target and other indicators alongside normalized HV.
-  \item \textbf{LLM-assisted experiment planning}: we are exploring an integrated assistant that maps a natural-language problem description to a validated experiment configuration, using either deterministic templates or an optional LLM provider, to further lower the barrier to entry for non-expert users.
+  \item \textbf{LLM-assisted experiment planning}: we are exploring an integrated assistant that maps a natural-language problem description to a validated experiment configuration, using an optional LLM provider, to further lower the barrier to entry for non-expert users.
 \end{itemize}
 
 \section*{Data and code availability}
