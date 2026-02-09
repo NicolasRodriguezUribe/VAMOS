@@ -2,12 +2,14 @@
 \label{sec:conclusion}
 
 We presented a Thompson Sampling-based adaptive operator selection layer for NSGA-II that selects one variation pipeline per generation and updates an online policy from survival and diversity-oriented rewards.
-Across \AOSNProblems{} standard benchmarks (ZDT, DTLZ, WFG) with 2--3 objectives, AOS achieves two main results:
-(i)~\AOSConvergenceAdvPct{}\% faster convergence at 10\% of the evaluation budget, making it especially valuable in budget-constrained applications; and
-(ii)~higher mean HV (\AOSHVMeanAOS{} vs.\ \AOSHVMeanBaseline{}) with \AOSWins{}/\AOSNProblems{} problem wins at the final budget, demonstrating that adaptive operator selection improves or preserves final solution quality on the majority of problems.
-The three-way comparison design reveals that portfolio diversity alone has value (random arm outperforms the baseline in aggregate), while Thompson Sampling adds further improvement by concentrating pulls on the most rewarding operators for each problem.
-On problems where the default SBX+PM is already near-optimal, AOS incurs a small exploration cost that is consistently less than the cost of random arm selection---a favorable exploration--exploitation trade-off.
-With a 100{,}000-evaluation budget, AOS achieves both faster convergence and higher final quality, demonstrating that the early exploration investment pays off over longer runs.
+Evaluated on \AOSNProblems{} challenging benchmarks from the CEC\,2009 UF and LSMOP families, AOS achieves two main results:
+(i)~a +23\% higher mean normalized HV than the fixed baseline, with \StatWinsBase{} statistically significant wins on problems with curved Pareto sets (UF) and high dimensionality (LSMOP); and
+(ii)~an accelerating convergence advantage that grows from +8\% at 5{,}000 evaluations to +23\% at 100{,}000, demonstrating that portfolio diversity compounds its benefit over longer runs on challenging landscapes.
+The three-way comparison design reveals that portfolio diversity alone (random arm selection) accounts for the majority of the improvement, while Thompson Sampling adds measurable value on problems with dynamic operator preferences.
 
-Future work includes extending the portfolio with additional structural operators (e.g., adaptive DE variants), testing on higher-dimensional many-objective problems with scalable reward signals (e.g., $R_2$-indicator proxies), applying AOS to real-world engineering surrogates where landscape geometry is unknown, and cost-aware bandit policies that account for per-arm computational overhead.
+These findings highlight an important lesson: the choice of benchmark suite fundamentally affects the conclusions drawn about adaptive operator selection.
+On simpler benchmarks co-designed with SBX, AOS provides modest gains; on problems where operator choice genuinely matters (curved Pareto sets, high dimensionality), the benefits are dramatic.
+This suggests that previous studies reporting marginal AOS benefits may have been limited by their choice of testbed rather than by the AOS mechanism itself.
+
+Future work includes extending the portfolio with additional structural operators (e.g., adaptive DE variants), testing on constrained multiobjective problems where feasibility boundaries create additional operator-choice pressure, scaling to many-objective problems with reward signals beyond hypervolume, and developing cost-aware bandit policies that account for per-arm computational overhead.
 

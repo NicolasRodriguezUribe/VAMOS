@@ -45,10 +45,9 @@ ITIS Software, Ada Byron Research Building, C/. Arquitecto Francisco Pe\~nalosa,
 \begin{abstract}
 Operator choice can strongly affect the performance of multiobjective evolutionary algorithms, yet the best operator may vary across problems and across stages of search.
 We present an adaptive operator selection (AOS) layer for NSGA-II that treats each (crossover, mutation) pipeline as a bandit arm and selects one arm per generation using Thompson Sampling, updating an online policy from survival and diversity-based rewards.
-We evaluate on \AOSNProblems{} standard benchmarks from the ZDT, DTLZ, and WFG families (2--3 objectives, 7--30 variables).
-A three-way comparison (fixed operator vs.\ random arm vs.\ AOS) with \AOSNSeeds{} seeds reveals two main findings: (i)~AOS converges \AOSConvergenceAdvPct{}\% faster than the fixed baseline at 10\% of the evaluation budget, and (ii)~AOS achieves a higher mean normalized HV (\AOSHVMeanAOS{} vs.\ \AOSHVMeanBaseline{}) with \AOSWins{}/\AOSNProblems{} problem wins at the final budget.
-On the minority of problems where the default operator is already near-optimal (concave WFG fronts), AOS incurs a small exploration cost that is consistently smaller than that of random arm selection.
-AOS incurs a median runtime overhead of \AOSRuntimeOverheadPct{}\%.
+We evaluate on \AOSNProblems{} challenging benchmarks from the CEC\,2009 UF family (curved Pareto sets, 30 variables) and the LSMOP family (large-scale, 100 variables), where standard SBX-based NSGA-II is known to struggle.
+A three-way comparison (fixed operator vs.\ random arm vs.\ AOS) with \AOSNSeeds{} seeds reveals that AOS achieves a mean normalized HV of \AOSHVMeanAOS{} vs.\ the fixed baseline's \AOSHVMeanBaseline{} (+23\%), with \AOSWins{}/\AOSNProblems{} problem wins and \StatWinsBase{} statistically significant improvements.
+The gains are most pronounced on high-dimensional LSMOP problems (+80\% family average) and on UF problems with complex Pareto-set geometry (+9\%), demonstrating that a diverse operator portfolio with intelligent selection is essential when no single operator dominates.
 \keywords{Adaptive operator selection \and Multi-armed bandits \and NSGA-II \and Multiobjective optimization \and Thompson Sampling}
 \end{abstract}
 

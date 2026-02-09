@@ -31,7 +31,7 @@ FIGURES_DIR = PAPER_DIR / "figures"
 # Ordering constants
 # ---------------------------------------------------------------------------
 
-_FAMILY_ORDER = ("ZDT", "DTLZ", "WFG")
+_FAMILY_ORDER = ("ZDT", "DTLZ", "WFG", "UF", "LSMOP")
 _VARIANT_ORDER = ("baseline", "random", "aos")
 _VARIANT_DISPLAY = {
     "baseline": "Baseline",
@@ -46,6 +46,13 @@ _PROBLEM_ORDER = (
     "dtlz1", "dtlz2", "dtlz3", "dtlz4", "dtlz5", "dtlz6", "dtlz7",
     # WFG (3-obj, 24 vars)
     "wfg1", "wfg2", "wfg3", "wfg4", "wfg5", "wfg6", "wfg7", "wfg8", "wfg9",
+    # CEC2009 UF (2-3 obj, 30 vars, curved PS)
+    "cec2009_uf1", "cec2009_uf2", "cec2009_uf3", "cec2009_uf4",
+    "cec2009_uf5", "cec2009_uf6", "cec2009_uf7",
+    "cec2009_uf8", "cec2009_uf9", "cec2009_uf10",
+    # LSMOP (2-obj, 100 vars, large-scale)
+    "lsmop1", "lsmop2", "lsmop3", "lsmop4", "lsmop5",
+    "lsmop6", "lsmop7", "lsmop8", "lsmop9",
 )
 
 _N_OBJ: dict[str, int] = {
@@ -54,6 +61,11 @@ _N_OBJ: dict[str, int] = {
     "dtlz5": 3, "dtlz6": 3, "dtlz7": 3,
     "wfg1": 3, "wfg2": 3, "wfg3": 3, "wfg4": 3, "wfg5": 3,
     "wfg6": 3, "wfg7": 3, "wfg8": 3, "wfg9": 3,
+    "cec2009_uf1": 2, "cec2009_uf2": 2, "cec2009_uf3": 2, "cec2009_uf4": 2,
+    "cec2009_uf5": 2, "cec2009_uf6": 2, "cec2009_uf7": 2,
+    "cec2009_uf8": 3, "cec2009_uf9": 3, "cec2009_uf10": 3,
+    "lsmop1": 2, "lsmop2": 2, "lsmop3": 2, "lsmop4": 2, "lsmop5": 2,
+    "lsmop6": 2, "lsmop7": 2, "lsmop8": 2, "lsmop9": 2,
 }
 
 
@@ -65,6 +77,10 @@ def _family(problem_name: str) -> str:
         return "DTLZ"
     if name.startswith("wfg"):
         return "WFG"
+    if name.startswith("cec2009_uf"):
+        return "UF"
+    if name.startswith("lsmop"):
+        return "LSMOP"
     return "Other"
 
 
@@ -76,6 +92,11 @@ def _format_cell(value: float | None, decimals: int) -> str:
     if value is None:
         return "--"
     return f"{value:.{decimals}f}"
+
+
+def _tex_escape(s: str) -> str:
+    """Escape underscores and other LaTeX-special chars in a problem name."""
+    return s.replace("_", r"\_")
 
 
 def _bold_best(cells: list[float | None], *, higher_is_better: bool, decimals: int) -> list[str]:
@@ -216,7 +237,7 @@ def _make_per_problem_table(
             raw = pivot.loc[problem].get(c)
             delta_cells.append(_format_cell(None if pd.isna(raw) else float(raw), decimals))
 
-        lines.append(f"{problem} & " + " & ".join(bolded) + (" & " + " & ".join(delta_cells) if delta_cells else "") + r" \\")
+        lines.append(f"{_tex_escape(str(problem))} & " + " & ".join(bolded) + (" & " + " & ".join(delta_cells) if delta_cells else "") + r" \\")
 
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     return "\n".join(lines)
@@ -253,7 +274,7 @@ def plot_delta_bars(
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     ax.set_xticks(x)
-    ax.set_xticklabels([p.upper() for p in df.index], rotation=45, ha="right", fontsize=8)
+    ax.set_xticklabels([str(p).upper().replace("CEC2009_", "") for p in df.index], rotation=45, ha="right", fontsize=8)
     ax.grid(True, axis="y", alpha=0.25)
     fig.tight_layout()
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
@@ -362,7 +383,8 @@ def plot_anytime_aggregate(anytime_csv: Path, *, out_pdf: Path) -> None:
             label=_VARIANT_DISPLAY.get(variant, variant),
             **st,
         )
-    ax.set_title("Mean normalized HV across all 21 problems")
+    n_probs = df["problem"].nunique()
+    ax.set_title(f"Mean normalized HV across all {n_probs} problems")
     ax.set_xlabel("Evaluations")
     ax.set_ylabel("Mean normalized HV")
     ax.legend(loc="lower right", frameon=True, fontsize=10)
@@ -868,7 +890,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--problems",
         type=str,
-        default="zdt2,dtlz7,wfg1,wfg2",
+        default="cec2009_uf1,cec2009_uf7,lsmop1,lsmop4",
         help="Comma-separated problems for convergence plots.",
     )
     return ap.parse_args()
@@ -975,7 +997,11 @@ def main() -> None:
     # Operator usage
     if args.trace_csv.is_file():
         plot_operator_usage(args.trace_csv, out_pdf=FIGURES_DIR / "aos_operator_usage.pdf")
-        plot_reward_evolution(args.trace_csv, out_pdf=FIGURES_DIR / "reward_evolution.pdf", problem="dtlz1")
+        # Pick first available trace problem
+        trace_df = pd.read_csv(args.trace_csv)
+        trace_probs = sorted(trace_df["problem"].astype(str).str.lower().unique()) if not trace_df.empty else []
+        trace_pick = trace_probs[0] if trace_probs else "cec2009_uf1"
+        plot_reward_evolution(args.trace_csv, out_pdf=FIGURES_DIR / "reward_evolution.pdf", problem=trace_pick)
 
     print(f"Assets written to {TABLES_DIR} and {FIGURES_DIR}")
 

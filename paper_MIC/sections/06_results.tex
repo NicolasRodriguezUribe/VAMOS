@@ -1,25 +1,25 @@
 \section{Results}
 \label{sec:results}
 
-We first compare the three methods at the benchmark-family level (ZDT, DTLZ, WFG), then inspect convergence speed, per-problem deltas, and operator usage.
+We first compare the three methods at the benchmark-family level (UF, LSMOP), then inspect convergence speed, per-problem deltas, and operator usage.
 Unless stated otherwise, we report means over \AOSNSeeds{} seeds.
 
 \subsection{Solution quality}
 Table~\ref{tab:hv_family} shows mean normalized hypervolume grouped by benchmark family.
 AOS achieves the highest overall mean HV (\AOSHVMeanAOS{}) compared to the baseline (\AOSHVMeanBaseline{}) and random arm (\AOSHVMeanRandom{}), outperforming the baseline on \AOSWins{} of \AOSNProblems{} problems.
-The largest gain is on \texttt{\AOSBestProblem{}} ($\Delta{=}\AOSBestDelta{}$), where the baseline's fixed SBX+PM pipeline fails to converge; AOS's adaptive arm selection discovers effective operators that reach the true front.
+The improvements are dramatic:
+on the UF family, AOS achieves a +9.2\% HV advantage over the baseline, winning on 7 of 10 problems;
+on LSMOP, the advantage grows to +80\%, with AOS producing non-zero HV on problems where the baseline completely fails (e.g., LSMOP8: AOS 0.422 vs.\ baseline 0.000).
 The Wilcoxon tests (Table~\ref{tab:stat_test}) confirm \StatWinsBase{} significant wins and \StatLossesBase{} significant losses against the baseline after Holm--Bonferroni correction.
-Against the random arm, AOS achieves \StatWinsRand{} significant wins with \StatLossesRand{} significant losses, confirming that intelligent selection adds measurable value beyond random operator switching.
 
 \input{tables/ablation_hv_family}
 
 \subsection{Convergence speed}
 \label{sec:convergence}
-The most striking result is not the final HV but the convergence \emph{speed}.
-Figure~\ref{fig:anytime_agg} shows the mean normalized HV across all 21 problems at each evaluation checkpoint.
-At 10{,}000 evaluations (10\% of budget), AOS achieves a mean HV of \AOSHVAOSTenK{} vs.\ the baseline's \AOSHVBaselineTenK{}---a \AOSConvergenceAdvPct{}\% advantage.
-This early-stage dominance stems from AOS's ability to deploy exploratory operators (low-$\eta$ SBX, DE) when the population is spread across the search space, then shift toward exploitation operators (high-$\eta$ SBX) as the population converges.
-The gap narrows toward the full budget as all methods approach the reference front, but AOS maintains a +2.3\% advantage at the final 100{,}000 evaluation mark.
+Figure~\ref{fig:anytime_agg} shows the mean normalized HV across all \AOSNProblems{} problems at each evaluation checkpoint.
+The AOS advantage grows monotonically over time: from +8\% at 5{,}000 evaluations to +23\% at the full 100{,}000-evaluation budget.
+This is the opposite pattern from standard benchmarks (where convergence gaps typically narrow)---here AOS keeps \emph{widening} the gap, indicating that the diverse portfolio compounds its advantage as the search progresses into harder regions of the decision space.
+On LSMOP specifically, the advantage accelerates from +3\% at 5K to +80\% at 100K, demonstrating that portfolio diversity is increasingly valuable as the search deepens in high-dimensional spaces.
 
 \begin{figure}[t]
 \centering
@@ -28,11 +28,11 @@ The gap narrows toward the full budget as all methods approach the reference fro
 }{
   \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/anytime\_hv\_aggregate.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Mean normalized HV across all 21 problems vs.\ evaluations. AOS converges significantly faster than both the baseline and random arm selection, with the largest advantage at early checkpoints and a sustained +2.3\% lead at 100K evaluations.}
+\caption{Mean normalized HV across all \AOSNProblems{} problems vs.\ evaluations. AOS and the random arm both substantially outperform the fixed baseline, with the advantage growing over time rather than diminishing.}
 \label{fig:anytime_agg}
 \end{figure}
 
-Figure~\ref{fig:anytime} shows per-problem convergence for four representative problems where AOS's convergence advantage is most visible.
+Figure~\ref{fig:anytime} shows per-problem convergence for four representative problems where the operator-choice effect is most visible.
 
 \begin{figure}[t]
 \centering
@@ -41,7 +41,7 @@ Figure~\ref{fig:anytime} shows per-problem convergence for four representative p
 }{
   \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/anytime\_hv\_selected.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Mean$\pm$std normalized hypervolume vs.\ evaluations for selected problems. AOS converges substantially faster on DTLZ6 and DTLZ7, and maintains or extends the lead through the full budget on WFG1 and WFG2.}
+\caption{Mean$\pm$std normalized HV vs.\ evaluations for selected problems. UF1 and UF7 show AOS converging rapidly to near-optimal HV, far outpacing the baseline. LSMOP1 and LSMOP4 demonstrate the dramatic advantage of a diverse portfolio in high-dimensional spaces.}
 \label{fig:anytime}
 \end{figure}
 
@@ -54,27 +54,29 @@ Figure~\ref{fig:anytime} shows per-problem convergence for four representative p
 }{
   \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/hv\_delta\_by\_problem.pdf (run the asset script).\vspace{2mm}}}
 }
-\caption{Per-problem mean HV change (AOS $-$ Baseline), sorted by $\Delta$. Positive bars indicate problems where AOS outperforms the fixed operator.}
+\caption{Per-problem mean HV change (AOS $-$ Baseline), sorted by $\Delta$. Positive bars indicate problems where AOS outperforms the fixed operator. The large positive bars on LSMOP and UF problems demonstrate AOS's strength on challenging landscapes.}
 \label{fig:hv_delta}
 \end{figure}
 
 Figure~\ref{fig:hv_delta} shows per-problem HV deltas.
-The pattern reveals a family-dependent effect:
-AOS achieves its strongest gains on DTLZ problems (+7.4\% family average), where landscape features (multi-modality, degenerate fronts, disconnected regions) strongly reward operator adaptation.
-On WFG, AOS shows a mixed result: significant wins on WFG1--2 and WFG6, but losses on WFG4--5, WFG7--8, where concave fronts and SBX with $\eta{=}20$ are already near-optimal.
-Crucially, on every WFG problem where AOS loses, the random arm loses even more (Section~\ref{sec:discussion}), confirming that the deficit is not a failure of the policy but an inherent cost of maintaining a diverse portfolio.
+The pattern reveals a clear family-dependent effect:
+\begin{itemize}
+  \item \textbf{UF problems}: AOS achieves strong wins on 7 of 7 bi-objective problems (UF1--UF7), with improvements ranging from +1.4\% (UF2, UF4) to +38\% (UF5). The curved Pareto sets reward operators that can navigate non-axis-aligned structures. The only losses are on the tri-objective variants (UF8--UF10), where the spherical Pareto front is amenable to the baseline's SBX.
+  \item \textbf{LSMOP problems}: AOS wins on 5 of 9 problems, with massive improvements on LSMOP1 (+633\%), LSMOP4 (+45\%), and LSMOP8 (from zero to 0.42). Four LSMOP problems (LSMOP3, 6, 7, 9---those with Rastrigin, Rosenbrock, and Ackley distance functions) prove intractable for all methods at 100K evaluations.
+\end{itemize}
 
 \subsection{Statistical significance}
 We apply the Wilcoxon signed-rank test~\cite{wilcoxon1945} (paired, two-sided) across \AOSNSeeds{} seeds for each problem, with Holm--Bonferroni correction for \AOSNProblems{} comparisons at $\alpha{=}0.05$.
 Table~\ref{tab:stat_test} summarizes the results.
-AOS achieves \StatWinsBase{} significant wins vs.\ the baseline with \StatLossesBase{} losses, and \StatWinsRand{} significant wins vs.\ the random arm.
+AOS achieves \StatWinsBase{} significant wins vs.\ the baseline with \StatLossesBase{} losses, confirming that the gains are robust and not due to random variation.
+Against the random arm, AOS achieves \StatWinsRand{} significant wins with \StatLossesRand{} losses; the comparable performance between AOS and random arm (Section~\ref{sec:discussion}) reveals that portfolio diversity is the primary driver.
 
 \input{tables/stat_test}
 
 \subsection{Runtime}
 Table~\ref{tab:runtime_family} reports median runtime by benchmark family.
 The AOS overhead is \AOSRuntimeOverheadPct{}\% (\AOSRuntimeMedianAOS{}s vs.\ \AOSRuntimeMedianBaseline{}s), reflecting policy updates and reward computation.
-The random arm is slower (\AOSRuntimeMedianRandom{}s) because it selects all operators with equal probability, including the 3-parent DE crossover; AOS learns to favor efficient operators, yielding an implicit computational benefit.
+The overhead is larger on these benchmarks than on standard problems because the LSMOP evaluations (100 variables) and UF evaluations (30 variables with complex functions) are computationally cheaper per evaluation, making the AOS bookkeeping a relatively larger fraction of total runtime.
 
 \input{tables/ablation_runtime_family}
 

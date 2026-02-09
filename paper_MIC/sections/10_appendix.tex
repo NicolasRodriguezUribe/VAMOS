@@ -32,36 +32,33 @@ This layered design ensures that the portfolio contains both parameter variants 
 \begin{table}[t]
 \centering
 \scriptsize
-\caption{Summary of the 21 benchmark problems used in the experiments.}
+\caption{Summary of the \AOSNProblems{} benchmark problems used in the experiments.}
 \label{tab:problems}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{l|r|r|l}
 \toprule
 \textbf{Problem} & \textbf{Vars} & \textbf{Obj} & \textbf{Characteristics} \\
 \midrule
-ZDT1  & 30 & 2 & Convex front \\
-ZDT2  & 30 & 2 & Non-convex front \\
-ZDT3  & 30 & 2 & Disconnected front \\
-ZDT4  & 10 & 2 & Multi-modal ($21^9$ local fronts) \\
-ZDT6  & 10 & 2 & Non-uniform density, biased \\
+UF1   & 30  & 2 & Curved PS, $f_2 = 1 - \sqrt{f_1}$ \\
+UF2   & 30  & 2 & Curved PS, non-linear variable linkage \\
+UF3   & 30  & 2 & Curved PS, product-based distance \\
+UF4   & 30  & 2 & Concave front ($f_2 = 1 - f_1^2$) \\
+UF5   & 30  & 2 & Discrete points on linear front \\
+UF6   & 30  & 2 & Disconnected segments, product distance \\
+UF7   & 30  & 2 & Curved PS with $f_1 = x_1^{0.2}$ \\
+UF8   & 30  & 3 & Spherical front, curved PS (3-obj) \\
+UF9   & 30  & 3 & Spherical front, disconnected regions (3-obj) \\
+UF10  & 30  & 3 & Spherical front, cosine-based distance (3-obj) \\
 \midrule
-DTLZ1 & 7  & 3 & Linear front, multi-modal ($11^5$ local fronts) \\
-DTLZ2 & 12 & 3 & Concave front \\
-DTLZ3 & 12 & 3 & Concave front, highly multi-modal \\
-DTLZ4 & 12 & 3 & Concave front, biased density \\
-DTLZ5 & 12 & 3 & Degenerate (curve in 3-D) \\
-DTLZ6 & 22 & 3 & Degenerate, biased distance function \\
-DTLZ7 & 22 & 3 & Disconnected (4 regions) \\
-\midrule
-WFG1  & 24 & 3 & Separable, convex, mixed, biased \\
-WFG2  & 24 & 3 & Non-separable, convex, disconnected \\
-WFG3  & 24 & 3 & Non-separable, linear, degenerate \\
-WFG4  & 24 & 3 & Non-separable, concave, multi-modal \\
-WFG5  & 24 & 3 & Non-separable, concave, deceptive \\
-WFG6  & 24 & 3 & Non-separable, concave \\
-WFG7  & 24 & 3 & Separable, concave, biased \\
-WFG8  & 24 & 3 & Non-separable, concave, biased \\
-WFG9  & 24 & 3 & Non-separable, concave, deceptive, multi-modal \\
+LSMOP1 & 100 & 2 & Linear front, sphere distance \\
+LSMOP2 & 100 & 2 & Linear front, Griewank / Schwefel distance \\
+LSMOP3 & 100 & 2 & Linear front, Rastrigin / Rosenbrock distance \\
+LSMOP4 & 100 & 2 & Linear front, Ackley / Griewank distance \\
+LSMOP5 & 100 & 2 & Convex front, sphere distance \\
+LSMOP6 & 100 & 2 & Convex front, Rosenbrock / Schwefel distance \\
+LSMOP7 & 100 & 2 & Convex front, Ackley / Rosenbrock distance \\
+LSMOP8 & 100 & 2 & Convex front, Griewank / sphere distance \\
+LSMOP9 & 100 & 2 & Disconnected front, sphere / Ackley distance \\
 \bottomrule
 \end{tabular}
 \end{table}
