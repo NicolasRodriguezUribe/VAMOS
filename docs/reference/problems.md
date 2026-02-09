@@ -12,7 +12,9 @@ Continuous benchmarks
 - DTLZ: dtlz1-dtlz7 (default 3 objectives, override allowed).
 - WFG: wfg1-9 (requires `research` extra, override objectives allowed).
 - LZ09: lz09_f1-f9.
-- CEC2009: cec2009_uf1, cec2009_uf2, cec2009_uf3, cec2009_cf1.
+- CEC2009: cec2009_uf1-cec2009_uf10, cec2009_cf1.
+- LSMOP: lsmop1-lsmop9 (large-scale, default 300 variables).
+- Constrained many-objective: c1dtlz1, c1dtlz3, c2dtlz2, c3dtlz1, dc1dtlz1, dc1dtlz3, dc2dtlz1, dc2dtlz3, dc3dtlz1, dc3dtlz3, mw1-mw14.
 
 DTLZ benchmarks note
 --------------------
@@ -56,6 +58,9 @@ Presets
 -------
 
 - `families` preset in CLI covers representative ZDT/DTLZ/WFG cases.
+- `cec` includes CEC2009 UF1-10 + CF1.
+- `lsmop` includes LSMOP1-9.
+- `constrained_many` includes C-DTLZ, DC-DTLZ, and MW constrained families.
 
 Reference fronts
 ----------------

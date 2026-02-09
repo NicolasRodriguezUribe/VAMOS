@@ -144,6 +144,75 @@ def _init_default_suites() -> None:
         )
     )
 
+    cec_curved_experiments = [
+        BenchmarkExperiment("cec2009_uf1", {"n_var": 30}, evaluation_budget=50000),
+        BenchmarkExperiment("cec2009_uf2", {"n_var": 30}, evaluation_budget=50000),
+        BenchmarkExperiment("cec2009_uf3", {"n_var": 30}, evaluation_budget=50000),
+        BenchmarkExperiment("cec2009_uf4", {"n_var": 30}, evaluation_budget=50000),
+        BenchmarkExperiment("cec2009_uf5", {"n_var": 30}, evaluation_budget=50000),
+        BenchmarkExperiment("cec2009_uf6", {"n_var": 30}, evaluation_budget=50000),
+        BenchmarkExperiment("cec2009_uf7", {"n_var": 30}, evaluation_budget=50000),
+        BenchmarkExperiment("cec2009_cf1", {"n_var": 30}, evaluation_budget=50000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="CEC2009_UF_CF_curved",
+            experiments=cec_curved_experiments,
+            default_algorithms=["nsgaii", "moead", "smsemoa"],
+            default_metrics=["hv", "igd_plus", "epsilon_additive"],
+            description="CEC2009 UF/CF curved decision-space landscapes (bi-objective).",
+            default_seeds=list(range(5)),
+        )
+    )
+
+    lsmop_experiments = [
+        BenchmarkExperiment("lsmop1", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+        BenchmarkExperiment("lsmop2", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+        BenchmarkExperiment("lsmop3", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+        BenchmarkExperiment("lsmop4", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+        BenchmarkExperiment("lsmop5", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+        BenchmarkExperiment("lsmop6", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+        BenchmarkExperiment("lsmop7", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+        BenchmarkExperiment("lsmop8", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+        BenchmarkExperiment("lsmop9", {"n_var": 300, "n_obj": 2}, evaluation_budget=120000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="LSMOP_large",
+            experiments=lsmop_experiments,
+            default_algorithms=["nsgaii", "moead"],
+            default_metrics=["hv", "igd_plus", "epsilon_additive"],
+            description="Large-scale many-objective benchmarks (LSMOP1-9) projected to 2 objectives.",
+            default_seeds=list(range(3)),
+        )
+    )
+
+    constrained_experiments = [
+        BenchmarkExperiment("c1dtlz1", {"n_var": 12, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("c1dtlz3", {"n_var": 12, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("c2dtlz2", {"n_var": 12, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("dc1dtlz1", {"n_var": 12, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("dc1dtlz3", {"n_var": 12, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("dc2dtlz1", {"n_var": 12, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("dc2dtlz3", {"n_var": 12, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("mw1", {"n_var": 15, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("mw2", {"n_var": 15, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("mw3", {"n_var": 15, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("mw5", {"n_var": 15, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("mw6", {"n_var": 15, "n_obj": 2}, evaluation_budget=60000),
+        BenchmarkExperiment("mw7", {"n_var": 15, "n_obj": 2}, evaluation_budget=60000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="Constrained_CDTLZ_MW_DCDTLZ",
+            experiments=constrained_experiments,
+            default_algorithms=["nsgaii", "moead", "smsemoa"],
+            default_metrics=["hv", "igd_plus", "epsilon_additive"],
+            description="Constrained MO benchmarks combining C-DTLZ, DC-DTLZ, and MW (bi-objective).",
+            default_seeds=list(range(5)),
+        )
+    )
+
     perm_experiments = [
         BenchmarkExperiment("tsp6", {"n_var": 6}, evaluation_budget=5000),
         BenchmarkExperiment("kroa100", {"n_var": 100}, evaluation_budget=40000),

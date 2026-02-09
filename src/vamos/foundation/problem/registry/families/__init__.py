@@ -8,6 +8,8 @@ __all__ = [
     "wfg",
     "lz09",
     "cec",
+    "lsmop",
+    "constrained_many",
     "real_world",
     "tanabe_ishibuchi_re",
     "zapotecas_rwa",

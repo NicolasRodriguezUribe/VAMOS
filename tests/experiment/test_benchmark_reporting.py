@@ -12,6 +12,9 @@ from vamos.experiment.benchmark.report import BenchmarkReport, BenchmarkReportCo
 def test_suite_registry_contains_defaults():
     names = list_benchmark_suites()
     assert "ZDT_small" in names
+    assert "CEC2009_UF_CF_curved" in names
+    assert "LSMOP_large" in names
+    assert "Constrained_CDTLZ_MW_DCDTLZ" in names
     suite = get_benchmark_suite("ZDT_small")
     assert suite.experiments
     assert suite.default_algorithms
