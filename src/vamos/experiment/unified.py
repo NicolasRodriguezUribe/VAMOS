@@ -28,6 +28,10 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+#: Default random seed used when no seed is explicitly provided.
+DEFAULT_SEED: int = 42
+
+
 _ALLOWED_EVAL_STRATEGIES = {"serial", "multiprocessing", "dask"}
 
 
@@ -110,7 +114,7 @@ def optimize(
     max_evaluations: int | None = None,
     pop_size: int | None = None,
     engine: str | None = None,
-    seed: int | list[int] | tuple[int, ...] = 42,
+    seed: int | list[int] | tuple[int, ...] = DEFAULT_SEED,
     verbose: bool = False,
     n_var: int | None = None,
     n_obj: int | None = None,
@@ -149,6 +153,13 @@ def optimize(
 
     Returns:
         OptimizationResult for single seed, or list[OptimizationResult] for multiple seeds.
+
+    Raises:
+        ValueError: If the problem name is unknown, or if *checkpoint* is
+            provided for multi-seed runs, or if conflicting termination
+            options are given.
+        ConfigurationError: If the algorithm/engine combination is invalid.
+        OptimizationError: If the optimization run fails internally.
 
     Examples:
         # AutoML mode - zero config

@@ -24,6 +24,10 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+#: Default number of generations between checkpoint saves.
+DEFAULT_CHECKPOINT_INTERVAL: int = 50
+
+
 def notify_generation(
     algo: NSGAII,
     live_cb: LiveVisualization,
@@ -107,7 +111,9 @@ def notify_generation(
                     "G": (
                         np.asarray(st.G).copy()
                         if copy_arrays and isinstance(st.G, np.ndarray)
-                        else np.asarray(st.G) if isinstance(st.G, np.ndarray) else None
+                        else np.asarray(st.G)
+                        if isinstance(st.G, np.ndarray)
+                        else None
                     ),
                 },
                 "nondominated": None,
@@ -116,16 +122,8 @@ def notify_generation(
             }
             if nd_mask is not None:
                 payload["nondominated"] = {
-                    "X": (
-                        np.asarray(st.X[nd_mask]).copy()
-                        if copy_arrays
-                        else np.asarray(st.X[nd_mask])
-                    ),
-                    "F": (
-                        np.asarray(st.F[nd_mask]).copy()
-                        if copy_arrays
-                        else np.asarray(st.F[nd_mask])
-                    ),
+                    "X": (np.asarray(st.X[nd_mask]).copy() if copy_arrays else np.asarray(st.X[nd_mask])),
+                    "F": (np.asarray(st.F[nd_mask]).copy() if copy_arrays else np.asarray(st.F[nd_mask])),
                 }
             archive_payload = get_archive_contents(st)
             if archive_payload is not None:
@@ -181,7 +179,7 @@ def run_nsgaii(
     eval_strategy: EvaluationBackend | None = None,
     live_viz: LiveVisualization | None = None,
     checkpoint_dir: str | None = None,
-    checkpoint_interval: int = 50,
+    checkpoint_interval: int = DEFAULT_CHECKPOINT_INTERVAL,
     checkpoint: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run the NSGA-II algorithm."""

@@ -62,7 +62,7 @@ def main() -> None:
     try:
         # explore_result_front(result, title="Custom Problem Result")
         pass  # Commented out to avoid auto-launching in non-interactive run
-    except:
+    except ImportError:
         pass
 
 

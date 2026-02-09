@@ -476,7 +476,7 @@ def compile_latex(tex_path: Path) -> bool:
     for ext in [".aux", ".log", ".out"]:
         try:
             (tex_path.parent / (tex_path.stem + ext)).unlink()
-        except:
+        except OSError:
             pass
     return result.returncode == 0
 
