@@ -59,6 +59,11 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
 
         run_open_results(argv[1:])
         return True
+    if command in {"create-problem", "create_problem"}:
+        from vamos.experiment.cli.create_problem import run_create_problem
+
+        run_create_problem(argv[1:])
+        return True
     return False
 
 

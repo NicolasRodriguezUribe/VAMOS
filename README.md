@@ -82,11 +82,45 @@ After a run, summarize results with:
 vamos summarize --results results/quickstart
 ```
 
-New CLI helpers:
+CLI helpers:
 
 - `vamos quickstart`: guided wizard that writes a config
+- `vamos create-problem`: scaffold a custom problem file from a guided wizard
 - `vamos summarize`: table/JSON summary of recent runs
 - `vamos open-results`: print or open the latest run folder
+
+## 🧩 Define Your Own Problem
+
+Use `make_problem()` to turn any Python function into a VAMOS-compatible problem
+-- no classes, no protocols, no NumPy vectorization required:
+
+```python
+from vamos import make_problem, optimize
+
+problem = make_problem(
+    lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
+    n_var=2,
+    n_obj=2,
+    bounds=[(0, 1), (0, 1)],
+)
+
+result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
+```
+
+Your function receives a single solution `x` (array of length `n_var`) and returns
+a list of `n_obj` objective values. VAMOS auto-vectorizes it for performance.
+
+For extra speed, pass `vectorized=True` and write a function that handles batches directly.
+
+Prefer a file template? The CLI wizard scaffolds a ready-to-run `.py` file:
+
+```bash
+vamos create-problem
+# Prompts for: name, variables, objectives, bounds, style
+# Generates a .py file with TODO markers -- fill in your math and run it
+```
+
+See `docs/dev/add_problem.md` for all approaches (function, class, or registry).
 
 ## VAMOS Assist (no-code workflow)
 
@@ -131,11 +165,9 @@ Reminder: plain dict configs are intentionally not accepted (use `GenericAlgorit
 
 ## Notes
 
-- NSGA-III works best when `pop_size` matches the number of reference directions. With `reference_directions(divisions=p)`, the count is `comb(p + n_obj - 1, n_obj - 1)`; mismatches emit a warning unless strict enforcement is enabled.
-- RVEA requires `pop_size` to match the number of reference directions implied by `n_partitions` (simplex-lattice). It uses APD survival with periodic reference-vector adaptation (`alpha`, `adapt_freq`).
 - For reproducible results, set `seed`; NumPy/Numba/MooCore backends share the same RNG-driven stochastic operators.
-- Default operator settings align with jMetalPy standard configurations (e.g., SBX prob 1.0, PM prob 1/n, MOEA/D PBI, IBEA kappa 1.0); override via config/CLI if needed.
 - Troubleshooting guide: `docs/guide/troubleshooting.md`.
+- Algorithm-specific notes (reference directions, operator defaults): `docs/reference/algorithms.md`.
 - Release packaging smoke checklist: `docs/release_smoke.md`.
 
 ## 📚 Examples & Notebooks

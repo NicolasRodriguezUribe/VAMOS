@@ -50,9 +50,22 @@ VAMOS prioritizes ease of use:
     )
     ```
 
-2.  **Interactive Results**: Use `explore_result_front(result)` for immediate visualization in notebooks.
-3.  **Publication Ready**: Use `result_to_latex(result)` for generating tables directly from code.
-4.  **No Internal Imports**: Avoid deep internal modules (`vamos.engine.algorithm...`, `vamos.foundation...`). Use the public facades: `vamos`, `vamos.algorithms`, `vamos.problems`, and `vamos.ux.api`.
+2.  **Friendly Custom Problems**: Use `make_problem()` for custom problems -- no class boilerplate, no NumPy vectorization knowledge required. VAMOS auto-vectorizes scalar functions internally.
+    ```python
+    from vamos import make_problem, optimize
+
+    problem = make_problem(
+        lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
+        n_var=2, n_obj=2,
+        bounds=[(0, 1), (0, 1)],
+    )
+    result = optimize(problem, algorithm="nsgaii", max_evaluations=5000)
+    ```
+    For scaffolding a problem file interactively, use `vamos create-problem`.
+
+3.  **Interactive Results**: Use `explore_result_front(result)` for immediate visualization in notebooks.
+4.  **Publication Ready**: Use `result_to_latex(result)` for generating tables directly from code.
+5.  **No Internal Imports**: Avoid deep internal modules (`vamos.engine.algorithm...`, `vamos.foundation...`). Use the public facades: `vamos`, `vamos.algorithms`, `vamos.problems`, and `vamos.ux.api`.
 
 ---
 
@@ -73,7 +86,7 @@ VAMOS prioritizes ease of use:
 
 - **Library imports (user-facing)**:
   ```python
-  from vamos import optimize, make_problem_selection
+  from vamos import optimize, make_problem, make_problem_selection
   from vamos.algorithms import NSGAIIConfig
   from vamos.ux.api import plot_pareto_front_2d, weighted_sum_scores
   ```

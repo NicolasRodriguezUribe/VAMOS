@@ -4,6 +4,7 @@
     "__version__",
     "available_problem_names",
     "configure_logging",
+    "make_problem",
     "make_problem_selection",
     "optimize",
     "problems",
@@ -29,6 +30,7 @@
     "OptimizationResult",
     "available_problem_names",
     "configure_logging",
+    "make_problem",
     "make_problem_selection",
     "optimize",
     "run_self_check"

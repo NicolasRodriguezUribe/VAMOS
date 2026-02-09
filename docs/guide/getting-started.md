@@ -46,7 +46,23 @@ result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10_000, pop_size=1
 print(result_summary_text(result))
 ```
 
-**2. Advanced control (explicit args + config objects):**
+**2. Your own problem (no class needed):**
+
+```python
+from vamos import make_problem, optimize
+
+# Write a simple function -- VAMOS handles vectorization and the protocol
+problem = make_problem(
+    lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
+    n_var=2, n_obj=2,
+    bounds=[(0, 1), (0, 1)],
+)
+result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
+```
+
+Or scaffold a file interactively: `vamos create-problem`.
+
+**3. Advanced control (explicit args + config objects):**
 
 ```python
 from vamos import optimize
@@ -76,6 +92,8 @@ Use the lightest interface that still makes the run reproducible.
 | Goal | Use | Example |
 | --- | --- | --- |
 | Quick scripts, notebooks | Unified `optimize(...)` | `optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)` |
+| Your own problem | `make_problem(fn, ...)` | `make_problem(my_fn, n_var=2, n_obj=2, bounds=[(0,1),(0,1)])` |
+| Scaffold a problem file | CLI wizard | `vamos create-problem` |
 | Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit termination | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, termination=("max_evaluations", 5000))` |
 | Plugin algorithms | `GenericAlgorithmConfig` | `optimize(problem, algorithm="my_algo", algorithm_config=GenericAlgorithmConfig({...}))` |
 | Small study in one call | `seed=[...]` | `optimize("zdt1", seed=[0, 1, 2])` |

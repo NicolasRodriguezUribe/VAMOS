@@ -7,6 +7,28 @@ This directory contains benchmark and real-world optimization problems for VAMOS
 - PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
 - ADRs in `docs/dev/adr/` are mandatory reading before architectural changes.
 
+## Quick Custom Problems: `make_problem()`
+
+The friendliest way to create a problem. Lives in `builder.py` and is
+exported from the public API (`from vamos import make_problem`):
+
+```python
+from vamos import make_problem, optimize
+
+problem = make_problem(
+    lambda x: [x[0], 1 - x[0] ** 0.5],
+    n_var=2, n_obj=2,
+    bounds=[(0, 1), (0, 1)],
+)
+result = optimize(problem, algorithm="nsgaii", max_evaluations=5000)
+```
+
+`make_problem()` creates a `FunctionalProblem` that implements `ProblemProtocol`
+internally. Scalar functions are auto-vectorized. Use `vectorized=True` for
+batch functions. Constraints are supported via the `constraints` parameter.
+
+CLI scaffolding: `vamos create-problem` generates a ready-to-run `.py` file.
+
 ## Problem Protocol
 
 All problems must implement:
@@ -17,14 +39,18 @@ class ProblemProtocol(Protocol):
     xl: np.ndarray  # lower bounds (n_var,)
     xu: np.ndarray  # upper bounds (n_var,)
     
-    def evaluate(self, X: np.ndarray) -> np.ndarray:
-        """Evaluate population X (N × n_var) → F (N × n_obj)"""
+    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
+        """Evaluate population X (N × n_var), write F (N × n_obj) to out["F"]."""
         ...
 ```
 
 Optional: `n_constraints`, `evaluate_constraints(X) → G`
 
 ## Adding a New Problem
+
+**Quick / ad-hoc**: use `make_problem()` (see above) -- no registration needed.
+
+**Reusable benchmark**: follow the registry approach:
 
 1. Create `new_problem.py` with class implementing `ProblemProtocol`
 2. Register in the appropriate family module under `registry/families/`:
@@ -45,8 +71,10 @@ ProblemSpec(
 
 ## Directory Structure
 
-| Path | Problems |
-|------|----------|
+| Path | Purpose |
+|------|---------|
+| `builder.py` | `make_problem()` convenience builder + `FunctionalProblem` wrapper |
+| `types.py` | `ProblemProtocol` definition |
 | `zdt*.py` | ZDT1-ZDT6 (2-obj continuous) |
 | `dtlz.py` | DTLZ1-DTLZ4 (scalable n_obj) |
 | `wfg.py` | WFG1-WFG9 (scalable n_obj) |
