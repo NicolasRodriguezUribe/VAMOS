@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from collections.abc import Iterable
 
 import numpy as np
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 @dataclass
@@ -62,7 +67,7 @@ def load_run_from_directory(run_dir: Path) -> RunRecord:
         try:
             metadata["config"] = json.loads(config_path.read_text(encoding="utf-8"))
         except Exception:
-            pass
+            _logger().debug("Failed to load resolved_config.json from %s", config_path, exc_info=True)
 
     # Heuristics to determine problem/algorithm/seed when metadata is absent
     problem_name = metadata.get("problem", {}).get("key") or metadata.get("problem_key")

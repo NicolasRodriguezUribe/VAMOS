@@ -254,7 +254,7 @@ def initialize_run(
             source_F = checkpoint_archive_F if checkpoint_archive_F is not None else F
             result_archive.update(source_X, source_F)
         except Exception:  # pragma: no cover - defensive
-            pass
+            _logger().debug("Failed to seed result archive from checkpoint", exc_info=True)
 
     immigration_cfg = algo.cfg.get("immigration")
     immigration_manager = None
@@ -264,9 +264,7 @@ def initialize_run(
     parent_selection_filter = algo.cfg.get("parent_selection_filter")
     live_callback_mode = str(algo.cfg.get("live_callback_mode", "nd_only")).lower()
     if live_callback_mode not in {"nd_only", "population", "population_archive"}:
-        raise ValueError(
-            "live_callback_mode must be one of: nd_only, population, population_archive"
-        )
+        raise ValueError("live_callback_mode must be one of: nd_only, population, population_archive")
     generation_callback = algo.cfg.get("generation_callback")
     generation_callback_copy = bool(algo.cfg.get("generation_callback_copy", True))
 

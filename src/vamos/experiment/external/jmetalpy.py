@@ -103,14 +103,14 @@ def _run_jmetalpy_nsga2(
 
         PRNG.seed(config.seed)
     except Exception:  # pragma: no cover
-        pass
+        _logger().debug("Could not seed jMetalPy PRNG", exc_info=True)
     try:
         import random
 
         random.seed(config.seed)
         np.random.seed(config.seed)
     except Exception:  # pragma: no cover
-        pass
+        _logger().debug("Could not seed random/numpy RNG for jMetalPy NSGA-II", exc_info=True)
 
     if use_native_problem:
         jm_problem = ZDT1(number_of_variables=selection.n_var)
@@ -209,7 +209,7 @@ def _run_jmetalpy_perm_nsga2(
         random.seed(config.seed)
         np.random.seed(config.seed)
     except Exception:  # pragma: no cover
-        pass
+        _logger().debug("Could not seed random/numpy RNG for jMetalPy permutation NSGA-II", exc_info=True)
 
     try:
         from vamos.operators.impl.permutation import order_crossover as _vamos_order_crossover

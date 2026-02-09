@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
 
 from vamos.engine.algorithm.config import GenericAlgorithmConfig, NSGAIIConfig
 from vamos.engine.algorithm.config.defaults import build_default_algorithm_config
@@ -38,7 +44,7 @@ class DynamicsCallback:
                 if F is not None:
                     self.history.append(np.array(F))
         except Exception:
-            pass
+            _logger().debug("Failed to capture population snapshot in DynamicsCallback", exc_info=True)
 
 
 def load_studio_data(study_dir: Path) -> tuple[list[RunRecord], list[FrontRecord]]:

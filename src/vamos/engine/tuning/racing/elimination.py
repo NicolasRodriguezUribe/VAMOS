@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import math
 import warnings
 from typing import TYPE_CHECKING
@@ -8,6 +9,11 @@ import numpy as np
 
 from .stats import build_score_matrix, select_configs_by_paired_test
 from .state import ConfigState, EliteEntry
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from .scenario import Scenario
@@ -141,9 +147,9 @@ def eliminate_configs(configs: list[ConfigState], *, task: TuningTask, scenario:
             if p_friedman > scenario.alpha:
                 return False
         except ImportError:
-            pass  # no scipy, skip pre-check
+            _logger().debug("Could not import scipy for Friedman pre-check", exc_info=True)
         except ValueError:
-            pass  # can happen if all numbers are identical
+            _logger().debug("Friedman test raised ValueError (e.g. identical scores)", exc_info=True)
     # -------------------------------
 
     keep_mask = select_configs_by_paired_test(

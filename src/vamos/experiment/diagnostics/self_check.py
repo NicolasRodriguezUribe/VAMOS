@@ -49,8 +49,26 @@ def _run_backend_check(engine: str, *, pop_size: int = 6, max_eval: int = 20) ->
 
 
 def run_self_check(verbose: bool = False) -> list[CheckResult]:
-    """
-    Run a minimal set of checks. Always runs NumPy; Numba/MooCore are optional.
+    """Run a minimal set of smoke checks for each compute backend.
+
+    Always exercises NumPy; Numba and MooCore are optional and reported
+    as ``"skipped"`` when the dependency is missing.
+
+    Parameters
+    ----------
+    verbose : bool, default False
+        If ``True``, log the result of each check at INFO level.
+
+    Returns
+    -------
+    list[CheckResult]
+        One entry per backend / encoding variant with ``status`` in
+        ``{"ok", "skipped", "failed"}``.
+
+    Raises
+    ------
+    RuntimeError
+        If the mandatory NumPy backend check fails.
     """
     checks: list[CheckResult] = []
     for engine in ("numpy", "numba", "moocore"):
