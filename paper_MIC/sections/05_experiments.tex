@@ -2,7 +2,7 @@
 \label{sec:experiments}
 
 \subsection{Benchmarks and budget}
-We evaluate on \AOSNProblems{} continuous multiobjective benchmarks drawn from two families specifically chosen to stress-test operator choice:
+We evaluate on \AOSNProblems{} continuous multiobjective benchmarks drawn from three challenge axes specifically chosen to stress-test operator choice:
 \begin{itemize}
   \item \textbf{CEC\,2009 UF}~\cite{zhang2009cec2009}: 10 unconstrained problems (UF1--UF10) with 30 decision variables and 2--3 objectives.
         These problems feature curved, non-linear Pareto sets in decision space, making them difficult for operators that assume coordinate-aligned structure (e.g., standard SBX).
@@ -10,8 +10,10 @@ We evaluate on \AOSNProblems{} continuous multiobjective benchmarks drawn from t
   \item \textbf{LSMOP}~\cite{cheng2017lsmop}: 9 large-scale problems (LSMOP1--LSMOP9) with 100 decision variables and 2 objectives.
         The high dimensionality ($\sim$3$\times$ more variables than standard benchmarks) makes operator choice critical: the search space grows exponentially, and a single crossover strategy often cannot balance exploration and exploitation across all variable groups.
         LSMOP problems vary in distance-function difficulty (sphere, Rastrigin, Rosenbrock, Ackley, Griewank) and front shape (linear, convex, disconnected).
+  \item \textbf{Constrained problems}: 13 problems from three constrained families---C-DTLZ~\cite{jain2014cdtlz} (3 problems, 12 variables), DC-DTLZ~\cite{li2019dcdtlz} (4 problems, 12 variables), and MW~\cite{ma2019mw} (6 problems, 15 variables)---all with 2 objectives.
+        Feasibility boundaries create additional operator-choice pressure: operators must simultaneously navigate toward the Pareto front and maintain feasibility, and the most effective operator can change as the population transitions from infeasible to feasible regions.
 \end{itemize}
-Together these \AOSNProblems{} problems cover landscapes where standard SBX-based NSGA-II is known to struggle---curved Pareto sets, high dimensionality, multi-modality, and non-separability---making them an ideal testbed for evaluating whether adaptive operator selection provides genuine benefit beyond what a well-tuned fixed operator can achieve.
+Together these \AOSNProblems{} problems cover three axes where standard SBX-based NSGA-II is known to struggle---curved Pareto sets, high dimensionality, and constrained feasible regions---making them an ideal testbed for evaluating whether adaptive operator selection provides genuine benefit beyond what a well-tuned fixed operator can achieve.
 Each run is terminated after a fixed evaluation budget of 100{,}000 function evaluations, using \AOSNSeeds{} independent seeds per problem.
 
 \subsection{Methods compared}
@@ -37,7 +39,7 @@ This design is intentionally composed of variations and complements of a strong 
 
 \subsection{Metrics}
 We report normalized hypervolume (higher is better) and wall-clock runtime (lower is better).
-Hypervolume is computed using analytically derived reference fronts for each problem family (known true Pareto fronts for UF and LSMOP).
+Hypervolume is computed using reference fronts: analytically derived true Pareto fronts for UF and LSMOP, and empirically generated approximations (50 seeds $\times$ 200{,}000 evaluations, merged and Pareto-filtered) for the constrained families.
 The reference point is the per-objective maximum of the reference front plus a small $\epsilon$ margin.
 Normalized hypervolume divides the raw HV of a run by the reference front's HV; values near~1 indicate performance comparable to the true Pareto front (values slightly above~1 can occur when a run discovers solutions beyond the reference approximation).
 We additionally report \emph{anytime convergence}: mean normalized HV at evaluation checkpoints (5\,000, 10\,000, 20\,000, 50\,000, 100\,000), which captures convergence \emph{speed} in addition to final quality.
@@ -55,7 +57,7 @@ Algorithm & NSGA-II \\
 Population / offspring & 100 / 100 \\
 Budget & 100{,}000 evaluations \\
 Seeds & \AOSNSeeds{} per problem \\
-Problems & \AOSNProblems{} (CEC\,2009 UF + LSMOP, continuous) \\
+Problems & \AOSNProblems{} (UF + LSMOP + C-DTLZ + DC-DTLZ + MW) \\
 Baseline operators & SBX($p{=}1.0$, $\eta_c{=}20$) + PM($p{=}1/n_{\mathrm{var}}$, $\eta_m{=}20$) \\
 Random arm & Uniform selection from 5-arm pool \\
 AOS policy & Thompson Sampling ($W{=}50$, $m_{\min}{=}5$, $p_{\mathrm{floor}}{=}0.02$) \\

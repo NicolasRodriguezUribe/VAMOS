@@ -31,7 +31,7 @@ FIGURES_DIR = PAPER_DIR / "figures"
 # Ordering constants
 # ---------------------------------------------------------------------------
 
-_FAMILY_ORDER = ("ZDT", "DTLZ", "WFG", "UF", "LSMOP")
+_FAMILY_ORDER = ("ZDT", "DTLZ", "WFG", "UF", "LSMOP", "C-DTLZ", "DC-DTLZ", "MW")
 _VARIANT_ORDER = ("baseline", "random", "aos")
 _VARIANT_DISPLAY = {
     "baseline": "Baseline",
@@ -53,6 +53,12 @@ _PROBLEM_ORDER = (
     # LSMOP (2-obj, 100 vars, large-scale)
     "lsmop1", "lsmop2", "lsmop3", "lsmop4", "lsmop5",
     "lsmop6", "lsmop7", "lsmop8", "lsmop9",
+    # C-DTLZ (constrained, 2-obj, 12 vars)
+    "c1dtlz1", "c1dtlz3", "c2dtlz2",
+    # DC-DTLZ (discontinuous constrained, 2-obj, 12 vars)
+    "dc1dtlz1", "dc1dtlz3", "dc2dtlz1", "dc2dtlz3",
+    # MW (constrained, 2-obj, 15 vars)
+    "mw1", "mw2", "mw3", "mw5", "mw6", "mw7",
 )
 
 _N_OBJ: dict[str, int] = {
@@ -66,6 +72,10 @@ _N_OBJ: dict[str, int] = {
     "cec2009_uf8": 3, "cec2009_uf9": 3, "cec2009_uf10": 3,
     "lsmop1": 2, "lsmop2": 2, "lsmop3": 2, "lsmop4": 2, "lsmop5": 2,
     "lsmop6": 2, "lsmop7": 2, "lsmop8": 2, "lsmop9": 2,
+    # Constrained
+    "c1dtlz1": 2, "c1dtlz3": 2, "c2dtlz2": 2,
+    "dc1dtlz1": 2, "dc1dtlz3": 2, "dc2dtlz1": 2, "dc2dtlz3": 2,
+    "mw1": 2, "mw2": 2, "mw3": 2, "mw5": 2, "mw6": 2, "mw7": 2,
 }
 
 
@@ -73,6 +83,10 @@ def _family(problem_name: str) -> str:
     name = problem_name.strip().lower()
     if name.startswith("zdt"):
         return "ZDT"
+    if name.startswith("dc") and "dtlz" in name:
+        return "DC-DTLZ"
+    if name.startswith("c") and "dtlz" in name and not name.startswith("cec"):
+        return "C-DTLZ"
     if name.startswith("dtlz"):
         return "DTLZ"
     if name.startswith("wfg"):
@@ -81,6 +95,8 @@ def _family(problem_name: str) -> str:
         return "UF"
     if name.startswith("lsmop"):
         return "LSMOP"
+    if name.startswith("mw"):
+        return "MW"
     return "Other"
 
 
@@ -1018,6 +1034,27 @@ def parse_args() -> argparse.Namespace:
         help="Optional AOS trace CSV for operator-usage plots.",
     )
     ap.add_argument(
+        "--extra-csv",
+        type=Path,
+        nargs="*",
+        default=[],
+        help="Additional ablation CSVs to merge (e.g. constrained results).",
+    )
+    ap.add_argument(
+        "--extra-anytime-csv",
+        type=Path,
+        nargs="*",
+        default=[],
+        help="Additional anytime CSVs to merge.",
+    )
+    ap.add_argument(
+        "--extra-trace-csv",
+        type=Path,
+        nargs="*",
+        default=[],
+        help="Additional trace CSVs to merge.",
+    )
+    ap.add_argument(
         "--n-evals",
         type=int,
         default=0,
@@ -1032,6 +1069,23 @@ def parse_args() -> argparse.Namespace:
     return ap.parse_args()
 
 
+def _merge_csvs(primary: Path, extras: list[Path]) -> Path:
+    """Merge primary CSV with extra CSVs into a temporary combined file."""
+    if not extras:
+        return primary
+    frames = [pd.read_csv(primary)]
+    for p in extras:
+        if p.is_file():
+            frames.append(pd.read_csv(p))
+    if len(frames) == 1:
+        return primary
+    combined = pd.concat(frames, ignore_index=True)
+    out = primary.parent / f"{primary.stem}_combined.csv"
+    combined.to_csv(out, index=False)
+    print(f"  Merged {len(frames)} CSVs -> {out} ({len(combined)} rows)")
+    return out
+
+
 def main() -> None:
     args = parse_args()
     TABLES_DIR.mkdir(parents=True, exist_ok=True)
@@ -1040,8 +1094,13 @@ def main() -> None:
     if not args.ablation_csv.is_file():
         raise FileNotFoundError(f"Missing ablation CSV: {args.ablation_csv}")
 
-    anytime_path = args.anytime_csv if args.anytime_csv.is_file() else None
-    summary = summarize_ablation(args.ablation_csv, n_evals=int(args.n_evals), anytime_csv=anytime_path)
+    # Merge extra CSVs if provided
+    merged_ablation = _merge_csvs(args.ablation_csv, args.extra_csv)
+    merged_anytime = _merge_csvs(args.anytime_csv, args.extra_anytime_csv) if args.anytime_csv.is_file() else args.anytime_csv
+    merged_trace = _merge_csvs(args.trace_csv, args.extra_trace_csv) if args.trace_csv.is_file() else args.trace_csv
+
+    anytime_path = merged_anytime if merged_anytime.is_file() else None
+    summary = summarize_ablation(merged_ablation, n_evals=int(args.n_evals), anytime_csv=anytime_path)
     write_summary_macros(summary, TABLES_DIR / "summary_macros.tex")
 
     # --- Family-level tables ---
@@ -1131,16 +1190,17 @@ def main() -> None:
         plot_anytime_aggregate(anytime_path, out_pdf=FIGURES_DIR / "anytime_hv_aggregate.pdf")
 
     # Operator usage
-    if args.trace_csv.is_file():
-        plot_operator_usage(args.trace_csv, out_pdf=FIGURES_DIR / "aos_operator_usage.pdf")
+    trace_path = merged_trace if merged_trace.is_file() else None
+    if trace_path is not None:
+        plot_operator_usage(trace_path, out_pdf=FIGURES_DIR / "aos_operator_usage.pdf")
         # Pick first available trace problem
-        trace_df = pd.read_csv(args.trace_csv)
+        trace_df = pd.read_csv(trace_path)
         trace_probs = sorted(trace_df["problem"].astype(str).str.lower().unique()) if not trace_df.empty else []
         trace_pick = trace_probs[0] if trace_probs else "cec2009_uf1"
-        plot_reward_evolution(args.trace_csv, out_pdf=FIGURES_DIR / "reward_evolution.pdf", problem=trace_pick)
+        plot_reward_evolution(trace_path, out_pdf=FIGURES_DIR / "reward_evolution.pdf", problem=trace_pick)
         if anytime_path is not None:
             plot_arm_elimination(
-                args.trace_csv, anytime_path,
+                trace_path, anytime_path,
                 out_pdf=FIGURES_DIR / "arm_elimination.pdf",
                 elimination_gen=300,
             )

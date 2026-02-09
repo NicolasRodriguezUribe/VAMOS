@@ -43,17 +43,36 @@ Fialho, {\'A}., Da~Costa, L., Schoenauer, M., Sebag, M.: Analyzing bandit-based
   Intelligence  \textbf{60}(1--2),  25--64 (2010).
   \doi{10.1007/s10472-010-9213-y}
 
+\bibitem{jain2014cdtlz}
+Jain, H., Deb, K.: An evolutionary many-objective optimization algorithm using
+  reference-point based nondominated sorting approach, part {II}: Handling
+  constraints and extending to an adaptive approach. In: IEEE Transactions on
+  Evolutionary Computation. vol.~18, pp. 602--622 (2014).
+  \doi{10.1109/TEVC.2013.2281534}
+
 \bibitem{karafotias2015paramcontrol}
 Karafotias, G., Hoogendoorn, M., Eiben, {\'A}.E.: Parameter control in
   evolutionary algorithms: Trends and challenges. IEEE Transactions on
   Evolutionary Computation  \textbf{19}(2),  167--187 (2015).
   \doi{10.1109/TEVC.2014.2308294}
 
+\bibitem{li2019dcdtlz}
+Li, K., Chen, R., Fu, G., Yao, X.: Two-archive evolutionary algorithm for
+  constrained multiobjective optimization. IEEE Transactions on Evolutionary
+  Computation  \textbf{23}(2),  303--315 (2019).
+  \doi{10.1109/TEVC.2018.2855411}
+
 \bibitem{li2014aos_moea}
 Li, K., Fialho, {\'A}., Kwong, S., Zhang, Q.: Adaptive operator selection with
   bandits for a multiobjective evolutionary algorithm based on decomposition.
   IEEE Transactions on Evolutionary Computation  \textbf{18}(1),  114--130
   (2014). \doi{10.1109/TEVC.2013.2239648}
+
+\bibitem{ma2019mw}
+Ma, Z., Wang, Y.: Evolutionary constrained multiobjective optimization: Test
+  suite construction and performance comparisons. IEEE Transactions on
+  Evolutionary Computation  \textbf{23}(6),  972--986 (2019).
+  \doi{10.1109/TEVC.2019.2896967}
 
 \bibitem{thompson1933ts}
 Thompson, W.R.: On the likelihood that one unknown probability exceeds another

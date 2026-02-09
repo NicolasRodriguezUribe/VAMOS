@@ -1,13 +1,19 @@
 \section{Discussion}
 \label{sec:discussion}
 
-The results demonstrate that AOS with arm elimination provides robust performance gains on challenging landscapes, winning or tying against the fixed baseline on all \AOSNProblems{} problems after statistical correction.
+The results demonstrate that AOS with arm elimination provides robust performance gains across three distinct challenge axes---curved Pareto sets, high dimensionality, and constrained feasible regions---winning or tying against the fixed baseline on all \AOSNProblems{} problems after statistical correction.
 We now analyze the mechanisms behind this robustness, the role of arm elimination, and the trade-offs involved.
 
 \paragraph{Portfolio diversity remains the foundation.}
 The \emph{random arm}---which selects operators uniformly at random from the 5-arm portfolio---achieves the highest raw mean HV (\AOSHVMeanRandom{}), outperforming both AOS (\AOSHVMeanAOS{}) and the baseline (\AOSHVMeanBaseline{}).
 This confirms that operator diversity is the primary driver of improvement on challenging landscapes: having \emph{any} mechanism that deploys alternative operators provides a large benefit over the fixed baseline.
-This is especially pronounced on LSMOP problems, where the 100-variable search space overwhelms a single crossover strategy.
+This is especially pronounced on LSMOP problems (where the 100-variable search space overwhelms a single crossover strategy) and on constrained problems (where the random arm achieves the highest HV on 8 of 13 problems, suggesting that diverse feasibility-seeking strategies are inherently valuable).
+
+\paragraph{Diversity vs.\ selection on constrained problems.}
+On constrained problems, the random arm outperforms AOS on 8 of 13 problems, even though both massively outperform the baseline.
+This reveals a mechanism-specific insight: on constrained landscapes, the search transitions from feasibility-seeking to front-optimization, and different operators may be optimal at each phase.
+Random selection naturally maintains this phase-dependent diversity, while arm elimination---which prunes based on cumulative reward statistics---can remove operators that are currently suboptimal but will become valuable as the feasible region is reached.
+This finding suggests that constraint-aware reward signals or phase-dependent elimination thresholds could further improve AOS on constrained problems, and represents a clear direction for future work.
 
 \paragraph{Arm elimination enables robustness.}
 The key innovation in our approach is adaptive arm elimination, which prunes statistically underperforming operators after 300 generations ($\approx$30{,}000 evaluations).
@@ -16,14 +22,14 @@ Arm elimination resolves this by automatically detecting and removing suboptimal
 
 The effect is dramatic on UF9: without elimination, this was the worst-performing problem for AOS (baseline outperformed AOS by 0.098 in HV); with elimination, AOS \emph{wins} by 0.037.
 UF8 and UF10 shift from substantial losses to near-ties (deltas $<$0.01).
-Across the full benchmark suite, the number of statistically significant losses drops to zero.
+Across the full benchmark suite of \AOSNProblems{} problems, the number of statistically significant losses drops to zero.
 
 \paragraph{The robustness--diversity trade-off.}
 Arm elimination introduces a deliberate trade-off: by pruning operators, AOS sacrifices some of the peak diversity benefit that the random arm exploits freely.
-This is visible in the AOS-vs-random comparison, where AOS significantly loses on \StatLossesRand{} problems---all cases where elimination removed arms that would have contributed positively.
-However, from a practical perspective, the relevant comparison is AOS vs.\ baseline (``should I use AOS or a fixed operator?''), and here the result is unambiguous: \StatWinsBase{} significant wins, zero significant losses.
+This is visible in the AOS-vs-random comparison, where AOS significantly loses on \StatLossesRand{} problems---cases where elimination removed arms that would have contributed positively, particularly on constrained benchmarks.
+However, from a practical perspective, the relevant comparison is AOS vs.\ baseline (``should I use AOS or a fixed operator?''), and here the result is unambiguous: \StatWinsBase{} significant wins, zero significant losses across all \AOSNProblems{} problems.
 
-The random arm, while achieving higher mean HV, suffers from unreliable performance on problems where the baseline excels (its losses on UF8--UF10 are far larger than AOS's near-ties).
+The random arm, while achieving higher mean HV, suffers from unreliable performance on problems where the baseline excels.
 AOS with elimination thus occupies a unique position: it captures most of the portfolio's diversity benefit while providing a robustness guarantee that the random arm cannot.
 
 \paragraph{Intractable LSMOP problems.}
@@ -35,8 +41,8 @@ This represents a genuine limitation of the evaluation budget rather than a fail
 \paragraph{Practical implications.}
 Our results suggest that an AOS layer with arm elimination is a \emph{safe default} for NSGA-II:
 \begin{enumerate}
-  \item It never significantly degrades performance compared to the fixed baseline, even on problems where the baseline operator is well-suited.
-  \item It provides substantial gains (+18\% mean HV) on problems where operator choice matters.
-  \item The arm elimination mechanism requires no problem-specific tuning---the same $z$-threshold and warm-up period work across all 19 problems tested.
+  \item It never significantly degrades performance compared to the fixed baseline across \AOSNProblems{} problems spanning unconstrained, large-scale, and constrained benchmarks.
+  \item It provides substantial gains (+17\% mean HV) on problems where operator choice matters, with particularly large improvements on constrained and high-dimensional landscapes.
+  \item The arm elimination mechanism requires no problem-specific tuning---the same $z$-threshold and warm-up period work across all \AOSNProblems{} problems.
 \end{enumerate}
 For practitioners, this means AOS can be enabled unconditionally without risk: if the default operator happens to be effective, arm elimination will prune the alternatives; if it is not, the diverse portfolio will provide potentially large improvements.

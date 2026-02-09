@@ -132,14 +132,31 @@ LSMOP_PROBLEMS = [
     "lsmop6", "lsmop7", "lsmop8", "lsmop9",
 ]
 
+# --- Constrained MO benchmarks (13 problems, 12-15 vars, 2 obj) ---
+CDTLZ_PROBLEMS = [
+    "c1dtlz1", "c1dtlz3", "c2dtlz2",                              # 2-obj, 12 vars
+]
+DCDTLZ_PROBLEMS = [
+    "dc1dtlz1", "dc1dtlz3", "dc2dtlz1", "dc2dtlz3",              # 2-obj, 12 vars
+]
+MW_PROBLEMS = [
+    "mw1", "mw2", "mw3", "mw5", "mw6", "mw7",                    # 2-obj, 15 vars
+]
+CONSTRAINED_PROBLEMS = [*CDTLZ_PROBLEMS, *DCDTLZ_PROBLEMS, *MW_PROBLEMS]
+
 # --- Challenging suite: problems that stress-test operator choice ---
 CHALLENGING_PROBLEMS = [*UF_PROBLEMS, *LSMOP_PROBLEMS]
+
+# --- Comprehensive suite: challenging + constrained ---
+COMPREHENSIVE_PROBLEMS = [*UF_PROBLEMS, *LSMOP_PROBLEMS, *CONSTRAINED_PROBLEMS]
 
 # --- Suite selection ---
 _SUITES: dict[str, list[str]] = {
     "standard": STANDARD_PROBLEMS,
     "realworld": REALWORLD_PROBLEMS,
     "challenging": CHALLENGING_PROBLEMS,
+    "constrained": CONSTRAINED_PROBLEMS,
+    "comprehensive": COMPREHENSIVE_PROBLEMS,
     "uf": UF_PROBLEMS,
     "lsmop": LSMOP_PROBLEMS,
     "all": [*STANDARD_PROBLEMS, *REALWORLD_PROBLEMS],
@@ -180,6 +197,10 @@ _N_OBJ: dict[str, int] = {
     # LSMOP (large-scale)
     "lsmop1": 2, "lsmop2": 2, "lsmop3": 2, "lsmop4": 2, "lsmop5": 2,
     "lsmop6": 2, "lsmop7": 2, "lsmop8": 2, "lsmop9": 2,
+    # Constrained (C-DTLZ, DC-DTLZ, MW)
+    "c1dtlz1": 2, "c1dtlz3": 2, "c2dtlz2": 2,
+    "dc1dtlz1": 2, "dc1dtlz3": 2, "dc2dtlz1": 2, "dc2dtlz3": 2,
+    "mw1": 2, "mw2": 2, "mw3": 2, "mw5": 2, "mw6": 2, "mw7": 2,
 }
 
 # Group label for paper tables
@@ -195,6 +216,12 @@ def obj_group(problem: str) -> str:
         return "UF"
     if name.startswith("lsmop"):
         return "LSMOP"
+    if name.startswith("c") and "dtlz" in name and not name.startswith("cec"):
+        return "C-DTLZ"
+    if name.startswith("dc") and "dtlz" in name:
+        return "DC-DTLZ"
+    if name.startswith("mw"):
+        return "MW"
     if name.startswith("re"):
         return "RE"
     if name.startswith("rwa"):
@@ -206,7 +233,7 @@ def obj_group(problem: str) -> str:
         return "3-obj"
     return "many-obj"
 
-OBJ_GROUP_ORDER = ("ZDT", "DTLZ", "WFG", "UF", "LSMOP", "RE", "RWA")
+OBJ_GROUP_ORDER = ("ZDT", "DTLZ", "WFG", "UF", "LSMOP", "C-DTLZ", "DC-DTLZ", "MW", "RE", "RWA")
 
 # Problem-specific parameter overrides for make_problem_selection()
 # LSMOP: 2 objectives + 100 variables (default is 3-obj / 300-var).
@@ -214,6 +241,13 @@ OBJ_GROUP_ORDER = ("ZDT", "DTLZ", "WFG", "UF", "LSMOP", "RE", "RWA")
 # operator choice, but tractable within 100 k evaluations.
 _PROBLEM_OVERRIDES: dict[str, dict[str, int]] = {
     **{f"lsmop{i}": {"n_obj": 2, "n_var": 100} for i in range(1, 10)},
+    # C-DTLZ / DC-DTLZ: 12 vars, 2 objectives
+    **{k: {"n_obj": 2, "n_var": 12} for k in [
+        "c1dtlz1", "c1dtlz3", "c2dtlz2",
+        "dc1dtlz1", "dc1dtlz3", "dc2dtlz1", "dc2dtlz3",
+    ]},
+    # MW: 15 vars, 2 objectives
+    **{f"mw{i}": {"n_obj": 2, "n_var": 15} for i in [1, 2, 3, 5, 6, 7]},
 }
 
 def _make_problem_selection(problem_name: str):
@@ -910,8 +944,12 @@ def run_experiment() -> None:
         for v in _parse_csv_list(_as_str_env("VAMOS_MIC_TRACE_VARIANTS", "aos"))
     )
     # Default trace problems: pick 3 representative problems from active suite
-    if any(p.startswith("cec2009_uf") for p in ALL_PROBLEMS):
+    if any(p.startswith("cec2009_uf") for p in ALL_PROBLEMS) and any("dtlz" in p for p in ALL_PROBLEMS if p.startswith(("c1", "c2", "c3", "dc"))):
+        _default_trace = "cec2009_uf1,cec2009_uf9,lsmop3,c2dtlz2,mw3"
+    elif any(p.startswith("cec2009_uf") for p in ALL_PROBLEMS):
         _default_trace = "cec2009_uf1,cec2009_uf9,lsmop3"
+    elif any(p.startswith(("c1dtlz", "c2dtlz", "c3dtlz", "dc")) for p in ALL_PROBLEMS):
+        _default_trace = "c2dtlz2,dc1dtlz1,mw3"
     elif any(p.startswith(("zdt", "dtlz", "wfg")) for p in ALL_PROBLEMS):
         _default_trace = "dtlz1,dtlz6,wfg1"
     else:
