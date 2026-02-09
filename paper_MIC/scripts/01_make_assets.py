@@ -481,6 +481,142 @@ def plot_operator_usage(trace_csv: Path, *, out_pdf: Path, checkpoints: list[int
     plt.close(fig)
 
 
+def plot_arm_elimination(
+    trace_csv: Path,
+    anytime_csv: Path,
+    *,
+    out_pdf: Path,
+    elimination_gen: int = 300,
+) -> None:
+    """Two-row figure showing arm usage evolution and convergence for traced problems.
+
+    Top row: rolling operator selection fractions over generations (with
+    a vertical line marking the elimination point).
+    Bottom row: convergence curves for all three variants.
+    """
+    tdf = pd.read_csv(trace_csv)
+    if tdf.empty:
+        return
+    tdf["variant"] = tdf["variant"].astype(str).str.strip().str.lower()
+    tdf = tdf[tdf["variant"] == "aos"].copy()
+    tdf["problem"] = tdf["problem"].astype(str).str.strip().str.lower()
+    tdf["op_name"] = tdf["op_name"].astype(str).str.strip()
+    tdf["step"] = tdf["step"].astype(int)
+
+    adf = pd.read_csv(anytime_csv)
+    adf["variant"] = adf["variant"].astype(str).str.strip().str.lower()
+    adf["problem"] = adf["problem"].astype(str).str.strip().str.lower()
+
+    problems = sorted(tdf["problem"].unique())
+    if not problems:
+        return
+
+    ops = sorted(tdf["op_name"].unique())
+    colors = plt.cm.tab10(np.linspace(0.0, 1.0, max(len(ops), 1)))
+    color_by_op = {op: colors[i] for i, op in enumerate(ops)}
+
+    variant_style = {
+        "baseline": {"color": "#1f77b4", "linestyle": "-", "linewidth": 2.0},
+        "random": {"color": "#ff7f0e", "linestyle": "--", "linewidth": 1.5},
+        "aos": {"color": "#2ca02c", "linestyle": "-", "linewidth": 2.0},
+    }
+
+    fig, axes = plt.subplots(
+        2, len(problems),
+        figsize=(4.8 * len(problems), 5.5),
+        gridspec_kw={"height_ratios": [1.2, 1.0]},
+    )
+    if len(problems) == 1:
+        axes = axes.reshape(2, 1)
+
+    window = 30  # rolling window for smoothing
+
+    for col, problem in enumerate(problems):
+        ax_top = axes[0, col]
+        ax_bot = axes[1, col]
+
+        # --- Top: arm selection fractions over generations ---
+        pdf = tdf[tdf["problem"] == problem].copy()
+        # Compute per-step selection fractions (averaged across seeds)
+        step_op = (
+            pdf.groupby(["seed", "step", "op_name"], as_index=False)
+            .size()
+            .rename(columns={"size": "count"})
+        )
+        step_total = (
+            step_op.groupby(["seed", "step"], as_index=False)["count"]
+            .sum()
+            .rename(columns={"count": "total"})
+        )
+        step_op = step_op.merge(step_total, on=["seed", "step"], how="left")
+        step_op["frac"] = step_op["count"] / step_op["total"].clip(lower=1)
+
+        # Average across seeds, then smooth
+        avg = (
+            step_op.groupby(["step", "op_name"], as_index=False)
+            .agg(frac=("frac", "mean"))
+        )
+
+        for op in ops:
+            opd = avg[avg["op_name"] == op].sort_values("step")
+            if opd.empty:
+                continue
+            x = opd["step"].to_numpy()
+            y = pd.Series(opd["frac"].to_numpy()).rolling(window, min_periods=1, center=True).mean().to_numpy()
+            ax_top.plot(x, y, color=color_by_op[op], linewidth=1.4, label=op)
+
+        ax_top.axvline(x=elimination_gen, color="red", linestyle=":", linewidth=1.2, alpha=0.8)
+        ax_top.text(
+            elimination_gen + 10, 0.92, "elim.",
+            color="red", fontsize=8, ha="left", va="top",
+            transform=ax_top.get_xaxis_transform(),
+        )
+        ax_top.set_ylim(0, 0.55)
+        ax_top.set_ylabel("Selection fraction" if col == 0 else "")
+        ax_top.set_title(problem.upper().replace("CEC2009_", ""), fontsize=11)
+        ax_top.grid(True, alpha=0.2)
+
+        # --- Bottom: convergence curves ---
+        apf = adf[adf["problem"] == problem]
+        for variant, style in variant_style.items():
+            vd = apf[apf["variant"] == variant]
+            if vd.empty:
+                continue
+            curve = vd.groupby("evals", as_index=False)["hypervolume"].mean().sort_values("evals")
+            ax_bot.plot(
+                curve["evals"].to_numpy(),
+                curve["hypervolume"].to_numpy(),
+                label=variant.capitalize(),
+                **style,
+            )
+
+        ax_bot.axvline(
+            x=elimination_gen * 100,  # gen * pop_size ≈ evals
+            color="red", linestyle=":", linewidth=1.2, alpha=0.8,
+        )
+        ax_bot.set_xlabel("Evaluations")
+        ax_bot.set_ylabel("Mean HV" if col == 0 else "")
+        ax_bot.grid(True, alpha=0.2)
+
+    # Legends
+    handles_top, labels_top = axes[0, 0].get_legend_handles_labels()
+    fig.legend(
+        handles_top, labels_top,
+        loc="upper center", ncol=min(len(ops), 5),
+        frameon=True, fontsize=8, title="Operator arm", title_fontsize=9,
+    )
+    handles_bot, labels_bot = axes[1, 0].get_legend_handles_labels()
+    axes[1, -1].legend(
+        handles_bot, labels_bot,
+        loc="lower right", frameon=True, fontsize=8,
+    )
+
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.91))
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, bbox_inches="tight", dpi=150)
+    plt.close(fig)
+
+
 # ---------------------------------------------------------------------------
 # Summary dataclass
 # ---------------------------------------------------------------------------
@@ -1002,6 +1138,12 @@ def main() -> None:
         trace_probs = sorted(trace_df["problem"].astype(str).str.lower().unique()) if not trace_df.empty else []
         trace_pick = trace_probs[0] if trace_probs else "cec2009_uf1"
         plot_reward_evolution(args.trace_csv, out_pdf=FIGURES_DIR / "reward_evolution.pdf", problem=trace_pick)
+        if anytime_path is not None:
+            plot_arm_elimination(
+                args.trace_csv, anytime_path,
+                out_pdf=FIGURES_DIR / "arm_elimination.pdf",
+                elimination_gen=300,
+            )
 
     print(f"Assets written to {TABLES_DIR} and {FIGURES_DIR}")
 

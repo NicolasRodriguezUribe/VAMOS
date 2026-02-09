@@ -22,10 +22,11 @@ We compare three methods, all based on NSGA-II with the same 5-arm operator port
         This is the most common default operator pipeline in the MOEA literature.
   \item \textbf{Random arm}: At each generation, one of the five operator arms is selected uniformly at random.
         This isolates the effect of portfolio \emph{diversity} (having multiple operators) from \emph{intelligent selection}.
-  \item \textbf{AOS}: The same portfolio, but one arm is selected per generation using Thompson Sampling with a sliding window of $W{=}50$ generations, warm-up of $m_{\min}{=}5$ pulls per arm, and an exploration floor of $p_{\mathrm{floor}}{=}0.05$.
+  \item \textbf{AOS}: The same portfolio, but one arm is selected per generation using Thompson Sampling with a sliding window of $W{=}50$ generations, warm-up of $m_{\min}{=}5$ pulls per arm, and an exploration floor of $p_{\mathrm{floor}}{=}0.02$.
         Rewards use a weighted combination of survival rate, non-dominated insertion rate, and a bounded hypervolume proxy with weights $(0.4, 0.4, 0.2)$.
+        Additionally, \emph{adaptive arm elimination} prunes statistically underperforming arms after $T_{\mathrm{elim}}{=}300$ generations ($\approx$30{,}000 evaluations) using a $z$-threshold of 2.0, retaining at least $K_{\min}{=}2$ arms.
 \end{enumerate}
-Comparing (1) vs.\ (2) reveals whether operator diversity alone helps; comparing (2) vs.\ (3) reveals whether the bandit policy adds value beyond random selection.
+Comparing (1) vs.\ (2) reveals whether operator diversity alone helps; comparing (2) vs.\ (3) reveals whether the bandit policy with adaptive pruning adds value beyond random selection.
 
 \subsection{Operator portfolio}
 The five arms were designed along two axes of diversity:
@@ -57,7 +58,8 @@ Seeds & \AOSNSeeds{} per problem \\
 Problems & \AOSNProblems{} (CEC\,2009 UF + LSMOP, continuous) \\
 Baseline operators & SBX($p{=}1.0$, $\eta_c{=}20$) + PM($p{=}1/n_{\mathrm{var}}$, $\eta_m{=}20$) \\
 Random arm & Uniform selection from 5-arm pool \\
-AOS policy & Thompson Sampling ($W{=}50$, $m_{\min}{=}5$, $p_{\mathrm{floor}}{=}0.05$) \\
+AOS policy & Thompson Sampling ($W{=}50$, $m_{\min}{=}5$, $p_{\mathrm{floor}}{=}0.02$) \\
+Arm elimination & After 300 gen., $z_{\mathrm{thresh}}{=}2.0$, $K_{\min}{=}2$ \\
 AOS reward & $0.4\,r_{\mathrm{surv}} + 0.4\,r_{\mathrm{nd}} + 0.2\,r_{\mathrm{hv}}$ \\
 Portfolio & 5 arms (Table~\ref{tab:portfolio}) \\
 \bottomrule

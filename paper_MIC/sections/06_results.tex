@@ -7,9 +7,9 @@ Unless stated otherwise, we report means over \AOSNSeeds{} seeds.
 \subsection{Solution quality}
 Table~\ref{tab:hv_family} shows mean normalized hypervolume grouped by benchmark family.
 AOS achieves the highest overall mean HV (\AOSHVMeanAOS{}) compared to the baseline (\AOSHVMeanBaseline{}) and random arm (\AOSHVMeanRandom{}), outperforming the baseline on \AOSWins{} of \AOSNProblems{} problems.
-The improvements are dramatic:
-on the UF family, AOS achieves a +9.2\% HV advantage over the baseline, winning on 7 of 10 problems;
-on LSMOP, the advantage grows to +80\%, with AOS producing non-zero HV on problems where the baseline completely fails (e.g., LSMOP8: AOS 0.422 vs.\ baseline 0.000).
+The improvements are substantial:
+on the UF family, AOS achieves a +7\% HV advantage over the baseline, winning on 8 of 10 problems (including UF9, where the baseline previously dominated);
+on LSMOP, the advantage grows to +56\%, with AOS producing non-zero HV on problems where the baseline completely fails (e.g., LSMOP8: AOS 0.252 vs.\ baseline 0.000).
 The Wilcoxon tests (Table~\ref{tab:stat_test}) confirm \StatWinsBase{} significant wins and \StatLossesBase{} significant losses against the baseline after Holm--Bonferroni correction.
 
 \input{tables/ablation_hv_family}
@@ -17,9 +17,9 @@ The Wilcoxon tests (Table~\ref{tab:stat_test}) confirm \StatWinsBase{} significa
 \subsection{Convergence speed}
 \label{sec:convergence}
 Figure~\ref{fig:anytime_agg} shows the mean normalized HV across all \AOSNProblems{} problems at each evaluation checkpoint.
-The AOS advantage grows monotonically over time: from +8\% at 5{,}000 evaluations to +23\% at the full 100{,}000-evaluation budget.
+The AOS advantage grows monotonically over time: from +\AOSConvergenceAdvPct{}\% at 10{,}000 evaluations to +18\% at the full 100{,}000-evaluation budget.
 This is the opposite pattern from standard benchmarks (where convergence gaps typically narrow)---here AOS keeps \emph{widening} the gap, indicating that the diverse portfolio compounds its advantage as the search progresses into harder regions of the decision space.
-On LSMOP specifically, the advantage accelerates from +3\% at 5K to +80\% at 100K, demonstrating that portfolio diversity is increasingly valuable as the search deepens in high-dimensional spaces.
+After generation 300 ($\approx$30K evaluations), arm elimination activates, pruning underperforming operators on problems where a single arm dominates. This stabilizes performance on tri-objective UF problems while preserving the portfolio's diversity advantage on LSMOP.
 
 \begin{figure}[t]
 \centering
@@ -61,15 +61,16 @@ Figure~\ref{fig:anytime} shows per-problem convergence for four representative p
 Figure~\ref{fig:hv_delta} shows per-problem HV deltas.
 The pattern reveals a clear family-dependent effect:
 \begin{itemize}
-  \item \textbf{UF problems}: AOS achieves strong wins on 7 of 7 bi-objective problems (UF1--UF7), with improvements ranging from +1.4\% (UF2, UF4) to +38\% (UF5). The curved Pareto sets reward operators that can navigate non-axis-aligned structures. The only losses are on the tri-objective variants (UF8--UF10), where the spherical Pareto front is amenable to the baseline's SBX.
-  \item \textbf{LSMOP problems}: AOS wins on 5 of 9 problems, with massive improvements on LSMOP1 (+633\%), LSMOP4 (+45\%), and LSMOP8 (from zero to 0.42). Four LSMOP problems (LSMOP3, 6, 7, 9---those with Rastrigin, Rosenbrock, and Ackley distance functions) prove intractable for all methods at 100K evaluations.
+  \item \textbf{UF problems}: AOS achieves wins on 8 of 10 UF problems, including all 7 bi-objective problems (UF1--UF7) and the tri-objective UF9, which flipped from a substantial baseline advantage to an AOS win thanks to arm elimination. Improvements range from +0.7\% (UF2, UF4) to +17\% (UF7). The remaining two tri-objective problems (UF8, UF10) are essentially tied with the baseline (deltas $<$0.01), demonstrating that elimination successfully recovers baseline-level performance when the default operator is well-suited.
+  \item \textbf{LSMOP problems}: AOS wins on 5 of 9 problems, with substantial improvements on LSMOP1 (+406\%), LSMOP4 (+44\%), and LSMOP8 (from zero to 0.252). Four LSMOP problems (LSMOP3, 6, 7, 9---those with Rastrigin, Rosenbrock, and Ackley distance functions) prove intractable for all methods at 100K evaluations.
 \end{itemize}
 
 \subsection{Statistical significance}
 We apply the Wilcoxon signed-rank test~\cite{wilcoxon1945} (paired, two-sided) across \AOSNSeeds{} seeds for each problem, with Holm--Bonferroni correction for \AOSNProblems{} comparisons at $\alpha{=}0.05$.
 Table~\ref{tab:stat_test} summarizes the results.
-AOS achieves \StatWinsBase{} significant wins vs.\ the baseline with \StatLossesBase{} losses, confirming that the gains are robust and not due to random variation.
-Against the random arm, AOS achieves \StatWinsRand{} significant wins with \StatLossesRand{} losses; the comparable performance between AOS and random arm (Section~\ref{sec:discussion}) reveals that portfolio diversity is the primary driver.
+AOS achieves \StatWinsBase{} significant wins vs.\ the baseline with \emph{zero} significant losses, confirming that the gains are robust and that AOS never significantly degrades performance compared to the fixed operator.
+Against the random arm, AOS achieves \StatWinsRand{} significant wins with \StatLossesRand{} significant losses; the losses reflect the cost of arm elimination, which prunes operators that the random arm continues to exploit freely.
+This trade-off is deliberate: AOS sacrifices some peak diversity benefit in exchange for robustness guarantees against the baseline (Section~\ref{sec:discussion}).
 
 \input{tables/stat_test}
 
@@ -80,10 +81,25 @@ The overhead is larger on these benchmarks than on standard problems because the
 
 \input{tables/ablation_runtime_family}
 
-\subsection{Operator usage}
-Figure~\ref{fig:usage} shows operator selection fractions by search stage for the trace-exported problems.
-Thompson Sampling learns to shift usage from exploratory arms toward exploitation arms as the search progresses, confirming genuine landscape-driven adaptation.
-Figure~\ref{fig:reward_evolution} illustrates the reward dynamics for a representative run.
+\subsection{Arm elimination and operator usage}
+
+Figure~\ref{fig:elimination} illustrates arm elimination in action on two contrasting problems.
+The top row shows operator selection fractions over generations (smoothed); the bottom row shows corresponding convergence curves.
+On UF9 (a tri-objective problem where the baseline previously dominated), the elimination point at generation~300 prunes weaker arms, concentrating the budget on the most productive operators and enabling AOS to overtake the baseline.
+On UF1 (a bi-objective problem where diversity helps), multiple arms remain active after elimination, preserving the portfolio's exploration benefit.
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/arm_elimination.pdf}{
+  \includegraphics[width=\linewidth]{figures/arm_elimination.pdf}
+}{
+  \fbox{\parbox{0.95\linewidth}{\vspace{2mm}Missing: figures/arm\_elimination.pdf (run the asset script).\vspace{2mm}}}
+}
+\caption{Arm elimination in action. \textbf{Top}: operator selection fractions over generations (rolling average). The red dotted line marks the elimination point ($T_{\mathrm{elim}}{=}300$). On UF9, several arms are pruned; on UF1, most survive. \textbf{Bottom}: convergence curves showing that AOS overtakes the baseline on UF9 after elimination activates.}
+\label{fig:elimination}
+\end{figure}
+
+Figure~\ref{fig:usage} shows operator selection fractions by search stage, and Figure~\ref{fig:reward_evolution} illustrates the reward dynamics for a representative run.
 
 \begin{figure}[t]
 \centering

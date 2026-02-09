@@ -27,13 +27,16 @@ def _argmax(values: list[float]) -> int:
     return best_idx
 
 
-def _select_min_usage(counts: list[int], min_usage: int) -> int | None:
+def _select_min_usage(counts: list[int], min_usage: int, excluded: set[int] | None = None) -> int | None:
     if min_usage <= 0:
         return None
-    min_count = min(counts)
+    active = [(idx, c) for idx, c in enumerate(counts) if excluded is None or idx not in excluded]
+    if not active:
+        return None
+    min_count = min(c for _, c in active)
     if min_count >= min_usage:
         return None
-    for idx, count in enumerate(counts):
+    for idx, count in active:
         if count == min_count:
             return idx
     return None
@@ -44,7 +47,7 @@ class OperatorBanditPolicy(Protocol):
     Protocol for AOS bandit policies.
     """
 
-    def select_arm(self) -> int: ...
+    def select_arm(self, excluded: set[int] | None = None) -> int: ...
 
     def update(self, arm_index: int, reward: float) -> None: ...
 
@@ -67,8 +70,8 @@ class UCBPolicy:
         self._counts = [0] * self.n_arms
         self._values = [0.0] * self.n_arms
 
-    def select_arm(self) -> int:
-        warm = _select_min_usage(self._counts, self.min_usage)
+    def select_arm(self, excluded: set[int] | None = None) -> int:
+        warm = _select_min_usage(self._counts, self.min_usage, excluded)
         if warm is not None:
             return warm
         total = sum(self._counts)
@@ -78,6 +81,8 @@ class UCBPolicy:
         best_idx = 0
         best_score = float("-inf")
         for idx in range(self.n_arms):
+            if excluded and idx in excluded:
+                continue
             count = self._counts[idx]
             if count <= 0:
                 return idx
@@ -136,13 +141,17 @@ class EpsGreedyPolicy:
         self._counts = [0] * self.n_arms
         self._values = [0.0] * self.n_arms
 
-    def select_arm(self) -> int:
-        warm = _select_min_usage(self._counts, self.min_usage)
+    def select_arm(self, excluded: set[int] | None = None) -> int:
+        warm = _select_min_usage(self._counts, self.min_usage, excluded)
         if warm is not None:
             return warm
-        if self._rng.random() < self.epsilon:
+        active = [i for i in range(self.n_arms) if not excluded or i not in excluded]
+        if not active:
             return self._rng.randrange(self.n_arms)
-        return _argmax(self._values)
+        if self._rng.random() < self.epsilon:
+            return self._rng.choice(active)
+        active_values = [(i, self._values[i]) for i in active]
+        return max(active_values, key=lambda x: x[1])[0]
 
     def update(self, arm_index: int, reward: float) -> None:
         reward = _clamp01(reward)
@@ -189,8 +198,19 @@ class EXP3Policy:
             return [1.0 / self.n_arms] * self.n_arms
         return [p / total_p for p in probs]
 
-    def select_arm(self) -> int:
+    def select_arm(self, excluded: set[int] | None = None) -> int:
         probs = self.probs()
+        if excluded:
+            for idx in excluded:
+                probs[idx] = 0.0
+            total = sum(probs)
+            if total > 0:
+                probs = [p / total for p in probs]
+            else:
+                active = [i for i in range(self.n_arms) if i not in excluded]
+                probs = [0.0] * self.n_arms
+                for i in active:
+                    probs[i] = 1.0 / len(active)
         draw = self._rng.random()
         accum = 0.0
         for idx, prob in enumerate(probs):
@@ -261,21 +281,25 @@ class ThompsonSamplingPolicy:
         beta = 1.0 + sum(1.0 - r for r in rewards)
         return alpha, beta
 
-    def select_arm(self) -> int:
+    def select_arm(self, excluded: set[int] | None = None) -> int:
         # Warm-up phase
-        warm = _select_min_usage(self._counts, self.min_usage)
+        warm = _select_min_usage(self._counts, self.min_usage, excluded)
         if warm is not None:
             return warm
 
-        # Sample from Beta distribution for each arm
-        samples = []
+        # Sample from Beta distribution for each active arm
+        best_idx = 0
+        best_sample = float("-inf")
         for idx in range(self.n_arms):
+            if excluded and idx in excluded:
+                continue
             alpha, beta = self._get_alpha_beta(idx)
-            # Use inverse transform sampling approximation for Beta
             sample = self._sample_beta(alpha, beta)
-            samples.append(sample)
+            if sample > best_sample:
+                best_sample = sample
+                best_idx = idx
 
-        return _argmax(samples)
+        return best_idx
 
     def _sample_beta(self, alpha: float, beta: float) -> float:
         """Sample from Beta(alpha, beta) using random.betavariate."""
@@ -344,12 +368,12 @@ class SlidingWindowUCBPolicy:
         rewards = self._reward_history[arm_index]
         return min(len(rewards), self.window_size)
 
-    def select_arm(self) -> int:
-        warm = _select_min_usage(self._counts, self.min_usage)
+    def select_arm(self, excluded: set[int] | None = None) -> int:
+        warm = _select_min_usage(self._counts, self.min_usage, excluded)
         if warm is not None:
             return warm
 
-        total = sum(self._windowed_count(i) for i in range(self.n_arms))
+        total = sum(self._windowed_count(i) for i in range(self.n_arms) if not excluded or i not in excluded)
         if total <= 0:
             return 0
 
@@ -358,6 +382,8 @@ class SlidingWindowUCBPolicy:
         best_score = float("-inf")
 
         for idx in range(self.n_arms):
+            if excluded and idx in excluded:
+                continue
             w_count = self._windowed_count(idx)
             if w_count <= 0:
                 return idx
