@@ -18,15 +18,30 @@ CEC2009_CF1 = None
 CEC2009_UF1 = None
 CEC2009_UF2 = None
 CEC2009_UF3 = None
+CEC2009_UF4 = None
+CEC2009_UF5 = None
+CEC2009_UF6 = None
+CEC2009_UF7 = None
+CEC2009_UF8 = None
+CEC2009_UF9 = None
+CEC2009_UF10 = None
 
 from .cec2009 import CEC2009_CF1 as _FallbackCF1
 from .cec2009 import CEC2009_UF1 as _FallbackUF1
 from .cec2009 import CEC2009_UF2 as _FallbackUF2
 from .cec2009 import CEC2009_UF3 as _FallbackUF3
+from .cec2009 import CEC2009_UF4 as _FallbackUF4
+from .cec2009 import CEC2009_UF5 as _FallbackUF5
+from .cec2009 import CEC2009_UF6 as _FallbackUF6
+from .cec2009 import CEC2009_UF7 as _FallbackUF7
+from .cec2009 import CEC2009_UF8 as _FallbackUF8
+from .cec2009 import CEC2009_UF9 as _FallbackUF9
+from .cec2009 import CEC2009_UF10 as _FallbackUF10
 
 
 def _load_pymoo() -> None:
     global CEC2009_CF1, CEC2009_UF1, CEC2009_UF2, CEC2009_UF3
+    global CEC2009_UF4, CEC2009_UF5, CEC2009_UF6, CEC2009_UF7, CEC2009_UF8, CEC2009_UF9, CEC2009_UF10
     if CEC2009_UF1 is not None:
         return
     try:  # pragma: no cover - only executed when pymoo is available
@@ -35,6 +50,13 @@ def _load_pymoo() -> None:
             CEC2009_UF1 as _CEC2009_UF1,
             CEC2009_UF2 as _CEC2009_UF2,
             CEC2009_UF3 as _CEC2009_UF3,
+            CEC2009_UF4 as _CEC2009_UF4,
+            CEC2009_UF5 as _CEC2009_UF5,
+            CEC2009_UF6 as _CEC2009_UF6,
+            CEC2009_UF7 as _CEC2009_UF7,
+            CEC2009_UF8 as _CEC2009_UF8,
+            CEC2009_UF9 as _CEC2009_UF9,
+            CEC2009_UF10 as _CEC2009_UF10,
         )
     except ImportError:  # pragma: no cover
         return
@@ -42,6 +64,13 @@ def _load_pymoo() -> None:
     CEC2009_UF1 = _CEC2009_UF1
     CEC2009_UF2 = _CEC2009_UF2
     CEC2009_UF3 = _CEC2009_UF3
+    CEC2009_UF4 = _CEC2009_UF4
+    CEC2009_UF5 = _CEC2009_UF5
+    CEC2009_UF6 = _CEC2009_UF6
+    CEC2009_UF7 = _CEC2009_UF7
+    CEC2009_UF8 = _CEC2009_UF8
+    CEC2009_UF9 = _CEC2009_UF9
+    CEC2009_UF10 = _CEC2009_UF10
 
 
 def _require_pymoo() -> None:
@@ -98,6 +127,48 @@ class CEC2009UF3Problem(_BaseCEC2009):
         super().__init__(CEC2009_UF3, _FallbackUF3, n_var=n_var)
 
 
+class CEC2009UF4Problem(_BaseCEC2009):
+    def __init__(self, n_var: int = 30) -> None:
+        _load_pymoo()
+        super().__init__(CEC2009_UF4, _FallbackUF4, n_var=n_var)
+
+
+class CEC2009UF5Problem(_BaseCEC2009):
+    def __init__(self, n_var: int = 30) -> None:
+        _load_pymoo()
+        super().__init__(CEC2009_UF5, _FallbackUF5, n_var=n_var)
+
+
+class CEC2009UF6Problem(_BaseCEC2009):
+    def __init__(self, n_var: int = 30) -> None:
+        _load_pymoo()
+        super().__init__(CEC2009_UF6, _FallbackUF6, n_var=n_var)
+
+
+class CEC2009UF7Problem(_BaseCEC2009):
+    def __init__(self, n_var: int = 30) -> None:
+        _load_pymoo()
+        super().__init__(CEC2009_UF7, _FallbackUF7, n_var=n_var)
+
+
+class CEC2009UF8Problem(_BaseCEC2009):
+    def __init__(self, n_var: int = 30) -> None:
+        _load_pymoo()
+        super().__init__(CEC2009_UF8, _FallbackUF8, n_var=n_var)
+
+
+class CEC2009UF9Problem(_BaseCEC2009):
+    def __init__(self, n_var: int = 30) -> None:
+        _load_pymoo()
+        super().__init__(CEC2009_UF9, _FallbackUF9, n_var=n_var)
+
+
+class CEC2009UF10Problem(_BaseCEC2009):
+    def __init__(self, n_var: int = 30) -> None:
+        _load_pymoo()
+        super().__init__(CEC2009_UF10, _FallbackUF10, n_var=n_var)
+
+
 class CEC2009CF1Problem(_BaseCEC2009):
     def __init__(self, n_var: int = 30) -> None:
         _load_pymoo()
@@ -113,6 +184,13 @@ __all__ = [
     "CEC2009UF1Problem",
     "CEC2009UF2Problem",
     "CEC2009UF3Problem",
+    "CEC2009UF4Problem",
+    "CEC2009UF5Problem",
+    "CEC2009UF6Problem",
+    "CEC2009UF7Problem",
+    "CEC2009UF8Problem",
+    "CEC2009UF9Problem",
+    "CEC2009UF10Problem",
     "CEC2009CF1Problem",
     "has_cec2009",
 ]

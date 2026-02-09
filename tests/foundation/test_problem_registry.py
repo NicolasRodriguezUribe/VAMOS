@@ -26,6 +26,20 @@ def test_problem_selection_dtlz56_defaults(name: str):
     assert selection.n_obj == 3
 
 
+@pytest.mark.parametrize("name", ["lsmop1", "lsmop9"])
+def test_problem_selection_lsmop_defaults(name: str):
+    selection = make_problem_selection(name)
+    assert selection.n_var == 300
+    assert selection.n_obj == 3
+
+
+@pytest.mark.parametrize("name", ["c1dtlz1", "dc2dtlz3", "mw1"])
+def test_problem_selection_constrained_many_defaults(name: str):
+    selection = make_problem_selection(name)
+    assert selection.n_var > 0
+    assert selection.n_obj >= 2
+
+
 def test_tsplib_selection_encoding():
     selection = make_problem_selection("kroa100")
     assert selection.n_var == 100
