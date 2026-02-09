@@ -139,35 +139,39 @@ A safety constraint ensures that at least $K_{\min}$ arms remain active.
 This mechanism is specifically designed to handle the robustness--diversity trade-off: on problems where multiple operators contribute (e.g., high-dimensional LSMOP), reward differences are small and few or no arms are eliminated; on problems where a single operator dominates (e.g., tri-objective UF with spherical fronts), weaker arms are pruned early, concentrating the budget on productive operators.
 
 \begin{algorithm}[t]
-\caption{NSGA-II with generation-level AOS.}
+\DontPrintSemicolon
+\small
+\KwIn{Portfolio $\mathcal{A}=\{1,\dots,K\}$; policy $\pi$; pop.\ size $N$; weights $w_{\mathrm{surv}}, w_{\mathrm{nd}}, w_{\mathrm{hv}}$; floor $p_{\mathrm{floor}}$; warmup $m_{\min}$; budget $B$}
+\KwOut{Final population $P$}
+$P_0 \gets \mathtt{InitPopulation}(N)$\; \label{alg:aos:init}
+$c_k \gets 0$ \textbf{for all} $k \in \mathcal{A}$\; \label{alg:aos:counts}
+\For{$t = 1$ \KwTo $\lfloor B/N \rfloor$}{ \label{alg:aos:for}
+    \tcc{Arm selection (warmup $\to$ floor $\to$ policy)}
+    \uIf{$\exists\, k \in \mathcal{A}$ \textbf{with} $c_k < m_{\min}$}{ \label{alg:aos:warmup}
+        $a_t \gets \arg\min_k c_k$\;
+    }
+    \uElseIf{$\mathtt{Uniform}(0,1) < p_{\mathrm{floor}}$}{ \label{alg:aos:floor}
+        $a_t \gets \mathtt{Uniform}(\mathcal{A})$\;
+    }
+    \Else{ \label{alg:aos:policy}
+        $a_t \gets \pi.\mathtt{select}()$\;
+    }
+    $c_{a_t} \gets c_{a_t} + 1$\; \label{alg:aos:count}
+    \tcc{Variation and survival}
+    $O_t \gets \mathtt{Vary}(P_{t-1},\, \mathcal{A}[a_t])$\; \label{alg:aos:vary}
+    $P_t \gets \mathtt{Survive}(P_{t-1} \cup O_t,\, N)$\; \label{alg:aos:survive}
+    $n_{\mathrm{surv}} \gets |O_t \cap P_t|$\; \label{alg:aos:nsurv}
+    $n_{\mathrm{nd}} \gets |\{x \in O_t \cap P_t : x \text{ non-dom.\ in } P_t\}|$\; \label{alg:aos:nnd}
+    \tcc{Reward computation}
+    $r_{\mathrm{surv}} \gets n_{\mathrm{surv}} \,/\, |O_t|$\; \label{alg:aos:rsurv}
+    $r_{\mathrm{nd}} \gets n_{\mathrm{nd}} \,/\, |O_t|$\;
+    $\rho_t \gets (\mathtt{HV}(P_t) - \mathtt{HV}(P_{t-1})) \,/\, \max(|\mathtt{HV}(P_{t-1})|,\, \epsilon)$\; \label{alg:aos:rho}
+    $r_{\mathrm{hv}} \gets 0.5 + 0.5\,\tanh(\rho_t)$\;
+    $r_t \gets w_{\mathrm{surv}}\, r_{\mathrm{surv}} + w_{\mathrm{nd}}\, r_{\mathrm{nd}} + w_{\mathrm{hv}}\, r_{\mathrm{hv}}$\; \label{alg:aos:reward}
+    \tcc{Policy update}
+    $\pi.\mathtt{update}(a_t,\, r_t)$\; \label{alg:aos:update}
+}
+\Return{$P_{\lfloor B/N \rfloor}$}\; \label{alg:aos:return}
+\caption{\sc NSGA-II with generation-level AOS}
 \label{alg:nsgaii_aos}
-\begin{algorithmic}[1]
-\Require Portfolio $\mathcal{A}=\{1,\dots,K\}$; policy $\pi$; pop.\ size $N$; weights $w_{\mathrm{surv}}, w_{\mathrm{nd}}, w_{\mathrm{hv}}$; floor $p_{\mathrm{floor}}$; warmup $m_{\min}$; budget $B$
-\Ensure Final population $P$
-\State Initialize population $P_0$ of size $N$; set pull counts $c_k \gets 0$ for all $k \in \mathcal{A}$
-\For{$t = 1, 2, \dots, \lfloor B/N \rfloor$}
-  \Statex \hspace{\algorithmicindent}\textit{--- Stage 2: Arm selection (warmup $\to$ floor $\to$ policy) ---}
-  \If{$\exists\, k \in \mathcal{A}$ with $c_k < m_{\min}$} \Comment{Warmup}
-    \State $a_t \gets \arg\min_k c_k$ \hfill (break ties uniformly)
-  \ElsIf{$U(0,1) < p_{\mathrm{floor}}$} \Comment{Exploration floor}
-    \State $a_t \gets \mathrm{Uniform}(\mathcal{A})$
-  \Else \Comment{Policy exploitation}
-    \State $a_t \gets \pi.\mathrm{select}()$ \hfill ($\varepsilon$-greedy / UCB / EXP3 / TS)
-  \EndIf
-  \State $c_{a_t} \gets c_{a_t} + 1$
-  \Statex \hspace{\algorithmicindent}\textit{--- Stage 3: Variation and survival ---}
-  \State $O_t \gets \mathrm{Vary}(P_{t-1},\; \mathcal{A}[a_t])$ \Comment{Crossover + mutation, $|O_t|=n_{\mathrm{off}}$}
-  \State $P_t \gets \mathrm{NSGA\text{-}II\_Survive}(P_{t-1} \cup O_t,\; N)$
-  \State $n_{\mathrm{surv}} \gets |O_t \cap P_t|$ ;\; $n_{\mathrm{nd}} \gets |\{x \in O_t \cap P_t : x \text{ is non-dominated in } P_t\}|$
-  \Statex \hspace{\algorithmicindent}\textit{--- Stage 4: Reward computation ---}
-  \State $r_{\mathrm{surv}} \gets n_{\mathrm{surv}} / n_{\mathrm{off}}$ ;\;
-         $r_{\mathrm{nd}} \gets n_{\mathrm{nd}} / n_{\mathrm{off}}$
-  \State $\rho_t \gets (\mathrm{HV}(P_t) - \mathrm{HV}(P_{t-1})) \;/\; \max(|\mathrm{HV}(P_{t-1})|,\epsilon)$
-  \State $r_{\mathrm{hv}} \gets 0.5 + 0.5\,\tanh(\rho_t)$
-  \State $r_t \gets w_{\mathrm{surv}}\, r_{\mathrm{surv}} + w_{\mathrm{nd}}\, r_{\mathrm{nd}} + w_{\mathrm{hv}}\, r_{\mathrm{hv}}$
-  \Statex \hspace{\algorithmicindent}\textit{--- Stage 5: Policy update ---}
-  \State $\pi.\mathrm{update}(a_t,\; r_t)$
-\EndFor
-\State \Return $P_{\lfloor B/N \rfloor}$
-\end{algorithmic}
 \end{algorithm}
