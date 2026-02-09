@@ -4,14 +4,15 @@
 We presented a Thompson Sampling-based adaptive operator selection layer for NSGA-II that combines generation-level operator selection with adaptive arm elimination.
 The arm elimination mechanism statistically prunes underperforming operators after an initial learning phase, automatically balancing portfolio diversity against the cost of exploring suboptimal arms.
 
-Evaluated on \AOSNProblems{} challenging benchmarks from the CEC\,2009 UF and LSMOP families, AOS achieves two main results:
-(i)~a +18\% higher mean normalized HV than the fixed baseline, with \StatWinsBase{} statistically significant wins and \emph{zero} significant losses---establishing AOS as a safe, unconditional default for NSGA-II; and
+Evaluated on \AOSNProblems{} benchmarks spanning three challenge axes---curved Pareto sets (CEC\,2009 UF), high dimensionality (LSMOP), and constrained feasible regions (C-DTLZ, DC-DTLZ, MW)---AOS achieves two main results:
+(i)~a +17\% higher mean normalized HV than the fixed baseline, with \StatWinsBase{} statistically significant wins and \emph{zero} significant losses across all \AOSNProblems{} problems---establishing AOS as a safe, unconditional default for NSGA-II; and
 (ii)~an accelerating convergence advantage that grows over time, demonstrating that portfolio diversity compounds its benefit on challenging landscapes.
-The arm elimination mechanism is critical to this robustness: without it, the tri-objective UF problems (UF8--UF10) exhibit substantial losses where the baseline operator is well-suited; with elimination, these losses vanish (UF9 even flips to a win).
+The arm elimination mechanism is critical to this robustness: without it, the tri-objective UF problems exhibit substantial losses; with elimination, these losses vanish.
 
-These findings highlight two complementary insights.
-First, operator portfolio diversity is the primary driver of improvement on problems with curved Pareto sets or high dimensionality---even random operator switching substantially outperforms a fixed pipeline.
+These findings highlight three complementary insights.
+First, operator portfolio diversity is the primary driver of improvement across all problem types---even random operator switching substantially outperforms a fixed pipeline.
 Second, adaptive arm elimination resolves the fragility of diverse portfolios on problems where the default operator is already effective, enabling AOS to be deployed without problem-specific tuning.
+Third, on constrained problems, diversity alone is the dominant factor: the random arm outperforms AOS on most constrained benchmarks, suggesting that constraint-aware reward signals could further improve adaptive selection.
 
-Future work includes extending the portfolio with additional structural operators (e.g., adaptive DE variants), testing on constrained multiobjective problems where feasibility boundaries create additional operator-choice pressure, scaling to many-objective problems with reward signals beyond hypervolume, and developing cost-aware bandit policies that account for per-arm computational overhead.
+Future work includes developing constraint-aware bandit policies that adapt reward signals to the feasibility-seeking phase, extending the portfolio with adaptive DE variants, scaling to many-objective problems with reward signals beyond hypervolume, and developing cost-aware policies that account for per-arm computational overhead.
 
