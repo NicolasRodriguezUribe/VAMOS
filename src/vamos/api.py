@@ -28,10 +28,16 @@ from vamos.experiment.unified import optimize
 
 
 def configure_logging(*, level: int = logging.INFO) -> None:
-    """
-    Configure a minimal console logger for VAMOS.
+    """Configure a minimal console logger for VAMOS.
 
-    This is intentionally opt-in (library code must not call logging.basicConfig()).
+    Attaches a ``StreamHandler`` to the ``"vamos"`` logger if no handlers
+    are already present.  This is intentionally opt-in: library code
+    must never call ``logging.basicConfig()``.
+
+    Parameters
+    ----------
+    level : int, default ``logging.INFO``
+        Logging level for the ``"vamos"`` logger.
     """
     configure_vamos_logging(level=level)
 

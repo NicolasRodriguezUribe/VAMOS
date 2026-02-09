@@ -54,7 +54,7 @@ class ConsoleObserver(Observer):
             off_s = ctx.config.offspring_size()
             _logger().info("Offspring population size: %s", off_s)
         except Exception:
-            pass
+            _logger().debug("Could not retrieve offspring size from config", exc_info=True)
 
         _logger().info("Max evaluations: %s", max_evals)
         _logger().info("%s", "-" * 80)

@@ -116,11 +116,11 @@ def _safe_call_provider(provider: Any, generation: int, state: Any) -> Any:
     try:
         return provider(generation, state)
     except TypeError:
-        pass
+        _logger().debug("Could not call provider with (generation, state) signature", exc_info=True)
     try:
         return provider(generation)
     except TypeError:
-        pass
+        _logger().debug("Could not call provider with (generation) signature", exc_info=True)
     return provider()
 
 

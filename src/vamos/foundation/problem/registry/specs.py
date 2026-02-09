@@ -50,6 +50,14 @@ def get_problem_specs() -> dict[str, ProblemSpec]:
 
 
 def available_problem_names() -> tuple[str, ...]:
+    """Return the sorted names of all registered benchmark problems.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Problem keys that can be passed to ``optimize()`` or
+        ``make_problem_selection()``.
+    """
     return tuple(get_problem_specs().keys())
 
 

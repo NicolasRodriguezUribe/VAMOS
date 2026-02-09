@@ -132,7 +132,7 @@ def run_profile(
 
                     hv = compute_hypervolume(result.F, ref_point)
                 except Exception:
-                    pass
+                    _logger().debug("Failed to compute hypervolume for engine %s", engine, exc_info=True)
 
             report.results.append(ProfileResult(engine=engine, time_seconds=elapsed, n_solutions=n_solutions, hypervolume=hv))
 

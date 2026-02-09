@@ -48,6 +48,31 @@ def _format_unknown_problem(name: str, options: list[str]) -> str:
 
 
 def make_problem_selection(key: str, *, n_var: int | None = None, n_obj: int | None = None) -> ProblemSelection:
+    """Look up a registered problem by *key* and resolve its dimensions.
+
+    Parameters
+    ----------
+    key : str
+        Registered problem name (e.g. ``"zdt1"``, ``"dtlz2"``).
+    n_var : int, optional
+        Override the default number of decision variables.
+    n_obj : int, optional
+        Override the default number of objectives (only for problems
+        that allow it).
+
+    Returns
+    -------
+    ProblemSelection
+        A frozen selection with the resolved ``spec``, ``n_var``, and
+        ``n_obj`` ready to instantiate.
+
+    Raises
+    ------
+    KeyError
+        If *key* does not match any registered problem.  The error
+        message includes the full list of valid names and close-match
+        suggestions.
+    """
     specs = get_problem_specs()
     try:
         spec = specs[key]

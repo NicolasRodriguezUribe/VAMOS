@@ -129,7 +129,7 @@ class LiveParetoPlot:
             try:
                 flush()
             except Exception:
-                pass
+                _logger().debug("Failed to flush matplotlib canvas events", exc_info=True)
         if self._interactive:
             self.plt.pause(0.01)
 
@@ -225,7 +225,7 @@ class LiveTuningPlot:
             try:
                 flush()
             except Exception:
-                pass
+                _logger().debug("Failed to flush matplotlib canvas events", exc_info=True)
         if self._interactive:
             self.plt.pause(0.01)
 
