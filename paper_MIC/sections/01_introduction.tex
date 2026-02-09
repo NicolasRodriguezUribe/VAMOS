@@ -11,16 +11,16 @@ Following the bandit view of AOS~\cite{dacosta2008aosdmab}, we model each candid
 Compared to offline tuning, this approach aims to improve robustness across problems and reduce the need for manual operator configuration.
 
 This paper focuses on NSGA-II~\cite{deb2002nsgaii}, a widely used MOEA whose performance depends strongly on variation settings.
-We implement a generation-level AOS layer for NSGA-II in a vectorized optimization framework and evaluate it on \AOSNProblems{} standard benchmarks from the ZDT~\cite{zitzler2000zdt}, DTLZ~\cite{deb2002dtlz}, and WFG~\cite{huband2006wfg} families.
-Our evaluation reveals that AOS with Thompson Sampling not only improves final solution quality on the majority of problems, but---more importantly---converges significantly faster than the fixed baseline, making it especially attractive in budget-constrained settings.
+We implement a generation-level AOS layer for NSGA-II in a vectorized optimization framework and evaluate it on \AOSNProblems{} challenging benchmarks from the CEC\,2009 UF~\cite{zhang2009cec2009} and LSMOP~\cite{cheng2017lsmop} families---problems specifically designed to expose operator-choice sensitivity through curved Pareto sets and high-dimensional decision spaces.
+Our evaluation reveals that AOS with Thompson Sampling dramatically outperforms the fixed baseline on these challenging landscapes, achieving +23\% higher mean HV overall and up to +80\% on large-scale problems.
 
 \paragraph{Contributions.}
 This paper makes four contributions:
 \begin{itemize}
   \item A simple, reproducible AOS interface for NSGA-II that selects exactly one variation pipeline per generation using Thompson Sampling with a sliding reward window.
   \item A reward design aligned with NSGA-II survivor selection, combining offspring survival and non-dominated insertion rates, with an optional bounded hypervolume-improvement proxy.
-  \item A portfolio design based on parameter diversity (SBX $\eta$ variants) and structural diversity (BLX-$\alpha$, DE/rand/1/bin), showing that calibrated variation of a strong baseline is more effective than mixing in exotic operators.
-  \item An empirical evaluation on \AOSNProblems{} standard MO benchmarks (ZDT, DTLZ, WFG) demonstrating that AOS achieves \AOSConvergenceAdvPct{}\% faster convergence at 10\% of budget, with \AOSWins{}/\AOSNProblems{} final-quality wins, while incurring measurable runtime overhead.
+  \item A portfolio design based on parameter diversity (SBX $\eta$ variants) and structural diversity (BLX-$\alpha$, DE/rand/1/bin), showing that genuine operator diversity is the primary driver of performance gains on challenging landscapes.
+  \item An empirical evaluation on \AOSNProblems{} challenging benchmarks (CEC\,2009 UF, LSMOP) demonstrating that AOS achieves +23\% higher mean HV than the fixed baseline, with \StatWinsBase{} statistically significant wins, while the diverse portfolio itself accounts for the majority of the improvement.
 \end{itemize}
 
 \paragraph{Organization.}

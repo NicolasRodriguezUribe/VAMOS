@@ -119,11 +119,31 @@ RWA_PROBLEMS = [
 ]
 REALWORLD_PROBLEMS = [*RE_PROBLEMS, *RWA_PROBLEMS]
 
+# --- CEC2009 UF problems (curved Pareto sets, 30 vars, 2-3 obj) ---
+UF_PROBLEMS = [
+    "cec2009_uf1", "cec2009_uf2", "cec2009_uf3", "cec2009_uf4",
+    "cec2009_uf5", "cec2009_uf6", "cec2009_uf7",                  # 2-obj
+    "cec2009_uf8", "cec2009_uf9", "cec2009_uf10",                  # 3-obj
+]
+
+# --- LSMOP (large-scale, 300 vars, 2 obj) ---
+LSMOP_PROBLEMS = [
+    "lsmop1", "lsmop2", "lsmop3", "lsmop4", "lsmop5",
+    "lsmop6", "lsmop7", "lsmop8", "lsmop9",
+]
+
+# --- Challenging suite: problems that stress-test operator choice ---
+CHALLENGING_PROBLEMS = [*UF_PROBLEMS, *LSMOP_PROBLEMS]
+
 # --- Suite selection ---
 _SUITES: dict[str, list[str]] = {
     "standard": STANDARD_PROBLEMS,
     "realworld": REALWORLD_PROBLEMS,
+    "challenging": CHALLENGING_PROBLEMS,
+    "uf": UF_PROBLEMS,
+    "lsmop": LSMOP_PROBLEMS,
     "all": [*STANDARD_PROBLEMS, *REALWORLD_PROBLEMS],
+    "full": [*STANDARD_PROBLEMS, *CHALLENGING_PROBLEMS],
 }
 VALID_SUITES = set(_SUITES.keys())
 
@@ -153,6 +173,13 @@ _N_OBJ: dict[str, int] = {
     "rwa8": 4,
     "rwa9": 5,
     "rwa10": 7,
+    # CEC2009 UF
+    "cec2009_uf1": 2, "cec2009_uf2": 2, "cec2009_uf3": 2, "cec2009_uf4": 2,
+    "cec2009_uf5": 2, "cec2009_uf6": 2, "cec2009_uf7": 2,
+    "cec2009_uf8": 3, "cec2009_uf9": 3, "cec2009_uf10": 3,
+    # LSMOP (large-scale)
+    "lsmop1": 2, "lsmop2": 2, "lsmop3": 2, "lsmop4": 2, "lsmop5": 2,
+    "lsmop6": 2, "lsmop7": 2, "lsmop8": 2, "lsmop9": 2,
 }
 
 # Group label for paper tables
@@ -164,6 +191,10 @@ def obj_group(problem: str) -> str:
         return "DTLZ"
     if name.startswith("wfg"):
         return "WFG"
+    if name.startswith("cec2009_uf"):
+        return "UF"
+    if name.startswith("lsmop"):
+        return "LSMOP"
     if name.startswith("re"):
         return "RE"
     if name.startswith("rwa"):
@@ -175,7 +206,20 @@ def obj_group(problem: str) -> str:
         return "3-obj"
     return "many-obj"
 
-OBJ_GROUP_ORDER = ("ZDT", "DTLZ", "WFG", "RE", "RWA")
+OBJ_GROUP_ORDER = ("ZDT", "DTLZ", "WFG", "UF", "LSMOP", "RE", "RWA")
+
+# Problem-specific parameter overrides for make_problem_selection()
+# LSMOP: 2 objectives + 100 variables (default is 3-obj / 300-var).
+# 100 vars is 3× larger than ZDT/UF (30 vars) – large enough to stress
+# operator choice, but tractable within 100 k evaluations.
+_PROBLEM_OVERRIDES: dict[str, dict[str, int]] = {
+    **{f"lsmop{i}": {"n_obj": 2, "n_var": 100} for i in range(1, 10)},
+}
+
+def _make_problem_selection(problem_name: str):
+    """Create a ProblemSelection with per-problem overrides."""
+    overrides = _PROBLEM_OVERRIDES.get(problem_name.lower(), {})
+    return make_problem_selection(problem_name, **overrides)
 
 # =============================================================================
 # Shared defaults
@@ -638,7 +682,7 @@ def generate_reference_fronts() -> None:
     REFERENCE_FRONTS_DIR.mkdir(parents=True, exist_ok=True)
 
     def _run_one(problem: str, seed: int) -> tuple[str, np.ndarray | None]:
-        sel = make_problem_selection(problem)
+        sel = _make_problem_selection(problem)
         prob = sel.instantiate()
         n_var = sel.n_var
         cfg = (
@@ -712,7 +756,7 @@ def run_single(
     aos_options: AOSRuntimeOptions | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     """Execute one (variant, problem, seed) run."""
-    sel = make_problem_selection(problem_name)
+    sel = _make_problem_selection(problem_name)
     problem = sel.instantiate()
     n_var = sel.n_var
 
@@ -847,7 +891,12 @@ def run_experiment() -> None:
         for v in _parse_csv_list(_as_str_env("VAMOS_MIC_TRACE_VARIANTS", "aos"))
     )
     # Default trace problems: pick 3 representative problems from active suite
-    _default_trace = "dtlz1,dtlz6,wfg1" if any(p.startswith(("zdt", "dtlz", "wfg")) for p in ALL_PROBLEMS) else "re37,rwa2,rwa9"
+    if any(p.startswith("cec2009_uf") for p in ALL_PROBLEMS):
+        _default_trace = "cec2009_uf1,cec2009_uf4,lsmop3"
+    elif any(p.startswith(("zdt", "dtlz", "wfg")) for p in ALL_PROBLEMS):
+        _default_trace = "dtlz1,dtlz6,wfg1"
+    else:
+        _default_trace = "re37,rwa2,rwa9"
     trace_problems = set(
         p.strip().lower()
         for p in _parse_csv_list(_as_str_env("VAMOS_MIC_TRACE_PROBLEMS", _default_trace))
