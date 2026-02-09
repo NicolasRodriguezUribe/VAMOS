@@ -59,6 +59,23 @@ vamos create-problem --name "portfolio optimizer" --n-var 5 --n-obj 3 --yes
 
 Use `--style class` to generate a class-based template instead.
 
+### Visual builder in VAMOS Studio
+
+For a fully visual experience, launch VAMOS Studio and open the
+**Problem Builder** tab:
+
+```bash
+vamos studio
+```
+
+The Problem Builder lets you:
+
+- Pick from starter templates (ZDT1-like, Schaffer, Fonseca-Fleming, etc.)
+- Edit objective code in a text area with live syntax checking
+- Configure algorithm, budget, population size, and bounds
+- Click **Run preview** to see the Pareto front rendered instantly
+- Export a standalone `.py` script when you are happy with the result
+
 ---
 
 ## Class-based: implement `ProblemProtocol` directly

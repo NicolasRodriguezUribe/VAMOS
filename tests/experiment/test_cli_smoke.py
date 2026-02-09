@@ -30,5 +30,5 @@ def test_vamos_studio_help():
 
     if importlib.util.find_spec("streamlit") is None:
         pytest.skip("streamlit not installed")
-    proc = _run_cmd("vamos-studio --help")
+    proc = _run_cmd(f"{sys.executable} -m vamos.ux.studio.app --help")
     assert proc.returncode == 0

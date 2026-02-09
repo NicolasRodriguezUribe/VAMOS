@@ -7,7 +7,7 @@ VAMOS Studio is an interactive dashboard for exploring optimization results, vis
 To start the studio, ensure you have the `studio` extra installed (`pip install -e ".[studio]"`), then point it to your results directory:
 
 ```bash
-vamos-studio --study-dir results/
+vamos studio --study-dir results/
 ```
 
 Or via python module:

@@ -27,13 +27,16 @@ tests/                             # Unit and integration tests
 examples/, notebooks/, experiments/# Research scripts and demos
 docs/                              # MkDocs site + dev guides
 ```
-Entry points (from `pyproject.toml`):
-- `vamos` -> `src/vamos/experiment/cli/main.py`
-- `vamos-self-check` -> `src/vamos/experiment/diagnostics/self_check.py`
-- `vamos-benchmark` -> `src/vamos/experiment/benchmark/cli.py`
-- `vamos-studio` -> `src/vamos/experiment/studio/app.py`
-- `vamos-zoo` -> `src/vamos/experiment/zoo/cli.py`
-- `vamos-tune` -> `src/vamos/experiment/cli/tune.py`
+Entry point (from `pyproject.toml`):
+- `vamos` -> `src/vamos/experiment/cli/main.py` (all tools via `vamos <subcommand>`)
+
+Subcommand routing (in `_dispatch_subcommand`):
+- `vamos check` -> `src/vamos/experiment/diagnostics/self_check.py`
+- `vamos bench` -> `src/vamos/experiment/benchmark/cli.py`
+- `vamos studio` -> `src/vamos/ux/studio/app.py`
+- `vamos zoo` -> `src/vamos/experiment/zoo/cli.py`
+- `vamos tune` -> `src/vamos/experiment/cli/tune.py`
+- `vamos profile` -> `src/vamos/experiment/profiler/cli.py`
 
 Primary public APIs:
 - `src/vamos/__init__.py` reexports high-level functions and the problem registry; algorithm configs live in `src/vamos/algorithms`, analysis/visualization helpers in `src/vamos/ux/api.py`.

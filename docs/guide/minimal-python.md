@@ -94,7 +94,7 @@ vamos open-results --results results/quickstart --open
 
 ## If something fails
 
-- Run: `vamos-self-check` to verify your install.
+- Run: `vamos check` to verify your install.
 - For biology/chemistry templates, install scikit-learn:
   `pip install -e ".[examples]"`.
 - For plots, install the analysis extras:

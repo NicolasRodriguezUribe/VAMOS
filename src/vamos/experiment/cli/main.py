@@ -30,10 +30,38 @@ def _ensure_project_root_on_path() -> None:
             sys.path.insert(0, project_root_str)
 
 
+_SUBCOMMANDS: dict[str, str] = {
+    # Original subcommands
+    "quickstart": "Guided wizard for a first run",
+    "create-problem": "Scaffold a custom problem file",
+    "summarize": "Table/JSON summary of results",
+    "open-results": "Open the latest results folder",
+    "ablation": "Ablation study runner",
+    "assist": "AI-assisted experiment planning",
+    # Consolidated from standalone vamos-* commands
+    "check": "Verify installation and backends",
+    "bench": "Benchmark suite across algorithms",
+    "studio": "Launch the interactive dashboard",
+    "zoo": "Problem zoo presets",
+    "tune": "Hyperparameter tuning",
+    "profile": "Performance profiling",
+}
+
+
 def _dispatch_subcommand(argv: list[str]) -> bool:
     if not argv:
         return False
     command = argv[0]
+
+    # ---- help: list all subcommands ----
+    if command in {"help", "--help-commands"}:
+        print("Available vamos subcommands:\n")
+        for name, desc in _SUBCOMMANDS.items():
+            print(f"  vamos {name:20s} {desc}")
+        print("\nRun `vamos <command> --help` for details on a specific command.")
+        raise SystemExit(0)
+
+    # ---- original subcommands ----
     if command in {"quickstart", "--quickstart"}:
         from vamos.experiment.cli.quickstart import run_quickstart
 
@@ -64,6 +92,39 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
 
         run_create_problem(argv[1:])
         return True
+
+    # ---- consolidated standalone commands ----
+    if command in {"check", "self-check", "self_check"}:
+        from vamos.experiment.diagnostics.self_check import main as _self_check_main
+
+        _self_check_main()
+        return True
+    if command in {"bench", "benchmark"}:
+        from vamos.experiment.benchmark.cli import main as _bench_main
+
+        _bench_main(argv[1:])
+        return True
+    if command in {"studio"}:
+        from vamos.ux.studio.app import main as _studio_main
+
+        _studio_main(argv[1:])
+        return True
+    if command in {"zoo"}:
+        from vamos.experiment.zoo.cli import main as _zoo_main
+
+        _zoo_main(argv[1:])
+        return True
+    if command in {"tune"}:
+        from vamos.experiment.cli.tune import main as _tune_main
+
+        _tune_main(argv[1:])
+        return True
+    if command in {"profile"}:
+        from vamos.experiment.profiler.cli import main as _profile_main
+
+        _profile_main(argv[1:])
+        return True
+
     return False
 
 

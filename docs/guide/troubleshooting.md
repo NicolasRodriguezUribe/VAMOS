@@ -13,4 +13,4 @@
 ## Benchmark suites
 
 - Use the suite names shown by the benchmark CLI and match case exactly.
-- See `docs/guide/cli.md` for examples of `vamos-benchmark` usage.
+- See `docs/guide/cli.md` for examples of `vamos bench` usage.

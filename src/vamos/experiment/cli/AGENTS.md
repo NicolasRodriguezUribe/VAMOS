@@ -18,6 +18,8 @@ vamos [OPTIONS]
 
 ## Subcommands
 
+All VAMOS functionality is available via `vamos <subcommand>`. Run `vamos help` to list them.
+
 | Command | Description | File |
 |---------|-------------|------|
 | `vamos quickstart` | Guided wizard for a single run | `quickstart.py` |
@@ -26,6 +28,14 @@ vamos [OPTIONS]
 | `vamos open-results` | Print or open the latest run folder | `results_cli.py` |
 | `vamos ablation` | Run ablation studies | `ablation.py` |
 | `vamos assist` | AI-assisted experiment planning | `../../assist/cli.py` |
+| `vamos check` | Verify installation and backends | `../diagnostics/self_check.py` |
+| `vamos bench` | Benchmark suite across algorithms | `../benchmark/cli.py` |
+| `vamos studio` | Launch interactive dashboard | `../../ux/studio/app.py` |
+| `vamos zoo` | Problem zoo presets | `../zoo/cli.py` |
+| `vamos tune` | Hyperparameter tuning | `tune.py` |
+| `vamos profile` | Performance profiling | `../profiler/cli.py` |
+
+> All tools are accessed via `vamos <subcommand>`. Legacy `vamos-*` entry points have been removed.
 
 ## Key Options (standard run)
 

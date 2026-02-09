@@ -21,7 +21,7 @@ This file explains how to set up the environment, how the project is structured,
 - Research-grade, vectorized multi-objective optimization framework in Python (Python 3.10+).
 - **Unified API**: All workflows should use `vamos.optimize()` as the primary entry point.
 - **Algorithms**: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA with vectorized kernels.
-- **Tooling**: Comprehensive suite including `vamos-profile` (profiling), `vamos-benchmark` (reporting), and `vamos-studio` (interactive dashboard).
+- **Tooling**: Comprehensive suite via `vamos <subcommand>`: `vamos profile` (profiling), `vamos bench` (reporting), `vamos studio` (interactive dashboard).
 - **Notebooks**: extensive examples under `notebooks/0_basic/`, `notebooks/1_intermediate/` and `notebooks/2_advanced/`.
 
 ### User-Friendliness Principles
@@ -62,6 +62,7 @@ VAMOS prioritizes ease of use:
     result = optimize(problem, algorithm="nsgaii", max_evaluations=5000)
     ```
     For scaffolding a problem file interactively, use `vamos create-problem`.
+    For a visual approach, use the **Problem Builder** tab in VAMOS Studio (`vamos studio`).
 
 3.  **Interactive Results**: Use `explore_result_front(result)` for immediate visualization in notebooks.
 4.  **Publication Ready**: Use `result_to_latex(result)` for generating tables directly from code.
@@ -78,9 +79,9 @@ VAMOS prioritizes ease of use:
 
 - **Useful commands**:
   - Quick run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
-  - Self-check: `vamos-self-check`
-  - Profile: `vamos-profile nsgaii zdt1`
-  - Tune: `vamos-tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5`
+  - Self-check: `vamos check`
+  - Profile: `vamos profile nsgaii zdt1`
+  - Tune: `vamos tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5`
     (`--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.)
   - Tests: `pytest`
 

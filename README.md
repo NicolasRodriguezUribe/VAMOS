@@ -14,6 +14,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 - **Multi-Fidelity Tuning**: Hyperband-style racing with warm-start checkpoints for sample-efficient algorithm configuration.
 - **Performance Driven**: Vectorized kernels, GPU acceleration (JAX), and optional Numba JIT compilation.
 - **Interactive Analysis**: Built-in dashboards with `explore_result_front(result)` and publication-ready LaTeX tables.
+- **Visual Problem Builder**: Define custom problems in the browser with live Pareto front preview via VAMOS Studio.
 - **Extensible**: Standardized protocols for adding custom problems, operators, and algorithms.
 
 ## 📦 Quick Install
@@ -82,12 +83,25 @@ After a run, summarize results with:
 vamos summarize --results results/quickstart
 ```
 
-CLI helpers:
+All functionality lives under one command. Run `vamos help` to list everything:
 
-- `vamos quickstart`: guided wizard that writes a config
-- `vamos create-problem`: scaffold a custom problem file from a guided wizard
-- `vamos summarize`: table/JSON summary of recent runs
-- `vamos open-results`: print or open the latest run folder
+| Command | What it does |
+|---------|-------------|
+| `vamos quickstart` | Guided wizard that writes a config |
+| `vamos create-problem` | Scaffold a custom problem file |
+| `vamos summarize` | Table/JSON summary of recent runs |
+| `vamos check` | Verify installation and backends |
+| `vamos bench` | Benchmark suite across algorithms |
+| `vamos studio` | Launch interactive dashboard |
+| `vamos tune` | Hyperparameter tuning |
+| `vamos profile` | Performance profiling |
+| `vamos zoo` | Problem zoo presets |
+
+New to hands-on learning? Open the **interactive tutorial notebook**:
+
+```bash
+jupyter notebook notebooks/0_basic/05_interactive_tutorial.ipynb
+```
 
 ## 🧩 Define Your Own Problem
 
@@ -118,6 +132,14 @@ Prefer a file template? The CLI wizard scaffolds a ready-to-run `.py` file:
 vamos create-problem
 # Prompts for: name, variables, objectives, bounds, style
 # Generates a .py file with TODO markers -- fill in your math and run it
+```
+
+Or use the **visual builder** in VAMOS Studio -- write your objectives
+in the browser, pick an algorithm, and see the Pareto front update on each run:
+
+```bash
+vamos studio
+# Open the "Problem Builder" tab
 ```
 
 See `docs/dev/add_problem.md` for all approaches (function, class, or registry).
@@ -184,23 +206,25 @@ VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
 
 ## 🛠️ Tooling Ecosystem
 
-- **`vamos-profile`**: Analyze the performance overhead of your experiments.
+All tools are available as `vamos <subcommand>`. Run `vamos help` for the full list.
+
+- **`vamos profile`**: Analyze the performance overhead of your experiments.
   ```bash
-  vamos-profile nsgaii zdt1 --budget 5000
+  vamos profile nsgaii zdt1 --budget 5000
   ```
-- **`vamos-benchmark`**: Generate full reports comparing multiple algorithms, plus jMetalPy-compatible lab outputs (`summary/lab/QualityIndicatorSummary.csv`, Wilcoxon tables, boxplots). Boxplots require `matplotlib`.
+- **`vamos bench`**: Generate full reports comparing multiple algorithms, plus jMetalPy-compatible lab outputs (`summary/lab/QualityIndicatorSummary.csv`, Wilcoxon tables, boxplots). Boxplots require `matplotlib`.
   ```bash
-  vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/
+  vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/
   ```
-- **`vamos-tune`**: Racing-style hyperparameter tuning with optional multi-fidelity. `--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.
+- **`vamos tune`**: Racing-style hyperparameter tuning with optional multi-fidelity. `--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.
   ```bash
-  vamos-tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5
+  vamos tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5
   ```
 - Generic tuning example (script-based):
   ```bash
   python examples/tuning/racing_tuner_generic.py --algorithm nsgaii --multi-fidelity --fidelity-levels 500,1000,1500
   ```
-- **`vamos-self-check`**: Verify your installation and backend availability.
+- **`vamos check`**: Verify your installation and backend availability.
 
 ## 🤝 Contributing
 

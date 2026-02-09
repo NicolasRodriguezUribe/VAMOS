@@ -64,12 +64,12 @@ tuner = RacingTuner(
 best_config, history = tuner.run(evaluate_config)
 ```
 
-## Command Line Interface (`vamos-tune`)
+## Command Line Interface (`vamos tune`)
 
 You can also run tuning jobs directly from the command line.
 
 ```bash
-vamos-tune --algorithm nsgaii --problem zdt1 --budget 1000 --n-jobs 4
+vamos tune --algorithm nsgaii --problem zdt1 --budget 1000 --n-jobs 4
 ```
 
 This will run a racing tuner to find the best hyperparameters for NSGA-II on ZDT1.

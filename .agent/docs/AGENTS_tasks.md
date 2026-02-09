@@ -42,9 +42,9 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 | T5      | New benchmark problem                       | `python -m vamos.experiment.cli.main --problem <id> ...`       |
 | T6      | Create study / experiment pipeline          | StudyRunner/central runner / `python -m vamos.experiment.cli.main --config`   |
 | T7      | Improve logging/metadata + analysis helpers | Outputs under standard results layout; UX loaders    |
-| T8      | Add to benchmarking CLI                     | `vamos-benchmark --suite ... --output ...`          |
-| T9      | Extend diagnostics / self-check             | `python -m vamos.experiment.diagnostics.self_check`            |
-| T10     | Create Interactive Tools / Studio           | `vamos-studio` / Streamlit / Dash                   |
+| T8      | Add to benchmarking CLI                     | `vamos bench --suite ... --output ...`              |
+| T9      | Extend diagnostics / self-check             | `vamos check`                                       |
+| T10     | Create Interactive Tools / Studio           | `vamos studio` / Streamlit                          |
 | T11     | Build ablation planning pipelines           | `vamos.engine.tuning.ablation` + `vamos.experiment.study`     |
 
 ---
@@ -160,17 +160,17 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 
 ---
 
-## 8. Add to the benchmarking CLI (`vamos-benchmark`)
+## 8. Add to the benchmarking CLI (`vamos bench`)
 
-**Goal**: Extend benchmark suites or algorithms used by `vamos-benchmark`.
+**Goal**: Extend benchmark suites or algorithms used by `vamos bench`.
 
-**Context**: Benchmark definitions under `src/vamos/experiment/benchmark/` (suites, reference fronts, reporting); CLI entry `vamos-benchmark`.
+**Context**: Benchmark definitions under `src/vamos/experiment/benchmark/` (suites, reference fronts, reporting); CLI via `vamos bench`.
 
 **Steps**
 - Locate suite definitions (e.g., `ZDT_small`); add new problems/algorithms with sensible budgets.
 - Ensure outputs (raw runs, summary CSVs, LaTeX/plots) remain compatible.
 - Add/update tests or smoke runs for the new suite with minimal budgets.
-- Document example invocation, e.g., `vamos-benchmark --suite <suite> --algorithms nsgaii moead --output report/`.
+- Document example invocation, e.g., `vamos bench --suite <suite> --algorithms nsgaii moead --output report/`.
 
 **Avoid**: Changing default suites without noting compatibility impact.
 
@@ -178,9 +178,9 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 
 ## 9. Extend diagnostics / self-check tooling
 
-**Goal**: Improve `vamos-self-check` / `vamos.experiment.diagnostics.self_check` to validate installs and basic runs.
+**Goal**: Improve `vamos check` / `vamos.experiment.diagnostics.self_check` to validate installs and basic runs.
 
-**Context**: `src/vamos/experiment/diagnostics/` (or similar module); CLI entry `vamos-self-check`.
+**Context**: `src/vamos/experiment/diagnostics/`; CLI via `vamos check`.
 
 **Steps**
 - Identify existing checks (deps, minimal algorithm runs).
@@ -194,16 +194,15 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 
 ## 10. Create Interactive Tools / Studio
 
-**Goal**: Build or enhance interactive dashboards (e.g., Streamlit, Dash) for results exploration and real-time monitoring.
+**Goal**: Build or enhance interactive dashboards (Streamlit) for results exploration and real-time monitoring.
 
-**Context**: `src/vamos/ux/studio/` (or similar); `vamos-studio` CLI entry point.
+**Context**: `src/vamos/ux/studio/`; CLI via `vamos studio`.
 
 **Steps**
-- Choose a framework (Streamlit is recommended for rapid prototyping).
 - Create a dashboard that loads `results/` (using `vamos.ux.analysis.results`).
 - Implement visualizations: Pareto front scatter plots, parallel coordinates, metrics over time.
 - (Advanced) Connect to a live running optimization via a file watcher or socket.
-- Expose via `vamos-studio --study-dir <path>`.
+- Expose via `vamos studio --study-dir <path>`.
 
 **Avoid**: Mixing UI code with core algorithms (keep strictly separate in `vamos.ux`).
 

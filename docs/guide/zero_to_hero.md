@@ -75,7 +75,7 @@ print(f"Running benchmark on {problem_name} with {algorithms}...")
 # 2. Run in PARALLEL
 # VAMOS supports parallel evaluation of seeds/algorithms if you wrap this loop.
 # For simplicity here, we run sequentially but show how fast it is.
-# Pro-tip: Use StudyRunner or the `vamos-benchmark` CLI for full sweeps.
+# Pro-tip: Use StudyRunner or the `vamos bench` CLI for full sweeps.
 
 results = {}
 for algo in algorithms:
