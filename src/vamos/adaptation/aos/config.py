@@ -30,6 +30,9 @@ AOS_CONFIG_KEYS = {
     "hv_reference_hv",
     "floor_prob",
     "operator_pool",
+    "elimination_after",
+    "elimination_z",
+    "elimination_min_arms",
 }
 
 
@@ -68,6 +71,9 @@ class AdaptiveOperatorSelectionConfig:
     hv_reference_point: tuple[float, ...] | None = None
     hv_reference_hv: float | None = None
     floor_prob: float = 0.0
+    elimination_after: int = 0  # Generations before arm elimination starts; 0 = disabled
+    elimination_z: float = 1.5  # Z-score threshold: eliminate arms this many stdevs below best
+    elimination_min_arms: int = 2  # Never eliminate below this many active arms
 
     @classmethod
     def from_dict(cls, config: Mapping[str, Any] | None) -> AdaptiveOperatorSelectionConfig:
@@ -98,6 +104,15 @@ class AdaptiveOperatorSelectionConfig:
         hv_reference_hv = None if hv_ref_hv is None else float(hv_ref_hv)
         if hv_reference_hv is not None and hv_reference_hv <= 0.0:
             raise ValueError("hv_reference_hv must be > 0 when provided.")
+        elimination_after = int(config.get("elimination_after", 0))
+        if elimination_after < 0:
+            raise ValueError("elimination_after must be >= 0.")
+        elimination_z = float(config.get("elimination_z", 1.5))
+        if elimination_z < 0.0:
+            raise ValueError("elimination_z must be >= 0.")
+        elimination_min_arms = int(config.get("elimination_min_arms", 2))
+        if elimination_min_arms < 1:
+            raise ValueError("elimination_min_arms must be >= 1.")
         return cls(
             enabled=bool(config.get("enabled", False)),
             method=str(config.get("method", "epsilon_greedy")).lower(),
@@ -112,6 +127,9 @@ class AdaptiveOperatorSelectionConfig:
             hv_reference_point=hv_reference_point,
             hv_reference_hv=hv_reference_hv,
             floor_prob=floor_prob,
+            elimination_after=elimination_after,
+            elimination_z=elimination_z,
+            elimination_min_arms=elimination_min_arms,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -132,6 +150,9 @@ class AdaptiveOperatorSelectionConfig:
             "hv_reference_point": list(self.hv_reference_point) if self.hv_reference_point is not None else None,
             "hv_reference_hv": self.hv_reference_hv,
             "floor_prob": self.floor_prob,
+            "elimination_after": self.elimination_after,
+            "elimination_z": self.elimination_z,
+            "elimination_min_arms": self.elimination_min_arms,
         }
 
 

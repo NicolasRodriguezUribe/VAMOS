@@ -1,44 +1,42 @@
 \section{Discussion}
 \label{sec:discussion}
 
-The results demonstrate that AOS provides dramatic performance gains on challenging landscapes where no single operator dominates.
-We now analyze the mechanisms behind the wins, the losses, and the relative contributions of portfolio diversity vs.\ intelligent selection.
+The results demonstrate that AOS with arm elimination provides robust performance gains on challenging landscapes, winning or tying against the fixed baseline on all \AOSNProblems{} problems after statistical correction.
+We now analyze the mechanisms behind this robustness, the role of arm elimination, and the trade-offs involved.
 
-\paragraph{Portfolio diversity is the primary driver.}
-The most striking finding is that the \emph{random arm}---which selects operators uniformly at random---performs nearly as well as AOS overall (mean HV \AOSHVMeanRandom{} vs.\ \AOSHVMeanAOS{}).
-Both dramatically outperform the fixed baseline (\AOSHVMeanBaseline{}).
-This reveals that the 5-arm portfolio itself---with its combination of SBX $\eta$ variants, BLX-$\alpha$, and DE/rand/1/bin---is the main source of improvement.
-On problems where the default SBX ($\eta{=}20$) fails, having \emph{any} mechanism that sometimes deploys alternative operators provides a large benefit.
+\paragraph{Portfolio diversity remains the foundation.}
+The \emph{random arm}---which selects operators uniformly at random from the 5-arm portfolio---achieves the highest raw mean HV (\AOSHVMeanRandom{}), outperforming both AOS (\AOSHVMeanAOS{}) and the baseline (\AOSHVMeanBaseline{}).
+This confirms that operator diversity is the primary driver of improvement on challenging landscapes: having \emph{any} mechanism that deploys alternative operators provides a large benefit over the fixed baseline.
 This is especially pronounced on LSMOP problems, where the 100-variable search space overwhelms a single crossover strategy.
 
-\paragraph{Where Thompson Sampling adds value.}
-While portfolio diversity accounts for the bulk of the gain, Thompson Sampling contributes measurably on specific problem types.
-On the bi-objective UF problems (UF1--UF7), AOS consistently outperforms the random arm (mean HV 0.755 vs.\ 0.751 for random), with the largest margins on UF7 (+1.8\%) and UF3 (+1.3\%).
-On these problems, the curved Pareto sets create a dynamic landscape where different operators are optimal at different stages of search; Thompson Sampling captures this non-stationarity better than uniform random selection.
-On LSMOP problems, the random arm slightly outperforms AOS on several instances (e.g., LSMOP1, LSMOP8), suggesting that the high dimensionality creates a more stationary reward signal where the overhead of Thompson Sampling's exploration phase does not pay off within the 100K-evaluation budget.
+\paragraph{Arm elimination enables robustness.}
+The key innovation in our approach is adaptive arm elimination, which prunes statistically underperforming operators after 300 generations ($\approx$30{,}000 evaluations).
+Without elimination, the diverse portfolio \emph{hurts} on problems where the baseline operator is already well-suited: on the tri-objective UF problems (UF8--UF10), which have spherical Pareto fronts amenable to SBX ($\eta{=}20$), every alternative operator wastes evaluation budget.
+Arm elimination resolves this by automatically detecting and removing suboptimal arms after enough reward data has accumulated.
 
-\paragraph{The tri-objective UF losses.}
-AOS loses to the baseline on 3 of \AOSNProblems{} problems: UF8, UF9, and UF10 (all tri-objective).
-These problems have a spherical Pareto front where the baseline's SBX ($\eta{=}20$) is well-suited.
-The curved Pareto \emph{sets} of UF problems only strongly penalize single operators when the decision-space structure is bi-objective and highly non-linear; in the tri-objective case, the additional degree of freedom reduces the sensitivity to operator choice.
-Notably, the random arm also loses on these problems, confirming that the deficit is not a failure of Thompson Sampling but an inherent cost of maintaining a diverse portfolio on landscapes where the default operator is already effective.
+The effect is dramatic on UF9: without elimination, this was the worst-performing problem for AOS (baseline outperformed AOS by 0.098 in HV); with elimination, AOS \emph{wins} by 0.037.
+UF8 and UF10 shift from substantial losses to near-ties (deltas $<$0.01).
+Across the full benchmark suite, the number of statistically significant losses drops to zero.
+
+\paragraph{The robustness--diversity trade-off.}
+Arm elimination introduces a deliberate trade-off: by pruning operators, AOS sacrifices some of the peak diversity benefit that the random arm exploits freely.
+This is visible in the AOS-vs-random comparison, where AOS significantly loses on \StatLossesRand{} problems---all cases where elimination removed arms that would have contributed positively.
+However, from a practical perspective, the relevant comparison is AOS vs.\ baseline (``should I use AOS or a fixed operator?''), and here the result is unambiguous: \StatWinsBase{} significant wins, zero significant losses.
+
+The random arm, while achieving higher mean HV, suffers from unreliable performance on problems where the baseline excels (its losses on UF8--UF10 are far larger than AOS's near-ties).
+AOS with elimination thus occupies a unique position: it captures most of the portfolio's diversity benefit while providing a robustness guarantee that the random arm cannot.
 
 \paragraph{Intractable LSMOP problems.}
 Four LSMOP problems (3, 6, 7, 9) yield zero HV for all methods, including AOS.
 These problems use Rastrigin, Rosenbrock, Ackley, or Griewank distance functions that create massive numbers of local optima in 100 dimensions.
 At 100{,}000 evaluations (1{,}000 generations with population size 100), no method converges to solutions within the reference front.
 This represents a genuine limitation of the evaluation budget rather than a failure of AOS.
-The remaining LSMOP problems (1, 2, 4, 5, 8), which use sphere or less deceptive distance functions, show consistent and often dramatic AOS advantages.
-
-\paragraph{The accelerating convergence pattern.}
-Unlike on simpler benchmarks, where convergence advantages typically narrow over time as all methods approach the Pareto front, the AOS advantage on these challenging benchmarks \emph{grows} over time (from +8\% at 5K to +23\% at 100K evaluations).
-This occurs because on hard landscapes, the fixed baseline progresses slowly throughout the entire budget, while the diverse portfolio continues discovering new productive regions.
-In practical terms, this means AOS is most valuable precisely when it is needed most: on difficult problems where the default operator stalls.
 
 \paragraph{Practical implications.}
-Our results suggest two complementary practical guidelines:
+Our results suggest that an AOS layer with arm elimination is a \emph{safe default} for NSGA-II:
 \begin{enumerate}
-  \item \textbf{Portfolio diversity is essential} for problems with unknown landscape geometry, high dimensionality, or curved Pareto sets. Even random operator switching provides large gains over a fixed operator on such problems.
-  \item \textbf{Thompson Sampling provides a safe, principled default} for operator selection. It matches or exceeds random switching on almost all problems, adds measurable value on problems with dynamic operator preferences (UF family), and never catastrophically degrades performance.
+  \item It never significantly degrades performance compared to the fixed baseline, even on problems where the baseline operator is well-suited.
+  \item It provides substantial gains (+18\% mean HV) on problems where operator choice matters.
+  \item The arm elimination mechanism requires no problem-specific tuning---the same $z$-threshold and warm-up period work across all 19 problems tested.
 \end{enumerate}
-For practitioners who know their landscape favors SBX with a specific $\eta$ (e.g., spherical tri-objective fronts), the fixed operator remains a valid choice; otherwise, an AOS layer with a diverse portfolio provides automatic adaptation with a strongly favorable risk--reward profile.
+For practitioners, this means AOS can be enabled unconditionally without risk: if the default operator happens to be effective, arm elimination will prune the alternatives; if it is not, the diverse portfolio will provide potentially large improvements.

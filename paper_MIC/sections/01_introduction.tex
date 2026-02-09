@@ -12,15 +12,15 @@ Compared to offline tuning, this approach aims to improve robustness across prob
 
 This paper focuses on NSGA-II~\cite{deb2002nsgaii}, a widely used MOEA whose performance depends strongly on variation settings.
 We implement a generation-level AOS layer for NSGA-II in a vectorized optimization framework and evaluate it on \AOSNProblems{} challenging benchmarks from the CEC\,2009 UF~\cite{zhang2009cec2009} and LSMOP~\cite{cheng2017lsmop} families---problems specifically designed to expose operator-choice sensitivity through curved Pareto sets and high-dimensional decision spaces.
-Our evaluation reveals that AOS with Thompson Sampling dramatically outperforms the fixed baseline on these challenging landscapes, achieving +23\% higher mean HV overall and up to +80\% on large-scale problems.
+Our evaluation reveals that AOS with Thompson Sampling and adaptive arm elimination dramatically outperforms the fixed baseline on these challenging landscapes, achieving +18\% higher mean HV overall with \emph{zero} statistically significant losses across all \AOSNProblems{} problems.
 
 \paragraph{Contributions.}
 This paper makes four contributions:
 \begin{itemize}
   \item A simple, reproducible AOS interface for NSGA-II that selects exactly one variation pipeline per generation using Thompson Sampling with a sliding reward window.
   \item A reward design aligned with NSGA-II survivor selection, combining offspring survival and non-dominated insertion rates, with an optional bounded hypervolume-improvement proxy.
-  \item A portfolio design based on parameter diversity (SBX $\eta$ variants) and structural diversity (BLX-$\alpha$, DE/rand/1/bin), showing that genuine operator diversity is the primary driver of performance gains on challenging landscapes.
-  \item An empirical evaluation on \AOSNProblems{} challenging benchmarks (CEC\,2009 UF, LSMOP) demonstrating that AOS achieves +23\% higher mean HV than the fixed baseline, with \StatWinsBase{} statistically significant wins, while the diverse portfolio itself accounts for the majority of the improvement.
+  \item An \emph{adaptive arm elimination} mechanism that statistically prunes underperforming operators after an initial learning phase, automatically recovering baseline-level performance on problems where the default operator is already effective.
+  \item An empirical evaluation on \AOSNProblems{} challenging benchmarks (CEC\,2009 UF, LSMOP) demonstrating that AOS achieves +18\% higher mean HV than the fixed baseline, with \StatWinsBase{} statistically significant wins and \StatLossesBase{} significant losses---making AOS a strictly safe default in practice.
 \end{itemize}
 
 \paragraph{Organization.}

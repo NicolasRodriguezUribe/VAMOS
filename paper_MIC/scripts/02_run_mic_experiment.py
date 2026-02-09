@@ -406,6 +406,9 @@ def _make_aos_cfg(
     gamma: float = 0.2,
     window_size: int = 50,
     floor_prob: float = 0.02,
+    elimination_after: int = 0,
+    elimination_z: float = 1.5,
+    elimination_min_arms: int = 2,
 ) -> dict[str, Any]:
     """Build AOS config dict for any AOS variant."""
     hv_ref_pt, hv_ref_hv = _hv_reward_refs(problem_name)
@@ -432,6 +435,9 @@ def _make_aos_cfg(
         "hv_reference_point": hv_ref_pt,
         "hv_reference_hv": hv_ref_hv,
         "operator_pool": _operator_pool(n_var),
+        "elimination_after": int(elimination_after),
+        "elimination_z": float(elimination_z),
+        "elimination_min_arms": int(elimination_min_arms),
     }
 
 
@@ -446,7 +452,8 @@ VARIANT_SPECS: dict[str, VariantSpec] = {
     "random": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=1.0, min_usage=0)),
     # AOS – Thompson Sampling with proper exploration
     "aos": VariantSpec(
-        aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.02),
+        aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.02,
+                        elimination_after=300, elimination_z=2.0, elimination_min_arms=2),
     ),
     # ---- Pilot variants ----
     "aos_eps15": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.15, min_usage=5)),
@@ -469,6 +476,9 @@ class AOSRuntimeOptions:
     min_usage: int = 5
     window_size: int = 50
     floor_prob: float = 0.02
+    elimination_after: int = 300
+    elimination_z: float = 2.0
+    elimination_min_arms: int = 2
     disable_manyobj: bool = False
 
 
@@ -504,6 +514,9 @@ def build_config(
             "min_usage": aos_options.min_usage,
             "window_size": aos_options.window_size,
             "floor_prob": aos_options.floor_prob,
+            "elimination_after": aos_options.elimination_after,
+            "elimination_z": aos_options.elimination_z,
+            "elimination_min_arms": aos_options.elimination_min_arms,
         }
     # Optional safeguard: disable AOS on many-objective instances.
     if (
@@ -627,6 +640,9 @@ def _load_aos_runtime_options() -> AOSRuntimeOptions:
     min_usage = _as_int_env("VAMOS_MIC_AOS_MIN_USAGE", 5)
     floor_prob = _as_float_env("VAMOS_MIC_AOS_FLOOR_PROB", 0.02)
     disable_manyobj = _as_bool_env("VAMOS_MIC_AOS_DISABLE_MANYOBJ", False)
+    elimination_after = _as_int_env("VAMOS_MIC_AOS_ELIM_AFTER", 300)
+    elimination_z = _as_float_env("VAMOS_MIC_AOS_ELIM_Z", 2.0)
+    elimination_min_arms = _as_int_env("VAMOS_MIC_AOS_ELIM_MIN_ARMS", 2)
 
     # Defaults tuned for non-stationary policies; harmless for others.
     default_window = 50 if method in {"sliding_ucb", "thompson_sampling"} else 0
@@ -655,6 +671,9 @@ def _load_aos_runtime_options() -> AOSRuntimeOptions:
         min_usage=min_usage,
         window_size=window_size,
         floor_prob=floor_prob,
+        elimination_after=elimination_after,
+        elimination_z=elimination_z,
+        elimination_min_arms=elimination_min_arms,
         disable_manyobj=disable_manyobj,
     )
 
@@ -892,7 +911,7 @@ def run_experiment() -> None:
     )
     # Default trace problems: pick 3 representative problems from active suite
     if any(p.startswith("cec2009_uf") for p in ALL_PROBLEMS):
-        _default_trace = "cec2009_uf1,cec2009_uf4,lsmop3"
+        _default_trace = "cec2009_uf1,cec2009_uf9,lsmop3"
     elif any(p.startswith(("zdt", "dtlz", "wfg")) for p in ALL_PROBLEMS):
         _default_trace = "dtlz1,dtlz6,wfg1"
     else:
@@ -949,6 +968,8 @@ def run_experiment() -> None:
             f"method={aos_options.method}, epsilon={aos_options.epsilon}, c={aos_options.c}, "
             f"gamma={aos_options.gamma}, min_usage={aos_options.min_usage}, "
             f"window_size={aos_options.window_size}, floor_prob={aos_options.floor_prob}, "
+            f"elim_after={aos_options.elimination_after}, elim_z={aos_options.elimination_z}, "
+            f"elim_min_arms={aos_options.elimination_min_arms}, "
             f"disable_manyobj={int(aos_options.disable_manyobj)}"
         )
     if anytime_csv:

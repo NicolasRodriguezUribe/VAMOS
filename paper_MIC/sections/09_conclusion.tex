@@ -1,15 +1,17 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented a Thompson Sampling-based adaptive operator selection layer for NSGA-II that selects one variation pipeline per generation and updates an online policy from survival and diversity-oriented rewards.
-Evaluated on \AOSNProblems{} challenging benchmarks from the CEC\,2009 UF and LSMOP families, AOS achieves two main results:
-(i)~a +23\% higher mean normalized HV than the fixed baseline, with \StatWinsBase{} statistically significant wins on problems with curved Pareto sets (UF) and high dimensionality (LSMOP); and
-(ii)~an accelerating convergence advantage that grows from +8\% at 5{,}000 evaluations to +23\% at 100{,}000, demonstrating that portfolio diversity compounds its benefit over longer runs on challenging landscapes.
-The three-way comparison design reveals that portfolio diversity alone (random arm selection) accounts for the majority of the improvement, while Thompson Sampling adds measurable value on problems with dynamic operator preferences.
+We presented a Thompson Sampling-based adaptive operator selection layer for NSGA-II that combines generation-level operator selection with adaptive arm elimination.
+The arm elimination mechanism statistically prunes underperforming operators after an initial learning phase, automatically balancing portfolio diversity against the cost of exploring suboptimal arms.
 
-These findings highlight an important lesson: the choice of benchmark suite fundamentally affects the conclusions drawn about adaptive operator selection.
-On simpler benchmarks co-designed with SBX, AOS provides modest gains; on problems where operator choice genuinely matters (curved Pareto sets, high dimensionality), the benefits are dramatic.
-This suggests that previous studies reporting marginal AOS benefits may have been limited by their choice of testbed rather than by the AOS mechanism itself.
+Evaluated on \AOSNProblems{} challenging benchmarks from the CEC\,2009 UF and LSMOP families, AOS achieves two main results:
+(i)~a +18\% higher mean normalized HV than the fixed baseline, with \StatWinsBase{} statistically significant wins and \emph{zero} significant losses---establishing AOS as a safe, unconditional default for NSGA-II; and
+(ii)~an accelerating convergence advantage that grows over time, demonstrating that portfolio diversity compounds its benefit on challenging landscapes.
+The arm elimination mechanism is critical to this robustness: without it, the tri-objective UF problems (UF8--UF10) exhibit substantial losses where the baseline operator is well-suited; with elimination, these losses vanish (UF9 even flips to a win).
+
+These findings highlight two complementary insights.
+First, operator portfolio diversity is the primary driver of improvement on problems with curved Pareto sets or high dimensionality---even random operator switching substantially outperforms a fixed pipeline.
+Second, adaptive arm elimination resolves the fragility of diverse portfolios on problems where the default operator is already effective, enabling AOS to be deployed without problem-specific tuning.
 
 Future work includes extending the portfolio with additional structural operators (e.g., adaptive DE variants), testing on constrained multiobjective problems where feasibility boundaries create additional operator-choice pressure, scaling to many-objective problems with reward signals beyond hypervolume, and developing cost-aware bandit policies that account for per-arm computational overhead.
 

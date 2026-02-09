@@ -123,6 +123,21 @@ Beyond the policies listed in Stage~2 (Section~\ref{sec:aos_overview}), we provi
 (ii) the \emph{exploration floor} described in Stage~5, which guarantees a minimum pull fraction for every arm throughout the run.
 Both mechanisms are especially important in the early generations, when reward estimates are noisy and premature lock-in is most likely.
 
+\subsection{Adaptive arm elimination}
+While a diverse portfolio is generally beneficial, it can be counterproductive on problems where the default operator is already well-suited---each pull of a suboptimal arm wastes part of the evaluation budget.
+To address this, we introduce an \emph{arm elimination} mechanism that prunes statistically underperforming operators after an initial learning phase.
+
+After a configurable warm-up of $T_{\mathrm{elim}}$ generations, the controller computes the mean reward $\bar{r}_k$ and standard deviation $s_k$ for each active arm $k$ from its accumulated reward history.
+For each arm $k \neq k^*$ (where $k^* = \arg\max_k \bar{r}_k$), we compute the $z$-score of the difference from the best arm:
+\begin{align}
+  z_k = \frac{\bar{r}_{k^*} - \bar{r}_k}{\sqrt{s_{k^*}^2/n_{k^*} + s_k^2/n_k}},
+\end{align}
+where $n_k$ is the number of reward observations for arm $k$.
+Arms with $z_k \geq z_{\mathrm{thresh}}$ are permanently eliminated: they are excluded from all subsequent selections, including the exploration floor and warm-up draws.
+A safety constraint ensures that at least $K_{\min}$ arms remain active.
+
+This mechanism is specifically designed to handle the robustness--diversity trade-off: on problems where multiple operators contribute (e.g., high-dimensional LSMOP), reward differences are small and few or no arms are eliminated; on problems where a single operator dominates (e.g., tri-objective UF with spherical fronts), weaker arms are pruned early, concentrating the budget on productive operators.
+
 \begin{algorithm}[t]
 \caption{NSGA-II with generation-level AOS.}
 \label{alg:nsgaii_aos}
