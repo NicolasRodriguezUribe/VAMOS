@@ -18,6 +18,23 @@ _DEFAULT_TEMPLATE = "ZDT1-like (convex)"
 def example_objectives() -> dict[str, dict[str, str]]:
     """Return example objective templates (lazy to avoid import-time side effects)."""
     return {
+        **_math_templates(),
+        **_domain_templates(),
+        "Blank (write your own)": {
+            "code": textwrap.dedent("""\
+                f0 = x[0]
+                f1 = x[1]
+                return [f0, f1]"""),
+            "n_var": "2",
+            "n_obj": "2",
+            "category": "blank",
+        },
+    }
+
+
+def _math_templates() -> dict[str, dict[str, str]]:
+    """Classic mathematical benchmark templates."""
+    return {
         "ZDT1-like (convex)": {
             "code": textwrap.dedent("""\
                 f0 = x[0]
@@ -26,6 +43,7 @@ def example_objectives() -> dict[str, dict[str, str]]:
                 return [f0, f1]"""),
             "n_var": "5",
             "n_obj": "2",
+            "category": "math",
         },
         "Schaffer N.1 (concave)": {
             "code": textwrap.dedent("""\
@@ -34,6 +52,7 @@ def example_objectives() -> dict[str, dict[str, str]]:
                 return [f0, f1]"""),
             "n_var": "1",
             "n_obj": "2",
+            "category": "math",
         },
         "Fonseca-Fleming": {
             "code": textwrap.dedent("""\
@@ -46,6 +65,7 @@ def example_objectives() -> dict[str, dict[str, str]]:
                 return [f0, f1]"""),
             "n_var": "3",
             "n_obj": "2",
+            "category": "math",
         },
         "Tri-objective (DTLZ1-like)": {
             "code": textwrap.dedent("""\
@@ -56,16 +76,87 @@ def example_objectives() -> dict[str, dict[str, str]]:
                 return [f0, f1, f2]"""),
             "n_var": "5",
             "n_obj": "3",
-        },
-        "Blank (write your own)": {
-            "code": textwrap.dedent("""\
-                f0 = x[0]
-                f1 = x[1]
-                return [f0, f1]"""),
-            "n_var": "2",
-            "n_obj": "2",
+            "category": "math",
         },
     }
+
+
+def _domain_templates() -> dict[str, dict[str, str]]:
+    """Real-world domain-specific templates."""
+    return {
+        "Engineering: beam design (cost vs deflection)": {
+            "code": textwrap.dedent("""\
+                # x[0]=width, x[1]=height
+                area = x[0] * x[1]
+                cost = 2.0 * x[0] + 3.0 * x[1]  # material cost
+                deflection = 1000.0 / (x[0] * x[1] ** 3 + 1e-6)  # stiffness
+                return [cost, deflection]"""),
+            "n_var": "2",
+            "n_obj": "2",
+            "bounds": "1.0, 10.0",
+            "category": "engineering",
+            "constraint_code": textwrap.dedent("""\
+                # Stress must not exceed limit: stress <= 100
+                stress = 600.0 / (x[0] * x[1] ** 2 + 1e-6)
+                return [stress - 100.0]"""),
+            "n_constraints": "1",
+        },
+        "ML: accuracy vs model size": {
+            "code": textwrap.dedent("""\
+                import math
+                # x[0]=layers, x[1]=width_factor, x[2]=dropout
+                params = x[0] * (x[1] ** 2) * 1000  # proxy for param count
+                acc_proxy = 1.0 - math.exp(-0.5 * x[0] * x[1]) * (1.0 + 0.3 * x[2])
+                neg_accuracy = -acc_proxy  # minimize negative accuracy
+                model_size = params / 1e6  # in millions
+                return [neg_accuracy, model_size]"""),
+            "n_var": "3",
+            "n_obj": "2",
+            "bounds": "1.0, 10.0\n1.0, 8.0\n0.0, 0.5",
+            "category": "ml",
+        },
+        "Scheduling: makespan vs tardiness": {
+            "code": textwrap.dedent("""\
+                # x[i] = priority weight for job i (continuous relaxation)
+                n = len(x)
+                # simulate: higher priority -> earlier start
+                order = sorted(range(n), key=lambda i: -x[i])
+                durations = [2 + i % 3 for i in range(n)]
+                deadlines = [3 + 2 * i for i in range(n)]
+                t = 0.0
+                total_tardiness = 0.0
+                for j in order:
+                    t += durations[j]
+                    total_tardiness += max(0.0, t - deadlines[j])
+                makespan = t
+                return [makespan, total_tardiness]"""),
+            "n_var": "5",
+            "n_obj": "2",
+            "bounds": "0.0, 1.0",
+            "category": "scheduling",
+        },
+    }
+
+
+def compile_constraint_function(code: str) -> Any:
+    """Compile user constraint code into ``g(x) -> list[float]``.
+
+    Constraint values follow the convention: **g(x) <= 0 is feasible**.
+    """
+    import math as _math
+
+    header = "import math\nimport numpy as np\n"
+    full_source = header + "def _user_constraint(x):\n" + textwrap.indent(code, "    ") + "\n"
+    local_ns: dict[str, Any] = {}
+    exec(  # noqa: S102
+        compile(full_source, "<constraint-builder>", "exec"),
+        {"math": _math, "np": np, "__builtins__": __builtins__},
+        local_ns,
+    )
+    fn = local_ns.get("_user_constraint")
+    if fn is None:
+        raise RuntimeError("Could not compile constraint function.")
+    return fn
 
 
 def compile_objective_function(code: str) -> Any:
@@ -96,12 +187,18 @@ def run_preview_optimization(
     budget: int,
     pop_size: int,
     seed: int,
+    constraints: Any = None,
+    n_constraints: int = 0,
 ) -> dict[str, Any]:
     """Run a quick optimization and return ``{"F": ..., "X": ..., "elapsed_ms": ...}``."""
     from vamos.foundation.problem.builder import make_problem
     from vamos.ux.studio.services import _build_algorithm_config, _run_algorithm
 
-    problem = make_problem(fn, n_var=n_var, n_obj=n_obj, bounds=bounds, name="studio_preview")
+    kw: dict[str, Any] = {}
+    if constraints is not None and n_constraints > 0:
+        kw["constraints"] = constraints
+        kw["n_constraints"] = n_constraints
+    problem = make_problem(fn, n_var=n_var, n_obj=n_obj, bounds=bounds, name="studio_preview", **kw)
     algo_cfg = _build_algorithm_config(algorithm, pop_size=pop_size, n_var=n_var, n_obj=n_obj)
     t0 = time.perf_counter()
     result = _run_algorithm(
@@ -168,52 +265,74 @@ def generate_script(
     bounds: list[tuple[float, float]],
     algorithm: str,
     budget: int,
+    constraint_code: str = "",
+    n_constraints: int = 0,
 ) -> str:
     """Generate a standalone Python script from the builder state."""
     func_name = "".join(c if c.isalnum() else "_" for c in name.lower()).strip("_") or "custom"
     while "__" in func_name:
         func_name = func_name.replace("__", "_")
 
-    indented_code = textwrap.indent(code, "    ")
-    return textwrap.dedent(f"""\
-        \"\"\"
-        Custom problem: {name}
+    has_constraints = bool(constraint_code.strip()) and n_constraints > 0
 
-        Generated by VAMOS Studio -- Problem Builder.
-        \"\"\"
+    parts: list[str] = [
+        '"""',
+        f"Custom problem: {name}",
+        "",
+        "Generated by VAMOS Studio -- Problem Builder.",
+        '"""',
+        "",
+        "from vamos import make_problem, optimize",
+        "",
+        "",
+        f"def {func_name}(x):",
+        f'    """Evaluate one solution (x has length {n_var}). Returns {n_obj} objectives."""',
+    ]
+    for ln in code.splitlines():
+        parts.append(f"    {ln}")
 
-        from vamos import make_problem, optimize
+    if has_constraints:
+        parts += [
+            "",
+            "",
+            f"def {func_name}_constraints(x):",
+            '    """Constraint function. Values <= 0 are feasible."""',
+        ]
+        for ln in constraint_code.splitlines():
+            parts.append(f"    {ln}")
 
+    parts += ["", "", "problem = make_problem(", f"    {func_name},"]
+    parts.append(f"    n_var={n_var},")
+    parts.append(f"    n_obj={n_obj},")
+    parts.append(f"    bounds={bounds!r},")
+    parts.append(f'    name="{name}",')
+    if has_constraints:
+        parts.append(f"    constraints={func_name}_constraints,")
+        parts.append(f"    n_constraints={n_constraints},")
+    parts.append(")")
 
-        def {func_name}(x):
-            \"\"\"Evaluate one solution (x has length {n_var}). Returns {n_obj} objectives.\"\"\"
-        {indented_code}
+    parts += [
+        "",
+        'if __name__ == "__main__":',
+        "    result = optimize(",
+        "        problem,",
+        f'        algorithm="{algorithm}",',
+        f"        max_evaluations={budget},",
+        "        seed=42,",
+        "        verbose=True,",
+        "    )",
+        "    F = result.F",
+        '    print(f"\\nFound {len(F)} non-dominated solutions")',
+    ]
+    for i in range(n_obj):
+        parts.append(f'    print(f"  f{i}: [{{F[:, {i}].min():.4f}}, {{F[:, {i}].max():.4f}}]")')
+    parts.append("")
 
-
-        problem = make_problem(
-            {func_name},
-            n_var={n_var},
-            n_obj={n_obj},
-            bounds={bounds!r},
-            name="{name}",
-        )
-
-        if __name__ == "__main__":
-            result = optimize(
-                problem,
-                algorithm="{algorithm}",
-                max_evaluations={budget},
-                seed=42,
-                verbose=True,
-            )
-            F = result.F
-            print(f"\\nFound {{len(F)}} non-dominated solutions")
-            for i in range({n_obj}):
-                print(f"  f{{i}}: [{{F[:, i].min():.4f}}, {{F[:, i].max():.4f}}]")
-    """)
+    return "\n".join(parts)
 
 
 __all__ = [
+    "compile_constraint_function",
     "compile_objective_function",
     "example_objectives",
     "generate_script",
