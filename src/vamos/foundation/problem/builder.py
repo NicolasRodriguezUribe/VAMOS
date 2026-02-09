@@ -99,10 +99,7 @@ class FunctionalProblem:
                 out["G"] = G_result
 
     def __repr__(self) -> str:
-        return (
-            f"FunctionalProblem(name={self.name!r}, "
-            f"n_var={self.n_var}, n_obj={self.n_obj})"
-        )
+        return f"FunctionalProblem(name={self.name!r}, n_var={self.n_var}, n_obj={self.n_obj})"
 
 
 # ======================================================================
@@ -183,6 +180,15 @@ def make_problem(
     FunctionalProblem
         A problem object ready to pass to ``vamos.optimize()``.
 
+    Raises
+    ------
+    TypeError
+        If *fn* is not callable.
+    ValueError
+        If *bounds* and *xl*/*xu* are both provided, if *bounds* length
+        does not match *n_var*, or if *n_constraints* > 0 but no
+        *constraints* callable is given.
+
     Examples
     --------
     Minimal two-objective problem::
@@ -238,26 +244,18 @@ def make_problem(
 
     # ---- resolve bounds ----
     if bounds is not None and (xl is not None or xu is not None):
-        raise ValueError(
-            "Use either 'bounds' or 'xl'/'xu', not both."
-            "\n\nHint: bounds=[(0, 1), (0, 1)] is equivalent to xl=0.0, xu=1.0"
-        )
+        raise ValueError("Use either 'bounds' or 'xl'/'xu', not both.\n\nHint: bounds=[(0, 1), (0, 1)] is equivalent to xl=0.0, xu=1.0")
 
     if bounds is not None:
         if len(bounds) != n_var:
             raise ValueError(
-                f"bounds has {len(bounds)} entries but n_var={n_var}."
-                "\n\nHint: provide exactly one (lower, upper) pair per variable."
+                f"bounds has {len(bounds)} entries but n_var={n_var}.\n\nHint: provide exactly one (lower, upper) pair per variable."
             )
         for i, b in enumerate(bounds):
             if not (isinstance(b, (tuple, list)) and len(b) == 2):
-                raise ValueError(
-                    f"bounds[{i}] must be a (lower, upper) pair, got {b!r}."
-                )
+                raise ValueError(f"bounds[{i}] must be a (lower, upper) pair, got {b!r}.")
             if b[0] > b[1]:
-                raise ValueError(
-                    f"bounds[{i}]: lower bound ({b[0]}) > upper bound ({b[1]})."
-                )
+                raise ValueError(f"bounds[{i}]: lower bound ({b[0]}) > upper bound ({b[1]}).")
         xl_arr = np.array([b[0] for b in bounds], dtype=float)
         xu_arr = np.array([b[1] for b in bounds], dtype=float)
     else:

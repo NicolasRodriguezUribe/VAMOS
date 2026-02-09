@@ -4,9 +4,15 @@ Ask/tell operations for NSGA-II.
 
 from __future__ import annotations
 
+import logging
 from typing import Any, TYPE_CHECKING, cast
 
 import numpy as np
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
 
 from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.metrics.pareto import pareto_filter
@@ -91,8 +97,10 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
             try:
                 selected_raw = filter_fn(st)
             except Exception:
+                _logger().debug("parent_selection_filter(state) failed; using default selection", exc_info=True)
                 selected_raw = None
         except Exception:
+            _logger().debug("parent_selection_filter failed; using default selection", exc_info=True)
             selected_raw = None
         selected_idx = _coerce_parent_candidates(selected_raw, st.X.shape[0])
         if selected_idx is not None and selected_idx.size > 0:

@@ -4,10 +4,16 @@ Helpers for building run metadata and operator summaries.
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
 
 from vamos.foundation.version import get_version
 
@@ -75,7 +81,7 @@ def build_run_metadata(
     try:
         problem_info["description"] = selection.spec.description
     except Exception:
-        pass
+        _logger().debug("Could not read problem spec description", exc_info=True)
 
     kernel_caps = sorted(set(kernel_backend.capabilities())) if kernel_backend else []
     kernel_info = {

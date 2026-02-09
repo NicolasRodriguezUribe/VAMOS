@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import logging
 from argparse import Namespace
 from difflib import get_close_matches
 from collections.abc import Iterable, Sequence
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
+
 
 from importlib.resources import as_file
 
@@ -112,6 +118,7 @@ def resolve_reference_front_path(problem_key: str, explicit_path: str | None) ->
         with as_file(reference_front_path(problem_key)) as p:
             return str(p)
     except Exception:
+        _logger().debug("No reference front found for %r", problem_key, exc_info=True)
         return None
 
 

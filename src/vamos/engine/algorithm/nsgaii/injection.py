@@ -4,11 +4,16 @@ Immigration/injection support for NSGA-II.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any, cast
 from collections.abc import Mapping, Sequence
 
 import numpy as np
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 @dataclass
@@ -79,16 +84,12 @@ def _coerce_candidates(raw: Any) -> list[ImmigrantCandidate]:
                 for i in range(X_arr.shape[0]):
                     f_i = (
                         np.asarray(F_arr[i], dtype=float).copy()
-                        if isinstance(F_arr, np.ndarray)
-                        and F_arr.ndim == 2
-                        and i < F_arr.shape[0]
+                        if isinstance(F_arr, np.ndarray) and F_arr.ndim == 2 and i < F_arr.shape[0]
                         else None
                     )
                     g_i = (
                         np.asarray(G_arr[i], dtype=float).copy()
-                        if isinstance(G_arr, np.ndarray)
-                        and G_arr.ndim == 2
-                        and i < G_arr.shape[0]
+                        if isinstance(G_arr, np.ndarray) and G_arr.ndim == 2 and i < G_arr.shape[0]
                         else None
                     )
                     out.append(
@@ -174,9 +175,7 @@ class ImmigrationManager:
         self._stats: dict[int, ImmigrationStats] = {}
         self._active_indices = np.zeros(0, dtype=int)
         if self.breeding_mode not in {"normal", "exclude", "freeze_reinsert"}:
-            raise ValueError(
-                "immigration.breeding_mode must be one of: normal, exclude, freeze_reinsert"
-            )
+            raise ValueError("immigration.breeding_mode must be one of: normal, exclude, freeze_reinsert")
 
     def _stats_for(self, generation: int) -> ImmigrationStats:
         g = int(max(0, generation))
@@ -264,13 +263,7 @@ class ImmigrationManager:
         constraint_mode = str(getattr(state, "constraint_mode", "feasibility"))
         result = list(candidates)
         for j, idx in enumerate(needs_eval):
-            g_i = (
-                np.asarray(G[j], dtype=float).copy()
-                if isinstance(G, np.ndarray)
-                and G.ndim == 2
-                and constraint_mode != "none"
-                else None
-            )
+            g_i = np.asarray(G[j], dtype=float).copy() if isinstance(G, np.ndarray) and G.ndim == 2 and constraint_mode != "none" else None
             result[idx] = ImmigrantCandidate(
                 X=np.asarray(candidates[idx].X, dtype=float).copy(),
                 F=np.asarray(F[j], dtype=float).copy(),
@@ -438,7 +431,7 @@ class ImmigrationManager:
             try:
                 do_inject = do_inject and (not bool(self.skip_if(generation, state)))
             except Exception:
-                do_inject = do_inject
+                _logger().debug("skip_if callback raised; proceeding with injection", exc_info=True)
 
         if do_inject:
             candidates = self._fetch_candidates(generation, state)
@@ -462,11 +455,7 @@ class ImmigrationManager:
             self._active = self._active[: self.max_in_pop]
 
         X_new = getattr(state, "X", None)
-        self._active_indices = (
-            _match_active_indices(X_new, self._active)
-            if isinstance(X_new, np.ndarray)
-            else np.zeros(0, dtype=int)
-        )
+        self._active_indices = _match_active_indices(X_new, self._active) if isinstance(X_new, np.ndarray) else np.zeros(0, dtype=int)
         if self.breeding_mode in {"exclude", "freeze_reinsert"}:
             setattr(state, "non_breeding_indices", self._active_indices.copy())
         else:
