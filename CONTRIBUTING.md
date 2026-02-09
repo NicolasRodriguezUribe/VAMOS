@@ -44,14 +44,14 @@ Thank you for considering a contribution! This project is organized to make addi
 - Import from `vamos.engine.tuning` or use the user-friendly facade `vamos.tuning`.
 
 ## Self-check
-- After changes, run `python -m vamos.experiment.diagnostics.self_check` or `vamos-self-check` for a quick sanity check.
+- After changes, run `vamos check` for a quick sanity check.
 - CI-friendly tests live under `tests/`; keep populations/evaluation budgets small for speed.
 
 ## Before opening a pull request (human or AI-assisted)
 1. Run the health gates: `python tools/health.py`.
 2. Run the full suite: `pytest -q`.
 3. If you touched tuning, StudyRunner, or benchmarking:
-   - Run the smallest relevant `vamos-benchmark` suite.
+   - Run the smallest relevant `vamos bench` suite.
 4. If you added docs or notebooks:
    - Build docs locally (`mkdocs serve`) or open the notebook and run all cells.
 5. For guidance on assistant-specific workflows, see `.agent/docs/AGENTS.md`, `.agent/docs/AGENTS_tasks.md`, and `README.md`.

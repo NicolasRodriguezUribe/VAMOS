@@ -122,7 +122,7 @@ def _parse_fidelity_levels(raw: str | None, parser: argparse.ArgumentParser) -> 
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="VAMOS Tuning CLI (vamos-tune)")
+    parser = argparse.ArgumentParser(description="VAMOS Tuning CLI (vamos tune)")
     parser.add_argument("--problem", type=str, required=True, help="Problem ID (e.g., zdt1)")
     parser.add_argument("--algorithm", type=str, default="nsgaii", choices=list(BUILDERS.keys()), help="Algorithm to tune")
     parser.add_argument("--n-var", type=int, default=30, help="Number of variables")

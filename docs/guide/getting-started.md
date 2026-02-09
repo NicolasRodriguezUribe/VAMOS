@@ -22,12 +22,25 @@ Useful extras:
 Smoke tests
 -----------
 
-- Core check: `python -m vamos.experiment.diagnostics.self_check` or `vamos-self-check`
+- Core check: `vamos check`
 - Guided quickstart: `vamos quickstart` (use `--template list` to see domain templates)
 - Quick NSGA-II run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
 - Full test suite (core): `pytest`
 - With extras installed: `pytest -m "not slow"`
+- List all subcommands: `vamos help`
 - If you hit missing-dependency or unknown-key errors, see `docs/guide/troubleshooting.md`.
+
+Interactive tutorial
+--------------------
+
+For a hands-on walkthrough with runnable code, open the interactive tutorial notebook:
+
+```bash
+jupyter notebook notebooks/0_basic/05_interactive_tutorial.ipynb
+```
+
+It covers installation verification, first optimization, custom problems, algorithm
+comparison, constraints, parameter tuning, and exporting results for papers.
 
 Python API
 ----------
@@ -102,6 +115,6 @@ Benchmarks and studies
 ----------------------
 
 - Compare backends: `python -m vamos.experiment.cli.main --experiment backends --problem zdt1`
-- Run a predefined suite: `vamos-benchmark --suite ZDT_small --algorithms nsgaii moead --output report/`
+- Run a predefined suite: `vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/`
 - Batch problem x algorithm sweeps: `vamos --problem-set families --algorithm both`
 

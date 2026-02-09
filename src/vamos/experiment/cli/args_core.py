@@ -84,7 +84,7 @@ def add_core_arguments(
         "--problem",
         choices=available_problem_names(),
         default=spec_default(experiment_defaults, "problem", DEFAULT_PROBLEM),
-        help="Benchmark problem to solve (see available_problem_names() or vamos-zoo list).",
+        help="Benchmark problem to solve (see available_problem_names() or vamos zoo list).",
     )
     add_spec_argument(
         parser,

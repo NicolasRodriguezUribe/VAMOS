@@ -1,5 +1,5 @@
 """
-CLI for vamos-profile.
+CLI for ``vamos profile``.
 """
 
 from __future__ import annotations
@@ -10,9 +10,9 @@ import sys
 
 
 def main() -> int:
-    """Entry point for vamos-profile CLI."""
+    """Entry point for ``vamos profile`` CLI."""
     logger = logging.getLogger(__name__)
-    parser = argparse.ArgumentParser(prog="vamos-profile", description="Profile VAMOS optimization across different backends")
+    parser = argparse.ArgumentParser(prog="vamos profile", description="Profile VAMOS optimization across different backends")
     parser.add_argument("--problem", "-p", default="zdt1", help="Problem to benchmark (default: zdt1)")
     parser.add_argument("--engines", "-e", default="numpy", help="Comma-separated list of engines (default: numpy)")
     parser.add_argument("--budget", "-b", type=int, default=2000, help="Evaluation budget (default: 2000)")

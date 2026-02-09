@@ -149,12 +149,6 @@ all = [
 
 [project.scripts]
 vamos = "vamos.experiment.cli.main:main"
-vamos-self-check = "vamos.experiment.diagnostics.self_check:main"
-vamos-benchmark = "vamos.experiment.benchmark.cli:main"
-vamos-studio = "vamos.experiment.studio.app:main"
-vamos-zoo = "vamos.experiment.zoo.cli:main"
-vamos-tune = "vamos.experiment.cli.tune:main"
-vamos-profile = "vamos.experiment.profiler.cli:main"
 
 [tool.mypy]
 python_version = "3.11"

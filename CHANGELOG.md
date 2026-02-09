@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - **Unified API**: `vamos.optimize()` consolidates `study()` and `auto_optimize()` into a single powerful entry point.
-- **Performance Profiler**: `vamos-profile` CLI for benchmarking engines (NumPy, Numba, JAX) and algorithms.
+- **Performance Profiler**: `vamos profile` CLI for benchmarking engines (NumPy, Numba, JAX) and algorithms.
 - **Interactive Dashboard**: `explore_result_front(result)` launches a Plotly-based interactive visualization of the Pareto front.
 - **JAX Support**: New GPU-accelerated kernel backend (`engine="jax"`) for large-scale population updates.
 - **New Algorithms**: Added `AGE-MOEA` (Adaptive Geometry Estimation) and `RVEA` (Reference Vector Guided EA).

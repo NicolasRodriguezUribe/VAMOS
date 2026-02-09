@@ -215,16 +215,18 @@ Run a config with a CLI override:
 vamos --config configs/experiment.yaml --algorithm smsemoa --max-evaluations 10000
 ```
 
-Other CLIs
-----------
+Other subcommands
+-----------------
 
-- Self-check: `vamos-self-check`
-- Benchmarking: `vamos-benchmark --list` and `vamos-benchmark ZDT_small --algorithms nsgaii moead --output report/`
-- Tuning: `vamos-tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 20000 --n-jobs 4`
+All tools are accessed via `vamos <subcommand>`. Run `vamos help` for the full list.
+
+- Self-check: `vamos check`
+- Benchmarking: `vamos bench --list` and `vamos bench ZDT_small --algorithms nsgaii moead --output report/`
+- Tuning: `vamos tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 20000 --n-jobs 4`
 - Ablation plans: `vamos ablation --config configs/ablation.yaml`
-- Profiling: `vamos-profile --problem zdt1 --engines numpy,numba --budget 2000 --output report/profile.csv`
-- Problem zoo: `vamos-zoo list`, `vamos-zoo info zdt1`, `vamos-zoo run zdt1 --algorithm nsgaii --budget 3000`
-- Studio (interactive, needs `studio` extra): `vamos-studio --study-dir results`
+- Profiling: `vamos profile --problem zdt1 --engines numpy,numba --budget 2000 --output report/profile.csv`
+- Problem zoo: `vamos zoo list`, `vamos zoo info zdt1`, `vamos zoo run zdt1 --algorithm nsgaii --budget 3000`
+- Studio (interactive, needs `studio` extra): `vamos studio --study-dir results`
 
 Ablation config example
 -----------------------

@@ -141,16 +141,16 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 ---
 
-## 8. Extend the benchmarking CLI (`vamos-benchmark`)
+## 8. Extend the benchmarking CLI (`vamos bench`)
 
 **Prompt 8 - Add a benchmark suite entry**
 
 > You are in the VAMOS repo. Follow the rules.  
-> Goal: extend `vamos-benchmark` with a new or updated suite.  
+> Goal: extend `vamos bench` with a new or updated suite.  
 > Tasks:  
 > - Locate suite/problem/algorithm definitions under `src/vamos/experiment/benchmark/` and any reference fronts.  
 > - Add or adjust a suite (problems, budgets, algorithms) keeping output schema (raw runs, summary CSVs, LaTeX/plots) compatible.  
-> - Add a smoke test (tiny budgets) that runs `vamos-benchmark --suite <suite> --algorithms ... --output report/`.  
+> - Add a smoke test (tiny budgets) that runs `vamos bench --suite <suite> --algorithms ... --output report/`.  
 > - Document the new invocation in a short note or example.  
 > Provide diffs/new files and the sample CLI command.
 
@@ -158,10 +158,10 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 ## 9. Extend diagnostics / self-check tooling
 
-**Prompt 9 - Enhance `vamos-self-check`**
+**Prompt 9 - Enhance `vamos check`**
 
 > You are in the VAMOS repo. Follow the rules.  
-> Goal: improve diagnostics (`vamos.experiment.diagnostics.self_check` / `vamos-self-check`) to validate installs/backends quickly.  
+> Goal: improve diagnostics (`vamos.experiment.diagnostics.self_check` / `vamos check`) to validate installs/backends quickly.  
 > Tasks:  
 > - Inspect existing diagnostics under `src/vamos/experiment/diagnostics/`.  
 > - Add fast checks (e.g., optional backend availability, tiny ZDT1 run) guarded so missing extras produce clear messages.  
@@ -176,11 +176,11 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 **Prompt 10 - Update Studio experience**
 
 > You are in the VAMOS repo. Rules apply.  
-> Goal: extend the Studio (`vamos-studio`) experience (e.g., add a new panel or preference scoring helper) while keeping defaults intact.  
+> Goal: extend the Studio (`vamos studio`) experience (e.g., add a new panel or preference scoring helper) while keeping defaults intact.  
 > Tasks:  
 > - Locate Studio code (e.g., `src/vamos/ux/studio/`) and how it reads study data from `results/`.  
 > - Add the new feature (panel/helper) with clear defaults; guard optional deps required by the `studio` extra.  
-> - Provide a minimal example dataset or instructions so `vamos-studio --study-dir results` exercises the feature.  
+> - Provide a minimal example dataset or instructions so `vamos studio --study-dir results` exercises the feature.  
 > - Add tests or a lightweight integration check if feasible.  
 > Output diffs/new files and usage notes.
 

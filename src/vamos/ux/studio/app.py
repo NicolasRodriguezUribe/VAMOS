@@ -1,20 +1,17 @@
+"""VAMOS Studio -- main Streamlit application.
+
+Thin entry point that orchestrates three tabs:
+
+1. **Welcome** -- onboarding wizard
+2. **Problem Builder** -- interactive problem definition
+3. **Explore Results** -- post-run comparison & MCDM
+"""
+
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-
-import numpy as np
-
-from vamos.ux.studio.services import (
-    build_decision_views,
-    load_studio_data,
-    run_focused_optimization,
-    run_with_history,
-)
-
-if TYPE_CHECKING:
-    from vamos.ux.studio.data import FrontRecord
+from typing import Any
 
 
 def _import_streamlit() -> Any:
@@ -33,189 +30,140 @@ def _import_plotly() -> Any:
     return px
 
 
-def _select_primary_front(
-    fronts: list[FrontRecord],
-    problem: str,
-    primary_algo: str | None,
-) -> FrontRecord | None:
-    if primary_algo is None:
-        return None
-    return next((f for f in fronts if f.problem_name == problem and f.algorithm_name == primary_algo), None)
+# ======================================================================
+# Tab: Welcome / Onboarding
+# ======================================================================
+
+
+def _render_welcome_tab(st: Any) -> None:
+    """Render the Welcome / Getting Started onboarding page."""
+    st.header("Welcome to VAMOS Studio")
+    st.markdown("VAMOS Studio is your interactive workspace for multi-objective optimization. Here is how to get started:")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.subheader("1. Build a Problem")
+        st.markdown(
+            "Go to the **Problem Builder** tab to define your own optimization "
+            "problem visually. Write your objective functions, set bounds, "
+            "and see the Pareto front update live."
+        )
+        st.code(
+            "from vamos import make_problem\n\n"
+            "problem = make_problem(\n"
+            "    lambda x: [x[0], 1-x[0]**0.5],\n"
+            "    n_var=2, n_obj=2,\n"
+            "    bounds=[(0,1), (0,1)],\n"
+            ")",
+            language="python",
+        )
+
+    with col2:
+        st.subheader("2. Run Optimization")
+        st.markdown("Use the Python API or the CLI to run experiments. Results are stored under `results/` automatically.")
+        st.code(
+            "# Python\n"
+            "from vamos import optimize\n"
+            'result = optimize("zdt1",\n'
+            '    algorithm="nsgaii",\n'
+            "    max_evaluations=10000)\n\n"
+            "# Or CLI\n"
+            "vamos quickstart",
+            language="python",
+        )
+
+    with col3:
+        st.subheader("3. Explore Results")
+        st.markdown(
+            "Switch to the **Explore Results** tab to compare algorithms, rank solutions with MCDM methods, and export the best ones."
+        )
+        st.code(
+            "vamos summarize \\\n  --results results/\n\n# Or browse visually in\n# the Explore Results tab",
+            language="bash",
+        )
+
+    st.divider()
+    _render_welcome_expanders(st)
+
+
+def _render_welcome_expanders(st: Any) -> None:
+    """Render the collapsible quick-reference sections."""
+    with st.expander("Quick Reference: CLI commands", expanded=False):
+        st.markdown(
+            "| Command | Description |\n"
+            "|---------|-------------|\n"
+            "| `vamos quickstart` | Guided wizard for a first run |\n"
+            "| `vamos create-problem` | Scaffold a custom problem file |\n"
+            "| `vamos summarize` | Table summary of results |\n"
+            "| `vamos bench` | Benchmark suite across algorithms |\n"
+            "| `vamos tune` | Hyperparameter tuning |\n"
+            "| `vamos check` | Verify installation and backends |\n"
+            "| `vamos studio` | Launch this dashboard |\n"
+            "| `vamos profile` | Performance profiling |\n"
+        )
+
+    with st.expander("Quick Reference: Python API", expanded=False):
+        st.markdown(
+            "| Goal | Code |\n"
+            "|------|------|\n"
+            '| Run a benchmark | `optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)` |\n'
+            "| Custom problem | `make_problem(fn, n_var=2, n_obj=2, bounds=[(0,1),(0,1)])` |\n"
+            '| Compare seeds | `optimize("zdt1", seed=[0, 1, 2, 3, 4])` |\n'
+            "| List problems | `from vamos import available_problem_names; available_problem_names()` |\n"
+        )
+
+    with st.expander("What is multi-objective optimization?", expanded=False):
+        st.markdown(
+            "Multi-objective optimization finds solutions that balance "
+            "**conflicting objectives** (e.g. cost vs quality). Instead of a "
+            "single best answer, you get a **Pareto front** -- a set of "
+            "trade-off solutions where improving one objective worsens another.\n\n"
+            "VAMOS uses **evolutionary algorithms** (MOEAs) to discover these "
+            "fronts efficiently. Popular algorithms include NSGA-II, MOEA/D, "
+            "and SPEA2."
+        )
+
+
+# ======================================================================
+# Main entry point with tabs
+# ======================================================================
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Launch VAMOS Studio (Streamlit).")
-    parser.add_argument("--study-dir", help="Path to a StudyRunner output directory.", default="results")
+    parser.add_argument(
+        "--study-dir",
+        help="Path to a StudyRunner output directory.",
+        default="results",
+    )
     args, _ = parser.parse_known_args(argv)
 
     st = _import_streamlit()
     px = _import_plotly()
 
-    st.set_page_config(page_title="VAMOS Studio", layout="wide")
+    st.set_page_config(
+        page_title="VAMOS Studio",
+        page_icon="https://raw.githubusercontent.com/NicolasRodriguezUribe/VAMOS/main/docs/assets/VAMOS.jpeg",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
     st.title("VAMOS Studio")
-    study_dir = Path(st.sidebar.text_input("Study directory", args.study_dir)).expanduser()
-    if not study_dir.exists():
-        st.warning(f"Study directory {study_dir} not found.")
-        return
 
-    runs, fronts = load_studio_data(study_dir)
-    st.sidebar.success(f"Loaded {len(runs)} runs across {len(fronts)} fronts.")
+    tab_welcome, tab_builder, tab_explore = st.tabs(["Welcome", "Problem Builder", "Explore Results"])
 
-    problems = sorted({f.problem_name for f in fronts})
-    problem = st.sidebar.selectbox("Problem", problems)
-    algos = sorted({f.algorithm_name for f in fronts if f.problem_name == problem})
+    with tab_welcome:
+        _render_welcome_tab(st)
 
-    selected_algos = st.sidebar.multiselect("Algorithms to Compare", algos, default=algos[:1])
-    primary_algo = st.sidebar.selectbox("Primary Algorithm (for MCDM)", selected_algos) if selected_algos else None
+    with tab_builder:
+        from vamos.ux.studio.problem_builder import render_problem_builder
 
-    if not selected_algos:
-        st.info("Select at least one algorithm to visualize.")
-        return
+        render_problem_builder(st, px)
 
-    comparison_fronts = [f for f in fronts if f.problem_name == problem and f.algorithm_name in selected_algos]
-    primary_front = _select_primary_front(fronts, problem, primary_algo)
+    with tab_explore:
+        from vamos.ux.studio.explore_results import render_explore_tab
 
-    if primary_front is None:
-        st.error("Primary front not found.")
-        return
-    if primary_algo is None:
-        st.error("Primary algorithm not selected.")
-        return
-
-    default_weights = np.ones(primary_front.points_F.shape[1]) / primary_front.points_F.shape[1]
-    weight_inputs = []
-    st.sidebar.subheader("Preferences (Primary Algo)")
-    for i in range(primary_front.points_F.shape[1]):
-        weight_inputs.append(st.sidebar.slider(f"Weight f{i}", min_value=0.0, max_value=1.0, value=float(default_weights[i]), step=0.05))
-    weights = np.array(weight_inputs)
-    if weights.sum() == 0:
-        weights = default_weights
-    ref_input = st.sidebar.text_input("Reference point (comma-separated)", "")
-    reference_point = None
-    if ref_input.strip():
-        try:
-            reference_point = np.array([float(v.strip()) for v in ref_input.split(",")])
-        except Exception:
-            st.sidebar.error("Invalid reference point format.")
-    method = st.sidebar.selectbox("MCDM method", ["tchebycheff", "weighted_sum", "knee", "topsis"])
-
-    views = build_decision_views([primary_front], weights, reference_point, method)
-    view = views[0]
-    scores = view.mcdm_scores.get(method, np.zeros(view.front.points_F.shape[0]))
-    order = np.argsort(scores)
-
-    st.subheader("Pareto Front Comparison")
-    obj_idx = st.multiselect("Objectives (choose 2)", list(range(primary_front.points_F.shape[1])), default=[0, 1])
-
-    if len(obj_idx) == 2:
-        import pandas as pd
-
-        plot_data = []
-        for front in comparison_fronts:
-            for i in range(front.points_F.shape[0]):
-                plot_data.append(
-                    {
-                        f"f{obj_idx[0]}": float(front.points_F[i, obj_idx[0]]),
-                        f"f{obj_idx[1]}": float(front.points_F[i, obj_idx[1]]),
-                        "algorithm": front.algorithm_name,
-                    }
-                )
-
-        df = pd.DataFrame(plot_data)
-        fig = px.scatter(df, x=f"f{obj_idx[0]}", y=f"f{obj_idx[1]}", color="algorithm", title=f"{problem} Pareto Fronts")
-
-        best_idx = int(order[0])
-        best_point = primary_front.points_F[best_idx]
-        fig.add_scatter(
-            x=[best_point[obj_idx[0]]],
-            y=[best_point[obj_idx[1]]],
-            mode="markers",
-            marker=dict(size=12, color="red", symbol="star", line=dict(width=2, color="black")),
-            name=f"Best (Primary: {method})",
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    st.subheader(f"Top solutions ({primary_algo})")
-    top_k = st.slider("Show top-k", min_value=1, max_value=min(20, len(order)), value=min(5, len(order)))
-    top_indices = order[:top_k]
-    st.write("Indices (Primary):", top_indices.tolist())
-
-    import pandas as pd
-
-    st.dataframe(pd.DataFrame(primary_front.points_F[top_indices], columns=[f"f{i}" for i in range(primary_front.points_F.shape[1])]))
-
-    if st.button("Export top-k as JSON"):
-        from vamos.ux.studio.export import export_solutions_to_json
-
-        path = export_solutions_to_json(view, top_indices.tolist(), study_dir / "studio_export.json")
-        st.success(f"Exported to {path}")
-
-    st.subheader("Parallel Coordinates")
-    try:
-        fig_pc = px.parallel_coordinates(
-            view.normalized_F,
-            color=scores,
-            labels={i: f"f{i}" for i in range(view.normalized_F.shape[1])},
-        )
-        st.plotly_chart(fig_pc, use_container_width=True)
-    except Exception as exc:
-        st.warning(f"Parallel coordinates unavailable: {exc}")
-
-    st.subheader("Focused optimization")
-    focus_budget = st.number_input("Budget (evaluations)", min_value=100, max_value=5000, value=500, step=100)
-    if st.button("Run focused optimization"):
-        if reference_point is None:
-            st.error("Provide a reference point first.")
-        else:
-            with st.spinner("Running focused optimization..."):
-                F_new, X_new = run_focused_optimization(problem, reference_point, primary_algo, int(focus_budget))
-            st.success(f"Focused run produced {len(F_new)} points.")
-            if len(obj_idx) == 2:
-                fig2 = px.scatter(
-                    x=F_new[:, obj_idx[0]],
-                    y=F_new[:, obj_idx[1]],
-                    labels={"x": f"f{obj_idx[0]}", "y": f"f{obj_idx[1]}"},
-                )
-                st.plotly_chart(fig2, use_container_width=True)
-
-    st.subheader("Search Dynamics (Re-run)")
-    if primary_front.extra.get("config"):
-        if st.button("Animate Optimization Evolution"):
-            config = primary_front.extra["config"]
-            with st.spinner("Re-running optimization to capture history..."):
-                _, history = run_with_history(problem, config, int(focus_budget))
-
-            if not history:
-                st.warning("No history captured. Ensure algorithm supports live_viz/callbacks.")
-            else:
-                st.success(f"Captured {len(history)} generations.")
-                frames = []
-                for gen, F_gen in enumerate(history):
-                    if len(F_gen) > 200:
-                        F_gen = F_gen[:200]
-                    for i in range(len(F_gen)):
-                        frames.append(
-                            {
-                                "Generation": gen,
-                                f"f{obj_idx[0]}": float(F_gen[i, obj_idx[0]]),
-                                f"f{obj_idx[1]}": float(F_gen[i, obj_idx[1]]),
-                            }
-                        )
-                df_anim = pd.DataFrame(frames)
-
-                fig_anim = px.scatter(
-                    df_anim,
-                    x=f"f{obj_idx[0]}",
-                    y=f"f{obj_idx[1]}",
-                    animation_frame="Generation",
-                    range_x=[df_anim[f"f{obj_idx[0]}"].min(), df_anim[f"f{obj_idx[0]}"].max()],
-                    range_y=[df_anim[f"f{obj_idx[1]}"].min(), df_anim[f"f{obj_idx[1]}"].max()],
-                    title=f"Evolution of {primary_algo} on {problem}",
-                )
-                st.plotly_chart(fig_anim, use_container_width=True)
-    else:
-        st.info("Config not available for this run (cannot re-run accurately).")
+        render_explore_tab(st, px, Path(args.study_dir))
 
 
 __all__ = ["main"]
