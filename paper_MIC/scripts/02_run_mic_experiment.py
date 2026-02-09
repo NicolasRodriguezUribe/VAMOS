@@ -405,7 +405,7 @@ def _make_aos_cfg(
     c: float = 1.0,
     gamma: float = 0.2,
     window_size: int = 50,
-    floor_prob: float = 0.05,
+    floor_prob: float = 0.02,
 ) -> dict[str, Any]:
     """Build AOS config dict for any AOS variant."""
     hv_ref_pt, hv_ref_hv = _hv_reward_refs(problem_name)
@@ -446,7 +446,7 @@ VARIANT_SPECS: dict[str, VariantSpec] = {
     "random": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=1.0, min_usage=0)),
     # AOS – Thompson Sampling with proper exploration
     "aos": VariantSpec(
-        aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.05),
+        aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.02),
     ),
     # ---- Pilot variants ----
     "aos_eps15": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.15, min_usage=5)),
@@ -468,7 +468,7 @@ class AOSRuntimeOptions:
     gamma: float = 0.2
     min_usage: int = 5
     window_size: int = 50
-    floor_prob: float = 0.05
+    floor_prob: float = 0.02
     disable_manyobj: bool = False
 
 
@@ -625,7 +625,7 @@ def _load_aos_runtime_options() -> AOSRuntimeOptions:
     c = _as_float_env("VAMOS_MIC_AOS_C", 1.0)
     gamma = _as_float_env("VAMOS_MIC_AOS_GAMMA", 0.2)
     min_usage = _as_int_env("VAMOS_MIC_AOS_MIN_USAGE", 5)
-    floor_prob = _as_float_env("VAMOS_MIC_AOS_FLOOR_PROB", 0.05)
+    floor_prob = _as_float_env("VAMOS_MIC_AOS_FLOOR_PROB", 0.02)
     disable_manyobj = _as_bool_env("VAMOS_MIC_AOS_DISABLE_MANYOBJ", False)
 
     # Defaults tuned for non-stationary policies; harmless for others.
