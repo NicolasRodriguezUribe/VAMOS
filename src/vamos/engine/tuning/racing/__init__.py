@@ -25,6 +25,7 @@ from .tuning_task import TuningTask, EvalContext, Instance
 from .scenario import Scenario
 from .config_space import AlgorithmConfigSpace
 from .warm_start import WarmStartEvaluator
+from .two_phase import TwoPhaseTuner, TwoPhaseScenario
 from .io import filter_active_config, history_to_dict, save_history_json, save_history_csv, save_checkpoint, load_checkpoint
 from .bridge import (
     build_agemoea_config_space,
@@ -89,6 +90,9 @@ __all__ = [
     "AlgorithmConfigSpace",
     # Warm-start helper
     "WarmStartEvaluator",
+    # Two-phase tuner
+    "TwoPhaseTuner",
+    "TwoPhaseScenario",
     # I/O
     "filter_active_config",
     "history_to_dict",

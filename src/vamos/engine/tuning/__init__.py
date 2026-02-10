@@ -40,6 +40,9 @@ from .racing import (
     TrialResult,
     ConfigState,
     EliteEntry,
+    # Two-phase tuner
+    TwoPhaseTuner,
+    TwoPhaseScenario,
     # I/O
     filter_active_config,
     history_to_dict,
@@ -108,6 +111,8 @@ __all__ = [
     "TrialResult",
     "ConfigState",
     "EliteEntry",
+    "TwoPhaseTuner",
+    "TwoPhaseScenario",
     # I/O
     "filter_active_config",
     "history_to_dict",

@@ -12,6 +12,9 @@ import numpy as np
 from .parameters import ConditionalBlock
 from .param_space import Condition, ParamSpace, ParamType
 
+# Type alias for composable space parts: (params, conditionals, conditions).
+SpacePart = tuple[list[ParamType], list[ConditionalBlock], list[Condition]]
+
 
 @dataclass
 class AlgorithmConfigSpace:
@@ -120,3 +123,34 @@ class AlgorithmConfigSpace:
                     raise ValueError(f"Condition references unknown parameter '{cond.param_name}'.")
 
         return ParamSpace(params=params, conditions=conditions)
+
+
+def compose_config_space(algorithm_name: str, *parts: SpacePart) -> AlgorithmConfigSpace:
+    """
+    Compose an :class:`AlgorithmConfigSpace` from multiple
+    ``(params, conditionals, conditions)`` parts.
+
+    This enables separating algorithm-specific parameters from
+    encoding-specific operator parameters and combining them cleanly::
+
+        def build_moead_mixed_config_space():
+            return compose_config_space(
+                "moead_mixed",
+                _moead_core_part(),
+                _moead_aggregation_part(),
+                _mixed_operator_part(),
+            )
+    """
+    all_params: list[ParamType] = []
+    all_conditionals: list[ConditionalBlock] = []
+    all_conditions: list[Condition] = []
+    for params, conditionals, conditions in parts:
+        all_params.extend(params)
+        all_conditionals.extend(conditionals)
+        all_conditions.extend(conditions)
+    return AlgorithmConfigSpace(
+        algorithm_name=algorithm_name,
+        params=all_params,
+        conditionals=all_conditionals or None,
+        conditions=all_conditions or None,
+    )
