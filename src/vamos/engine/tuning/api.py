@@ -22,6 +22,8 @@ from vamos.engine.tuning import (
     AlgorithmConfigSpace,
     RandomSearchTuner,
     RacingTuner,
+    TwoPhaseTuner,
+    TwoPhaseScenario,
     # Parameter types
     ParamSpace,
     Real,
@@ -71,6 +73,8 @@ __all__ = [
     "AlgorithmConfigSpace",
     "RandomSearchTuner",
     "RacingTuner",
+    "TwoPhaseTuner",
+    "TwoPhaseScenario",
     # Parameter types
     "ParamSpace",
     "Real",

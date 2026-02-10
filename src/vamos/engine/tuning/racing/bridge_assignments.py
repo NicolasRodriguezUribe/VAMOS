@@ -24,10 +24,10 @@ from vamos.engine.algorithm.config import (
 
 
 _NSGAII_NAMES = {"nsgaii", "nsgaii_permutation", "nsgaii_mixed", "nsgaii_binary", "nsgaii_integer"}
-_MOEAD_NAMES = {"moead", "moead_binary", "moead_integer"}
-_NSGAIII_NAMES = {"nsgaiii", "nsgaiii_binary", "nsgaiii_integer"}
-_SMSEMOA_NAMES = {"smsemoa", "smsemoa_binary", "smsemoa_integer"}
-_IBEA_NAMES = {"ibea", "ibea_binary", "ibea_integer"}
+_MOEAD_NAMES = {"moead", "moead_mixed", "moead_binary", "moead_integer"}
+_NSGAIII_NAMES = {"nsgaiii", "nsgaiii_mixed", "nsgaiii_binary", "nsgaiii_integer"}
+_SMSEMOA_NAMES = {"smsemoa", "smsemoa_mixed", "smsemoa_binary", "smsemoa_integer"}
+_IBEA_NAMES = {"ibea", "ibea_mixed", "ibea_binary", "ibea_integer"}
 
 
 def _apply_initializer(builder: Any, assignment: dict[str, Any], pop_size: int) -> None:
@@ -254,16 +254,16 @@ def _build_spea2_config(assignment: dict[str, Any]) -> SPEA2Config:
     pop_size = int(assignment["pop_size"])
     builder.pop_size(pop_size)
     builder.archive_size(int(assignment.get("archive_size", pop_size)))
-    builder.crossover(
-        str(assignment["crossover"]),
-        prob=float(assignment["crossover_prob"]),
-        eta=float(assignment.get("crossover_eta", 20.0)),
-    )
-    builder.mutation(
-        str(assignment["mutation"]),
-        prob=float(assignment["mutation_prob"]),
-        eta=float(assignment["mutation_eta"]),
-    )
+    cross = str(assignment["crossover"])
+    cross_params: dict[str, Any] = {"prob": float(assignment["crossover_prob"])}
+    if cross == "sbx":
+        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
+    builder.crossover(cross, **cross_params)
+    mut = str(assignment["mutation"])
+    mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
+    if mut in {"pm", "polynomial"}:
+        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
+    builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
     builder.k_neighbors(int(assignment.get("k_neighbors", max(1, int(np.sqrt(pop_size))))))
     return builder.build()
@@ -452,15 +452,15 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         return _build_nsgaiii_config(assignment)
     if algo in _SMSEMOA_NAMES:
         return _build_smsemoa_config(assignment)
-    if algo == "spea2":
+    if algo in {"spea2", "spea2_mixed"}:
         return _build_spea2_config(assignment)
     if algo in _IBEA_NAMES:
         return _build_ibea_config(assignment)
     if algo == "smpso":
         return _build_smpso_config(assignment)
-    if algo == "agemoea":
+    if algo in {"agemoea", "agemoea_mixed"}:
         return _build_agemoea_config(assignment)
-    if algo == "rvea":
+    if algo in {"rvea", "rvea_mixed"}:
         return _build_rvea_config(assignment)
     raise ValueError(f"Unsupported algorithm for config construction: {algorithm_name}")
 

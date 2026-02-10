@@ -111,6 +111,16 @@ class WarmStartEvaluator:
 
         return score, new_checkpoint
 
+    def reset_bounds(self) -> None:
+        """Reset accumulated global min/max bounds.
+
+        Call this between tuning phases so that normalization in Phase 2
+        is not distorted by the cheap Phase 1 evaluations.
+        """
+        self.global_min = None
+        self.global_max = None
+        self._objectives_seen = False
+
     def _update_bounds(self, F: np.ndarray) -> None:
         """Update global min/max for normalization."""
         if self.global_min is None or self.global_max is None:
