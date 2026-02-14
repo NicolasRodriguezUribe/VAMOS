@@ -103,9 +103,11 @@ def eliminate_configs(configs: list[ConfigState], *, task: TuningTask, scenario:
     min_len = min(lengths)
     max_len = max(lengths)
 
-    use_stat_tests = scenario.use_statistical_tests and min_len >= scenario.min_blocks_before_elimination and min_len > 1
-
-    if not use_stat_tests:
+    if not scenario.use_statistical_tests:
+        # Even in rank-only mode, wait for a minimum number of blocks to reduce
+        # noisy eliminations of recently spawned/restarted configurations.
+        if min_len < scenario.min_blocks_before_elimination:
+            return False
         return rank_based_elimination(
             configs,
             alive_indices,
@@ -114,14 +116,13 @@ def eliminate_configs(configs: list[ConfigState], *, task: TuningTask, scenario:
             scenario=scenario,
         )
 
+    # In statistical mode, be conservative before enough block evidence.
+    if min_len < scenario.min_blocks_before_elimination or min_len <= 1:
+        return False
+
+    # Keep waiting until all alive configs are aligned on the same number of blocks.
     if min_len != max_len:
-        return rank_based_elimination(
-            configs,
-            alive_indices,
-            agg_scores,
-            task=task,
-            scenario=scenario,
-        )
+        return False
 
     scores, aligned_indices = build_score_matrix(configs)
 

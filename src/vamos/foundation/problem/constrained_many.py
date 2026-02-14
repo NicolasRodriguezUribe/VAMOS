@@ -5,6 +5,22 @@ import math
 import numpy as np
 
 
+def _safe_divide(num: np.ndarray, den: np.ndarray, *, eps: float = 1e-12) -> np.ndarray:
+    num_arr = np.asarray(num, dtype=float)
+    den_arr = np.asarray(den, dtype=float)
+    out = np.zeros_like(num_arr, dtype=float)
+    np.divide(num_arr, den_arr, out=out, where=np.abs(den_arr) > eps)
+    return out
+
+
+def _safe_sqrt(expr: np.ndarray | float) -> np.ndarray:
+    return np.sqrt(np.maximum(np.asarray(expr, dtype=float), 0.0))
+
+
+def _safe_arcsin(x: np.ndarray) -> np.ndarray:
+    return np.arcsin(np.clip(np.asarray(x, dtype=float), -1.0, 1.0))
+
+
 def _prepare_output(
     X: np.ndarray,
     out: dict[str, np.ndarray],
@@ -344,9 +360,9 @@ class MWProblem:
         elif idx == 5:
             g = self._g1(X_arr)
             f0 = g * X_arr[:, 0]
-            f1 = g * np.sqrt(1.0 - np.square(f0 / g))
-            with np.errstate(divide="ignore", invalid="ignore"):
-                atan = np.arctan(f1 / f0)
+            ratio = _safe_divide(f0, g)
+            f1 = g * _safe_sqrt(1.0 - np.square(ratio))
+            atan = np.arctan2(f1, f0)
             g0 = np.square(f0) + np.square(f1) - np.square(1.7 - self._la2(0.2, 2.0, 1.0, 1.0, atan))
             t = 0.5 * np.pi - 2.0 * np.abs(atan - 0.25 * np.pi)
             g1 = np.square(1.0 + self._la2(0.5, 6.0, 3.0, 1.0, t)) - np.square(f0) - np.square(f1)
@@ -356,9 +372,9 @@ class MWProblem:
         elif idx == 6:
             g = self._g2(X_arr)
             f0 = g * X_arr[:, 0]
-            f1 = g * np.sqrt(1.1 * 1.1 - np.square(f0 / g))
-            with np.errstate(divide="ignore", invalid="ignore"):
-                atan = np.arctan(f1 / f0)
+            ratio = _safe_divide(f0, g)
+            f1 = g * _safe_sqrt(1.1 * 1.1 - np.square(ratio))
+            atan = np.arctan2(f1, f0)
             g0 = np.square(f0 / (1.0 + self._la3(0.15, 6.0, 4.0, 10.0, atan))) + np.square(
                 f1 / (1.0 + self._la3(0.75, 6.0, 4.0, 10.0, atan))
             ) - 1.0
@@ -367,9 +383,9 @@ class MWProblem:
         elif idx == 7:
             g = self._g3(X_arr)
             f0 = g * X_arr[:, 0]
-            f1 = g * np.sqrt(1.0 - np.square(f0 / g))
-            with np.errstate(divide="ignore", invalid="ignore"):
-                atan = np.arctan(f1 / f0)
+            ratio = _safe_divide(f0, g)
+            f1 = g * _safe_sqrt(1.0 - np.square(ratio))
+            atan = np.arctan2(f1, f0)
             g0 = np.square(f0) + np.square(f1) - np.square(1.2 + np.abs(self._la2(0.4, 4.0, 1.0, 16.0, atan)))
             g1 = np.square(1.15 - self._la2(0.2, 4.0, 1.0, 8.0, atan)) - np.square(f0) - np.square(f1)
             F = np.column_stack([f0, f1])
@@ -381,7 +397,9 @@ class MWProblem:
             cos_terms = np.cos(0.5 * np.pi * X_arr[:, : self.n_obj - 1])
             F[:, :-1] *= np.flip(np.cumprod(cos_terms, axis=1), axis=1)
             f_sq = np.sum(F * F, axis=1)
-            g0 = f_sq - np.square(1.25 - self._la2(0.5, 6.0, 1.0, 2.0, np.arcsin(F[:, -1] / np.sqrt(f_sq))))
+            denom = _safe_sqrt(f_sq)
+            angle = _safe_arcsin(_safe_divide(F[:, -1], denom))
+            g0 = f_sq - np.square(1.25 - self._la2(0.5, 6.0, 1.0, 2.0, angle))
             G = g0[:, None]
         elif idx == 9:
             g = self._g1(X_arr)
@@ -404,7 +422,8 @@ class MWProblem:
         elif idx == 11:
             g = self._g3(X_arr)
             f0 = g * X_arr[:, 0]
-            f1 = g * np.sqrt(2.0 - np.square(f0 / g))
+            ratio = _safe_divide(f0, g)
+            f1 = g * _safe_sqrt(2.0 - np.square(ratio))
             g0 = -(3.0 - f0 * f0 - f1) * (3.0 - 2.0 * f0 * f0 - f1)
             g1 = (3.0 - 0.625 * f0 * f0 - f1) * (3.0 - 7.0 * f0 * f0 - f1)
             g2 = -(1.62 - 0.18 * f0 * f0 - f1) * (1.125 - 0.125 * f0 * f0 - f1)

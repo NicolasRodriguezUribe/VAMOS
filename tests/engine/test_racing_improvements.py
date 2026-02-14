@@ -31,6 +31,26 @@ def test_elimination_keeps_history_when_lengths_differ():
     assert configs[1].alive is False
 
 
+def test_rank_elimination_waits_for_min_blocks():
+    task = SimpleNamespace(aggregator=np.mean, maximize=False)
+    scenario = SimpleNamespace(
+        min_survivors=1,
+        elimination_fraction=0.5,
+        use_statistical_tests=False,
+        min_blocks_before_elimination=3,
+        alpha=0.05,
+    )
+    configs = [
+        ConfigState(config_id=0, config={}, alive=True, scores=[0.1, 0.1]),
+        ConfigState(config_id=1, config={}, alive=True, scores=[0.5, 0.5]),
+    ]
+
+    eliminated = eliminate_configs(configs, task=task, scenario=scenario)
+
+    assert eliminated is False
+    assert all(c.alive for c in configs)
+
+
 def test_stage_index_advances_without_elimination():
     task = TuningTask(
         name="demo",

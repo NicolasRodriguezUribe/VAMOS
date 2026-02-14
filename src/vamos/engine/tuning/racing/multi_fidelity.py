@@ -18,12 +18,21 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+def _failure_score(maximize: bool) -> float:
+    return -1e30 if maximize else 1e30
+
+
 def _eval_worker_warmstart(
     eval_fn: EvalFn,
     config: dict[str, Any],
     ctx: EvalContext,
+    maximize: bool,
 ) -> EvalResult:
-    return eval_fn(config, ctx)
+    try:
+        return eval_fn(config, ctx)
+    except Exception:
+        _logger().warning("[multi-fidelity] eval_fn failed in worker; assigning failure score.", exc_info=True)
+        return _failure_score(maximize)
 
 
 def _run_multi_fidelity(
@@ -180,7 +189,15 @@ def _run_stage_with_budget(
 
     if tuner.scenario.n_jobs == 1:
         for cfg, ctx, idx in tasks:
-            result = eval_fn(cfg, ctx)
+            try:
+                result = eval_fn(cfg, ctx)
+            except Exception:
+                _logger().warning(
+                    "[multi-fidelity] eval_fn failed for config_id=%s; assigning failure score.",
+                    configs[idx].config_id,
+                    exc_info=True,
+                )
+                result = _failure_score(tuner.task.maximize)
 
             if warm_start and isinstance(result, tuple) and len(result) == 2:
                 score, checkpoint = result
@@ -194,7 +211,10 @@ def _run_stage_with_budget(
             configs[idx].last_budget = budget
             configs[idx].last_budget_map[block_key] = budget
     else:
-        results = Parallel(n_jobs=tuner.scenario.n_jobs)(delayed(_eval_worker_warmstart)(eval_fn, cfg, ctx) for cfg, ctx, _ in tasks)
+        results = Parallel(n_jobs=tuner.scenario.n_jobs)(
+            delayed(_eval_worker_warmstart)(eval_fn, cfg, ctx, tuner.task.maximize)
+            for cfg, ctx, _ in tasks
+        )
         for i, result in enumerate(results):
             idx = tasks[i][2]
             if warm_start and isinstance(result, tuple) and len(result) == 2:

@@ -49,16 +49,18 @@ class UniformSampler:
 @dataclass
 class ModelBasedSampler:
     """
-    Simple model-based sampler that learns per-parameter marginal distributions
-    from a set of 'good' configurations.
+    Model-based sampler with two exploitation modes:
 
-    - For categorical parameters, it estimates empirical frequencies.
-    - For real and integer parameters, it shrinks the sampling interval around
-      the min/max of observed good values (clipped to original bounds).
+    1) Marginal model (independent per parameter):
+       - Categorical: empirical frequencies
+       - Real/Int: Gaussian in linear/log space
 
-    Sampling uses a mixture of:
-        - exploration: uniform sampling from the full ParamSpace,
-        - exploitation: sampling from learned marginals.
+    2) Joint local model (interaction-preserving):
+       - Sample an anchor from observed good configurations
+       - Apply small, bounded perturbations around that anchor
+
+    The joint mode keeps cross-parameter structure from successful configs,
+    while marginals provide broader coverage.
     """
 
     param_space: ParamSpace
@@ -77,6 +79,10 @@ class ModelBasedSampler:
     _cat_models: dict[str, dict[str, Any]] = field(default_factory=dict)
     _real_models: dict[str, dict[str, float]] = field(default_factory=dict)
     _int_models: dict[str, dict[str, float]] = field(default_factory=dict)
+    _joint_pool: list[dict[str, Any]] = field(default_factory=list)
+    joint_sampling_prob: float = 0.7
+    min_samples_for_joint: int = 8
+    neighbor_noise_scale: float = 0.2
 
     def update(self, good_configs: Sequence[Mapping[str, Any]]) -> None:
         """
@@ -89,6 +95,7 @@ class ModelBasedSampler:
             self._cat_models.clear()
             self._real_models.clear()
             self._int_models.clear()
+            self._joint_pool.clear()
             return
 
         observed: dict[str, list[Any]] = {name: [] for name in self.param_space.params.keys()}
@@ -101,6 +108,17 @@ class ModelBasedSampler:
         self._cat_models.clear()
         self._real_models.clear()
         self._int_models.clear()
+        self._joint_pool.clear()
+
+        for cfg in good_configs:
+            cfg_dict = dict(cfg)
+            try:
+                self.param_space.validate(cfg_dict)
+            except ValueError:
+                continue
+            active_cfg = {name: value for name, value in cfg_dict.items() if self.param_space.is_active(name, cfg_dict)}
+            if active_cfg:
+                self._joint_pool.append(active_cfg)
 
         for name, spec in self.param_space.params.items():
             values = observed.get(name, [])
@@ -191,6 +209,17 @@ class ModelBasedSampler:
         if rng.random() < self.exploration_prob or (not self._cat_models and not self._real_models and not self._int_models):
             return self.param_space.sample(rng)
 
+        if (
+            len(self._joint_pool) >= self.min_samples_for_joint
+            and rng.random() < self.joint_sampling_prob
+        ):
+            joint_cfg = self._sample_joint(rng)
+            if joint_cfg is not None:
+                return joint_cfg
+
+        return self._sample_marginal(rng)
+
+    def _sample_marginal(self, rng: np.random.Generator) -> dict[str, Any]:
         cfg: dict[str, Any] = {}
 
         for name, spec in self.param_space.params.items():
@@ -231,6 +260,69 @@ class ModelBasedSampler:
             self.param_space.validate(active_cfg)
         except ValueError:
             return self.param_space.sample(rng)
+        return active_cfg
+
+    def _sample_joint(self, rng: np.random.Generator) -> dict[str, Any] | None:
+        if not self._joint_pool:
+            return None
+
+        anchor = dict(self._joint_pool[int(rng.integers(0, len(self._joint_pool)))])
+        cfg: dict[str, Any] = dict(anchor)
+
+        for name, spec in self.param_space.params.items():
+            if not self.param_space.is_active(name, cfg):
+                continue
+
+            if isinstance(spec, Categorical):
+                model = self._cat_models.get(name)
+                # Keep anchor category most of the time to preserve interactions.
+                if model is not None and rng.random() < self.neighbor_noise_scale:
+                    choices = model["choices"]
+                    probs = model["probs"]
+                    idx = int(rng.choice(len(choices), p=probs))
+                    cfg[name] = choices[idx]
+                elif name not in cfg:
+                    idx = int(rng.integers(0, len(spec.choices)))
+                    cfg[name] = spec.choices[idx]
+                continue
+
+            if isinstance(spec, Real):
+                m = self._real_models.get(name)
+                base = float(cfg.get(name, 0.5 * (spec.low + spec.high)))
+                if m is not None:
+                    std = max(float(m["std"]) * self.neighbor_noise_scale, 1e-12)
+                    if m.get("log", False):
+                        base_log = math.log(max(base, 1e-12))
+                        val = float(math.exp(rng.normal(base_log, std)))
+                    else:
+                        val = float(rng.normal(base, std))
+                else:
+                    range_width = float(spec.high - spec.low)
+                    val = float(rng.normal(base, self.neighbor_noise_scale * max(range_width, 1e-12)))
+                cfg[name] = max(float(spec.low), min(float(spec.high), val))
+                continue
+
+            if isinstance(spec, Int):
+                m = self._int_models.get(name)
+                base = int(cfg.get(name, int(round(0.5 * (spec.low + spec.high)))))
+                if m is not None:
+                    std = max(float(m["std"]) * self.neighbor_noise_scale, 1e-12)
+                    if m.get("log", False):
+                        base_log = math.log(max(float(base), 1e-12))
+                        val = int(round(math.exp(rng.normal(base_log, std))))
+                    else:
+                        val = int(round(rng.normal(base, std)))
+                else:
+                    range_width = max(1, int(spec.high - spec.low))
+                    val = int(round(rng.normal(base, self.neighbor_noise_scale * range_width)))
+                cfg[name] = max(int(spec.low), min(int(spec.high), val))
+                continue
+
+        active_cfg = {name: value for name, value in cfg.items() if self.param_space.is_active(name, cfg)}
+        try:
+            self.param_space.validate(active_cfg)
+        except ValueError:
+            return None
         return active_cfg
 
 

@@ -11,7 +11,7 @@ from .scenario import Scenario
 from .tuning_task import TuningTask, Instance, EvalContext
 from .random_search_tuner import TrialResult
 from .param_space import ParamSpace
-from .sampler import Sampler, UniformSampler, ModelBasedSampler
+from .sampler import Sampler, ModelBasedSampler
 from .state import ConfigState, EliteEntry
 from .schedule import build_schedule
 from .elimination import eliminate_configs, update_elite_archive
@@ -26,11 +26,25 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def _eval_worker(eval_fn: EvalFn, config: dict[str, Any], ctx: EvalContext) -> float:
-    result = eval_fn(config, ctx)
-    if isinstance(result, tuple):
-        return float(result[0])
-    return float(result)
+def _failure_score(maximize: bool) -> float:
+    # Use a finite sentinel so aggregators and statistical tests keep working.
+    return -1e30 if maximize else 1e30
+
+
+def _eval_worker(
+    eval_fn: EvalFn,
+    config: dict[str, Any],
+    ctx: EvalContext,
+    maximize: bool,
+) -> float:
+    try:
+        result = eval_fn(config, ctx)
+        if isinstance(result, tuple):
+            return float(result[0])
+        return float(result)
+    except Exception:
+        _logger().warning("[racing] eval_fn failed in worker; assigning failure score.", exc_info=True)
+        return _failure_score(maximize)
 
 
 class RacingTuner:
@@ -62,7 +76,8 @@ class RacingTuner:
         self.seeds: Sequence[int] = list(task.seeds)
 
         if sampler is None:
-            self.sampler: Sampler = UniformSampler(self.param_space)
+            # Prefer model-based sampling by default in large/conditional spaces.
+            self.sampler: Sampler = ModelBasedSampler(self.param_space)
         else:
             self.sampler = sampler
 
@@ -143,10 +158,20 @@ class RacingTuner:
                 break
 
             stage_alive = self._num_alive(configs)
-            if num_experiments + stage_alive > self.scenario.max_experiments:
+            remaining_budget = self.scenario.max_experiments - num_experiments
+            if remaining_budget <= 0:
                 if verbose_flag:
-                    _logger().info("[racing] Experiment budget exhausted before next stage.")
+                    _logger().info("[racing] Experiment budget exhausted.")
                 break
+            partial_eval_limit: int | None = None
+            if remaining_budget < stage_alive:
+                partial_eval_limit = int(remaining_budget)
+                if verbose_flag:
+                    _logger().info(
+                        "[racing] Partial stage due to budget: evaluating %s/%s alive configs.",
+                        partial_eval_limit,
+                        stage_alive,
+                    )
 
             if verbose_flag:
                 _logger().info(
@@ -157,11 +182,18 @@ class RacingTuner:
                     stage_alive,
                 )
 
-            self._run_stage(configs, inst_idx, seed_idx, eval_fn)
-            stage_eval_count = self._count_new_experiments(configs)
+            stage_eval_count = self._run_stage(
+                configs,
+                inst_idx,
+                seed_idx,
+                eval_fn,
+                max_evals=partial_eval_limit,
+            )
             num_experiments += stage_eval_count
 
-            eliminated_any = eliminate_configs(configs, task=self.task, scenario=self.scenario)
+            eliminated_any = False
+            if partial_eval_limit is None:
+                eliminated_any = eliminate_configs(configs, task=self.task, scenario=self.scenario)
 
             if eliminated_any:
                 self._elite_archive = update_elite_archive(
@@ -181,9 +213,9 @@ class RacingTuner:
                         rng=self.rng,
                         next_config_id=self._next_config_id,
                     )
-                if isinstance(self.sampler, ModelBasedSampler):
-                    survivor_configs = [c.config for c in configs if c.alive]
-                    self.sampler.update(survivor_configs)
+            if isinstance(self.sampler, ModelBasedSampler):
+                survivor_configs = [c.config for c in configs if c.alive]
+                self.sampler.update(survivor_configs)
 
             # Track best score for convergence detection
             current_best = self._get_current_best_score(configs)
@@ -211,6 +243,11 @@ class RacingTuner:
                     _logger().info("[racing] Converged after %s stages (no improvement).", self._stage_index)
                 break
 
+            if partial_eval_limit is not None:
+                if verbose_flag:
+                    _logger().info("[racing] Budget exhausted after partial stage.")
+                break
+
         best_state, history = self._finalize_results(configs)
         if best_state is None:
             raise RuntimeError("RacingTuner finished without a valid configuration.")
@@ -230,7 +267,8 @@ class RacingTuner:
         inst_idx: int,
         seed_idx: int,
         eval_fn: EvalFn,
-    ) -> None:
+        max_evals: int | None = None,
+    ) -> int:
         instance = self.instances[inst_idx]
         seed = self.seeds[seed_idx]
         budget = self._current_budget()
@@ -246,24 +284,40 @@ class RacingTuner:
             indices.append(idx)
 
         if not tasks:
-            return
+            return 0
+
+        if max_evals is not None and max_evals < len(tasks):
+            take = int(max(max_evals, 0))
+            if take <= 0:
+                return 0
+            chosen = self.rng.choice(len(tasks), size=take, replace=False)
+            chosen = np.sort(chosen)
+            tasks = [tasks[int(i)] for i in chosen]
+            indices = [indices[int(i)] for i in chosen]
 
         if self.scenario.n_jobs == 1:
             # Sequential execution (avoid overhead)
             for i, (cfg, ctx) in enumerate(tasks):
-                result = eval_fn(cfg, ctx)
-                score = float(result[0]) if isinstance(result, tuple) else float(result)
+                try:
+                    result = eval_fn(cfg, ctx)
+                    score = float(result[0]) if isinstance(result, tuple) else float(result)
+                except Exception:
+                    _logger().warning(
+                        "[racing] eval_fn failed for config_id=%s; assigning failure score.",
+                        configs[indices[i]].config_id,
+                        exc_info=True,
+                    )
+                    score = _failure_score(self.task.maximize)
                 configs[indices[i]].scores.append(score)
         else:
             # Parallel execution with joblib
-            results = Parallel(n_jobs=self.scenario.n_jobs)(delayed(_eval_worker)(eval_fn, cfg, ctx) for cfg, ctx in tasks)
+            results = Parallel(n_jobs=self.scenario.n_jobs)(
+                delayed(_eval_worker)(eval_fn, cfg, ctx, self.task.maximize) for cfg, ctx in tasks
+            )
 
             for i, score in enumerate(results):
                 configs[indices[i]].scores.append(score)
-
-    def _count_new_experiments(self, configs: list[ConfigState]) -> int:
-        """Count how many alive configs were evaluated in the last stage."""
-        return self._num_alive(configs)
+        return len(tasks)
 
     def _num_alive(self, configs: list[ConfigState]) -> int:
         return sum(1 for c in configs if c.alive)
@@ -297,15 +351,31 @@ class RacingTuner:
         recent = history[-window:]
         oldest = recent[0]
         newest = recent[-1]
+        recent_arr = np.asarray(recent, dtype=float)
+        if recent_arr.size == 0 or not np.all(np.isfinite(recent_arr)):
+            return False
 
         # Compute relative improvement
-        if abs(oldest) < 1e-12:
-            # Avoid division by zero; if scores are near zero, use absolute diff
-            improvement = abs(newest - oldest)
+        if self.task.maximize:
+            delta = newest - oldest
         else:
-            improvement = abs((newest - oldest) / oldest)
+            delta = oldest - newest
+        if abs(oldest) < 1e-12:
+            # Avoid division by zero; when near zero use signed absolute-diff.
+            improvement = delta
+        else:
+            improvement = delta / abs(oldest)
 
-        return improvement < self.scenario.convergence_threshold
+        # Also require low volatility in the recent window to avoid declaring
+        # convergence on noisy oscillations around a plateau.
+        mean_abs = float(np.mean(np.abs(recent_arr)))
+        scale = mean_abs if mean_abs > 1e-12 else 1.0
+        volatility = float(np.std(recent_arr) / scale)
+
+        return (
+            improvement < self.scenario.convergence_threshold
+            and volatility < self.scenario.convergence_threshold
+        )
 
     def _finalize_results(self, configs: list[ConfigState]) -> tuple[EliteEntry | None, list[TrialResult]]:
         history: list[TrialResult] = []
@@ -337,7 +407,8 @@ class RacingTuner:
                 )
             )
 
-            if not state.alive or not state.scores:
+            # Consider all evaluated configs, not only survivors.
+            if not scores or np.isnan(agg_score):
                 continue
 
             if best_score is None:
