@@ -12,6 +12,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 - **Battle-Tested Algorithms**: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA.
 - **Unified Archiving**: Consistent external archive configuration via `.archive(size=...).archive_type("crowding" | "hypervolume")`.
 - **Multi-Fidelity Tuning**: Hyperband-style racing with warm-start checkpoints for sample-efficient algorithm configuration.
+- **Ready-to-use Tuning Backends**: `racing`, `random`, `optuna`, `bohb_optuna`, `smac3`, and `bohb` are available via `vamos tune`.
 - **Performance Driven**: Vectorized kernels, GPU acceleration (JAX), and optional Numba JIT compilation.
 - **Interactive Analysis**: Built-in dashboards with `explore_result_front(result)` and publication-ready LaTeX tables.
 - **Visual Problem Builder**: Define custom problems in the browser with live Pareto front preview via VAMOS Studio.
@@ -96,6 +97,33 @@ All functionality lives under one command. Run `vamos help` to list everything:
 | `vamos tune` | Hyperparameter tuning |
 | `vamos profile` | Performance profiling |
 | `vamos zoo` | Problem zoo presets |
+
+## 🎯 Tuning Quick Start
+
+You can use the implemented tuning backends directly from `vamos tune`:
+`racing`, `random`, `optuna`, `bohb_optuna`, `smac3`, `bohb`.
+
+Check backend availability in your current environment:
+
+```bash
+vamos tune --list-backends
+```
+
+Recommended robust command (fallback + suite-stratified split):
+
+```bash
+vamos tune \
+  --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 \
+  --algorithm nsgaii \
+  --backend optuna \
+  --backend-fallback random \
+  --split-strategy suite_stratified \
+  --budget 5000 \
+  --tune-budget 200 \
+  --n-jobs -1
+```
+
+Canonical tuning reference: `docs/topics/tuning.md`.
 
 New to hands-on learning? Open the **interactive tutorial notebook**:
 
@@ -216,10 +244,15 @@ All tools are available as `vamos <subcommand>`. Run `vamos help` for the full l
   ```bash
   vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/
   ```
-- **`vamos tune`**: Racing-style hyperparameter tuning with optional multi-fidelity. `--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.
+- **`vamos tune`**: You can use the implemented tuners directly from CLI (`racing`, `random`, `optuna`, `bohb_optuna`, `smac3`, `bohb`). `--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.
   ```bash
   vamos tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5
   ```
+- Recommended robust invocation (backend fallback + suite-stratified split):
+  ```bash
+  vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1
+  ```
+- Full tuning reference (canonical docs): `docs/topics/tuning.md`.
 - Generic tuning example (script-based):
   ```bash
   python examples/tuning/racing_tuner_generic.py --algorithm nsgaii --multi-fidelity --fidelity-levels 500,1000,1500

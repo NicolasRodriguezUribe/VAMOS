@@ -11,6 +11,7 @@ and config space builders for each algorithm.
 """
 
 from .ablation import AblationPlan, AblationTask, AblationVariant, build_ablation_plan
+from .backends import ModelBasedTuner, available_model_based_backends
 from .racing import (
     # Parameter types
     ParamSpace,
@@ -83,6 +84,9 @@ __all__ = [
     "AblationTask",
     "AblationVariant",
     "build_ablation_plan",
+    # External backends
+    "ModelBasedTuner",
+    "available_model_based_backends",
     # Parameter types
     "ParamSpace",
     "Real",

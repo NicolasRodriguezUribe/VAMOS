@@ -18,6 +18,9 @@ from vamos.engine.tuning import (
     AblationTask,
     AblationVariant,
     build_ablation_plan,
+    # External backends
+    ModelBasedTuner,
+    available_model_based_backends,
     # Tuners
     AlgorithmConfigSpace,
     RandomSearchTuner,
@@ -69,6 +72,9 @@ __all__ = [
     "AblationTask",
     "AblationVariant",
     "build_ablation_plan",
+    # External backends
+    "ModelBasedTuner",
+    "available_model_based_backends",
     # Tuners
     "AlgorithmConfigSpace",
     "RandomSearchTuner",
