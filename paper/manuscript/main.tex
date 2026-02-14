@@ -426,6 +426,7 @@ Figure~\ref{fig:scaling} shows that the runtime gap between NumPy and Numba wide
 
 Table~\ref{tab:frameworks_perf} compares \VAMOS{} against other Python frameworks on runtime. \VAMOS{} is evaluated with its accelerated backend (Numba) for the headline comparison, while additional backends are reported in the appendix.
 We repeat the same runtime protocol for NSGA-II variants (steady-state and external archive), SMS-EMOA (steady-state, one offspring per iteration), and MOEA/D (decomposition with differential-evolution variation), reported in Tables~\ref{tab:frameworks_perf_nsgaii_ss} and~\ref{tab:frameworks_perf_nsgaii_archive} and Tables~\ref{tab:frameworks_perf_smsemoa} and~\ref{tab:frameworks_perf_moead}.
+These supplementary runtime tables are placed in Appendix~\ref{app:variants} to keep the main results focused.
 
 \begin{table}[htbp]
 \centering
@@ -457,26 +458,20 @@ Figure~\ref{fig:runtime_comparison} visualizes these relative runtimes. Each bar
 Some toolkits expose a steady-state (incremental-replacement) variant of NSGA-II, typically implemented as a $(\mu+1)$ loop with one offspring per iteration and one survivor replaced.
 We benchmark this mode by aligning NSGA-II settings across frameworks and setting the offspring batch size to~1.
 In \VAMOS{}, we configure steady-state mode with \texttt{offspring\_size}=1 and \texttt{replacement\_size}=1; in pymoo we set \texttt{n\_offsprings}=1; in jMetalPy we set \texttt{offspring\_population\_size}=1; and for DEAP we implement the corresponding one-offspring loop around \texttt{selNSGA2}.
-Platypus does not provide an equivalent steady-state NSGA-II API, so we omit it from this comparison.
-
-\input{frameworks_perf_nsgaii_ss.tex}
+Platypus does not provide an equivalent steady-state NSGA-II API, so we omit it from this comparison (see Appendix~\ref{app:variants}).
 
 \paragraph{NSGA-II with external archive.}
 To assess the overhead of maintaining an external elite set, we also benchmark NSGA-II with an \emph{unbounded} external archive that accumulates non-dominated solutions throughout the run.
 For this variant, we compute normalized hypervolume on the archive contents (rather than the final population) to reflect the larger retained approximation set.
-In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook; for DEAP we maintain an equivalent separate unbounded archive; and in Platypus we pass an \texttt{Archive()} object.
-
-\input{frameworks_perf_nsgaii_archive.tex}
-
-\input{frameworks_perf_smsemoa.tex}
-\input{frameworks_perf_moead.tex}
+In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook; for DEAP we maintain an equivalent separate unbounded archive; and in Platypus we pass an \texttt{Archive()} object (see Appendix~\ref{app:variants}).
 
 \subsection{Solution quality summary}
 
 Table~\ref{tab:frameworks_hv} summarizes normalized hypervolume for the NSGA-II baseline across frameworks, aggregated by benchmark family. We report per-problem medians across seeds, and summarize these per-problem medians using median and interquartile range (IQR) within each family, yielding a descriptive view of solution quality under the fixed normalization protocol (Section~\ref{sec:hv}).
 
-\begin{table}[htbp]
+\begin{table*}[htbp]
 \centering
+\footnotesize
 \caption{NSGA-II. Normalized hypervolume summary (median (IQR)) by problem family across frameworks.}
 \label{tab:frameworks_hv}
 \begin{tabular}{l|rrr|r}
@@ -490,7 +485,7 @@ DEAP & \textbf{0.990 (0.008)} & \textbf{0.802 (0.170)} & 0.839 (0.226) & 0.917 (
 Platypus & \textbf{0.990 (0.008)} & 0.786 (0.209) & 0.920 (0.139) & 0.920 (0.196) \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Across ZDT, all frameworks attain nearly identical normalized HV, suggesting that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks, while WFG exhibits the largest dispersion; \VAMOS{} achieves the highest median on WFG and overall. Together with the runtime results, these summaries support improved throughput without degraded final quality under the fixed-reference-front protocol.
 
@@ -500,8 +495,7 @@ Across ZDT, all frameworks attain nearly identical normalized HV, suggesting tha
 To move beyond descriptive summaries, we apply Wilcoxon signed-rank tests (paired by seed) comparing VAMOS (Numba) against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). We report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{vargha2000critique} alongside each test ($\hat{A}_{12}>0.5$ favors VAMOS; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also report paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and we declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
 
 Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 21 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.3\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis across all frameworks: VAMOS is equivalent to pymoo on 14/21 problems and non-inferior on 16/21, with a median $\Delta$HV of $-0.03\%$. Similar patterns hold for jMetalPy, DEAP, and Platypus. Tables~\ref{tab:hv_robustness_summary_nsgaii} and~\ref{tab:hv_equivalence_ci_nsgaii} detail robustness and per-problem CIs. Corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
-
-\input{stats_nsgaii.tex}
+Detailed NSGA-II statistical tables are provided in Appendix~\ref{app:stats_nsgaii}.
 
 \subsection{Discussion}
 
@@ -546,6 +540,24 @@ All data and code supporting the findings of this study (benchmark scripts, refe
 
 %==============================================================================
 \appendices
+\section{Additional runtime comparisons}
+\label{app:variants}
+Tables in this appendix report supplementary runtime comparisons for NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D under the same protocol as Section~\ref{sec:experiments}.
+
+\input{frameworks_perf_nsgaii_ss.tex}
+\input{frameworks_perf_nsgaii_archive.tex}
+\input{frameworks_perf_smsemoa.tex}
+\input{frameworks_perf_moead.tex}
+
+\section{Detailed statistical analysis for NSGA-II}
+\label{app:stats_nsgaii}
+This appendix reports per-problem Wilcoxon signed-rank tests, bootstrap equivalence analyses, robustness summaries, and bootstrap confidence intervals for the NSGA-II baseline discussed in Section~\ref{sec:stats}.
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\input{stats_nsgaii.tex}
+\endgroup
+
 \section{Reference fronts and detailed benchmark results}
 \label{app:detailed}
 %==============================================================================
@@ -636,13 +648,21 @@ Tables in this appendix report Wilcoxon signed-rank tests, bootstrap equivalence
 
 Tables~\ref{tab:stats_hypervolume_smsemoa}--\ref{tab:hv_equivalence_ci_smsemoa} present per-problem Wilcoxon tests, equivalence summaries, robustness summaries, and per-problem bootstrap confidence intervals for SMS-EMOA.
 
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \input{stats_smsemoa.tex}
+\endgroup
 
 \subsection{MOEA/D}
 
 Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_equivalence_ci_moead} present the corresponding analyses for MOEA/D.
 
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \input{stats_moead.tex}
+\endgroup
 
 %==============================================================================
 % Bibliography
