@@ -222,11 +222,34 @@ All tools are accessed via `vamos <subcommand>`. Run `vamos help` for the full l
 
 - Self-check: `vamos check`
 - Benchmarking: `vamos bench --list` and `vamos bench ZDT_small --algorithms nsgaii moead --output report/`
-- Tuning: `vamos tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 20000 --n-jobs 4`
+- Tuning: `vamos tune --instances zdt1,zdt2,zdt3 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1`
 - Ablation plans: `vamos ablation --config configs/ablation.yaml`
 - Profiling: `vamos profile --problem zdt1 --engines numpy,numba --budget 2000 --output report/profile.csv`
 - Problem zoo: `vamos zoo list`, `vamos zoo info zdt1`, `vamos zoo run zdt1 --algorithm nsgaii --budget 3000`
 - Studio (interactive, needs `studio` extra): `vamos studio --study-dir results`
+
+Tuning quick notes (`vamos tune`)
+---------------------------------
+
+Use this guide for quick usage. For the complete, maintained `tune` reference
+(all backends, split/fallback behavior, finisher/validation/test, and artifact
+contracts), see:
+
+- `docs/topics/tuning.md`
+
+Recommended robust invocation:
+
+```bash
+vamos tune \
+  --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 \
+  --algorithm nsgaii \
+  --backend optuna \
+  --backend-fallback random \
+  --split-strategy suite_stratified \
+  --budget 5000 \
+  --tune-budget 200 \
+  --n-jobs -1
+```
 
 Ablation config example
 -----------------------

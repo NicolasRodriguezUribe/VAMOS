@@ -68,11 +68,33 @@ best_config, history = tuner.run(evaluate_config)
 
 You can also run tuning jobs directly from the command line.
 
+This section is the canonical reference for `vamos tune` options and output artifacts.
+
 ```bash
 vamos tune --algorithm nsgaii --problem zdt1 --budget 1000 --n-jobs 4
 ```
 
-This will run a racing tuner to find the best hyperparameters for NSGA-II on ZDT1.
+This command supports unified backends:
+- `racing` (default statistical racing flow)
+- `random`
+- `optuna`
+- `bohb_optuna`
+- `smac3`
+- `bohb`
+
+Example with robust split and backend fallback:
+
+```bash
+vamos tune \
+  --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 \
+  --algorithm nsgaii \
+  --backend optuna \
+  --backend-fallback random \
+  --split-strategy suite_stratified \
+  --budget 5000 \
+  --tune-budget 200 \
+  --n-jobs -1
+```
 
 Notes:
 - The MOEA/D tuner explores both SBX and DE crossovers, and can select PBI aggregation (with a tunable theta). These settings align with the jMetalPy default configuration when chosen.
@@ -81,10 +103,21 @@ Notes:
 ### Options
 
 - `--algorithm`: Algorithm to tune (e.g., nsgaii, moead).
-- `--problem`: Problem to tune on (e.g., zdt1, dtlz2).
-- `--budget`: Total tuning budget (evaluations).
-- `--n-jobs`: Number of parallel workers.
-- `--output`: Directory to save the best configuration (JSON).
+- `--instances`: Optional comma-separated problem list; overrides `--problem`.
+- `--backend`: Tuning backend (`racing`, `random`, `optuna`, `bohb_optuna`, `smac3`, `bohb`).
+- `--backend-fallback`: Fallback backend if selected model backend is unavailable.
+- `--split-strategy`: Instance split policy (`suite_stratified` or `random`).
+- `--budget`: Per-run algorithm evaluation budget.
+- `--tune-budget`: Number of racing experiments or model trials.
+- `--n-jobs`: Number of parallel workers (`-1` means CPU cores minus one).
+- `--run-validation`, `--run-test`: Optional post-tuning validation/test stages.
+- `--run-statistical-finisher`: Optional final paired-test selection on train split top-k.
+
+Artifacts in output directory include:
+- `best_config_raw.json`, `best_config_active.json`
+- `tuning_history.json`, `tuning_history.csv`, `tuning_summary.json`
+- `split_instances.csv`, `split_seeds.json`
+- Optional finisher/validation/test files when enabled
 
 ## Ablation Planning
 

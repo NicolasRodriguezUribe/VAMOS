@@ -70,6 +70,13 @@ analysis = [
   "nbformat>=5.9",
   "nbconvert>=7.10",
 ]
+# Model-based tuning backends (optional)
+tuning = [
+  "optuna>=3.6",
+  "smac>=2.0",
+  "ConfigSpace>=1.2",
+  "hpbandster>=0.7.4",
+]
 # Studio UI
 studio = [
   "streamlit>=1.29",
@@ -131,6 +138,10 @@ all = [
   "ipywidgets>=8.1",
   "nbformat>=5.9",
   "nbconvert>=7.10",
+  "optuna>=3.6",
+  "smac>=2.0",
+  "ConfigSpace>=1.2",
+  "hpbandster>=0.7.4",
   "streamlit>=1.29",
   "jax>=0.4",
   "mkdocs>=1.6",
