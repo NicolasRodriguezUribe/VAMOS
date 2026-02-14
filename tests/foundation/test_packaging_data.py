@@ -1,5 +1,6 @@
 from importlib import resources
 
+from vamos.foundation import data as data_module
 from vamos.foundation.data import reference_front_path, weight_path
 from vamos.foundation.problem.tsplib import load_tsplib_coords
 from vamos.foundation.core.hv_stop import build_hv_stop_config
@@ -18,6 +19,30 @@ def test_reference_front_zdt5_packaged_and_accessible():
     assert path.is_file()
     data = path.read_text().splitlines()
     assert len(data) == 31
+
+
+def test_reference_front_wfg4_packaged_and_accessible():
+    packaged = resources.files("vamos.foundation.data.reference_fronts").joinpath("wfg4.csv")
+    assert packaged.is_file()
+    path = reference_front_path("wfg4")
+    assert path.is_file()
+
+
+def test_reference_front_prefers_repo_data_over_packaged(monkeypatch, tmp_path):
+    repo_data = tmp_path / "data_fronts"
+    pkg_data = tmp_path / "pkg_fronts"
+    repo_data.mkdir()
+    pkg_data.mkdir()
+
+    repo_file = repo_data / "zdt1.csv"
+    pkg_file = pkg_data / "zdt1.csv"
+    repo_file.write_text("0.1,0.2\n", encoding="utf-8")
+    pkg_file.write_text("0.9,0.8\n", encoding="utf-8")
+
+    monkeypatch.setattr(data_module, "_reference_front_locations", lambda: [repo_data, pkg_data])
+
+    resolved = data_module.reference_front_path("zdt1")
+    assert resolved == repo_file
 
 
 def test_weight_file_packaged_and_accessible():
