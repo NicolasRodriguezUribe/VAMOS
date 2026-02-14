@@ -151,7 +151,7 @@ def render_problem_builder(st: Any, px: Any) -> None:
 
     # ---- template selector ----
     examples = example_objectives()
-    col_tmpl, col_cat = st.columns([2, 2])
+    col_cat, col_tmpl = st.columns([2, 2])
     with col_cat:
         categories = sorted({t.get("category", "other") for t in examples.values()})
         cat_labels = {
@@ -215,10 +215,11 @@ def render_problem_builder(st: Any, px: Any) -> None:
             help="One line applies to ALL variables.  Or one 'lower, upper' per variable.",
         )
         st.markdown("**Objective function** (receives `x`, return a list of objectives)")
+        st.caption("Expected format: compute objective values and `return [f0, f1, ...]` with exactly `n_obj` entries.")
         code = st.text_area(
             "Objective code",
             value=template["code"],
-            height=200,
+            height=280,
             help="Write Python code that uses `x` and returns a list of n_obj values.",
             label_visibility="collapsed",
         )
@@ -230,11 +231,22 @@ def render_problem_builder(st: Any, px: Any) -> None:
         st.subheader("Optimization settings")
         col_algo, col_seed = st.columns(2)
         with col_algo:
+            algo_labels = {
+                "nsgaii": "NSGA-II (general purpose, recommended)",
+                "moead": "MOEA/D (good for decomposition-style searches)",
+                "spea2": "SPEA2 (strong diversity maintenance)",
+                "smsemoa": "SMS-EMOA (hypervolume-driven selection)",
+                "nsgaiii": "NSGA-III (many-objective scenarios)",
+                "ibea": "IBEA (indicator-based)",
+                "agemoea": "AGE-MOEA (geometry-aware)",
+                "rvea": "RVEA (reference-vector guided)",
+            }
             algorithm = st.selectbox(
                 "Algorithm",
-                ["nsgaii", "moead", "spea2", "smsemoa", "nsgaiii", "ibea", "agemoea", "rvea"],
+                list(algo_labels.keys()),
                 index=0,
-                help="Which MOEA to use for the preview run.",
+                format_func=lambda key: algo_labels.get(key, key),
+                help="Pick a MOEA for preview runs. Start with NSGA-II unless you have a specific reason to choose another.",
             )
         with col_seed:
             seed = st.number_input("Seed", min_value=0, value=42, step=1, help="Random seed for reproducibility.")
@@ -286,6 +298,8 @@ def render_problem_builder(st: Any, px: Any) -> None:
                 st,
                 px,
                 fn=fn,
+                objective_code=code,
+                constraint_code=constraint_code,
                 problem_name=problem_name,
                 n_var=int(n_var),
                 n_obj=int(n_obj),
@@ -323,7 +337,14 @@ def render_problem_builder(st: Any, px: Any) -> None:
         with st.expander("Preview generated script"):
             st.code(script, language="python")
     else:
-        st.info("Fix any errors above to enable export.")
+        if not code.strip():
+            st.info("Write your objective function above to enable export.")
+        elif compile_error or has_constraint_error:
+            st.warning("Fix the errors above to enable export.")
+        elif not bounds_ok:
+            st.warning("Fix the bounds above to enable export.")
+        else:
+            st.info("Complete the fields above to enable export.")
 
 
 def _run_and_show_preview(
@@ -331,6 +352,8 @@ def _run_and_show_preview(
     px: Any,
     *,
     fn: Any,
+    objective_code: str,
+    constraint_code: str,
     problem_name: str,
     n_var: int,
     n_obj: int,
@@ -356,11 +379,16 @@ def _run_and_show_preview(
                 seed=seed,
                 constraints=constraints,
                 n_constraints=n_constraints,
+                objective_code=objective_code,
+                constraint_code=constraint_code,
             )
         F = preview["F"]
         st.success(f"Found {len(F)} solutions in {preview['elapsed_ms']:.0f} ms")
         _render_preview_plot(st, px, F, n_obj, problem_name)
         _render_summary_table(st, F, n_obj)
+    except TimeoutError as exc:
+        st.error(str(exc))
+        st.info("Try reducing max evaluations, simplifying your objective function, or removing expensive loops.")
     except Exception as exc:
         st.error(f"Optimization failed: {exc}")
         st.info("Common causes: your function returns the wrong number of objectives, or uses variables outside the bounds.")

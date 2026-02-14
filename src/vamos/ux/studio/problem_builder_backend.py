@@ -6,6 +6,8 @@ module under the LOC budget.  No Streamlit imports here.
 
 from __future__ import annotations
 
+import ast
+import builtins as _py_builtins
 import textwrap
 import time
 from typing import Any
@@ -13,6 +15,195 @@ from typing import Any
 import numpy as np
 
 _DEFAULT_TEMPLATE = "ZDT1-like (convex)"
+_MAX_USER_CODE_CHARS = 12000
+_PREVIEW_TIMEOUT_SECONDS = 10.0
+_DEFAULT_SANDBOX_PROFILE = "basic"
+_ALLOWED_IMPORT_ROOTS = {"math", "numpy"}
+_SANDBOX_PROFILES: dict[str, dict[str, int]] = {
+    "none": {},
+    "basic": {
+        "memory_mb": 2048,
+        "max_file_bytes": 8_000_000,
+        "max_open_files": 128,
+        "max_processes": 64,
+    },
+    "strict": {
+        "memory_mb": 1024,
+        "max_file_bytes": 4_000_000,
+        "max_open_files": 64,
+        "max_processes": 32,
+    },
+}
+_BLOCKED_NAME_REFERENCES = {
+    "__import__",
+    "open",
+    "exec",
+    "eval",
+    "compile",
+    "input",
+    "help",
+    "breakpoint",
+    "globals",
+    "locals",
+    "vars",
+    "dir",
+    "getattr",
+    "setattr",
+    "delattr",
+}
+_SAFE_BUILTINS: dict[str, object] = {
+    "abs": _py_builtins.abs,
+    "all": _py_builtins.all,
+    "any": _py_builtins.any,
+    "bool": _py_builtins.bool,
+    "dict": _py_builtins.dict,
+    "enumerate": _py_builtins.enumerate,
+    "float": _py_builtins.float,
+    "int": _py_builtins.int,
+    "isinstance": _py_builtins.isinstance,
+    "len": _py_builtins.len,
+    "list": _py_builtins.list,
+    "max": _py_builtins.max,
+    "min": _py_builtins.min,
+    "pow": _py_builtins.pow,
+    "range": _py_builtins.range,
+    "round": _py_builtins.round,
+    "set": _py_builtins.set,
+    "sorted": _py_builtins.sorted,
+    "str": _py_builtins.str,
+    "sum": _py_builtins.sum,
+    "tuple": _py_builtins.tuple,
+    "zip": _py_builtins.zip,
+    "Exception": _py_builtins.Exception,
+    "ValueError": _py_builtins.ValueError,
+    "TypeError": _py_builtins.TypeError,
+    "RuntimeError": _py_builtins.RuntimeError,
+    "IndexError": _py_builtins.IndexError,
+    "KeyError": _py_builtins.KeyError,
+}
+
+
+def _safe_import(name: str, globals: Any = None, locals: Any = None, fromlist: Any = (), level: int = 0) -> Any:
+    """Allow imports only from approved modules used in user formulas."""
+    root = str(name).split(".", 1)[0]
+    if level != 0 or root not in _ALLOWED_IMPORT_ROOTS:
+        raise ImportError(f"Import '{name}' is not allowed in Studio preview code.")
+    return _py_builtins.__import__(name, globals, locals, fromlist, level)
+
+
+class _UserCodeSafetyVisitor(ast.NodeVisitor):
+    """Reject clearly unsafe constructs in user-entered code."""
+
+    def visit_Import(self, node: ast.Import) -> None:
+        for alias in node.names:
+            root = alias.name.split(".", 1)[0]
+            if root not in _ALLOWED_IMPORT_ROOTS:
+                raise ValueError(
+                    f"Import '{alias.name}' is not allowed. "
+                    f"Allowed modules: {', '.join(sorted(_ALLOWED_IMPORT_ROOTS))}."
+                )
+        self.generic_visit(node)
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        if node.module is None:
+            raise ValueError("Relative imports are not allowed in Studio preview code.")
+        root = node.module.split(".", 1)[0]
+        if node.level != 0 or root not in _ALLOWED_IMPORT_ROOTS:
+            raise ValueError(
+                f"Import from '{node.module}' is not allowed. "
+                f"Allowed modules: {', '.join(sorted(_ALLOWED_IMPORT_ROOTS))}."
+            )
+        self.generic_visit(node)
+
+    def visit_Name(self, node: ast.Name) -> None:
+        if node.id in _BLOCKED_NAME_REFERENCES:
+            raise ValueError(f"'{node.id}' is not allowed in Studio preview code.")
+        self.generic_visit(node)
+
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        if node.attr.startswith("__"):
+            raise ValueError("Dunder attribute access is not allowed in Studio preview code.")
+        self.generic_visit(node)
+
+
+def _validate_user_code(code: str, *, section: str) -> None:
+    if len(code) > _MAX_USER_CODE_CHARS:
+        raise ValueError(f"{section} code is too long (>{_MAX_USER_CODE_CHARS} characters).")
+    tree = ast.parse(code, mode="exec")
+    _UserCodeSafetyVisitor().visit(tree)
+
+
+def _normalize_sandbox_profile(profile: str) -> str:
+    normalized = profile.strip().lower()
+    if normalized not in _SANDBOX_PROFILES:
+        options = ", ".join(sorted(_SANDBOX_PROFILES))
+        raise ValueError(f"Unknown sandbox profile '{profile}'. Choose one of: {options}.")
+    return normalized
+
+
+def _try_set_rlimit(resource_mod: Any, limit_name: str, soft: int, hard: int) -> None:
+    limit_const = getattr(resource_mod, limit_name, None)
+    if limit_const is None:
+        return
+    try:
+        resource_mod.setrlimit(limit_const, (int(soft), int(hard)))
+    except (ValueError, OSError):
+        # Best-effort only: OS and user privileges vary.
+        return
+
+
+def _apply_process_sandbox(*, profile: str, timeout_seconds: float) -> None:
+    profile_name = _normalize_sandbox_profile(profile)
+    if profile_name == "none":
+        return
+    try:
+        import resource  # type: ignore[attr-defined]
+    except Exception:
+        # Resource limits are not available on all platforms (e.g., Windows).
+        return
+
+    settings = _SANDBOX_PROFILES[profile_name]
+    cpu_soft = max(1, int(float(timeout_seconds)))
+    cpu_hard = max(cpu_soft + 1, cpu_soft)
+    _try_set_rlimit(resource, "RLIMIT_CPU", cpu_soft, cpu_hard)
+    _try_set_rlimit(resource, "RLIMIT_CORE", 0, 0)
+
+    mem_mb = settings.get("memory_mb")
+    if mem_mb is not None:
+        mem_bytes = int(mem_mb) * 1024 * 1024
+        _try_set_rlimit(resource, "RLIMIT_AS", mem_bytes, mem_bytes)
+        _try_set_rlimit(resource, "RLIMIT_DATA", mem_bytes, mem_bytes)
+
+    max_file_bytes = settings.get("max_file_bytes")
+    if max_file_bytes is not None:
+        _try_set_rlimit(resource, "RLIMIT_FSIZE", int(max_file_bytes), int(max_file_bytes))
+
+    max_open_files = settings.get("max_open_files")
+    if max_open_files is not None:
+        _try_set_rlimit(resource, "RLIMIT_NOFILE", int(max_open_files), int(max_open_files))
+
+    max_processes = settings.get("max_processes")
+    if max_processes is not None:
+        _try_set_rlimit(resource, "RLIMIT_NPROC", int(max_processes), int(max_processes))
+
+
+def _compile_user_function(code: str, *, func_name: str, source_tag: str) -> Any:
+    import math
+
+    _validate_user_code(code, section=func_name)
+    source = f"def {func_name}(x):\n" + textwrap.indent(code, "    ") + "\n"
+    local_ns: dict[str, Any] = {}
+    safe_builtins = dict(_SAFE_BUILTINS)
+    safe_builtins["__import__"] = _safe_import
+    exec(  # noqa: S102
+        compile(source, source_tag, "exec"),
+        {"math": math, "np": np, "__builtins__": safe_builtins},
+        local_ns,
+    )
+    fn = local_ns.get(func_name)
+    if fn is None:
+        raise RuntimeError(f"Could not compile {func_name}.")
+    return fn
 
 
 def example_objectives() -> dict[str, dict[str, str]]:
@@ -143,41 +334,23 @@ def compile_constraint_function(code: str) -> Any:
 
     Constraint values follow the convention: **g(x) <= 0 is feasible**.
     """
-    import math as _math
-
-    header = "import math\nimport numpy as np\n"
-    full_source = header + "def _user_constraint(x):\n" + textwrap.indent(code, "    ") + "\n"
-    local_ns: dict[str, Any] = {}
-    exec(  # noqa: S102
-        compile(full_source, "<constraint-builder>", "exec"),
-        {"math": _math, "np": np, "__builtins__": __builtins__},
-        local_ns,
+    return _compile_user_function(
+        code,
+        func_name="_user_constraint",
+        source_tag="<constraint-builder>",
     )
-    fn = local_ns.get("_user_constraint")
-    if fn is None:
-        raise RuntimeError("Could not compile constraint function.")
-    return fn
 
 
 def compile_objective_function(code: str) -> Any:
     """Compile user code into a callable ``fn(x) -> list[float]``."""
-    import math as _math
-
-    header = "import math\nimport numpy as np\n"
-    full_source = header + "def _user_fn(x):\n" + textwrap.indent(code, "    ") + "\n"
-    local_ns: dict[str, Any] = {}
-    exec(  # noqa: S102
-        compile(full_source, "<problem-builder>", "exec"),
-        {"math": _math, "np": np, "__builtins__": __builtins__},
-        local_ns,
+    return _compile_user_function(
+        code,
+        func_name="_user_fn",
+        source_tag="<problem-builder>",
     )
-    fn = local_ns.get("_user_fn")
-    if fn is None:
-        raise RuntimeError("Could not compile objective function.")
-    return fn
 
 
-def run_preview_optimization(
+def _run_preview_once(
     fn: Any,
     *,
     n_var: int,
@@ -190,7 +363,6 @@ def run_preview_optimization(
     constraints: Any = None,
     n_constraints: int = 0,
 ) -> dict[str, Any]:
-    """Run a quick optimization and return ``{"F": ..., "X": ..., "elapsed_ms": ...}``."""
     from vamos.foundation.problem.builder import make_problem
     from vamos.ux.studio.services import _build_algorithm_config, _run_algorithm
 
@@ -219,6 +391,131 @@ def run_preview_optimization(
         "X": np.asarray(X) if X is not None else None,
         "elapsed_ms": elapsed,
     }
+
+
+def _preview_worker(
+    queue: Any,
+    *,
+    objective_code: str,
+    constraint_code: str,
+    n_var: int,
+    n_obj: int,
+    bounds: list[tuple[float, float]],
+    algorithm: str,
+    budget: int,
+    pop_size: int,
+    seed: int,
+    n_constraints: int,
+    timeout_seconds: float,
+    sandbox_profile: str,
+) -> None:
+    try:
+        _apply_process_sandbox(profile=sandbox_profile, timeout_seconds=timeout_seconds)
+        fn = compile_objective_function(objective_code)
+        constraints = None
+        if constraint_code.strip() and n_constraints > 0:
+            constraints = compile_constraint_function(constraint_code)
+        payload = _run_preview_once(
+            fn,
+            n_var=n_var,
+            n_obj=n_obj,
+            bounds=bounds,
+            algorithm=algorithm,
+            budget=budget,
+            pop_size=pop_size,
+            seed=seed,
+            constraints=constraints,
+            n_constraints=n_constraints,
+        )
+        queue.put({"ok": True, "payload": payload})
+    except Exception as exc:  # pragma: no cover - validated by parent behavior tests
+        queue.put({"ok": False, "error": f"{type(exc).__name__}: {exc}"})
+
+
+def run_preview_optimization(
+    fn: Any,
+    *,
+    n_var: int,
+    n_obj: int,
+    bounds: list[tuple[float, float]],
+    algorithm: str,
+    budget: int,
+    pop_size: int,
+    seed: int,
+    constraints: Any = None,
+    n_constraints: int = 0,
+    objective_code: str | None = None,
+    constraint_code: str = "",
+    timeout_seconds: float = _PREVIEW_TIMEOUT_SECONDS,
+    sandbox_profile: str = _DEFAULT_SANDBOX_PROFILE,
+) -> dict[str, Any]:
+    """Run a quick optimization and return ``{"F": ..., "X": ..., "elapsed_ms": ...}``."""
+    sandbox_profile = _normalize_sandbox_profile(sandbox_profile)
+    if objective_code is None or timeout_seconds <= 0:
+        return _run_preview_once(
+            fn,
+            n_var=n_var,
+            n_obj=n_obj,
+            bounds=bounds,
+            algorithm=algorithm,
+            budget=budget,
+            pop_size=pop_size,
+            seed=seed,
+            constraints=constraints,
+            n_constraints=n_constraints,
+        )
+
+    import multiprocessing as mp
+    import queue as queue_mod
+
+    ctx = mp.get_context("spawn")
+    result_queue = ctx.Queue(maxsize=1)
+    process = ctx.Process(
+        target=_preview_worker,
+        kwargs={
+            "queue": result_queue,
+            "objective_code": objective_code,
+            "constraint_code": constraint_code,
+            "n_var": n_var,
+            "n_obj": n_obj,
+            "bounds": bounds,
+            "algorithm": algorithm,
+            "budget": budget,
+            "pop_size": pop_size,
+            "seed": seed,
+            "n_constraints": n_constraints,
+            "timeout_seconds": timeout_seconds,
+            "sandbox_profile": sandbox_profile,
+        },
+    )
+    process.start()
+    process.join(float(timeout_seconds))
+
+    if process.is_alive():
+        process.terminate()
+        process.join(timeout=1.0)
+        raise TimeoutError(f"Preview timed out after {timeout_seconds:.1f}s. Try simpler code or a smaller budget.")
+
+    try:
+        worker_result = result_queue.get(timeout=1.0)
+    except queue_mod.Empty as exc:
+        if process.exitcode not in (0, None):
+            raise RuntimeError(f"Preview worker exited unexpectedly (exit code {process.exitcode}).") from exc
+        raise RuntimeError("Preview worker finished without returning a result.") from exc
+    finally:
+        result_queue.close()
+        result_queue.join_thread()
+
+    if not isinstance(worker_result, dict):
+        raise RuntimeError("Preview worker returned an invalid result payload.")
+    if not worker_result.get("ok", False):
+        raise RuntimeError(str(worker_result.get("error", "Unknown preview worker error.")))
+    payload = worker_result.get("payload")
+    if not isinstance(payload, dict):
+        raise RuntimeError("Preview worker returned an invalid payload body.")
+    payload["F"] = np.asarray(payload.get("F"))
+    payload["X"] = np.asarray(payload["X"]) if payload.get("X") is not None else None
+    return payload
 
 
 def parse_bounds_text(text: str, n_var: int) -> list[tuple[float, float]] | str:
