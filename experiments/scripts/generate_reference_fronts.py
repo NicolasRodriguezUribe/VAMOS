@@ -8,7 +8,7 @@ from pymoo.problems import get_problem
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_OUT_DIR = ROOT_DIR / "data" / "reference_fronts"
-# Only ZDT reference fronts are packaged with the library for CLI defaults.
+# Keep the package fronts in sync with the full local front set.
 PACKAGE_OUT_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
 
 ZDT_PROBLEMS = ["zdt1", "zdt2", "zdt3", "zdt4", "zdt6"]
@@ -37,13 +37,11 @@ def _ensure_dirs() -> None:
 
 
 def _save_front(problem: str, front: np.ndarray) -> None:
-    name = problem.upper() if problem.lower().startswith("zdt") else problem.lower()
-    out_dirs = [DATA_OUT_DIR]
-    if problem.lower().startswith("zdt"):
-        out_dirs.append(PACKAGE_OUT_DIR)
-    for out_dir in out_dirs:
-        path = out_dir / f"{name}.csv"
-        np.savetxt(path, front, delimiter=",")
+    # Keep lowercase in repo data; preserve historical uppercase naming for packaged ZDT files.
+    data_name = problem.lower()
+    pkg_name = problem.upper() if problem.lower().startswith("zdt") else problem.lower()
+    np.savetxt(DATA_OUT_DIR / f"{data_name}.csv", front, delimiter=",")
+    np.savetxt(PACKAGE_OUT_DIR / f"{pkg_name}.csv", front, delimiter=",")
 
 
 def _pareto_filter_2d(front: np.ndarray) -> np.ndarray:

@@ -4,19 +4,30 @@ Packaged data assets for VAMOS (reference fronts, weight vectors, etc.).
 
 from __future__ import annotations
 
+import os
 from importlib import resources
 from pathlib import Path
 
 
 def _reference_front_locations() -> list[object]:
     """Return candidate locations containing reference front CSV files."""
-    locations: list[object] = [resources.files(__name__) / "reference_fronts"]
+    locations: list[object] = []
+
+    # Explicit override for external runs (e.g., remote servers).
+    override = os.environ.get("VAMOS_REFERENCE_FRONTS_DIR")
+    if override:
+        override_path = Path(override)
+        if override_path.exists():
+            locations.append(override_path)
 
     # Local-repo fallback: <repo>/data/reference_fronts
     # __file__: .../src/vamos/foundation/data/__init__.py
     repo_data = Path(__file__).resolve().parents[4] / "data" / "reference_fronts"
     if repo_data.exists():
         locations.append(repo_data)
+
+    # Packaged fronts remain the default fallback for installed distributions.
+    locations.append(resources.files(__name__) / "reference_fronts")
 
     return locations
 
