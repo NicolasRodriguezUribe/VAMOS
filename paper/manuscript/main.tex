@@ -1,4 +1,4 @@
-% VAMOS Paper: Swarm and Evolutionary Computation (Elsevier)
+% VAMOS Paper: IEEE Transactions on Evolutionary Computation (IEEE TEVC)
 % -----------------------------------------------------------------------------
 % NOTE: Several tables in this manuscript are auto-generated from CSV artifacts:
 %   - `experiments/benchmark_paper.csv`:
@@ -11,22 +11,23 @@
 %         `tab:frameworks_perf_nsgaii_archive`, `tab:frameworks_perf_smsemoa`,
 %         `tab:frameworks_perf_moead`).
 % -----------------------------------------------------------------------------
-\documentclass[preprint,12pt]{elsarticle}
+\documentclass[journal]{IEEEtran}
 
+\usepackage{cite}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{hyperref}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
 \hypersetup{hypertexnames=false}
 \makeatletter
 \g@addto@macro\UrlBreaks{\do\.\do\_\do\-\do\/}
 \makeatother
-\usepackage{listings}
-\usepackage{xcolor}
-\usepackage{multirow}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
 
 % Code listing style
 \lstset{
@@ -42,64 +43,42 @@
   numberstyle=\tiny\color{gray}
 }
 
-\journal{Swarm and Evolutionary Computation}
-
 \newcommand{\VAMOS}{VAMOS}
 \newcommand{\HV}{\mathrm{HV}}
 
+\title{VAMOS: A Vectorized Architecture for Multiobjective Optimization Studies: A High-Performance Python Framework}
+\author{Nicol\'{a}s~R.~Uribe,
+        Alberto~Herr\'{a}n,
+        Antonio~J.~Nebro,
+        Javier~del~Ser,
+        and~J.~Manuel~Colmenar%
+\thanks{N. R. Uribe, A. Herr\'{a}n, and J. M. Colmenar are with the Dept. Computer Sciences, Universidad Rey Juan Carlos, M\'{o}stoles, 28933 Madrid, Spain (e-mail: nicolas.rodriguez@urjc.es; alberto.herran@urjc.es; josemanuel.colmenar@urjc.es).}%
+\thanks{A. J. Nebro is with the Dept. de Lenguajes y Ciencias de la Computaci\'{o}n, ITIS Software, University of M\'{a}laga, 29071 M\'{a}laga, Spain (e-mail: ajnebro@uma.es).}%
+\thanks{J. del Ser is with TECNALIA, Basque Research \& Technology Alliance (BRTA), Derio, 48160, Spain, and also with the Dept. of Mathematics, University of the Basque Country (UPV/EHU), Leioa, 48940, Spain (e-mail: javier.delser@tecnalia.com).}%
+\thanks{Corresponding author: Alberto Herr\'{a}n (alberto.herran@urjc.es).}%
+}
+
 \begin{document}
-
-\begin{frontmatter}
-
-\title{VAMOS: A Vectorized Architecture for Multiobjective Optimization Studies\\A High-Performance Python Framework}
-
-\author[URJC]{Nicol\'{a}s R. Uribe}
-\ead{nicolas.rodriguez@urjc.es}
-
-\author[URJC]{Alberto Herr\'{a}n\corref{cor1}}
-\ead{alberto.herran@urjc.es}
-
-\author[LCC,ITIS]{Antonio J. Nebro}
-\ead{ajnebro@uma.es}
-
-\author[TECNALIA,UPV]{Javier del Ser}
-\ead{javier.delser@tecnalia.com}
-
-\author[URJC]{J. Manuel Colmenar}
-\ead{josemanuel.colmenar@urjc.es}
-
-\cortext[cor1]{Corresponding author: Alberto Herr\'{a}n (alberto.herran@urjc.es)}
-
-\address[URJC]{Dept. Computer Sciences, Universidad Rey Juan Carlos\\
-C/. Tulip\'{a}n, s/n, M\'{o}stoles, 28933 (Madrid), Spain}
-
-\address[LCC]{Dept. de Lenguajes y Ciencias de la Computaci\'{o}n, ITIS Software, University of M\'{a}laga,\\
-ETSI Inform\'{a}tica, Campus de Teatinos, 29071 (M\'{a}laga), Spain}
-
-\address[ITIS]{ITIS Software, Ada Byron Research Building, C/. Arquitecto Francisco Pe\~nalosa, 18, University of M\'{a}laga, 29071 (M\'{a}laga), Spain}
-
-\address[TECNALIA]{TECNALIA, Basque Research \& Technology Alliance (BRTA), Derio, 48160, Spain}
-
-\address[UPV]{Department of Mathematics, University of the Basque Country (UPV/EHU), Leioa, 48940, Spain}
+\maketitle
 
 \begin{abstract}
-\sloppy
 Python has become the de facto platform for empirical studies in multi-objective optimization, yet most multi-objective evolutionary algorithm (MOEA) libraries remain dominated by object-oriented designs that incur substantial interpreter overhead in the inner loop. We introduce \VAMOS{} (Vectorized Architecture for Multiobjective Optimization Studies), a research-oriented framework that represents populations as contiguous numerical arrays and separates algorithmic logic from numerical kernels. \VAMOS{} provides interchangeable compute backends (NumPy, Numba JIT, and optional C and JAX accelerators), a unified configuration API, and nine MOEAs (NSGA-II and NSGA-III, MOEA/\allowbreak D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, and RVEA). We release a reproducible cross-framework benchmarking pipeline that aligns problem definitions and operator semantics across common Python frameworks and reports wall-clock runtime and \emph{normalized} hypervolume computed with fixed reference Pareto fronts. Across the ZDT, DTLZ, and WFG suites, \VAMOS{} achieves up to an order-of-magnitude reduction in runtime relative to object-centric libraries (jMetalPy, DEAP, Platypus), with more moderate but consistent gains over pymoo, while maintaining statistically equivalent solution quality.
 \end{abstract}
 
-\begin{highlights}
-\item Vectorized MOEA core with pluggable NumPy/Numba/C/JAX kernels.
-\item Fair cross-framework benchmarking via semantic configuration alignment.
-\item Backend and cross-framework runtime comparison across multiple MOEA variants.
-\item Competitive normalized hypervolume under a fixed-reference-front protocol.
-\item Reproducible pipeline with scripts and versioned artifacts.
-\end{highlights}
+% Elsevier-only highlights (kept for reference; not used in IEEE submissions):
+% \begin{highlights}
+% \item Vectorized MOEA core with pluggable NumPy/Numba/C/JAX kernels.
+% \item Fair cross-framework benchmarking via semantic configuration alignment.
+% \item Backend and cross-framework runtime comparison across multiple MOEA variants.
+% \item Competitive normalized hypervolume under a fixed-reference-front protocol.
+% \item Reproducible pipeline with scripts and versioned artifacts.
+% \end{highlights}
 
-\begin{keyword}
-Multi-objective optimization \sep Evolutionary algorithms \sep Benchmarking \sep Hypervolume \sep Python framework \sep Vectorization
-\end{keyword}
+\begin{IEEEkeywords}
+Multi-objective optimization, evolutionary algorithms, benchmarking, hypervolume, Python framework, vectorization
+\end{IEEEkeywords}
 
-\end{frontmatter}
+\IEEEpeerreviewmaketitle
 
 %==============================================================================
 \section{Introduction}
@@ -566,7 +545,7 @@ All data and code supporting the findings of this study (benchmark scripts, refe
 \url{https://github.com/NicolasRodriguezUribe/VAMOS}.
 
 %==============================================================================
-\appendix
+\appendices
 \section{Reference fronts and detailed benchmark results}
 \label{app:detailed}
 %==============================================================================
@@ -668,7 +647,7 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_equivalence_ci_moead} pres
 %==============================================================================
 % Bibliography
 %==============================================================================
-\bibliographystyle{elsarticle-num}
+% IEEEtran formats thebibliography appropriately; keep manual entries for now.
 \begin{thebibliography}{33}
 
 \bibitem{coello2007evolutionary}

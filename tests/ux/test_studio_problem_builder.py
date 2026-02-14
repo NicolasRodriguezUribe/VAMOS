@@ -47,6 +47,14 @@ class TestCompileObjectiveFunction:
         with pytest.raises(SyntaxError):
             compile_objective_function("return [x[0] +]")
 
+    def test_disallow_unsafe_import(self) -> None:
+        with pytest.raises(ValueError, match="not allowed"):
+            compile_objective_function("import os\nreturn [x[0], x[1]]")
+
+    def test_disallow_unsafe_builtin(self) -> None:
+        with pytest.raises(ValueError, match="not allowed"):
+            compile_objective_function("open('tmp.txt', 'w')\nreturn [x[0], x[1]]")
+
     def test_all_templates_compile(self) -> None:
         """Every built-in template must compile without error."""
         for name, template in example_objectives().items():
@@ -182,3 +190,35 @@ class TestRunPreviewOptimization:
             seed=0,
         )
         assert result["F"].shape[1] == 3
+
+    def test_preview_timeout_for_non_terminating_code(self) -> None:
+        fn = compile_objective_function("return [x[0], x[1]]")
+        with pytest.raises(TimeoutError, match="timed out"):
+            run_preview_optimization(
+                fn,
+                n_var=2,
+                n_obj=2,
+                bounds=[(0.0, 1.0), (0.0, 1.0)],
+                algorithm="nsgaii",
+                budget=200,
+                pop_size=20,
+                seed=0,
+                objective_code="while True:\n    pass\nreturn [x[0], x[1]]",
+                timeout_seconds=0.5,
+            )
+
+    def test_invalid_sandbox_profile(self) -> None:
+        fn = compile_objective_function("return [x[0], x[1]]")
+        with pytest.raises(ValueError, match="Unknown sandbox profile"):
+            run_preview_optimization(
+                fn,
+                n_var=2,
+                n_obj=2,
+                bounds=[(0.0, 1.0), (0.0, 1.0)],
+                algorithm="nsgaii",
+                budget=200,
+                pop_size=20,
+                seed=0,
+                objective_code="return [x[0], x[1]]",
+                sandbox_profile="invalid_profile",
+            )
