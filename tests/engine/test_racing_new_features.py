@@ -81,6 +81,31 @@ def test_convergence_disabled_by_default():
     assert tuner._stage_index == len(tuner._schedule)
 
 
+def test_convergence_not_triggered_by_high_variance_plateau():
+    """Do not declare convergence when recent best scores are too volatile."""
+    task = TuningTask(
+        name="demo",
+        param_space=ParamSpace(params={"x": Real("x", 0.0, 1.0)}),
+        instances=[Instance("p", 2)],
+        seeds=[0],
+        budget_per_run=1,
+        maximize=True,
+        aggregator=np.mean,
+    )
+    scenario = Scenario(
+        max_experiments=100,
+        convergence_window=4,
+        convergence_threshold=0.05,
+        use_statistical_tests=False,
+    )
+    tuner = RacingTuner(task=task, scenario=scenario, seed=0, max_initial_configs=2)
+
+    # Improvement from oldest to newest is small/negative, but variance is large.
+    tuner._best_score_history = [1.0, 0.75, 1.25, 0.98]
+
+    assert tuner._check_convergence() is False
+
+
 def test_checkpoint_save_load_roundtrip():
     """Test checkpoint save and load preserves data."""
     best_configs = [{"x": 0.5, "pop_size": 100}]

@@ -29,7 +29,7 @@ class Scenario:
     number.
     """
 
-    elimination_fraction: float = 0.5
+    elimination_fraction: float = 0.25
     """
     Fraction of configurations to eliminate in each elimination step.
     For example, 0.5 means "drop roughly the worst 50% after each stage",
@@ -85,8 +85,8 @@ class Scenario:
     min_blocks_before_elimination: int = 3
     """
     Minimum number of blocks (instance x seed combinations) that must be evaluated
-    before using statistical tests. Before this number is reached, the racing tuner
-    may either avoid elimination or use the simpler rank-based elimination.
+    before elimination is allowed. In statistical mode this gates hypothesis tests;
+    in rank-only mode it acts as a grace period to reduce noisy early pruning.
     """
 
     use_adaptive_budget: bool = False

@@ -37,16 +37,20 @@ def build_schedule(
 
     schedule: list[tuple[int, int]] = []
 
-    # Stage 1: restricted set of instances
-    for seed_idx in seed_indices:
-        for inst_idx in stage1_instances:
-            schedule.append((inst_idx, seed_idx))
+    # Interleave the initially-selected subset with the remaining instances.
+    # This reduces early overfitting to `start_instances` while still giving
+    # them slight priority.
+    interleaved_instances: list[int] = []
+    max_len = max(len(stage1_instances), len(remaining_instances))
+    for i in range(max_len):
+        if i < len(stage1_instances):
+            interleaved_instances.append(stage1_instances[i])
+        if i < len(remaining_instances):
+            interleaved_instances.append(remaining_instances[i])
 
-    # Stage 2+: remaining instances
-    if remaining_instances:
-        for seed_idx in seed_indices:
-            for inst_idx in remaining_instances:
-                schedule.append((inst_idx, seed_idx))
+    for seed_idx in seed_indices:
+        for inst_idx in interleaved_instances:
+            schedule.append((inst_idx, seed_idx))
 
     return schedule
 

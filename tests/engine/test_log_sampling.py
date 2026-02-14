@@ -118,3 +118,35 @@ def test_refill_log_perturbation_int():
 
     assert np.sum(arr < 64) > 0
     assert np.sum(arr > 64) > 0
+
+
+def test_model_based_sampler_joint_mode_preserves_numeric_correlation():
+    space = ParamSpace({"x": Real("x", 0.0, 1.0), "y": Real("y", 0.0, 1.0)})
+    sampler = ModelBasedSampler(
+        space,
+        exploration_prob=0.0,
+        min_samples_to_model=3,
+        min_samples_for_joint=3,
+        joint_sampling_prob=1.0,
+        neighbor_noise_scale=0.08,
+    )
+
+    rng_data = np.random.default_rng(123)
+    good = []
+    for _ in range(80):
+        x = float(rng_data.uniform(0.1, 0.9))
+        y = float(np.clip(x + rng_data.normal(0.0, 0.03), 0.0, 1.0))
+        good.append({"x": x, "y": y})
+
+    sampler.update(good)
+
+    rng_sample = np.random.default_rng(99)
+    xs = []
+    ys = []
+    for _ in range(250):
+        cfg = sampler.sample(rng_sample)
+        xs.append(float(cfg["x"]))
+        ys.append(float(cfg["y"]))
+
+    corr = float(np.corrcoef(np.asarray(xs), np.asarray(ys))[0, 1])
+    assert corr > 0.6

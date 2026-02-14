@@ -50,16 +50,25 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+def _failure_score(maximize: bool) -> float:
+    return -1e30 if maximize else 1e30
+
+
 def _screening_worker(
     eval_fn: EvalFn,
     config: dict[str, Any],
     ctx: EvalContext,
+    maximize: bool,
 ) -> float:
     """Worker for parallel phase-1 evaluation; returns a scalar score."""
-    result = eval_fn(config, ctx)
-    if isinstance(result, tuple):
-        return float(result[0])
-    return float(result)
+    try:
+        result = eval_fn(config, ctx)
+        if isinstance(result, tuple):
+            return float(result[0])
+        return float(result)
+    except Exception:
+        _logger().warning("[two-phase] eval_fn failed in screening worker; assigning failure score.", exc_info=True)
+        return _failure_score(maximize)
 
 
 # ---------------------------------------------------------------------------
@@ -335,14 +344,22 @@ class TwoPhaseTuner:
 
         if self.scenario.n_jobs == 1:
             for i, (cfg, ctx) in enumerate(tasks):
-                result = eval_fn(cfg, ctx)
-                score = float(result[0]) if isinstance(result, tuple) else float(result)
+                try:
+                    result = eval_fn(cfg, ctx)
+                    score = float(result[0]) if isinstance(result, tuple) else float(result)
+                except Exception:
+                    _logger().warning(
+                        "[two-phase] eval_fn failed in screening for config_id=%s; assigning failure score.",
+                        configs[task_indices[i]].config_id,
+                        exc_info=True,
+                    )
+                    score = _failure_score(self.task.maximize)
                 configs[task_indices[i]].fidelity_scores.setdefault(
                     level_idx, [],
                 ).append(score)
         else:
             results = Parallel(n_jobs=self.scenario.n_jobs)(
-                delayed(_screening_worker)(eval_fn, cfg, ctx)
+                delayed(_screening_worker)(eval_fn, cfg, ctx, self.task.maximize)
                 for cfg, ctx in tasks
             )
             for i, score in enumerate(results):
