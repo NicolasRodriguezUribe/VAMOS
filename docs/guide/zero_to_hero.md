@@ -16,8 +16,13 @@ We will cover:
 First, install VAMOS (assuming you are in the repository root):
 
 ```bash
-pip install -e .
+pip install -e ".[analysis]"
 ```
+
+Notes:
+- Plotting in this guide requires the `analysis` extra (matplotlib/pandas).
+- For accelerated kernels and distributed evaluation: `pip install -e ".[compute]"`.
+- For model-based tuning backends (optuna/smac3/bohb): `pip install -e ".[tuning]"`.
 
 Prefer a guided CLI? Run `vamos quickstart` for prompts and a ready-made config file.
 Use `vamos quickstart --template list` to explore domain-flavored templates.
@@ -186,7 +191,7 @@ scenario = Scenario(
     max_experiments=300,
     use_multi_fidelity=True,          # Enable Hyperband-style
     fidelity_levels=(1000, 3000, 10000),  # Increasing budgets
-    fidelity_warm_start=True,          # Continue from checkpoints
+    fidelity_warm_start=True,          # Pass checkpoints between fidelity levels (eval_fn opt-in)
     fidelity_promotion_ratio=0.3,      # Top 30% advance
     n_jobs=-1,                         # Parallel evaluation
 )
@@ -204,16 +209,18 @@ print(best_config)
 Fidelity 1 (budget=1000):  30 configs evaluated cheaply
                            -> Top 9 promoted
 
-Fidelity 2 (budget=3000):  9 configs continue from checkpoint (+2000 evals)
+Fidelity 2 (budget=3000):  9 configs re-evaluated at higher budget (+2000 evals)
+                           (optionally warm-started from checkpoints)
                            -> Top 3 promoted
 
-Fidelity 3 (budget=10000): 3 configs continue from checkpoint (+7000 evals)
+Fidelity 3 (budget=10000): 3 configs re-evaluated at full budget (+7000 evals)
+                           (optionally warm-started from checkpoints)
                            -> Best returned
 ```
 
 **Benefits over irace:**
 - **3x more initial exploration** with same total budget
-- **Warm-starting** accumulates progress between levels
+- **Checkpoint hooks** for warm-starting between fidelity levels (when your eval_fn consumes/returns checkpoints)
 - **Dynamic normalization** works without knowing ideal/nadir
 
 ### B. Custom Vectorized Problem
@@ -260,7 +267,7 @@ Run a short sweep (three seeds) into a dedicated folder:
 
 ```bash
 for seed in 1 2 3; do
-  vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --seed $seed --output-dir results/cli_demo
+  vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --seed $seed --output-root results/cli_demo
 done
 ```
 

@@ -6,7 +6,7 @@ Install
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .\.venv\Scripts\Activate.ps1
-pip install "vamos[compute,research,dev]"
+pip install "vamos[compute,research,analysis,dev]"
 ```
 
 Useful extras:
@@ -14,6 +14,7 @@ Useful extras:
 - `compute`: accelerated kernels + distributed eval (numba, moocore, dask)
 - `research`: external baselines + benchmarks (pymoo, jmetalpy, pygmo)
 - `analysis`: plotting + notebook deps (matplotlib/plotly/scikit-learn, ipywidgets, nbconvert)
+- `tuning`: model-based hyperparameter tuning backends (Optuna, SMAC3, BOHB)
 - `dev`: pytest, ruff, black, nbformat/nbconvert for notebook checks
 - `examples`: minimal plotting + scikit-learn deps
 - `studio`: streamlit + plotly dashboard
@@ -117,4 +118,3 @@ Benchmarks and studies
 - Compare backends: `python -m vamos.experiment.cli.main --experiment backends --problem zdt1`
 - Run a predefined suite: `vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/`
 - Batch problem x algorithm sweeps: `vamos --problem-set families --algorithm both`
-

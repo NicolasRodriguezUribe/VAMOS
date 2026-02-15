@@ -9,6 +9,7 @@
 
 - Backends (numba/moocore): `pip install -e ".[compute]"`
 - External baselines (pymoo/jmetalpy/pygmo): `pip install -e ".[research]"`
+- Model-based tuning backends (optuna/smac3/bohb): `pip install -e ".[tuning]"`
 
 ## Benchmark suites
 

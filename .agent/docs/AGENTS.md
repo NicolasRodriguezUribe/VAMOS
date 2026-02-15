@@ -32,7 +32,7 @@ VAMOS prioritizes ease of use:
     ```python
     from vamos import optimize
 
-    result = optimize("zdt1", algorithm="nsgaii", budget=2000, pop_size=100, seed=42)
+    result = optimize("zdt1", algorithm="nsgaii", max_evaluations=2000, pop_size=100, seed=42)
     ```
     ```python
     from vamos import optimize
@@ -45,7 +45,7 @@ VAMOS prioritizes ease of use:
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("n_eval", 2000),
+        termination=("max_evaluations", 2000),
         seed=42,
     )
     ```
@@ -74,7 +74,11 @@ VAMOS prioritizes ease of use:
 
 - **Standard Install**:
   ```powershell
-  pip install -e ".[backends,benchmarks,dev,notebooks]"
+  pip install -e ".[dev]"
+  # Common full dev install:
+  pip install -e ".[compute,research,analysis,tuning,studio,dev]"
+  # Or install everything:
+  pip install -e ".[all]"
   ```
 
 - **Useful commands**:
@@ -119,7 +123,7 @@ VAMOS prioritizes ease of use:
   - `api.py` - Root facade. Other facades (`algorithms`, `problems`, `ux.api`) are public.
 - `tests/` - pytest suite (operators, algorithms, CLI/study integration, examples/notebooks when enabled).
 - `examples/`, `notebooks/` - runnable examples and exploratory notebooks.
-- `notebooks/90_paper_benchmarking.ipynb` includes SAES-style critical distance plots (toggle with `CD_STYLE`).
+- `notebooks/2_advanced/30_paper_benchmarking.ipynb` includes SAES-style critical distance plots (toggle with `CD_STYLE`).
 - Results and reports default to `results/` (fronts, metadata, CSVs).
 
 Prefer following this structure instead of guessing new locations.
@@ -139,7 +143,7 @@ Prefer following this structure instead of guessing new locations.
 ## 6. Dependency and performance contract
 
 - Do NOT add new heavy dependencies (large ML frameworks, extra plotting stacks, etc.) unless strictly necessary and clearly justified.
-- Prefer existing extras (`backends`, `benchmarks`, `notebooks`, `examples`, `studio`, etc.) instead of inventing new ones.
+- Prefer existing extras in `pyproject.toml` (`compute`, `research`, `analysis`, `tuning`, `examples`, `studio`, etc.) instead of inventing new ones.
 - Preserve vectorization and the existing kernels (NumPy/Numba/MooCore); avoid replacing them with pure Python loops in critical paths.
 - Any new dependency must:
   - Be optional if not core to the framework.
@@ -152,17 +156,16 @@ Prefer following this structure instead of guessing new locations.
 
 The preferred toolchain is:
 
-- `black` for formatting
 - `ruff` for linting
-- `isort` for import ordering
+- `ruff format` for formatting
 - `pytest` for tests
 
 When adding or modifying code, aim for code that passes:
 
 ```bash
-black src tests
+ruff format src tests
 ruff check src tests
-isort src tests
+python tools/health.py
 pytest
 ```
 

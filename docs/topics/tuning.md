@@ -2,6 +2,22 @@
 
 VAMOS provides powerful tools for tuning algorithm hyperparameters, from simple random search to advanced racing methods.
 
+## Install (optional backends)
+
+The built-in tuners (`racing`, `random`) work with the core install.
+
+To enable model-based backends (`optuna`, `smac3`, `bohb`, `bohb_optuna`), install the optional `tuning` extra:
+
+```bash
+pip install "vamos[tuning]"
+```
+
+From a local checkout:
+
+```bash
+pip install -e ".[tuning]"
+```
+
 ## Programmatic Tuning
 
 For full control, you can use the `vamos.engine.tuning` module directly in your scripts.

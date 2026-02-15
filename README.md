@@ -12,7 +12,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 - **Battle-Tested Algorithms**: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA.
 - **Unified Archiving**: Consistent external archive configuration via `.archive(size=...).archive_type("crowding" | "hypervolume")`.
 - **Multi-Fidelity Tuning**: Hyperband-style racing with warm-start checkpoints for sample-efficient algorithm configuration.
-- **Ready-to-use Tuning Backends**: `racing`, `random`, `optuna`, `bohb_optuna`, `smac3`, and `bohb` are available via `vamos tune`.
+- **Ready-to-use Tuning Backends**: `racing` and `random` work out of the box; install the optional `tuning` extra to enable `optuna`, `bohb_optuna`, `smac3`, and `bohb` via `vamos tune`.
 - **Performance Driven**: Vectorized kernels, GPU acceleration (JAX), and optional Numba JIT compilation.
 - **Interactive Analysis**: Built-in dashboards with `explore_result_front(result)` and publication-ready LaTeX tables.
 - **Visual Problem Builder**: Define custom problems in the browser with live Pareto front preview via VAMOS Studio.
@@ -33,6 +33,12 @@ python -m venv .venv
 
 # Install core + essential extras
 pip install "vamos[compute,research,analysis]"
+```
+
+Optional model-based tuning backends (`optuna`, `smac3`, `bohb`):
+
+```bash
+pip install "vamos[tuning]"
 ```
 
 ```bash
@@ -108,6 +114,8 @@ Check backend availability in your current environment:
 ```bash
 vamos tune --list-backends
 ```
+
+Note: `racing` and `random` require no extra dependencies. The model-based backends (`optuna`, `bohb_optuna`, `smac3`, `bohb`) require the optional `tuning` extra: `pip install "vamos[tuning]"`.
 
 Recommended robust command (fallback + suite-stratified split):
 

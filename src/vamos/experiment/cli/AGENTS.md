@@ -43,14 +43,14 @@ All VAMOS functionality is available via `vamos <subcommand>`. Run `vamos help` 
 |------|-------------|---------|
 | `--problem` | Problem name (zdt1, dtlz2, etc.) | zdt1 |
 | `--algorithm` | Algorithm (nsgaii, moead, spea2, etc.) | nsgaii |
-| `--engine` | Backend (numpy, numba, moocore) | numpy |
+| `--engine` | Backend (numpy, numba, moocore, jax) | numpy |
 | `--max-evaluations` | Termination budget | 25000 |
 | `--population-size` | Population size | 100 |
 | `--n-var` | Number of variables | problem default |
 | `--n-obj` | Number of objectives | problem default |
 | `--config` | YAML config file path | None |
-| `--seed` | Random seed | None |
-| `--output-dir` | Results directory | results/ |
+| `--seed` | Random seed | 42 |
+| `--output-root` | Results directory | results/ |
 
 ## `create-problem` subcommand
 
@@ -100,5 +100,5 @@ python -m vamos.experiment.cli.main --config study.yaml --max-evaluations 5000
 
 1. Add argument to `argparse` in `main.py`
 2. Wire to `run_single()` or `ExperimentConfig`
-3. Document in `docs/cli.md`
+3. Document in `docs/guide/cli.md`
 4. Add integration test in `tests/test_cli_*.py`
