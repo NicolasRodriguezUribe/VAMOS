@@ -16,13 +16,13 @@ Variants:
 Usage
 -----
   # Step 1: Generate reference fronts (one-time, ~hours)
-  VAMOS_MIC_SUITE=standard python paper_MIC/scripts/02_run_mic_experiment.py --generate-ref-fronts
+  VAMOS_MIC_SUITE=standard python paper/mic/scripts/02_run_mic_experiment.py --generate-ref-fronts
 
   # Step 2: Run the main experiment
-  VAMOS_MIC_SUITE=standard python paper_MIC/scripts/02_run_mic_experiment.py
+  VAMOS_MIC_SUITE=standard python paper/mic/scripts/02_run_mic_experiment.py
 
   # Or run on real-world problems:
-  VAMOS_MIC_SUITE=realworld python paper_MIC/scripts/02_run_mic_experiment.py
+  VAMOS_MIC_SUITE=realworld python paper/mic/scripts/02_run_mic_experiment.py
 
 Environment variables (main experiment)
 ---------------------------------------
@@ -71,7 +71,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
+ROOT_DIR = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT_DIR / "src"))
 sys.path.insert(0, str(ROOT_DIR / "paper"))
 

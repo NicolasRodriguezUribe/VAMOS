@@ -3,7 +3,7 @@
 Generate analytical reference fronts for UF (CEC2009) and LSMOP problems.
 
 Usage:
-    python paper_MIC/scripts/03_generate_challenging_ref_fronts.py
+    python paper/mic/scripts/03_generate_challenging_ref_fronts.py
 
 These are the *true* Pareto fronts derived from the analytical problem
 definitions, not approximations from optimisation runs.  They are saved
@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+ROOT_DIR = Path(__file__).resolve().parents[3]
 REF_DIR = ROOT_DIR / "data" / "reference_fronts"
 
 N_POINTS = 1000
