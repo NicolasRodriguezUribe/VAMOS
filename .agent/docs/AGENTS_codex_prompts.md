@@ -3,7 +3,7 @@
 Ready-to-paste prompts for AI coding agents (e.g., Code, Copilot, GPT) working on **VAMOS**.
 
 Assumptions:
-- `AGENTS.md` and `AGENTS_tasks.md` are in the repo root.
+- `.agent/docs/AGENTS.md` and `.agent/docs/AGENTS_tasks.md` are in the repo.
 - The agent can read project files before writing code.
 - **User-friendliness is paramount**: Always prefer the clean public API `from vamos import ...` for user-facing code. Layered imports (`vamos.foundation.*`, `vamos.engine.*`, `vamos.experiment.*`, `vamos.ux.*`) are for contributor/internal work only.
 
@@ -29,7 +29,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 **Prompt 0 - Load and summarise VAMOS rules**
 
 > You are an expert Python engineer working on VAMOS (Vectorized Architecture for Multiobjective Optimization Studies).  
-> 1) Read and summarise `AGENTS.md` and `AGENTS_tasks.md`.  
+> 1) Read and summarise `.agent/docs/AGENTS.md` and `.agent/docs/AGENTS_tasks.md`.  
 > 2) Produce a concise checklist covering: (a) **user-friendliness** (clean public API, sensible defaults), (b) architectural concepts (problem, kernel, algorithm, operators, tuning, study, archive, benchmarking/diagnostics), (c) coding conventions and constraints (type hints, vectorization, tests, dependency/performance rules), (d) rules for adding new features and updating tests/docs.  
 > 3) Confirm you will follow all of these rules for subsequent changes.  
 > Output: a short bullet list of rules you will respect and a 3-5 sentence architecture summary.
@@ -40,7 +40,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 **Prompt 1 - Minimal ZDT1 baseline + smoke test**
 
-> You are in the VAMOS repo. You have read `AGENTS.md` and `AGENTS_tasks.md`.  
+> You are in the VAMOS repo. You have read `.agent/docs/AGENTS.md` and `.agent/docs/AGENTS_tasks.md`.  
 > Goal: create a minimal ZDT1 baseline using NSGA-II via `python -m vamos.experiment.cli.main` plus a pytest smoke test.  
 > Tasks:  
 > - Locate ZDT1 under `src/vamos/foundation/problem/` and NSGA-II under `src/vamos/engine/algorithm/`.  
@@ -55,7 +55,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 **Prompt 2 - Hypervolume-based external archive option**
 
-> You are in the VAMOS repo. Rules from `AGENTS.md` / `AGENTS_tasks.md` apply.  
+> You are in the VAMOS repo. Rules from `.agent/docs/AGENTS.md` / `.agent/docs/AGENTS_tasks.md` apply.  
 > Goal: implement a hypervolume-based external archive and make it selectable in an algorithm (e.g., NSGA-II) without changing defaults.  
 > Tasks:  
 > - Find archive abstractions and hypervolume helpers (e.g., under `src/vamos/foundation/eval/`, `metrics/`, `algorithm/`, or kernels/backends).  
@@ -70,7 +70,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 **Prompt 3 - Extend tuning search space and binding**
 
-> You are in the VAMOS repo and will follow `AGENTS.md` / `AGENTS_tasks.md`.  
+> You are in the VAMOS repo and will follow `.agent/docs/AGENTS.md` / `.agent/docs/AGENTS_tasks.md`.  
 > Goal: extend the AutoNSGA-II (or equivalent) tuning space with new parameters (e.g., `mutation_rate`, `crossover_eta`, `archive_type`).  
 > Tasks:  
 > - Locate search space definitions under `src/vamos/engine/tuning/racing/` plus algorithm config binding under `src/vamos/engine/algorithm/`.  
@@ -85,7 +85,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 **Prompt 4 - Implement a real-coded crossover/mutation**
 
-> You are in the VAMOS repo. Follow `AGENTS.md` and `AGENTS_tasks.md`.  
+> You are in the VAMOS repo. Follow `.agent/docs/AGENTS.md` and `.agent/docs/AGENTS_tasks.md`.  
 > Goal: add a new real-coded operator `<Name>` under `src/vamos/engine/operators/real/`.  
 > Tasks:  
 > - Use existing operators (SBX, BLX-alpha, polynomial mutation) as patterns.  
@@ -100,14 +100,14 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 **Prompt 5 - Implement and register `<ProblemName>`**
 
-> You are in the VAMOS repo. Rules from `AGENTS.md` / `AGENTS_tasks.md` apply.  
+> You are in the VAMOS repo. Rules from `.agent/docs/AGENTS.md` / `.agent/docs/AGENTS_tasks.md` apply.  
 > Goal: add a new problem `<ProblemName>` that fits the Problem API and registry.  
 > Tasks:  
 > - Implement the problem under `src/vamos/foundation/problem/benchmark/` or `real_world/` with dimension, bounds, objectives, constraints, and `evaluate` / `evaluate_population`.  
 > - Register it so `python -m vamos.experiment.cli.main --problem <id>` works.  
 > - Add tests for shapes/finite outputs (and reference points if applicable).  
 > - Add an example snippet or tiny script showing NSGA-II on the new problem with a small budget.  
-> - If editing the paper benchmarking notebook (`notebooks/90_paper_benchmarking.ipynb`), keep the SAES-style critical distance plot toggle (`CD_STYLE`) intact.  
+> - If editing the paper benchmarking notebook (`notebooks/2_advanced/30_paper_benchmarking.ipynb`), keep the SAES-style critical distance plot toggle (`CD_STYLE`) intact.  
 > Output code/tests/registry diffs and a brief description.
 
 ---
@@ -116,7 +116,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 **Prompt 6 - Reproducible study via CLI/study runner**
 
-> You are in the VAMOS repo. Follow `AGENTS.md` / `AGENTS_tasks.md`.  
+> You are in the VAMOS repo. Follow `.agent/docs/AGENTS.md` / `.agent/docs/AGENTS_tasks.md`.  
 > Goal: define a study (problem x algorithm x seeds) with CLI wiring.  
 > Tasks:  
 > - Use `src/vamos/experiment/study/`, the central orchestration in `src/vamos/experiment/runner.py`, and CLI entry points to set up a study runnable via `python -m vamos.experiment.cli.main --config path.yaml` or a new flag.  
@@ -207,7 +207,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 > 1. List all functions/classes whose public API changed (signatures, default values, behaviour).
 > 2. For each change, check whether there is at least one test that covers the new or changed behaviour.
 >    - If not, propose specific new tests to add (paths + test names + what they assert).
-> 3. Check that all new imports respect the dependency and performance contract in `AGENTS.md`.
+> 3. Check that all new imports respect the dependency and performance contract in `.agent/docs/AGENTS.md`.
 > 4. Check that all new modules are placed under the appropriate package (`algorithm`, `kernel`, `problem`, `tuning`, `study`, etc.).
 > 5. Suggest any small follow-up cleanup (dead code, duplicated helpers, missing docstrings) that would improve maintainability without large refactors.
 >
@@ -215,4 +215,4 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 ---
 
-You can keep this file in the repo and copy any of these prompts directly into your coding agent when starting a new task on VAMOS. Each prompt aligns with README and the guidance in `AGENTS.md` and `AGENTS_tasks.md`.
+You can keep this file in the repo and copy any of these prompts directly into your coding agent when starting a new task on VAMOS. Each prompt aligns with README and the guidance in `.agent/docs/AGENTS.md` and `.agent/docs/AGENTS_tasks.md`.

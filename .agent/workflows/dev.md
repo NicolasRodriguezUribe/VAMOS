@@ -7,9 +7,9 @@ description: Common development commands for VAMOS project
 This workflow enables auto-running of common development commands.
 
 ## Python Environment
-1. Activate venv: `.venv\Scripts\activate`
+1. Activate venv: `.\.venv\Scripts\Activate.ps1`
 2. Install package: `.venv\Scripts\pip install -e .`
-3. Install with extras: `.venv\Scripts\pip install -e ".[backends,benchmarks,notebooks]"`
+3. Install with extras: `.venv\Scripts\pip install -e ".[compute,research,analysis,tuning,studio,dev]"` (or `.[all]`)
 
 ## Running Code
 4. Run Python script: `.venv\Scripts\python <script.py>`

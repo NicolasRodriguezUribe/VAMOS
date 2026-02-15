@@ -19,6 +19,7 @@ EXPERIMENT_BACKENDS = (
     "numpy",
     "numba",
     "moocore",
+    "jax",
 )
 
 _PREFER_NUMBA_ALGORITHMS = {"nsgaii", "moead"}

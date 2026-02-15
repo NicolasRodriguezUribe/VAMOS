@@ -62,7 +62,7 @@ def make_latex_table_a1(df_table: pd.DataFrame) -> str:
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption{Detailed VAMOS backend comparison: median runtime (seconds) per problem.}",
+        r"\caption{Detailed VAMOS backend comparison: median runtime (seconds) per problem}",
         r"\label{tab:detailed_backends}",
         r"\begin{tabular}{l|" + "r" * len(valid_backends) + "}",
         r"\toprule",
@@ -133,7 +133,7 @@ def make_latex_table_a2(df_table: pd.DataFrame) -> str:
         r"\begin{table*}[htbp]",  # Use table* for wide content
         r"\tiny",  # Reduce font size to fit all columns
         r"\centering",
-        r"\caption{Detailed comparison of median runtime (seconds) across all frameworks.}",
+        r"\caption{Detailed comparison of median runtime (seconds) across all frameworks}",
         r"\label{tab:detailed_comparison}",
         r"\begin{tabular}{l|" + "r" * len(cols) + "}",
         r"\toprule",
@@ -177,7 +177,7 @@ def make_latex_table_3(vamos_fam: pd.DataFrame) -> str:
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption{VAMOS backend comparison: median runtime (seconds) by problem family.}",
+        r"\caption{VAMOS backend comparison: median runtime (seconds) by problem family}",
         r"\label{tab:backends}",
         f"\\begin{{tabular}}{{{col_spec}}}",
         r"\toprule",
@@ -241,7 +241,7 @@ def make_latex_table_4(family_df: pd.DataFrame) -> str:
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption{Median runtime (seconds) by problem family across all frameworks.}",
+        r"\caption{Median runtime (seconds) by problem family across all frameworks}",
         r"\label{tab:frameworks_perf}",
         r"\begin{tabular}{l|" + "r" * len(families) + "|r}",
         r"\toprule",
@@ -307,7 +307,7 @@ def make_latex_table_hv_summary(median_df: pd.DataFrame, iqr_df: pd.DataFrame) -
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks.}",
+        r"\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}",
         r"\label{tab:frameworks_hv}",
         r"\begin{tabular}{l|" + "r" * len(families) + "|r}",
         r"\toprule",

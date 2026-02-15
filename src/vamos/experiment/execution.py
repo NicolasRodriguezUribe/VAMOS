@@ -413,28 +413,35 @@ def execute_problem_suite(
                     config,
                 )
             engine_name = resolve_engine(engine, algorithm=algorithm_name)
-            metrics = run_single_fn(
-                engine_name,
-                algorithm_name,
-                problem_selection,
-                config,
-                external_archive_size=args.external_archive_size,
-                selection_pressure=args.selection_pressure,
-                nsgaii_variation=nsgaii_variation,
-                moead_variation=getattr(args, "moead_variation", None),
-                smsemoa_variation=getattr(args, "smsemoa_variation", None),
-                nsgaiii_variation=getattr(args, "nsgaiii_variation", None),
-                spea2_variation=getattr(args, "spea2_variation", None),
-                ibea_variation=getattr(args, "ibea_variation", None),
-                smpso_variation=getattr(args, "smpso_variation", None),
-                hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
-                config_source=config_source,
-                config_spec=config_spec,
-                problem_override=problem_override,
-                track_genealogy=(getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii"),
-                autodiff_constraints=getattr(args, "autodiff_constraints", False),
-                live_viz=live_viz,
-            )
+            try:
+                metrics = run_single_fn(
+                    engine_name,
+                    algorithm_name,
+                    problem_selection,
+                    config,
+                    external_archive_size=args.external_archive_size,
+                    selection_pressure=args.selection_pressure,
+                    nsgaii_variation=nsgaii_variation,
+                    moead_variation=getattr(args, "moead_variation", None),
+                    smsemoa_variation=getattr(args, "smsemoa_variation", None),
+                    nsgaiii_variation=getattr(args, "nsgaiii_variation", None),
+                    spea2_variation=getattr(args, "spea2_variation", None),
+                    ibea_variation=getattr(args, "ibea_variation", None),
+                    smpso_variation=getattr(args, "smpso_variation", None),
+                    hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
+                    config_source=config_source,
+                    config_spec=config_spec,
+                    problem_override=problem_override,
+                    track_genealogy=(getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii"),
+                    autodiff_constraints=getattr(args, "autodiff_constraints", False),
+                    live_viz=live_viz,
+                )
+            except ImportError as exc:
+                # Backends experiment should be resilient to missing optional deps.
+                if args.experiment == "backends" and f"Kernel '{engine_name}' requires" in str(exc):
+                    _logger().warning("Skipping engine '%s': %s", engine_name, exc)
+                    continue
+                raise
             results.append(metrics)
         for algorithm_name in optional_algorithms:
             live_viz = None
@@ -447,28 +454,34 @@ def execute_problem_suite(
                     config,
                 )
             engine_name = resolve_engine(engine, algorithm=algorithm_name)
-            metrics = run_single_fn(
-                engine_name,
-                algorithm_name,
-                problem_selection,
-                config,
-                external_archive_size=args.external_archive_size,
-                selection_pressure=args.selection_pressure,
-                nsgaii_variation=nsgaii_variation,
-                moead_variation=getattr(args, "moead_variation", None),
-                smsemoa_variation=getattr(args, "smsemoa_variation", None),
-                nsgaiii_variation=getattr(args, "nsgaiii_variation", None),
-                spea2_variation=getattr(args, "spea2_variation", None),
-                ibea_variation=getattr(args, "ibea_variation", None),
-                smpso_variation=getattr(args, "smpso_variation", None),
-                hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
-                config_source=config_source,
-                config_spec=config_spec,
-                problem_override=problem_override,
-                track_genealogy=(getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii"),
-                autodiff_constraints=getattr(args, "autodiff_constraints", False),
-                live_viz=live_viz,
-            )
+            try:
+                metrics = run_single_fn(
+                    engine_name,
+                    algorithm_name,
+                    problem_selection,
+                    config,
+                    external_archive_size=args.external_archive_size,
+                    selection_pressure=args.selection_pressure,
+                    nsgaii_variation=nsgaii_variation,
+                    moead_variation=getattr(args, "moead_variation", None),
+                    smsemoa_variation=getattr(args, "smsemoa_variation", None),
+                    nsgaiii_variation=getattr(args, "nsgaiii_variation", None),
+                    spea2_variation=getattr(args, "spea2_variation", None),
+                    ibea_variation=getattr(args, "ibea_variation", None),
+                    smpso_variation=getattr(args, "smpso_variation", None),
+                    hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
+                    config_source=config_source,
+                    config_spec=config_spec,
+                    problem_override=problem_override,
+                    track_genealogy=(getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii"),
+                    autodiff_constraints=getattr(args, "autodiff_constraints", False),
+                    live_viz=live_viz,
+                )
+            except ImportError as exc:
+                if args.experiment == "backends" and f"Kernel '{engine_name}' requires" in str(exc):
+                    _logger().warning("Skipping engine '%s': %s", engine_name, exc)
+                    continue
+                raise
             results.append(metrics)
 
     for algorithm_name in external_algorithms:
