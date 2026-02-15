@@ -2,7 +2,7 @@
 
 > **A high-performance, unified framework for Multi-Objective Evolutionary Algorithms (MOEA) in Python.**
 
-![VAMOS Banner](docs/assets/VAMOS.jpeg)
+![VAMOS Banner](docs/assets/vamos1.png)
 
 VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels (NumPy, Numba, JAX) for maximum performance.
 
