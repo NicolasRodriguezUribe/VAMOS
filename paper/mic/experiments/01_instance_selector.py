@@ -320,7 +320,7 @@ def main() -> None:
         "--selection-pct",
         type=float,
         default=30.0,
-        help="Default percentage of total instances to keep when --k-total is not provided (default: 40.0).",
+        help="Default percentage of total instances to keep when --k-total is not provided (default: 30.0).",
     )
     parser.add_argument(
         "--k-total",
@@ -402,4 +402,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
