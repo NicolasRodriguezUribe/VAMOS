@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib.util
 import math
-import threading
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -237,30 +236,14 @@ class ModelBasedTuner:
         from smac import MultiFidelityFacade, Scenario
 
         cs = _build_configspace(self.task.param_space, seed=int(self.seed))
-        history: list[TrialResult] = []
-        lock = threading.Lock()
-        trial_counter = 0
 
         def target(config, seed: int = 0, budget: float | None = None) -> float:
-            nonlocal trial_counter
             cfg = dict(config)
             self.task.param_space.validate(cfg)
             b = int(round(float(budget if budget is not None else self.task.budget_per_run)))
             b = min(int(self.task.budget_per_run), max(1, b))
             score = self._eval_config_at_budget(cfg, eval_fn, budget=b)
-            loss = self._score_to_loss(score)
-            with lock:
-                trial_id = int(trial_counter)
-                trial_counter += 1
-                history.append(
-                    TrialResult(
-                        trial_id=trial_id,
-                        config=dict(cfg),
-                        score=float(score),
-                        details={"backend": "smac3", "seed": int(seed), "budget": int(b), "loss": float(loss)},
-                    )
-                )
-            return float(loss)
+            return float(self._score_to_loss(score))
 
         scenario = Scenario(
             configspace=cs,
@@ -278,6 +261,34 @@ class ModelBasedTuner:
             overwrite=True,
         )
         _ = optimizer.optimize()
+
+        history: list[TrialResult] = []
+        runhistory = optimizer.runhistory
+        for trial_id, (trial_key, trial_value) in enumerate(runhistory.items()):
+            cfg = runhistory.get_config(trial_key.config_id)
+            if cfg is None:
+                continue
+            cfg_dict = dict(cfg)
+            raw_cost = trial_value.cost
+            if isinstance(raw_cost, list):
+                if not raw_cost:
+                    continue
+                loss = float(raw_cost[0])
+            else:
+                loss = float(raw_cost)
+            score = float(-loss if self.task.maximize else loss)
+            budget = None if trial_key.budget is None else int(round(float(trial_key.budget)))
+            details = {
+                "backend": "smac3",
+                "seed": None if trial_key.seed is None else int(trial_key.seed),
+                "budget": budget,
+                "loss": float(loss),
+                "status": str(getattr(trial_value.status, "name", trial_value.status)),
+                "time": float(trial_value.time),
+                "cpu_time": float(trial_value.cpu_time),
+            }
+            history.append(TrialResult(trial_id=int(trial_id), config=cfg_dict, score=score, details=details))
+
         if not history:
             raise RuntimeError("Tuner finished without a valid configuration.")
         best = max(history, key=lambda h: h.score) if self.task.maximize else min(history, key=lambda h: h.score)

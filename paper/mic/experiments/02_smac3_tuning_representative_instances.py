@@ -60,6 +60,21 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+def _json_default(obj: Any) -> Any:
+    if hasattr(obj, "item"):
+        try:
+            return obj.item()
+        except Exception:
+            pass
+    if isinstance(obj, Path):
+        return str(obj)
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _json_dumps(obj: Any, *, indent: int | None = None, sort_keys: bool = False) -> str:
+    return json.dumps(obj, indent=indent, sort_keys=sort_keys, default=_json_default)
+
+
 def _configure_logging() -> None:
     root = logging.getLogger()
     if root.handlers:
@@ -237,7 +252,7 @@ def _rank_unique_configs(
     best_by_key: dict[str, dict[str, Any]] = {}
     for tr in history:
         active_cfg = filter_active_config(dict(tr.config), task.param_space)
-        key = json.dumps(active_cfg, sort_keys=True)
+        key = _json_dumps(active_cfg, sort_keys=True)
         row = best_by_key.get(key)
         score = float(tr.score)
         if row is None or score > float(row["score"]):
@@ -267,8 +282,8 @@ def _write_top_configs_csv(path: Path, rows: list[dict[str, Any]]) -> None:
                 "rank": int(row["rank"]),
                 "score": float(row["score"]),
                 "trial_id": int(row["trial_id"]),
-                "config_json": json.dumps(row["config"], sort_keys=True),
-                "resolved_config_json": json.dumps(row["resolved_config"], sort_keys=True),
+                "config_json": _json_dumps(row["config"], sort_keys=True),
+                "resolved_config_json": _json_dumps(row["resolved_config"], sort_keys=True),
             }
         )
     with path.open("w", encoding="utf-8", newline="") as fh:
@@ -439,10 +454,10 @@ def main() -> None:
     best_config_path = out_dir / "best_config_raw.json"
     best_active_path = out_dir / "best_config_active.json"
     best_resolved_path = out_dir / "best_config_resolved.json"
-    best_config_path.write_text(json.dumps(best_config, indent=2), encoding="utf-8")
-    best_active_path.write_text(json.dumps(best_active, indent=2), encoding="utf-8")
+    best_config_path.write_text(_json_dumps(best_config, indent=2), encoding="utf-8")
+    best_active_path.write_text(_json_dumps(best_active, indent=2), encoding="utf-8")
     best_resolved = config_from_assignment("nsgaii", best_active).to_dict()
-    best_resolved_path.write_text(json.dumps(best_resolved, indent=2), encoding="utf-8")
+    best_resolved_path.write_text(_json_dumps(best_resolved, indent=2), encoding="utf-8")
 
     top_ranked, all_ranked = _rank_unique_configs(history=history, task=task, top_k=int(args.top_k))
     n_distinct = len(all_ranked)
@@ -471,7 +486,7 @@ def main() -> None:
 
     top_json_path = out_dir / "top_configs_distinct.json"
     top_csv_path = out_dir / "top_configs_distinct.csv"
-    top_json_path.write_text(json.dumps(top_rows, indent=2), encoding="utf-8")
+    top_json_path.write_text(_json_dumps(top_rows, indent=2), encoding="utf-8")
     _write_top_configs_csv(top_csv_path, top_rows)
 
     selected_payload = {
@@ -479,7 +494,7 @@ def main() -> None:
         "selected_instances": selected_instances,
         "instance_meta": instance_meta,
     }
-    (out_dir / "selected_instances.json").write_text(json.dumps(selected_payload, indent=2), encoding="utf-8")
+    (out_dir / "selected_instances.json").write_text(_json_dumps(selected_payload, indent=2), encoding="utf-8")
 
     summary = {
         "schema_version": "mic_smac3_tuning_v1",
@@ -511,7 +526,7 @@ def main() -> None:
             "top_configs_distinct_csv": "top_configs_distinct.csv",
         },
     }
-    (out_dir / "tuning_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (out_dir / "tuning_summary.json").write_text(_json_dumps(summary, indent=2), encoding="utf-8")
 
     _logger().info("Done. Distinct configs found: %s", n_distinct)
     _logger().info("Top distinct exported: %s", len(top_rows))

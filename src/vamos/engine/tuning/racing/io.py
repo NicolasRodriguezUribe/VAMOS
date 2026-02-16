@@ -9,6 +9,18 @@ from .param_space import ParamSpace
 from .random_search_tuner import TrialResult
 
 
+def _json_default(obj: Any) -> Any:
+    """Best-effort conversion for scalar types not handled by stdlib json."""
+    if hasattr(obj, "item"):
+        try:
+            return obj.item()
+        except Exception:
+            pass
+    if isinstance(obj, Path):
+        return str(obj)
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
 def filter_active_config(config: dict[str, Any], param_space: ParamSpace) -> dict[str, Any]:
     """
     Return a copy of `config` containing only parameters that are active
@@ -65,7 +77,7 @@ def save_history_json(
     path.parent.mkdir(parents=True, exist_ok=True)
     data = history_to_dict(history, param_space, include_raw=include_raw)
     with path.open("w", encoding="utf-8") as fh:
-        json.dump(data, fh, indent=2)
+        json.dump(data, fh, indent=2, default=_json_default)
 
 
 def save_history_csv(
@@ -86,9 +98,9 @@ def save_history_csv(
         writer.writerow(headers)
         for trial in history:
             clean_config = filter_active_config(trial.config, param_space)
-            row = [trial.trial_id, trial.score, json.dumps(clean_config)]
+            row = [trial.trial_id, trial.score, json.dumps(clean_config, default=_json_default)]
             if include_raw:
-                row.append(json.dumps(trial.config))
+                row.append(json.dumps(trial.config, default=_json_default))
             writer.writerow(row)
 
 
@@ -116,7 +128,7 @@ def save_checkpoint(
         "metadata": metadata or {},
     }
     with path.open("w", encoding="utf-8") as fh:
-        json.dump(checkpoint, fh, indent=2)
+        json.dump(checkpoint, fh, indent=2, default=_json_default)
 
 
 def load_checkpoint(path: str | Path) -> dict[str, Any]:

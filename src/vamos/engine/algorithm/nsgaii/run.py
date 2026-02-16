@@ -5,6 +5,7 @@ Run loop and checkpoint helpers for NSGA-II.
 from __future__ import annotations
 
 import logging
+import threading
 from typing import Any, TYPE_CHECKING, cast
 
 import numpy as np
@@ -198,14 +199,16 @@ def run_nsgaii(
     assert st is not None, "State not initialized"
 
     interrupted = False
-    original_handler = signal.getsignal(signal.SIGINT)
+    main_thread_signals = threading.current_thread() is threading.main_thread()
+    original_handler = signal.getsignal(signal.SIGINT) if main_thread_signals else None
 
     def _handle_interrupt(signum: int, frame: Any | None) -> None:
         nonlocal interrupted
         interrupted = True
         _logger().info("Interrupt received, finishing current generation...")
 
-    signal.signal(signal.SIGINT, _handle_interrupt)
+    if main_thread_signals:
+        signal.signal(signal.SIGINT, _handle_interrupt)
 
     generation = st.generation
     step = st.step
@@ -272,7 +275,8 @@ def run_nsgaii(
                 if checkpoint_dir and generation % checkpoint_interval == 0:
                     save_checkpoint(algo, checkpoint_dir, seed, generation, n_eval)
     finally:
-        signal.signal(signal.SIGINT, original_handler)
+        if main_thread_signals and original_handler is not None:
+            signal.signal(signal.SIGINT, original_handler)
 
     result = build_result(st, n_eval, hv_reached, kernel=algo.kernel)
     result["interrupted"] = interrupted
