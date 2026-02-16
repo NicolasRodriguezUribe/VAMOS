@@ -1,0 +1,11 @@
+selection_rank,problem,family,n_var,n_obj,quota_family,constrained,disconnected_pf,multimodal,deceptive,nonseparable,parameter_dependency,large_scale,dist_to_family_centroid,dist_to_nearest_selected
+1,cec2009_uf1,UF,30,2,3,0,0,0,0,1,0,0,0.793725,1.414214
+2,cec2009_uf10,UF,30,3,3,0,1,0,1,1,1,0,1.493318,2.0
+3,cec2009_uf6,UF,30,2,3,0,0,1,0,1,1,0,0.911043,1.414214
+4,lsmop1,LSMOP,100,2,3,0,0,1,0,1,1,1,0.555556,0.0
+5,lsmop2,LSMOP,100,2,3,0,0,1,0,1,1,1,0.555556,0.0
+6,lsmop5,LSMOP,100,2,3,0,0,1,1,1,1,1,0.444444,1.0
+7,c1dtlz1,C-DTLZ,12,2,1,1,0,1,0,0,0,0,0.333333,1.767767
+8,dc1dtlz1,DC-DTLZ,12,2,1,1,0,1,0,0,0,0,0.0,1.767767
+9,mw1,MW,15,2,2,1,0,0,0,1,0,0,0.333333,1.0
+10,mw2,MW,15,2,2,1,0,1,0,1,0,0,0.666667,1.0

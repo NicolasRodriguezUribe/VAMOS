@@ -22,6 +22,25 @@ latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 Outputs:
 - `paper/mic/main.pdf`
 
+## Auxiliary Experiments
+
+The auxiliary experiment folder is now:
+- `paper/mic/experiments`
+
+First experiment:
+- `paper/mic/experiments/01_instance_selector.py`
+- Selects representative instances from the MIC runtime-table suite
+  (`UF + LSMOP + C-DTLZ + DC-DTLZ + MW`).
+
+Run:
+
+```powershell
+.\.venv\Scripts\python.exe paper\mic\experiments\01_instance_selector.py
+```
+
+Default selection:
+- `--selection-pct 40.0` (unless `--k-total` is provided).
+
 ## Notes
 
 - The asset script reads:

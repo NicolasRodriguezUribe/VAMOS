@@ -1,0 +1,59 @@
+{
+  "suite": "mic_runtime_table",
+  "total_instances": 32,
+  "selection_pct": 30.0,
+  "k_total": 10,
+  "min_per_family": 1,
+  "family_sizes": {
+    "UF": 10,
+    "LSMOP": 9,
+    "C-DTLZ": 3,
+    "DC-DTLZ": 4,
+    "MW": 6
+  },
+  "family_quotas": {
+    "UF": 3,
+    "LSMOP": 3,
+    "C-DTLZ": 1,
+    "DC-DTLZ": 1,
+    "MW": 2
+  },
+  "selected_instances": [
+    "cec2009_uf1",
+    "cec2009_uf10",
+    "cec2009_uf6",
+    "lsmop1",
+    "lsmop2",
+    "lsmop5",
+    "c1dtlz1",
+    "dc1dtlz1",
+    "mw1",
+    "mw2"
+  ],
+  "selected_by_family": {
+    "UF": [
+      "cec2009_uf1",
+      "cec2009_uf10",
+      "cec2009_uf6"
+    ],
+    "LSMOP": [
+      "lsmop1",
+      "lsmop2",
+      "lsmop5"
+    ],
+    "C-DTLZ": [
+      "c1dtlz1"
+    ],
+    "DC-DTLZ": [
+      "dc1dtlz1"
+    ],
+    "MW": [
+      "mw1",
+      "mw2"
+    ]
+  },
+  "coverage": {
+    "coverage_mean_distance": 0.169194,
+    "coverage_max_distance": 1.414214
+  }
+}
