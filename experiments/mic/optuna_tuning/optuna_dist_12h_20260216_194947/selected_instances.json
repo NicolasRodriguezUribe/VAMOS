@@ -1,0 +1,98 @@
+{
+  "selection_source": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\mic\\instance_selection\\representative_instances_mic_runtime_p30p0_k10.json",
+  "selected_instances": [
+    "cec2009_uf1",
+    "cec2009_uf10",
+    "cec2009_uf6",
+    "lsmop1",
+    "lsmop2",
+    "lsmop5",
+    "c1dtlz1",
+    "dc1dtlz1",
+    "mw1",
+    "mw2"
+  ],
+  "instance_meta": [
+    {
+      "problem": "cec2009_uf1",
+      "n_var": 30,
+      "n_obj": 2,
+      "kwargs": {}
+    },
+    {
+      "problem": "cec2009_uf10",
+      "n_var": 30,
+      "n_obj": 3,
+      "kwargs": {}
+    },
+    {
+      "problem": "cec2009_uf6",
+      "n_var": 30,
+      "n_obj": 2,
+      "kwargs": {}
+    },
+    {
+      "problem": "lsmop1",
+      "n_var": 100,
+      "n_obj": 2,
+      "kwargs": {
+        "n_obj": 2,
+        "n_var": 100
+      }
+    },
+    {
+      "problem": "lsmop2",
+      "n_var": 100,
+      "n_obj": 2,
+      "kwargs": {
+        "n_obj": 2,
+        "n_var": 100
+      }
+    },
+    {
+      "problem": "lsmop5",
+      "n_var": 100,
+      "n_obj": 2,
+      "kwargs": {
+        "n_obj": 2,
+        "n_var": 100
+      }
+    },
+    {
+      "problem": "c1dtlz1",
+      "n_var": 12,
+      "n_obj": 2,
+      "kwargs": {
+        "n_obj": 2,
+        "n_var": 12
+      }
+    },
+    {
+      "problem": "dc1dtlz1",
+      "n_var": 12,
+      "n_obj": 2,
+      "kwargs": {
+        "n_obj": 2,
+        "n_var": 12
+      }
+    },
+    {
+      "problem": "mw1",
+      "n_var": 15,
+      "n_obj": 2,
+      "kwargs": {
+        "n_obj": 2,
+        "n_var": 15
+      }
+    },
+    {
+      "problem": "mw2",
+      "n_var": 15,
+      "n_obj": 2,
+      "kwargs": {
+        "n_obj": 2,
+        "n_var": 15
+      }
+    }
+  ]
+}
