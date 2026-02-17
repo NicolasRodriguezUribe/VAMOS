@@ -1,0 +1,352 @@
+[
+  {
+    "rank": 1,
+    "score": 0.43716118675090726,
+    "trial_id": 122,
+    "config": {
+      "pop_size": 102,
+      "offspring_ratio": 0.75,
+      "selection": "tournament",
+      "selection_pressure": 2,
+      "use_external_archive": false,
+      "archive_unbounded": true,
+      "initializer": "scatter",
+      "crossover": "sbx",
+      "crossover_prob": 0.7191154361056405,
+      "mutation": "non_uniform",
+      "mutation_prob_factor": 0.7332317029555462,
+      "mutation_eta": 33.749430577960005,
+      "repair": "none",
+      "crossover_eta": 22.509899105303695,
+      "nonuniform_perturbation": 0.12489200141075664,
+      "scatter_base_size_factor": 0.2
+    },
+    "resolved_config": {
+      "pop_size": 102,
+      "crossover": [
+        "sbx",
+        {
+          "prob": 0.7191154361056405,
+          "eta": 22.509899105303695
+        }
+      ],
+      "mutation": [
+        "non_uniform",
+        {
+          "prob": 0.1,
+          "perturbation": 0.12489200141075664
+        }
+      ],
+      "selection": [
+        "tournament",
+        {
+          "pressure": 2
+        }
+      ],
+      "offspring_size": 77,
+      "steady_state": false,
+      "replacement_size": null,
+      "repair": null,
+      "archive": null,
+      "initializer": {
+        "type": "scatter",
+        "base_size": 20
+      },
+      "mutation_prob_factor": 0.7332317029555462,
+      "result_mode": "non_dominated",
+      "archive_type": null,
+      "constraint_mode": "feasibility",
+      "track_genealogy": false,
+      "adaptive_operator_selection": null,
+      "immigration": null,
+      "parent_selection_filter": null,
+      "live_callback_mode": "nd_only",
+      "generation_callback": null,
+      "generation_callback_copy": true
+    },
+    "details": {
+      "state": "COMPLETE"
+    }
+  },
+  {
+    "rank": 2,
+    "score": 0.42749043663601577,
+    "trial_id": 117,
+    "config": {
+      "pop_size": 142,
+      "offspring_ratio": 0.25,
+      "selection": "tournament",
+      "selection_pressure": 7,
+      "use_external_archive": false,
+      "archive_unbounded": false,
+      "initializer": "scatter",
+      "crossover": "sbx",
+      "crossover_prob": 0.8195423028082001,
+      "mutation": "non_uniform",
+      "mutation_prob_factor": 0.7136037622631638,
+      "mutation_eta": 34.17422877147085,
+      "repair": "clip",
+      "crossover_eta": 39.8169387923805,
+      "nonuniform_perturbation": 0.1080514042870045,
+      "scatter_base_size_factor": 0.3
+    },
+    "resolved_config": {
+      "pop_size": 142,
+      "crossover": [
+        "sbx",
+        {
+          "prob": 0.8195423028082001,
+          "eta": 39.8169387923805
+        }
+      ],
+      "mutation": [
+        "non_uniform",
+        {
+          "prob": 0.1,
+          "perturbation": 0.1080514042870045
+        }
+      ],
+      "selection": [
+        "tournament",
+        {
+          "pressure": 7
+        }
+      ],
+      "offspring_size": 36,
+      "steady_state": false,
+      "replacement_size": null,
+      "repair": [
+        "clip",
+        {}
+      ],
+      "archive": null,
+      "initializer": {
+        "type": "scatter",
+        "base_size": 43
+      },
+      "mutation_prob_factor": 0.7136037622631638,
+      "result_mode": "non_dominated",
+      "archive_type": null,
+      "constraint_mode": "feasibility",
+      "track_genealogy": false,
+      "adaptive_operator_selection": null,
+      "immigration": null,
+      "parent_selection_filter": null,
+      "live_callback_mode": "nd_only",
+      "generation_callback": null,
+      "generation_callback_copy": true
+    },
+    "details": {
+      "state": "COMPLETE"
+    }
+  },
+  {
+    "rank": 3,
+    "score": 0.4161155239842487,
+    "trial_id": 63,
+    "config": {
+      "pop_size": 165,
+      "offspring_ratio": 0.25,
+      "selection": "tournament",
+      "selection_pressure": 3,
+      "use_external_archive": false,
+      "archive_unbounded": false,
+      "initializer": "scatter",
+      "crossover": "sbx",
+      "crossover_prob": 0.7915303456472692,
+      "mutation": "non_uniform",
+      "mutation_prob_factor": 0.7677585407194171,
+      "mutation_eta": 38.328499131509695,
+      "repair": "none",
+      "crossover_eta": 31.429985922195367,
+      "nonuniform_perturbation": 0.12184638232219952,
+      "scatter_base_size_factor": 0.5
+    },
+    "resolved_config": {
+      "pop_size": 165,
+      "crossover": [
+        "sbx",
+        {
+          "prob": 0.7915303456472692,
+          "eta": 31.429985922195367
+        }
+      ],
+      "mutation": [
+        "non_uniform",
+        {
+          "prob": 0.1,
+          "perturbation": 0.12184638232219952
+        }
+      ],
+      "selection": [
+        "tournament",
+        {
+          "pressure": 3
+        }
+      ],
+      "offspring_size": 41,
+      "steady_state": false,
+      "replacement_size": null,
+      "repair": null,
+      "archive": null,
+      "initializer": {
+        "type": "scatter",
+        "base_size": 83
+      },
+      "mutation_prob_factor": 0.7677585407194171,
+      "result_mode": "non_dominated",
+      "archive_type": null,
+      "constraint_mode": "feasibility",
+      "track_genealogy": false,
+      "adaptive_operator_selection": null,
+      "immigration": null,
+      "parent_selection_filter": null,
+      "live_callback_mode": "nd_only",
+      "generation_callback": null,
+      "generation_callback_copy": true
+    },
+    "details": {
+      "state": "COMPLETE"
+    }
+  },
+  {
+    "rank": 4,
+    "score": 0.4116599103374616,
+    "trial_id": 96,
+    "config": {
+      "pop_size": 83,
+      "offspring_ratio": 1.0,
+      "selection": "tournament",
+      "selection_pressure": 2,
+      "use_external_archive": false,
+      "archive_unbounded": true,
+      "initializer": "scatter",
+      "crossover": "sbx",
+      "crossover_prob": 0.7325525238376261,
+      "mutation": "non_uniform",
+      "mutation_prob_factor": 0.8353375397197574,
+      "mutation_eta": 37.76411215013047,
+      "repair": "none",
+      "crossover_eta": 20.656041766958417,
+      "nonuniform_perturbation": 0.06108715938093898,
+      "scatter_base_size_factor": 0.2
+    },
+    "resolved_config": {
+      "pop_size": 83,
+      "crossover": [
+        "sbx",
+        {
+          "prob": 0.7325525238376261,
+          "eta": 20.656041766958417
+        }
+      ],
+      "mutation": [
+        "non_uniform",
+        {
+          "prob": 0.1,
+          "perturbation": 0.06108715938093898
+        }
+      ],
+      "selection": [
+        "tournament",
+        {
+          "pressure": 2
+        }
+      ],
+      "offspring_size": 83,
+      "steady_state": false,
+      "replacement_size": null,
+      "repair": null,
+      "archive": null,
+      "initializer": {
+        "type": "scatter",
+        "base_size": 17
+      },
+      "mutation_prob_factor": 0.8353375397197574,
+      "result_mode": "non_dominated",
+      "archive_type": null,
+      "constraint_mode": "feasibility",
+      "track_genealogy": false,
+      "adaptive_operator_selection": null,
+      "immigration": null,
+      "parent_selection_filter": null,
+      "live_callback_mode": "nd_only",
+      "generation_callback": null,
+      "generation_callback_copy": true
+    },
+    "details": {
+      "state": "COMPLETE"
+    }
+  },
+  {
+    "rank": 5,
+    "score": 0.40431692885178194,
+    "trial_id": 138,
+    "config": {
+      "pop_size": 118,
+      "offspring_ratio": 0.25,
+      "selection": "tournament",
+      "selection_pressure": 2,
+      "use_external_archive": true,
+      "archive_unbounded": false,
+      "initializer": "lhs",
+      "crossover": "sbx",
+      "crossover_prob": 0.8254978329306474,
+      "mutation": "uniform",
+      "mutation_prob_factor": 0.8424119450166826,
+      "mutation_eta": 37.51359770159244,
+      "repair": "none",
+      "archive_type": "hypervolume",
+      "archive_size_factor": 1,
+      "crossover_eta": 22.289625840432805,
+      "uniform_perturb": 0.18376767549861078
+    },
+    "resolved_config": {
+      "pop_size": 118,
+      "crossover": [
+        "sbx",
+        {
+          "prob": 0.8254978329306474,
+          "eta": 22.289625840432805
+        }
+      ],
+      "mutation": [
+        "uniform",
+        {
+          "prob": 0.1,
+          "perturb": 0.18376767549861078
+        }
+      ],
+      "selection": [
+        "tournament",
+        {
+          "pressure": 2
+        }
+      ],
+      "offspring_size": 30,
+      "steady_state": false,
+      "replacement_size": null,
+      "repair": null,
+      "archive": {
+        "size": 118
+      },
+      "initializer": {
+        "type": "lhs"
+      },
+      "mutation_prob_factor": 0.8424119450166826,
+      "result_mode": "external_archive",
+      "archive_type": "hypervolume",
+      "constraint_mode": "feasibility",
+      "track_genealogy": false,
+      "adaptive_operator_selection": null,
+      "immigration": null,
+      "parent_selection_filter": null,
+      "live_callback_mode": "nd_only",
+      "generation_callback": null,
+      "generation_callback_copy": true
+    },
+    "details": {
+      "state": "COMPLETE"
+    }
+  }
+]

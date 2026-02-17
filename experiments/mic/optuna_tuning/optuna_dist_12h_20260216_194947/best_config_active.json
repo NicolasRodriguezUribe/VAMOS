@@ -1,0 +1,18 @@
+{
+  "pop_size": 102,
+  "offspring_ratio": 0.75,
+  "selection": "tournament",
+  "selection_pressure": 2,
+  "use_external_archive": false,
+  "archive_unbounded": true,
+  "initializer": "scatter",
+  "crossover": "sbx",
+  "crossover_prob": 0.7191154361056405,
+  "mutation": "non_uniform",
+  "mutation_prob_factor": 0.7332317029555462,
+  "mutation_eta": 33.749430577960005,
+  "repair": "none",
+  "crossover_eta": 22.509899105303695,
+  "nonuniform_perturbation": 0.12489200141075664,
+  "scatter_base_size_factor": 0.2
+}

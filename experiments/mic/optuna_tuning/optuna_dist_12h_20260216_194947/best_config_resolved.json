@@ -1,0 +1,43 @@
+{
+  "pop_size": 102,
+  "crossover": [
+    "sbx",
+    {
+      "prob": 0.7191154361056405,
+      "eta": 22.509899105303695
+    }
+  ],
+  "mutation": [
+    "non_uniform",
+    {
+      "prob": 0.1,
+      "perturbation": 0.12489200141075664
+    }
+  ],
+  "selection": [
+    "tournament",
+    {
+      "pressure": 2
+    }
+  ],
+  "offspring_size": 77,
+  "steady_state": false,
+  "replacement_size": null,
+  "repair": null,
+  "archive": null,
+  "initializer": {
+    "type": "scatter",
+    "base_size": 20
+  },
+  "mutation_prob_factor": 0.7332317029555462,
+  "result_mode": "non_dominated",
+  "archive_type": null,
+  "constraint_mode": "feasibility",
+  "track_genealogy": false,
+  "adaptive_operator_selection": null,
+  "immigration": null,
+  "parent_selection_filter": null,
+  "live_callback_mode": "nd_only",
+  "generation_callback": null,
+  "generation_callback_copy": true
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "mic_optuna_tuning_v1",
+  "timestamp_utc": "2026-02-16T19:20:07.156307+00:00",
+  "backend": "optuna",
+  "engine": "numba",
+  "budget": 20000,
+  "budget_levels": [
+    5000,
+    10000,
+    20000
+  ],
+  "max_trials": 120,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "timeout_seconds": 43200.0,
+  "n_jobs_resolved": 21,
+  "execution_mode": "optuna_distributed_processes",
+  "optuna_workers": 21,
+  "optuna_study_name": "mic_optuna_nsgaii_representative_instances_42_1771267788",
+  "selected_instances_count": 10,
+  "history_rows": 140,
+  "distinct_configs_found": 140,
+  "top_k_requested": 5,
+  "min_distinct_requested": 5,
+  "strict_min_distinct": true,
+  "elapsed_seconds": 1818.4112100999992,
+  "best_score": 0.43716118675090726,
+  "artifacts": {
+    "selected_instances": "selected_instances.json",
+    "history_json": "tuning_history.json",
+    "history_csv": "tuning_history.csv",
+    "best_config_raw": "best_config_raw.json",
+    "best_config_active": "best_config_active.json",
+    "best_config_resolved": "best_config_resolved.json",
+    "top_configs_distinct_json": "top_configs_distinct.json",
+    "top_configs_distinct_csv": "top_configs_distinct.csv",
+    "optuna_study_db": "optuna_study.sqlite3"
+  }
+}
