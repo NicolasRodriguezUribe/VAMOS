@@ -315,6 +315,14 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any, pop_size: int) -> bool:
         n_nd_insertions = int(np.sum(is_offspring & nd_mask))
         aos_controller.observe_survivors(st.aos_last_op_id, n_survivors)
         aos_controller.observe_nd_insertions(st.aos_last_op_id, n_nd_insertions)
+
+        # Phase-detection: report population feasibility so the controller can
+        # detect the infeasible→feasible transition and reset the bandit.
+        if new_G is not None and new_G.size > 0:
+            from vamos.foundation.constraints.utils import is_feasible as _is_feasible
+            feas_mask = _is_feasible(new_G)
+            aos_controller.observe_feasibility_rate(int(np.sum(feas_mask)), new_G.shape[0])
+
         trace_rows = aos_controller.finalize_generation(st.aos_step or 0, hv_delta_rate=hv_delta_rate)
         for row in trace_rows:
             st.aos_trace_rows.append(
