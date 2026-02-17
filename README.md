@@ -41,6 +41,12 @@ Optional model-based tuning backends (`optuna`, `smac3`, `bohb`):
 pip install "vamos[tuning]"
 ```
 
+`smac3` in VAMOS is provided by the PyPI package `smac` (SMAC3):
+
+```bash
+pip install "smac>=2.0"
+```
+
 ```bash
 # Create virtual environment
 python -m venv .venv
@@ -115,7 +121,7 @@ Check backend availability in your current environment:
 vamos tune --list-backends
 ```
 
-Note: `racing` and `random` require no extra dependencies. The model-based backends (`optuna`, `bohb_optuna`, `smac3`, `bohb`) require the optional `tuning` extra: `pip install "vamos[tuning]"`.
+Note: `racing` and `random` require no extra dependencies. The model-based backends (`optuna`, `bohb_optuna`, `smac3`, `bohb`) require the optional `tuning` extra: `pip install "vamos[tuning]"`. The `smac3` backend uses the `smac` package.
 
 Recommended robust command (fallback + suite-stratified split):
 

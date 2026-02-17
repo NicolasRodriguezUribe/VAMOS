@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
 from .racing.param_space import Boolean, Categorical, Int, ParamSpace, Real
 from .racing.random_search_tuner import TrialResult
-from .racing.tuning_task import EvalContext, TuningTask
+from .racing.tuning_task import EvalContext, Instance, TuningTask
 
 
 def available_model_based_backends() -> dict[str, bool]:
@@ -102,6 +103,18 @@ def _estimate_hyperband_evals_per_iteration(max_budget: int, eta: int) -> int:
     return max(1, total)
 
 
+def _suite_key(instance: Instance) -> str:
+    kwargs = dict(getattr(instance, "kwargs", {}) or {})
+    for key in ("suite", "family", "group"):
+        value = kwargs.get(key)
+        if value is not None and str(value).strip():
+            return str(value).strip().lower()
+    name = str(getattr(instance, "name", "")).strip().lower()
+    if "_" in name:
+        return name.split("_", 1)[0]
+    return name if name else "default"
+
+
 @dataclass
 class ModelBasedTuner:
     """
@@ -123,12 +136,148 @@ class ModelBasedTuner:
     show_progress_bar: bool = False
     bohb_reduction_factor: int = 3
     budget_levels: list[int] | None = None
+    fidelity_min_instance_frac: float = 1.0
+    fidelity_min_seed_count: int | None = None
+    fidelity_max_seed_count: int | None = None
+    fidelity_selection_seed: int | None = None
+    optuna_storage_url: str | None = None
+    optuna_study_name: str | None = None
+    optuna_load_if_exists: bool = True
+    _fidelity_cache: dict[int, tuple[Sequence[Instance], Sequence[int], dict[str, Any]]] = field(default_factory=dict, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        frac = float(self.fidelity_min_instance_frac)
+        if not (0.0 < frac <= 1.0):
+            raise ValueError("fidelity_min_instance_frac must be in (0, 1].")
+        if self.fidelity_min_seed_count is not None and int(self.fidelity_min_seed_count) <= 0:
+            raise ValueError("fidelity_min_seed_count must be > 0 when provided.")
+        if self.fidelity_max_seed_count is not None and int(self.fidelity_max_seed_count) <= 0:
+            raise ValueError("fidelity_max_seed_count must be > 0 when provided.")
+        if (
+            self.fidelity_min_seed_count is not None
+            and self.fidelity_max_seed_count is not None
+            and int(self.fidelity_min_seed_count) > int(self.fidelity_max_seed_count)
+        ):
+            raise ValueError("fidelity_min_seed_count cannot be greater than fidelity_max_seed_count.")
 
     def _worst_score(self) -> float:
         return float("-inf") if self.task.maximize else float("inf")
 
     def _score_to_loss(self, score: float) -> float:
         return float(-score if self.task.maximize else score)
+
+    def _default_optuna_study_name(self) -> str:
+        raw = f"{self.task.name}_{self.backend}_{int(self.seed)}"
+        safe = "".join(ch if (ch.isalnum() or ch in "-_.") else "_" for ch in raw)
+        return safe or f"vamos_tuning_{int(self.seed)}"
+
+    def _resolve_seed_bounds(self) -> tuple[int, int]:
+        total = max(1, len(self.task.seeds))
+        max_count = int(self.fidelity_max_seed_count) if self.fidelity_max_seed_count is not None else total
+        max_count = min(total, max(1, max_count))
+        min_count = int(self.fidelity_min_seed_count) if self.fidelity_min_seed_count is not None else max_count
+        min_count = min(max_count, max(1, min_count))
+        return min_count, max_count
+
+    def _budget_fraction(self, budget: int) -> float:
+        b = int(min(int(self.task.budget_per_run), max(1, int(budget))))
+        if self.budget_levels:
+            levels = self._resolve_budget_levels()
+            b_min = int(levels[0])
+            b_max = int(levels[-1])
+        else:
+            b_min = 1
+            b_max = max(1, int(self.task.budget_per_run))
+        if b_max <= b_min:
+            return 1.0
+        frac = (float(b) - float(b_min)) / float(b_max - b_min)
+        return float(np.clip(frac, 0.0, 1.0))
+
+    def _fidelity_level_info(self, budget: int) -> tuple[int, int | None]:
+        levels = self._resolve_budget_levels()
+        b = int(min(int(self.task.budget_per_run), max(1, int(budget))))
+        idx = 0
+        for i, level in enumerate(levels):
+            if b >= int(level):
+                idx = int(i)
+            else:
+                break
+        prev = int(levels[idx - 1]) if idx > 0 else None
+        return int(idx), prev
+
+    def _resolve_fidelity_slice(self, budget: int) -> tuple[Sequence[Instance], Sequence[int], dict[str, Any]]:
+        b = int(min(int(self.task.budget_per_run), max(1, int(budget))))
+        cached = self._fidelity_cache.get(int(b))
+        if cached is not None:
+            return cached
+
+        all_instances = list(self.task.instances)
+        all_seeds = [int(s) for s in self.task.seeds]
+        if not all_instances:
+            raise RuntimeError("Tuning task has no instances.")
+        if not all_seeds:
+            raise RuntimeError("Tuning task has no seeds.")
+
+        frac = self._budget_fraction(b)
+        min_inst_frac = float(self.fidelity_min_instance_frac)
+        inst_frac = min_inst_frac + frac * (1.0 - min_inst_frac)
+        target_instances = int(max(1, min(len(all_instances), int(round(float(len(all_instances)) * inst_frac)))))
+        if target_instances >= len(all_instances):
+            selected_instances = list(all_instances)
+        else:
+            rng_seed = int(self.fidelity_selection_seed if self.fidelity_selection_seed is not None else self.seed)
+            rng = np.random.default_rng(rng_seed + int(7919 * b))
+            groups: dict[str, list[int]] = {}
+            for idx, inst in enumerate(all_instances):
+                groups.setdefault(_suite_key(inst), []).append(int(idx))
+            group_names = sorted(groups)
+            for name in group_names:
+                rng.shuffle(groups[name])
+
+            selected_idx: list[int] = []
+            if target_instances <= len(group_names):
+                chosen = rng.choice(np.asarray(group_names, dtype=object), size=target_instances, replace=False)
+                for name in chosen.tolist():
+                    selected_idx.append(int(groups[str(name)].pop()))
+            else:
+                for name in group_names:
+                    selected_idx.append(int(groups[name].pop()))
+                remainder: list[int] = []
+                for name in group_names:
+                    remainder.extend(int(v) for v in groups[name])
+                rng.shuffle(remainder)
+                missing = int(target_instances - len(selected_idx))
+                selected_idx.extend(remainder[:missing])
+
+            selected_instances = [all_instances[i] for i in sorted(set(selected_idx))]
+            if len(selected_instances) < target_instances:
+                used = {id(inst) for inst in selected_instances}
+                for inst in all_instances:
+                    if id(inst) in used:
+                        continue
+                    selected_instances.append(inst)
+                    if len(selected_instances) >= target_instances:
+                        break
+
+        min_seed_count, max_seed_count = self._resolve_seed_bounds()
+        target_seed_count = int(round(float(min_seed_count) + frac * float(max_seed_count - min_seed_count)))
+        target_seed_count = max(1, min(len(all_seeds), target_seed_count))
+        selected_seeds = list(all_seeds[:target_seed_count]) if target_seed_count < len(all_seeds) else list(all_seeds)
+
+        fidelity_level, previous_budget = self._fidelity_level_info(b)
+        meta = {
+            "budget": int(b),
+            "budget_fraction": float(frac),
+            "instances_used": int(len(selected_instances)),
+            "instances_total": int(len(all_instances)),
+            "seeds_used": int(len(selected_seeds)),
+            "seeds_total": int(len(all_seeds)),
+            "fidelity_level": int(fidelity_level),
+            "previous_budget": (None if previous_budget is None else int(previous_budget)),
+        }
+        resolved = (selected_instances, selected_seeds, meta)
+        self._fidelity_cache[int(b)] = resolved
+        return resolved
 
     def _eval_config_at_budget(
         self,
@@ -137,10 +286,19 @@ class ModelBasedTuner:
         budget: int,
     ) -> float:
         scores: list[float] = []
-        b = int(max(1, budget))
-        for inst in self.task.instances:
-            for seed in self.task.seeds:
-                ctx = EvalContext(instance=inst, seed=int(seed), budget=b)
+        b = int(min(int(self.task.budget_per_run), max(1, int(budget))))
+        instances, seeds, fidelity_meta = self._resolve_fidelity_slice(b)
+        fidelity_level = int(fidelity_meta.get("fidelity_level", 0))
+        previous_budget = fidelity_meta.get("previous_budget", None)
+        for inst in instances:
+            for seed in seeds:
+                ctx = EvalContext(
+                    instance=inst,
+                    seed=int(seed),
+                    budget=b,
+                    fidelity_level=int(fidelity_level),
+                    previous_budget=(None if previous_budget is None else int(previous_budget)),
+                )
                 result = eval_fn(config, ctx)
                 if isinstance(result, tuple):
                     scores.append(float(result[0]))
@@ -192,23 +350,47 @@ class ModelBasedTuner:
                 interval_steps=1,
             )
 
-        study = optuna.create_study(
-            direction="maximize" if self.task.maximize else "minimize",
-            sampler=sampler,
-            pruner=pruner,
-        )
+        storage_url = str(self.optuna_storage_url or "").strip() or None
+        study_name_raw = str(self.optuna_study_name or "").strip()
+        study_name = study_name_raw if study_name_raw else self._default_optuna_study_name()
+        create_kwargs: dict[str, Any] = {
+            "direction": "maximize" if self.task.maximize else "minimize",
+            "sampler": sampler,
+            "pruner": pruner,
+        }
+        if storage_url:
+            create_kwargs["storage"] = storage_url
+            create_kwargs["study_name"] = study_name
+            create_kwargs["load_if_exists"] = bool(self.optuna_load_if_exists)
+
+        study = optuna.create_study(**create_kwargs)
 
         def objective(trial: Any) -> float:
             config = _sample_from_optuna_trial(trial, self.task.param_space)
             self.task.param_space.validate(config)
             trial.set_user_attr("config", dict(config))
             final_score = self._worst_score()
+            fidelity_trace: list[dict[str, Any]] = []
             for step_idx, budget in enumerate(levels):
                 score = self._eval_config_at_budget(config, eval_fn, budget=int(budget))
                 final_score = score
+                _, _, fidelity_meta = self._resolve_fidelity_slice(int(budget))
+                fidelity_trace.append(
+                    {
+                        "step": int(step_idx),
+                        "budget": int(budget),
+                        "score": float(score),
+                        "instances_used": int(fidelity_meta.get("instances_used", 0)),
+                        "instances_total": int(fidelity_meta.get("instances_total", 0)),
+                        "seeds_used": int(fidelity_meta.get("seeds_used", 0)),
+                        "seeds_total": int(fidelity_meta.get("seeds_total", 0)),
+                    }
+                )
                 trial.report(float(score), step=step_idx)
                 if trial.should_prune():
+                    trial.set_user_attr("fidelity_trace", fidelity_trace)
                     raise optuna.TrialPruned(f"Pruned at step {step_idx} (budget={budget}).")
+            trial.set_user_attr("fidelity_trace", fidelity_trace)
             return float(final_score)
 
         study.optimize(
@@ -224,7 +406,10 @@ class ModelBasedTuner:
             if trial.value is None:
                 continue
             cfg = trial.user_attrs.get("config", dict(trial.params))
-            details = {"state": str(getattr(trial.state, "name", trial.state))}
+            details: dict[str, Any] = {"state": str(getattr(trial.state, "name", trial.state))}
+            fidelity_trace = trial.user_attrs.get("fidelity_trace")
+            if isinstance(fidelity_trace, list):
+                details["fidelity_trace"] = fidelity_trace
             history.append(TrialResult(trial_id=int(trial.number), config=dict(cfg), score=float(trial.value), details=details))
         if not history:
             raise RuntimeError("Tuner finished without a valid configuration.")
@@ -236,12 +421,21 @@ class ModelBasedTuner:
         from smac import MultiFidelityFacade, Scenario
 
         cs = _build_configspace(self.task.param_space, seed=int(self.seed))
+        levels = self._resolve_budget_levels()
+        if self.budget_levels:
+            min_budget_i = int(levels[0])
+            max_budget_i = int(levels[-1])
+        else:
+            min_budget_i = 1
+            max_budget_i = int(self.task.budget_per_run)
+        min_budget_i = max(1, min_budget_i)
+        max_budget_i = max(min_budget_i, max_budget_i)
 
         def target(config, seed: int = 0, budget: float | None = None) -> float:
             cfg = dict(config)
             self.task.param_space.validate(cfg)
-            b = int(round(float(budget if budget is not None else self.task.budget_per_run)))
-            b = min(int(self.task.budget_per_run), max(1, b))
+            b = int(round(float(budget if budget is not None else max_budget_i)))
+            b = min(int(max_budget_i), max(int(min_budget_i), b))
             score = self._eval_config_at_budget(cfg, eval_fn, budget=b)
             return float(self._score_to_loss(score))
 
@@ -249,8 +443,8 @@ class ModelBasedTuner:
             configspace=cs,
             deterministic=False,
             n_trials=int(self.max_trials),
-            min_budget=1.0,
-            max_budget=float(max(1, int(self.task.budget_per_run))),
+            min_budget=float(min_budget_i),
+            max_budget=float(max_budget_i),
             n_workers=int(max(1, self.n_jobs)),
             seed=int(self.seed),
             walltime_limit=float(self.timeout_seconds) if self.timeout_seconds is not None else np.inf,
@@ -278,6 +472,8 @@ class ModelBasedTuner:
                 loss = float(raw_cost)
             score = float(-loss if self.task.maximize else loss)
             budget = None if trial_key.budget is None else int(round(float(trial_key.budget)))
+            fidelity_budget = int(max_budget_i if budget is None else budget)
+            _, _, fidelity_meta = self._resolve_fidelity_slice(int(fidelity_budget))
             details = {
                 "backend": "smac3",
                 "seed": None if trial_key.seed is None else int(trial_key.seed),
@@ -286,6 +482,10 @@ class ModelBasedTuner:
                 "status": str(getattr(trial_value.status, "name", trial_value.status)),
                 "time": float(trial_value.time),
                 "cpu_time": float(trial_value.cpu_time),
+                "instances_used": int(fidelity_meta.get("instances_used", 0)),
+                "instances_total": int(fidelity_meta.get("instances_total", 0)),
+                "seeds_used": int(fidelity_meta.get("seeds_used", 0)),
+                "seeds_total": int(fidelity_meta.get("seeds_total", 0)),
             }
             history.append(TrialResult(trial_id=int(trial_id), config=cfg_dict, score=score, details=details))
 
@@ -304,6 +504,15 @@ class ModelBasedTuner:
 
         cs = _build_configspace(self.task.param_space, seed=int(self.seed))
         eta = max(2, int(self.bohb_reduction_factor))
+        levels = self._resolve_budget_levels()
+        if self.budget_levels:
+            min_budget_i = int(levels[0])
+            max_budget_i = int(levels[-1])
+        else:
+            min_budget_i = 1
+            max_budget_i = int(self.task.budget_per_run)
+        min_budget_i = max(1, min_budget_i)
+        max_budget_i = max(min_budget_i, max_budget_i)
         history: list[TrialResult] = []
         lock = threading.Lock()
         trial_counter = 0
@@ -316,10 +525,11 @@ class ModelBasedTuner:
                     self.task.param_space.validate(cfg)
                 except Exception as exc:
                     return {"loss": 1e9, "info": {"error": f"{type(exc).__name__}: {exc}"}}
-                b = int(round(float(budget if budget is not None else self.task.budget_per_run)))
-                b = min(int(self.task.budget_per_run), max(1, b))
+                b = int(round(float(budget if budget is not None else max_budget_i)))
+                b = min(int(max_budget_i), max(int(min_budget_i), b))
                 score = self._eval_config_at_budget(cfg, eval_fn, budget=b)
                 loss = self._score_to_loss(score)
+                _, _, fidelity_meta = self._resolve_fidelity_slice(int(b))
                 with lock:
                     tid = int(trial_counter)
                     trial_counter += 1
@@ -328,7 +538,15 @@ class ModelBasedTuner:
                             trial_id=tid,
                             config=dict(cfg),
                             score=float(score),
-                            details={"backend": "bohb", "budget": int(b), "loss": float(loss)},
+                            details={
+                                "backend": "bohb",
+                                "budget": int(b),
+                                "loss": float(loss),
+                                "instances_used": int(fidelity_meta.get("instances_used", 0)),
+                                "instances_total": int(fidelity_meta.get("instances_total", 0)),
+                                "seeds_used": int(fidelity_meta.get("seeds_used", 0)),
+                                "seeds_total": int(fidelity_meta.get("seeds_total", 0)),
+                            },
                         )
                     )
                 return {"loss": float(loss), "info": {"score": float(score)}}
@@ -356,12 +574,12 @@ class ModelBasedTuner:
                 run_id=run_id,
                 nameserver=ns_host,
                 nameserver_port=ns_port,
-                min_budget=1.0,
-                max_budget=float(max(1, int(self.task.budget_per_run))),
+                min_budget=float(min_budget_i),
+                max_budget=float(max_budget_i),
                 eta=int(eta),
                 random_state=int(self.seed),
             )
-            evals_per_iter = _estimate_hyperband_evals_per_iteration(max_budget=int(self.task.budget_per_run), eta=int(eta))
+            evals_per_iter = _estimate_hyperband_evals_per_iteration(max_budget=int(max_budget_i), eta=int(eta))
             n_iterations = max(1, int(math.ceil(max(1, int(self.max_trials)) / evals_per_iter)))
             _ = optimizer.run(n_iterations=n_iterations, min_n_workers=max(1, int(self.n_jobs)))
         finally:
