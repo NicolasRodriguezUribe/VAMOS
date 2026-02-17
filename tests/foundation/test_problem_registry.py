@@ -40,6 +40,19 @@ def test_problem_selection_constrained_many_defaults(name: str):
     assert selection.n_obj >= 2
 
 
+@pytest.mark.parametrize("name", ["zcat1", "zcat14", "zcat20"])
+def test_problem_selection_zcat_defaults(name: str):
+    selection = make_problem_selection(name)
+    assert selection.n_var == 30
+    assert selection.n_obj == 2
+
+
+def test_problem_selection_zcat_n_obj_override():
+    selection = make_problem_selection("zcat6", n_var=40, n_obj=4)
+    assert selection.n_var == 40
+    assert selection.n_obj == 4
+
+
 def test_tsplib_selection_encoding():
     selection = make_problem_selection("kroa100")
     assert selection.n_var == 100

@@ -45,7 +45,7 @@ from vamos.foundation.problem.registry import make_problem_selection
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-REF_DIR = ROOT_DIR / "data" / "reference_fronts"
+REF_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
 REF_EPS = 1e-6
 
 _PROBLEM_OVERRIDES: dict[str, dict[str, int]] = {

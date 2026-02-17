@@ -6,6 +6,7 @@ __all__ = [
     "zdt",
     "dtlz",
     "wfg",
+    "zcat",
     "lz09",
     "cec",
     "lsmop",

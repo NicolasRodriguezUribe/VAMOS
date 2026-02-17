@@ -17,13 +17,14 @@ def build_hv_stop_config(
     hv_threshold: float | None,
     hv_reference_front: str | None,
     problem_key: str,
+    n_obj: int | None = None,
 ) -> dict[str, object] | None:
     """
     Build an early-stop configuration for hypervolume-based termination.
     """
     if hv_threshold is None:
         return None
-    front_path = resolve_reference_front_path(problem_key, hv_reference_front)
+    front_path = resolve_reference_front_path(problem_key, hv_reference_front, n_obj=n_obj)
     if front_path is None:
         raise ValueError(f"No reference front found for problem '{problem_key}'. Provide --hv-reference-front or add a built-in front.")
     reference_front = np.loadtxt(front_path, delimiter=",")

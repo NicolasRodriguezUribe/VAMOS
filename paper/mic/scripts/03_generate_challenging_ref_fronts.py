@@ -7,17 +7,16 @@ Usage:
 
 These are the *true* Pareto fronts derived from the analytical problem
 definitions, not approximations from optimisation runs.  They are saved
-as CSV files in ``data/reference_fronts/``.
+as CSV files in ``src/vamos/foundation/data/reference_fronts/``.
 """
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import numpy as np
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-REF_DIR = ROOT_DIR / "data" / "reference_fronts"
+REF_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
 
 N_POINTS = 1000
 
@@ -55,7 +54,6 @@ def _uf5_pf() -> np.ndarray:
 
 def _uf6_pf() -> np.ndarray:
     """Two disconnected segments on f1+f2 = 1 (N=2)."""
-    N = 2
     # PF exists where sin(2Nπx₀) ≤ 0, i.e. x₀ in [1/(2N), 2/(2N)] ∪ [3/(2N), 4/(2N)]
     # With N=2: x₀ ∈ [0.25, 0.50] ∪ [0.75, 1.0]
     seg1 = np.linspace(0.25, 0.50, N_POINTS // 2)
