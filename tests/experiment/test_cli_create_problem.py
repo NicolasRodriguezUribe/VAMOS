@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from vamos.experiment.cli.create_problem import (
     _generate_class,
     _generate_functional,

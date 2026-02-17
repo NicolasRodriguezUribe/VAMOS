@@ -90,7 +90,6 @@ def build_nsgaii_algorithm(
     if external_archive_size:
         builder.archive(external_archive_size)
         builder.archive_type(archive_type)
-        builder.result_mode("external_archive")
     if track_genealogy:
         builder.track_genealogy(True)
 

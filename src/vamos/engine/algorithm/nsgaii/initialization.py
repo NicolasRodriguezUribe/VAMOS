@@ -229,7 +229,6 @@ def setup_selection(
 
 
 def setup_result_archive(
-    result_mode: str,
     archive_type: str,
     archive_size: int | None,
     n_var: int,
@@ -238,12 +237,10 @@ def setup_result_archive(
     *,
     unbounded: bool = False,
 ) -> HypervolumeArchive | CrowdingDistanceArchive | None:
-    """Create result archive if configured for external_archive mode.
+    """Create result archive if configured.
 
     Parameters
     ----------
-    result_mode : str
-        Result mode ('population' or 'external_archive').
     archive_type : str
         Archive type ('hypervolume' or 'crowding').
     archive_size : int | None
@@ -260,12 +257,14 @@ def setup_result_archive(
     HypervolumeArchive | CrowdingDistanceArchive | None
         The result archive, or None if not configured.
     """
-    if result_mode != "external_archive" or not archive_size or unbounded:
+    if not archive_size or unbounded:
         return None
 
     if archive_type == "crowding":
         return CrowdingDistanceArchive(archive_size, n_var, n_obj, dtype)
-    return HypervolumeArchive(archive_size, n_var, n_obj, dtype)
+    if archive_type == "hypervolume":
+        return HypervolumeArchive(archive_size, n_var, n_obj, dtype)
+    raise ValueError("archive_type must be 'crowding' or 'hypervolume'.")
 
 
 def resolve_archive_size(cfg: dict[str, Any]) -> int | None:
@@ -281,7 +280,7 @@ def resolve_archive_size(cfg: dict[str, Any]) -> int | None:
     int | None
         Archive size if configured and positive, else None.
     """
-    archive_cfg = cfg.get("archive") or cfg.get("external_archive")
+    archive_cfg = cfg.get("archive")
     if not archive_cfg:
         return None
     size = int(archive_cfg.get("size", 0))

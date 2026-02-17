@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import csv
 import json
+import logging
 from pathlib import Path
 from typing import Any, cast
 
 from .param_space import ParamSpace
 from .random_search_tuner import TrialResult
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def _json_default(obj: Any) -> Any:
@@ -15,7 +20,7 @@ def _json_default(obj: Any) -> Any:
         try:
             return obj.item()
         except Exception:
-            pass
+            _logger().debug("Failed to convert scalar-like value with item().", exc_info=True)
     if isinstance(obj, Path):
         return str(obj)
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")

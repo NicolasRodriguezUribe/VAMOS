@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
 
 def _resolve_archive_settings(cfg: dict[str, Any], *, pop_size: int) -> tuple[int | None, bool]:
-    archive_cfg = cfg.get("archive") or cfg.get("external_archive") or {}
+    archive_cfg = cfg.get("archive") or {}
     unbounded = bool(archive_cfg.get("unbounded", False)) if isinstance(archive_cfg, dict) else False
     size = resolve_archive_size(cfg)
     if unbounded and not size:
@@ -237,10 +237,12 @@ def initialize_run(
         mut_factor,
     )
 
-    result_mode = algo.cfg.get("result_mode", "non_dominated")
-    archive_type = algo.cfg.get("archive_type", "hypervolume")
+    result_mode = str(algo.cfg.get("result_mode", "non_dominated")).strip().lower()
+    if result_mode not in {"non_dominated", "population"}:
+        raise ValueError("result_mode must be one of: non_dominated, population")
+    archive_type_raw = algo.cfg.get("archive_type")
+    archive_type = str(archive_type_raw).strip().lower() if archive_type_raw else "hypervolume"
     result_archive = setup_result_archive(
-        result_mode,
         archive_type,
         archive_size,
         n_var,

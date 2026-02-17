@@ -78,7 +78,11 @@ class _NSGAIIConfigBuilder:
         return self
 
     def result_mode(self, value: str) -> _NSGAIIConfigBuilder:
-        self._cfg["result_mode"] = str(value)
+        """Set result payload mode: ``non_dominated`` or ``population``."""
+        mode = str(value).strip().lower()
+        if mode not in {"non_dominated", "population"}:
+            raise ValueError("result_mode must be 'non_dominated' or 'population'.")
+        self._cfg["result_mode"] = mode
         return self
 
     def archive_type(self, value: str) -> _NSGAIIConfigBuilder:
@@ -96,13 +100,16 @@ class _NSGAIIConfigBuilder:
                 - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
                 - prune_policy: "crowding", "hv_contrib", "random"
                 - epsilon: Grid epsilon for epsilon_grid/hybrid types
+
+        Notes:
+            This method configures archive storage only. It does not change
+            ``result_mode``.
         """
         if size <= 0:
             self._cfg["archive"] = {"size": 0}
             return self
         archive_cfg = {"size": int(size), **kwargs}
         self._cfg["archive"] = archive_cfg
-        self._cfg.setdefault("result_mode", "external_archive")
         return self
 
     def constraint_mode(self, value: str) -> _NSGAIIConfigBuilder:

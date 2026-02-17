@@ -106,7 +106,10 @@ class _RVEAConfigBuilder:
         return self
 
     def result_mode(self, value: str) -> _RVEAConfigBuilder:
-        self._cfg["result_mode"] = str(value)
+        mode = str(value).strip().lower()
+        if mode not in {"non_dominated", "population"}:
+            raise ValueError("result_mode must be 'non_dominated' or 'population'.")
+        self._cfg["result_mode"] = mode
         return self
 
     def archive(self, size: int, **kwargs: Any) -> _RVEAConfigBuilder:
@@ -119,6 +122,10 @@ class _RVEAConfigBuilder:
                 - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
                 - prune_policy: "crowding", "hv_contrib", "random"
                 - epsilon: Grid epsilon for epsilon_grid/hybrid types
+
+        Notes:
+            This method configures archive storage only. It does not change
+            ``result_mode``.
         """
         if size <= 0:
             self._cfg["archive"] = {"size": 0}

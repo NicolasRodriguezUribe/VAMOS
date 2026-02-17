@@ -27,7 +27,9 @@ def _reference_front_locations() -> list[object]:
         locations.append(repo_data)
 
     # Packaged fronts remain the default fallback for installed distributions.
-    locations.append(resources.files(__name__) / "reference_fronts")
+    packaged = resources.files(__name__) / "reference_fronts"
+    if packaged.is_dir():
+        locations.append(packaged)
 
     return locations
 
@@ -38,6 +40,8 @@ def reference_front_path(name: str) -> Path:
     """
     target = f"{name.lower()}.csv"
     for base in _reference_front_locations():
+        if not base.is_dir():
+            continue
         candidates = (
             f"{name}.csv",
             f"{name.lower()}.csv",
@@ -49,7 +53,11 @@ def reference_front_path(name: str) -> Path:
                 return Path(str(p))
 
         # Case-insensitive lookup for robustness across filesystems and naming.
-        for entry in base.iterdir():
+        try:
+            entries = tuple(base.iterdir())
+        except OSError:
+            continue
+        for entry in entries:
             if entry.name.lower() == target and entry.is_file():
                 return Path(str(entry))
 

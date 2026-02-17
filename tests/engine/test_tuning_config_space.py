@@ -173,7 +173,7 @@ def test_agemoea_external_archive_config():
     cfg = config_from_assignment("agemoea", assignment)
     assert cfg.archive is not None
     assert cfg.archive["size"] >= cfg.pop_size
-    assert cfg.result_mode == "archive"
+    assert cfg.result_mode == "non_dominated"
 
 
 def test_rvea_external_archive_config():
@@ -193,7 +193,7 @@ def test_rvea_external_archive_config():
     cfg = config_from_assignment("rvea", assignment)
     assert cfg.archive is not None
     assert cfg.archive["size"] >= cfg.pop_size
-    assert cfg.result_mode == "archive"
+    assert cfg.result_mode == "non_dominated"
 
 
 def test_binary_integer_config_spaces_build_and_construct_config():

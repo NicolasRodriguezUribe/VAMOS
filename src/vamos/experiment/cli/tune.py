@@ -783,7 +783,7 @@ def _run_statistical_finisher(
                         should_run_paired = False
                         method = "friedman_no_difference"
             except Exception:
-                pass
+                _logger().debug("Friedman pre-check failed; continuing with paired tests.", exc_info=True)
 
         if should_run_paired:
             keep_mask = select_configs_by_paired_test(
