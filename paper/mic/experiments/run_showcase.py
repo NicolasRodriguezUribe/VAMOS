@@ -53,6 +53,7 @@ SCRIPTS_DIR = ROOT_DIR / "paper" / "mic" / "scripts"
 
 sys.path.insert(0, str(ROOT_DIR / "src"))
 sys.path.insert(0, str(ROOT_DIR / "paper"))
+sys.path.insert(0, str(SCRIPTS_DIR))  # allow joblib workers to import mic modules
 
 # Tell the experiment module which suite to load (needed at import time)
 os.environ["VAMOS_MIC_SUITE"] = "comprehensive"
@@ -67,8 +68,10 @@ os.environ["VAMOS_MIC_RESUME"]   = "1" if RESUME else "0"
 import importlib.util as _ilu
 
 def _load(path: Path):
-    spec = _ilu.spec_from_file_location(path.stem, path)
+    name = path.stem
+    spec = _ilu.spec_from_file_location(name, path)
     mod  = _ilu.module_from_spec(spec)   # type: ignore[arg-type]
+    sys.modules[name] = mod              # register so @dataclass can find it
     spec.loader.exec_module(mod)          # type: ignore[union-attr]
     return mod
 

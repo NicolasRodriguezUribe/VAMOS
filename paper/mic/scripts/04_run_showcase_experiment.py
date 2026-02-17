@@ -52,15 +52,18 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 
 sys.path.insert(0, str(ROOT_DIR / "src"))
 sys.path.insert(0, str(ROOT_DIR / "paper"))
+sys.path.insert(0, str(SCRIPTS_DIR))  # allow child processes to import by filename
 
 # Must be set *before* 02_run_mic_experiment.py is loaded (module-level suite select)
 os.environ.setdefault("VAMOS_MIC_SUITE", "comprehensive")
 
 # ── Load shared infrastructure from 02_run_mic_experiment.py ───────────────
+_MIC_MOD_NAME = "02_run_mic_experiment"
 _spec = importlib.util.spec_from_file_location(
-    "_mic", SCRIPTS_DIR / "02_run_mic_experiment.py"
+    _MIC_MOD_NAME, SCRIPTS_DIR / "02_run_mic_experiment.py"
 )
 _mic = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
+sys.modules[_MIC_MOD_NAME] = _mic  # register so @dataclass + joblib workers can resolve it
 _spec.loader.exec_module(_mic)  # type: ignore[union-attr]
 
 run_single       = _mic.run_single
