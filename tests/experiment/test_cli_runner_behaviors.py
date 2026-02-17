@@ -32,6 +32,15 @@ def test_cli_hv_threshold_uses_builtin_reference_for_zdt1(monkeypatch):
     assert "ZDT1" in args.hv_reference_front.upper()
 
 
+def test_cli_hv_threshold_uses_builtin_reference_for_zcat(monkeypatch):
+    default_cfg = ExperimentConfig()
+    argv = ["prog", "--problem", "zcat1", "--n-obj", "3", "--hv-threshold", "0.25"]
+    monkeypatch.setattr(sys, "argv", argv)
+    args = cli.parse_args(default_cfg)
+    assert args.hv_reference_front
+    assert args.hv_reference_front.lower().endswith("zcat1.3d.csv")
+
+
 def test_build_hv_stop_config_uses_builtin_front():
     cfg = build_hv_stop_config(0.1, None, "zdt1")
     assert cfg["target_value"] > 0.0

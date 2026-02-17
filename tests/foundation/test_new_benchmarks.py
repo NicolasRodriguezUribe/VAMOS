@@ -1,10 +1,13 @@
 import numpy as np
+import pytest
 from vamos.foundation.problem.lz import LZ09F1Problem, LZ09F6Problem
 from vamos.foundation.problem.cec import CEC2009CF1Problem, CEC2009UF1Problem, CEC2009UF4Problem, CEC2009UF8Problem
 from vamos.foundation.problem.constrained_many import CDTLZProblem, DCDTLZProblem, MWProblem
 from vamos.foundation.problem.dtlz import DTLZ5Problem, DTLZ6Problem
 from vamos.foundation.problem.lsmop import LSMOP1, LSMOP9
 from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
+from vamos.foundation.problem.registry import make_problem_selection
+from vamos.foundation.problem.zcat import ZCAT13Problem
 from vamos.foundation.problem.zdt5 import ZDT5Problem
 
 
@@ -146,3 +149,57 @@ def test_constrained_many_wrappers_smoke():
     assert out3["F"].shape == (2, 2)
     assert "G" in out3
     assert out3["G"].shape[0] == X2.shape[0]
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "zcat1",
+        "zcat2",
+        "zcat3",
+        "zcat4",
+        "zcat5",
+        "zcat6",
+        "zcat7",
+        "zcat8",
+        "zcat9",
+        "zcat10",
+        "zcat11",
+        "zcat12",
+        "zcat13",
+        "zcat14",
+        "zcat15",
+        "zcat16",
+        "zcat17",
+        "zcat18",
+        "zcat19",
+        "zcat20",
+    ],
+)
+def test_zcat_suite_smoke(key: str):
+    selection = make_problem_selection(key, n_var=30, n_obj=3)
+    problem = selection.instantiate()
+    X = _sample(problem, n=4)
+    out = {"F": np.empty((X.shape[0], problem.n_obj))}
+    problem.evaluate(X, out)
+    assert out["F"].shape == (X.shape[0], problem.n_obj)
+    assert np.isfinite(out["F"]).all()
+
+
+def test_zcat13_f13_last_component_matches_reference_formula():
+    # With n_var == n_obj - 1, beta is exactly zero and F equals weighted alpha.
+    problem = ZCAT13Problem(n_var=2, n_obj=3, complicated_pareto_set=True, level=1, bias=False, imbalance=False)
+    y = np.array([0.25, 0.70], dtype=float)
+    x = problem.xl + y * (problem.xu - problem.xl)
+    X = x.reshape(1, -1)
+    out = {"F": np.empty((1, problem.n_obj))}
+    problem.evaluate(X, out)
+
+    k = 3.0
+    y0 = float(y[0])
+    expected_last_unscaled = 1.0 - (
+        np.cos((2.0 * k - 1.0) * y0 * np.pi) + 2.0 * y0 + 4.0 * k * (1.0 - y0) - 1.0
+    ) / (4.0 * k)
+    expected_last = (3.0**2.0) * expected_last_unscaled
+
+    assert np.isclose(out["F"][0, 2], expected_last, atol=1e-12, rtol=0.0)

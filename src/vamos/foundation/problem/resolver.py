@@ -25,6 +25,28 @@ PROBLEM_SET_PRESETS: dict[str, Sequence[str]] = {
     "zdt": ("zdt1", "zdt2", "zdt3", "zdt4", "zdt6"),
     "dtlz": ("dtlz1", "dtlz2", "dtlz3", "dtlz4", "dtlz5", "dtlz6", "dtlz7"),
     "wfg": ("wfg1", "wfg2", "wfg3", "wfg4", "wfg5", "wfg6", "wfg7", "wfg8", "wfg9"),
+    "zcat": (
+        "zcat1",
+        "zcat2",
+        "zcat3",
+        "zcat4",
+        "zcat5",
+        "zcat6",
+        "zcat7",
+        "zcat8",
+        "zcat9",
+        "zcat10",
+        "zcat11",
+        "zcat12",
+        "zcat13",
+        "zcat14",
+        "zcat15",
+        "zcat16",
+        "zcat17",
+        "zcat18",
+        "zcat19",
+        "zcat20",
+    ),
     "lz": ("lz09_f1", "lz09_f2", "lz09_f3", "lz09_f4", "lz09_f5", "lz09_f6", "lz09_f7", "lz09_f8", "lz09_f9"),
     "cec": (
         "cec2009_uf1",
@@ -108,18 +130,36 @@ def _format_unknown_problem_set(name: str, options: list[str]) -> str:
     return " ".join(parts)
 
 
-def resolve_reference_front_path(problem_key: str, explicit_path: str | None) -> str | None:
+def resolve_reference_front_path(problem_key: str, explicit_path: str | None, n_obj: int | None = None) -> str | None:
     """
     Return a path to a reference front, using an explicit override when provided.
     """
     if explicit_path:
         return explicit_path
-    try:
-        with as_file(reference_front_path(problem_key)) as p:
-            return str(p)
-    except Exception:
-        _logger().debug("No reference front found for %r", problem_key, exc_info=True)
-        return None
+
+    key = str(problem_key).strip().lower()
+    candidates: list[str]
+
+    # ZCAT fronts are packaged as zcatX.{2d,3d,4d,6d}.csv in addition to zcatX.csv aliases.
+    # Prefer dimension-specific assets before generic aliases.
+    if key.startswith("zcat") and "." not in key:
+        candidates = []
+        if n_obj is not None and n_obj > 0:
+            candidates.append(f"{key}.{int(n_obj)}d")
+        candidates.append(f"{key}.2d")
+        candidates.append(key)
+    else:
+        candidates = [key]
+
+    for candidate in candidates:
+        try:
+            with as_file(reference_front_path(candidate)) as p:
+                return str(p)
+        except Exception:
+            _logger().debug("No reference front found for candidate %r", candidate, exc_info=True)
+
+    _logger().debug("No reference front found for %r", problem_key)
+    return None
 
 
 def _validate_problem_name(name: str) -> None:

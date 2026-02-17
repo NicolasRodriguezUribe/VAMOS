@@ -28,21 +28,31 @@ def test_reference_front_wfg4_packaged_and_accessible():
     assert path.is_file()
 
 
-def test_reference_front_prefers_repo_data_over_packaged(monkeypatch, tmp_path):
-    repo_data = tmp_path / "data_fronts"
+def test_reference_front_zcat_bundle_packaged_and_accessible():
+    path_3d = reference_front_path("zcat1.3d")
+    assert path_3d.is_file()
+    rows_3d = path_3d.read_text(encoding="utf-8").splitlines()
+    assert len(rows_3d) > 0
+
+    path_alias = reference_front_path("zcat1")
+    assert path_alias.is_file()
+
+
+def test_reference_front_prefers_override_data_over_packaged(monkeypatch, tmp_path):
+    override_data = tmp_path / "override_fronts"
     pkg_data = tmp_path / "pkg_fronts"
-    repo_data.mkdir()
+    override_data.mkdir()
     pkg_data.mkdir()
 
-    repo_file = repo_data / "zdt1.csv"
+    override_file = override_data / "zdt1.csv"
     pkg_file = pkg_data / "zdt1.csv"
-    repo_file.write_text("0.1,0.2\n", encoding="utf-8")
+    override_file.write_text("0.1,0.2\n", encoding="utf-8")
     pkg_file.write_text("0.9,0.8\n", encoding="utf-8")
 
-    monkeypatch.setattr(data_module, "_reference_front_locations", lambda: [repo_data, pkg_data])
+    monkeypatch.setattr(data_module, "_reference_front_locations", lambda: [override_data, pkg_data])
 
     resolved = data_module.reference_front_path("zdt1")
-    assert resolved == repo_file
+    assert resolved == override_file
 
 
 def test_weight_file_packaged_and_accessible():
@@ -59,6 +69,13 @@ def test_hv_stop_uses_packaged_reference_front():
     ref_path = cfg["reference_front_path"]
     assert "ZDT1" in ref_path.upper()
     assert resources.files("vamos.foundation.data.reference_fronts").joinpath("ZDT1.csv").is_file()
+
+
+def test_hv_stop_uses_dimensioned_zcat_reference_front():
+    cfg = build_hv_stop_config(0.1, None, "zcat1", n_obj=3)
+    assert cfg is not None
+    ref_path = str(cfg["reference_front_path"]).lower()
+    assert ref_path.endswith("zcat1.3d.csv")
 
 
 def test_tsplib_packaged_and_accessible():

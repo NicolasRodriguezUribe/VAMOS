@@ -20,13 +20,7 @@ def _reference_front_locations() -> list[object]:
         if override_path.exists():
             locations.append(override_path)
 
-    # Local-repo fallback: <repo>/data/reference_fronts
-    # __file__: .../src/vamos/foundation/data/__init__.py
-    repo_data = Path(__file__).resolve().parents[4] / "data" / "reference_fronts"
-    if repo_data.exists():
-        locations.append(repo_data)
-
-    # Packaged fronts remain the default fallback for installed distributions.
+    # Packaged fronts are the canonical built-in source.
     packaged = resources.files(__name__) / "reference_fronts"
     if packaged.is_dir():
         locations.append(packaged)

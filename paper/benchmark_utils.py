@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import cache
 import os
 from pathlib import Path
 
@@ -10,7 +10,7 @@ from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.metrics.pareto import pareto_filter
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-REFERENCE_FRONTS_DIR = ROOT_DIR / "data" / "reference_fronts"
+REFERENCE_FRONTS_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
 REF_EPS = 1e-6
 REF_MODE = os.environ.get("VAMOS_HV_REF_MODE", "pf").strip().lower()
 
@@ -19,7 +19,7 @@ _DTLZ_N_VAR = {"dtlz1": 7, "dtlz2": 12, "dtlz3": 12, "dtlz4": 12, "dtlz5": 12, "
 _DTLZ_N_OBJ = 3
 
 
-@lru_cache(maxsize=None)
+@cache
 def _load_reference_front(problem_name: str) -> np.ndarray:
     name = problem_name.lower()
     path = REFERENCE_FRONTS_DIR / f"{name}.csv"
@@ -69,7 +69,7 @@ def _bounds_reference_point(problem_name: str) -> np.ndarray:
     raise ValueError(f"Unsupported problem for bounds reference point: '{problem_name}'")
 
 
-@lru_cache(maxsize=None)
+@cache
 def _reference_point(problem_name: str) -> np.ndarray:
     if REF_MODE == "bounds":
         return _bounds_reference_point(problem_name)
@@ -79,7 +79,7 @@ def _reference_point(problem_name: str) -> np.ndarray:
     return front.max(axis=0) + REF_EPS
 
 
-@lru_cache(maxsize=None)
+@cache
 def _reference_hv(problem_name: str) -> float:
     front = _load_reference_front(problem_name)
     ref = _reference_point(problem_name)

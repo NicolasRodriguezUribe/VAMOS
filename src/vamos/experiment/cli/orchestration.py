@@ -151,6 +151,7 @@ def run_from_args(
                 effective_args.hv_threshold,
                 effective_args.hv_reference_front,
                 effective_selection.spec.key,
+                n_obj=effective_selection.n_obj,
             )
         nsgaii_variation = getattr(effective_args, "nsgaii_variation", None)
         execute_problem_suite(

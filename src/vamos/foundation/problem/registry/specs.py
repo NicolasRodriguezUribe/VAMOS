@@ -13,6 +13,7 @@ from .families import (
     real_world,
     tanabe_ishibuchi_re,
     wfg,
+    zcat,
     zapotecas_rwa,
     zdt,
 )
@@ -33,6 +34,7 @@ def _build_problem_specs() -> dict[str, ProblemSpec]:
         lsmop.get_specs(),
         constrained_many.get_specs(),
         wfg.get_specs(),
+        zcat.get_specs(),
         misc.get_specs(),
         real_world.get_specs(),
         tanabe_ishibuchi_re.get_specs(),

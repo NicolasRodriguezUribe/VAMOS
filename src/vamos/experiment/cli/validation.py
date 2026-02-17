@@ -61,13 +61,13 @@ def finalize_args(
             parser.error("--hv-threshold must be in the (0, 1) range.")
         if not args.hv_reference_front:
             problem_key = str(getattr(args, "problem", "")).strip().lower()
-            if problem_key.startswith("zdt"):
-                default_front = resolve_reference_front_path(problem_key, None)
+            if problem_key.startswith("zdt") or problem_key.startswith("zcat"):
+                default_front = resolve_reference_front_path(problem_key, None, n_obj=getattr(args, "n_obj", None))
                 if default_front is None:
                     parser.error("--hv-reference-front is required for the selected problem because no default reference front is available.")
                 args.hv_reference_front = str(default_front)
             else:
-                parser.error("--hv-reference-front is required for non-ZDT problems when --hv-threshold is set.")
+                parser.error("--hv-reference-front is required for non-ZDT/ZCAT problems when --hv-threshold is set.")
     elif args.hv_reference_front:
         parser.error("--hv-reference-front requires --hv-threshold to be set.")
 

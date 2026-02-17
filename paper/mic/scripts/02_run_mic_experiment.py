@@ -263,7 +263,7 @@ CROSSOVER_PROB = 1.0
 CROSSOVER_ETA = 20.0
 MUTATION_ETA = 20.0
 
-REFERENCE_FRONTS_DIR = ROOT_DIR / "data" / "reference_fronts"
+REFERENCE_FRONTS_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
 REF_EPS = 1e-6
 
 
@@ -308,7 +308,7 @@ def _operator_pool(n_var: int) -> list[dict[str, Any]]:
     ]
 
 # =============================================================================
-# HV helpers (reuse reference fronts from data/reference_fronts/)
+# HV helpers (reuse reference fronts from src/vamos/foundation/data/reference_fronts/)
 # =============================================================================
 #
 # Exact hypervolume is exponential in the number of objectives.  For problems
@@ -446,7 +446,6 @@ def _make_aos_cfg(
 ) -> dict[str, Any]:
     """Build AOS config dict for any AOS variant."""
     hv_ref_pt, hv_ref_hv = _hv_reward_refs(problem_name)
-    n_obj = _N_OBJ.get(problem_name.lower(), 2)
 
     # For many-obj without HV feedback, shift weight to survival + nd_insertions
     if hv_ref_pt is None:

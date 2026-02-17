@@ -624,7 +624,7 @@ This appendix reports per-problem Wilcoxon signed-rank tests, bootstrap equivale
 \label{app:detailed}
 %==============================================================================
 
-The repository includes dense reference Pareto fronts for all benchmark problems used for normalized hypervolume computation (\path{data/reference_fronts/}). These fronts are generated analytically when closed forms are available (ZDT and most DTLZ problems) and by dense sampling followed by non-dominated filtering for cases where the Pareto front is disconnected or defined implicitly (DTLZ7 and WFG). For WFG2 we use a higher sampling density (configurable via \path{VAMOS_REF_WFG2_POINTS}) to stabilize HV normalization.
+The repository includes dense reference Pareto fronts for all benchmark problems used for normalized hypervolume computation (\path{src/vamos/foundation/data/reference_fronts/}). These fronts are generated analytically when closed forms are available (ZDT and most DTLZ problems) and by dense sampling followed by non-dominated filtering for cases where the Pareto front is disconnected or defined implicitly (DTLZ7 and WFG). For WFG2 we use a higher sampling density (configurable via \path{VAMOS_REF_WFG2_POINTS}) to stabilize HV normalization.
 
 Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-problem median runtimes.
 
