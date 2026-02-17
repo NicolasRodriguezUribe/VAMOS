@@ -50,7 +50,8 @@ Default behavior:
 - Reads the latest selection JSON from `experiments/mic/instance_selection/`.
 - Uses `--budget 20000`, `--max-trials 120`, `--seeds 0,1,2`.
 - Uses `--timeout-seconds 32400` (9h).
-- Runs Optuna in distributed mode (`SQLite` study + process workers).
+- Requires `smac` (SMAC3) and `ConfigSpace` dependencies (or install `vamos[tuning]`).
+- Runs SMAC3 multi-fidelity tuning backend.
 - Uses `--n-jobs -1` as CPU cores minus one.
 - Exports `--top-k 5` distinct configurations.
 - Enforces `--min-distinct 5` in strict mode by default (`--strict-min-distinct`).

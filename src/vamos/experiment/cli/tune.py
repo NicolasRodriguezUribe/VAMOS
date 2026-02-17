@@ -258,6 +258,48 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--bohb-reduction-factor", type=int, default=3, help="Reduction factor for BOHB/Hyperband-style backends.")
     parser.add_argument("--timeout-seconds", type=float, default=0.0, help="Optional wallclock timeout. 0 disables.")
     parser.add_argument("--show-progress-bar", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument(
+        "--fidelity-min-instance-frac",
+        type=float,
+        default=1.0,
+        help="Minimum instance fraction at lowest budget for model backends (1.0 disables instance subsampling).",
+    )
+    parser.add_argument(
+        "--fidelity-min-seed-count",
+        type=int,
+        default=0,
+        help="Minimum seed count at lowest budget for model backends (0 uses all seeds).",
+    )
+    parser.add_argument(
+        "--fidelity-max-seed-count",
+        type=int,
+        default=0,
+        help="Maximum seed count at highest budget for model backends (0 uses all seeds).",
+    )
+    parser.add_argument(
+        "--fidelity-selection-seed",
+        type=int,
+        default=-1,
+        help="Seed for deterministic fidelity subsampling (-1 uses --seed).",
+    )
+    parser.add_argument(
+        "--optuna-storage",
+        type=str,
+        default="",
+        help="Optional Optuna storage URL for persistent/restartable studies (e.g. sqlite:///results/tune.db).",
+    )
+    parser.add_argument(
+        "--optuna-study-name",
+        type=str,
+        default="",
+        help="Optional Optuna study name. Used with --optuna-storage.",
+    )
+    parser.add_argument(
+        "--optuna-load-if-exists",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="When using --optuna-storage, resume existing study if present.",
+    )
 
     parser.add_argument("--split-seed", type=int, default=42, help="Seed used to split instances into train/validation/test.")
     parser.add_argument(
@@ -324,6 +366,15 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         parser.error("--finisher-alpha must be in (0, 1).")
     if float(args.runtime_penalty) < 0.0:
         parser.error("--runtime-penalty must be >= 0.")
+    if not (0.0 < float(args.fidelity_min_instance_frac) <= 1.0):
+        parser.error("--fidelity-min-instance-frac must be in (0, 1].")
+    if int(args.fidelity_min_seed_count) < 0:
+        parser.error("--fidelity-min-seed-count must be >= 0.")
+    if int(args.fidelity_max_seed_count) < 0:
+        parser.error("--fidelity-max-seed-count must be >= 0.")
+    if int(args.fidelity_min_seed_count) > 0 and int(args.fidelity_max_seed_count) > 0:
+        if int(args.fidelity_min_seed_count) > int(args.fidelity_max_seed_count):
+            parser.error("--fidelity-min-seed-count cannot exceed --fidelity-max-seed-count.")
     if not (0.0 < float(args.train_frac) < 1.0):
         parser.error("--train-frac must be in (0, 1).")
     if not (0.0 < float(args.validation_frac) < 1.0):
@@ -788,6 +839,8 @@ def _run_backend(
 ) -> tuple[dict[str, Any], list[TrialResult]]:
     fidelity_levels = args.fidelity_levels
     if args.backend in MODEL_BACKENDS:
+        min_seed_count = int(args.fidelity_min_seed_count)
+        max_seed_count = int(args.fidelity_max_seed_count)
         tuner = ModelBasedTuner(
             task=task,
             max_trials=int(args.tune_budget),
@@ -798,6 +851,13 @@ def _run_backend(
             show_progress_bar=bool(args.show_progress_bar),
             bohb_reduction_factor=max(2, int(args.bohb_reduction_factor)),
             budget_levels=list(fidelity_levels) if fidelity_levels else None,
+            fidelity_min_instance_frac=float(args.fidelity_min_instance_frac),
+            fidelity_min_seed_count=(None if min_seed_count <= 0 else int(min_seed_count)),
+            fidelity_max_seed_count=(None if max_seed_count <= 0 else int(max_seed_count)),
+            fidelity_selection_seed=(None if int(args.fidelity_selection_seed) < 0 else int(args.fidelity_selection_seed)),
+            optuna_storage_url=(str(args.optuna_storage).strip() or None),
+            optuna_study_name=(str(args.optuna_study_name).strip() or None),
+            optuna_load_if_exists=bool(args.optuna_load_if_exists),
         )
         return tuner.run(eval_fn, verbose=True)
 
