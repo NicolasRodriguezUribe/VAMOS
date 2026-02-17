@@ -1,6 +1,7 @@
 """Test that NSGA-II returns only non-dominated solutions."""
 
 import numpy as np
+import pytest
 
 from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.engine.algorithm.nsgaii import NSGAII
@@ -69,3 +70,65 @@ def test_nsgaii_population_key_contains_full_population():
     # Result F should be <= population F (only non-dominated subset)
     assert result["F"].shape[0] <= pop_size
     assert result["F"].shape[0] > 0
+
+
+def test_nsgaii_archive_keeps_default_nondominated_result_mode():
+    pop_size = 16
+    cfg = (
+        NSGAIIConfig.builder()
+        .pop_size(pop_size)
+        .offspring_size(pop_size)
+        .crossover("sbx", prob=0.9, eta=15.0)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .selection("tournament", pressure=2)
+        .archive(pop_size * 2)
+        .archive_type("crowding")
+        .build()
+    )
+    assert cfg.result_mode == "non_dominated"
+
+    algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT1Problem(n_var=8)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size * 2), seed=7)
+
+    assert result["F"].shape[0] <= pop_size
+    assert "archive" in result
+    assert result["archive"]["F"].shape[0] > 0
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)
+
+
+def test_nsgaii_archive_population_mode_returns_full_population_and_archive():
+    pop_size = 12
+    cfg = (
+        NSGAIIConfig.builder()
+        .pop_size(pop_size)
+        .offspring_size(pop_size)
+        .crossover("sbx", prob=0.9, eta=15.0)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .selection("tournament", pressure=2)
+        .archive(pop_size * 2)
+        .archive_type("crowding")
+        .result_mode("population")
+        .build()
+    )
+
+    algorithm = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT1Problem(n_var=8)
+    result = algorithm.run(problem, termination=("max_evaluations", pop_size * 2), seed=9)
+
+    assert result["F"].shape == (pop_size, problem.n_obj)
+    assert "archive" in result
+    assert result["archive"]["F"].shape[0] > 0
+    assert result["population"]["F"].shape == (pop_size, problem.n_obj)
+
+
+def test_nsgaii_rejects_external_archive_result_mode():
+    with pytest.raises(ValueError, match="result_mode must be 'non_dominated' or 'population'"):
+        (
+            NSGAIIConfig.builder()
+            .pop_size(10)
+            .crossover("sbx", prob=0.9, eta=15.0)
+            .mutation("pm", prob="1/n", eta=20.0)
+            .selection("tournament", pressure=2)
+            .result_mode("external_archive")
+        )

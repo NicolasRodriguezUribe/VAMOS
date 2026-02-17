@@ -1,0 +1,4 @@
+{
+  "max_files_to_reformat": 65,
+  "notes": "Baseline formatting debt budget. Lower this number as files are formatted."
+}

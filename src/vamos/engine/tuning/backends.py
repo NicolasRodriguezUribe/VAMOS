@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import logging
 import math
 import threading
 import time
@@ -13,6 +14,10 @@ import numpy as np
 from .racing.param_space import Boolean, Categorical, Int, ParamSpace, Real
 from .racing.random_search_tuner import TrialResult
 from .racing.tuning_task import EvalContext, Instance, TuningTask
+
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 def available_model_based_backends() -> dict[str, bool]:
@@ -587,12 +592,12 @@ class ModelBasedTuner:
                 try:
                     optimizer.shutdown(shutdown_workers=True)
                 except Exception:
-                    pass
+                    _logger().debug("Failed to shutdown BOHB optimizer cleanly.", exc_info=True)
             if ns is not None:
                 try:
                     ns.shutdown()
                 except Exception:
-                    pass
+                    _logger().debug("Failed to shutdown BOHB nameserver cleanly.", exc_info=True)
 
         if not history:
             raise RuntimeError("Tuner finished without a valid configuration.")

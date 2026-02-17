@@ -53,8 +53,6 @@ class _ExceptScanner(ast.NodeVisitor):
                 f"{self.rel_path}:{node.lineno}: bare except: (always specify an exception type)"
             )
         elif _is_silent_swallow(node):
-            # Get the exception type name for the message
-            exc_name = ast.dump(node.type) if node.type else "?"
             self.violations.append(
                 f"{self.rel_path}:{node.lineno}: silent swallow (except ... : pass) -- "
                 f"add logging, re-raise, or a comment explaining why silence is safe"

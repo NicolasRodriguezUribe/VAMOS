@@ -62,7 +62,7 @@ class NSGAIIState:
     archive_manager: CrowdingDistanceArchive | UnboundedArchive | None = None
     archive_via_kernel: bool = False
     result_archive: HypervolumeArchive | CrowdingDistanceArchive | None = None
-    result_mode: str = "population"
+    result_mode: str = "non_dominated"
 
     # Termination
     hv_tracker: HVTracker | None = None
@@ -143,8 +143,8 @@ def build_result(
         Full population is always available in 'population' key.
     """
     # Filter to non-dominated solutions only (if requested)
-    mode = getattr(state, "result_mode", "population")
-    should_filter = kernel is not None and mode is not None and mode != "population"
+    mode = getattr(state, "result_mode", "non_dominated")
+    should_filter = kernel is not None and mode == "non_dominated"
 
     if should_filter:
         try:

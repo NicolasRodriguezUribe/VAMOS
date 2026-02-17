@@ -255,10 +255,24 @@ class RVEA:
 
             generation += 1
 
-        result_mode = self.config.get("result_mode", "non_dominated")
-        if result_mode == "archive" and archive is not None:
-            return {"X": archive.X, "F": archive.F, "n_eval": n_eval, "n_gen": generation}
+        result_mode = str(self.config.get("result_mode", "non_dominated")).strip().lower()
+        if result_mode not in {"non_dominated", "population"}:
+            raise ValueError("result_mode must be one of: non_dominated, population")
 
-        ranks, _ = self.kernel.nsga2_ranking(F)
-        front_mask = ranks == 0
-        return {"X": X[front_mask], "F": F[front_mask], "n_eval": n_eval, "n_gen": generation}
+        if result_mode == "population":
+            result_X, result_F = X, F
+        else:
+            ranks, _ = self.kernel.nsga2_ranking(F)
+            front_mask = ranks == 0
+            result_X, result_F = X[front_mask], F[front_mask]
+
+        result = {
+            "X": result_X,
+            "F": result_F,
+            "n_eval": n_eval,
+            "n_gen": generation,
+            "population": {"X": X, "F": F},
+        }
+        if archive is not None:
+            result["archive"] = {"X": archive.X, "F": archive.F}
+        return result

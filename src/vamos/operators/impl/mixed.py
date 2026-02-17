@@ -48,35 +48,31 @@ _PERM_MUTATION = {
 }
 
 
-_CUSTOM_CROSSOVER_KEYS = frozenset(
-    {
-        "perm_crossover_prob",
-        "real_crossover_prob",
-        "int_crossover_prob",
-        "cat_crossover_prob",
-        "real_crossover",
-        "int_crossover",
-        "cat_crossover",
-        "int_crossover_eta",
-    }
-)
+_CUSTOM_CROSSOVER_KEYS: set[str] = {
+    "perm_crossover_prob",
+    "real_crossover_prob",
+    "int_crossover_prob",
+    "cat_crossover_prob",
+    "real_crossover",
+    "int_crossover",
+    "cat_crossover",
+    "int_crossover_eta",
+}
 
-_CUSTOM_MUTATION_KEYS = frozenset(
-    {
-        "perm_mutation_prob",
-        "real_mutation_prob",
-        "int_mutation_prob",
-        "cat_mutation_prob",
-        "real_mutation",
-        "int_mutation",
-        "cat_mutation",
-        "real_mutation_sigma",
-        "real_mutation_sigma_factor",
-        "real_mutation_eta",
-        "int_mutation_step",
-        "int_mutation_eta",
-    }
-)
+_CUSTOM_MUTATION_KEYS: set[str] = {
+    "perm_mutation_prob",
+    "real_mutation_prob",
+    "int_mutation_prob",
+    "cat_mutation_prob",
+    "real_mutation",
+    "int_mutation",
+    "cat_mutation",
+    "real_mutation_sigma",
+    "real_mutation_sigma_factor",
+    "real_mutation_eta",
+    "int_mutation_step",
+    "int_mutation_eta",
+}
 
 
 def _extract_index_array(spec: dict[str, Any], key: str) -> np.ndarray:
@@ -144,7 +140,7 @@ def _resolve_choice(
     return raw
 
 
-def _has_customized_segment_settings(spec: dict[str, Any], keys: frozenset[str]) -> bool:
+def _has_customized_segment_settings(spec: dict[str, Any], keys: set[str]) -> bool:
     return any(key in spec for key in keys)
 
 

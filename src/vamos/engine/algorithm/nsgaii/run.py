@@ -41,7 +41,6 @@ def notify_generation(
     st = algo._st
     nd_mask = None
     ranks = None
-    crowding = None
     if st is not None and st.immigration_manager is not None and problem is not None:
         changed = bool(
             st.immigration_manager.apply_generation(

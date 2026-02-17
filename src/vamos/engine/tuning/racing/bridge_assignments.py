@@ -364,7 +364,6 @@ def _build_agemoea_config(assignment: dict[str, Any]) -> AGEMOEAConfig:
             prune_policy=prune_policy,
             epsilon=epsilon,
         )
-        builder.result_mode("archive")
 
     return builder.build()
 
@@ -431,7 +430,6 @@ def _build_rvea_config(assignment: dict[str, Any]) -> RVEAConfig:
             prune_policy=prune_policy,
             epsilon=epsilon,
         )
-        builder.result_mode("archive")
 
     return builder.build()
 
