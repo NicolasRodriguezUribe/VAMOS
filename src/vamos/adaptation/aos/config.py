@@ -33,6 +33,8 @@ AOS_CONFIG_KEYS = {
     "elimination_after",
     "elimination_z",
     "elimination_min_arms",
+    "feasibility_reset_threshold",
+    "feasibility_reset_min_gen",
 }
 
 
@@ -74,6 +76,11 @@ class AdaptiveOperatorSelectionConfig:
     elimination_after: int = 0  # Generations before arm elimination starts; 0 = disabled
     elimination_z: float = 1.5  # Z-score threshold: eliminate arms this many stdevs below best
     elimination_min_arms: int = 2  # Never eliminate below this many active arms
+    # Phase-detection reset: when the population feasibility rate crosses this threshold for
+    # `feasibility_reset_min_gen` consecutive generations, the bandit statistics are cleared
+    # and learning restarts from scratch.  0.0 = disabled (default).
+    feasibility_reset_threshold: float = 0.0
+    feasibility_reset_min_gen: int = 10
 
     @classmethod
     def from_dict(cls, config: Mapping[str, Any] | None) -> AdaptiveOperatorSelectionConfig:
@@ -113,6 +120,12 @@ class AdaptiveOperatorSelectionConfig:
         elimination_min_arms = int(config.get("elimination_min_arms", 2))
         if elimination_min_arms < 1:
             raise ValueError("elimination_min_arms must be >= 1.")
+        feasibility_reset_threshold = float(config.get("feasibility_reset_threshold", 0.0))
+        if not (0.0 <= feasibility_reset_threshold <= 1.0):
+            raise ValueError("feasibility_reset_threshold must be in [0, 1].")
+        feasibility_reset_min_gen = int(config.get("feasibility_reset_min_gen", 10))
+        if feasibility_reset_min_gen < 1:
+            raise ValueError("feasibility_reset_min_gen must be >= 1.")
         return cls(
             enabled=bool(config.get("enabled", False)),
             method=str(config.get("method", "epsilon_greedy")).lower(),
@@ -130,6 +143,8 @@ class AdaptiveOperatorSelectionConfig:
             elimination_after=elimination_after,
             elimination_z=elimination_z,
             elimination_min_arms=elimination_min_arms,
+            feasibility_reset_threshold=feasibility_reset_threshold,
+            feasibility_reset_min_gen=feasibility_reset_min_gen,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -153,6 +168,8 @@ class AdaptiveOperatorSelectionConfig:
             "elimination_after": self.elimination_after,
             "elimination_z": self.elimination_z,
             "elimination_min_arms": self.elimination_min_arms,
+            "feasibility_reset_threshold": self.feasibility_reset_threshold,
+            "feasibility_reset_min_gen": self.feasibility_reset_min_gen,
         }
 
 

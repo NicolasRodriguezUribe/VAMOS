@@ -443,6 +443,8 @@ def _make_aos_cfg(
     elimination_after: int = 0,
     elimination_z: float = 1.5,
     elimination_min_arms: int = 2,
+    feasibility_reset_threshold: float = 0.0,
+    feasibility_reset_min_gen: int = 10,
 ) -> dict[str, Any]:
     """Build AOS config dict for any AOS variant."""
     hv_ref_pt, hv_ref_hv = _hv_reward_refs(problem_name)
@@ -471,6 +473,8 @@ def _make_aos_cfg(
         "elimination_after": int(elimination_after),
         "elimination_z": float(elimination_z),
         "elimination_min_arms": int(elimination_min_arms),
+        "feasibility_reset_threshold": float(feasibility_reset_threshold),
+        "feasibility_reset_min_gen": int(feasibility_reset_min_gen),
     }
 
 
@@ -487,6 +491,22 @@ VARIANT_SPECS: dict[str, VariantSpec] = {
     "aos": VariantSpec(
         aos_kwargs=dict(method="thompson_sampling", min_usage=5, window_size=50, floor_prob=0.02,
                         elimination_after=300, elimination_z=2.0, elimination_min_arms=2),
+    ),
+    # AOS v2 – four diversity-maximising changes vs. the original:
+    #   (1) arm elimination disabled (no premature pruning)
+    #   (2) wider sliding window (slower forgetting → more stable estimates)
+    #   (3) higher exploration floor (keeps diversity alive like random arm)
+    #   (4) phase-detection reset (bandit restarts when pop becomes feasible)
+    "aos_v2": VariantSpec(
+        aos_kwargs=dict(
+            method="thompson_sampling",
+            min_usage=5,
+            window_size=100,
+            floor_prob=0.10,
+            elimination_after=0,
+            feasibility_reset_threshold=0.9,
+            feasibility_reset_min_gen=10,
+        ),
     ),
     # ---- Pilot variants ----
     "aos_eps15": VariantSpec(aos_kwargs=dict(method="epsilon_greedy", epsilon=0.15, min_usage=5)),

@@ -55,6 +55,10 @@ class OperatorBanditPolicy(Protocol):
 
     def counts(self) -> list[int]: ...
 
+    def reset(self) -> None:
+        """Clear all learned statistics; keep hyperparameters intact."""
+        ...
+
 
 class UCBPolicy:
     """
@@ -118,6 +122,10 @@ class UCBPolicy:
     def counts(self) -> list[int]:
         return list(self._counts)
 
+    def reset(self) -> None:
+        self._counts = [0] * self.n_arms
+        self._values = [0.0] * self.n_arms
+
 
 class EpsGreedyPolicy:
     """
@@ -169,6 +177,10 @@ class EpsGreedyPolicy:
 
     def counts(self) -> list[int]:
         return list(self._counts)
+
+    def reset(self) -> None:
+        self._counts = [0] * self.n_arms
+        self._values = [0.0] * self.n_arms
 
 
 class EXP3Policy:
@@ -232,6 +244,10 @@ class EXP3Policy:
 
     def counts(self) -> list[int]:
         return list(self._counts)
+
+    def reset(self) -> None:
+        self._weights = [1.0] * self.n_arms
+        self._counts = [0] * self.n_arms
 
 
 class ThompsonSamplingPolicy:
@@ -329,6 +345,10 @@ class ThompsonSamplingPolicy:
     def counts(self) -> list[int]:
         return list(self._counts)
 
+    def reset(self) -> None:
+        self._counts = [0] * self.n_arms
+        self._reward_history = [[] for _ in range(self.n_arms)]
+
 
 class SlidingWindowUCBPolicy:
     """
@@ -419,6 +439,10 @@ class SlidingWindowUCBPolicy:
 
     def counts(self) -> list[int]:
         return list(self._counts)
+
+    def reset(self) -> None:
+        self._counts = [0] * self.n_arms
+        self._reward_history = [[] for _ in range(self.n_arms)]
 
 
 __all__ = [
