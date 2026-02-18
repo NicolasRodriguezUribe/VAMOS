@@ -32,7 +32,7 @@ from vamos.engine.config.variation import (
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.kernel.backend import KernelBackend
-from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.kernel import default_kernel
 from vamos.foundation.problem.types import ProblemProtocol
 
 from .state import RVEAState, build_rvea_result
@@ -205,7 +205,7 @@ class RVEA:
 
     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
         self.cfg = config
-        self.kernel = kernel or NumPyKernel()
+        self.kernel = kernel or default_kernel()
         self._st: RVEAState | None = None
 
     # -------------------------------------------------------------------------
@@ -215,7 +215,7 @@ class RVEA:
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: Any | None = None,
@@ -239,7 +239,7 @@ class RVEA:
     def initialize(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
     ) -> None:

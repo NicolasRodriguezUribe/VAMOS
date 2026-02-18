@@ -69,7 +69,7 @@ class AlgorithmProtocol(Protocol):
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: Any | None = None,
         live_viz: Any | None = None,
@@ -83,6 +83,7 @@ class AlgorithmProtocol(Protocol):
             The optimization problem to solve.
         termination : tuple[str, Any]
             Termination criterion, e.g., ("max_evaluations", 10000) or ("hv", {...}).
+            Defaults to ("max_evaluations", 25000).
         seed : int
             Random seed for reproducibility (default: 0).
         eval_strategy : Any | None

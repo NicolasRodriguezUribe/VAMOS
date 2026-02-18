@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from vamos.foundation.kernel import default_kernel
+
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import (
@@ -81,9 +83,9 @@ class SMSEMOA:
     >>> result = smsemoa.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend):
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
         self.cfg = config
-        self.kernel = kernel
+        self.kernel = kernel or default_kernel()
         self._st: SMSEMOAState | None = None
         self._live_cb: LiveVisualization | None = None
         self._eval_strategy: EvaluationBackend | None = None
@@ -98,7 +100,7 @@ class SMSEMOA:
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
@@ -249,7 +251,7 @@ class SMSEMOA:
     def initialize(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,

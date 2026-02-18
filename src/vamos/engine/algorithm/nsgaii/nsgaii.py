@@ -10,6 +10,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.foundation.eval.backends import EvaluationBackend
+from vamos.foundation.kernel import default_kernel
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.hooks.live_viz import LiveVisualization
@@ -26,15 +27,15 @@ class NSGAII:
     Individuals are represented as array rows (X, F) without per-object instances.
     """
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None) -> None:
         self.cfg = config
-        self.kernel = kernel
+        self.kernel = kernel or default_kernel()
         self._st: NSGAIIState | None = None
 
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
