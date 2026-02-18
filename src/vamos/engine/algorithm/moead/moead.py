@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from vamos.foundation.kernel import default_kernel
+
 import numpy as np
 
 from vamos.engine.algorithm.components.archives import update_archive
@@ -86,15 +88,15 @@ class MOEAD:
     ...     moead.tell(EvalResult(F=F_off, G=None))
     """
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None) -> None:
         self.cfg = config
-        self.kernel = kernel
+        self.kernel = kernel or default_kernel()
         self._st: MOEADState | None = None
 
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
