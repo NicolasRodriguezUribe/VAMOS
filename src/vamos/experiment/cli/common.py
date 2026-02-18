@@ -130,10 +130,20 @@ def _collect_generic_variation(args: argparse.Namespace, prefix: str) -> dict[st
     }
 
 
+def _collect_moead_variation(args: argparse.Namespace) -> dict[str, object]:
+    """Collect MOEA/D variation args including the aggregation special case."""
+    base = _collect_generic_variation(args, "moead")
+    aggregation = getattr(args, "moead_aggregation", None)
+    if aggregation is not None:
+        base["aggregation"] = aggregation
+    return base
+
+
 __all__ = [
     "_parse_probability_arg",
     "_parse_positive_float",
     "_normalize_operator_args",
     "collect_nsgaii_variation_args",
     "_collect_generic_variation",
+    "_collect_moead_variation",
 ]

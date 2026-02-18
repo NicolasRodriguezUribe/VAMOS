@@ -143,7 +143,7 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     return X_off
 
 
-def tell_nsgaii(algo: NSGAII, eval_result: Any, pop_size: int) -> bool:
+def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
     st = algo._st
     if st is None:
         raise RuntimeError("tell() called before initialization.")
@@ -208,7 +208,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any, pop_size: int) -> bool:
         incremental_insert_fronts(fronts, ranks, combined_F, combined_F.shape[0] - 1)
         crowding = compute_crowding(combined_F, fronts)
 
-        selected_idx = select_nsga2(fronts, crowding, pop_size)
+        selected_idx = select_nsga2(fronts, crowding, st.pop_size)
         new_X = combined_X[selected_idx]
         new_F = combined_F[selected_idx]
         new_G = None
@@ -223,19 +223,19 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any, pop_size: int) -> bool:
         used_incremental = True
     elif st.G is None or G_off is None or st.constraint_mode == "none":
         if aos_controller is not None:
-            new_X, new_F, selected_idx = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size, return_indices=True)
+            new_X, new_F, selected_idx = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size, return_indices=True)
         else:
-            new_X, new_F = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, pop_size)
+            new_X, new_F = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size)
         new_G = None
     else:
         from .helpers import feasible_nsga2_survival
 
         if aos_controller is not None:
             new_X, new_F, new_G, selected_idx = feasible_nsga2_survival(
-                algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size, return_indices=True
+                algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size, return_indices=True
             )
         else:
-            new_X, new_F, new_G = feasible_nsga2_survival(algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, pop_size)
+            new_X, new_F, new_G = feasible_nsga2_survival(algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size)
 
     if combined_ids is not None:
         from .helpers import match_ids

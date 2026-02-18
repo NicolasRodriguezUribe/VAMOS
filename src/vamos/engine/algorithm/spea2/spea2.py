@@ -123,7 +123,7 @@ class SPEA2:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
@@ -187,7 +187,7 @@ class SPEA2:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> tuple[Any, Any, int, Any]:
@@ -209,7 +209,7 @@ class SPEA2:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> None:

@@ -179,6 +179,8 @@ def run_from_args(
             spea2_variation=effective_args.spea2_variation,
             ibea_variation=effective_args.ibea_variation,
             smpso_variation=effective_args.smpso_variation,
+            agemoea_variation=effective_args.agemoea_variation,
+            rvea_variation=effective_args.rvea_variation,
             include_external=effective_args.include_external,
             config_source=config_source,
             config_spec=config_spec,

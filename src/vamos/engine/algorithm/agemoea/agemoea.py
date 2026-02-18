@@ -312,7 +312,7 @@ class AGEMOEA:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: Any | None = None,
     ) -> dict[str, Any]:
@@ -336,7 +336,7 @@ class AGEMOEA:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
     ) -> None:
         """Initialize algorithm state for ask/tell loop.
@@ -421,6 +421,7 @@ class AGEMOEA:
             n_parents=n_parents,
         )
 
+        assert st.variation is not None
         X_off = st.variation.produce_offspring(st.X[parents_idx], st.rng)
         st.pending_offspring = X_off
         return np.array(X_off, copy=True)

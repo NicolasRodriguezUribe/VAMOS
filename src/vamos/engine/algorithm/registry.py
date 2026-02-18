@@ -31,7 +31,7 @@ class AlgorithmLike(Protocol):
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: Any | None = None,
         live_viz: Any | None = None,
     ) -> Mapping[str, Any]: ...

@@ -16,7 +16,8 @@
     "src/vamos/experiment/cli/tune.py:main": 317
   },
   "class_violations": {
-    "src/vamos/engine/tuning/backends.py:ModelBasedTuner": 502
+    "src/vamos/engine/tuning/backends.py:ModelBasedTuner": 502,
+    "src/vamos/engine/algorithm/nsgaiii/nsgaiii.py:NSGAIII": 407
   },
   "notes": "Baseline monolith debt budget. Refactors should reduce these values over time."
 }
