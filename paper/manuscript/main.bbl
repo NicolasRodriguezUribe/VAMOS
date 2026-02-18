@@ -218,6 +218,13 @@ E.~Zitzler, L.~Thiele, M.~Laumanns, C.~M. Fonseca, and V.~{Grunert da Fonseca},
   review,'' \emph{IEEE Transactions on Evolutionary Computation}, vol.~7,
   no.~2, pp. 117--132, 2003.
 
+\bibitem{ishibuchi2015modified}
+H.~Ishibuchi, H.~Masuda, Y.~Tanigaki, and Y.~Nojima, ``Modified distance
+  calculation in generational distance and inverted generational distance,'' in
+  \emph{Proc. Evolutionary Multi-Criterion Optimization (EMO)}, ser. Lecture
+  Notes in Computer Science, vol. 9019.\hskip 1em plus 0.5em minus 0.4em\relax
+  Springer, 2015, pp. 110--125.
+
 \bibitem{vargha2000critique}
 A.~Vargha and H.~D. Delaney, ``A critique and improvement of the {CL} common
   language effect size statistics of {McGraw} and {Wong},'' \emph{Journal of
