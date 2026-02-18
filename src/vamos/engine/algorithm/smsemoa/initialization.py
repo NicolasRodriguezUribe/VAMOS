@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.archives import resolve_external_archive, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -134,23 +134,10 @@ def initialize_smsemoa_run(
     ref_point, ref_offset, ref_adaptive = initialize_reference_point(F, ref_cfg)
 
     # Setup external archive
-    archive_size = resolve_archive_size(config) or 0
-    archive_X: np.ndarray | None = None
-    archive_F: np.ndarray | None = None
-    archive_manager = None
-
-    if archive_size > 0:
-        archive_type = config.get("archive_type", "hypervolume")
-        archive_X, archive_F, archive_manager = setup_archive(
-            kernel=kernel,
-            X=X,
-            F=F,
-            n_var=n_var,
-            n_obj=n_obj,
-            dtype=X.dtype,
-            archive_size=archive_size,
-            archive_type=archive_type,
-        )
+    ext_cfg = resolve_external_archive(config)
+    archive_X, archive_F, archive_manager = setup_archive(
+        kernel, X, F, n_var, n_obj, X.dtype, ext_cfg
+    )
 
     # Create state
     state = SMSEMOAState(
@@ -171,7 +158,7 @@ def initialize_smsemoa_run(
         crossover_fn=crossover_fn,
         mutation_fn=mutation_fn,
         # Archive
-        archive_size=archive_size,
+        archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
         archive_manager=archive_manager,

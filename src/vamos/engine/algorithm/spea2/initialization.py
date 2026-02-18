@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.archives import resolve_external_archive, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -104,9 +104,8 @@ def initialize_spea2_run(
     env_X, env_F, env_G = environmental_selection(X, F, G, env_archive_size, k_neighbors, constraint_mode)
 
     # Setup external archive (optional, separate from internal)
-    ext_archive_size = resolve_archive_size(cfg)
-    archive_type = cfg.get("archive_type", "crowding")
-    archive_X, archive_F, archive_manager = setup_archive(kernel, env_X, env_F, n_var, n_obj, X.dtype, ext_archive_size, archive_type)
+    ext_cfg = resolve_external_archive(cfg)
+    archive_X, archive_F, archive_manager = setup_archive(kernel, env_X, env_F, n_var, n_obj, X.dtype, ext_cfg)
 
     # Setup HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)
@@ -139,7 +138,7 @@ def initialize_spea2_run(
         generation=0,
         n_eval=n_eval,
         # External archive (from base class)
-        archive_size=ext_archive_size,
+        archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
         archive_manager=archive_manager,

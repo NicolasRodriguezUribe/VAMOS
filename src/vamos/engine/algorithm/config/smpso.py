@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from vamos.archive import ExternalArchiveConfig
 from .base import _SerializableConfig, _require_fields
 
 
@@ -22,8 +23,7 @@ class SMPSOConfig(_SerializableConfig):
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
     result_mode: str | None = None
-    archive: dict[str, Any] | None = None  # External archive for results
-    archive_type: str | None = None
+    external_archive: ExternalArchiveConfig | None = None
 
     @classmethod
     def default(
@@ -94,29 +94,16 @@ class _SMPSOConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def archive(self, size: int, **kwargs: Any) -> _SMPSOConfigBuilder:
-        """
-        Configure an external archive for result storage.
+    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _SMPSOConfigBuilder:
+        """Configure an external archive for result storage.
 
-        Note: This is separate from archive_size which is the internal SMPSO archive.
+        Note: This is separate from ``archive_size`` which is the internal SMPSO archive.
 
         Args:
-            size: Archive size (required). <= 0 disables the archive.
-            **kwargs: Optional configuration:
-                - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
-                - prune_policy: "crowding", "hv_contrib", "random"
-                - epsilon: Grid epsilon for epsilon_grid/hybrid types
+            capacity: Maximum number of solutions. ``None`` means unbounded.
+            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
-        if size <= 0:
-            self._cfg["archive"] = {"size": 0}
-            return self
-        archive_cfg = {"size": int(size), **kwargs}
-        self._cfg["archive"] = archive_cfg
-        return self
-
-    def external_archive_type(self, value: str) -> _SMPSOConfigBuilder:
-        """Set external archive pruning strategy."""
-        self._cfg["archive_type"] = str(value)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
         return self
 
     def build(self) -> SMPSOConfig:
@@ -138,6 +125,5 @@ class _SMPSOConfigBuilder:
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
-            archive=self._cfg.get("archive"),
-            archive_type=self._cfg.get("archive_type"),
+            external_archive=self._cfg.get("external_archive"),
         )

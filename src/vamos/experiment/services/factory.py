@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.factory import build_algorithm
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.foundation.problem.types import ProblemProtocol
@@ -13,8 +14,7 @@ def build_algorithm_from_spec(
     problem: ProblemProtocol,
     config: ExperimentConfig,
     *,
-    external_archive_size: int | None = None,
-    archive_type: str = "hypervolume",
+    external_archive: ExternalArchiveConfig | None = None,
     selection_pressure: int = 2,
     nsgaii_variation: VariationConfig | None = None,
     moead_variation: VariationConfig | None = None,
@@ -30,8 +30,7 @@ def build_algorithm_from_spec(
         engine_name,
         problem,
         config,
-        external_archive_size=external_archive_size,
-        archive_type=archive_type,
+        external_archive=external_archive,
         selection_pressure=selection_pressure,
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,

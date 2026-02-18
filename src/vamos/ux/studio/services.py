@@ -239,15 +239,21 @@ def run_with_history(
             builder.mutation_prob_factor(float(cfg["mutation_prob_factor"]))
         if cfg.get("result_mode") is not None:
             builder.result_mode(str(cfg["result_mode"]))
-        if cfg.get("archive_type") is not None:
-            builder.archive_type(str(cfg["archive_type"]))
-        if cfg.get("archive") is not None:
-            archive_cfg = cfg["archive"]
-            if not isinstance(archive_cfg, dict):
-                raise TypeError("archive must be a dict.")
-            size = int(archive_cfg.get("size", 0))
-            kwargs = {k: v for k, v in archive_cfg.items() if k != "size" and v is not None}
-            builder.archive(size, **kwargs)
+        if cfg.get("external_archive") is not None:
+            from vamos.archive import ExternalArchiveConfig
+            ext_cfg = cfg["external_archive"]
+            if isinstance(ext_cfg, dict):
+                builder.external_archive(**ext_cfg)
+            elif isinstance(ext_cfg, ExternalArchiveConfig):
+                builder.external_archive(
+                    capacity=ext_cfg.capacity,
+                    pruning=ext_cfg.pruning,
+                    archive_type=ext_cfg.archive_type,
+                    nondominated_only=ext_cfg.nondominated_only,
+                    epsilon=ext_cfg.epsilon,
+                )
+            else:
+                raise TypeError("external_archive must be a dict or ExternalArchiveConfig.")
         if cfg.get("constraint_mode") is not None:
             builder.constraint_mode(str(cfg["constraint_mode"]))
         if cfg.get("track_genealogy") is not None:

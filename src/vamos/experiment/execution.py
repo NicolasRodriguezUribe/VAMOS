@@ -35,6 +35,7 @@ from vamos.hooks import (
     LiveVisualization,
 )
 from vamos.hooks.config_parse import parse_stopping_archive
+from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.config.spec import ExperimentSpec, SpecBlock
 from vamos.engine.config.variation import VariationConfig
@@ -136,8 +137,7 @@ def run_single(
     algorithm: Any,
     cfg_data: AlgorithmConfigProtocol,
     problem: Any | None = None,
-    external_archive_size: int | None = None,
-    archive_type: str = "hypervolume",
+    external_archive: ExternalArchiveConfig | None = None,
     selection_pressure: int = 2,
     nsgaii_variation: VariationConfig | None = None,
     moead_variation: VariationConfig | None = None,
@@ -208,7 +208,7 @@ def run_single(
         problem_override=problem_override,
         hv_stop_config=hv_stop_config,
         selection_pressure=selection_pressure,
-        external_archive_size=external_archive_size,
+        external_archive=external_archive,
         variations=variations,
     )
     observers.append(storage)
@@ -419,7 +419,7 @@ def execute_problem_suite(
                     algorithm_name,
                     problem_selection,
                     config,
-                    external_archive_size=args.external_archive_size,
+                    external_archive=args.external_archive,
                     selection_pressure=args.selection_pressure,
                     nsgaii_variation=nsgaii_variation,
                     moead_variation=getattr(args, "moead_variation", None),
@@ -460,7 +460,7 @@ def execute_problem_suite(
                     algorithm_name,
                     problem_selection,
                     config,
-                    external_archive_size=args.external_archive_size,
+                    external_archive=args.external_archive,
                     selection_pressure=args.selection_pressure,
                     nsgaii_variation=nsgaii_variation,
                     moead_variation=getattr(args, "moead_variation", None),
