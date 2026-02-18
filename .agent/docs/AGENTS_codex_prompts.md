@@ -186,21 +186,37 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 
 ---
 
-## 11. Align tests and markers
+## 11. Build ablation planning pipelines
 
-**Prompt 11 - Add/adjust tests with markers**
+**Prompt 11 - Ablation variants and task grid**
 
-> You are in the VAMOS repo. Follow the rules.  
-> Goal: add or adjust tests while keeping the layered layout and markers consistent.  
-> Tasks:  
-> - Place new tests under the appropriate layer folder (`tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, or `tests/integration`).  
-> - Apply markers: `smoke` for fast critical checks, `slow` for heavy runs, `backends` (or `numba`/`moocore`) for optional backends, `notebooks`/`examples` when relevant.  
-> - Update `pyproject.toml` markers if new ones are introduced and mention any CI invocation changes (e.g., `pytest -m "smoke"`).  
-> - Provide diffs and commands for running the relevant subsets.  
+> You are in the VAMOS repo. Follow `.agent/docs/AGENTS.md` / `.agent/docs/AGENTS_tasks.md`.
+> Goal: define ablation variants and create a reproducible task grid for component contribution analysis.
+> Tasks:
+> - Define `AblationVariant` entries with `config_overrides` (same algorithm, toggled components) under `src/vamos/engine/tuning/ablation/`.
+> - Build the plan with `build_ablation_plan` (problems x variants x seeds x budgets).
+> - Convert plan tasks to `StudyTask` and execute via `run_study` or `StudyRunner` in `src/vamos/experiment/study/`.
+> - Summarize contributions with deltas vs the baseline variant (median across seeds).
+> - Avoid experiment-layer imports inside `engine/tuning/ablation/`.
+> Provide diffs/new files and a usage snippet showing the ablation plan and execution.
 
 ---
 
-## 12. QA/self-review prompt
+## 12. Align tests and markers
+
+**Prompt 12 - Add/adjust tests with markers**
+
+> You are in the VAMOS repo. Follow the rules.
+> Goal: add or adjust tests while keeping the layered layout and markers consistent.
+> Tasks:
+> - Place new tests under the appropriate layer folder (`tests/foundation`, `tests/engine`, `tests/experiment`, `tests/ux`, or `tests/integration`).
+> - Apply markers: `smoke` for fast critical checks, `slow` for heavy runs, `backends` (or `numba`/`moocore`) for optional backends, `notebooks`/`examples` when relevant.
+> - Update `pyproject.toml` markers if new ones are introduced and mention any CI invocation changes (e.g., `pytest -m "smoke"`).
+> - Provide diffs and commands for running the relevant subsets.
+
+---
+
+## 13. QA/self-review prompt
 
 > You have just modified several files in the VAMOS repository.
 >

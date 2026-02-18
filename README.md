@@ -24,12 +24,23 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 pip install vamos
 ```
 
-For development and extras:
+For development and extras (Windows PowerShell):
 
 ```powershell
 # Create virtual environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+
+# Install core + essential extras
+pip install "vamos[compute,research,analysis]"
+```
+
+For development and extras (Linux / macOS):
+
+```bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate
 
 # Install core + essential extras
 pip install "vamos[compute,research,analysis]"
@@ -45,15 +56,6 @@ pip install "vamos[tuning]"
 
 ```bash
 pip install "smac>=2.0"
-```
-
-```bash
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
-# Install core + essential extras
-pip install "vamos[compute,research,analysis]"
 ```
 
 ## ⚡ Quickstart
@@ -239,12 +241,18 @@ Reminder: plain dict configs are intentionally not accepted (use `GenericAlgorit
 VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
 
 - **0. Basic**: Essential concepts and API basics.
-  - `notebooks/0_basic/01_quickstart.ipynb`
+  - `notebooks/0_basic/01_quickstart.ipynb` -- First optimization run
+  - `notebooks/0_basic/05_interactive_tutorial.ipynb` -- Guided hands-on walkthrough
 - **1. Intermediate**: Real-world problems, constraints, and deeper analysis.
-  - `notebooks/1_intermediate/10_discrete_problems.ipynb`
-  - `notebooks/1_intermediate/16_interactive_explorer.ipynb`
-- **2. Advanced**: Custom extensions, distributed evaluation, and research benchmarks.
-  - `notebooks/2_advanced/30_paper_benchmarking.ipynb`
+  - `notebooks/1_intermediate/10_discrete_problems.ipynb` -- Binary, integer, and permutation encodings
+  - `notebooks/1_intermediate/11_constrained_optimization.ipynb` -- Constraint handling
+  - `notebooks/1_intermediate/15_mcdm.ipynb` -- Multi-criteria decision making
+  - `notebooks/1_intermediate/16_interactive_explorer.ipynb` -- Interactive Pareto front explorer
+- **2. Advanced**: Custom extensions, tuning, and research benchmarks.
+  - `notebooks/2_advanced/20_hyperparameter_tuning.ipynb` -- Algorithm tuning
+  - `notebooks/2_advanced/30_paper_benchmarking.ipynb` -- Publication-ready benchmarks
+  - `notebooks/2_advanced/31_adaptive_operator_selection.ipynb` -- AOS analysis
+  - `notebooks/2_advanced/32_ablation_planning.ipynb` -- Ablation studies
 
 ## 🛠️ Tooling Ecosystem
 
