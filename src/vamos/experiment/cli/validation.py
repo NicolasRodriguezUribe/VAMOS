@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.foundation.problem.resolver import resolve_reference_front_path
 from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS
 
@@ -50,6 +51,12 @@ def finalize_args(
         parser.error("--selection-pressure must be a positive integer.")
     if args.external_archive_size is not None and args.external_archive_size <= 0:
         parser.error("--external-archive-size must be a positive integer.")
+    # Convert raw CLI value to ExternalArchiveConfig
+    args.external_archive = (
+        ExternalArchiveConfig(capacity=args.external_archive_size)
+        if args.external_archive_size is not None
+        else None
+    )
     if args.max_evaluations <= 0:
         parser.error("--max-evaluations must be a positive integer.")
     if args.n_workers is not None and args.n_workers <= 0:

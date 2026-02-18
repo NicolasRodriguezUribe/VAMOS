@@ -5,7 +5,10 @@ Algorithm-specific builder helpers to keep the factory slim.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import asdict
 from typing import Any, cast
+
+from vamos.archive import ExternalArchiveConfig
 
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.kernel.backend import KernelBackend
@@ -43,8 +46,7 @@ def build_nsgaii_algorithm(
     pop_size: int,
     offspring_size: int,
     selection_pressure: int,
-    external_archive_size: int | None,
-    archive_type: str,
+    external_archive: ExternalArchiveConfig | None,
     nsgaii_variation: dict[str, Any] | None,
     track_genealogy: bool,
 ) -> tuple[Any, AlgorithmConfigProtocol]:
@@ -87,9 +89,8 @@ def build_nsgaii_algorithm(
     if replacement_size is not None:
         builder.replacement_size(_as_int(replacement_size))
 
-    if external_archive_size:
-        builder.archive(external_archive_size)
-        builder.archive_type(archive_type)
+    if external_archive is not None:
+        builder.external_archive(**asdict(external_archive))
     if track_genealogy:
         builder.track_genealogy(True)
 
@@ -240,7 +241,7 @@ def build_spea2_algorithm(
     problem: ProblemProtocol,
     pop_size: int,
     selection_pressure: int,
-    external_archive_size: int | None,
+    external_archive: ExternalArchiveConfig | None,
     spea2_variation: dict[str, Any] | None,
 ) -> tuple[Any, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
@@ -252,7 +253,10 @@ def build_spea2_algorithm(
     builder = SPEA2Config.builder()
     builder.pop_size(pop_size)
     archive_override = var_cfg.get("archive_size")
-    builder.archive_size(_as_int(archive_override) if archive_override is not None else (external_archive_size or pop_size))
+    ext_capacity = external_archive.capacity if external_archive is not None and external_archive.capacity is not None else None
+    builder.archive_size(_as_int(archive_override) if archive_override is not None else (ext_capacity or pop_size))
+    if external_archive is not None:
+        builder.external_archive(**asdict(external_archive))
     if "k_neighbors" in var_cfg and var_cfg["k_neighbors"] is not None:
         builder.k_neighbors(_as_int(var_cfg["k_neighbors"]))
 
@@ -331,7 +335,7 @@ def build_smpso_algorithm(
     kernel: KernelBackend,
     problem: ProblemProtocol,
     pop_size: int,
-    external_archive_size: int | None,
+    external_archive: ExternalArchiveConfig | None,
     smpso_variation: dict[str, Any] | None,
 ) -> tuple[Any, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
@@ -343,7 +347,10 @@ def build_smpso_algorithm(
     )
     builder = SMPSOConfig.builder()
     builder.pop_size(pop_size)
-    builder.archive_size(pop_size if external_archive_size is None else external_archive_size)
+    ext_capacity = external_archive.capacity if external_archive is not None and external_archive.capacity is not None else None
+    builder.archive_size(pop_size if ext_capacity is None else ext_capacity)
+    if external_archive is not None:
+        builder.external_archive(**asdict(external_archive))
     m_name, m_kwargs = ensure_operator_tuple(
         mut_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
         key="mutation",

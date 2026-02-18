@@ -120,20 +120,19 @@ def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:
 
     use_external_archive = bool(assignment.get("use_external_archive", False))
     if use_external_archive:
-        archive_type_raw = assignment.get("archive_type", "hypervolume")
+        archive_type_raw = assignment.get("archive_type", "size_cap")
         archive_unbounded = bool(assignment.get("archive_unbounded", False))
         if str(archive_type_raw).strip().lower() == "unbounded":
             archive_unbounded = True
         if archive_unbounded:
-            builder.archive(pop_size, unbounded=True)
+            builder.external_archive(capacity=None)
         else:
             archive_type = str(archive_type_raw)
             archive_size_factor = int(assignment.get("archive_size_factor", 1))
             if archive_size_factor < 1:
                 raise ValueError("archive_size_factor must be >= 1.")
             archive_size = max(pop_size, pop_size * archive_size_factor)
-            builder.archive_type(archive_type)
-            builder.archive(archive_size)
+            builder.external_archive(capacity=archive_size, archive_type=archive_type)
 
     return builder.build()
 
@@ -198,14 +197,13 @@ def _build_moead_permutation_config(assignment: dict[str, Any]) -> MOEADConfig:
 
     use_external_archive = bool(assignment.get("use_external_archive", False))
     if use_external_archive:
-        archive_type = str(assignment.get("archive_type", "crowding"))
+        archive_type = str(assignment.get("archive_type", "size_cap"))
         archive_size_factor = int(assignment.get("archive_size_factor", 1))
         if archive_size_factor < 1:
             raise ValueError("archive_size_factor must be >= 1.")
         pop_size = int(assignment["pop_size"])
         archive_size = max(pop_size, pop_size * archive_size_factor)
-        builder.archive_type(archive_type)
-        builder.archive(archive_size)
+        builder.external_archive(capacity=archive_size, archive_type=archive_type)
 
     return builder.build()
 
@@ -358,10 +356,10 @@ def _build_agemoea_config(assignment: dict[str, Any]) -> AGEMOEAConfig:
             raise ValueError("archive_size_factor must be >= 1.")
         archive_size = max(pop_size, pop_size * archive_size_factor)
         epsilon = float(assignment.get("archive_epsilon", 0.01))
-        builder.archive(
-            archive_size,
+        builder.external_archive(
+            capacity=archive_size,
             archive_type=archive_type,
-            prune_policy=prune_policy,
+            pruning=prune_policy,
             epsilon=epsilon,
         )
 
@@ -424,10 +422,10 @@ def _build_rvea_config(assignment: dict[str, Any]) -> RVEAConfig:
             raise ValueError("archive_size_factor must be >= 1.")
         archive_size = max(pop_size, pop_size * archive_size_factor)
         epsilon = float(assignment.get("archive_epsilon", 0.01))
-        builder.archive(
-            archive_size,
+        builder.external_archive(
+            capacity=archive_size,
             archive_type=archive_type,
-            prune_policy=prune_policy,
+            pruning=prune_policy,
             epsilon=epsilon,
         )
 

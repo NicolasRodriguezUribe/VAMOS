@@ -244,18 +244,23 @@ def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, pr
 
 
 def _build_archive(config: dict[str, Any], seed: int) -> Any:
+    from vamos.archive import ExternalArchiveConfig
     from vamos.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
 
-    archive_cfg = config.get("archive")
-    if not archive_cfg or archive_cfg.get("size", 0) <= 0:
+    ext_cfg = config.get("external_archive")
+    if ext_cfg is None:
+        return None
+    if isinstance(ext_cfg, dict):
+        ext_cfg = ExternalArchiveConfig(**ext_cfg)
+    if ext_cfg.capacity is None or ext_cfg.capacity <= 0:
         return None
     bac = BoundedArchiveConfig(
-        size_cap=int(archive_cfg["size"]),
-        archive_type=archive_cfg.get("archive_type", "size_cap"),
-        prune_policy=archive_cfg.get("prune_policy", "crowding"),
-        epsilon=float(archive_cfg.get("epsilon", 0.01)),
+        size_cap=ext_cfg.capacity,
+        archive_type=ext_cfg.archive_type,
+        prune_policy=ext_cfg.pruning,
+        epsilon=ext_cfg.epsilon,
         rng_seed=seed,
-        nondominated_only=True,
+        nondominated_only=ext_cfg.nondominated_only,
     )
     return BoundedArchive(bac)
 

@@ -23,11 +23,11 @@ from vamos.problems import ZDT1
 from vamos.algorithms import NSGAIIConfig
 
 
-def build_config(archive_type: str = "hypervolume") -> NSGAIIConfig:
+def build_config(pruning: str = "hv_contrib") -> NSGAIIConfig:
     """
     Configure NSGA-II with an external archive.
 
-    archive_type: "hypervolume" (default, prefers high HV) or "crowding" (spread)
+    pruning: "hv_contrib" (default, prefers high HV) or "crowding" (spread)
     """
     return (
         NSGAIIConfig.builder()
@@ -36,15 +36,14 @@ def build_config(archive_type: str = "hypervolume") -> NSGAIIConfig:
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .archive(100)
-        .archive_type(archive_type)
+        .external_archive(capacity=100, pruning=pruning)
         .build()
     )
 
 
 def main() -> None:
     problem = ZDT1(n_var=30)
-    cfg = build_config(archive_type="hypervolume")
+    cfg = build_config(pruning="hv_contrib")
 
     result = optimize(
         problem,
@@ -62,11 +61,12 @@ def main() -> None:
 
     print(f"Population size: {len(F)}")
     if archive_F is not None:
-        print(f"Archive size ({cfg.archive_type or 'hypervolume'}): {len(archive_F)}")
+        ea = cfg.external_archive
+        print(f"Archive size ({ea.pruning if ea else 'hv_contrib'}): {len(archive_F)}")
         hv_best_idx = int(np.argmin(archive_F[:, 0] + archive_F[:, 1]))
         print("Best archived objectives (sum-min heuristic):", archive_F[hv_best_idx])
     else:
-        print("No archive returned. Check archive_size and archive_type.")
+        print("No archive returned. Check external_archive config.")
 
     try:
         import matplotlib.pyplot as plt

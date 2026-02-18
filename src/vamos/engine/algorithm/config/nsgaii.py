@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from vamos.archive import ExternalArchiveConfig
 from .base import _SerializableConfig, _require_fields
 
 
@@ -85,31 +86,19 @@ class _NSGAIIConfigBuilder:
         self._cfg["result_mode"] = mode
         return self
 
-    def archive_type(self, value: str) -> _NSGAIIConfigBuilder:
-        """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
-        self._cfg["archive_type"] = str(value)
-        return self
-
-    def archive(self, size: int, **kwargs: Any) -> _NSGAIIConfigBuilder:
-        """
-        Configure an external archive.
+    def external_archive(
+        self,
+        capacity: int | None = None,
+        **kwargs: Any,
+    ) -> _NSGAIIConfigBuilder:
+        """Configure an external archive.
 
         Args:
-            size: Archive size (required). <= 0 disables the archive.
-            **kwargs: Optional configuration:
-                - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
-                - prune_policy: "crowding", "hv_contrib", "random"
-                - epsilon: Grid epsilon for epsilon_grid/hybrid types
-
-        Notes:
-            This method configures archive storage only. It does not change
-            ``result_mode``.
+            capacity: Maximum number of solutions. ``None`` means unbounded.
+            **kwargs: Forwarded to :class:`ExternalArchiveConfig`
+                (e.g. ``pruning``, ``archive_type``, ``epsilon``).
         """
-        if size <= 0:
-            self._cfg["archive"] = {"size": 0}
-            return self
-        archive_cfg = {"size": int(size), **kwargs}
-        self._cfg["archive"] = archive_cfg
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
         return self
 
     def constraint_mode(self, value: str) -> _NSGAIIConfigBuilder:
@@ -159,7 +148,6 @@ class _NSGAIIConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection"),
             "NSGA-II",
         )
-        archive_cfg = self._cfg.get("archive")
         return NSGAIIConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
@@ -169,11 +157,10 @@ class _NSGAIIConfigBuilder:
             steady_state=bool(self._cfg.get("steady_state", False)),
             replacement_size=self._cfg.get("replacement_size"),
             repair=self._cfg.get("repair"),
-            archive=archive_cfg,
+            external_archive=self._cfg.get("external_archive"),
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
-            archive_type=self._cfg.get("archive_type"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             adaptive_operator_selection=self._cfg.get("adaptive_operator_selection"),
@@ -195,11 +182,10 @@ class NSGAIIConfig(_SerializableConfig):
     steady_state: bool = False
     replacement_size: int | None = None
     repair: tuple[str, dict[str, Any]] | None = None
-    archive: dict[str, Any] | None = None
+    external_archive: ExternalArchiveConfig | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     result_mode: str | None = None
-    archive_type: str | None = None
     constraint_mode: str = "feasibility"
     track_genealogy: bool = False
     adaptive_operator_selection: dict[str, Any] | None = None

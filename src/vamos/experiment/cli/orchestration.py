@@ -6,6 +6,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from typing import TypeVar, cast
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.engine.config.variation import VariationOverrides, merge_variation_overrides
 from vamos.engine.config.spec import ExperimentSpec, ProblemOverrides, SpecBlock
 from vamos.foundation.core.experiment_config import ExperimentConfig
@@ -83,7 +84,11 @@ def run_from_args(
             if override.get(key) is not None:
                 setattr(effective_args, key, override[key])
         effective_args.selection_pressure = override.get("selection_pressure", args.selection_pressure)
-        effective_args.external_archive_size = override.get("external_archive_size", args.external_archive_size)
+        _ea_override = override.get("external_archive_size")
+        if _ea_override is not None:
+            effective_args.external_archive = ExternalArchiveConfig(capacity=int(str(_ea_override)))
+        else:
+            effective_args.external_archive = getattr(args, "external_archive", None)
         effective_args.hv_threshold = override.get("hv_threshold", args.hv_threshold)
         effective_args.hv_reference_front = override.get("hv_reference_front", args.hv_reference_front)
         effective_args.n_var = override.get("n_var", args.n_var)
