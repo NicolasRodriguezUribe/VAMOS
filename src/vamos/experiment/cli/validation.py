@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import logging
 
 from vamos.archive import ExternalArchiveConfig
+from vamos.foundation.core.experiment_config import EXPERIMENT_TYPES
 from vamos.foundation.problem.resolver import resolve_reference_front_path
 from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS
 
-from .common import _normalize_operator_args, collect_nsgaii_variation_args
+from .common import _collect_generic_variation, _normalize_operator_args, collect_nsgaii_variation_args
 from .types import SpecDefaults
 
 
@@ -33,8 +35,8 @@ def finalize_args(
             parser.error("--problem-set is not available because no presets are registered.")
         if args.problem_set not in PROBLEM_SET_PRESETS:
             parser.error(f"--problem-set must be one of: {', '.join(sorted(PROBLEM_SET_PRESETS))}.")
-    if getattr(args, "experiment", None) is not None and args.experiment not in ("backends",):
-        parser.error("--experiment must be one of: backends.")
+    if getattr(args, "experiment", None) is not None and args.experiment not in EXPERIMENT_TYPES:
+        parser.error(f"--experiment must be one of: {', '.join(EXPERIMENT_TYPES)}.")
 
     if args.population_size <= 0:
         parser.error("--population-size must be a positive integer.")
@@ -78,9 +80,29 @@ def finalize_args(
     elif args.hv_reference_front:
         parser.error("--hv-reference-front requires --hv-threshold to be set.")
 
+    # Warn when algorithm-specific args don't match the selected algorithm
+    _algo = getattr(args, "algorithm", None)
+    if _algo and _algo != "both":
+        _prefixes = {
+            "nsgaii": "nsgaii_", "moead": "moead_", "smsemoa": "smsemoa_",
+            "nsgaiii": "nsgaiii_", "spea2": "spea2_", "ibea": "ibea_",
+            "smpso": "smpso_", "agemoea": "agemoea_", "rvea": "rvea_",
+        }
+        for algo_key, prefix in _prefixes.items():
+            if algo_key == _algo:
+                continue
+            for attr_name in vars(args):
+                if attr_name.startswith(prefix) and getattr(args, attr_name, None) is not None:
+                    logging.getLogger(__name__).warning(
+                        "Ignoring --%s (selected algorithm is '%s').",
+                        attr_name.replace("_", "-"), _algo,
+                    )
+
     args.nsgaii_variation = collect_nsgaii_variation_args(args)
     args.spea2_variation = spec_defaults.experiment_defaults.get("spea2", {})
     args.ibea_variation = spec_defaults.experiment_defaults.get("ibea", {})
     args.smpso_variation = spec_defaults.experiment_defaults.get("smpso", {})
+    args.agemoea_variation = _collect_generic_variation(args, "agemoea")
+    args.rvea_variation = _collect_generic_variation(args, "rvea")
 
     return args

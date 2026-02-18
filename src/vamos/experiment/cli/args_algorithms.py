@@ -276,3 +276,85 @@ def add_algorithm_arguments(
         default=_as_int(nsgaiii_mutation.get("step")),
         help="Integer creep step for NSGA-III (real encoding).",
     )
+
+    # ── AGE-MOEA ─────────────────────────────────────────────────────────
+    agemoea_defaults = spec_defaults.agemoea_defaults
+    agemoea_crossover = _as_block(agemoea_defaults.get("crossover"))
+    agemoea_mutation = _as_block(agemoea_defaults.get("mutation"))
+
+    parser.add_argument(
+        "--agemoea-crossover",
+        choices=("sbx", "blx_alpha"),
+        default=_as_str(agemoea_crossover.get("method")),
+        help="Crossover method for AGE-MOEA (default: sbx).",
+    )
+    parser.add_argument(
+        "--agemoea-crossover-prob",
+        default=_as_float(agemoea_crossover.get("prob")),
+        help="Crossover probability for AGE-MOEA.",
+    )
+    parser.add_argument(
+        "--agemoea-crossover-eta",
+        type=float,
+        default=_as_float(agemoea_crossover.get("eta")),
+        help="SBX eta for AGE-MOEA (real encoding).",
+    )
+    parser.add_argument(
+        "--agemoea-mutation",
+        choices=("pm", "non_uniform"),
+        default=_as_str(agemoea_mutation.get("method")),
+        help="Mutation method for AGE-MOEA (default: pm).",
+    )
+    parser.add_argument(
+        "--agemoea-mutation-prob",
+        type=str,
+        default=_as_str(agemoea_mutation.get("prob")),
+        help="Mutation probability for AGE-MOEA (allow expressions like 1/n).",
+    )
+    parser.add_argument(
+        "--agemoea-mutation-eta",
+        type=float,
+        default=_as_float(agemoea_mutation.get("eta")),
+        help="Polynomial mutation eta for AGE-MOEA.",
+    )
+
+    # ── RVEA ─────────────────────────────────────────────────────────────
+    rvea_defaults = spec_defaults.rvea_defaults
+    rvea_crossover = _as_block(rvea_defaults.get("crossover"))
+    rvea_mutation = _as_block(rvea_defaults.get("mutation"))
+
+    parser.add_argument(
+        "--rvea-crossover",
+        choices=("sbx", "blx_alpha"),
+        default=_as_str(rvea_crossover.get("method")),
+        help="Crossover method for RVEA (default: sbx).",
+    )
+    parser.add_argument(
+        "--rvea-crossover-prob",
+        default=_as_float(rvea_crossover.get("prob")),
+        help="Crossover probability for RVEA.",
+    )
+    parser.add_argument(
+        "--rvea-crossover-eta",
+        type=float,
+        default=_as_float(rvea_crossover.get("eta")),
+        help="SBX eta for RVEA (real encoding).",
+    )
+    parser.add_argument(
+        "--rvea-mutation",
+        choices=("pm", "non_uniform"),
+        default=_as_str(rvea_mutation.get("method")),
+        help="Mutation method for RVEA (default: pm).",
+    )
+    parser.add_argument(
+        "--rvea-mutation-prob",
+        type=str,
+        default=_as_str(rvea_mutation.get("prob")),
+        help="Mutation probability for RVEA (allow expressions like 1/n).",
+    )
+    parser.add_argument(
+        "--rvea-mutation-eta",
+        type=float,
+        default=_as_float(rvea_mutation.get("eta")),
+        help="Polynomial mutation eta for RVEA.",
+    )

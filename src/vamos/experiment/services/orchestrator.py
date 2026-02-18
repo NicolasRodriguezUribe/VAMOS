@@ -26,6 +26,8 @@ def run_single(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     hv_stop_config: dict[str, object] | None = None,
     evaluator: object | None = None,
     termination: tuple[str, object] | None = None,
@@ -45,6 +47,8 @@ def run_single(
         spea2_variation,
         ibea_variation,
         smpso_variation,
+        agemoea_variation,
+        rvea_variation,
     ) = normalize_variations(
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
@@ -53,6 +57,8 @@ def run_single(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        agemoea_variation=agemoea_variation,
+        rvea_variation=rvea_variation,
     )
     algorithm, cfg_data = build_algorithm_from_spec(
         algorithm_name,
@@ -68,6 +74,8 @@ def run_single(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        agemoea_variation=agemoea_variation,
+        rvea_variation=rvea_variation,
         track_genealogy=track_genealogy,
     )
     return execute_run_single(
@@ -87,6 +95,8 @@ def run_single(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        agemoea_variation=agemoea_variation,
+        rvea_variation=rvea_variation,
         hv_stop_config=hv_stop_config,
         evaluator=evaluator,
         termination=termination,

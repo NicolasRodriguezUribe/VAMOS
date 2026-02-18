@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.archive import ExternalArchiveConfig
-from .base import _SerializableConfig, _require_fields
+from .base import ConstraintModeStr, ResultMode, _SerializableConfig, _require_fields
 
 
 class _AGEMOEAConfigBuilder:
@@ -94,9 +94,9 @@ class AGEMOEAConfig(_SerializableConfig):
     repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
-    constraint_mode: str = "feasibility"
+    constraint_mode: ConstraintModeStr = "feasibility"
     track_genealogy: bool = False
-    result_mode: str | None = None
+    result_mode: ResultMode | None = None
     external_archive: ExternalArchiveConfig | None = None
 
     @classmethod

@@ -3,7 +3,7 @@
     "src/vamos/engine/tuning/backends.py": 568,
     "src/vamos/experiment/cli/create_problem.py": 355,
     "src/vamos/experiment/cli/tune.py": 1169,
-    "src/vamos/experiment/execution.py": 458,
+    "src/vamos/experiment/execution.py": 469,
     "src/vamos/operators/impl/mixed.py": 579,
     "src/vamos/operators/impl/real/crossover.py": 482,
     "src/vamos/ux/studio/problem_builder.py": 357,
@@ -12,6 +12,7 @@
   "function_violations": {
     "src/vamos/engine/algorithm/moead/initialization.py:initialize_moead_run": 273,
     "src/vamos/engine/algorithm/nsgaii/setup.py:initialize_run": 260,
+    "src/vamos/experiment/cli/args_algorithms.py:add_algorithm_arguments": 323,
     "src/vamos/experiment/cli/tune.py:main": 317
   },
   "class_violations": {

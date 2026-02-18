@@ -14,6 +14,7 @@ from vamos.foundation.core.execution import execute_algorithm
 from vamos.foundation.core.experiment_config import (
     ENABLED_ALGORITHMS,
     EXPERIMENT_BACKENDS,
+    EXPERIMENT_TYPES,
     EXTERNAL_ALGORITHM_NAMES,
     OPTIONAL_ALGORITHMS,
     ExperimentConfig,
@@ -146,6 +147,8 @@ def run_single(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     hv_stop_config: dict[str, Any] | None = None,
     evaluator: Any | None = None,
     termination: tuple[str, Any] | None = None,
@@ -199,6 +202,8 @@ def run_single(
         "spea2_variation": spea2_variation,
         "ibea_variation": ibea_variation,
         "smpso_variation": smpso_variation,
+        "agemoea_variation": agemoea_variation,
+        "rvea_variation": rvea_variation,
     }
 
     storage = StorageObserver(
@@ -368,6 +373,8 @@ def execute_problem_suite(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     include_external: bool = False,
     config_source: str | None = None,
     config_spec: ExperimentSpec | None = None,
@@ -380,7 +387,7 @@ def execute_problem_suite(
     from vamos.experiment import external  # local import to keep runner decoupled
 
     engines: Iterable[str | None]
-    if args.experiment == "backends":
+    if args.experiment in EXPERIMENT_TYPES:
         engines = EXPERIMENT_BACKENDS
     else:
         engines = (getattr(args, "engine", None),)
@@ -428,6 +435,8 @@ def execute_problem_suite(
                     spea2_variation=getattr(args, "spea2_variation", None),
                     ibea_variation=getattr(args, "ibea_variation", None),
                     smpso_variation=getattr(args, "smpso_variation", None),
+                    agemoea_variation=getattr(args, "agemoea_variation", None),
+                    rvea_variation=getattr(args, "rvea_variation", None),
                     hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                     config_source=config_source,
                     config_spec=config_spec,
@@ -438,7 +447,7 @@ def execute_problem_suite(
                 )
             except ImportError as exc:
                 # Backends experiment should be resilient to missing optional deps.
-                if args.experiment == "backends" and f"Kernel '{engine_name}' requires" in str(exc):
+                if args.experiment in EXPERIMENT_TYPES and f"Kernel '{engine_name}' requires" in str(exc):
                     _logger().warning("Skipping engine '%s': %s", engine_name, exc)
                     continue
                 raise
@@ -469,6 +478,8 @@ def execute_problem_suite(
                     spea2_variation=getattr(args, "spea2_variation", None),
                     ibea_variation=getattr(args, "ibea_variation", None),
                     smpso_variation=getattr(args, "smpso_variation", None),
+                    agemoea_variation=getattr(args, "agemoea_variation", None),
+                    rvea_variation=getattr(args, "rvea_variation", None),
                     hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                     config_source=config_source,
                     config_spec=config_spec,
@@ -478,7 +489,7 @@ def execute_problem_suite(
                     live_viz=live_viz,
                 )
             except ImportError as exc:
-                if args.experiment == "backends" and f"Kernel '{engine_name}' requires" in str(exc):
+                if args.experiment in EXPERIMENT_TYPES and f"Kernel '{engine_name}' requires" in str(exc):
                     _logger().warning("Skipping engine '%s': %s", engine_name, exc)
                     continue
                 raise

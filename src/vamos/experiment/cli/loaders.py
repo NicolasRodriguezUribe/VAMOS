@@ -29,6 +29,11 @@ def load_spec_defaults(config_path: str | None) -> SpecDefaults:
     moead_defaults: SpecBlock = {}
     smsemoa_defaults: SpecBlock = {}
     nsgaiii_defaults: SpecBlock = {}
+    spea2_defaults: SpecBlock = {}
+    ibea_defaults: SpecBlock = {}
+    smpso_defaults: SpecBlock = {}
+    agemoea_defaults: SpecBlock = {}
+    rvea_defaults: SpecBlock = {}
     if config_path:
         raw = load_experiment_spec(config_path)
         if raw is None:
@@ -75,6 +80,20 @@ def load_spec_defaults(config_path: str | None) -> SpecDefaults:
         if not isinstance(nsgaiii_raw, dict):
             raise ValueError("Experiment spec 'defaults.nsgaiii' must be a mapping when provided.")
         nsgaiii_defaults = cast(SpecBlock, nsgaiii_raw)
+
+        def _algo_defaults(key: str) -> SpecBlock:
+            raw = experiment_defaults.get(key, {})
+            if raw is None:
+                raw = {}
+            if not isinstance(raw, dict):
+                raise ValueError(f"Experiment spec 'defaults.{key}' must be a mapping when provided.")
+            return cast(SpecBlock, raw)
+
+        spea2_defaults = _algo_defaults("spea2")
+        ibea_defaults = _algo_defaults("ibea")
+        smpso_defaults = _algo_defaults("smpso")
+        agemoea_defaults = _algo_defaults("agemoea")
+        rvea_defaults = _algo_defaults("rvea")
     return SpecDefaults(
         spec=spec,
         problem_overrides=problem_overrides,
@@ -83,4 +102,9 @@ def load_spec_defaults(config_path: str | None) -> SpecDefaults:
         moead_defaults=moead_defaults,
         smsemoa_defaults=smsemoa_defaults,
         nsgaiii_defaults=nsgaiii_defaults,
+        spea2_defaults=spea2_defaults,
+        ibea_defaults=ibea_defaults,
+        smpso_defaults=smpso_defaults,
+        agemoea_defaults=agemoea_defaults,
+        rvea_defaults=rvea_defaults,
     )

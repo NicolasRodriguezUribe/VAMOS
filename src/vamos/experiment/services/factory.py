@@ -23,6 +23,8 @@ def build_algorithm_from_spec(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     track_genealogy: bool = False,
 ) -> tuple[object, AlgorithmConfigProtocol]:
     return build_algorithm(
@@ -39,5 +41,7 @@ def build_algorithm_from_spec(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        agemoea_variation=agemoea_variation,
+        rvea_variation=rvea_variation,
         track_genealogy=track_genealogy,
     )
