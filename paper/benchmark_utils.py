@@ -109,8 +109,41 @@ def compute_hv(F, problem_name: str) -> float:
     return hv / hv_ref if hv_ref > 0.0 else 0.0
 
 
+def compute_igd_plus(F, problem_name: str) -> float:
+    """Compute IGD+ using a fixed reference front.
+
+    Returns the IGD+ value (lower is better).  Uses moocore if available,
+    otherwise falls back to a pure-NumPy implementation.
+    """
+    if F is None:
+        return float("nan")
+    F_arr = np.asarray(F, dtype=float)
+    if F_arr.ndim != 2 or F_arr.size == 0:
+        return float("inf")
+
+    front = pareto_filter(F_arr)
+    if front is None or front.size == 0:
+        return float("inf")
+
+    ref_front = _load_reference_front(problem_name)
+
+    try:
+        import moocore
+        return float(moocore.igd_plus(front, ref=ref_front, maximise=False))
+    except ImportError:
+        pass
+
+    # Pure-NumPy fallback: IGD+ = mean over ref points of min modified distance
+    # Modified distance: max(f_i - r_i, 0) for each objective
+    diffs = front[np.newaxis, :, :] - ref_front[:, np.newaxis, :]  # (R, N, m)
+    diffs = np.maximum(diffs, 0.0)
+    dists = np.sqrt((diffs ** 2).sum(axis=2))  # (R, N)
+    return float(dists.min(axis=1).mean())
+
+
 __all__ = [
     "compute_hv",
+    "compute_igd_plus",
     "_load_reference_front",
     "_reference_point",
     "_reference_hv",
