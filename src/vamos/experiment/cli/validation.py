@@ -8,7 +8,7 @@ from vamos.foundation.core.experiment_config import EXPERIMENT_TYPES
 from vamos.foundation.problem.resolver import resolve_reference_front_path
 from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS
 
-from .common import _collect_generic_variation, _normalize_operator_args, collect_nsgaii_variation_args
+from .common import _collect_generic_variation, _collect_moead_variation, _normalize_operator_args, collect_nsgaii_variation_args
 from .types import SpecDefaults
 
 
@@ -99,6 +99,9 @@ def finalize_args(
                     )
 
     args.nsgaii_variation = collect_nsgaii_variation_args(args)
+    args.moead_variation = _collect_moead_variation(args)
+    args.smsemoa_variation = _collect_generic_variation(args, "smsemoa")
+    args.nsgaiii_variation = _collect_generic_variation(args, "nsgaiii")
     args.spea2_variation = spec_defaults.experiment_defaults.get("spea2", {})
     args.ibea_variation = spec_defaults.experiment_defaults.get("ibea", {})
     args.smpso_variation = spec_defaults.experiment_defaults.get("smpso", {})

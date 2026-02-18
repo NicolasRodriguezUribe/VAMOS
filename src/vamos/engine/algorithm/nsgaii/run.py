@@ -229,7 +229,7 @@ def run_nsgaii(
             st.replacements = replacements
             X_off = algo.ask()
             eval_off = eval_strategy.evaluate(X_off, problem)
-            hv_reached = algo.tell(eval_off, st.pop_size)
+            hv_reached = algo.tell(eval_off)
             n_eval += X_off.shape[0]
             replacements += X_off.shape[0]
 

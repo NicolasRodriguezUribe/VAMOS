@@ -35,7 +35,7 @@ class NSGAII:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
         checkpoint_dir: str | None = None,
@@ -80,8 +80,8 @@ class NSGAII:
     def ask(self) -> np.ndarray:
         return ask_nsgaii(self)
 
-    def tell(self, eval_result: Any, pop_size: int) -> bool:
-        return tell_nsgaii(self, eval_result, pop_size)
+    def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
+        return tell_nsgaii(self, eval_result)
 
     def _combine_ids(self, st: NSGAIIState) -> np.ndarray | None:
         return combine_ids(st)

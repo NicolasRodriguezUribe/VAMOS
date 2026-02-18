@@ -216,7 +216,7 @@ class RVEA:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: Any | None = None,
     ) -> dict[str, Any]:
@@ -240,7 +240,7 @@ class RVEA:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
     ) -> None:
         """Initialize algorithm state for ask/tell loop.
@@ -343,6 +343,7 @@ class RVEA:
             raise RuntimeError("Previous offspring not yet consumed by tell().")
 
         st = self._st
+        assert st.variation is not None
         parents_idx = st.rng.integers(0, len(st.X), size=st.pop_size)
         X_off = st.variation.produce_offspring(st.X[parents_idx], st.rng)
         st.pending_offspring = X_off
