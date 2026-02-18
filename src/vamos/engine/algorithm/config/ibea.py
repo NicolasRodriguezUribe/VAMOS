@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from vamos.archive import ExternalArchiveConfig
-from .base import _SerializableConfig, _require_fields
+from .base import ConstraintModeStr, IndicatorType, ResultMode, _SerializableConfig, _require_fields
 
 
 @dataclass(frozen=True)
@@ -15,14 +15,14 @@ class IBEAConfig(_SerializableConfig):
     crossover: tuple[str, dict[str, Any]]
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
-    indicator: str
+    indicator: IndicatorType
     kappa: float
     repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
-    constraint_mode: str = "feasibility"
+    constraint_mode: ConstraintModeStr = "feasibility"
     track_genealogy: bool = False
-    result_mode: str | None = None
+    result_mode: ResultMode | None = None
     external_archive: ExternalArchiveConfig | None = None
 
     @classmethod
@@ -124,7 +124,7 @@ class _IBEAConfigBuilder:
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
             selection=self._cfg["selection"],
-            indicator=str(self._cfg["indicator"]),
+            indicator=cast(IndicatorType, str(self._cfg["indicator"])),
             kappa=float(self._cfg["kappa"]),
             repair=self._cfg.get("repair"),
             initializer=self._cfg.get("initializer"),

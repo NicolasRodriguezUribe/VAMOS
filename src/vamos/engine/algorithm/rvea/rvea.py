@@ -11,7 +11,10 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from vamos.archive.bounded_archive import BoundedArchive
 
 import numpy as np
 
@@ -147,7 +150,7 @@ def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, pr
     )
 
 
-def _build_archive(config: dict[str, Any], seed: int) -> Any:
+def _build_archive(config: dict[str, Any], seed: int) -> BoundedArchive | None:
     from vamos.archive import ExternalArchiveConfig
     from vamos.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
 
@@ -201,7 +204,7 @@ class RVEA:
     """
 
     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
-        self.config = config
+        self.cfg = config
         self.kernel = kernel or NumPyKernel()
         self._st: RVEAState | None = None
 
@@ -256,11 +259,11 @@ class RVEA:
         rng = np.random.default_rng(seed)
         backend = eval_strategy or SerialEvalBackend()
 
-        pop_size = int(self.config.get("pop_size", 100))
+        pop_size = int(self.cfg.get("pop_size", 100))
         n_obj = int(problem.n_obj)
-        n_partitions = int(self.config.get("n_partitions", 12))
-        alpha = float(self.config.get("alpha", 2.0))
-        adapt_freq = self.config.get("adapt_freq", 0.1)
+        n_partitions = int(self.cfg.get("n_partitions", 12))
+        alpha = float(self.cfg.get("alpha", 2.0))
+        adapt_freq = self.cfg.get("adapt_freq", 0.1)
 
         term_key, term_val = termination
         if term_key == "n_gen":
@@ -282,11 +285,11 @@ class RVEA:
 
         encoding = normalize_encoding(getattr(problem, "encoding", "real"))
         xl, xu = resolve_bounds(problem, encoding)
-        X = initialize_population(pop_size, problem.n_var, xl, xu, encoding, rng, problem, self.config.get("initializer"))
+        X = initialize_population(pop_size, problem.n_var, xl, xu, encoding, rng, problem, self.cfg.get("initializer"))
         F = np.asarray(backend.evaluate(X, problem).F, dtype=float)
 
-        variation = _build_variation(self.config, encoding, xl, xu, problem)
-        archive = _build_archive(self.config, seed)
+        variation = _build_variation(self.cfg, encoding, xl, xu, problem)
+        archive = _build_archive(self.cfg, seed)
         if archive is not None:
             archive.add(X, F, X.shape[0])
 
@@ -294,7 +297,7 @@ class RVEA:
         if adapt_freq is not None:
             adapt_interval = max(1, int(math.ceil(max_gen * float(adapt_freq))))
 
-        result_mode = str(self.config.get("result_mode", "non_dominated")).strip().lower()
+        result_mode = str(self.cfg.get("result_mode", "non_dominated")).strip().lower()
         if result_mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be one of: non_dominated, population")
 

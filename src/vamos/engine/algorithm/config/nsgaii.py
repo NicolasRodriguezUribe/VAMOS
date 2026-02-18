@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.archive import ExternalArchiveConfig
-from .base import _SerializableConfig, _require_fields
+from .base import ConstraintModeStr, LiveCallbackMode, ResultMode, _SerializableConfig, _require_fields
 
 
 class _NSGAIIConfigBuilder:
@@ -185,13 +185,13 @@ class NSGAIIConfig(_SerializableConfig):
     external_archive: ExternalArchiveConfig | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
-    result_mode: str | None = None
-    constraint_mode: str = "feasibility"
+    result_mode: ResultMode | None = None
+    constraint_mode: ConstraintModeStr = "feasibility"
     track_genealogy: bool = False
     adaptive_operator_selection: dict[str, Any] | None = None
     immigration: dict[str, Any] | None = None
     parent_selection_filter: Any | None = None
-    live_callback_mode: str = "nd_only"
+    live_callback_mode: LiveCallbackMode = "nd_only"
     generation_callback: Any | None = None
     generation_callback_copy: bool = True
 

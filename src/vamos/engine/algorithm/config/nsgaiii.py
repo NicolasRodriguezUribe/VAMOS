@@ -7,7 +7,7 @@ from math import comb
 from typing import Any
 
 from vamos.archive import ExternalArchiveConfig
-from .base import _SerializableConfig, _require_fields
+from .base import ConstraintModeStr, ResultMode, _SerializableConfig, _require_fields
 
 
 @dataclass(frozen=True)
@@ -19,12 +19,12 @@ class NSGAIIIConfig(_SerializableConfig):
     reference_directions: dict[str, int | str | None]
     enforce_ref_dirs: bool = True
     pop_size_auto: bool = False
-    constraint_mode: str = "feasibility"
+    constraint_mode: ConstraintModeStr = "feasibility"
     repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     track_genealogy: bool = False
-    result_mode: str | None = None
+    result_mode: ResultMode | None = None
     external_archive: ExternalArchiveConfig | None = None
 
     @classmethod

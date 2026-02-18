@@ -6,7 +6,18 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import asdict
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from vamos.engine.algorithm.agemoea import AGEMOEA
+    from vamos.engine.algorithm.ibea import IBEA
+    from vamos.engine.algorithm.moead import MOEAD
+    from vamos.engine.algorithm.nsgaii import NSGAII
+    from vamos.engine.algorithm.nsgaiii import NSGAIII
+    from vamos.engine.algorithm.rvea import RVEA
+    from vamos.engine.algorithm.smpso import SMPSO
+    from vamos.engine.algorithm.smsemoa import SMSEMOA
+    from vamos.engine.algorithm.spea2 import SPEA2
 
 from vamos.archive import ExternalArchiveConfig
 
@@ -49,7 +60,7 @@ def build_nsgaii_algorithm(
     external_archive: ExternalArchiveConfig | None,
     nsgaii_variation: dict[str, Any] | None,
     track_genealogy: bool,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[NSGAII, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     var_cfg = resolve_default_variation_config(encoding, nsgaii_variation)
 
@@ -97,7 +108,7 @@ def build_nsgaii_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("nsgaii")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("NSGAII", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 def build_moead_algorithm(
@@ -106,7 +117,7 @@ def build_moead_algorithm(
     problem: ProblemProtocol,
     pop_size: int,
     moead_variation: dict[str, Any] | None,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[MOEAD, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     moead_overrides = moead_variation or {}
     var_cfg = resolve_default_variation_config(encoding, moead_overrides)
@@ -157,7 +168,7 @@ def build_moead_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("moead")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("MOEAD", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 def build_smsemoa_algorithm(
@@ -166,7 +177,7 @@ def build_smsemoa_algorithm(
     problem: ProblemProtocol,
     pop_size: int,
     smsemoa_variation: dict[str, Any] | None,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[SMSEMOA, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     smsemoa_overrides = smsemoa_variation or {}
     var_cfg = resolve_default_variation_config(encoding, smsemoa_overrides)
@@ -193,7 +204,7 @@ def build_smsemoa_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("smsemoa")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("SMSEMOA", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 def build_nsgaiii_algorithm(
@@ -203,7 +214,7 @@ def build_nsgaiii_algorithm(
     pop_size: int,
     nsgaiii_variation: dict[str, Any] | None,
     selection_pressure: int,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[NSGAIII, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     nsgaiii_overrides = nsgaiii_variation or {}
     var_cfg = resolve_default_variation_config(encoding, nsgaiii_overrides)
@@ -232,7 +243,7 @@ def build_nsgaiii_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("nsgaiii")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("NSGAIII", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 def build_spea2_algorithm(
@@ -243,7 +254,7 @@ def build_spea2_algorithm(
     selection_pressure: int,
     external_archive: ExternalArchiveConfig | None,
     spea2_variation: dict[str, Any] | None,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[SPEA2, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     spea2_overrides = spea2_variation or {}
     var_cfg = resolve_default_variation_config(encoding, spea2_overrides)
@@ -282,7 +293,7 @@ def build_spea2_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("spea2")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("SPEA2", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 def build_ibea_algorithm(
@@ -292,7 +303,7 @@ def build_ibea_algorithm(
     pop_size: int,
     selection_pressure: int,
     ibea_variation: dict[str, Any] | None,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[IBEA, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     ibea_overrides = ibea_variation or {}
     var_cfg = resolve_default_variation_config(encoding, ibea_overrides)
@@ -327,7 +338,7 @@ def build_ibea_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("ibea")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("IBEA", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 def build_smpso_algorithm(
@@ -337,7 +348,7 @@ def build_smpso_algorithm(
     pop_size: int,
     external_archive: ExternalArchiveConfig | None,
     smpso_variation: dict[str, Any] | None,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[SMPSO, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     mut_cfg = merge_variation_overrides(
         {
@@ -370,7 +381,7 @@ def build_smpso_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("smpso")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("SMPSO", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 class DictConfigWrapper:
@@ -387,7 +398,7 @@ def build_agemoea_algorithm(
     problem: ProblemProtocol,
     pop_size: int,
     agemoea_variation: dict[str, Any] | None,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[AGEMOEA, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     agemoea_overrides = agemoea_variation or {}
     var_cfg = resolve_default_variation_config(encoding, agemoea_overrides)
@@ -416,7 +427,7 @@ def build_agemoea_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("agemoea")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("AGEMOEA", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 def build_rvea_algorithm(
@@ -425,7 +436,7 @@ def build_rvea_algorithm(
     problem: ProblemProtocol,
     pop_size: int,
     rvea_variation: dict[str, Any] | None,
-) -> tuple[Any, AlgorithmConfigProtocol]:
+) -> tuple[RVEA, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     rvea_overrides = rvea_variation or {}
     var_cfg = resolve_default_variation_config(encoding, rvea_overrides)
@@ -460,7 +471,7 @@ def build_rvea_algorithm(
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("rvea")
     cfg_dict = cfg_data.to_dict()
-    return algo_ctor(cfg_dict, kernel), cfg_data
+    return cast("RVEA", algo_ctor(cfg_dict, kernel)), cfg_data
 
 
 __all__ = [

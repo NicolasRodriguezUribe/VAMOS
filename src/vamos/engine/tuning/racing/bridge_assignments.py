@@ -28,6 +28,8 @@ _MOEAD_NAMES = {"moead", "moead_mixed", "moead_binary", "moead_integer"}
 _NSGAIII_NAMES = {"nsgaiii", "nsgaiii_mixed", "nsgaiii_binary", "nsgaiii_integer"}
 _SMSEMOA_NAMES = {"smsemoa", "smsemoa_mixed", "smsemoa_binary", "smsemoa_integer"}
 _IBEA_NAMES = {"ibea", "ibea_mixed", "ibea_binary", "ibea_integer"}
+_AGEMOEA_NAMES = {"agemoea", "agemoea_mixed"}
+_RVEA_NAMES = {"rvea", "rvea_mixed"}
 
 
 def _apply_initializer(builder: Any, assignment: dict[str, Any], pop_size: int) -> None:
@@ -454,9 +456,9 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         return _build_ibea_config(assignment)
     if algo == "smpso":
         return _build_smpso_config(assignment)
-    if algo in {"agemoea", "agemoea_mixed"}:
+    if algo in _AGEMOEA_NAMES:
         return _build_agemoea_config(assignment)
-    if algo in {"rvea", "rvea_mixed"}:
+    if algo in _RVEA_NAMES:
         return _build_rvea_config(assignment)
     raise ValueError(f"Unsupported algorithm for config construction: {algorithm_name}")
 

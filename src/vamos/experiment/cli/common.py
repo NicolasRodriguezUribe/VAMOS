@@ -79,6 +79,18 @@ def _normalize_operator_args(parser: argparse.ArgumentParser, args: argparse.Nam
     args.nsgaiii_crossover_prob = _parse_probability_arg(
         parser, "--nsga3-crossover-prob", getattr(args, "nsgaiii_crossover_prob", None), allow_expression=False
     )
+    args.agemoea_crossover_prob = _parse_probability_arg(
+        parser, "--agemoea-crossover-prob", getattr(args, "agemoea_crossover_prob", None), allow_expression=False
+    )
+    args.agemoea_mutation_prob = _parse_probability_arg(
+        parser, "--agemoea-mutation-prob", getattr(args, "agemoea_mutation_prob", None), allow_expression=True
+    )
+    args.rvea_crossover_prob = _parse_probability_arg(
+        parser, "--rvea-crossover-prob", getattr(args, "rvea_crossover_prob", None), allow_expression=False
+    )
+    args.rvea_mutation_prob = _parse_probability_arg(
+        parser, "--rvea-mutation-prob", getattr(args, "rvea_mutation_prob", None), allow_expression=True
+    )
 
 
 def collect_nsgaii_variation_args(args: argparse.Namespace) -> dict[str, object]:

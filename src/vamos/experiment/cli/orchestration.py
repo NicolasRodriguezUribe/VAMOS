@@ -119,6 +119,12 @@ def run_from_args(
         effective_args.smpso_variation = merge_variation_overrides(
             getattr(args, "smpso_variation", None), _override_mapping(override, "smpso")
         )
+        effective_args.agemoea_variation = merge_variation_overrides(
+            getattr(args, "agemoea_variation", None), _override_mapping(override, "agemoea")
+        )
+        effective_args.rvea_variation = merge_variation_overrides(
+            getattr(args, "rvea_variation", None), _override_mapping(override, "rvea")
+        )
         effective_args.effective_problem_override = override
 
         (
@@ -129,6 +135,8 @@ def run_from_args(
             effective_args.spea2_variation,
             effective_args.ibea_variation,
             effective_args.smpso_variation,
+            effective_args.agemoea_variation,
+            effective_args.rvea_variation,
         ) = normalize_variations(
             nsgaii_variation=effective_args.nsgaii_variation,
             moead_variation=effective_args.moead_variation,
@@ -137,6 +145,8 @@ def run_from_args(
             spea2_variation=effective_args.spea2_variation,
             ibea_variation=effective_args.ibea_variation,
             smpso_variation=effective_args.smpso_variation,
+            agemoea_variation=effective_args.agemoea_variation,
+            rvea_variation=effective_args.rvea_variation,
         )
 
         if multiple:
