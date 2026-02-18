@@ -68,7 +68,7 @@ Create `benchmark.py`:
 import pandas as pd
 from vamos import optimize
 from vamos.foundation.metrics import compute_normalized_hv
-from vamos.ux.analysis.stats import friedman_test
+from vamos.ux.api import friedman_test
 
 # 1. Define the study
 algorithms = ["nsgaii", "moead", "smsemoa"]
