@@ -4,7 +4,7 @@ from vamos.archive import ExternalArchiveConfig
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 from vamos.hooks import LiveVisualization
-from vamos.experiment.execution import run_single as execute_run_single
+from vamos.experiment.execution import run_single as execute_run_single, VariationConfigs
 from vamos.engine.config.spec import ExperimentSpec, SpecBlock
 
 from vamos.experiment.services.config import VariationConfig, normalize_variations
@@ -88,15 +88,17 @@ def run_single(
         problem=problem,
         external_archive=external_archive,
         selection_pressure=selection_pressure,
-        nsgaii_variation=nsgaii_variation,
-        moead_variation=moead_variation,
-        smsemoa_variation=smsemoa_variation,
-        nsgaiii_variation=nsgaiii_variation,
-        spea2_variation=spea2_variation,
-        ibea_variation=ibea_variation,
-        smpso_variation=smpso_variation,
-        agemoea_variation=agemoea_variation,
-        rvea_variation=rvea_variation,
+        variations=VariationConfigs(
+            nsgaii=nsgaii_variation,
+            moead=moead_variation,
+            smsemoa=smsemoa_variation,
+            nsgaiii=nsgaiii_variation,
+            spea2=spea2_variation,
+            ibea=ibea_variation,
+            smpso=smpso_variation,
+            agemoea=agemoea_variation,
+            rvea=rvea_variation,
+        ),
         hv_stop_config=hv_stop_config,
         evaluator=evaluator,
         termination=termination,

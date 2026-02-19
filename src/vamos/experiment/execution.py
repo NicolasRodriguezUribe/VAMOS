@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from argparse import Namespace
+from dataclasses import dataclass as _dataclass
 from importlib.resources import as_file
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ from vamos.foundation.core.experiment_config import (
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.data import weight_path
+from vamos.foundation.exceptions import ConfigurationError
 from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
 from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.problem.registry import ProblemSelection
@@ -51,6 +53,54 @@ def _logger() -> logging.Logger:
 
 
 Metrics = dict[str, Any]
+
+
+@_dataclass
+class VariationConfigs:
+    """Bundles per-algorithm variation configurations into a single object.
+
+    Replaces the previous pattern of 9 separate keyword arguments in run_single,
+    making it easy to add new algorithms without widening the function signature.
+    """
+
+    nsgaii:  VariationConfig | None = None
+    moead:   VariationConfig | None = None
+    smsemoa: VariationConfig | None = None
+    nsgaiii: VariationConfig | None = None
+    spea2:   VariationConfig | None = None
+    ibea:    VariationConfig | None = None
+    smpso:   VariationConfig | None = None
+    agemoea: VariationConfig | None = None
+    rvea:    VariationConfig | None = None
+
+    @classmethod
+    def from_namespace(cls, args: Namespace) -> VariationConfigs:
+        """Extract all variation configs from an argparse Namespace."""
+        return cls(
+            nsgaii=getattr(args, "nsgaii_variation", None),
+            moead=getattr(args, "moead_variation", None),
+            smsemoa=getattr(args, "smsemoa_variation", None),
+            nsgaiii=getattr(args, "nsgaiii_variation", None),
+            spea2=getattr(args, "spea2_variation", None),
+            ibea=getattr(args, "ibea_variation", None),
+            smpso=getattr(args, "smpso_variation", None),
+            agemoea=getattr(args, "agemoea_variation", None),
+            rvea=getattr(args, "rvea_variation", None),
+        )
+
+    def as_storage_dict(self) -> dict[str, VariationConfig | None]:
+        """Return the dict format expected by StorageObserver."""
+        return {
+            "nsgaii_variation":  self.nsgaii,
+            "moead_variation":   self.moead,
+            "smsemoa_variation": self.smsemoa,
+            "nsgaiii_variation": self.nsgaiii,
+            "spea2_variation":   self.spea2,
+            "ibea_variation":    self.ibea,
+            "smpso_variation":   self.smpso,
+            "agemoea_variation": self.agemoea,
+            "rvea_variation":    self.rvea,
+        }
 
 
 class CompositeObserver(Observer):
@@ -140,15 +190,7 @@ def run_single(
     problem: Any | None = None,
     external_archive: ExternalArchiveConfig | None = None,
     selection_pressure: int = 2,
-    nsgaii_variation: VariationConfig | None = None,
-    moead_variation: VariationConfig | None = None,
-    smsemoa_variation: VariationConfig | None = None,
-    nsgaiii_variation: VariationConfig | None = None,
-    spea2_variation: VariationConfig | None = None,
-    ibea_variation: VariationConfig | None = None,
-    smpso_variation: VariationConfig | None = None,
-    agemoea_variation: VariationConfig | None = None,
-    rvea_variation: VariationConfig | None = None,
+    variations: VariationConfigs | None = None,
     hv_stop_config: dict[str, Any] | None = None,
     evaluator: Any | None = None,
     termination: tuple[str, Any] | None = None,
@@ -193,19 +235,7 @@ def run_single(
     observers.append(ConsoleObserver())
 
     # Storage
-    # Collect variations for metadata
-    variations = {
-        "nsgaii_variation": nsgaii_variation,
-        "moead_variation": moead_variation,
-        "smsemoa_variation": smsemoa_variation,
-        "nsgaiii_variation": nsgaiii_variation,
-        "spea2_variation": spea2_variation,
-        "ibea_variation": ibea_variation,
-        "smpso_variation": smpso_variation,
-        "agemoea_variation": agemoea_variation,
-        "rvea_variation": rvea_variation,
-    }
-
+    _variations = variations or VariationConfigs()
     storage = StorageObserver(
         output_dir=output_dir,
         project_root=_project_root(),
@@ -214,7 +244,7 @@ def run_single(
         hv_stop_config=hv_stop_config,
         selection_pressure=selection_pressure,
         external_archive=external_archive,
-        variations=variations,
+        variations=_variations.as_storage_dict(),
     )
     observers.append(storage)
 
@@ -235,7 +265,12 @@ def run_single(
                     ),
                 )
                 observers.append(hook_mgr)
-        except Exception:
+        except Exception as exc:
+            _logger().warning(
+                "Hook setup failed for problem '%s'; hooks disabled. Reason: %s",
+                selection.spec.key,
+                exc,
+            )
             hook_mgr = None
 
     # User Viz (LiveVisualization uses RunContext)
@@ -278,7 +313,11 @@ def run_single(
     validate_problem(problem)
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     if encoding == "permutation" and algorithm_name != "nsgaii":
-        raise ValueError("Permutation problems are only supported by NSGA-II.")
+        raise ConfigurationError(
+            f"Algorithm '{algorithm_name}' does not support permutation encoding.",
+            suggestion="Set algorithm='nsgaii' to run permutation problems.",
+            details={"algorithm": algorithm_name, "encoding": "permutation"},
+        )
 
     # 4. Execute
     exec_result = execute_algorithm(
@@ -407,9 +446,16 @@ def execute_problem_suite(
     optional_algorithms = [a for a in algorithms if a in OPTIONAL_ALGORITHMS]
     external_algorithms = [a for a in algorithms if a in EXTERNAL_ALGORITHM_NAMES]
 
+    # Extract args-sourced values once to avoid repetition and silent getattr typos.
+    _track_genealogy: bool = getattr(args, "track_genealogy", False)
+    _autodiff_constraints: bool = getattr(args, "autodiff_constraints", False)
+    _moead_variation: VariationConfig | None = getattr(args, "moead_variation", None)
+    _smsemoa_variation: VariationConfig | None = getattr(args, "smsemoa_variation", None)
+    _nsgaiii_variation: VariationConfig | None = getattr(args, "nsgaiii_variation", None)
+
     results: list[Metrics] = []
     for engine in engines:
-        for algorithm_name in internal_algorithms:
+        for algorithm_name in internal_algorithms + optional_algorithms:
             live_viz = None
             if live_viz_factory is not None:
                 engine_name = resolve_engine(engine, algorithm=algorithm_name)
@@ -429,66 +475,24 @@ def execute_problem_suite(
                     external_archive=args.external_archive,
                     selection_pressure=args.selection_pressure,
                     nsgaii_variation=nsgaii_variation,
-                    moead_variation=getattr(args, "moead_variation", None),
-                    smsemoa_variation=getattr(args, "smsemoa_variation", None),
-                    nsgaiii_variation=getattr(args, "nsgaiii_variation", None),
-                    spea2_variation=getattr(args, "spea2_variation", None),
-                    ibea_variation=getattr(args, "ibea_variation", None),
-                    smpso_variation=getattr(args, "smpso_variation", None),
-                    agemoea_variation=getattr(args, "agemoea_variation", None),
-                    rvea_variation=getattr(args, "rvea_variation", None),
+                    moead_variation=_moead_variation,
+                    smsemoa_variation=_smsemoa_variation,
+                    nsgaiii_variation=_nsgaiii_variation,
+                    spea2_variation=spea2_variation,
+                    ibea_variation=ibea_variation,
+                    smpso_variation=smpso_variation,
+                    agemoea_variation=agemoea_variation,
+                    rvea_variation=rvea_variation,
                     hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                     config_source=config_source,
                     config_spec=config_spec,
                     problem_override=problem_override,
-                    track_genealogy=(getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii"),
-                    autodiff_constraints=getattr(args, "autodiff_constraints", False),
+                    track_genealogy=(_track_genealogy and algorithm_name == "nsgaii"),
+                    autodiff_constraints=_autodiff_constraints,
                     live_viz=live_viz,
                 )
             except ImportError as exc:
                 # Backends experiment should be resilient to missing optional deps.
-                if args.experiment in EXPERIMENT_TYPES and f"Kernel '{engine_name}' requires" in str(exc):
-                    _logger().warning("Skipping engine '%s': %s", engine_name, exc)
-                    continue
-                raise
-            results.append(metrics)
-        for algorithm_name in optional_algorithms:
-            live_viz = None
-            if live_viz_factory is not None:
-                engine_name = resolve_engine(engine, algorithm=algorithm_name)
-                live_viz = live_viz_factory(
-                    problem_selection,
-                    algorithm_name,
-                    engine_name,
-                    config,
-                )
-            engine_name = resolve_engine(engine, algorithm=algorithm_name)
-            try:
-                metrics = run_single_fn(
-                    engine_name,
-                    algorithm_name,
-                    problem_selection,
-                    config,
-                    external_archive=args.external_archive,
-                    selection_pressure=args.selection_pressure,
-                    nsgaii_variation=nsgaii_variation,
-                    moead_variation=getattr(args, "moead_variation", None),
-                    smsemoa_variation=getattr(args, "smsemoa_variation", None),
-                    nsgaiii_variation=getattr(args, "nsgaiii_variation", None),
-                    spea2_variation=getattr(args, "spea2_variation", None),
-                    ibea_variation=getattr(args, "ibea_variation", None),
-                    smpso_variation=getattr(args, "smpso_variation", None),
-                    agemoea_variation=getattr(args, "agemoea_variation", None),
-                    rvea_variation=getattr(args, "rvea_variation", None),
-                    hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
-                    config_source=config_source,
-                    config_spec=config_spec,
-                    problem_override=problem_override,
-                    track_genealogy=(getattr(args, "track_genealogy", False) and algorithm_name == "nsgaii"),
-                    autodiff_constraints=getattr(args, "autodiff_constraints", False),
-                    live_viz=live_viz,
-                )
-            except ImportError as exc:
                 if args.experiment in EXPERIMENT_TYPES and f"Kernel '{engine_name}' requires" in str(exc):
                     _logger().warning("Skipping engine '%s': %s", engine_name, exc)
                     continue

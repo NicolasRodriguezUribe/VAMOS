@@ -1,9 +1,11 @@
 import warnings
 
 import numpy as np
+from vamos.foundation.problem.base import Problem
 
 
-class DTLZBase:
+
+class DTLZBase(Problem):
     def __init__(self, n_var: int, n_obj: int) -> None:
         self.n_var = n_var
         self.n_obj = n_obj

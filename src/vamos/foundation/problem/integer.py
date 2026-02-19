@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from vamos.foundation.problem.base import Problem
+
 
 def _validate_bounds(n_var: int, lower: np.ndarray, upper: np.ndarray) -> None:
     if lower.shape != upper.shape or lower.shape[0] != n_var:
@@ -10,7 +12,7 @@ def _validate_bounds(n_var: int, lower: np.ndarray, upper: np.ndarray) -> None:
         raise ValueError("lower bounds must not exceed upper bounds.")
 
 
-class IntegerResourceAllocationProblem:
+class IntegerResourceAllocationProblem(Problem):
     """
     Allocate integer resources to tasks.
     Objective 1: minimize cost.
@@ -50,7 +52,7 @@ class IntegerResourceAllocationProblem:
         }
 
 
-class IntegerJobAssignmentProblem:
+class IntegerJobAssignmentProblem(Problem):
     """
     Assign job types (integer labels) to positions with penalties.
     Objective 1: minimize mismatch cost to preferred types.

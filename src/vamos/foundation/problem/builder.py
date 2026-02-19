@@ -22,9 +22,10 @@ from collections.abc import Callable, Sequence
 import numpy as np
 
 from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.problem.base import Problem
 
 
-class FunctionalProblem:
+class FunctionalProblem(Problem):
     """Problem wrapper that adapts a user function to the VAMOS ProblemProtocol.
 
     Created via :func:`make_problem` -- users should not instantiate this
