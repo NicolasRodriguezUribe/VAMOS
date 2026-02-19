@@ -1,0 +1,52 @@
+name: zcat_cross_framework_smoke
+
+paths:
+  vamos_root: ../..
+  jmetalpy_root: ../../../jMetalPy
+  pymoo_root: ../../../pymoo
+  reference_front_dir: ../../src/vamos/foundation/data/reference_fronts
+  jmetalpy_reference_front_dir: ../../../jMetalPy/resources/reference_fronts
+  output_dir: ../../results/zcat_cross_framework_smoke
+  moead_weight_dir: ../../results/zcat_cross_framework_smoke/weights
+
+framework_options:
+  vamos:
+    engine: numba
+
+deadline:
+  stop_new_runs_at: "2026-02-19 09:00:00"
+
+run:
+  workers: -1
+
+experiment:
+  frameworks: [vamos, jmetalpy, pymoo]
+  algorithms: [nsgaii, moead, smsemoa]
+  problem_ids: [1, 9, 14, 20]
+  objective_counts: [2, 3]
+  n_var: 30
+  scenarios:
+    - id: S0
+      complicated_pareto_set: false
+      level: 2
+      bias: false
+      imbalance: false
+    - id: S1
+      complicated_pareto_set: true
+      level: 4
+      bias: true
+      imbalance: true
+  seeds: [1, 2]
+  population_size: 60
+  max_evaluations_per_objective: 400
+
+validation:
+  problem_ids: [1, 9, 14, 20]
+  objective_counts: [2, 3]
+  n_random_points: 64
+  tolerance: 1.0e-12
+
+metrics:
+  indicators: [igd_plus, hv_normalized, epsilon_additive]
+  primary_indicator: igd_plus
+  hv_ref_point_padding: 0.1
