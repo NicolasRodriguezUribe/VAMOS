@@ -457,15 +457,14 @@ def execute_problem_suite(
     for engine in engines:
         for algorithm_name in internal_algorithms + optional_algorithms:
             live_viz = None
+            engine_name = resolve_engine(engine, algorithm=algorithm_name)
             if live_viz_factory is not None:
-                engine_name = resolve_engine(engine, algorithm=algorithm_name)
                 live_viz = live_viz_factory(
                     problem_selection,
                     algorithm_name,
                     engine_name,
                     config,
                 )
-            engine_name = resolve_engine(engine, algorithm=algorithm_name)
             try:
                 metrics = run_single_fn(
                     engine_name,

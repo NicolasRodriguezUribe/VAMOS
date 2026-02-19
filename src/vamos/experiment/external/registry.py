@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import logging
-from difflib import get_close_matches
 from typing import Any
 from collections.abc import Callable
 
 from vamos.foundation.problem.registry import ProblemSelection
+from vamos.foundation.exceptions import _suggest_names
 
 from .jmetalpy import _run_jmetalpy_nsga2, _run_jmetalpy_perm_nsga2
 from .pymoo import _run_pymoo_nsga2, _run_pymoo_perm_nsga2
@@ -14,14 +14,6 @@ from .pygmo import _run_pygmo_nsga2
 _EXTERNAL_ALGORITHM_ADAPTERS: dict[str, ExternalAlgorithmAdapter] | None = None
 _EXTERNAL_DOCS = "docs/reference/algorithms.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
-
-
-def _suggest_names(name: str, options: list[str]) -> list[str]:
-    if not name or not options:
-        return []
-    lookup = {option.lower(): option for option in options}
-    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
-    return [lookup[match] for match in matches]
 
 
 def _format_unknown_external(name: str, options: list[str]) -> str:

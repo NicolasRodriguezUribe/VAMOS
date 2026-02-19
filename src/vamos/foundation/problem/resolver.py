@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 from argparse import Namespace
-from difflib import get_close_matches
 from collections.abc import Iterable, Sequence
+
+from vamos.foundation.exceptions import _suggest_names
 
 
 def _logger() -> logging.Logger:
@@ -94,14 +95,6 @@ PROBLEM_SET_PRESETS: dict[str, Sequence[str]] = {
 }
 _PROBLEM_DOCS = "docs/reference/problems.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
-
-
-def _suggest_names(name: str, options: Sequence[str]) -> list[str]:
-    if not name or not options:
-        return []
-    lookup = {option.lower(): option for option in options}
-    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
-    return [lookup[match] for match in matches]
 
 
 def _format_unknown_problem(name: str, options: list[str]) -> str:

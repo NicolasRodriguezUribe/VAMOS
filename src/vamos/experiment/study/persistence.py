@@ -55,11 +55,10 @@ class CSVPersister:
         if not rows:
             return path
 
-        fieldnames: list[str] = []
+        seen: dict[str, None] = {}
         for row in rows:
-            for key in row.keys():
-                if key not in fieldnames:
-                    fieldnames.append(key)
+            seen.update(dict.fromkeys(row.keys()))
+        fieldnames = sorted(seen.keys())
 
         with path.open("w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=fieldnames)

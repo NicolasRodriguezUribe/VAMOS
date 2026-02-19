@@ -6,9 +6,9 @@ from vamos.foundation.problem.registry import ProblemSelection
 from vamos.hooks import LiveVisualization
 from vamos.experiment.execution import run_single as execute_run_single, VariationConfigs
 from vamos.engine.config.spec import ExperimentSpec, SpecBlock
+from vamos.engine.algorithm.factory import build_algorithm
 
 from vamos.experiment.services.config import VariationConfig, normalize_variations
-from vamos.experiment.services.factory import build_algorithm_from_spec
 
 
 def run_single(
@@ -60,7 +60,7 @@ def run_single(
         agemoea_variation=agemoea_variation,
         rvea_variation=rvea_variation,
     )
-    algorithm, cfg_data = build_algorithm_from_spec(
+    algorithm, cfg_data = build_algorithm(
         algorithm_name,
         engine_name,
         problem,

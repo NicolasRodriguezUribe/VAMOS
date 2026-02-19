@@ -116,12 +116,7 @@ class OptimizationResult:
             raise ValueError(f"Unknown method '{method}'. Use: knee, min_f1, min_f2, balanced")
 
         idx = int(front_idx[front_pos])
-        X_sel = None
-        if self.X is not None:
-            try:
-                X_sel = self.X[idx]
-            except Exception:
-                X_sel = None
+        X_sel = self.X[idx] if self.X is not None else None
         return {
             "X": X_sel,
             "F": self.F[idx],
