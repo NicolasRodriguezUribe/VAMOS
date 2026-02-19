@@ -192,8 +192,6 @@ DEFAULT_FRAMEWORKS_NS = [
     "vamos-moocore",  # VAMOS backends
     "pymoo",  # pymoo
     "jmetalpy",  # jMetalPy
-    "deap",  # DEAP
-    "platypus",  # Platypus
 ]
 DEFAULT_FRAMEWORKS_NS_SS = [
     "vamos-numpy",
@@ -201,7 +199,6 @@ DEFAULT_FRAMEWORKS_NS_SS = [
     "vamos-moocore",  # VAMOS backends
     "pymoo",
     "jmetalpy",
-    "deap",
 ]
 DEFAULT_FRAMEWORKS_NS_ARCHIVE = [
     "vamos-numpy",
@@ -209,8 +206,6 @@ DEFAULT_FRAMEWORKS_NS_ARCHIVE = [
     "vamos-moocore",  # VAMOS backends
     "pymoo",
     "jmetalpy",
-    "deap",
-    "platypus",
 ]
 DEFAULT_FRAMEWORKS_SMS = [
     "vamos-numpy",
@@ -225,7 +220,6 @@ DEFAULT_FRAMEWORKS_MOEAD = [
     "vamos-moocore",  # VAMOS backends
     "pymoo",
     "jmetalpy",
-    "platypus",
 ]
 if ALGORITHM == "nsgaii":
     DEFAULT_FRAMEWORKS = DEFAULT_FRAMEWORKS_NS

@@ -67,6 +67,11 @@ class MultiprocessingEvalBackend(EvaluationBackend):
                 G_parts.append((start, G_chunk))
 
         # Restore original order
+        if not F_parts:
+            raise RuntimeError(
+                "MultiprocessingEvalBackend: no results were collected from worker chunks. "
+                "All futures may have failed or the pool was empty."
+            )
         F = np.empty((n, F_parts[0][1].shape[1]), dtype=float)
         G_sample = G_parts[0][1]
         G_out: np.ndarray | None = None
