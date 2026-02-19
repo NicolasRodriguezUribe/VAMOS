@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import sys
 from dataclasses import asdict
-from typing import Any, Literal, Self, cast
+from typing import Any, Literal, cast
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 # ── Shared Literal type aliases ──────────────────────────────────────
 ResultMode = Literal["non_dominated", "population"]
