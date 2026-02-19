@@ -1,0 +1,109 @@
+site_name: VAMOS
+site_url: https://vamos-optimization.org
+site_description: >-
+  Fast, clean, multi-objective evolutionary optimization for Python.
+  Nine algorithms. Two-line API. Vectorized core — 4–12× faster than DEAP and jMetalPy.
+site_author: VAMOS Contributors
+copyright: Copyright &copy; 2024–2025 VAMOS Contributors
+
+repo_name: NicolasRodriguezUribe/VAMOS
+repo_url: https://github.com/NicolasRodriguezUribe/VAMOS
+
+docs_dir: docs
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.tabs.link
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/NicolasRodriguezUribe/VAMOS
+      name: VAMOS on GitHub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/vamos-optimization
+      name: VAMOS on PyPI
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: folder
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - def_list
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Algorithms:
+      - Overview: algorithms/index.md
+      - NSGA-II: algorithms/nsgaii.md
+      - NSGA-III: algorithms/nsgaiii.md
+      - MOEA/D: algorithms/moead.md
+      - SMS-EMOA: algorithms/smsemoa.md
+      - SPEA2: algorithms/spea2.md
+      - IBEA: algorithms/ibea.md
+      - SMPSO: algorithms/smpso.md
+      - AGE-MOEA: algorithms/agemoea.md
+      - RVEA: algorithms/rvea.md
+  - Tutorials:
+      - Quickstart: tutorials/quickstart.md
+      - Custom Problem: tutorials/custom-problem.md
+      - Hyperparameter Tuning: tutorials/tuning.md
+  - API Reference: api/index.md
+  - Benchmarks: benchmarks.md

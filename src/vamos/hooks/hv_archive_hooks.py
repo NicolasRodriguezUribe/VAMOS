@@ -27,6 +27,14 @@ def _append_csv_row(path: Path, fieldnames: list[str], row: dict[str, Any]) -> N
         writer.writerow(row)
 
 
+import logging as _logging
+import warnings as _warnings
+
+
+def _hv_logger() -> _logging.Logger:
+    return _logging.getLogger(__name__)
+
+
 def _try_compute_hv(F: np.ndarray, ref: list[float] | None = None) -> float | None:
     """
     Best-effort HV computation:
@@ -37,6 +45,13 @@ def _try_compute_hv(F: np.ndarray, ref: list[float] | None = None) -> float | No
     if F.size == 0:
         return 0.0
     if F.ndim != 2 or F.shape[1] != 2:
+        n_obj = F.shape[1] if F.ndim == 2 else F.ndim
+        _warnings.warn(
+            f"HV-based termination/archiving requires exactly 2 objectives; "
+            f"this problem has {n_obj}. HV computation is disabled for this run.",
+            UserWarning,
+            stacklevel=3,
+        )
         return None
     if ref is None:
         mx = np.max(F, axis=0)

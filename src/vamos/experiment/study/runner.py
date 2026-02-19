@@ -100,18 +100,25 @@ class StudyRunner:
         return results
 
     def _attach_hypervolume(self, results: Iterable[StudyResult]) -> None:
-        fronts = [res.metrics["F"] for res in results]
+        results = list(results)
+        fronts = [res.metrics["F"] for res in results if res.metrics.get("F") is not None]
         if not fronts:
             return
         hv_ref_point = compute_hv_reference(fronts)
         for res in results:
             metrics = res.metrics
             backend = metrics.pop("_kernel_backend", None)
+            F_res = metrics.get("F")
+            if F_res is None:
+                metrics["hv"] = None
+                metrics["hv_source"] = "none"
+                metrics["hv_reference"] = hv_ref_point
+                continue
             if backend and backend.supports_quality_indicator("hypervolume"):
-                hv_val = backend.hypervolume(metrics["F"], hv_ref_point)
+                hv_val = backend.hypervolume(F_res, hv_ref_point)
                 hv_source = backend.__class__.__name__
             else:
-                hv_val = hypervolume(metrics["F"], hv_ref_point)
+                hv_val = hypervolume(F_res, hv_ref_point)
                 hv_source = "global"
             metrics["hv"] = hv_val
             metrics["hv_source"] = hv_source
