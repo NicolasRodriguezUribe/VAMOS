@@ -285,6 +285,7 @@ N_JOBS = int(os.environ.get("VAMOS_N_JOBS", _default_n_jobs))
 if N_JOBS == 0:
     raise ValueError("VAMOS_N_JOBS cannot be 0 (joblib expects 1, -1, or another non-zero integer).")
 print(f"Using {N_JOBS} parallel workers")
+DEAP_N_JOBS = int(os.environ.get("VAMOS_DEAP_N_JOBS", "2"))
 SAVE_EVERY = int(os.environ.get("VAMOS_PAPER_SAVE_EVERY", "50"))
 RESUME = os.environ.get("VAMOS_PAPER_RESUME", "1").strip().lower() not in {"0", "false", "no"}
 
@@ -584,7 +585,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 if ALGORITHM == "nsgaii_ss":
                     builder = builder.steady_state(True).offspring_size(1).replacement_size(1)
                 elif ALGORITHM == "nsgaii_archive":
-                    builder = builder.archive(POP_SIZE, unbounded=True)
+                    builder = builder.external_archive(capacity=None)
                 algo_config = builder.build()
             elif ALGORITHM == "smsemoa":
                 algo_id = "smsemoa"
@@ -845,6 +846,11 @@ def run_single_benchmark(problem_name, seed, framework):
             toolbox.register("select_tournament", tools.selTournamentDCD)
             toolbox.register("clone", copy.deepcopy)
 
+            import multiprocessing as _mp
+            _deap_pool = _mp.Pool(DEAP_N_JOBS) if DEAP_N_JOBS > 1 else None
+            if _deap_pool is not None:
+                toolbox.register("map", _deap_pool.map)
+
             random.seed(seed)
             pop = toolbox.population(n=POP_SIZE)
             n_gen = max(0, (N_EVALS - POP_SIZE) // POP_SIZE)
@@ -860,8 +866,9 @@ def run_single_benchmark(problem_name, seed, framework):
 
             # Evaluate the initial population
             invalid = [ind for ind in pop if not ind.fitness.valid]
-            for ind in invalid:
-                ind.fitness.values = toolbox.evaluate(ind)
+            fitnesses = list(toolbox.map(toolbox.evaluate, invalid))
+            for ind, fit in zip(invalid, fitnesses):
+                ind.fitness.values = fit
 
             # Assign crowding distance
             pop = toolbox.select(pop, len(pop))
@@ -904,8 +911,9 @@ def run_single_benchmark(problem_name, seed, framework):
                         del mutant.fitness.values
 
                     invalid = [ind for ind in offspring if not ind.fitness.valid]
-                    for ind in invalid:
-                        ind.fitness.values = toolbox.evaluate(ind)
+                    fitnesses = list(toolbox.map(toolbox.evaluate, invalid))
+                    for ind, fit in zip(invalid, fitnesses):
+                        ind.fitness.values = fit
 
                     if use_archive and archive is not None:
                         X_off = np.array([list(ind) for ind in offspring], dtype=float)
@@ -915,6 +923,10 @@ def run_single_benchmark(problem_name, seed, framework):
                     pop = toolbox.select(pop + offspring, POP_SIZE)
 
             elapsed = time.perf_counter() - start
+
+            if _deap_pool is not None:
+                _deap_pool.close()
+                _deap_pool.join()
 
             if use_archive and archive is not None:
                 _, F = archive.contents()

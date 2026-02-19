@@ -1,13 +1,15 @@
 """
-NSGA-III and SPEA2 Cross-Framework Benchmark
-=============================================
-Runs NSGA-III (VAMOS vs pymoo) and SPEA2 (VAMOS vs jMetalPy) on the standard
-benchmark suite, complementing the NSGA-II/SMS-EMOA/MOEA/D results.
+NSGA-III, SPEA2, AGE-MOEA, and RVEA Benchmark
+===============================================
+Runs NSGA-III (VAMOS vs pymoo), SPEA2 (VAMOS vs jMetalPy), AGE-MOEA (VAMOS),
+and RVEA (VAMOS) on the standard benchmark suite, complementing the
+NSGA-II/SMS-EMOA/MOEA/D results.
 
 Usage: python paper/20_run_additional_algorithms_benchmark.py
 
 Environment variables:
-  - VAMOS_PAPER_ALGORITHM: nsgaiii, spea2, or both (default: both)
+  - VAMOS_PAPER_ALGORITHM: nsgaiii, spea2, agemoea, rvea, both (nsgaiii+spea2),
+                           or all (default: all)
   - VAMOS_N_EVALS: evaluations per run (default: 50000)
   - VAMOS_N_SEEDS: number of seeds (default: 30)
   - VAMOS_NUMBA_WARMUP_EVALS: warmup evaluations for Numba (default: 2000)
@@ -15,6 +17,8 @@ Environment variables:
 Output:
   - experiments/benchmark_paper_nsgaiii.csv
   - experiments/benchmark_paper_spea2.csv
+  - experiments/benchmark_paper_agemoea.csv
+  - experiments/benchmark_paper_rvea.csv
 """
 
 from __future__ import annotations
@@ -47,14 +51,20 @@ except ImportError:
 # Configuration
 # =============================================================================
 
-_algo_env = os.environ.get("VAMOS_PAPER_ALGORITHM", "both").strip().lower()
+_algo_env = os.environ.get("VAMOS_PAPER_ALGORITHM", "all").strip().lower()
 ALGORITHMS_TO_RUN = []
 if _algo_env in {"nsgaiii", "nsga3", "nsga-iii"}:
     ALGORITHMS_TO_RUN = ["nsgaiii"]
 elif _algo_env in {"spea2"}:
     ALGORITHMS_TO_RUN = ["spea2"]
-else:
+elif _algo_env in {"agemoea", "age-moea", "age_moea"}:
+    ALGORITHMS_TO_RUN = ["agemoea"]
+elif _algo_env in {"rvea"}:
+    ALGORITHMS_TO_RUN = ["rvea"]
+elif _algo_env in {"both"}:
     ALGORITHMS_TO_RUN = ["nsgaiii", "spea2"]
+else:  # "all" or unrecognised
+    ALGORITHMS_TO_RUN = ["nsgaiii", "spea2", "agemoea", "rvea"]
 
 N_EVALS = int(os.environ.get("VAMOS_N_EVALS", "50000"))
 N_SEEDS = int(os.environ.get("VAMOS_N_SEEDS", "30"))
@@ -76,7 +86,13 @@ POP_SIZE = 100
 CROSSOVER_PROB = 1.0
 CROSSOVER_ETA_NSGAIII = 30.0  # NSGA-III typically uses eta=30
 CROSSOVER_ETA_SPEA2 = 20.0
+CROSSOVER_ETA_AGEMOEA = 15.0  # AGE-MOEA default
+CROSSOVER_PROB_AGEMOEA = 0.9  # AGE-MOEA default
+CROSSOVER_ETA_RVEA = 30.0    # RVEA default
 MUTATION_ETA = 20.0
+RVEA_N_PARTITIONS = 12
+RVEA_ALPHA = 2.0
+RVEA_ADAPT_FREQ = 0.1
 
 # ZDT (2-obj) + DTLZ (3-obj) problems
 PROBLEMS = list(ZDT_N_VAR.keys()) + list(DTLZ_N_VAR.keys()) + [f"wfg{i}" for i in range(1, 10)]
@@ -329,6 +345,109 @@ def run_jmetalpy_spea2(problem_name: str, seed: int) -> dict | None:
 
 
 # =============================================================================
+# AGE-MOEA runners
+# =============================================================================
+
+def run_vamos_agemoea(problem_name: str, seed: int) -> dict | None:
+    from vamos.foundation.problem.registry import make_problem_selection
+    from vamos import optimize
+    from vamos.engine.algorithm.config.agemoea import AGEMOEAConfig
+
+    n_var, n_obj = get_problem_dims(problem_name)
+    problem = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj).instantiate()
+
+    cfg = (
+        AGEMOEAConfig.builder()
+        .pop_size(POP_SIZE)
+        .crossover("sbx", prob=CROSSOVER_PROB_AGEMOEA, eta=CROSSOVER_ETA_AGEMOEA)
+        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .build()
+    )
+
+    # Numba warmup
+    if NUMBA_WARMUP_EVALS > 0:
+        _ = optimize(problem, algorithm="agemoea", algorithm_config=cfg,
+                     termination=("max_evaluations", min(NUMBA_WARMUP_EVALS, N_EVALS)),
+                     seed=seed, engine="numba")
+
+    start = time.perf_counter()
+    result = optimize(problem, algorithm="agemoea", algorithm_config=cfg,
+                      termination=("max_evaluations", N_EVALS),
+                      seed=seed, engine="numba")
+    elapsed = time.perf_counter() - start
+
+    F = result.F
+    n_solutions = result.X.shape[0] if result.X is not None else 0
+    hv = compute_hv(F, problem_name) if F is not None else float("nan")
+    igd_plus = compute_igd_plus(F, problem_name) if F is not None else float("nan")
+
+    return {
+        "framework": "VAMOS (numba)",
+        "problem": problem_name,
+        "algorithm": "AGE-MOEA",
+        "n_evals": N_EVALS,
+        "seed": seed,
+        "runtime_seconds": elapsed,
+        "n_solutions": n_solutions,
+        "hypervolume": hv,
+        "igd_plus": igd_plus,
+    }
+
+
+# =============================================================================
+# RVEA runners
+# =============================================================================
+
+def run_vamos_rvea(problem_name: str, seed: int) -> dict | None:
+    from vamos.foundation.problem.registry import make_problem_selection
+    from vamos import optimize
+    from vamos.engine.algorithm.config.rvea import RVEAConfig
+
+    n_var, n_obj = get_problem_dims(problem_name)
+    problem = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj).instantiate()
+
+    cfg = (
+        RVEAConfig.builder()
+        .pop_size(POP_SIZE)
+        .n_partitions(RVEA_N_PARTITIONS)
+        .alpha(RVEA_ALPHA)
+        .adapt_freq(RVEA_ADAPT_FREQ)
+        .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA_RVEA)
+        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .build()
+    )
+
+    # Numba warmup
+    if NUMBA_WARMUP_EVALS > 0:
+        _ = optimize(problem, algorithm="rvea", algorithm_config=cfg,
+                     termination=("max_evaluations", min(NUMBA_WARMUP_EVALS, N_EVALS)),
+                     seed=seed, engine="numba")
+
+    start = time.perf_counter()
+    result = optimize(problem, algorithm="rvea", algorithm_config=cfg,
+                      termination=("max_evaluations", N_EVALS),
+                      seed=seed, engine="numba")
+    elapsed = time.perf_counter() - start
+
+    F = result.F
+    n_solutions = result.X.shape[0] if result.X is not None else 0
+    hv = compute_hv(F, problem_name) if F is not None else float("nan")
+    igd_plus = compute_igd_plus(F, problem_name) if F is not None else float("nan")
+
+    return {
+        "framework": "VAMOS (numba)",
+        "problem": problem_name,
+        "algorithm": "RVEA",
+        "n_evals": N_EVALS,
+        "seed": seed,
+        "runtime_seconds": elapsed,
+        "n_solutions": n_solutions,
+        "hypervolume": hv,
+        "igd_plus": igd_plus,
+    }
+
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -381,6 +500,18 @@ def main() -> None:
             ("jMetalPy", run_jmetalpy_spea2),
         ]
         run_benchmark("SPEA2", runners, DATA_DIR / "benchmark_paper_spea2.csv")
+
+    if "agemoea" in ALGORITHMS_TO_RUN:
+        runners = [
+            ("VAMOS (numba)", run_vamos_agemoea),
+        ]
+        run_benchmark("AGE-MOEA", runners, DATA_DIR / "benchmark_paper_agemoea.csv")
+
+    if "rvea" in ALGORITHMS_TO_RUN:
+        runners = [
+            ("VAMOS (numba)", run_vamos_rvea),
+        ]
+        run_benchmark("RVEA", runners, DATA_DIR / "benchmark_paper_rvea.csv")
 
 
 if __name__ == "__main__":
