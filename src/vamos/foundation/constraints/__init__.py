@@ -16,16 +16,22 @@ class ConstraintInfo:
     feasible_mask: np.ndarray
 
 
-def compute_constraint_info(G: np.ndarray, eps: float = 0.0) -> ConstraintInfo:
-    """
-    Compute aggregate constraint violation and feasibility mask.
+def compute_constraint_info(G: np.ndarray | None, eps: float = 0.0) -> ConstraintInfo:
+    """Compute aggregate constraint violation and feasibility mask.
 
     Args:
         G: (n_points, n_constr) constraint values, <=0 means satisfied.
+            When ``None`` (unconstrained), a trivially-feasible result is
+            returned with zero-column G and zero violation.
         eps: tolerance. Constraints <= eps are treated as satisfied.
     """
     if G is None:
-        raise ValueError("G must be provided; use an array of zeros when unconstrained.")
+        empty_G = np.zeros((0, 0), dtype=float)
+        return ConstraintInfo(
+            G=empty_G,
+            cv=np.zeros(0, dtype=float),
+            feasible_mask=np.ones(0, dtype=bool),
+        )
     G = np.asarray(G, dtype=float)
     if G.ndim != 2:
         raise ValueError("G must be a 2D array of shape (n_points, n_constr).")

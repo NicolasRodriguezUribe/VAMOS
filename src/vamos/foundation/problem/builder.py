@@ -76,7 +76,9 @@ class FunctionalProblem(Problem):
             F_result = np.asarray(results, dtype=float)
 
         N = X.shape[0]
-        if F_result.ndim == 1:
+        if F_result.ndim == 0:
+            F_result = F_result.reshape(1, 1)
+        elif F_result.ndim == 1:
             F_result = F_result.reshape(-1, self.n_obj)
         if F_result.shape != (N, self.n_obj):
             raise ValueError(f"make_problem fn returned shape {F_result.shape}, expected ({N}, {self.n_obj}).")
@@ -96,7 +98,9 @@ class FunctionalProblem(Problem):
                 g_results = [self._constraints_fn(X[i]) for i in range(X.shape[0])]
                 G_result = np.asarray(g_results, dtype=float)
 
-            if G_result.ndim == 1:
+            if G_result.ndim == 0:
+                G_result = G_result.reshape(1, 1)
+            elif G_result.ndim == 1:
                 G_result = G_result.reshape(-1, self.n_constraints)
             if G_result.shape != (N, self.n_constraints):
                 raise ValueError(f"make_problem constraints fn returned shape {G_result.shape}, expected ({N}, {self.n_constraints}).")

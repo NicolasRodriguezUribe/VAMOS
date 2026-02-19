@@ -160,6 +160,7 @@ problem = make_problem(
     n_var=2,
     n_obj=2,
     bounds=[(0, 1), (0, 1)],
+    encoding="real",
 )
 
 result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)

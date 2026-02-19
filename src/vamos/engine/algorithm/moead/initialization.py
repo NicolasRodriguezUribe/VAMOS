@@ -206,7 +206,9 @@ def initialize_moead_run(
         divisions=weight_cfg.get("divisions"),
         mode="jmetalpy",
     )
-    weights_safe = np.where(weights == 0, 0.0001, weights)
+    from .helpers import ZERO_WEIGHT_EPS
+
+    weights_safe = np.where(weights == 0, ZERO_WEIGHT_EPS, weights)
     weight_norms = np.linalg.norm(weights, axis=1)
     weight_norms = np.where(weight_norms > 0, weight_norms, 1.0)
     weights_unit = weights / weight_norms[:, None]
