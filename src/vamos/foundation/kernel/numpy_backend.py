@@ -208,6 +208,9 @@ class NumPyKernel(KernelBackend):
             if best.size == 1:
                 winners[i] = int(best[0])
                 continue
+            # NaN crowding (e.g. degenerate fronts with identical objective
+            # values) is mapped to -inf so those solutions always lose the
+            # tournament — they contribute no diversity information.
             best_crowd = np.nan_to_num(crowding[best], nan=-np.inf)
             max_crowd = best_crowd.max()
             tied = best[best_crowd == max_crowd]

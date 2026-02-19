@@ -132,11 +132,17 @@ class Problem:
         """Framework evaluation entry point.  Override :meth:`objectives`
         (and optionally :meth:`constraints`) instead of this method."""
         X = np.asarray(X, dtype=float)
+        if X.ndim != 2 or X.shape[1] != self.n_var:
+            raise ValueError(
+                f"Expected decision matrix of shape (N, {self.n_var}), got {X.shape}."
+            )
 
         # --- objectives ---
         N = X.shape[0]
         F_computed = np.asarray(self.objectives(X), dtype=float)
-        if F_computed.ndim == 1:
+        if F_computed.ndim == 0:
+            F_computed = F_computed.reshape(1, 1)
+        elif F_computed.ndim == 1:
             F_computed = F_computed.reshape(-1, self.n_obj)
         if F_computed.shape != (N, self.n_obj):
             raise ValueError(f"{type(self).__name__}.objectives() returned shape {F_computed.shape}, expected ({N}, {self.n_obj}).")
@@ -156,7 +162,9 @@ class Problem:
                     "to return an array of shape (N, n_constraints)."
                 )
             G_computed = np.asarray(G_computed, dtype=float)
-            if G_computed.ndim == 1:
+            if G_computed.ndim == 0:
+                G_computed = G_computed.reshape(1, 1)
+            elif G_computed.ndim == 1:
                 G_computed = G_computed.reshape(-1, self.n_constraints)
             if G_computed.shape != (N, self.n_constraints):
                 raise ValueError(

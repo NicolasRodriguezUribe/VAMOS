@@ -25,7 +25,7 @@ Smoke tests
 
 - Core check: `vamos check`
 - Guided quickstart: `vamos quickstart` (use `--template list` to see domain templates)
-- Quick NSGA-II run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
+- Quick NSGA-II run: `vamos optimize --problem zdt1 --max-evaluations 2000`
 - Full test suite (core): `pytest`
 - With extras installed: `pytest -m "not slow"`
 - List all subcommands: `vamos help`
@@ -70,6 +70,7 @@ problem = make_problem(
     lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
     n_var=2, n_obj=2,
     bounds=[(0, 1), (0, 1)],
+    encoding="real",
 )
 result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
 ```
@@ -106,7 +107,7 @@ Use the lightest interface that still makes the run reproducible.
 | Goal | Use | Example |
 | --- | --- | --- |
 | Quick scripts, notebooks | Unified `optimize(...)` | `optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)` |
-| Your own problem | `make_problem(fn, ...)` | `make_problem(my_fn, n_var=2, n_obj=2, bounds=[(0,1),(0,1)])` |
+| Your own problem | `make_problem(fn, ...)` | `make_problem(my_fn, n_var=2, n_obj=2, bounds=[(0,1),(0,1)], encoding="real")` |
 | Scaffold a problem file | CLI wizard | `vamos create-problem` |
 | Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit termination | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, termination=("max_evaluations", 5000))` |
 | Plugin algorithms | `GenericAlgorithmConfig` | `optimize(problem, algorithm="my_algo", algorithm_config=GenericAlgorithmConfig({...}))` |
@@ -115,6 +116,6 @@ Use the lightest interface that still makes the run reproducible.
 Benchmarks and studies
 ----------------------
 
-- Compare backends: `python -m vamos.experiment.cli.main --experiment backends --problem zdt1`
+- Compare backends: `vamos optimize --experiment backends --problem zdt1`
 - Run a predefined suite: `vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/`
 - Batch problem x algorithm sweeps: `vamos --problem-set families --algorithm both`

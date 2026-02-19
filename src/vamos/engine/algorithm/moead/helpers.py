@@ -20,6 +20,12 @@ if TYPE_CHECKING:
 
 AggregatorFn: TypeAlias = Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]
 
+# Small positive constant replacing zero weights in Tchebycheff scalarization.
+# Prevents division-by-zero while keeping the contribution negligible.  For
+# problems where objective values are very small (near this magnitude), consider
+# increasing via the ``zero_weight_eps`` parameter in the aggregation config.
+ZERO_WEIGHT_EPS: float = 1e-4
+
 # Aggregation IDs for optional JIT path.
 AGG_TCHEBYCHEFF = 0
 AGG_WEIGHTED_SUM = 1
@@ -80,7 +86,7 @@ def tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarray) -> np
         Aggregated scalar values, shape (N,) or scalar.
     """
     diff = np.abs(fvals - ideal)
-    weighted = np.where(weights == 0, 0.0001 * diff, weights * diff)
+    weighted = np.where(weights == 0, ZERO_WEIGHT_EPS * diff, weights * diff)
     return np.asarray(np.max(weighted, axis=-1), dtype=float)
 
 
@@ -153,7 +159,7 @@ def modified_tchebycheff(fvals: np.ndarray, weights: np.ndarray, ideal: np.ndarr
         Aggregated scalar values.
     """
     diff = np.abs(fvals - ideal)
-    weighted = np.where(weights == 0, 0.0001 * diff, weights * diff)
+    weighted = np.where(weights == 0, ZERO_WEIGHT_EPS * diff, weights * diff)
     return np.asarray(np.max(weighted, axis=-1) + rho * np.sum(weighted, axis=-1), dtype=float)
 
 

@@ -13,7 +13,7 @@ Quick start:
 python -m venv .venv
 source .venv/bin/activate  # or .\.venv\Scripts\Activate.ps1 on Windows
 pip install -e ".[compute,research,analysis,dev]"
-python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000
+vamos optimize --problem zdt1 --max-evaluations 2000
 ```
 
 Optional model-based tuning backends (`optuna`, `bohb_optuna`, `smac3`, `bohb`):

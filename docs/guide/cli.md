@@ -62,7 +62,7 @@ vamos open-results --open
 Main runner
 -----------
 
-Use `python -m vamos.experiment.cli.main` (or `vamos`) for single runs and problem sets.
+Use `vamos` (or `python -m vamos.experiment.cli.main`) for single runs and problem sets.
 
 Quick walkthroughs
 ------------------
