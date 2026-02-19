@@ -525,11 +525,16 @@ def execute_problem_suite(
     hv_ref_point = compute_hv_reference(fronts)
     for res in results:
         backend = res.pop("_kernel_backend", None)
+        F_res = res.get("F")
+        if F_res is None:
+            res["hv"] = None
+            res["hv_source"] = "none"
+            continue
         if backend and backend.supports_quality_indicator("hypervolume"):
-            hv_value = backend.hypervolume(res["F"], hv_ref_point)
+            hv_value = backend.hypervolume(F_res, hv_ref_point)
             res["hv_source"] = backend.__class__.__name__
         else:
-            hv_value = hypervolume(res["F"], hv_ref_point)
+            hv_value = hypervolume(F_res, hv_ref_point)
             res["hv_source"] = "global"
         res["hv"] = hv_value
 

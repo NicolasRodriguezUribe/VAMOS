@@ -176,7 +176,10 @@ class DaskEvalBackend(EvaluationBackend):
             results = self.client.gather([f for _, f in futures])
 
             # Reassemble
-            # Assuming first result gives dimensions
+            if not results:
+                raise RuntimeError(
+                    "DaskEvalBackend: no results returned from workers. All futures may have failed or the futures list was empty."
+                )
             F_sample = results[0][0]
             G_sample = results[0][1]
 
@@ -189,7 +192,12 @@ class DaskEvalBackend(EvaluationBackend):
                 f_chunk, g_chunk = results[i]
                 end = start + f_chunk.shape[0]
                 F[start:end] = f_chunk
-                if G is not None and g_chunk is not None:
+                if G is not None:
+                    if g_chunk is None:
+                        raise ValueError(
+                            "DaskEvalBackend: worker chunk returned no constraint data (G=None) "
+                            "but earlier chunks did. Ensure all evaluations compute constraints."
+                        )
                     G[start:end] = g_chunk
 
             return EvaluationResult(F=F, G=G)

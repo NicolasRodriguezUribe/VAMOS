@@ -1,0 +1,117 @@
+/* =====================================================================
+   VAMOS Documentation — Custom styles for MkDocs Material
+   Primary: #1565C0 (deep blue)   Accent: #FF6F00 (amber)
+   ===================================================================== */
+
+/* ----- Custom colour tokens ----------------------------------------- */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color:        #1565C0;
+  --md-primary-fg-color--light: #1976D2;
+  --md-primary-fg-color--dark:  #0D47A1;
+  --md-accent-fg-color:         #FF6F00;
+  --md-accent-fg-color--transparent: rgba(255, 111, 0, 0.10);
+  --vamos-hero-bg: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1976D2 100%);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:        #1565C0;
+  --md-primary-fg-color--light: #1976D2;
+  --md-primary-fg-color--dark:  #0D47A1;
+  --md-accent-fg-color:         #FF6F00;
+  --md-accent-fg-color--transparent: rgba(255, 111, 0, 0.12);
+  --vamos-hero-bg: linear-gradient(135deg, #0a2d6e 0%, #0D47A1 50%, #1565C0 100%);
+}
+
+/* ----- Hero section -------------------------------------------------- */
+.vamos-hero {
+  background: var(--vamos-hero-bg);
+  color: #ffffff;
+  padding: 5rem 2rem 4rem;
+  text-align: center;
+  margin: -0.8rem calc(-1 * var(--md-content-padding, 1.2rem)) 3rem;
+  border-radius: 0 0 1rem 1rem;
+}
+
+.vamos-hero h1 {
+  color: #ffffff !important;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+
+.vamos-hero p {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 1.2rem;
+  max-width: 560px;
+  margin: 0 auto 2rem;
+}
+
+.vamos-hero .md-button {
+  margin: 0.3rem;
+}
+
+.vamos-hero .md-button--primary {
+  background-color: #FF6F00;
+  border-color: #FF6F00;
+  color: #ffffff;
+}
+
+.vamos-hero .md-button--primary:hover {
+  background-color: #E65100;
+  border-color: #E65100;
+}
+
+.vamos-hero .md-button:not(.md-button--primary) {
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+}
+
+.vamos-hero .md-button:not(.md-button--primary):hover {
+  border-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ----- Install banner ------------------------------------------------ */
+.vamos-install {
+  background: var(--md-code-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.5rem;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.vamos-install h2 {
+  margin-top: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--md-default-fg-color--light);
+}
+
+.vamos-install p {
+  margin-bottom: 0;
+  font-size: 0.85rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* ----- Feature cards — accent top border ---------------------------- */
+.grid.cards > ul > li,
+.grid.cards > ol > li {
+  border-top: 3px solid var(--md-primary-fg-color);
+}
+
+/* ----- Performance table — highlight VAMOS row ---------------------- */
+.md-typeset table tbody tr:first-child td {
+  font-weight: 600;
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+/* ----- Algorithm characteristic table ------------------------------- */
+.algo-props td:first-child {
+  font-weight: 600;
+  width: 38%;
+  color: var(--md-default-fg-color--light);
+}
