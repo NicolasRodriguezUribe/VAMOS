@@ -9,6 +9,7 @@ from typing import Any, cast
 import numpy as np
 
 from vamos.foundation.eval.population import evaluate_population_with_constraints
+from vamos.foundation.exceptions import ConfigurationError
 from . import EvaluationBackend, EvaluationResult
 
 
@@ -81,7 +82,10 @@ class MultiprocessingEvalBackend(EvaluationBackend):
                     break
                 G_out[start : start + g_part.shape[0]] = g_part
         if missing_constraints:
-            G_out = None
+            raise ValueError(
+                "MultiprocessingEvalBackend: one or more worker chunks returned no "
+                "constraint data (G=None). Ensure all evaluations compute constraints."
+            )
 
         return EvaluationResult(F=F, G=G_out)
 
@@ -130,7 +134,7 @@ class DaskEvalBackend(EvaluationBackend):
     def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         if not self._connected or (self.client is None and self.address is None):
             if not self._logged_fallback:
-                _logger().debug("DaskEvalBackend not connected; using SerialEvalBackend.")
+                _logger().warning("DaskEvalBackend not connected; falling back to SerialEvalBackend.")
                 self._logged_fallback = True
             return SerialEvalBackend().evaluate(X, problem)
 
@@ -186,19 +190,24 @@ class DaskEvalBackend(EvaluationBackend):
             return EvaluationResult(F=F, G=G)
 
         except Exception:
-            _logger().debug("DaskEvalBackend evaluation failed; falling back to SerialEvalBackend.", exc_info=True)
-            # Fallback on failure
+            _logger().warning("DaskEvalBackend evaluation failed; falling back to SerialEvalBackend.", exc_info=True)
             return SerialEvalBackend().evaluate(X, problem)
 
 
 def resolve_eval_strategy(
     name: str, *, n_workers: int | None = None, chunk_size: int | None = None, dask_address: str | None = None
 ) -> EvaluationBackend:
+    _KNOWN = ("serial", "multiprocessing", "dask")
     key = (name or "serial").lower()
     if key == "multiprocessing":
         return MultiprocessingEvalBackend(n_workers=n_workers, chunk_size=chunk_size)
     if key == "dask":
         return DaskEvalBackend(address=dask_address)
+    if key != "serial":
+        raise ConfigurationError(
+            f"Unknown eval_strategy {name!r}.",
+            suggestion=f"Valid strategies: {_KNOWN}.",
+        )
     return SerialEvalBackend()
 
 

@@ -16,7 +16,6 @@ from vamos.foundation.problem.resolver import resolve_problem_selections
 from vamos.hooks import LiveVisualization
 
 from vamos.experiment.execution import execute_problem_suite
-from vamos.experiment.services.config import normalize_variations
 from vamos.experiment.services.orchestrator import run_single
 
 
@@ -126,28 +125,6 @@ def run_from_args(
             getattr(args, "rvea_variation", None), _override_mapping(override, "rvea")
         )
         effective_args.effective_problem_override = override
-
-        (
-            effective_args.nsgaii_variation,
-            effective_args.moead_variation,
-            effective_args.smsemoa_variation,
-            effective_args.nsgaiii_variation,
-            effective_args.spea2_variation,
-            effective_args.ibea_variation,
-            effective_args.smpso_variation,
-            effective_args.agemoea_variation,
-            effective_args.rvea_variation,
-        ) = normalize_variations(
-            nsgaii_variation=effective_args.nsgaii_variation,
-            moead_variation=effective_args.moead_variation,
-            smsemoa_variation=effective_args.smsemoa_variation,
-            nsgaiii_variation=effective_args.nsgaiii_variation,
-            spea2_variation=effective_args.spea2_variation,
-            ibea_variation=effective_args.ibea_variation,
-            smpso_variation=effective_args.smpso_variation,
-            agemoea_variation=effective_args.agemoea_variation,
-            rvea_variation=effective_args.rvea_variation,
-        )
 
         if multiple:
             _logger().info("%s", "\n" + "#" * 80)

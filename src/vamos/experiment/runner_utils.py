@@ -9,12 +9,12 @@ import os
 import numpy as np
 
 from vamos.foundation.encoding import normalize_encoding
-from vamos.foundation.problem.base import Problem
+from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
 
-def validate_problem(problem: Problem) -> None:
+def validate_problem(problem: ProblemProtocol) -> None:
     if problem.n_var <= 0 or problem.n_obj <= 0:
         raise ValueError("Problem must have positive n_var and n_obj.")
     if problem.n_constraints < 0:

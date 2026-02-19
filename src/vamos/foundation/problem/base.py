@@ -60,6 +60,15 @@ class Problem:
     """
 
     # ------------------------------------------------------------------
+    # Required instance attributes — must be set in subclass __init__
+    # ------------------------------------------------------------------
+
+    n_var: int
+    n_obj: int
+    xl: float | int | np.ndarray
+    xu: float | int | np.ndarray
+
+    # ------------------------------------------------------------------
     # Class-level defaults — override at class body level, not in __init__
     # ------------------------------------------------------------------
 
@@ -127,9 +136,15 @@ class Problem:
         X = np.asarray(X, dtype=float)
 
         # --- objectives ---
+        N = X.shape[0]
         F_computed = np.asarray(self.objectives(X), dtype=float)
         if F_computed.ndim == 1:
             F_computed = F_computed.reshape(-1, self.n_obj)
+        if F_computed.shape != (N, self.n_obj):
+            raise ValueError(
+                f"{type(self).__name__}.objectives() returned shape {F_computed.shape}, "
+                f"expected ({N}, {self.n_obj})."
+            )
         F_buf = out.get("F")
         if F_buf is not None and F_buf.shape == F_computed.shape:
             F_buf[:] = F_computed
@@ -143,6 +158,11 @@ class Problem:
                 G_computed = np.asarray(G_computed, dtype=float)
                 if G_computed.ndim == 1:
                     G_computed = G_computed.reshape(-1, self.n_constraints)
+                if G_computed.shape != (N, self.n_constraints):
+                    raise ValueError(
+                        f"{type(self).__name__}.constraints() returned shape {G_computed.shape}, "
+                        f"expected ({N}, {self.n_constraints})."
+                    )
                 G_buf = out.get("G")
                 if G_buf is not None and G_buf.shape == G_computed.shape:
                     G_buf[:] = G_computed
