@@ -3,6 +3,7 @@ import pytest
 from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
 from vamos import OptimizationResult, optimize
 from vamos.foundation.exceptions import InvalidAlgorithmError
+from vamos.foundation.problem.tsp import TSPProblem
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
@@ -131,3 +132,19 @@ def test_optimize_accepts_max_evaluations_termination() -> None:
     )
     defaults = result.explain_defaults()
     assert defaults["resolved_config"]["max_evaluations"] == 12
+
+
+def test_optimize_permutation_problem_uses_encoding_defaults() -> None:
+    problem = TSPProblem(n_cities=8)
+    result = optimize(
+        problem,
+        algorithm="nsgaii",
+        max_evaluations=16,
+        pop_size=8,
+        seed=1,
+        engine="numpy",
+    )
+    assert isinstance(result, OptimizationResult)
+    assert result.F is not None
+    assert result.X is not None
+    assert result.X.shape[1] == problem.n_var

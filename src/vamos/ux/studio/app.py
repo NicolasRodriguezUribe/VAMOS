@@ -152,6 +152,7 @@ def _render_welcome_tab(st: Any) -> None:
             "    lambda x: [x[0], 1-x[0]**0.5],\n"
             "    n_var=2, n_obj=2,\n"
             "    bounds=[(0,1), (0,1)],\n"
+            '    encoding="real",\n'
             ")",
             language="python",
         )
@@ -205,7 +206,7 @@ def _render_welcome_expanders(st: Any) -> None:
             "| Goal | Code |\n"
             "|------|------|\n"
             '| Run a benchmark | `optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)` |\n'
-            "| Custom problem | `make_problem(fn, n_var=2, n_obj=2, bounds=[(0,1),(0,1)])` |\n"
+            '| Custom problem | `make_problem(fn, n_var=2, n_obj=2, bounds=[(0,1),(0,1)], encoding="real")` |\n'
             '| Compare seeds | `optimize("zdt1", seed=[0, 1, 2, 3, 4])` |\n'
             "| List problems | `from vamos import available_problem_names; available_problem_names()` |\n"
         )

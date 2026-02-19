@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.archive import ExternalArchiveConfig
+from vamos.foundation.encoding import normalize_encoding
 from .base import ConstraintModeStr, LiveCallbackMode, ResultMode, _SerializableConfig, _require_fields
 
 
@@ -145,14 +146,16 @@ class _NSGAIIConfigBuilder:
     def build(self) -> NSGAIIConfig:
         _require_fields(
             self._cfg,
-            ("pop_size", "crossover", "mutation", "selection"),
+            ("crossover", "mutation"),
             "NSGA-II",
         )
+        pop_size = int(self._cfg.get("pop_size", 100))
+        selection = self._cfg.get("selection", ("tournament", {}))
         return NSGAIIConfig(
-            pop_size=self._cfg["pop_size"],
+            pop_size=pop_size,
             crossover=self._cfg["crossover"],
             mutation=self._cfg["mutation"],
-            selection=self._cfg["selection"],
+            selection=selection,
             offspring_size=self._cfg.get("offspring_size"),
             steady_state=bool(self._cfg.get("steady_state", False)),
             replacement_size=self._cfg.get("replacement_size"),
@@ -200,6 +203,7 @@ class NSGAIIConfig(_SerializableConfig):
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
+        encoding: str | None = None,
     ) -> NSGAIIConfig:
         """
         Create a default NSGA-II configuration with sensible defaults.
@@ -207,18 +211,24 @@ class NSGAIIConfig(_SerializableConfig):
         Args:
             pop_size: Population size (default: 100)
             n_var: Number of variables (used for mutation prob = 1/n_var)
+            encoding: Problem encoding. If omitted, defaults to "real".
         Returns:
             Frozen NSGAIIConfig ready to use
         """
+        normalized = normalize_encoding(encoding, default="real")
         mut_prob = 1.0 / n_var if n_var else 0.1
-        return (
-            cls.builder()
-            .pop_size(pop_size)
-            .crossover("sbx", prob=1.0, eta=20.0)
-            .mutation("pm", prob=mut_prob, eta=20.0)
-            .selection("tournament")
-            .build()
-        )
+        builder = cls.builder().pop_size(pop_size).selection("tournament")
+
+        if normalized == "permutation":
+            return builder.crossover("ox").mutation("swap").build()
+        if normalized == "binary":
+            return builder.crossover("uniform", prob=0.9).mutation("bitflip", prob=mut_prob).build()
+        if normalized == "integer":
+            return builder.crossover("sbx", prob=0.9, eta=20.0).mutation("pm", prob=mut_prob, eta=20.0).build()
+        if normalized == "mixed":
+            return builder.crossover("mixed", prob=0.9).mutation("mixed", prob=mut_prob).build()
+
+        return builder.crossover("sbx", prob=1.0, eta=20.0).mutation("pm", prob=mut_prob, eta=20.0).build()
 
     @classmethod
     def builder(cls) -> _NSGAIIConfigBuilder:

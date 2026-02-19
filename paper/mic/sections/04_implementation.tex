@@ -18,10 +18,3 @@ We log two types of artifacts for post-hoc analysis:
 (ii) a summary table (number of pulls and mean reward per arm at the end of the run).
 These logs enable inspection of when the policy switches operators, whether it locks into a single arm, and how reward signals evolve over time.
 
-\subsection{Computational efficiency}
-All experiments are executed within VAMOS, a vectorized Python framework for multiobjective optimization that leverages Numba JIT compilation to achieve near-native performance.
-We compare its runtime against pymoo~\cite{pymoo} and jMetalPy~\cite{jmetalpy}, the two most widely adopted Python MOEA frameworks in recent literature.
-DEAP~\cite{deap} and Platypus are deliberately excluded from this comparison: DEAP is a general-purpose evolutionary computation toolkit whose NSGA-II implementation prioritizes pedagogical clarity over computational efficiency, while Platypus has seen little active maintenance and has a substantially smaller adoption in the MOEA community.
-Both frameworks ran more than one order of magnitude slower than pymoo on our benchmarks in preliminary tests, making them unsuitable comparison points for a performance evaluation; retaining them would also have multiplied the total experiment time by a factor incompatible with the publication timeline.
-The comparison is therefore restricted to pymoo and jMetalPy, which represent the current state of the art in optimized Python MOEA implementations.
-

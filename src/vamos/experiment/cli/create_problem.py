@@ -48,6 +48,7 @@ problem = make_problem(
     n_var={n_var},
     n_obj={n_obj},
     bounds={bounds},
+    encoding="real",
     name="{name}",
 )
 

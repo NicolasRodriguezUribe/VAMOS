@@ -5,7 +5,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from vamos.foundation.problem.builder import FunctionalProblem, make_problem
+from vamos.foundation.problem.builder import FunctionalProblem, make_problem as _make_problem
+
+
+def make_problem(*args: object, **kwargs: object) -> FunctionalProblem:
+    """Test helper: keep test fixtures concise while make_problem requires encoding."""
+    kwargs.setdefault("encoding", "real")
+    return _make_problem(*args, **kwargs)
 
 
 # ======================================================================
@@ -300,3 +306,7 @@ class TestValidation:
             make_problem(
                 lambda x: [x[0]], n_var=1, n_obj=1, encoding="quantum"
             )
+
+    def test_encoding_required(self) -> None:
+        with pytest.raises(TypeError, match="encoding"):
+            _make_problem(lambda x: [x[0]], n_var=1, n_obj=1)
