@@ -1,5 +1,3 @@
-from .hv_archive_hooks import CompositeLiveVisualization, HookManager, HookManagerConfig
-from .live_viz import LiveVisualization, NoOpLiveVisualization
 from .genealogy import (
     DefaultGenealogyTracker,
     GenealogyRecord,
@@ -7,6 +5,8 @@ from .genealogy import (
     NoOpGenealogyTracker,
     get_lineage,
 )
+from .hv_archive_hooks import CompositeLiveVisualization, HookManager, HookManagerConfig
+from .live_viz import LiveVisualization, NoOpLiveVisualization
 
 __all__ = [
     "CompositeLiveVisualization",

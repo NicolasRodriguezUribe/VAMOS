@@ -1,13 +1,14 @@
-import numpy as np
 from types import SimpleNamespace
+
+import numpy as np
 
 from vamos.engine.tuning.racing.core import RacingTuner
 from vamos.engine.tuning.racing.elimination import eliminate_configs
-from vamos.engine.tuning.racing.param_space import ParamSpace, Real, Categorical, Condition
+from vamos.engine.tuning.racing.param_space import Categorical, Condition, ParamSpace, Real
 from vamos.engine.tuning.racing.sampler import ModelBasedSampler
 from vamos.engine.tuning.racing.scenario import Scenario
 from vamos.engine.tuning.racing.state import ConfigState
-from vamos.engine.tuning.racing.tuning_task import TuningTask, Instance
+from vamos.engine.tuning.racing.tuning_task import Instance, TuningTask
 
 
 def test_elimination_keeps_history_when_lengths_differ():

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from ...binary import BinaryFeatureSelectionProblem, BinaryKnapsackProblem, BinaryQUBOProblem
 from ...integer import IntegerJobAssignmentProblem, IntegerResourceAllocationProblem
 from ...mixed import MixedDesignProblem

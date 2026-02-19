@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
-from vamos.foundation.problem.lz import LZ09F1Problem, LZ09F6Problem
+
 from vamos.foundation.problem.cec import CEC2009CF1Problem, CEC2009UF1Problem, CEC2009UF4Problem, CEC2009UF8Problem
 from vamos.foundation.problem.constrained_many import CDTLZProblem, DCDTLZProblem, MWProblem
 from vamos.foundation.problem.dtlz import DTLZ5Problem, DTLZ6Problem
 from vamos.foundation.problem.lsmop import LSMOP1, LSMOP9
+from vamos.foundation.problem.lz import LZ09F1Problem, LZ09F6Problem
 from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.problem.zcat import ZCAT13Problem

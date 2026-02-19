@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
 import numpy as np
+import pytest
 
 from vamos.ux.studio.problem_builder_backend import (
     compile_objective_function,
@@ -12,7 +12,6 @@ from vamos.ux.studio.problem_builder_backend import (
     parse_bounds_text,
     run_preview_optimization,
 )
-
 
 # ======================================================================
 # compile_objective_function

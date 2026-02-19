@@ -6,7 +6,7 @@ A complete walk-through of common VAMOS workflows from install to result analysi
 
 ## Prerequisites
 
-- Python 3.9+
+- Python 3.10+
 - `pip install vamos-optimization`
 - Basic NumPy familiarity
 

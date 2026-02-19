@@ -28,7 +28,7 @@ def execute_algorithm(
     live_viz: Any = None,
 ) -> ExecutionResult:
     start = time.perf_counter()
-    run_fn = getattr(algorithm, "run")
+    run_fn = algorithm.run
     kwargs = {
         "problem": problem,
         "termination": termination,

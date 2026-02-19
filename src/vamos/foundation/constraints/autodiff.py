@@ -5,7 +5,7 @@ from typing import Any, cast
 
 import numpy as np
 
-from vamos.foundation.constraints.dsl import ConstraintModel, Constraint, Expr, Var
+from vamos.foundation.constraints.dsl import Constraint, ConstraintModel, Expr, Var
 
 
 def _import_jax() -> tuple[Any, Any]:

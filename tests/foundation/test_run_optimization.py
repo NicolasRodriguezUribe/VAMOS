@@ -5,8 +5,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from vamos.api import OptimizationResult, optimize
 from vamos.algorithms import MOEADConfig, NSGAIIConfig
+from vamos.api import OptimizationResult, optimize
 from vamos.foundation.exceptions import InvalidAlgorithmError
 from vamos.foundation.problem.zdt1 import ZDT1Problem as ZDT1
 

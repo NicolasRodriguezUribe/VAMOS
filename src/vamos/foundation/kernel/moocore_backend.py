@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterable, Mapping
-from typing import Any, Literal, TYPE_CHECKING, cast, overload
-
-import numpy as np
-from numpy.typing import NDArray
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import moocore
+import numpy as np
+from numpy.typing import NDArray
 
 try:  # Optional JIT acceleration for tournament selection
     from numba import njit
@@ -15,9 +14,10 @@ except ImportError:  # pragma: no cover - optional dependency
     njit = None
 
 from vamos.foundation.metrics.hypervolume import hypervolume as hv_fn
-from .backend import KernelBackend
-from .numpy_backend import NumPyKernel as _NumPyKernel, _compute_crowding
 
+from .backend import KernelBackend
+from .numpy_backend import NumPyKernel as _NumPyKernel
+from .numpy_backend import _compute_crowding
 
 FloatArray = NDArray[np.floating[Any]]
 IntArray = NDArray[np.integer[Any]]

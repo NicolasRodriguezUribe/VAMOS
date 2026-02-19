@@ -14,8 +14,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from vamos.foundation.kernel import default_kernel
-
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import (
@@ -23,21 +21,22 @@ from vamos.engine.algorithm.components.hooks import (
     live_should_stop,
     track_offspring_genealogy,
 )
+from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.foundation.kernel import default_kernel
+
 from .helpers import (
     evaluate_population_with_constraints,
     nsgaiii_survival,
 )
 from .initialization import initialize_nsgaiii_run
 from .state import NSGAIIIState, build_nsgaiii_result
-from vamos.engine.algorithm.components.termination import HVTracker
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-from vamos.hooks.live_viz import LiveVisualization
 from vamos.foundation.observer import RunContext
-
+from vamos.hooks.live_viz import LiveVisualization
 
 __all__ = ["NSGAIII"]
 

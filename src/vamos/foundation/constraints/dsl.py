@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Literal
-from collections.abc import Callable, Iterator, Sequence
 
 import numpy as np
 

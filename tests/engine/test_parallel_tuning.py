@@ -1,10 +1,12 @@
 import time
-import pytest
 from typing import Any
+
+import pytest
+
 from src.vamos.engine.tuning.racing.core import RacingTuner
-from src.vamos.engine.tuning.racing.scenario import Scenario
-from src.vamos.engine.tuning.racing.tuning_task import TuningTask, Instance, EvalContext
 from src.vamos.engine.tuning.racing.param_space import ParamSpace, Real
+from src.vamos.engine.tuning.racing.scenario import Scenario
+from src.vamos.engine.tuning.racing.tuning_task import EvalContext, Instance, TuningTask
 
 
 def slow_eval_fn(config: dict[str, Any], ctx: EvalContext) -> float:

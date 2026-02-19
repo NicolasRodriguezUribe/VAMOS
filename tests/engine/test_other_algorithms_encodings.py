@@ -1,9 +1,9 @@
 import numpy as np
 
+from vamos.engine.algorithm.config import MOEADConfig, NSGAIIIConfig, SMSEMOAConfig
 from vamos.engine.algorithm.moead import MOEAD
-from vamos.engine.algorithm.smsemoa import SMSEMOA
 from vamos.engine.algorithm.nsgaiii import NSGAIII
-from vamos.engine.algorithm.config import MOEADConfig, SMSEMOAConfig, NSGAIIIConfig
+from vamos.engine.algorithm.smsemoa import SMSEMOA
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.binary import BinaryKnapsackProblem
 from vamos.foundation.problem.integer import IntegerResourceAllocationProblem

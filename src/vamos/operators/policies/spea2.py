@@ -15,8 +15,7 @@ import numpy as np
 
 from vamos.foundation.encoding import normalize_encoding
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
-from vamos.operators.impl.real import VariationWorkspace
+from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
 
 if TYPE_CHECKING:
     from vamos.foundation.problem.types import ProblemProtocol

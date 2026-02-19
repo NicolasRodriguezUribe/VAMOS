@@ -5,7 +5,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from vamos.foundation.problem.builder import FunctionalProblem, make_problem as _make_problem
+from vamos.foundation.problem.builder import FunctionalProblem
+from vamos.foundation.problem.builder import make_problem as _make_problem
 
 
 def make_problem(*args: object, **kwargs: object) -> FunctionalProblem:

@@ -9,8 +9,8 @@ Note: SPEA2 has two archives:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, cast
-from collections.abc import Iterable
 
 import numpy as np
 

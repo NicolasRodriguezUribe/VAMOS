@@ -3,9 +3,9 @@ from pathlib import Path
 
 import numpy as np
 
+from vamos.experiment.runner import run_single
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.experiment.runner import run_single
 
 
 def test_metadata_and_resolved_config_are_consistent(tmp_path):

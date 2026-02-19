@@ -25,10 +25,10 @@ from vamos.engine.algorithm.config import (
 )
 from vamos.engine.algorithm.config.base import _SerializableConfig
 from vamos.engine.algorithm.config.defaults import build_default_algorithm_config
-from vamos.foundation.core.experiment_config import DEFAULT_ALGORITHM
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
 from vamos.exceptions import InvalidAlgorithmError
+from vamos.foundation.core.experiment_config import DEFAULT_ALGORITHM
 
 _CONFIG_MAP: dict[str, type[_SerializableConfig]] = {
     "nsgaii": NSGAIIConfig,
@@ -47,12 +47,12 @@ from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.ux.analysis.mcdm import reference_point_scores
-
 from vamos.ux.studio.data import build_fronts, load_runs_from_study
 from vamos.ux.studio.dm import build_decision_view
 
 if TYPE_CHECKING:
     from pathlib import Path
+
     from vamos.ux.studio.data import FrontRecord, RunRecord
     from vamos.ux.studio.dm import DecisionView
 
@@ -159,7 +159,7 @@ def _run_algorithm(
 
     algo_ctor = resolve_algorithm(algorithm)
     algorithm_instance = algo_ctor(cfg_dict, kernel)
-    run_fn = getattr(algorithm_instance, "run")
+    run_fn = algorithm_instance.run
     result = run_fn(
         problem=problem,
         termination=termination,

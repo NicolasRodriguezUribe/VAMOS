@@ -14,7 +14,8 @@ References:
     Search," in Proc. PPSN VIII, 2004, pp. 832-842.
 """
 
-from .ibea import IBEA
+from vamos.operators.policies.ibea import build_variation_pipeline
+
 from .helpers import (
     apply_constraint_penalty,
     combine_constraints,
@@ -24,7 +25,7 @@ from .helpers import (
     hypervolume_indicator,
     ibea_fitness,
 )
-from vamos.operators.policies.ibea import build_variation_pipeline
+from .ibea import IBEA
 from .initialization import initialize_ibea_run
 from .state import IBEAState, build_ibea_result
 

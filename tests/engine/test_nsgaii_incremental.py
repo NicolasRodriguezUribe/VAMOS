@@ -1,8 +1,8 @@
 import numpy as np
 
 from vamos.engine.algorithm.nsgaii.helpers import (
-    fronts_from_ranks,
     compute_crowding,
+    fronts_from_ranks,
     incremental_insert_fronts,
     select_nsga2,
 )

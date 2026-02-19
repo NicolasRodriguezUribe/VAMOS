@@ -13,7 +13,6 @@ from ...lz import (
 )
 from ..common import ProblemSpec
 
-
 SPECS: dict[str, ProblemSpec] = {}
 
 

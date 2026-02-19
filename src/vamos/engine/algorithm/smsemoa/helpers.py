@@ -16,9 +16,10 @@ import numpy as np
 from vamos.foundation.metrics.hypervolume import hypervolume_contributions
 
 if TYPE_CHECKING:
-    from .state import SMSEMOAState
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
+
+    from .state import SMSEMOAState
 
 
 __all__ = [

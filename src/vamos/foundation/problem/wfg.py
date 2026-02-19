@@ -6,8 +6,8 @@ Based on the standard WFG toolkit definitions.
 from __future__ import annotations
 
 import numpy as np
-from vamos.foundation.problem.base import Problem
 
+from vamos.foundation.problem.base import Problem
 
 
 def _correct_to_01(x: np.ndarray, epsilon: float = 1.0e-10) -> np.ndarray:

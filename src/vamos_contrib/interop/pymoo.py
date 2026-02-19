@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 import numpy as np
+
 from vamos.foundation.problem.types import ProblemProtocol
 
 

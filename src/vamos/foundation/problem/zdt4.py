@@ -1,6 +1,6 @@
 import numpy as np
-from vamos.foundation.problem.base import Problem
 
+from vamos.foundation.problem.base import Problem
 
 
 class ZDT4Problem(Problem):

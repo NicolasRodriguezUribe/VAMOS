@@ -21,7 +21,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 ## 📦 Quick Install
 
 ```bash
-pip install vamos
+pip install vamos-optimization
 ```
 
 For development and extras (Windows PowerShell):
@@ -32,7 +32,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
 # Install core + essential extras
-pip install "vamos[compute,research,analysis]"
+pip install "vamos-optimization[compute,research,analysis]"
 ```
 
 For development and extras (Linux / macOS):
@@ -43,13 +43,13 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install core + essential extras
-pip install "vamos[compute,research,analysis]"
+pip install "vamos-optimization[compute,research,analysis]"
 ```
 
 Optional model-based tuning backends (`optuna`, `smac3`, `bohb`):
 
 ```bash
-pip install "vamos[tuning]"
+pip install "vamos-optimization[tuning]"
 ```
 
 `smac3` in VAMOS is provided by the PyPI package `smac` (SMAC3):
@@ -123,7 +123,7 @@ Check backend availability in your current environment:
 vamos tune --list-backends
 ```
 
-Note: `racing` and `random` require no extra dependencies. The model-based backends (`optuna`, `bohb_optuna`, `smac3`, `bohb`) require the optional `tuning` extra: `pip install "vamos[tuning]"`. The `smac3` backend uses the `smac` package.
+Note: `racing` and `random` require no extra dependencies. The model-based backends (`optuna`, `bohb_optuna`, `smac3`, `bohb`) require the optional `tuning` extra: `pip install "vamos-optimization[tuning]"`. The `smac3` backend uses the `smac` package.
 
 Recommended robust command (fallback + suite-stratified split):
 
@@ -197,7 +197,7 @@ vamos assist go "template-first example" --template demo --smoke
 ```
 
 ```bash
-pip install vamos[openai]
+pip install vamos-optimization[openai]
 setx OPENAI_API_KEY "..."
 vamos assist go "..." --mode auto --provider openai --smoke
 ```

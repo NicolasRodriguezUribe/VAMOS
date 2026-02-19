@@ -1,8 +1,8 @@
 import warnings
 
 import numpy as np
-from vamos.foundation.problem.base import Problem
 
+from vamos.foundation.problem.base import Problem
 
 
 class DTLZBase(Problem):

@@ -181,8 +181,10 @@ class HypervolumeArchive(_BaseArchive):
     The reference point is dynamically computed from the current archive.
     """
 
-    def __init__(self, capacity: int, n_var: int, n_obj: int, dtype: Any, ref_offset: float = 1.0) -> None:
-        super().__init__(capacity, n_var, n_obj, dtype)
+    def __init__(
+        self, capacity: int, n_var: int, n_obj: int, dtype: Any, ref_offset: float = 1.0, objective_tolerance: float = 1e-10
+    ) -> None:
+        super().__init__(capacity, n_var, n_obj, dtype, objective_tolerance=objective_tolerance)
         self._ref_offset = float(ref_offset)
 
     def _get_indicator(self, F: np.ndarray) -> np.ndarray:

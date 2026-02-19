@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -92,9 +92,15 @@ def uniform_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.random
     return _reshape_offspring(pairs, X_parents)
 
 
-def arithmetic_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.random.Generator) -> np.ndarray:
+def arithmetic_integer_crossover(
+    X_parents: np.ndarray,
+    prob: float,
+    rng: np.random.Generator,
+    lower: np.ndarray | None = None,
+    upper: np.ndarray | None = None,
+) -> np.ndarray:
     """
-    Integer arithmetic crossover: average parents and round.
+    Integer arithmetic crossover: average parents and round, then clip to bounds.
     """
     pairs, _ = _as_pairs(X_parents)
     prob = float(np.clip(prob, 0.0, 1.0))
@@ -107,6 +113,8 @@ def arithmetic_integer_crossover(X_parents: np.ndarray, prob: float, rng: np.ran
     for row in idx:
         p1, p2 = pairs[row, 0], pairs[row, 1]
         mean = np.rint(0.5 * (p1 + p2)).astype(p1.dtype, copy=False)
+        if lower is not None and upper is not None:
+            mean = np.clip(mean, lower, upper)
         pairs[row, 0] = mean
         pairs[row, 1] = mean
     return _reshape_offspring(pairs, X_parents)

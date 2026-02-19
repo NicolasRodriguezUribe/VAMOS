@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.operators.impl.real.mutation import UniformMutation, LinkedPolynomialMutation
+from vamos.operators.impl.real.mutation import LinkedPolynomialMutation, UniformMutation
 from vamos.operators.impl.real.repair import ClampRepair
 
 

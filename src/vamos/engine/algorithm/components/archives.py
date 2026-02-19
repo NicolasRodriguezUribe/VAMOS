@@ -4,7 +4,7 @@ Archive management helpers for algorithms.
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -78,13 +78,15 @@ def setup_archive(
     capacity = ext_cfg.capacity
     pruning = ext_cfg.pruning
 
+    tol = ext_cfg.objective_tolerance
+
     if capacity is None:
         # Unbounded archive
-        manager: _ArchiveManager = UnboundedArchive(n_var=n_var, n_obj=n_obj, dtype=dtype)
+        manager: _ArchiveManager = UnboundedArchive(n_var=n_var, n_obj=n_obj, dtype=dtype, objective_tolerance=tol)
     elif pruning == "hv_contrib":
-        manager = HypervolumeArchive(capacity, n_var, n_obj, dtype)
+        manager = HypervolumeArchive(capacity, n_var, n_obj, dtype, objective_tolerance=tol)
     else:
-        manager = CrowdingDistanceArchive(capacity, n_var, n_obj, dtype)
+        manager = CrowdingDistanceArchive(capacity, n_var, n_obj, dtype, objective_tolerance=tol)
 
     archive_X, archive_F = manager.update(X, F)
     return archive_X, archive_F, manager

@@ -4,7 +4,7 @@ Metric tracking helpers (hypervolume, convergence).
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from vamos.engine.algorithm.components.termination import HVTracker
 

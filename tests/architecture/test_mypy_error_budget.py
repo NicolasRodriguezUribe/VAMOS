@@ -4,9 +4,9 @@ import json
 import re
 import subprocess
 import sys
-from shutil import which
 from collections import Counter
 from pathlib import Path
+from shutil import which
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BUDGET_PATH = Path(__file__).with_name("mypy_error_budget.json")

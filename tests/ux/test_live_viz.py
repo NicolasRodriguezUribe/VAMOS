@@ -1,12 +1,12 @@
-import pytest
 import numpy as np
+import pytest
 
 pytest.importorskip("matplotlib")
 
 from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.engine.algorithm.nsgaii import NSGAII
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
-from vamos.ux.visualization.live_viz import LiveVisualization, LiveParetoPlot
+from vamos.ux.visualization.live_viz import LiveParetoPlot, LiveVisualization
 
 
 class DummyProblem:

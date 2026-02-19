@@ -12,7 +12,7 @@ def _parse_probability_arg(
 ) -> float | str | None:
     if raw is None:
         return None
-    text = str(raw).strip()
+    text = str(raw).strip().replace(" ", "")
     if allow_expression and text.endswith("/n"):
         numerator = text[:-2].strip()
         if numerator:

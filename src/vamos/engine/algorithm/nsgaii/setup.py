@@ -5,16 +5,16 @@ Initialization helpers for NSGA-II.
 from __future__ import annotations
 
 import logging
-from typing import Any, TYPE_CHECKING, cast
 from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
-from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.checkpoint import restore_rng
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.observer import RunContext
 from vamos.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
@@ -22,7 +22,6 @@ from vamos.operators.impl.real import VariationWorkspace
 from vamos.operators.policies.nsgaii import build_operator_pool
 
 from .helpers import fronts_from_ranks
-from .injection import ImmigrationManager
 from .initialization import (
     parse_termination,
     resolve_external_archive,
@@ -32,10 +31,12 @@ from .initialization import (
     setup_result_archive,
     setup_selection,
 )
+from .injection import ImmigrationManager
 from .state import NSGAIIState
 
 if TYPE_CHECKING:
     from vamos.archive import ExternalArchiveConfig
+
     from .nsgaii import NSGAII
 
 

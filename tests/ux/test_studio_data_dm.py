@@ -3,8 +3,8 @@ from pathlib import Path
 import numpy as np
 
 from vamos.ux.studio.data import RunRecord, build_fronts, normalize_objectives
-from vamos.ux.studio.dm import build_decision_view, rank_by_score, feasible_indices, filter_by_objective_ranges
-from vamos.ux.studio.export import export_solutions_to_json, export_solutions_to_csv
+from vamos.ux.studio.dm import build_decision_view, feasible_indices, filter_by_objective_ranges, rank_by_score
+from vamos.ux.studio.export import export_solutions_to_csv, export_solutions_to_json
 
 
 def test_build_fronts_and_decision_view(tmp_path: Path):

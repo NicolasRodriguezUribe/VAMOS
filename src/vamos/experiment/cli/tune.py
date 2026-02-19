@@ -7,10 +7,10 @@ import logging
 import os
 import time
 import warnings
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from collections.abc import Callable, Mapping, Sequence
 
 import numpy as np
 
@@ -23,8 +23,8 @@ from vamos.engine.tuning import (
     RacingTuner,
     RandomSearchTuner,
     Scenario,
-    TuningTask,
     TrialResult,
+    TuningTask,
     available_model_based_backends,
     build_agemoea_config_space,
     build_ibea_binary_config_space,
@@ -43,10 +43,10 @@ from vamos.engine.tuning import (
     build_nsgaiii_config_space,
     build_nsgaiii_integer_config_space,
     build_rvea_config_space,
+    build_smpso_config_space,
     build_smsemoa_binary_config_space,
     build_smsemoa_config_space,
     build_smsemoa_integer_config_space,
-    build_smpso_config_space,
     build_spea2_config_space,
     config_from_assignment,
     filter_active_config,

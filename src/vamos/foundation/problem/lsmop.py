@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import numpy as np
-from vamos.foundation.problem.base import Problem
 
+from vamos.foundation.problem.base import Problem
 
 
 def _sphere(x: np.ndarray) -> np.ndarray:

@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-
 REQUIRED_LINK = "docs/dev/architecture_health.md"
 
 

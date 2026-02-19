@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .stats import build_score_matrix, select_configs_by_paired_test
 from .state import ConfigState, EliteEntry
+from .stats import build_score_matrix, select_configs_by_paired_test
 
 
 def _logger() -> logging.Logger:

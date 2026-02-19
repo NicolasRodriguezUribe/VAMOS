@@ -2,15 +2,22 @@ from __future__ import annotations
 
 import logging
 from argparse import Namespace
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass as _dataclass
 from importlib.resources import as_file
 from pathlib import Path
 from typing import Any
-from collections.abc import Callable, Iterable
 
 import numpy as np
 
-from vamos.foundation.encoding import normalize_encoding
+from vamos.archive import ExternalArchiveConfig
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.config.spec import ExperimentSpec, SpecBlock
+from vamos.engine.config.variation import VariationConfig
+from vamos.experiment.observers.console import ConsoleObserver
+from vamos.experiment.observers.storage import StorageObserver
+from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
+from vamos.experiment.runner_utils import run_output_dir, validate_problem
 from vamos.foundation.core.execution import execute_algorithm
 from vamos.foundation.core.experiment_config import (
     ENABLED_ALGORITHMS,
@@ -24,24 +31,17 @@ from vamos.foundation.core.experiment_config import (
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.data import weight_path
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.exceptions import ConfigurationError
-from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
 from vamos.foundation.metrics.hypervolume import hypervolume
-from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.observer import Observer, RunContext
-from vamos.experiment.runner_utils import run_output_dir, validate_problem
-from vamos.experiment.observers.console import ConsoleObserver
-from vamos.experiment.observers.storage import StorageObserver
+from vamos.foundation.problem.registry import ProblemSelection
 from vamos.hooks import (
     HookManager,
     HookManagerConfig,
     LiveVisualization,
 )
 from vamos.hooks.config_parse import parse_stopping_archive
-from vamos.archive import ExternalArchiveConfig
-from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
-from vamos.engine.config.spec import ExperimentSpec, SpecBlock
-from vamos.engine.config.variation import VariationConfig
 
 
 def _project_root() -> Path:

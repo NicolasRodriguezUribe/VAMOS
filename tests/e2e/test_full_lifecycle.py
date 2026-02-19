@@ -2,13 +2,13 @@
 E2E Test: Full Lifecycle (Optimize -> Save -> Analyze)
 """
 
-import pytest
 import pandas as pd
+import pytest
 
-from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos import OptimizationResult, optimize
-from vamos.foundation.metrics import compute_hypervolume
 from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.foundation.metrics import compute_hypervolume
+from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
 @pytest.mark.e2e

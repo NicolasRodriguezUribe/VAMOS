@@ -4,7 +4,7 @@ Lifecycle helpers for algorithm runs (initial population, evaluation strategies)
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 

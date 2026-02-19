@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, TypeAlias
 from collections.abc import Callable
+from typing import Any, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -191,8 +191,12 @@ def scramble_mutation(
     X: PermPop,
     prob: float,
     rng: RNG,
+    max_segment_length: int = 0,
 ) -> None:
-    _apply_row_mutation(X, prob, rng, _scramble_row_mutation)
+    if max_segment_length > 0:
+        _apply_row_mutation(X, prob, rng, lambda row, rng: _scramble_row_mutation(row, rng, max_segment_length=max_segment_length))
+    else:
+        _apply_row_mutation(X, prob, rng, _scramble_row_mutation)
 
 
 def inversion_mutation(
@@ -302,9 +306,8 @@ def _pmx_into(parent_a: PermVec, parent_b: PermVec, child: PermVec, cut1: int, c
 
     mapping: dict[int, int] = {}
     for i in range(cut1, cut2 + 1):
-        gene_a = int(parent_a[i])
         gene_b = int(parent_b[i])
-        mapping[gene_a] = gene_b
+        gene_a = int(parent_a[i])
         mapping[gene_b] = gene_a
 
     for i in range(n):
@@ -470,7 +473,7 @@ def _insert_row_mutation(row: PermVec, rng: RNG) -> None:
         row[j] = gene
 
 
-def _scramble_row_mutation(row: PermVec, rng: RNG) -> None:
+def _scramble_row_mutation(row: PermVec, rng: RNG, max_segment_length: int = 20) -> None:
     n = row.size
     if n < 2:
         return
@@ -480,8 +483,8 @@ def _scramble_row_mutation(row: PermVec, rng: RNG) -> None:
         point2 += 1
     else:
         point1, point2 = point2, point1
-    if point2 - point1 >= 20:
-        point2 = point1 + 20
+    if max_segment_length > 0 and point2 - point1 >= max_segment_length:
+        point2 = point1 + max_segment_length
     segment = row[point1:point2].copy()
     rng.shuffle(segment)
     row[point1:point2] = segment
@@ -503,16 +506,16 @@ def _displacement_row_mutation(row: PermVec, rng: RNG) -> None:
 
 
 from .permutation_adapters import (
-    SwapMutation,
-    PMXCrossover,
     CycleCrossover,
-    PositionBasedCrossover,
-    EdgeRecombinationCrossover,
-    OrderCrossover,
-    InsertMutation,
-    ScrambleMutation,
-    InversionMutation,
     DisplacementMutation,
+    EdgeRecombinationCrossover,
+    InsertMutation,
+    InversionMutation,
+    OrderCrossover,
+    PMXCrossover,
+    PositionBasedCrossover,
+    ScrambleMutation,
+    SwapMutation,
 )
 
 __all__ = [

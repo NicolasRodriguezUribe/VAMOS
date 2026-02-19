@@ -6,39 +6,38 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairName
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.registry import Registry
-from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairName
 from vamos.operators.impl.binary import (
+    bit_flip_mutation,
+    hux_crossover,
     one_point_crossover,
     two_point_crossover,
     uniform_crossover,
-    hux_crossover,
-    bit_flip_mutation,
 )
 from vamos.operators.impl.integer import (
-    uniform_integer_crossover,
     arithmetic_integer_crossover,
-    integer_sbx_crossover,
-    random_reset_mutation,
     creep_mutation,
     integer_polynomial_mutation,
-)
-from vamos.operators.impl.permutation import order_crossover
-from vamos.operators.impl.permutation import (
-    pmx_crossover,
-    cycle_crossover,
-    position_based_crossover,
-    edge_recombination_crossover,
-    swap_mutation,
-    insert_mutation,
-    scramble_mutation,
-    inversion_mutation,
-    displacement_mutation,
+    integer_sbx_crossover,
+    random_reset_mutation,
+    uniform_integer_crossover,
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
+from vamos.operators.impl.permutation import (
+    cycle_crossover,
+    displacement_mutation,
+    edge_recombination_crossover,
+    insert_mutation,
+    inversion_mutation,
+    order_crossover,
+    pmx_crossover,
+    position_based_crossover,
+    scramble_mutation,
+    swap_mutation,
+)
 from vamos.operators.impl.registry import get_operator_registry
-
 
 _REAL_CROSSOVER_KEYS = ("sbx", "blx_alpha", "arithmetic", "de", "pcx", "undx", "simplex")
 _REAL_MUTATION_KEYS = (

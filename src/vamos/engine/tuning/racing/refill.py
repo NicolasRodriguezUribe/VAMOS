@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
 import math
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from .param_space import ParamSpace, Real, Int, Categorical
+from .param_space import Categorical, Int, ParamSpace, Real
 from .sampler import Sampler
 from .state import ConfigState, EliteEntry
 

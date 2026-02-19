@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from vamos.foundation.kernel.numba_ops import polynomial_mutation_numba, sbx_crossover_numba
 
 

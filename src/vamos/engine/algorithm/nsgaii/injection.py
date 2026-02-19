@@ -5,9 +5,9 @@ Immigration/injection support for NSGA-II.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, cast
-from collections.abc import Mapping, Sequence
 
 import numpy as np
 
@@ -249,7 +249,7 @@ class ImmigrationManager:
         if not needs_eval:
             return candidates
         X_batch = np.vstack([candidates[i].X.reshape(1, -1) for i in needs_eval])
-        n_obj = int(getattr(state, "F").shape[1]) if isinstance(getattr(state, "F", None), np.ndarray) else 1
+        n_obj = int(state.F.shape[1]) if isinstance(getattr(state, "F", None), np.ndarray) else 1
         out: dict[str, Any] = {"F": np.zeros((X_batch.shape[0], n_obj), dtype=float)}
         g_state = getattr(state, "G", None)
         if isinstance(g_state, np.ndarray) and g_state.ndim == 2 and g_state.shape[1] > 0:
@@ -294,7 +294,7 @@ class ImmigrationManager:
         n = X.shape[0]
         if n == 0:
             return None
-        protected_set = set(int(i) for i in protected.tolist())
+        protected_set = {int(i) for i in protected.tolist()}
         candidates = np.array(
             [i for i in range(n) if i not in protected_set],
             dtype=int,
@@ -310,7 +310,7 @@ class ImmigrationManager:
         policy_name = str(policy).lower()
         ranks, crowding = kernel.nsga2_ranking(F)
         if policy_name == "random":
-            rng = cast(np.random.Generator, getattr(state, "rng"))
+            rng = cast(np.random.Generator, state.rng)
             return int(rng.choice(candidates))
         if policy_name == "worst_crowding":
             return int(candidates[np.argmin(crowding[candidates])])
@@ -392,13 +392,13 @@ class ImmigrationManager:
     ) -> bool:
         if not self.enabled or self.max_in_pop <= 0:
             self._active_indices = np.zeros(0, dtype=int)
-            setattr(state, "non_breeding_indices", np.zeros(0, dtype=int))
+            state.non_breeding_indices = np.zeros(0, dtype=int)
             return False
 
         X = getattr(state, "X", None)
         if not isinstance(X, np.ndarray) or X.size == 0:
             self._active_indices = np.zeros(0, dtype=int)
-            setattr(state, "non_breeding_indices", np.zeros(0, dtype=int))
+            state.non_breeding_indices = np.zeros(0, dtype=int)
             return False
 
         changed = False
@@ -457,7 +457,7 @@ class ImmigrationManager:
         X_new = getattr(state, "X", None)
         self._active_indices = _match_active_indices(X_new, self._active) if isinstance(X_new, np.ndarray) else np.zeros(0, dtype=int)
         if self.breeding_mode in {"exclude", "freeze_reinsert"}:
-            setattr(state, "non_breeding_indices", self._active_indices.copy())
+            state.non_breeding_indices = self._active_indices.copy()
         else:
-            setattr(state, "non_breeding_indices", np.zeros(0, dtype=int))
+            state.non_breeding_indices = np.zeros(0, dtype=int)
         return bool(changed)

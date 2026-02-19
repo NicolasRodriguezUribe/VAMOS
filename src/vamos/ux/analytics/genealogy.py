@@ -5,7 +5,6 @@ from typing import Any
 
 import numpy as np
 
-
 IndividualID = int
 
 

@@ -33,29 +33,28 @@ from vamos.engine.algorithm.components.lifecycle import (
     setup_initial_population,
 )
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
-from vamos.engine.algorithm.components.results import build_result
-from vamos.engine.algorithm.components.state import AlgorithmState
-from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
 from vamos.engine.algorithm.components.protocol import (
     AlgorithmProtocol,
+    ConstraintMode,
     InteractiveAlgorithmProtocol,
     SelectionMethod,
     SurvivalMethod,
-    ConstraintMode,
 )
-from vamos.engine.algorithm.components.selection import TournamentSelection, RandomSelection
-from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.results import build_result
+from vamos.engine.algorithm.components.selection import RandomSelection, TournamentSelection
+from vamos.engine.algorithm.components.state import AlgorithmState
+from vamos.engine.algorithm.components.termination import HVTracker, parse_termination
 from vamos.engine.algorithm.components.utils import (
-    resolve_prob_expression,
-    resolve_bounds_array,
-    validate_termination,
-    parse_operator_config,
     compute_ideal_nadir,
     normalize_objectives,
+    parse_operator_config,
+    resolve_bounds_array,
+    resolve_prob_expression,
+    validate_termination,
 )
 
 __all__ = [

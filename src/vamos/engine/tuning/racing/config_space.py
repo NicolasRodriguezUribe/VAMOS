@@ -9,8 +9,8 @@ from typing import Any
 
 import numpy as np
 
-from .parameters import ConditionalBlock
 from .param_space import Condition, ParamSpace, ParamType
+from .parameters import ConditionalBlock
 
 # Type alias for composable space parts: (params, conditionals, conditions).
 SpacePart = tuple[list[ParamType], list[ConditionalBlock], list[Condition]]

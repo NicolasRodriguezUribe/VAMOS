@@ -10,6 +10,7 @@ import numpy as np
 
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.foundation.exceptions import ConfigurationError
+
 from . import EvaluationBackend, EvaluationResult
 
 
@@ -40,9 +41,10 @@ class MultiprocessingEvalBackend(EvaluationBackend):
         - Best suited for expensive evaluations; overhead dominates for tiny problems.
     """
 
-    def __init__(self, n_workers: int | None = None, chunk_size: int | None = None) -> None:
+    def __init__(self, n_workers: int | None = None, chunk_size: int | None = None, timeout: float | None = None) -> None:
         self.n_workers = max(1, n_workers or os.cpu_count() or 1)
         self.chunk_size = chunk_size
+        self.timeout = timeout
 
     def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         if self.n_workers <= 1 or X.shape[0] <= 1:
@@ -62,7 +64,7 @@ class MultiprocessingEvalBackend(EvaluationBackend):
             future_map = {ex.submit(_eval_chunk, problem, X[start:end]): (start, end) for start, end in slices}
             for fut in as_completed(future_map):
                 start, end = future_map[fut]
-                F_chunk, G_chunk = fut.result()
+                F_chunk, G_chunk = fut.result(timeout=self.timeout)
                 F_parts.append((start, F_chunk))
                 G_parts.append((start, G_chunk))
 
@@ -116,6 +118,7 @@ class DaskEvalBackend(EvaluationBackend):
         self.address = address
         self._connected = False
         self._logged_fallback = False
+        self._owns_client = False
 
         try:
             from dask.distributed import Client
@@ -123,18 +126,25 @@ class DaskEvalBackend(EvaluationBackend):
             if self.client is None:
                 if self.address:
                     self.client = cast(Any, Client)(self.address)
+                    self._owns_client = True
                 else:
-                    # Create local cluster if neither provided?
-                    # Or let user manage strictness?
-                    # For now, require explicit client or address for "remote",
-                    # otherwise create LocalCluster implicitly?
-                    # Better to defer creation to first evaluate call or let user pass it.
                     _logger().debug(
                         "DaskEvalBackend initialized without a client/address; it will fall back to serial until a client or address is provided."
                     )
             self._connected = True
         except ImportError:
             _logger().debug("DaskEvalBackend unavailable (missing dask.distributed); falling back to serial.")
+
+    def close(self) -> None:
+        """Close the Dask client if this backend created it."""
+        if self._owns_client and self.client is not None:
+            try:
+                self.client.close()
+            except Exception:
+                _logger().debug("Error closing Dask client.", exc_info=True)
+            finally:
+                self.client = None
+                self._connected = False
 
     def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         if not self._connected or (self.client is None and self.address is None):
@@ -149,20 +159,19 @@ class DaskEvalBackend(EvaluationBackend):
                 from dask.distributed import Client
 
                 self.client = cast(Any, Client)(self.address)
+                self._owns_client = True
 
             if self.client is None:
                 # Fallback
                 return SerialEvalBackend().evaluate(X, problem)
 
             n = X.shape[0]
-            # Map futures
-            # Dask handles efficient chunking usually, but for strict comparison
-            # with multiprocessing, we can chunk manually or let dask decide.
-            # Simple map over rows:
-            # futures = self.client.map(lambda x: _eval_chunk(problem, x[None, :]), X)
 
-            # Better: chunk it to reduce overhead
-            n_workers = len(self.client.scheduler_info()["workers"])
+            # Determine worker count with fallback if scheduler is unreachable
+            try:
+                n_workers = len(self.client.scheduler_info()["workers"])
+            except Exception:
+                n_workers = 1
             chunk_size = max(1, math.ceil(n / n_workers))
             slices = [(i, min(i + chunk_size, n)) for i in range(0, n, chunk_size)]
 

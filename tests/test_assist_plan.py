@@ -5,10 +5,10 @@ import json
 import pytest
 
 from vamos.assist.plan import create_plan, resolve_plan_template
-from vamos.experiment.cli.quickstart import available_templates
 from vamos.engine.config.spec import validate_experiment_spec
 from vamos.experiment.cli.args import build_parser, build_pre_parser
 from vamos.experiment.cli.loaders import load_spec_defaults
+from vamos.experiment.cli.quickstart import available_templates
 from vamos.experiment.cli.spec_args import parser_spec_keys
 from vamos.foundation.core.experiment_config import ExperimentConfig
 

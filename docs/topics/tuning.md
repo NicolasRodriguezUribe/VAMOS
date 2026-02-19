@@ -9,7 +9,7 @@ The built-in tuners (`racing`, `random`) work with the core install.
 To enable model-based backends (`optuna`, `smac3`, `bohb`, `bohb_optuna`), install the optional `tuning` extra:
 
 ```bash
-pip install "vamos[tuning]"
+pip install "vamos-optimization[tuning]"
 ```
 
 From a local checkout:

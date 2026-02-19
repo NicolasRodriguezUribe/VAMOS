@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from vamos.foundation.problem.cec2009 import CEC2009_CF1, CEC2009_UF1, CEC2009_UF2, CEC2009_UF3
 from vamos.foundation.problem.dtlz import DTLZ1Problem, DTLZ2Problem, DTLZ3Problem, DTLZ4Problem, DTLZ7Problem
+from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
+from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
+from vamos.foundation.problem.real_world.hyperparam import HyperparameterTuningProblem
 from vamos.foundation.problem.tsp import TSPProblem
 from vamos.foundation.problem.wfg import (
     WFG1Problem,
@@ -25,9 +28,6 @@ from vamos.foundation.problem.zdt2 import ZDT2Problem
 from vamos.foundation.problem.zdt3 import ZDT3Problem
 from vamos.foundation.problem.zdt4 import ZDT4Problem
 from vamos.foundation.problem.zdt6 import ZDT6Problem
-from vamos.foundation.problem.real_world.engineering import WeldedBeamDesignProblem
-from vamos.foundation.problem.real_world.feature_selection import FeatureSelectionProblem
-from vamos.foundation.problem.real_world.hyperparam import HyperparameterTuningProblem
 
 CEC2009UF1 = CEC2009_UF1
 CEC2009UF2 = CEC2009_UF2

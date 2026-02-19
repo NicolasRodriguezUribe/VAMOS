@@ -9,19 +9,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from vamos.foundation.encoding import normalize_encoding
-from vamos.engine.algorithm.config import (
-    AGEMOEAConfig,
-    GenericAlgorithmConfig,
-    IBEAConfig,
-    MOEADConfig,
-    NSGAIIConfig,
-    NSGAIIIConfig,
-    RVEAConfig,
-    SMPSOConfig,
-    SMSEMOAConfig,
-    SPEA2Config,
-)
 from vamos.engine.algorithm.components.variation.helpers import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
@@ -34,6 +21,19 @@ from vamos.engine.algorithm.components.variation.helpers import (
     REAL_CROSSOVER,
     REAL_MUTATION,
 )
+from vamos.engine.algorithm.config import (
+    AGEMOEAConfig,
+    GenericAlgorithmConfig,
+    IBEAConfig,
+    MOEADConfig,
+    NSGAIIConfig,
+    NSGAIIIConfig,
+    RVEAConfig,
+    SMPSOConfig,
+    SMSEMOAConfig,
+    SPEA2Config,
+)
+from vamos.foundation.encoding import normalize_encoding
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.registry import AlgorithmBuilder

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
-from typing import Any, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 

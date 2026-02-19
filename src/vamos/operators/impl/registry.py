@@ -21,24 +21,24 @@ def _get_registry() -> Registry[object]:
 
     # Register common operators
     from vamos.operators.impl.real import (
-        SBXCrossover,
-        PolynomialMutation,
         ArithmeticCrossover,
-        DEMatingCrossover,
-        PCXCrossover,
-        SPXCrossover,
-        UNDXCrossover,
         BLXAlphaCrossover,
         CauchyMutation,
-        GaussianMutation,
-        NonUniformMutation,
-        LinkedPolynomialMutation,
-        UniformMutation,
-        UniformResetMutation,
         ClampRepair,
+        DEMatingCrossover,
+        GaussianMutation,
+        LinkedPolynomialMutation,
+        NonUniformMutation,
+        PCXCrossover,
+        PolynomialMutation,
         ReflectRepair,
         ResampleRepair,
         RoundRepair,
+        SBXCrossover,
+        SPXCrossover,
+        UNDXCrossover,
+        UniformMutation,
+        UniformResetMutation,
     )
 
     # Crossover
@@ -71,10 +71,12 @@ def _get_registry() -> Registry[object]:
     # Binary operators
     from vamos.operators.impl.binary import (
         BitFlipMutation,
+        HuxCrossover,
         OnePointCrossover,
         TwoPointCrossover,
+    )
+    from vamos.operators.impl.binary import (
         UniformCrossover as BinaryUniformCrossover,
-        HuxCrossover,
     )
 
     reg.register("bitflip", BitFlipMutation)
@@ -82,20 +84,20 @@ def _get_registry() -> Registry[object]:
     reg.register("two_point", TwoPointCrossover)
     reg.register("binary_uniform", BinaryUniformCrossover)
     reg.register("hux", HuxCrossover)
-    reg.register("spx", OnePointCrossover)
+    reg.register("spx", SPXCrossover)
 
     # Permutation operators
     from vamos.operators.impl.permutation import (
-        SwapMutation,
-        PMXCrossover,
         CycleCrossover,
-        PositionBasedCrossover,
-        EdgeRecombinationCrossover,
-        OrderCrossover,
-        InsertMutation,
-        ScrambleMutation,
-        InversionMutation,
         DisplacementMutation,
+        EdgeRecombinationCrossover,
+        InsertMutation,
+        InversionMutation,
+        OrderCrossover,
+        PMXCrossover,
+        PositionBasedCrossover,
+        ScrambleMutation,
+        SwapMutation,
     )
 
     reg.register("swap", SwapMutation)
@@ -113,12 +115,12 @@ def _get_registry() -> Registry[object]:
 
     # Integer operators
     from vamos.operators.impl.integer import (
-        UniformIntegerCrossover,
         ArithmeticIntegerCrossover,
+        CreepMutation,
+        IntegerPolynomialMutation,
         IntegerSBXCrossover,
         RandomResetMutation,
-        IntegerPolynomialMutation,
-        CreepMutation,
+        UniformIntegerCrossover,
     )
 
     reg.register("int_uniform", UniformIntegerCrossover)

@@ -8,22 +8,22 @@ and return an initialized algorithm instance.
 
 from __future__ import annotations
 
-from typing import Any, Protocol
 from collections.abc import Callable, Mapping
+from typing import Any, Protocol
 
+from vamos.engine.algorithm.config.types import AlgorithmConfigMapping
+from vamos.foundation.exceptions import _suggest_names
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.engine.algorithm.config.types import AlgorithmConfigMapping
+from vamos.foundation.registry import Registry
 
+from .ibea import IBEA
+from .moead import MOEAD
 from .nsgaii import NSGAII
 from .nsgaiii import NSGAIII
-from .moead import MOEAD
+from .smpso import SMPSO
 from .smsemoa import SMSEMOA
 from .spea2 import SPEA2
-from .ibea import IBEA
-from .smpso import SMPSO
-from vamos.foundation.registry import Registry
-from vamos.foundation.exceptions import _suggest_names
 
 
 class AlgorithmLike(Protocol):

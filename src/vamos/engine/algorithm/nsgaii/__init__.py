@@ -19,7 +19,6 @@ Example:
     >>> result = algo.run(problem, ("max_evaluations", 10000), seed=42)
 """
 
-from .nsgaii import NSGAII
 from .helpers import (
     build_mating_pool,
     feasible_nsga2_survival,
@@ -27,7 +26,8 @@ from .helpers import (
     match_ids,
     operator_success_stats,
 )
-from .injection import ImmigrationManager, ImmigrantCandidate, ImmigrationStats
+from .injection import ImmigrantCandidate, ImmigrationManager, ImmigrationStats
+from .nsgaii import NSGAII
 
 __all__ = [
     "NSGAII",

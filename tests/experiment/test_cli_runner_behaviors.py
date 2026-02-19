@@ -4,15 +4,14 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from vamos.experiment import cli
-from vamos.experiment import runner
+from vamos.experiment import cli, runner
+from vamos.experiment.study.persistence import CSVPersister
+from vamos.experiment.study.runner import StudyRunner
+from vamos.experiment.study.types import StudyTask
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
 from vamos.foundation.exceptions import ConfigurationError
 from vamos.foundation.problem.tsp import TSPProblem
-from vamos.experiment.study.runner import StudyRunner
-from vamos.experiment.study.types import StudyTask
-from vamos.experiment.study.persistence import CSVPersister
 
 
 def test_cli_hv_threshold_requires_reference_for_non_zdt(monkeypatch):

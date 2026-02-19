@@ -15,7 +15,6 @@ from ...cec import (
 )
 from ..common import ProblemSpec
 
-
 SPECS: dict[str, ProblemSpec] = {}
 
 

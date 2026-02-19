@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-from .specs import ProblemSpec, get_problem_specs
-from vamos.foundation.exceptions import _suggest_names
 from typing import cast
 
+from vamos.foundation.exceptions import _suggest_names
+
 from ..types import ProblemProtocol
+from .specs import ProblemSpec, get_problem_specs
 
 
 @dataclass(frozen=True)

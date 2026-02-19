@@ -14,7 +14,6 @@ from ...real_world.zapotecas_rwa import (
 )
 from ..common import ProblemSpec
 
-
 SPECS: dict[str, ProblemSpec] = {}
 
 

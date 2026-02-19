@@ -11,18 +11,17 @@ from .integer import (
     random_reset_mutation,
 )
 from .permutation import (
+    cycle_crossover,
+    displacement_mutation,
+    edge_recombination_crossover,
+    insert_mutation,
+    inversion_mutation,
     order_crossover,
     pmx_crossover,
-    cycle_crossover,
     position_based_crossover,
-    edge_recombination_crossover,
-    swap_mutation,
-    insert_mutation,
     scramble_mutation,
-    inversion_mutation,
-    displacement_mutation,
+    swap_mutation,
 )
-
 
 _PERM_CROSSOVER = {
     "ox": order_crossover,

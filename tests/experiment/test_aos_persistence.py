@@ -5,7 +5,6 @@ from pathlib import Path
 from vamos.experiment.runner import run_experiment
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
-
 TRACE_HEADER = [
     "step",
     "mating_id",

@@ -1,16 +1,16 @@
 import numpy as np
 
 from vamos.operators.impl.binary import (
-    random_binary_population,
-    one_point_crossover,
     bit_flip_mutation,
+    one_point_crossover,
+    random_binary_population,
 )
 from vamos.operators.impl.integer import (
     random_integer_population,
-    uniform_integer_crossover,
     random_reset_mutation,
+    uniform_integer_crossover,
 )
-from vamos.operators.impl.mixed import mixed_initialize, mixed_crossover, mixed_mutation
+from vamos.operators.impl.mixed import mixed_crossover, mixed_initialize, mixed_mutation
 
 
 def test_binary_operators_shape_and_values():

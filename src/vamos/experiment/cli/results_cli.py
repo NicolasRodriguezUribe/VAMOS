@@ -3,8 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 import subprocess
+import sys
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path

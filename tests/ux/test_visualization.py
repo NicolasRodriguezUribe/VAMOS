@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")

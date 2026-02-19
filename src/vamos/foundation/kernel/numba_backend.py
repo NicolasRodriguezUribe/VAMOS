@@ -1,15 +1,14 @@
 # kernel/numba_backend.py
 from __future__ import annotations
 
-import numpy as np
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any, Literal, TypeVar, cast, overload
 
+import numpy as np
 from numba import njit as _numba_njit
 
 from .backend import KernelBackend
 from .numpy_backend import NumPyKernel as _NumPyKernel
-
 
 _F = TypeVar("_F", bound=Callable[..., object])
 

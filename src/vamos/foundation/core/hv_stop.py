@@ -8,9 +8,9 @@ from collections.abc import Iterable
 
 import numpy as np
 
+from vamos.foundation.core.experiment_config import HV_REFERENCE_OFFSET
 from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.problem.resolver import resolve_reference_front_path
-from vamos.foundation.core.experiment_config import HV_REFERENCE_OFFSET
 
 
 def build_hv_stop_config(

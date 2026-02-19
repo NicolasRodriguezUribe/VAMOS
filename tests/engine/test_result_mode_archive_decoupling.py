@@ -1,13 +1,13 @@
 import pytest
 
 from vamos.engine.algorithm.agemoea import AGEMOEA
-from vamos.engine.algorithm.rvea import RVEA
 from vamos.engine.algorithm.config import (
     AGEMOEAConfig,
     MOEADConfig,
     RVEAConfig,
     SMSEMOAConfig,
 )
+from vamos.engine.algorithm.rvea import RVEA
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 

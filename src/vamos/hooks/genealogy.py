@@ -5,7 +5,6 @@ from typing import Protocol
 
 import numpy as np
 
-
 IndividualID = int
 
 

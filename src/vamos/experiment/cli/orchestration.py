@@ -7,16 +7,15 @@ from copy import deepcopy
 from typing import TypeVar, cast
 
 from vamos.archive import ExternalArchiveConfig
-from vamos.engine.config.variation import VariationOverrides, merge_variation_overrides
 from vamos.engine.config.spec import ExperimentSpec, ProblemOverrides, SpecBlock
+from vamos.engine.config.variation import VariationOverrides, merge_variation_overrides
+from vamos.experiment.execution import execute_problem_suite
+from vamos.experiment.services.orchestrator import run_single
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.problem.resolver import resolve_problem_selections
 from vamos.hooks import LiveVisualization
-
-from vamos.experiment.execution import execute_problem_suite
-from vamos.experiment.services.orchestrator import run_single
 
 
 def _logger() -> logging.Logger:

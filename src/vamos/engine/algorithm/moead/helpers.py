@@ -361,6 +361,81 @@ def _get_update_neighborhood_numba() -> Callable[..., int] | None:
     return _UPDATE_NEIGHBORHOOD_JIT
 
 
+def _update_neighborhood_python(
+    X: np.ndarray,
+    F: np.ndarray,
+    G: np.ndarray,
+    cv: np.ndarray,
+    weights: np.ndarray,
+    weights_safe: np.ndarray,
+    weights_unit: np.ndarray,
+    ideal: np.ndarray,
+    child: np.ndarray,
+    child_f: np.ndarray,
+    child_g: np.ndarray,
+    child_cv: float,
+    candidate_order: np.ndarray,
+    replace_limit: int,
+    agg_id: int,
+    agg_theta: float,
+    agg_rho: float,
+    use_constraints: int,
+) -> int:
+    """Pure-Python fallback for neighborhood updates when numba is unavailable."""
+    replacements = 0
+    for idx in range(candidate_order.shape[0]):
+        k = int(candidate_order[idx])
+
+        diff_current = np.abs(F[k] - ideal)
+        diff_child = np.abs(child_f - ideal)
+
+        if agg_id == AGG_TCHEBYCHEFF:
+            current_val = float(np.max(weights_safe[k] * diff_current))
+            child_val = float(np.max(weights_safe[k] * diff_child))
+        elif agg_id == AGG_WEIGHTED_SUM:
+            current_val = float(np.dot(weights[k], F[k]))
+            child_val = float(np.dot(weights[k], child_f))
+        elif agg_id == AGG_PBI:
+            d1 = abs(float(np.dot(F[k] - ideal, weights_unit[k])))
+            d1_child = abs(float(np.dot(child_f - ideal, weights_unit[k])))
+            d2 = float(np.linalg.norm((F[k] - ideal) - d1 * weights_unit[k]))
+            d2_child = float(np.linalg.norm((child_f - ideal) - d1_child * weights_unit[k]))
+            current_val = d1 + agg_theta * d2
+            child_val = d1_child + agg_theta * d2_child
+        else:  # AGG_MODIFIED_TCHEBYCHEFF
+            weighted_current = weights_safe[k] * diff_current
+            weighted_child = weights_safe[k] * diff_child
+            current_val = float(np.max(weighted_current)) + agg_rho * float(np.sum(weighted_current))
+            child_val = float(np.max(weighted_child)) + agg_rho * float(np.sum(weighted_child))
+
+        replace = False
+        if use_constraints == 1:
+            current_cv = cv[k]
+            feas_child = child_cv <= 0.0
+            feas_curr = current_cv <= 0.0
+            if (not feas_curr) and feas_child:
+                replace = True
+            elif feas_child and feas_curr:
+                replace = child_val < current_val
+            else:
+                replace = child_cv < current_cv
+        else:
+            replace = child_val < current_val
+
+        if not replace:
+            continue
+
+        X[k] = child
+        F[k] = child_f
+        if use_constraints == 1:
+            G[k] = child_g
+            cv[k] = child_cv
+        replacements += 1
+        if replacements >= replace_limit:
+            break
+    return replacements
+
+
 # =============================================================================
 # Neighborhood Management
 # =============================================================================
@@ -436,7 +511,7 @@ def update_neighborhood(
 
     updater = _get_update_neighborhood_numba()
     if updater is None:
-        raise RuntimeError("MOEA/D requires numba for neighborhood updates. Install numba to run MOEA/D.")
+        updater = _update_neighborhood_python
 
     dummy_g, dummy_cv, dummy_child_g = _dummy_buffers()
     updater(

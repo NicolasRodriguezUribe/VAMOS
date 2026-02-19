@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from .repair import Repair
 from .utils import (
     ArrayLike,
     RealOperator,
@@ -15,7 +16,6 @@ from .utils import (
     _clip_population,
     _ensure_bounds,
 )
-from .repair import Repair
 
 
 class Mutation(RealOperator, ABC):

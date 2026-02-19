@@ -9,18 +9,18 @@ keeping the main algorithm file focused on the evolutionary loop.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable
 
 import numpy as np
 
+from vamos.adaptation.aos.controller import AOSController
 from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive, UnboundedArchive
-from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.hooks.genealogy import GenealogyTracker
 from vamos.operators.impl.real import VariationWorkspace
-from vamos.adaptation.aos.controller import AOSController
 
 
 def _logger() -> logging.Logger:
@@ -233,7 +233,7 @@ def finalize_genealogy(
     kernel : KernelBackend
         Kernel for ranking computation.
     """
-    from .helpers import operator_success_stats, generation_contributions
+    from .helpers import generation_contributions, operator_success_stats
 
     if not state.track_genealogy or state.genealogy_tracker is None:
         return

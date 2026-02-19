@@ -15,18 +15,18 @@ from typing import Any, Protocol
 import numpy as np
 
 from .param_space import (
-    Real,
-    Int,
-    Categorical,
     Boolean,
+    BooleanParam,
+    Categorical,
+    CategoricalIntegerParam,
+    CategoricalParam,
     ConditionalBlock,
-    ParamType,
     # Aliases
     FloatParam,
+    Int,
     IntegerParam,
-    CategoricalParam,
-    BooleanParam,
-    CategoricalIntegerParam,
+    ParamType,
+    Real,
 )
 
 

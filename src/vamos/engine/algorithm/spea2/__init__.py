@@ -14,7 +14,8 @@ References:
     Pareto Evolutionary Algorithm," TIK-Report 103, ETH Zurich, 2001.
 """
 
-from .spea2 import SPEA2
+from vamos.operators.policies.spea2 import build_variation_operators
+
 from .helpers import (
     compute_selection_metrics,
     dominance_matrix,
@@ -22,8 +23,8 @@ from .helpers import (
     spea2_fitness,
     truncate_by_distance,
 )
-from vamos.operators.policies.spea2 import build_variation_operators
 from .initialization import initialize_spea2_run
+from .spea2 import SPEA2
 from .state import SPEA2State, build_spea2_result
 
 __all__ = [

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, TYPE_CHECKING
 from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from scipy import stats as spstats  # type: ignore[import-untyped]

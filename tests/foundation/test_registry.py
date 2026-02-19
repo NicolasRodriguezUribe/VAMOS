@@ -1,5 +1,6 @@
-from vamos.foundation.registry import Registry
 import pytest
+
+from vamos.foundation.registry import Registry
 
 
 def test_registry_basic():

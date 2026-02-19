@@ -20,7 +20,6 @@ from ...real_world.tanabe_ishibuchi import (
 )
 from ..common import ProblemSpec
 
-
 SPECS: dict[str, ProblemSpec] = {}
 
 

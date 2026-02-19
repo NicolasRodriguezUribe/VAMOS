@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import math
 
-from vamos.foundation.problem.base import Problem
-
 import numpy as np
+
+from vamos.foundation.problem.base import Problem
 
 
 def _safe_divide(num: np.ndarray, den: np.ndarray, *, eps: float = 1e-12) -> np.ndarray:

@@ -15,10 +15,11 @@ References:
     for multi-objective optimization. IEEE MCDM'09, pp. 66-73.
 """
 
-from .smpso import SMPSO
-from .helpers import extract_eval_arrays, update_personal_bests
 from vamos.operators.policies.smpso import build_mutation_operator
+
+from .helpers import extract_eval_arrays, update_personal_bests
 from .initialization import initialize_smpso_run
+from .smpso import SMPSO
 from .state import SMPSOState, build_smpso_result
 
 __all__ = [

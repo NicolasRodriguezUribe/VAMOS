@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from vamos.engine.algorithm.nsgaiii import NSGAIII, associate, nsgaiii_survival
 from vamos.engine.algorithm.config import NSGAIIIConfig
+from vamos.engine.algorithm.nsgaiii import NSGAIII, associate, nsgaiii_survival
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.dtlz import DTLZ2Problem
 from vamos.foundation.problem.zdt1 import ZDT1Problem

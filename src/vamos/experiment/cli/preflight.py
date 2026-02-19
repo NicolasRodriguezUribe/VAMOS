@@ -7,7 +7,6 @@ from importlib.util import find_spec
 from vamos.foundation.core.experiment_config import EXTERNAL_ALGORITHM_NAMES
 from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS
 
-
 _PROBLEM_EXTRA_REQUIREMENTS: dict[str, str] = {
     "ml_tuning": "examples",
     "fs_real": "examples",

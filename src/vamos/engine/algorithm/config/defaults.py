@@ -10,11 +10,10 @@ from .moead import MOEADConfig
 from .nsgaii import NSGAIIConfig
 from .nsgaiii import NSGAIIIConfig
 from .rvea import RVEAConfig
-from .smsemoa import SMSEMOAConfig
 from .smpso import SMPSOConfig
+from .smsemoa import SMSEMOAConfig
 from .spea2 import SPEA2Config
 from .types import AlgorithmConfigProtocol
-
 
 DefaultConfigBuilder = Callable[[int | None, int | None, int | None, str | None], AlgorithmConfigProtocol]
 

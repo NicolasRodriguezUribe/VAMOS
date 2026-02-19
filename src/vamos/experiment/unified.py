@@ -14,14 +14,14 @@ from collections.abc import Mapping
 from typing import cast, overload
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.experiment.auto import _compute_max_evaluations, _compute_pop_size, _resolve_problem, _select_algorithm
 from vamos.experiment.optimization_result import OptimizationResult
-from vamos.experiment.optimize import _OptimizeConfig, _run_config, _build_algorithm_config
-from vamos.foundation.eval import EvaluationBackend
-from vamos.foundation.encoding import normalize_encoding
-from vamos.foundation.logging import configure_vamos_logging
+from vamos.experiment.optimize import _build_algorithm_config, _OptimizeConfig, _run_config
 from vamos.foundation.core.experiment_config import resolve_engine
+from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.eval import EvaluationBackend
+from vamos.foundation.logging import configure_vamos_logging
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.experiment.auto import _resolve_problem, _select_algorithm, _compute_pop_size, _compute_max_evaluations
 
 
 def _logger() -> logging.Logger:
@@ -277,13 +277,15 @@ def _run_single(
         raise ValueError("algorithm_config requires an explicit algorithm name (not algorithm='auto').")
 
     # Auto-select algorithm if needed
+    _auto_defaults: dict[str, object] = {}
     if algorithm == "auto":
         algorithm = _select_algorithm(n_obj, encoding)
-        if verbose:
-            _logger().info("[vamos] Auto-selected algorithm: %s", algorithm)
+        _auto_defaults["algorithm"] = algorithm
 
     # Auto-determine hyperparameters if not specified
     effective_pop_size = pop_size if pop_size else _compute_pop_size(n_var, n_obj)
+    if not pop_size:
+        _auto_defaults["pop_size"] = effective_pop_size
     term_max_evaluations = _extract_max_evaluations(termination) if termination is not None else None
     if termination is not None and max_evaluations is not None:
         if term_max_evaluations is None:
@@ -295,9 +297,13 @@ def _run_single(
         effective_termination = termination
     else:
         effective_max_evaluations = max_evaluations if max_evaluations is not None else _compute_max_evaluations(n_var, n_obj)
+        if max_evaluations is None:
+            _auto_defaults["max_evaluations"] = effective_max_evaluations
         effective_termination = ("max_evaluations", effective_max_evaluations)
     effective_engine = resolve_engine(engine, algorithm=algorithm)
 
+    if _auto_defaults:
+        _logger().info("[vamos] Auto-selected defaults: %s", _auto_defaults)
     if verbose:
         _logger().info("[vamos] Problem: n_var=%s, n_obj=%s, encoding=%s", n_var, n_obj, encoding)
         _logger().info(

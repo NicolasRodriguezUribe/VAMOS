@@ -7,9 +7,9 @@ fidelity levels when tuning multi-objective algorithms.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable
 
 import numpy as np
 

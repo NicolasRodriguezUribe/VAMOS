@@ -7,8 +7,8 @@ and produce feasible solutions on standard constrained test problems.
 
 from __future__ import annotations
 
-import pytest
 import numpy as np
+import pytest
 
 
 class SimpleConstrainedProblem:

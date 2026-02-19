@@ -4,7 +4,6 @@ import ast
 import json
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = REPO_ROOT / "src" / "vamos"
 SNAPSHOT_PATH = Path(__file__).resolve().parent / "public_api_snapshot.json"

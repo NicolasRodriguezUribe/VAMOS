@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 from vamos.archive import ExternalArchiveConfig
-from vamos.foundation.core.experiment_config import ExperimentConfig
-from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
-from vamos.foundation.problem.types import ProblemProtocol
-from vamos.engine.config.variation import VariationConfig
-from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.engine.algorithm.builders import (
-    build_nsgaii_algorithm,
-    build_moead_algorithm,
-    build_smsemoa_algorithm,
-    build_nsgaiii_algorithm,
-    build_spea2_algorithm,
-    build_ibea_algorithm,
-    build_smpso_algorithm,
     build_agemoea_algorithm,
+    build_ibea_algorithm,
+    build_moead_algorithm,
+    build_nsgaii_algorithm,
+    build_nsgaiii_algorithm,
     build_rvea_algorithm,
+    build_smpso_algorithm,
+    build_smsemoa_algorithm,
+    build_spea2_algorithm,
 )
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.config.variation import VariationConfig
+from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.kernel.registry import resolve_kernel
+from vamos.foundation.problem.types import ProblemProtocol
 
 
 def build_algorithm(

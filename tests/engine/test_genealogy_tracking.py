@@ -3,24 +3,24 @@
 import pytest
 
 from vamos.engine.algorithm.config import (
+    IBEAConfig,
     MOEADConfig,
     NSGAIIConfig,
     NSGAIIIConfig,
+    SMPSOConfig,
     SMSEMOAConfig,
     SPEA2Config,
-    IBEAConfig,
-    SMPSOConfig,
 )
+from vamos.engine.algorithm.ibea import IBEA
 from vamos.engine.algorithm.moead import MOEAD
 from vamos.engine.algorithm.nsgaii import NSGAII
 from vamos.engine.algorithm.nsgaiii import NSGAIII
+from vamos.engine.algorithm.smpso import SMPSO
 from vamos.engine.algorithm.smsemoa import SMSEMOA
 from vamos.engine.algorithm.spea2 import SPEA2
-from vamos.engine.algorithm.ibea import IBEA
-from vamos.engine.algorithm.smpso import SMPSO
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
-from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.foundation.problem.dtlz import DTLZ2Problem
+from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
 class TestGenealogyTracking:

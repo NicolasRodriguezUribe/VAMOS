@@ -5,9 +5,9 @@ This module provides the state dataclass for SMSEMOA's ask/tell interface.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable
 
 import numpy as np
 

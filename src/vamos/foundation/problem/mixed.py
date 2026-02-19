@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from vamos.foundation.problem.base import Problem
 
+from vamos.foundation.problem.base import Problem
 
 
 def _split_counts(n_var: int) -> tuple[int, int, int]:

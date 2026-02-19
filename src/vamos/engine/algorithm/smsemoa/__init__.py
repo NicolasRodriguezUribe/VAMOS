@@ -15,13 +15,6 @@ References:
     vol. 181, no. 3, 2007.
 """
 
-from .smsemoa import SMSEMOA
-from .helpers import (
-    evaluate_population_with_constraints,
-    initialize_reference_point,
-    survival_selection,
-    update_reference_point,
-)
 from vamos.operators.policies.smsemoa import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
@@ -29,7 +22,15 @@ from vamos.operators.policies.smsemoa import (
     INT_MUTATION,
     build_variation_operators,
 )
+
+from .helpers import (
+    evaluate_population_with_constraints,
+    initialize_reference_point,
+    survival_selection,
+    update_reference_point,
+)
 from .initialization import initialize_population, initialize_smsemoa_run
+from .smsemoa import SMSEMOA
 from .state import SMSEMOAState, build_smsemoa_result
 
 __all__ = [

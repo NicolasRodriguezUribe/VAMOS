@@ -5,9 +5,9 @@ import logging
 import math
 import threading
 import time
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -318,13 +318,13 @@ class ModelBasedTuner:
             levels = [int(v) for v in self.budget_levels if int(v) > 0]
             if not levels:
                 levels = [int(self.task.budget_per_run)]
-            levels = sorted(set(min(int(self.task.budget_per_run), max(1, v)) for v in levels))
+            levels = sorted({min(int(self.task.budget_per_run), max(1, v)) for v in levels})
         else:
             bmax = max(1, int(self.task.budget_per_run))
             if bmax <= 3:
                 levels = list(range(1, bmax + 1))
             else:
-                levels = sorted(set([max(1, bmax // 3), max(1, (2 * bmax) // 3), bmax]))
+                levels = sorted({max(1, bmax // 3), max(1, (2 * bmax) // 3), bmax})
         if levels[-1] != int(self.task.budget_per_run):
             levels.append(int(self.task.budget_per_run))
         return levels
