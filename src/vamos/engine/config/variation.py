@@ -5,10 +5,9 @@ Shared helpers for variation/default handling across CLI, runner, and factories.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypedDict, TypeAlias
+from typing import Any, TypeAlias, TypedDict
 
 from vamos.foundation.encoding import normalize_encoding
-
 
 # =============================================================================
 # Operator Registry by Encoding

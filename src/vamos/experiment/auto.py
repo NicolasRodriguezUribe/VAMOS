@@ -11,7 +11,6 @@ from collections.abc import Mapping
 from typing import Any
 
 from vamos.foundation.encoding import normalize_encoding
-
 from vamos.foundation.problem.registry import make_problem_selection
 
 

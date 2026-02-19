@@ -7,7 +7,8 @@ from typing import Any
 
 from vamos.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import normalize_encoding
-from .base import ConstraintModeStr, LiveCallbackMode, ResultMode, _SerializableConfig, _require_fields
+
+from .base import ConstraintModeStr, LiveCallbackMode, ResultMode, _require_fields, _SerializableConfig
 
 
 class _NSGAIIConfigBuilder:

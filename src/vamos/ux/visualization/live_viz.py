@@ -3,9 +3,9 @@ from __future__ import annotations
 import logging
 import os
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
-from collections.abc import Sequence
 
 import numpy as np
 

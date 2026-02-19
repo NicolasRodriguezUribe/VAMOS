@@ -1,12 +1,14 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
-from unittest.mock import MagicMock
+
 from vamos.engine.algorithm.builders import (
-    build_moead_algorithm,
-    build_smsemoa_algorithm,
-    build_nsgaiii_algorithm,
     build_agemoea_algorithm,
+    build_moead_algorithm,
+    build_nsgaiii_algorithm,
     build_rvea_algorithm,
+    build_smsemoa_algorithm,
 )
 from vamos.foundation.kernel.backend import KernelBackend
 
@@ -135,8 +137,9 @@ def test_agemoea_pipeline_run_integration(mock_kernel):
         agemoea_variation=None,  # Uses defaults
     )
 
-    from vamos.foundation.eval.backends import SerialEvalBackend
     from unittest.mock import patch
+
+    from vamos.foundation.eval.backends import SerialEvalBackend
 
     # Mock backend
     mock_backend = MagicMock(spec=SerialEvalBackend)

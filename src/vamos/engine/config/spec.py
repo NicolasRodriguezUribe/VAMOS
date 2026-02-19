@@ -23,7 +23,6 @@ from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import available_problem_names
 from vamos.monitoring.hv_convergence import HVConvergenceConfig
 
-
 SpecBlock = dict[str, object]
 ProblemOverrides = dict[str, SpecBlock | None]
 

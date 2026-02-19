@@ -16,17 +16,17 @@ from vamos.engine.algorithm.components.archives import resolve_external_archive,
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
-from vamos.engine.algorithm.components.termination import parse_termination
-from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.engine.algorithm.components.population import (
     evaluate_population,
     initialize_population,
     resolve_bounds,
 )
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.eval.population import evaluate_population_with_constraints
+from vamos.operators.policies.spea2 import build_variation_operators
 
 from .helpers import environmental_selection
-from vamos.operators.policies.spea2 import build_variation_operators
 from .state import SPEA2State
 
 if TYPE_CHECKING:
@@ -34,8 +34,8 @@ if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-from vamos.hooks.live_viz import LiveVisualization
 from vamos.foundation.observer import RunContext
+from vamos.hooks.live_viz import LiveVisualization
 
 
 def initialize_spea2_run(

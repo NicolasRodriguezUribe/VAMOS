@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import importlib.util
 import time
-import pytest
+
 import numpy as np
+import pytest
 
 
 def has_jax() -> bool:
@@ -28,8 +29,8 @@ class TestJaxSpeedup:
 
     def test_nsga2_ranking_speedup(self):
         """Test JAX ranking is faster than NumPy for large populations."""
-        from vamos.foundation.kernel.numpy_backend import NumPyKernel
         from vamos.foundation.kernel.jax_backend import JaxKernel
+        from vamos.foundation.kernel.numpy_backend import NumPyKernel
 
         # Generate test data - large population
         np.random.seed(42)
@@ -71,8 +72,8 @@ class TestJaxSpeedup:
 
     def test_crowding_distance_correctness(self):
         """Verify JAX crowding distance matches NumPy."""
-        from vamos.foundation.kernel.numpy_backend import NumPyKernel
         from vamos.foundation.kernel.jax_backend import JaxKernel
+        from vamos.foundation.kernel.numpy_backend import NumPyKernel
 
         np.random.seed(42)
         F = np.random.rand(50, 2)

@@ -6,13 +6,13 @@ supporting continuous, binary, integer, and mixed encodings.
 
 from __future__ import annotations
 
-from typing import Any, TypeAlias
 from collections.abc import Callable
+from typing import Any, TypeAlias
 
 import numpy as np
 
-from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.operators.impl.binary import (
     bit_flip_mutation,
     one_point_crossover,
@@ -26,9 +26,7 @@ from vamos.operators.impl.integer import (
     uniform_integer_crossover,
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
-from vamos.operators.impl.real import VariationWorkspace
-
+from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
 
 __all__ = [
     "BINARY_CROSSOVER",

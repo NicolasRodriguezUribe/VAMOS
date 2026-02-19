@@ -1,4 +1,4 @@
-from vamos.ux.analytics.genealogy import GenealogyTracker, get_lineage, compute_operator_success_stats, compute_generation_contributions
+from vamos.ux.analytics.genealogy import GenealogyTracker, compute_generation_contributions, compute_operator_success_stats, get_lineage
 
 
 def test_genealogy_tracker_lineage_and_stats():

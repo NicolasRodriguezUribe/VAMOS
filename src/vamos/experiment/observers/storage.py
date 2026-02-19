@@ -7,12 +7,12 @@ from typing import Any
 
 import numpy as np
 
+from vamos.adaptation.aos.logging import write_aos_summary, write_aos_trace
 from vamos.archive import ExternalArchiveConfig
+from vamos.foundation.core.io_utils import ensure_dir, write_metadata, write_population, write_timing
+from vamos.foundation.core.metadata import build_run_metadata
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.observer import Observer, RunContext
-from vamos.foundation.core.io_utils import ensure_dir, write_population, write_metadata, write_timing
-from vamos.foundation.core.metadata import build_run_metadata
-from vamos.adaptation.aos.logging import write_aos_summary, write_aos_trace
 
 
 def _logger() -> logging.Logger:

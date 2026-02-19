@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
-from collections.abc import Mapping, Sequence
 
-import math
 import numpy as np
 
-from .param_space import ParamSpace, Real, Int, Categorical
+from .param_space import Categorical, Int, ParamSpace, Real
 
 
 class Sampler(Protocol):

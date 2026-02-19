@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 import pytest
 
 from vamos.engine.tuning import EvalContext, Instance

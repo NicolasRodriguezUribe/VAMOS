@@ -8,13 +8,13 @@ for different encodings (continuous, binary, integer, permutation, mixed).
 
 from __future__ import annotations
 
-from typing import Any, TypeAlias
 from collections.abc import Callable
+from typing import Any, TypeAlias
 
 import numpy as np
 
-from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.operators.impl.binary import (
     bit_flip_mutation,
     one_point_crossover,
@@ -29,22 +29,20 @@ from vamos.operators.impl.integer import (
     random_reset_mutation,
     uniform_integer_crossover,
 )
+from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
 from vamos.operators.impl.permutation import (
+    cycle_crossover,
+    displacement_mutation,
+    edge_recombination_crossover,
+    insert_mutation,
+    inversion_mutation,
     order_crossover,
     pmx_crossover,
-    cycle_crossover,
     position_based_crossover,
-    edge_recombination_crossover,
-    swap_mutation,
-    insert_mutation,
     scramble_mutation,
-    inversion_mutation,
-    displacement_mutation,
+    swap_mutation,
 )
-from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
-from vamos.operators.impl.real import VariationWorkspace
-
+from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
 
 # Operator registries
 BinaryCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]

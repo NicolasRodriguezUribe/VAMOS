@@ -14,7 +14,14 @@ References:
     Decomposition," IEEE Trans. Evolutionary Computation, vol. 11, no. 6, 2007.
 """
 
-from .moead import MOEAD
+from vamos.operators.policies.moead import (
+    BINARY_CROSSOVER,
+    BINARY_MUTATION,
+    INT_CROSSOVER,
+    INT_MUTATION,
+    build_variation_operators,
+)
+
 from .helpers import (
     build_aggregator,
     compute_neighbors,
@@ -24,14 +31,8 @@ from .helpers import (
     update_neighborhood,
     weighted_sum,
 )
-from vamos.operators.policies.moead import (
-    BINARY_CROSSOVER,
-    BINARY_MUTATION,
-    INT_CROSSOVER,
-    INT_MUTATION,
-    build_variation_operators,
-)
 from .initialization import initialize_moead_run, initialize_population
+from .moead import MOEAD
 from .state import MOEADState, build_moead_result
 
 __all__ = [

@@ -17,8 +17,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from vamos.foundation.kernel import default_kernel
-
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import (
@@ -26,14 +24,15 @@ from vamos.engine.algorithm.components.hooks import (
     live_should_stop,
     track_offspring_genealogy,
 )
-from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.engine.algorithm.components.population import evaluate_population
+from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.nsgaii.helpers import build_mating_pool
+from vamos.foundation.eval.population import evaluate_population_with_constraints
+from vamos.foundation.kernel import default_kernel
 
 from .helpers import combine_constraints, environmental_selection
 from .initialization import initialize_ibea_run
 from .state import IBEAState, build_ibea_result
-from vamos.engine.algorithm.components.termination import HVTracker
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend

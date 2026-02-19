@@ -3,15 +3,15 @@ from __future__ import annotations
 import logging
 import numbers
 from dataclasses import dataclass, fields, replace
-from typing import Any, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from vamos.engine.algorithm.registry import resolve_algorithm, get_algorithms_registry
-from vamos.foundation.kernel.registry import resolve_kernel
-from vamos.foundation.problem.types import ProblemProtocol
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
+from vamos.exceptions import InvalidAlgorithmError
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.eval.backends import resolve_eval_strategy
-from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
-from vamos.exceptions import InvalidAlgorithmError
+from vamos.foundation.kernel.registry import resolve_kernel
+from vamos.foundation.problem.types import ProblemProtocol
 
 if TYPE_CHECKING:
     from .optimization_result import OptimizationResult
@@ -132,7 +132,7 @@ def _run_config(
     algo_ctor = resolve_algorithm(algorithm_name)
     algorithm = algo_ctor(cfg_dict, kernel)
 
-    run_fn = getattr(algorithm, "run")
+    run_fn = algorithm.run
     kwargs = {
         "problem": cfg.problem,
         "termination": cfg.termination,

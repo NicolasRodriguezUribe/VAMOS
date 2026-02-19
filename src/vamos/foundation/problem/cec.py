@@ -7,8 +7,8 @@ to enable these problems.
 
 from __future__ import annotations
 
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -47,15 +47,35 @@ def _load_pymoo() -> None:
     try:  # pragma: no cover - only executed when pymoo is available
         from pymoo.problems.multi.cec2009 import (
             CEC2009_CF1 as _CEC2009_CF1,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF1 as _CEC2009_UF1,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF2 as _CEC2009_UF2,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF3 as _CEC2009_UF3,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF4 as _CEC2009_UF4,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF5 as _CEC2009_UF5,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF6 as _CEC2009_UF6,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF7 as _CEC2009_UF7,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF8 as _CEC2009_UF8,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF9 as _CEC2009_UF9,
+        )
+        from pymoo.problems.multi.cec2009 import (
             CEC2009_UF10 as _CEC2009_UF10,
         )
     except ImportError:  # pragma: no cover

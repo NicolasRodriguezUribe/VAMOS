@@ -9,7 +9,6 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.algorithm.config import (
     AGEMOEAConfig,
     IBEAConfig,
@@ -21,7 +20,7 @@ from vamos.engine.algorithm.config import (
     SMSEMOAConfig,
     SPEA2Config,
 )
-
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 
 _NSGAII_NAMES = {"nsgaii", "nsgaii_permutation", "nsgaii_mixed", "nsgaii_binary", "nsgaii_integer"}
 _MOEAD_NAMES = {"moead", "moead_mixed", "moead_binary", "moead_integer"}

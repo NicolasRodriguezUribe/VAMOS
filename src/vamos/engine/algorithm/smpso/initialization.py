@@ -17,16 +17,17 @@ from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
-from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
+from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.foundation.encoding import normalize_encoding
 from vamos.operators.policies.smpso import (
     build_mutation_operator,
     build_repair_operator,
 )
+
 from .state import SMPSOState
 
 if TYPE_CHECKING:

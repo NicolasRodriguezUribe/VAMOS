@@ -8,10 +8,10 @@ import os
 
 import numpy as np
 
-from vamos.foundation.encoding import normalize_encoding
-from vamos.foundation.problem.types import ProblemProtocol
-from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.problem.registry import ProblemSelection
+from vamos.foundation.problem.types import ProblemProtocol
 
 
 def validate_problem(problem: ProblemProtocol) -> None:
@@ -33,7 +33,7 @@ def validate_problem(problem: ProblemProtocol) -> None:
     if encoding == "mixed":
         if not hasattr(problem, "mixed_spec"):
             raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
-        spec = getattr(problem, "mixed_spec")
+        spec = problem.mixed_spec
         spec_keys = set(spec.keys())
         if not {"perm_idx", "real_idx", "int_idx", "cat_idx"} & spec_keys:
             raise ValueError("mixed_spec must define at least one of perm_idx, real_idx, int_idx, or cat_idx.")

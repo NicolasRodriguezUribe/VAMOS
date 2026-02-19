@@ -1,10 +1,10 @@
 from importlib import resources
 
+from vamos.experiment.execution import _default_weight_path
 from vamos.foundation import data as data_module
+from vamos.foundation.core.hv_stop import build_hv_stop_config
 from vamos.foundation.data import reference_front_path, weight_path
 from vamos.foundation.problem.tsplib import load_tsplib_coords
-from vamos.foundation.core.hv_stop import build_hv_stop_config
-from vamos.experiment.execution import _default_weight_path
 
 
 def test_reference_front_packaged_and_accessible():

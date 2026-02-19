@@ -13,17 +13,17 @@ Examples:
     cfg = NSGAIIConfig.default(pop_size=100, n_var=30)
 """
 
-from .types import AlgorithmConfigMapping, AlgorithmConfigProtocol
-from .generic import GenericAlgorithmConfig
-from .nsgaii import NSGAIIConfig
-from .moead import MOEADConfig
-from .spea2 import SPEA2Config
-from .ibea import IBEAConfig
-from .smsemoa import SMSEMOAConfig
-from .smpso import SMPSOConfig
-from .nsgaiii import NSGAIIIConfig
 from .agemoea import AGEMOEAConfig
+from .generic import GenericAlgorithmConfig
+from .ibea import IBEAConfig
+from .moead import MOEADConfig
+from .nsgaii import NSGAIIConfig
+from .nsgaiii import NSGAIIIConfig
 from .rvea import RVEAConfig
+from .smpso import SMPSOConfig
+from .smsemoa import SMSEMOAConfig
+from .spea2 import SPEA2Config
+from .types import AlgorithmConfigMapping, AlgorithmConfigProtocol
 
 __all__ = [
     # NSGA-II

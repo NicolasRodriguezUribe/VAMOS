@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from ...zdt1 import ZDT1Problem
 from ...zdt2 import ZDT2Problem
 from ...zdt3 import ZDT3Problem

@@ -50,7 +50,7 @@ Note: `execution_mode` can be `"in_process"` or `"subprocess"` (fallback). The a
 Install optional dependencies:
 
 ```bash
-pip install vamos[openai]
+pip install vamos-optimization[openai]
 ```
 
 Alternative:
@@ -125,7 +125,7 @@ Expected JSON output (example):
 Install optional dependency support:
 
 ```bash
-pip install vamos[openai]
+pip install vamos-optimization[openai]
 ```
 
 Alternative:
@@ -250,7 +250,7 @@ Run directory (`assist run` / `assist go --smoke`):
 
 ## Troubleshooting
 
-- Missing OpenAI SDK: install optional deps with `pip install vamos[openai]` (or `pip install openai`).
+- Missing OpenAI SDK: install optional deps with `pip install vamos-optimization[openai]` (or `pip install openai`).
 - Missing API key: set `OPENAI_API_KEY` and open a new shell session if needed.
 - Run diagnostics first: `vamos assist doctor`.
 - Invalid auto overrides: VAMOS filters/rejects unsupported keys and records requested/applied/rejected overrides in `plan.json`.

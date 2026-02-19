@@ -4,19 +4,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from vamos.experiment.benchmark.lab_compat import build_quality_indicator_summary
+from vamos.experiment.benchmark.lab_plots import generate_boxplots
+from vamos.experiment.benchmark.lab_stats import write_summary_tables, write_wilcoxon_tables
+from vamos.experiment.benchmark.report_plots import generate_plots
+from vamos.experiment.benchmark.report_utils import (
+    dump_stats_summary,
+    ensure_dir,
+    format_cell,
+    higher_is_better,
+    import_pandas,
+)
 from vamos.experiment.benchmark.runner import BenchmarkResult
 from vamos.ux.analysis.stats import friedman_test, pairwise_wilcoxon
-from vamos.experiment.benchmark.report_utils import (
-    ensure_dir,
-    import_pandas,
-    higher_is_better,
-    format_cell,
-    dump_stats_summary,
-)
-from vamos.experiment.benchmark.report_plots import generate_plots
-from vamos.experiment.benchmark.lab_compat import build_quality_indicator_summary
-from vamos.experiment.benchmark.lab_stats import write_summary_tables, write_wilcoxon_tables
-from vamos.experiment.benchmark.lab_plots import generate_boxplots
 
 
 @dataclass

@@ -13,32 +13,31 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from vamos.foundation.kernel import default_kernel
-
 import numpy as np
 
+from vamos.engine.algorithm.components.archive import _single_front_crowding
 from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     notify_generation,
     track_offspring_genealogy,
 )
-from vamos.engine.algorithm.components.archive import _single_front_crowding
+from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.foundation.kernel import default_kernel
+
 from .helpers import (
     extract_eval_arrays,
     update_personal_bests,
 )
 from .initialization import initialize_smpso_run
 from .state import SMPSOState, build_smpso_result
-from vamos.engine.algorithm.components.termination import HVTracker
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-from vamos.hooks.live_viz import LiveVisualization
 from vamos.foundation.observer import RunContext
-
+from vamos.hooks.live_viz import LiveVisualization
 
 __all__ = ["SMPSO"]
 

@@ -28,13 +28,13 @@ Then run the build smoke commands above.
 After installing the wheel, you can additionally verify OpenAI optional dependencies:
 
 ```bash
-python -m pip install vamos[openai]
+python -m pip install vamos-optimization[openai]
 ```
 
 If working from a published package rather than local wheel testing:
 
 ```bash
-python -m pip install vamos[openai]
+python -m pip install vamos-optimization[openai]
 ```
 
 ## Optional automation script

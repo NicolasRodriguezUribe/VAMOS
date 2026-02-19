@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from importlib.util import find_spec
 from typing import TypedDict
 
-
 DEFAULT_QUICKSTART_BUDGET = 5000
 
 

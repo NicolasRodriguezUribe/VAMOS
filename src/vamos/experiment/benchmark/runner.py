@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from collections.abc import Sequence
 
-from vamos.experiment.benchmark.suites import BenchmarkSuite, BenchmarkExperiment
-from vamos.foundation.core.experiment_config import resolve_engine
-from vamos.experiment.study.runner import StudyRunner, StudyTask, StudyResult
-from vamos.experiment.study.persistence import CSVPersister
+from vamos.experiment.benchmark.suites import BenchmarkExperiment, BenchmarkSuite
 from vamos.experiment.runner import run_single
+from vamos.experiment.study.persistence import CSVPersister
+from vamos.experiment.study.runner import StudyResult, StudyRunner, StudyTask
+from vamos.foundation.core.experiment_config import resolve_engine
 
 
 @dataclass

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Any, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -70,8 +70,8 @@ def notify_generation(
         stats["immigration"] = {
             "events": int(ig.events),
             "inserted": int(ig.inserted),
-            "replaced_indices": list(int(i) for i in (ig.replaced_indices or [])),
-            "replaced_pages": list(int(p) for p in (ig.replaced_pages or [])),
+            "replaced_indices": [int(i) for i in (ig.replaced_indices or [])],
+            "replaced_pages": [int(p) for p in (ig.replaced_pages or [])],
             "mating_participation": int(ig.mating_participation),
         }
 

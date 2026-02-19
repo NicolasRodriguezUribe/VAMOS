@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.foundation.metrics.hypervolume import compute_hypervolume
 from vamos.foundation.metrics.hv_zdt import compute_normalized_hv, get_zdt_reference_front
+from vamos.foundation.metrics.hypervolume import compute_hypervolume
 
 
 def test_compute_hypervolume_returns_expected_area() -> None:

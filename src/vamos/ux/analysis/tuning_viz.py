@@ -8,9 +8,9 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, cast
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from vamos.ux.analysis.core_objective_reduction import reduce_objectives
 

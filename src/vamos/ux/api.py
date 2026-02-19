@@ -5,8 +5,8 @@ UX/analysis utilities; not required for core optimization runtime.
 from __future__ import annotations
 
 from vamos.ux.analysis.core_objective_reduction import (
-    ObjectiveReductionConfig,
     ObjectiveReducer,
+    ObjectiveReductionConfig,
     reduce_objectives,
 )
 from vamos.ux.analysis.mcdm import (
@@ -24,12 +24,6 @@ from vamos.ux.analysis.stats import (
     pairwise_wilcoxon,
     plot_critical_distance,
 )
-from vamos.ux.visualization import (
-    plot_hv_convergence,
-    plot_parallel_coordinates,
-    plot_pareto_front_2d,
-    plot_pareto_front_3d,
-)
 from vamos.ux.results import (
     explore_result_front,
     log_result_summary,
@@ -38,6 +32,12 @@ from vamos.ux.results import (
     result_to_dataframe,
     result_to_latex,
     save_result,
+)
+from vamos.ux.visualization import (
+    plot_hv_convergence,
+    plot_parallel_coordinates,
+    plot_pareto_front_2d,
+    plot_pareto_front_3d,
 )
 
 __all__ = [

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Protocol
 from collections.abc import Callable
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -115,8 +115,8 @@ def _run_pymoo_perm_nsga2(
     try:
         from pymoo.algorithms.moo.nsga2 import NSGA2
         from pymoo.core.problem import Problem as PymooProblem
-        from pymoo.operators.sampling.rnd import PermutationRandomSampling
         from pymoo.operators.mutation.inversion import InversionMutation
+        from pymoo.operators.sampling.rnd import PermutationRandomSampling
         from pymoo.optimize import minimize
     except ImportError as exc:  # pragma: no cover
         raise ImportError("pymoo is not installed. Install it with 'pip install pymoo' to use this baseline.") from exc

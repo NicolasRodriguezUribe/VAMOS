@@ -13,8 +13,6 @@ from typing import Any, Protocol, cast
 
 import numpy as np
 
-from vamos.foundation.encoding import Encoding
-from vamos.foundation.problem.types import ProblemProtocol
 from vamos.engine.algorithm.components.variation.helpers import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
@@ -32,6 +30,8 @@ from vamos.engine.algorithm.components.variation.protocol import (
     MutationOperator,
     VariationWorkspaceProtocol,
 )
+from vamos.foundation.encoding import Encoding
+from vamos.foundation.problem.types import ProblemProtocol
 from vamos.operators.impl.registry import get_operator_registry
 
 

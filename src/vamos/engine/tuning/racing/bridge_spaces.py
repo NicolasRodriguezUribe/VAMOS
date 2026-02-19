@@ -35,13 +35,13 @@ from .bridge_spaces_nsgaiii import (
     build_nsgaiii_mixed_config_space,
 )
 from .bridge_spaces_rvea import build_rvea_config_space, build_rvea_mixed_config_space
+from .bridge_spaces_smpso import build_smpso_config_space
 from .bridge_spaces_smsemoa import (
     build_smsemoa_binary_config_space,
     build_smsemoa_config_space,
     build_smsemoa_integer_config_space,
     build_smsemoa_mixed_config_space,
 )
-from .bridge_spaces_smpso import build_smpso_config_space
 from .bridge_spaces_spea2 import build_spea2_config_space, build_spea2_mixed_config_space
 
 __all__ = [

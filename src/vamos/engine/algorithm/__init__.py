@@ -29,23 +29,22 @@ For configuration builders:
     from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
 """
 
-from vamos.engine.algorithm.nsgaii import NSGAII
-from vamos.engine.algorithm.moead import MOEAD
-from vamos.engine.algorithm.spea2 import SPEA2
-from vamos.engine.algorithm.smsemoa import SMSEMOA
-from vamos.engine.algorithm.nsgaiii import NSGAIII
-from vamos.engine.algorithm.ibea import IBEA
-from vamos.engine.algorithm.smpso import SMPSO
 from vamos.engine.algorithm.agemoea import AGEMOEA
-from vamos.engine.algorithm.rvea import RVEA
-
 from vamos.engine.algorithm.components.protocol import (
     AlgorithmProtocol,
+    ConstraintMode,
     InteractiveAlgorithmProtocol,
     SelectionMethod,
     SurvivalMethod,
-    ConstraintMode,
 )
+from vamos.engine.algorithm.ibea import IBEA
+from vamos.engine.algorithm.moead import MOEAD
+from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.engine.algorithm.nsgaiii import NSGAIII
+from vamos.engine.algorithm.rvea import RVEA
+from vamos.engine.algorithm.smpso import SMPSO
+from vamos.engine.algorithm.smsemoa import SMSEMOA
+from vamos.engine.algorithm.spea2 import SPEA2
 
 __all__ = [
     # Algorithms

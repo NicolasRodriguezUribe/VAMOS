@@ -20,26 +20,25 @@ if TYPE_CHECKING:
     from vamos.engine.algorithm.spea2 import SPEA2
 
 from vamos.archive import ExternalArchiveConfig
-
-from vamos.foundation.encoding import normalize_encoding
-from vamos.foundation.kernel.backend import KernelBackend
-from vamos.foundation.data import weight_path
-from vamos.foundation.problem.types import ProblemProtocol
+from vamos.engine.algorithm.components.variation.helpers import ensure_supported_repair_name
 from vamos.engine.algorithm.config import (
-    AlgorithmConfigProtocol,
-    NSGAIIConfig,
-    MOEADConfig,
-    SMSEMOAConfig,
-    NSGAIIIConfig,
-    SPEA2Config,
-    IBEAConfig,
-    SMPSOConfig,
     AGEMOEAConfig,
+    AlgorithmConfigProtocol,
+    IBEAConfig,
+    MOEADConfig,
+    NSGAIIConfig,
+    NSGAIIIConfig,
     RVEAConfig,
+    SMPSOConfig,
+    SMSEMOAConfig,
+    SPEA2Config,
 )
 from vamos.engine.algorithm.registry import resolve_algorithm
-from vamos.engine.algorithm.components.variation.helpers import ensure_supported_repair_name
 from vamos.engine.config.variation import ensure_operator_tuple, merge_variation_overrides, resolve_default_variation_config
+from vamos.foundation.data import weight_path
+from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.kernel.backend import KernelBackend
+from vamos.foundation.problem.types import ProblemProtocol
 
 
 def _as_int(value: object) -> int:

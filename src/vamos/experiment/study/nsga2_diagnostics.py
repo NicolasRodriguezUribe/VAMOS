@@ -19,9 +19,9 @@ import numpy as np
 
 from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
-from vamos.foundation.core.experiment_config import ExperimentConfig
 
 _DEFAULT_CONFIG: ExperimentConfig | None = None
 

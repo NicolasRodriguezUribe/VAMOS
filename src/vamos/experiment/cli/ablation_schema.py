@@ -7,7 +7,6 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-
 _ALLOWED_TOP_LEVEL_KEYS = {
     "version",
     "algorithm",

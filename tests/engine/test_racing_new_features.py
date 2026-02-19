@@ -1,14 +1,15 @@
 """Tests for new racing features: convergence detection and checkpoint I/O."""
 
-import numpy as np
 import tempfile
 from pathlib import Path
 
+import numpy as np
+
 from vamos.engine.tuning.racing.core import RacingTuner
+from vamos.engine.tuning.racing.io import load_checkpoint, save_checkpoint
 from vamos.engine.tuning.racing.param_space import ParamSpace, Real
 from vamos.engine.tuning.racing.scenario import Scenario
-from vamos.engine.tuning.racing.tuning_task import TuningTask, Instance
-from vamos.engine.tuning.racing.io import save_checkpoint, load_checkpoint
+from vamos.engine.tuning.racing.tuning_task import Instance, TuningTask
 
 
 def test_convergence_detection_stops_early():

@@ -61,9 +61,9 @@ def add_core_arguments(
     add_spec_argument(
         parser,
         "--eval-strategy",
-        choices=("serial", "multiprocessing"),
+        choices=("serial", "multiprocessing", "dask"),
         default=spec_default(experiment_defaults, "eval_strategy", "serial"),
-        help="Evaluation strategy to use (default: serial). Multiprocessing uses --n-workers.",
+        help="Evaluation strategy to use (default: serial). Multiprocessing uses --n-workers; dask uses --dask-address.",
     )
     add_spec_argument(
         parser,
@@ -71,6 +71,12 @@ def add_core_arguments(
         type=int,
         default=experiment_defaults.get("n_workers"),
         help="Number of workers for multiprocessing evaluation backend (ignored for serial).",
+    )
+    add_spec_argument(
+        parser,
+        "--dask-address",
+        default=experiment_defaults.get("dask_address"),
+        help="Address of Dask scheduler (e.g. 'tcp://localhost:8786'). Only used with --eval-strategy dask.",
     )
     add_spec_argument(
         parser,

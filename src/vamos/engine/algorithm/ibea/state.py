@@ -10,8 +10,8 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.algorithm.components.state import AlgorithmState
+from vamos.engine.algorithm.components.variation import VariationPipeline
 
 
 @dataclass

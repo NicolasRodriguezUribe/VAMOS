@@ -13,14 +13,13 @@ from typing import Any
 
 import numpy as np
 
+from vamos.foundation.constraints.utils import compute_violation, is_feasible
 from vamos.operators.impl.real import (
     ClampRepair,
     ReflectRepair,
     ResampleRepair,
     RoundRepair,
 )
-from vamos.foundation.constraints.utils import compute_violation, is_feasible
-
 
 __all__ = [
     "REPAIR_MAP",

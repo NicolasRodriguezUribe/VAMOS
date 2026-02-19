@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from vamos.assist.catalog import build_catalog
 
-
 REQUIRED_KEYS: tuple[str, ...] = (
     "algorithms",
     "kernels",

@@ -65,6 +65,8 @@ class FunctionalProblem(Problem):
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         """Evaluate the objective (and optional constraint) functions."""
         X = np.asarray(X, dtype=float)
+        if X.ndim != 2 or X.shape[1] != self.n_var:
+            raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}), got {X.shape}.")
 
         if self._vectorized:
             F_result = np.asarray(self._fn(X), dtype=float)

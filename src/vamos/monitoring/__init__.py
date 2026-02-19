@@ -1,3 +1,3 @@
-from .hv_convergence import HVConvergenceMonitor, HVConvergenceConfig, HVDecision
+from .hv_convergence import HVConvergenceConfig, HVConvergenceMonitor, HVDecision
 
 __all__ = ["HVConvergenceMonitor", "HVConvergenceConfig", "HVDecision"]

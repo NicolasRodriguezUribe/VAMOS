@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-import logging
 import inspect
-from typing import Any
+import logging
 from collections.abc import Callable, Iterable, Sequence
+from typing import Any
 
 import numpy as np
 
-from vamos.foundation.metrics.hypervolume import hypervolume
+from vamos.experiment.study.persistence import StudyPersister
+from vamos.experiment.study.types import StudyResult, StudyTask
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
-from vamos.foundation.problem.registry import make_problem_selection
-from vamos.foundation.metrics.moocore_indicators import QualityIndicator, has_moocore, get_indicator, HVIndicator
 from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
-
-from vamos.experiment.study.types import StudyTask, StudyResult
-from vamos.experiment.study.persistence import StudyPersister
+from vamos.foundation.metrics.hypervolume import hypervolume
+from vamos.foundation.metrics.moocore_indicators import HVIndicator, QualityIndicator, get_indicator, has_moocore
+from vamos.foundation.problem.registry import make_problem_selection
 
 
 def _logger() -> logging.Logger:

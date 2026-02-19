@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Protocol, cast
 
 import numpy as np
 
-from vamos.engine.hyperheuristics.operator_selector import make_operator_selector, compute_reward
 from vamos.engine.hyperheuristics.indicator import IndicatorEvaluator
+from vamos.engine.hyperheuristics.operator_selector import compute_reward, make_operator_selector
 
 
 class PortfolioAlgorithm(Protocol):

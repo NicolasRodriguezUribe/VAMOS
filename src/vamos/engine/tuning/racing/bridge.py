@@ -9,9 +9,6 @@ from .bridge_spaces import (
     # AGE-MOEA
     build_agemoea_config_space,
     build_agemoea_mixed_config_space,
-    # RVEA
-    build_rvea_config_space,
-    build_rvea_mixed_config_space,
     # IBEA
     build_ibea_binary_config_space,
     build_ibea_config_space,
@@ -34,13 +31,16 @@ from .bridge_spaces import (
     build_nsgaiii_config_space,
     build_nsgaiii_integer_config_space,
     build_nsgaiii_mixed_config_space,
+    # RVEA
+    build_rvea_config_space,
+    build_rvea_mixed_config_space,
+    # SMPSO
+    build_smpso_config_space,
     # SMS-EMOA
     build_smsemoa_binary_config_space,
     build_smsemoa_config_space,
     build_smsemoa_integer_config_space,
     build_smsemoa_mixed_config_space,
-    # SMPSO
-    build_smpso_config_space,
     # SPEA2
     build_spea2_config_space,
     build_spea2_mixed_config_space,

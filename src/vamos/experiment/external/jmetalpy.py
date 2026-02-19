@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
 from collections.abc import Callable, Sequence
+from typing import Any
 
 import numpy as np
 
-from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.problem.registry import ProblemSelection
 
 
@@ -82,11 +82,11 @@ def _run_jmetalpy_nsga2(
     problem = selection.instantiate()
     print_banner(problem, selection, "jMetalPy NSGA-II", "jmetalpy")
     try:
-        from jmetal.core.problem import FloatProblem
-        from jmetal.core.solution import FloatSolution
         from jmetal.algorithm.multiobjective.nsgaii import (
             NSGAII,
         )
+        from jmetal.core.problem import FloatProblem
+        from jmetal.core.solution import FloatSolution
         from jmetal.operator.crossover import SBXCrossover
         from jmetal.operator.mutation import (
             PolynomialMutation,
@@ -178,10 +178,10 @@ def _run_jmetalpy_perm_nsga2(
         raise ValueError("jMetalPy permutation baseline requires a permutation-encoded problem.")
     print_banner(problem, selection, "jMetalPy NSGA-II (perm)", "jmetalpy")
     try:
+        from jmetal.algorithm.multiobjective.nsgaii import NSGAII
         from jmetal.core.operator import Crossover, Mutation
         from jmetal.core.problem import PermutationProblem
         from jmetal.core.solution import PermutationSolution
-        from jmetal.algorithm.multiobjective.nsgaii import NSGAII
         from jmetal.util.termination_criterion import StoppingByEvaluations
     except ImportError as exc:  # pragma: no cover
         raise ImportError("jmetalpy is not installed. Install it with 'pip install jmetalpy' to use this baseline.") from exc

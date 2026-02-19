@@ -16,10 +16,11 @@ References:
     vol. 18, no. 4, 2014.
 """
 
-from .nsgaiii import NSGAIII
-from .helpers import associate, evaluate_population_with_constraints, nsgaiii_survival
 from vamos.operators.policies.nsgaiii import build_variation_operators
+
+from .helpers import associate, evaluate_population_with_constraints, nsgaiii_survival
 from .initialization import initialize_nsgaiii_run
+from .nsgaiii import NSGAIII
 from .state import NSGAIIIState, build_nsgaiii_result
 
 __all__ = [

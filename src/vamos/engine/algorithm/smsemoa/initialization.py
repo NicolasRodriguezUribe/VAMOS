@@ -24,10 +24,11 @@ from vamos.engine.algorithm.components.population import (
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
+from vamos.operators.policies.smsemoa import build_variation_operators
+
 from .helpers import (
     initialize_reference_point,
 )
-from vamos.operators.policies.smsemoa import build_variation_operators
 from .state import SMSEMOAState
 
 if TYPE_CHECKING:

@@ -5,14 +5,13 @@ CLI argument parsing and validation helpers.
 from __future__ import annotations
 
 import argparse
-
 from collections.abc import Sequence
 
 from vamos.engine.config.spec import allowed_override_keys, validate_experiment_spec
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
 from .args import build_parser, build_pre_parser
-from .common import collect_nsgaii_variation_args, _collect_generic_variation
+from .common import _collect_generic_variation, collect_nsgaii_variation_args
 from .loaders import load_spec_defaults
 from .spec_args import parser_spec_keys
 from .validation import finalize_args

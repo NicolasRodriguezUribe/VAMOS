@@ -1,10 +1,10 @@
 import numpy as np
 
-from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
-from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.engine.algorithm.config import MOEADConfig, NSGAIIConfig
 from vamos.engine.algorithm.moead import MOEAD
-from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.engine.algorithm.nsgaii import NSGAII
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
+from vamos.foundation.kernel.numpy_backend import NumPyKernel
 
 
 class LinearConstraintProblem:

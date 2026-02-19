@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from vamos.foundation.problem.base import Problem
 
+from vamos.foundation.problem.base import Problem
 
 
 class LZ09Problem(Problem):

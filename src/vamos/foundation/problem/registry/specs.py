@@ -13,8 +13,8 @@ from .families import (
     real_world,
     tanabe_ishibuchi_re,
     wfg,
-    zcat,
     zapotecas_rwa,
+    zcat,
     zdt,
 )
 

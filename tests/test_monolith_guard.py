@@ -4,7 +4,6 @@ import ast
 import json
 from pathlib import Path
 
-
 CORE_LOC_MAX = 450
 CLI_UI_LOC_MAX = 350
 FUNC_LOC_MAX = 250

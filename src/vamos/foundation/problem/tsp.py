@@ -6,9 +6,9 @@ from collections.abc import Iterable, Sequence
 
 import numpy as np
 
-from .tsplib import load_tsplib_coords
 from vamos.foundation.problem.base import Problem
 
+from .tsplib import load_tsplib_coords
 
 
 def _default_coordinates() -> np.ndarray:

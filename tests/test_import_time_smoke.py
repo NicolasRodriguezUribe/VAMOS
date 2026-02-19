@@ -4,7 +4,6 @@ import json
 import subprocess
 import sys
 
-
 BLACKLIST = (
     "torch",
     "tensorflow",

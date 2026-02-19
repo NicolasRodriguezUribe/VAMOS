@@ -11,12 +11,11 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.operators.impl.mixed import mixed_mutation
-from vamos.operators.impl.real import PolynomialMutation
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
-from vamos.operators.impl.real import VariationWorkspace
 from vamos.engine.algorithm.smpso.helpers import resolve_repair
 from vamos.foundation.encoding import normalize_encoding
+from vamos.operators.impl.mixed import mixed_mutation
+from vamos.operators.impl.real import PolynomialMutation, VariationWorkspace
 
 if TYPE_CHECKING:
     from vamos.foundation.problem.types import ProblemProtocol

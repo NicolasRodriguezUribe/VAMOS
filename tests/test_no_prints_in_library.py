@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-
 ALLOWED_PREFIXES = (
     "src/vamos/experiment/cli/",
     "src/vamos/experiment/scripts/",

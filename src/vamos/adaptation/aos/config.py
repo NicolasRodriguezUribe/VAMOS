@@ -4,10 +4,10 @@ Configuration helpers for adaptive operator selection (AOS).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import math
-from typing import Any
 from collections.abc import Mapping
+from dataclasses import dataclass, field
+from typing import Any
 
 DEFAULT_REWARD_WEIGHTS = {
     "survival": 0.5,

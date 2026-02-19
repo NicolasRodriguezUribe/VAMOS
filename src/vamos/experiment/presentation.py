@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import os
 from argparse import Namespace
-from typing import TYPE_CHECKING, Any
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
+from vamos.experiment.runner_utils import run_output_dir
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
-from vamos.experiment.runner_utils import run_output_dir
 
 from .cli.orchestration import run_from_args
 

@@ -12,11 +12,6 @@ from typing import Any, cast
 
 import numpy as np
 
-from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
-from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairName
-from vamos.foundation.encoding import EncodingLike
-from vamos.operators.impl.real import VariationWorkspace
-from vamos.foundation.problem.types import ProblemProtocol
 from vamos.adaptation.aos.config import AdaptiveOperatorSelectionConfig
 from vamos.adaptation.aos.controller import AOSController
 from vamos.adaptation.aos.policies import (
@@ -28,6 +23,11 @@ from vamos.adaptation.aos.policies import (
     UCBPolicy,
 )
 from vamos.adaptation.aos.portfolio import OperatorPortfolio
+from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
+from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairName
+from vamos.foundation.encoding import EncodingLike
+from vamos.foundation.problem.types import ProblemProtocol
+from vamos.operators.impl.real import VariationWorkspace
 
 
 def build_operator_pool(

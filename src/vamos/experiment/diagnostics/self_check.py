@@ -10,9 +10,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from vamos.experiment.runner import run_single
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.experiment.runner import run_single
 
 
 def _logger() -> logging.Logger:

@@ -3,13 +3,14 @@ E2E Test: Plugin Registration Flow
 Verifies the dynamic Registry can accept custom algorithms.
 """
 
-import pytest
-import numpy as np
 from dataclasses import dataclass
 
+import numpy as np
+import pytest
+
+from vamos import optimize
 from vamos.engine.algorithm.registry import ALGORITHMS
 from vamos.foundation.problem.zdt1 import ZDT1Problem
-from vamos import optimize
 
 
 @pytest.mark.e2e

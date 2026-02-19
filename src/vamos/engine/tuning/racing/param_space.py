@@ -18,9 +18,9 @@ from __future__ import annotations
 import ast
 import math
 import operator
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable, Sequence
 
 import numpy as np
 

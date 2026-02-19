@@ -5,11 +5,10 @@ CSV writers for AOS trace and summary data.
 from __future__ import annotations
 
 import csv
+from collections.abc import Iterable
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
-from collections.abc import Iterable
-
 
 TRACE_HEADER = [
     "step",

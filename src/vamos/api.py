@@ -15,17 +15,17 @@ from __future__ import annotations
 import logging
 
 from vamos.experiment.diagnostics.self_check import run_self_check
-from vamos.foundation.logging import configure_vamos_logging
 from vamos.experiment.optimization_result import OptimizationResult
+
+# Unified API - the primary entry point
+from vamos.experiment.unified import optimize
+from vamos.foundation.logging import configure_vamos_logging
 from vamos.foundation.problem.base import Problem
 from vamos.foundation.problem.builder import make_problem
 from vamos.foundation.problem.registry import (
     available_problem_names,
     make_problem_selection,
 )
-
-# Unified API - the primary entry point
-from vamos.experiment.unified import optimize
 
 
 def configure_logging(*, level: int = logging.INFO) -> None:

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Literal
 import math
 import random
+from dataclasses import dataclass, field
+from typing import Any, Literal
 
 Statistic = Literal["mean", "median", "min"]
 EpsilonMode = Literal["abs", "rel"]

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from joblib import Parallel, delayed  # type: ignore[import-untyped]
 
 from .eval_types import EvalFn, EvalResult
+from .random_search_tuner import TrialResult
 from .state import ConfigState
 from .tuning_task import EvalContext
-from .random_search_tuner import TrialResult
 
 if TYPE_CHECKING:
     from .core import RacingTuner

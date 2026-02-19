@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal
+
 import numpy as np
 
 ArchiveType = Literal["size_cap", "epsilon_grid", "hvc_prune", "hybrid"]
@@ -40,6 +41,7 @@ class ExternalArchiveConfig:
     hv_ref_point: list[float] | None = None
     hv_samples: int = 20000
     rng_seed: int = 0
+    objective_tolerance: float = 1e-10
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,4 @@
-from vamos.foundation.problem.registry_info import list_problems, get_problem_info
+from vamos.foundation.problem.registry_info import get_problem_info, list_problems
 
 
 def test_problem_zoo_lists_known_problem():

@@ -23,10 +23,10 @@ from vamos.engine.algorithm.components.archive import (
 )
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
 from vamos.foundation.encoding import normalize_encoding
-from vamos.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
 from vamos.foundation.eval.backends import EvaluationBackend
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
+from vamos.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
 
 # Constants
 DEFAULT_TOURNAMENT_PRESSURE = 2

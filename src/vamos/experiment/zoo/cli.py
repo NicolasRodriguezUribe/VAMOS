@@ -3,9 +3,9 @@ from __future__ import annotations
 import argparse
 import logging
 
-from vamos.foundation.problem.registry_info import list_problems, get_problem_info
 from vamos.experiment.runner import run_experiment
 from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.problem.registry_info import get_problem_info, list_problems
 
 
 def _logger() -> logging.Logger:

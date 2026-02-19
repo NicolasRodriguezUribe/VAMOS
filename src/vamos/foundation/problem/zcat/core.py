@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from .fshape import evaluate_f
-from .gz import evaluate_g, zcat_evaluate_z, zcat_get_j, zcat_value_in, zbias
+from .gz import evaluate_g, zbias, zcat_evaluate_z, zcat_get_j, zcat_value_in
 
 _COMPLICATED_G_FUNCTION_BY_PROBLEM = {
     1: 4,

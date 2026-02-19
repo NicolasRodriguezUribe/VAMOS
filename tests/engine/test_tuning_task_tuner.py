@@ -1,8 +1,8 @@
 import numpy as np
 
 from vamos.engine.tuning.racing.param_space import ParamSpace, Real
-from vamos.engine.tuning.racing.tuning_task import TuningTask, Instance, EvalContext
 from vamos.engine.tuning.racing.random_search_tuner import RandomSearchTuner
+from vamos.engine.tuning.racing.tuning_task import EvalContext, Instance, TuningTask
 
 
 def test_tuning_task_eval_config_aggregates_scores():

@@ -10,11 +10,10 @@ This module handles algorithm setup including:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
 import os
 import warnings
 from math import comb
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -27,8 +26,9 @@ from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
-from .helpers import evaluate_population_with_constraints
 from vamos.operators.policies.nsgaiii import build_variation_operators
+
+from .helpers import evaluate_population_with_constraints
 from .state import NSGAIIIState
 
 if TYPE_CHECKING:
@@ -88,7 +88,6 @@ def initialize_nsgaiii_run(
     rng = np.random.default_rng(seed)
     pop_size = config["pop_size"]
     enforce_ref_dirs = bool(config.get("enforce_ref_dirs", False))
-    pop_size_auto = bool(config.get("pop_size_auto", False))
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
@@ -114,17 +113,12 @@ def initialize_nsgaiii_run(
     def _handle_refdir_mismatch(expected: int, actual: int, detail: str) -> int:
         if enforce_ref_dirs:
             raise ValueError(detail)
-        if pop_size_auto:
-            warnings.warn(
-                f"{detail} Auto-adjusting pop_size to {expected}.",
-                RuntimeWarning,
-            )
-            return expected
         warnings.warn(
-            f"{detail} Continuing with pop_size={actual}.",
+            f"{detail} Auto-adjusting pop_size from {actual} to {expected}.",
             RuntimeWarning,
+            stacklevel=2,
         )
-        return actual
+        return expected
 
     # Load reference directions (prefer #ref_dirs == pop_size; warn if mismatched)
     dir_cfg = config.get("reference_directions", {}) or {}

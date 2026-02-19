@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable
 
 import numpy as np
 
-from .tuning_task import TuningTask, EvalContext
 from .sampler import Sampler, UniformSampler
+from .tuning_task import EvalContext, TuningTask
 
 
 def _logger() -> logging.Logger:

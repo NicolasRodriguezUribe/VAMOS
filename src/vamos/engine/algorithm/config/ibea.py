@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from vamos.archive import ExternalArchiveConfig
-from .base import ConstraintModeStr, IndicatorType, ResultMode, _SerializableConfig, _require_fields
+
+from .base import ConstraintModeStr, IndicatorType, ResultMode, _require_fields, _SerializableConfig
 
 
 @dataclass(frozen=True)

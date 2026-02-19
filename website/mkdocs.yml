@@ -1,45 +1,41 @@
 site_name: VAMOS
+site_description: Fast. Clean. Multi-objective. A Python framework for multi-objective evolutionary optimization.
 site_url: https://vamos-optimization.org
-site_description: >-
-  Fast, clean, multi-objective evolutionary optimization for Python.
-  Nine algorithms. Two-line API. Vectorized core — 4–12× faster than DEAP and jMetalPy.
-site_author: VAMOS Contributors
-copyright: Copyright &copy; 2024–2025 VAMOS Contributors
-
-repo_name: NicolasRodriguezUribe/VAMOS
-repo_url: https://github.com/NicolasRodriguezUribe/VAMOS
-
-docs_dir: docs
+repo_url: https://github.com/vamos-optimization/vamos
+repo_name: vamos-optimization/vamos
 
 theme:
   name: material
-  palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+  custom_dir: docs/overrides
   font:
-    text: Inter
+    text: DM Sans
     code: JetBrains Mono
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
   features:
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.top
-    - navigation.footer
     - navigation.indexes
+    - navigation.instant
     - search.highlight
     - search.suggest
     - content.code.copy
+    - content.code.annotate
     - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
 
 extra_css:
   - stylesheets/extra.css
@@ -47,24 +43,28 @@ extra_css:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/NicolasRodriguezUribe/VAMOS
-      name: VAMOS on GitHub
+      link: https://github.com/vamos-optimization
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/vamos-optimization
-      name: VAMOS on PyPI
 
 plugins:
   - search
-  - i18n:
-      docs_structure: folder
-      fallback_to_default: true
-      reconfigure_material: true
-      reconfigure_search: true
+  - static-i18n:
+      default_language: en
       languages:
-        - locale: en
-          default: true
+        en:
           name: English
           build: true
+        zh:
+          name: 中文
+          build: true
+          nav_translations:
+            Home: 首页
+            Getting Started: 快速开始
+            Algorithms: 算法
+            API Reference: API 参考
+            Tutorials: 教程
+            Benchmarks: 基准测试
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -72,6 +72,7 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
+  - pymdownx.snippets
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -83,27 +84,26 @@ markdown_extensions:
   - attr_list
   - md_in_html
   - tables
-  - def_list
   - toc:
       permalink: true
 
 nav:
-  - Home: index.md
-  - Getting Started: getting-started.md
+  - Home: en/index.md
+  - Getting Started: en/getting-started.md
   - Algorithms:
-      - Overview: algorithms/index.md
-      - NSGA-II: algorithms/nsgaii.md
-      - NSGA-III: algorithms/nsgaiii.md
-      - MOEA/D: algorithms/moead.md
-      - SMS-EMOA: algorithms/smsemoa.md
-      - SPEA2: algorithms/spea2.md
-      - IBEA: algorithms/ibea.md
-      - SMPSO: algorithms/smpso.md
-      - AGE-MOEA: algorithms/agemoea.md
-      - RVEA: algorithms/rvea.md
+    - en/algorithms/index.md
+    - NSGA-II: en/algorithms/nsgaii.md
+    - NSGA-III: en/algorithms/nsgaiii.md
+    - MOEA/D: en/algorithms/moead.md
+    - SMS-EMOA: en/algorithms/smsemoa.md
+    - SPEA2: en/algorithms/spea2.md
+    - IBEA: en/algorithms/ibea.md
+    - SMPSO: en/algorithms/smpso.md
+    - AGE-MOEA: en/algorithms/agemoea.md
+    - RVEA: en/algorithms/rvea.md
+  - API Reference: en/api/index.md
   - Tutorials:
-      - Quickstart: tutorials/quickstart.md
-      - Custom Problem: tutorials/custom-problem.md
-      - Hyperparameter Tuning: tutorials/tuning.md
-  - API Reference: api/index.md
-  - Benchmarks: benchmarks.md
+    - Quickstart: en/tutorials/quickstart.md
+    - Custom Problems: en/tutorials/custom-problem.md
+    - Tuning: en/tutorials/tuning.md
+  - Benchmarks: en/benchmarks.md

@@ -191,13 +191,13 @@ class TestExceptionHierarchy:
     def test_all_inherit_from_vamos_error(self):
         """All custom exceptions should inherit from VAMOSError."""
         from vamos.foundation.exceptions import (
-            VAMOSError,
             ConfigurationError,
-            InvalidAlgorithmError,
-            ProblemError,
-            OptimizationError,
             DataError,
             DependencyError,
+            InvalidAlgorithmError,
+            OptimizationError,
+            ProblemError,
+            VAMOSError,
         )
 
         assert issubclass(ConfigurationError, VAMOSError)
@@ -209,7 +209,7 @@ class TestExceptionHierarchy:
 
     def test_catch_all_vamos_errors(self):
         """Should be able to catch all VAMOS errors with VAMOSError."""
-        from vamos.foundation.exceptions import VAMOSError, InvalidAlgorithmError
+        from vamos.foundation.exceptions import InvalidAlgorithmError, VAMOSError
 
         with pytest.raises(VAMOSError):
             raise InvalidAlgorithmError("test")
@@ -236,25 +236,25 @@ class TestExceptionUsage:
     def test_all_exceptions_importable(self):
         """All exceptions should be importable from foundation.exceptions."""
         from vamos.foundation.exceptions import (
-            VAMOSError,
+            BackendNotAvailableError,
+            BoundsError,
             ConfigurationError,
+            ConstraintViolationError,
+            ConvergenceError,
+            DataError,
+            DependencyError,
+            EvaluationError,
             InvalidAlgorithmError,
             InvalidEngineError,
             InvalidOperatorError,
-            MissingConfigError,
-            ProblemError,
             InvalidProblemError,
-            ProblemDimensionError,
-            BoundsError,
-            OptimizationError,
-            ConvergenceError,
-            EvaluationError,
-            ConstraintViolationError,
-            DataError,
-            ResultsNotFoundError,
             InvalidResultsError,
-            DependencyError,
-            BackendNotAvailableError,
+            MissingConfigError,
+            OptimizationError,
+            ProblemDimensionError,
+            ProblemError,
+            ResultsNotFoundError,
+            VAMOSError,
         )
 
         # Just verify all are not None

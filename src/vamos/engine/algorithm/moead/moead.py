@@ -17,8 +17,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from vamos.foundation.kernel import default_kernel
-
 import numpy as np
 
 from vamos.engine.algorithm.components.archives import update_archive
@@ -29,6 +27,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from vamos.foundation.constraints.utils import compute_violation
+from vamos.foundation.kernel import default_kernel
 
 from .helpers import update_neighborhood
 from .initialization import initialize_moead_run

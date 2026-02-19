@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from vamos.ux.analysis.mcdm import weighted_sum_scores, tchebycheff_scores, knee_point_scores, reference_point_scores, topsis_scores
+from vamos.ux.analysis.mcdm import knee_point_scores, reference_point_scores, tchebycheff_scores, topsis_scores, weighted_sum_scores
 from vamos.ux.studio.data import FrontRecord, normalize_objectives
-
 
 SolutionDecoder = Callable[[np.ndarray], dict[str, Any]]
 

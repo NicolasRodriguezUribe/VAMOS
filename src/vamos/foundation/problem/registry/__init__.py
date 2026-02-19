@@ -2,8 +2,8 @@
 Problem registry: specs, selection, and factories.
 """
 
-from .specs import ProblemSpec, available_problem_names, get_problem_specs  # noqa: F401
 from .selection import ProblemSelection, make_problem_selection  # noqa: F401
+from .specs import ProblemSpec, available_problem_names, get_problem_specs  # noqa: F401
 
 
 def __getattr__(name: str) -> object:

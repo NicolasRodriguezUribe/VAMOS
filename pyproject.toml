@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vamos"
+name = "vamos-optimization"
 version = "0.1.0"
 description = "Vectorized Architecture for Multiobjective Optimization Studies"
 requires-python = ">=3.10"
@@ -23,6 +23,7 @@ keywords = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
@@ -261,14 +262,19 @@ target-version = "py310"
 line-ending = "auto"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "UP"]
+select = ["E", "F", "W", "UP", "I", "B", "C4"]
 ignore = [
     "E402",  # Module level import not at top - intentional for sys.path and matplotlib backend
     "E741",  # Ambiguous variable name 'l' - used in WFG problems (standard math notation)
     "E501",  # Line too long - handled by black formatter
+    "B007",  # Loop control variable not used - intentional destructuring
+    "B905",  # zip() without strict= - existing codebase pattern
+    "C408",  # Unnecessary dict() call - dict() reads better in plotly marker kwargs
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B017"]  # Tests may assert broad exceptions intentionally
+
 [tool.semantic_release]
 version_variable = [
     "src/vamos/foundation/version.py:__version__",
@@ -277,6 +283,6 @@ version_toml = [
     "pyproject.toml:project.version",
 ]
 branch = "main"
-upload_to_pypi = false
+upload_to_pypi = true
 upload_to_release = true
 build_command = "pip install build && python -m build"

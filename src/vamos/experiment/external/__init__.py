@@ -5,11 +5,11 @@ External baseline adapters and dispatch.
 from typing import Any
 
 from .registry import (
-    ExternalAlgorithmAdapter,
     EXTERNAL_ALGORITHM_RUNNERS,
+    ExternalAlgorithmAdapter,
+    _get_external_algorithm_adapters,
     resolve_external_algorithm,
     run_external,
-    _get_external_algorithm_adapters,
 )
 
 

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 
 from vamos.experiment.unified import optimize
 from vamos.foundation.problem.registry import make_problem_selection

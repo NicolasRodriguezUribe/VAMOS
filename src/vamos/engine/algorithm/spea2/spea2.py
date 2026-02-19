@@ -17,8 +17,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from vamos.foundation.kernel import default_kernel
-
 import numpy as np
 
 from vamos.engine.algorithm.components.archives import update_archive
@@ -28,11 +26,12 @@ from vamos.engine.algorithm.components.hooks import (
     notify_generation,
     track_offspring_genealogy,
 )
+from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.foundation.kernel import default_kernel
 
-from .helpers import dominance_matrix, environmental_selection, strength_raw_fitness, knn_density
+from .helpers import dominance_matrix, environmental_selection, knn_density, strength_raw_fitness
 from .initialization import initialize_spea2_run
 from .state import SPEA2State, build_spea2_result
-from vamos.engine.algorithm.components.termination import HVTracker
 
 if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend

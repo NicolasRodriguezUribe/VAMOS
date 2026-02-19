@@ -5,7 +5,6 @@ from ...real_world.feature_selection import FeatureSelectionProblem
 from ...real_world.hyperparam import HyperparameterTuningProblem
 from ..common import ProblemSpec
 
-
 SPECS: dict[str, ProblemSpec] = {}
 
 

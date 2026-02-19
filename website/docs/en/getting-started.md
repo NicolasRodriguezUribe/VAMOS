@@ -23,7 +23,7 @@ pip install "vamos-optimization[optuna]"     # Hyperparameter tuning
 pip install "vamos-optimization[all]"        # All of the above
 ```
 
-**Requirements:** Python 3.9+ · NumPy ≥ 1.23 · SciPy ≥ 1.9 · joblib ≥ 1.2
+**Requirements:** Python 3.10+ · NumPy ≥ 1.23 · SciPy ≥ 1.10 · joblib ≥ 1.2
 
 ---
 

@@ -11,7 +11,7 @@ from typing import Literal, overload
 
 import numpy as np
 
-from vamos.operators.impl.real import SBXCrossover, PolynomialMutation
+from vamos.operators.impl.real import PolynomialMutation, SBXCrossover
 
 from .backend import KernelBackend
 

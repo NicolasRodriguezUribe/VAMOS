@@ -1,7 +1,7 @@
 # problem/zdt1.py
 import numpy as np
-from vamos.foundation.problem.base import Problem
 
+from vamos.foundation.problem.base import Problem
 
 
 class ZDT1Problem(Problem):

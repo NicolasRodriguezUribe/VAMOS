@@ -1,23 +1,23 @@
 from .hv_zdt import (
+    compute_normalized_hv,
     get_zdt_reference_front,
     get_zdt_reference_point,
-    compute_normalized_hv,
 )
 from .hypervolume import compute_hypervolume
 from .moocore_indicators import (
-    IndicatorResult,
-    QualityIndicator,
-    has_moocore,
-    get_indicator,
-    HVIndicator,
-    HVContributionsIndicator,
-    IGDIndicator,
-    IGDPlusIndicator,
+    AvgHausdorffIndicator,
     EpsilonAdditiveIndicator,
     EpsilonMultiplicativeIndicator,
-    AvgHausdorffIndicator,
     HVApproxIndicator,
+    HVContributionsIndicator,
+    HVIndicator,
+    IGDIndicator,
+    IGDPlusIndicator,
+    IndicatorResult,
+    QualityIndicator,
     WHVRectIndicator,
+    get_indicator,
+    has_moocore,
 )
 
 __all__ = [

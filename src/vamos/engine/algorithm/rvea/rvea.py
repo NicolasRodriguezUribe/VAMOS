@@ -19,11 +19,11 @@ if TYPE_CHECKING:
 import numpy as np
 
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
-from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
 from vamos.engine.algorithm.components.variation.helpers import (
     ensure_supported_operator_names,
     ensure_supported_repair_name,
 )
+from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
 from vamos.engine.config.variation import (
     ensure_operator_tuple,
     ensure_operator_tuple_optional,
@@ -31,8 +31,8 @@ from vamos.engine.config.variation import (
 )
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
-from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.kernel import default_kernel
+from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 
 from .state import RVEAState, build_rvea_result

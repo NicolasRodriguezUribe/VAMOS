@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
-from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.core.experiment_config import ExperimentConfig
+from vamos.foundation.problem.registry import ProblemSelection
 
 
 def _logger() -> logging.Logger:

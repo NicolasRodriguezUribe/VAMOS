@@ -9,13 +9,14 @@ Backends that rely on optional dependencies (numba, moocore) are lazy-loaded so
 
 from __future__ import annotations
 
-from importlib import import_module
 from collections.abc import Callable
+from importlib import import_module
 from typing import cast
+
+from vamos.foundation.exceptions import _suggest_names
 
 from .backend import KernelBackend
 from .numpy_backend import NumPyKernel
-from vamos.foundation.exceptions import _suggest_names
 
 
 def _load_numba() -> KernelBackend:

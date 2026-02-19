@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .permutation import PermPop, RNG
+    from .permutation import RNG, PermPop
 
 
 class SwapMutation:
@@ -77,13 +77,14 @@ class InsertMutation:
 
 
 class ScrambleMutation:
-    def __init__(self, prob: float = 0.1, **kwargs: object) -> None:
+    def __init__(self, prob: float = 0.1, max_segment_length: int = 0, **kwargs: object) -> None:
         self.prob = float(prob)
+        self.max_segment_length = int(max_segment_length)
 
     def __call__(self, X: PermPop, rng: RNG, **kwargs: object) -> None:
         from .permutation import scramble_mutation
 
-        scramble_mutation(X, self.prob, rng)
+        scramble_mutation(X, self.prob, rng, max_segment_length=self.max_segment_length)
 
 
 class InversionMutation:

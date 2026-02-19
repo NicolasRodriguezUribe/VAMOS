@@ -5,8 +5,7 @@ import logging
 
 from vamos.archive import ExternalArchiveConfig
 from vamos.foundation.core.experiment_config import EXPERIMENT_TYPES
-from vamos.foundation.problem.resolver import resolve_reference_front_path
-from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS
+from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS, resolve_reference_front_path
 
 from .common import _collect_generic_variation, _collect_moead_variation, _normalize_operator_args, collect_nsgaii_variation_args
 from .types import SpecDefaults
