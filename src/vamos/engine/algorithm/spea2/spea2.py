@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from vamos.foundation.kernel import default_kernel
+
 import numpy as np
 
 from vamos.engine.algorithm.components.archives import update_archive
@@ -109,9 +111,9 @@ class SPEA2:
     >>> result = spea2.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None) -> None:
         self.cfg = config
-        self.kernel = kernel
+        self.kernel = kernel or default_kernel()
         self._st: SPEA2State | None = None
         self._live_cb: LiveVisualization | None = None
         self._eval_strategy: EvaluationBackend | None = None
@@ -122,8 +124,8 @@ class SPEA2:
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
@@ -187,7 +189,7 @@ class SPEA2:
         self,
         problem: ProblemProtocol,
         termination: tuple[str, Any],
-        seed: int,
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> tuple[Any, Any, int, Any]:
@@ -208,8 +210,8 @@ class SPEA2:
     def initialize(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> None:

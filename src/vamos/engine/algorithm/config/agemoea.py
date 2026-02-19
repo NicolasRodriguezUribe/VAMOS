@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .base import _SerializableConfig, _require_fields
+from vamos.archive import ExternalArchiveConfig
+from .base import ConstraintModeStr, ResultMode, _SerializableConfig, _require_fields
 
 
 class _AGEMOEAConfigBuilder:
@@ -55,31 +56,14 @@ class _AGEMOEAConfigBuilder:
         self._cfg["result_mode"] = mode
         return self
 
-    def archive(self, size: int, **kwargs: Any) -> _AGEMOEAConfigBuilder:
-        """
-        Configure an external archive.
+    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+        """Configure an external archive.
 
         Args:
-            size: Archive size (required). <= 0 disables the archive.
-            **kwargs: Optional configuration:
-                - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
-                - prune_policy: "crowding", "hv_contrib", "random"
-                - epsilon: Grid epsilon for epsilon_grid/hybrid types
-
-        Notes:
-            This method configures archive storage only. It does not change
-            ``result_mode``.
+            capacity: Maximum number of solutions. ``None`` means unbounded.
+            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
-        if size <= 0:
-            self._cfg["archive"] = {"size": 0}
-            return self
-        archive_cfg = {"size": int(size), **kwargs}
-        self._cfg["archive"] = archive_cfg
-        return self
-
-    def archive_type(self, value: str) -> _AGEMOEAConfigBuilder:
-        """Set archive pruning strategy."""
-        self._cfg["archive_type"] = str(value)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
         return self
 
     def build(self) -> AGEMOEAConfig:
@@ -98,8 +82,7 @@ class _AGEMOEAConfigBuilder:
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
-            archive=self._cfg.get("archive"),
-            archive_type=self._cfg.get("archive_type"),
+            external_archive=self._cfg.get("external_archive"),
         )
 
 
@@ -111,11 +94,10 @@ class AGEMOEAConfig(_SerializableConfig):
     repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
-    constraint_mode: str = "feasibility"
+    constraint_mode: ConstraintModeStr = "feasibility"
     track_genealogy: bool = False
-    result_mode: str | None = None
-    archive: dict[str, Any] | None = None
-    archive_type: str | None = None
+    result_mode: ResultMode | None = None
+    external_archive: ExternalArchiveConfig | None = None
 
     @classmethod
     def default(

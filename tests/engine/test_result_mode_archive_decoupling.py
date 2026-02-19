@@ -43,7 +43,7 @@ def test_moead_archive_keeps_default_nondominated_result_mode():
         .crossover("de", cr=1.0, f=0.5)
         .mutation("pm", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
-        .archive(20)
+        .external_archive(capacity=20)
         .build()
     )
     assert cfg.result_mode == "non_dominated"
@@ -56,7 +56,7 @@ def test_smsemoa_archive_keeps_default_nondominated_result_mode():
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .archive(20)
+        .external_archive(capacity=20)
         .build()
     )
     assert cfg.result_mode == "non_dominated"
@@ -103,7 +103,7 @@ def test_rvea_rejects_archive_result_mode():
 
 def test_agemoea_archive_keeps_default_result_and_exposes_population():
     pop_size = 12
-    cfg = _agemoea_builder(pop_size).archive(pop_size * 2).build()
+    cfg = _agemoea_builder(pop_size).external_archive(capacity=pop_size * 2).build()
     problem = ZDT1Problem(n_var=6)
     result = AGEMOEA(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
@@ -120,7 +120,7 @@ def test_agemoea_population_result_mode_with_archive():
     pop_size = 12
     cfg = (
         _agemoea_builder(pop_size)
-        .archive(pop_size * 2)
+        .external_archive(capacity=pop_size * 2)
         .result_mode("population")
         .build()
     )
@@ -137,7 +137,7 @@ def test_agemoea_population_result_mode_with_archive():
 
 def test_rvea_archive_keeps_default_result_and_exposes_population():
     pop_size = 6
-    cfg = _rvea_builder(pop_size=pop_size, n_partitions=5).archive(pop_size * 2).build()
+    cfg = _rvea_builder(pop_size=pop_size, n_partitions=5).external_archive(capacity=pop_size * 2).build()
     problem = ZDT1Problem(n_var=6)
     result = RVEA(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
@@ -153,7 +153,7 @@ def test_rvea_population_result_mode_with_archive():
     pop_size = 6
     cfg = (
         _rvea_builder(pop_size=pop_size, n_partitions=5)
-        .archive(pop_size * 2)
+        .external_archive(capacity=pop_size * 2)
         .result_mode("population")
         .build()
     )

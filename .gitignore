@@ -82,3 +82,9 @@ experiments/ablation_smoke*.csv
 
 # --- Notebooks (keep local unless explicitly tracked) ---
 # *.ipynb
+
+# --- Claude Code metadata ---
+.claude/
+
+# --- LaTeX / build scratch files ---
+*_out.txt

@@ -1,3 +1,3 @@
-from .bounded_archive import BoundedArchive, BoundedArchiveConfig, ArchiveUpdate
+from .bounded_archive import BoundedArchive, BoundedArchiveConfig, ExternalArchiveConfig, ArchiveUpdate
 
-__all__ = ["BoundedArchive", "BoundedArchiveConfig", "ArchiveUpdate"]
+__all__ = ["BoundedArchive", "BoundedArchiveConfig", "ExternalArchiveConfig", "ArchiveUpdate"]

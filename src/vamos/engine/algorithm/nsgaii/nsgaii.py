@@ -10,6 +10,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.foundation.eval.backends import EvaluationBackend
+from vamos.foundation.kernel import default_kernel
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.hooks.live_viz import LiveVisualization
@@ -26,16 +27,16 @@ class NSGAII:
     Individuals are represented as array rows (X, F) without per-object instances.
     """
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend) -> None:
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None) -> None:
         self.cfg = config
-        self.kernel = kernel
+        self.kernel = kernel or default_kernel()
         self._st: NSGAIIState | None = None
 
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
         checkpoint_dir: str | None = None,
@@ -80,8 +81,8 @@ class NSGAII:
     def ask(self) -> np.ndarray:
         return ask_nsgaii(self)
 
-    def tell(self, eval_result: Any, pop_size: int) -> bool:
-        return tell_nsgaii(self, eval_result, pop_size)
+    def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
+        return tell_nsgaii(self, eval_result)
 
     def _combine_ids(self, st: NSGAIIState) -> np.ndarray | None:
         return combine_ids(st)

@@ -8,7 +8,7 @@ to focused component modules.
 from __future__ import annotations
 
 from vamos.engine.algorithm.components.archives import (
-    resolve_archive_size,
+    resolve_external_archive,
     setup_archive,
     update_archive,
 )
@@ -42,7 +42,7 @@ __all__ = [
     # Archives
     "setup_archive",
     "update_archive",
-    "resolve_archive_size",
+    "resolve_external_archive",
     # Live visualization hooks
     "get_live_viz",
     "notify_generation",

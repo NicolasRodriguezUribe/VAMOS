@@ -14,6 +14,7 @@ from vamos.foundation.core.execution import execute_algorithm
 from vamos.foundation.core.experiment_config import (
     ENABLED_ALGORITHMS,
     EXPERIMENT_BACKENDS,
+    EXPERIMENT_TYPES,
     EXTERNAL_ALGORITHM_NAMES,
     OPTIONAL_ALGORITHMS,
     ExperimentConfig,
@@ -35,6 +36,7 @@ from vamos.hooks import (
     LiveVisualization,
 )
 from vamos.hooks.config_parse import parse_stopping_archive
+from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.config.spec import ExperimentSpec, SpecBlock
 from vamos.engine.config.variation import VariationConfig
@@ -136,8 +138,7 @@ def run_single(
     algorithm: Any,
     cfg_data: AlgorithmConfigProtocol,
     problem: Any | None = None,
-    external_archive_size: int | None = None,
-    archive_type: str = "hypervolume",
+    external_archive: ExternalArchiveConfig | None = None,
     selection_pressure: int = 2,
     nsgaii_variation: VariationConfig | None = None,
     moead_variation: VariationConfig | None = None,
@@ -146,6 +147,8 @@ def run_single(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     hv_stop_config: dict[str, Any] | None = None,
     evaluator: Any | None = None,
     termination: tuple[str, Any] | None = None,
@@ -199,6 +202,8 @@ def run_single(
         "spea2_variation": spea2_variation,
         "ibea_variation": ibea_variation,
         "smpso_variation": smpso_variation,
+        "agemoea_variation": agemoea_variation,
+        "rvea_variation": rvea_variation,
     }
 
     storage = StorageObserver(
@@ -208,7 +213,7 @@ def run_single(
         problem_override=problem_override,
         hv_stop_config=hv_stop_config,
         selection_pressure=selection_pressure,
-        external_archive_size=external_archive_size,
+        external_archive=external_archive,
         variations=variations,
     )
     observers.append(storage)
@@ -368,6 +373,8 @@ def execute_problem_suite(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     include_external: bool = False,
     config_source: str | None = None,
     config_spec: ExperimentSpec | None = None,
@@ -380,7 +387,7 @@ def execute_problem_suite(
     from vamos.experiment import external  # local import to keep runner decoupled
 
     engines: Iterable[str | None]
-    if args.experiment == "backends":
+    if args.experiment in EXPERIMENT_TYPES:
         engines = EXPERIMENT_BACKENDS
     else:
         engines = (getattr(args, "engine", None),)
@@ -419,7 +426,7 @@ def execute_problem_suite(
                     algorithm_name,
                     problem_selection,
                     config,
-                    external_archive_size=args.external_archive_size,
+                    external_archive=args.external_archive,
                     selection_pressure=args.selection_pressure,
                     nsgaii_variation=nsgaii_variation,
                     moead_variation=getattr(args, "moead_variation", None),
@@ -428,6 +435,8 @@ def execute_problem_suite(
                     spea2_variation=getattr(args, "spea2_variation", None),
                     ibea_variation=getattr(args, "ibea_variation", None),
                     smpso_variation=getattr(args, "smpso_variation", None),
+                    agemoea_variation=getattr(args, "agemoea_variation", None),
+                    rvea_variation=getattr(args, "rvea_variation", None),
                     hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                     config_source=config_source,
                     config_spec=config_spec,
@@ -438,7 +447,7 @@ def execute_problem_suite(
                 )
             except ImportError as exc:
                 # Backends experiment should be resilient to missing optional deps.
-                if args.experiment == "backends" and f"Kernel '{engine_name}' requires" in str(exc):
+                if args.experiment in EXPERIMENT_TYPES and f"Kernel '{engine_name}' requires" in str(exc):
                     _logger().warning("Skipping engine '%s': %s", engine_name, exc)
                     continue
                 raise
@@ -460,7 +469,7 @@ def execute_problem_suite(
                     algorithm_name,
                     problem_selection,
                     config,
-                    external_archive_size=args.external_archive_size,
+                    external_archive=args.external_archive,
                     selection_pressure=args.selection_pressure,
                     nsgaii_variation=nsgaii_variation,
                     moead_variation=getattr(args, "moead_variation", None),
@@ -469,6 +478,8 @@ def execute_problem_suite(
                     spea2_variation=getattr(args, "spea2_variation", None),
                     ibea_variation=getattr(args, "ibea_variation", None),
                     smpso_variation=getattr(args, "smpso_variation", None),
+                    agemoea_variation=getattr(args, "agemoea_variation", None),
+                    rvea_variation=getattr(args, "rvea_variation", None),
                     hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                     config_source=config_source,
                     config_spec=config_spec,
@@ -478,7 +489,7 @@ def execute_problem_suite(
                     live_viz=live_viz,
                 )
             except ImportError as exc:
-                if args.experiment == "backends" and f"Kernel '{engine_name}' requires" in str(exc):
+                if args.experiment in EXPERIMENT_TYPES and f"Kernel '{engine_name}' requires" in str(exc):
                     _logger().warning("Skipping engine '%s': %s", engine_name, exc)
                     continue
                 raise

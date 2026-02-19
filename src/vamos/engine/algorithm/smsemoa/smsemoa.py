@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from vamos.foundation.kernel import default_kernel
+
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import (
@@ -77,13 +79,13 @@ class SMSEMOA:
     >>> while not smsemoa.should_terminate():
     ...     X = smsemoa.ask()
     ...     F = evaluate(X)
-    ...     smsemoa.tell(X, F)
+    ...     smsemoa.tell(F)
     >>> result = smsemoa.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend):
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
         self.cfg = config
-        self.kernel = kernel
+        self.kernel = kernel or default_kernel()
         self._st: SMSEMOAState | None = None
         self._live_cb: LiveVisualization | None = None
         self._eval_strategy: EvaluationBackend | None = None
@@ -98,8 +100,8 @@ class SMSEMOA:
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
@@ -249,8 +251,8 @@ class SMSEMOA:
     def initialize(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> None:
@@ -308,22 +310,21 @@ class SMSEMOA:
         self._st.pending_offspring = offspring
         return offspring.copy()
 
-    def tell(
-        self,
-        X: np.ndarray,
-        F: np.ndarray,
-        G: np.ndarray | None = None,
-    ) -> None:
+    def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
         """Receive evaluated offspring and update population.
 
         Parameters
         ----------
-        X : np.ndarray
-            Evaluated decision vectors.
-        F : np.ndarray
-            Objective values.
-        G : np.ndarray, optional
-            Constraint values.
+        eval_result : Any
+            Objective values as ``np.ndarray``, or an object with ``.F``
+            attribute, or a dict with ``"F"`` key.
+        problem : ProblemProtocol | None
+            Unused, kept for interface consistency.
+
+        Returns
+        -------
+        bool
+            Always ``False`` (SMS-EMOA has no early-stop criterion via tell).
 
         Raises
         ------
@@ -336,17 +337,29 @@ class SMSEMOA:
             raise RuntimeError("No pending offspring. Call ask() first.")
 
         st = self._st
+        X_off = st.pending_offspring
+        assert X_off is not None
         st.pending_offspring = None
 
-        # Survival selection for each child
-        if X.shape[0] == 1:
-            survival_selection(st, X, F, G, self.kernel)
-        else:  # pragma: no cover - steady-state SMS-EMOA typically uses 1 offspring
-            for i in range(X.shape[0]):
-                G_i = G[i : i + 1] if G is not None else None
-                survival_selection(st, X[i : i + 1], F[i : i + 1], G_i, self.kernel)
+        if hasattr(eval_result, "F"):
+            F = np.asarray(eval_result.F, dtype=float)
+            G = getattr(eval_result, "G", None)
+        elif isinstance(eval_result, dict):
+            F = np.asarray(eval_result["F"], dtype=float)
+            G = eval_result.get("G")
+        else:
+            F = np.asarray(eval_result, dtype=float)
+            G = None
 
-        st.n_eval += X.shape[0]
+        # Survival selection for each child
+        if X_off.shape[0] == 1:
+            survival_selection(st, X_off, F, G, self.kernel)
+        else:  # pragma: no cover - steady-state SMS-EMOA typically uses 1 offspring
+            for i in range(X_off.shape[0]):
+                G_i = G[i : i + 1] if G is not None else None
+                survival_selection(st, X_off[i : i + 1], F[i : i + 1], G_i, self.kernel)
+
+        st.n_eval += X_off.shape[0]
         st.generation += 1
 
         # Update archive
@@ -360,6 +373,8 @@ class SMSEMOA:
         # Check HV tracker
         if st.hv_tracker is not None and st.hv_tracker.enabled:
             st.hv_tracker.reached(st.hv_points())
+
+        return False
 
     def should_terminate(self) -> bool:
         """Check if termination criterion is met.

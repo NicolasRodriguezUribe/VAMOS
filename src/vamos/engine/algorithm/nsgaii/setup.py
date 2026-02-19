@@ -25,7 +25,7 @@ from .helpers import fronts_from_ranks
 from .injection import ImmigrationManager
 from .initialization import (
     parse_termination,
-    resolve_archive_size,
+    resolve_external_archive,
     setup_archive,
     setup_genealogy,
     setup_population,
@@ -35,16 +35,12 @@ from .initialization import (
 from .state import NSGAIIState
 
 if TYPE_CHECKING:
+    from vamos.archive import ExternalArchiveConfig
     from .nsgaii import NSGAII
 
 
-def _resolve_archive_settings(cfg: dict[str, Any], *, pop_size: int) -> tuple[int | None, bool]:
-    archive_cfg = cfg.get("archive") or {}
-    unbounded = bool(archive_cfg.get("unbounded", False)) if isinstance(archive_cfg, dict) else False
-    size = resolve_archive_size(cfg)
-    if unbounded and not size:
-        size = pop_size
-    return size, unbounded
+def _resolve_archive_settings(cfg: dict[str, Any]) -> ExternalArchiveConfig | None:
+    return resolve_external_archive(cfg)
 
 
 def _logger() -> logging.Logger:
@@ -176,30 +172,21 @@ def initialize_run(
     live_cb.on_start(ctx)
     hv_tracker = HVTracker(hv_config, algo.kernel)
 
-    archive_size, archive_unbounded = _resolve_archive_settings(algo.cfg, pop_size=pop_size)
-    archive_X, archive_F, archive_manager, archive_via_kernel = setup_archive(
+    ext_cfg = _resolve_archive_settings(algo.cfg)
+    archive_X, archive_F, archive_manager = setup_archive(
         algo.kernel,
         X,
         F,
         n_var,
         problem.n_obj,
         X.dtype,
-        archive_size,
-        unbounded=archive_unbounded,
+        ext_cfg,
     )
 
-    if checkpoint_archive_X is not None and checkpoint_archive_F is not None and archive_size:
+    if checkpoint_archive_X is not None and checkpoint_archive_F is not None and ext_cfg is not None:
         try:
             if archive_manager is not None:
                 archive_X, archive_F = archive_manager.update(checkpoint_archive_X, checkpoint_archive_F)
-            elif archive_via_kernel:
-                archive_X, archive_F = algo.kernel.update_archive(
-                    None,
-                    None,
-                    checkpoint_archive_X,
-                    checkpoint_archive_F,
-                    archive_size,
-                )
             else:
                 archive_X = checkpoint_archive_X
                 archive_F = checkpoint_archive_F
@@ -240,15 +227,11 @@ def initialize_run(
     result_mode = str(algo.cfg.get("result_mode", "non_dominated")).strip().lower()
     if result_mode not in {"non_dominated", "population"}:
         raise ValueError("result_mode must be one of: non_dominated, population")
-    archive_type_raw = algo.cfg.get("archive_type")
-    archive_type = str(archive_type_raw).strip().lower() if archive_type_raw else "hypervolume"
     result_archive = setup_result_archive(
-        archive_type,
-        archive_size,
+        ext_cfg,
         n_var,
         problem.n_obj,
         X.dtype,
-        unbounded=archive_unbounded,
     )
     if result_archive is not None and checkpoint is not None:
         try:
@@ -285,11 +268,10 @@ def initialize_run(
         replacement_size=replacement_size,
         steady_state=steady_state,
         constraint_mode=constraint_mode,
-        archive_size=archive_size,
+        archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
         archive_manager=archive_manager,
-        archive_via_kernel=archive_via_kernel,
         result_archive=result_archive,
         result_mode=result_mode,
         hv_tracker=hv_tracker,

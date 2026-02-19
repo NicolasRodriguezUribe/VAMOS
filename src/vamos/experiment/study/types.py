@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 
@@ -22,8 +23,7 @@ class StudyTask:
     n_obj: int | None = None
     seed: int = ExperimentConfig().seed
     selection_pressure: int = 2
-    external_archive_size: int | None = None
-    archive_type: str = "hypervolume"
+    external_archive: ExternalArchiveConfig | None = None
     nsgaii_variation: dict[str, Any] | None = None
     moead_variation: dict[str, Any] | None = None
     smsemoa_variation: dict[str, Any] | None = None

@@ -20,7 +20,7 @@ from vamos.engine.algorithm.components.archive import (
     _single_front_crowding,
 )
 from vamos.engine.algorithm.components.archives import (
-    resolve_archive_size,
+    resolve_external_archive,
     setup_archive,
     update_archive,
 )
@@ -71,7 +71,7 @@ __all__ = [
     "setup_initial_population",
     "setup_archive",
     "update_archive",
-    "resolve_archive_size",
+    "resolve_external_archive",
     "setup_hv_tracker",
     "get_live_viz",
     "notify_generation",

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from vamos.foundation.kernel import default_kernel
+
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import (
@@ -78,13 +80,13 @@ class NSGAIII:
     >>> while not nsga3.should_terminate():
     ...     X = nsga3.ask()
     ...     F = evaluate(X)
-    ...     nsga3.tell(X, F)
+    ...     nsga3.tell(F)
     >>> result = nsga3.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend):
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
         self.cfg = config
-        self.kernel = kernel
+        self.kernel = kernel or default_kernel()
         self._st: NSGAIIIState | None = None
         self._live_cb: LiveVisualization | None = None
         self._eval_strategy: EvaluationBackend | None = None
@@ -99,8 +101,8 @@ class NSGAIII:
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
@@ -252,8 +254,8 @@ class NSGAIII:
     def initialize(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> None:
@@ -311,22 +313,21 @@ class NSGAIII:
         self._st.pending_offspring = offspring
         return offspring.copy()
 
-    def tell(
-        self,
-        X: np.ndarray,
-        F: np.ndarray,
-        G: np.ndarray | None = None,
-    ) -> None:
+    def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
         """Receive evaluated offspring and update population.
 
         Parameters
         ----------
-        X : np.ndarray
-            Evaluated decision vectors.
-        F : np.ndarray
-            Objective values.
-        G : np.ndarray, optional
-            Constraint values.
+        eval_result : Any
+            Objective values as ``np.ndarray``, or an object with ``.F``
+            attribute, or a dict with ``"F"`` key.
+        problem : ProblemProtocol | None
+            Unused, kept for interface consistency.
+
+        Returns
+        -------
+        bool
+            Always ``False`` (NSGA-III has no early-stop criterion via tell).
 
         Raises
         ------
@@ -339,7 +340,19 @@ class NSGAIII:
             raise RuntimeError("No pending offspring. Call ask() first.")
 
         st = self._st
+        X_off = st.pending_offspring
+        assert X_off is not None
         st.pending_offspring = None
+
+        if hasattr(eval_result, "F"):
+            F = np.asarray(eval_result.F, dtype=float)
+            G = getattr(eval_result, "G", None)
+        elif isinstance(eval_result, dict):
+            F = np.asarray(eval_result["F"], dtype=float)
+            G = eval_result.get("G")
+        else:
+            F = np.asarray(eval_result, dtype=float)
+            G = None
 
         # Combine ids for genealogy if tracking
         ids_combined = None
@@ -359,7 +372,7 @@ class NSGAIII:
             st.X,
             st.F,
             st.G,
-            X,
+            X_off,
             F,
             G,
             st.pop_size,
@@ -374,7 +387,7 @@ class NSGAIII:
         if ids_combined is not None:
             st.ids = ids_combined[survivor_indices]
 
-        st.n_eval += X.shape[0]
+        st.n_eval += X_off.shape[0]
         st.generation += 1
 
         # Update archive
@@ -388,6 +401,8 @@ class NSGAIII:
         # Check HV tracker
         if st.hv_tracker is not None and st.hv_tracker.enabled:
             st.hv_tracker.reached(st.hv_points())
+
+        return False
 
     def should_terminate(self) -> bool:
         """Check if termination criterion is met.

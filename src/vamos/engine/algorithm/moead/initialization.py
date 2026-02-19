@@ -14,7 +14,7 @@ from collections.abc import Mapping
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.archives import resolve_external_archive, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -237,9 +237,8 @@ def initialize_moead_run(
     )
 
     # Setup archive
-    archive_size = resolve_archive_size(cfg)
-    archive_type = cfg.get("archive_type", "crowding")
-    archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, archive_size, archive_type)
+    ext_cfg = resolve_external_archive(cfg)
+    archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, ext_cfg)
 
     # Setup HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)
@@ -295,7 +294,7 @@ def initialize_moead_run(
         xl=xl,
         xu=xu,
         # Archive
-        archive_size=archive_size,
+        archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
         archive_manager=archive_manager,
@@ -310,7 +309,7 @@ def initialize_moead_run(
 
     state.generation = generation
 
-    if checkpoint_archive_X is not None and checkpoint_archive_F is not None and archive_size:
+    if checkpoint_archive_X is not None and checkpoint_archive_F is not None and ext_cfg:
         try:
             if state.archive_manager is not None:
                 state.archive_X, state.archive_F = state.archive_manager.update(checkpoint_archive_X, checkpoint_archive_F)

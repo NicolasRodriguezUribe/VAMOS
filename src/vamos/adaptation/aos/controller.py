@@ -59,6 +59,8 @@ class AOSController:
     _generation_count: int = field(default=0, init=False)
     _reward_history_all: list[list[float]] = field(default_factory=list, init=False)
     _rng: random.Random = field(init=False, repr=False)
+    _feas_history: list[float] = field(default_factory=list, init=False)
+    _phase_reset_done: bool = field(default=False, init=False)
 
     def __post_init__(self) -> None:
         n_arms = len(self.portfolio)
@@ -102,6 +104,11 @@ class AOSController:
         self._gen_pulls[idx] += 1
         self._total_pulls[idx] += 1
         return self.portfolio[idx]
+
+    def observe_feasibility_rate(self, feasible_count: int, total_count: int) -> None:
+        """Record the population feasibility rate for phase-transition detection."""
+        rate = feasible_count / max(total_count, 1)
+        self._feas_history.append(float(rate))
 
     def observe_offspring(self, op_id: str, n: int) -> None:
         self._add_count(self._gen_offspring, op_id, n)
@@ -162,12 +169,43 @@ class AOSController:
         self._trace_rows.extend(rows)
         self._generation_count += 1
 
+        # --- Phase-transition reset (feasibility threshold crossed) ---
+        if self._check_phase_transition():
+            self._reset_bandit()
+
         # --- Arm elimination ---
         elim_after = self.config.elimination_after
         if elim_after > 0 and self._generation_count == elim_after:
             self._try_eliminate_arms()
 
         return rows
+
+    def _check_phase_transition(self) -> bool:
+        """Return True if the feasibility threshold has been crossed for enough consecutive
+        generations and a bandit reset has not already been triggered."""
+        threshold = self.config.feasibility_reset_threshold
+        if threshold <= 0.0 or self._phase_reset_done:
+            return False
+        min_gen = max(self.config.feasibility_reset_min_gen, 1)
+        if len(self._feas_history) < min_gen:
+            return False
+        recent = self._feas_history[-min_gen:]
+        return all(r >= threshold for r in recent)
+
+    def _reset_bandit(self) -> None:
+        """Clear all learned statistics and re-activate eliminated arms.
+
+        Called once when the feasibility phase transition is detected.  The
+        bandit restarts its warm-up phase from scratch so it can re-learn which
+        operators work best in the new (feasible) landscape.
+        """
+        n_arms = len(self.portfolio)
+        self._total_pulls = [0] * n_arms
+        self._total_reward = [0.0] * n_arms
+        self._reward_history_all = [[] for _ in range(n_arms)]
+        self._eliminated.clear()
+        self.policy.reset()
+        self._phase_reset_done = True
 
     def _try_eliminate_arms(self) -> None:
         """Eliminate arms whose mean reward is significantly below the best arm."""

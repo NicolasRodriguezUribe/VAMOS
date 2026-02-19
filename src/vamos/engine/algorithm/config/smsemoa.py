@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .base import _SerializableConfig, _require_fields
+from vamos.archive import ExternalArchiveConfig
+from .base import ConstraintModeStr, ResultMode, _SerializableConfig, _require_fields
 
 
 @dataclass(frozen=True)
@@ -16,14 +17,13 @@ class SMSEMOAConfig(_SerializableConfig):
     selection: tuple[str, dict[str, Any]]
     reference_point: dict[str, Any]
     eliminate_duplicates: bool = False
-    constraint_mode: str = "feasibility"
+    constraint_mode: ConstraintModeStr = "feasibility"
     repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     track_genealogy: bool = False
-    result_mode: str | None = None
-    archive_type: str | None = None
-    archive: dict[str, Any] | None = None
+    result_mode: ResultMode | None = None
+    external_archive: ExternalArchiveConfig | None = None
 
     @classmethod
     def default(
@@ -121,31 +121,14 @@ class _SMSEMOAConfigBuilder:
         self._cfg["result_mode"] = mode
         return self
 
-    def archive_type(self, value: str) -> _SMSEMOAConfigBuilder:
-        """Set archive pruning strategy: 'hypervolume' or 'crowding'."""
-        self._cfg["archive_type"] = str(value)
-        return self
-
-    def archive(self, size: int, **kwargs: Any) -> _SMSEMOAConfigBuilder:
-        """
-        Configure an external archive.
+    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _SMSEMOAConfigBuilder:
+        """Configure an external archive.
 
         Args:
-            size: Archive size (required). <= 0 disables the archive.
-            **kwargs: Optional configuration:
-                - archive_type: "size_cap", "epsilon_grid", "hvc_prune", "hybrid"
-                - prune_policy: "crowding", "hv_contrib", "random"
-                - epsilon: Grid epsilon for epsilon_grid/hybrid types
-
-        Notes:
-            This method configures archive storage only. It does not change
-            ``result_mode``.
+            capacity: Maximum number of solutions. ``None`` means unbounded.
+            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
-        if size <= 0:
-            self._cfg["archive"] = {"size": 0}
-            return self
-        archive_cfg = {"size": int(size), **kwargs}
-        self._cfg["archive"] = archive_cfg
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
         return self
 
     def build(self) -> SMSEMOAConfig:
@@ -168,6 +151,5 @@ class _SMSEMOAConfigBuilder:
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
-            archive_type=self._cfg.get("archive_type"),
-            archive=self._cfg.get("archive"),
+            external_archive=self._cfg.get("external_archive"),
         )

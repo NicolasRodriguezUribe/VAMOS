@@ -7,7 +7,7 @@ name = "vamos"
 version = "0.1.0"
 description = "Vectorized Architecture for Multiobjective Optimization Studies"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = "MIT"
 authors = [
   { name = "VAMOS contributors" }
 ]
