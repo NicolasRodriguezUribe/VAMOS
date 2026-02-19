@@ -1,7 +1,9 @@
 import numpy as np
+from vamos.foundation.problem.base import Problem
 
 
-class ZDT2Problem:
+
+class ZDT2Problem(Problem):
     """
     Classic bi-objective benchmark with a concave Pareto front.
     Shares structure with ZDT1 but uses a quadratic term in the second objective.

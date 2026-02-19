@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
+from vamos.foundation.problem.base import Problem
 
 
-class LZ09Problem:
+
+class LZ09Problem(Problem):
     """
     Li & Zhang (LZ09) benchmark family as described in:
     H. Li and Q. Zhang, "Multiobjective optimization problems with complicated Pareto sets,
@@ -28,7 +30,6 @@ class LZ09Problem:
         self.ptype = int(ptype)
         self.dtype = int(dtype)
         self.ltype = int(ltype)
-        self.encoding = "continuous"
         # All LZ09 definitions operate in [0, 1]
         self.xl = 0.0
         self.xu = 1.0

@@ -1,7 +1,9 @@
 import numpy as np
+from vamos.foundation.problem.base import Problem
 
 
-class ZDT4Problem:
+
+class ZDT4Problem(Problem):
     """ZDT4 benchmark introducing multimodality through shifted bounds."""
 
     def __init__(self, n_var: int) -> None:

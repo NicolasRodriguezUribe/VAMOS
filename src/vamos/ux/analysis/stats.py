@@ -125,8 +125,15 @@ def plot_critical_distance(
     ax.set_yticks([])
     ax.set_xlabel("Average Rank (lower is better)")
     if n_problems is not None:
-        # q_alpha approximation for alpha=0.05 (large-sample Studentized range)
-        q_alpha = 2.569 if alpha == 0.05 else 2.343  # simple fallback
+        _Q_ALPHA = {0.10: 2.343, 0.05: 2.569, 0.025: 2.807, 0.01: 3.143}
+        if alpha not in _Q_ALPHA:
+            import warnings
+            warnings.warn(
+                f"alpha={alpha} not in supported values {sorted(_Q_ALPHA)}; "
+                "defaulting to alpha=0.05.",
+                stacklevel=2,
+            )
+        q_alpha = _Q_ALPHA.get(alpha, _Q_ALPHA[0.05])
         cd = q_alpha * np.sqrt(k * (k + 1) / (6.0 * n_problems))
         xmin = ranks.min()
         ax.hlines(0.1, xmin, xmin + cd, colors="black")

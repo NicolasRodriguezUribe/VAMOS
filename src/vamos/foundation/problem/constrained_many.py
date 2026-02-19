@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import math
 
+from vamos.foundation.problem.base import Problem
+
 import numpy as np
 
 
@@ -127,7 +129,7 @@ def _constraint_dc3(X: np.ndarray, gx: np.ndarray, a: float = 5.0, b: float = 0.
     return np.column_stack([g_gx, g_x])
 
 
-class CDTLZProblem:
+class CDTLZProblem(Problem):
     def __init__(self, variant: str, *, n_var: int = 12, n_obj: int = 3, r: float | None = None) -> None:
         key = str(variant).lower()
         if key not in {"c1dtlz1", "c1dtlz3", "c2dtlz2", "c3dtlz1"}:
@@ -139,7 +141,6 @@ class CDTLZProblem:
         self.n_var = int(n_var)
         self.n_obj = int(n_obj)
         self.n_constraints = self.n_obj if key == "c3dtlz1" else 1
-        self.encoding = "continuous"
         self.xl = np.zeros(self.n_var, dtype=float)
         self.xu = np.ones(self.n_var, dtype=float)
 
@@ -191,7 +192,7 @@ class CDTLZProblem:
         out["G"] = G
 
 
-class DCDTLZProblem:
+class DCDTLZProblem(Problem):
     def __init__(self, variant: str, *, n_var: int = 12, n_obj: int = 3) -> None:
         key = str(variant).lower()
         if key not in {"dc1dtlz1", "dc1dtlz3", "dc2dtlz1", "dc2dtlz3", "dc3dtlz1", "dc3dtlz3"}:
@@ -208,7 +209,6 @@ class DCDTLZProblem:
             self.n_constraints = 2
         else:
             self.n_constraints = self.n_obj
-        self.encoding = "continuous"
         self.xl = np.zeros(self.n_var, dtype=float)
         self.xu = np.ones(self.n_var, dtype=float)
 
@@ -236,7 +236,7 @@ class DCDTLZProblem:
         out["G"] = G
 
 
-class MWProblem:
+class MWProblem(Problem):
     def __init__(self, variant: str, *, n_var: int = 15, n_obj: int | None = None) -> None:
         key = str(variant).lower()
         if not key.startswith("mw"):
@@ -260,7 +260,6 @@ class MWProblem:
 
         self.n_var = int(n_var)
         self.n_obj = int(resolved_n_obj)
-        self.encoding = "continuous"
 
         self.n_constraints = {
             1: 1,
