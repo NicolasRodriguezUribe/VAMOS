@@ -105,6 +105,7 @@ def _build_algorithm_config(
     pop_size: int | None,
     n_var: int | None,
     n_obj: int | None,
+    encoding: str | None = None,
 ) -> AlgorithmConfigProtocol:
     algorithm = algorithm.lower()
     result_mode = "population"
@@ -114,6 +115,7 @@ def _build_algorithm_config(
         pop_size=pop_size,
         n_var=n_var,
         n_obj=n_obj,
+        encoding=encoding,
     )
     if default_cfg is not None:
         return _with_result_mode(default_cfg, result_mode)
@@ -182,6 +184,7 @@ def run_focused_optimization(
         pop_size=40,
         n_var=getattr(instance, "n_var", None),
         n_obj=getattr(instance, "n_obj", None),
+        encoding=getattr(instance, "encoding", None),
     )
     result = _run_algorithm(
         instance,
@@ -221,6 +224,7 @@ def run_with_history(
                 pop_size=100,
                 n_var=getattr(problem, "n_var", None),
                 n_obj=getattr(problem, "n_obj", None),
+                encoding=getattr(problem, "encoding", None),
             )
         if isinstance(cfg, AlgorithmConfigProtocol):
             return cfg

@@ -30,6 +30,21 @@ class TestNSGAIIConfigShortcuts:
         # mutation prob should be ~1/30 = 0.033
         assert abs(cfg.mutation[1]["prob"] - 1 / 30) < 0.001
 
+    def test_default_with_permutation_encoding(self):
+        """default() should pick permutation-compatible operators when requested."""
+        cfg = NSGAIIConfig.default(encoding="permutation")
+
+        assert cfg.crossover[0] == "ox"
+        assert cfg.mutation[0] == "swap"
+        assert cfg.selection[0] == "tournament"
+
+    def test_builder_defaults_pop_size_and_selection(self):
+        """Builder should fill defaults for pop_size and selection if omitted."""
+        cfg = NSGAIIConfig.builder().crossover("sbx", prob=1.0, eta=20.0).mutation("pm", prob=0.1, eta=20.0).build()
+
+        assert cfg.pop_size == 100
+        assert cfg.selection[0] == "tournament"
+
 
 class TestMOEADConfigShortcuts:
     """Test MOEADConfig.default()."""

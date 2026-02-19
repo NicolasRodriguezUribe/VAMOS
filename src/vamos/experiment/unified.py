@@ -314,6 +314,7 @@ def _run_single(
             pop_size=effective_pop_size,
             n_var=n_var,
             n_obj=n_obj,
+            encoding=encoding,
         )
     else:
         if not isinstance(algorithm_config, AlgorithmConfigProtocol):

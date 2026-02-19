@@ -168,6 +168,7 @@ def _build_algorithm_config(
     pop_size: int | None,
     n_var: int | None,
     n_obj: int | None,
+    encoding: str | None,
 ) -> AlgorithmConfigProtocol:
     algorithm = algorithm.lower()
     result_mode = "population"
@@ -180,6 +181,7 @@ def _build_algorithm_config(
         pop_size=pop_size,
         n_var=n_var,
         n_obj=n_obj,
+        encoding=encoding,
     )
     if default_cfg is not None:
         return cast(AlgorithmConfigProtocol, _with_result_mode(default_cfg, result_mode))

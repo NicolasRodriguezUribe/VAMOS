@@ -370,7 +370,7 @@ def _run_preview_once(
     if constraints is not None and n_constraints > 0:
         kw["constraints"] = constraints
         kw["n_constraints"] = n_constraints
-    problem = make_problem(fn, n_var=n_var, n_obj=n_obj, bounds=bounds, name="studio_preview", **kw)
+    problem = make_problem(fn, n_var=n_var, n_obj=n_obj, bounds=bounds, encoding="real", name="studio_preview", **kw)
     algo_cfg = _build_algorithm_config(algorithm, pop_size=pop_size, n_var=n_var, n_obj=n_obj)
     t0 = time.perf_counter()
     result = _run_algorithm(
@@ -602,6 +602,7 @@ def generate_script(
     parts.append(f"    n_var={n_var},")
     parts.append(f"    n_obj={n_obj},")
     parts.append(f"    bounds={bounds!r},")
+    parts.append('    encoding="real",')
     parts.append(f'    name="{name}",')
     if has_constraints:
         parts.append(f"    constraints={func_name}_constraints,")

@@ -228,7 +228,7 @@ Performance indicators              & \cmark & \pmark & \xmark & \pmark & \xmark
 Parallelism                         & \pmark & \pmark & \cmark & \cmark & \cmark & \pmark \\
 Graphical user interface            & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
 Automatic algorithm selection       & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
-Active maintenance                  & \cmark & \pmark & \cmark & \xmark & \cmark & \cmark \\
+Active maintenance                  & \cmark & \pmark & \xmark & \xmark & \cmark & \cmark \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -497,6 +497,12 @@ Fig.~\ref{fig:runtime_comparison} visualizes these relative runtimes. Each bar r
   \caption{Runtime of each framework relative to \VAMOS{} (Numba) for generational NSGA-II, grouped by problem family ($\log_2$ scale). Bars above the dashed parity line ($2^0=1$) indicate that the competitor is slower. Error bars show variability across per-problem medians within each family. All runs use 50{,}000 evaluations and 30 seeds.}
   \label{fig:runtime_comparison}
 \end{figure*}
+
+\paragraph{Scope of the extended comparison.}
+DEAP~\cite{fortin2012deap} and Platypus are included in the generational NSGA-II runtime table above for completeness, but are deliberately excluded from the extended experimental analyses (solution-quality comparisons, IGD$^+$ metrics, and algorithm-variant benchmarks).
+DEAP is a general-purpose evolutionary computation toolkit whose NSGA-II implementation prioritizes pedagogical clarity over computational efficiency, while Platypus has seen little active maintenance and has a substantially smaller adoption in the MOEA community.
+Both frameworks ran more than one order of magnitude slower than pymoo on our benchmarks in preliminary tests, making them unsuitable as primary performance-comparison points; retaining them in all analyses would also have multiplied the total experiment time by a factor incompatible with the study's scale.
+The extended comparisons are therefore restricted to pymoo~\cite{blank2020pymoo} and jMetalPy~\cite{benitez2019jmetalpy}, which represent the current state of the art in optimized Python MOEA implementations.
 
 \paragraph{Steady-state NSGA-II.}
 Some Frameworks expose a steady-state (incremental-replacement) variant of NSGA-II, typically implemented as a $(\mu+1)$ loop with one offspring per iteration and one survivor replaced.

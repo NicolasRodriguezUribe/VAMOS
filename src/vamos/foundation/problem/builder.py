@@ -11,6 +11,7 @@ Example
 ...     lambda x: [x[0], 1 - x[0] ** 0.5],
 ...     n_var=2, n_obj=2,
 ...     bounds=[(0, 1), (0, 1)],
+...     encoding="real",
 ... )
 >>> result = optimize(problem, algorithm="nsgaii", max_evaluations=2000)
 """
@@ -122,7 +123,7 @@ def make_problem(
     xl: float | Sequence[float] | np.ndarray | None = None,
     xu: float | Sequence[float] | np.ndarray | None = None,
     vectorized: bool = False,
-    encoding: str = "real",
+    encoding: str,
     name: str | None = None,
     constraints: Callable[..., object] | None = None,
     n_constraints: int = 0,
@@ -164,7 +165,7 @@ def make_problem(
         to write).  Set ``True`` when your function already handles
         batches for better performance.
 
-    encoding : str, default ``"real"``
+    encoding : str
         Variable encoding: ``"real"``, ``"binary"``, ``"integer"``,
         ``"permutation"``, or ``"mixed"``.
 
@@ -205,6 +206,7 @@ def make_problem(
             lambda x: [x[0], 1 - x[0] ** 0.5],
             n_var=2, n_obj=2,
             bounds=[(0, 1), (0, 1)],
+            encoding="real",
         )
         result = optimize(problem, algorithm="nsgaii", max_evaluations=2000)
 
@@ -222,6 +224,7 @@ def make_problem(
             n_var=2, n_obj=2,
             bounds=[(0, 1), (0, 1)],
             vectorized=True,
+            encoding="real",
         )
 
     With constraints (``g(x) <= 0`` is feasible)::
@@ -230,6 +233,7 @@ def make_problem(
             lambda x: [x[0] + x[1], x[0] * x[1]],
             n_var=2, n_obj=2,
             bounds=[(0, 5), (0, 5)],
+            encoding="real",
             constraints=lambda x: [x[0] + x[1] - 4],
             n_constraints=1,
         )
