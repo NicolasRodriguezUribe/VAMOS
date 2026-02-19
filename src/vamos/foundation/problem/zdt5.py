@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
+from vamos.foundation.problem.base import Problem
 
 
-class ZDT5Problem:
+
+class ZDT5Problem(Problem):
     """
     ZDT5: Binary-coded ZDT benchmark.
 

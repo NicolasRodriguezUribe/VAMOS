@@ -7,6 +7,8 @@ from collections.abc import Iterable, Sequence
 import numpy as np
 
 from .tsplib import load_tsplib_coords
+from vamos.foundation.problem.base import Problem
+
 
 
 def _default_coordinates() -> np.ndarray:
@@ -31,7 +33,7 @@ def _circle_coordinates(n_cities: int) -> np.ndarray:
     return np.stack([np.cos(angles), np.sin(angles)], axis=1)
 
 
-class TSPProblem:
+class TSPProblem(Problem):
     """
     Toy multi-objective travelling salesman problem.
     Objective 1: total tour length (closed tour).

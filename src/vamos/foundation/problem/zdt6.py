@@ -1,7 +1,9 @@
 import numpy as np
 
+from vamos.foundation.problem.base import Problem
 
-class ZDT6Problem:
+
+class ZDT6Problem(Problem):
     """ZDT6 benchmark with non-uniform objective distribution."""
 
     def __init__(self, n_var: int) -> None:

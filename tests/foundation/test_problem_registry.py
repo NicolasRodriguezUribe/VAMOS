@@ -8,7 +8,7 @@ def test_problem_selection_defaults_and_encoding():
     assert selection.n_var == 30
     assert selection.n_obj == 2
     problem = selection.instantiate()
-    assert getattr(problem, "encoding", "continuous") == "continuous"
+    assert problem.encoding == "real"
 
 
 def test_problem_selection_zdt5_binary_encoding():
