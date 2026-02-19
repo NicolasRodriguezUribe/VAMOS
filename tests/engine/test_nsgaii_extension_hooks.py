@@ -134,7 +134,7 @@ def test_generation_callback_population_archive_payload_is_rich() -> None:
         pop_x[:] = np.nan
         return True
 
-    cfg["archive"] = {"size": 24}
+    cfg["external_archive"] = {"capacity": 24}
     cfg["live_callback_mode"] = "population_archive"
     cfg["generation_callback"] = _on_generation
     cfg["generation_callback_copy"] = True

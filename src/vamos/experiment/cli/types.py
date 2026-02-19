@@ -14,3 +14,8 @@ class SpecDefaults:
     moead_defaults: SpecBlock
     smsemoa_defaults: SpecBlock
     nsgaiii_defaults: SpecBlock
+    spea2_defaults: SpecBlock
+    ibea_defaults: SpecBlock
+    smpso_defaults: SpecBlock
+    agemoea_defaults: SpecBlock
+    rvea_defaults: SpecBlock

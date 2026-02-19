@@ -26,7 +26,7 @@ class VariationOperator(Protocol):
         ...
 
 
-RealCrossoverName: TypeAlias = Literal["sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex"]
+RealCrossoverName: TypeAlias = Literal["sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex", "de"]
 RealMutationName: TypeAlias = Literal[
     "pm",
     "polynomial",

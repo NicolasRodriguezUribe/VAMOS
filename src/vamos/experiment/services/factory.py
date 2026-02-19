@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.factory import build_algorithm
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.foundation.problem.types import ProblemProtocol
@@ -13,8 +14,7 @@ def build_algorithm_from_spec(
     problem: ProblemProtocol,
     config: ExperimentConfig,
     *,
-    external_archive_size: int | None = None,
-    archive_type: str = "hypervolume",
+    external_archive: ExternalArchiveConfig | None = None,
     selection_pressure: int = 2,
     nsgaii_variation: VariationConfig | None = None,
     moead_variation: VariationConfig | None = None,
@@ -23,6 +23,8 @@ def build_algorithm_from_spec(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     track_genealogy: bool = False,
 ) -> tuple[object, AlgorithmConfigProtocol]:
     return build_algorithm(
@@ -30,8 +32,7 @@ def build_algorithm_from_spec(
         engine_name,
         problem,
         config,
-        external_archive_size=external_archive_size,
-        archive_type=archive_type,
+        external_archive=external_archive,
         selection_pressure=selection_pressure,
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
@@ -40,5 +41,7 @@ def build_algorithm_from_spec(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        agemoea_variation=agemoea_variation,
+        rvea_variation=rvea_variation,
         track_genealogy=track_genealogy,
     )

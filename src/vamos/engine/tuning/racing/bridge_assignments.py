@@ -28,6 +28,8 @@ _MOEAD_NAMES = {"moead", "moead_mixed", "moead_binary", "moead_integer"}
 _NSGAIII_NAMES = {"nsgaiii", "nsgaiii_mixed", "nsgaiii_binary", "nsgaiii_integer"}
 _SMSEMOA_NAMES = {"smsemoa", "smsemoa_mixed", "smsemoa_binary", "smsemoa_integer"}
 _IBEA_NAMES = {"ibea", "ibea_mixed", "ibea_binary", "ibea_integer"}
+_AGEMOEA_NAMES = {"agemoea", "agemoea_mixed"}
+_RVEA_NAMES = {"rvea", "rvea_mixed"}
 
 
 def _apply_initializer(builder: Any, assignment: dict[str, Any], pop_size: int) -> None:
@@ -120,20 +122,19 @@ def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:
 
     use_external_archive = bool(assignment.get("use_external_archive", False))
     if use_external_archive:
-        archive_type_raw = assignment.get("archive_type", "hypervolume")
+        archive_type_raw = assignment.get("archive_type", "size_cap")
         archive_unbounded = bool(assignment.get("archive_unbounded", False))
         if str(archive_type_raw).strip().lower() == "unbounded":
             archive_unbounded = True
         if archive_unbounded:
-            builder.archive(pop_size, unbounded=True)
+            builder.external_archive(capacity=None)
         else:
             archive_type = str(archive_type_raw)
             archive_size_factor = int(assignment.get("archive_size_factor", 1))
             if archive_size_factor < 1:
                 raise ValueError("archive_size_factor must be >= 1.")
             archive_size = max(pop_size, pop_size * archive_size_factor)
-            builder.archive_type(archive_type)
-            builder.archive(archive_size)
+            builder.external_archive(capacity=archive_size, archive_type=archive_type)
 
     return builder.build()
 
@@ -198,14 +199,13 @@ def _build_moead_permutation_config(assignment: dict[str, Any]) -> MOEADConfig:
 
     use_external_archive = bool(assignment.get("use_external_archive", False))
     if use_external_archive:
-        archive_type = str(assignment.get("archive_type", "crowding"))
+        archive_type = str(assignment.get("archive_type", "size_cap"))
         archive_size_factor = int(assignment.get("archive_size_factor", 1))
         if archive_size_factor < 1:
             raise ValueError("archive_size_factor must be >= 1.")
         pop_size = int(assignment["pop_size"])
         archive_size = max(pop_size, pop_size * archive_size_factor)
-        builder.archive_type(archive_type)
-        builder.archive(archive_size)
+        builder.external_archive(capacity=archive_size, archive_type=archive_type)
 
     return builder.build()
 
@@ -358,10 +358,10 @@ def _build_agemoea_config(assignment: dict[str, Any]) -> AGEMOEAConfig:
             raise ValueError("archive_size_factor must be >= 1.")
         archive_size = max(pop_size, pop_size * archive_size_factor)
         epsilon = float(assignment.get("archive_epsilon", 0.01))
-        builder.archive(
-            archive_size,
+        builder.external_archive(
+            capacity=archive_size,
             archive_type=archive_type,
-            prune_policy=prune_policy,
+            pruning=prune_policy,
             epsilon=epsilon,
         )
 
@@ -424,10 +424,10 @@ def _build_rvea_config(assignment: dict[str, Any]) -> RVEAConfig:
             raise ValueError("archive_size_factor must be >= 1.")
         archive_size = max(pop_size, pop_size * archive_size_factor)
         epsilon = float(assignment.get("archive_epsilon", 0.01))
-        builder.archive(
-            archive_size,
+        builder.external_archive(
+            capacity=archive_size,
             archive_type=archive_type,
-            prune_policy=prune_policy,
+            pruning=prune_policy,
             epsilon=epsilon,
         )
 
@@ -456,9 +456,9 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         return _build_ibea_config(assignment)
     if algo == "smpso":
         return _build_smpso_config(assignment)
-    if algo in {"agemoea", "agemoea_mixed"}:
+    if algo in _AGEMOEA_NAMES:
         return _build_agemoea_config(assignment)
-    if algo in {"rvea", "rvea_mixed"}:
+    if algo in _RVEA_NAMES:
         return _build_rvea_config(assignment)
     raise ValueError(f"Unsupported algorithm for config construction: {algorithm_name}")
 

@@ -69,8 +69,8 @@ class AlgorithmProtocol(Protocol):
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: Any | None = None,
         live_viz: Any | None = None,
     ) -> dict[str, Any]:
@@ -83,8 +83,9 @@ class AlgorithmProtocol(Protocol):
             The optimization problem to solve.
         termination : tuple[str, Any]
             Termination criterion, e.g., ("max_evaluations", 10000) or ("hv", {...}).
+            Defaults to ("max_evaluations", 25000).
         seed : int
-            Random seed for reproducibility.
+            Random seed for reproducibility (default: 0).
         eval_strategy : Any | None
             Evaluation backend for problem evaluations.
         live_viz : Any | None
@@ -129,16 +130,20 @@ class InteractiveAlgorithmProtocol(AlgorithmProtocol, Protocol):
         """
         ...
 
-    def tell(self, eval_result: Any, pop_size: int) -> bool:
+    def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
         """
         Receive evaluated offspring and update algorithm state.
 
         Parameters
         ----------
         eval_result : Any
-            Evaluation result with attributes F (objectives) and optionally G (constraints).
-        pop_size : int
-            Target population size for survival selection.
+            Evaluation result — accepts:
+            - ``np.ndarray`` of objectives, shape ``(n_offspring, n_obj)``
+            - ``dict`` with ``"F"`` key (and optionally ``"G"``)
+            - Object with ``.F`` attribute (and optionally ``.G``)
+        problem : ProblemProtocol, optional
+            Problem instance (unused by most algorithms, kept for interface
+            consistency).
 
         Returns
         -------

@@ -21,7 +21,7 @@ def _core_part() -> SpacePart:
         Boolean("use_external_archive"),
         Boolean("archive_unbounded"),
     ]
-    archive_type_param = Categorical("archive_type", ["hypervolume", "crowding"])
+    archive_type_param = Categorical("archive_type", ["size_cap", "hvc_prune"])
     archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
     conditionals = [
         ConditionalBlock(

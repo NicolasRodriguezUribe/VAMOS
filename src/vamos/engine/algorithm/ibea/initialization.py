@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.archives import resolve_external_archive, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -115,23 +115,10 @@ def initialize_ibea_run(
     _, _, _, fitness = environmental_selection(X.copy(), F.copy(), G.copy() if G is not None else None, pop_size, indicator, kappa)
 
     # Setup external archive
-    archive_size = resolve_archive_size(cfg) or 0
-    archive_manager = None
-    archive_X: np.ndarray | None = None
-    archive_F: np.ndarray | None = None
-
-    if archive_size > 0:
-        archive_type = cfg.get("archive_type", "hypervolume")
-        archive_X, archive_F, archive_manager = setup_archive(
-            kernel=kernel,
-            X=X,
-            F=F,
-            n_var=n_var,
-            n_obj=n_obj,
-            dtype=X.dtype,
-            archive_size=archive_size,
-            archive_type=archive_type,
-        )
+    ext_cfg = resolve_external_archive(cfg)
+    archive_X, archive_F, archive_manager = setup_archive(
+        kernel, X, F, n_var, n_obj, X.dtype, ext_cfg
+    )
 
     # Setup genealogy
     track_genealogy = bool(cfg.get("track_genealogy", False))
@@ -163,7 +150,7 @@ def initialize_ibea_run(
         pressure=pressure,
         variation=variation,
         # Archive
-        archive_size=archive_size,
+        archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
         archive_manager=archive_manager,

@@ -59,8 +59,7 @@ class NSGAIIState:
     archive_size: int | None = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
-    archive_manager: CrowdingDistanceArchive | UnboundedArchive | None = None
-    archive_via_kernel: bool = False
+    archive_manager: CrowdingDistanceArchive | HypervolumeArchive | UnboundedArchive | None = None
     result_archive: HypervolumeArchive | CrowdingDistanceArchive | None = None
     result_mode: str = "non_dominated"
 
@@ -215,8 +214,6 @@ def get_archive_contents(state: NSGAIIState) -> dict[str, Any] | None:
     if state.archive_manager is not None:
         final_X, final_F = state.archive_manager.contents()
         return {"X": final_X, "F": final_F}
-    elif state.archive_via_kernel and state.archive_X is not None:
-        return {"X": state.archive_X, "F": state.archive_F}
     return None
 
 
@@ -352,7 +349,7 @@ def update_archives(
     state : NSGAIIState
         Current algorithm state (modified in place).
     kernel : KernelBackend
-        Kernel backend (may have update_archive method).
+        Kernel backend.
     X : np.ndarray | None
         Candidate decision variables to insert (defaults to state.X).
     F : np.ndarray | None
@@ -363,14 +360,5 @@ def update_archives(
     if state.result_archive is not None:
         state.result_archive.update(X_use, F_use)
 
-    if state.archive_size:
-        if state.archive_via_kernel:
-            state.archive_X, state.archive_F = kernel.update_archive(
-                state.archive_X,
-                state.archive_F,
-                X_use,
-                F_use,
-                state.archive_size,
-            )
-        elif state.archive_manager is not None:
-            state.archive_X, state.archive_F = state.archive_manager.update(X_use, F_use)
+    if state.archive_manager is not None:
+        state.archive_X, state.archive_F = state.archive_manager.update(X_use, F_use)

@@ -269,6 +269,30 @@ if "hypervolume" in df.columns:
 else:
     print("No hypervolume data found")
 
+print("\n" + "=" * 60)
+print(f"IGD+ COMPARISON: {BASELINE_FRAMEWORK} vs baselines")
+print("=" * 60)
+
+igd_comparisons: list[pd.DataFrame] = []
+if "igd_plus" in df.columns:
+    for fw in competitors:
+        print("\n" + "-" * 60)
+        print(f"IGD+: {BASELINE_FRAMEWORK} vs {fw}")
+        print("-" * 60)
+        comp = compare_frameworks(df, "igd_plus", BASELINE_FRAMEWORK, fw, higher_is_better=False)
+        comp["metric"] = "igd_plus"
+        comp["p_value_adj"] = holm_adjust(comp["p_value_raw"].tolist())
+        comp["significant"] = comp["p_value_adj"].apply(lambda p: bool(np.isfinite(p) and p < ALPHA))
+        igd_comparisons.append(comp)
+        print(comp.to_string())
+
+        base_wins = (comp["winner"] == BASELINE_FRAMEWORK).sum()
+        other_wins = (comp["winner"] == fw).sum()
+        print(f"\nIGD+: {BASELINE_FRAMEWORK} better: {base_wins}/{len(comp)}")
+        print(f"IGD+: {fw} better: {other_wins}/{len(comp)}")
+else:
+    print("No IGD+ data found")
+
 # =============================================================================
 # VAMOS BACKEND COMPARISON
 # =============================================================================
@@ -403,6 +427,10 @@ if "hypervolume" in df.columns and competitors:
     hv_out = pd.concat(hv_comparisons, ignore_index=True) if hv_comparisons else pd.DataFrame()
     if not hv_out.empty:
         comparisons_out = pd.concat([comparisons_out, hv_out], ignore_index=True)
+if "igd_plus" in df.columns and competitors:
+    igd_out = pd.concat(igd_comparisons, ignore_index=True) if igd_comparisons else pd.DataFrame()
+    if not igd_out.empty:
+        comparisons_out = pd.concat([comparisons_out, igd_out], ignore_index=True)
 
 if ALGORITHM == "nsgaii":
     output_csv = DATA_DIR / "statistical_tests.csv"
@@ -513,6 +541,46 @@ if "hypervolume" in df.columns:
             value_decimals=3,
         )
 
+
+# =============================================================================
+# IGD+ STATISTICAL TABLE
+# =============================================================================
+
+latex_igd = ""
+latex_igd_export = ""
+if "igd_plus" in df.columns:
+    igd_primary_fw = "pymoo" if "pymoo" in competitors else (competitors[0] if competitors else None)
+    if igd_primary_fw is not None:
+        igd_primary = compare_frameworks(df, "igd_plus", BASELINE_FRAMEWORK, igd_primary_fw, higher_is_better=False)
+        igd_primary["p_value_adj"] = holm_adjust(igd_primary["p_value_raw"].tolist())
+        igd_primary["significant"] = igd_primary["p_value_adj"].apply(lambda p: bool(np.isfinite(p) and p < ALPHA))
+        igd_caption = "IGD+ comparison with Wilcoxon signed-rank test results (Holm-corrected). Lower is better"
+        latex_igd = generate_latex_stats_table(
+            igd_primary,
+            fw1=BASELINE_FRAMEWORK,
+            fw2=igd_primary_fw,
+            caption=igd_caption,
+            label="tab:stats_igd_plus",
+            higher_is_better=False,
+            value_decimals=4,
+        )
+        latex_igd_export = generate_latex_stats_table(
+            igd_primary,
+            fw1=BASELINE_FRAMEWORK,
+            fw2=igd_primary_fw,
+            caption=f"{ALGORITHM_DISPLAY}. {igd_caption}",
+            label=f"tab:stats_igd_plus_{ALGORITHM}",
+            higher_is_better=False,
+            value_decimals=4,
+        )
+
+        # HV/IGD+ concordance analysis
+        if "hypervolume" in df.columns and hv_primary_fw == igd_primary_fw:
+            hv_winners = hv_primary.set_index("problem")["winner"]
+            igd_winners = igd_primary.set_index("problem")["winner"]
+            common = hv_winners.index.intersection(igd_winners.index)
+            concordant = sum(hv_winners[p] == igd_winners[p] for p in common)
+            print(f"\n  HV/IGD+ concordance: {concordant}/{len(common)} problems agree on winner")
 
 # =============================================================================
 # EQUIVALENCE + ROBUSTNESS (HV)
@@ -752,7 +820,7 @@ if not UPDATE_MAIN_TEX:
         "",
     ]
 
-    tables = [t for t in [latex_hv_export, latex_eq_export, latex_rob_export, latex_ci_export] if t]
+    tables = [t for t in [latex_hv_export, latex_igd_export, latex_eq_export, latex_rob_export, latex_ci_export] if t]
     if tables:
         export_tex.write_text("\n\n".join(parts + tables) + "\n", encoding="utf-8")
         print(f"Skipping main.tex update (VAMOS_PAPER_UPDATE_MAIN_TEX=0). Wrote LaTeX tables to {export_tex}.")

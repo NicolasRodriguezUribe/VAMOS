@@ -64,7 +64,7 @@ def _permutation_operator_part() -> SpacePart:
         Real("mutation_prob", 0.01, 0.5),
         Boolean("use_external_archive"),
     ]
-    archive_type_param = Categorical("archive_type", ["hypervolume", "crowding"])
+    archive_type_param = Categorical("archive_type", ["size_cap", "hvc_prune"])
     archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
     conditionals = [
         ConditionalBlock(

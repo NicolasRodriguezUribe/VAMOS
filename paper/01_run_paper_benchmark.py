@@ -280,7 +280,8 @@ from joblib import Parallel, delayed
 
 # Use all cores minus 1
 # joblib supports negative n_jobs (e.g., -1 = all cores). Only n_jobs==1 is truly sequential.
-N_JOBS = int(os.environ.get("VAMOS_N_JOBS", "8"))
+_default_n_jobs = str(max(1, (os.cpu_count() or 2) - 1))
+N_JOBS = int(os.environ.get("VAMOS_N_JOBS", _default_n_jobs))
 if N_JOBS == 0:
     raise ValueError("VAMOS_N_JOBS cannot be 0 (joblib expects 1, -1, or another non-zero integer).")
 print(f"Using {N_JOBS} parallel workers")
@@ -292,9 +293,9 @@ from vamos import optimize
 from vamos.engine.algorithm.config import MOEADConfig, NSGAIIConfig, SMSEMOAConfig
 
 try:
-    from .benchmark_utils import compute_hv
+    from .benchmark_utils import compute_hv, compute_igd_plus
 except ImportError:
-    from benchmark_utils import compute_hv
+    from benchmark_utils import compute_hv, compute_igd_plus
 
 try:
     from .progress_utils import ProgressBar, joblib_progress
@@ -646,6 +647,7 @@ def run_single_benchmark(problem_name, seed, framework):
                         hv_source = archive_F
                         n_solutions = int(archive_F.shape[0])
             hv = compute_hv(hv_source, problem_name) if hv_source is not None else float("nan")
+            igd_plus = compute_igd_plus(hv_source, problem_name) if hv_source is not None else float("nan")
             result_entry = {
                 "framework": f"VAMOS ({backend})",
                 "problem": problem_name,
@@ -655,6 +657,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "runtime_seconds": elapsed,
                 "n_solutions": n_solutions,
                 "hypervolume": hv,
+                "igd_plus": igd_plus,
             }
             print(f"  {problem_name} VAMOS({backend}) seed={seed}: {elapsed:.2f}s")
         except Exception as e:
@@ -791,6 +794,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     hv_source = archive_F
                     n_solutions = int(archive_F.shape[0])
             hv = compute_hv(hv_source, problem_name) if hv_source is not None else float("nan")
+            igd_plus = compute_igd_plus(hv_source, problem_name) if hv_source is not None else float("nan")
             result_entry = {
                 "framework": "pymoo",
                 "problem": problem_name,
@@ -800,6 +804,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "runtime_seconds": elapsed,
                 "n_solutions": n_solutions,
                 "hypervolume": hv,
+                "igd_plus": igd_plus,
             }
             print(f"  {problem_name} pymoo seed={seed}: {elapsed:.2f}s")
         except Exception as e:
@@ -914,11 +919,13 @@ def run_single_benchmark(problem_name, seed, framework):
             if use_archive and archive is not None:
                 _, F = archive.contents()
                 hv = compute_hv(F, problem_name)
+                igd_plus = compute_igd_plus(F, problem_name)
                 n_solutions = int(F.shape[0]) if F is not None else 0
             else:
                 fronts = tools.sortNondominated(pop, len(pop), first_front_only=True)
                 F = np.array([ind.fitness.values for ind in fronts[0]])
                 hv = compute_hv(F, problem_name)
+                igd_plus = compute_igd_plus(F, problem_name)
                 n_solutions = len(fronts[0])
 
             result_entry = {
@@ -930,6 +937,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "runtime_seconds": elapsed,
                 "n_solutions": n_solutions,
                 "hypervolume": hv,
+                "igd_plus": igd_plus,
             }
             print(f"  {problem_name} DEAP seed={seed}: {elapsed:.2f}s")
         except Exception as e:
@@ -1059,11 +1067,13 @@ def run_single_benchmark(problem_name, seed, framework):
             if ALGORITHM == "nsgaii_archive" and archive is not None:
                 _, F = archive.contents()
                 hv = compute_hv(F, problem_name)
+                igd_plus = compute_igd_plus(F, problem_name)
                 n_solutions = int(F.shape[0]) if F is not None else 0
             else:
                 solutions = algorithm.result()  # result() is a method, not property
                 F = np.array([s.objectives for s in solutions])
                 hv = compute_hv(F, problem_name)
+                igd_plus = compute_igd_plus(F, problem_name)
                 n_solutions = len(solutions)
 
             result_entry = {
@@ -1075,6 +1085,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "runtime_seconds": elapsed,
                 "n_solutions": n_solutions,
                 "hypervolume": hv,
+                "igd_plus": igd_plus,
             }
             print(f"  {problem_name} jMetalPy seed={seed}: {elapsed:.2f}s")
         except Exception as e:
@@ -1202,6 +1213,7 @@ def run_single_benchmark(problem_name, seed, framework):
             result_solutions = list(algorithm.result)
             F = np.array([s.objectives for s in result_solutions])
             hv = compute_hv(F, problem_name)
+            igd_plus = compute_igd_plus(F, problem_name)
 
             result_entry = {
                 "framework": "Platypus",
@@ -1212,6 +1224,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 "runtime_seconds": elapsed,
                 "n_solutions": len(result_solutions),
                 "hypervolume": hv,
+                "igd_plus": igd_plus,
             }
             print(f"  {problem_name} Platypus seed={seed}: {elapsed:.2f}s")
         except Exception as e:

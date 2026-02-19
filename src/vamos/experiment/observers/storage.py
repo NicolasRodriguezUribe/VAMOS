@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.observer import Observer, RunContext
 from vamos.foundation.core.io_utils import ensure_dir, write_population, write_metadata, write_timing
@@ -40,7 +41,7 @@ class StorageObserver(Observer):
         problem_override: dict[str, Any] | None = None,
         hv_stop_config: dict[str, Any] | None = None,
         selection_pressure: int = 2,
-        external_archive_size: int | None = None,
+        external_archive: ExternalArchiveConfig | None = None,
         variations: dict[str, Any] | None = None,
     ) -> None:
         self.output_dir = Path(output_dir)
@@ -49,7 +50,7 @@ class StorageObserver(Observer):
         self.problem_override = problem_override
         self.hv_stop_config = hv_stop_config
         self.selection_pressure = selection_pressure
-        self.external_archive_size = external_archive_size
+        self.external_archive = external_archive
         self.variations = variations or {}
 
     def on_generation(
@@ -203,7 +204,11 @@ class StorageObserver(Observer):
             "max_evaluations": getattr(ctx.config, "max_evaluations", None),
             "seed": getattr(ctx.config, "seed", None),
             "selection_pressure": self.selection_pressure,
-            "external_archive_size": self.external_archive_size,
+            "external_archive": {
+                "capacity": self.external_archive.capacity,
+                "archive_type": self.external_archive.archive_type,
+                "pruning": self.external_archive.pruning,
+            } if self.external_archive is not None else None,
             "hv_threshold": self.hv_stop_config.get("threshold_fraction") if self.hv_stop_config else None,
             "hv_reference_point": self.hv_stop_config.get("reference_point") if self.hv_stop_config else None,
             "hv_reference_front": self.hv_stop_config.get("reference_front_path") if self.hv_stop_config else None,

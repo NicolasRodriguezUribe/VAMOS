@@ -18,7 +18,7 @@ from math import comb
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archives import resolve_archive_size, setup_archive
+from vamos.engine.algorithm.components.archives import resolve_external_archive, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -187,23 +187,10 @@ def initialize_nsgaiii_run(
     genealogy_tracker, ids = setup_genealogy(pop_size, F, track_genealogy, "nsgaiii")
 
     # Setup external archive
-    archive_size = resolve_archive_size(config) or 0
-    archive_manager = None
-    archive_X: np.ndarray | None = None
-    archive_F: np.ndarray | None = None
-
-    if archive_size > 0:
-        archive_type = config.get("archive_type", "hypervolume")
-        archive_X, archive_F, archive_manager = setup_archive(
-            kernel=kernel,
-            X=X,
-            F=F,
-            n_var=n_var,
-            n_obj=n_obj,
-            dtype=X.dtype,
-            archive_size=archive_size,
-            archive_type=archive_type,
-        )
+    ext_cfg = resolve_external_archive(config)
+    archive_X, archive_F, archive_manager = setup_archive(
+        kernel, X, F, n_var, n_obj, X.dtype, ext_cfg
+    )
 
     # Create state
     state = NSGAIIIState(
@@ -225,7 +212,7 @@ def initialize_nsgaiii_run(
         worst_point=np.full(n_obj, -np.inf),
         extreme_points=None,
         # Archive
-        archive_size=archive_size,
+        archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
         archive_manager=archive_manager,

@@ -9,6 +9,40 @@ PrunePolicy = Literal["crowding", "hv_contrib", "random", "mc_hv_contrib"]
 
 
 @dataclass(frozen=True)
+class ExternalArchiveConfig:
+    """Configuration for an external (result-collection) archive.
+
+    Parameters
+    ----------
+    capacity : int | None
+        Maximum number of solutions. ``None`` means unbounded.
+    pruning : PrunePolicy
+        Strategy used when the archive exceeds *capacity*.
+    archive_type : ArchiveType
+        Bounding strategy (grid, HV-contribution, hybrid, or plain cap).
+    nondominated_only : bool
+        If True, dominated solutions are discarded on insertion.
+    epsilon : float
+        Grid cell width for ``epsilon_grid`` / ``hybrid`` archive types.
+    hv_ref_point : list[float] | None
+        Explicit reference point for HV-contribution pruning.
+    hv_samples : int
+        Monte-Carlo samples for HV-contribution approximation (m > 2).
+    rng_seed : int
+        Seed for stochastic pruning policies.
+    """
+
+    capacity: int | None = None
+    pruning: PrunePolicy = "crowding"
+    archive_type: ArchiveType = "size_cap"
+    nondominated_only: bool = True
+    epsilon: float = 0.01
+    hv_ref_point: list[float] | None = None
+    hv_samples: int = 20000
+    rng_seed: int = 0
+
+
+@dataclass(frozen=True)
 class BoundedArchiveConfig:
     enabled: bool = True
     archive_type: ArchiveType = "size_cap"

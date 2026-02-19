@@ -35,6 +35,9 @@ Generates `experiments/benchmark_paper.csv`:
 4) Compile PDF + sync sources to Overleaf (excludes `main.pdf`): `python paper/08_compile_manuscript_pdf.py`
    - Compile only (no sync): `python paper/08_compile_manuscript_pdf.py --no-sync` (or `--no-sync-overleaf`)
      - Sync requires the Overleaf git remote (default name: `overleaf`) and saved credentials (Git auth token).
+5) Pull sources from Overleaf to local manuscript dir (`paper/manuscript`, excludes build artifacts): `python paper/15_sync_overleaf_to_local_sources.py`
+   - Preview only: `python paper/15_sync_overleaf_to_local_sources.py --dry-run`
+   - Pull requires the Overleaf git remote (default name: `overleaf`) and saved credentials (Git auth token).
 
 Controls:
 - `VAMOS_N_EVALS` (default `50000`), `VAMOS_N_SEEDS` (default `30`), `VAMOS_N_JOBS`

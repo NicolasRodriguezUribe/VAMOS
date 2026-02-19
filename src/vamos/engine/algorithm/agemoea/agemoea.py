@@ -9,7 +9,10 @@ Reference:
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from vamos.archive.bounded_archive import BoundedArchive
 
 import numpy as np
 
@@ -27,8 +30,10 @@ from vamos.engine.config.variation import (
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.kernel.backend import KernelBackend
-from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.kernel import default_kernel
 from vamos.foundation.problem.types import ProblemProtocol
+
+from .state import AGEMOEAState, build_agemoea_result
 
 
 def _logger() -> logging.Logger:
@@ -208,32 +213,149 @@ def _age_survival(F: np.ndarray, n_survive: int, kernel: KernelBackend) -> np.nd
     return np.flatnonzero(selected)
 
 
+def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, problem: ProblemProtocol) -> VariationPipeline:
+    explicit_overrides: dict[str, Any] = {}
+    if "crossover" in config:
+        explicit_overrides["crossover"] = config["crossover"]
+    if "mutation" in config:
+        explicit_overrides["mutation"] = config["mutation"]
+    if "repair" in config:
+        explicit_overrides["repair"] = config["repair"]
+
+    var_cfg = resolve_default_variation_config(encoding, explicit_overrides)
+    c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {})), key="crossover")
+    m_name, m_kwargs = ensure_operator_tuple(var_cfg.get("mutation", ("pm", {})), key="mutation")
+    repair_tuple = ensure_operator_tuple_optional(var_cfg.get("repair"), key="repair")
+    cross_name, mut_name = ensure_supported_operator_names(encoding, c_name, m_name)
+    repair_cfg = None
+    if repair_tuple is not None:
+        repair_name, repair_params = repair_tuple
+        repair_cfg = (ensure_supported_repair_name(encoding, repair_name), repair_params)
+
+    return VariationPipeline(
+        encoding=encoding,
+        cross_method=cross_name,
+        mut_method=mut_name,
+        cross_params=c_kwargs,
+        mut_params=m_kwargs,
+        xl=xl,
+        xu=xu,
+        workspace=None,
+        repair_cfg=repair_cfg,
+        problem=problem,
+    )
+
+
+def _build_archive(config: dict[str, Any], seed: int) -> BoundedArchive | None:
+    from vamos.archive import ExternalArchiveConfig
+    from vamos.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
+
+    ext_cfg = config.get("external_archive")
+    if ext_cfg is None:
+        return None
+    if isinstance(ext_cfg, dict):
+        ext_cfg = ExternalArchiveConfig(**ext_cfg)
+    if ext_cfg.capacity is None or ext_cfg.capacity <= 0:
+        return None
+    bac = BoundedArchiveConfig(
+        size_cap=ext_cfg.capacity,
+        archive_type=ext_cfg.archive_type,
+        prune_policy=ext_cfg.pruning,
+        epsilon=ext_cfg.epsilon,
+        rng_seed=seed,
+        nondominated_only=ext_cfg.nondominated_only,
+    )
+    return BoundedArchive(bac)
+
+
 class AGEMOEA:
-    """
-    AGE-MOEA: Adaptive Geometry Estimation MOEA.
+    """AGE-MOEA: Adaptive Geometry Estimation MOEA.
 
     Implements adaptive geometry estimation for survival selection as in the
     original AGE-MOEA paper.
+
+    Parameters
+    ----------
+    config : dict
+        Algorithm configuration.
+    kernel : KernelBackend, optional
+        Backend for vectorized operations.
+
+    Examples
+    --------
+    Batch mode:
+
+    >>> algo = AGEMOEA(config, kernel)
+    >>> result = algo.run(problem, ("max_evaluations", 10000), seed=42)
+
+    Ask/tell interface:
+
+    >>> algo = AGEMOEA(config, kernel)
+    >>> algo.initialize(problem, ("max_evaluations", 10000), seed=42)
+    >>> while not algo.should_terminate():
+    ...     X = algo.ask()
+    ...     F = evaluate(X)
+    ...     algo.tell(F)
+    >>> result = algo.result()
     """
 
     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
-        self.config = config
-        self.kernel = kernel or NumPyKernel()
-        self._state = None
+        self.cfg = config
+        self.kernel = kernel or default_kernel()
+        self._st: AGEMOEAState | None = None
+
+    # -------------------------------------------------------------------------
+    # Main run method (batch mode)
+    # -------------------------------------------------------------------------
 
     def run(
         self,
         problem: ProblemProtocol,
-        termination: tuple[str, Any],
-        seed: int,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
         live_viz: Any | None = None,
     ) -> dict[str, Any]:
         """Run AGE-MOEA optimization."""
+        self.initialize(problem, termination, seed, eval_strategy)
+        backend = eval_strategy or SerialEvalBackend()
+
+        assert self._st is not None
+        while not self.should_terminate():
+            X_off = self.ask()
+            F_off = np.asarray(backend.evaluate(X_off, problem).F, dtype=float)
+            self.tell(F_off)
+
+        return self.result()
+
+    # -------------------------------------------------------------------------
+    # Ask/Tell Interface
+    # -------------------------------------------------------------------------
+
+    def initialize(
+        self,
+        problem: ProblemProtocol,
+        termination: tuple[str, Any] = ("max_evaluations", 25000),
+        seed: int = 0,
+        eval_strategy: EvaluationBackend | None = None,
+    ) -> None:
+        """Initialize algorithm state for ask/tell loop.
+
+        Parameters
+        ----------
+        problem : ProblemProtocol
+            Problem to optimize.
+        termination : tuple
+            Termination criterion, e.g., ``("max_evaluations", 10000)``.
+        seed : int
+            Random seed for reproducibility.
+        eval_strategy : EvaluationBackend, optional
+            Evaluation backend for the initial population.
+        """
         rng = np.random.default_rng(seed)
         backend = eval_strategy or SerialEvalBackend()
 
-        pop_size = int(self.config.get("pop_size", 100))
+        pop_size = int(self.cfg.get("pop_size", 100))
         term_key, term_val = termination
         if term_key == "max_evaluations":
             max_evals = int(term_val)
@@ -244,103 +366,137 @@ class AGEMOEA:
 
         encoding = normalize_encoding(getattr(problem, "encoding", "real"))
         xl, xu = resolve_bounds(problem, encoding)
-        X = initialize_population(pop_size, problem.n_var, xl, xu, encoding, rng, problem, self.config.get("initializer"))
+        X = initialize_population(pop_size, problem.n_var, xl, xu, encoding, rng, problem, self.cfg.get("initializer"))
         F = np.asarray(backend.evaluate(X, problem).F, dtype=float)
-        n_eval = X.shape[0]
 
-        explicit_overrides = {}
-        if "crossover" in self.config:
-            explicit_overrides["crossover"] = self.config["crossover"]
-        if "mutation" in self.config:
-            explicit_overrides["mutation"] = self.config["mutation"]
-        if "repair" in self.config:
-            explicit_overrides["repair"] = self.config["repair"]
+        variation = _build_variation(self.cfg, encoding, xl, xu, problem)
+        archive = _build_archive(self.cfg, seed)
+        if archive is not None:
+            archive.add(X, F, X.shape[0])
 
-        var_cfg = resolve_default_variation_config(encoding, explicit_overrides)
-        c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {})), key="crossover")
-        m_name, m_kwargs = ensure_operator_tuple(var_cfg.get("mutation", ("pm", {})), key="mutation")
-        repair_tuple = ensure_operator_tuple_optional(var_cfg.get("repair"), key="repair")
-        cross_name, mut_name = ensure_supported_operator_names(encoding, c_name, m_name)
-        repair_cfg = None
-        if repair_tuple is not None:
-            repair_name, repair_params = repair_tuple
-            repair_cfg = (ensure_supported_repair_name(encoding, repair_name), repair_params)
-
-        variation = VariationPipeline(
-            encoding=encoding,
-            cross_method=cross_name,
-            mut_method=mut_name,
-            cross_params=c_kwargs,
-            mut_params=m_kwargs,
-            xl=xl,
-            xu=xu,
-            workspace=None,
-            repair_cfg=repair_cfg,
-            problem=problem,
-        )
-
-        from vamos.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
-
-        archive = None
-        archive_cfg = self.config.get("archive")
-        if archive_cfg and archive_cfg.get("size", 0) > 0:
-            bac = BoundedArchiveConfig(
-                size_cap=int(archive_cfg["size"]),
-                archive_type=archive_cfg.get("archive_type", "size_cap"),
-                prune_policy=archive_cfg.get("prune_policy", "crowding"),
-                epsilon=float(archive_cfg.get("epsilon", 0.01)),
-                rng_seed=seed,
-                nondominated_only=True,
-            )
-            archive = BoundedArchive(bac)
-            archive.add(X, F, n_eval)
-
-        generation = 0
-        while n_eval < max_evals:
-            ranks, crowding = self.kernel.nsga2_ranking(F)
-            n_parents = 2 * (pop_size // 2)
-            parents_idx = self.kernel.tournament_selection(
-                ranks=ranks,
-                crowding=crowding,
-                pressure=2,
-                rng=rng,
-                n_parents=n_parents,
-            )
-
-            X_off = variation.produce_offspring(X[parents_idx], rng)
-            F_off = np.asarray(backend.evaluate(X_off, problem).F, dtype=float)
-            n_eval += X_off.shape[0]
-
-            if archive is not None:
-                archive.add(X_off, F_off, n_eval)
-
-            X_combined = np.vstack([X, X_off])
-            F_combined = np.vstack([F, F_off])
-
-            survivors = _age_survival(F_combined, pop_size, self.kernel)
-            X = X_combined[survivors]
-            F = F_combined[survivors]
-
-            generation += 1
-
-        result_mode = str(self.config.get("result_mode", "non_dominated")).strip().lower()
+        result_mode = str(self.cfg.get("result_mode", "non_dominated")).strip().lower()
         if result_mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be one of: non_dominated, population")
 
-        if result_mode == "population":
-            result_X, result_F = X, F
-        else:
-            ranks, _ = self.kernel.nsga2_ranking(F)
-            front_mask = ranks == 0
-            result_X, result_F = X[front_mask], F[front_mask]
+        self._st = AGEMOEAState(
+            X=X,
+            F=F,
+            G=None,
+            rng=rng,
+            pop_size=pop_size,
+            n_eval=X.shape[0],
+            generation=0,
+            max_evals=max_evals,
+            variation=variation,
+            archive=archive,
+            result_mode=result_mode,
+        )
 
-        result = {
-            "X": result_X,
-            "F": result_F,
-            "n_eval": n_eval,
-            "n_gen": generation,
-            "population": {"X": X, "F": F},
-        }
-        if archive is not None:
-            result["archive"] = {"X": archive.X, "F": archive.F}
-        return result
+    def ask(self) -> np.ndarray:
+        """Generate offspring for external evaluation.
+
+        Returns
+        -------
+        np.ndarray
+            Offspring decision variables, shape ``(n_offspring, n_var)``.
+
+        Raises
+        ------
+        RuntimeError
+            If called before ``initialize()`` or previous offspring not consumed.
+        """
+        if self._st is None:
+            raise RuntimeError("Algorithm not initialized. Call initialize() first.")
+        if self._st.pending_offspring is not None:
+            raise RuntimeError("Previous offspring not yet consumed by tell().")
+
+        st = self._st
+        ranks, crowding = self.kernel.nsga2_ranking(st.F)
+        n_parents = 2 * (st.pop_size // 2)
+        parents_idx = self.kernel.tournament_selection(
+            ranks=ranks,
+            crowding=crowding,
+            pressure=2,
+            rng=st.rng,
+            n_parents=n_parents,
+        )
+
+        assert st.variation is not None
+        X_off = st.variation.produce_offspring(st.X[parents_idx], st.rng)
+        st.pending_offspring = X_off
+        return np.array(X_off, copy=True)
+
+    def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
+        """Receive evaluated offspring and update population.
+
+        Parameters
+        ----------
+        eval_result : Any
+            Objective values as ``np.ndarray``, or an object with ``.F`` attribute,
+            or a dict with ``"F"`` key.
+        problem : ProblemProtocol | None
+            Unused, kept for interface consistency.
+
+        Returns
+        -------
+        bool
+            Always ``False`` (AGE-MOEA has no early-stop criterion).
+
+        Raises
+        ------
+        RuntimeError
+            If called before ``ask()``.
+        """
+        if self._st is None or self._st.pending_offspring is None:
+            raise RuntimeError("No pending offspring. Call ask() first.")
+
+        st = self._st
+        X_off = st.pending_offspring
+        assert X_off is not None
+
+        if hasattr(eval_result, "F"):
+            F_off = np.asarray(eval_result.F, dtype=float)
+        elif isinstance(eval_result, dict):
+            F_off = np.asarray(eval_result["F"], dtype=float)
+        else:
+            F_off = np.asarray(eval_result, dtype=float)
+
+        st.n_eval += X_off.shape[0]
+
+        if st.archive is not None:
+            st.archive.add(X_off, F_off, st.n_eval)
+
+        X_combined = np.vstack([st.X, X_off])
+        F_combined = np.vstack([st.F, F_off])
+
+        survivors = _age_survival(F_combined, st.pop_size, self.kernel)
+        st.X = X_combined[survivors]
+        st.F = F_combined[survivors]
+
+        st.pending_offspring = None
+        st.generation += 1
+        return False
+
+    def should_terminate(self) -> bool:
+        """Check if termination criterion is met."""
+        if self._st is None:
+            return True
+        return self._st.n_eval >= self._st.max_evals
+
+    def result(self) -> dict[str, Any]:
+        """Get optimization result.
+
+        Returns
+        -------
+        dict
+            Result dictionary with ``X``, ``F``, ``n_eval``, ``n_gen``,
+            ``population``, and optionally ``archive``.
+        """
+        if self._st is None:
+            raise RuntimeError("Algorithm not initialized.")
+        return build_agemoea_result(self._st, kernel=self.kernel)
+
+    @property
+    def state(self) -> AGEMOEAState | None:
+        """Access current algorithm state."""
+        return self._st

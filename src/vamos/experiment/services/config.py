@@ -12,7 +12,11 @@ def normalize_variations(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
 ) -> tuple[
+    VariationConfig | None,
+    VariationConfig | None,
     VariationConfig | None,
     VariationConfig | None,
     VariationConfig | None,
@@ -29,6 +33,8 @@ def normalize_variations(
         normalize_variation_config(spea2_variation),
         normalize_variation_config(ibea_variation),
         normalize_variation_config(smpso_variation),
+        normalize_variation_config(agemoea_variation),
+        normalize_variation_config(rvea_variation),
     )
 
 

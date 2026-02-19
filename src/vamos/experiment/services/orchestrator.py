@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 from vamos.hooks import LiveVisualization
@@ -16,8 +17,7 @@ def run_single(
     selection: ProblemSelection,
     config: ExperimentConfig,
     *,
-    external_archive_size: int | None = None,
-    archive_type: str = "hypervolume",
+    external_archive: ExternalArchiveConfig | None = None,
     selection_pressure: int = 2,
     nsgaii_variation: VariationConfig | None = None,
     moead_variation: VariationConfig | None = None,
@@ -26,6 +26,8 @@ def run_single(
     spea2_variation: VariationConfig | None = None,
     ibea_variation: VariationConfig | None = None,
     smpso_variation: VariationConfig | None = None,
+    agemoea_variation: VariationConfig | None = None,
+    rvea_variation: VariationConfig | None = None,
     hv_stop_config: dict[str, object] | None = None,
     evaluator: object | None = None,
     termination: tuple[str, object] | None = None,
@@ -45,6 +47,8 @@ def run_single(
         spea2_variation,
         ibea_variation,
         smpso_variation,
+        agemoea_variation,
+        rvea_variation,
     ) = normalize_variations(
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
@@ -53,14 +57,15 @@ def run_single(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        agemoea_variation=agemoea_variation,
+        rvea_variation=rvea_variation,
     )
     algorithm, cfg_data = build_algorithm_from_spec(
         algorithm_name,
         engine_name,
         problem,
         config,
-        external_archive_size=external_archive_size,
-        archive_type=archive_type,
+        external_archive=external_archive,
         selection_pressure=selection_pressure,
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
@@ -69,6 +74,8 @@ def run_single(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        agemoea_variation=agemoea_variation,
+        rvea_variation=rvea_variation,
         track_genealogy=track_genealogy,
     )
     return execute_run_single(
@@ -79,8 +86,7 @@ def run_single(
         algorithm=algorithm,
         cfg_data=cfg_data,
         problem=problem,
-        external_archive_size=external_archive_size,
-        archive_type=archive_type,
+        external_archive=external_archive,
         selection_pressure=selection_pressure,
         nsgaii_variation=nsgaii_variation,
         moead_variation=moead_variation,
@@ -89,6 +95,8 @@ def run_single(
         spea2_variation=spea2_variation,
         ibea_variation=ibea_variation,
         smpso_variation=smpso_variation,
+        agemoea_variation=agemoea_variation,
+        rvea_variation=rvea_variation,
         hv_stop_config=hv_stop_config,
         evaluator=evaluator,
         termination=termination,

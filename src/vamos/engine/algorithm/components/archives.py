@@ -8,14 +8,34 @@ from typing import Any, TYPE_CHECKING
 
 import numpy as np
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
+    UnboundedArchive,
 )
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.state import AlgorithmState
     from vamos.foundation.kernel.backend import KernelBackend
+
+_ArchiveManager = CrowdingDistanceArchive | HypervolumeArchive | UnboundedArchive
+
+
+def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | None:
+    """Extract :class:`ExternalArchiveConfig` from a serialised config dict.
+
+    The config dict is typically produced by ``AlgorithmConfig.to_dict()``.
+
+    Returns ``None`` when no external archive is configured.
+    """
+    raw = cfg.get("external_archive")
+    if raw is None:
+        return None
+    if isinstance(raw, ExternalArchiveConfig):
+        return raw
+    # Deserialise from plain dict (produced by dataclasses.asdict)
+    return ExternalArchiveConfig(**raw)
 
 
 def setup_archive(
@@ -25,9 +45,8 @@ def setup_archive(
     n_var: int,
     n_obj: int,
     dtype: np.dtype,
-    archive_size: int | None,
-    archive_type: str = "crowding",
-) -> tuple[np.ndarray | None, np.ndarray | None, CrowdingDistanceArchive | HypervolumeArchive | None]:
+    ext_cfg: ExternalArchiveConfig | None,
+) -> tuple[np.ndarray | None, np.ndarray | None, _ArchiveManager | None]:
     """
     Initialize external archive if configured.
 
@@ -45,27 +64,30 @@ def setup_archive(
         Number of objectives.
     dtype : np.dtype
         Data type for arrays.
-    archive_size : int | None
-        Archive capacity, or None to disable.
-    archive_type : str
-        Archive type: "crowding" or "hypervolume".
+    ext_cfg : ExternalArchiveConfig | None
+        External archive configuration, or ``None`` to disable.
 
     Returns
     -------
     tuple
         (archive_X, archive_F, archive_manager)
     """
-    if not archive_size:
+    if ext_cfg is None:
         return None, None, None
 
-    archive_manager: CrowdingDistanceArchive | HypervolumeArchive
-    if archive_type == "hypervolume":
-        archive_manager = HypervolumeArchive(archive_size, n_var, n_obj, dtype)
-    else:
-        archive_manager = CrowdingDistanceArchive(archive_size, n_var, n_obj, dtype)
+    capacity = ext_cfg.capacity
+    pruning = ext_cfg.pruning
 
-    archive_X, archive_F = archive_manager.update(X, F)
-    return archive_X, archive_F, archive_manager
+    if capacity is None:
+        # Unbounded archive
+        manager: _ArchiveManager = UnboundedArchive(n_var=n_var, n_obj=n_obj, dtype=dtype)
+    elif pruning == "hv_contrib":
+        manager = HypervolumeArchive(capacity, n_var, n_obj, dtype)
+    else:
+        manager = CrowdingDistanceArchive(capacity, n_var, n_obj, dtype)
+
+    archive_X, archive_F = manager.update(X, F)
+    return archive_X, archive_F, manager
 
 
 def update_archive(
@@ -94,25 +116,4 @@ def update_archive(
     state.archive_X, state.archive_F = state.archive_manager.update(X, F)
 
 
-def resolve_archive_size(cfg: dict[str, Any]) -> int | None:
-    """
-    Resolve archive size from configuration.
-
-    Parameters
-    ----------
-    cfg : dict[str, Any]
-        Algorithm configuration.
-
-    Returns
-    -------
-    int | None
-        Archive size if configured and positive, else None.
-    """
-    archive_cfg = cfg.get("archive") or cfg.get("external_archive")
-    if not archive_cfg:
-        return None
-    size = int(archive_cfg.get("size", 0))
-    return size if size > 0 else None
-
-
-__all__ = ["setup_archive", "update_archive", "resolve_archive_size"]
+__all__ = ["setup_archive", "update_archive", "resolve_external_archive"]

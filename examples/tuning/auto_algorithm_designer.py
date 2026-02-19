@@ -189,16 +189,16 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfig:
         archive_size = int(assignment.get("archive_size", 200))
         prune_policy = assignment.get("prune_policy", "crowding")
 
-        archive_kwargs = {
+        archive_kwargs: dict[str, Any] = {
             "archive_type": archive_type,
-            "prune_policy": prune_policy,
+            "pruning": prune_policy,
         }
 
         # Add epsilon for grid-based archives
         if archive_type in ("epsilon_grid", "hybrid"):
             archive_kwargs["epsilon"] = float(assignment.get("archive_epsilon", 0.01))
 
-        config = config.result_mode("external_archive").archive(archive_size, **archive_kwargs)
+        config = config.external_archive(capacity=archive_size, **archive_kwargs)
     else:
         config = config.result_mode("population")
 

@@ -6,6 +6,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from typing import TypeVar, cast
 
+from vamos.archive import ExternalArchiveConfig
 from vamos.engine.config.variation import VariationOverrides, merge_variation_overrides
 from vamos.engine.config.spec import ExperimentSpec, ProblemOverrides, SpecBlock
 from vamos.foundation.core.experiment_config import ExperimentConfig
@@ -83,7 +84,11 @@ def run_from_args(
             if override.get(key) is not None:
                 setattr(effective_args, key, override[key])
         effective_args.selection_pressure = override.get("selection_pressure", args.selection_pressure)
-        effective_args.external_archive_size = override.get("external_archive_size", args.external_archive_size)
+        _ea_override = override.get("external_archive_size")
+        if _ea_override is not None:
+            effective_args.external_archive = ExternalArchiveConfig(capacity=int(str(_ea_override)))
+        else:
+            effective_args.external_archive = getattr(args, "external_archive", None)
         effective_args.hv_threshold = override.get("hv_threshold", args.hv_threshold)
         effective_args.hv_reference_front = override.get("hv_reference_front", args.hv_reference_front)
         effective_args.n_var = override.get("n_var", args.n_var)
@@ -114,6 +119,12 @@ def run_from_args(
         effective_args.smpso_variation = merge_variation_overrides(
             getattr(args, "smpso_variation", None), _override_mapping(override, "smpso")
         )
+        effective_args.agemoea_variation = merge_variation_overrides(
+            getattr(args, "agemoea_variation", None), _override_mapping(override, "agemoea")
+        )
+        effective_args.rvea_variation = merge_variation_overrides(
+            getattr(args, "rvea_variation", None), _override_mapping(override, "rvea")
+        )
         effective_args.effective_problem_override = override
 
         (
@@ -124,6 +135,8 @@ def run_from_args(
             effective_args.spea2_variation,
             effective_args.ibea_variation,
             effective_args.smpso_variation,
+            effective_args.agemoea_variation,
+            effective_args.rvea_variation,
         ) = normalize_variations(
             nsgaii_variation=effective_args.nsgaii_variation,
             moead_variation=effective_args.moead_variation,
@@ -132,6 +145,8 @@ def run_from_args(
             spea2_variation=effective_args.spea2_variation,
             ibea_variation=effective_args.ibea_variation,
             smpso_variation=effective_args.smpso_variation,
+            agemoea_variation=effective_args.agemoea_variation,
+            rvea_variation=effective_args.rvea_variation,
         )
 
         if multiple:
@@ -164,6 +179,8 @@ def run_from_args(
             spea2_variation=effective_args.spea2_variation,
             ibea_variation=effective_args.ibea_variation,
             smpso_variation=effective_args.smpso_variation,
+            agemoea_variation=effective_args.agemoea_variation,
+            rvea_variation=effective_args.rvea_variation,
             include_external=effective_args.include_external,
             config_source=config_source,
             config_spec=config_spec,
