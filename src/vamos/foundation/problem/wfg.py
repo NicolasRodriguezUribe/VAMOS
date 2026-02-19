@@ -6,6 +6,8 @@ Based on the standard WFG toolkit definitions.
 from __future__ import annotations
 
 import numpy as np
+from vamos.foundation.problem.base import Problem
+
 
 
 def _correct_to_01(x: np.ndarray, epsilon: float = 1.0e-10) -> np.ndarray:
@@ -149,7 +151,7 @@ def _validate_wfg2_wfg3(l: int) -> None:
 # -----------------------------------------------------------------------------
 
 
-class WFGProblem:
+class WFGProblem(Problem):
     def __init__(self, name: str, n_var: int, n_obj: int, k: int | None = None, l: int | None = None) -> None:
         self.name = name
         self.n_var = int(n_var)

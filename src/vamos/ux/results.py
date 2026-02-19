@@ -26,7 +26,7 @@ def _logger() -> logging.Logger:
 
 def result_summary_text(result: ResultLike) -> str:
     """Return a human-readable summary string for a result object."""
-    meta = result.meta if isinstance(result.meta, Mapping) else {}
+    meta = result.meta
     algo = meta.get("algorithm")
     seed = meta.get("seed")
     engine = meta.get("engine")

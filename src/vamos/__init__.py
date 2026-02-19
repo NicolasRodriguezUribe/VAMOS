@@ -14,6 +14,7 @@ import importlib
 
 from vamos.api import (
     OptimizationResult,
+    Problem,
     available_problem_names,
     configure_logging,
     make_problem,
@@ -27,6 +28,7 @@ __all__ = [
     "__version__",
     # Optimization
     "optimize",
+    "Problem",
     "make_problem",
     "OptimizationResult",
     "configure_logging",

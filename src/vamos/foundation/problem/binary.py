@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from vamos.foundation.problem.base import Problem
+
 
 def _as_bits(X: np.ndarray, n_var: int) -> np.ndarray:
     bits = np.asarray(X)
@@ -10,7 +12,7 @@ def _as_bits(X: np.ndarray, n_var: int) -> np.ndarray:
     return (bits > 0.5).astype(np.int8, copy=False)
 
 
-class BinaryFeatureSelectionProblem:
+class BinaryFeatureSelectionProblem(Problem):
     """
     Synthetic feature-selection style benchmark.
     Objective 1: maximize predictive utility (minimize negative gain).
@@ -46,7 +48,7 @@ class BinaryFeatureSelectionProblem:
         }
 
 
-class BinaryKnapsackProblem:
+class BinaryKnapsackProblem(Problem):
     """
     Multi-objective knapsack surrogate.
     Objective 1: stay close to a target capacity (absolute deviation).
@@ -84,7 +86,7 @@ class BinaryKnapsackProblem:
         }
 
 
-class BinaryQUBOProblem:
+class BinaryQUBOProblem(Problem):
     """
     Quadratic unconstrained binary optimization (QUBO) surrogate.
     Objective 1: minimize quadratic energy x^T Q x + b^T x.

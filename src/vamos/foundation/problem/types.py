@@ -10,6 +10,8 @@ from vamos.foundation.encoding import EncodingLike
 class ProblemProtocol(Protocol):
     n_var: int
     n_obj: int
+    n_constraints: int
+    n_constr: int
     xl: float | int | np.ndarray
     xu: float | int | np.ndarray
     encoding: EncodingLike

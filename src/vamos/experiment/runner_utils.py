@@ -17,6 +17,8 @@ from vamos.foundation.core.experiment_config import ExperimentConfig
 def validate_problem(problem: ProblemProtocol) -> None:
     if problem.n_var <= 0 or problem.n_obj <= 0:
         raise ValueError("Problem must have positive n_var and n_obj.")
+    if problem.n_constraints < 0:
+        raise ValueError("n_constraints must be >= 0.")
     xl = np.asarray(problem.xl)
     xu = np.asarray(problem.xu)
     if xl.ndim > 1 or xu.ndim > 1:
@@ -27,7 +29,7 @@ def validate_problem(problem: ProblemProtocol) -> None:
         raise ValueError("Upper bounds length must match n_var.")
     if np.any(xl > xu):
         raise ValueError("Lower bounds must not exceed upper bounds.")
-    encoding = normalize_encoding(getattr(problem, "encoding", "real"))
+    encoding = normalize_encoding(problem.encoding)
     if encoding == "mixed":
         if not hasattr(problem, "mixed_spec"):
             raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")

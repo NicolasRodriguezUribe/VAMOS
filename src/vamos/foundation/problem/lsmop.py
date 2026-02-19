@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import numpy as np
+from vamos.foundation.problem.base import Problem
+
 
 
 def _sphere(x: np.ndarray) -> np.ndarray:
@@ -44,7 +46,7 @@ def _griewank(x: np.ndarray) -> np.ndarray:
     return sum_term - prod_term + 1.0
 
 
-class _LSMOPBase:
+class _LSMOPBase(Problem):
     """
     Vectorized implementation of the LSMOP benchmark family.
 
@@ -70,7 +72,6 @@ class _LSMOPBase:
         self.n_var = int(n_var)
         self.n_obj = int(n_obj)
         self.nk = int(nk)
-        self.encoding = "continuous"
 
         self.xl = np.zeros(self.n_var, dtype=float)
         self.xu = np.full(self.n_var, 10.0, dtype=float)

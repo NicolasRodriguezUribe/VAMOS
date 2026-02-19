@@ -1,7 +1,9 @@
 import numpy as np
+from vamos.foundation.problem.base import Problem
 
 
-class ZDT3Problem:
+
+class ZDT3Problem(Problem):
     """ZDT3 benchmark with a disconnected Pareto front."""
 
     def __init__(self, n_var: int) -> None:

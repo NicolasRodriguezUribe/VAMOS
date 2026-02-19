@@ -9,13 +9,13 @@ Backends that rely on optional dependencies (numba, moocore) are lazy-loaded so
 
 from __future__ import annotations
 
-from difflib import get_close_matches
 from importlib import import_module
 from collections.abc import Callable
 from typing import cast
 
 from .backend import KernelBackend
 from .numpy_backend import NumPyKernel
+from vamos.foundation.exceptions import _suggest_names
 
 
 def _load_numba() -> KernelBackend:
@@ -55,14 +55,6 @@ KERNELS: dict[str, Callable[[], KernelBackend]] = {
 
 _ENGINE_DOCS = "docs/reference/algorithms.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
-
-
-def _suggest_names(name: str, options: list[str]) -> list[str]:
-    if not name or not options:
-        return []
-    lookup = {option.lower(): option for option in options}
-    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
-    return [lookup[match] for match in matches]
 
 
 def _format_unknown_engine(name: str, options: list[str]) -> str:

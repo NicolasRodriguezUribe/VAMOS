@@ -8,6 +8,7 @@ from vamos.experiment import cli
 from vamos.experiment import runner
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
+from vamos.foundation.exceptions import ConfigurationError
 from vamos.foundation.problem.tsp import TSPProblem
 from vamos.experiment.study.runner import StudyRunner
 from vamos.experiment.study.types import StudyTask
@@ -51,7 +52,7 @@ def test_build_hv_stop_config_uses_builtin_front():
 def test_permutation_problem_requires_nsgaii():
     selection = SimpleNamespace(instantiate=lambda: TSPProblem(n_cities=6), spec=SimpleNamespace(key="tsp6"), n_var=6, n_obj=2)
     config = ExperimentConfig(population_size=4, offspring_population_size=4, max_evaluations=8, seed=1)
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigurationError):
         runner.run_single(
             "numpy",
             "moead",

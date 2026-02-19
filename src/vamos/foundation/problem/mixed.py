@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
+from vamos.foundation.problem.base import Problem
+
 
 
 def _split_counts(n_var: int) -> tuple[int, int, int]:
@@ -15,7 +17,7 @@ def _split_counts(n_var: int) -> tuple[int, int, int]:
     return n_real, n_int, n_cat
 
 
-class MixedDesignProblem:
+class MixedDesignProblem(Problem):
     """
     Synthetic mixed-encoding benchmark with real, integer, and categorical variables.
 

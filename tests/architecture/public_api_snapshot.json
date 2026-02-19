@@ -1,6 +1,7 @@
 {
   "vamos": [
     "OptimizationResult",
+    "Problem",
     "__version__",
     "available_problem_names",
     "configure_logging",
@@ -28,6 +29,7 @@
   ],
   "vamos.api": [
     "OptimizationResult",
+    "Problem",
     "available_problem_names",
     "configure_logging",
     "make_problem",

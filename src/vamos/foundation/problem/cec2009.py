@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
+from vamos.foundation.problem.base import Problem
 
 
-class _CEC2009Base:
+
+class _CEC2009Base(Problem):
     def __init__(
         self,
         *,
@@ -17,7 +19,6 @@ class _CEC2009Base:
             raise ValueError(f"CEC2009 problem requires at least {n_var_min} decision variables.")
         self.n_var = int(n_var)
         self.n_obj = int(n_obj)
-        self.encoding = "continuous"
 
         xl = np.full(self.n_var, float(lower_rest), dtype=float)
         xu = np.full(self.n_var, float(upper_rest), dtype=float)

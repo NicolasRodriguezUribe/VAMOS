@@ -8,7 +8,6 @@ and return an initialized algorithm instance.
 
 from __future__ import annotations
 
-from difflib import get_close_matches
 from typing import Any, Protocol
 from collections.abc import Callable, Mapping
 
@@ -24,6 +23,7 @@ from .spea2 import SPEA2
 from .ibea import IBEA
 from .smpso import SMPSO
 from vamos.foundation.registry import Registry
+from vamos.foundation.exceptions import _suggest_names
 
 
 class AlgorithmLike(Protocol):
@@ -42,14 +42,6 @@ AlgorithmBuilder = Callable[[AlgorithmConfigMapping, KernelBackend | None], Algo
 _ALGORITHMS: Registry[AlgorithmBuilder] | None = None
 _ALGO_DOCS = "docs/reference/algorithms.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
-
-
-def _suggest_names(name: str, options: list[str]) -> list[str]:
-    if not name or not options:
-        return []
-    lookup = {option.lower(): option for option in options}
-    matches = get_close_matches(name.lower(), lookup.keys(), n=3, cutoff=0.6)
-    return [lookup[match] for match in matches]
 
 
 def _format_unknown_algorithm(name: str, options: list[str]) -> str:

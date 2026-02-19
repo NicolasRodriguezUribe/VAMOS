@@ -1,8 +1,10 @@
 # problem/zdt1.py
 import numpy as np
+from vamos.foundation.problem.base import Problem
 
 
-class ZDT1Problem:
+
+class ZDT1Problem(Problem):
     def __init__(self, n_var: int) -> None:
         self.n_var = n_var
         self.n_obj = 2

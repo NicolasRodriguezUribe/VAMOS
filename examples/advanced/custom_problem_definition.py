@@ -1,20 +1,24 @@
 """
-Custom two-objective problem defined inline and solved with NSGA-II.
+Custom problem definition using the Problem base class.
 
-Shows the minimal problem interface (n_var, n_obj, xl, xu, encoding, evaluate)
-and how to plug it into `vamos.optimize()` directly using the Unified API.
+Shows both the unconstrained and constrained cases, and how to plug them
+into `vamos.optimize()` directly using the Unified API.
 
 Usage:
-    python examples/custom_problem_definition.py
+    python examples/advanced/custom_problem_definition.py
 """
 
 from __future__ import annotations
 
 import numpy as np
-from vamos import optimize
+from vamos import Problem, optimize
 
 
-class CustomBiObjectiveProblem:
+# ---------------------------------------------------------------------------
+# Unconstrained problem — override objectives() only
+# ---------------------------------------------------------------------------
+
+class CustomBiObjectiveProblem(Problem):
     """
     Simple convex/concave two-objective toy problem.
 
@@ -30,40 +34,70 @@ class CustomBiObjectiveProblem:
         self.n_obj = 2
         self.xl = np.array([0.0, 0.0], dtype=float)
         self.xu = np.array([1.0, 1.0], dtype=float)
-        self.encoding = "real"
 
-    def evaluate(self, X: np.ndarray, out: dict) -> None:
-        X = np.asarray(X, dtype=float)
-        # Vectorized evaluation for performance
+    def objectives(self, X: np.ndarray) -> np.ndarray:
+        # X: (N, 2) batch of candidate solutions
         f1 = X[:, 0]
         g = 1.0 + X[:, 1]
         f2 = g * (1.0 - np.sqrt(np.clip(X[:, 0], 0.0, 1.0))) + 0.1 * np.sin(5.0 * X[:, 0])
+        return np.column_stack([f1, f2])
 
-        # Write directly to output buffers
-        F = out["F"]
-        F[:, 0] = f1
-        F[:, 1] = f2
+
+# ---------------------------------------------------------------------------
+# Constrained problem — override objectives() and constraints()
+# ---------------------------------------------------------------------------
+
+class ConstrainedBiObjectiveProblem(Problem):
+    """
+    Two-objective problem with one inequality constraint.
+
+    Decision variables: x0, x1, x2 in [0, 1]
+    Objectives (minimize):
+        f1 = sum(x^2)
+        f2 = sum((x - 1)^2)
+    Constraint (g <= 0 means feasible):
+        g = sum(x) - 2  (i.e. sum(x) <= 2)
+    """
+
+    n_constraints = 1  # declare at class level
+
+    def __init__(self) -> None:
+        self.n_var = 3
+        self.n_obj = 2
+        self.xl = np.zeros(3)
+        self.xu = np.ones(3)
+
+    def objectives(self, X: np.ndarray) -> np.ndarray:
+        f1 = np.sum(X ** 2, axis=1)
+        f2 = np.sum((X - 1) ** 2, axis=1)
+        return np.column_stack([f1, f2])
+
+    def constraints(self, X: np.ndarray) -> np.ndarray:
+        # Sign convention: g(x) <= 0 means feasible (negative = OK).
+        g = np.sum(X, axis=1) - 2.0
+        return g.reshape(-1, 1)
 
 
 def main() -> None:
-    # 1. Instantiate existing custom class
+    # --- Unconstrained ---
     problem = CustomBiObjectiveProblem()
-
-    # 2. Run optimize directy with the instance
-    # Note: Unified API handles instance dispatch automatically
-    print("optimizing custom problem instance...")
+    print("Optimizing unconstrained custom problem...")
     result = optimize(problem, algorithm="nsgaii", max_evaluations=4000, seed=3, verbose=True)
 
     F = result.F
     print(f"\nSolutions: {len(F)}")
-    print(f"Objective ranges: f1=[{F[:, 0].min():.3f}, {F[:, 0].max():.3f}], f2=[{F[:, 1].min():.3f}, {F[:, 1].max():.3f}]")
+    print(f"Objective ranges: f1=[{F[:, 0].min():.3f}, {F[:, 0].max():.3f}], "
+          f"f2=[{F[:, 1].min():.3f}, {F[:, 1].max():.3f}]")
 
-    # 3. Use built-in explorer if dependencies available (plotly)
-    try:
-        # explore_result_front(result, title="Custom Problem Result")
-        pass  # Commented out to avoid auto-launching in non-interactive run
-    except ImportError:
-        pass
+    # --- Constrained ---
+    constrained = ConstrainedBiObjectiveProblem()
+    print("\nOptimizing constrained custom problem...")
+    result_c = optimize(constrained, algorithm="nsgaii", max_evaluations=4000, seed=3, verbose=True)
+
+    F_c = result_c.F
+    print(f"\nConstrained solutions: {len(F_c)}")
+    print(f"Objective ranges: f1=[{F_c[:, 0].min():.3f}, {F_c[:, 0].max():.3f}], "
+          f"f2=[{F_c[:, 1].min():.3f}, {F_c[:, 1].max():.3f}]")
 
 
 if __name__ == "__main__":
