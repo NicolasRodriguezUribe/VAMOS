@@ -19,7 +19,7 @@ class ProblemSpec:
     factory: ProblemFactory
     default_n_var_fn: DefaultNVarFn | None = None
     description: str = ""
-    encoding: str = "continuous"
+    encoding: str = "real"
 
     def resolve_dimensions(self, *, n_var: int | None, n_obj: int | None) -> tuple[int, int]:
         """

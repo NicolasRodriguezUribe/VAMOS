@@ -63,15 +63,15 @@ class VariationConfigs:
     making it easy to add new algorithms without widening the function signature.
     """
 
-    nsgaii:  VariationConfig | None = None
-    moead:   VariationConfig | None = None
+    nsgaii: VariationConfig | None = None
+    moead: VariationConfig | None = None
     smsemoa: VariationConfig | None = None
     nsgaiii: VariationConfig | None = None
-    spea2:   VariationConfig | None = None
-    ibea:    VariationConfig | None = None
-    smpso:   VariationConfig | None = None
+    spea2: VariationConfig | None = None
+    ibea: VariationConfig | None = None
+    smpso: VariationConfig | None = None
     agemoea: VariationConfig | None = None
-    rvea:    VariationConfig | None = None
+    rvea: VariationConfig | None = None
 
     @classmethod
     def from_namespace(cls, args: Namespace) -> VariationConfigs:
@@ -91,15 +91,15 @@ class VariationConfigs:
     def as_storage_dict(self) -> dict[str, VariationConfig | None]:
         """Return the dict format expected by StorageObserver."""
         return {
-            "nsgaii_variation":  self.nsgaii,
-            "moead_variation":   self.moead,
+            "nsgaii_variation": self.nsgaii,
+            "moead_variation": self.moead,
             "smsemoa_variation": self.smsemoa,
             "nsgaiii_variation": self.nsgaiii,
-            "spea2_variation":   self.spea2,
-            "ibea_variation":    self.ibea,
-            "smpso_variation":   self.smpso,
+            "spea2_variation": self.spea2,
+            "ibea_variation": self.ibea,
+            "smpso_variation": self.smpso,
             "agemoea_variation": self.agemoea,
-            "rvea_variation":    self.rvea,
+            "rvea_variation": self.rvea,
         }
 
 
@@ -331,7 +331,11 @@ def run_single(
 
     payload = exec_result.payload
     total_time_ms = exec_result.elapsed_ms
-    F = payload["F"]
+    F = payload.get("F")
+    if F is None:
+        raise RuntimeError(
+            f"Algorithm '{algorithm_name}' (engine='{engine_name}') returned no objective values. The execution payload is missing key 'F'."
+        )
     actual_evaluations = int(payload.get("evaluations", config.max_evaluations))
 
     # Termination reason determination
@@ -517,7 +521,7 @@ def execute_problem_suite(
         _logger().info("No runs were executed. Check algorithm selection or install missing dependencies.")
         return
 
-    fronts = [res["F"] for res in results]
+    fronts = [res["F"] for res in results if res.get("F") is not None]
     hv_ref_point = compute_hv_reference(fronts)
     for res in results:
         backend = res.pop("_kernel_backend", None)

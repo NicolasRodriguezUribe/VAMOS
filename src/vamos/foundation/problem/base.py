@@ -106,9 +106,7 @@ class Problem:
             **minimize**.  A single-objective problem may return a 1-D array
             of length ``N``.
         """
-        raise NotImplementedError(
-            f"{type(self).__name__} must implement objectives(self, X)."
-        )
+        raise NotImplementedError(f"{type(self).__name__} must implement objectives(self, X).")
 
     def constraints(self, X: np.ndarray) -> np.ndarray | None:
         """Compute constraint violations for a batch of solutions.
@@ -141,10 +139,7 @@ class Problem:
         if F_computed.ndim == 1:
             F_computed = F_computed.reshape(-1, self.n_obj)
         if F_computed.shape != (N, self.n_obj):
-            raise ValueError(
-                f"{type(self).__name__}.objectives() returned shape {F_computed.shape}, "
-                f"expected ({N}, {self.n_obj})."
-            )
+            raise ValueError(f"{type(self).__name__}.objectives() returned shape {F_computed.shape}, expected ({N}, {self.n_obj}).")
         F_buf = out.get("F")
         if F_buf is not None and F_buf.shape == F_computed.shape:
             F_buf[:] = F_computed
@@ -154,20 +149,24 @@ class Problem:
         # --- constraints ---
         if self.n_constraints > 0:
             G_computed = self.constraints(X)
-            if G_computed is not None:
-                G_computed = np.asarray(G_computed, dtype=float)
-                if G_computed.ndim == 1:
-                    G_computed = G_computed.reshape(-1, self.n_constraints)
-                if G_computed.shape != (N, self.n_constraints):
-                    raise ValueError(
-                        f"{type(self).__name__}.constraints() returned shape {G_computed.shape}, "
-                        f"expected ({N}, {self.n_constraints})."
-                    )
-                G_buf = out.get("G")
-                if G_buf is not None and G_buf.shape == G_computed.shape:
-                    G_buf[:] = G_computed
-                else:
-                    out["G"] = G_computed
+            if G_computed is None:
+                raise ValueError(
+                    f"{type(self).__name__}.constraints() returned None but "
+                    f"n_constraints={self.n_constraints}. Override constraints() "
+                    "to return an array of shape (N, n_constraints)."
+                )
+            G_computed = np.asarray(G_computed, dtype=float)
+            if G_computed.ndim == 1:
+                G_computed = G_computed.reshape(-1, self.n_constraints)
+            if G_computed.shape != (N, self.n_constraints):
+                raise ValueError(
+                    f"{type(self).__name__}.constraints() returned shape {G_computed.shape}, expected ({N}, {self.n_constraints})."
+                )
+            G_buf = out.get("G")
+            if G_buf is not None and G_buf.shape == G_computed.shape:
+                G_buf[:] = G_computed
+            else:
+                out["G"] = G_computed
 
 
 __all__ = ["Problem"]

@@ -108,6 +108,8 @@ class OptimizationResult:
         elif method == "min_f1":
             front_pos = int(np.argmin(front_F[:, 0]))
         elif method == "min_f2":
+            if front_F.shape[1] < 2:
+                raise ValueError(f"'min_f2' requires at least 2 objectives, but this result has {front_F.shape[1]}.")
             front_pos = int(np.argmin(front_F[:, 1]))
         elif method == "balanced":
             F_norm = (front_F - front_F.min(axis=0)) / (np.ptp(front_F, axis=0) + 1e-12)

@@ -76,10 +76,7 @@ class FunctionalProblem(Problem):
         if F_result.ndim == 1:
             F_result = F_result.reshape(-1, self.n_obj)
         if F_result.shape != (N, self.n_obj):
-            raise ValueError(
-                f"make_problem fn returned shape {F_result.shape}, "
-                f"expected ({N}, {self.n_obj})."
-            )
+            raise ValueError(f"make_problem fn returned shape {F_result.shape}, expected ({N}, {self.n_obj}).")
 
         # Write into pre-allocated buffer when available, else assign.
         F = out.get("F")
@@ -99,10 +96,7 @@ class FunctionalProblem(Problem):
             if G_result.ndim == 1:
                 G_result = G_result.reshape(-1, self.n_constraints)
             if G_result.shape != (N, self.n_constraints):
-                raise ValueError(
-                    f"make_problem constraints fn returned shape {G_result.shape}, "
-                    f"expected ({N}, {self.n_constraints})."
-                )
+                raise ValueError(f"make_problem constraints fn returned shape {G_result.shape}, expected ({N}, {self.n_constraints}).")
 
             G = out.get("G")
             if G is not None and G.shape == G_result.shape:
@@ -288,6 +282,12 @@ def make_problem(
                 "\n\nHint: n_constraints is the number of constraint values "
                 "your function returns."
             )
+    if n_constraints > 0 and constraints is None:
+        raise ValueError(
+            f"n_constraints={n_constraints} but no constraints function was provided."
+            "\n\nHint: pass constraints=your_function where your_function(x) "
+            "returns a list of n_constraints values (g(x) <= 0 is feasible)."
+        )
 
     # ---- resolve name ----
     if name is None:

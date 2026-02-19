@@ -117,7 +117,9 @@ def plot_critical_distance(
         raise ValueError("algo_names length must match avg_ranks length.")
     k = avg_ranks.shape[0]
     ax = ax or plt.figure().add_subplot(111)
-    ranks = avg_ranks if higher_is_better else (k + 1 - avg_ranks)
+    # avg_ranks from compute_ranks always encode rank 1 = best regardless of
+    # higher_is_better; no inversion needed for the CD diagram (lower x = better).
+    ranks = avg_ranks
     y = np.zeros_like(ranks)
     ax.scatter(ranks, y, c="black")
     for idx, name in enumerate(algo_names):
@@ -128,9 +130,9 @@ def plot_critical_distance(
         _Q_ALPHA = {0.10: 2.343, 0.05: 2.569, 0.025: 2.807, 0.01: 3.143}
         if alpha not in _Q_ALPHA:
             import warnings
+
             warnings.warn(
-                f"alpha={alpha} not in supported values {sorted(_Q_ALPHA)}; "
-                "defaulting to alpha=0.05.",
+                f"alpha={alpha} not in supported values {sorted(_Q_ALPHA)}; defaulting to alpha=0.05.",
                 stacklevel=2,
             )
         q_alpha = _Q_ALPHA.get(alpha, _Q_ALPHA[0.05])
