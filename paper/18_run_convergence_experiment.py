@@ -88,7 +88,7 @@ class VAMOSConvergenceCallback:
     def on_generation(self, generation, F=None, X=None, stats=None):
         if stats is None or F is None:
             return
-        evals = stats.get("n_evals", stats.get("evaluations", 0))
+        evals = stats.get("evals", stats.get("n_evals", stats.get("evaluations", 0)))
         if evals is None:
             evals = (generation + 1) * POP_SIZE
         evals = int(evals)
@@ -99,7 +99,7 @@ class VAMOSConvergenceCallback:
             hv = compute_hv(F, self.problem_name)
             self.trace.append((self._last_checkpoint, hv))
 
-    def on_end(self, F=None, stats=None):
+    def on_end(self, F=None, stats=None, **kwargs):
         pass
 
     def should_stop(self) -> bool:
@@ -196,7 +196,11 @@ def run_pymoo(problem_name: str, seed: int) -> list[tuple[int, float]]:
 
     n_var, n_obj = get_problem_dims(problem_name)
 
-    pymoo_problem = get_problem(problem_name)
+    n_var, n_obj = get_problem_dims(problem_name)
+    if problem_name.startswith("wfg"):
+        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
+    else:
+        pymoo_problem = get_problem(problem_name)
 
     callback = PymooConvergenceCallback(problem_name, CHECKPOINT_EVERY)
 
