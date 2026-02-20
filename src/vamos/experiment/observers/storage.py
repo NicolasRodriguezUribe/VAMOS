@@ -206,8 +206,12 @@ class StorageObserver(Observer):
             "selection_pressure": self.selection_pressure,
             "external_archive": {
                 "capacity": self.external_archive.capacity,
+                "truncate_size": self.external_archive.truncate_size,
                 "archive_type": self.external_archive.archive_type,
                 "pruning": self.external_archive.pruning,
+                "deduplicate_in": self.external_archive.deduplicate_in,
+                "objective_tolerance": self.external_archive.objective_tolerance,
+                "decision_tolerance": self.external_archive.decision_tolerance,
             } if self.external_archive is not None else None,
             "hv_threshold": self.hv_stop_config.get("threshold_fraction") if self.hv_stop_config else None,
             "hv_reference_point": self.hv_stop_config.get("reference_point") if self.hv_stop_config else None,

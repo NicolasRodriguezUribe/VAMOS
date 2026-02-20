@@ -27,7 +27,7 @@ def _core_part() -> SpacePart:
     archive_type_param = Categorical("archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"])
     archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
     archive_prune_policy_param = Categorical(
-        "archive_prune_policy", ["crowding", "hv_contrib", "mc_hv_contrib", "random"]
+        "archive_prune_policy", ["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"]
     )
     archive_epsilon_param = Real("archive_epsilon", 1e-4, 0.1, log=True)
     conditionals = [

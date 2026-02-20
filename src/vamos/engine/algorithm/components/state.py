@@ -12,7 +12,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive, UnboundedArchive
+    from vamos.engine.algorithm.components.archive import (
+        CrowdingDistanceArchive,
+        HypervolumeArchive,
+        SPEA2Archive,
+        UnboundedArchive,
+    )
     from vamos.engine.algorithm.components.termination import HVTracker
     from vamos.hooks.genealogy import GenealogyTracker
 
@@ -47,7 +52,7 @@ class AlgorithmState:
     archive_size: int | None = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
-    archive_manager: CrowdingDistanceArchive | HypervolumeArchive | UnboundedArchive | None = None
+    archive_manager: CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive | None = None
     result_mode: str = "non_dominated"
 
     # Termination

@@ -424,7 +424,7 @@ class LevyFlightMutation(Mutation):
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.span = self.upper - self.lower
         # Precompute sigma_u for Mantegna's algorithm
-        from math import gamma, sin, pi
+        from math import gamma, pi, sin
 
         num = gamma(1.0 + self.beta) * sin(pi * self.beta / 2.0)
         den = gamma((1.0 + self.beta) / 2.0) * self.beta * 2.0 ** ((self.beta - 1.0) / 2.0)

@@ -16,7 +16,12 @@ from typing import Any
 import numpy as np
 
 from vamos.adaptation.aos.controller import AOSController
-from vamos.engine.algorithm.components.archive import CrowdingDistanceArchive, HypervolumeArchive, UnboundedArchive
+from vamos.engine.algorithm.components.archive import (
+    CrowdingDistanceArchive,
+    HypervolumeArchive,
+    SPEA2Archive,
+    UnboundedArchive,
+)
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.hooks.genealogy import GenealogyTracker
@@ -59,8 +64,8 @@ class NSGAIIState:
     archive_size: int | None = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
-    archive_manager: CrowdingDistanceArchive | HypervolumeArchive | UnboundedArchive | None = None
-    result_archive: HypervolumeArchive | CrowdingDistanceArchive | None = None
+    archive_manager: CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive | None = None
+    result_archive: HypervolumeArchive | CrowdingDistanceArchive | SPEA2Archive | None = None
     result_mode: str = "non_dominated"
 
     # Termination
@@ -341,6 +346,7 @@ def update_archives(
     *,
     X: np.ndarray | None = None,
     F: np.ndarray | None = None,
+    G: np.ndarray | None = None,
 ) -> None:
     """Update result archive and external archive.
 
@@ -354,11 +360,14 @@ def update_archives(
         Candidate decision variables to insert (defaults to state.X).
     F : np.ndarray | None
         Candidate objectives to insert (defaults to state.F).
+    G : np.ndarray | None
+        Candidate constraints to insert (defaults to state.G).
     """
     X_use = state.X if X is None else X
     F_use = state.F if F is None else F
+    G_use = state.G if G is None else G
     if state.result_archive is not None:
-        state.result_archive.update(X_use, F_use)
+        state.result_archive.update(X_use, F_use, G_use)
 
     if state.archive_manager is not None:
-        state.archive_X, state.archive_F = state.archive_manager.update(X_use, F_use)
+        state.archive_X, state.archive_F = state.archive_manager.update(X_use, F_use, G_use)

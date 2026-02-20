@@ -138,7 +138,7 @@ def initialize_smpso_run(
 
     # Leader archive
     leader_archive = CrowdingDistanceArchive(archive_size, n_var, n_obj, X.dtype)
-    archive_X, archive_F = leader_archive.update(X, F)
+    archive_X, archive_F = leader_archive.update(X, F, G)
 
     # Genealogy tracking
     track_genealogy = bool(config.get("track_genealogy", False))

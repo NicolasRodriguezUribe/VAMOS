@@ -105,7 +105,16 @@ def initialize_spea2_run(
 
     # Setup external archive (optional, separate from internal)
     ext_cfg = resolve_external_archive(cfg)
-    archive_X, archive_F, archive_manager = setup_archive(kernel, env_X, env_F, n_var, n_obj, X.dtype, ext_cfg)
+    archive_X, archive_F, archive_manager = setup_archive(
+        kernel,
+        env_X,
+        env_F,
+        n_var,
+        n_obj,
+        X.dtype,
+        ext_cfg,
+        env_G,
+    )
 
     # Setup HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)

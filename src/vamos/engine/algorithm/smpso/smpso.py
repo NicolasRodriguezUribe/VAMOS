@@ -385,7 +385,7 @@ class SMPSO:
 
         # Update leader archive
         if st.archive_manager is not None:
-            st.archive_X, st.archive_F = st.archive_manager.update(X_new, F)
+            st.archive_X, st.archive_F = st.archive_manager.update(X_new, F, G)
 
         if st.hv_tracker is not None and st.hv_tracker.enabled:
             return st.hv_tracker.reached(st.hv_points())

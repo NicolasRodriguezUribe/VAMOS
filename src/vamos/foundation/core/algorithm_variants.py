@@ -1,28 +1,74 @@
 from __future__ import annotations
 
-ALGORITHM_VARIANT_GROUPS: dict[str, frozenset[str]] = {
-    "nsgaii": frozenset({"nsgaii", "nsgaii_permutation", "nsgaii_mixed", "nsgaii_binary", "nsgaii_integer"}),
-    "moead": frozenset({"moead", "moead_permutation", "moead_mixed", "moead_binary", "moead_integer"}),
-    "nsgaiii": frozenset({"nsgaiii", "nsgaiii_permutation", "nsgaiii_mixed", "nsgaiii_binary", "nsgaiii_integer"}),
-    "smsemoa": frozenset({"smsemoa", "smsemoa_permutation", "smsemoa_mixed", "smsemoa_binary", "smsemoa_integer"}),
-    "spea2": frozenset({"spea2", "spea2_permutation", "spea2_mixed", "spea2_binary", "spea2_integer"}),
-    "ibea": frozenset({"ibea", "ibea_permutation", "ibea_mixed", "ibea_binary", "ibea_integer"}),
-    "smpso": frozenset({"smpso", "smpso_mixed"}),
-    "agemoea": frozenset({"agemoea", "agemoea_permutation", "agemoea_mixed", "agemoea_binary", "agemoea_integer"}),
-    "rvea": frozenset({"rvea", "rvea_permutation", "rvea_mixed", "rvea_binary", "rvea_integer"}),
+ALGORITHM_VARIANT_GROUPS: dict[str, set[str]] = {
+    "nsgaii": {"nsgaii", "nsgaii_permutation", "nsgaii_mixed", "nsgaii_binary", "nsgaii_integer"},
+    "moead": {"moead", "moead_permutation", "moead_mixed", "moead_binary", "moead_integer"},
+    "nsgaiii": {"nsgaiii", "nsgaiii_permutation", "nsgaiii_mixed", "nsgaiii_binary", "nsgaiii_integer"},
+    "smsemoa": {"smsemoa", "smsemoa_permutation", "smsemoa_mixed", "smsemoa_binary", "smsemoa_integer"},
+    "spea2": {"spea2", "spea2_permutation", "spea2_mixed", "spea2_binary", "spea2_integer"},
+    "ibea": {"ibea", "ibea_permutation", "ibea_mixed", "ibea_binary", "ibea_integer"},
+    "smpso": {"smpso", "smpso_mixed"},
+    "agemoea": {"agemoea", "agemoea_permutation", "agemoea_mixed", "agemoea_binary", "agemoea_integer"},
+    "rvea": {"rvea", "rvea_permutation", "rvea_mixed", "rvea_binary", "rvea_integer"},
 }
 
 
 VARIANT_TO_CANONICAL: dict[str, str] = {
-    variant: canonical for canonical, variants in ALGORITHM_VARIANT_GROUPS.items() for variant in variants
+    "nsgaii": "nsgaii",
+    "nsgaii_permutation": "nsgaii",
+    "nsgaii_mixed": "nsgaii",
+    "nsgaii_binary": "nsgaii",
+    "nsgaii_integer": "nsgaii",
+    "moead": "moead",
+    "moead_permutation": "moead",
+    "moead_mixed": "moead",
+    "moead_binary": "moead",
+    "moead_integer": "moead",
+    "nsgaiii": "nsgaiii",
+    "nsgaiii_permutation": "nsgaiii",
+    "nsgaiii_mixed": "nsgaiii",
+    "nsgaiii_binary": "nsgaiii",
+    "nsgaiii_integer": "nsgaiii",
+    "smsemoa": "smsemoa",
+    "smsemoa_permutation": "smsemoa",
+    "smsemoa_mixed": "smsemoa",
+    "smsemoa_binary": "smsemoa",
+    "smsemoa_integer": "smsemoa",
+    "spea2": "spea2",
+    "spea2_permutation": "spea2",
+    "spea2_mixed": "spea2",
+    "spea2_binary": "spea2",
+    "spea2_integer": "spea2",
+    "ibea": "ibea",
+    "ibea_permutation": "ibea",
+    "ibea_mixed": "ibea",
+    "ibea_binary": "ibea",
+    "ibea_integer": "ibea",
+    "smpso": "smpso",
+    "smpso_mixed": "smpso",
+    "agemoea": "agemoea",
+    "agemoea_permutation": "agemoea",
+    "agemoea_mixed": "agemoea",
+    "agemoea_binary": "agemoea",
+    "agemoea_integer": "agemoea",
+    "rvea": "rvea",
+    "rvea_permutation": "rvea",
+    "rvea_mixed": "rvea",
+    "rvea_binary": "rvea",
+    "rvea_integer": "rvea",
 }
 
 
-PERMUTATION_COMPATIBLE_ALGORITHMS: frozenset[str] = frozenset(
-    canonical
-    for canonical, variants in ALGORITHM_VARIANT_GROUPS.items()
-    if any(name.endswith("_permutation") for name in variants)
-)
+PERMUTATION_COMPATIBLE_ALGORITHMS: set[str] = {
+    "nsgaii",
+    "moead",
+    "nsgaiii",
+    "smsemoa",
+    "spea2",
+    "ibea",
+    "agemoea",
+    "rvea",
+}
 
 
 def canonical_algorithm_name(name: str) -> str:

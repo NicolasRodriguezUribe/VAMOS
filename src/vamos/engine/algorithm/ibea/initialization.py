@@ -117,7 +117,7 @@ def initialize_ibea_run(
     # Setup external archive
     ext_cfg = resolve_external_archive(cfg)
     archive_X, archive_F, archive_manager = setup_archive(
-        kernel, X, F, n_var, n_obj, X.dtype, ext_cfg
+        kernel, X, F, n_var, n_obj, X.dtype, ext_cfg, G
     )
 
     # Setup genealogy

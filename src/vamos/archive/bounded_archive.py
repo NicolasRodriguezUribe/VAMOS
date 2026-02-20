@@ -6,7 +6,8 @@ from typing import Literal
 import numpy as np
 
 ArchiveType = Literal["size_cap", "epsilon_grid", "hvc_prune", "hybrid"]
-PrunePolicy = Literal["crowding", "hv_contrib", "random", "mc_hv_contrib"]
+PrunePolicy = Literal["crowding", "hv_contrib", "random", "mc_hv_contrib", "spea2"]
+DeduplicateIn = Literal["objective", "decision", "both"]
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,24 @@ class ExternalArchiveConfig:
     hv_samples: int = 20000
     rng_seed: int = 0
     objective_tolerance: float = 1e-10
+    truncate_size: int | None = None
+    deduplicate_in: DeduplicateIn = "objective"
+    decision_tolerance: float = 1e-32
+
+    def __post_init__(self) -> None:
+        if self.capacity is not None and self.capacity <= 0:
+            raise ValueError("capacity must be > 0 when provided.")
+        if self.truncate_size is not None:
+            if self.capacity is None:
+                raise ValueError("truncate_size requires a finite capacity.")
+            if self.truncate_size <= 0:
+                raise ValueError("truncate_size must be > 0.")
+            if self.truncate_size > self.capacity:
+                raise ValueError("truncate_size must be <= capacity.")
+        if self.objective_tolerance < 0.0:
+            raise ValueError("objective_tolerance must be >= 0.")
+        if self.decision_tolerance < 0.0:
+            raise ValueError("decision_tolerance must be >= 0.")
 
 
 @dataclass(frozen=True)
@@ -51,6 +70,7 @@ class BoundedArchiveConfig:
     nondominated_only: bool = True
 
     size_cap: int = 200
+    truncate_size: int | None = None
     epsilon: float = 0.01  # for epsilon_grid (objective space)
     prune_policy: PrunePolicy = "crowding"
 
@@ -58,6 +78,15 @@ class BoundedArchiveConfig:
     hv_ref_point: list[float] | None = None
     hv_samples: int = 20000  # for Monte Carlo contributions (m>2 fallback)
     rng_seed: int = 0
+
+    def __post_init__(self) -> None:
+        if self.size_cap <= 0:
+            raise ValueError("size_cap must be > 0")
+        if self.truncate_size is not None:
+            if self.truncate_size <= 0:
+                raise ValueError("truncate_size must be > 0")
+            if self.truncate_size > self.size_cap:
+                raise ValueError("truncate_size must be <= size_cap")
 
 
 @dataclass
@@ -219,6 +248,7 @@ class BoundedArchive:
     def _prune_to_cap(self) -> tuple[int, str]:
         n = self.size()
         cap = self.cfg.size_cap
+        target = self.cfg.truncate_size if self.cfg.truncate_size is not None else cap
         if n <= cap:
             return 0, "none"
 
@@ -236,7 +266,7 @@ class BoundedArchive:
             D = crowding_distance(self.F)
             # prune smallest distances
             order = np.argsort(D)  # ascending
-            kill = order[: (n - cap)]
+            kill = order[: (n - target)]
             keep = np.ones(n, dtype=bool)
             keep[kill] = False
             self.F = self.F[keep]
@@ -257,10 +287,10 @@ class BoundedArchive:
                     n = self.size()
                 contrib = hv_contrib_2d(self.F, ref=np.asarray(ref, dtype=float))
                 # prune smallest contribution
-                kill = np.argsort(contrib)[: (n - cap)]
+                kill = np.argsort(contrib)[: (n - target)]
             else:
                 # Monte Carlo approx contributions for m>2
-                kill = self._mc_hv_contrib_prune(ref, n - cap)
+                kill = self._mc_hv_contrib_prune(ref, n - target)
 
             keep = np.ones(self.size(), dtype=bool)
             keep[kill] = False
@@ -269,8 +299,36 @@ class BoundedArchive:
                 self.X = self.X[keep]
             return int(np.sum(~keep)), policy
 
+        if policy == "spea2":
+            from vamos.engine.algorithm.spea2.helpers import (
+                dominance_matrix,
+                strength_raw_fitness,
+                truncate_by_distance,
+            )
+
+            raw = strength_raw_fitness(dominance_matrix(self.F, None, "none")[0])
+            selected: list[int] = []
+            for fit in np.sort(np.unique(raw)):
+                front = np.flatnonzero(raw == fit)
+                if len(selected) + front.size <= target:
+                    selected.extend(front.tolist())
+                    continue
+                remaining = target - len(selected)
+                if remaining > 0:
+                    dist = np.linalg.norm(self.F[front][:, None, :] - self.F[front][None, :, :], axis=2)
+                    keep_local = truncate_by_distance(dist, remaining)
+                    selected.extend(front[keep_local].tolist())
+                break
+
+            keep = np.zeros(n, dtype=bool)
+            keep[np.asarray(selected, dtype=int)] = True
+            self.F = self.F[keep]
+            if self.X is not None:
+                self.X = self.X[keep]
+            return int(np.sum(~keep)), "spea2"
+
         # random fallback
-        kill = self._rng.choice(n, size=(n - cap), replace=False)
+        kill = self._rng.choice(n, size=(n - target), replace=False)
         keep = np.ones(n, dtype=bool)
         keep[kill] = False
         self.F = self.F[keep]

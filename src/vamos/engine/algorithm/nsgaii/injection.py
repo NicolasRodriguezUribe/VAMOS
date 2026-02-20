@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, cast
 
 import numpy as np
@@ -20,15 +20,9 @@ def _logger() -> logging.Logger:
 class ImmigrationStats:
     events: int = 0
     inserted: int = 0
-    replaced_indices: list[int] | None = None
-    replaced_pages: list[int] | None = None
+    replaced_indices: list[int] = field(default_factory=list)
+    replaced_pages: list[int] = field(default_factory=list)
     mating_participation: int = 0
-
-    def __post_init__(self) -> None:
-        if self.replaced_indices is None:
-            self.replaced_indices = []
-        if self.replaced_pages is None:
-            self.replaced_pages = []
 
 
 @dataclass(frozen=True)
@@ -103,10 +97,10 @@ def _coerce_candidates(raw: Any) -> list[ImmigrantCandidate]:
                 return out
         return []
     if isinstance(raw, Sequence):
-        out: list[ImmigrantCandidate] = []
+        items_out: list[ImmigrantCandidate] = []
         for item in raw:
-            out.extend(_coerce_candidates(item))
-        return out
+            items_out.extend(_coerce_candidates(item))
+        return items_out
     return []
 
 
@@ -190,8 +184,8 @@ class ImmigrationManager:
         return ImmigrationStats(
             events=int(st.events),
             inserted=int(st.inserted),
-            replaced_indices=list(st.replaced_indices or []),
-            replaced_pages=list(st.replaced_pages or []),
+            replaced_indices=list(st.replaced_indices),
+            replaced_pages=list(st.replaced_pages),
             mating_participation=int(st.mating_participation),
         )
 

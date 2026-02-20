@@ -366,7 +366,7 @@ class SPEA2:
         st.G = st.env_G
 
         # Update external archive
-        update_archive(st, st.env_X, st.env_F)
+        update_archive(st, st.env_X, st.env_F, st.env_G)
 
         # Clear pending
         st.pending_offspring = None

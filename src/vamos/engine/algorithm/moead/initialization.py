@@ -240,7 +240,7 @@ def initialize_moead_run(
 
     # Setup archive
     ext_cfg = resolve_external_archive(cfg)
-    archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, ext_cfg)
+    archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, ext_cfg, G)
 
     # Setup HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)
