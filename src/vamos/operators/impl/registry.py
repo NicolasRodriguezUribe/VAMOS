@@ -22,15 +22,20 @@ def _get_registry() -> Registry[object]:
     # Register common operators
     from vamos.operators.impl.real import (
         ArithmeticCrossover,
+        BLXAlphaBetaCrossover,
         BLXAlphaCrossover,
         CauchyMutation,
         ClampRepair,
         DEMatingCrossover,
+        FuzzyCrossover,
         GaussianMutation,
+        LaplaceCrossover,
+        LevyFlightMutation,
         LinkedPolynomialMutation,
         NonUniformMutation,
         PCXCrossover,
         PolynomialMutation,
+        PowerLawMutation,
         ReflectRepair,
         ResampleRepair,
         RoundRepair,
@@ -39,12 +44,17 @@ def _get_registry() -> Registry[object]:
         UNDXCrossover,
         UniformMutation,
         UniformResetMutation,
+        WholeArithmeticCrossover,
     )
 
     # Crossover
     reg.register("sbx", SBXCrossover)
     reg.register("blx_alpha", BLXAlphaCrossover)
+    reg.register("blx_alpha_beta", BLXAlphaBetaCrossover)
     reg.register("arithmetic", ArithmeticCrossover)
+    reg.register("whole_arithmetic", WholeArithmeticCrossover)
+    reg.register("laplace", LaplaceCrossover)
+    reg.register("fuzzy", FuzzyCrossover)
     reg.register("de", DEMatingCrossover)
     reg.register("pcx", PCXCrossover)
     reg.register("undx", UNDXCrossover)
@@ -59,6 +69,8 @@ def _get_registry() -> Registry[object]:
     reg.register("cauchy", CauchyMutation)
     reg.register("uniform", UniformMutation)
     reg.register("linked_polynomial", LinkedPolynomialMutation)
+    reg.register("levy_flight", LevyFlightMutation)
+    reg.register("power_law", PowerLawMutation)
 
     # Repair
     reg.register("clip", ClampRepair)

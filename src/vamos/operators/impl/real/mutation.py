@@ -378,13 +378,147 @@ class CauchyMutation(Mutation):
         return X
 
 
+class LevyFlightMutation(Mutation):
+    """Lévy flight mutation using Mantegna's algorithm for stable random walks.
+
+    The step size follows a Lévy stable distribution approximated by:
+
+        step = sigma_u · u / |v|^{1/beta}
+
+    where *u ~ N(0, sigma_u²)*, *v ~ N(0, 1)*, and *sigma_u* is derived
+    from the Gamma function to ensure the correct heavy-tailed behaviour.
+
+    Parameters
+    ----------
+    prob_mutation : float
+        Per-gene mutation probability.
+    beta : float
+        Stability index of the Lévy distribution (0 < beta <= 2).
+        Default 1.5.
+    scale : float
+        Scaling factor for the step relative to the variable range.
+        Default 0.01.
+    lower, upper : array-like
+        Decision variable bounds.
+
+    References
+    ----------
+    Yang, X.-S. (2010). Nature-Inspired Metaheuristic Algorithms (2nd ed.).
+    Mantegna, R.N. (1994). Fast, accurate algorithm for numerical
+    simulation of Lévy stable stochastic processes. Physical Review E 49(5).
+    """
+
+    def __init__(
+        self,
+        prob_mutation: float,
+        beta: float = 1.5,
+        scale: float = 0.01,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
+    ) -> None:
+        self.prob = float(prob_mutation)
+        self.beta = float(beta)
+        self.scale = float(scale)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.span = self.upper - self.lower
+        # Precompute sigma_u for Mantegna's algorithm
+        from math import gamma, sin, pi
+
+        num = gamma(1.0 + self.beta) * sin(pi * self.beta / 2.0)
+        den = gamma((1.0 + self.beta) / 2.0) * self.beta * 2.0 ** ((self.beta - 1.0) / 2.0)
+        self._sigma_u = (num / den) ** (1.0 / self.beta)
+
+    def __call__(self, offspring: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        X = self._as_population(offspring, name="offspring")
+        self._check_bounds_match(X, self.lower)
+        n_ind, n_var = X.shape
+        if n_ind == 0:
+            return X
+
+        mask = rng.random(X.shape) <= self.prob
+        if not np.any(mask):
+            return X
+
+        u = rng.normal(0.0, self._sigma_u, size=X.shape)
+        v = rng.normal(0.0, 1.0, size=X.shape)
+        eps = 1e-30
+        step = u / (np.abs(v) ** (1.0 / self.beta) + eps)
+        update = self.scale * step * self.span
+        X[mask] += update[mask]
+        np.clip(X, self.lower, self.upper, out=X)
+        return X
+
+
+class PowerLawMutation(Mutation):
+    """Power-law mutation with heavy-tailed perturbation magnitudes.
+
+    The perturbation magnitude is drawn from a power-law distribution:
+
+        s = u^{1 / (1 + index)}
+
+    where *u ~ U(0, 1)* and *index* controls the shape.  Higher index
+    values concentrate perturbations near zero (fine-grained search).
+
+    Parameters
+    ----------
+    prob_mutation : float
+        Per-gene mutation probability.
+    index : float
+        Power-law exponent (>= 0). Default 1.0.
+    lower, upper : array-like
+        Decision variable bounds.
+
+    References
+    ----------
+    Deep, K. & Thakur, M. (2007). A new mutation operator for real coded
+    genetic algorithms. Applied Mathematics and Computation 193, 211–230.
+    """
+
+    def __init__(
+        self,
+        prob_mutation: float,
+        index: float = 1.0,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
+    ) -> None:
+        self.prob = float(prob_mutation)
+        self.index = float(index)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.span = self.upper - self.lower
+
+    def __call__(self, offspring: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        X = self._as_population(offspring, name="offspring")
+        self._check_bounds_match(X, self.lower)
+        n_ind, n_var = X.shape
+        if n_ind == 0:
+            return X
+
+        mask = rng.random(X.shape) <= self.prob
+        if not np.any(mask):
+            return X
+
+        u = rng.random(X.shape)
+        s = np.power(u, 1.0 / (1.0 + self.index))
+        direction = np.where(rng.random(X.shape) < 0.5, -1.0, 1.0)
+        update = s * direction * self.span
+        X[mask] += update[mask]
+        np.clip(X, self.lower, self.upper, out=X)
+        return X
+
+
 __all__ = [
     "CauchyMutation",
     "GaussianMutation",
+    "LevyFlightMutation",
     "LinkedPolynomialMutation",
     "Mutation",
     "NonUniformMutation",
     "PolynomialMutation",
+    "PowerLawMutation",
     "UniformMutation",
     "UniformResetMutation",
 ]

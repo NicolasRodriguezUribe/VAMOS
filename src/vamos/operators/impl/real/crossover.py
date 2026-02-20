@@ -550,14 +550,285 @@ class SPXCrossover(Crossover):
         return offspring
 
 
+class BLXAlphaBetaCrossover(Crossover):
+    """Asymmetric blend crossover (BLX-αβ) with separate expansion on each side.
+
+    Unlike BLX-α which uses the same expansion factor on both sides,
+    BLX-αβ uses *alpha* for the lower side and *beta* for the upper side:
+
+        lower_range = min(p1, p2) - alpha * |p1 - p2|
+        upper_range = max(p1, p2) + beta  * |p1 - p2|
+
+    References
+    ----------
+    Eshelman, L.J. & Schaffer, J.D. (1993).  Real-coded genetic algorithms
+    and interval schemata.
+    """
+
+    def __init__(
+        self,
+        alpha: float = 0.75,
+        beta: float = 0.25,
+        prob_crossover: float = 0.9,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
+    ) -> None:
+        self.alpha = float(alpha)
+        self.beta = float(beta)
+        self.prob = float(prob_crossover)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.workspace = workspace
+        self.allow_inplace = bool(allow_inplace)
+
+    def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        parents_arr = self._as_matings(parents, copy=False, name="parents")
+        offspring = parents_arr if self.allow_inplace else parents_arr.copy()
+        n_pairs = offspring.shape[0]
+        if n_pairs == 0:
+            return offspring
+
+        mask = rng.random(n_pairs) <= self.prob
+        if not np.any(mask):
+            return offspring
+
+        active = offspring[mask]
+        p1 = active[:, 0, :]
+        p2 = active[:, 1, :]
+        lo = np.minimum(p1, p2)
+        hi = np.maximum(p1, p2)
+        span = hi - lo
+        lower_range = lo - self.alpha * span
+        upper_range = hi + self.beta * span
+        width = upper_range - lower_range
+        child1 = lower_range + rng.random(lower_range.shape) * width
+        child2 = lower_range + rng.random(lower_range.shape) * width
+        np.clip(child1, self.lower, self.upper, out=child1)
+        np.clip(child2, self.lower, self.upper, out=child2)
+        active[:, 0, :] = child1
+        active[:, 1, :] = child2
+        offspring[mask] = active
+        return offspring
+
+
+class LaplaceCrossover(Crossover):
+    """Laplace crossover using the Laplace distribution for offspring generation.
+
+    For each variable, a random variate *β* is drawn from a Laplace
+    distribution parameterised by location *a* and scale *b*:
+
+        β = a + b · sign(u − 0.5) · ln(1 − 2|u − 0.5|),   u ~ U(0,1)
+
+    Offspring are produced as:
+
+        child1 = p1 + β · |p1 − p2|
+        child2 = p2 + β · |p1 − p2|
+
+    References
+    ----------
+    Deep, K. & Thakur, M. (2007).  A new crossover operator for real coded
+    genetic algorithms.  Applied Mathematics and Computation 188, 895–911.
+    """
+
+    def __init__(
+        self,
+        a: float = 0.0,
+        b: float = 0.5,
+        prob_crossover: float = 0.9,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
+    ) -> None:
+        self.a = float(a)
+        self.b = float(b)
+        self.prob = float(prob_crossover)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.workspace = workspace
+        self.allow_inplace = bool(allow_inplace)
+
+    def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        parents_arr = self._as_matings(parents, copy=False, name="parents")
+        offspring = parents_arr if self.allow_inplace else parents_arr.copy()
+        n_pairs = offspring.shape[0]
+        if n_pairs == 0:
+            return offspring
+
+        mask = rng.random(n_pairs) <= self.prob
+        if not np.any(mask):
+            return offspring
+
+        active = offspring[mask]
+        p1 = active[:, 0, :]
+        p2 = active[:, 1, :]
+        diff = np.abs(p1 - p2)
+
+        # Sample Laplace variates for each gene
+        u1 = rng.random(p1.shape)
+        u2 = rng.random(p1.shape)
+        eps = 1e-30
+        beta1 = self.a + self.b * np.sign(u1 - 0.5) * np.log(np.maximum(1.0 - 2.0 * np.abs(u1 - 0.5), eps))
+        beta2 = self.a + self.b * np.sign(u2 - 0.5) * np.log(np.maximum(1.0 - 2.0 * np.abs(u2 - 0.5), eps))
+
+        child1 = p1 + beta1 * diff
+        child2 = p2 + beta2 * diff
+        np.clip(child1, self.lower, self.upper, out=child1)
+        np.clip(child2, self.lower, self.upper, out=child2)
+        active[:, 0, :] = child1
+        active[:, 1, :] = child2
+        offspring[mask] = active
+        return offspring
+
+
+class FuzzyCrossover(Crossover):
+    """Fuzzy recombination crossover using triangular fuzzy numbers.
+
+    For each variable a triangular distribution is formed with:
+
+        lo = min(p1, p2) − d · |p1 − p2|
+        hi = max(p1, p2) + d · |p1 − p2|
+        mode = 0.5 · (p1 + p2)
+
+    where *d* controls the spread beyond the parent range.
+
+    References
+    ----------
+    Voigt, H.-M., Mühlenbein, H. & Cvetković, D. (1995).  Fuzzy
+    recombination for the Breeder Genetic Algorithm.
+    """
+
+    def __init__(
+        self,
+        d: float = 0.5,
+        prob_crossover: float = 0.9,
+        *,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
+    ) -> None:
+        self.d = float(d)
+        self.prob = float(prob_crossover)
+        self.lower, self.upper = _ensure_bounds(lower, upper)
+        self.workspace = workspace
+        self.allow_inplace = bool(allow_inplace)
+
+    def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        parents_arr = self._as_matings(parents, copy=False, name="parents")
+        offspring = parents_arr if self.allow_inplace else parents_arr.copy()
+        n_pairs = offspring.shape[0]
+        if n_pairs == 0:
+            return offspring
+
+        mask = rng.random(n_pairs) <= self.prob
+        if not np.any(mask):
+            return offspring
+
+        active = offspring[mask]
+        p1 = active[:, 0, :]
+        p2 = active[:, 1, :]
+        lo_p = np.minimum(p1, p2)
+        hi_p = np.maximum(p1, p2)
+        span = hi_p - lo_p
+        tri_lo = lo_p - self.d * span
+        tri_hi = hi_p + self.d * span
+        tri_mode = 0.5 * (p1 + p2)
+
+        # Clip triangular params to problem bounds
+        np.clip(tri_lo, self.lower, self.upper, out=tri_lo)
+        np.clip(tri_hi, self.lower, self.upper, out=tri_hi)
+        np.clip(tri_mode, tri_lo, tri_hi, out=tri_mode)
+
+        # Ensure valid triangular params (lo <= mode <= hi)
+        # where lo == hi, just keep the value
+        degenerate = tri_hi - tri_lo < 1e-30
+        width = np.where(degenerate, 1.0, tri_hi - tri_lo)
+        fc = np.where(degenerate, 0.5, (tri_mode - tri_lo) / width)
+
+        # Sample from triangular distribution
+        u1 = rng.random(p1.shape)
+        u2 = rng.random(p1.shape)
+        left1 = tri_lo + np.sqrt(u1 * width * fc * width)
+        right1 = tri_hi - np.sqrt((1.0 - u1) * width * (1.0 - fc) * width)
+        child1 = np.where(u1 < fc, left1, right1)
+        child1 = np.where(degenerate, tri_mode, child1)
+
+        left2 = tri_lo + np.sqrt(u2 * width * fc * width)
+        right2 = tri_hi - np.sqrt((1.0 - u2) * width * (1.0 - fc) * width)
+        child2 = np.where(u2 < fc, left2, right2)
+        child2 = np.where(degenerate, tri_mode, child2)
+
+        np.clip(child1, self.lower, self.upper, out=child1)
+        np.clip(child2, self.lower, self.upper, out=child2)
+        active[:, 0, :] = child1
+        active[:, 1, :] = child2
+        offspring[mask] = active
+        return offspring
+
+
+class WholeArithmeticCrossover(Crossover):
+    """Whole arithmetic crossover with a fixed blending weight *alpha*.
+
+    Unlike :class:`ArithmeticCrossover` which draws a random *λ* per pair,
+    whole arithmetic crossover uses a deterministic weight for all variables:
+
+        child1 = α · p1 + (1 − α) · p2
+        child2 = (1 − α) · p1 + α · p2
+
+    References
+    ----------
+    Michalewicz, Z. (1996).  Genetic Algorithms + Data Structures =
+    Evolution Programs (3rd ed.).
+    """
+
+    def __init__(
+        self,
+        alpha: float = 0.5,
+        prob_crossover: float = 0.9,
+        *,
+        lower: ArrayLike | None = None,
+        upper: ArrayLike | None = None,
+        workspace: VariationWorkspace | None = None,
+        allow_inplace: bool = False,
+    ) -> None:
+        self.alpha = float(alpha)
+        self.prob = float(prob_crossover)
+
+    def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
+        parents_arr = self._as_matings(parents, copy=False, name="parents")
+        offspring = parents_arr.copy()
+        n_pairs = offspring.shape[0]
+        if n_pairs == 0:
+            return offspring
+
+        mask = rng.random(n_pairs) <= self.prob
+        if not np.any(mask):
+            return offspring
+
+        p1 = offspring[mask, 0, :]
+        p2 = offspring[mask, 1, :]
+        child1 = self.alpha * p1 + (1.0 - self.alpha) * p2
+        child2 = (1.0 - self.alpha) * p1 + self.alpha * p2
+        offspring[mask, 0, :] = child1
+        offspring[mask, 1, :] = child2
+        return offspring
+
+
 __all__ = [
     "ArithmeticCrossover",
+    "BLXAlphaBetaCrossover",
     "BLXAlphaCrossover",
     "Crossover",
     "DEMatingCrossover",
     "DifferentialCrossover",
+    "FuzzyCrossover",
+    "LaplaceCrossover",
     "PCXCrossover",
     "SPXCrossover",
     "SBXCrossover",
     "UNDXCrossover",
+    "WholeArithmeticCrossover",
 ]

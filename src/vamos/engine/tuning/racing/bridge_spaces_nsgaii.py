@@ -16,7 +16,7 @@ def _core_part() -> SpacePart:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Categorical("offspring_ratio", [0.25, 0.5, 0.75, 1.0]),
-        Categorical("selection", ["tournament"]),
+        Categorical("selection", ["tournament", "boltzmann", "ranking", "sus"]),
         Int("selection_pressure", 2, 10),
         Boolean("use_external_archive"),
         Boolean("archive_unbounded"),
@@ -45,11 +45,20 @@ def _core_part() -> SpacePart:
 def _real_operator_part() -> SpacePart:
     params: list[ParamType] = [
         Categorical("initializer", ["random", "lhs", "scatter"]),
-        Categorical("crossover", ["sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex"]),
+        Categorical(
+            "crossover",
+            [
+                "sbx", "blx_alpha", "blx_alpha_beta", "arithmetic", "whole_arithmetic",
+                "laplace", "fuzzy", "pcx", "undx", "simplex",
+            ],
+        ),
         Real("crossover_prob", 0.6, 1.0),
         Categorical(
             "mutation",
-            ["pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform"],
+            [
+                "pm", "linked_polynomial", "non_uniform", "gaussian",
+                "uniform_reset", "cauchy", "uniform", "levy_flight", "power_law",
+            ],
         ),
         Real("mutation_prob_factor", 0.25, 3.0),
         Real("mutation_eta", 5.0, 40.0),
@@ -67,6 +76,26 @@ def _real_operator_part() -> SpacePart:
         ),
         ConditionalBlock(
             "crossover",
+            "blx_alpha_beta",
+            [Real("blxab_alpha", 0.0, 1.0), Real("blxab_beta", 0.0, 1.0)],
+        ),
+        ConditionalBlock(
+            "crossover",
+            "whole_arithmetic",
+            [Real("wa_alpha", 0.0, 1.0)],
+        ),
+        ConditionalBlock(
+            "crossover",
+            "laplace",
+            [Real("laplace_a", -1.0, 1.0), Real("laplace_b", 0.01, 2.0)],
+        ),
+        ConditionalBlock(
+            "crossover",
+            "fuzzy",
+            [Real("fuzzy_d", 0.0, 2.0)],
+        ),
+        ConditionalBlock(
+            "crossover",
             "pcx",
             [Real("pcx_sigma_eta", 0.01, 0.5), Real("pcx_sigma_zeta", 0.01, 0.5)],
         ),
@@ -80,6 +109,16 @@ def _real_operator_part() -> SpacePart:
         ConditionalBlock("mutation", "gaussian", [Real("gaussian_sigma", 0.001, 0.5)]),
         ConditionalBlock("mutation", "cauchy", [Real("cauchy_gamma", 0.001, 0.5)]),
         ConditionalBlock("mutation", "uniform", [Real("uniform_perturb", 0.01, 0.5)]),
+        ConditionalBlock(
+            "mutation",
+            "levy_flight",
+            [Real("levy_beta", 0.5, 2.0), Real("levy_scale", 0.001, 0.1)],
+        ),
+        ConditionalBlock(
+            "mutation",
+            "power_law",
+            [Real("power_index", 0.5, 5.0)],
+        ),
         ConditionalBlock(
             "initializer",
             "scatter",
