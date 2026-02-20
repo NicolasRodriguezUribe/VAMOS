@@ -194,26 +194,26 @@ In contrast to these Python libraries, EvoX~\cite{huang2025evox} targets automat
 and \xmark~indicates absence of the feature.}
 \label{tab:framework-comparison}
 \renewcommand{\arraystretch}{1.3}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Feature} & \textbf{pymoo} & \textbf{jMetalPy} & \textbf{DEAP} & \textbf{Platypus} & \textbf{pygmo} & \textbf{VAMOS} \\
+\textbf{Feature} & \textbf{pymoo} & \textbf{jMetalPy} & \textbf{pygmo} & \textbf{VAMOS} \\
 \midrule
-Dominance-based algorithms          & \cmark & \cmark & \pmark & \cmark & \pmark & \cmark \\
-Decomposition-based algorithms      & \cmark & \pmark & \xmark & \cmark & \pmark & \cmark \\
-Indicator-based algorithms          & \pmark & \pmark & \xmark & \xmark & \xmark & \cmark \\
-Pluggable computation backends      & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
-Dense array population model        & \pmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
-Interchangeable variation operators & \pmark & \pmark & \cmark & \xmark & \xmark & \cmark \\
-Configurable steady-state mode      & \xmark & \pmark & \pmark & \xmark & \xmark & \cmark \\
-External archive support            & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
-Performance indicators              & \cmark & \pmark & \xmark & \pmark & \xmark & \cmark \\
-Parallelism                         & \pmark & \pmark & \cmark & \cmark & \cmark & \pmark \\
-\textcolor{red}{Graphical user interface}            & \textcolor{red}{\xmark} & \textcolor{red}{\xmark} & \textcolor{red}{\xmark} & \textcolor{red}{\xmark} & \textcolor{red}{\xmark} & \textcolor{red}{\cmark} \\
-Automatic algorithm selection       & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
-\textcolor{red}{Min.\ lines of code\textsuperscript{$\dagger$}} & \textcolor{red}{$\sim$10} & \textcolor{red}{$\sim$15} & \textcolor{red}{$\sim$20} & \textcolor{red}{$\sim$8} & \textcolor{red}{--} & \textcolor{red}{2} \\
-Active maintenance                  & \cmark & \pmark & \cmark & \xmark & \cmark & \cmark \\
+Dominance-based algorithms          & \cmark & \cmark & \pmark & \cmark \\
+Decomposition-based algorithms      & \cmark & \pmark & \pmark & \cmark \\
+Indicator-based algorithms          & \pmark & \pmark & \xmark & \cmark \\
+Pluggable computation backends      & \xmark & \xmark & \xmark & \cmark \\
+Dense array population model        & \pmark & \xmark & \xmark & \cmark \\
+Interchangeable variation operators & \pmark & \pmark & \xmark & \cmark \\
+Configurable steady-state mode      & \xmark & \pmark & \xmark & \cmark \\
+External archive support            & \xmark & \xmark & \xmark & \cmark \\
+Performance indicators              & \cmark & \pmark & \xmark & \cmark \\
+Parallelism                         & \pmark & \pmark & \cmark & \pmark \\
+\textcolor{red}{Graphical user interface}            & \textcolor{red}{\xmark} & \textcolor{red}{\xmark} & \textcolor{red}{\xmark} & \textcolor{red}{\cmark} \\
+Automatic algorithm selection       & \xmark & \xmark & \xmark & \cmark \\
+\textcolor{red}{Min.\ lines of code\textsuperscript{$\dagger$}} & \textcolor{red}{$\sim$10} & \textcolor{red}{$\sim$15} & \textcolor{red}{--} & \textcolor{red}{2} \\
+Active maintenance                  & \cmark & \pmark & \cmark & \cmark \\
 \bottomrule
-\multicolumn{7}{l}{\textcolor{red}{\footnotesize\textsuperscript{$\dagger$}Lines of code for a minimal NSGA-II run on a built-in benchmark.}}
+\multicolumn{5}{l}{\textcolor{red}{\footnotesize\textsuperscript{$\dagger$}Lines of code for a minimal NSGA-II run on a built-in benchmark.}}
 \end{tabular}
 \end{table*}
 
@@ -374,7 +374,7 @@ Quality & Normalized hypervolume on final non-dominated set with fixed reference
 \end{tabular}
 \end{table}
 
-Although \VAMOS{} implements nine MOEAs, our cross-framework comparison focuses on algorithms with the closest semantic matches across libraries: NSGA-II (baseline plus steady-state and archive variants), SMS-EMOA, and MOEA/D. This scope avoids confounding effects from missing implementations or materially different operator and termination semantics in specific Frameworks.
+Although \VAMOS{} implements nine MOEAs, our cross-framework comparison focuses on algorithms with the closest semantic matches across libraries: NSGA-II (baseline plus steady-state and archive variants), SMS-EMOA, and MOEA/D. This scope avoids confounding effects from missing implementations or materially different operator and termination semantics in specific frameworks. \textcolor{red}{We restrict the comparison to pymoo and jMetalPy, the two most actively maintained and feature-rich Python MOEA libraries. DEAP and Platypus are excluded from the experimental evaluation: both offer limited algorithmic configurability (e.g., no native support for steady-state mode, external archives, or SMS-EMOA), lack modern APIs for variant configuration, are significantly slower than array-oriented frameworks, and have seen reduced maintenance activity in recent years.}
 
 To ensure comparability across frameworks, we standardize the algorithmic settings of NSGA-II: population size $N=100$, SBX crossover probability $p_c=1.0$ and distribution index $\eta_c=20$, polynomial mutation distribution index $\eta_m=20$ and mutation probability $p_m=1/n$, tournament selection, and rank--crowding survival. For each framework we map these settings to the closest available implementation.
 
@@ -384,9 +384,9 @@ For MOEA/D we align population size $N=100$, weight vectors (uniform for two obj
 
 This workflow follows standard practice in comparative MOEA studies (independent runs, indicator computation, and structured reporting) and is consistent with the experimentation methodology described in jMetalPy~\cite{benitez2019jmetalpy}. Our main extension is to make the \emph{inputs} to this workflow comparable across Frameworks by enforcing semantic alignment of both problem definitions and operator probabilities.
 
-Crucially, we align \emph{semantics} (not only parameter names) and enforce consistent benchmark definitions. Two examples illustrate why this matters. First, in \textbf{pymoo} the polynomial mutation operator exposes both an individual-level probability (\texttt{prob}) and a per-variable probability (\texttt{prob\_var}); to match the standard ``$p_m=1/n$ per decision variable'' setting used by jMetalPy and DEAP, we set \texttt{prob}=1 and \texttt{prob\_var}=1/n. Second, some libraries ship benchmark problems under canonical names but with library-specific domains; for instance, Platypus' built-in ZDT base class uses $[0,1]^n$, whereas ZDT4 is defined with $x_1\in[0,1]$ and $x_{2..n}\in[-5,5]$.
+Crucially, we align \emph{semantics} (not only parameter names) and enforce consistent benchmark definitions. For example, in \textbf{pymoo} the polynomial mutation operator exposes both an individual-level probability (\texttt{prob}) and a per-variable probability (\texttt{prob\_var}); to match the standard ``$p_m=1/n$ per decision variable'' setting used by jMetalPy, we set \texttt{prob}=1 and \texttt{prob\_var}=1/n.
 
-Therefore, for Frameworks or APIs where problem definitions differ (notably DEAP and Platypus for ZDT4), we evaluate individuals using a shared reference implementation of the benchmark function and bounds (validated against pymoo) while still using each framework's NSGA-II implementation and operators. For WFG we adopt pymoo's canonical parameterization for two objectives ($k=4$, $l=20$ for $n=24$) and pass parameters explicitly when a toolkit exposes different defaults; in Platypus we wrap pymoo's WFG definitions to avoid definition drift. While full equivalence cannot be guaranteed due to framework-specific details (tie-breaking, boundary handling, duplicate elimination, etc.), these choices aim to make the comparison as fair as possible by removing confounders unrelated to algorithmic overhead and numerical kernels.
+For WFG we adopt pymoo's canonical parameterization for two objectives ($k=4$, $l=20$ for $n=24$) and pass parameters explicitly when a toolkit exposes different defaults. While full equivalence cannot be guaranteed due to framework-specific details (tie-breaking, boundary handling, duplicate elimination, etc.), these choices aim to make the comparison as fair as possible by removing confounders unrelated to algorithmic overhead and numerical kernels.
 
 As an additional validity check, we sample 64 random decision vectors per problem uniformly within the specified bounds and verify that objective values match across implementations within a numerical tolerance ($\mathrm{rtol}=10^{-6}$, $\mathrm{atol}=10^{-8}$). This guards against silent benchmark-definition drift (e.g., differing domains or parameterizations) that could invalidate hypervolume comparisons.
 
@@ -396,7 +396,7 @@ All runtimes are measured wall-clock using high-resolution timers and include al
 
 For Numba-accelerated backends, we distinguish two timing policies. \textbf{Warm} timings exclude one-time JIT compilation by performing a short warmup run in the same process before starting the timer (2{,}000 warmup evaluations; not counted in the reported time). \textbf{Cold} timings measure the first run from a fresh process and therefore include JIT compilation overhead. Unless otherwise stated, we report warm timings to reflect steady-state throughput; cold-start costs can be reproduced with the provided scripts.
 
-Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H central processing unit (CPU) (16 cores, 22 logical processors) and 32\,GB random-access memory (RAM), running Microsoft Windows 11 Home (build 26200). We used Python 3.12.3 and evaluated \VAMOS{} 0.1.0 (NumPy 2.3.5 with OpenBLAS 0.3.30; Numba 0.63.1) against pymoo 0.6.1.6, jMetalPy (local source checkout at commit \texttt{fecb85c}, accessed January 2026), DEAP 1.4.3, and Platypus (local source checkout at commit \texttt{fe7aeff}, accessed January 2026).
+Experiments were run on a workstation with an Intel(R) Core(TM) Ultra 9 185H central processing unit (CPU) (16 cores, 22 logical processors) and 32\,GB random-access memory (RAM), running Microsoft Windows 11 Home (build 26200). We used Python 3.12.3 and evaluated \VAMOS{} 0.1.0 (NumPy 2.3.5 with OpenBLAS 0.3.30; Numba 0.63.1) against pymoo 0.6.1.6 and jMetalPy (local source checkout at commit \texttt{fecb85c}, accessed January 2026).
 
 \subsection{Normalized hypervolume protocol}
 \label{sec:hv}
@@ -486,13 +486,11 @@ These supplementary runtime tables are placed in Appendix~\ref{app:variants} to 
 VAMOS & \textbf{2.62} & \textbf{3.46} & \textbf{4.03} & \textbf{3.37} \\
 pymoo & 3.22 & 3.86 & 4.56 & 3.88 \\
 jMetalPy & 11.55 & 14.91 & 43.94 & 23.47 \\
-DEAP & 14.99 & 21.42 & 43.72 & 26.71 \\
-Platypus & 20.28 & 29.01 & 50.16 & 33.15 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Fig.~\ref{fig:runtime_comparison} visualizes these relative runtimes. Each bar represents the ratio of a competitor's median family-level runtime to \VAMOS{} (Numba); the dashed line at $2^0=1$ marks parity. Platypus, DEAP, and jMetalPy are consistently $4\text{--}12\times$ slower, with the largest gaps on WFG problems where per-solution overhead is amplified by higher dimensionality ($n=24$). pymoo is the closest competitor, staying within $1.1\text{--}1.2\times$ of \VAMOS{} on ZDT and DTLZ, though the gap widens on WFG. Error bars indicate variability across per-problem medians within each family.
+Fig.~\ref{fig:runtime_comparison} visualizes these relative runtimes. Each bar represents the ratio of a competitor's median family-level runtime to \VAMOS{} (Numba); the dashed line at $2^0=1$ marks parity. jMetalPy is consistently $3\text{--}11\times$ slower, with the largest gaps on WFG problems where per-solution overhead is amplified by higher dimensionality ($n=24$). pymoo is the closest competitor, staying within $1.1\text{--}1.2\times$ of \VAMOS{} on ZDT and DTLZ, though the gap widens on WFG. Error bars indicate variability across per-problem medians within each family.
 
 \begin{figure*}[htbp]
   \centering
@@ -504,13 +502,12 @@ Fig.~\ref{fig:runtime_comparison} visualizes these relative runtimes. Each bar r
 \paragraph{Steady-state NSGA-II.}
 Some Frameworks expose a steady-state (incremental-replacement) variant of NSGA-II, typically implemented as a $(\mu+1)$ loop with one offspring per iteration and one survivor replaced.
 We benchmark this mode by aligning NSGA-II settings across frameworks and setting the offspring batch size to~1.
-In \VAMOS{}, we configure steady-state mode with \texttt{offspring\_size}=1 and \texttt{replacement\_size}=1; in pymoo we set \texttt{n\_offsprings}=1; in jMetalPy we set \texttt{offspring\_population\_size}=1; and for DEAP we implement the corresponding one-offspring loop around \texttt{selNSGA2}.
-Platypus does not provide an equivalent steady-state NSGA-II API, so we omit it from this comparison (see Appendix~\ref{app:variants}).
+In \VAMOS{}, we configure steady-state mode with \texttt{offspring\_size}=1 and \texttt{replacement\_size}=1; in pymoo we set \texttt{n\_offsprings}=1; in jMetalPy we set \texttt{offspring\_population\_size}=1.
 
 \paragraph{NSGA-II with external archive.}
 To assess the overhead of maintaining an external elite set, we also benchmark NSGA-II with an \emph{unbounded} external archive that accumulates non-dominated solutions throughout the run.
 For this variant, we compute normalized hypervolume on the archive contents (rather than the final population) to reflect the larger retained approximation set.
-In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook; for DEAP we maintain an equivalent separate unbounded archive; and in Platypus we pass an \texttt{Archive()} object (see Appendix~\ref{app:variants}).
+In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook.
 
 \textcolor{red}{\paragraph{Memory footprint.}
 To complement the runtime comparison, we measure peak resident-set-size (RSS) overhead during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} achieves a median peak memory of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). The lower memory footprint reflects the array-native representation, which stores the entire population in contiguous NumPy arrays rather than materializing individual solution objects with per-instance attribute dictionaries.}
@@ -528,11 +525,9 @@ Table~\ref{tab:frameworks_hv} summarizes normalized hypervolume for the NSGA-II 
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall\textsuperscript{*}} \\
 \midrule
-VAMOS & \textbf{0.990 (0.008)} & 0.799 (0.153) & \textbf{0.934 (0.140)} & \textbf{0.934 (0.181)} \\
+VAMOS & \textbf{0.990 (0.008)} & \textbf{0.799 (0.153)} & \textbf{0.934 (0.140)} & \textbf{0.934 (0.181)} \\
 pymoo & \textbf{0.990 (0.008)} & 0.792 (0.180) & 0.846 (0.222) & 0.914 (0.192) \\
 jMetalPy & \textbf{0.990 (0.009)} & 0.797 (0.155) & 0.846 (0.224) & 0.915 (0.192) \\
-DEAP & \textbf{0.990 (0.008)} & \textbf{0.802 (0.170)} & 0.839 (0.226) & 0.917 (0.186) \\
-Platypus & \textbf{0.990 (0.008)} & 0.786 (0.209) & 0.920 (0.139) & 0.920 (0.196) \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -555,7 +550,7 @@ Tables~\ref{tab:frameworks_hv_nsgaii_ss} and~\ref{tab:frameworks_hv_nsgaii_archi
 
 To move beyond descriptive summaries, we apply Wilcoxon signed-rank tests (paired by seed) comparing VAMOS against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). We report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{vargha2000critique} alongside each test ($\hat{A}_{12}>0.5$ favors VAMOS; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also report paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and we declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
 
-Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 21 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.3\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis across all frameworks: VAMOS is equivalent to pymoo on 14/21 problems and non-inferior on 16/21, with a median $\Delta$HV of $-0.03\%$. Similar patterns hold for jMetalPy, DEAP, and Platypus. Tables~\ref{tab:hv_robustness_summary_nsgaii} and~\ref{tab:hv_equivalence_ci_nsgaii} detail robustness and per-problem CIs. Corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
+Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 21 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.3\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: VAMOS is equivalent to pymoo on 14/21 problems and non-inferior on 16/21, with a median $\Delta$HV of $-0.03\%$. Similar patterns hold for jMetalPy. Tables~\ref{tab:hv_robustness_summary_nsgaii} and~\ref{tab:hv_equivalence_ci_nsgaii} detail robustness and per-problem CIs. Corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
 Detailed NSGA-II statistical tables are provided in Appendix~\ref{app:stats_nsgaii}.
 
 \textcolor{red}{\subsection{Extended algorithm comparisons}}
@@ -697,33 +692,33 @@ zdt6 & \textbf{2.44} & 2.51 & 5.16 \\
 \centering
 \caption{Detailed comparison of median runtime (seconds) across all frameworks. Average is computed over all 21 per-problem medians}
 \label{tab:detailed_comparison}
-\begin{tabular}{l|rrrrr}
+\begin{tabular}{l|rrr}
 \toprule
-\textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{jMetalPy} & \textbf{DEAP} & \textbf{Platypus} \\
+\textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{jMetalPy} \\
 \midrule
-dtlz1 & \textbf{2.67} & 3.21 & 11.39 & 16.91 & 19.82 \\
-dtlz2 & \textbf{3.01} & 3.38 & 12.23 & 17.62 & 25.72 \\
-dtlz3 & \textbf{3.60} & 4.44 & 16.82 & 24.92 & 31.03 \\
-dtlz4 & \textbf{3.72} & 3.84 & 15.15 & 22.67 & 29.29 \\
-dtlz5 & \textbf{3.74} & 4.03 & 14.65 & 21.78 & 30.89 \\
-dtlz6 & \textbf{3.90} & 4.52 & 15.28 & 22.82 & 30.98 \\
-dtlz7 & \textbf{3.90} & 4.22 & 16.41 & 20.99 & 30.35 \\
-wfg1 & \textbf{4.17} & 4.76 & 30.35 & 31.37 & 38.26 \\
-wfg2 & \textbf{3.90} & 4.55 & 48.26 & 46.68 & 54.91 \\
-wfg3 & \textbf{3.81} & 4.18 & 44.80 & 44.07 & 50.92 \\
-wfg4 & \textbf{3.93} & 4.42 & 24.93 & 26.17 & 33.42 \\
-wfg5 & \textbf{4.31} & 4.61 & 25.57 & 28.82 & 41.68 \\
-wfg6 & \textbf{4.40} & 4.91 & 122.00 & 125.18 & 133.25 \\
-wfg7 & \textbf{3.85} & 4.31 & 37.01 & 37.17 & 45.73 \\
-wfg8 & \textbf{4.18} & 4.68 & 86.14 & 79.09 & 83.92 \\
-wfg9 & \textbf{3.85} & 4.75 & 179.86 & 166.45 & 169.99 \\
-zdt1 & \textbf{2.63} & 2.93 & 11.54 & 14.43 & 20.77 \\
-zdt2 & \textbf{2.79} & 3.28 & 12.01 & 15.40 & 21.46 \\
-zdt3 & \textbf{2.76} & 3.08 & 11.81 & 15.54 & 21.94 \\
-zdt4 & \textbf{2.41} & 3.12 & 11.23 & 15.41 & 17.52 \\
-zdt6 & \textbf{2.44} & 3.51 & 10.39 & 14.46 & 18.20 \\
+dtlz1 & \textbf{2.67} & 3.21 & 11.39 \\
+dtlz2 & \textbf{3.01} & 3.38 & 12.23 \\
+dtlz3 & \textbf{3.60} & 4.44 & 16.82 \\
+dtlz4 & \textbf{3.72} & 3.84 & 15.15 \\
+dtlz5 & \textbf{3.74} & 4.03 & 14.65 \\
+dtlz6 & \textbf{3.90} & 4.52 & 15.28 \\
+dtlz7 & \textbf{3.90} & 4.22 & 16.41 \\
+wfg1 & \textbf{4.17} & 4.76 & 30.35 \\
+wfg2 & \textbf{3.90} & 4.55 & 48.26 \\
+wfg3 & \textbf{3.81} & 4.18 & 44.80 \\
+wfg4 & \textbf{3.93} & 4.42 & 24.93 \\
+wfg5 & \textbf{4.31} & 4.61 & 25.57 \\
+wfg6 & \textbf{4.40} & 4.91 & 122.00 \\
+wfg7 & \textbf{3.85} & 4.31 & 37.01 \\
+wfg8 & \textbf{4.18} & 4.68 & 86.14 \\
+wfg9 & \textbf{3.85} & 4.75 & 179.86 \\
+zdt1 & \textbf{2.63} & 2.93 & 11.54 \\
+zdt2 & \textbf{2.79} & 3.28 & 12.01 \\
+zdt3 & \textbf{2.76} & 3.08 & 11.81 \\
+zdt4 & \textbf{2.41} & 3.12 & 11.23 \\
+zdt6 & \textbf{2.44} & 3.51 & 10.39 \\
 \midrule
-\textbf{Average} & \textbf{3.52} & 4.03 & 36.09 & 38.47 & 45.24 \\
+\textbf{Average} & \textbf{3.52} & 4.03 & 36.09 \\
 \bottomrule
 \end{tabular}
 \end{table*}
