@@ -64,8 +64,14 @@ def _normalize_fw(fw: str) -> str:
 
 def build_hv_summary(df: pd.DataFrame) -> pd.DataFrame:
     """Build a family-level HV summary: median (IQR) per framework per family."""
-    # Keep only the primary VAMOS backend
-    vamos_rows = df[df["framework"] == VAMOS_BACKEND].copy()
+    # Keep only the primary VAMOS backend (prefer numba, fallback to moocore, then numpy)
+    vamos_backend = VAMOS_BACKEND
+    if vamos_backend not in df["framework"].values:
+        for fallback in ("VAMOS (moocore)", "VAMOS (numpy)"):
+            if fallback in df["framework"].values:
+                vamos_backend = fallback
+                break
+    vamos_rows = df[df["framework"] == vamos_backend].copy()
     vamos_rows["framework"] = "VAMOS"
     other_rows = df[~df["framework"].str.startswith("VAMOS")].copy()
     df_clean = pd.concat([vamos_rows, other_rows], ignore_index=True)

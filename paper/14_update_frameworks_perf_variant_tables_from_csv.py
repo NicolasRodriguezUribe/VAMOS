@@ -137,9 +137,14 @@ def _load_family_table(csv_path: Path) -> pd.DataFrame:
     # Average across available families.
     family["Average"] = family.mean(axis=1)
 
-    # Paper tables show only the tuned VAMOS implementation (numba) as "VAMOS".
-    if "VAMOS (numba)" in family.index:
-        family = family.rename(index={"VAMOS (numba)": "VAMOS"})
+    # Paper tables show only the tuned VAMOS implementation (prefer numba, fallback to moocore/numpy).
+    vamos_rep = None
+    for candidate in ("VAMOS (numba)", "VAMOS (moocore)", "VAMOS (numpy)"):
+        if candidate in family.index:
+            vamos_rep = candidate
+            break
+    if vamos_rep is not None:
+        family = family.rename(index={vamos_rep: "VAMOS"})
 
     # Drop other VAMOS variants.
     family = family.loc[~family.index.to_series().astype(str).str.contains(r"^VAMOS \(", regex=True)]
