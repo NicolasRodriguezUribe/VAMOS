@@ -308,7 +308,7 @@ Reference Vector Guided EA (RVEA) & Decomposition & \cite{cheng2016reference} \\
 \end{tabular}
 \end{table}
 
-All nine algorithms are built on top of the shared selection, variation, and survival components described in Sections~\ref{sec:architecture} and below, ensuring consistent operator semantics and enabling component-level substitution (e.g., replacing SBX crossover and polynomial mutation with any of the others available variation operators and using bounded and unbounded external archives) without algorithm-specific code changes. The suite spans the three major MOEA paradigms: dominance ranking (NSGA-II, NSGA-III, SPEA2, AGE-MOEA), decomposition (MOEA/D, RVEA), and indicator contribution (SMS-EMOA, IBEA), plus a particle swarm optimization algorithm (SMPSO), so that practitioners can compare paradigms under identical infrastructure and configuration conventions.
+All nine algorithms are built on top of the shared selection, variation, and survival components described in Sections~\ref{sec:architecture} and below, ensuring consistent operator semantics and enabling component-level substitution (e.g., replacing SBX crossover and polynomial mutation with any of the others available variation operators and using bounded and unbounded external archives) without algorithm-specific code changes. The suite spans the three major MOEA paradigms: dominance ranking (NSGA-II, NSGA-III, SPEA2, AGE-MOEA), decomposition (MOEA/D, RVEA), and indicator contribution (SMS-EMOA, IBEA), plus a particle swarm optimization algorithm (SMPSO), so that practitioners can compare paradigms under identical infrastructure and configuration conventions. \textcolor{red}{Table~\ref{tab:algo_overview} in Appendix~\ref{app:param_space} summarizes the configurable parameter space for each algorithm, ranging from 8 parameters (SMPSO) to 37 (NSGA-II).}
 
 %AGE-MOEA follows the adaptive geometry estimation survival scheme described in~\cite{panichella2019adaptive}: after non-dominated sorting, the first front is normalized by extreme points, a curvature-dependent $p$-norm is estimated, and survival uses geometry-aware crowding based on Minkowski distances. RVEA follows~\cite{cheng2016reference} with angle-penalized distance survival and periodic reference-vector adaptation using ideal/nadir scaling; we therefore enforce \texttt{pop\_size} to match the number of simplex-lattice reference directions induced by \texttt{n\_partitions}.
 
@@ -458,7 +458,7 @@ Fig.~\ref{fig:scaling} shows that the runtime gap between NumPy and Numba widens
   \label{fig:convergence}
 \end{figure*}
 
-\textcolor{red}{To verify that runtime speedups do not come at the expense of convergence rate, we track normalized hypervolume at 1{,}000-evaluation intervals over the full 50{,}000-evaluation budget. Fig.~\ref{fig:convergence} compares \VAMOS{} (Numba) and pymoo on two representative problems: DTLZ2 (3 objectives, 12 variables) and ZDT1 (2 objectives, 30 variables). The convergence curves are nearly indistinguishable, with overlapping interquartile ranges across all 30 seeds. Both frameworks reach the same final quality at the same evaluation counts, confirming that the performance gains observed in runtime measurements are not accompanied by degraded convergence behavior.}
+\textcolor{red}{To verify that runtime speedups do not come at the expense of convergence rate, we track normalized hypervolume at 1{,}000-evaluation intervals over the full 50{,}000-evaluation budget. Fig.~\ref{fig:convergence} compares \VAMOS{} and pymoo on two representative problems: DTLZ2 (3 objectives, 12 variables) and ZDT1 (2 objectives, 30 variables). The convergence curves are nearly indistinguishable, with overlapping interquartile ranges across all 30 seeds. Both frameworks reach the same final quality at the same evaluation counts, confirming that the performance gains observed in runtime measurements are not accompanied by degraded convergence behavior.}
 
 \textcolor{red}{\subsection{Pareto front visualization}}
 
@@ -515,7 +515,7 @@ For this variant, we compute normalized hypervolume on the archive contents (rat
 In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook; for DEAP we maintain an equivalent separate unbounded archive; and in Platypus we pass an \texttt{Archive()} object (see Appendix~\ref{app:variants}).
 
 \textcolor{red}{\paragraph{Memory footprint.}
-To complement the runtime comparison, we measure peak resident-set-size (RSS) overhead during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} (Numba) achieves a median peak memory of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). The lower memory footprint reflects the array-native representation, which stores the entire population in contiguous NumPy arrays rather than materializing individual solution objects with per-instance attribute dictionaries.}
+To complement the runtime comparison, we measure peak resident-set-size (RSS) overhead during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} achieves a median peak memory of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). The lower memory footprint reflects the array-native representation, which stores the entire population in contiguous NumPy arrays rather than materializing individual solution objects with per-instance attribute dictionaries.}
 
 \subsection{Solution quality summary}
 \label{sec:quality}
@@ -541,7 +541,7 @@ Platypus & \textbf{0.990 (0.008)} & 0.786 (0.209) & 0.920 (0.139) & 0.920 (0.196
 
 Across ZDT, all frameworks attain nearly identical normalized HV, suggesting that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks, while WFG exhibits the largest dispersion; \VAMOS{} achieves the highest median on WFG and overall. Together with the runtime results, these summaries support improved throughput without degraded final quality under the fixed-reference-front protocol.
 
-\textcolor{red}{Tables~\ref{tab:frameworks_hv_nsgaii_ss} and~\ref{tab:frameworks_hv_nsgaii_archive} extend this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, all three frameworks achieve nearly identical overall HV (0.949 for \VAMOS{} and pymoo, 0.948 for jMetalPy). For the archive variant, pymoo and jMetalPy reach near-perfect normalized HV (1.000 overall), while \VAMOS{} attains 0.944---a gap attributable to differences in how the unbounded archive interacts with the survival operator across frameworks.}
+\textcolor{red}{Tables~\ref{tab:frameworks_hv_nsgaii_ss} and~\ref{tab:frameworks_hv_nsgaii_archive} extend this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, all three frameworks achieve nearly identical overall HV. For the archive variant, pymoo and jMetalPy reach near-perfect normalized HV (1.000 overall), while \VAMOS{} attains 0.944---a gap attributable to differences in how the unbounded archive interacts with the survival operator across frameworks.}
 
 \input{frameworks_hv_nsgaii_ss.tex}
 \input{frameworks_hv_nsgaii_archive.tex}
@@ -756,11 +756,36 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_equivalence_ci_moead} pres
 \endgroup
 
 %==============================================================================
-\section{NSGA-II Parameter Space}
+\section{Algorithm Configuration Spaces}
 \label{app:param_space}
 %==============================================================================
 
-\textcolor{red}{Table~\ref{tab:parameter_space} summarizes the full parameter space considered for NSGA-II in \VAMOS{}, illustrating the depth of component-level configurability described in Section~\ref{sec:design_goals}. The default configuration used throughout the experimental evaluation (Section~\ref{sec:experiments}) corresponds to the values shown in bold.}
+\textcolor{red}{Table~\ref{tab:algo_overview} provides a compact overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces (real-valued encoding). Each row summarizes the algorithm's selection paradigm, supported encodings, number of available crossover and mutation operators, selection methods, algorithm-specific parameters, and total parameter count (including conditional parameters). The parameter counts reflect the tuning configuration spaces used by the built-in autotuner (Section~\ref{sec:design_goals}) and range from 8 (SMPSO) to 37 (NSGA-II), illustrating the breadth of component-level configurability that \VAMOS{} exposes as first-class configuration options.}
+
+\begin{table*}[htbp]
+\centering
+\caption{\textcolor{red}{Overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces (real-valued encoding). Encodings: R\,=\,real, P\,=\,permutation, B\,=\,binary, I\,=\,integer, M\,=\,mixed. The ``\#Params'' column reports the total number of configurable parameters (base + conditional) in the tuning configuration space. Acronyms: SBX (Simulated Binary Crossover), PM (Polynomial Mutation), DE (Differential Evolution), PBI (Penalty-based Boundary Intersection), SUS (Stochastic Universal Sampling).}}
+\label{tab:algo_overview}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccclc}
+\toprule
+\textbf{Algorithm} & \textbf{Paradigm} & \textbf{Encodings} & \textbf{\#Xover} & \textbf{\#Mut} & \textbf{\#Sel} & \textbf{Specific Parameters} & \textbf{\#Params} \\
+\midrule
+NSGA-II & Dominance + crowding & R, P, B, I, M & 10 & 9 & 4 & Offspring ratio, external archive (type, size, bounded) & 37 \\
+AGE-MOEA & Adaptive geometry & R, M & 6 & 7 & --- & Archive policies (crowding, HV, $\varepsilon$-grid, hybrid) & 26 \\
+RVEA & Reference vectors & R, M & 6 & 7 & --- & Partitions, $\alpha$ decay, adaptation frequency & 28 \\
+MOEA/D & Decomposition & R, P, B, I, M & 2 & 1 & --- & Aggregation (Tchebycheff, WS, PBI), $T$, $\delta$, $\eta$ & 14 \\
+IBEA & Indicator ($\varepsilon$/HV) & R, B, I, M & 1 & 1 & 1 & Indicator type, scaling factor $\kappa$ & 10 \\
+SPEA2 & Strength Pareto & R, M & 1 & 1 & 1 & Archive size, $k$-nearest neighbors & 10 \\
+NSGA-III & Reference directions & R, B, I, M & 1 & 1 & 1 & Reference directions (auto-computed) & 8 \\
+SMS-EMOA & HV contribution & R, B, I, M & 1 & 1 & 1 & Reference point (adaptive) & 8 \\
+SMPSO & Particle swarm & R & --- & 1 & --- & Inertia $\omega$, $c_1$, $c_2$, $v_{\max}$ fraction & 8 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+Table~\ref{tab:parameter_space} summarizes the full parameter space considered for NSGA-II in \VAMOS{}, illustrating the depth of component-level configurability described in Section~\ref{sec:design_goals}. The default configuration used throughout the experimental evaluation (Section~\ref{sec:experiments}) corresponds to the values shown in bold.
 
 \begin{table*}[htbp]
 \centering
