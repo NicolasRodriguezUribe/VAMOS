@@ -219,8 +219,9 @@ def setup_selection(
     ValueError
         If selection method is not supported.
     """
-    if sel_method not in ("tournament", "random"):
-        raise ValueError(f"Unsupported selection method '{sel_method}'.")
+    allowed = ("tournament", "random", "boltzmann", "ranking", "sus")
+    if sel_method not in allowed:
+        raise ValueError(f"Unsupported selection method '{sel_method}'. Must be one of {allowed}.")
     pressure = int(sel_params.get("pressure", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
     return sel_method, pressure
 

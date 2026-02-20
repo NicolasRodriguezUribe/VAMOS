@@ -21,6 +21,9 @@ class SelectionMethod(str, Enum):
 
     TOURNAMENT = "tournament"
     RANDOM = "random"
+    BOLTZMANN = "boltzmann"
+    RANKING = "ranking"
+    SUS = "sus"
 
     def __str__(self) -> str:
         return self.value

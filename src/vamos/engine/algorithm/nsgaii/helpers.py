@@ -40,6 +40,31 @@ def build_mating_pool(
 
     if selection_method == "random":
         parent_indices = rng.choice(cand, size=parent_count, replace=True)
+    elif selection_method in ("boltzmann", "ranking", "sus"):
+        # Build a composite fitness score from ranks and crowding.
+        # Lower rank is better; within the same rank, higher crowding is better.
+        cand_ranks = ranks[cand]
+        cand_crowd = crowding[cand]
+        max_rank = int(cand_ranks.max()) if cand_ranks.size else 0
+        max_crowd = float(np.nanmax(cand_crowd[np.isfinite(cand_crowd)])) if np.any(np.isfinite(cand_crowd)) else 1.0
+        # Normalise crowding to [0, 1] (inf -> 1.0)
+        norm_crowd = np.where(np.isfinite(cand_crowd), cand_crowd / (max_crowd + 1e-30), 1.0)
+        fitness = (max_rank - cand_ranks).astype(float) + norm_crowd
+
+        if selection_method == "boltzmann":
+            from vamos.engine.algorithm.components.selection import BoltzmannSelection
+            sel = BoltzmannSelection(temperature=max(float(pressure), 0.1), rng=rng)
+            parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
+        elif selection_method == "ranking":
+            from vamos.engine.algorithm.components.selection import RankingSelection
+            sp = min(max(float(pressure) / 5.0, 1.0), 2.0)  # map pressure [2..10] -> sp [1..2]
+            sel = RankingSelection(sp=sp, rng=rng)
+            parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
+        else:  # sus
+            from vamos.engine.algorithm.components.selection import SUSSelection
+            sel = SUSSelection(rng=rng)
+            parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
+        parent_indices = cand[np.asarray(parent_local, dtype=int)]
     else:
         parent_local = kernel.tournament_selection(
             ranks[cand],

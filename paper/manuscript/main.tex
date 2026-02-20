@@ -701,54 +701,60 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_equivalence_ci_moead} pres
 
 \textcolor{red}{Table~\ref{tab:parameter_space} summarizes the full parameter space considered for NSGA-II in \VAMOS{}, illustrating the depth of component-level configurability described in Section~\ref{sec:design_goals}. The default configuration used throughout the experimental evaluation (Section~\ref{sec:experiments}) corresponds to the values shown in bold.}
 
-\begin{table}[htbp]
+\begin{table*}[htbp]
 \centering
-\caption{Summary of the considered parameter space for NSGA-II. Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default NSGA-II configuration. The total number of configurable parameters is 32. Acronyms: LHS (Latin Hypercube Sampling), SUS (Stochastic Universal Sampling), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDC (Unimodal Normal Distribution Crossover).}
+\caption{\textcolor{red}{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default configuration used in Section~\ref{sec:experiments}. The total number of configurable parameters is 37. Acronyms: LHS (Latin Hypercube Sampling), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), PM (Polynomial Mutation), SUS (Stochastic Universal Sampling).}}
 \label{tab:parameter_space}
-\resizebox{\columnwidth}{!}{%
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
-\multirow{4}{*}{General} & Offspring Pop.\ Size $\in \{1, 5, 10, 20, 50, \mathbf{100}, 200, 400\}$ & -- \\
- & Algorithm Result $\in$ \{\textbf{Population}, ExternalArchive\} & -- \\
- & \textit{Archive Type} $\in$ \{CrowdingDistance, Unbounded\} & \textit{Result} = ExternalArchive \\
- & \textit{Pop.\ Size (Archive)} $\in \Intdomain{10, 200}$ & \textit{Result} = ExternalArchive \\ \midrule
-Initialization & \{\textbf{Default}, LHS, Scatter, Chaos, Grid, Opposition\} & -- \\ \midrule
-\multirow{3}{*}{Selection} & \textbf{Tournament} & \textit{Size} $\in \Intdomain{\mathbf{2}, 10}$ \\
- & Boltzmann & \textit{Temperature} $\in \Realdomain{0.1, 100.0}$ \\
- & Random, Ranking, SUS & -- \\ \midrule
-\multirow{11}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.0, 1.0}$, Repair $\in$ \{random, round, \textbf{bounds}\}} \\
- & \textbf{SBX} & \textit{Dist.\ Index} $\in \Realdomain{5.0, 400.0}$ \\
- & BLX-$\alpha$ & $\alpha \in \Realdomain{0.0, 1.0}$ \\
- & BLX-$\alpha\beta$ & $\alpha, \beta \in \Realdomain{0.0, 1.0}$ \\
- & Laplace & \textit{Scale} $\in \Realdomain{0.1, 0.5}$ \\
- & Fuzzy & $\alpha \in \Realdomain{0.0, 1.0}$ \\
- & PCX & $\zeta, \eta \in \Realdomain{0.0, 1.0}$ \\
- & UNDC & $\zeta \in \Realdomain{0.1, 1.0}, \eta \in \Realdomain{0.1, 0.5}$ \\
- & WholeArithmetic, Arithmetic & -- \\ \midrule
-\multirow{7}{*}{Mutation} & \multicolumn{2}{l}{\textit{Global:} Prob.\ Factor $\in \Realdomain{0.0, 2.0}$, Repair $\in$ \{random, round, \textbf{bounds}\}} \\
- & Uniform & \textit{Perturbation} $\in \Realdomain{0.0, 1.0}$ \\
- & NonUniform & \textit{Perturbation} $\in \Realdomain{0.0, 1.0}$ \\
- & \textbf{Polynomial} & \textit{Dist.\ Index} $\in \Realdomain{5.0, 400.0}$ \\
- & LinkedPolynomial & \textit{Dist.\ Index} $\in \Realdomain{5.0, 400.0}$ \\
- & LevyFlight & $\beta \in \Realdomain{1.0, 2.0}, \textit{Step} \in \Realdomain{0.01, 1.0}$ \\
- & PowerLaw & $\Delta \in \Realdomain{0.1, 10.0}$ \\ \bottomrule
+\multirow{8}{*}{General} & Pop.\ Size $\in \Intdomain{20, 200}$ (log-scale); default $\mathbf{100}$ & -- \\
+ & Offspring Ratio $\in \{0.25, 0.5, 0.75, \mathbf{1.0}\}$ & -- \\
+ & Selection $\in$ \{\textbf{Tournament}, \textcolor{red}{Boltzmann, Ranking, SUS}\} & Pressure $\in \Intdomain{\mathbf{2}, 10}$ \\
+ & Use External Archive $\in$ \{True, \textbf{False}\} & -- \\
+ & \textit{Archive Unbounded} $\in$ \{True, False\} & \textit{Archive} = True \\
+ & \textit{Archive Type} $\in$ \{size\_cap, hvc\_prune\} & \textit{Unbounded} = False \\
+ & \textit{Archive Size Factor} $\in \{1, 2, 5, 10\}$ & \textit{Unbounded} = False \\ \midrule
+\multirow{2}{*}{Initialization} & \{\textbf{Random}, LHS, Scatter\} & -- \\
+ & \textit{Scatter Base Size Factor} $\in \{0.1, 0.2, 0.3, 0.5, 0.75, 1.0\}$ & \textit{Init.} = Scatter \\ \midrule
+\multirow{12}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.6, 1.0}$, Repair $\in$ \{none, \textbf{clip}, reflect, random, round\}} \\
+ & \textbf{SBX} & \textit{Dist.\ Index} $\in \Realdomain{5.0, 40.0}$ \\
+ & BLX-$\alpha$ & $\alpha \in \Realdomain{0.0, 1.0}$, \textit{Repair} $\in$ \{clip, random, reflect, round\} \\
+ & \textcolor{red}{BLX-$\alpha\beta$} & \textcolor{red}{$\alpha \in \Realdomain{0.0, 1.0}$, $\beta \in \Realdomain{0.0, 1.0}$} \\
+ & Arithmetic & -- \\
+ & \textcolor{red}{WholeArithmetic} & \textcolor{red}{$\alpha \in \Realdomain{0.0, 1.0}$} \\
+ & \textcolor{red}{Laplace} & \textcolor{red}{$a \in \Realdomain{-1.0, 1.0}$, $b \in \Realdomain{0.01, 2.0}$} \\
+ & \textcolor{red}{Fuzzy} & \textcolor{red}{$d \in \Realdomain{0.0, 2.0}$} \\
+ & PCX & $\sigma_\eta \in \Realdomain{0.01, 0.5}$, $\sigma_\zeta \in \Realdomain{0.01, 0.5}$ \\
+ & UNDX & $\zeta \in \Realdomain{0.1, 1.0}$, $\eta \in \Realdomain{0.1, 1.0}$ \\
+ & Simplex & $\epsilon \in \Realdomain{0.1, 1.0}$ \\ \midrule
+\multirow{10}{*}{Mutation} & \multicolumn{2}{l}{\textit{Global:} Prob.\ Factor $\in \Realdomain{0.25, 3.0}$ ($p_m = \text{factor}/n$), Dist.\ Index $\in \Realdomain{5.0, 40.0}$} \\
+ & \textbf{PM} & (uses global dist.\ index) \\
+ & LinkedPolynomial & (uses global dist.\ index) \\
+ & NonUniform & \textit{Perturbation} $\in \Realdomain{0.05, 0.5}$ \\
+ & Gaussian & $\sigma \in \Realdomain{0.001, 0.5}$ \\
+ & Cauchy & $\gamma \in \Realdomain{0.001, 0.5}$ \\
+ & Uniform & \textit{Perturbation} $\in \Realdomain{0.01, 0.5}$ \\
+ & UniformReset & -- \\
+ & \textcolor{red}{L\'evyFlight} & \textcolor{red}{$\beta \in \Realdomain{0.5, 2.0}$, \textit{Scale} $\in \Realdomain{0.001, 0.1}$} \\
+ & \textcolor{red}{PowerLaw} & \textcolor{red}{\textit{Index} $\in \Realdomain{0.5, 5.0}$} \\ \bottomrule
 \end{tabular}%
 }
-\end{table}
+\end{table*}
 
 %==============================================================================
 \section{Code Examples}
 \label{app:code}
 %==============================================================================
 
-\begin{lstlisting}[caption={Minimal NSGA-II run on ZDT1 in \VAMOS{}.},label={lst:quickstart}]
+\begin{lstlisting}[float=*,caption={Minimal NSGA-II run on ZDT1 in \VAMOS{}.},label={lst:quickstart}]
 from vamos import optimize
 result = optimize("zdt1", algorithm="nsgaii",
                   max_evaluations=50000, seed=42)
 \end{lstlisting}
 
-\begin{lstlisting}[caption={Builder API for fine-grained configuration.},label={lst:builder}]
+\begin{lstlisting}[float=*,caption={Builder API for fine-grained configuration.},label={lst:builder}]
 from vamos import optimize
 from vamos.algorithms import NSGAIIConfig
 cfg = (NSGAIIConfig.builder()
@@ -761,7 +767,7 @@ result = optimize("zdt1", algorithm="nsgaii",
                   max_evaluations=50000, seed=42)
 \end{lstlisting}
 
-\begin{lstlisting}[caption={Defining and optimizing a custom problem.},label={lst:make_problem}]
+\begin{lstlisting}[float=*,caption={Defining and optimizing a custom problem.},label={lst:make_problem}]
 from vamos import make_problem, optimize
 problem = make_problem(
     lambda x: [x[0]**2 + x[1]**2,
@@ -771,9 +777,9 @@ result = optimize(problem, algorithm="nsgaii",
                   max_evaluations=50000, seed=42)
 \end{lstlisting}
 
-\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 32-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
+\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 28-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
 
-\begin{lstlisting}[caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1.}},label={lst:optuna_tune}]
+\begin{lstlisting}[float=*,caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1.}},label={lst:optuna_tune}]
 import numpy as np
 from vamos import optimize
 from vamos.engine.tuning import (
@@ -781,7 +787,7 @@ from vamos.engine.tuning import (
     build_nsgaii_config_space, config_from_assignment,
 )
 
-# Build the 32-parameter NSGA-II config space
+# Build the 28-parameter NSGA-II config space
 space = build_nsgaii_config_space()
 
 # Evaluation function: returns hypervolume

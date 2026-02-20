@@ -53,4 +53,142 @@ class RandomSelection:
         return self.rng.integers(0, pop_size, size=n_parents)
 
 
-__all__ = ["TournamentSelection", "RandomSelection"]
+class BoltzmannSelection:
+    """Boltzmann (softmax) selection converting fitness to probabilities.
+
+    Probability of selecting individual *i* is:
+
+        p_i = exp(fitness_i / T) / Σ exp(fitness_j / T)
+
+    where *T* is the temperature.  Higher *T* flattens probabilities
+    (more exploration); lower *T* concentrates on the best (exploitation).
+
+    The *fitness* array must be provided at call time and should be oriented
+    so that *higher is better* (e.g. negative rank).
+    """
+
+    def __init__(
+        self,
+        temperature: float = 1.0,
+        rng: np.random.Generator | None = None,
+    ) -> None:
+        if temperature <= 0:
+            raise ValueError("temperature must be positive.")
+        self.temperature = float(temperature)
+        self.rng = rng or np.random.default_rng()
+
+    def __call__(
+        self,
+        population: Sequence[object],
+        n_parents: int,
+        *,
+        fitness: np.ndarray | None = None,
+    ) -> np.ndarray:
+        pop_size = len(population)
+        if pop_size == 0:
+            raise ValueError("population is empty.")
+        if fitness is None:
+            raise ValueError("BoltzmannSelection requires a fitness array.")
+        f = np.asarray(fitness, dtype=float)
+        # Numerically stable softmax
+        f_shifted = f - f.max()
+        exp_f = np.exp(f_shifted / self.temperature)
+        probs = exp_f / exp_f.sum()
+        return self.rng.choice(pop_size, size=n_parents, replace=True, p=probs)
+
+
+class RankingSelection:
+    """Linear ranking selection assigning probabilities by rank order.
+
+    Individuals are sorted by fitness (higher is better) and assigned
+    linearly interpolated selection probabilities controlled by *sp*
+    (selective pressure, 1.0 – 2.0):
+
+        p_i = (2 − sp + 2·(sp − 1)·(N − rank_i − 1) / (N − 1)) / N
+
+    where *rank_i = 0* is the worst and *rank_i = N − 1* is the best.
+    """
+
+    def __init__(
+        self,
+        sp: float = 1.5,
+        rng: np.random.Generator | None = None,
+    ) -> None:
+        if not 1.0 <= sp <= 2.0:
+            raise ValueError("Selective pressure sp must be in [1.0, 2.0].")
+        self.sp = float(sp)
+        self.rng = rng or np.random.default_rng()
+
+    def __call__(
+        self,
+        population: Sequence[object],
+        n_parents: int,
+        *,
+        fitness: np.ndarray | None = None,
+    ) -> np.ndarray:
+        pop_size = len(population)
+        if pop_size == 0:
+            raise ValueError("population is empty.")
+        if fitness is None:
+            raise ValueError("RankingSelection requires a fitness array.")
+        f = np.asarray(fitness, dtype=float)
+        # rank_order[i] = rank of individual i (0 = worst, N-1 = best)
+        rank_order = np.argsort(np.argsort(f))
+        if pop_size == 1:
+            probs = np.array([1.0])
+        else:
+            probs = (2.0 - self.sp + 2.0 * (self.sp - 1.0) * rank_order / (pop_size - 1)) / pop_size
+        probs = np.maximum(probs, 0.0)
+        probs /= probs.sum()
+        return self.rng.choice(pop_size, size=n_parents, replace=True, p=probs)
+
+
+class SUSSelection:
+    """Stochastic Universal Sampling (SUS) with evenly spaced pointers.
+
+    SUS is a low-variance alternative to roulette-wheel selection.
+    A single random offset determines *n_parents* evenly spaced pointers
+    along the cumulative fitness distribution, guaranteeing each
+    individual is selected approximately proportionally to its fitness.
+
+    The *fitness* array must be provided at call time (higher is better).
+    """
+
+    def __init__(self, rng: np.random.Generator | None = None) -> None:
+        self.rng = rng or np.random.default_rng()
+
+    def __call__(
+        self,
+        population: Sequence[object],
+        n_parents: int,
+        *,
+        fitness: np.ndarray | None = None,
+    ) -> np.ndarray:
+        pop_size = len(population)
+        if pop_size == 0:
+            raise ValueError("population is empty.")
+        if fitness is None:
+            raise ValueError("SUSSelection requires a fitness array.")
+        f = np.asarray(fitness, dtype=float)
+        # Shift so all values are positive
+        f_shifted = f - f.min()
+        total = f_shifted.sum()
+        if total <= 0:
+            # All equal fitness — uniform random
+            return self.rng.choice(pop_size, size=n_parents, replace=True)
+        cumsum = np.cumsum(f_shifted)
+        step = total / n_parents
+        start = self.rng.random() * step
+        pointers = start + step * np.arange(n_parents)
+        selected = np.searchsorted(cumsum, pointers, side="left")
+        np.clip(selected, 0, pop_size - 1, out=selected)
+        return selected
+
+
+__all__ = [
+    "BoltzmannSelection",
+    "RandomSelection",
+    "RankingSelection",
+    "SUSSelection",
+    "TournamentSelection",
+]
