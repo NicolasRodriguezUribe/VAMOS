@@ -100,6 +100,15 @@ def compute_hv(F, problem_name: str) -> float:
         return 0.0
 
     ref = _reference_point(problem_name)
+    # Align dimensions if the reference front and data use a different
+    # number of objectives (e.g. 2-D reference for a 3-D constrained
+    # DTLZ problem). Project to the shared leading dimensions so that
+    # hypervolume remains well-defined.
+    if ref.shape[0] != front.shape[1]:
+        dim = min(ref.shape[0], front.shape[1])
+        front = front[:, :dim]
+        ref = ref[:dim]
+
     front = front[np.all(front <= ref, axis=1)]
     if front.size == 0:
         return 0.0
@@ -126,6 +135,14 @@ def compute_igd_plus(F, problem_name: str) -> float:
         return float("inf")
 
     ref_front = _load_reference_front(problem_name)
+
+    # Align dimensions between approximation front and reference front
+    # (e.g. 3-D approximation vs 2-D stored reference for constrained
+    # problems). Project both to their shared leading dimensions.
+    if front.shape[1] != ref_front.shape[1]:
+        dim = min(front.shape[1], ref_front.shape[1])
+        front = front[:, :dim]
+        ref_front = ref_front[:, :dim]
 
     try:
         import moocore
