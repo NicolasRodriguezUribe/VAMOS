@@ -539,7 +539,7 @@ Platypus & \textbf{0.990 (0.008)} & 0.786 (0.209) & 0.920 (0.139) & 0.920 (0.196
 
 Across ZDT, all frameworks attain nearly identical normalized HV, suggesting that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks, while WFG exhibits the largest dispersion; \VAMOS{} achieves the highest median on WFG and overall. Together with the runtime results, these summaries support improved throughput without degraded final quality under the fixed-reference-front protocol.
 
-\textcolor{red}{Tables~\ref{tab:frameworks_hv_nsgaii_ss} and~\ref{tab:frameworks_hv_nsgaii_archive} extend this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, all three frameworks achieve nearly identical overall HV. For the archive variant, pymoo and jMetalPy reach near-perfect normalized HV (1.000 overall), while \VAMOS{} attains 0.944---a gap attributable to differences in how the unbounded archive interacts with the survival operator across frameworks.}
+Tables~\ref{tab:frameworks_hv_nsgaii_ss} and~\ref{tab:frameworks_hv_nsgaii_archive} extend this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, all three frameworks achieve nearly identical overall HV. For the archive variant, all three frameworks reach comparable normalized HV across ZDT and DTLZ families (1.000), confirming that the unbounded archive accumulates equivalent approximation sets regardless of the framework.
 
 \input{frameworks_hv_nsgaii_ss.tex}
 \input{frameworks_hv_nsgaii_archive.tex}
