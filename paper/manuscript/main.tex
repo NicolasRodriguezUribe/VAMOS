@@ -413,6 +413,8 @@ Because HV is scale-dependent and sensitive to the choice of $r$, naive implemen
 \end{enumerate}
 For WFG problems, the reference front is necessarily an approximation; we use large Pareto-set samples and non-dominated filtering, and we increase density for particularly sensitive cases (e.g., WFG2) to avoid underestimating $\HV(P_{\text{ref}}, r)$ and obtaining normalized HV slightly above~1.
 
+\textcolor{red}{As a complementary quality indicator, we also report the Inverted Generational Distance Plus (IGD+)~\cite{ishibuchi2015igd}, which measures the average minimum distance from each reference-front point to the closest solution in the approximation set (lower is better). Unlike HV, IGD+ captures both proximity and diversity with respect to the entire reference front. We report IGD+ summaries alongside normalized HV in Section~\ref{sec:quality}.}
+
 \subsection{\VAMOS{} backend comparison}
 
 Table~\ref{tab:backends} reports median runtime for \VAMOS{} backends aggregated by problem family.
@@ -446,6 +448,28 @@ To quantify how the array-native architecture scales, we measure wall-clock runt
 \end{figure*}
 
 Fig.~\ref{fig:scaling} shows that the runtime gap between NumPy and Numba widens substantially as the population grows. At $N=50$ the two backends perform similarly (and NumPy is even marginally faster on ZDT4), but by $N=800$ the NumPy backend requires 30\,s on all three problems while Numba stays below 12\,s---a $3\text{--}5\times$ speedup. The effect is consistent across problem families despite their different dimensionalities ($n_{\text{var}}=10$, 12, and 24 for ZDT4, DTLZ2, and WFG2 respectively). Crucially, the Numba curve remains nearly flat across population sizes, confirming that the JIT-compiled kernels scale sub-linearly with array size in the per-evaluation cost, whereas NumPy's interpreted dispatch overhead accumulates with each generation cycle. These results reinforce the practical relevance of the vectorized design for large-scale benchmarking studies that require large populations or many independent seeds under a fixed compute budget.
+
+\textcolor{red}{\subsection{Convergence analysis}}
+
+\begin{figure*}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{figures/convergence.png}
+  \caption{\textcolor{red}{Convergence of normalized hypervolume over 50{,}000 evaluations for \VAMOS{} (Numba) and pymoo on DTLZ2 (3 objectives, 12 variables) and ZDT1 (2 objectives, 30 variables). Solid/dashed lines show median HV across 30 seeds; shaded regions indicate the interquartile range. Both frameworks follow nearly identical convergence trajectories, confirming that the semantic alignment protocol produces equivalent algorithmic behavior.}}
+  \label{fig:convergence}
+\end{figure*}
+
+\textcolor{red}{To verify that runtime speedups do not come at the expense of convergence rate, we track normalized hypervolume at 1{,}000-evaluation intervals over the full 50{,}000-evaluation budget. Fig.~\ref{fig:convergence} compares \VAMOS{} (Numba) and pymoo on two representative problems: DTLZ2 (3 objectives, 12 variables) and ZDT1 (2 objectives, 30 variables). The convergence curves are nearly indistinguishable, with overlapping interquartile ranges across all 30 seeds. Both frameworks reach the same final quality at the same evaluation counts, confirming that the performance gains observed in runtime measurements are not accompanied by degraded convergence behavior.}
+
+\textcolor{red}{\subsection{Pareto front visualization}}
+
+\begin{figure*}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{figures/pareto_fronts.png}
+  \caption{\textcolor{red}{Final non-dominated sets from \VAMOS{}, pymoo, and jMetalPy on ZDT1 (left, 2-objective) and DTLZ2 (right, 3-objective), overlaid with the reference Pareto front. All three frameworks produce well-distributed approximation sets that closely track the reference front, confirming solution-quality equivalence under the fixed-reference-front protocol.}}
+  \label{fig:pareto_fronts}
+\end{figure*}
+
+\textcolor{red}{Fig.~\ref{fig:pareto_fronts} provides a visual comparison of the final non-dominated sets produced by \VAMOS{}, pymoo, and jMetalPy on ZDT1 (2D Pareto front) and DTLZ2 (3D Pareto front). In both cases, the solutions from all three frameworks overlap closely with the reference front and with each other, providing qualitative confirmation of the quantitative equivalence reported in the hypervolume and IGD+ summaries. The 3D DTLZ2 plot illustrates that \VAMOS{}'s approximation set covers the spherical Pareto surface with comparable uniformity to the established frameworks.}
 
 \subsection{Cross-framework comparison}
 
@@ -490,7 +514,11 @@ To assess the overhead of maintaining an external elite set, we also benchmark N
 For this variant, we compute normalized hypervolume on the archive contents (rather than the final population) to reflect the larger retained approximation set.
 In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook; for DEAP we maintain an equivalent separate unbounded archive; and in Platypus we pass an \texttt{Archive()} object (see Appendix~\ref{app:variants}).
 
+\textcolor{red}{\paragraph{Memory footprint.}
+To complement the runtime comparison, we measure peak resident-set-size (RSS) overhead during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} (Numba) achieves a median peak memory of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). The lower memory footprint reflects the array-native representation, which stores the entire population in contiguous NumPy arrays rather than materializing individual solution objects with per-instance attribute dictionaries.}
+
 \subsection{Solution quality summary}
+\label{sec:quality}
 
 Table~\ref{tab:frameworks_hv} summarizes normalized hypervolume for the NSGA-II baseline across frameworks, aggregated by benchmark family. We report per-problem medians across seeds, and summarize these per-problem medians using median and interquartile range (IQR) within each family, yielding a descriptive view of solution quality under the fixed normalization protocol (Section~\ref{sec:hv}).
 
@@ -513,6 +541,17 @@ Platypus & \textbf{0.990 (0.008)} & 0.786 (0.209) & 0.920 (0.139) & 0.920 (0.196
 
 Across ZDT, all frameworks attain nearly identical normalized HV, suggesting that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks, while WFG exhibits the largest dispersion; \VAMOS{} achieves the highest median on WFG and overall. Together with the runtime results, these summaries support improved throughput without degraded final quality under the fixed-reference-front protocol.
 
+\textcolor{red}{Tables~\ref{tab:frameworks_hv_nsgaii_ss} and~\ref{tab:frameworks_hv_nsgaii_archive} extend this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, all three frameworks achieve nearly identical overall HV (0.949 for \VAMOS{} and pymoo, 0.948 for jMetalPy). For the archive variant, pymoo and jMetalPy reach near-perfect normalized HV (1.000 overall), while \VAMOS{} attains 0.944---a gap attributable to differences in how the unbounded archive interacts with the survival operator across frameworks.}
+
+\input{frameworks_hv_nsgaii_ss.tex}
+\input{frameworks_hv_nsgaii_archive.tex}
+
+\textcolor{red}{As a complementary quality indicator, Tables~\ref{tab:frameworks_igd_nsgaii}--\ref{tab:frameworks_igd_moead} report IGD+ summaries across frameworks for NSGA-II, SMS-EMOA, and MOEA/D. For NSGA-II, IGD+ values are tightly clustered across frameworks (overall median 0.0108 for \VAMOS{} and pymoo, 0.0105 for jMetalPy), mirroring the HV equivalence. SMS-EMOA achieves the lowest IGD+ overall (0.0078 for all three frameworks), reflecting the steady-state indicator-based selection's effectiveness at maintaining proximity and diversity. For MOEA/D, \VAMOS{} (0.0102) and jMetalPy (0.0102) outperform pymoo (0.0160), consistent with the known difficulty of MOEA/D under certain weight-vector configurations.}
+
+\input{frameworks_igd_nsgaii.tex}
+\input{frameworks_igd_smsemoa.tex}
+\input{frameworks_igd_moead.tex}
+
 \subsection{Statistical analysis}
 \label{sec:stats}
 
@@ -520,6 +559,22 @@ To move beyond descriptive summaries, we apply Wilcoxon signed-rank tests (paire
 
 Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 21 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.3\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis across all frameworks: VAMOS is equivalent to pymoo on 14/21 problems and non-inferior on 16/21, with a median $\Delta$HV of $-0.03\%$. Similar patterns hold for jMetalPy, DEAP, and Platypus. Tables~\ref{tab:hv_robustness_summary_nsgaii} and~\ref{tab:hv_equivalence_ci_nsgaii} detail robustness and per-problem CIs. Corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
 Detailed NSGA-II statistical tables are provided in Appendix~\ref{app:stats_nsgaii}.
+
+\textcolor{red}{\subsection{Extended algorithm comparisons}}
+
+\textcolor{red}{To assess the generality of \VAMOS{} beyond the core NSGA-II/SMS-EMOA/MOEA/D comparison, we conduct preliminary evaluations on additional algorithms and problem classes. These comparisons are necessarily less comprehensive (fewer frameworks per algorithm, smaller problem sets) but provide evidence that \VAMOS{}'s design extends to a broader algorithmic scope.}
+
+\textcolor{red}{\paragraph{NSGA-III.}
+We compare \VAMOS{} and pymoo on NSGA-III across 12 problems (ZDT1--4, ZDT6, DTLZ1--7) using 50{,}000 evaluations and 30 seeds. \VAMOS{} achieves a substantially higher median normalized HV (0.876 vs.\ 0.785 for pymoo). The gap is most pronounced on DTLZ3 (0.842 vs.\ 0.000, where pymoo fails to converge), DTLZ5 (0.907 vs.\ 0.785), and DTLZ6 (0.471 vs.\ 0.238). Both frameworks use structured reference directions, but the number of retained solutions differs (91 for \VAMOS{} vs.\ 7--91 for pymoo on two-objective problems, reflecting different reference-direction generation strategies). Runtime is not directly comparable, as pymoo's NSGA-III implementation uses a different internal architecture; however, the quality advantage suggests that \VAMOS{}'s reference-direction handling and survival operator produce more effective population distributions under the fixed evaluation budget.}
+
+\textcolor{red}{\paragraph{SPEA2.}
+We compare \VAMOS{} and jMetalPy on SPEA2 across 11 problems (ZDT and DTLZ families). Solution quality is comparable (median HV 0.966 for \VAMOS{} vs.\ 0.967 for jMetalPy). However, \VAMOS{} is slower on this algorithm (median 46.7\,s vs.\ 14.6\,s). This reversal reflects the nature of SPEA2's steady-state loop: with one offspring per iteration, the algorithm performs 50{,}000 selection--variation--survival cycles, and the overhead of dispatching array operations for single-individual batches outweighs the benefit of vectorization. This limitation is consistent with the pattern observed for steady-state variants in Section~\ref{sec:experiments} and motivates future work on adaptive batch sizing.}
+
+\textcolor{red}{\paragraph{Constrained problems.}
+We evaluate constrained multi-objective optimization on five problems---C1-DTLZ1, C2-DTLZ2, MW1, MW3, and MW6~\cite{ma2019mw}---comparing \VAMOS{} against pymoo using NSGA-II with 60{,}000 evaluations and 30 seeds. \VAMOS{} finds feasible solutions on all runs across all problems, whereas pymoo returns zero feasible solutions on 28 out of 30 seeds for C1-DTLZ1. On MW1, \VAMOS{} achieves substantially higher median HV (0.993 vs.\ 0.910), while C2-DTLZ2 and MW3 show similar performance. These results suggest that \VAMOS{}'s feasibility-rule constraint handling is effective at maintaining feasible populations on problems where alternative constraint-handling approaches may struggle.}
+
+\textcolor{red}{\paragraph{Three-objective WFG.}
+As a preliminary many-objective evaluation, we compare \VAMOS{} and pymoo on three representative WFG problems (WFG1, WFG4, WFG9) scaled to three objectives with 50{,}000 evaluations and 30 seeds. pymoo achieves slightly higher median HV (0.781 vs.\ 0.740), indicating room for improvement in \VAMOS{}'s handling of higher-dimensional objective spaces. This comparison validates that \VAMOS{} supports many-objective problems; a broader evaluation with additional problems and objectives is left to future work.}
 
 \subsection{Discussion}
 
@@ -539,6 +594,12 @@ We also note that both \VAMOS{} and pymoo obtain zero normalized hypervolume on 
 
 A related observation concerns SMS-EMOA on DTLZ4 (Appendix~\ref{app:stats}): \VAMOS{} attains a median normalized HV of 0.898 versus 0.671 for pymoo, yet the Wilcoxon test reports $p=1.0$ after Holm correction. This reflects very high variance across seeds due to the deceptive density bias in DTLZ4, which causes many seeds to converge to a narrow region of the front. The high IQR makes the paired differences too noisy for the test to reject the null hypothesis despite the large median gap.
 
+\textcolor{red}{The convergence analysis (Fig.~\ref{fig:convergence}) and Pareto front visualization (Fig.~\ref{fig:pareto_fronts}) reinforce the solution-quality equivalence: \VAMOS{} and pymoo follow nearly identical convergence trajectories on both ZDT1 and DTLZ2, and the final non-dominated sets from all three frameworks overlap closely with the reference fronts. These visual confirmations complement the statistical analyses and provide intuitive evidence that the runtime speedups do not degrade convergence behavior.}
+
+\textcolor{red}{The memory footprint measurements further illustrate the practical advantages of the array-native design: \VAMOS{} uses $3\times$ less peak memory than pymoo and $1.8\times$ less than jMetalPy on the same problems. For large-scale studies involving many concurrent runs or high-dimensional problems, this reduced memory overhead can be a meaningful practical benefit.}
+
+\textcolor{red}{The extended algorithm comparisons reveal both strengths and limitations of the array-native approach. The NSGA-III results (median HV 0.876 vs.\ 0.785 for pymoo) are encouraging but not directly attributable to the array architecture alone---differences in reference-direction generation and survival-operator details likely contribute. The SPEA2 comparison confirms a known limitation: for steady-state algorithms that process one individual at a time, \VAMOS{}'s array-dispatch overhead outweighs vectorization benefits, resulting in slower execution than jMetalPy's lightweight per-individual loop. The constrained-problem results demonstrate that \VAMOS{}'s feasibility-rule constraint handling is effective, with \VAMOS{} finding feasible solutions on all 150 runs where pymoo fails on 28/30 seeds for C1-DTLZ1. The three-objective WFG comparison validates many-objective support but shows room for improvement (median HV 0.740 vs.\ 0.781 for pymoo), motivating the many-objective benchmarking extension listed in future work.}
+
 \subsection{Threats to validity}
 
 Despite careful alignment of dimensions, budgets, problem definitions, and operator settings, cross-framework comparisons remain subject to several threats: (i) operator implementations may differ in subtle details (e.g., boundary handling, duplicate elimination, tie-breaking in survival), (ii) random number generation and seeding semantics vary across libraries, and (iii) library-specific overheads (data conversion, object materialization) may affect measured runtime. We mitigate major sources of unfairness by enforcing consistent benchmark bounds (e.g., ZDT4) and matching operator semantics where APIs differ (e.g., mutation probability in pymoo).
@@ -552,7 +613,7 @@ For hypervolume, reference fronts for problems without closed-form Pareto fronts
 \label{sec:conclusions}
 %==============================================================================
 
-We presented \VAMOS{}, a high-performance Python framework for multi-objective optimization studies that addresses three practical gaps in existing Frameworks: (i)~a vectorized core with pluggable compute kernels that reduces inner-loop overhead; (ii)~rich component-level configurability---including interchangeable variation operators, configurable offspring batch size for steady-state variants, optional bounded or unbounded external archives, multiple constraint-handling modes---that enables researchers to explore algorithmic design choices without custom code; and (iii)~an accessible API and graphical interface that lowers the entry barrier for domain experts with basic Python skills, requiring as few as two lines of code for a complete optimization run. We also release a reproducible cross-framework benchmarking pipeline with semantic alignment and fixed reference Pareto fronts for normalized hypervolume reporting. Under this protocol, \VAMOS{} achieves competitive normalized hypervolume (Table~\ref{tab:frameworks_hv}) while substantially reducing runtime (Tables~\ref{tab:frameworks_perf}--\ref{tab:frameworks_perf_moead}).
+We presented \VAMOS{}, a high-performance Python framework for multi-objective optimization studies that addresses three practical gaps in existing Frameworks: (i)~a vectorized core with pluggable compute kernels that reduces inner-loop overhead; (ii)~rich component-level configurability---including interchangeable variation operators, configurable offspring batch size for steady-state variants, optional bounded or unbounded external archives, multiple constraint-handling modes---that enables researchers to explore algorithmic design choices without custom code; and (iii)~an accessible API and graphical interface that lowers the entry barrier for domain experts with basic Python skills, requiring as few as two lines of code for a complete optimization run. We also release a reproducible cross-framework benchmarking pipeline with semantic alignment and fixed reference Pareto fronts for normalized hypervolume reporting. Under this protocol, \VAMOS{} achieves competitive normalized hypervolume (Table~\ref{tab:frameworks_hv}) while substantially reducing runtime (Tables~\ref{tab:frameworks_perf}--\ref{tab:frameworks_perf_moead}). \textcolor{red}{Convergence analysis (Fig.~\ref{fig:convergence}) and Pareto front visualization (Fig.~\ref{fig:pareto_fronts}) confirm that these speedups do not degrade convergence behavior or solution quality. The framework achieves $3\times$ lower peak memory than pymoo, and extended evaluations on NSGA-III, SPEA2, constrained problems (C-DTLZ, MW), and three-objective WFG demonstrate broad algorithmic coverage---with \VAMOS{} finding feasible solutions where alternative approaches fail and delivering competitive or superior solution quality across problem classes.}
 
 \subsection{Future work}
 \begin{itemize}
