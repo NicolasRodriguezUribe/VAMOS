@@ -76,6 +76,7 @@ OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
         ],
         "mutation": [
             ("bitflip", {"prob": "1/n"}),
+            ("segment_inversion", {"prob": 0.1}),
         ],
     },
     "integer": {
@@ -86,6 +87,9 @@ OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
         "mutation": [
             ("reset", {"prob": "1/n"}),
             ("creep", {"prob": 0.1}),
+            ("pm", {"prob": "1/n", "eta": 20.0}),
+            ("gaussian", {"prob": 0.1, "sigma": 1.0}),
+            ("boundary", {"prob": 0.1}),
         ],
     },
     "permutation": {
@@ -95,6 +99,7 @@ OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
             ("edge", {"prob": 0.9}),
             ("cycle", {"prob": 0.9}),
             ("position", {"prob": 0.9}),
+            ("aex", {"prob": 0.9}),
         ],
         "mutation": [
             ("swap", {"prob": 0.1}),
@@ -102,6 +107,7 @@ OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
             ("scramble", {"prob": 0.1}),
             ("insert", {"prob": 0.1}),
             ("displacement", {"prob": 0.1}),
+            ("two_opt", {"prob": 0.1}),
         ],
     },
     "mixed": {

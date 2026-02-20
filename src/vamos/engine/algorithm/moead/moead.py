@@ -26,6 +26,7 @@ from vamos.engine.algorithm.components.hooks import (
     notify_generation,
     track_offspring_genealogy,
 )
+from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.foundation.constraints.utils import compute_violation
 from vamos.foundation.kernel import default_kernel
 
@@ -263,7 +264,7 @@ class MOEAD:
         st.pending_use_neighbors = use_neighbors
 
         # Track genealogy
-        op_name = "de+pm" if cross_method in {"de", "differential", "differential_evolution"} else "sbx+pm"
+        op_name = variation_operator_label(self.cfg, "sbx+pm")
         track_offspring_genealogy(st, parents_flat, children.shape[0], op_name, "moead")
 
         return children

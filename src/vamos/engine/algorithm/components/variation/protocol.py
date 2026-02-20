@@ -45,10 +45,10 @@ RealMutationName: TypeAlias = Literal[
 RealRepairName: TypeAlias = Literal["clip", "clamp", "reflect", "random", "resample", "round"]
 
 BinaryCrossoverName: TypeAlias = Literal["one_point", "single_point", "1point", "spx", "two_point", "2point", "uniform", "hux"]
-BinaryMutationName: TypeAlias = Literal["bitflip", "bit_flip"]
+BinaryMutationName: TypeAlias = Literal["bitflip", "bit_flip", "segment_inversion"]
 
 IntegerCrossoverName: TypeAlias = Literal["uniform", "blend", "arithmetic", "sbx"]
-IntegerMutationName: TypeAlias = Literal["reset", "random_reset", "creep", "pm", "polynomial"]
+IntegerMutationName: TypeAlias = Literal["reset", "random_reset", "creep", "pm", "polynomial", "gaussian", "boundary"]
 
 PermutationCrossoverName: TypeAlias = Literal[
     "ox",
@@ -63,8 +63,10 @@ PermutationCrossoverName: TypeAlias = Literal[
     "edge",
     "edge_recombination",
     "erx",
+    "aex",
+    "alternating_edges",
 ]
-PermutationMutationName: TypeAlias = Literal["swap", "insert", "scramble", "inversion", "displacement"]
+PermutationMutationName: TypeAlias = Literal["swap", "insert", "scramble", "inversion", "displacement", "two_opt"]
 
 MixedCrossoverName: TypeAlias = Literal["mixed", "uniform"]
 MixedMutationName: TypeAlias = Literal["mixed", "gaussian"]

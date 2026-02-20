@@ -26,10 +26,14 @@ from vamos.engine.tuning import (
     TrialResult,
     TuningTask,
     available_model_based_backends,
+    build_agemoea_binary_config_space,
     build_agemoea_config_space,
+    build_agemoea_integer_config_space,
+    build_agemoea_permutation_config_space,
     build_ibea_binary_config_space,
     build_ibea_config_space,
     build_ibea_integer_config_space,
+    build_ibea_permutation_config_space,
     build_moead_binary_config_space,
     build_moead_config_space,
     build_moead_integer_config_space,
@@ -42,12 +46,21 @@ from vamos.engine.tuning import (
     build_nsgaiii_binary_config_space,
     build_nsgaiii_config_space,
     build_nsgaiii_integer_config_space,
+    build_nsgaiii_permutation_config_space,
+    build_rvea_binary_config_space,
     build_rvea_config_space,
+    build_rvea_integer_config_space,
+    build_rvea_permutation_config_space,
     build_smpso_config_space,
+    build_smpso_mixed_config_space,
     build_smsemoa_binary_config_space,
     build_smsemoa_config_space,
     build_smsemoa_integer_config_space,
+    build_smsemoa_permutation_config_space,
+    build_spea2_binary_config_space,
     build_spea2_config_space,
+    build_spea2_integer_config_space,
+    build_spea2_permutation_config_space,
     config_from_assignment,
     filter_active_config,
     save_history_csv,
@@ -57,6 +70,7 @@ from vamos.engine.tuning.racing.eval_types import EvalFn
 from vamos.engine.tuning.racing.stats import select_configs_by_paired_test
 from vamos.engine.tuning.racing.warm_start import WarmStartEvaluator
 from vamos.experiment.unified import optimize
+from vamos.foundation.core.algorithm_variants import canonical_algorithm_name
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
 from vamos.foundation.problem.registry import make_problem_selection
 
@@ -71,18 +85,31 @@ BUILDERS: dict[str, Callable[[], AlgorithmConfigSpace | ParamSpace]] = {
     "moead_binary": build_moead_binary_config_space,
     "moead_integer": build_moead_integer_config_space,
     "nsgaiii": build_nsgaiii_config_space,
+    "nsgaiii_permutation": build_nsgaiii_permutation_config_space,
     "nsgaiii_binary": build_nsgaiii_binary_config_space,
     "nsgaiii_integer": build_nsgaiii_integer_config_space,
     "spea2": build_spea2_config_space,
+    "spea2_permutation": build_spea2_permutation_config_space,
+    "spea2_binary": build_spea2_binary_config_space,
+    "spea2_integer": build_spea2_integer_config_space,
     "ibea": build_ibea_config_space,
+    "ibea_permutation": build_ibea_permutation_config_space,
     "ibea_binary": build_ibea_binary_config_space,
     "ibea_integer": build_ibea_integer_config_space,
     "smpso": build_smpso_config_space,
+    "smpso_mixed": build_smpso_mixed_config_space,
     "smsemoa": build_smsemoa_config_space,
+    "smsemoa_permutation": build_smsemoa_permutation_config_space,
     "smsemoa_binary": build_smsemoa_binary_config_space,
     "smsemoa_integer": build_smsemoa_integer_config_space,
     "agemoea": build_agemoea_config_space,
+    "agemoea_permutation": build_agemoea_permutation_config_space,
+    "agemoea_binary": build_agemoea_binary_config_space,
+    "agemoea_integer": build_agemoea_integer_config_space,
     "rvea": build_rvea_config_space,
+    "rvea_permutation": build_rvea_permutation_config_space,
+    "rvea_binary": build_rvea_binary_config_space,
+    "rvea_integer": build_rvea_integer_config_space,
 }
 
 MODEL_BACKENDS = ("optuna", "bohb_optuna", "smac3", "bohb")
@@ -105,17 +132,7 @@ def _configure_cli_logging(level: int = logging.INFO) -> None:
 
 
 def _canonical_algorithm_name(name: str) -> str:
-    if name in {"nsgaii_permutation", "nsgaii_mixed", "nsgaii_binary", "nsgaii_integer"}:
-        return "nsgaii"
-    if name in {"moead_permutation", "moead_binary", "moead_integer"}:
-        return "moead"
-    if name in {"nsgaiii_binary", "nsgaiii_integer"}:
-        return "nsgaiii"
-    if name in {"smsemoa_binary", "smsemoa_integer"}:
-        return "smsemoa"
-    if name in {"ibea_binary", "ibea_integer"}:
-        return "ibea"
-    return name
+    return canonical_algorithm_name(name)
 
 
 def _supports_warm_start(name: str) -> bool:

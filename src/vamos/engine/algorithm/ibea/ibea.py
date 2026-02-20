@@ -26,6 +26,7 @@ from vamos.engine.algorithm.components.hooks import (
 )
 from vamos.engine.algorithm.components.population import evaluate_population
 from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.engine.algorithm.nsgaii.helpers import build_mating_pool
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.foundation.kernel import default_kernel
@@ -202,7 +203,7 @@ class IBEA:
             X_off = X_off[: st.offspring_size]
 
         # Track genealogy
-        track_offspring_genealogy(st, parent_idx, X_off.shape[0], "sbx+pm", "ibea")
+        track_offspring_genealogy(st, parent_idx, X_off.shape[0], variation_operator_label(self.cfg, "sbx+pm"), "ibea")
 
         return X_off
 

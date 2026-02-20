@@ -208,6 +208,29 @@ def bit_flip_mutation(X: np.ndarray, prob: float, rng: np.random.Generator) -> N
         X[mask] = 1 - X[mask]
 
 
+def segment_inversion_mutation(X: np.ndarray, prob: float, rng: np.random.Generator) -> None:
+    """
+    Per-individual mutation that selects a random segment and flips all bits in it.
+    """
+    if X.size == 0:
+        return
+    prob = float(np.clip(prob, 0.0, 1.0))
+    if prob <= 0.0:
+        return
+    rows, cols = X.shape
+    if cols < 2:
+        return
+    active = np.flatnonzero(rng.random(rows) <= prob)
+    for row in active:
+        a = int(rng.integers(0, cols))
+        b = int(rng.integers(0, cols - 1))
+        if b >= a:
+            b += 1
+        if a > b:
+            a, b = b, a
+        X[row, a : b + 1] = 1 - X[row, a : b + 1]
+
+
 class BitFlipMutation:
     def __init__(self, prob: float = 0.1, **kwargs: Any) -> None:
         self.prob = float(prob)
@@ -215,6 +238,15 @@ class BitFlipMutation:
     def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
         # Mutation in place
         bit_flip_mutation(X, self.prob, rng)
+        return X
+
+
+class SegmentInversionMutation:
+    def __init__(self, prob: float = 0.1, **kwargs: Any) -> None:
+        self.prob = float(prob)
+
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> np.ndarray:
+        segment_inversion_mutation(X, self.prob, rng)
         return X
 
 
@@ -257,7 +289,9 @@ __all__ = [
     "uniform_crossover",
     "hux_crossover",
     "bit_flip_mutation",
+    "segment_inversion_mutation",
     "BitFlipMutation",
+    "SegmentInversionMutation",
     "OnePointCrossover",
     "TwoPointCrossover",
     "UniformCrossover",

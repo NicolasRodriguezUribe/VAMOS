@@ -22,6 +22,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.foundation.kernel import default_kernel
 
 from .helpers import (
@@ -229,7 +230,13 @@ class NSGAIII:
         # Track genealogy
         if st.genealogy_tracker is not None:
             parent_pairs = parents_idx.flatten()
-            track_offspring_genealogy(st, parent_pairs, X_off.shape[0], "sbx+pm", "nsgaiii")
+            track_offspring_genealogy(
+                st,
+                parent_pairs,
+                X_off.shape[0],
+                variation_operator_label(self.cfg, "sbx+pm"),
+                "nsgaiii",
+            )
 
         return X_off
 

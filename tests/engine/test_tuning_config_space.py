@@ -1,9 +1,13 @@
 import numpy as np
 
 from vamos.engine.tuning.racing.bridge import (
+    build_agemoea_binary_config_space,
     build_agemoea_config_space,
+    build_agemoea_integer_config_space,
+    build_agemoea_permutation_config_space,
     build_ibea_binary_config_space,
     build_ibea_integer_config_space,
+    build_ibea_permutation_config_space,
     build_moead_binary_config_space,
     build_moead_integer_config_space,
     build_moead_permutation_config_space,
@@ -14,9 +18,18 @@ from vamos.engine.tuning.racing.bridge import (
     build_nsgaii_permutation_config_space,
     build_nsgaiii_binary_config_space,
     build_nsgaiii_integer_config_space,
+    build_nsgaiii_permutation_config_space,
+    build_rvea_binary_config_space,
     build_rvea_config_space,
+    build_rvea_integer_config_space,
+    build_rvea_permutation_config_space,
+    build_smpso_mixed_config_space,
     build_smsemoa_binary_config_space,
     build_smsemoa_integer_config_space,
+    build_smsemoa_permutation_config_space,
+    build_spea2_binary_config_space,
+    build_spea2_integer_config_space,
+    build_spea2_permutation_config_space,
     config_from_assignment,
 )
 from vamos.engine.tuning.racing.config_space import AlgorithmConfigSpace
@@ -95,8 +108,8 @@ def test_nsgaii_permutation_config_space_builds_and_constructs_config():
     assignment = space.sample(rng)
     cfg = config_from_assignment("nsgaii_permutation", assignment)
     assert cfg.pop_size > 0
-    assert cfg.crossover[0] in ("ox", "pmx", "edge", "cycle", "position")
-    assert cfg.mutation[0] in ("swap", "insert", "scramble", "inversion", "displacement")
+    assert cfg.crossover[0] in ("ox", "pmx", "edge", "cycle", "position", "aex")
+    assert cfg.mutation[0] in ("swap", "insert", "scramble", "inversion", "displacement", "two_opt")
 
 
 def test_nsgaii_mixed_config_space_builds_and_constructs_config():
@@ -115,8 +128,8 @@ def test_moead_permutation_config_space_builds_and_constructs_config():
     assignment = space.sample(rng)
     cfg = config_from_assignment("moead_permutation", assignment)
     assert cfg.pop_size > 0
-    assert cfg.crossover[0] in ("ox", "pmx", "edge", "cycle", "position")
-    assert cfg.mutation[0] in ("swap", "insert", "scramble", "inversion", "displacement")
+    assert cfg.crossover[0] in ("ox", "pmx", "edge", "cycle", "position", "aex")
+    assert cfg.mutation[0] in ("swap", "insert", "scramble", "inversion", "displacement", "two_opt")
 
 
 def test_agemoea_config_space_builds_and_constructs_config():
@@ -267,3 +280,127 @@ def test_binary_integer_config_spaces_build_and_construct_config():
         cfg = config_from_assignment(algo, assignment)
         assert cfg.crossover[0] in cross_set
         assert cfg.mutation[0] in mut_set
+
+
+def test_new_permutation_binary_integer_builders_construct_configs():
+    cases = [
+        (
+            build_agemoea_permutation_config_space,
+            "agemoea_permutation",
+            {"ox", "pmx", "edge", "cycle", "position", "aex"},
+            {"swap", "insert", "scramble", "inversion", "displacement", "two_opt"},
+            False,
+        ),
+        (
+            build_agemoea_binary_config_space,
+            "agemoea_binary",
+            {"hux", "uniform", "one_point", "two_point"},
+            {"bitflip", "segment_inversion"},
+            False,
+        ),
+        (
+            build_agemoea_integer_config_space,
+            "agemoea_integer",
+            {"uniform", "arithmetic", "sbx"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
+            False,
+        ),
+        (
+            build_rvea_permutation_config_space,
+            "rvea_permutation",
+            {"ox", "pmx", "edge", "cycle", "position", "aex"},
+            {"swap", "insert", "scramble", "inversion", "displacement", "two_opt"},
+            True,
+        ),
+        (
+            build_rvea_binary_config_space,
+            "rvea_binary",
+            {"hux", "uniform", "one_point", "two_point"},
+            {"bitflip", "segment_inversion"},
+            True,
+        ),
+        (
+            build_rvea_integer_config_space,
+            "rvea_integer",
+            {"uniform", "arithmetic", "sbx"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
+            True,
+        ),
+        (
+            build_spea2_permutation_config_space,
+            "spea2_permutation",
+            {"ox", "pmx", "edge", "cycle", "position", "aex"},
+            {"swap", "insert", "scramble", "inversion", "displacement", "two_opt"},
+            False,
+        ),
+        (
+            build_spea2_binary_config_space,
+            "spea2_binary",
+            {"hux", "uniform", "one_point", "two_point"},
+            {"bitflip", "segment_inversion"},
+            False,
+        ),
+        (
+            build_spea2_integer_config_space,
+            "spea2_integer",
+            {"uniform", "arithmetic", "sbx"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
+            False,
+        ),
+        (
+            build_ibea_permutation_config_space,
+            "ibea_permutation",
+            {"ox", "pmx", "edge", "cycle", "position", "aex"},
+            {"swap", "insert", "scramble", "inversion", "displacement", "two_opt"},
+            False,
+        ),
+        (
+            build_smsemoa_permutation_config_space,
+            "smsemoa_permutation",
+            {"ox", "pmx", "edge", "cycle", "position", "aex"},
+            {"swap", "insert", "scramble", "inversion", "displacement", "two_opt"},
+            False,
+        ),
+        (
+            build_nsgaiii_permutation_config_space,
+            "nsgaiii_permutation",
+            {"ox", "pmx", "edge", "cycle", "position", "aex"},
+            {"swap", "insert", "scramble", "inversion", "displacement", "two_opt"},
+            False,
+        ),
+    ]
+    for idx, (builder, algo, cross_set, mut_set, needs_n_obj) in enumerate(cases):
+        rng = np.random.default_rng(200 + idx)
+        space = builder()
+        assignment = space.sample(rng)
+        if needs_n_obj:
+            assignment["n_obj"] = 3
+        cfg = config_from_assignment(algo, assignment)
+        assert cfg.crossover[0] in cross_set
+        assert cfg.mutation[0] in mut_set
+
+
+def test_smpso_mixed_builder_and_assignment():
+    rng = np.random.default_rng(300)
+    space = build_smpso_mixed_config_space()
+    assignment = space.sample(rng)
+    cfg = config_from_assignment("smpso_mixed", assignment)
+    assert cfg.mutation[0] in {"mixed", "gaussian"}
+
+
+def test_new_integer_parameter_mapping_in_assignment():
+    ag_space = build_agemoea_integer_config_space()
+    ag_assignment = ag_space.sample(np.random.default_rng(400))
+    ag_assignment["mutation"] = "gaussian"
+    ag_assignment["gaussian_sigma"] = 2.5
+    ag_cfg = config_from_assignment("agemoea_integer", ag_assignment)
+    assert ag_cfg.mutation[0] == "gaussian"
+    assert float(ag_cfg.mutation[1]["sigma"]) == 2.5
+
+    sp_space = build_spea2_integer_config_space()
+    sp_assignment = sp_space.sample(np.random.default_rng(401))
+    sp_assignment["mutation"] = "creep"
+    sp_assignment["creep_step"] = 3
+    sp_cfg = config_from_assignment("spea2_integer", sp_assignment)
+    assert sp_cfg.mutation[0] == "creep"
+    assert int(sp_cfg.mutation[1]["step"]) == 3

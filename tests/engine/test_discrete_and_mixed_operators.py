@@ -4,13 +4,17 @@ from vamos.operators.impl.binary import (
     bit_flip_mutation,
     one_point_crossover,
     random_binary_population,
+    segment_inversion_mutation,
 )
 from vamos.operators.impl.integer import (
+    boundary_integer_mutation,
+    gaussian_integer_mutation,
     random_integer_population,
     random_reset_mutation,
     uniform_integer_crossover,
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_initialize, mixed_mutation
+from vamos.operators.impl.permutation import alternating_edges_crossover, two_opt_mutation
 
 
 def test_binary_operators_shape_and_values():
@@ -29,6 +33,16 @@ def test_binary_operators_shape_and_values():
     assert set(np.unique(children)).issubset({0, 1})
 
 
+def test_binary_segment_inversion_mutation_flips_segments():
+    rng = np.random.default_rng(4)
+    X = random_binary_population(6, 10, rng)
+    before = X.copy()
+    segment_inversion_mutation(X, prob=1.0, rng=rng)
+    assert X.shape == before.shape
+    assert np.any(X != before)
+    assert set(np.unique(X)).issubset({0, 1})
+
+
 def test_integer_operators_respect_bounds():
     rng = np.random.default_rng(1)
     lower = np.array([0, 5, 10])
@@ -43,6 +57,20 @@ def test_integer_operators_respect_bounds():
 
     random_reset_mutation(children, prob=1.0, lower=lower, upper=upper, rng=rng)
     assert np.all(children >= lower) and np.all(children <= upper)
+
+
+def test_integer_gaussian_and_boundary_mutations_respect_bounds():
+    rng = np.random.default_rng(5)
+    lower = np.array([0, 2, 5], dtype=np.int32)
+    upper = np.array([4, 6, 9], dtype=np.int32)
+    X = random_integer_population(5, 3, lower, upper, rng)
+
+    gaussian_integer_mutation(X, prob=1.0, sigma=1.25, lower=lower, upper=upper, rng=rng)
+    assert np.all(X >= lower) and np.all(X <= upper)
+
+    boundary_integer_mutation(X, prob=1.0, lower=lower, upper=upper, rng=rng)
+    assert np.all(X >= lower) and np.all(X <= upper)
+    assert np.all((X == lower) | (X == upper))
 
 
 def test_mixed_initialize_and_variation():
@@ -113,6 +141,20 @@ def test_mixed_with_permutation_segment():
         assert set(row.astype(int)) == expected
     assert np.all(children[:, spec["int_idx"]] >= spec["int_lower"])
     assert np.all(children[:, spec["int_idx"]] <= spec["int_upper"])
+
+
+def test_permutation_aex_and_two_opt_keep_valid_permutations():
+    rng = np.random.default_rng(6)
+    n_var = 8
+    parents = np.vstack([rng.permutation(n_var) for _ in range(6)]).astype(np.int32, copy=False)
+    children = alternating_edges_crossover(parents, prob=1.0, rng=rng)
+    assert children.shape == parents.shape
+    expected = np.arange(n_var)
+    assert all(np.array_equal(np.sort(row), expected) for row in children)
+
+    two_opt_mutation(children, prob=1.0, rng=rng)
+    assert children.shape == parents.shape
+    assert all(np.array_equal(np.sort(row), expected) for row in children)
 
 
 def test_mixed_segment_specific_probabilities_override_global_probability():

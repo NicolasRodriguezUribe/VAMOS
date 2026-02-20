@@ -29,6 +29,7 @@ from vamos.foundation.core.experiment_config import (
     resolve_engine,
 )
 from vamos.foundation.core.hv_stop import compute_hv_reference
+from vamos.foundation.core.algorithm_variants import PERMUTATION_COMPATIBLE_ALGORITHMS
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.data import weight_path
 from vamos.foundation.encoding import normalize_encoding
@@ -312,12 +313,15 @@ def run_single(
 
     validate_problem(problem)
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
-    if encoding == "permutation" and algorithm_name != "nsgaii":
-        raise ConfigurationError(
-            f"Algorithm '{algorithm_name}' does not support permutation encoding.",
-            suggestion="Set algorithm='nsgaii' to run permutation problems.",
-            details={"algorithm": algorithm_name, "encoding": "permutation"},
-        )
+    if encoding == "permutation":
+        permutation_algorithms = PERMUTATION_COMPATIBLE_ALGORITHMS
+        if algorithm_name not in permutation_algorithms:
+            supported = ", ".join(sorted(permutation_algorithms))
+            raise ConfigurationError(
+                f"Algorithm '{algorithm_name}' does not support permutation encoding.",
+                suggestion=f"Use one of: {supported}.",
+                details={"algorithm": algorithm_name, "encoding": "permutation", "supported": sorted(permutation_algorithms)},
+            )
 
     # 4. Execute
     exec_result = execute_algorithm(

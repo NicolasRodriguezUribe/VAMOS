@@ -56,6 +56,16 @@ class EdgeRecombinationCrossover:
         return edge_recombination_crossover(parents, self.prob, rng)
 
 
+class AlternatingEdgesCrossover:
+    def __init__(self, prob: float = 0.9, **kwargs: object) -> None:
+        self.prob = float(prob)
+
+    def __call__(self, parents: PermPop, rng: RNG, **kwargs: object) -> PermPop:
+        from .permutation import alternating_edges_crossover
+
+        return alternating_edges_crossover(parents, self.prob, rng)
+
+
 class OrderCrossover:
     def __init__(self, prob: float = 0.9, **kwargs: object) -> None:
         self.prob = float(prob)
@@ -107,15 +117,27 @@ class DisplacementMutation:
         displacement_mutation(X, self.prob, rng)
 
 
+class TwoOptMutation:
+    def __init__(self, prob: float = 0.1, **kwargs: object) -> None:
+        self.prob = float(prob)
+
+    def __call__(self, X: PermPop, rng: RNG, **kwargs: object) -> None:
+        from .permutation import two_opt_mutation
+
+        two_opt_mutation(X, self.prob, rng)
+
+
 __all__ = [
     "SwapMutation",
     "PMXCrossover",
     "CycleCrossover",
     "PositionBasedCrossover",
     "EdgeRecombinationCrossover",
+    "AlternatingEdgesCrossover",
     "OrderCrossover",
     "InsertMutation",
     "ScrambleMutation",
     "InversionMutation",
     "DisplacementMutation",
+    "TwoOptMutation",
 ]

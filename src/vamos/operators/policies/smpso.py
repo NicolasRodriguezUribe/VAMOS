@@ -68,8 +68,8 @@ def build_mutation_operator(
     mut_method = str(mut_method).lower()
 
     if normalized == "mixed":
-        if mut_method != "mixed":
-            raise ValueError(f"Unsupported SMPSO mutation '{mut_method}' for mixed encoding. Use 'mixed'.")
+        if mut_method not in {"mixed", "gaussian"}:
+            raise ValueError(f"Unsupported SMPSO mutation '{mut_method}' for mixed encoding. Use 'mixed' or 'gaussian'.")
         mixed_spec = getattr(problem, "mixed_spec", None) if problem is not None else None
         if mixed_spec is None:
             raise ValueError("SMPSO mixed encoding requires problem.mixed_spec.")

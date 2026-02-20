@@ -171,6 +171,32 @@ def parse_operator_config(
     raise ValueError(f"Invalid operator config format: {type(config)}")
 
 
+def variation_operator_label(config: dict[str, Any], default: str = "variation") -> str:
+    """Build a compact ``crossover+mutation`` label from algorithm config."""
+
+    def _method_name(value: Any) -> str:
+        if isinstance(value, tuple) and value:
+            return str(value[0]).strip().lower()
+        if isinstance(value, dict):
+            method = value.get("method", value.get("name", value.get("type")))
+            if method is not None:
+                return str(method).strip().lower()
+            return ""
+        if isinstance(value, str):
+            return value.strip().lower()
+        return ""
+
+    cross_name = _method_name(config.get("crossover"))
+    mut_name = _method_name(config.get("mutation"))
+    if cross_name and mut_name:
+        return f"{cross_name}+{mut_name}"
+    if cross_name:
+        return cross_name
+    if mut_name:
+        return mut_name
+    return default
+
+
 def compute_ideal_nadir(F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute ideal and nadir points from objective values.
@@ -230,6 +256,7 @@ __all__ = [
     "resolve_bounds_array",
     "validate_termination",
     "parse_operator_config",
+    "variation_operator_label",
     "compute_ideal_nadir",
     "normalize_objectives",
 ]

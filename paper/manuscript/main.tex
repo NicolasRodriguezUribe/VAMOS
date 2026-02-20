@@ -770,14 +770,14 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_equivalence_ci_moead} pres
 \textbf{Algorithm} & \textbf{Paradigm} & \textbf{Encodings} & \textbf{\#Xover} & \textbf{\#Mut} & \textbf{\#Sel} & \textbf{Specific Parameters} & \textbf{\#Params} \\
 \midrule
 NSGA-II & Dominance + crowding & R, P, B, I, M & 10 & 9 & 4 & Offspring ratio, external archive (type, size, bounded) & 37 \\
-AGE-MOEA & Adaptive geometry & R, M & 6 & 7 & --- & Archive policies (crowding, HV, $\varepsilon$-grid, hybrid) & 26 \\
-RVEA & Reference vectors & R, M & 6 & 7 & --- & Partitions, $\alpha$ decay, adaptation frequency & 28 \\
+AGE-MOEA & Adaptive geometry & R, P, B, I, M & 6 & 7 & --- & Archive policies (crowding, HV, $\varepsilon$-grid, hybrid) & 26 \\
+RVEA & Reference vectors & R, P, B, I, M & 6 & 7 & --- & Partitions, $\alpha$ decay, adaptation frequency & 28 \\
 MOEA/D & Decomposition & R, P, B, I, M & 2 & 1 & --- & Aggregation (Tchebycheff, WS, PBI), $T$, $\delta$, $\eta$ & 14 \\
-IBEA & Indicator ($\varepsilon$/HV) & R, B, I, M & 1 & 1 & 1 & Indicator type, scaling factor $\kappa$ & 10 \\
-SPEA2 & Strength Pareto & R, M & 1 & 1 & 1 & Archive size, $k$-nearest neighbors & 10 \\
-NSGA-III & Reference directions & R, B, I, M & 1 & 1 & 1 & Reference directions (auto-computed) & 8 \\
-SMS-EMOA & HV contribution & R, B, I, M & 1 & 1 & 1 & Reference point (adaptive) & 8 \\
-SMPSO & Particle swarm & R & --- & 1 & --- & Inertia $\omega$, $c_1$, $c_2$, $v_{\max}$ fraction & 8 \\
+IBEA & Indicator ($\varepsilon$/HV) & R, P, B, I, M & 1 & 1 & 1 & Indicator type, scaling factor $\kappa$ & 10 \\
+SPEA2 & Strength Pareto & R, P, B, I, M & 1 & 1 & 1 & Archive size, $k$-nearest neighbors & 10 \\
+NSGA-III & Reference directions & R, P, B, I, M & 1 & 1 & 1 & Reference directions (auto-computed) & 8 \\
+SMS-EMOA & HV contribution & R, P, B, I, M & 1 & 1 & 1 & Reference point (adaptive) & 8 \\
+SMPSO & Particle swarm & R, M & --- & 1 & --- & Inertia $\omega$, $c_1$, $c_2$, $v_{\max}$ fraction & 8 \\
 \bottomrule
 \end{tabular}%
 }

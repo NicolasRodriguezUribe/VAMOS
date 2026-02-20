@@ -27,6 +27,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.foundation.kernel import default_kernel
 
 from .helpers import dominance_matrix, environmental_selection, knn_density, strength_raw_fitness
@@ -266,13 +267,25 @@ class SPEA2:
         # Apply mutation
         offspring_X = st.mutation_fn(offspring_X, st.rng)
 
-        # Clip to bounds
-        np.clip(offspring_X, st.xl, st.xu, out=offspring_X)
+        # Clip to bounds; cast bounds for integer-typed offspring to avoid
+        # numpy in-place casting errors when bounds are stored as floats.
+        xl = st.xl
+        xu = st.xu
+        if np.issubdtype(offspring_X.dtype, np.integer):
+            xl = np.asarray(xl, dtype=offspring_X.dtype)
+            xu = np.asarray(xu, dtype=offspring_X.dtype)
+        np.clip(offspring_X, xl, xu, out=offspring_X)
 
         st.pending_offspring = offspring_X
 
         # Track genealogy
-        track_offspring_genealogy(st, parent_idx.reshape(-1), offspring_X.shape[0], "sbx+pm", "spea2")
+        track_offspring_genealogy(
+            st,
+            parent_idx.reshape(-1),
+            offspring_X.shape[0],
+            variation_operator_label(self.cfg, "sbx+pm"),
+            "spea2",
+        )
 
         return offspring_X
 
