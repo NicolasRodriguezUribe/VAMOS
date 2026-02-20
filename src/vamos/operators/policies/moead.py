@@ -17,6 +17,7 @@ from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.operators.impl.binary import (
     bit_flip_mutation,
+    hux_crossover,
     one_point_crossover,
     segment_inversion_mutation,
     two_point_crossover,
@@ -48,6 +49,7 @@ from vamos.operators.impl.permutation import (
     two_opt_mutation,
 )
 from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
+from vamos.operators.impl.registry import get_operator_registry
 
 # Operator registries
 BinaryCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
@@ -69,6 +71,7 @@ BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = {
     "two_point": two_point_crossover,
     "2point": two_point_crossover,
     "uniform": uniform_crossover,
+    "hux": hux_crossover,
 }
 
 BINARY_MUTATION: dict[str, BinaryMutationOp] = {
@@ -185,7 +188,7 @@ def build_variation_operators(
             rng,
         )
     elif normalized == "real":
-        return _build_continuous_operators(cross_method, cross_params, mut_params, n_var, xl, xu, rng)
+        return _build_continuous_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
     else:
         raise ValueError(f"MOEA/D does not support encoding '{normalized}'.")
 
@@ -284,6 +287,7 @@ def _build_integer_operators(
 def _build_continuous_operators(
     cross_method: str,
     cross_params: dict[str, Any],
+    mut_method: str,
     mut_params: dict[str, Any],
     n_var: int,
     xl: np.ndarray,
@@ -331,17 +335,39 @@ def _build_continuous_operators(
             return crossover_operator(parents, _rng)
 
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
-    mut_eta = float(mut_params.get("eta", 20.0))
-    mutation_operator = PolynomialMutation(
-        prob_mutation=mut_prob,
-        eta=mut_eta,
-        lower=xl,
-        upper=xu,
-        workspace=workspace,
-    )
+    mut_name = (mut_method or "pm").lower()
 
-    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        return mutation_operator(X_child, _rng)
+    if mut_name in {"pm", "polynomial", "linked_polynomial"}:
+        mut_eta = float(mut_params.get("eta", 20.0))
+        mutation_operator = PolynomialMutation(
+            prob_mutation=mut_prob,
+            eta=mut_eta,
+            lower=xl,
+            upper=xu,
+            workspace=workspace,
+        )
+
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            return mutation_operator(X_child, _rng)
+
+    else:
+        registry = get_operator_registry()
+        try:
+            mut_cls = registry.get(mut_name)
+        except KeyError as exc:
+            available = ", ".join(registry.list())
+            raise ValueError(f"Unsupported MOEA/D mutation '{mut_name}' for real encoding. Available: {available}") from exc
+
+        mut_kwargs = dict(mut_params)
+        mut_kwargs.pop("prob", None)
+        mut_kwargs.setdefault("prob_mutation", mut_prob)
+        mut_kwargs.setdefault("lower", xl)
+        mut_kwargs.setdefault("upper", xu)
+        mut_kwargs.setdefault("workspace", workspace)
+        mutation_operator = mut_cls(**mut_kwargs)
+
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            return mutation_operator(X_child, _rng)
 
     return crossover, mutation
 

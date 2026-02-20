@@ -59,6 +59,39 @@ def _apply_optional_repair(builder: Any, assignment: dict[str, Any]) -> None:
         builder.repair(repair_name)
 
 
+def _extend_real_crossover_params(cross: str, assignment: dict[str, Any], cross_params: dict[str, Any]) -> None:
+    if cross == "sbx":
+        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
+    elif cross == "blx_alpha":
+        cross_params["alpha"] = float(assignment.get("crossover_alpha", 0.5))
+        blx_repair = assignment.get("blx_repair")
+        if blx_repair is not None:
+            cross_params["repair"] = str(blx_repair)
+    elif cross == "pcx":
+        cross_params["sigma_eta"] = float(assignment.get("pcx_sigma_eta", 0.1))
+        cross_params["sigma_zeta"] = float(assignment.get("pcx_sigma_zeta", 0.1))
+    elif cross == "undx":
+        cross_params["zeta"] = float(assignment.get("undx_zeta", 0.5))
+        cross_params["eta"] = float(assignment.get("undx_eta", 0.35))
+    elif cross == "simplex":
+        cross_params["epsilon"] = float(assignment.get("simplex_epsilon", 0.5))
+
+
+def _extend_mutation_params(mut: str, assignment: dict[str, Any], mut_params: dict[str, Any]) -> None:
+    if mut in {"pm", "polynomial", "linked_polynomial"}:
+        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
+    elif mut == "creep":
+        mut_params["step"] = int(assignment.get("creep_step", 1))
+    elif mut == "non_uniform":
+        mut_params["perturbation"] = float(assignment.get("nonuniform_perturbation", 0.5))
+    elif mut == "gaussian":
+        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
+    elif mut == "cauchy":
+        mut_params["gamma"] = float(assignment.get("cauchy_gamma", 0.1))
+    elif mut == "uniform":
+        mut_params["perturb"] = float(assignment.get("uniform_perturb", 0.1))
+
+
 def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:
     builder = NSGAIIConfig.builder()
     pop_size = int(assignment["pop_size"])
@@ -82,21 +115,7 @@ def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:
 
     cross = assignment["crossover"]
     cross_params: dict[str, Any] = {"prob": float(assignment["crossover_prob"])}
-    if cross == "sbx":
-        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
-    elif cross == "blx_alpha":
-        cross_params["alpha"] = float(assignment.get("crossover_alpha", 0.5))
-        blx_repair = assignment.get("blx_repair")
-        if blx_repair is not None:
-            cross_params["repair"] = str(blx_repair)
-    elif cross == "pcx":
-        cross_params["sigma_eta"] = float(assignment.get("pcx_sigma_eta", 0.1))
-        cross_params["sigma_zeta"] = float(assignment.get("pcx_sigma_zeta", 0.1))
-    elif cross == "undx":
-        cross_params["zeta"] = float(assignment.get("undx_zeta", 0.5))
-        cross_params["eta"] = float(assignment.get("undx_eta", 0.35))
-    elif cross == "simplex":
-        cross_params["epsilon"] = float(assignment.get("simplex_epsilon", 0.5))
+    _extend_real_crossover_params(str(cross), assignment, cross_params)
     builder.crossover(cross, **cross_params)
 
     mut = assignment["mutation"]
@@ -104,18 +123,7 @@ def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
     if mut_factor is not None:
         builder.mutation_prob_factor(float(mut_factor))
-    if mut in {"pm", "polynomial", "linked_polynomial"}:
-        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
-    elif mut == "creep":
-        mut_params["step"] = int(assignment.get("creep_step", 1))
-    elif mut == "non_uniform":
-        mut_params["perturbation"] = float(assignment.get("nonuniform_perturbation", 0.5))
-    elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 0.1))
-    elif mut == "cauchy":
-        mut_params["gamma"] = float(assignment.get("cauchy_gamma", 0.1))
-    elif mut == "uniform":
-        mut_params["perturb"] = float(assignment.get("uniform_perturb", 0.1))
+    _extend_mutation_params(str(mut), assignment, mut_params)
     builder.mutation(mut, **mut_params)
 
     builder.selection(str(assignment.get("selection", "tournament")), pressure=int(assignment["selection_pressure"]))
@@ -156,16 +164,12 @@ def _build_moead_config(assignment: dict[str, Any]) -> MOEADConfig:
         )
     else:
         cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 1.0))}
-        if cross == "sbx":
-            cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
+        _extend_real_crossover_params(cross, assignment, cross_params)
         builder.crossover(cross, **cross_params)
 
     mut = str(assignment["mutation"])
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
-    if mut in {"pm", "polynomial"}:
-        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
-    elif mut == "creep":
-        mut_params["step"] = int(assignment.get("creep_step", 1))
+    _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
 
     aggregation = str(assignment["aggregation"])
@@ -214,44 +218,38 @@ def _build_moead_permutation_config(assignment: dict[str, Any]) -> MOEADConfig:
 
 def _build_nsgaiii_config(assignment: dict[str, Any]) -> NSGAIIIConfig:
     builder = NSGAIIIConfig.builder()
-    builder.pop_size(int(assignment["pop_size"]))
+    pop_size = int(assignment["pop_size"])
+    builder.pop_size(pop_size)
+    _apply_initializer(builder, assignment, pop_size)
     cross = str(assignment["crossover"])
     cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 1.0))}
-    if cross == "sbx":
-        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
+    _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
     mut = str(assignment["mutation"])
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
-    if mut in {"pm", "polynomial"}:
-        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
-    elif mut == "creep":
-        mut_params["step"] = int(assignment.get("creep_step", 1))
-    elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
+    _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    _apply_optional_repair(builder, assignment)
     return builder.build()
 
 
 def _build_smsemoa_config(assignment: dict[str, Any]) -> SMSEMOAConfig:
     builder = SMSEMOAConfig.builder()
-    builder.pop_size(int(assignment["pop_size"]))
+    pop_size = int(assignment["pop_size"])
+    builder.pop_size(pop_size)
+    _apply_initializer(builder, assignment, pop_size)
     cross = str(assignment["crossover"])
     cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 1.0))}
-    if cross == "sbx":
-        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
+    _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
     mut = str(assignment["mutation"])
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
-    if mut in {"pm", "polynomial"}:
-        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
-    elif mut == "creep":
-        mut_params["step"] = int(assignment.get("creep_step", 1))
-    elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
+    _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
     builder.reference_point(offset=0.1, adaptive=True)
+    _apply_optional_repair(builder, assignment)
     return builder.build()
 
 
@@ -260,45 +258,38 @@ def _build_spea2_config(assignment: dict[str, Any]) -> SPEA2Config:
     pop_size = int(assignment["pop_size"])
     builder.pop_size(pop_size)
     builder.archive_size(int(assignment.get("archive_size", pop_size)))
+    _apply_initializer(builder, assignment, pop_size)
     cross = str(assignment["crossover"])
     cross_params: dict[str, Any] = {"prob": float(assignment["crossover_prob"])}
-    if cross == "sbx":
-        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
+    _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
     mut = str(assignment["mutation"])
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
-    if mut in {"pm", "polynomial"}:
-        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
-    elif mut == "creep":
-        mut_params["step"] = int(assignment.get("creep_step", 1))
-    elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
+    _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
     builder.k_neighbors(int(assignment.get("k_neighbors", max(1, int(np.sqrt(pop_size))))))
+    _apply_optional_repair(builder, assignment)
     return builder.build()
 
 
 def _build_ibea_config(assignment: dict[str, Any]) -> IBEAConfig:
     builder = IBEAConfig.builder()
-    builder.pop_size(int(assignment["pop_size"]))
+    pop_size = int(assignment["pop_size"])
+    builder.pop_size(pop_size)
+    _apply_initializer(builder, assignment, pop_size)
     cross = str(assignment["crossover"])
     cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 0.9))}
-    if cross == "sbx":
-        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
+    _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
     mut = str(assignment["mutation"])
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
-    if mut in {"pm", "polynomial"}:
-        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
-    elif mut == "creep":
-        mut_params["step"] = int(assignment.get("creep_step", 1))
-    elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
+    _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
     builder.indicator(str(assignment.get("indicator", "eps")))
     builder.kappa(float(assignment.get("kappa", 1.0)))
+    _apply_optional_repair(builder, assignment)
     return builder.build()
 
 
@@ -328,37 +319,12 @@ def _build_agemoea_config(assignment: dict[str, Any]) -> AGEMOEAConfig:
 
     cross = str(assignment.get("crossover", "sbx"))
     cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 0.9))}
-    if cross == "sbx":
-        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
-    elif cross == "blx_alpha":
-        cross_params["alpha"] = float(assignment.get("crossover_alpha", 0.5))
-        blx_repair = assignment.get("blx_repair")
-        if blx_repair is not None:
-            cross_params["repair"] = str(blx_repair)
-    elif cross == "pcx":
-        cross_params["sigma_eta"] = float(assignment.get("pcx_sigma_eta", 0.1))
-        cross_params["sigma_zeta"] = float(assignment.get("pcx_sigma_zeta", 0.1))
-    elif cross == "undx":
-        cross_params["zeta"] = float(assignment.get("undx_zeta", 0.5))
-        cross_params["eta"] = float(assignment.get("undx_eta", 0.35))
-    elif cross == "simplex":
-        cross_params["epsilon"] = float(assignment.get("simplex_epsilon", 0.5))
+    _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
 
     mut = str(assignment.get("mutation", "pm"))
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
-    if mut in {"pm", "polynomial", "linked_polynomial"}:
-        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
-    elif mut == "creep":
-        mut_params["step"] = int(assignment.get("creep_step", 1))
-    elif mut == "non_uniform":
-        mut_params["perturbation"] = float(assignment.get("nonuniform_perturbation", 0.5))
-    elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
-    elif mut == "cauchy":
-        mut_params["gamma"] = float(assignment.get("cauchy_gamma", 0.1))
-    elif mut == "uniform":
-        mut_params["perturb"] = float(assignment.get("uniform_perturb", 0.1))
+    _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
 
     _apply_optional_repair(builder, assignment)
@@ -396,37 +362,12 @@ def _build_rvea_config(assignment: dict[str, Any]) -> RVEAConfig:
 
     cross = str(assignment.get("crossover", "sbx"))
     cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 1.0))}
-    if cross == "sbx":
-        cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
-    elif cross == "blx_alpha":
-        cross_params["alpha"] = float(assignment.get("crossover_alpha", 0.5))
-        blx_repair = assignment.get("blx_repair")
-        if blx_repair is not None:
-            cross_params["repair"] = str(blx_repair)
-    elif cross == "pcx":
-        cross_params["sigma_eta"] = float(assignment.get("pcx_sigma_eta", 0.1))
-        cross_params["sigma_zeta"] = float(assignment.get("pcx_sigma_zeta", 0.1))
-    elif cross == "undx":
-        cross_params["zeta"] = float(assignment.get("undx_zeta", 0.5))
-        cross_params["eta"] = float(assignment.get("undx_eta", 0.35))
-    elif cross == "simplex":
-        cross_params["epsilon"] = float(assignment.get("simplex_epsilon", 0.5))
+    _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
 
     mut = str(assignment.get("mutation", "pm"))
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
-    if mut in {"pm", "polynomial", "linked_polynomial"}:
-        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
-    elif mut == "creep":
-        mut_params["step"] = int(assignment.get("creep_step", 1))
-    elif mut == "non_uniform":
-        mut_params["perturbation"] = float(assignment.get("nonuniform_perturbation", 0.5))
-    elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
-    elif mut == "cauchy":
-        mut_params["gamma"] = float(assignment.get("cauchy_gamma", 0.1))
-    elif mut == "uniform":
-        mut_params["perturb"] = float(assignment.get("uniform_perturb", 0.1))
+    _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
 
     _apply_optional_repair(builder, assignment)

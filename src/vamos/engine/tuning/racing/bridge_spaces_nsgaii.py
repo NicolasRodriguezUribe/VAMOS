@@ -4,7 +4,12 @@ NSGA-II configuration space builders for tuning.
 
 from __future__ import annotations
 
-from .bridge_space_parts_discrete import mixed_operator_part, permutation_operator_part_full
+from .bridge_space_parts_discrete import (
+    binary_operator_part_full,
+    integer_operator_part_full,
+    mixed_operator_part,
+    permutation_operator_part_full,
+)
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
 from .param_space import Boolean, Categorical, Condition, ConditionalBlock, Int, ParamType, Real
 
@@ -143,28 +148,11 @@ def _mixed_operator_part() -> SpacePart:
 
 
 def _binary_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("crossover", ["hux", "uniform", "one_point", "two_point"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical("mutation", ["bitflip"]),
-        Real("mutation_prob_factor", 0.25, 3.0),
-    ]
-    return params, [], []
+    return binary_operator_part_full(mutation_prob_param="mutation_prob_factor", mutation_prob_bounds=(0.25, 3.0))
 
 
 def _integer_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("crossover", ["uniform", "arithmetic", "sbx"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical("mutation", ["reset", "creep", "pm"]),
-        Real("mutation_prob_factor", 0.25, 3.0),
-    ]
-    conditionals = [
-        ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
-        ConditionalBlock("mutation", "pm", [Real("mutation_eta", 5.0, 40.0)]),
-        ConditionalBlock("mutation", "creep", [Int("creep_step", 1, 5)]),
-    ]
-    return params, conditionals, []
+    return integer_operator_part_full(mutation_prob_param="mutation_prob_factor", mutation_prob_bounds=(0.25, 3.0))
 
 
 # ---------------------------------------------------------------------------
