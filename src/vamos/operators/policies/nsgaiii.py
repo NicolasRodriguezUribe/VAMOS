@@ -1,7 +1,7 @@
 """NSGA-III operator registration and building.
 
 This module provides operator registries and factory functions for NSGA-III
-supporting continuous, binary, integer, and mixed encodings.
+supporting continuous, binary, integer, permutation, and mixed encodings.
 """
 
 from __future__ import annotations
@@ -13,19 +13,27 @@ import numpy as np
 
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
-from vamos.operators.impl.binary import (
-    bit_flip_mutation,
-    one_point_crossover,
-    two_point_crossover,
-    uniform_crossover,
-)
 from vamos.operators.impl.integer import (
-    arithmetic_integer_crossover,
     creep_mutation,
-    random_reset_mutation,
-    uniform_integer_crossover,
+    gaussian_integer_mutation,
+    integer_polynomial_mutation,
+    integer_sbx_crossover,
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
+from vamos.operators.policies.discrete_operator_maps import (
+    BINARY_CROSSOVER_COMMON,
+    BINARY_MUTATION_COMMON,
+    INT_CROSSOVER_COMMON,
+    INT_MUTATION_COMMON,
+    PERM_CROSSOVER_COMMON,
+    PERM_MUTATION_COMMON,
+    BinaryCrossoverOp,
+    BinaryMutationOp,
+    IntCrossoverOp,
+    IntMutationOp,
+    PermCrossoverOp,
+    PermMutationOp,
+)
 from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
 
 __all__ = [
@@ -33,6 +41,8 @@ __all__ = [
     "BINARY_MUTATION",
     "INT_CROSSOVER",
     "INT_MUTATION",
+    "PERM_CROSSOVER",
+    "PERM_MUTATION",
     "build_variation_operators",
 ]
 
@@ -41,40 +51,16 @@ __all__ = [
 # Operator registries
 # -------------------------------------------------------------------------
 
-BinaryCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
-BinaryMutationOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], None]
-IntCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
-IntMutationOp: TypeAlias = Callable[..., None]
-
 VariationCrossoverFn: TypeAlias = Callable[[np.ndarray], np.ndarray]
 VariationMutationFn: TypeAlias = Callable[[np.ndarray], np.ndarray]
 
 
-BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = {
-    "one_point": one_point_crossover,
-    "single_point": one_point_crossover,
-    "1point": one_point_crossover,
-    "two_point": two_point_crossover,
-    "2point": two_point_crossover,
-    "uniform": uniform_crossover,
-}
-
-BINARY_MUTATION: dict[str, BinaryMutationOp] = {
-    "bitflip": bit_flip_mutation,
-    "bit_flip": bit_flip_mutation,
-}
-
-INT_CROSSOVER: dict[str, IntCrossoverOp] = {
-    "uniform": uniform_integer_crossover,
-    "blend": arithmetic_integer_crossover,
-    "arithmetic": arithmetic_integer_crossover,
-}
-
-INT_MUTATION: dict[str, IntMutationOp] = {
-    "reset": random_reset_mutation,
-    "random_reset": random_reset_mutation,
-    "creep": creep_mutation,
-}
+BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = dict(BINARY_CROSSOVER_COMMON)
+BINARY_MUTATION: dict[str, BinaryMutationOp] = dict(BINARY_MUTATION_COMMON)
+INT_CROSSOVER: dict[str, IntCrossoverOp] = dict(INT_CROSSOVER_COMMON)
+INT_MUTATION: dict[str, IntMutationOp] = dict(INT_MUTATION_COMMON)
+PERM_CROSSOVER: dict[str, PermCrossoverOp] = dict(PERM_CROSSOVER_COMMON)
+PERM_MUTATION: dict[str, PermMutationOp] = dict(PERM_MUTATION_COMMON)
 
 
 # -------------------------------------------------------------------------
@@ -91,33 +77,7 @@ def build_variation_operators(
     rng: np.random.Generator,
     mixed_spec: dict[str, np.ndarray] | None = None,
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
-    """Build crossover and mutation operators for the given encoding.
-
-    Parameters
-    ----------
-    config : dict
-        Algorithm configuration containing 'crossover' and 'mutation' keys.
-    encoding : str
-        Variable encoding: "real", "binary", "integer", or "mixed".
-    n_var : int
-        Number of decision variables.
-    xl : np.ndarray
-        Lower bounds.
-    xu : np.ndarray
-        Upper bounds.
-    rng : np.random.Generator
-        Random number generator.
-
-    Returns
-    -------
-    tuple
-        (crossover_fn, mutation_fn) callable operators.
-
-    Raises
-    ------
-    ValueError
-        If encoding or operator is not supported.
-    """
+    """Build crossover and mutation operators for the given encoding."""
     # Unpack crossover config
     cross_cfg = config.get("crossover", ("sbx", {}))
     if isinstance(cross_cfg, tuple):
@@ -136,6 +96,8 @@ def build_variation_operators(
         mut_method = "pm"
         mut_params = mut_cfg or {}
 
+    cross_method = str(cross_method).lower()
+    mut_method = str(mut_method).lower()
     if mut_params.get("prob") == "1/n":
         mut_params["prob"] = 1.0 / n_var
 
@@ -144,12 +106,14 @@ def build_variation_operators(
         return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif normalized == "integer":
         return _build_integer_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
-    elif normalized == "real":
-        return _build_real_operators(cross_params, mut_params, n_var, xl, xu, rng)
+    elif normalized == "permutation":
+        return _build_permutation_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif normalized == "mixed":
         if mixed_spec is None:
             raise ValueError("NSGA-III mixed encoding requires problem.mixed_spec.")
         return _build_mixed_operators(cross_method, cross_params, mut_method, mut_params, n_var, mixed_spec, rng)
+    elif normalized == "real":
+        return _build_real_operators(cross_params, mut_params, n_var, xl, xu, rng)
     else:
         raise ValueError(f"NSGA-III does not support encoding '{normalized}'.")
 
@@ -205,8 +169,16 @@ def _build_integer_operators(
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     step = int(mut_params.get("step", 1))
 
-    def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        return cross_fn(parents, cross_prob, _rng)
+    if cross_fn is integer_sbx_crossover:
+        eta = float(cross_params.get("eta", 20.0))
+
+        def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            return integer_sbx_crossover(parents, cross_prob, eta, xl, xu, _rng)
+
+    else:
+
+        def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            return cross_fn(parents, cross_prob, _rng)
 
     if mut_fn is creep_mutation:
 
@@ -214,11 +186,56 @@ def _build_integer_operators(
             creep_mutation(X_child, mut_prob, step, xl, xu, _rng)
             return X_child
 
+    elif mut_fn is integer_polynomial_mutation:
+        eta = float(mut_params.get("eta", 20.0))
+
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            integer_polynomial_mutation(X_child, mut_prob, eta, xl, xu, _rng)
+            return X_child
+
+    elif mut_fn is gaussian_integer_mutation:
+        sigma = float(mut_params.get("sigma", 1.0))
+
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            gaussian_integer_mutation(X_child, mut_prob, sigma, xl, xu, _rng)
+            return X_child
+
     else:
 
         def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
             mut_fn(X_child, mut_prob, xl, xu, _rng)
             return X_child
+
+    return crossover, mutation
+
+
+def _build_permutation_operators(
+    cross_method: str,
+    cross_params: dict[str, Any],
+    mut_method: str,
+    mut_params: dict[str, Any],
+    n_var: int,
+    rng: np.random.Generator,
+) -> tuple[VariationCrossoverFn, VariationMutationFn]:
+    """Build permutation encoding operators."""
+    if cross_method not in PERM_CROSSOVER:
+        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for permutation encoding.")
+    if mut_method not in PERM_MUTATION:
+        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for permutation encoding.")
+
+    cross_fn = PERM_CROSSOVER[cross_method]
+    cross_prob = float(cross_params.get("prob", 0.9))
+    mut_fn = PERM_MUTATION[mut_method]
+    mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+
+    def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        parents_flat = parents.reshape(-1, parents.shape[-1])
+        offspring_flat = cross_fn(parents_flat, cross_prob, _rng)
+        return offspring_flat.reshape(parents.shape)
+
+    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        mut_fn(X_child, mut_prob, _rng)
+        return X_child
 
     return crossover, mutation
 
@@ -274,12 +291,14 @@ def _build_mixed_operators(
     rng: np.random.Generator,
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build mixed encoding operators."""
-    cross_name = str(cross_method).lower()
-    mut_name = str(mut_method).lower()
-    if cross_name != "mixed":
-        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for mixed encoding. Use 'mixed'.")
-    if mut_name != "mixed":
-        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for mixed encoding. Use 'mixed'.")
+    if str(cross_method).lower() not in {"mixed", "uniform"}:
+        raise ValueError(
+            f"Unsupported NSGA-III crossover '{cross_method}' for mixed encoding."
+        )
+    if str(mut_method).lower() not in {"mixed", "gaussian"}:
+        raise ValueError(
+            f"Unsupported NSGA-III mutation '{mut_method}' for mixed encoding."
+        )
 
     cross_prob = float(cross_params.get("prob", 0.9))
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))

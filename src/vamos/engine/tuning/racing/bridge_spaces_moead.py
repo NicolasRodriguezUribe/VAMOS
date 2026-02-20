@@ -4,6 +4,7 @@ MOEA/D configuration space builders for tuning.
 
 from __future__ import annotations
 
+from .bridge_space_parts_discrete import mixed_operator_part, permutation_operator_part_full
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
 from .param_space import Boolean, Categorical, ConditionalBlock, Int, ParamType, Real
 
@@ -57,13 +58,8 @@ def _real_operator_part() -> SpacePart:
 
 
 def _permutation_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("crossover", ["ox", "pmx", "edge", "cycle", "position"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical("mutation", ["swap", "insert", "scramble", "inversion", "displacement"]),
-        Real("mutation_prob", 0.01, 0.5),
-        Boolean("use_external_archive"),
-    ]
+    params, _, _ = permutation_operator_part_full()
+    params.append(Boolean("use_external_archive"))
     archive_type_param = Categorical("archive_type", ["size_cap", "hvc_prune"])
     archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
     conditionals = [
@@ -77,13 +73,7 @@ def _permutation_operator_part() -> SpacePart:
 
 
 def _mixed_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("crossover", ["mixed"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical("mutation", ["mixed"]),
-        Real("mutation_prob", 0.01, 0.5),
-    ]
-    return params, [], []
+    return mixed_operator_part()
 
 
 def _binary_operator_part() -> SpacePart:

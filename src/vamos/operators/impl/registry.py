@@ -85,6 +85,7 @@ def _get_registry() -> Registry[object]:
         BitFlipMutation,
         HuxCrossover,
         OnePointCrossover,
+        SegmentInversionMutation,
         TwoPointCrossover,
     )
     from vamos.operators.impl.binary import (
@@ -97,9 +98,11 @@ def _get_registry() -> Registry[object]:
     reg.register("binary_uniform", BinaryUniformCrossover)
     reg.register("hux", HuxCrossover)
     reg.register("spx", SPXCrossover)
+    reg.register("segment_inversion", SegmentInversionMutation)
 
     # Permutation operators
     from vamos.operators.impl.permutation import (
+        AlternatingEdgesCrossover,
         CycleCrossover,
         DisplacementMutation,
         EdgeRecombinationCrossover,
@@ -110,6 +113,7 @@ def _get_registry() -> Registry[object]:
         PositionBasedCrossover,
         ScrambleMutation,
         SwapMutation,
+        TwoOptMutation,
     )
 
     reg.register("swap", SwapMutation)
@@ -118,17 +122,21 @@ def _get_registry() -> Registry[object]:
     reg.register("cycle", CycleCrossover)
     reg.register("position_based", PositionBasedCrossover)
     reg.register("erx", EdgeRecombinationCrossover)
+    reg.register("aex", AlternatingEdgesCrossover)
     reg.register("ox", OrderCrossover)
     reg.register("order", OrderCrossover)
     reg.register("insert", InsertMutation)
     reg.register("scramble", ScrambleMutation)
     reg.register("inversion", InversionMutation)
     reg.register("displacement", DisplacementMutation)
+    reg.register("two_opt", TwoOptMutation)
 
     # Integer operators
     from vamos.operators.impl.integer import (
         ArithmeticIntegerCrossover,
+        BoundaryIntegerMutation,
         CreepMutation,
+        GaussianIntegerMutation,
         IntegerPolynomialMutation,
         IntegerSBXCrossover,
         RandomResetMutation,
@@ -141,6 +149,8 @@ def _get_registry() -> Registry[object]:
     reg.register("reset", RandomResetMutation)
     reg.register("int_pm", IntegerPolynomialMutation)
     reg.register("creep", CreepMutation)
+    reg.register("boundary", BoundaryIntegerMutation)
+    reg.register("int_gaussian", GaussianIntegerMutation)
 
     # Mixed operators
     from vamos.operators.impl.mixed import MixedCrossover, MixedMutation

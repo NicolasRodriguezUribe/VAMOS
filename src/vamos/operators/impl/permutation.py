@@ -215,6 +215,22 @@ def displacement_mutation(
     _apply_row_mutation(X, prob, rng, _displacement_row_mutation)
 
 
+def two_opt_mutation(
+    X: PermPop,
+    prob: float,
+    rng: RNG,
+) -> None:
+    _apply_row_mutation(X, prob, rng, _two_opt_row_mutation)
+
+
+def alternating_edges_crossover(
+    X_parents: PermPop,
+    prob: float,
+    rng: RNG,
+) -> PermPop:
+    return _pairwise_crossover(X_parents, prob, rng, _alternating_edges_children)
+
+
 # === Internal helpers ===
 
 
@@ -505,7 +521,78 @@ def _displacement_row_mutation(row: PermVec, rng: RNG) -> None:
     row[:] = np.concatenate([remaining[:insert_pos], segment, remaining[insert_pos:]])
 
 
+def _two_opt_row_mutation(row: PermVec, rng: RNG) -> None:
+    n = row.size
+    if n < 2:
+        return
+    lo, hi = _two_cut_points(n, rng)
+    if hi <= lo:
+        return
+    row[lo : hi + 1] = row[lo : hi + 1][::-1]
+
+
+def _alternating_edges_children(p1: PermVec, p2: PermVec, rng: RNG) -> tuple[PermVec, PermVec]:
+    c1 = _alternating_edges_child(p1, p2, rng, prefer_parent_a=True)
+    c2 = _alternating_edges_child(p2, p1, rng, prefer_parent_a=False)
+    return c1, c2
+
+
+def _alternating_edges_child(
+    parent_a: PermVec,
+    parent_b: PermVec,
+    rng: RNG,
+    *,
+    prefer_parent_a: bool,
+) -> PermVec:
+    n = parent_a.size
+    child = np.empty(n, dtype=parent_a.dtype)
+    if n == 0:
+        return child
+
+    pos_a = np.empty(n, dtype=int)
+    pos_b = np.empty(n, dtype=int)
+    pos_a[parent_a] = np.arange(n, dtype=int)
+    pos_b[parent_b] = np.arange(n, dtype=int)
+    used = np.zeros(n, dtype=bool)
+
+    if prefer_parent_a:
+        current = int(parent_a[0])
+        take_from_a = True
+    else:
+        current = int(parent_b[0])
+        take_from_a = False
+
+    child[0] = current
+    used[current] = True
+
+    for i in range(1, n):
+        if take_from_a:
+            primary = int(parent_a[(pos_a[current] + 1) % n])
+            secondary = int(parent_b[(pos_b[current] + 1) % n])
+        else:
+            primary = int(parent_b[(pos_b[current] + 1) % n])
+            secondary = int(parent_a[(pos_a[current] + 1) % n])
+
+        if not used[primary]:
+            nxt = primary
+        elif not used[secondary]:
+            nxt = secondary
+        else:
+            remaining = np.flatnonzero(~used)
+            if remaining.size == 0:
+                break
+            nxt = int(rng.choice(remaining))
+
+        child[i] = nxt
+        used[nxt] = True
+        current = nxt
+        take_from_a = not take_from_a
+
+    return child
+
+
 from .permutation_adapters import (
+    AlternatingEdgesCrossover,
     CycleCrossover,
     DisplacementMutation,
     EdgeRecombinationCrossover,
@@ -516,6 +603,7 @@ from .permutation_adapters import (
     PositionBasedCrossover,
     ScrambleMutation,
     SwapMutation,
+    TwoOptMutation,
 )
 
 __all__ = [
@@ -530,14 +618,18 @@ __all__ = [
     "scramble_mutation",
     "inversion_mutation",
     "displacement_mutation",
+    "two_opt_mutation",
+    "alternating_edges_crossover",
     "SwapMutation",
     "PMXCrossover",
     "CycleCrossover",
     "PositionBasedCrossover",
     "EdgeRecombinationCrossover",
+    "AlternatingEdgesCrossover",
     "OrderCrossover",
     "InsertMutation",
     "ScrambleMutation",
     "InversionMutation",
     "DisplacementMutation",
+    "TwoOptMutation",
 ]

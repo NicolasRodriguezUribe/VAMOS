@@ -11,6 +11,7 @@ from .integer import (
     random_reset_mutation,
 )
 from .permutation import (
+    alternating_edges_crossover,
     cycle_crossover,
     displacement_mutation,
     edge_recombination_crossover,
@@ -21,6 +22,7 @@ from .permutation import (
     position_based_crossover,
     scramble_mutation,
     swap_mutation,
+    two_opt_mutation,
 )
 
 _PERM_CROSSOVER = {
@@ -36,6 +38,8 @@ _PERM_CROSSOVER = {
     "edge": edge_recombination_crossover,
     "edge_recombination": edge_recombination_crossover,
     "erx": edge_recombination_crossover,
+    "aex": alternating_edges_crossover,
+    "alternating_edges": alternating_edges_crossover,
 }
 
 _PERM_MUTATION = {
@@ -44,6 +48,7 @@ _PERM_MUTATION = {
     "scramble": scramble_mutation,
     "inversion": inversion_mutation,
     "displacement": displacement_mutation,
+    "two_opt": two_opt_mutation,
 }
 
 

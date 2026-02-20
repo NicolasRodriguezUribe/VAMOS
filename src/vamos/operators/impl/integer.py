@@ -252,6 +252,63 @@ def creep_mutation(X: np.ndarray, prob: float, step: int, lower: np.ndarray, upp
     X[:] = proposed
 
 
+def gaussian_integer_mutation(
+    X: np.ndarray,
+    prob: float,
+    sigma: float,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    rng: np.random.Generator,
+) -> None:
+    """
+    Per-gene Gaussian mutation for integer variables (round + clip).
+    """
+    if X.size == 0:
+        return
+    prob = float(np.clip(prob, 0.0, 1.0))
+    if prob <= 0.0:
+        return
+    if lower.shape != upper.shape or lower.shape[0] != X.shape[1]:
+        raise ValueError("lower/upper must match chromosome length.")
+    sigma = float(sigma)
+    if sigma <= 0.0:
+        return
+    mask = rng.random(X.shape) <= prob
+    if not np.any(mask):
+        return
+    noise = rng.normal(loc=0.0, scale=sigma, size=X.shape)
+    proposed = np.rint(X.astype(float) + noise).astype(X.dtype, copy=False)
+    np.clip(proposed, lower, upper, out=proposed)
+    X[mask] = proposed[mask]
+
+
+def boundary_integer_mutation(
+    X: np.ndarray,
+    prob: float,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    rng: np.random.Generator,
+) -> None:
+    """
+    Per-gene boundary mutation that snaps selected genes to lower/upper bounds.
+    """
+    if X.size == 0:
+        return
+    prob = float(np.clip(prob, 0.0, 1.0))
+    if prob <= 0.0:
+        return
+    if lower.shape != upper.shape or lower.shape[0] != X.shape[1]:
+        raise ValueError("lower/upper must match chromosome length.")
+    mask = rng.random(X.shape) <= prob
+    if not np.any(mask):
+        return
+    boundary_pick_upper = rng.random(X.shape) < 0.5
+    boundary_values = np.broadcast_to(lower, X.shape).copy()
+    upper_values = np.broadcast_to(upper, X.shape)
+    boundary_values[boundary_pick_upper] = upper_values[boundary_pick_upper]
+    X[mask] = boundary_values[mask]
+
+
 def integer_polynomial_mutation(
     X: np.ndarray,
     prob: float,
@@ -376,6 +433,31 @@ class CreepMutation:
         creep_mutation(X, self.prob, self.step, lower, upper, rng)
 
 
+class GaussianIntegerMutation:
+    def __init__(self, prob: float = 0.1, sigma: float = 1.0, **kwargs: Any) -> None:
+        self.prob = float(prob)
+        self.sigma = float(sigma)
+
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> None:
+        lower = kwargs.get("lower")
+        upper = kwargs.get("upper")
+        if lower is None or upper is None:
+            raise ValueError("GaussianIntegerMutation requires 'lower' and 'upper' bounds in kwargs.")
+        gaussian_integer_mutation(X, self.prob, self.sigma, lower, upper, rng)
+
+
+class BoundaryIntegerMutation:
+    def __init__(self, prob: float = 0.1, **kwargs: Any) -> None:
+        self.prob = float(prob)
+
+    def __call__(self, X: np.ndarray, rng: np.random.Generator, **kwargs: Any) -> None:
+        lower = kwargs.get("lower")
+        upper = kwargs.get("upper")
+        if lower is None or upper is None:
+            raise ValueError("BoundaryIntegerMutation requires 'lower' and 'upper' bounds in kwargs.")
+        boundary_integer_mutation(X, self.prob, lower, upper, rng)
+
+
 __all__ = [
     "random_integer_population",
     "uniform_integer_crossover",
@@ -383,6 +465,8 @@ __all__ = [
     "integer_sbx_crossover",
     "random_reset_mutation",
     "creep_mutation",
+    "gaussian_integer_mutation",
+    "boundary_integer_mutation",
     "integer_polynomial_mutation",
     "UniformIntegerCrossover",
     "ArithmeticIntegerCrossover",
@@ -390,4 +474,6 @@ __all__ = [
     "RandomResetMutation",
     "IntegerPolynomialMutation",
     "CreepMutation",
+    "GaussianIntegerMutation",
+    "BoundaryIntegerMutation",
 ]

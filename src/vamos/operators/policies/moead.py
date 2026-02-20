@@ -18,12 +18,15 @@ from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.operators.impl.binary import (
     bit_flip_mutation,
     one_point_crossover,
+    segment_inversion_mutation,
     two_point_crossover,
     uniform_crossover,
 )
 from vamos.operators.impl.integer import (
     arithmetic_integer_crossover,
+    boundary_integer_mutation,
     creep_mutation,
+    gaussian_integer_mutation,
     integer_polynomial_mutation,
     integer_sbx_crossover,
     random_reset_mutation,
@@ -31,6 +34,7 @@ from vamos.operators.impl.integer import (
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
 from vamos.operators.impl.permutation import (
+    alternating_edges_crossover,
     cycle_crossover,
     displacement_mutation,
     edge_recombination_crossover,
@@ -41,6 +45,7 @@ from vamos.operators.impl.permutation import (
     position_based_crossover,
     scramble_mutation,
     swap_mutation,
+    two_opt_mutation,
 )
 from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
 
@@ -69,6 +74,7 @@ BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = {
 BINARY_MUTATION: dict[str, BinaryMutationOp] = {
     "bitflip": bit_flip_mutation,
     "bit_flip": bit_flip_mutation,
+    "segment_inversion": segment_inversion_mutation,
 }
 
 INT_CROSSOVER: dict[str, IntCrossoverOp] = {
@@ -84,6 +90,8 @@ INT_MUTATION: dict[str, IntMutationOp] = {
     "creep": creep_mutation,
     "pm": integer_polynomial_mutation,
     "polynomial": integer_polynomial_mutation,
+    "gaussian": gaussian_integer_mutation,
+    "boundary": boundary_integer_mutation,
 }
 
 PERM_CROSSOVER: dict[str, PermCrossoverOp] = {
@@ -98,6 +106,8 @@ PERM_CROSSOVER: dict[str, PermCrossoverOp] = {
     "edge": edge_recombination_crossover,
     "edge_recombination": edge_recombination_crossover,
     "erx": edge_recombination_crossover,
+    "aex": alternating_edges_crossover,
+    "alternating_edges": alternating_edges_crossover,
 }
 
 PERM_MUTATION: dict[str, PermMutationOp] = {
@@ -106,6 +116,7 @@ PERM_MUTATION: dict[str, PermMutationOp] = {
     "scramble": scramble_mutation,
     "inversion": inversion_mutation,
     "displacement": displacement_mutation,
+    "two_opt": two_opt_mutation,
 }
 
 
@@ -252,6 +263,13 @@ def _build_integer_operators(
 
         def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
             integer_polynomial_mutation(X_child, mut_prob, eta, xl, xu, _rng)
+            return X_child
+
+    elif mut_fn is gaussian_integer_mutation:
+        sigma = float(mut_params.get("sigma", 1.0))
+
+        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+            gaussian_integer_mutation(X_child, mut_prob, sigma, xl, xu, _rng)
             return X_child
 
     else:

@@ -4,6 +4,7 @@ NSGA-II configuration space builders for tuning.
 
 from __future__ import annotations
 
+from .bridge_space_parts_discrete import mixed_operator_part, permutation_operator_part_full
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
 from .param_space import Boolean, Categorical, Condition, ConditionalBlock, Int, ParamType, Real
 
@@ -129,23 +130,16 @@ def _real_operator_part() -> SpacePart:
 
 
 def _permutation_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("crossover", ["ox", "pmx", "edge", "cycle", "position"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical("mutation", ["swap", "insert", "scramble", "inversion", "displacement"]),
-        Real("mutation_prob_factor", 0.25, 3.0),
-    ]
-    return params, [], []
+    return permutation_operator_part_full(mutation_prob_param="mutation_prob_factor", mutation_prob_bounds=(0.25, 3.0))
 
 
 def _mixed_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("crossover", ["mixed", "uniform"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical("mutation", ["mixed", "gaussian"]),
-        Real("mutation_prob_factor", 0.25, 3.0),
-    ]
-    return params, [], []
+    return mixed_operator_part(
+        crossover_choices=("mixed", "uniform"),
+        mutation_choices=("mixed", "gaussian"),
+        mutation_prob_param="mutation_prob_factor",
+        mutation_prob_bounds=(0.25, 3.0),
+    )
 
 
 def _binary_operator_part() -> SpacePart:

@@ -48,13 +48,13 @@ def test_build_hv_stop_config_uses_builtin_front():
     assert cfg["reference_front_path"].upper().endswith("ZDT1.CSV")
 
 
-def test_permutation_problem_requires_nsgaii():
+def test_permutation_problem_rejects_unsupported_algorithm():
     selection = SimpleNamespace(instantiate=lambda: TSPProblem(n_cities=6), spec=SimpleNamespace(key="tsp6"), n_var=6, n_obj=2)
     config = ExperimentConfig(population_size=4, offspring_population_size=4, max_evaluations=8, seed=1)
     with pytest.raises(ConfigurationError):
         runner.run_single(
             "numpy",
-            "moead",
+            "smpso",
             selection,
             config,
         )

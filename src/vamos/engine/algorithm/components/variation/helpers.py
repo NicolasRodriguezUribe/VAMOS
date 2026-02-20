@@ -13,12 +13,15 @@ from vamos.operators.impl.binary import (
     bit_flip_mutation,
     hux_crossover,
     one_point_crossover,
+    segment_inversion_mutation,
     two_point_crossover,
     uniform_crossover,
 )
 from vamos.operators.impl.integer import (
     arithmetic_integer_crossover,
+    boundary_integer_mutation,
     creep_mutation,
+    gaussian_integer_mutation,
     integer_polynomial_mutation,
     integer_sbx_crossover,
     random_reset_mutation,
@@ -26,6 +29,7 @@ from vamos.operators.impl.integer import (
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
 from vamos.operators.impl.permutation import (
+    alternating_edges_crossover,
     cycle_crossover,
     displacement_mutation,
     edge_recombination_crossover,
@@ -36,6 +40,7 @@ from vamos.operators.impl.permutation import (
     position_based_crossover,
     scramble_mutation,
     swap_mutation,
+    two_opt_mutation,
 )
 from vamos.operators.impl.registry import get_operator_registry
 
@@ -158,6 +163,8 @@ def _populate_defaults() -> None:
             "edge": edge_recombination_crossover,
             "edge_recombination": edge_recombination_crossover,
             "erx": edge_recombination_crossover,
+            "aex": alternating_edges_crossover,
+            "alternating_edges": alternating_edges_crossover,
         },
     )
 
@@ -169,6 +176,7 @@ def _populate_defaults() -> None:
             "scramble": scramble_mutation,
             "inversion": inversion_mutation,
             "displacement": displacement_mutation,
+            "two_opt": two_opt_mutation,
         },
     )
 
@@ -191,6 +199,7 @@ def _populate_defaults() -> None:
         {
             "bitflip": bit_flip_mutation,
             "bit_flip": bit_flip_mutation,
+            "segment_inversion": segment_inversion_mutation,
         },
     )
 
@@ -212,6 +221,8 @@ def _populate_defaults() -> None:
             "creep": creep_mutation,
             "pm": integer_polynomial_mutation,
             "polynomial": integer_polynomial_mutation,
+            "gaussian": gaussian_integer_mutation,
+            "boundary": boundary_integer_mutation,
         },
     )
 

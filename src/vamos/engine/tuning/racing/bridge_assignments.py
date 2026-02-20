@@ -21,14 +21,17 @@ from vamos.engine.algorithm.config import (
     SPEA2Config,
 )
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.foundation.core.algorithm_variants import ALGORITHM_VARIANT_GROUPS
 
-_NSGAII_NAMES = {"nsgaii", "nsgaii_permutation", "nsgaii_mixed", "nsgaii_binary", "nsgaii_integer"}
-_MOEAD_NAMES = {"moead", "moead_mixed", "moead_binary", "moead_integer"}
-_NSGAIII_NAMES = {"nsgaiii", "nsgaiii_mixed", "nsgaiii_binary", "nsgaiii_integer"}
-_SMSEMOA_NAMES = {"smsemoa", "smsemoa_mixed", "smsemoa_binary", "smsemoa_integer"}
-_IBEA_NAMES = {"ibea", "ibea_mixed", "ibea_binary", "ibea_integer"}
-_AGEMOEA_NAMES = {"agemoea", "agemoea_mixed"}
-_RVEA_NAMES = {"rvea", "rvea_mixed"}
+_NSGAII_NAMES = ALGORITHM_VARIANT_GROUPS["nsgaii"]
+_MOEAD_NAMES = ALGORITHM_VARIANT_GROUPS["moead"] - {"moead_permutation"}
+_NSGAIII_NAMES = ALGORITHM_VARIANT_GROUPS["nsgaiii"]
+_SMSEMOA_NAMES = ALGORITHM_VARIANT_GROUPS["smsemoa"]
+_SPEA2_NAMES = ALGORITHM_VARIANT_GROUPS["spea2"]
+_IBEA_NAMES = ALGORITHM_VARIANT_GROUPS["ibea"]
+_SMPSO_NAMES = ALGORITHM_VARIANT_GROUPS["smpso"]
+_AGEMOEA_NAMES = ALGORITHM_VARIANT_GROUPS["agemoea"]
+_RVEA_NAMES = ALGORITHM_VARIANT_GROUPS["rvea"]
 
 
 def _apply_initializer(builder: Any, assignment: dict[str, Any], pop_size: int) -> None:
@@ -223,6 +226,8 @@ def _build_nsgaiii_config(assignment: dict[str, Any]) -> NSGAIIIConfig:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     elif mut == "creep":
         mut_params["step"] = int(assignment.get("creep_step", 1))
+    elif mut == "gaussian":
+        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
     return builder.build()
@@ -242,6 +247,8 @@ def _build_smsemoa_config(assignment: dict[str, Any]) -> SMSEMOAConfig:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     elif mut == "creep":
         mut_params["step"] = int(assignment.get("creep_step", 1))
+    elif mut == "gaussian":
+        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
     builder.reference_point(offset=0.1, adaptive=True)
@@ -262,6 +269,10 @@ def _build_spea2_config(assignment: dict[str, Any]) -> SPEA2Config:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     if mut in {"pm", "polynomial"}:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
+    elif mut == "creep":
+        mut_params["step"] = int(assignment.get("creep_step", 1))
+    elif mut == "gaussian":
+        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
     builder.k_neighbors(int(assignment.get("k_neighbors", max(1, int(np.sqrt(pop_size))))))
@@ -282,6 +293,8 @@ def _build_ibea_config(assignment: dict[str, Any]) -> IBEAConfig:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     elif mut == "creep":
         mut_params["step"] = int(assignment.get("creep_step", 1))
+    elif mut == "gaussian":
+        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
     builder.indicator(str(assignment.get("indicator", "eps")))
@@ -298,11 +311,11 @@ def _build_smpso_config(assignment: dict[str, Any]) -> SMPSOConfig:
     builder.c1(float(assignment["c1"]))
     builder.c2(float(assignment["c2"]))
     builder.vmax_fraction(float(assignment["vmax_fraction"]))
-    builder.mutation(
-        "pm",
-        prob=float(assignment["mutation_prob"]),
-        eta=float(assignment["mutation_eta"]),
-    )
+    mut = str(assignment.get("mutation", "pm"))
+    mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
+    if mut in {"pm", "polynomial"}:
+        mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
+    builder.mutation(mut, **mut_params)
     return builder.build()
 
 
@@ -336,10 +349,12 @@ def _build_agemoea_config(assignment: dict[str, Any]) -> AGEMOEAConfig:
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
     if mut in {"pm", "polynomial", "linked_polynomial"}:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
+    elif mut == "creep":
+        mut_params["step"] = int(assignment.get("creep_step", 1))
     elif mut == "non_uniform":
         mut_params["perturbation"] = float(assignment.get("nonuniform_perturbation", 0.5))
     elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 0.1))
+        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
     elif mut == "cauchy":
         mut_params["gamma"] = float(assignment.get("cauchy_gamma", 0.1))
     elif mut == "uniform":
@@ -402,10 +417,12 @@ def _build_rvea_config(assignment: dict[str, Any]) -> RVEAConfig:
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
     if mut in {"pm", "polynomial", "linked_polynomial"}:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
+    elif mut == "creep":
+        mut_params["step"] = int(assignment.get("creep_step", 1))
     elif mut == "non_uniform":
         mut_params["perturbation"] = float(assignment.get("nonuniform_perturbation", 0.5))
     elif mut == "gaussian":
-        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 0.1))
+        mut_params["sigma"] = float(assignment.get("gaussian_sigma", 1.0))
     elif mut == "cauchy":
         mut_params["gamma"] = float(assignment.get("cauchy_gamma", 0.1))
     elif mut == "uniform":
@@ -449,11 +466,11 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
         return _build_nsgaiii_config(assignment)
     if algo in _SMSEMOA_NAMES:
         return _build_smsemoa_config(assignment)
-    if algo in {"spea2", "spea2_mixed"}:
+    if algo in _SPEA2_NAMES:
         return _build_spea2_config(assignment)
     if algo in _IBEA_NAMES:
         return _build_ibea_config(assignment)
-    if algo == "smpso":
+    if algo in _SMPSO_NAMES:
         return _build_smpso_config(assignment)
     if algo in _AGEMOEA_NAMES:
         return _build_agemoea_config(assignment)
