@@ -324,8 +324,6 @@ Algorithms in \VAMOS{} expose a uniform \texttt{run(problem, termination, seed, 
 
 The framework includes optional external archives---both bounded (with crowding-distance or hypervolume-based pruning) and unbounded---that accumulate non-dominated solutions independently of the evolving population. This decouples the population-based search from the elite set, which is particularly useful for problems with more than two objectives~\cite{IshibuchiPS20}. Common quality indicators are built in, including hypervolume, generational distance (GD), inverted generational distance (IGD), and spread. Hypervolume computation can use optimized backends (MooCore) when installed, with fallback implementations for low-dimensional cases.
 
-\VAMOS{} also provides constraint handling through a declarative interface that supports feasibility rules, penalty functions, and $\varepsilon$-constraint relaxation. Constraints are specified via a lightweight DSL or plain Python callables and integrated into survival selection transparently. Results are returned in a unified result object that supports plotting and post-hoc analysis (e.g., filtering non-dominated solutions and exporting fronts).
-
 \subsection{Benchmark runner and reporting}
 
 The experiment layer includes a benchmark runner that executes standardized studies under a shared protocol (fixed problem definitions, evaluation budgets, and seeds) and emits machine-readable artifacts (per-seed results and summary CSVs). Table generation scripts produce LaTeX-ready tables directly from these artifacts, reducing transcription errors and enabling end-to-end reproducibility.
