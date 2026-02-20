@@ -187,37 +187,27 @@ MOEAD_WEIGHTS_DIR = weight_path("W3D_100.dat").parent
 
 # Frameworks to benchmark
 DEFAULT_FRAMEWORKS_NS = [
-    "vamos-numpy",
     "vamos-numba",
-    "vamos-moocore",  # VAMOS backends
-    "pymoo",  # pymoo
-    "jmetalpy",  # jMetalPy
+    "pymoo",
+    "jmetalpy",
 ]
 DEFAULT_FRAMEWORKS_NS_SS = [
-    "vamos-numpy",
     "vamos-numba",
-    "vamos-moocore",  # VAMOS backends
     "pymoo",
     "jmetalpy",
 ]
 DEFAULT_FRAMEWORKS_NS_ARCHIVE = [
-    "vamos-numpy",
     "vamos-numba",
-    "vamos-moocore",  # VAMOS backends
     "pymoo",
     "jmetalpy",
 ]
 DEFAULT_FRAMEWORKS_SMS = [
-    "vamos-numpy",
     "vamos-numba",
-    "vamos-moocore",  # VAMOS backends
     "pymoo",
     "jmetalpy",
 ]
 DEFAULT_FRAMEWORKS_MOEAD = [
-    "vamos-numpy",
     "vamos-numba",
-    "vamos-moocore",  # VAMOS backends
     "pymoo",
     "jmetalpy",
 ]

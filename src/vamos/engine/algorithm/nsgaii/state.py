@@ -177,7 +177,7 @@ def build_result(
     if state.result_archive is not None:
         arch_X, arch_F = state.result_archive.contents()
         result["archive"] = {"X": arch_X, "F": arch_F}
-    elif state.archive_size:
+    elif state.archive_manager is not None:
         archive_contents = get_archive_contents(state)
         if archive_contents is not None:
             result["archive"] = archive_contents
