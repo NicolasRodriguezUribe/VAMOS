@@ -160,6 +160,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
 
     combined_X = np.vstack([st.X, X_off])
     combined_F = np.vstack([st.F, F_off])
+    combined_G = np.vstack([st.G, G_off]) if st.G is not None and G_off is not None else None
     combined_ids = combine_ids(st)
     parent_count = st.X.shape[0]
     selected_idx = None
@@ -342,7 +343,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
     if early_reject:
         update_archives(st, algo.kernel, X=st.X, F=st.F)
     else:
-        update_archives(st, algo.kernel, X=combined_X, F=combined_F)
+        update_archives(st, algo.kernel, X=combined_X, F=combined_F, G=combined_G)
 
     hv_reached = st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points_fn())
 

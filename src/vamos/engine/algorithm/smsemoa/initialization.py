@@ -137,7 +137,7 @@ def initialize_smsemoa_run(
     # Setup external archive
     ext_cfg = resolve_external_archive(config)
     archive_X, archive_F, archive_manager = setup_archive(
-        kernel, X, F, n_var, n_obj, X.dtype, ext_cfg
+        kernel, X, F, n_var, n_obj, X.dtype, ext_cfg, G
     )
 
     # Create state

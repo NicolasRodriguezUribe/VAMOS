@@ -20,6 +20,7 @@ from vamos.operators.impl.integer import (
     integer_sbx_crossover,
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
+from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
 from vamos.operators.policies.discrete_operator_maps import (
     BINARY_CROSSOVER_COMMON,
     BINARY_MUTATION_COMMON,
@@ -34,7 +35,6 @@ from vamos.operators.policies.discrete_operator_maps import (
     PermCrossoverOp,
     PermMutationOp,
 )
-from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
 
 if TYPE_CHECKING:
     from vamos.foundation.problem.types import ProblemProtocol
@@ -43,12 +43,12 @@ if TYPE_CHECKING:
 VariationFn: TypeAlias = Callable[[np.ndarray, np.random.Generator], np.ndarray]
 
 
-BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = dict(BINARY_CROSSOVER_COMMON)
-BINARY_MUTATION: dict[str, BinaryMutationOp] = dict(BINARY_MUTATION_COMMON)
-INT_CROSSOVER: dict[str, IntCrossoverOp] = dict(INT_CROSSOVER_COMMON)
-INT_MUTATION: dict[str, IntMutationOp] = dict(INT_MUTATION_COMMON)
-PERM_CROSSOVER: dict[str, PermCrossoverOp] = dict(PERM_CROSSOVER_COMMON)
-PERM_MUTATION: dict[str, PermMutationOp] = dict(PERM_MUTATION_COMMON)
+BINARY_CROSSOVER: dict[str, BinaryCrossoverOp] = {**BINARY_CROSSOVER_COMMON}
+BINARY_MUTATION: dict[str, BinaryMutationOp] = {**BINARY_MUTATION_COMMON}
+INT_CROSSOVER: dict[str, IntCrossoverOp] = {**INT_CROSSOVER_COMMON}
+INT_MUTATION: dict[str, IntMutationOp] = {**INT_MUTATION_COMMON}
+PERM_CROSSOVER: dict[str, PermCrossoverOp] = {**PERM_CROSSOVER_COMMON}
+PERM_MUTATION: dict[str, PermMutationOp] = {**PERM_MUTATION_COMMON}
 
 
 def build_variation_operators(

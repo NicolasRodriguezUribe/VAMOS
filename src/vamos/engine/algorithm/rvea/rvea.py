@@ -163,6 +163,7 @@ def _build_archive(config: dict[str, Any], seed: int) -> BoundedArchive | None:
         return None
     bac = BoundedArchiveConfig(
         size_cap=ext_cfg.capacity,
+        truncate_size=ext_cfg.truncate_size,
         archive_type=ext_cfg.archive_type,
         prune_policy=ext_cfg.pruning,
         epsilon=ext_cfg.epsilon,

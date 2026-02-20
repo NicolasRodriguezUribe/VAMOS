@@ -38,7 +38,6 @@ from vamos.operators.impl.permutation import (
     two_opt_mutation,
 )
 
-
 BinaryCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]
 BinaryMutationOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], None]
 IntCrossoverOp: TypeAlias = Callable[..., np.ndarray]

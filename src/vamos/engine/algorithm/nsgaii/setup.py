@@ -178,6 +178,7 @@ def initialize_run(
         algo.kernel,
         X,
         F,
+        G,
         n_var,
         problem.n_obj,
         X.dtype,
@@ -238,7 +239,8 @@ def initialize_run(
         try:
             source_X = checkpoint_archive_X if checkpoint_archive_X is not None else X
             source_F = checkpoint_archive_F if checkpoint_archive_F is not None else F
-            result_archive.update(source_X, source_F)
+            source_G = None if checkpoint_archive_X is not None else G
+            result_archive.update(source_X, source_F, source_G)
         except Exception:  # pragma: no cover - defensive
             _logger().debug("Failed to seed result archive from checkpoint", exc_info=True)
 

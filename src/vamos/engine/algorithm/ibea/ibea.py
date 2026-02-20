@@ -148,7 +148,7 @@ class IBEA:
 
             # Update archive
             if st.archive_manager is not None:
-                st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F)
+                st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F, st.G)
 
             # Live callback
             live_cb.on_generation(st.generation, F=st.F, stats={"evals": st.n_eval})
@@ -317,7 +317,7 @@ class IBEA:
 
         # Update archive
         if st.archive_manager is not None:
-            st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F)
+            st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F, st.G)
 
         # Live callback
         if self._live_cb is not None:

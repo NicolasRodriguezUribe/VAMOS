@@ -19,6 +19,7 @@ from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
+    SPEA2Archive,
     UnboundedArchive,
 )
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
@@ -111,11 +112,12 @@ def setup_archive(
     kernel: KernelBackend,
     X: np.ndarray,
     F: np.ndarray,
+    G: np.ndarray | None,
     n_var: int,
     n_obj: int,
     dtype: np.dtype,
     ext_cfg: ExternalArchiveConfig | None,
-) -> tuple[np.ndarray | None, np.ndarray | None, CrowdingDistanceArchive | HypervolumeArchive | UnboundedArchive | None]:
+) -> tuple[np.ndarray | None, np.ndarray | None, CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive | None]:
     """Initialize archive if configured.
 
     Parameters
@@ -126,6 +128,8 @@ def setup_archive(
         Initial population decision variables.
     F : np.ndarray
         Initial population objectives.
+    G : np.ndarray | None
+        Initial population constraints.
     n_var : int
         Number of decision variables.
     n_obj : int
@@ -146,16 +150,64 @@ def setup_archive(
     capacity = ext_cfg.capacity
     pruning = ext_cfg.pruning
 
-    manager: CrowdingDistanceArchive | HypervolumeArchive | UnboundedArchive
+    tol = ext_cfg.objective_tolerance
+    dedup_mode = ext_cfg.deduplicate_in
+    decision_tol = ext_cfg.decision_tolerance
+    truncate_size = ext_cfg.truncate_size
+    n_con = G.shape[1] if G is not None else None
+
+    manager: CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive
     if capacity is None:
         # Unbounded archive
-        manager = UnboundedArchive(n_var=n_var, n_obj=n_obj, dtype=dtype)
-    elif pruning == "hv_contrib":
-        manager = HypervolumeArchive(capacity, n_var, n_obj, dtype)
+        manager = UnboundedArchive(
+            n_var=n_var,
+            n_obj=n_obj,
+            dtype=dtype,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+        )
+    elif pruning in {"hv_contrib", "mc_hv_contrib"}:
+        manager = HypervolumeArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+            ref_point=ext_cfg.hv_ref_point,
+        )
+    elif pruning == "spea2":
+        manager = SPEA2Archive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+            constraint_mode="feasibility",
+        )
     else:
-        manager = CrowdingDistanceArchive(capacity, n_var, n_obj, dtype)
+        manager = CrowdingDistanceArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+        )
 
-    archive_X, archive_F = manager.update(X, F)
+    archive_X, archive_F = manager.update(X, F, G)
     return archive_X, archive_F, manager
 
 
@@ -231,7 +283,7 @@ def setup_result_archive(
     n_var: int,
     n_obj: int,
     dtype: np.dtype,
-) -> HypervolumeArchive | CrowdingDistanceArchive | None:
+) -> HypervolumeArchive | CrowdingDistanceArchive | SPEA2Archive | None:
     """Create result archive if configured.
 
     Parameters
@@ -239,8 +291,8 @@ def setup_result_archive(
     ext_cfg : ExternalArchiveConfig | None
         External archive configuration. The ``pruning`` field determines
         the archive class (``"hv_contrib"`` -> HypervolumeArchive,
-        otherwise CrowdingDistanceArchive). ``None`` or unbounded
-        (``capacity is None``) disables the result archive.
+        ``"spea2"`` -> SPEA2Archive, otherwise CrowdingDistanceArchive).
+        ``None`` or unbounded (``capacity is None``) disables the result archive.
     n_var : int
         Number of decision variables.
     n_obj : int
@@ -256,9 +308,45 @@ def setup_result_archive(
     if ext_cfg is None or ext_cfg.capacity is None:
         return None
 
-    if ext_cfg.pruning == "hv_contrib":
-        return HypervolumeArchive(ext_cfg.capacity, n_var, n_obj, dtype)
-    return CrowdingDistanceArchive(ext_cfg.capacity, n_var, n_obj, dtype)
+    truncate_size = ext_cfg.truncate_size
+    tol = ext_cfg.objective_tolerance
+    dedup_mode = ext_cfg.deduplicate_in
+    decision_tol = ext_cfg.decision_tolerance
+
+    if ext_cfg.pruning in {"hv_contrib", "mc_hv_contrib"}:
+        return HypervolumeArchive(
+            ext_cfg.capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            ref_point=ext_cfg.hv_ref_point,
+        )
+    if ext_cfg.pruning == "spea2":
+        return SPEA2Archive(
+            ext_cfg.capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            constraint_mode="feasibility",
+        )
+    return CrowdingDistanceArchive(
+        ext_cfg.capacity,
+        n_var,
+        n_obj,
+        dtype,
+        truncate_size=truncate_size,
+        objective_tolerance=tol,
+        deduplicate_in=dedup_mode,
+        decision_tolerance=decision_tol,
+    )
 
 
 def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | None:

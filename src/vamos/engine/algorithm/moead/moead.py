@@ -340,7 +340,7 @@ class MOEAD:
             )
 
         # Update archive
-        update_archive(st)
+        update_archive(st, st.X, st.F, st.G)
 
         # Check HV termination
         hv_reached = st.hv_tracker is not None and st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points())

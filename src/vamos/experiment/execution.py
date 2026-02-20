@@ -18,6 +18,7 @@ from vamos.experiment.observers.console import ConsoleObserver
 from vamos.experiment.observers.storage import StorageObserver
 from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
 from vamos.experiment.runner_utils import run_output_dir, validate_problem
+from vamos.foundation.core.algorithm_variants import PERMUTATION_COMPATIBLE_ALGORITHMS
 from vamos.foundation.core.execution import execute_algorithm
 from vamos.foundation.core.experiment_config import (
     ENABLED_ALGORITHMS,
@@ -29,7 +30,6 @@ from vamos.foundation.core.experiment_config import (
     resolve_engine,
 )
 from vamos.foundation.core.hv_stop import compute_hv_reference
-from vamos.foundation.core.algorithm_variants import PERMUTATION_COMPATIBLE_ALGORITHMS
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.data import weight_path
 from vamos.foundation.encoding import normalize_encoding

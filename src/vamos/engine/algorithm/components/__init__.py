@@ -17,6 +17,7 @@ This package contains building blocks used across multiple algorithms:
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
+    SPEA2Archive,
     _single_front_crowding,
 )
 from vamos.engine.algorithm.components.archives import (
@@ -79,6 +80,7 @@ __all__ = [
     # archive
     "CrowdingDistanceArchive",
     "HypervolumeArchive",
+    "SPEA2Archive",
     "_single_front_crowding",
     # population
     "initialize_population",
