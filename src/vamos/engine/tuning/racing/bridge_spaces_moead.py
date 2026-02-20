@@ -4,7 +4,12 @@ MOEA/D configuration space builders for tuning.
 
 from __future__ import annotations
 
-from .bridge_space_parts_discrete import mixed_operator_part, permutation_operator_part_full
+from .bridge_space_parts_discrete import (
+    binary_operator_part_full,
+    integer_operator_part_full,
+    mixed_operator_part,
+    permutation_operator_part_full,
+)
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
 from .param_space import Boolean, Categorical, ConditionalBlock, Int, ParamType, Real
 
@@ -46,13 +51,17 @@ def _aggregation_part(*, extended: bool = False) -> SpacePart:
 def _real_operator_part() -> SpacePart:
     params: list[ParamType] = [
         Categorical("crossover", ["sbx", "de"]),
-        Categorical("mutation", ["pm"]),
+        Categorical("mutation", ["pm", "gaussian", "non_uniform", "cauchy", "uniform"]),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
     ]
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_prob", 0.6, 1.0), Real("crossover_eta", 10.0, 40.0)]),
         ConditionalBlock("crossover", "de", [Real("de_cr", 0.0, 1.0), Real("de_f", 0.0, 1.0)]),
+        ConditionalBlock("mutation", "non_uniform", [Real("nonuniform_perturbation", 0.05, 0.5)]),
+        ConditionalBlock("mutation", "gaussian", [Real("gaussian_sigma", 0.001, 0.5)]),
+        ConditionalBlock("mutation", "cauchy", [Real("cauchy_gamma", 0.001, 0.5)]),
+        ConditionalBlock("mutation", "uniform", [Real("uniform_perturb", 0.01, 0.5)]),
     ]
     return params, conditionals, []
 
@@ -73,32 +82,18 @@ def _permutation_operator_part() -> SpacePart:
 
 
 def _mixed_operator_part() -> SpacePart:
-    return mixed_operator_part()
+    return mixed_operator_part(
+        crossover_choices=("mixed", "uniform"),
+        mutation_choices=("mixed", "gaussian"),
+    )
 
 
 def _binary_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("crossover", ["one_point", "two_point", "uniform"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical("mutation", ["bitflip"]),
-        Real("mutation_prob", 0.01, 0.5),
-    ]
-    return params, [], []
+    return binary_operator_part_full()
 
 
 def _integer_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("crossover", ["uniform", "arithmetic", "sbx"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical("mutation", ["reset", "creep", "pm"]),
-        Real("mutation_prob", 0.01, 0.5),
-    ]
-    conditionals = [
-        ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
-        ConditionalBlock("mutation", "pm", [Real("mutation_eta", 5.0, 40.0)]),
-        ConditionalBlock("mutation", "creep", [Int("creep_step", 1, 5)]),
-    ]
-    return params, conditionals, []
+    return integer_operator_part_full()
 
 
 # ---------------------------------------------------------------------------

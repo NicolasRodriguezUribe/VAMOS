@@ -758,26 +758,26 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_equivalence_ci_moead} pres
 \label{app:param_space}
 %==============================================================================
 
-\textcolor{red}{Table~\ref{tab:algo_overview} provides a compact overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces (real-valued encoding). Each row summarizes the algorithm's selection paradigm, supported encodings, number of available crossover and mutation operators, selection methods, algorithm-specific parameters, and total parameter count (including conditional parameters). The parameter counts reflect the tuning configuration spaces used by the built-in autotuner (Section~\ref{sec:design_goals}) and range from 8 (SMPSO) to 37 (NSGA-II), illustrating the breadth of component-level configurability that \VAMOS{} exposes as first-class configuration options.}
+\textcolor{red}{Table~\ref{tab:algo_overview} provides a compact overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces across all supported encodings. Each row summarizes the algorithm's selection paradigm, supported encodings, number of available crossover and mutation operators, selection methods, algorithm-specific parameters, and total parameter count (including conditional parameters). The parameter counts reflect the tuning configuration spaces used by the built-in autotuner (Section~\ref{sec:design_goals}) and range from 8 (SMPSO) to 37 (NSGA-II), illustrating the breadth of component-level configurability that \VAMOS{} exposes as first-class configuration options.}
 
 \begin{table*}[htbp]
 \centering
-\caption{\textcolor{red}{Overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces (real-valued encoding). Encodings: R\,=\,real, P\,=\,permutation, B\,=\,binary, I\,=\,integer, M\,=\,mixed. The ``\#Params'' column reports the total number of configurable parameters (base + conditional) in the tuning configuration space. Acronyms: SBX (Simulated Binary Crossover), PM (Polynomial Mutation), DE (Differential Evolution), PBI (Penalty-based Boundary Intersection), SUS (Stochastic Universal Sampling).}}
+\caption{\textcolor{red}{Overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces across all supported encodings. Encodings: R\,=\,real, P\,=\,permutation, B\,=\,binary, I\,=\,integer, M\,=\,mixed. The ``\#Xover'' and ``\#Mut'' columns report totals across supported encodings for each algorithm. The ``\#Params'' column reports the total number of configurable parameters (base + conditional) in the tuning configuration space. Acronyms: SBX (Simulated Binary Crossover), PM (Polynomial Mutation), DE (Differential Evolution), PBI (Penalty-based Boundary Intersection), SUS (Stochastic Universal Sampling).}}
 \label{tab:algo_overview}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{llcccclc}
 \toprule
 \textbf{Algorithm} & \textbf{Paradigm} & \textbf{Encodings} & \textbf{\#Xover} & \textbf{\#Mut} & \textbf{\#Sel} & \textbf{Specific Parameters} & \textbf{\#Params} \\
 \midrule
-NSGA-II & Dominance + crowding & R, P, B, I, M & 10 & 9 & 4 & Offspring ratio, external archive (type, size, bounded) & 37 \\
-AGE-MOEA & Adaptive geometry & R, P, B, I, M & 6 & 7 & --- & Archive policies (crowding, HV, $\varepsilon$-grid, hybrid) & 26 \\
-RVEA & Reference vectors & R, P, B, I, M & 6 & 7 & --- & Partitions, $\alpha$ decay, adaptation frequency & 28 \\
-MOEA/D & Decomposition & R, P, B, I, M & 2 & 1 & --- & Aggregation (Tchebycheff, WS, PBI), $T$, $\delta$, $\eta$ & 14 \\
-IBEA & Indicator ($\varepsilon$/HV) & R, P, B, I, M & 1 & 1 & 1 & Indicator type, scaling factor $\kappa$ & 10 \\
-SPEA2 & Strength Pareto & R, P, B, I, M & 1 & 1 & 1 & Archive size, $k$-nearest neighbors & 10 \\
-NSGA-III & Reference directions & R, P, B, I, M & 1 & 1 & 1 & Reference directions (auto-computed) & 8 \\
-SMS-EMOA & HV contribution & R, P, B, I, M & 1 & 1 & 1 & Reference point (adaptive) & 8 \\
-SMPSO & Particle swarm & R, M & --- & 1 & --- & Inertia $\omega$, $c_1$, $c_2$, $v_{\max}$ fraction & 8 \\
+NSGA-II & Dominance + crowding & R, P, B, I, M & 25 & 24 & 4 & Offspring ratio, external archive (type, size, bounded) & 37 \\
+AGE-MOEA & Adaptive geometry & R, P, B, I, M & 21 & 22 & --- & Archive policies (crowding, HV, $\varepsilon$-grid, hybrid) & 26 \\
+RVEA & Reference vectors & R, P, B, I, M & 21 & 22 & --- & Partitions, $\alpha$ decay, adaptation frequency & 28 \\
+MOEA/D & Decomposition & R, P, B, I, M & 17 & 20 & --- & Aggregation (Tchebycheff, WS, PBI), $T$, $\delta$, $\eta$ & 18 \\
+IBEA & Indicator ($\varepsilon$/HV) & R, P, B, I, M & 21 & 22 & 1 & Indicator type, scaling factor $\kappa$ & 24 \\
+SPEA2 & Strength Pareto & R, P, B, I, M & 21 & 22 & 1 & Archive size, $k$-nearest neighbors & 24 \\
+NSGA-III & Reference directions & R, P, B, I, M & 21 & 22 & 1 & Reference directions (auto-computed) & 22 \\
+SMS-EMOA & HV contribution & R, P, B, I, M & 21 & 22 & 1 & Reference point (adaptive) & 22 \\
+SMPSO & Particle swarm & R, M & --- & 3 & --- & Inertia $\omega$, $c_1$, $c_2$, $v_{\max}$ fraction & 8 \\
 \bottomrule
 \end{tabular}%
 }

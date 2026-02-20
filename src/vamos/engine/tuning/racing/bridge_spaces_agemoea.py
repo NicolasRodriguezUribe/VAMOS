@@ -9,6 +9,7 @@ from .bridge_space_parts_discrete import (
     integer_operator_part_full,
     mixed_operator_part,
     permutation_operator_part_full,
+    real_operator_part_medium,
 )
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
 from .param_space import Boolean, Categorical, ConditionalBlock, Int, ParamType, Real
@@ -45,54 +46,14 @@ def _core_part() -> SpacePart:
 
 
 def _real_operator_part() -> SpacePart:
-    params: list[ParamType] = [
-        Categorical("initializer", ["random", "lhs", "scatter"]),
-        Categorical("crossover", ["sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex"]),
-        Real("crossover_prob", 0.6, 1.0),
-        Categorical(
-            "mutation",
-            ["pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform"],
-        ),
-        Real("mutation_prob", 0.01, 0.5),
-        Real("mutation_eta", 5.0, 40.0),
-        Categorical("repair", ["none", "clip", "reflect", "random", "round"]),
-    ]
-    conditionals = [
-        ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
-        ConditionalBlock(
-            "crossover",
-            "blx_alpha",
-            [
-                Real("crossover_alpha", 0.0, 1.0),
-                Categorical("blx_repair", ["clip", "random", "reflect", "round"]),
-            ],
-        ),
-        ConditionalBlock(
-            "crossover",
-            "pcx",
-            [Real("pcx_sigma_eta", 0.01, 0.5), Real("pcx_sigma_zeta", 0.01, 0.5)],
-        ),
-        ConditionalBlock(
-            "crossover",
-            "undx",
-            [Real("undx_zeta", 0.1, 1.0), Real("undx_eta", 0.1, 1.0)],
-        ),
-        ConditionalBlock("crossover", "simplex", [Real("simplex_epsilon", 0.1, 1.0)]),
-        ConditionalBlock("mutation", "non_uniform", [Real("nonuniform_perturbation", 0.05, 0.5)]),
-        ConditionalBlock("mutation", "gaussian", [Real("gaussian_sigma", 0.001, 0.5)]),
-        ConditionalBlock("mutation", "cauchy", [Real("cauchy_gamma", 0.001, 0.5)]),
-        ConditionalBlock("mutation", "uniform", [Real("uniform_perturb", 0.01, 0.5)]),
-        ConditionalBlock(
-            "initializer",
-            "scatter",
-            [Categorical("scatter_base_size_factor", [0.1, 0.2, 0.3, 0.5, 0.75, 1.0])],
-        ),
-    ]
-    return params, conditionals, []
+    return real_operator_part_medium()
 
 
 def _mixed_operator_part() -> SpacePart:
-    return mixed_operator_part()
+    return mixed_operator_part(
+        crossover_choices=("mixed", "uniform"),
+        mutation_choices=("mixed", "gaussian"),
+    )
 
 
 def _permutation_operator_part() -> SpacePart:
