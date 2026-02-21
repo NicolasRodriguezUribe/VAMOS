@@ -80,9 +80,16 @@ def _reference_point(problem_name: str) -> np.ndarray:
 
 
 @cache
-def _reference_hv(problem_name: str) -> float:
+def _reference_hv(problem_name: str, n_obj: int | None = None) -> float:
     front = _load_reference_front(problem_name)
     ref = _reference_point(problem_name)
+    # Project to the requested dimensionality (e.g. 2-D benchmark with 3-D
+    # reference front).  This ensures the reference HV uses the same number
+    # of objectives as the actual HV computation.
+    if n_obj is not None and front.shape[1] != n_obj:
+        dim = min(front.shape[1], n_obj)
+        front = front[:, :dim]
+        ref = ref[:dim]
     front = front[np.all(front <= ref, axis=1)]
     return hypervolume(front, ref, allow_ref_expand=False) if front.size else 0.0
 
@@ -99,22 +106,24 @@ def compute_hv(F, problem_name: str) -> float:
     if front is None or front.size == 0:
         return 0.0
 
+    n_obj = front.shape[1]
     ref = _reference_point(problem_name)
     # Align dimensions if the reference front and data use a different
-    # number of objectives (e.g. 2-D reference for a 3-D constrained
-    # DTLZ problem). Project to the shared leading dimensions so that
-    # hypervolume remains well-defined.
-    if ref.shape[0] != front.shape[1]:
-        dim = min(ref.shape[0], front.shape[1])
+    # number of objectives (e.g. 2-D benchmark with 3-D reference front).
+    # Project to the shared leading dimensions so that hypervolume remains
+    # well-defined.
+    if ref.shape[0] != n_obj:
+        dim = min(ref.shape[0], n_obj)
         front = front[:, :dim]
         ref = ref[:dim]
+        n_obj = dim
 
     front = front[np.all(front <= ref, axis=1)]
     if front.size == 0:
         return 0.0
 
     hv = hypervolume(front, ref, allow_ref_expand=False)
-    hv_ref = _reference_hv(problem_name)
+    hv_ref = _reference_hv(problem_name, n_obj)
     return hv / hv_ref if hv_ref > 0.0 else 0.0
 
 

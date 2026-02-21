@@ -34,13 +34,7 @@ ROOT_DIR = Path(__file__).parent.parent
 # Add project src to path
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
-# Prefer local checkouts when available
-DESKTOP_DIR = ROOT_DIR.parent
-JMETALPY_SRC = DESKTOP_DIR / "jMetalPy" / "src"
-PLATYPUS_SRC = DESKTOP_DIR / "Platypus"
-for extra_path in (JMETALPY_SRC, PLATYPUS_SRC):
-    if extra_path.exists():
-        sys.path.insert(0, str(extra_path))
+# Use pip-installed versions of external frameworks (jMetalPy, pymoo, etc.)
 
 import time
 import pandas as pd
