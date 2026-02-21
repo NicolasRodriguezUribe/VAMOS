@@ -419,15 +419,15 @@ Table~\ref{tab:backends} reports median runtime for \VAMOS{} backends aggregated
 
 \begin{table}[htbp]
 \centering
-\caption{\VAMOS{} backend comparison: median runtime (seconds) by problem family\protect\footnotemark}
+\caption{VAMOS backend comparison: median runtime (seconds) by problem family}
 \label{tab:backends}
 \begin{tabular}{l|rrr|r}
 \toprule
-\textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average\textsuperscript{*}} \\
+\textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Numba & \textbf{2.62} & \textbf{3.46} & \textbf{4.03} & \textbf{3.37} \\
-MooCore & 2.69 & 3.52 & 4.16 & 3.45 \\
-NumPy & 5.18 & 6.82 & 7.37 & 6.46 \\
+Numba & \textbf{0.88} & \textbf{0.91} & \textbf{4.19} & 1.99 \\
+MooCore & 0.91 & 0.92 & nan & \textbf{0.91} \\
+NumPy & 2.09 & 2.11 & nan & 2.10 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -477,15 +477,15 @@ These supplementary runtime tables are placed in Appendix~\ref{app:variants} to 
 
 \begin{table}[htbp]
 \centering
-\caption{NSGA-II (generational). Median runtime (seconds) by problem family across all frameworks}
+\caption{Median runtime (seconds) by problem family across all frameworks}
 \label{tab:frameworks_perf}
 \begin{tabular}{l|rrr|r}
 \toprule
-\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average\textsuperscript{*}} \\
+\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-VAMOS & \textbf{2.62} & \textbf{3.46} & \textbf{4.03} & \textbf{3.37} \\
-pymoo & 3.22 & 3.86 & 4.56 & 3.88 \\
-jMetalPy & 11.55 & 14.91 & 43.94 & 23.47 \\
+VAMOS & \textbf{0.88} & \textbf{0.91} & \textbf{4.19} & \textbf{1.99} \\
+pymoo & 1.36 & 1.35 & 10.02 & 4.25 \\
+jMetalPy & 5.63 & 5.49 & 33.85 & 14.99 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -517,20 +517,20 @@ To complement the runtime comparison, we measure peak resident-set-size (RSS) ov
 
 Table~\ref{tab:frameworks_hv} summarizes normalized hypervolume for the NSGA-II baseline across frameworks, aggregated by benchmark family. We report per-problem medians across seeds, and summarize these per-problem medians using median and interquartile range (IQR) within each family, yielding a descriptive view of solution quality under the fixed normalization protocol (Section~\ref{sec:hv}).
 
-\begin{table*}[htbp]
+\begin{table}[htbp]
 \centering
-\caption{NSGA-II. Normalized hypervolume summary (median (IQR)) by problem family across frameworks}
+\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}
 \label{tab:frameworks_hv}
-\begin{tabular}{lcccc}
+\begin{tabular}{l|rrr|r}
 \toprule
-\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall\textsuperscript{*}} \\
+\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall} \\
 \midrule
-VAMOS & \textbf{0.990 (0.008)} & \textbf{0.799 (0.153)} & \textbf{0.934 (0.140)} & \textbf{0.934 (0.181)} \\
-pymoo & \textbf{0.990 (0.008)} & 0.792 (0.180) & 0.846 (0.222) & 0.914 (0.192) \\
-jMetalPy & \textbf{0.990 (0.009)} & 0.797 (0.155) & 0.846 (0.224) & 0.915 (0.192) \\
+VAMOS & \textbf{0.991 (0.013)} & \textbf{0.836 (0.121)} & \textbf{0.934 (0.138)} & \textbf{0.934 (0.157)} \\
+pymoo & \textbf{0.991 (0.011)} & 0.829 (0.127) & 0.846 (0.220) & 0.918 (0.156) \\
+jMetalPy & \textbf{0.991 (0.014)} & 0.834 (0.124) & 0.843 (0.218) & 0.922 (0.158) \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 Across ZDT, all frameworks attain nearly identical normalized HV, suggesting that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks, while WFG exhibits the largest dispersion; \VAMOS{} achieves the highest median on WFG and overall. Together with the runtime results, these summaries support improved throughput without degraded final quality under the fixed-reference-front protocol.
 
@@ -655,70 +655,71 @@ Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-
 
 \begin{table}[htbp]
 \centering
-\caption{Detailed \VAMOS{} backend comparison: median runtime (seconds) per problem. Average is computed over all 21 per-problem medians}
+\caption{Detailed VAMOS backend comparison: median runtime (seconds) per problem}
 \label{tab:detailed_backends}
 \begin{tabular}{l|rrr}
 \toprule
 \textbf{Problem} & \textbf{Numba} & \textbf{MooCore} & \textbf{NumPy} \\
 \midrule
-dtlz1 & \textbf{2.67} & 2.74 & 5.48 \\
-dtlz2 & \textbf{3.01} & 3.04 & 5.83 \\
-dtlz3 & 3.60 & \textbf{3.44} & 7.54 \\
-dtlz4 & \textbf{3.72} & 3.95 & 7.00 \\
-dtlz5 & 3.74 & \textbf{3.68} & 6.72 \\
-dtlz6 & \textbf{3.90} & 4.04 & 7.64 \\
-dtlz7 & 3.90 & \textbf{3.73} & 7.12 \\
-wfg1 & 4.17 & \textbf{4.13} & 7.91 \\
-wfg2 & \textbf{3.90} & 3.95 & 7.49 \\
-wfg3 & \textbf{3.81} & 3.96 & 7.15 \\
-wfg4 & \textbf{3.93} & 4.06 & 7.65 \\
-wfg5 & \textbf{4.31} & 4.46 & 7.98 \\
-wfg6 & \textbf{4.40} & 4.74 & 7.63 \\
-wfg7 & 3.85 & \textbf{3.83} & 7.18 \\
-wfg8 & \textbf{4.18} & 4.35 & 7.30 \\
-wfg9 & \textbf{3.85} & 4.18 & 6.23 \\
-zdt1 & 2.63 & \textbf{2.56} & 4.82 \\
-zdt2 & 2.79 & \textbf{2.72} & 5.24 \\
-zdt3 & \textbf{2.76} & 2.81 & 5.19 \\
-zdt4 & \textbf{2.41} & 2.51 & 5.33 \\
-zdt6 & \textbf{2.44} & 2.51 & 5.16 \\
+dtlz1 & \textbf{0.89} & 0.91 & 2.17 \\
+dtlz2 & 0.92 & \textbf{0.91} & 2.08 \\
+dtlz3 & \textbf{0.84} & 0.86 & 2.10 \\
+dtlz4 & \textbf{0.91} & 0.94 & 2.11 \\
+dtlz5 & \textbf{0.89} & 0.90 & 2.12 \\
+dtlz6 & \textbf{0.92} & 0.93 & 2.11 \\
+dtlz7 & 0.94 & \textbf{0.93} & 2.12 \\
+wfg1 & \textbf{3.17} & - & - \\
+wfg2 & \textbf{3.70} & - & - \\
+wfg3 & \textbf{4.93} & - & - \\
+wfg4 & \textbf{4.21} & - & - \\
+wfg5 & \textbf{4.25} & - & - \\
+wfg6 & \textbf{5.31} & - & - \\
+wfg7 & \textbf{4.07} & - & - \\
+wfg8 & \textbf{4.22} & - & - \\
+wfg9 & \textbf{4.32} & - & - \\
+zdt1 & \textbf{0.91} & 0.97 & 2.12 \\
+zdt2 & \textbf{0.88} & 0.92 & 2.15 \\
+zdt3 & \textbf{0.89} & 0.93 & 2.11 \\
+zdt4 & 0.83 & \textbf{0.83} & 2.11 \\
+zdt6 & \textbf{0.82} & 0.84 & 2.03 \\
 \midrule
-\textbf{Average} & \textbf{3.52} & 3.59 & 6.65 \\
+\textbf{Average} & 2.32 & \textbf{0.91} & 2.11 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table*}[htbp]
+\tiny
 \centering
-\caption{Detailed comparison of median runtime (seconds) across all frameworks. Average is computed over all 21 per-problem medians}
+\caption{Detailed comparison of median runtime (seconds) across all frameworks}
 \label{tab:detailed_comparison}
 \begin{tabular}{l|rrr}
 \toprule
 \textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{jMetalPy} \\
 \midrule
-dtlz1 & \textbf{2.67} & 3.21 & 11.39 \\
-dtlz2 & \textbf{3.01} & 3.38 & 12.23 \\
-dtlz3 & \textbf{3.60} & 4.44 & 16.82 \\
-dtlz4 & \textbf{3.72} & 3.84 & 15.15 \\
-dtlz5 & \textbf{3.74} & 4.03 & 14.65 \\
-dtlz6 & \textbf{3.90} & 4.52 & 15.28 \\
-dtlz7 & \textbf{3.90} & 4.22 & 16.41 \\
-wfg1 & \textbf{4.17} & 4.76 & 30.35 \\
-wfg2 & \textbf{3.90} & 4.55 & 48.26 \\
-wfg3 & \textbf{3.81} & 4.18 & 44.80 \\
-wfg4 & \textbf{3.93} & 4.42 & 24.93 \\
-wfg5 & \textbf{4.31} & 4.61 & 25.57 \\
-wfg6 & \textbf{4.40} & 4.91 & 122.00 \\
-wfg7 & \textbf{3.85} & 4.31 & 37.01 \\
-wfg8 & \textbf{4.18} & 4.68 & 86.14 \\
-wfg9 & \textbf{3.85} & 4.75 & 179.86 \\
-zdt1 & \textbf{2.63} & 2.93 & 11.54 \\
-zdt2 & \textbf{2.79} & 3.28 & 12.01 \\
-zdt3 & \textbf{2.76} & 3.08 & 11.81 \\
-zdt4 & \textbf{2.41} & 3.12 & 11.23 \\
-zdt6 & \textbf{2.44} & 3.51 & 10.39 \\
+dtlz1 & \textbf{0.89} & 1.35 & 5.48 \\
+dtlz2 & \textbf{0.92} & 1.32 & 5.28 \\
+dtlz3 & \textbf{0.84} & 1.34 & 5.64 \\
+dtlz4 & \textbf{0.91} & 1.31 & 5.30 \\
+dtlz5 & \textbf{0.89} & 1.34 & 5.55 \\
+dtlz6 & \textbf{0.92} & 1.40 & 5.41 \\
+dtlz7 & \textbf{0.94} & 1.31 & 5.73 \\
+wfg1 & \textbf{3.17} & 7.55 & 15.22 \\
+wfg2 & \textbf{3.70} & 9.88 & 35.48 \\
+wfg3 & \textbf{4.93} & 12.15 & 35.59 \\
+wfg4 & \textbf{4.21} & 10.12 & 17.18 \\
+wfg5 & \textbf{4.25} & 10.00 & 16.01 \\
+wfg6 & \textbf{5.31} & 11.11 & 100.01 \\
+wfg7 & \textbf{4.07} & 11.48 & 26.39 \\
+wfg8 & \textbf{4.22} & 9.32 & 61.65 \\
+wfg9 & \textbf{4.32} & 9.48 & 163.89 \\
+zdt1 & \textbf{0.91} & 1.37 & 5.79 \\
+zdt2 & \textbf{0.88} & 1.37 & 5.80 \\
+zdt3 & \textbf{0.89} & 1.32 & 5.79 \\
+zdt4 & \textbf{0.83} & 1.31 & 5.24 \\
+zdt6 & \textbf{0.82} & 1.48 & 5.09 \\
 \midrule
-\textbf{Average} & \textbf{3.52} & 4.03 & 36.09 \\
+\textbf{Average} & \textbf{2.32} & 5.11 & 25.60 \\
 \bottomrule
 \end{tabular}
 \end{table*}

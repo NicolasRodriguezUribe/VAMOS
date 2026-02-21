@@ -87,7 +87,8 @@ def initialize_nsgaiii_run(
 
     rng = np.random.default_rng(seed)
     pop_size = config["pop_size"]
-    enforce_ref_dirs = bool(config.get("enforce_ref_dirs", False))
+    pop_size_auto = bool(config.get("pop_size_auto", False))
+    enforce_ref_dirs = bool(config.get("enforce_ref_dirs", False)) and not pop_size_auto
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
