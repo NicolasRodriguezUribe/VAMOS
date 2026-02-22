@@ -107,7 +107,10 @@ def run_pymoo(problem_name: str, n_var: int, n_obj: int, seed: int):
     from pymoo.operators.mutation.pm import PM
     from pymoo.operators.selection.rnd import RandomSelection
 
-    pymoo_problem = get_problem(problem_name)
+    if problem_name.startswith("wfg"):
+        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
+    else:
+        pymoo_problem = get_problem(problem_name)
     algorithm = NSGA2(
         pop_size=POP_SIZE,
         crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),

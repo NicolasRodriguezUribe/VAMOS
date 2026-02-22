@@ -114,7 +114,7 @@ def main() -> None:
 
     # Log scale
     ax.set_yscale("log", base=2)
-    ax.set_ylabel("Runtime relative to VAMOS (numba)")
+    ax.set_ylabel("Runtime relative to VAMOS")
 
     # Y ticks
     yticks = [1, 2, 4, 8, 16, 32]

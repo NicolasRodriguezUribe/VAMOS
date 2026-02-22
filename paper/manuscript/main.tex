@@ -488,8 +488,15 @@ To assess the overhead of maintaining an external elite set, we also benchmark N
 For this variant, we compute normalized hypervolume on the archive contents (rather than the final population) to reflect the larger retained approximation set.
 In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook.
 
-\textcolor{red}{\paragraph{Memory footprint.}
-To complement the runtime comparison, we measure peak resident-set-size (RSS) overhead during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} achieves a median peak memory of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). The lower memory footprint reflects the array-native representation, which stores the entire population in contiguous NumPy arrays rather than materializing individual solution objects with per-instance attribute dictionaries.}
+\paragraph{Memory footprint.}
+To complement the runtime comparison, we measure peak resident-set-size (RSS) overhead during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework (Fig.~\ref{fig:memory_comparison}). \VAMOS{} achieves a median peak memory of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). The lower memory footprint reflects the array-native representation, which stores the entire population in contiguous NumPy arrays rather than materializing individual solution objects with per-instance attribute dictionaries.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/memory_comparison.png}
+\caption{Peak memory footprint (MB) during NSGA-II optimization on three representative problems (50{,}000 evaluations, median of 5 seeds). \VAMOS{} consistently uses less memory than both pymoo and jMetalPy across all problem families.}
+\label{fig:memory_comparison}
+\end{figure}
 
 \subsection{Solution quality summary}
 \label{sec:quality}
@@ -550,9 +557,9 @@ We also note that both \VAMOS{} and pymoo obtain zero normalized hypervolume on 
 
 A related observation concerns SMS-EMOA on DTLZ4 (Appendix~\ref{app:stats}): \VAMOS{} attains a median normalized HV of 0.898 versus 0.671 for pymoo, yet the Wilcoxon test reports $p=1.0$ after Holm correction. This reflects very high variance across seeds due to the deceptive density bias in DTLZ4, which causes many seeds to converge to a narrow region of the front. The high IQR makes the paired differences too noisy for the test to reject the null hypothesis despite the large median gap.
 
-\textcolor{red}{The convergence analysis (Fig.~\ref{fig:convergence}) and Pareto front visualization (Fig.~\ref{fig:pareto_fronts}) reinforce the solution-quality equivalence: \VAMOS{} and pymoo follow nearly identical convergence trajectories on both ZDT1 and DTLZ2, and the final non-dominated sets from all three frameworks overlap closely with the reference fronts. These visual confirmations complement the statistical analyses and provide intuitive evidence that the runtime speedups do not degrade convergence behavior.}
+The convergence analysis (Fig.~\ref{fig:convergence}) and Pareto front visualization (Fig.~\ref{fig:pareto_fronts}) reinforce the solution-quality equivalence: \VAMOS{} and pymoo follow nearly identical convergence trajectories on both ZDT1 and DTLZ2, and the final non-dominated sets from all three frameworks overlap closely with the reference fronts. These visual confirmations complement the statistical analyses and provide intuitive evidence that the runtime speedups do not degrade convergence behavior.
 
-\textcolor{red}{The memory footprint measurements further illustrate the practical advantages of the array-native design: \VAMOS{} uses $3\times$ less peak memory than pymoo and $1.8\times$ less than jMetalPy on the same problems. For large-scale studies involving many concurrent runs or high-dimensional problems, this reduced memory overhead can be a meaningful practical benefit.}
+The memory footprint measurements (Fig.~\ref{fig:memory_comparison}) further illustrate the practical advantages of the array-native design: \VAMOS{} uses $3\times$ less peak memory than pymoo and $1.8\times$ less than jMetalPy on the same problems. For large-scale studies involving many concurrent runs or high-dimensional problems, this reduced memory overhead can be a meaningful practical benefit.
 
 \subsection{Threats to validity}
 
