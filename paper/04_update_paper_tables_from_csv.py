@@ -274,13 +274,12 @@ def make_latex_table_4(family_df: pd.DataFrame) -> str:
 
 
 def make_latex_table_hv_summary(median_df: pd.DataFrame, iqr_df: pd.DataFrame) -> str:
-    """Table 10: Normalized hypervolume summary (median (IQR)) by family.
+    """Table: Normalized hypervolume summary (median (IQR)) — transposed layout.
 
-    We compute per-problem median(HV) across seeds, then summarize these per-problem medians
-    using the median and interquartile range (IQR) across problems within each family.
+    Rows = problem families + Overall; Columns = frameworks.
     """
     families = [col for col in ["ZDT", "DTLZ", "WFG"] if col in median_df.columns]
-    cols = families + ["Overall"]
+    rows = families + ["Overall"]
 
     order_map = {"VAMOS": 0, "pymoo": 1, "jMetalPy": 2, "DEAP": 3, "Platypus": 4}
 
@@ -292,13 +291,7 @@ def make_latex_table_hv_summary(median_df: pd.DataFrame, iqr_df: pd.DataFrame) -
                 return v
         return 99
 
-    idx_list = sorted(median_df.index.tolist(), key=sort_key)
-
-    # Bold best (max) median per column, but use the displayed precision to avoid
-    # confusing cases where values tie after rounding.
-    best_median_rounded = {
-        col: round(float(median_df[col].max()), 3) for col in cols if col in median_df.columns
-    }
+    fw_list = sorted(median_df.index.tolist(), key=sort_key)
 
     def fmt_cell(med: float, iqr: float, bold: bool) -> str:
         s = f"{med:.3f} ({iqr:.3f})"
@@ -309,27 +302,49 @@ def make_latex_table_hv_summary(median_df: pd.DataFrame, iqr_df: pd.DataFrame) -
         r"\centering",
         r"\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}",
         r"\label{tab:frameworks_hv}",
-        r"\begin{tabular}{l" + "c" * len(families) + "c}",
+        r"\begin{tabular}{l" + "c" * len(fw_list) + "}",
         r"\toprule",
     ]
 
-    header = " & ".join([f"\\textbf{{{c}}}" for c in families]) + " & \\textbf{Overall}"
-    lines.append(f"\\textbf{{Framework}} & {header} \\\\")
+    header = " & ".join([f"\\textbf{{{fw}}}" for fw in fw_list])
+    lines.append(f"\\textbf{{Family}} & {header} \\\\")
     lines.append(r"\midrule")
 
-    for fw in idx_list:
-        row_parts: list[str] = []
-        for col in cols:
-            med = median_df.at[fw, col] if col in median_df.columns else float("nan")
-            iqr = iqr_df.at[fw, col] if col in iqr_df.columns else float("nan")
+    for row_name in families:
+        # Best (max) median in this row
+        best_rounded = max(
+            round(float(median_df.at[fw, row_name]), 3)
+            for fw in fw_list
+            if row_name in median_df.columns and not pd.isna(median_df.at[fw, row_name])
+        )
+        cells: list[str] = []
+        for fw in fw_list:
+            med = median_df.at[fw, row_name] if row_name in median_df.columns else float("nan")
+            iqr = iqr_df.at[fw, row_name] if row_name in iqr_df.columns else float("nan")
             if pd.isna(med) or pd.isna(iqr):
-                row_parts.append("-")
-                continue
-            bold = round(float(med), 3) == best_median_rounded[col]
-            row_parts.append(fmt_cell(float(med), float(iqr), bold=bold))
+                cells.append("-")
+            else:
+                bold = round(float(med), 3) == best_rounded
+                cells.append(fmt_cell(float(med), float(iqr), bold=bold))
+        lines.append(f"{row_name} & {' & '.join(cells)} \\\\")
 
-        # Insert column separator before Overall
-        lines.append(f"{fw} & {' & '.join(row_parts[:-1])} & {row_parts[-1]} \\\\")
+    # Overall row
+    lines.append(r"\midrule")
+    best_overall = max(
+        round(float(median_df.at[fw, "Overall"]), 3)
+        for fw in fw_list
+        if "Overall" in median_df.columns and not pd.isna(median_df.at[fw, "Overall"])
+    )
+    cells = []
+    for fw in fw_list:
+        med = median_df.at[fw, "Overall"] if "Overall" in median_df.columns else float("nan")
+        iqr = iqr_df.at[fw, "Overall"] if "Overall" in iqr_df.columns else float("nan")
+        if pd.isna(med) or pd.isna(iqr):
+            cells.append("-")
+        else:
+            bold = round(float(med), 3) == best_overall
+            cells.append(fmt_cell(float(med), float(iqr), bold=bold))
+    lines.append(f"Overall & {' & '.join(cells)} \\\\")
 
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     return "\n".join(lines)
