@@ -813,12 +813,12 @@ if "hypervolume" in df.columns:
     latex_ci_export = ""
     if not eq_details.empty:
         latex_ci_export = "\n".join([
-            rf"\begin{{figure*}}[htbp]",
+            rf"\begin{{figure}}[htbp]",
             rf"  \centering",
-            rf"  \includegraphics[width=0.85\textwidth]{{figures/forest_ci_{ALGORITHM}.png}}",
+            rf"  \includegraphics[width=\columnwidth]{{figures/forest_ci_{ALGORITHM}.png}}",
             rf"  \caption{{{ALGORITHM_DISPLAY}. Per-problem paired bootstrap 90\% confidence intervals for the relative normalized hypervolume difference $\Delta = (\HV_{{\VAMOS}} - \HV_{{\text{{fw}}}})/\HV_{{\text{{fw}}}}$, reported in percent. The shaded band marks the $\pm 1\%$ equivalence margin; intervals falling entirely within this band indicate statistical equivalence}}",
             rf"  \label{{fig:forest_ci_{ALGORITHM}}}",
-            rf"\end{{figure*}}",
+            rf"\end{{figure}}",
         ])
 
 print("\n" + "=" * 60)

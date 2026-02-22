@@ -67,7 +67,7 @@ def plot_forest(algo_key: str, spec: dict) -> None:
     problems = [p for p in PROBLEM_ORDER if p in df["problem"].unique()]
     n_problems = len(problems)
 
-    fig, ax = plt.subplots(figsize=(5.5, 0.32 * n_problems + 1.2))
+    fig, ax = plt.subplots(figsize=(3.4, 0.22 * n_problems + 0.9))
 
     y_offset = {"pymoo": 0.15, "jMetalPy": -0.15}
     if len(frameworks) == 1:
@@ -101,7 +101,7 @@ def plot_forest(algo_key: str, spec: dict) -> None:
 
             # Draw median dot
             med_clipped = max(min(med, CLIP_RANGE), -CLIP_RANGE)
-            ax.plot(med_clipped, y, "o", color=color, markersize=3.5, zorder=3)
+            ax.plot(med_clipped, y, "o", color=color, markersize=2.5, zorder=3)
 
             # Arrow indicators for clipped CIs
             if lo < -CLIP_RANGE:
@@ -121,20 +121,20 @@ def plot_forest(algo_key: str, spec: dict) -> None:
 
     # Y-axis
     ax.set_yticks(range(n_problems))
-    ax.set_yticklabels([p.upper() for p in reversed(problems)], fontsize=7.5)
+    ax.set_yticklabels([p.upper() for p in reversed(problems)], fontsize=6)
     ax.set_ylim(-0.5, n_problems - 0.5)
 
     # X-axis
     ax.set_xlim(-CLIP_RANGE - 0.5, CLIP_RANGE + 0.5)
-    ax.set_xlabel(r"$\Delta$HV (%)", fontsize=9)
-    ax.set_title(f"{spec['display']} — Equivalence CI (90%)", fontsize=10)
+    ax.set_xlabel(r"$\Delta$HV (%)", fontsize=7.5)
+    ax.set_title(f"{spec['display']} — Equivalence CI (90%)", fontsize=8)
 
     # Legend
     handles = []
     for fw in frameworks:
         handles.append(mpatches.Patch(color=FRAMEWORK_COLORS[fw], label=f"vs {fw}"))
     handles.append(mpatches.Patch(color="lightgray", alpha=0.5, label=r"$\pm$1% margin"))
-    ax.legend(handles=handles, fontsize=7.5, loc="lower right", frameon=True)
+    ax.legend(handles=handles, fontsize=6, loc="lower right", frameon=True)
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
