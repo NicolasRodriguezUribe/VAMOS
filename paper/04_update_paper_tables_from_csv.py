@@ -527,12 +527,11 @@ def main() -> None:
     original_len = len(content)
 
     replaced_any = False
+    # tab:frameworks_perf removed (redundant with time_comparison figure)
+    # tab:detailed_backends and tab:detailed_comparison replaced by runtime heatmap figure
     for label, table in [
         ("tab:backends", table_3_latex),
-        ("tab:frameworks_perf", table_4_latex),
         ("tab:frameworks_hv", table_10_latex),
-        ("tab:detailed_backends", table_a1_latex),
-        ("tab:detailed_comparison", table_a2_latex),
     ]:
         content, replaced = replace_table_in_tex(content, label, table)
         replaced_any = replaced_any or replaced
