@@ -29,7 +29,7 @@ OUTPUT_FIG = Path(__file__).parent / "manuscript" / "figures" / "convergence.png
 
 # Display settings
 FRAMEWORK_STYLES = {
-    "VAMOS (numba)": {"color": "#1f77b4", "label": "VAMOS (Numba)", "ls": "-"},
+    "VAMOS (numba)": {"color": "#1f77b4", "label": "VAMOS", "ls": "-"},
     "pymoo": {"color": "#ff7f0e", "label": "pymoo", "ls": "--"},
 }
 
