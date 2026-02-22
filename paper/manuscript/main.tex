@@ -371,7 +371,7 @@ As an additional validity check, we sample 64 random decision vectors per proble
 
 \subsection{Runtime measurement}
 
-All runtimes are measured wall-clock using high-resolution timers and include algorithm overhead and objective evaluations. Unless otherwise stated, we use a fixed budget of 50{,}000 objective evaluations per run and report medians across 30 independent seeds, with per-problem and per-family summaries.
+All runtimes are measured wall-clock using high-resolution timers and include algorithm overhead and objective evaluations.
 
 For Numba-accelerated backends, we distinguish two timing policies. \textbf{Warm} timings exclude one-time JIT compilation by performing a short warmup run in the same process before starting the timer (2{,}000 warmup evaluations; not counted in the reported time). \textbf{Cold} timings measure the first run from a fresh process and therefore include JIT compilation overhead. Unless otherwise stated, we report warm timings to reflect steady-state throughput; cold-start costs can be reproduced with the provided scripts.
 
@@ -532,7 +532,7 @@ Not all comparisons favor \VAMOS{}. For MOEA/D on WFG problems (Table~\ref{tab:f
 
 Beyond runtime, \VAMOS{} offers a level of component-level configurability that distinguishes it from the closest competitor. pymoo provides a modular API for standard algorithm configurations, but does not natively support configuring the offspring batch size to obtain steady-state variants, attaching bounded or unbounded external archives to arbitrary algorithms, switching between multiple constraint-handling modes (feasibility rules, penalty functions, or $\varepsilon$-relaxation). In contrast, \VAMOS{} exposes all of these as first-class configuration options---as demonstrated experimentally by the steady-state NSGA-II and external-archive variants (Table~\ref{tab:frameworks_perf_variants}), which required only parameter changes in \VAMOS{} but custom wrappers or workarounds in other Frameworks. This configurability is complemented by the ability to swap the compute backend (NumPy, Numba, MooCore) with a single parameter, enabling users to trade compilation overhead for throughput depending on their use case.
 
-The third design axis---accessibility---addresses a different audience than the first two. While performance and configurability primarily benefit MOEA researchers running large-scale benchmarking studies, the minimal-boilerplate API and graphical tooling target domain experts who need multi-objective optimization but lack a background in metaheuristics. The two-line \texttt{optimize} entry point, the \texttt{make\_problem} factory, and the \texttt{algorithm="auto"} mode eliminate the need to understand algorithm internals, operator semantics, or framework-specific abstractions. VAMOS Studio further lowers the barrier by providing a browser-based environment with domain-specific templates where users can define problems, run optimizations, and explore Pareto fronts without writing any code. As \textcolor{red}{Table~\ref{tab:framework-comparison}} shows, no other Python MOEA framework combines all three axes: array-native performance, rich configurability, and a two-line API with a graphical interface. We note that usability is assessed here through objective proxies (lines of code, number of required imports, and feature availability) rather than controlled user studies; a formal evaluation with domain-expert participants is left to future work.
+The third design axis---accessibility---addresses a different audience than the first two. While performance and configurability primarily benefit MOEA researchers running large-scale benchmarking studies, the minimal-boilerplate API and graphical tooling target domain experts who need multi-objective optimization but lack a background in metaheuristics. The two-line \texttt{optimize} entry point, and the \texttt{make\_problem} factory, eliminate the need to understand algorithm internals, operator semantics, or framework-specific abstractions. VAMOS Studio further lowers the barrier by providing a browser-based environment with domain-specific templates where users can define problems, run optimizations, and explore Pareto fronts without writing any code. As \textcolor{red}{Table~\ref{tab:framework-comparison}} shows, no other Python MOEA framework combines all three axes: array-native performance, rich configurability, and a non-verbose API with a graphical interface. We note that usability is assessed here through objective proxies (lines of code, number of required imports, and feature availability) rather than controlled user studies; a formal evaluation with domain-expert participants is left to future work.
 
 These speedups have direct practical implications. A 4--10$\times$ reduction in per-run wall-clock time means that the same compute budget can accommodate proportionally more independent seeds, larger population sizes, or denser hyperparameter sweeps---precisely the conditions required for statistically rigorous benchmarking studies. Moreover, the scaling study (Section~\ref{sec:scaling}) shows that the advantage grows with population size, so the benefit is amplified in exactly the large-scale regimes where it matters most.
 
@@ -643,12 +643,12 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_robustness_summary_moead} 
 
 \begin{table*}[htbp]
 \centering
-\caption{\textcolor{red}{Overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces across all supported encodings. Encodings: R\,=\,real, P\,=\,permutation, B\,=\,binary, I\,=\,integer, M\,=\,mixed. The ``\#Xover'' and ``\#Mut'' columns report totals across supported encodings for each algorithm. The ``\#Params'' column reports the total number of configurable parameters (base + conditional) in the tuning configuration space. Acronyms: SBX (Simulated Binary Crossover), PM (Polynomial Mutation), DE (Differential Evolution), PBI (Penalty-based Boundary Intersection).}}
+\caption{\textcolor{red}{Overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces across all supported encodings. Encodings: R\,=\,real, P\,=\,permutation, B\,=\,binary, I\,=\,integer, M\,=\,mixed. The ``\#Cx'' and ``\#Mx'' columns report totals across supported encodings for each algorithm. The ``\#Params'' column reports the total number of configurable parameters (base + conditional) in the tuning configuration space. Acronyms: SBX (Simulated Binary Crossover), PM (Polynomial Mutation), DE (Differential Evolution), PBI (Penalty-based Boundary Intersection).}}
 \label{tab:algo_overview}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{llccclc}
 \toprule
-\textbf{Algorithm} & \textbf{Paradigm} & \textbf{Encodings} & \textbf{\#Xover} & \textbf{\#Mut} & \textbf{Specific Parameters} & \textbf{\#Params} \\
+\textbf{Algorithm} & \textbf{Paradigm} & \textbf{Encodings} & \textbf{\#Cx} & \textbf{\#Mx} & \textbf{Specific Parameters} & \textbf{\#Params} \\
 \midrule
 NSGA-II & Dominance + crowding & R, P, B, I, M & 25 & 24 & Offspring ratio, external archive (type, size, bounded) & 37 \\
 AGE-MOEA & Adaptive geometry & R, P, B, I, M & 21 & 22 & Archive policies (crowding, HV, $\varepsilon$-grid, hybrid) & 26 \\
@@ -664,7 +664,7 @@ SMPSO & Particle swarm & R, M & --- & 3 & Inertia $\omega$, $c_1$, $c_2$, $v_{\m
 }
 \end{table*}
 
-Table~\ref{tab:parameter_space} summarizes the full parameter space considered for NSGA-II in \VAMOS{}, illustrating the depth of component-level configurability described in Section~\ref{sec:design_goals}. The default configuration used throughout the experimental evaluation (Section~\ref{sec:experiments}) corresponds to the values shown in bold.
+Table~\ref{tab:parameter_space} summarizes the full parameter space considered for NSGA-II with real-valued encoding in \VAMOS{}, illustrating the depth of component-level configurability described in Section~\ref{sec:design_goals}. Of the 37 total parameters, 13 are always active (e.g., population size, crossover type, mutation probability factor) and 24 are conditional---activated only when their parent operator is selected (e.g., the distribution index $\eta_c$ applies only when SBX crossover is chosen). In any single configuration, between 15 and 20 parameters are simultaneously active, depending on the selected operators. The default configuration used throughout the experimental evaluation (Section~\ref{sec:experiments}) corresponds to the values shown in bold.
 
 \begin{table*}[htbp]
 \centering
@@ -715,8 +715,8 @@ Table~\ref{tab:parameter_space} summarizes the full parameter space considered f
 
 \begin{lstlisting}[float=*,caption={Minimal NSGA-II run on ZDT1 in \VAMOS{}.},label={lst:quickstart}]
 from vamos import optimize
-result = optimize("zdt1", algorithm="nsgaii",
-                  max_evaluations=50000, seed=42)
+result = optimize("zdt1", algorithm="nsgaii")
+                 
 \end{lstlisting}
 
 \begin{lstlisting}[float=*,caption={Builder API for fine-grained configuration.},label={lst:builder}]
@@ -727,24 +727,24 @@ cfg = (NSGAIIConfig.builder()
        .crossover("sbx", prob=1.0, eta=20)
        .mutation("pm", prob="1/n", eta=20)
        .build())
-result = optimize("zdt1", algorithm="nsgaii",
-                  algorithm_config=cfg,
-                  max_evaluations=50000, seed=42)
+result = optimize("zdt1", algorithm="nsgaii", algorithm_config=cfg, max_evaluations=50000, seed=42)
 \end{lstlisting}
 
 \begin{lstlisting}[float=*,caption={Defining and optimizing a custom problem.},label={lst:make_problem}]
 from vamos import make_problem, optimize
-problem = make_problem(
-    lambda x: [x[0]**2 + x[1]**2,
-               (x[0]-1)**2 + (x[1]-1)**2],
-    n_var=2, n_obj=2, bounds=[(0, 2), (0, 2)])
-result = optimize(problem, algorithm="nsgaii",
-                  max_evaluations=50000, seed=42)
+
+def my_objectives(x):
+    f1 = x[0]**2 + x[1]**2
+    f2 = (x[0] - 1)**2 + (x[1] - 1)**2
+    return [f1, f2]
+
+problem = make_problem(my_objectives, n_var=2, n_obj=2, bounds=[(0, 2), (0, 2)])
+result = optimize(problem, algorithm="nsgaii", max_evaluations=50000, seed=42)
 \end{lstlisting}
 
-\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 28-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
+\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 37-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
 
-\begin{lstlisting}[float=*,caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1.}},label={lst:optuna_tune}]
+\begin{lstlisting}[float=*,caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1, DTLZ2, and WFG4.}},label={lst:optuna_tune}]
 import numpy as np
 from vamos import optimize
 from vamos.engine.tuning import (
@@ -752,22 +752,26 @@ from vamos.engine.tuning import (
     build_nsgaii_config_space, config_from_assignment,
 )
 
-# Build the 28-parameter NSGA-II config space
+# Build the 37-parameter NSGA-II config space
 space = build_nsgaii_config_space()
 
 # Evaluation function: returns hypervolume
 def eval_fn(config, ctx: EvalContext):
     cfg = config_from_assignment("nsgaii", config)
-    res = optimize("zdt1", algorithm="nsgaii",
+    res = optimize(ctx.instance.name, algorithm="nsgaii",
                    algorithm_config=cfg,
                    max_evaluations=ctx.budget, seed=ctx.seed)
-    return float(res.hypervolume(ref_point=[1.1, 1.1]))
+    return float(res.hypervolume(ref_point=ctx.instance.ref))
 
-# Define tuning task
+# Define tuning task with one problem per family
 task = TuningTask(
-    name="tune_nsgaii_zdt1",
+    name="tune_nsgaii",
     param_space=space.to_param_space(),
-    instances=[Instance(name="zdt1", n_var=30)],
+    instances=[
+        Instance(name="zdt1",  n_var=30, ref=[1.1, 1.1]),
+        Instance(name="dtlz2", n_var=12, ref=[1.1]*3),
+        Instance(name="wfg4",  n_var=24, ref=[3.0, 5.0]),
+    ],
     seeds=[1, 2, 3], aggregator=np.mean,
     budget_per_run=10000, maximize=True,
 )
