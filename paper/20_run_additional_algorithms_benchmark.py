@@ -13,6 +13,8 @@ Environment variables:
   - VAMOS_N_EVALS: evaluations per run (default: 50000)
   - VAMOS_N_SEEDS: number of seeds (default: 30)
   - VAMOS_NUMBA_WARMUP_EVALS: warmup evaluations for Numba (default: 2000)
+  - VAMOS_N_JOBS: joblib workers (default: CPU count - 1)
+  - VAMOS_PAPER_RESUME: 0 to disable resume (default: 1)
 
 Output:
   - experiments/benchmark_paper_nsgaiii.csv
@@ -31,6 +33,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
@@ -46,6 +49,11 @@ try:
     from .benchmark_utils import compute_hv, compute_igd_plus
 except ImportError:
     from benchmark_utils import compute_hv, compute_igd_plus
+
+try:
+    from .progress_utils import joblib_progress
+except ImportError:
+    from progress_utils import joblib_progress
 
 # =============================================================================
 # Configuration
@@ -69,6 +77,9 @@ else:  # "all" or unrecognised
 N_EVALS = int(os.environ.get("VAMOS_N_EVALS", "50000"))
 N_SEEDS = int(os.environ.get("VAMOS_N_SEEDS", "30"))
 NUMBA_WARMUP_EVALS = int(os.environ.get("VAMOS_NUMBA_WARMUP_EVALS", "2000"))
+_default_n_jobs = max(1, (os.cpu_count() or 2) - 1)
+N_JOBS = int(os.environ.get("VAMOS_N_JOBS", _default_n_jobs))
+RESUME = os.environ.get("VAMOS_PAPER_RESUME", "1").strip() != "0"
 
 DATA_DIR = ROOT_DIR / "experiments"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -179,7 +190,10 @@ def run_pymoo_nsgaiii(problem_name: str, seed: int) -> dict | None:
     from pymoo.operators.mutation.pm import PM
 
     n_var, n_obj = get_problem_dims(problem_name)
-    pymoo_problem = get_problem(problem_name)
+    if problem_name.startswith("wfg"):
+        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
+    else:
+        pymoo_problem = get_problem(problem_name)
 
     divisions = 12 if n_obj == 3 else 6
     ref_dirs = get_reference_directions("das-dennis", n_obj, n_partitions=divisions)
@@ -451,7 +465,32 @@ def run_vamos_rvea(problem_name: str, seed: int) -> dict | None:
 # Main
 # =============================================================================
 
+# Registry mapping framework names to runner functions, populated by main().
+_RUNNER_REGISTRY: dict[str, callable] = {}
+
+
+def _run_single(problem_name: str, seed: int, fw_name: str) -> dict | None:
+    """Top-level function for joblib (must be picklable)."""
+    run_fn = _RUNNER_REGISTRY[fw_name]
+    return run_fn(problem_name, seed)
+
+
+def _save_results(chunk_results: list[dict], output_csv: Path) -> None:
+    """Append chunk results to the CSV file."""
+    df_chunk = pd.DataFrame(chunk_results)
+    if output_csv.exists():
+        df_old = pd.read_csv(output_csv)
+        df = pd.concat([df_old, df_chunk], ignore_index=True)
+    else:
+        df = df_chunk
+    df.to_csv(output_csv, index=False)
+
+
 def run_benchmark(algo_name: str, runners: list[tuple[str, callable]], output_csv: Path) -> None:
+    # Register runners so _run_single can look them up (needed for joblib pickling).
+    for fw_name, run_fn in runners:
+        _RUNNER_REGISTRY[fw_name] = run_fn
+
     print(f"\n{'=' * 60}")
     print(f"  {algo_name} Benchmark")
     print(f"{'=' * 60}")
@@ -459,31 +498,53 @@ def run_benchmark(algo_name: str, runners: list[tuple[str, callable]], output_cs
     print(f"Seeds: {N_SEEDS}")
     print(f"Evaluations: {N_EVALS}")
     print(f"Frameworks: {[name for name, _ in runners]}")
+    print(f"Workers: {N_JOBS}")
+    print(f"Resume: {RESUME}")
     print(f"Output: {output_csv}")
     print()
 
-    results: list[dict] = []
+    # Build full job list
     seeds = list(range(N_SEEDS))
-
+    all_jobs: list[tuple[str, int, str]] = []
     for problem_name in PROBLEMS:
-        n_var, n_obj = get_problem_dims(problem_name)
         for seed in seeds:
-            for fw_name, run_fn in runners:
-                try:
-                    entry = run_fn(problem_name, seed)
-                    if entry is not None:
-                        results.append(entry)
-                        hv = entry.get("hypervolume", float("nan"))
-                        print(f"  {problem_name} {fw_name} seed={seed}: {entry['runtime_seconds']:.2f}s HV={hv:.4f}")
-                except Exception as e:
-                    print(f"  {problem_name} {fw_name} seed={seed} FAILED: {e}")
+            for fw_name, _ in runners:
+                all_jobs.append((problem_name, seed, fw_name))
 
-        # Save partial results after each problem
-        if results:
-            df = pd.DataFrame(results)
-            df.to_csv(output_csv, index=False)
+    # Resume: skip already-completed runs
+    completed_keys: set[tuple[str, int, str]] = set()
+    if RESUME and output_csv.exists():
+        try:
+            existing = pd.read_csv(output_csv)
+            for _, row in existing.iterrows():
+                completed_keys.add((str(row["problem"]).lower(), int(row["seed"]), str(row["framework"])))
+            print(f"Resume: found {len(completed_keys)} completed runs in {output_csv}")
+        except Exception as exc:
+            print(f"Warning: could not load existing CSV for resume: {exc}")
 
-    print(f"\nSaved {len(results)} rows to {output_csv}")
+    jobs = [(p, s, fw) for p, s, fw in all_jobs if (p.lower(), s, fw) not in completed_keys]
+    print(f"Jobs to run: {len(jobs)} (skipped {len(all_jobs) - len(jobs)})")
+
+    if not jobs:
+        print("Nothing to do.")
+        return
+
+    # Run with joblib parallelism, saving each chunk independently
+    SAVE_EVERY = 50
+    total_new = 0
+
+    for i in range(0, len(jobs), SAVE_EVERY):
+        chunk = jobs[i : i + SAVE_EVERY]
+        with joblib_progress(total=len(chunk), desc=f"{algo_name} benchmark"):
+            chunk_results = Parallel(n_jobs=N_JOBS, batch_size=1)(
+                delayed(_run_single)(p, s, fw) for p, s, fw in chunk
+            )
+        chunk_ok = [entry for entry in chunk_results if entry is not None]
+        if chunk_ok:
+            _save_results(chunk_ok, output_csv)
+            total_new += len(chunk_ok)
+
+    print(f"\nSaved {total_new} new rows to {output_csv}")
 
 
 def main() -> None:
