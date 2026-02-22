@@ -64,7 +64,7 @@ def make_latex_table_a1(df_table: pd.DataFrame) -> str:
         r"\centering",
         r"\caption{Detailed VAMOS backend comparison: median runtime (seconds) per problem}",
         r"\label{tab:detailed_backends}",
-        r"\begin{tabular}{l" + "r" * len(valid_backends) + "}",
+        r"\begin{tabular}{l" + "c" * len(valid_backends) + "}",
         r"\toprule",
         r"\textbf{Problem} & " + " & ".join(header_cols) + r" \\",
         r"\midrule",
@@ -135,7 +135,7 @@ def make_latex_table_a2(df_table: pd.DataFrame) -> str:
         r"\centering",
         r"\caption{Detailed comparison of median runtime (seconds) across all frameworks}",
         r"\label{tab:detailed_comparison}",
-        r"\begin{tabular}{l" + "r" * len(cols) + "}",
+        r"\begin{tabular}{l" + "c" * len(cols) + "}",
         r"\toprule",
         r"\textbf{Problem} & " + " & ".join([f"\\textbf{{{c}}}" for c in cols]) + r" \\",
         r"\midrule",
@@ -171,7 +171,7 @@ def make_latex_table_a2(df_table: pd.DataFrame) -> str:
 def make_latex_table_3(vamos_fam: pd.DataFrame) -> str:
     """Table 3: VAMOS backend comparison by family (ZDT, DTLZ, WFG)."""
     families = [col for col in ["ZDT", "DTLZ", "WFG"] if col in vamos_fam.columns]
-    col_spec = "l|" + "r" * len(families) + "|r"
+    col_spec = "l" + "c" * len(families) + "c"
     header_cols = " & ".join([f"\\textbf{{{f}}}" for f in families]) + " & \\textbf{Average}"
 
     lines = [
@@ -243,7 +243,7 @@ def make_latex_table_4(family_df: pd.DataFrame) -> str:
         r"\centering",
         r"\caption{Median runtime (seconds) by problem family across all frameworks}",
         r"\label{tab:frameworks_perf}",
-        r"\begin{tabular}{l" + "r" * len(families) + "r}",
+        r"\begin{tabular}{l" + "c" * len(families) + "c}",
         r"\toprule",
     ]
 
@@ -309,7 +309,7 @@ def make_latex_table_hv_summary(median_df: pd.DataFrame, iqr_df: pd.DataFrame) -
         r"\centering",
         r"\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}",
         r"\label{tab:frameworks_hv}",
-        r"\begin{tabular}{l" + "r" * len(families) + "r}",
+        r"\begin{tabular}{l" + "c" * len(families) + "c}",
         r"\toprule",
     ]
 

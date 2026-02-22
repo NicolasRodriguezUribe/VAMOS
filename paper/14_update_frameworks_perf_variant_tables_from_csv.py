@@ -98,7 +98,7 @@ def _make_table(family_df: pd.DataFrame, *, label: str, caption: str, generator:
         r"\centering",
         rf"\caption{{{caption}}}",
         rf"\label{{{label}}}",
-        r"\begin{tabular}{l" + "r" * len(families) + "r}",
+        r"\begin{tabular}{l" + "c" * len(families) + "c}",
         r"\toprule",
     ]
 

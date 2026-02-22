@@ -399,7 +399,7 @@ Table~\ref{tab:backends} reports median runtime for \VAMOS{} backends aggregated
 \begin{table}[htbp]
 \centering
 \label{tab:backends}
-\begin{tabular}{lrrrr}
+\begin{tabular}{lcccc}
 \toprule
 \textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
@@ -458,7 +458,7 @@ These supplementary runtime tables are placed in Appendix~\ref{app:variants} to 
 \caption{Median runtime (seconds) aggregated by problem family across all frameworks}
 \label{tab:frameworks_perf}
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrr}
+\begin{tabular}{lcccc}
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
@@ -500,7 +500,7 @@ Table~\ref{tab:frameworks_hv} summarizes normalized hypervolume for the NSGA-II 
 \centering
 \caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}
 \label{tab:frameworks_hv}
-\begin{tabular}{lrrrr}
+\begin{tabular}{lcccc}
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall} \\
 \midrule
@@ -618,7 +618,7 @@ Tables~\ref{tab:detailed_backends} and~\ref{tab:detailed_comparison} report per-
 \centering
 \caption{Detailed VAMOS backend comparison: median runtime (seconds) per problem}
 \label{tab:detailed_backends}
-\begin{tabular}{lrrr}
+\begin{tabular}{lccc}
 \toprule
 \textbf{Problem} & \textbf{Numba} & \textbf{MooCore} & \textbf{NumPy} \\
 \midrule
@@ -654,7 +654,7 @@ zdt6 & \textbf{0.82} & 0.84 & 2.03 \\
 \centering
 \caption{Detailed comparison of median runtime (seconds) across all frameworks}
 \label{tab:detailed_comparison}
-\begin{tabular}{lrrr}
+\begin{tabular}{lccc}
 \toprule
 \textbf{Problem} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{jMetalPy} \\
 \midrule
