@@ -4,30 +4,17 @@
 \centering
 \caption{Normalized hypervolume summary (median (IQR)) by problem family for NSGA-II variants}
 \label{tab:frameworks_hv_variants}
-\begin{minipage}{0.48\textwidth}\centering
-\begin{tabular}{lcccc}
+\begin{tabular}{llcccc}
 \toprule
-\multicolumn{5}{c}{\textbf{NSGA-II (steady-state)}} \\
+\textbf{Algorithm} & \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall\textsuperscript{*}} \\
 \midrule
-\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall\textsuperscript{*}} \\
+NSGA-II (steady-state) & VAMOS & 0.993 (0.009) & 0.843 (0.096) & 0.930 (0.138) & 0.930 (0.153) \\
+ & pymoo & 0.993 (0.008) & 0.847 (0.122) & 0.849 (0.218) & 0.921 (0.153) \\
+ & jMetalPy & 0.993 (0.009) & 0.846 (0.098) & 0.844 (0.218) & 0.919 (0.153) \\
 \midrule
-VAMOS & 0.993 (0.009) & 0.843 (0.096) & 0.930 (0.138) & 0.930 (0.153) \\
-pymoo & 0.993 (0.008) & 0.847 (0.122) & 0.849 (0.218) & 0.921 (0.153) \\
-jMetalPy & 0.993 (0.009) & 0.846 (0.098) & 0.844 (0.218) & 0.919 (0.153) \\
+NSGA-II (ext. archive) & VAMOS & 1.000 (0.000) & 1.000 (0.078) & 0.959 (0.138) & 0.997 (0.139) \\
+ & pymoo & 1.000 (0.000) & 1.001 (0.093) & 0.868 (0.224) & 0.996 (0.152) \\
+ & jMetalPy & 1.000 (0.000) & 1.001 (0.097) & 0.960 (0.138) & 0.998 (0.129) \\
 \bottomrule
 \end{tabular}
-\end{minipage}\hfill
-\begin{minipage}{0.48\textwidth}\centering
-\begin{tabular}{lcccc}
-\toprule
-\multicolumn{5}{c}{\textbf{NSGA-II (ext. archive)}} \\
-\midrule
-\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall\textsuperscript{*}} \\
-\midrule
-VAMOS & 1.000 (0.000) & 1.000 (0.078) & 0.959 (0.138) & 0.997 (0.139) \\
-pymoo & 1.000 (0.000) & 1.001 (0.093) & 0.868 (0.224) & 0.996 (0.152) \\
-jMetalPy & 1.000 (0.000) & 1.001 (0.097) & 0.960 (0.138) & 0.998 (0.129) \\
-\bottomrule
-\end{tabular}
-\end{minipage}
 \end{table*}
