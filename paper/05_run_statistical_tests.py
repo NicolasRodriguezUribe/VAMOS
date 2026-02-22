@@ -795,6 +795,11 @@ latex_ci_export = ""
 eq_details = pd.DataFrame()
 if "hypervolume" in df.columns:
     eq_details = build_hv_equivalence_details(df)
+    # Export CI details to CSV for forest plot generation
+    if not eq_details.empty:
+        ci_csv_path = DATA_DIR / f"ci_details_{ALGORITHM}.csv"
+        eq_details.to_csv(ci_csv_path, index=False)
+        print(f"Saved CI details to {ci_csv_path}")
     eq_summary = build_hv_equivalence_summary(eq_details)
     rob_summary = build_hv_robustness_summary(df)
     latex_eq = generate_latex_hv_equivalence_table(eq_summary, label="tab:hv_equivalence_summary")
@@ -804,9 +809,17 @@ if "hypervolume" in df.columns:
     _suffix = f"_{ALGORITHM}"
     latex_eq_export = generate_latex_hv_equivalence_table(eq_summary, label=f"tab:hv_equivalence_summary{_suffix}")
     latex_rob_export = generate_latex_hv_robustness_table(rob_summary, label=f"tab:hv_robustness_summary{_suffix}")
-    latex_ci_export = (
-        generate_latex_hv_equivalence_ci_table(eq_details, label=f"tab:hv_equivalence_ci{_suffix}") if not eq_details.empty else ""
-    )
+    # Replace CI table with forest plot figure include
+    latex_ci_export = ""
+    if not eq_details.empty:
+        latex_ci_export = "\n".join([
+            rf"\begin{{figure*}}[htbp]",
+            rf"  \centering",
+            rf"  \includegraphics[width=0.85\textwidth]{{figures/forest_ci_{ALGORITHM}.png}}",
+            rf"  \caption{{{ALGORITHM_DISPLAY}. Per-problem paired bootstrap 90\% confidence intervals for the relative normalized hypervolume difference $\Delta = (\HV_{{\VAMOS}} - \HV_{{\text{{fw}}}})/\HV_{{\text{{fw}}}}$, reported in percent. The shaded band marks the $\pm 1\%$ equivalence margin; intervals falling entirely within this band indicate statistical equivalence}}",
+            rf"  \label{{fig:forest_ci_{ALGORITHM}}}",
+            rf"\end{{figure*}}",
+        ])
 
 print("\n" + "=" * 60)
 print("UPDATING MAIN.TEX")
