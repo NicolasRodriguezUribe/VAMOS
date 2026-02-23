@@ -120,6 +120,32 @@ def _suite_key(instance: Instance) -> str:
     return name if name else "default"
 
 
+_OPTUNA_SAMPLERS: dict[str, str] = {
+    "tpe": "TPESampler",
+    "cmaes": "CmaEsSampler",
+    "random": "RandomSampler",
+    "nsgaii": "NSGAIISampler",
+    "nsgaiii": "NSGAIIISampler",
+    "qmc": "QMCSampler",
+    "gp": "GPSampler",
+}
+
+
+def _build_optuna_sampler(name: str, seed: int) -> Any:
+    """Instantiate an Optuna sampler by short name."""
+    import optuna.samplers as samplers
+
+    key = name.lower().replace("-", "").replace("_", "")
+    cls_name = _OPTUNA_SAMPLERS.get(key)
+    if cls_name is None:
+        supported = ", ".join(sorted(_OPTUNA_SAMPLERS))
+        raise ValueError(f"Unknown optuna_sampler {name!r}. Choose from: {supported}")
+    cls = getattr(samplers, cls_name)
+    if key == "tpe":
+        return cls(seed=seed, multivariate=True, group=True)
+    return cls(seed=seed)
+
+
 @dataclass
 class ModelBasedTuner:
     """
@@ -148,6 +174,7 @@ class ModelBasedTuner:
     optuna_storage_url: str | None = None
     optuna_study_name: str | None = None
     optuna_load_if_exists: bool = True
+    optuna_sampler: str = "tpe"
     _fidelity_cache: dict[int, tuple[Sequence[Instance], Sequence[int], dict[str, Any]]] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -337,11 +364,7 @@ class ModelBasedTuner:
         import optuna
 
         levels = self._resolve_budget_levels()
-        sampler = optuna.samplers.TPESampler(
-            seed=int(self.seed),
-            multivariate=True,
-            group=True,
-        )
+        sampler = _build_optuna_sampler(self.optuna_sampler, seed=int(self.seed))
         if bohb_mode:
             pruner = optuna.pruners.HyperbandPruner(
                 min_resource=1,
