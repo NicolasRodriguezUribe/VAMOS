@@ -260,12 +260,12 @@ Most frameworks require importing separate modules for the algorithm, problem, o
 
 Fig.~\ref{fig:architecture} illustrates the core layered organization: the Foundation layer provides problem definitions, compute kernels, metrics, and archives; the Engine layer implements nine MOEAs on top of shared components; the Experiment layer exposes CLI tools, benchmarking utilities, and reporting; and the UX layer provides \VAMOS{} Studio, a Streamlit-based interactive environment for visual problem definition, live Pareto-front preview, and post-run analysis.
 
-\begin{figure*}[htbp]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/architecture.png}
+\includegraphics[width=\columnwidth]{figures/architecture_1col.png}
 \caption{\VAMOS{} four-layer architecture. The Foundation layer provides problem definitions, compute kernels (NumPy, Numba, MooCore/C), metrics, and archives. The Engine layer implements nine MOEAs using shared selection, variation, and survival components. The Experiment layer exposes CLI tools for problem creation, hyperparameter tuning, benchmarking runners, table/plot generation, and results analysis. The UX layer provides \VAMOS{} Studio, an interactive dashboard for visual problem building, onboarding, and results exploration.}
 \label{fig:architecture}
-\end{figure*}
+\end{figure}
 
 The user-facing API and configuration model are described in Section~\ref{sec:design_goals}. The core design choice is to represent a population as a pair of dense arrays: decision variables $X \in \mathbb{R}^{N \times n}$ and objective values $F \in \mathbb{R}^{N \times m}$ for population size $N$, $n$ decision variables, and $m$ objectives. Variation and survival operate on these arrays (or views thereof), enabling vectorized operations (NumPy) and compilation of hot loops (Numba) without per-individual Python objects.
 
