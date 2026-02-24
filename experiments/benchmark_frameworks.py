@@ -173,6 +173,72 @@ def run_jmetalpy_benchmark(problem: str, n_evals: int, seed: int) -> BenchmarkRe
     )
 
 
+def run_pygmo_benchmark(problem: str, n_evals: int, seed: int) -> BenchmarkResult:
+    """Run pygmo benchmark."""
+    try:
+        import pygmo as pg
+    except ImportError:
+        return BenchmarkResult(
+            framework="pygmo",
+            problem=problem,
+            algorithm="NSGA-II",
+            n_evals=n_evals,
+            seed=seed,
+            runtime_seconds=-1,
+            n_solutions=0,
+        )
+
+    problem_map = {
+        "zdt1": lambda: pg.problem(pg.zdt(prob_id=1, param=30)),
+        "zdt2": lambda: pg.problem(pg.zdt(prob_id=2, param=30)),
+        "zdt3": lambda: pg.problem(pg.zdt(prob_id=3, param=30)),
+        "dtlz1": lambda: pg.problem(pg.dtlz(prob_id=1, dim=7, fdim=3)),
+        "dtlz2": lambda: pg.problem(pg.dtlz(prob_id=2, dim=12, fdim=3)),
+    }
+
+    prob_key = problem.lower()
+    if prob_key not in problem_map:
+        return BenchmarkResult(
+            framework="pygmo",
+            problem=problem,
+            algorithm="NSGA-II",
+            n_evals=n_evals,
+            seed=seed,
+            runtime_seconds=-1,
+            n_solutions=0,
+        )
+
+    prob = problem_map[prob_key]()
+    pop_size = 100
+    gen = max(1, (n_evals - pop_size) // pop_size)
+
+    algo = pg.algorithm(pg.nsga2(
+        gen=gen,
+        cr=0.9,
+        eta_c=20.0,
+        m=1.0 / prob.get_nx(),
+        eta_m=20.0,
+        seed=seed,
+    ))
+
+    start = time.perf_counter()
+    pop = pg.population(prob, size=pop_size, seed=seed)
+    pop = algo.evolve(pop)
+    elapsed = time.perf_counter() - start
+
+    fits = pop.get_f()
+
+    return BenchmarkResult(
+        framework="pygmo",
+        problem=problem,
+        algorithm="NSGA-II",
+        n_evals=n_evals,
+        seed=seed,
+        runtime_seconds=elapsed,
+        n_solutions=len(fits),
+    )
+
+
 def run_benchmarks(
     problems: list[str],
     n_evals: int,
@@ -228,6 +294,12 @@ def run_benchmarks(
                 print(f"{res.runtime_seconds:.2f}s" if res.runtime_seconds > 0 else "SKIPPED")
                 results.append(res)
 
+            if "pygmo" in frameworks:
+                print("  pygmo...", end=" ", flush=True)
+                res = run_pygmo_benchmark(problem, n_evals, seed)
+                print(f"{res.runtime_seconds:.2f}s" if res.runtime_seconds > 0 else "SKIPPED")
+                results.append(res)
+
     return pd.DataFrame([r.__dict__ for r in results])
 
 
@@ -236,7 +308,7 @@ def main():
     parser.add_argument("--problems", nargs="+", default=["zdt1", "zdt2", "dtlz2"])
     parser.add_argument("--evals", type=int, default=100000)
     parser.add_argument("--seeds", type=int, default=30)
-    parser.add_argument("--frameworks", nargs="+", default=["vamos-numpy", "vamos-numba", "pymoo", "jmetalpy"])
+    parser.add_argument("--frameworks", nargs="+", default=["vamos-numba", "pymoo", "jmetalpy", "pygmo"])
     parser.add_argument("--output", type=str, default="benchmark_results.csv")
     args = parser.parse_args()
 

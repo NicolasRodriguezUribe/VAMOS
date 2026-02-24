@@ -75,6 +75,16 @@ def _extend_real_crossover_params(cross: str, assignment: dict[str, Any], cross_
         cross_params["eta"] = float(assignment.get("undx_eta", 0.35))
     elif cross == "simplex":
         cross_params["epsilon"] = float(assignment.get("simplex_epsilon", 0.5))
+    elif cross == "blx_alpha_beta":
+        cross_params["alpha"] = float(assignment.get("blxab_alpha", 0.75))
+        cross_params["beta"] = float(assignment.get("blxab_beta", 0.25))
+    elif cross == "whole_arithmetic":
+        cross_params["alpha"] = float(assignment.get("wa_alpha", 0.5))
+    elif cross == "laplace":
+        cross_params["a"] = float(assignment.get("laplace_a", 0.0))
+        cross_params["b"] = float(assignment.get("laplace_b", 0.5))
+    elif cross == "fuzzy":
+        cross_params["d"] = float(assignment.get("fuzzy_d", 0.5))
 
 
 def _extend_mutation_params(mut: str, assignment: dict[str, Any], mut_params: dict[str, Any]) -> None:
@@ -90,6 +100,11 @@ def _extend_mutation_params(mut: str, assignment: dict[str, Any], mut_params: di
         mut_params["gamma"] = float(assignment.get("cauchy_gamma", 0.1))
     elif mut == "uniform":
         mut_params["perturb"] = float(assignment.get("uniform_perturb", 0.1))
+    elif mut == "levy_flight":
+        mut_params["beta"] = float(assignment.get("levy_beta", 1.5))
+        mut_params["scale"] = float(assignment.get("levy_scale", 0.01))
+    elif mut == "power_law":
+        mut_params["index"] = float(assignment.get("power_index", 1.0))
 
 
 def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:

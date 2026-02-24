@@ -30,7 +30,7 @@ except Exception:
 
 
 SUPPORTED_ALGORITHMS = ("nsgaii", "moead", "smsemoa")
-SUPPORTED_FRAMEWORKS = ("vamos", "jmetalpy", "pymoo")
+SUPPORTED_FRAMEWORKS = ("vamos", "jmetalpy", "pymoo", "pygmo")
 METRIC_DIRECTIONS = {
     "igd_plus": "min",
     "epsilon_additive": "min",
@@ -390,6 +390,9 @@ def _instantiate_problem(framework: str, task: Task) -> Any:
             bias=s.bias,
             imbalance=s.imbalance,
         )
+    if framework == "pygmo":
+        # pygmo uses VAMOS evaluation under the hood via _ZcatUDP.
+        return _instantiate_problem("vamos", task)
     raise ValueError(f"Unknown framework: {framework}")
 
 
@@ -408,6 +411,9 @@ def _evaluate_problem(framework: str, problem: Any, X: np.ndarray, n_obj: int) -
         return F
     if framework == "pymoo":
         return np.asarray(problem.evaluate(X, return_values_of=["F"]), dtype=float)
+    if framework == "pygmo":
+        # pygmo wraps VAMOS evaluation; delegate to vamos path.
+        return _evaluate_problem("vamos", problem, X, n_obj)
     raise ValueError(f"Unknown framework: {framework}")
 
 
@@ -638,6 +644,84 @@ def _run_pymoo(task: Task, weights: np.ndarray | None) -> np.ndarray:
     return np.asarray(result.F, dtype=float)
 
 
+class _ZcatUDP:
+    """Pygmo User-Defined Problem wrapping VAMOS's ZCAT evaluation."""
+
+    def __init__(self, task: Task) -> None:
+        self._problem = _instantiate_problem("vamos", task)
+        self._n_var = task.n_var
+        self._n_obj = task.n_obj
+        lb, ub = _bounds(task.n_var)
+        self._lb = lb.tolist()
+        self._ub = ub.tolist()
+
+    def fitness(self, x):
+        X = np.asarray(x, dtype=float).reshape(1, self._n_var)
+        out: dict[str, np.ndarray] = {}
+        self._problem.evaluate(X, out)
+        return out["F"][0].tolist()
+
+    def get_bounds(self):
+        return (self._lb, self._ub)
+
+    def get_nobj(self):
+        return self._n_obj
+
+    def get_name(self):
+        return f"ZCAT (n_var={self._n_var}, n_obj={self._n_obj})"
+
+
+def _run_pygmo(task: Task, weights: np.ndarray | None) -> np.ndarray:
+    import pygmo as pg
+
+    udp = _ZcatUDP(task)
+    prob = pg.problem(udp)
+    pop_size = task.population_size
+
+    # pygmo: total_evals = pop_size (initial) + gen * pop_size (per generation)
+    gen = max(1, (task.max_evaluations - pop_size) // pop_size)
+
+    if task.algorithm == "nsgaii":
+        algo = pg.algorithm(pg.nsga2(
+            gen=gen,
+            cr=0.9,
+            eta_c=20.0,
+            m=1.0 / task.n_var,
+            eta_m=20.0,
+            seed=task.seed,
+        ))
+    elif task.algorithm == "moead":
+        # pygmo generates weight vectors internally; "low discrepancy" gives
+        # exactly pop_size vectors (unlike "grid" which depends on n_obj).
+        algo = pg.algorithm(pg.moead(
+            gen=gen,
+            weight_generation="low discrepancy",
+            decomposition="tchebycheff",
+            neighbours=20,
+            CR=1.0,
+            F=0.5,
+            eta_m=20.0,
+            realb=0.9,
+            seed=task.seed,
+        ))
+    elif task.algorithm == "smsemoa":
+        # SMS-EMOA is not available in pygmo.
+        logging.getLogger(__name__).warning(
+            "SMS-EMOA is not available in pygmo; returning empty front."
+        )
+        return np.empty((0, task.n_obj), dtype=float)
+    else:
+        raise ValueError(f"Unsupported algorithm for pygmo: {task.algorithm}")
+
+    pop = pg.population(prob, size=pop_size, seed=task.seed)
+    pop = algo.evolve(pop)
+    fits = pop.get_f()
+
+    if fits is None or len(fits) == 0:
+        return np.empty((0, task.n_obj), dtype=float)
+    return np.asarray(fits, dtype=float)
+
+
 def _run_task(task: Task, framework_options: dict[str, Any], weight_dir: Path) -> np.ndarray:
     if task.framework == "vamos":
         engine = str(framework_options.get("vamos", {}).get("engine", "numpy"))
@@ -649,6 +733,8 @@ def _run_task(task: Task, framework_options: dict[str, Any], weight_dir: Path) -
         if task.algorithm == "moead":
             weights, _ = _ensure_weight_files(weight_dir, task.population_size, task.n_obj)
         return _run_pymoo(task, weights=weights)
+    if task.framework == "pygmo":
+        return _run_pygmo(task, weights=None)
     raise ValueError(f"Unsupported framework: {task.framework}")
 
 
@@ -1343,7 +1429,7 @@ def command_analyze(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Cross-framework ZCAT experiment runner (VAMOS vs jMetalPy vs pymoo).")
+    parser = argparse.ArgumentParser(description="Cross-framework ZCAT experiment runner (VAMOS vs jMetalPy vs pymoo vs pygmo).")
     parser.add_argument(
         "--manifest",
         default="experiments/configs/zcat_cross_framework.yaml",
@@ -1361,7 +1447,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_validate.set_defaults(func=command_validate)
 
     p_run = sub.add_parser("run", help="Execute campaign runs.")
-    p_run.add_argument("--frameworks", default=None, help="Comma-separated subset (vamos,jmetalpy,pymoo).")
+    p_run.add_argument("--frameworks", default=None, help="Comma-separated subset (vamos,jmetalpy,pymoo,pygmo).")
     p_run.add_argument("--algorithms", default=None, help="Comma-separated subset (nsgaii,moead,smsemoa).")
     p_run.add_argument("--problem-ids", default=None, help="Comma-separated subset override.")
     p_run.add_argument("--objective-counts", default=None, help="Comma-separated subset override.")

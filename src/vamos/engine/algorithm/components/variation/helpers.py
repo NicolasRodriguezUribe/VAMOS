@@ -44,7 +44,10 @@ from vamos.operators.impl.permutation import (
 )
 from vamos.operators.impl.registry import get_operator_registry
 
-_REAL_CROSSOVER_KEYS = ("sbx", "blx_alpha", "arithmetic", "de", "pcx", "undx", "simplex")
+_REAL_CROSSOVER_KEYS = (
+    "sbx", "blx_alpha", "blx_alpha_beta", "whole_arithmetic",
+    "laplace", "fuzzy", "arithmetic", "de", "pcx", "undx", "simplex",
+)
 _REAL_MUTATION_KEYS = (
     "pm",
     "polynomial",
@@ -54,6 +57,8 @@ _REAL_MUTATION_KEYS = (
     "cauchy",
     "uniform",
     "linked_polynomial",
+    "levy_flight",
+    "power_law",
 )
 
 
