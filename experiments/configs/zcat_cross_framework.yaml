@@ -20,7 +20,7 @@ run:
   workers: -1
 
 experiment:
-  frameworks: [vamos, jmetalpy, pymoo]
+  frameworks: [vamos, jmetalpy, pymoo, pygmo]
   algorithms: [nsgaii, moead, smsemoa]
   problem_ids:
     - 1

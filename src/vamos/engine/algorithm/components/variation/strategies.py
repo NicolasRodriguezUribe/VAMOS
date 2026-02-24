@@ -217,19 +217,17 @@ class IntegerEncodingStrategy:
         xl, xu = self.ctx.xl, self.ctx.xu
         if method == "creep":
             step = int(params.get("step", 1))
-            eta = None
+            extra: float | int | None = step
         elif method in {"pm", "polynomial"}:
-            step = None
-            eta = float(params.get("eta", 20.0))
+            extra = float(params.get("eta", 20.0))
+        elif method == "gaussian":
+            extra = float(params.get("sigma", 1.0))
         else:
-            step = None
-            eta = None
+            extra = None
 
         def mutate(offspring: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-            if step is not None:
-                mut_fn(offspring, mut_prob, int(step), xl, xu, rng)
-            elif eta is not None:
-                mut_fn(offspring, mut_prob, float(eta), xl, xu, rng)
+            if extra is not None:
+                mut_fn(offspring, mut_prob, extra, xl, xu, rng)
             else:
                 mut_fn(offspring, mut_prob, xl, xu, rng)
             return offspring

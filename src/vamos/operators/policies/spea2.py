@@ -20,7 +20,8 @@ from vamos.operators.impl.integer import (
     integer_sbx_crossover,
 )
 from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
+from vamos.operators.impl.real import VariationWorkspace
+from vamos.operators.impl.registry import get_operator_registry
 from vamos.operators.policies.discrete_operator_maps import (
     BINARY_CROSSOVER_COMMON,
     BINARY_MUTATION_COMMON,
@@ -103,7 +104,7 @@ def build_variation_operators(
             rng,
         )
     elif normalized == "real":
-        return _build_real_operators(cross_params, mut_params, n_var, xl, xu, rng)
+        return _build_real_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
     else:
         raise ValueError(f"SPEA2 does not support encoding '{normalized}'.")
 
@@ -228,33 +229,39 @@ def _build_permutation_operators(
 
 
 def _build_real_operators(
+    cross_method: str,
     cross_params: dict[str, Any],
+    mut_method: str,
     mut_params: dict[str, Any],
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
 ) -> tuple[VariationFn, VariationFn]:
+    registry = get_operator_registry()
     workspace = VariationWorkspace()
-    cross_prob = float(cross_params.get("prob", 0.9))
-    cross_eta = float(cross_params.get("eta", 20.0))
-    crossover_operator = SBXCrossover(
-        prob_crossover=cross_prob,
-        eta=cross_eta,
-        lower=xl,
-        upper=xu,
-        workspace=workspace,
-        allow_inplace=True,
+
+    # --- crossover ---
+    cross_kwargs = dict(cross_params)
+    prob = cross_kwargs.pop("prob", None)
+    cross_kwargs.setdefault("prob_crossover", 0.9 if prob is None else float(prob))
+    cross_kwargs.setdefault("allow_inplace", True)
+    cross_kwargs.setdefault("lower", xl)
+    cross_kwargs.setdefault("upper", xu)
+    cross_kwargs.setdefault("workspace", workspace)
+    crossover_operator = registry.get(cross_method)(**cross_kwargs)
+
+    # --- mutation ---
+    mut_kwargs = dict(mut_params)
+    m_prob = mut_kwargs.pop("prob", None)
+    mut_kwargs.setdefault(
+        "prob_mutation",
+        resolve_prob_expression(m_prob, n_var, 1.0 / max(1, n_var)),
     )
-    mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
-    mut_eta = float(mut_params.get("eta", 20.0))
-    mutation_operator = PolynomialMutation(
-        prob_mutation=float(mut_prob),
-        eta=mut_eta,
-        lower=xl,
-        upper=xu,
-        workspace=workspace,
-    )
+    mut_kwargs.setdefault("lower", xl)
+    mut_kwargs.setdefault("upper", xu)
+    mut_kwargs.setdefault("workspace", workspace)
+    mutation_operator = registry.get(mut_method)(**mut_kwargs)
 
     def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
         return np.asarray(crossover_operator(parents, _rng))

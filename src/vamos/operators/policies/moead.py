@@ -48,7 +48,7 @@ from vamos.operators.impl.permutation import (
     swap_mutation,
     two_opt_mutation,
 )
-from vamos.operators.impl.real import PolynomialMutation, SBXCrossover, VariationWorkspace
+from vamos.operators.impl.real import VariationWorkspace
 from vamos.operators.impl.registry import get_operator_registry
 
 # Operator registries
@@ -320,16 +320,15 @@ def _build_continuous_operators(
             return child[:, None, :]
 
     else:
-        cross_prob = float(cross_params.get("prob", 0.9))
-        cross_eta = float(cross_params.get("eta", 20.0))
-        crossover_operator = SBXCrossover(
-            prob_crossover=cross_prob,
-            eta=cross_eta,
-            lower=xl,
-            upper=xu,
-            workspace=workspace,
-            allow_inplace=True,
-        )
+        registry = get_operator_registry()
+        cross_kwargs = dict(cross_params)
+        prob = cross_kwargs.pop("prob", None)
+        cross_kwargs.setdefault("prob_crossover", 0.9 if prob is None else float(prob))
+        cross_kwargs.setdefault("allow_inplace", True)
+        cross_kwargs.setdefault("lower", xl)
+        cross_kwargs.setdefault("upper", xu)
+        cross_kwargs.setdefault("workspace", workspace)
+        crossover_operator = registry.get(method)(**cross_kwargs)
 
         def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
             return crossover_operator(parents, _rng)
@@ -337,37 +336,17 @@ def _build_continuous_operators(
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     mut_name = (mut_method or "pm").lower()
 
-    if mut_name in {"pm", "polynomial", "linked_polynomial"}:
-        mut_eta = float(mut_params.get("eta", 20.0))
-        mutation_operator = PolynomialMutation(
-            prob_mutation=mut_prob,
-            eta=mut_eta,
-            lower=xl,
-            upper=xu,
-            workspace=workspace,
-        )
+    registry = get_operator_registry()
+    mut_kwargs = dict(mut_params)
+    mut_kwargs.pop("prob", None)
+    mut_kwargs.setdefault("prob_mutation", mut_prob)
+    mut_kwargs.setdefault("lower", xl)
+    mut_kwargs.setdefault("upper", xu)
+    mut_kwargs.setdefault("workspace", workspace)
+    mutation_operator = registry.get(mut_name)(**mut_kwargs)
 
-        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-            return mutation_operator(X_child, _rng)
-
-    else:
-        registry = get_operator_registry()
-        try:
-            mut_cls = registry.get(mut_name)
-        except KeyError as exc:
-            available = ", ".join(registry.list())
-            raise ValueError(f"Unsupported MOEA/D mutation '{mut_name}' for real encoding. Available: {available}") from exc
-
-        mut_kwargs = dict(mut_params)
-        mut_kwargs.pop("prob", None)
-        mut_kwargs.setdefault("prob_mutation", mut_prob)
-        mut_kwargs.setdefault("lower", xl)
-        mut_kwargs.setdefault("upper", xu)
-        mut_kwargs.setdefault("workspace", workspace)
-        mutation_operator = mut_cls(**mut_kwargs)
-
-        def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-            return mutation_operator(X_child, _rng)
+    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
+        return mutation_operator(X_child, _rng)
 
     return crossover, mutation
 
