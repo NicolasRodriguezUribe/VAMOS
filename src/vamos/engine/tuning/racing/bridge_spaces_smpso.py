@@ -7,6 +7,7 @@ crossover/mutation. The mixed variant exposes mutation-only tuning.
 
 from __future__ import annotations
 
+from .bridge_space_parts_discrete import external_archive_part
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
 from .param_space import Categorical, Int, ParamType, Real
 
@@ -16,6 +17,7 @@ from .param_space import Categorical, Int, ParamType, Real
 
 
 def _smpso_part() -> SpacePart:
+    ext_params, ext_conds, ext_conditions = external_archive_part()
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Int("archive_size", 20, 200, log=True),
@@ -25,11 +27,13 @@ def _smpso_part() -> SpacePart:
         Real("vmax_fraction", 0.1, 1.0),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
+        *ext_params,
     ]
-    return params, [], []
+    return params, ext_conds, ext_conditions
 
 
 def _smpso_mixed_part() -> SpacePart:
+    ext_params, ext_conds, ext_conditions = external_archive_part()
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Int("archive_size", 20, 200, log=True),
@@ -39,8 +43,9 @@ def _smpso_mixed_part() -> SpacePart:
         Real("vmax_fraction", 0.1, 1.0),
         Categorical("mutation", ["mixed", "gaussian"]),
         Real("mutation_prob", 0.01, 0.5),
+        *ext_params,
     ]
-    return params, [], []
+    return params, ext_conds, ext_conditions
 
 
 # ---------------------------------------------------------------------------

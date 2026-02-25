@@ -6,12 +6,13 @@ from __future__ import annotations
 
 from .bridge_space_parts_discrete import (
     binary_operator_part_full,
+    external_archive_part,
     integer_operator_part_full,
     mixed_operator_part,
     permutation_operator_part_full,
 )
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
-from .param_space import Boolean, Categorical, ConditionalBlock, Int, ParamType, Real
+from .param_space import Categorical, ConditionalBlock, Int, ParamType, Real
 
 # ---------------------------------------------------------------------------
 # Core part (shared by ALL MOEA/D encoding variants)
@@ -25,7 +26,8 @@ def _core_part() -> SpacePart:
         Real("delta", 0.5, 0.95),
         Int("replace_limit", 1, 5),
     ]
-    return params, [], []
+    arch_params, arch_conds, arch_conditions = external_archive_part()
+    return [*params, *arch_params], arch_conds, arch_conditions
 
 
 def _aggregation_part(*, extended: bool = False) -> SpacePart:
@@ -67,18 +69,7 @@ def _real_operator_part() -> SpacePart:
 
 
 def _permutation_operator_part() -> SpacePart:
-    params, _, _ = permutation_operator_part_full()
-    params.append(Boolean("use_external_archive"))
-    archive_type_param = Categorical("archive_type", ["size_cap", "hvc_prune"])
-    archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
-    conditionals = [
-        ConditionalBlock(
-            "use_external_archive",
-            True,
-            [archive_type_param, archive_size_factor_param],
-        ),
-    ]
-    return params, conditionals, []
+    return permutation_operator_part_full()
 
 
 def _mixed_operator_part() -> SpacePart:
