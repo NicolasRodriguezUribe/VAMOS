@@ -33,9 +33,9 @@ def sample_from_optuna_trial(trial: Any, param_space: ParamSpace) -> dict[str, A
     return cfg
 
 
-def build_configspace(param_space: ParamSpace, seed: int):
-    from ConfigSpace import ConfigurationSpace
-    from ConfigSpace.hyperparameters import (
+def build_configspace(param_space: ParamSpace, seed: int) -> Any:
+    from ConfigSpace import ConfigurationSpace  # type: ignore[import-not-found]
+    from ConfigSpace.hyperparameters import (  # type: ignore[import-not-found]
         CategoricalHyperparameter,
         UniformFloatHyperparameter,
         UniformIntegerHyperparameter,
@@ -76,7 +76,7 @@ def estimate_hyperband_evals_per_iteration(max_budget: int, eta: int) -> int:
 
 
 def build_optuna_sampler(name: str, seed: int) -> Any:
-    import optuna.samplers as samplers
+    import optuna.samplers as samplers  # type: ignore[import-not-found]
 
     key = name.lower().replace("-", "").replace("_", "")
     cls_name = _OPTUNA_SAMPLERS.get(key)
@@ -87,4 +87,3 @@ def build_optuna_sampler(name: str, seed: int) -> Any:
     if key == "tpe":
         return cls(seed=seed, multivariate=True, group=True)
     return cls(seed=seed)
-

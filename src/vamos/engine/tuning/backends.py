@@ -5,7 +5,7 @@ import logging
 import math
 import threading
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -288,7 +288,7 @@ class ModelBasedTuner:
         eval_fn: Callable[[dict[str, Any], EvalContext], float],
         bohb_mode: bool,
     ) -> tuple[dict[str, Any], list[TrialResult]]:
-        import optuna
+        import optuna  # type: ignore[import-not-found]
 
         levels = self._resolve_budget_levels()
         sampler = _build_optuna_sampler(self.optuna_sampler, seed=int(self.seed))
@@ -373,7 +373,7 @@ class ModelBasedTuner:
         return dict(best_cfg), history
 
     def _run_smac3(self, eval_fn: Callable[[dict[str, Any], EvalContext], float]) -> tuple[dict[str, Any], list[TrialResult]]:
-        from smac import MultiFidelityFacade, Scenario
+        from smac import MultiFidelityFacade, Scenario  # type: ignore[import-not-found]
 
         cs = _build_configspace(self.task.param_space, seed=int(self.seed))
         levels = self._resolve_budget_levels()
@@ -386,7 +386,7 @@ class ModelBasedTuner:
         min_budget_i = max(1, min_budget_i)
         max_budget_i = max(min_budget_i, max_budget_i)
 
-        def target(config, seed: int = 0, budget: float | None = None) -> float:
+        def target(config: Mapping[str, Any], seed: int = 0, budget: float | None = None) -> float:
             cfg = dict(config)
             self.task.param_space.validate(cfg)
             b = int(round(float(budget if budget is not None else max_budget_i)))
@@ -453,9 +453,9 @@ class ModelBasedTuner:
         self,
         eval_fn: Callable[[dict[str, Any], EvalContext], float],
     ) -> tuple[dict[str, Any], list[TrialResult]]:
-        import hpbandster.core.nameserver as hpns
-        from hpbandster.core.worker import Worker
-        from hpbandster.optimizers import BOHB
+        import hpbandster.core.nameserver as hpns  # type: ignore[import-not-found]
+        from hpbandster.core.worker import Worker  # type: ignore[import-not-found]
+        from hpbandster.optimizers import BOHB  # type: ignore[import-not-found]
 
         cs = _build_configspace(self.task.param_space, seed=int(self.seed))
         eta = max(2, int(self.bohb_reduction_factor))
@@ -472,8 +472,8 @@ class ModelBasedTuner:
         lock = threading.Lock()
         trial_counter = 0
 
-        class _Worker(Worker):
-            def compute(inner_self, config, budget, **kwargs):
+        class _Worker(Worker):  # type: ignore[misc]
+            def compute(inner_self, config: Mapping[str, Any], budget: float | None, **kwargs: Any) -> dict[str, Any]:
                 nonlocal trial_counter
                 cfg = dict(config)
                 try:

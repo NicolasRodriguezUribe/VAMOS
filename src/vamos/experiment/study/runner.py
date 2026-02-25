@@ -12,9 +12,9 @@ from vamos.experiment.study.types import StudyResult, StudyTask
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.kernel.numpy_backend import _fast_non_dominated_sort
+from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.quality_indicators.hypervolume import hypervolume
 from vamos.foundation.quality_indicators.moocore_indicators import HVIndicator, QualityIndicator, get_indicator, has_moocore
-from vamos.foundation.problem.registry import make_problem_selection
 
 
 def _logger() -> logging.Logger:

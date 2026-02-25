@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -66,12 +66,8 @@ from vamos.foundation.core.algorithm_variants import canonical_algorithm_name
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 
-from ._tune_args import (
-    build_parser as _build_parser_impl,
-)
-from ._tune_args import (
-    parse_args as _parse_args_impl,
-)
+from ._tune_args import build_parser as _build_parser_impl
+from ._tune_args import parse_args as _parse_args_impl
 from ._tune_flow import (
     run_test_stage as _run_test_stage,
 )
@@ -318,7 +314,7 @@ def _run_backend(
     if args.backend in MODEL_BACKENDS:
         min_seed_count = int(args.fidelity_min_seed_count)
         max_seed_count = int(args.fidelity_max_seed_count)
-        tuner = ModelBasedTuner(
+        model_tuner = ModelBasedTuner(
             task=task,
             max_trials=int(args.tune_budget),
             backend=str(args.backend),
@@ -336,11 +332,13 @@ def _run_backend(
             optuna_study_name=(str(args.optuna_study_name).strip() or None),
             optuna_load_if_exists=bool(args.optuna_load_if_exists),
         )
-        return tuner.run(eval_fn, verbose=True)
+        return model_tuner.run(cast(Callable[[dict[str, Any], EvalContext], float], eval_fn), verbose=True)
 
     if args.backend == "random":
-        tuner = RandomSearchTuner(task=task, max_trials=int(args.tune_budget), seed=int(args.seed))
-        return tuner.run(eval_fn, verbose=True)
+        return RandomSearchTuner(task=task, max_trials=int(args.tune_budget), seed=int(args.seed)).run(
+            cast(Callable[[dict[str, Any], EvalContext], float], eval_fn),
+            verbose=True,
+        )
 
     scenario = Scenario(
         max_experiments=int(args.tune_budget),
@@ -356,8 +354,10 @@ def _run_backend(
         fidelity_min_configs=int(args.fidelity_min_configs),
         fidelity_warm_start=bool(args.fidelity_warm_start),
     )
-    tuner = RacingTuner(task=task, scenario=scenario, seed=int(args.seed), max_initial_configs=int(args.initial_configs))
-    return tuner.run(eval_fn, verbose=True)
+    return RacingTuner(task=task, scenario=scenario, seed=int(args.seed), max_initial_configs=int(args.initial_configs)).run(
+        eval_fn,
+        verbose=True,
+    )
 
 
 def _run_statistical_finisher(
