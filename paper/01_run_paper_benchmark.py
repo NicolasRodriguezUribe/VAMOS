@@ -166,10 +166,7 @@ CROSSOVER_ETA = 20.0
 MUTATION_ETA = 20.0
 MOEAD_NEIGHBOR_SIZE = 20
 MOEAD_DELTA = 0.9
-MOEAD_REPLACE_LIMIT = MOEAD_NEIGHBOR_SIZE
-MOEAD_DE_CR = 1.0
-MOEAD_DE_F = 0.5
-MOEAD_PBI_THETA = 5.0
+MOEAD_REPLACE_LIMIT = 2
 
 ZDT_N_VAR = {"zdt1": 30, "zdt2": 30, "zdt3": 30, "zdt4": 10, "zdt6": 10}
 DTLZ_N_VAR = {"dtlz1": 7, "dtlz2": 12, "dtlz3": 12, "dtlz4": 12, "dtlz5": 12, "dtlz6": 12, "dtlz7": 22}
@@ -586,9 +583,9 @@ def run_single_benchmark(problem_name, seed, framework):
                     .neighbor_size(MOEAD_NEIGHBOR_SIZE)
                     .delta(MOEAD_DELTA)
                     .replace_limit(MOEAD_REPLACE_LIMIT)
-                    .crossover("de", cr=MOEAD_DE_CR, f=MOEAD_DE_F)
+                    .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
                     .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
-                    .aggregation("pbi", theta=MOEAD_PBI_THETA)
+                    .aggregation("tchebycheff")
                     .weight_vectors(path=str(MOEAD_WEIGHTS_DIR))
                     .build()
                 )
@@ -706,9 +703,9 @@ def run_single_benchmark(problem_name, seed, framework):
                     normalize=False,
                 )
             else:
-                from pymoo.algorithms.moo.moead import MOEAD
-                from pymoo.operators.crossover.dex import DEX
-                from pymoo.decomposition.pbi import PBI
+                from pymoo.algorithms.moo.moead import MOEAD as _PyMooMOEAD
+                from pymoo.operators.crossover.sbx import SBX as PyMooSBX
+                from pymoo.decomposition.tchebicheff import Tchebicheff
                 from pymoo.core.selection import Selection
 
                 ref_dirs = load_moead_weights(n_obj, POP_SIZE)
@@ -743,13 +740,31 @@ def run_single_benchmark(problem_name, seed, framework):
 
                         return P
 
-                algorithm = MOEAD(
+                class _MOEADNr(_PyMooMOEAD):
+                    """MOEAD with capped neighborhood replacement (nr)."""
+
+                    def __init__(self, *args, n_max_replace=2, **kwargs):
+                        super().__init__(*args, **kwargs)
+                        self._n_max_replace = n_max_replace
+
+                    def _replace(self, k, off):
+                        pop = self.pop
+                        N = self.neighbors[k]
+                        FV = self.decomposition.do(pop[N].get("F"), weights=self.ref_dirs[N, :], ideal_point=self.ideal)
+                        off_FV = self.decomposition.do(off.F[None, :], weights=self.ref_dirs[N, :], ideal_point=self.ideal)
+                        I = np.where(off_FV < FV)[0]
+                        if len(I) > self._n_max_replace:
+                            I = np.random.choice(I, self._n_max_replace, replace=False)
+                        pop[N[I]] = off
+
+                algorithm = _MOEADNr(
                     ref_dirs=ref_dirs,
                     n_neighbors=MOEAD_NEIGHBOR_SIZE,
-                    decomposition=PBI(theta=MOEAD_PBI_THETA),
+                    decomposition=Tchebicheff(),
                     prob_neighbor_mating=MOEAD_DELTA,
-                    crossover=DEX(CR=MOEAD_DE_CR, F=MOEAD_DE_F, variant="bin"),
+                    crossover=PyMooSBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
                     mutation=PM(prob=1.0, prob_var=1.0 / n_var, eta=MUTATION_ETA),
+                    n_max_replace=MOEAD_REPLACE_LIMIT,
                 )
                 algorithm.selection = NeighborhoodSelectionWithCurrent(prob=MOEAD_DELTA)
             termination = get_termination("n_eval", N_EVALS)
@@ -939,9 +954,9 @@ def run_single_benchmark(problem_name, seed, framework):
             from jmetal.algorithm.multiobjective import NSGAII
             from jmetal.algorithm.multiobjective.smsemoa import SMSEMOA
             from jmetal.algorithm.multiobjective.moead import MOEAD
-            from jmetal.operator.crossover import DifferentialEvolutionCrossover, SBXCrossover
+            from jmetal.operator.crossover import SBXCrossover
             from jmetal.operator.mutation import PolynomialMutation
-            from jmetal.util.aggregation_function import PenaltyBoundaryIntersection
+            from jmetal.util.aggregation_function import Tschebycheff
             from jmetal.util.termination_criterion import StoppingByEvaluations
             from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
             from jmetal.problem import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ5, DTLZ6, DTLZ7
@@ -1041,8 +1056,8 @@ def run_single_benchmark(problem_name, seed, framework):
                     problem=jmetal_problem,
                     population_size=POP_SIZE,
                     mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
-                    crossover=DifferentialEvolutionCrossover(CR=MOEAD_DE_CR, F=MOEAD_DE_F, K=0.5),
-                    aggregation_function=PenaltyBoundaryIntersection(n_obj, theta=MOEAD_PBI_THETA),
+                    crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
+                    aggregation_function=Tschebycheff(dimension=n_obj),
                     neighbourhood_selection_probability=MOEAD_DELTA,
                     max_number_of_replaced_solutions=MOEAD_REPLACE_LIMIT,
                     neighbor_size=MOEAD_NEIGHBOR_SIZE,
@@ -1088,7 +1103,7 @@ def run_single_benchmark(problem_name, seed, framework):
         try:
             from platypus import MOEAD as PlatypusMOEAD
             from platypus import NSGAII as PlatypusNSGAII, Problem, Real
-            from platypus import Archive, DifferentialEvolution, GAOperator, PM, SBX, TournamentSelector, pbi
+            from platypus import Archive, GAOperator, PM, SBX, TournamentSelector
             import random
 
             random.seed(seed)
@@ -1178,11 +1193,8 @@ def run_single_benchmark(problem_name, seed, framework):
                     weights = load_moead_weights(nobjs, population_size)
                     return weights.tolist()
 
-                def _pbi_scalarization(solution, ideal_point, weights, theta=MOEAD_PBI_THETA):
-                    return pbi(solution, ideal_point, weights, theta=theta)
-
                 variator = GAOperator(
-                    DifferentialEvolution(crossover_rate=MOEAD_DE_CR, step_size=MOEAD_DE_F),
+                    SBX(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
                     PM(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
                 )
                 algorithm = PlatypusMOEAD(
@@ -1192,7 +1204,6 @@ def run_single_benchmark(problem_name, seed, framework):
                     eta=MOEAD_REPLACE_LIMIT,
                     variator=variator,
                     weight_generator=_weight_generator,
-                    scalarizing_function=_pbi_scalarization,
                     population_size=POP_SIZE,
                 )
 
