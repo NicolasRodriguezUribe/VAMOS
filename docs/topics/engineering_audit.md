@@ -1,7 +1,7 @@
 # VAMOS Software Engineering Best Practices Audit
 
 ## Executive summary
-- Operators are split into `src/vamos/operators/impl` (implementations) and `src/vamos/operators/policies` (algorithm wiring), and an architecture boundary test now guards layer inversions; foundation->engine and engine->ux edges are removed.
+- Operators are split into `src/vamos/engine/operators/impl` (implementations) and `src/vamos/engine/operators/policies` (algorithm wiring), and an architecture boundary test now guards layer inversions; foundation->engine and engine->ux edges are removed.
 - Import graph is cleaner; experiment import cycles are now guarded, while coupling remains concentrated in experiment->engine/ux and a small foundation->operators dependency for kernels.
 - Experiment orchestration modules (runner/quick/CLI) remain large and mix execution, IO, and presentation, creating monolith risk.
 - Algorithm classes are large but mostly cohesive; variation pipeline and config classes remain heavy and will be hard to evolve without stronger interfaces.
@@ -59,11 +59,11 @@ Top 20 largest Python files under `src/vamos/` by non-blank LOC (static scan):
 | `src/vamos/experiment/runner.py` | 536 | Orchestrates runs, builds algorithms, HV, hooks, plotting, persistence | High: execution + IO + plotting + config overrides |
 | `src/vamos/foundation/core/external/base.py` | 510 | External baseline adapters (pymoo/jmetalpy/pygmo), wrappers, printing | High: integration + CLI output + optional deps |
 | `src/vamos/experiment/cli/parser.py` | 491 | CLI parsing, config loading, validation, defaults for algorithms | High: parsing + config semantics + validation |
-| `src/vamos/operators/impl/permutation.py` | 428 | All permutation operators and optional numba paths | Medium: large single-purpose operator library |
-| `src/vamos/operators/impl/real/crossover.py` | 379 | Many real-valued crossover operators | Medium: large operator module |
+| `src/vamos/engine/operators/impl/permutation.py` | 428 | All permutation operators and optional numba paths | Medium: large single-purpose operator library |
+| `src/vamos/engine/operators/impl/real/crossover.py` | 379 | Many real-valued crossover operators | Medium: large operator module |
 | `src/vamos/experiment/optimize.py` | 370 | Optimize API, result helpers, plotting, saving | Medium: core + presentation/IO |
 | `src/vamos/foundation/kernel/moocore_backend.py` | 332 | MooCore kernel + HV + archives + tournament selection | Medium: kernel + metrics/selection coupling |
-| `src/vamos/operators/impl/real/mutation.py` | 327 | Many real-valued mutation operators | Medium: large operator module |
+| `src/vamos/engine/operators/impl/real/mutation.py` | 327 | Many real-valued mutation operators | Medium: large operator module |
 | `src/vamos/engine/algorithm/nsgaiii/nsgaiii.py` | 324 | NSGA-III algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/smsemoa/smsemoa.py` | 322 | SMS-EMOA algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/smpso/smpso.py` | 311 | SMPSO algorithm loop and helpers | Medium: large but cohesive |
@@ -105,7 +105,7 @@ Cross-cutting tangling hotspots:
 Utility modules that are growing:
 - `src/vamos/engine/algorithm/components/utils.py`
 - `src/vamos/engine/algorithm/components/variation/helpers.py`
-- `src/vamos/operators/impl/real/utils.py`
+- `src/vamos/engine/operators/impl/real/utils.py`
 - `src/vamos/foundation/constraints/utils.py`
 - `src/vamos/experiment/runner_utils.py`
 - `src/vamos/foundation/core/io_utils.py`
@@ -202,7 +202,7 @@ Refactor plan: define an `ExperimentSpec` dataclass or pydantic model; add schem
 Suggested tests: schema validation tests for typical configs; regression tests for YAML/JSON compatibility.
 
 7) Low - Split large operator modules by operator family.
-Evidence: `src/vamos/operators/impl/permutation.py`, `src/vamos/operators/impl/real/crossover.py`, `src/vamos/operators/impl/real/mutation.py`.
+Evidence: `src/vamos/engine/operators/impl/permutation.py`, `src/vamos/engine/operators/impl/real/crossover.py`, `src/vamos/engine/operators/impl/real/mutation.py`.
 Refactor plan: move each operator family into dedicated files and provide registries for lookup; keep public imports stable.
 Suggested tests: existing operator tests should continue to pass; add import performance checks if needed.
 
@@ -305,3 +305,4 @@ Scope: move plot/save/summary helpers into `src/vamos/experiment/output.py` or `
 - `rg -n "ux\.visualization|ux\.analysis|ux\.studio" src\vamos\experiment\runner.py` (experiment -> ux imports)
 - `rg -n "vamos\.engine" src\vamos\ux` (ux -> engine imports)
 - `rg -n "foundation\.core\.(runner|optimize|runner_utils)" src tests docs examples experiments` (verify old import paths removed)
+

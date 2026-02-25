@@ -157,4 +157,4 @@ def test_my_problem_smoke():
 ```
 
 4) If the problem needs reference data (fronts, weight files), add them under
-   `src/vamos/foundation/data/` and update packaging rules.
+   `src/vamos/resources/` and update packaging rules.
