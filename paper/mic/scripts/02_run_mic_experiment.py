@@ -308,7 +308,7 @@ def _operator_pool(n_var: int) -> list[dict[str, Any]]:
     ]
 
 # =============================================================================
-# HV helpers (reuse reference fronts from src/vamos/foundation/data/reference_fronts/)
+# HV helpers (reuse reference fronts from src/vamos/resources/reference_fronts/)
 # =============================================================================
 #
 # Exact hypervolume is exponential in the number of objectives.  For problems

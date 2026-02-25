@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
-from vamos.foundation.data import weight_path
+from vamos.resources import weight_path
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
 

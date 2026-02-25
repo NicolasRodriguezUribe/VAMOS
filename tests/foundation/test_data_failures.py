@@ -1,6 +1,6 @@
 import pytest
 
-from vamos.foundation.data import reference_front_path, weight_path
+from vamos.resources import reference_front_path, weight_path
 
 
 def test_unknown_reference_front_errors():

@@ -40,7 +40,7 @@ import time
 import pandas as pd
 import numpy as np
 
-from vamos.foundation.data import weight_path
+from vamos.resources import weight_path
 
 
 def _normalize_algorithm(value: str) -> str:

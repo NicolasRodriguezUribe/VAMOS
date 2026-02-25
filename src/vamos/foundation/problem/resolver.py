@@ -13,12 +13,12 @@ def _logger() -> logging.Logger:
 
 from importlib.resources import as_file
 
-from vamos.foundation.data import reference_front_path
 from vamos.foundation.problem.registry import (
     ProblemSelection,
     available_problem_names,
     make_problem_selection,
 )
+from vamos.resources import reference_front_path
 
 # Preset names map to problem keys defined in the registry.
 PROBLEM_SET_PRESETS: dict[str, Sequence[str]] = {
