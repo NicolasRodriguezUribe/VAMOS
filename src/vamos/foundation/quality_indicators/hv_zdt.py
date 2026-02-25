@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.foundation.metrics.hypervolume import hypervolume
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
 
 def get_zdt_reference_front(name: str, n_points: int = 1000) -> np.ndarray:

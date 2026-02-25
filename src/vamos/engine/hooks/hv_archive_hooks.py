@@ -9,7 +9,7 @@ import numpy as np
 
 from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig
 from vamos.engine.hooks.hv_convergence import HVConvergenceConfig, HVConvergenceMonitor, HVDecision
-from vamos.foundation.metrics.hypervolume import compute_hypervolume
+from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 from vamos.foundation.observer import RunContext
 
 

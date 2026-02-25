@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-import vamos.foundation.metrics.hypervolume as hv
+import vamos.foundation.quality_indicators.hypervolume as hv
 
 
 def test_hypervolume_impl_2d_matches_known_value():

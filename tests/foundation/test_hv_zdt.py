@@ -1,6 +1,6 @@
 import numpy as np
 
-from vamos.foundation.metrics.hv_zdt import compute_normalized_hv
+from vamos.foundation.quality_indicators.hv_zdt import compute_normalized_hv
 
 
 def test_normalized_hv_handles_points_above_default_reference():
@@ -12,7 +12,7 @@ def test_normalized_hv_handles_points_above_default_reference():
 
 
 def test_normalized_hv_zdt5_reference_front_is_one():
-    from vamos.foundation.metrics.hv_zdt import get_zdt_reference_front
+    from vamos.foundation.quality_indicators.hv_zdt import get_zdt_reference_front
 
     pf = get_zdt_reference_front("zdt5")
     hv = compute_normalized_hv(pf, "zdt5")

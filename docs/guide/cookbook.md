@@ -302,7 +302,7 @@ Merge fronts from multiple runs and keep the non-dominated set.
 import numpy as np
 
 from vamos import optimize
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 results = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2])
 combined = np.vstack([res.F for res in results if res.F is not None])
@@ -317,7 +317,7 @@ Compute hypervolume for 2D minimization fronts.
 import numpy as np
 
 from vamos import optimize
-from vamos.foundation.metrics import compute_hypervolume
+from vamos.foundation.quality_indicators import compute_hypervolume
 
 result = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000)
 F = np.asarray(result.F)
@@ -333,7 +333,7 @@ Use the built-in reference front to compute normalized hypervolume on ZDT.
 import numpy as np
 
 from vamos import optimize
-from vamos.foundation.metrics import compute_normalized_hv
+from vamos.foundation.quality_indicators import compute_normalized_hv
 
 result = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000)
 hv_norm = compute_normalized_hv(np.asarray(result.F), "zdt1")

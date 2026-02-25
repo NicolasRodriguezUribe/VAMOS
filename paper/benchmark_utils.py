@@ -6,8 +6,8 @@ from pathlib import Path
 
 import numpy as np
 
-from vamos.foundation.metrics.hypervolume import hypervolume
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 REFERENCE_FRONTS_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"

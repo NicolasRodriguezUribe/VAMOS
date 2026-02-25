@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 
 def test_pareto_filter_keeps_duplicates() -> None:

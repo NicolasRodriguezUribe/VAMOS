@@ -71,7 +71,7 @@ from vamos.engine.tuning.racing.stats import select_configs_by_paired_test
 from vamos.engine.tuning.racing.warm_start import WarmStartEvaluator
 from vamos.experiment.unified import optimize
 from vamos.foundation.core.algorithm_variants import canonical_algorithm_name
-from vamos.foundation.metrics.hypervolume import compute_hypervolume
+from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 from vamos.foundation.problem.registry import make_problem_selection
 
 BUILDERS: dict[str, Callable[[], AlgorithmConfigSpace | ParamSpace]] = {

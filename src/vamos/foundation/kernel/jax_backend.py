@@ -167,7 +167,7 @@ class JaxKernel(KernelBackend):
             X_comb = np.vstack([archive_X, population_X])
             F_comb = np.vstack([archive_F, population_F])
 
-        from vamos.foundation.metrics.pareto import pareto_filter
+        from vamos.foundation.quality_indicators.pareto import pareto_filter
 
         front_F, idx = pareto_filter(F_comb, return_indices=True)
         if idx.size == 0:

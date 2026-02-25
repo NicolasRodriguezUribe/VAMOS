@@ -52,7 +52,7 @@ from vamos.engine.tuning import (
     EvalContext,
     WarmStartEvaluator,
 )
-from vamos.foundation.metrics.hypervolume import compute_hypervolume
+from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 
 
 BUILDERS: dict[str, Callable[[], AlgorithmConfigSpace | ParamSpace]] = {
