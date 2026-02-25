@@ -4,7 +4,7 @@ paths:
   vamos_root: ../..
   jmetalpy_root: ../../../jMetalPy
   pymoo_root: ../../../pymoo
-  reference_front_dir: ../../src/vamos/foundation/data/reference_fronts
+  reference_front_dir: ../../src/vamos/resources/reference_fronts
   jmetalpy_reference_front_dir: ../../../jMetalPy/resources/reference_fronts
   output_dir: ../../results/zcat_cross_framework
   moead_weight_dir: ../../results/zcat_cross_framework/weights

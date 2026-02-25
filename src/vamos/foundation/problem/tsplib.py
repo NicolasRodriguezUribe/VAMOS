@@ -22,7 +22,7 @@ _FILE_NAME_MAP = {
 
 
 def _data_dir() -> Traversable:
-    return resources.files("vamos.foundation.data.tsplib")
+    return resources.files("vamos.resources.tsplib")
 
 
 @cache

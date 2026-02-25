@@ -35,10 +35,10 @@ from vamos.engine.algorithm.config import (
 from vamos.engine.algorithm.registry import resolve_algorithm
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.config.variation import ensure_operator_tuple, merge_variation_overrides, resolve_default_variation_config
-from vamos.foundation.data import weight_path
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
+from vamos.resources import weight_path
 
 
 def _as_int(value: object) -> int:

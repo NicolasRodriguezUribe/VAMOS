@@ -15,7 +15,7 @@ Output: experiments/benchmark_paper_wfg3d.csv
 
 Note: Reference fronts for 3-objective WFG need to be generated first.
       Use experiments/scripts/generate_reference_fronts.py if available,
-      or provide them in src/vamos/foundation/data/reference_fronts/ as
+      or provide them in src/vamos/resources/reference_fronts/ as
       wfg1_3d.csv, wfg4_3d.csv, wfg9_3d.csv.
 """
 

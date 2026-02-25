@@ -7,7 +7,7 @@ Usage:
 
 These are the *true* Pareto fronts derived from the analytical problem
 definitions, not approximations from optimisation runs.  They are saved
-as CSV files in ``src/vamos/foundation/data/reference_fronts/``.
+as CSV files in ``src/vamos/resources/reference_fronts/``.
 """
 from __future__ import annotations
 

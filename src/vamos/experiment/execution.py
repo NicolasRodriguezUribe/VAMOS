@@ -37,12 +37,12 @@ from vamos.foundation.core.experiment_config import (
 )
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.core.io_utils import ensure_dir
-from vamos.foundation.data import weight_path
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.exceptions import ConfigurationError
-from vamos.foundation.quality_indicators.hypervolume import hypervolume
 from vamos.foundation.observer import Observer, RunContext
 from vamos.foundation.problem.registry import ProblemSelection
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
+from vamos.resources import weight_path
 
 
 def _project_root() -> Path:

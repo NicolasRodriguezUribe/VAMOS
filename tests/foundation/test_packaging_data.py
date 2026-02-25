@@ -1,10 +1,10 @@
 from importlib import resources
 
+import vamos.resources as data_module
 from vamos.experiment.execution import _default_weight_path
-from vamos.foundation import data as data_module
 from vamos.foundation.core.hv_stop import build_hv_stop_config
-from vamos.foundation.data import reference_front_path, weight_path
 from vamos.foundation.problem.tsplib import load_tsplib_coords
+from vamos.resources import reference_front_path, weight_path
 
 
 def test_reference_front_packaged_and_accessible():
@@ -22,7 +22,7 @@ def test_reference_front_zdt5_packaged_and_accessible():
 
 
 def test_reference_front_wfg4_packaged_and_accessible():
-    packaged = resources.files("vamos.foundation.data.reference_fronts").joinpath("wfg4.csv")
+    packaged = resources.files("vamos.resources.reference_fronts").joinpath("wfg4.csv")
     assert packaged.is_file()
     path = reference_front_path("wfg4")
     assert path.is_file()
@@ -68,7 +68,7 @@ def test_hv_stop_uses_packaged_reference_front():
     assert cfg is not None
     ref_path = cfg["reference_front_path"]
     assert "ZDT1" in ref_path.upper()
-    assert resources.files("vamos.foundation.data.reference_fronts").joinpath("ZDT1.csv").is_file()
+    assert resources.files("vamos.resources.reference_fronts").joinpath("ZDT1.csv").is_file()
 
 
 def test_hv_stop_uses_dimensioned_zcat_reference_front():
@@ -79,7 +79,7 @@ def test_hv_stop_uses_dimensioned_zcat_reference_front():
 
 
 def test_tsplib_packaged_and_accessible():
-    assert resources.files("vamos.foundation.data.tsplib").joinpath("kroA100.tsp").is_file()
+    assert resources.files("vamos.resources.tsplib").joinpath("kroA100.tsp").is_file()
     coords = load_tsplib_coords("kroA100")
     assert coords.ndim == 2
     assert coords.shape[1] == 2
