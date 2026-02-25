@@ -16,7 +16,7 @@ References:
     vol. 18, no. 4, 2014.
 """
 
-from vamos.operators.policies.nsgaiii import build_variation_operators
+from vamos.engine.operators.policies.nsgaiii import build_variation_operators
 
 from .helpers import associate, evaluate_population_with_constraints, nsgaiii_survival
 from .initialization import initialize_nsgaiii_run

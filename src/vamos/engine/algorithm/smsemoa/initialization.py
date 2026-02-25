@@ -23,8 +23,8 @@ from vamos.engine.algorithm.components.population import (
 )
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
+from vamos.engine.operators.policies.smsemoa import build_variation_operators
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
-from vamos.operators.policies.smsemoa import build_variation_operators
 
 from .helpers import (
     initialize_reference_point,
@@ -32,10 +32,10 @@ from .helpers import (
 from .state import SMSEMOAState
 
 if TYPE_CHECKING:
+    from vamos.engine.hooks.live_viz import LiveVisualization
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = [

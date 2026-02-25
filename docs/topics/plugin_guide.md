@@ -36,7 +36,7 @@ result = optimize("zdt1", algorithm="my_algorithm", max_evaluations=1_000, pop_s
 Register with `operator_registry`:
 
 ```python
-from vamos.operators.impl.registry import operator_registry
+from vamos.engine.operators.impl.registry import operator_registry
 import numpy as np
 
 class MyMutation:

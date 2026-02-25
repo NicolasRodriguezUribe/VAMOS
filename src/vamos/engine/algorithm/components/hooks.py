@@ -16,9 +16,9 @@ def _logger() -> logging.Logger:
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.state import AlgorithmState
+    from vamos.engine.hooks.genealogy import GenealogyTracker
+    from vamos.engine.hooks.live_viz import LiveVisualization
     from vamos.foundation.kernel.backend import KernelBackend
-    from vamos.hooks.genealogy import GenealogyTracker
-    from vamos.hooks.live_viz import LiveVisualization
 
 
 def get_live_viz(
@@ -37,7 +37,7 @@ def get_live_viz(
     LiveVisualization
         The callback or a no-op implementation.
     """
-    from vamos.hooks.live_viz import NoOpLiveVisualization
+    from vamos.engine.hooks.live_viz import NoOpLiveVisualization
 
     return live_viz or NoOpLiveVisualization()
 
@@ -118,7 +118,7 @@ def setup_genealogy(
     if not track_genealogy:
         return None, None
 
-    from vamos.hooks.genealogy import DefaultGenealogyTracker
+    from vamos.engine.hooks.genealogy import DefaultGenealogyTracker
 
     genealogy_tracker = DefaultGenealogyTracker()
     ids = np.arange(pop_size, dtype=int)

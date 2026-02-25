@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vamos.adaptation.aos.rewards import (
+from vamos.engine.adaptation.aos.rewards import (
     aggregate_reward,
     nd_insertion_rate,
     survival_rate,

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import csv
 
-from vamos.adaptation.aos.controller import SummaryRow, TraceRow
-from vamos.adaptation.aos.logging import SUMMARY_HEADER, TRACE_HEADER, write_aos_summary, write_aos_trace
+from vamos.engine.adaptation.aos.controller import SummaryRow, TraceRow
+from vamos.engine.adaptation.aos.logging import SUMMARY_HEADER, TRACE_HEADER, write_aos_summary, write_aos_trace
 
 
 def test_write_aos_trace_headers_and_row(tmp_path) -> None:

@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import live_should_stop
+from vamos.engine.hooks.live_viz import LiveVisualization
 from vamos.foundation.eval.backends import EvaluationBackend
-from vamos.hooks.live_viz import LiveVisualization
 
 from .setup import initialize_run
 from .state import build_result, finalize_genealogy, get_archive_contents

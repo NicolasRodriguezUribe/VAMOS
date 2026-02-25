@@ -15,7 +15,7 @@ References:
     for multi-objective optimization. IEEE MCDM'09, pp. 66-73.
 """
 
-from vamos.operators.policies.smpso import build_mutation_operator
+from vamos.engine.operators.policies.smpso import build_mutation_operator
 
 from .helpers import extract_eval_arrays, update_personal_bests
 from .initialization import initialize_smpso_run

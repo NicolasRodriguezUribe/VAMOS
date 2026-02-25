@@ -131,7 +131,7 @@ Examples of risky couplings:
 - `src/vamos/experiment/runner.py` imports `vamos.engine.algorithm.factory` and `vamos.engine.config.*` (experiment -> engine).
 - `src/vamos/experiment/runner.py` imports `vamos.ux.visualization.plotting` and `LiveParetoPlot` (experiment -> ux).
 - `run_study` now lives in `src/vamos/experiment/study/api.py`, so experiment orchestration no longer imports the study runner directly.
-- `src/vamos/foundation/kernel/numpy_backend.py` imports `vamos.operators.impl.real.*` (foundation -> operators; shared package, still a tight dependency).
+- `src/vamos/foundation/kernel/numpy_backend.py` imports `vamos.engine.operators.impl.real.*` (foundation -> engine; cross-layer dependency, still a tight coupling).
 - `src/vamos/experiment/studio/app.py` imports `vamos.engine.algorithm.config.NSGAIIConfig` (experiment -> engine).
 
 No static cycles remain in `experiment` modules; foundation->engine/ux and engine->ux edges are cleared, improving backend modularity and UX replaceability.

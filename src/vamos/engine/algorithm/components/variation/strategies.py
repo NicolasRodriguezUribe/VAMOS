@@ -30,9 +30,9 @@ from vamos.engine.algorithm.components.variation.protocol import (
     MutationOperator,
     VariationWorkspaceProtocol,
 )
+from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.foundation.encoding import Encoding
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.operators.impl.registry import get_operator_registry
 
 
 @dataclass(frozen=True)

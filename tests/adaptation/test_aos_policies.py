@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vamos.adaptation.aos.policies import EpsGreedyPolicy, EXP3Policy, UCBPolicy
+from vamos.engine.adaptation.aos.policies import EpsGreedyPolicy, EXP3Policy, UCBPolicy
 
 
 def test_ucb_policy_min_usage() -> None:

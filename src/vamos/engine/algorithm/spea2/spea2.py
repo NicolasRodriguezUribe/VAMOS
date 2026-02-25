@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-from vamos.hooks.live_viz import LiveVisualization
+from vamos.engine.hooks.live_viz import LiveVisualization
 
 
 def _tournament_by_strength(

@@ -24,12 +24,12 @@ from vamos.engine.algorithm.components.population import (
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
+from vamos.engine.operators.impl.flags import set_numba_variation
+from vamos.engine.operators.policies.moead import build_variation_operators
 from vamos.foundation.checkpoint import restore_rng
 from vamos.foundation.constraints.utils import compute_violation
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.eval.population import evaluate_population_with_constraints
-from vamos.operators.impl.flags import set_numba_variation
-from vamos.operators.policies.moead import build_variation_operators
 
 from .helpers import build_aggregator, compute_neighbors, resolve_aggregation_spec
 from .state import MOEADState
@@ -39,8 +39,8 @@ if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
+from vamos.engine.hooks.live_viz import LiveVisualization
 from vamos.foundation.observer import RunContext
-from vamos.hooks.live_viz import LiveVisualization
 
 
 def _logger() -> logging.Logger:

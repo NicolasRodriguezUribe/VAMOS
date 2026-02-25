@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vamos.monitoring import HVConvergenceConfig, HVConvergenceMonitor
+from vamos.engine.hooks import HVConvergenceConfig, HVConvergenceMonitor
 
 
 def test_hv_monitor_stops_on_plateau():

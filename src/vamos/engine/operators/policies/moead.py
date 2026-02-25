@@ -14,8 +14,7 @@ from typing import Any, TypeAlias
 import numpy as np
 
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
-from vamos.foundation.encoding import EncodingLike, normalize_encoding
-from vamos.operators.impl.binary import (
+from vamos.engine.operators.impl.binary import (
     bit_flip_mutation,
     hux_crossover,
     one_point_crossover,
@@ -23,7 +22,7 @@ from vamos.operators.impl.binary import (
     two_point_crossover,
     uniform_crossover,
 )
-from vamos.operators.impl.integer import (
+from vamos.engine.operators.impl.integer import (
     arithmetic_integer_crossover,
     boundary_integer_mutation,
     creep_mutation,
@@ -33,8 +32,8 @@ from vamos.operators.impl.integer import (
     random_reset_mutation,
     uniform_integer_crossover,
 )
-from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.operators.impl.permutation import (
+from vamos.engine.operators.impl.mixed import mixed_crossover, mixed_mutation
+from vamos.engine.operators.impl.permutation import (
     alternating_edges_crossover,
     cycle_crossover,
     displacement_mutation,
@@ -48,8 +47,9 @@ from vamos.operators.impl.permutation import (
     swap_mutation,
     two_opt_mutation,
 )
-from vamos.operators.impl.real import VariationWorkspace
-from vamos.operators.impl.registry import get_operator_registry
+from vamos.engine.operators.impl.real import VariationWorkspace
+from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 # Operator registries
 BinaryCrossoverOp: TypeAlias = Callable[[np.ndarray, float, np.random.Generator], np.ndarray]

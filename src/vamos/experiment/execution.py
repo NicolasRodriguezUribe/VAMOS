@@ -10,10 +10,16 @@ from typing import Any
 
 import numpy as np
 
-from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.config.spec import ExperimentSpec, SpecBlock
 from vamos.engine.config.variation import VariationConfig
+from vamos.engine.hooks import (
+    HookManager,
+    HookManagerConfig,
+    LiveVisualization,
+)
+from vamos.engine.hooks.config_parse import parse_stopping_archive
 from vamos.experiment.observers.console import ConsoleObserver
 from vamos.experiment.observers.storage import StorageObserver
 from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
@@ -37,12 +43,6 @@ from vamos.foundation.exceptions import ConfigurationError
 from vamos.foundation.metrics.hypervolume import hypervolume
 from vamos.foundation.observer import Observer, RunContext
 from vamos.foundation.problem.registry import ProblemSelection
-from vamos.hooks import (
-    HookManager,
-    HookManagerConfig,
-    LiveVisualization,
-)
-from vamos.hooks.config_parse import parse_stopping_archive
 
 
 def _project_root() -> Path:

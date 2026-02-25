@@ -9,11 +9,11 @@ from typing import Any
 import numpy as np
 
 from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.hooks.live_viz import LiveVisualization
 from vamos.foundation.eval.backends import EvaluationBackend
 from vamos.foundation.kernel import default_kernel
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.hooks.live_viz import LiveVisualization
 
 from .ask_tell import ask_nsgaii, combine_ids, tell_nsgaii
 from .run import notify_generation, run_nsgaii, save_checkpoint

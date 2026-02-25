@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from vamos.archive import ExternalArchiveConfig
+from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.data import weight_path
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig

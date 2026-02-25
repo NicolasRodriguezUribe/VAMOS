@@ -14,7 +14,7 @@ References:
     Decomposition," IEEE Trans. Evolutionary Computation, vol. 11, no. 6, 2007.
 """
 
-from vamos.operators.policies.moead import (
+from vamos.engine.operators.policies.moead import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
     INT_CROSSOVER,

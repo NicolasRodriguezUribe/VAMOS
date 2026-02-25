@@ -9,8 +9,8 @@ from typing import Any, Literal, overload
 
 import numpy as np
 
+from vamos.engine.hooks.genealogy import GenealogyTracker, get_lineage
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
-from vamos.hooks.genealogy import GenealogyTracker, get_lineage
 
 
 def build_mating_pool(

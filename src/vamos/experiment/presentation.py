@@ -12,7 +12,7 @@ from vamos.foundation.problem.registry import ProblemSelection
 from .cli.orchestration import run_from_args
 
 if TYPE_CHECKING:
-    from vamos.hooks import LiveVisualization
+    from vamos.engine.hooks import LiveVisualization
 
 
 def build_live_viz(

@@ -25,17 +25,17 @@ from vamos.engine.algorithm.components.population import initialize_population a
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
+from vamos.engine.operators.policies.nsgaiii import build_variation_operators
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
-from vamos.operators.policies.nsgaiii import build_variation_operators
 
 from .helpers import evaluate_population_with_constraints
 from .state import NSGAIIIState
 
 if TYPE_CHECKING:
+    from vamos.engine.hooks.live_viz import LiveVisualization
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = [

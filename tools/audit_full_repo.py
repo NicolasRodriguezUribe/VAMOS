@@ -406,8 +406,8 @@ def main() -> None:
     # suspicious imports in shared packages
     suspicious_shared: dict[str, list[str]] = {}
     shared_packages = {
-        "vamos.operators.impl": ("vamos.engine", "vamos.experiment", "vamos.ux"),
-        "vamos.operators.policies": ("vamos.engine", "vamos.experiment", "vamos.ux"),
+        "vamos.engine.operators.impl": ("vamos.experiment", "vamos.ux"),
+        "vamos.engine.operators.policies": ("vamos.experiment", "vamos.ux"),
         "vamos.foundation.problem.registry": ("vamos.engine", "vamos.experiment", "vamos.ux"),
         "vamos.experiment.external": ("vamos.engine", "vamos.ux"),
     }

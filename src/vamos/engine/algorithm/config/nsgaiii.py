@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from math import comb
 from typing import Any
 
-from vamos.archive import ExternalArchiveConfig
+from vamos.engine.archive import ExternalArchiveConfig
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
 

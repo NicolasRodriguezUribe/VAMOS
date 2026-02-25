@@ -1,6 +1,6 @@
-"""NSGA-III operator registration and building.
+"""SMS-EMOA operator registration and building.
 
-This module provides operator registries and factory functions for NSGA-III
+This module provides operator registries and factory functions for SMS-EMOA
 supporting continuous, binary, integer, permutation, and mixed encodings.
 """
 
@@ -12,17 +12,16 @@ from typing import Any, TypeAlias
 import numpy as np
 
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
-from vamos.foundation.encoding import EncodingLike, normalize_encoding
-from vamos.operators.impl.integer import (
+from vamos.engine.operators.impl.integer import (
     creep_mutation,
     gaussian_integer_mutation,
     integer_polynomial_mutation,
     integer_sbx_crossover,
 )
-from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.operators.impl.real import VariationWorkspace
-from vamos.operators.impl.registry import get_operator_registry
-from vamos.operators.policies.discrete_operator_maps import (
+from vamos.engine.operators.impl.mixed import mixed_crossover, mixed_mutation
+from vamos.engine.operators.impl.real import VariationWorkspace
+from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.engine.operators.policies.discrete_operator_maps import (
     BINARY_CROSSOVER_COMMON,
     BINARY_MUTATION_COMMON,
     INT_CROSSOVER_COMMON,
@@ -36,6 +35,7 @@ from vamos.operators.policies.discrete_operator_maps import (
     PermCrossoverOp,
     PermMutationOp,
 )
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 __all__ = [
     "BINARY_CROSSOVER",
@@ -111,12 +111,20 @@ def build_variation_operators(
         return _build_permutation_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif normalized == "mixed":
         if mixed_spec is None:
-            raise ValueError("NSGA-III mixed encoding requires problem.mixed_spec.")
-        return _build_mixed_operators(cross_method, cross_params, mut_method, mut_params, n_var, mixed_spec, rng)
+            raise ValueError("SMSEMOA mixed encoding requires problem.mixed_spec.")
+        return _build_mixed_operators(
+            cross_method,
+            cross_params,
+            mut_method,
+            mut_params,
+            n_var,
+            mixed_spec,
+            rng,
+        )
     elif normalized == "real":
         return _build_real_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
     else:
-        raise ValueError(f"NSGA-III does not support encoding '{normalized}'.")
+        raise ValueError(f"SMSEMOA does not support encoding '{normalized}'.")
 
 
 def _build_binary_operators(
@@ -129,9 +137,9 @@ def _build_binary_operators(
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build binary encoding operators."""
     if cross_method not in BINARY_CROSSOVER:
-        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for binary encoding.")
+        raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for binary encoding.")
     if mut_method not in BINARY_MUTATION:
-        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for binary encoding.")
+        raise ValueError(f"Unsupported SMSEMOA mutation '{mut_method}' for binary encoding.")
 
     cross_fn = BINARY_CROSSOVER[cross_method]
     cross_prob = float(cross_params.get("prob", 0.9))
@@ -160,9 +168,9 @@ def _build_integer_operators(
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build integer encoding operators."""
     if cross_method not in INT_CROSSOVER:
-        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for integer encoding.")
+        raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for integer encoding.")
     if mut_method not in INT_MUTATION:
-        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for integer encoding.")
+        raise ValueError(f"Unsupported SMSEMOA mutation '{mut_method}' for integer encoding.")
 
     cross_fn = INT_CROSSOVER[cross_method]
     cross_prob = float(cross_params.get("prob", 0.9))
@@ -220,9 +228,9 @@ def _build_permutation_operators(
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build permutation encoding operators."""
     if cross_method not in PERM_CROSSOVER:
-        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for permutation encoding.")
+        raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for permutation encoding.")
     if mut_method not in PERM_MUTATION:
-        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for permutation encoding.")
+        raise ValueError(f"Unsupported SMSEMOA mutation '{mut_method}' for permutation encoding.")
 
     cross_fn = PERM_CROSSOVER[cross_method]
     cross_prob = float(cross_params.get("prob", 0.9))
@@ -295,24 +303,27 @@ def _build_mixed_operators(
     mixed_spec: dict[str, np.ndarray],
     rng: np.random.Generator,
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
-    """Build mixed encoding operators."""
+    """Build variation operators for mixed encoding."""
     if str(cross_method).lower() not in {"mixed", "uniform"}:
         raise ValueError(
-            f"Unsupported NSGA-III crossover '{cross_method}' for mixed encoding."
+            f"Unsupported SMSEMOA crossover '{cross_method}' for mixed encoding."
         )
     if str(mut_method).lower() not in {"mixed", "gaussian"}:
         raise ValueError(
-            f"Unsupported NSGA-III mutation '{mut_method}' for mixed encoding."
+            f"Unsupported SMSEMOA mutation '{mut_method}' for mixed encoding."
         )
 
     cross_prob = float(cross_params.get("prob", 0.9))
-    mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
+    mut_prob = resolve_prob_expression(
+        mut_params.get("prob"),
+        n_var,
+        1.0 / max(1, n_var),
+    )
 
     def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        shape = parents.shape
-        parents_flat = parents.reshape(-1, shape[-1])
+        parents_flat = parents.reshape(-1, parents.shape[-1])
         offspring_flat = mixed_crossover(parents_flat, cross_prob, mixed_spec, _rng)
-        return offspring_flat.reshape(shape)
+        return offspring_flat.reshape(parents.shape)
 
     def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
         mixed_mutation(X_child, mut_prob, mixed_spec, _rng)

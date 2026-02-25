@@ -70,5 +70,5 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 
 ## Adding Problems/Operators (no cross references)
 - Problem registry: add specs in `foundation/problem/registry/families/*.py`.
-- Operators: implementations live in `vamos.operators.impl`, algorithm wiring in `vamos.operators.policies`.
+- Operators: implementations live in `vamos.engine.operators.impl`, algorithm wiring in `vamos.engine.operators.policies`.
 - Update docs/tests when adding new modules or APIs.

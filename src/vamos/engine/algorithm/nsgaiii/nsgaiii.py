@@ -36,8 +36,8 @@ if TYPE_CHECKING:
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
+from vamos.engine.hooks.live_viz import LiveVisualization
 from vamos.foundation.observer import RunContext
-from vamos.hooks.live_viz import LiveVisualization
 
 __all__ = ["NSGAIII"]
 
