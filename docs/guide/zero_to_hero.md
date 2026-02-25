@@ -67,7 +67,7 @@ Create `benchmark.py`:
 ```python
 import pandas as pd
 from vamos import optimize
-from vamos.foundation.metrics import compute_normalized_hv
+from vamos.foundation.quality_indicators import compute_normalized_hv
 from vamos.ux.api import friedman_test
 
 # 1. Define the study

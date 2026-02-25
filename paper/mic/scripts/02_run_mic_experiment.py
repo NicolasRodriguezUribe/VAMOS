@@ -77,8 +77,8 @@ sys.path.insert(0, str(ROOT_DIR / "paper"))
 
 from vamos import optimize
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.metrics.hypervolume import hypervolume
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 from vamos.foundation.problem.registry import make_problem_selection
 
 from progress_utils import ProgressBar, joblib_progress

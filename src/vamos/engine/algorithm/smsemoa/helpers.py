@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from vamos.foundation.metrics.hypervolume import hypervolume_contributions
+from vamos.foundation.quality_indicators.hypervolume import hypervolume_contributions
 
 if TYPE_CHECKING:
     from vamos.foundation.kernel.backend import KernelBackend

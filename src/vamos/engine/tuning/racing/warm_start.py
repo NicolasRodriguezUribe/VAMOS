@@ -156,7 +156,7 @@ class WarmStartEvaluator:
         This is useful for problems where ideal/nadir are unknown.
         Supports any number of objectives (uses moocore backend for >2D).
         """
-        from vamos.foundation.metrics.hypervolume import hypervolume
+        from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
         norm_F = self.normalize(F)
         ref = np.ones(F.shape[1]) * (1.0 + ref_offset)

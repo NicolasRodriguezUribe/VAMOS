@@ -22,7 +22,7 @@ def compute_hypervolume(F: np.ndarray, ref_point: Sequence[float]) -> float:
     Notes
     - This implementation supports 2-objective minimization problems only.
     - For higher-dimensional hypervolume, use a dedicated backend (e.g., Moocore)
-      via the `vamos.foundation.metrics.moocore_indicators` helpers.
+      via the `vamos.foundation.quality_indicators.moocore_indicators` helpers.
     """
     F = np.asarray(F)
     ref = np.asarray(ref_point, dtype=float)

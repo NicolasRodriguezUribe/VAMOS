@@ -7,7 +7,7 @@ import pytest
 
 from vamos import OptimizationResult, optimize
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.metrics import compute_hypervolume
+from vamos.foundation.quality_indicators import compute_hypervolume
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 

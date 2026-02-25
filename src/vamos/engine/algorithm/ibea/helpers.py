@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
-from vamos.foundation.metrics.hypervolume import hypervolume
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
 if TYPE_CHECKING:
     pass

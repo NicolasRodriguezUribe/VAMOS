@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from vamos.foundation.metrics import moocore_indicators as mi
+from vamos.foundation.quality_indicators import moocore_indicators as mi
 
 pytestmark = pytest.mark.backends
 

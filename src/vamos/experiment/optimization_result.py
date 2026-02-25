@@ -14,7 +14,7 @@ class BestResult(TypedDict):
     front_index: int
 
 
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 
 class OptimizationResult:

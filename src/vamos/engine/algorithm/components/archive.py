@@ -12,7 +12,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
 from vamos.foundation.kernel.numpy_backend import _compute_crowding
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 DeduplicateIn = Literal["objective", "decision", "both"]
 _HV_FALLBACK_WARNED = False

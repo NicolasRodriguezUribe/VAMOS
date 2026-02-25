@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from vamos.foundation.metrics.hypervolume import hypervolume
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
 
 class HVTracker:

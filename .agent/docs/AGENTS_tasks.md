@@ -68,7 +68,7 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 
 **Goal**: Implement or adjust an external archive (crowding/hypervolume) and integrate it without breaking defaults.
 
-**Context**: Archive utilities in `src/vamos/foundation/eval/`, `src/vamos/foundation/metrics/`, or `src/vamos/engine/algorithm/` hooks; hypervolume helpers in kernels/backends; algorithm configs that accept archive choices.
+**Context**: Archive utilities in `src/vamos/foundation/eval/`, `src/vamos/foundation/quality_indicators/`, or `src/vamos/engine/algorithm/` hooks; hypervolume helpers in kernels/backends; algorithm configs that accept archive choices.
 
 **Steps**
 - Locate archive abstraction and existing implementations (capacity, `add`/`extend` behaviour).

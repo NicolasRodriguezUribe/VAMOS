@@ -36,7 +36,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 OUTPUT_FIG = Path(__file__).parent / "manuscript" / "figures" / "pareto_fronts.png"
 

@@ -5,7 +5,7 @@ import numpy as np
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 
 def _dominates(a: np.ndarray, b: np.ndarray) -> bool:

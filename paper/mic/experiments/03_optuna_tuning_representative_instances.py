@@ -39,8 +39,8 @@ from vamos.engine.tuning import (
     save_history_json,
 )
 from vamos.engine.tuning.racing.param_space import Boolean, Categorical, Int, ParamSpace, Real
-from vamos.foundation.metrics.hypervolume import hypervolume
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 from vamos.foundation.problem.registry import make_problem_selection
 
 

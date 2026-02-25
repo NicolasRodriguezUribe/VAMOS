@@ -128,7 +128,7 @@ def run_profile(
             hv = None
             if compute_hv and ref_point is not None and result.F is not None and len(result.F) > 0:
                 try:
-                    from vamos.foundation.metrics.hypervolume import compute_hypervolume
+                    from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 
                     hv = compute_hypervolume(result.F, ref_point)
                 except Exception:

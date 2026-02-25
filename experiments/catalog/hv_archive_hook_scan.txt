@@ -40,7 +40,7 @@ src\vamos\foundation\metrics\hypervolume.py:57: # Compute hypervolume as sum of 
 src\vamos\foundation\metrics\hypervolume.py:58: hv = 0.0
 src\vamos\foundation\metrics\hypervolume.py:65: hv += width * height
 src\vamos\hooks\hv_archive_hooks.py:10: from vamos.archive import BoundedArchive, BoundedArchiveConfig
-src\vamos\hooks\hv_archive_hooks.py:11: from vamos.foundation.metrics.hypervolume import compute_hypervolume
+src\vamos\hooks\hv_archive_hooks.py:11: from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 src\vamos\hooks\hv_archive_hooks.py:13: from vamos.monitoring import HVConvergenceConfig, HVConvergenceMonitor, HVDecision
 src\vamos\hooks\hv_archive_hooks.py:30: def _try_compute_hv(F: np.ndarray, ref: list[float] | None = None) -> float | None:
 src\vamos\hooks\hv_archive_hooks.py:32: Best-effort HV computation:
@@ -56,7 +56,7 @@ src\vamos\engine\algorithm\nsgaii\initialization.py:47: If termination type is u
 src\vamos\engine\algorithm\nsgaii\initialization.py:50: hv_config = None
 src\vamos\engine\algorithm\nsgaii\initialization.py:53: elif term_type == "hv":
 src\vamos\experiment\execution.py:19: from vamos.foundation.core.hv_stop import compute_hv_reference
-src\vamos\experiment\execution.py:23: from vamos.foundation.metrics.hypervolume import hypervolume
+src\vamos\experiment\execution.py:23: from vamos.foundation.quality_indicators.hypervolume import hypervolume
 src\vamos\experiment\execution.py:34: from vamos.hooks.config_parse import parse_stopping_archive
 src\vamos\experiment\execution.py:78: # Check if any observer requests stopping (e.g. Hooks)
 src\vamos\experiment\execution.py:134: external_archive_size: int | None = None,
@@ -79,7 +79,7 @@ src\vamos\engine\algorithm\nsgaii\state.py:60: archive_X: np.ndarray | None = No
 src\vamos\engine\algorithm\nsgaii\state.py:61: archive_F: np.ndarray | None = None
 src\vamos\engine\algorithm\nsgaii\state.py:62: archive_manager: CrowdingDistanceArchive | None = None
 src\vamos\engine\algorithm\nsgaii\state.py:63: archive_via_kernel: bool = False
-src\vamos\foundation\kernel\moocore_backend.py:16: from vamos.foundation.metrics.hypervolume import hypervolume as hv_fn
+src\vamos\foundation\kernel\moocore_backend.py:16: from vamos.foundation.quality_indicators.hypervolume import hypervolume as hv_fn
 src\vamos\foundation\kernel\moocore_backend.py:96: Consolidated MooCore backend with buffered survival, adaptive HV/crowding,
 src\vamos\foundation\kernel\moocore_backend.py:97: optional numba tournament selection, and incremental archive maintenance.
 src\vamos\foundation\kernel\moocore_backend.py:101: HV_SIZE_THRESHOLD = 256

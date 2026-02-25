@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import numpy as np
 
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 
 def _logger() -> logging.Logger:

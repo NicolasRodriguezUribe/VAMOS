@@ -14,8 +14,8 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-from vamos.foundation.metrics.hypervolume import hypervolume
-from vamos.foundation.metrics.pareto import pareto_filter
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
+from vamos.foundation.quality_indicators.pareto import pareto_filter
 
 from .helpers import (
     build_mating_pool,
