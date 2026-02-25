@@ -21,7 +21,7 @@ building blocks used across multiple algorithms.
   - `variation/`: variation pipelines (crossover + mutation wiring)
 - Algorithm subfolders: `nsgaii/`, `moead/`, `spea2/`, `ibea/`, `smsemoa/`, `smpso/`, `nsgaiii/`, `agemoea/`, `rvea/`
   - Each contains: `__init__.py`, `{algorithm}.py`, `initialization.py`, `helpers.py`, `state.py`
-  - Operator wiring lives in `src/vamos/operators/policies/`
+  - Operator wiring lives in `src/vamos/engine/operators/policies/`
 - Config subfolder: `config/`
   - `base.py`, `nsgaii.py`, `moead.py`, `spea2.py`, `ibea.py`, `smsemoa.py`, `smpso.py`, `nsgaiii.py`, `agemoea.py`, `rvea.py`
   - **Unified Archive API**: All configs must support `.archive(size, **kwargs)` using `BoundedArchive` parameters.
@@ -55,4 +55,5 @@ Algorithms are tunable via `vamos.engine.tuning.racing`:
 - Use `config_from_assignment(algo_name, params)` to convert tuned params to config
 - Multi-fidelity tuning passes varying `budget` via `EvalContext`
 - Warm-start support: algorithms can checkpoint population state for continuation
+
 

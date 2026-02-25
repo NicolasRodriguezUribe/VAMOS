@@ -6,12 +6,22 @@ from pathlib import Path
 BASELINE_VIOLATIONS = {
     # Pre-existing: numpy_backend uses SBX/PM operator classes for its kernel implementation.
     # TODO: consider moving operator primitives to foundation or using a protocol.
-    ("A", "src/vamos/foundation/kernel/numpy_backend.py", "vamos.engine.operators.impl.real"),
+    ("foundation->engine", "src/vamos/foundation/kernel/numpy_backend.py", "vamos.engine.operators.impl.real"),
 }
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = ROOT / "src" / "vamos"
-LAYERS = {"foundation", "engine", "ux", "experiment"}
+LAYERS = {"foundation", "engine", "ux", "experiment", "assist", "resources"}
+
+# Allowed direct layer imports (source -> set(targets)).
+ALLOWED_LAYER_IMPORTS: dict[str, set[str]] = {
+    "foundation": {"foundation", "resources"},
+    "engine": {"engine", "foundation", "resources"},
+    "experiment": {"experiment", "foundation", "engine", "ux", "assist", "resources"},
+    "ux": {"ux", "foundation", "engine", "resources"},
+    "assist": {"assist", "foundation", "engine", "experiment", "resources"},
+    "resources": {"resources"},
+}
 
 
 def _layer_from_path(path: Path) -> str | None:
@@ -72,7 +82,7 @@ def _detect_violations():
 
     for path in _iter_python_files():
         source_layer = _layer_from_path(path)
-        if source_layer not in {"foundation", "engine", "ux"}:
+        if source_layer not in LAYERS:
             continue
         text = _read_text(path)
         tree = ast.parse(text)
@@ -137,19 +147,14 @@ def _detect_violations():
 
 
 def _violation_record(source_layer: str, target_layer: str | None, rel_path: str, module: str):
-    if source_layer == "foundation" and target_layer == "engine":
-        return ("A", rel_path, module)
-    if source_layer == "foundation" and target_layer == "experiment":
-        return ("B", rel_path, module)
-    if source_layer == "foundation" and target_layer == "ux":
-        return ("C", rel_path, module)
-    if source_layer == "engine" and target_layer == "experiment":
-        return ("D", rel_path, module)
-    if source_layer == "engine" and target_layer == "ux":
-        return ("E", rel_path, module)
-    if source_layer == "ux" and target_layer == "experiment":
-        return ("F", rel_path, module)
-    return None
+    if target_layer is None:
+        return None
+    if source_layer == target_layer:
+        return None
+    allowed = ALLOWED_LAYER_IMPORTS.get(source_layer, {source_layer})
+    if target_layer in allowed:
+        return None
+    return (f"{source_layer}->{target_layer}", rel_path, module)
 
 
 def _add_violation(record, lineno: int, violations, line_map):

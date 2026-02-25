@@ -27,9 +27,12 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - `pytest -q`
 
 ## Layering Policy (current reality)
-- foundation must not import engine/ux/experiment.
-- engine may depend on foundation and hooks only.
-- experiment and ux may depend on foundation and engine.
+- foundation may depend on foundation/resources only.
+- engine may depend on engine/foundation/resources.
+- experiment may depend on experiment/foundation/engine/ux/assist/resources.
+- ux may depend on ux/foundation/engine/resources.
+- assist may depend on assist/foundation/engine/experiment/resources.
+- resources must not import other VAMOS layers.
 - Facades: prefer `vamos.api`, `vamos.algorithms`, `vamos.problems`, `vamos.ux.api`.
 
 ## Optional Dependencies Policy

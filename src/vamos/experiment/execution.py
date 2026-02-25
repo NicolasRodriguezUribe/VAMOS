@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 from argparse import Namespace
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass as _dataclass
-from importlib.resources import as_file
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +18,14 @@ from vamos.engine.hooks import (
     LiveVisualization,
 )
 from vamos.engine.hooks.config_parse import parse_stopping_archive
+from vamos.experiment._execution_support import (
+    CompositeObserver,
+    LiveVizAdapter,
+    VariationConfigs,
+)
+from vamos.experiment._execution_support import (
+    default_weight_path as _default_weight_path_impl,
+)
 from vamos.experiment.observers.console import ConsoleObserver
 from vamos.experiment.observers.storage import StorageObserver
 from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
@@ -42,7 +48,6 @@ from vamos.foundation.exceptions import ConfigurationError
 from vamos.foundation.observer import Observer, RunContext
 from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.quality_indicators.hypervolume import hypervolume
-from vamos.resources import weight_path
 
 
 def _project_root() -> Path:
@@ -56,128 +61,8 @@ def _logger() -> logging.Logger:
 Metrics = dict[str, Any]
 
 
-@_dataclass
-class VariationConfigs:
-    """Bundles per-algorithm variation configurations into a single object.
-
-    Replaces the previous pattern of 9 separate keyword arguments in run_single,
-    making it easy to add new algorithms without widening the function signature.
-    """
-
-    nsgaii: VariationConfig | None = None
-    moead: VariationConfig | None = None
-    smsemoa: VariationConfig | None = None
-    nsgaiii: VariationConfig | None = None
-    spea2: VariationConfig | None = None
-    ibea: VariationConfig | None = None
-    smpso: VariationConfig | None = None
-    agemoea: VariationConfig | None = None
-    rvea: VariationConfig | None = None
-
-    @classmethod
-    def from_namespace(cls, args: Namespace) -> VariationConfigs:
-        """Extract all variation configs from an argparse Namespace."""
-        return cls(
-            nsgaii=getattr(args, "nsgaii_variation", None),
-            moead=getattr(args, "moead_variation", None),
-            smsemoa=getattr(args, "smsemoa_variation", None),
-            nsgaiii=getattr(args, "nsgaiii_variation", None),
-            spea2=getattr(args, "spea2_variation", None),
-            ibea=getattr(args, "ibea_variation", None),
-            smpso=getattr(args, "smpso_variation", None),
-            agemoea=getattr(args, "agemoea_variation", None),
-            rvea=getattr(args, "rvea_variation", None),
-        )
-
-    def as_storage_dict(self) -> dict[str, VariationConfig | None]:
-        """Return the dict format expected by StorageObserver."""
-        return {
-            "nsgaii_variation": self.nsgaii,
-            "moead_variation": self.moead,
-            "smsemoa_variation": self.smsemoa,
-            "nsgaiii_variation": self.nsgaiii,
-            "spea2_variation": self.spea2,
-            "ibea_variation": self.ibea,
-            "smpso_variation": self.smpso,
-            "agemoea_variation": self.agemoea,
-            "rvea_variation": self.rvea,
-        }
-
-
-class CompositeObserver(Observer):
-    """Fans out events to multiple observers."""
-
-    def __init__(self, observers: list[Observer]):
-        self.observers = [o for o in observers if o is not None]
-
-    def on_start(self, ctx: RunContext) -> None:
-        for obs in self.observers:
-            obs.on_start(ctx)
-
-    def on_generation(
-        self,
-        generation: int,
-        F: np.ndarray | None = None,
-        X: np.ndarray | None = None,
-        stats: dict[str, Any] | None = None,
-    ) -> None:
-        for obs in self.observers:
-            obs.on_generation(generation, F, X, stats)
-
-    def on_end(
-        self,
-        final_F: np.ndarray | None = None,
-        final_stats: dict[str, Any] | None = None,
-    ) -> None:
-        for obs in self.observers:
-            obs.on_end(final_F, final_stats)
-
-    def should_stop(self) -> bool:
-        # Check if any observer requests stopping (e.g. Hooks)
-        # Note: Observer protocol doesn't strictly have should_stop, but HookManager does.
-        # We handle this specifically for observers that support it.
-        for obs in self.observers:
-            if hasattr(obs, "should_stop") and obs.should_stop():
-                return True
-        return False
-
-
-class _LiveVizAdapter:
-    """Bridge algorithm live-viz callbacks to observer on_generation events."""
-
-    def __init__(self, observer: CompositeObserver):
-        self._observer = observer
-
-    def on_start(self, ctx: RunContext) -> None:
-        return None
-
-    def on_generation(
-        self,
-        generation: int,
-        F: np.ndarray | None = None,
-        X: np.ndarray | None = None,
-        stats: dict[str, Any] | None = None,
-    ) -> None:
-        self._observer.on_generation(generation, F, X, stats)
-
-    def on_end(
-        self,
-        final_F: np.ndarray | None = None,
-        final_stats: dict[str, Any] | None = None,
-    ) -> None:
-        return None
-
-    def should_stop(self) -> bool:
-        return self._observer.should_stop()
-
-
 def _default_weight_path(problem_name: str, n_obj: int, pop_size: int) -> str:
-    filename = f"{problem_name}_nobj{n_obj}_pop{pop_size}.csv"
-    try:
-        with as_file(weight_path(filename)) as p:
-            return str(p)
-    except Exception:
-        return str(weight_path("zdt1problem_2obj_pop100.csv")) if "zdt1" in filename else str(weight_path(filename))
+    return _default_weight_path_impl(problem_name, n_obj, pop_size)
 
 
 def run_single(
@@ -330,7 +215,7 @@ def run_single(
         termination=termination_spec,
         seed=config.seed,
         eval_strategy=eval_strategy,
-        live_viz=_LiveVizAdapter(main_observer),
+        live_viz=LiveVizAdapter(main_observer),
     )
 
     payload = exec_result.payload
