@@ -6,12 +6,13 @@ from __future__ import annotations
 
 from .bridge_space_parts_discrete import (
     binary_operator_part_full,
+    external_archive_part,
     integer_operator_part_full,
     mixed_operator_part,
     permutation_operator_part_full,
 )
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
-from .param_space import Boolean, Categorical, Condition, ConditionalBlock, Int, ParamType, Real
+from .param_space import Categorical, ConditionalBlock, Int, ParamType, Real
 
 # ---------------------------------------------------------------------------
 # Core part (shared by ALL NSGA-II encoding variants)
@@ -24,23 +25,9 @@ def _core_part() -> SpacePart:
         Categorical("offspring_ratio", [0.25, 0.5, 0.75, 1.0]),
         Categorical("selection", ["tournament", "boltzmann", "ranking", "sus"]),
         Int("selection_pressure", 2, 10),
-        Boolean("use_external_archive"),
-        Boolean("archive_unbounded"),
     ]
-    archive_type_param = Categorical("archive_type", ["size_cap", "hvc_prune"])
-    archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
-    conditionals = [
-        ConditionalBlock(
-            "use_external_archive",
-            True,
-            [archive_type_param, archive_size_factor_param],
-        ),
-    ]
-    conditions = [
-        Condition("archive_type", "cfg['archive_unbounded'] == False"),
-        Condition("archive_size_factor", "cfg['archive_unbounded'] == False"),
-    ]
-    return params, conditionals, conditions
+    arch_params, arch_conds, arch_conditions = external_archive_part()
+    return [*params, *arch_params], arch_conds, arch_conditions
 
 
 # ---------------------------------------------------------------------------

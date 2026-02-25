@@ -6,13 +6,14 @@ from __future__ import annotations
 
 from .bridge_space_parts_discrete import (
     binary_operator_part_full,
+    external_archive_part,
     integer_operator_part_full,
     mixed_operator_part,
     permutation_operator_part_full,
     real_operator_part_medium,
 )
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
-from .param_space import Boolean, Categorical, ConditionalBlock, Int, ParamType, Real
+from .param_space import Int, ParamType
 
 # ---------------------------------------------------------------------------
 # Core part (shared by ALL AGE-MOEA encoding variants)
@@ -22,22 +23,9 @@ from .param_space import Boolean, Categorical, ConditionalBlock, Int, ParamType,
 def _core_part() -> SpacePart:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
-        Boolean("use_external_archive"),
     ]
-    archive_type_param = Categorical("archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"])
-    archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
-    archive_prune_policy_param = Categorical(
-        "archive_prune_policy", ["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"]
-    )
-    archive_epsilon_param = Real("archive_epsilon", 1e-4, 0.1, log=True)
-    conditionals = [
-        ConditionalBlock(
-            "use_external_archive",
-            True,
-            [archive_type_param, archive_size_factor_param, archive_prune_policy_param, archive_epsilon_param],
-        ),
-    ]
-    return params, conditionals, []
+    arch_params, arch_conds, arch_conditions = external_archive_part()
+    return [*params, *arch_params], arch_conds, arch_conditions
 
 
 # ---------------------------------------------------------------------------

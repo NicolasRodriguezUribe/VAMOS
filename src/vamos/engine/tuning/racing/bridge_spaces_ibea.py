@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from .bridge_space_parts_discrete import (
     binary_operator_part_full,
+    external_archive_part,
     integer_operator_part_full,
     mixed_operator_part,
     permutation_operator_part_full,
@@ -26,7 +27,8 @@ def _core_part() -> SpacePart:
         Categorical("indicator", ["eps", "hypervolume"]),
         Real("kappa", 0.01, 0.2),
     ]
-    return params, [], []
+    arch_params, arch_conds, arch_conditions = external_archive_part()
+    return [*params, *arch_params], arch_conds, arch_conditions
 
 
 # ---------------------------------------------------------------------------
