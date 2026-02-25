@@ -2,9 +2,9 @@ import pytest
 
 from vamos import optimize
 from vamos.engine.algorithm.config import MOEADConfig, NSGAIIConfig
-from vamos.foundation.quality_indicators import compute_hypervolume
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.foundation.problem.zdt2 import ZDT2Problem
+from vamos.foundation.quality_indicators import compute_hypervolume
 
 
 @pytest.mark.reference

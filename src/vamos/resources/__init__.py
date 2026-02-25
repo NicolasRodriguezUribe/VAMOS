@@ -6,12 +6,15 @@ from __future__ import annotations
 
 import os
 from importlib import resources
+from importlib.resources.abc import Traversable
 from pathlib import Path
 
+ResourceLocation = Path | Traversable
 
-def _reference_front_locations() -> list[object]:
+
+def _reference_front_locations() -> list[ResourceLocation]:
     """Return candidate locations containing reference front CSV files."""
-    locations: list[object] = []
+    locations: list[ResourceLocation] = []
 
     # Explicit override for external runs (e.g., remote servers).
     override = os.environ.get("VAMOS_REFERENCE_FRONTS_DIR")

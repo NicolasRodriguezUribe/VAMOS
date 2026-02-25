@@ -2,8 +2,8 @@ import pytest
 
 from vamos import optimize
 from vamos.engine.algorithm.config import NSGAIIIConfig
-from vamos.foundation.quality_indicators.hypervolume import hypervolume
 from vamos.foundation.problem.dtlz import DTLZ2Problem
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
 
 @pytest.mark.reference

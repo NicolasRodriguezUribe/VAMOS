@@ -56,9 +56,13 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
     if not use_external_archive:
         return
     archive_type_raw = assignment.get("archive_type", "size_cap")
-    archive_unbounded = bool(assignment.get("archive_unbounded", False))
-    if str(archive_type_raw).strip().lower() == "unbounded":
-        archive_unbounded = True
+    archive_type_norm = str(archive_type_raw).strip().lower()
+    # Prefer explicit archive_type when present. Fall back to legacy archive_unbounded only
+    # when archive_type is not provided in the assignment payload.
+    if "archive_type" in assignment:
+        archive_unbounded = archive_type_norm == "unbounded"
+    else:
+        archive_unbounded = bool(assignment.get("archive_unbounded", False))
     if archive_unbounded:
         builder.external_archive(capacity=None)
         return
