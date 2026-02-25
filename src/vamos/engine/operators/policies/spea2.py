@@ -12,17 +12,16 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 import numpy as np
 
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
-from vamos.foundation.encoding import normalize_encoding
-from vamos.operators.impl.integer import (
+from vamos.engine.operators.impl.integer import (
     creep_mutation,
     gaussian_integer_mutation,
     integer_polynomial_mutation,
     integer_sbx_crossover,
 )
-from vamos.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.operators.impl.real import VariationWorkspace
-from vamos.operators.impl.registry import get_operator_registry
-from vamos.operators.policies.discrete_operator_maps import (
+from vamos.engine.operators.impl.mixed import mixed_crossover, mixed_mutation
+from vamos.engine.operators.impl.real import VariationWorkspace
+from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.engine.operators.policies.discrete_operator_maps import (
     BINARY_CROSSOVER_COMMON,
     BINARY_MUTATION_COMMON,
     INT_CROSSOVER_COMMON,
@@ -36,6 +35,7 @@ from vamos.operators.policies.discrete_operator_maps import (
     PermCrossoverOp,
     PermMutationOp,
 )
+from vamos.foundation.encoding import normalize_encoding
 
 if TYPE_CHECKING:
     from vamos.foundation.problem.types import ProblemProtocol

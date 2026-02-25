@@ -7,10 +7,10 @@ from typing import Any
 
 import numpy as np
 
-from vamos.archive import BoundedArchive, BoundedArchiveConfig
+from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig
+from vamos.engine.hooks.hv_convergence import HVConvergenceConfig, HVConvergenceMonitor, HVDecision
 from vamos.foundation.metrics.hypervolume import compute_hypervolume
 from vamos.foundation.observer import RunContext
-from vamos.monitoring import HVConvergenceConfig, HVConvergenceMonitor, HVDecision
 
 
 def _ensure_dir(path: Path) -> None:

@@ -12,7 +12,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from vamos.archive.bounded_archive import BoundedArchive
+    from vamos.engine.archive.bounded_archive import BoundedArchive
 
 import numpy as np
 
@@ -247,8 +247,8 @@ def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, pr
 
 
 def _build_archive(config: dict[str, Any], seed: int) -> BoundedArchive | None:
-    from vamos.archive import ExternalArchiveConfig
-    from vamos.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
+    from vamos.engine.archive import ExternalArchiveConfig
+    from vamos.engine.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
 
     ext_cfg = config.get("external_archive")
     if ext_cfg is None:

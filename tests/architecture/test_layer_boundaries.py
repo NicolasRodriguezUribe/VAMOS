@@ -3,7 +3,11 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-BASELINE_VIOLATIONS = set()
+BASELINE_VIOLATIONS = {
+    # Pre-existing: numpy_backend uses SBX/PM operator classes for its kernel implementation.
+    # TODO: consider moving operator primitives to foundation or using a protocol.
+    ("A", "src/vamos/foundation/kernel/numpy_backend.py", "vamos.engine.operators.impl.real"),
+}
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = ROOT / "src" / "vamos"

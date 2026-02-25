@@ -22,19 +22,19 @@ from vamos.engine.algorithm.components.population import (
     resolve_bounds,
 )
 from vamos.engine.algorithm.components.termination import parse_termination
-from vamos.foundation.encoding import normalize_encoding
-from vamos.operators.policies.smpso import (
+from vamos.engine.operators.policies.smpso import (
     build_mutation_operator,
     build_repair_operator,
 )
+from vamos.foundation.encoding import normalize_encoding
 
 from .state import SMPSOState
 
 if TYPE_CHECKING:
+    from vamos.engine.hooks.live_viz import LiveVisualization
     from vamos.foundation.eval.backends import EvaluationBackend
     from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
-    from vamos.hooks.live_viz import LiveVisualization
 
 
 __all__ = [

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from vamos.adaptation.aos.policies import SlidingWindowUCBPolicy, ThompsonSamplingPolicy
+from vamos.engine.adaptation.aos.policies import SlidingWindowUCBPolicy, ThompsonSamplingPolicy
 
 
 def test_thompson_sampling_basic():

@@ -15,7 +15,7 @@ References:
     vol. 181, no. 3, 2007.
 """
 
-from vamos.operators.policies.smsemoa import (
+from vamos.engine.operators.policies.smsemoa import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
     INT_CROSSOVER,

@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TypedDict
 
-from vamos.archive import BoundedArchiveConfig
-from vamos.monitoring import HVConvergenceConfig
+from vamos.engine.archive import BoundedArchiveConfig
+from vamos.engine.hooks.hv_convergence import HVConvergenceConfig
 
 
 class StoppingArchiveConfig(TypedDict):

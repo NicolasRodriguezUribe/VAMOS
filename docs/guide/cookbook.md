@@ -141,11 +141,11 @@ The output includes:
 
 ## 8. Operator Facade Access
 
-Import common operators directly from `vamos.operators`.
+Import common operators directly from `vamos.engine.operators`.
 
 ```python
 import numpy as np
-from vamos.operators import SBXCrossover, PolynomialMutation
+from vamos.engine.operators import SBXCrossover, PolynomialMutation
 
 xl = np.zeros(30)
 xu = np.ones(30)

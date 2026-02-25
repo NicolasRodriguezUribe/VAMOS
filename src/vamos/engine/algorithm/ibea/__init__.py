@@ -14,7 +14,7 @@ References:
     Search," in Proc. PPSN VIII, 2004, pp. 832-842.
 """
 
-from vamos.operators.policies.ibea import build_variation_pipeline
+from vamos.engine.operators.policies.ibea import build_variation_pipeline
 
 from .helpers import (
     apply_constraint_penalty,

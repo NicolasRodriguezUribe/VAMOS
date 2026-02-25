@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.builders import (
     build_agemoea_algorithm,
     build_ibea_algorithm,
@@ -13,6 +12,7 @@ from vamos.engine.algorithm.builders import (
     build_spea2_algorithm,
 )
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.config.variation import VariationConfig
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.kernel.registry import resolve_kernel

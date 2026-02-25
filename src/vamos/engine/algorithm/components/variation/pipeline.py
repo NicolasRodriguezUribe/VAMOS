@@ -19,9 +19,9 @@ from vamos.engine.algorithm.components.variation.protocol import (
     VariationWorkspaceProtocol,
 )
 from vamos.engine.algorithm.components.variation.strategies import VariationContext, make_encoding_strategy
+from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.operators.impl.registry import get_operator_registry
 
 
 class VariationPipeline:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 
-from vamos.archive import ExternalArchiveConfig
+from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.core.experiment_config import EXPERIMENT_TYPES
 from vamos.foundation.problem.resolver import PROBLEM_SET_PRESETS, resolve_reference_front_path
 

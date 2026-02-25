@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from vamos.archive import ExternalArchiveConfig
+from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 

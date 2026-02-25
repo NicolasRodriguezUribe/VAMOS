@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from vamos.engine.algorithm.smsemoa import SMSEMOA
     from vamos.engine.algorithm.spea2 import SPEA2
 
-from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.components.variation.helpers import ensure_supported_repair_name
 from vamos.engine.algorithm.config import (
     AGEMOEAConfig,
@@ -34,6 +33,7 @@ from vamos.engine.algorithm.config import (
     SPEA2Config,
 )
 from vamos.engine.algorithm.registry import resolve_algorithm
+from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.config.variation import ensure_operator_tuple, merge_variation_overrides, resolve_default_variation_config
 from vamos.foundation.data import weight_path
 from vamos.foundation.encoding import normalize_encoding

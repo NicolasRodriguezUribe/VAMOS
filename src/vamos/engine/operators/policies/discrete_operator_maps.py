@@ -5,7 +5,7 @@ from typing import TypeAlias
 
 import numpy as np
 
-from vamos.operators.impl.binary import (
+from vamos.engine.operators.impl.binary import (
     bit_flip_mutation,
     hux_crossover,
     one_point_crossover,
@@ -13,7 +13,7 @@ from vamos.operators.impl.binary import (
     two_point_crossover,
     uniform_crossover,
 )
-from vamos.operators.impl.integer import (
+from vamos.engine.operators.impl.integer import (
     arithmetic_integer_crossover,
     boundary_integer_mutation,
     creep_mutation,
@@ -23,7 +23,7 @@ from vamos.operators.impl.integer import (
     random_reset_mutation,
     uniform_integer_crossover,
 )
-from vamos.operators.impl.permutation import (
+from vamos.engine.operators.impl.permutation import (
     alternating_edges_crossover,
     cycle_crossover,
     displacement_mutation,

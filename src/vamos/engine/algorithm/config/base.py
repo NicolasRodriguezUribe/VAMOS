@@ -41,7 +41,7 @@ class _SerializableConfig:
                 continue
             # Reconstruct nested ExternalArchiveConfig from plain dict
             if key == "external_archive" and isinstance(value, dict):
-                from vamos.archive import ExternalArchiveConfig
+                from vamos.engine.archive import ExternalArchiveConfig
                 value = ExternalArchiveConfig(**value)
             filtered[key] = value
         return cls(**filtered)  # type: ignore[call-arg]

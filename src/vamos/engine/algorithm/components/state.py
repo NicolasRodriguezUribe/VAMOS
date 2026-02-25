@@ -19,7 +19,7 @@ if TYPE_CHECKING:
         UnboundedArchive,
     )
     from vamos.engine.algorithm.components.termination import HVTracker
-    from vamos.hooks.genealogy import GenealogyTracker
+    from vamos.engine.hooks.genealogy import GenealogyTracker
 
 
 @dataclass

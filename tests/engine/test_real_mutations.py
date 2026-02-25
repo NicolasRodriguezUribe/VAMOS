@@ -1,7 +1,7 @@
 import numpy as np
 
-from vamos.operators.impl.real.mutation import LinkedPolynomialMutation, UniformMutation
-from vamos.operators.impl.real.repair import ClampRepair
+from vamos.engine.operators.impl.real.mutation import LinkedPolynomialMutation, UniformMutation
+from vamos.engine.operators.impl.real.repair import ClampRepair
 
 
 def test_uniform_mutation_respects_bounds_with_repair():

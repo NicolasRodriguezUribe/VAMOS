@@ -14,7 +14,7 @@ References:
     Pareto Evolutionary Algorithm," TIK-Report 103, ETH Zurich, 2001.
 """
 
-from vamos.operators.policies.spea2 import build_variation_operators
+from vamos.engine.operators.policies.spea2 import build_variation_operators
 
 from .helpers import (
     compute_selection_metrics,

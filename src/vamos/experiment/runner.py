@@ -3,12 +3,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from vamos.engine.hooks import LiveVisualization
 from vamos.experiment.execution import execute_problem_suite
 from vamos.experiment.services.orchestrator import run_single
 from vamos.experiment.study.api import run_study
 from vamos.foundation.core.experiment_config import ExperimentConfig, resolve_engine
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.hooks import LiveVisualization
 
 
 def run_experiment(

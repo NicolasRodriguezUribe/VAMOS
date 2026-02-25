@@ -9,7 +9,6 @@ from dataclasses import fields
 from difflib import get_close_matches
 from typing import TypedDict, cast
 
-from vamos.archive.bounded_archive import BoundedArchiveConfig
 from vamos.engine.algorithm.config import (
     IBEAConfig,
     MOEADConfig,
@@ -19,9 +18,10 @@ from vamos.engine.algorithm.config import (
     SMSEMOAConfig,
     SPEA2Config,
 )
+from vamos.engine.archive.bounded_archive import BoundedArchiveConfig
+from vamos.engine.hooks.hv_convergence import HVConvergenceConfig
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import available_problem_names
-from vamos.monitoring.hv_convergence import HVConvergenceConfig
 
 SpecBlock = dict[str, object]
 ProblemOverrides = dict[str, SpecBlock | None]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.archive import BoundedArchive, BoundedArchiveConfig
+from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig
 
 
 def test_bounded_archive_size_cap_and_nondominated():

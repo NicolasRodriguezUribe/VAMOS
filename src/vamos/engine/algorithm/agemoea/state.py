@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any
 from vamos.engine.algorithm.components.state import AlgorithmState
 
 if TYPE_CHECKING:
-    from vamos.archive.bounded_archive import BoundedArchive
     from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
+    from vamos.engine.archive.bounded_archive import BoundedArchive
 
 
 @dataclass

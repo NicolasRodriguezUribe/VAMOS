@@ -15,7 +15,6 @@ from typing import Any
 
 import numpy as np
 
-from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
@@ -23,11 +22,12 @@ from vamos.engine.algorithm.components.archive import (
     UnboundedArchive,
 )
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
+from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
-from vamos.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
 
 # Constants
 DEFAULT_TOURNAMENT_PRESSURE = 2

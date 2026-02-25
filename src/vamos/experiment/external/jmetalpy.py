@@ -212,7 +212,7 @@ def _run_jmetalpy_perm_nsga2(
         _logger().debug("Could not seed random/numpy RNG for jMetalPy permutation NSGA-II", exc_info=True)
 
     try:
-        from vamos.operators.impl.permutation import order_crossover as _vamos_order_crossover
+        from vamos.engine.operators.impl.permutation import order_crossover as _vamos_order_crossover
     except ImportError as exc:  # pragma: no cover
         raise ImportError("VAMOS permutation operators are unavailable.") from exc
 

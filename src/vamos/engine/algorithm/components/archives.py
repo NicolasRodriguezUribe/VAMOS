@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.archive import ExternalArchiveConfig
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
     SPEA2Archive,
     UnboundedArchive,
 )
+from vamos.engine.archive import ExternalArchiveConfig
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.state import AlgorithmState

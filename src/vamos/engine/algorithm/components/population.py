@@ -4,12 +4,12 @@ from typing import Any
 
 import numpy as np
 
+from vamos.engine.operators.impl.binary import random_binary_population
+from vamos.engine.operators.impl.integer import random_integer_population
+from vamos.engine.operators.impl.mixed import mixed_initialize
+from vamos.engine.operators.impl.permutation import random_permutation_population
+from vamos.engine.operators.impl.real import LatinHypercubeInitializer, ScatterSearchInitializer
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
-from vamos.operators.impl.binary import random_binary_population
-from vamos.operators.impl.integer import random_integer_population
-from vamos.operators.impl.mixed import mixed_initialize
-from vamos.operators.impl.permutation import random_permutation_population
-from vamos.operators.impl.real import LatinHypercubeInitializer, ScatterSearchInitializer
 
 
 def resolve_bounds(problem: Any, encoding: EncodingLike) -> tuple[np.ndarray, np.ndarray]:
