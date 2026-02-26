@@ -55,6 +55,44 @@ jobs:
       - name: Build docs
         run: mkdocs build --strict
 
+  cpp-native-contract:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies and native backend
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e ".[dev]"
+          python -m pip install -e "./VAMOS++"
+      - name: Verify native backend is active
+        run: |
+          python - <<'PY'
+          import vamospp
+          assert vamospp.is_native_backend(), "Native vamospp backend is required in this CI job."
+          print("Native backend active:", vamospp.backend_info())
+          PY
+      - name: Run native contract tests
+        env:
+          VAMOS_ENABLE_CPP_EVOLVE_FASTPATH: "1"
+          VAMOS_ENABLE_CPP_NATIVE_EVOLVE: "1"
+        run: |
+          python -m pytest -q \
+            tests/integration/test_cpp_native_nsga2_ndarray_contract.py \
+            tests/integration/test_cpp_native_out_buffer_semantics.py \
+            tests/integration/test_cpp_native_vs_fallback_nsga2_smallcase.py \
+            tests/integration/test_cpp_native_smsemoa_spea2_ndarray_contract.py \
+            tests/integration/test_cpp_native_smsemoa_spea2_vs_fallback_smallcase.py \
+            tests/integration/test_cpp_evolve_fastpath.py \
+            tests/engine/test_cpp_nsga2_evolve_determinism_extended.py
+
   tests-minimal:
     runs-on: ubuntu-latest
     strategy:
