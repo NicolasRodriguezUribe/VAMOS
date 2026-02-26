@@ -36,7 +36,7 @@ def build_config(pruning: str = "hv_contrib") -> NSGAIIConfig:
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .external_archive(capacity=100, pruning=pruning)
+        .external_archive()
         .build()
     )
 
