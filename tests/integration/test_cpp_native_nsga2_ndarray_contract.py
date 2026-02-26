@@ -1,0 +1,133 @@
+from __future__ import annotations
+
+import os
+import shutil
+import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+
+def _load_native_core():
+    if os.name == "nt" and hasattr(os, "add_dll_directory"):
+        candidates = [
+            os.environ.get("VAMOSPP_DLL_DIR"),
+            str(Path(sys.executable).resolve().parent),
+        ]
+        for tool in ("g++", "gcc", "clang++"):
+            tool_path = shutil.which(tool)
+            if tool_path:
+                candidates.append(str(Path(tool_path).resolve().parent))
+
+        seen: set[str] = set()
+        for candidate in candidates:
+            if not candidate or candidate in seen:
+                continue
+            seen.add(candidate)
+            path = Path(candidate)
+            if not path.exists():
+                continue
+            try:
+                os.add_dll_directory(str(path))
+            except (FileNotFoundError, OSError):
+                pass
+    return pytest.importorskip("vamospp._core", exc_type=ImportError)
+
+
+core = _load_native_core()
+
+
+def _sample_population(pop_size: int = 12, n_var: int = 4) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(1234)
+    X = rng.random((pop_size, n_var), dtype=np.float64)
+    F = np.ascontiguousarray(
+        np.column_stack(
+            (
+                np.sum(X, axis=1),
+                np.sum((X - 0.25) ** 2, axis=1),
+            )
+        ),
+        dtype=np.float64,
+    )
+    xl = np.zeros(n_var, dtype=np.float64)
+    xu = np.ones(n_var, dtype=np.float64)
+    return X, F, xl, xu
+
+
+def _config(n_var: int) -> dict[str, float | int]:
+    return {
+        "sbx_prob": 0.9,
+        "sbx_eta": 20.0,
+        "pm_prob": 1.0 / max(1, n_var),
+        "pm_eta": 20.0,
+        "tournament_pressure": 2,
+    }
+
+
+def _assert_float64_c_2d(arr: np.ndarray, shape: tuple[int, int]) -> None:
+    assert isinstance(arr, np.ndarray)
+    assert arr.dtype == np.float64
+    assert arr.flags.c_contiguous
+    assert arr.shape == shape
+
+
+def _assert_int64_c_1d(arr: np.ndarray, shape0: int) -> None:
+    assert isinstance(arr, np.ndarray)
+    assert arr.dtype == np.int64
+    assert arr.flags.c_contiguous
+    assert arr.shape == (shape0,)
+
+
+def _objectives(X: np.ndarray) -> np.ndarray:
+    return np.ascontiguousarray(
+        np.column_stack(
+            (
+                np.sum(X, axis=1),
+                np.sum((X - 0.5) ** 2, axis=1),
+            )
+        ),
+        dtype=np.float64,
+    )
+
+
+def test_native_generate_offspring_returns_float64_c_contiguous_ndarray() -> None:
+    X, F, xl, xu = _sample_population()
+    offspring = core.generate_offspring(X, F, X.shape[0], xl, xu, _config(X.shape[1]), 99, None)
+    _assert_float64_c_2d(offspring, (X.shape[0], X.shape[1]))
+
+
+def test_native_nsga2_survival_returns_ndarray_tuple_and_indices() -> None:
+    X, F, xl, xu = _sample_population()
+    X_off = core.generate_offspring(X, F, X.shape[0], xl, xu, _config(X.shape[1]), 7, None)
+    F_off = _objectives(X_off)
+
+    X_new, F_new = core.nsga2_survival(X, F, X_off, F_off, X.shape[0], False)
+    _assert_float64_c_2d(X_new, X.shape)
+    _assert_float64_c_2d(F_new, F.shape)
+
+    X_new_i, F_new_i, sel = core.nsga2_survival(X, F, X_off, F_off, X.shape[0], True)
+    _assert_float64_c_2d(X_new_i, X.shape)
+    _assert_float64_c_2d(F_new_i, F.shape)
+    _assert_int64_c_1d(sel, X.shape[0])
+
+
+@pytest.mark.parametrize("eval_payload", ["dict", "attr", "array"])
+def test_native_nsga2_evolve_returns_ndarray_tuple(eval_payload: str) -> None:
+    X, F, xl, xu = _sample_population()
+
+    class EvalResult:
+        def __init__(self, values: np.ndarray) -> None:
+            self.F = values
+
+    def eval_fn(X_off: np.ndarray) -> object:
+        values = _objectives(np.asarray(X_off, dtype=np.float64))
+        if eval_payload == "dict":
+            return {"F": values}
+        if eval_payload == "attr":
+            return EvalResult(values)
+        return values
+
+    X_new, F_new = core.nsga2_evolve(X, F, xl, xu, _config(X.shape[1]), 3, 31415, eval_fn)
+    _assert_float64_c_2d(X_new, X.shape)
+    _assert_float64_c_2d(F_new, F.shape)
