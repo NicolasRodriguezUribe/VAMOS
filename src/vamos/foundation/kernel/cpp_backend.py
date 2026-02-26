@@ -149,7 +149,7 @@ class CppBackend(NumPyKernel):
         if fn is None:
             return super().sbx_crossover(X_parents, params, rng, xl, xu)
         X_arr = self._require_float64_c(X_parents, name="X_parents", ndim=2)
-        n_var = X_arr.shape[1] if X_arr.ndim == 2 else 0
+        n_var = X_arr.shape[1]
         lower, upper = self._normalize_bounds(xl, xu, n_var)
         out = fn(
             X_arr,
@@ -175,7 +175,7 @@ class CppBackend(NumPyKernel):
             super().polynomial_mutation(X, params, rng, xl, xu)
             return
         X_arr = self._require_float64_c(X, name="X", ndim=2)
-        n_var = X_arr.shape[1] if X_arr.ndim == 2 else 0
+        n_var = X_arr.shape[1]
         lower, upper = self._normalize_bounds(xl, xu, n_var)
         mutated = fn(
             X_arr,
@@ -240,14 +240,14 @@ class CppBackend(NumPyKernel):
         if fn is None:
             return super().hypervolume(points, reference_point)
         points_arr = self._require_float64_c(points, name="points", ndim=2)
-        ref_arr = self._require_float64_c(np.asarray(reference_point), name="reference_point", ndim=1)
+        ref_arr = self._require_float64_c(reference_point, name="reference_point", ndim=1)
         self._mark("hypervolume")
         return float(fn(points_arr, ref_arr))
 
     def hypervolume_contributions(self, points: np.ndarray, reference_point: np.ndarray) -> np.ndarray:
         fn = self._cpp_fn("hypervolume_contributions")
         points_arr = self._require_float64_c(points, name="points", ndim=2)
-        ref_arr = self._require_float64_c(np.asarray(reference_point), name="reference_point", ndim=1)
+        ref_arr = self._require_float64_c(reference_point, name="reference_point", ndim=1)
         # Prefer the Python indicator layer for >=3D so MooCore (if installed)
         # can provide fast contributions; native fallback is currently expensive.
         if points_arr.shape[1] >= 3:
@@ -264,7 +264,7 @@ class CppBackend(NumPyKernel):
     def smsemoa_remove_index(self, F_combined: np.ndarray, ref_point: np.ndarray) -> int:
         fn = self._cpp_fn("smsemoa_remove_index")
         F_arr = self._require_float64_c(F_combined, name="F_combined", ndim=2)
-        ref_arr = self._require_float64_c(np.asarray(ref_point), name="ref_point", ndim=1)
+        ref_arr = self._require_float64_c(ref_point, name="ref_point", ndim=1)
         # Native 2D path is fast; >=3D falls back to indicator layer for speed.
         if fn is None or F_arr.shape[1] >= 3:
             ranks, _ = self.nsga2_ranking(F_combined)
@@ -373,7 +373,7 @@ class CppBackend(NumPyKernel):
         if reference_point is None:
             ref = np.max(F_arr, axis=0) + 1.0
         else:
-            ref = self._require_float64_c(np.asarray(reference_point), name="reference_point", ndim=1)
+            ref = self._require_float64_c(reference_point, name="reference_point", ndim=1)
         self._mark("ibea_indicator_matrix")
         return np.asarray(fn(F_arr, np.asarray(ref, dtype=np.float64), str(kind)), dtype=np.float64)
 
@@ -395,7 +395,7 @@ class CppBackend(NumPyKernel):
             selected, fitness = fn(
                 F_arr,
                 keep,
-                None if reference_point is None else self._require_float64_c(np.asarray(reference_point), name="reference_point", ndim=1),
+                None if reference_point is None else self._require_float64_c(reference_point, name="reference_point", ndim=1),
                 str(kind),
                 float(kappa),
             )
@@ -437,8 +437,8 @@ class CppBackend(NumPyKernel):
         fn = self._cpp_fn("smsemoa_generate_offspring")
         X_arr = self._require_float64_c(X, name="X", ndim=2)
         F_arr = self._require_float64_c(F, name="F", ndim=2)
-        xl_arr = self._require_float64_c(np.asarray(xl), name="xl", ndim=1)
-        xu_arr = self._require_float64_c(np.asarray(xu), name="xu", ndim=1)
+        xl_arr = self._require_float64_c(xl, name="xl", ndim=1)
+        xu_arr = self._require_float64_c(xu, name="xu", ndim=1)
         config = {
             "sbx_prob": _as_float(params.get("sbx_prob"), 0.9),
             "sbx_eta": _as_float(params.get("sbx_eta"), 20.0),
@@ -464,7 +464,7 @@ class CppBackend(NumPyKernel):
         child = np.asarray(offspring[:1], dtype=np.float64)
         self.polynomial_mutation(child, {"prob": config["pm_prob"], "eta": config["pm_eta"]}, rng, xl_arr, xu_arr)
         if out is not None:
-            out_arr = self._require_float64_c(np.asarray(out), name="out", ndim=2)
+            out_arr = self._require_float64_c(out, name="out", ndim=2)
             if out_arr.shape != child.shape:
                 raise ValueError("out has wrong shape for smsemoa_generate_offspring.")
             out_arr[:] = child
@@ -486,8 +486,8 @@ class CppBackend(NumPyKernel):
         fn = self._cpp_fn("spea2_generate_offspring")
         X_arr = self._require_float64_c(X, name="X", ndim=2)
         F_arr = self._require_float64_c(F, name="F", ndim=2)
-        xl_arr = self._require_float64_c(np.asarray(xl), name="xl", ndim=1)
-        xu_arr = self._require_float64_c(np.asarray(xu), name="xu", ndim=1)
+        xl_arr = self._require_float64_c(xl, name="xl", ndim=1)
+        xu_arr = self._require_float64_c(xu, name="xu", ndim=1)
         target = int(n_offspring)
         if target <= 0:
             return np.empty((0, X_arr.shape[1]), dtype=np.float64)
@@ -525,7 +525,7 @@ class CppBackend(NumPyKernel):
         offspring = np.asarray(crossed, dtype=np.float64).reshape(target, 2, X_arr.shape[1])[:, 0, :].copy()
         self.polynomial_mutation(offspring, {"prob": config["pm_prob"], "eta": config["pm_eta"]}, rng, xl_arr, xu_arr)
         if out is not None:
-            out_arr = self._require_float64_c(np.asarray(out), name="out", ndim=2)
+            out_arr = self._require_float64_c(out, name="out", ndim=2)
             if out_arr.shape != offspring.shape:
                 raise ValueError("out has wrong shape for spea2_generate_offspring.")
             out_arr[:] = offspring
@@ -558,8 +558,8 @@ class CppBackend(NumPyKernel):
 
         X_arr = self._require_float64_c(X, name="X", ndim=2)
         F_arr = self._require_float64_c(F, name="F", ndim=2)
-        xl_arr = self._require_float64_c(np.asarray(xl), name="xl", ndim=1)
-        xu_arr = self._require_float64_c(np.asarray(xu), name="xu", ndim=1)
+        xl_arr = self._require_float64_c(xl, name="xl", ndim=1)
+        xu_arr = self._require_float64_c(xu, name="xu", ndim=1)
         operator_cfg = {
             "sbx_prob": _as_float(params.get("sbx_prob"), 0.9),
             "sbx_eta": _as_float(params.get("sbx_eta"), 20.0),
@@ -596,8 +596,8 @@ class CppBackend(NumPyKernel):
 
         X_arr = self._require_float64_c(X, name="X", ndim=2)
         F_arr = self._require_float64_c(F, name="F", ndim=2)
-        xl_arr = self._require_float64_c(np.asarray(xl), name="xl", ndim=1)
-        xu_arr = self._require_float64_c(np.asarray(xu), name="xu", ndim=1)
+        xl_arr = self._require_float64_c(xl, name="xl", ndim=1)
+        xu_arr = self._require_float64_c(xu, name="xu", ndim=1)
         operator_cfg = {
             "sbx_prob": _as_float(params.get("sbx_prob"), 0.9),
             "sbx_eta": _as_float(params.get("sbx_eta"), 20.0),

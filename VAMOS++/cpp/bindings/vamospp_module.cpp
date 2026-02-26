@@ -21,12 +21,55 @@ namespace nb = nanobind;
 using NDArray2dDConst = nb::ndarray<const double, nb::ndim<2>, nb::c_contig>;
 using NDArray1dDConst = nb::ndarray<const double, nb::ndim<1>, nb::c_contig>;
 using NDArray1dIConst = nb::ndarray<const int64_t, nb::ndim<1>, nb::c_contig>;
+using NDArray2dD = nb::ndarray<double, nb::ndim<2>, nb::c_contig>;
+using NDArray1dI = nb::ndarray<int64_t, nb::ndim<1>, nb::c_contig>;
 using Fronts = std::vector<std::vector<size_t>>;
 
 namespace {
 
 inline nb::object np_module() {
     return nb::module_::import_("numpy");
+}
+
+inline nb::object make_float64_array_2d(nb::handle np, const std::vector<double>& flat, size_t rows, size_t cols) {
+    if (flat.size() != rows * cols) {
+        throw std::runtime_error("internal error: flat buffer size mismatch for float64 array.");
+    }
+    nb::object arr_obj = np.attr("empty")(nb::make_tuple(rows, cols), "float64");
+    auto arr = nb::cast<NDArray2dD>(arr_obj);
+    std::copy(flat.begin(), flat.end(), arr.data());
+    return arr_obj;
+}
+
+inline nb::object make_int64_array_1d(nb::handle np, const std::vector<int64_t>& values) {
+    nb::object arr_obj = np.attr("empty")(values.size(), "int64");
+    auto arr = nb::cast<NDArray1dI>(arr_obj);
+    std::copy(values.begin(), values.end(), arr.data());
+    return arr_obj;
+}
+
+inline NDArray2dD require_out_float64_c_2d(nb::handle out_obj, size_t rows, size_t cols, const char* fn_name) {
+    auto out = nb::cast<NDArray2dD>(out_obj);
+    if (out.shape(0) != rows || out.shape(1) != cols) {
+        throw std::runtime_error(std::string(fn_name) + ": out has wrong shape.");
+    }
+    return out;
+}
+
+inline nb::object extract_eval_objectives(nb::handle eval_out, nb::handle np) {
+    nb::object f_obj;
+    if (nb::hasattr(eval_out, "F")) {
+        f_obj = nb::borrow<nb::object>(eval_out.attr("F"));
+    } else if (nb::isinstance<nb::dict>(eval_out)) {
+        nb::dict d = nb::cast<nb::dict>(eval_out);
+        if (!d.contains("F")) {
+            throw std::runtime_error("eval_fn returned dict without key 'F'.");
+        }
+        f_obj = nb::borrow<nb::object>(d["F"]);
+    } else {
+        f_obj = nb::borrow<nb::object>(eval_out);
+    }
+    return np.attr("ascontiguousarray")(f_obj, "float64");
 }
 
 inline bool dominates(const double* F, size_t n_obj, size_t i, size_t j) {
@@ -1163,6 +1206,131 @@ std::vector<double> polynomial_mutation_impl(
     return out;
 }
 
+std::vector<double> generate_offspring_impl(
+    const double* X,
+    const double* F,
+    size_t n,
+    size_t n_var,
+    size_t n_obj,
+    size_t n_offspring,
+    const std::vector<double>& lower,
+    const std::vector<double>& upper,
+    int pressure,
+    double sbx_prob,
+    double sbx_eta,
+    double pm_prob,
+    double pm_eta,
+    uint64_t seed
+) {
+    if (n_offspring == 0) {
+        return {};
+    }
+
+    auto [fronts, ranks] = fast_non_dominated_sort_impl(F, n, n_obj);
+    const auto crowd = crowding_distance_impl(F, n, n_obj, fronts);
+    std::mt19937_64 rng(seed);
+
+    size_t parent_count = n_offspring;
+    if (parent_count % 2 != 0) {
+        parent_count += 1;
+    }
+    auto parents_idx = tournament_selection_impl(ranks.data(), crowd.data(), n, pressure, seed, parent_count);
+
+    std::vector<double> parents(parent_count * n_var, 0.0);
+    for (size_t i = 0; i < parent_count; ++i) {
+        const size_t p = static_cast<size_t>(parents_idx[i]);
+        std::copy(
+            X + static_cast<std::ptrdiff_t>(p * n_var),
+            X + static_cast<std::ptrdiff_t>((p + 1) * n_var),
+            parents.begin() + static_cast<std::ptrdiff_t>(i * n_var)
+        );
+    }
+
+    auto children = sbx_crossover_impl(
+        parents.data(),
+        parent_count,
+        n_var,
+        sbx_prob,
+        sbx_eta,
+        lower,
+        upper,
+        static_cast<uint64_t>(rng()),
+        0.5
+    );
+    children.resize(n_offspring * n_var);
+    return polynomial_mutation_impl(
+        children.data(),
+        n_offspring,
+        n_var,
+        pm_prob,
+        pm_eta,
+        lower,
+        upper,
+        static_cast<uint64_t>(rng())
+    );
+}
+
+std::pair<std::vector<double>, std::vector<double>> nsga2_survival_flat_impl(
+    const std::vector<double>& X,
+    const std::vector<double>& F,
+    const std::vector<double>& X_off,
+    const std::vector<double>& F_off,
+    size_t n_var,
+    size_t n_obj,
+    size_t pop_size,
+    std::vector<int64_t>* selected_out
+) {
+    if (n_var == 0 || n_obj == 0) {
+        throw std::runtime_error("n_var and n_obj must be positive in nsga2_survival_flat_impl.");
+    }
+    if (X.size() % n_var != 0 || X_off.size() % n_var != 0 || F.size() % n_obj != 0 || F_off.size() % n_obj != 0) {
+        throw std::runtime_error("flat buffer size mismatch in nsga2_survival_flat_impl.");
+    }
+
+    const size_t n = X.size() / n_var;
+    const size_t n_off = X_off.size() / n_var;
+    if ((F.size() / n_obj) != n || (F_off.size() / n_obj) != n_off) {
+        throw std::runtime_error("row mismatch between decision/objective buffers in nsga2_survival_flat_impl.");
+    }
+
+    const size_t n_comb = n + n_off;
+    if (pop_size > n_comb) {
+        throw std::runtime_error("pop_size cannot exceed combined population in nsga2_survival_flat_impl.");
+    }
+
+    std::vector<double> Xc(n_comb * n_var, 0.0);
+    std::vector<double> Fc(n_comb * n_obj, 0.0);
+    std::copy(X.begin(), X.end(), Xc.begin());
+    std::copy(X_off.begin(), X_off.end(), Xc.begin() + static_cast<std::ptrdiff_t>(n * n_var));
+    std::copy(F.begin(), F.end(), Fc.begin());
+    std::copy(F_off.begin(), F_off.end(), Fc.begin() + static_cast<std::ptrdiff_t>(n * n_obj));
+
+    const auto [fronts, _r] = fast_non_dominated_sort_impl(Fc.data(), n_comb, n_obj);
+    const auto crowd = crowding_distance_impl(Fc.data(), n_comb, n_obj, fronts);
+    const auto sel = select_nsga2_impl(fronts, crowd, pop_size);
+
+    std::vector<double> Xnew(pop_size * n_var, 0.0);
+    std::vector<double> Fnew(pop_size * n_obj, 0.0);
+    for (size_t i = 0; i < pop_size; ++i) {
+        const size_t src = static_cast<size_t>(sel[i]);
+        std::copy(
+            Xc.begin() + static_cast<std::ptrdiff_t>(src * n_var),
+            Xc.begin() + static_cast<std::ptrdiff_t>((src + 1) * n_var),
+            Xnew.begin() + static_cast<std::ptrdiff_t>(i * n_var)
+        );
+        std::copy(
+            Fc.begin() + static_cast<std::ptrdiff_t>(src * n_obj),
+            Fc.begin() + static_cast<std::ptrdiff_t>((src + 1) * n_obj),
+            Fnew.begin() + static_cast<std::ptrdiff_t>(i * n_obj)
+        );
+    }
+
+    if (selected_out != nullptr) {
+        *selected_out = sel;
+    }
+    return {std::move(Xnew), std::move(Fnew)};
+}
+
 } // namespace
 
 NB_MODULE(_core, m) {
@@ -1264,7 +1432,7 @@ NB_MODULE(_core, m) {
 
     m.def(
         "nsga2_survival",
-        [](NDArray2dDConst X, NDArray2dDConst F, NDArray2dDConst X_off, NDArray2dDConst F_off, int pop_size, bool return_indices) {
+        [](NDArray2dDConst X, NDArray2dDConst F, NDArray2dDConst X_off, NDArray2dDConst F_off, int pop_size, bool return_indices) -> nb::tuple {
             const size_t n = X.shape(0);
             const size_t n_var = X.shape(1);
             const size_t n_off = X_off.shape(0);
@@ -1272,35 +1440,25 @@ NB_MODULE(_core, m) {
             if (F.shape(0) != n || F_off.shape(0) != n_off || X_off.shape(1) != n_var || F_off.shape(1) != n_obj) {
                 throw std::runtime_error("shape mismatch in nsga2_survival.");
             }
-
-            const size_t n_comb = n + n_off;
-            std::vector<double> Xc(n_comb * n_var, 0.0);
-            std::vector<double> Fc(n_comb * n_obj, 0.0);
-            std::copy(X.data(), X.data() + n * n_var, Xc.begin());
-            std::copy(X_off.data(), X_off.data() + n_off * n_var, Xc.begin() + static_cast<std::ptrdiff_t>(n * n_var));
-            std::copy(F.data(), F.data() + n * n_obj, Fc.begin());
-            std::copy(F_off.data(), F_off.data() + n_off * n_obj, Fc.begin() + static_cast<std::ptrdiff_t>(n * n_obj));
-
-            const auto [fronts, _r] = fast_non_dominated_sort_impl(Fc.data(), n_comb, n_obj);
-            const auto crowd = crowding_distance_impl(Fc.data(), n_comb, n_obj, fronts);
-            const auto sel = select_nsga2_impl(fronts, crowd, static_cast<size_t>(pop_size));
-
-            std::vector<std::vector<double>> Xnew(static_cast<size_t>(pop_size), std::vector<double>(n_var, 0.0));
-            std::vector<std::vector<double>> Fnew(static_cast<size_t>(pop_size), std::vector<double>(n_obj, 0.0));
-            for (size_t i = 0; i < static_cast<size_t>(pop_size); ++i) {
-                const size_t src = static_cast<size_t>(sel[i]);
-                for (size_t j = 0; j < n_var; ++j) {
-                    Xnew[i][j] = Xc[src * n_var + j];
-                }
-                for (size_t m = 0; m < n_obj; ++m) {
-                    Fnew[i][m] = Fc[src * n_obj + m];
-                }
+            if (pop_size < 0) {
+                throw std::runtime_error("pop_size must be non-negative in nsga2_survival.");
             }
+            const size_t keep = static_cast<size_t>(pop_size);
+            std::vector<double> Xv(X.data(), X.data() + n * n_var);
+            std::vector<double> Fv(F.data(), F.data() + n * n_obj);
+            std::vector<double> Xoffv(X_off.data(), X_off.data() + n_off * n_var);
+            std::vector<double> Foffv(F_off.data(), F_off.data() + n_off * n_obj);
+
+            std::vector<int64_t> sel;
+            auto [x_new_flat, f_new_flat] = nsga2_survival_flat_impl(Xv, Fv, Xoffv, Foffv, n_var, n_obj, keep, return_indices ? &sel : nullptr);
+            nb::object np = np_module();
+            nb::object x_new = make_float64_array_2d(np, x_new_flat, keep, n_var);
+            nb::object f_new = make_float64_array_2d(np, f_new_flat, keep, n_obj);
 
             if (return_indices) {
-                return nb::make_tuple(Xnew, Fnew, sel);
+                return nb::make_tuple(x_new, f_new, make_int64_array_1d(np, sel));
             }
-            return nb::make_tuple(Xnew, Fnew);
+            return nb::make_tuple(x_new, f_new);
         },
         nb::arg("X"),
         nb::arg("F"),
@@ -1388,15 +1546,17 @@ NB_MODULE(_core, m) {
 
     m.def(
         "generate_offspring",
-        [](NDArray2dDConst X, NDArray2dDConst F, int n_offspring, NDArray1dDConst xl, NDArray1dDConst xu, nb::dict config, uint64_t seed, nb::object out_obj) {
+        [](NDArray2dDConst X, NDArray2dDConst F, int n_offspring, NDArray1dDConst xl, NDArray1dDConst xu, nb::dict config, uint64_t seed, nb::object out_obj) -> nb::object {
             const size_t n = X.shape(0);
             const size_t n_var = X.shape(1);
+            const size_t n_obj = F.shape(1);
             if (F.shape(0) != n) {
                 throw std::runtime_error("X/F row mismatch in generate_offspring.");
             }
-            if (n_offspring <= 0) {
-                return std::vector<std::vector<double>>();
+            if (n_offspring < 0) {
+                throw std::runtime_error("n_offspring must be non-negative in generate_offspring.");
             }
+            const size_t n_out = static_cast<size_t>(n_offspring);
 
             auto get_d = [&](const char* key, double def) -> double {
                 if (config.contains(key)) {
@@ -1416,59 +1576,40 @@ NB_MODULE(_core, m) {
             const double sbx_eta = get_d("sbx_eta", 20.0);
             const double pm_prob = get_d("pm_prob", 1.0 / std::max<size_t>(1, n_var));
             const double pm_eta = get_d("pm_eta", 20.0);
-
-            auto [fronts, ranks] = fast_non_dominated_sort_impl(F.data(), n, F.shape(1));
-            const auto crowd = crowding_distance_impl(F.data(), n, F.shape(1), fronts);
-            std::mt19937_64 rng(seed);
-
-            size_t parent_count = static_cast<size_t>(n_offspring);
-            if (parent_count % 2 != 0) {
-                parent_count += 1;
-            }
-            auto parents_idx = tournament_selection_impl(ranks.data(), crowd.data(), n, pressure, seed, parent_count);
-
-            std::vector<double> parents(parent_count * n_var, 0.0);
-            for (size_t i = 0; i < parent_count; ++i) {
-                const size_t p = static_cast<size_t>(parents_idx[i]);
-                std::copy(
-                    X.data() + static_cast<std::ptrdiff_t>(p * n_var),
-                    X.data() + static_cast<std::ptrdiff_t>((p + 1) * n_var),
-                    parents.begin() + static_cast<std::ptrdiff_t>(i * n_var)
-                );
-            }
-
             const auto [lower, upper] = normalize_bounds_impl(xl.data(), xl.shape(0), xu.data(), xu.shape(0), n_var);
-            auto children = sbx_crossover_impl(
-                parents.data(),
-                parent_count,
-                n_var,
-                sbx_prob,
-                sbx_eta,
-                lower,
-                upper,
-                static_cast<uint64_t>(rng()),
-                0.5
-            );
-            children.resize(static_cast<size_t>(n_offspring) * n_var);
-            children = polynomial_mutation_impl(
-                children.data(),
-                static_cast<size_t>(n_offspring),
-                n_var,
-                pm_prob,
-                pm_eta,
-                lower,
-                upper,
-                static_cast<uint64_t>(rng())
-            );
 
-            std::vector<std::vector<double>> arr(static_cast<size_t>(n_offspring), std::vector<double>(n_var, 0.0));
-            for (size_t i = 0; i < static_cast<size_t>(n_offspring); ++i) {
-                for (size_t j = 0; j < n_var; ++j) {
-                    arr[i][j] = children[i * n_var + j];
-                }
+            std::vector<double> children;
+            if (n_out > 0) {
+                children = generate_offspring_impl(
+                    X.data(),
+                    F.data(),
+                    n,
+                    n_var,
+                    n_obj,
+                    n_out,
+                    lower,
+                    upper,
+                    pressure,
+                    sbx_prob,
+                    sbx_eta,
+                    pm_prob,
+                    pm_eta,
+                    seed
+                );
+            } else {
+                children.clear();
             }
-            (void)out_obj;
-            return arr;
+
+            if (!out_obj.is_none()) {
+                auto out = require_out_float64_c_2d(out_obj, n_out, n_var, "generate_offspring");
+                if (children.empty()) {
+                    return nb::borrow<nb::object>(out_obj);
+                }
+                std::copy(children.begin(), children.end(), out.data());
+                return nb::borrow<nb::object>(out_obj);
+            }
+
+            return make_float64_array_2d(np_module(), children, n_out, n_var);
         },
         nb::arg("X"),
         nb::arg("F"),
@@ -1604,67 +1745,87 @@ NB_MODULE(_core, m) {
 
     m.def(
         "nsga2_evolve",
-        [m](NDArray2dDConst X0, NDArray2dDConst F0, NDArray1dDConst xl, NDArray1dDConst xu, nb::dict config, int n_generations, uint64_t seed, nb::callable eval_fn) {
+        [](NDArray2dDConst X0, NDArray2dDConst F0, NDArray1dDConst xl, NDArray1dDConst xu, nb::dict config, int n_generations, uint64_t seed, nb::callable eval_fn) -> nb::tuple {
             const size_t pop_size = X0.shape(0);
             const size_t n_var = X0.shape(1);
             const size_t n_obj = F0.shape(1);
+            if (F0.shape(0) != pop_size) {
+                throw std::runtime_error("X0/F0 row mismatch in nsga2_evolve.");
+            }
+            if (n_generations < 0) {
+                throw std::runtime_error("n_generations must be non-negative in nsga2_evolve.");
+            }
+
+            auto get_d = [&](const char* key, double def) -> double {
+                if (config.contains(key)) {
+                    return nb::cast<double>(config[key]);
+                }
+                return def;
+            };
+            auto get_i = [&](const char* key, int def) -> int {
+                if (config.contains(key)) {
+                    return nb::cast<int>(config[key]);
+                }
+                return def;
+            };
+
+            const int pressure = get_i("tournament_pressure", 2);
+            const double sbx_prob = get_d("sbx_prob", 0.9);
+            const double sbx_eta = get_d("sbx_eta", 20.0);
+            const double pm_prob = get_d("pm_prob", 1.0 / std::max<size_t>(1, n_var));
+            const double pm_eta = get_d("pm_eta", 20.0);
+            const auto [lower, upper] = normalize_bounds_impl(xl.data(), xl.shape(0), xu.data(), xu.shape(0), n_var);
+
             std::vector<double> X(X0.data(), X0.data() + pop_size * n_var);
             std::vector<double> F(F0.data(), F0.data() + pop_size * n_obj);
             std::mt19937_64 rng(seed);
             nb::object np = np_module();
 
-            auto to_2d = [](const std::vector<double>& flat, size_t rows, size_t cols) {
-                std::vector<std::vector<double>> out(rows, std::vector<double>(cols, 0.0));
-                for (size_t i = 0; i < rows; ++i) {
-                    for (size_t j = 0; j < cols; ++j) {
-                        out[i][j] = flat[i * cols + j];
-                    }
-                }
-                return out;
-            };
-
             for (int g = 0; g < n_generations; ++g) {
-                NDArray2dDConst X_arr = nb::cast<NDArray2dDConst>(np.attr("ascontiguousarray")(to_2d(X, pop_size, n_var), "float64"));
-                NDArray2dDConst F_arr = nb::cast<NDArray2dDConst>(np.attr("ascontiguousarray")(to_2d(F, pop_size, n_obj), "float64"));
-                auto X_off_list = nb::cast<std::vector<std::vector<double>>>(
-                    m.attr("generate_offspring")(X_arr, F_arr, static_cast<int>(pop_size), xl, xu, config, static_cast<uint64_t>(rng()), nb::none())
+                const auto child_seed = static_cast<uint64_t>(rng());
+                auto X_off_flat = generate_offspring_impl(
+                    X.data(),
+                    F.data(),
+                    pop_size,
+                    n_var,
+                    n_obj,
+                    pop_size,
+                    lower,
+                    upper,
+                    pressure,
+                    sbx_prob,
+                    sbx_eta,
+                    pm_prob,
+                    pm_eta,
+                    child_seed
                 );
-                nb::object X_off_obj = np.attr("ascontiguousarray")(X_off_list, "float64");
-
+                nb::object X_off_obj = make_float64_array_2d(np, X_off_flat, pop_size, n_var);
                 nb::object eval_out = eval_fn(X_off_obj);
-                nb::object F_off_obj;
-                if (nb::hasattr(eval_out, "F")) {
-                    F_off_obj = eval_out.attr("F");
-                } else if (nb::isinstance<nb::dict>(eval_out)) {
-                    nb::dict d = nb::cast<nb::dict>(eval_out);
-                    if (!d.contains("F")) {
-                        throw std::runtime_error("eval_fn returned dict without key 'F'.");
-                    }
-                    F_off_obj = d["F"];
-                } else {
-                    F_off_obj = eval_out;
+                nb::object F_off_obj = extract_eval_objectives(eval_out, np);
+                auto F_off = nb::cast<NDArray2dDConst>(F_off_obj);
+                if (F_off.shape(0) != pop_size || F_off.shape(1) != n_obj) {
+                    throw std::runtime_error("eval_fn objective matrix shape mismatch in nsga2_evolve.");
                 }
-                F_off_obj = np.attr("ascontiguousarray")(F_off_obj, "float64");
+                std::vector<double> F_off_flat(F_off.data(), F_off.data() + pop_size * n_obj);
 
-                NDArray2dDConst X_off = nb::cast<NDArray2dDConst>(X_off_obj);
-                NDArray2dDConst F_off = nb::cast<NDArray2dDConst>(F_off_obj);
-
-                auto surv = m.attr("nsga2_survival")(X_arr, F_arr, X_off, F_off, static_cast<int>(pop_size), false);
-                nb::tuple s = nb::cast<nb::tuple>(surv);
-                auto X_new = nb::cast<std::vector<std::vector<double>>>(s[0]);
-                auto F_new = nb::cast<std::vector<std::vector<double>>>(s[1]);
-
-                for (size_t i = 0; i < pop_size; ++i) {
-                    for (size_t j = 0; j < n_var; ++j) {
-                        X[i * n_var + j] = X_new[i][j];
-                    }
-                    for (size_t mobj = 0; mobj < n_obj; ++mobj) {
-                        F[i * n_obj + mobj] = F_new[i][mobj];
-                    }
-                }
+                auto [X_new, F_new] = nsga2_survival_flat_impl(
+                    X,
+                    F,
+                    X_off_flat,
+                    F_off_flat,
+                    n_var,
+                    n_obj,
+                    pop_size,
+                    nullptr
+                );
+                X.swap(X_new);
+                F.swap(F_new);
             }
 
-            return nb::make_tuple(to_2d(X, pop_size, n_var), to_2d(F, pop_size, n_obj));
+            return nb::make_tuple(
+                make_float64_array_2d(np, X, pop_size, n_var),
+                make_float64_array_2d(np, F, pop_size, n_obj)
+            );
         },
         nb::arg("X0"),
         nb::arg("F0"),
