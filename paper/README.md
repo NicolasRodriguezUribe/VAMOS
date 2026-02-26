@@ -44,6 +44,13 @@ Controls:
 - `VAMOS_PAPER_FRAMEWORKS` (comma-separated: `vamos-numpy,vamos-numba,vamos-moocore,pymoo,jmetalpy,deap,platypus`)
 - `VAMOS_PAPER_ALGORITHM` (`nsgaii`, `smsemoa`, `moead`, or `all`) and `VAMOS_PAPER_UPDATE_MAIN_TEX` (`0`/`1`, defaults to `1` for NSGA-II)
 
+## Native C++ refactor benchmarks
+
+Before/after runtime artifacts for native C++ kernels (`nsgaii, smsemoa, spea2`):
+- Baseline run: `VAMOS_CPP_BENCH_PHASE=baseline python paper/30_run_cpp_native_refactor_benchmark.py`
+- After run: `VAMOS_CPP_BENCH_PHASE=after python paper/30_run_cpp_native_refactor_benchmark.py`
+- Comparison report: `python paper/31_compare_cpp_native_refactor_results.py`
+
 ## Submission packaging (Elsevier / SwEvo)
 
 - Highlights: `paper/highlights.txt` (also included in `paper/manuscript/main.tex` via the `highlights` environment)
