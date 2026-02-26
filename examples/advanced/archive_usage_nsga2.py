@@ -19,7 +19,7 @@ from __future__ import annotations
 import numpy as np
 
 from vamos import optimize
-from vamos.problems import ZDT1
+from vamos.problems import ZDT1, DTLZ2
 from vamos.algorithms import NSGAIIConfig
 
 
@@ -42,14 +42,14 @@ def build_config(pruning: str = "hv_contrib") -> NSGAIIConfig:
 
 
 def main() -> None:
-    problem = ZDT1(n_var=30)
+    problem = DTLZ2(n_obj=3)
     cfg = build_config(pruning="hv_contrib")
 
     result = optimize(
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("max_evaluations", 8000),
+        termination=("max_evaluations", 40000),
         seed=11,
         engine="numpy",
     )
