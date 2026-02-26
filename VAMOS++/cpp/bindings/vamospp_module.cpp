@@ -1623,7 +1623,7 @@ NB_MODULE(_core, m) {
 
     m.def(
         "smsemoa_generate_offspring",
-        [](NDArray2dDConst X, NDArray2dDConst F, const std::string& selection, int pressure, NDArray1dDConst xl, NDArray1dDConst xu, nb::dict config, uint64_t seed, nb::object out_obj) {
+        [](NDArray2dDConst X, NDArray2dDConst F, const std::string& selection, int pressure, NDArray1dDConst xl, NDArray1dDConst xu, nb::dict config, uint64_t seed, nb::object out_obj) -> nb::object {
             const size_t n = X.shape(0);
             const size_t n_var = X.shape(1);
             const size_t n_obj = F.shape(1);
@@ -1663,12 +1663,15 @@ NB_MODULE(_core, m) {
                 seed
             );
 
-            std::vector<std::vector<double>> arr(1, std::vector<double>(n_var, 0.0));
-            for (size_t j = 0; j < n_var; ++j) {
-                arr[0][j] = child[j];
+            if (!out_obj.is_none()) {
+                auto out = require_out_float64_c_2d(out_obj, 1, n_var, "smsemoa_generate_offspring");
+                if (!child.empty()) {
+                    std::copy(child.begin(), child.end(), out.data());
+                }
+                return nb::borrow<nb::object>(out_obj);
             }
-            (void)out_obj;
-            return arr;
+
+            return make_float64_array_2d(np_module(), child, 1, n_var);
         },
         nb::arg("X"),
         nb::arg("F"),
@@ -1683,16 +1686,17 @@ NB_MODULE(_core, m) {
 
     m.def(
         "spea2_generate_offspring",
-        [](NDArray2dDConst X, NDArray2dDConst F, int n_offspring, int k_neighbors, NDArray1dDConst xl, NDArray1dDConst xu, nb::dict config, uint64_t seed, nb::object out_obj) {
+        [](NDArray2dDConst X, NDArray2dDConst F, int n_offspring, int k_neighbors, NDArray1dDConst xl, NDArray1dDConst xu, nb::dict config, uint64_t seed, nb::object out_obj) -> nb::object {
             const size_t n = X.shape(0);
             const size_t n_var = X.shape(1);
             const size_t n_obj = F.shape(1);
             if (F.shape(0) != n) {
                 throw std::runtime_error("X/F row mismatch in spea2_generate_offspring.");
             }
-            if (n_offspring <= 0) {
-                return std::vector<std::vector<double>>();
+            if (n_offspring < 0) {
+                throw std::runtime_error("n_offspring must be non-negative in spea2_generate_offspring.");
             }
+            const size_t n_out = static_cast<size_t>(n_offspring);
 
             auto get_d = [&](const char* key, double def) -> double {
                 if (config.contains(key)) {
@@ -1706,31 +1710,37 @@ NB_MODULE(_core, m) {
             const double pm_eta = get_d("pm_eta", 20.0);
 
             const auto [lower, upper] = normalize_bounds_impl(xl.data(), xl.shape(0), xu.data(), xu.shape(0), n_var);
-            const auto offspring = spea2_generate_offspring_impl(
-                X.data(),
-                F.data(),
-                n,
-                n_var,
-                n_obj,
-                static_cast<size_t>(n_offspring),
-                k_neighbors,
-                lower,
-                upper,
-                sbx_prob,
-                sbx_eta,
-                pm_prob,
-                pm_eta,
-                seed
-            );
-
-            std::vector<std::vector<double>> arr(static_cast<size_t>(n_offspring), std::vector<double>(n_var, 0.0));
-            for (size_t i = 0; i < static_cast<size_t>(n_offspring); ++i) {
-                for (size_t j = 0; j < n_var; ++j) {
-                    arr[i][j] = offspring[i * n_var + j];
-                }
+            std::vector<double> offspring;
+            if (n_out > 0) {
+                offspring = spea2_generate_offspring_impl(
+                    X.data(),
+                    F.data(),
+                    n,
+                    n_var,
+                    n_obj,
+                    n_out,
+                    k_neighbors,
+                    lower,
+                    upper,
+                    sbx_prob,
+                    sbx_eta,
+                    pm_prob,
+                    pm_eta,
+                    seed
+                );
+            } else {
+                offspring.clear();
             }
-            (void)out_obj;
-            return arr;
+
+            if (!out_obj.is_none()) {
+                auto out = require_out_float64_c_2d(out_obj, n_out, n_var, "spea2_generate_offspring");
+                if (!offspring.empty()) {
+                    std::copy(offspring.begin(), offspring.end(), out.data());
+                }
+                return nb::borrow<nb::object>(out_obj);
+            }
+
+            return make_float64_array_2d(np_module(), offspring, n_out, n_var);
         },
         nb::arg("X"),
         nb::arg("F"),
