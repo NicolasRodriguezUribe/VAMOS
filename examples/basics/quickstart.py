@@ -57,7 +57,6 @@ def main():
         print("\nInstall matplotlib for visualization: pip install matplotlib")
 
     # 4. Optional: Save Pareto front to CSV
-    # 4. Optional: Save Pareto front to CSV
     from pathlib import Path
     from vamos.foundation.core.io_utils import write_population
 
