@@ -71,6 +71,8 @@ def build_spea2_result(state: SPEA2State, hv_reached: bool = False) -> dict[str,
         "evaluations": state.n_eval,
         "hv_reached": hv_reached,
     }
+    if state.kernel_profiler is not None:
+        result["kernel_profile"] = state.kernel_profiler.summary()
     if state.env_G is not None and state.constraint_mode != "none":
         result["G"] = state.env_G
     result["archive"] = {"X": state.env_X, "F": state.env_F}

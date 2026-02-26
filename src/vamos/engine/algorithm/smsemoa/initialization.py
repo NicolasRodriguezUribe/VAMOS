@@ -16,6 +16,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.archives import resolve_external_archive, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
+from vamos.engine.algorithm.components.kernel_profile import resolve_kernel_profiler
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.population import (
@@ -141,6 +142,7 @@ def initialize_smsemoa_run(
     )
 
     # Create state
+    kernel_profiler = resolve_kernel_profiler(config)
     state = SMSEMOAState(
         X=X,
         F=F,
@@ -158,6 +160,8 @@ def initialize_smsemoa_run(
         eliminate_duplicates=eliminate_duplicates,
         crossover_fn=crossover_fn,
         mutation_fn=mutation_fn,
+        xl=xl,
+        xu=xu,
         # Archive
         archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
@@ -170,6 +174,7 @@ def initialize_smsemoa_run(
         genealogy_tracker=genealogy_tracker,
         ids=ids,
         result_mode=config.get("result_mode", "non_dominated"),
+        kernel_profiler=kernel_profiler,
     )
 
     return state, live_cb, eval_strategy, max_eval, hv_tracker

@@ -21,7 +21,13 @@ if TYPE_CHECKING:
     pass
 
 
-def dominance_matrix(F: np.ndarray, G: np.ndarray | None, constraint_mode: str) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
+def dominance_matrix(
+    F: np.ndarray,
+    G: np.ndarray | None,
+    constraint_mode: str,
+    *,
+    kernel: Any | None = None,
+) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
     """Compute dominance matrix with optional feasibility-aware handling.
 
     Parameters
@@ -48,6 +54,12 @@ def dominance_matrix(F: np.ndarray, G: np.ndarray | None, constraint_mode: str) 
     if constraint_mode and constraint_mode != "none" and G is not None:
         cv = compute_violation(G)
         feas = is_feasible(G)
+    elif kernel is not None:
+        dom_fn = getattr(kernel, "dominance_matrix", None)
+        if callable(dom_fn):
+            dom_fast = np.asarray(dom_fn(F), dtype=bool)
+            if dom_fast.shape == (n, n):
+                return dom_fast, None, None
 
     dom = np.zeros((n, n), dtype=bool)
     for i in range(n):
@@ -161,7 +173,7 @@ def knn_density(F: np.ndarray, k: int = 1) -> np.ndarray:
     return kth
 
 
-def truncate_by_distance(dist_matrix: np.ndarray, keep: int) -> np.ndarray:
+def truncate_by_distance(dist_matrix: np.ndarray, keep: int, *, k: int = 1) -> np.ndarray:
     """Truncate by iteratively removing solution with smallest distance.
 
     This is the SPEA2 truncation procedure that preserves boundary solutions.
@@ -182,11 +194,16 @@ def truncate_by_distance(dist_matrix: np.ndarray, keep: int) -> np.ndarray:
     if len(candidates) <= keep:
         return np.asarray(candidates, dtype=int)
 
+    k = int(k)
+    if k < 1:
+        k = 1
+    k = min(k, max(1, dist_matrix.shape[0] - 1))
+
     dist = dist_matrix.copy()
     while len(candidates) > keep:
         sub = dist[np.ix_(candidates, candidates)]
         np.fill_diagonal(sub, np.inf)
-        nearest = np.partition(sub, 1, axis=1)[:, 1]
+        nearest = np.partition(sub, k, axis=1)[:, k]
         remove_pos = int(np.argmin(nearest))
         del candidates[remove_pos]
 
@@ -200,6 +217,8 @@ def environmental_selection(
     archive_size: int,
     k_neighbors: int | None,
     constraint_mode: str,
+    *,
+    kernel: Any | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     """SPEA2 environmental selection (sequential truncation).
 
@@ -231,9 +250,19 @@ def environmental_selection(
     if n <= archive_size:
         return X, F, G
 
-    dom, _, _ = dominance_matrix(F, G, constraint_mode)
-    raw_fitness = strength_raw_fitness(dom)
     k = int(k_neighbors) if k_neighbors is not None else 1
+    if k < 1:
+        k = 1
+
+    if G is None and kernel is not None:
+        fast_idx_fn = getattr(kernel, "spea2_environmental_selection_indices", None)
+        if callable(fast_idx_fn):
+            selected_idx = np.asarray(fast_idx_fn(F, archive_size, k), dtype=int)
+            if selected_idx.ndim == 1 and selected_idx.size > 0:
+                return X[selected_idx], F[selected_idx], None
+
+    dom, _, _ = dominance_matrix(F, G, constraint_mode, kernel=kernel)
+    raw_fitness = strength_raw_fitness(dom)
 
     unique_fitness = np.unique(raw_fitness)
     fronts = [np.flatnonzero(raw_fitness == fit) for fit in np.sort(unique_fitness)]
@@ -248,14 +277,13 @@ def environmental_selection(
         if remaining <= 0:
             break
 
-        # Sequential truncation within the splitting front (jMetalPy-style).
-        keep = front.tolist()
-        while len(keep) > remaining:
-            density = knn_density(F[np.asarray(keep)], k)
-            order = np.argsort(-density, kind="mergesort")
-            keep = [keep[i] for i in order]
-            keep.pop()
-        selected.extend(keep)
+        # Sequential truncation within the splitting front using a precomputed
+        # distance matrix (avoids rebuilding pairwise distances each iteration).
+        front_idx = np.asarray(front, dtype=int)
+        front_F = F[front_idx]
+        dist_front = np.linalg.norm(front_F[:, None, :] - front_F[None, :, :], axis=2)
+        local_keep = truncate_by_distance(dist_front, remaining, k=k)
+        selected.extend(front_idx[local_keep].tolist())
         break
 
     selected_idx = np.asarray(selected, dtype=int)

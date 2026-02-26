@@ -15,6 +15,8 @@ References:
 
 from __future__ import annotations
 
+import time
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -161,24 +163,37 @@ class SPEA2:
         live_cb.on_generation(generation, F=st.env_F, stats={"evals": st.n_eval})
         stop_requested = live_should_stop(live_cb)
         hv_reached = hv_tracker.enabled and hv_tracker.reached(st.env_F)
+        prof = st.kernel_profiler
+
+        def _measure(label: str) -> Any:
+            return prof.measure(label) if prof is not None else nullcontext()
 
         while st.n_eval < max_eval and not hv_reached and not stop_requested:
-            st.generation = generation
-            X_off = self.ask()
+            loop_start_ns = time.perf_counter_ns() if prof is not None else 0
+            if prof is not None:
+                prof.start_generation(generation=generation, evaluations=st.n_eval)
+            try:
+                st.generation = generation
+                X_off = self.ask()
 
-            # Evaluate offspring
-            eval_result = eval_strategy.evaluate(X_off, problem)
-            hv_reached = self.tell(eval_result, problem)
+                # Evaluate offspring
+                with _measure("evaluation"):
+                    eval_result = eval_strategy.evaluate(X_off, problem)
+                hv_reached = self.tell(eval_result, problem)
 
-            assert st.env_F is not None
-            if hv_tracker.enabled and hv_tracker.reached(st.env_F):
-                hv_reached = True
-                break
+                assert st.env_F is not None
+                if hv_tracker.enabled and hv_tracker.reached(st.env_F):
+                    hv_reached = True
+                    break
 
-            generation += 1
-            st.generation = generation
-            assert st.env_F is not None
-            stop_requested = notify_generation(live_cb, self.kernel, generation, st.env_F, stats={"evals": st.n_eval})
+                generation += 1
+                st.generation = generation
+                assert st.env_F is not None
+                stop_requested = notify_generation(live_cb, self.kernel, generation, st.env_F, stats={"evals": st.n_eval})
+            finally:
+                if prof is not None:
+                    prof.add_ns("generation_total", time.perf_counter_ns() - loop_start_ns)
+                    prof.end_generation(generation=st.generation, evaluations=st.n_eval)
 
         result = build_spea2_result(st, hv_reached)
         finalize_genealogy(result, st, self.kernel)
@@ -240,6 +255,11 @@ class SPEA2:
             raise RuntimeError("Call initialize() or run() before ask()")
 
         st = self._st
+        prof = st.kernel_profiler
+
+        def _measure(label: str) -> Any:
+            return prof.measure(label) if prof is not None else nullcontext()
+
         if st.env_X is None or st.env_F is None:
             raise RuntimeError("SPEA2 internal archive is not initialized.")
         if st.crossover_fn is None or st.mutation_fn is None:
@@ -248,24 +268,80 @@ class SPEA2:
             raise RuntimeError("SPEA2 bounds are not initialized.")
         n_pairs = st.offspring_size
 
+        def _cfg_pair(name: str) -> tuple[str, dict[str, Any]]:
+            raw = self.cfg.get(name, ("", {}))
+            if isinstance(raw, tuple) and len(raw) == 2:
+                method = str(raw[0]).lower()
+                params = dict(raw[1]) if isinstance(raw[1], dict) else {}
+                return method, params
+            if isinstance(raw, str):
+                return raw.lower(), {}
+            return "", {}
+
+        def _can_use_fused() -> bool:
+            fn = getattr(self.kernel, "spea2_generate_offspring", None)
+            if not callable(fn):
+                return False
+            if st.genealogy_tracker is not None:
+                return False
+            if st.env_G is not None:
+                return False
+            cross_method, _ = _cfg_pair("crossover")
+            mut_method, _ = _cfg_pair("mutation")
+            if cross_method != "sbx":
+                return False
+            if mut_method not in {"pm", "polynomial"}:
+                return False
+            return True
+
+        if _can_use_fused():
+            _, cross_params = _cfg_pair("crossover")
+            _, mut_params = _cfg_pair("mutation")
+            params = {
+                "sbx_prob": cross_params.get("prob", cross_params.get("prob_crossover", 0.9)),
+                "sbx_eta": cross_params.get("eta", 20.0),
+                "pm_prob": mut_params.get("prob", mut_params.get("prob_mutation", 1.0 / max(1, st.env_X.shape[1]))),
+                "pm_eta": mut_params.get("eta", 20.0),
+            }
+            with _measure("generate_offspring"):
+                offspring_X = self.kernel.spea2_generate_offspring(
+                    st.env_X,
+                    st.env_F,
+                    n_pairs,
+                    st.k_neighbors or 1,
+                    params,
+                    st.rng,
+                    st.xl,
+                    st.xu,
+                )
+            offspring_X = np.asarray(offspring_X, dtype=float)
+            if offspring_X.shape[0] > n_pairs:
+                offspring_X = offspring_X[:n_pairs]
+            st.pending_offspring = offspring_X
+            return offspring_X
+
         # Fitness-based binary tournament selection (SPEA2)
-        dom, _, _ = dominance_matrix(st.env_F, st.env_G, st.constraint_mode)
-        raw_fitness = strength_raw_fitness(dom)
-        density = knn_density(st.env_F, st.k_neighbors or 1)
-        parent_idx = _tournament_by_strength(raw_fitness, density, st.rng, n_pairs)
+        with _measure("fitness"):
+            dom, _, _ = dominance_matrix(st.env_F, st.env_G, st.constraint_mode, kernel=self.kernel)
+            raw_fitness = strength_raw_fitness(dom)
+            density = knn_density(st.env_F, st.k_neighbors or 1)
+        with _measure("selection"):
+            parent_idx = _tournament_by_strength(raw_fitness, density, st.rng, n_pairs)
 
         # Gather parents in shape (n_pairs, 2, n_var)
         n_var = st.env_X.shape[1]
         parents = st.env_X[parent_idx.reshape(-1)].reshape(n_pairs, 2, n_var)
 
         # Apply crossover
-        offspring = st.crossover_fn(parents, st.rng)
+        with _measure("crossover"):
+            offspring = st.crossover_fn(parents, st.rng)
 
         # Take first child from each pair
         offspring_X = offspring[:, 0, :].copy()
 
         # Apply mutation
-        offspring_X = st.mutation_fn(offspring_X, st.rng)
+        with _measure("mutation"):
+            offspring_X = st.mutation_fn(offspring_X, st.rng)
 
         # Clip to bounds; cast bounds for integer-typed offspring to avoid
         # numpy in-place casting errors when bounds are stored as floats.
@@ -317,6 +393,11 @@ class SPEA2:
             raise RuntimeError("Call ask() before tell()")
 
         st = self._st
+        prof = st.kernel_profiler
+
+        def _measure(label: str) -> Any:
+            return prof.measure(label) if prof is not None else nullcontext()
+
         offspring_X = st.pending_offspring
         assert offspring_X is not None
         if st.env_X is None or st.env_F is None:
@@ -351,14 +432,16 @@ class SPEA2:
             G_union = None
 
         # Environmental selection
-        st.env_X, st.env_F, st.env_G = environmental_selection(
-            X_union,
-            F_union,
-            G_union,
-            st.env_archive_size,
-            st.k_neighbors,
-            st.constraint_mode,
-        )
+        with _measure("survival"):
+            st.env_X, st.env_F, st.env_G = environmental_selection(
+                X_union,
+                F_union,
+                G_union,
+                st.env_archive_size,
+                st.k_neighbors,
+                st.constraint_mode,
+                kernel=self.kernel,
+            )
 
         # Update population reference
         st.X = st.env_X

@@ -69,7 +69,12 @@ def hypervolume_indicator(F: np.ndarray) -> np.ndarray:
     return indicator
 
 
-def compute_indicator_matrix(F: np.ndarray, indicator: str) -> np.ndarray:
+def compute_indicator_matrix(
+    F: np.ndarray,
+    indicator: str,
+    *,
+    kernel: object | None = None,
+) -> np.ndarray:
     """Compute indicator matrix based on selected type.
 
     Parameters
@@ -84,6 +89,11 @@ def compute_indicator_matrix(F: np.ndarray, indicator: str) -> np.ndarray:
     np.ndarray
         Indicator matrix.
     """
+    if kernel is not None:
+        indicator_fn = getattr(kernel, "ibea_indicator_matrix", None)
+        if callable(indicator_fn):
+            return np.asarray(indicator_fn(F, None, indicator), dtype=float)
+
     if indicator == "hypervolume":
         return hypervolume_indicator(F)
     return epsilon_indicator(F)
@@ -148,6 +158,8 @@ def environmental_selection(
     pop_size: int,
     indicator: str,
     kappa: float,
+    *,
+    kernel: object | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None, np.ndarray]:
     """Perform IBEA environmental selection.
 
@@ -173,7 +185,16 @@ def environmental_selection(
     tuple[np.ndarray, np.ndarray, np.ndarray | None, np.ndarray]
         (X_selected, F_selected, G_selected, fitness)
     """
-    ind = compute_indicator_matrix(F, indicator)
+    if G is None and kernel is not None:
+        fast_idx_fn = getattr(kernel, "ibea_environmental_selection_indices", None)
+        if callable(fast_idx_fn):
+            selected_idx, fitness = fast_idx_fn(F, pop_size, None, indicator, kappa)
+            selected_arr = np.asarray(selected_idx, dtype=int)
+            fitness_arr = np.asarray(fitness, dtype=float)
+            if selected_arr.ndim == 1:
+                return X[selected_arr], F[selected_arr], None, fitness_arr
+
+    ind = compute_indicator_matrix(F, indicator, kernel=kernel)
     fitness = ibea_fitness(ind, kappa)
     fitness = apply_constraint_penalty(fitness, G)
 

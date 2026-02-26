@@ -5,15 +5,19 @@ Run loop and checkpoint helpers for NSGA-II.
 from __future__ import annotations
 
 import logging
+import os
 import threading
+import time
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import live_should_stop
-from vamos.engine.hooks.live_viz import LiveVisualization
+from vamos.engine.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.foundation.eval.backends import EvaluationBackend
 
+from .ask_tell import _build_fused_operator_params, _is_real_sbx_pm_pipeline
 from .setup import initialize_run
 from .state import build_result, finalize_genealogy, get_archive_contents
 
@@ -171,6 +175,51 @@ def save_checkpoint(algo: NSGAII, checkpoint_dir: str, seed: int, generation: in
     _logger().info("Checkpoint saved: %s", path)
 
 
+def _can_use_nsga2_evolve_fastpath(
+    algo: NSGAII,
+    st: Any,
+    live_cb: LiveVisualization,
+    hv_tracker: Any,
+    checkpoint_dir: str | None,
+) -> bool:
+    if str(os.environ.get("VAMOS_ENABLE_CPP_EVOLVE_FASTPATH", "0")).strip().lower() not in {"1", "true", "yes", "on"}:
+        return False
+    nsga2_evolve = getattr(algo.kernel, "nsga2_evolve", None)
+    if not callable(nsga2_evolve):
+        return False
+    if st.kernel_profiler is not None:
+        return False
+    if not isinstance(live_cb, NoOpLiveVisualization):
+        return False
+    if st.steady_state:
+        return False
+    if st.G is not None:
+        return False
+    if st.offspring_size != st.pop_size:
+        return False
+    if st.track_genealogy:
+        return False
+    if st.aos_controller is not None:
+        return False
+    if st.immigration_manager is not None:
+        return False
+    if callable(st.parent_selection_filter):
+        return False
+    if st.non_breeding_indices.size > 0:
+        return False
+    if st.archive_manager is not None or st.result_archive is not None:
+        return False
+    if checkpoint_dir is not None:
+        return False
+    if st.generation_callback is not None:
+        return False
+    if bool(getattr(hv_tracker, "enabled", False)):
+        return False
+    if not _is_real_sbx_pm_pipeline(st):
+        return False
+    return True
+
+
 def run_nsgaii(
     algo: NSGAII,
     problem: Any,
@@ -221,30 +270,90 @@ def run_nsgaii(
         evals=n_eval,
     )
     hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn())
+    prof = st.kernel_profiler
+
+    def _measure(label: str) -> Any:
+        return prof.measure(label) if prof is not None else nullcontext()
 
     try:
-        while n_eval < max_eval and not hv_reached and not stop_requested and not interrupted:
-            st.generation = generation
-            st.step = step
-            st.replacements = replacements
-            X_off = algo.ask()
-            eval_off = eval_strategy.evaluate(X_off, problem)
-            hv_reached = algo.tell(eval_off)
-            n_eval += X_off.shape[0]
-            replacements += X_off.shape[0]
+        used_fastpath = False
+        if _can_use_nsga2_evolve_fastpath(algo, st, live_cb, hv_tracker, checkpoint_dir) and not stop_requested and not interrupted:
+            remaining = max_eval - n_eval
+            n_gen = int(remaining // st.offspring_size)
+            if n_gen > 0:
+                params = _build_fused_operator_params(st)
 
-            step += 1
-            st.step = step
-            st.replacements = replacements
+                def _eval_fn(X_off: np.ndarray) -> Any:
+                    return eval_strategy.evaluate(X_off, problem)
 
-            if st.steady_state:
-                if not stop_requested:
-                    stop_requested = live_should_stop(live_cb)
-                new_generation = replacements // st.pop_size
-                if new_generation != generation:
-                    generation = new_generation
+                x_new, f_new = algo.kernel.nsga2_evolve(
+                    st.X,
+                    st.F,
+                    _eval_fn,
+                    n_gen,
+                    params,
+                    st.rng,
+                    st.variation.xl,
+                    st.variation.xu,
+                )
+                st.X = np.asarray(x_new)
+                st.F = np.asarray(f_new)
+                st.G = None
+                added = int(n_gen * st.offspring_size)
+                n_eval += added
+                replacements += added
+                step += n_gen
+                generation += n_gen
+                st.n_eval = n_eval
+                st.replacements = replacements
+                st.step = step
+                st.generation = generation
+                used_fastpath = True
+
+        while not used_fastpath and n_eval < max_eval and not hv_reached and not stop_requested and not interrupted:
+            loop_start_ns = time.perf_counter_ns() if prof is not None else 0
+            if prof is not None:
+                prof.start_generation(generation=generation, evaluations=n_eval)
+            try:
+                st.generation = generation
+                st.step = step
+                st.replacements = replacements
+                X_off = algo.ask()
+                with _measure("evaluation"):
+                    eval_off = eval_strategy.evaluate(X_off, problem)
+                hv_reached = algo.tell(eval_off)
+                n_eval += X_off.shape[0]
+                replacements += X_off.shape[0]
+                st.n_eval = n_eval
+
+                step += 1
+                st.step = step
+                st.replacements = replacements
+
+                if st.steady_state:
+                    if not stop_requested:
+                        stop_requested = live_should_stop(live_cb)
+                    new_generation = replacements // st.pop_size
+                    if new_generation != generation:
+                        generation = new_generation
+                        st.generation = generation
+                        stop_requested = stop_requested or notify_generation(
+                            algo,
+                            live_cb,
+                            generation,
+                            st.F,
+                            problem=problem,
+                            evals=n_eval,
+                        )
+                        if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
+                            hv_reached = True
+
+                        if checkpoint_dir and generation % checkpoint_interval == 0:
+                            save_checkpoint(algo, checkpoint_dir, seed, generation, n_eval)
+                else:
+                    generation += 1
                     st.generation = generation
-                    stop_requested = stop_requested or notify_generation(
+                    stop_requested = notify_generation(
                         algo,
                         live_cb,
                         generation,
@@ -257,22 +366,10 @@ def run_nsgaii(
 
                     if checkpoint_dir and generation % checkpoint_interval == 0:
                         save_checkpoint(algo, checkpoint_dir, seed, generation, n_eval)
-            else:
-                generation += 1
-                st.generation = generation
-                stop_requested = notify_generation(
-                    algo,
-                    live_cb,
-                    generation,
-                    st.F,
-                    problem=problem,
-                    evals=n_eval,
-                )
-                if hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn()):
-                    hv_reached = True
-
-                if checkpoint_dir and generation % checkpoint_interval == 0:
-                    save_checkpoint(algo, checkpoint_dir, seed, generation, n_eval)
+            finally:
+                if prof is not None:
+                    prof.add_ns("generation_total", time.perf_counter_ns() - loop_start_ns)
+                    prof.end_generation(generation=st.generation, evaluations=n_eval)
     finally:
         if main_thread_signals and original_handler is not None:
             signal.signal(signal.SIGINT, original_handler)

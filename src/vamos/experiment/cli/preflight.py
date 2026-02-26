@@ -16,6 +16,7 @@ _EXTRA_HINTS: dict[str, str] = {
     "analysis": 'pip install -e ".[analysis]"',
     "autodiff": 'pip install -e ".[autodiff]"',
     "compute": 'pip install -e ".[compute]"',
+    "native": 'pip install -e ".[native]"',
     "examples": 'pip install -e ".[examples]"',
     "research": 'pip install -e ".[research]"',
 }
@@ -66,6 +67,8 @@ def _check_plotting(args: object) -> None:
 
 def _check_engine(args: object) -> None:
     engine = getattr(args, "engine", None)
+    if engine == "cpp" and not _has_module("vamospp"):
+        _warn(f"Engine 'cpp' selected but vamospp is not installed. Install with: {_EXTRA_HINTS['native']} or pip install vamospp.")
     if engine == "numba" and not _has_module("numba"):
         _warn(f"Engine 'numba' selected but numba is not installed. Install with: {_EXTRA_HINTS['compute']}.")
     if engine == "moocore" and not _has_module("moocore"):

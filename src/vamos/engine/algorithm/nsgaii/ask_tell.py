@@ -5,6 +5,7 @@ Ask/tell operations for NSGA-II.
 from __future__ import annotations
 
 import logging
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -29,6 +30,66 @@ from .state import compute_selection_metrics, track_offspring_genealogy, update_
 if TYPE_CHECKING:
     from .nsgaii import NSGAII
     from .state import NSGAIIState
+
+
+def _is_real_sbx_pm_pipeline(st: NSGAIIState) -> bool:
+    variation = st.variation
+    if getattr(variation, "encoding", None) != "real":
+        return False
+    cross_method = str(getattr(variation, "cross_method", "")).lower()
+    mut_method = str(getattr(variation, "mut_method", "")).lower()
+    if cross_method != "sbx":
+        return False
+    if mut_method not in {"pm", "polynomial"}:
+        return False
+    if getattr(variation, "repair_op", None) is not None:
+        return False
+    return True
+
+
+def _build_fused_operator_params(st: NSGAIIState) -> dict[str, object]:
+    variation = st.variation
+    cross_params = getattr(variation, "cross_params", {}) or {}
+    mut_params = getattr(variation, "mut_params", {}) or {}
+    n_var = int(st.X.shape[1]) if st.X.ndim == 2 else 1
+    sbx_prob = cross_params.get("prob", cross_params.get("prob_crossover", 0.9))
+    sbx_eta = cross_params.get("eta", 20.0)
+    pm_prob = mut_params.get("prob", mut_params.get("prob_mutation", 1.0 / max(1, n_var)))
+    pm_eta = mut_params.get("eta", 20.0)
+    return {
+        "sbx_prob": sbx_prob,
+        "sbx_eta": sbx_eta,
+        "pm_prob": pm_prob,
+        "pm_eta": pm_eta,
+        "tournament_pressure": int(st.pressure),
+        # Keep nested aliases for Python fallback implementations.
+        "selection_pressure": int(st.pressure),
+        "crossover": {"prob": sbx_prob, "eta": sbx_eta},
+        "mutation": {"prob": pm_prob, "eta": pm_eta},
+    }
+
+
+def _can_use_fused_offspring(algo: NSGAII, st: NSGAIIState) -> bool:
+    generate_offspring = getattr(algo.kernel, "generate_offspring", None)
+    if not callable(generate_offspring):
+        return False
+    if st.steady_state:
+        return False
+    if st.G is not None:
+        return False
+    if st.track_genealogy:
+        return False
+    if st.aos_controller is not None:
+        return False
+    if st.immigration_manager is not None:
+        return False
+    if callable(st.parent_selection_filter):
+        return False
+    if st.non_breeding_indices.size > 0:
+        return False
+    if not _is_real_sbx_pm_pipeline(st):
+        return False
+    return True
 
 
 def combine_ids(st: NSGAIIState) -> np.ndarray | None:
@@ -64,6 +125,27 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     if st is None:
         raise RuntimeError("ask() called before initialization.")
 
+    prof = st.kernel_profiler
+
+    def _measure(label: str) -> Any:
+        return prof.measure(label) if prof is not None else nullcontext()
+
+    if _can_use_fused_offspring(algo, st):
+        params = _build_fused_operator_params(st)
+        with _measure("generate_offspring"):
+            X_off = algo.kernel.generate_offspring(
+                st.X,
+                st.F,
+                params,
+                st.rng,
+                st.variation.xl,
+                st.variation.xu,
+            )
+        if X_off.shape[0] > st.offspring_size:
+            X_off = X_off[: st.offspring_size]
+        st.pending_offspring = X_off
+        return X_off
+
     if st.aos_controller is not None:
         aos_step = st.step
         st.aos_controller.start_generation(aos_step)
@@ -78,7 +160,8 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     if st.incremental_enabled and st.ranks is not None and st.crowding is not None and st.G is None and st.constraint_mode == "none":
         ranks, crowding = st.ranks, st.crowding
     else:
-        ranks, crowding = compute_selection_metrics(algo.kernel, st.F, st.G, st.constraint_mode)
+        with _measure("ranking"):
+            ranks, crowding = compute_selection_metrics(algo.kernel, st.F, st.G, st.constraint_mode)
         if st.steady_state:
             st.ranks = ranks
             st.crowding = crowding
@@ -114,22 +197,33 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
             if candidate_indices.size == 0:
                 candidate_indices = np.arange(st.X.shape[0], dtype=int)
 
-    mating_pairs = build_mating_pool(
-        algo.kernel,
-        ranks,
-        crowding,
-        st.pressure,
-        st.rng,
-        parent_count,
-        parents_per_group,
-        st.sel_method,
-        candidate_indices=candidate_indices,
-    )
-    parent_idx = mating_pairs.reshape(-1)
-    if st.immigration_manager is not None:
-        st.immigration_manager.record_parent_indices(st.generation, parent_idx)
-    X_parents = st.variation.gather_parents(st.X, parent_idx)
-    X_off = st.variation.produce_offspring(X_parents, st.rng)
+    with _measure("selection"):
+        mating_pairs = build_mating_pool(
+            algo.kernel,
+            ranks,
+            crowding,
+            st.pressure,
+            st.rng,
+            parent_count,
+            parents_per_group,
+            st.sel_method,
+            candidate_indices=candidate_indices,
+        )
+        parent_idx = mating_pairs.reshape(-1)
+        if st.immigration_manager is not None:
+            st.immigration_manager.record_parent_indices(st.generation, parent_idx)
+        X_parents = st.variation.gather_parents(st.X, parent_idx)
+
+    if prof is None:
+        X_off = st.variation.produce_offspring(X_parents, st.rng)
+    else:
+        with _measure("crossover"):
+            X_off = st.variation.crossover_op(X_parents, st.rng)
+        with _measure("mutation"):
+            X_off = st.variation.mutation_op(X_off, st.rng)
+        if st.variation.repair_op is not None:
+            with _measure("repair"):
+                X_off = st.variation.repair_op(X_off, st.variation.xl, st.variation.xu, st.rng)
 
     if X_off.shape[0] > st.offspring_size:
         X_off = X_off[: st.offspring_size]
@@ -147,6 +241,11 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
     st = algo._st
     if st is None:
         raise RuntimeError("tell() called before initialization.")
+
+    prof = st.kernel_profiler
+
+    def _measure(label: str) -> Any:
+        return prof.measure(label) if prof is not None else nullcontext()
 
     X_off = st.pending_offspring
     st.pending_offspring = None
@@ -199,44 +298,48 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         used_incremental = True
     elif use_incremental:
         if st.fronts is None or st.ranks is None or st.crowding is None:
-            ranks, crowding = algo.kernel.nsga2_ranking(st.F)
+            with _measure("ranking"):
+                ranks, crowding = algo.kernel.nsga2_ranking(st.F)
             st.ranks = ranks
             st.crowding = crowding
             st.fronts = fronts_from_ranks(ranks)
 
-        fronts = [list(front) for front in (st.fronts or [])]
-        ranks = np.concatenate([st.ranks or np.empty(0, dtype=int), np.array([-1], dtype=int)])
-        incremental_insert_fronts(fronts, ranks, combined_F, combined_F.shape[0] - 1)
-        crowding = compute_crowding(combined_F, fronts)
+        with _measure("survival"):
+            fronts = [list(front) for front in (st.fronts or [])]
+            ranks = np.concatenate([st.ranks or np.empty(0, dtype=int), np.array([-1], dtype=int)])
+            incremental_insert_fronts(fronts, ranks, combined_F, combined_F.shape[0] - 1)
+            crowding = compute_crowding(combined_F, fronts)
 
-        selected_idx = select_nsga2(fronts, crowding, st.pop_size)
-        new_X = combined_X[selected_idx]
-        new_F = combined_F[selected_idx]
-        new_G = None
+            selected_idx = select_nsga2(fronts, crowding, st.pop_size)
+            new_X = combined_X[selected_idx]
+            new_F = combined_F[selected_idx]
+            new_G = None
 
-        new_ranks = ranks[selected_idx]
-        new_fronts = fronts_from_ranks(new_ranks)
-        new_crowding = compute_crowding(new_F, new_fronts)
+            new_ranks = ranks[selected_idx]
+            new_fronts = fronts_from_ranks(new_ranks)
+            new_crowding = compute_crowding(new_F, new_fronts)
 
-        st.fronts = new_fronts
-        st.ranks = new_ranks
-        st.crowding = new_crowding
+            st.fronts = new_fronts
+            st.ranks = new_ranks
+            st.crowding = new_crowding
         used_incremental = True
     elif st.G is None or G_off is None or st.constraint_mode == "none":
-        if aos_controller is not None:
-            new_X, new_F, selected_idx = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size, return_indices=True)
-        else:
-            new_X, new_F = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size)
+        with _measure("survival"):
+            if aos_controller is not None:
+                new_X, new_F, selected_idx = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size, return_indices=True)
+            else:
+                new_X, new_F = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size)
         new_G = None
     else:
         from .helpers import feasible_nsga2_survival
 
-        if aos_controller is not None:
-            new_X, new_F, new_G, selected_idx = feasible_nsga2_survival(
-                algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size, return_indices=True
-            )
-        else:
-            new_X, new_F, new_G = feasible_nsga2_survival(algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size)
+        with _measure("survival"):
+            if aos_controller is not None:
+                new_X, new_F, new_G, selected_idx = feasible_nsga2_survival(
+                    algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size, return_indices=True
+                )
+            else:
+                new_X, new_F, new_G = feasible_nsga2_survival(algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size)
 
     if combined_ids is not None:
         from .helpers import match_ids
@@ -247,7 +350,8 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
     st.pending_offspring_ids = None
 
     if st.incremental_enabled and not used_incremental:
-        ranks, crowding = algo.kernel.nsga2_ranking(st.F)
+        with _measure("ranking"):
+            ranks, crowding = algo.kernel.nsga2_ranking(st.F)
         st.ranks = ranks
         st.crowding = crowding
         st.fronts = fronts_from_ranks(ranks)
@@ -307,7 +411,8 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
             hv_delta_rate = 0.0
 
         try:
-            ranks, _ = algo.kernel.nsga2_ranking(st.F)
+            with _measure("ranking"):
+                ranks, _ = algo.kernel.nsga2_ranking(st.F)
             nd_mask = ranks == ranks.min(initial=0)
         except (ValueError, IndexError):
             nd_mask = np.zeros(st.F.shape[0], dtype=bool)

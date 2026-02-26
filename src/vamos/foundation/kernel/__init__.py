@@ -13,8 +13,15 @@ if TYPE_CHECKING:
 def default_kernel() -> KernelBackend:
     """Return the best available kernel backend.
 
-    Uses NumbaKernel when numba is installed, otherwise falls back to NumPyKernel.
+    Priority: CppBackend -> NumbaKernel -> NumPyKernel.
     """
+    try:
+        from .cpp_backend import CppBackend
+
+        return CppBackend()
+    except ImportError:
+        pass
+
     try:
         from .numba_backend import NumbaKernel
 

@@ -29,6 +29,16 @@ def _load_numba() -> KernelBackend:
         ) from exc
 
 
+def _load_cpp() -> KernelBackend:
+    try:
+        module = import_module("vamos.foundation.kernel.cpp_backend")
+        return cast(KernelBackend, module.CppBackend())
+    except ImportError as exc:
+        raise ImportError(
+            "Kernel 'cpp' requires the [native] extra (vamospp>=0.1). Install with `pip install -e \".[native]\"` or `pip install vamospp`."
+        ) from exc
+
+
 def _load_moocore() -> KernelBackend:
     try:
         module = import_module("vamos.foundation.kernel.moocore_backend")
@@ -48,6 +58,7 @@ def _load_jax() -> KernelBackend:
 
 
 KERNELS: dict[str, Callable[[], KernelBackend]] = {
+    "cpp": _load_cpp,
     "numpy": NumPyKernel,
     "numba": _load_numba,
     "moocore": _load_moocore,

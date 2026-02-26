@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 
 from vamos.engine.algorithm.components.population import resolve_bounds
+from vamos.engine.algorithm.components.kernel_profile import resolve_kernel_profiler
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.engine.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
@@ -255,6 +256,7 @@ def initialize_run(
         raise ValueError("live_callback_mode must be one of: nd_only, population, population_archive")
     generation_callback = algo.cfg.get("generation_callback")
     generation_callback_copy = bool(algo.cfg.get("generation_callback_copy", True))
+    kernel_profiler = resolve_kernel_profiler(algo.cfg)
 
     algo._st = NSGAIIState(
         X=X,
@@ -294,6 +296,7 @@ def initialize_run(
         live_callback_mode=live_callback_mode,
         generation_callback=generation_callback,
         generation_callback_copy=generation_callback_copy,
+        kernel_profiler=kernel_profiler,
     )
     return live_cb, eval_strategy, max_eval, n_eval, hv_tracker
 

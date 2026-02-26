@@ -99,6 +99,9 @@ class NSGAIIState:
     pending_offspring: np.ndarray | None = None
     pending_offspring_ids: np.ndarray | None = None
 
+    # Optional lightweight kernel profiler
+    kernel_profiler: Any | None = None
+
     # Optional extension hooks
     immigration_manager: Any | None = None
     parent_selection_filter: Any | None = None
@@ -170,6 +173,8 @@ def build_result(
         "hv_reached": hv_reached,
         "population": {"X": state.X, "F": state.F},  # Full population always available
     }
+    if state.kernel_profiler is not None:
+        result["kernel_profile"] = state.kernel_profiler.summary()
     if result_G is not None:
         result["G"] = result_G
 

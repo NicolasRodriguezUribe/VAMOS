@@ -14,6 +14,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.archives import resolve_external_archive, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
+from vamos.engine.algorithm.components.kernel_profile import resolve_kernel_profiler
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.population import (
@@ -101,7 +102,7 @@ def initialize_spea2_run(
     n_eval = pop_size
 
     # Environmental selection for initial internal archive
-    env_X, env_F, env_G = environmental_selection(X, F, G, env_archive_size, k_neighbors, constraint_mode)
+    env_X, env_F, env_G = environmental_selection(X, F, G, env_archive_size, k_neighbors, constraint_mode, kernel=kernel)
 
     # Setup external archive (optional, separate from internal)
     ext_cfg = resolve_external_archive(cfg)
@@ -136,6 +137,7 @@ def initialize_spea2_run(
     live_cb.on_start(ctx)
 
     # Create state
+    kernel_profiler = resolve_kernel_profiler(cfg)
     state = SPEA2State(
         X=X,
         F=F,
@@ -167,6 +169,7 @@ def initialize_spea2_run(
         track_genealogy=track_genealogy,
         genealogy_tracker=genealogy_tracker,
         ids=ids,
+        kernel_profiler=kernel_profiler,
     )
 
     return state, live_cb, eval_strategy, max_eval, hv_tracker

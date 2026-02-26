@@ -92,6 +92,10 @@ examples = [
 autodiff = [
   "jax>=0.4",
 ]
+# Native C++ backend
+native = [
+  "vamospp>=0.1",
+]
 # Documentation
 docs = [
   "mkdocs>=1.6",
@@ -144,6 +148,7 @@ all = [
   "hpbandster>=0.7.4",
   "streamlit>=1.29",
   "jax>=0.4",
+  "vamospp>=0.1",
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
   "mkdocstrings[python]>=0.24",
@@ -223,6 +228,8 @@ module = [
   "sklearn",
   "sklearn.*",
   "streamlit",
+  "vamospp",
+  "vamospp.*",
 ]
 ignore_missing_imports = true
 

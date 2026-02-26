@@ -44,6 +44,8 @@ class SMSEMOAState(AlgorithmState):
     eliminate_duplicates: bool = False
     crossover_fn: Callable[[np.ndarray], np.ndarray] | None = None
     mutation_fn: Callable[[np.ndarray], np.ndarray] | None = None
+    xl: np.ndarray | None = None
+    xu: np.ndarray | None = None
 
     # Workspace buffers (avoid per-iteration allocations in steady-state SMS-EMOA)
     _survival_F: np.ndarray | None = field(default=None, repr=False, compare=False)
@@ -101,6 +103,8 @@ def build_smsemoa_result(
         "hv_converged": hv_reached,
         "population": {"X": state.X.copy(), "F": state.F.copy()},
     }
+    if state.kernel_profiler is not None:
+        result["kernel_profile"] = state.kernel_profiler.summary()
 
     # Include archive if present
     if state.archive_X is not None and state.archive_F is not None and state.archive_X.size > 0:

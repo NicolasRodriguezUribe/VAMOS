@@ -17,6 +17,7 @@ HV_REFERENCE_OFFSET = 0.1
 EXPERIMENT_TYPES = ("backends",)
 
 EXPERIMENT_BACKENDS = (
+    "cpp",
     "numpy",
     "numba",
     "moocore",
@@ -30,19 +31,27 @@ def _has_numba() -> bool:
     return find_spec("numba") is not None
 
 
+def _has_cpp() -> bool:
+    return find_spec("vamospp") is not None
+
+
 def resolve_engine(engine: str | None, *, algorithm: str | None = None) -> str:
     """
     Resolve the effective engine for a run.
 
-    If engine is None or "auto", prefer numba for selected algorithms when available;
-    otherwise fall back to DEFAULT_ENGINE.
+    If engine is None or "auto", prefer cpp when available, then numba for selected
+    algorithms, then fall back to DEFAULT_ENGINE.
     """
     if engine is None:
+        if _has_cpp():
+            return "cpp"
         if algorithm and algorithm.lower() in _PREFER_NUMBA_ALGORITHMS and _has_numba():
             return "numba"
         return DEFAULT_ENGINE
     engine_name = str(engine).lower()
     if engine_name == "auto":
+        if _has_cpp():
+            return "cpp"
         if algorithm and algorithm.lower() in _PREFER_NUMBA_ALGORITHMS and _has_numba():
             return "numba"
         return DEFAULT_ENGINE

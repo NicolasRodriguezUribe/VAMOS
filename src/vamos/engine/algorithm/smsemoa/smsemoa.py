@@ -11,6 +11,8 @@ References:
 
 from __future__ import annotations
 
+import time
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -146,41 +148,56 @@ class SMSEMOA:
 
         hv_reached = False
         stop_requested = False
+        prof = st.kernel_profiler
+
+        def _measure(label: str) -> Any:
+            return prof.measure(label) if prof is not None else nullcontext()
+
         while st.n_eval < max_eval and not stop_requested:
-            # Generate and evaluate offspring
-            X_child = self._generate_offspring(st)
+            loop_start_ns = time.perf_counter_ns() if prof is not None else 0
+            if prof is not None:
+                prof.start_generation(generation=st.generation, evaluations=st.n_eval)
+            try:
+                # Generate and evaluate offspring
+                X_child = self._generate_offspring(st)
 
-            # Evaluate using backend or directly
-            F_child, G_child = self._evaluate_offspring(problem, X_child, eval_strategy, st.constraint_mode)
-            st.n_eval += X_child.shape[0]
+                # Evaluate using backend or directly
+                with _measure("evaluation"):
+                    F_child, G_child = self._evaluate_offspring(problem, X_child, eval_strategy, st.constraint_mode)
+                st.n_eval += X_child.shape[0]
 
-            # Survival selection (one child at a time for SMS-EMOA)
-            if X_child.shape[0] == 1:
-                survival_selection(st, X_child, F_child, G_child, self.kernel)
-            else:  # pragma: no cover - steady-state SMS-EMOA typically uses 1 offspring
-                for i in range(X_child.shape[0]):
-                    survival_selection(
-                        st,
-                        X_child[i : i + 1],
-                        F_child[i : i + 1],
-                        G_child[i : i + 1] if G_child is not None else None,
-                        self.kernel,
-                    )
+                # Survival selection (one child at a time for SMS-EMOA)
+                with _measure("survival"):
+                    if X_child.shape[0] == 1:
+                        survival_selection(st, X_child, F_child, G_child, self.kernel)
+                    else:  # pragma: no cover - steady-state SMS-EMOA typically uses 1 offspring
+                        for i in range(X_child.shape[0]):
+                            survival_selection(
+                                st,
+                                X_child[i : i + 1],
+                                F_child[i : i + 1],
+                                G_child[i : i + 1] if G_child is not None else None,
+                                self.kernel,
+                            )
 
-            st.generation += 1
+                st.generation += 1
 
-            # Update archive
-            if st.archive_manager is not None:
-                st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F, st.G)
+                # Update archive
+                if st.archive_manager is not None:
+                    st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F, st.G)
 
-            # Live callback
-            live_cb.on_generation(st.generation, F=st.F, stats={"evals": st.n_eval})
-            stop_requested = live_should_stop(live_cb)
+                # Live callback
+                live_cb.on_generation(st.generation, F=st.F, stats={"evals": st.n_eval})
+                stop_requested = live_should_stop(live_cb)
 
-            # Check HV threshold
-            if hv_tracker is not None and hv_tracker.enabled and hv_tracker.reached(st.hv_points()):
-                hv_reached = True
-                break
+                # Check HV threshold
+                if hv_tracker is not None and hv_tracker.enabled and hv_tracker.reached(st.hv_points()):
+                    hv_reached = True
+                    break
+            finally:
+                if prof is not None:
+                    prof.add_ns("generation_total", time.perf_counter_ns() - loop_start_ns)
+                    prof.end_generation(generation=st.generation, evaluations=st.n_eval)
 
         live_cb.on_end(final_F=st.F)
         result = build_smsemoa_result(st, hv_reached, kernel=self.kernel)
@@ -193,19 +210,96 @@ class SMSEMOA:
 
     def _generate_offspring(self, st: SMSEMOAState) -> np.ndarray:
         """Generate offspring using parent selection and variation."""
+        prof = st.kernel_profiler
+
+        def _measure(label: str) -> Any:
+            return prof.measure(label) if prof is not None else nullcontext()
+
+        def _cfg_pair(name: str) -> tuple[str, dict[str, Any]]:
+            raw = self.cfg.get(name, ("", {}))
+            if isinstance(raw, tuple) and len(raw) == 2:
+                method = str(raw[0]).lower()
+                params = dict(raw[1]) if isinstance(raw[1], dict) else {}
+                return method, params
+            if isinstance(raw, str):
+                return raw.lower(), {}
+            return "", {}
+
+        def _can_use_fused(sel_method_name: str) -> bool:
+            smsemoa_fn = getattr(self.kernel, "smsemoa_generate_offspring", None)
+            generic_fn = getattr(self.kernel, "generate_offspring", None)
+            sel_name = sel_method_name.lower()
+            if callable(smsemoa_fn):
+                if sel_name not in {"tournament", "random"}:
+                    return False
+            else:
+                if not callable(generic_fn):
+                    return False
+                if sel_name != "tournament":
+                    return False
+            if st.genealogy_tracker is not None:
+                return False
+            if st.xl is None or st.xu is None:
+                return False
+            cross_method, _ = _cfg_pair("crossover")
+            mut_method, _ = _cfg_pair("mutation")
+            if cross_method != "sbx":
+                return False
+            if mut_method not in {"pm", "polynomial"}:
+                return False
+            return True
+
         sel_cfg = self.cfg.get("selection", ("random", {}))
         if isinstance(sel_cfg, tuple):
             sel_method, _ = sel_cfg
         else:
             sel_method = sel_cfg
 
+        if _can_use_fused(str(sel_method)):
+            _, cross_params = _cfg_pair("crossover")
+            _, mut_params = _cfg_pair("mutation")
+            params = {
+                "sbx_prob": cross_params.get("prob", cross_params.get("prob_crossover", 0.9)),
+                "sbx_eta": cross_params.get("eta", 20.0),
+                "pm_prob": mut_params.get("prob", mut_params.get("prob_mutation", 1.0 / max(1, st.X.shape[1]))),
+                "pm_eta": mut_params.get("eta", 20.0),
+                "selection_pressure": int(st.pressure),
+                "crossover": cross_params,
+                "mutation": mut_params,
+            }
+            with _measure("generate_offspring"):
+                smsemoa_fn = getattr(self.kernel, "smsemoa_generate_offspring", None)
+                if callable(smsemoa_fn):
+                    child = smsemoa_fn(
+                        st.X,
+                        st.F,
+                        str(sel_method),
+                        int(st.pressure),
+                        params,
+                        st.rng,
+                        st.xl,
+                        st.xu,
+                    )
+                else:
+                    params["tournament_pressure"] = int(st.pressure)
+                    child = self.kernel.generate_offspring(st.X, st.F, params, st.rng, st.xl, st.xu, n_offspring=1)
+            child_arr = np.asarray(child, dtype=float)
+            if child_arr.ndim == 1:
+                child_arr = child_arr.reshape(1, -1)
+            if child_arr.shape[0] == 0:
+                raise RuntimeError("Fused offspring generation produced no offspring.")
+            return child_arr[:1]
+
         if sel_method == "tournament":
-            ranks, crowd = self.kernel.nsga2_ranking(st.F)
-            parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=2)
+            with _measure("ranking"):
+                ranks, crowd = self.kernel.nsga2_ranking(st.F)
+            with _measure("selection"):
+                parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=2)
         else:
             if st.X.shape[0] == 0:
                 raise ValueError("Cannot select parents from an empty population.")
-            parents_idx = st.rng.choice(st.X.shape[0], size=2, replace=True)
+            with _measure("selection"):
+                parents_idx = st.rng.choice(st.X.shape[0], size=2, replace=True)
 
         parents = st.X[parents_idx]
         if parents.ndim == 2:
@@ -214,9 +308,11 @@ class SMSEMOA:
         # Apply crossover and mutation
         if st.crossover_fn is None or st.mutation_fn is None:
             raise RuntimeError("SMS-EMOA variation operators are not initialized.")
-        offspring = st.crossover_fn(parents)
+        with _measure("crossover"):
+            offspring = st.crossover_fn(parents)
         child_vec = offspring.reshape(-1, st.X.shape[1])[0:1]  # first child as (1, n_var)
-        child = st.mutation_fn(child_vec)
+        with _measure("mutation"):
+            child = st.mutation_fn(child_vec)
 
         # Track genealogy - store parent indices for later assignment
         if st.genealogy_tracker is not None:

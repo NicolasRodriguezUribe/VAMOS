@@ -150,15 +150,19 @@ def survival_selection(
         st.ref_point = update_reference_point(st.ref_point, F_work, st.ref_offset)
 
     # Non-dominated ranking (on combined set)
-    ranks, _ = kernel.nsga2_ranking(F_work)
-    worst_rank = ranks.max()
-    worst_idx = np.flatnonzero(ranks == worst_rank)
-
-    if worst_idx.size == 1:
-        remove_idx = int(worst_idx[0])
+    remove_idx_fn = getattr(kernel, "smsemoa_remove_index", None)
+    if callable(remove_idx_fn):
+        remove_idx = int(remove_idx_fn(F_work, st.ref_point))
     else:
-        contribs = hypervolume_contributions(F_work[worst_idx], st.ref_point)
-        remove_idx = int(worst_idx[int(np.argmin(contribs))])
+        ranks, _ = kernel.nsga2_ranking(F_work)
+        worst_rank = ranks.max()
+        worst_idx = np.flatnonzero(ranks == worst_rank)
+
+        if worst_idx.size == 1:
+            remove_idx = int(worst_idx[0])
+        else:
+            contribs = hypervolume_contributions(F_work[worst_idx], st.ref_point)
+            remove_idx = int(worst_idx[int(np.argmin(contribs))])
 
     # If the offspring is removed, population remains unchanged.
     if remove_idx == pop_n:

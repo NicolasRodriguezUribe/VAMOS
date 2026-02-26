@@ -142,7 +142,15 @@ class IBEA:
             F_comb = np.vstack([st.F, F_off])
             G_comb = combine_constraints(st.G, G_off)
 
-            st.X, st.F, st.G, st.fitness = environmental_selection(X_comb, F_comb, G_comb, st.pop_size, st.indicator, st.kappa)
+            st.X, st.F, st.G, st.fitness = environmental_selection(
+                X_comb,
+                F_comb,
+                G_comb,
+                st.pop_size,
+                st.indicator,
+                st.kappa,
+                kernel=self.kernel,
+            )
 
             st.generation += 1
 
@@ -310,7 +318,15 @@ class IBEA:
         F_comb = np.vstack([st.F, F])
         G_comb = combine_constraints(st.G, G)
 
-        st.X, st.F, st.G, st.fitness = environmental_selection(X_comb, F_comb, G_comb, st.pop_size, st.indicator, st.kappa)
+        st.X, st.F, st.G, st.fitness = environmental_selection(
+            X_comb,
+            F_comb,
+            G_comb,
+            st.pop_size,
+            st.indicator,
+            st.kappa,
+            kernel=self.kernel,
+        )
 
         st.n_eval += X_off.shape[0]
         st.generation += 1

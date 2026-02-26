@@ -7,7 +7,7 @@ Keeps shared fields and helpers that algorithm-specific states can extend.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -61,6 +61,9 @@ class AlgorithmState:
     # Pending offspring for ask/tell
     pending_offspring: np.ndarray | None = None
     pending_offspring_ids: np.ndarray | None = None
+
+    # Optional lightweight kernel profiler
+    kernel_profiler: Any | None = None
 
     # Genealogy (optional)
     track_genealogy: bool = False
