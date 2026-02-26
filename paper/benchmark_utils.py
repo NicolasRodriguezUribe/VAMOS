@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from functools import cache
 import os
-from pathlib import Path
 
 import numpy as np
 
 from vamos.foundation.quality_indicators.hypervolume import hypervolume
 from vamos.foundation.quality_indicators.pareto import pareto_filter
+from vamos.resources import reference_front_path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-REFERENCE_FRONTS_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
 REF_EPS = 1e-6
 REF_MODE = os.environ.get("VAMOS_HV_REF_MODE", "pf").strip().lower()
 
@@ -21,14 +19,10 @@ _DTLZ_N_OBJ = 3
 
 @cache
 def _load_reference_front(problem_name: str) -> np.ndarray:
-    name = problem_name.lower()
-    path = REFERENCE_FRONTS_DIR / f"{name}.csv"
-    if not path.is_file():
-        alt = REFERENCE_FRONTS_DIR / f"{problem_name.upper()}.csv"
-        if alt.is_file():
-            path = alt
-        else:
-            raise FileNotFoundError(f"Missing reference front for '{problem_name}': {path}")
+    try:
+        path = reference_front_path(problem_name)
+    except ValueError as exc:
+        raise FileNotFoundError(f"Missing reference front for '{problem_name}'.") from exc
     return np.loadtxt(path, delimiter=",")
 
 

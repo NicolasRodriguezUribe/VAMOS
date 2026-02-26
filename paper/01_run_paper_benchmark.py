@@ -649,7 +649,6 @@ def run_single_benchmark(problem_name, seed, framework):
             from pymoo.problems import get_problem
             from pymoo.operators.crossover.sbx import SBX
             from pymoo.operators.mutation.pm import PM
-            from pymoo.operators.selection.rnd import RandomSelection
 
             if problem_name.startswith("zdt"):
                 pymoo_problem = get_problem(problem_name, n_var=n_var)
@@ -692,6 +691,8 @@ def run_single_benchmark(problem_name, seed, framework):
 
                     archive_cb = ArchiveCallback(n_var, n_obj)
             elif ALGORITHM == "smsemoa":
+                from pymoo.operators.selection.rnd import RandomSelection
+
                 algorithm = SMSEMOA(
                     pop_size=POP_SIZE,
                     n_offsprings=1,

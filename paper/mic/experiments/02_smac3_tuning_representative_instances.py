@@ -40,10 +40,10 @@ from vamos.engine.tuning import (
 from vamos.foundation.quality_indicators.hypervolume import hypervolume
 from vamos.foundation.quality_indicators.pareto import pareto_filter
 from vamos.foundation.problem.registry import make_problem_selection
+from vamos.resources import reference_front_path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-REF_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
 REF_EPS = 1e-6
 
 _PROBLEM_OVERRIDES: dict[str, dict[str, int]] = {
@@ -166,13 +166,10 @@ _REF_HV_CACHE: dict[str, float] = {}
 
 def _load_reference_front(problem_name: str) -> np.ndarray:
     name = problem_name.lower()
-    path = REF_DIR / f"{name}.csv"
-    if not path.is_file():
-        alt = REF_DIR / f"{name.upper()}.csv"
-        if alt.is_file():
-            path = alt
-        else:
-            raise FileNotFoundError(f"Missing reference front for '{name}': {path}")
+    try:
+        path = reference_front_path(name)
+    except ValueError as exc:
+        raise FileNotFoundError(f"Missing reference front for '{name}'.") from exc
     return np.loadtxt(path, delimiter=",")
 
 

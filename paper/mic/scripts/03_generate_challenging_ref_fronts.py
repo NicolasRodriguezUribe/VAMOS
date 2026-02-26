@@ -11,12 +11,18 @@ as CSV files in ``src/vamos/resources/reference_fronts/``.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-REF_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
+REF_DIR = Path(
+    os.environ.get(
+        "VAMOS_REFERENCE_FRONTS_DIR",
+        str(ROOT_DIR / "src" / "vamos" / "resources" / "reference_fronts"),
+    )
+)
 
 N_POINTS = 1000
 

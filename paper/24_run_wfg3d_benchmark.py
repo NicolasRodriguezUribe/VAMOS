@@ -146,7 +146,6 @@ def run_pymoo(problem_name: str, seed: int) -> dict | None:
     from pymoo.problems import get_problem
     from pymoo.operators.crossover.sbx import SBX
     from pymoo.operators.mutation.pm import PM
-    from pymoo.operators.selection.rnd import RandomSelection
 
     pymoo_problem = get_problem(problem_name, n_var=N_VAR, n_obj=N_OBJ)
 
@@ -154,7 +153,6 @@ def run_pymoo(problem_name: str, seed: int) -> dict | None:
         pop_size=POP_SIZE,
         crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
         mutation=PM(prob=1.0 / N_VAR, eta=MUTATION_ETA),
-        selection=RandomSelection(),
     )
 
     start = time.perf_counter()
