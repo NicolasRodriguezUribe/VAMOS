@@ -10,7 +10,7 @@ Note: SPEA2 has two archives:
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -47,6 +47,7 @@ class SPEA2State(AlgorithmState):
     mutation_fn: Callable[[np.ndarray, np.random.Generator], np.ndarray] | None = None
     xl: np.ndarray | None = None
     xu: np.ndarray | None = None
+    _fused_offspring: np.ndarray | None = field(default=None, repr=False, compare=False)
 
 
 def build_spea2_result(state: SPEA2State, hv_reached: bool = False) -> dict[str, Any]:

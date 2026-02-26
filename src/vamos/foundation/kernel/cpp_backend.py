@@ -160,7 +160,7 @@ class CppBackend(NumPyKernel):
             self._seed(rng),
         )
         self._mark("sbx_crossover")
-        return np.asarray(out, dtype=np.float64)
+        return self._require_float64_c(out, name="sbx_crossover output", ndim=2)
 
     def polynomial_mutation(
         self,
@@ -186,7 +186,7 @@ class CppBackend(NumPyKernel):
             self._seed(rng),
             True,
         )
-        X[:] = np.asarray(mutated, dtype=np.float64)
+        X_arr[:] = self._require_float64_c(mutated, name="polynomial_mutation output", ndim=2)
         self._mark("polynomial_mutation")
 
     @overload
@@ -231,9 +231,16 @@ class CppBackend(NumPyKernel):
         self._mark("nsga2_survival")
         if return_indices:
             x_new, f_new, indices = payload
-            return np.asarray(x_new, dtype=np.float64), np.asarray(f_new, dtype=np.float64), np.asarray(indices, dtype=np.int64)
+            return (
+                self._require_float64_c(x_new, name="nsga2_survival X", ndim=2),
+                self._require_float64_c(f_new, name="nsga2_survival F", ndim=2),
+                self._require_int64_c(indices, name="nsga2_survival indices", ndim=1),
+            )
         x_new, f_new = payload
-        return np.asarray(x_new, dtype=np.float64), np.asarray(f_new, dtype=np.float64)
+        return (
+            self._require_float64_c(x_new, name="nsga2_survival X", ndim=2),
+            self._require_float64_c(f_new, name="nsga2_survival F", ndim=2),
+        )
 
     def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
         fn = self._cpp_fn("hypervolume")
@@ -305,7 +312,10 @@ class CppBackend(NumPyKernel):
         dom_arr = np.asarray(dom, dtype=bool) if dom is not None else self.dominance_matrix(F_arr)
         self._mark("spea2_fitness")
         fitness, dist = fn(F_arr, dom_arr, None if k is None else int(k))
-        return np.asarray(fitness, dtype=np.float64), np.asarray(dist, dtype=np.float64)
+        return (
+            self._require_float64_c(fitness, name="spea2_fitness fitness", ndim=1),
+            self._require_float64_c(dist, name="spea2_fitness dist", ndim=2),
+        )
 
     def spea2_environmental_selection_indices(
         self,
@@ -374,8 +384,9 @@ class CppBackend(NumPyKernel):
             ref = np.max(F_arr, axis=0) + 1.0
         else:
             ref = self._require_float64_c(reference_point, name="reference_point", ndim=1)
+        ref_arr = self._require_float64_c(ref, name="reference_point", ndim=1)
         self._mark("ibea_indicator_matrix")
-        return np.asarray(fn(F_arr, np.asarray(ref, dtype=np.float64), str(kind)), dtype=np.float64)
+        return self._require_float64_c(fn(F_arr, ref_arr, str(kind)), name="ibea_indicator_matrix", ndim=2)
 
     def ibea_environmental_selection_indices(
         self,
@@ -449,7 +460,7 @@ class CppBackend(NumPyKernel):
         if fn is not None:
             child = fn(X_arr, F_arr, sel_name, int(pressure), xl_arr, xu_arr, config, self._seed(rng), out)
             self._mark("smsemoa_generate_offspring")
-            return np.asarray(child, dtype=np.float64)
+            return self._require_float64_c(child, name="smsemoa_generate_offspring output", ndim=2)
 
         if sel_name == "tournament":
             if X_arr.shape[0] > 1:
@@ -502,7 +513,7 @@ class CppBackend(NumPyKernel):
         if fn is not None:
             offspring = fn(X_arr, F_arr, target, int(k_neighbors), xl_arr, xu_arr, config, self._seed(rng), out)
             self._mark("spea2_generate_offspring")
-            return np.asarray(offspring, dtype=np.float64)
+            return self._require_float64_c(offspring, name="spea2_generate_offspring output", ndim=2)
 
         dom = self.dominance_matrix(F_arr)
         strength = dom.sum(axis=1).astype(np.float64)
@@ -522,7 +533,7 @@ class CppBackend(NumPyKernel):
             parent_idx = np.zeros(target * 2, dtype=np.int64)
         parents = X_arr[parent_idx]
         crossed = self.sbx_crossover(parents, {"prob": config["sbx_prob"], "eta": config["sbx_eta"]}, rng, xl_arr, xu_arr)
-        offspring = np.asarray(crossed, dtype=np.float64).reshape(target, 2, X_arr.shape[1])[:, 0, :].copy()
+        offspring = crossed.reshape(target, 2, X_arr.shape[1])[:, 0, :].copy()
         self.polynomial_mutation(offspring, {"prob": config["pm_prob"], "eta": config["pm_eta"]}, rng, xl_arr, xu_arr)
         if out is not None:
             out_arr = self._require_float64_c(out, name="out", ndim=2)
@@ -569,7 +580,7 @@ class CppBackend(NumPyKernel):
         }
         generated = fn(X_arr, F_arr, target_offspring, xl_arr, xu_arr, operator_cfg, self._seed(rng), out)
         self._mark("generate_offspring")
-        return np.asarray(generated, dtype=np.float64)
+        return self._require_float64_c(generated, name="generate_offspring output", ndim=2)
 
     def nsga2_evolve(
         self,
@@ -608,7 +619,10 @@ class CppBackend(NumPyKernel):
         self._mark("nsga2_evolve")
         assert fn is not None
         x_new, f_new = fn(X_arr, F_arr, xl_arr, xu_arr, operator_cfg, int(n_gen), self._seed(rng), evaluate_fn)
-        return np.asarray(x_new, dtype=np.float64), np.asarray(f_new, dtype=np.float64)
+        return (
+            self._require_float64_c(x_new, name="nsga2_evolve X", ndim=2),
+            self._require_float64_c(f_new, name="nsga2_evolve F", ndim=2),
+        )
 
 
 __all__ = ["CppBackend"]

@@ -22,7 +22,9 @@ using NDArray2dDConst = nb::ndarray<const double, nb::ndim<2>, nb::c_contig>;
 using NDArray1dDConst = nb::ndarray<const double, nb::ndim<1>, nb::c_contig>;
 using NDArray1dIConst = nb::ndarray<const int64_t, nb::ndim<1>, nb::c_contig>;
 using NDArray2dD = nb::ndarray<double, nb::ndim<2>, nb::c_contig>;
+using NDArray1dD = nb::ndarray<double, nb::ndim<1>, nb::c_contig>;
 using NDArray1dI = nb::ndarray<int64_t, nb::ndim<1>, nb::c_contig>;
+using NDArray2dB = nb::ndarray<bool, nb::ndim<2>, nb::c_contig>;
 using Fronts = std::vector<std::vector<size_t>>;
 
 namespace {
@@ -41,10 +43,29 @@ inline nb::object make_float64_array_2d(nb::handle np, const std::vector<double>
     return arr_obj;
 }
 
+inline nb::object make_float64_array_1d(nb::handle np, const std::vector<double>& values) {
+    nb::object arr_obj = np.attr("empty")(values.size(), "float64");
+    auto arr = nb::cast<NDArray1dD>(arr_obj);
+    std::copy(values.begin(), values.end(), arr.data());
+    return arr_obj;
+}
+
 inline nb::object make_int64_array_1d(nb::handle np, const std::vector<int64_t>& values) {
     nb::object arr_obj = np.attr("empty")(values.size(), "int64");
     auto arr = nb::cast<NDArray1dI>(arr_obj);
     std::copy(values.begin(), values.end(), arr.data());
+    return arr_obj;
+}
+
+inline nb::object make_bool_array_2d(nb::handle np, const std::vector<uint8_t>& flat, size_t rows, size_t cols) {
+    if (flat.size() != rows * cols) {
+        throw std::runtime_error("internal error: flat buffer size mismatch for bool array.");
+    }
+    nb::object arr_obj = np.attr("empty")(nb::make_tuple(rows, cols), np.attr("bool_"));
+    auto arr = nb::cast<NDArray2dB>(arr_obj);
+    for (size_t i = 0; i < flat.size(); ++i) {
+        arr.data()[i] = (flat[i] != 0);
+    }
     return arr_obj;
 }
 
@@ -1387,13 +1408,7 @@ NB_MODULE(_core, m) {
             const auto out = sbx_crossover_impl(X_parents.data(), n_parents, n_var, prob, eta, lower, upper, seed, prob_var);
 
             const size_t n_out = (n_parents % 2 == 0) ? n_parents : (n_parents + 1);
-            std::vector<std::vector<double>> arr(n_out, std::vector<double>(n_var, 0.0));
-            for (size_t i = 0; i < n_out; ++i) {
-                for (size_t j = 0; j < n_var; ++j) {
-                    arr[i][j] = out[i * n_var + j];
-                }
-            }
-            return arr;
+            return make_float64_array_2d(np_module(), out, n_out, n_var);
         },
         nb::arg("X_parents"),
         nb::arg("prob"),
@@ -1413,13 +1428,7 @@ NB_MODULE(_core, m) {
             const auto out = polynomial_mutation_impl(X.data(), n_ind, n_var, prob, eta, lower, upper, seed);
             (void)in_place;
 
-            std::vector<std::vector<double>> arr(n_ind, std::vector<double>(n_var, 0.0));
-            for (size_t i = 0; i < n_ind; ++i) {
-                for (size_t j = 0; j < n_var; ++j) {
-                    arr[i][j] = out[i * n_var + j];
-                }
-            }
-            return arr;
+            return make_float64_array_2d(np_module(), out, n_ind, n_var);
         },
         nb::arg("X"),
         nb::arg("prob"),
@@ -1849,13 +1858,7 @@ NB_MODULE(_core, m) {
 
     m.def("dominance_matrix", [](NDArray2dDConst F) {
         const auto dom = dominance_matrix_impl(F.data(), F.shape(0), F.shape(1));
-        std::vector<std::vector<uint8_t>> out(F.shape(0), std::vector<uint8_t>(F.shape(0), 0));
-        for (size_t i = 0; i < F.shape(0); ++i) {
-            for (size_t j = 0; j < F.shape(0); ++j) {
-                out[i][j] = dom[i * F.shape(0) + j];
-            }
-        }
-        return out;
+        return make_bool_array_2d(np_module(), dom, F.shape(0), F.shape(0));
     });
 
     m.def(
@@ -1881,14 +1884,8 @@ NB_MODULE(_core, m) {
                 k = nb::cast<int>(k_obj);
             }
             auto [fitness, dist] = spea2_fitness_impl(F.data(), n, n_obj, dom.data(), k);
-
-            std::vector<std::vector<double>> dist2d(n, std::vector<double>(n, 0.0));
-            for (size_t i = 0; i < n; ++i) {
-                for (size_t j = 0; j < n; ++j) {
-                    dist2d[i][j] = dist[i * n + j];
-                }
-            }
-            return nb::make_tuple(fitness, dist2d);
+            nb::object np = np_module();
+            return nb::make_tuple(make_float64_array_1d(np, fitness), make_float64_array_2d(np, dist, n, n));
         },
         nb::arg("F"),
         nb::arg("dom") = nb::none(),
@@ -1941,13 +1938,7 @@ NB_MODULE(_core, m) {
             } else {
                 flat = epsilon_indicator_impl(F.data(), n, n_obj);
             }
-            std::vector<std::vector<double>> out(n, std::vector<double>(n, 0.0));
-            for (size_t i = 0; i < n; ++i) {
-                for (size_t j = 0; j < n; ++j) {
-                    out[i][j] = flat[i * n + j];
-                }
-            }
-            return out;
+            return make_float64_array_2d(np_module(), flat, n, n);
         },
         nb::arg("F"),
         nb::arg("reference_point"),

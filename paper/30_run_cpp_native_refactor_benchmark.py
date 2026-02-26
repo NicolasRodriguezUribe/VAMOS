@@ -15,8 +15,9 @@ Environment variables:
   - VAMOS_CPP_BENCH_ALGORITHMS: comma list (default: nsgaii,smsemoa,spea2)
   - VAMOS_CPP_BENCH_PROBLEM: problem name (default: zdt1)
   - VAMOS_CPP_BENCH_CASES: e<evals>_p<pop>;... (default: e20000_p100;e50000_p500)
-  - VAMOS_CPP_BENCH_SEEDS_SMALL: comma seeds for first case (default: 11,22,33)
-  - VAMOS_CPP_BENCH_SEEDS_LARGE: comma seeds for second case (default: 1,2,3)
+  - VAMOS_CPP_BENCH_SEEDS: default comma seeds for all cases (default: 1..10)
+  - VAMOS_CPP_BENCH_SEEDS_SMALL: optional override for first case
+  - VAMOS_CPP_BENCH_SEEDS_LARGE: optional override for second case
   - VAMOS_CPP_BENCH_OUTPUT_DIR: output dir
       (default: results/cpp_native_refactor_<phase>)
   - VAMOS_CPP_BENCH_BASELINE_SUMMARY: baseline summary for comparison
@@ -96,8 +97,10 @@ def _resolve_cases() -> tuple[BenchCase, ...]:
     raw_cases = os.environ.get("VAMOS_CPP_BENCH_CASES", "e20000_p100;e50000_p500")
     parsed_cases = _parse_case_list(raw_cases)
 
-    seeds_small = _parse_int_list(os.environ.get("VAMOS_CPP_BENCH_SEEDS_SMALL", "11,22,33"))
-    seeds_large = _parse_int_list(os.environ.get("VAMOS_CPP_BENCH_SEEDS_LARGE", "1,2,3"))
+    default_seeds = _parse_int_list(os.environ.get("VAMOS_CPP_BENCH_SEEDS", "1,2,3,4,5,6,7,8,9,10"))
+    default_seed_csv = ",".join(str(seed) for seed in default_seeds)
+    seeds_small = _parse_int_list(os.environ.get("VAMOS_CPP_BENCH_SEEDS_SMALL", default_seed_csv))
+    seeds_large = _parse_int_list(os.environ.get("VAMOS_CPP_BENCH_SEEDS_LARGE", default_seed_csv))
     default_by_index = {0: seeds_small, 1: seeds_large}
 
     cases: list[BenchCase] = []
@@ -138,6 +141,12 @@ def _benchmark_one_case(algorithm: str, problem: str, case: BenchCase) -> dict[s
         start = time.perf_counter()
         optimize(**kwargs)
         times.append(time.perf_counter() - start)
+    if len(times) == 1:
+        p90_seconds = times[0]
+        stdev_seconds = 0.0
+    else:
+        p90_seconds = statistics.quantiles(times, n=10, method="inclusive")[8]
+        stdev_seconds = statistics.stdev(times)
     return {
         "algorithm": algorithm,
         "problem": problem,
@@ -146,6 +155,8 @@ def _benchmark_one_case(algorithm: str, problem: str, case: BenchCase) -> dict[s
         "seeds": list(case.seeds),
         "times_seconds": times,
         "median_seconds": statistics.median(times),
+        "p90_seconds": p90_seconds,
+        "stdev_seconds": stdev_seconds,
         "mean_seconds": statistics.mean(times),
     }
 
@@ -190,6 +201,10 @@ def _make_comparison(
             "after_median_seconds": after_median,
             "speedup_x": base_median / after_median,
             "runtime_reduction_percent": (base_median - after_median) / base_median * 100.0 if base_median > 0.0 else 0.0,
+            "baseline_p90_seconds": float(baseline_summary[key].get("p90_seconds", baseline_summary[key]["median_seconds"])),
+            "after_p90_seconds": float(after_payload.get("p90_seconds", after_payload["median_seconds"])),
+            "baseline_stdev_seconds": float(baseline_summary[key].get("stdev_seconds", 0.0)),
+            "after_stdev_seconds": float(after_payload.get("stdev_seconds", 0.0)),
         }
     if comparison:
         output_path.write_text(json.dumps(comparison, indent=2), encoding="utf-8")

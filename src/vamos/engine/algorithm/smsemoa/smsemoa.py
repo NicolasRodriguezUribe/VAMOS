@@ -249,6 +249,14 @@ class SMSEMOA:
                 return False
             return True
 
+        def _fused_out_buffer() -> np.ndarray:
+            n_var = st.X.shape[1]
+            out = st._fused_child
+            if out is None or out.shape != (1, n_var) or out.dtype != np.float64 or not out.flags.c_contiguous:
+                out = np.empty((1, n_var), dtype=np.float64)
+                st._fused_child = out
+            return out
+
         sel_cfg = self.cfg.get("selection", ("random", {}))
         if isinstance(sel_cfg, tuple):
             sel_method, _ = sel_cfg
@@ -269,6 +277,7 @@ class SMSEMOA:
             }
             with _measure("generate_offspring"):
                 smsemoa_fn = getattr(self.kernel, "smsemoa_generate_offspring", None)
+                out = _fused_out_buffer()
                 if callable(smsemoa_fn):
                     child = smsemoa_fn(
                         st.X,
@@ -279,10 +288,20 @@ class SMSEMOA:
                         st.rng,
                         st.xl,
                         st.xu,
+                        out=out,
                     )
                 else:
                     params["tournament_pressure"] = int(st.pressure)
-                    child = self.kernel.generate_offspring(st.X, st.F, params, st.rng, st.xl, st.xu, n_offspring=1)
+                    child = self.kernel.generate_offspring(
+                        st.X,
+                        st.F,
+                        params,
+                        st.rng,
+                        st.xl,
+                        st.xu,
+                        n_offspring=1,
+                        out=out,
+                    )
             child_arr = np.asarray(child, dtype=float)
             if child_arr.ndim == 1:
                 child_arr = child_arr.reshape(1, -1)

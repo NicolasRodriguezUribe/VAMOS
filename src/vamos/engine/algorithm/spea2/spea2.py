@@ -294,6 +294,14 @@ class SPEA2:
                 return False
             return True
 
+        def _fused_out_buffer() -> np.ndarray:
+            n_var = st.env_X.shape[1]
+            out = st._fused_offspring
+            if out is None or out.shape != (n_pairs, n_var) or out.dtype != np.float64 or not out.flags.c_contiguous:
+                out = np.empty((n_pairs, n_var), dtype=np.float64)
+                st._fused_offspring = out
+            return out
+
         if _can_use_fused():
             _, cross_params = _cfg_pair("crossover")
             _, mut_params = _cfg_pair("mutation")
@@ -313,6 +321,7 @@ class SPEA2:
                     st.rng,
                     st.xl,
                     st.xu,
+                    out=_fused_out_buffer(),
                 )
             offspring_X = np.asarray(offspring_X, dtype=float)
             if offspring_X.shape[0] > n_pairs:
