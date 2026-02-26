@@ -80,6 +80,7 @@ from vamos.engine.algorithm.config import NSGAIIConfig
 from vamos.foundation.quality_indicators.hypervolume import hypervolume
 from vamos.foundation.quality_indicators.pareto import pareto_filter
 from vamos.foundation.problem.registry import make_problem_selection
+from vamos.resources import reference_front_path
 
 from progress_utils import ProgressBar, joblib_progress
 
@@ -263,7 +264,12 @@ CROSSOVER_PROB = 1.0
 CROSSOVER_ETA = 20.0
 MUTATION_ETA = 20.0
 
-REFERENCE_FRONTS_DIR = ROOT_DIR / "src" / "vamos" / "foundation" / "data" / "reference_fronts"
+REFERENCE_FRONTS_DIR = Path(
+    os.environ.get(
+        "VAMOS_REFERENCE_FRONTS_DIR",
+        str(ROOT_DIR / "src" / "vamos" / "resources" / "reference_fronts"),
+    )
+)
 REF_EPS = 1e-6
 
 
@@ -348,14 +354,10 @@ def _subsample_front(front: np.ndarray, max_points: int) -> np.ndarray:
 
 def _load_reference_front(problem_name: str) -> np.ndarray:
     name = problem_name.lower()
-    path = REFERENCE_FRONTS_DIR / f"{name}.csv"
-    if not path.is_file():
-        # Try uppercase variant (e.g. ZDT1.csv)
-        path_upper = REFERENCE_FRONTS_DIR / f"{name.upper()}.csv"
-        if path_upper.is_file():
-            path = path_upper
-        else:
-            raise FileNotFoundError(f"Missing reference front for '{name}': {path}")
+    try:
+        path = reference_front_path(name)
+    except ValueError as exc:
+        raise FileNotFoundError(f"Missing reference front for '{name}'.") from exc
     return np.loadtxt(path, delimiter=",")
 
 
@@ -1004,7 +1006,11 @@ def run_experiment() -> None:
 
     # --- Verify reference fronts ---
     def _has_ref_front(name: str) -> bool:
-        return (REFERENCE_FRONTS_DIR / f"{name}.csv").is_file() or (REFERENCE_FRONTS_DIR / f"{name.upper()}.csv").is_file()
+        try:
+            _ = reference_front_path(name)
+            return True
+        except ValueError:
+            return False
     missing = [p for p in problems if not _has_ref_front(p)]
     if missing:
         raise FileNotFoundError(

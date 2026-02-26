@@ -190,10 +190,10 @@ def run_pymoo_nsgaiii(problem_name: str, seed: int) -> dict | None:
     from pymoo.operators.mutation.pm import PM
 
     n_var, n_obj = get_problem_dims(problem_name)
-    if problem_name.startswith("wfg"):
-        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
+    if problem_name.startswith("zdt"):
+        pymoo_problem = get_problem(problem_name, n_var=n_var)
     else:
-        pymoo_problem = get_problem(problem_name)
+        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
 
     divisions = 12 if n_obj == 3 else 6
     ref_dirs = get_reference_directions("das-dennis", n_obj, n_partitions=divisions)

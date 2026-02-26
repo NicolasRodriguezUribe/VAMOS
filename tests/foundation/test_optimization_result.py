@@ -280,3 +280,83 @@ class TestOptimizationResultSave:
         assert (out_dir / "FUN.csv").exists()
         assert (out_dir / "X.csv").exists()
         assert (out_dir / "metadata.json").exists()
+
+
+class TestOptimizationResultTopK:
+    """Test top-k ranking/report helpers."""
+
+    def test_top_k_archive_knee(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        F = np.array([[0.3, 0.7], [0.5, 0.5]])
+        archive_F = np.array([[0.1, 0.9], [0.9, 0.1], [0.5, 0.5]])
+        archive_X = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+        result = OptimizationResult({"F": F, "archive": {"F": archive_F, "X": archive_X}})
+
+        top = result.top_k(k=2, source="archive", method="knee", nondominated_only=True)
+
+        assert top["F"].shape == (2, 2)
+        assert top["X"] is not None and top["X"].shape == (2, 2)
+        assert top["indices"].shape == (2,)
+        assert top["scores"].shape == (2,)
+        assert np.all(np.diff(top["scores"]) >= 0.0)
+
+    def test_top_k_population_source(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        F = np.array([[0.3, 0.7], [0.5, 0.5]])
+        pop_F = np.array([[0.8, 0.2], [0.2, 0.8], [0.4, 0.4]])
+        pop_X = np.array([[1, 1], [2, 2], [3, 3]])
+        result = OptimizationResult({"F": F, "population": {"F": pop_F, "X": pop_X}})
+
+        top = result.top_k(k=1, source="population", method="balanced", nondominated_only=False)
+
+        assert top["F"].shape == (1, 2)
+        assert int(top["indices"][0]) in {0, 1, 2}
+        assert top["source"] == "population"
+        assert top["method"] == "balanced"
+
+    def test_top_k_filters_dominated_when_requested(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        # Third point is dominated by first two trade-off points.
+        archive_F = np.array([[0.0, 1.0], [1.0, 0.0], [1.2, 1.2]])
+        result = OptimizationResult({"F": archive_F, "archive": {"F": archive_F, "X": None}})
+
+        top = result.top_k(k=3, source="archive", method="knee", nondominated_only=True)
+
+        assert top["F"].shape[0] == 2
+        assert set(top["indices"].tolist()) == {0, 1}
+
+    def test_top_k_weighted_sum_validation(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        F = np.array([[0.1, 0.9], [0.9, 0.1]])
+        result = OptimizationResult({"F": F})
+
+        with pytest.raises(ValueError, match="weights must be a 1D array"):
+            result.top_k(k=1, source="result", method="weighted_sum", weights=np.array([1.0, 1.0, 1.0]))
+
+    def test_top_k_invalid_source(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        F = np.array([[0.1, 0.9], [0.9, 0.1]])
+        result = OptimizationResult({"F": F})
+
+        with pytest.raises(ValueError, match="source must be one of"):
+            result.top_k(k=1, source="invalid", method="knee")
+
+    def test_top_k_report_rows(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        archive_F = np.array([[0.1, 0.9], [0.9, 0.1], [0.5, 0.5]])
+        archive_X = np.array([[10.0, 11.0], [12.0, 13.0], [14.0, 15.0]])
+        result = OptimizationResult({"F": archive_F, "archive": {"F": archive_F, "X": archive_X}})
+
+        rows = result.top_k_report(k=2, source="archive", method="knee", nondominated_only=False)
+
+        assert len(rows) == 2
+        assert rows[0]["rank"] == 1
+        assert "score" in rows[0]
+        assert "f1" in rows[0] and "f2" in rows[0]
+        assert "x1" in rows[0] and "x2" in rows[0]
