@@ -10,3 +10,12 @@ It provides:
 
 The fallback keeps functionality available when native wheels are unavailable,
 while the C++ extension can progressively replace hot kernels.
+
+## NSGA-II native return contract
+
+For the NSGA-II native path (`vamospp._core`), these functions now return NumPy
+ndarrays directly (C-contiguous `float64` / `int64`), not Python nested lists:
+
+- `generate_offspring`: `ndarray[float64]` with shape `(n_offspring, n_var)`
+- `nsga2_survival`: tuple `(X_new, F_new)` or `(X_new, F_new, indices)`
+- `nsga2_evolve`: tuple `(X_new, F_new)`
