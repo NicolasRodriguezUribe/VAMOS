@@ -28,7 +28,7 @@ def _base_cfg() -> dict[str, object]:
         "pop_size": 12,
         "offspring_size": 12,
         "crossover": ("sbx", {"prob": 0.9, "eta": 15.0}),
-        "mutation": ("pm", {"prob": "1/n", "eta": 20.0}),
+        "mutation": ("polynomial", {"prob": "1/n", "eta": 20.0}),
         "selection": ("tournament", {"pressure": 2}),
     }
 

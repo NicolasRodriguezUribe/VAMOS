@@ -565,7 +565,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     NSGAIIConfig.builder()
                     .pop_size(POP_SIZE)
                     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
                     .selection("tournament")
                 )
                 if ALGORITHM == "nsgaii_ss":
@@ -579,7 +579,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     SMSEMOAConfig.builder()
                     .pop_size(POP_SIZE)
                     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
                     .selection("random")
                     .reference_point(offset=1.0, adaptive=True)
                     .eliminate_duplicates(True)
@@ -595,7 +595,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     .delta(MOEAD_DELTA)
                     .replace_limit(MOEAD_REPLACE_LIMIT)
                     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
                     .aggregation("tchebycheff")
                     .weight_vectors(path=str(MOEAD_WEIGHTS_DIR))
                     .build()
@@ -969,6 +969,7 @@ def run_single_benchmark(problem_name, seed, framework):
             from jmetal.algorithm.multiobjective.moead import MOEAD
             from jmetal.operator.crossover import SBXCrossover
             from jmetal.operator.mutation import PolynomialMutation
+            from jmetal.operator.selection import NaryRandomSolutionSelection
             from jmetal.util.aggregation_function import Tschebycheff
             from jmetal.util.termination_criterion import StoppingByEvaluations
             from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
@@ -1065,7 +1066,19 @@ def run_single_benchmark(problem_name, seed, framework):
                     termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
                 )
             else:
-                algorithm = MOEAD(
+                # jMetalPy's MOEAD.selection() returns 3 parents (for DE crossover).
+                # Subclass to return 2 parents so SBX crossover works (matching VAMOS/pymoo).
+                class _MOEAD_SBX(MOEAD):
+                    def __init__(self, **kwargs):
+                        super().__init__(**kwargs)
+                        self.selection_operator = NaryRandomSolutionSelection(1)
+
+                    def reproduction(self, mating_population):
+                        offspring_population = self.crossover_operator.execute(mating_population)
+                        self.mutation_operator.execute(offspring_population[0])
+                        return offspring_population
+
+                algorithm = _MOEAD_SBX(
                     problem=jmetal_problem,
                     population_size=POP_SIZE,
                     mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),

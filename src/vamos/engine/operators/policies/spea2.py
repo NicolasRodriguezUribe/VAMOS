@@ -70,12 +70,12 @@ def build_variation_operators(
         cross_method = "sbx"
         cross_params = cross_cfg or {}
 
-    mut_cfg = cfg.get("mutation", ("pm", {}))
+    mut_cfg = cfg.get("mutation", ("polynomial", {}))
     if isinstance(mut_cfg, tuple):
         mut_method, mut_params = mut_cfg
         mut_params = dict(mut_params) if mut_params else {}
     else:
-        mut_method = "pm"
+        mut_method = "polynomial"
         mut_params = mut_cfg or {}
 
     cross_method = str(cross_method).lower()

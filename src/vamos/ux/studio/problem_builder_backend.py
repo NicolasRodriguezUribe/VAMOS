@@ -213,6 +213,8 @@ def example_objectives() -> dict[str, dict[str, str]]:
             "n_var": "2",
             "n_obj": "2",
             "category": "blank",
+            "description": "Start from scratch with a minimal template. Define your own objectives using Python code.",
+            "difficulty": "advanced",
         },
     }
 
@@ -229,6 +231,8 @@ def _math_templates() -> dict[str, dict[str, str]]:
             "n_var": "5",
             "n_obj": "2",
             "category": "math",
+            "description": "A classic two-objective benchmark with a convex trade-off curve. Great starting point to see how optimizers find balanced solutions.",
+            "difficulty": "beginner",
         },
         "Schaffer N.1 (concave)": {
             "code": textwrap.dedent("""\
@@ -238,6 +242,8 @@ def _math_templates() -> dict[str, dict[str, str]]:
             "n_var": "1",
             "n_obj": "2",
             "category": "math",
+            "description": "The simplest multi-objective problem: one variable, two objectives. Perfect for understanding what a Pareto front looks like.",
+            "difficulty": "beginner",
         },
         "Fonseca-Fleming": {
             "code": textwrap.dedent("""\
@@ -251,6 +257,8 @@ def _math_templates() -> dict[str, dict[str, str]]:
             "n_var": "3",
             "n_obj": "2",
             "category": "math",
+            "description": "A smooth non-linear benchmark where both objectives conflict symmetrically. Tests how well the optimizer explores the full trade-off.",
+            "difficulty": "intermediate",
         },
         "Tri-objective (DTLZ1-like)": {
             "code": textwrap.dedent("""\
@@ -262,6 +270,8 @@ def _math_templates() -> dict[str, dict[str, str]]:
             "n_var": "5",
             "n_obj": "3",
             "category": "math",
+            "description": "A three-objective problem that produces a triangular Pareto surface. Good for exploring many-objective optimization.",
+            "difficulty": "advanced",
         },
     }
 
@@ -285,6 +295,8 @@ def _domain_templates() -> dict[str, dict[str, str]]:
                 stress = 600.0 / (x[0] * x[1] ** 2 + 1e-6)
                 return [stress - 100.0]"""),
             "n_constraints": "1",
+            "description": "Design a structural beam: minimize material cost while keeping deflection low, with a stress safety constraint.",
+            "difficulty": "intermediate",
         },
         "ML: accuracy vs model size": {
             "code": textwrap.dedent("""\
@@ -299,6 +311,8 @@ def _domain_templates() -> dict[str, dict[str, str]]:
             "n_obj": "2",
             "bounds": "1.0, 10.0\n1.0, 8.0\n0.0, 0.5",
             "category": "ml",
+            "description": "Find the best neural network architecture: maximize accuracy while keeping the model small and efficient.",
+            "difficulty": "intermediate",
         },
         "Scheduling: makespan vs tardiness": {
             "code": textwrap.dedent("""\
@@ -319,6 +333,8 @@ def _domain_templates() -> dict[str, dict[str, str]]:
             "n_obj": "2",
             "bounds": "0.0, 1.0",
             "category": "scheduling",
+            "description": "Schedule jobs to finish as fast as possible while meeting deadlines. A real-world operations research problem.",
+            "difficulty": "advanced",
         },
     }
 

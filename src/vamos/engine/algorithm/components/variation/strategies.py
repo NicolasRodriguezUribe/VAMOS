@@ -218,7 +218,7 @@ class IntegerEncodingStrategy:
         if method == "creep":
             step = int(params.get("step", 1))
             extra: float | int | None = step
-        elif method in {"pm", "polynomial"}:
+        elif method == "polynomial":
             extra = float(params.get("eta", 20.0))
         elif method == "gaussian":
             extra = float(params.get("sigma", 1.0))

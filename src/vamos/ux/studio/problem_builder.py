@@ -1,5 +1,9 @@
 """VAMOS Studio -- Problem Builder page (Streamlit UI layer).
 
+Progressive disclosure design: beginners see templates and a one-click run
+button; intermediate users can edit code and tweak algorithms; advanced users
+access bounds, constraints, population size and seed.
+
 Delegates heavy lifting to ``problem_builder_backend``.
 """
 
@@ -92,6 +96,53 @@ def _render_summary_table(st: Any, F: Any, n_obj: int) -> None:
     st.dataframe(pd.DataFrame(rows).set_index("Objective"), use_container_width=True)
 
 
+def _coerce_bool_widget_value(value: Any, default: bool = False) -> bool:
+    """Normalize Streamlit widget output for tests and mocked render calls."""
+    return value if isinstance(value, bool) else default
+
+
+def _render_template_snapshot(st: Any, template: dict[str, str]) -> None:
+    """Show the most important template facts without exposing code editors."""
+    constraints = int(template.get("n_constraints", "0"))
+    col_var, col_obj, col_con = st.columns(3)
+    with col_var:
+        st.metric("Variables", template["n_var"])
+    with col_obj:
+        st.metric("Objectives", template["n_obj"])
+    with col_con:
+        st.metric("Constraints", str(constraints))
+
+
+def _render_preview_guidance(st: Any, n_obj: int) -> None:
+    """Explain how to read the preview in plain language."""
+    if n_obj == 2:
+        st.info(
+            "How to read this chart: each point is one solution. Points farther down and left are usually better, "
+            "but no single point wins on every goal."
+        )
+    else:
+        st.info(
+            "How to read this preview: Studio is showing a compact view of several goals at once. "
+            "Use the summary table to compare the spread of objective values."
+        )
+
+
+def _render_template_chips(st: Any, template: dict[str, str], *, advanced_mode: bool) -> None:
+    """Show the currently selected template mode and difficulty in a compact strip."""
+    difficulty = template.get("difficulty", "custom").title()
+    category = template.get("category", "general").replace("_", " ").title()
+    mode_label = "Advanced mode enabled" if advanced_mode else "Beginner mode enabled"
+    st.markdown(
+        '<div class="studio-chip-row">'
+        f'<span class="studio-chip">{mode_label}</span>'
+        f'<span class="studio-chip">{category} template</span>'
+        f'<span class="studio-chip">{difficulty} difficulty</span>'
+        '<span class="studio-chip">NSGA-II defaults ready</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+
 # ------------------------------------------------------------------
 # Constraint builder UI
 # ------------------------------------------------------------------
@@ -138,6 +189,33 @@ def _render_constraint_section(st: Any, template: dict[str, str]) -> tuple[str, 
 
 
 # ------------------------------------------------------------------
+# Algorithm labels (friendly for all levels)
+# ------------------------------------------------------------------
+
+_ALGO_LABELS = {
+    "nsgaii": "NSGA-II (Recommended)",
+    "moead": "MOEA/D",
+    "spea2": "SPEA2",
+    "smsemoa": "SMS-EMOA",
+    "nsgaiii": "NSGA-III",
+    "ibea": "IBEA",
+    "agemoea": "AGE-MOEA",
+    "rvea": "RVEA",
+}
+
+_ALGO_HELP = {
+    "nsgaii": "General-purpose, works well on most problems",
+    "moead": "Decomposes the problem into scalar sub-problems",
+    "spea2": "Maintains strong diversity among solutions",
+    "smsemoa": "Driven by hypervolume indicator quality",
+    "nsgaiii": "Designed for problems with 3+ objectives",
+    "ibea": "Indicator-based evolutionary algorithm",
+    "agemoea": "Uses geometry to estimate the Pareto front shape",
+    "rvea": "Guided by reference vectors for many objectives",
+}
+
+
+# ------------------------------------------------------------------
 # Main Streamlit entry
 # ------------------------------------------------------------------
 
@@ -145,10 +223,44 @@ def _render_constraint_section(st: Any, template: dict[str, str]) -> tuple[str, 
 def render_problem_builder(st: Any, px: Any) -> None:
     """Render the Problem Builder tab inside VAMOS Studio."""
     st.header("Problem Builder")
-    st.caption(
-        "Define your objectives, adjust parameters, and see the Pareto front update live.  When happy, export a ready-to-run Python script."
+    st.markdown(
+        '<div class="studio-section-intro">'
+        '<span class="studio-kicker">Builder</span>'
+        "<h3>Shape a problem before you worry about optimization jargon</h3>"
+        "<p>Start with a ready-made template, inspect its defaults, and only open the deeper controls if you need to customize the mechanics.</p>"
+        "</div>",
+        unsafe_allow_html=True,
     )
+    st.caption(
+        "Step 1: choose a template. Step 2: run a preview. Step 3: read the trade-off chart. "
+        "Code editors stay hidden until you switch on Advanced mode."
+    )
+    default_advanced = bool(st.session_state.get("studio_advanced_mode", False))
+    toggle_widget = getattr(st, "toggle", None)
+    if callable(toggle_widget):
+        advanced_mode = _coerce_bool_widget_value(
+            toggle_widget(
+                "Advanced mode",
+                value=default_advanced,
+                help="Show code editors, algorithm selection, and expert settings.",
+            ),
+            default=default_advanced,
+        )
+    else:
+        advanced_mode = _coerce_bool_widget_value(
+            st.checkbox(
+                "Advanced mode",
+                value=default_advanced,
+                help="Show code editors, algorithm selection, and expert settings.",
+            ),
+            default=default_advanced,
+        )
+    st.session_state["studio_advanced_mode"] = advanced_mode
 
+    if not advanced_mode:
+        st.info("Beginner mode is active. Studio will use the template defaults and the recommended NSGA-II setup.")
+
+    st.markdown("### Step 1. Choose a starting point")
     # ---- template selector ----
     examples = example_objectives()
     col_cat, col_tmpl = st.columns([2, 2])
@@ -178,143 +290,197 @@ def render_problem_builder(st: Any, px: Any) -> None:
         )
     template = filtered[template_name]
 
-    # ---- form columns ----
-    left, right = st.columns([1, 1], gap="large")
+    # ---- template description (visible to all users) ----
+    description = template.get("description", "")
+    difficulty = template.get("difficulty", "")
+    if description:
+        difficulty_badge = ""
+        if difficulty:
+            colors = {"beginner": "green", "intermediate": "orange", "advanced": "red"}
+            color = colors.get(difficulty, "gray")
+            difficulty_badge = f' <span style="background:{color};color:white;padding:2px 8px;border-radius:10px;font-size:0.75rem;margin-left:8px">{difficulty.title()}</span>'
+        st.markdown(f"{description}{difficulty_badge}", unsafe_allow_html=True)
+    _render_template_chips(st, template, advanced_mode=advanced_mode)
+    _render_template_snapshot(st, template)
 
-    with left:
-        st.subheader("Problem definition")
-        problem_name = st.text_input(
-            "Problem name",
-            value="my_problem",
-            help="Human-readable label for logs and exported scripts.",
+    st.markdown("### Step 2. Run a quick preview")
+    st.markdown(
+        '<div class="studio-data-strip">'
+        "<p>Preview runs use a small, fast budget so you can learn the shape of the trade-off before committing to a larger experiment.</p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    # ---- Quick run with defaults (one-click for beginners) ----
+    quick_run = st.button("Run preview", type="primary", use_container_width=True)
+
+    # ---- Compile template defaults (needed for both quick run and custom run) ----
+    default_bounds = template.get("bounds", "0.0, 1.0")
+    code = template["code"]
+    n_var = int(template["n_var"])
+    n_obj = int(template["n_obj"])
+    algorithm = "nsgaii"
+    budget = 2000
+    pop_size = 50
+    seed = 42
+    problem_name = "my_problem"
+    constraint_code = ""
+    n_constraints = 0
+    constraint_fn: Any = None
+    constraint_error: str | None = None
+
+    # ---- Customization sections (progressive disclosure) ----
+    if advanced_mode:
+        # Problem definition
+        with st.expander("Edit problem definition", expanded=False):
+            problem_name = st.text_input(
+                "Problem name",
+                value="my_problem",
+                help="Human-readable label for logs and exported scripts.",
+            )
+            col_nvar, col_nobj = st.columns(2)
+            with col_nvar:
+                n_var = st.number_input(
+                    "Decision variables (n_var)",
+                    min_value=1,
+                    max_value=100,
+                    value=int(template["n_var"]),
+                    step=1,
+                    help="How many inputs does your problem have?",
+                )
+            with col_nobj:
+                n_obj = st.number_input(
+                    "Objectives (n_obj)",
+                    min_value=2,
+                    max_value=10,
+                    value=int(template["n_obj"]),
+                    step=1,
+                    help="How many objectives to minimize (must be >= 2).",
+                )
+
+            # Variable bounds
+            bounds_text = st.text_area(
+                "Variable bounds",
+                value=default_bounds,
+                height=68,
+                help="One line applies to ALL variables. Or one 'lower, upper' per variable.",
+            )
+            default_bounds = bounds_text
+
+            st.markdown("**Objective function** (receives `x`, return a list of objectives)")
+            st.caption("Expected format: compute objective values and `return [f0, f1, ...]` with exactly `n_obj` entries.")
+            code = st.text_area(
+                "Objective code",
+                value=template["code"],
+                height=280,
+                help="Write Python code that uses `x` and returns a list of n_obj values.",
+                label_visibility="collapsed",
+            )
+
+            # Constraint builder
+            constraint_code, n_constraints, constraint_fn, constraint_error = _render_constraint_section(st, template)
+
+        # Algorithm selection
+        with st.expander("Choose algorithm", expanded=False):
+            algo_help_text = "\n".join(f"- **{v}**: {_ALGO_HELP[k]}" for k, v in _ALGO_LABELS.items())
+            st.markdown(algo_help_text)
+            algorithm = str(
+                st.selectbox(
+                    "Algorithm",
+                    list(_ALGO_LABELS.keys()),
+                    index=0,
+                    format_func=lambda key: _ALGO_LABELS.get(key, key),
+                    help="Pick a MOEA. Start with NSGA-II unless you have a specific reason.",
+                )
+            )
+
+        # Advanced settings
+        with st.expander("Advanced settings", expanded=False):
+            col_budget, col_pop = st.columns(2)
+            with col_budget:
+                budget = int(
+                    st.number_input(
+                        "Max evaluations",
+                        min_value=200,
+                        max_value=50000,
+                        value=2000,
+                        step=500,
+                        help="Higher = better results, slower preview.",
+                    )
+                )
+            with col_pop:
+                pop_size = int(
+                    st.number_input(
+                        "Population size",
+                        min_value=10,
+                        max_value=500,
+                        value=50,
+                        step=10,
+                        help="Number of candidate solutions per generation.",
+                    )
+                )
+            seed = int(st.number_input("Seed", min_value=0, value=42, step=1, help="Random seed for reproducibility."))
+    else:
+        st.caption("Using template defaults. Turn on Advanced mode to edit code, constraints, algorithm, or optimization settings.")
+
+    # ---- Validation ----
+    bounds_result = parse_bounds_text(default_bounds, int(n_var))
+    if isinstance(bounds_result, str):
+        st.error(f"Bounds error: {bounds_result}")
+        bounds_ok: list[tuple[float, float]] = []
+    else:
+        bounds_ok = bounds_result
+
+    compile_error: str | None = None
+    fn: Any = None
+    if code.strip():
+        try:
+            fn = compile_objective_function(code)
+        except SyntaxError as exc:
+            compile_error = f"Syntax error on line {exc.lineno}: {exc.msg}"
+        except Exception as exc:
+            compile_error = str(exc)
+    if compile_error:
+        st.error(f"Code error: {compile_error}")
+
+    has_constraint_error = constraint_error is not None
+
+    # ---- Live preview ----
+    st.markdown("### Step 3. Read the result")
+    if not quick_run:
+        st.markdown(
+            '<div class="studio-data-strip">'
+            "<p>Your preview chart and summary table will appear here after you click <strong>Run preview</strong>.</p>"
+            "</div>",
+            unsafe_allow_html=True,
         )
-        col_nvar, col_nobj = st.columns(2)
-        with col_nvar:
-            n_var = st.number_input(
-                "Decision variables (n_var)",
-                min_value=1,
-                max_value=100,
-                value=int(template["n_var"]),
-                step=1,
-                help="How many inputs does your problem have?",
-            )
-        with col_nobj:
-            n_obj = st.number_input(
-                "Objectives (n_obj)",
-                min_value=2,
-                max_value=10,
-                value=int(template["n_obj"]),
-                step=1,
-                help="How many objectives to minimize (must be >= 2).",
-            )
-        default_bounds = template.get("bounds", "0.0, 1.0")
-        bounds_text = st.text_area(
-            "Variable bounds",
-            value=default_bounds,
-            height=68,
-            help="One line applies to ALL variables.  Or one 'lower, upper' per variable.",
+    if quick_run and fn is not None and bounds_ok and not compile_error and not has_constraint_error:
+        _run_and_show_preview(
+            st,
+            px,
+            fn=fn,
+            objective_code=code,
+            constraint_code=constraint_code,
+            problem_name=problem_name,
+            n_var=int(n_var),
+            n_obj=int(n_obj),
+            bounds_ok=bounds_ok,
+            algorithm=algorithm,
+            budget=budget,
+            pop_size=pop_size,
+            seed=seed,
+            constraints=constraint_fn,
+            n_constraints=n_constraints,
         )
-        st.markdown("**Objective function** (receives `x`, return a list of objectives)")
-        st.caption("Expected format: compute objective values and `return [f0, f1, ...]` with exactly `n_obj` entries.")
-        code = st.text_area(
-            "Objective code",
-            value=template["code"],
-            height=280,
-            help="Write Python code that uses `x` and returns a list of n_obj values.",
-            label_visibility="collapsed",
-        )
-
-        # Constraint builder
-        constraint_code, n_constraints, constraint_fn, constraint_error = _render_constraint_section(st, template)
-
-    with right:
-        st.subheader("Optimization settings")
-        col_algo, col_seed = st.columns(2)
-        with col_algo:
-            algo_labels = {
-                "nsgaii": "NSGA-II (general purpose, recommended)",
-                "moead": "MOEA/D (good for decomposition-style searches)",
-                "spea2": "SPEA2 (strong diversity maintenance)",
-                "smsemoa": "SMS-EMOA (hypervolume-driven selection)",
-                "nsgaiii": "NSGA-III (many-objective scenarios)",
-                "ibea": "IBEA (indicator-based)",
-                "agemoea": "AGE-MOEA (geometry-aware)",
-                "rvea": "RVEA (reference-vector guided)",
-            }
-            algorithm = st.selectbox(
-                "Algorithm",
-                list(algo_labels.keys()),
-                index=0,
-                format_func=lambda key: algo_labels.get(key, key),
-                help="Pick a MOEA for preview runs. Start with NSGA-II unless you have a specific reason to choose another.",
-            )
-        with col_seed:
-            seed = st.number_input("Seed", min_value=0, value=42, step=1, help="Random seed for reproducibility.")
-        col_budget, col_pop = st.columns(2)
-        with col_budget:
-            budget = st.number_input(
-                "Max evaluations",
-                min_value=200,
-                max_value=50000,
-                value=2000,
-                step=500,
-                help="Higher = better results, slower preview.",
-            )
-        with col_pop:
-            pop_size = st.number_input(
-                "Population size",
-                min_value=10,
-                max_value=500,
-                value=50,
-                step=10,
-                help="Number of solutions per generation.",
-            )
-        run_clicked = st.button("Run preview", type="primary", use_container_width=True)
-
-        # Validation
-        bounds_result = parse_bounds_text(bounds_text, int(n_var))
-        if isinstance(bounds_result, str):
-            st.error(f"Bounds error: {bounds_result}")
-            bounds_ok: list[tuple[float, float]] = []
-        else:
-            bounds_ok = bounds_result
-
-        compile_error: str | None = None
-        fn: Any = None
-        if code.strip():
-            try:
-                fn = compile_objective_function(code)
-            except SyntaxError as exc:
-                compile_error = f"Syntax error on line {exc.lineno}: {exc.msg}"
-            except Exception as exc:
-                compile_error = str(exc)
-        if compile_error:
-            st.error(f"Code error: {compile_error}")
-
-        has_constraint_error = constraint_error is not None
-        # Live preview
-        if run_clicked and fn is not None and bounds_ok and not compile_error and not has_constraint_error:
-            _run_and_show_preview(
-                st,
-                px,
-                fn=fn,
-                objective_code=code,
-                constraint_code=constraint_code,
-                problem_name=problem_name,
-                n_var=int(n_var),
-                n_obj=int(n_obj),
-                bounds_ok=bounds_ok,
-                algorithm=str(algorithm),
-                budget=int(budget),
-                pop_size=int(pop_size),
-                seed=int(seed),
-                constraints=constraint_fn,
-                n_constraints=n_constraints,
-            )
 
     # ---- export ----
     st.divider()
     st.subheader("Export")
+    st.markdown(
+        '<div class="studio-data-strip">'
+        "<p>When the template or custom code is valid, Studio can turn the current setup into a standalone Python script.</p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
     if fn is not None and bounds_ok and not compile_error and not has_constraint_error:
         script = generate_script(
             code,
@@ -322,8 +488,8 @@ def render_problem_builder(st: Any, px: Any) -> None:
             n_var=int(n_var),
             n_obj=int(n_obj),
             bounds=bounds_ok,
-            algorithm=str(algorithm),
-            budget=int(budget),
+            algorithm=algorithm,
+            budget=budget,
             constraint_code=constraint_code,
             n_constraints=n_constraints,
         )
@@ -334,8 +500,9 @@ def render_problem_builder(st: Any, px: Any) -> None:
             mime="text/x-python",
             help="Download a standalone .py file you can run with `python <file>.py`.",
         )
-        with st.expander("Preview generated script"):
-            st.code(script, language="python")
+        if advanced_mode:
+            with st.expander("Preview generated script"):
+                st.code(script, language="python")
     else:
         if not code.strip():
             st.info("Write your objective function above to enable export.")
@@ -384,6 +551,7 @@ def _run_and_show_preview(
             )
         F = preview["F"]
         st.success(f"Found {len(F)} solutions in {preview['elapsed_ms']:.0f} ms")
+        _render_preview_guidance(st, n_obj)
         _render_preview_plot(st, px, F, n_obj, problem_name)
         _render_summary_table(st, F, n_obj)
     except TimeoutError as exc:

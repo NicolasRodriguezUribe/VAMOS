@@ -18,7 +18,7 @@ def test_available_mutation_methods_real():
     assert isinstance(methods, tuple)
     assert len(methods) > 0
     # Check for known real mutations
-    assert "pm" in methods
+    assert "polynomial" in methods
     assert "gaussian" in methods
     # Should not contain binary/perm operators
     assert "bit_flip" not in methods
@@ -35,7 +35,7 @@ def test_available_crossover_methods_binary():
 def test_available_mutation_methods_binary():
     methods = available_mutation_methods("binary")
     assert "bit_flip" in methods
-    assert "pm" not in methods
+    assert "polynomial" not in methods
 
 
 def test_available_crossover_methods_permutation():

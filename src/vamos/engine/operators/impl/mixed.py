@@ -464,9 +464,9 @@ def mixed_mutation(
 
     Optional segment-level overrides in ``spec``:
       - ``*_mutation_prob`` per segment (perm/real/int/cat)
-      - ``int_mutation`` in {"reset", "creep", "pm", "polynomial"}
+      - ``int_mutation`` in {"reset", "creep", "polynomial"}
       - ``int_mutation_step`` for creep, ``int_mutation_eta`` for polynomial
-      - ``real_mutation`` in {"gaussian", "reset", "pm", "polynomial"}
+      - ``real_mutation`` in {"gaussian", "reset", "polynomial"}
       - ``real_mutation_sigma`` or ``real_mutation_sigma_factor``
       - ``cat_mutation`` in {"reset"}
     """
@@ -516,13 +516,13 @@ def mixed_mutation(
         spec,
         "real_mutation",
         "gaussian",
-        allowed={"gaussian", "reset", "uniform_reset", "random_reset", "pm", "polynomial"},
+        allowed={"gaussian", "reset", "uniform_reset", "random_reset", "polynomial"},
     )
     int_method = _resolve_choice(
         spec,
         "int_mutation",
         "reset",
-        allowed={"reset", "random_reset", "creep", "pm", "polynomial"},
+        allowed={"reset", "random_reset", "creep", "polynomial"},
     )
     cat_method = _resolve_choice(
         spec,
@@ -561,7 +561,7 @@ def mixed_mutation(
             mask = rng.random((X.shape[0], real_idx.size)) <= real_prob
             resampled = rng.uniform(real_lower, real_upper, size=(X.shape[0], real_idx.size))
             X_real[mask] = resampled[mask]
-        elif real_method in {"pm", "polynomial"}:
+        elif real_method == "polynomial":
             eta = float(spec.get("real_mutation_eta", 20.0))
             if eta <= 0.0:
                 raise ValueError("real_mutation_eta must be > 0.")
@@ -603,7 +603,7 @@ def mixed_mutation(
             if step <= 0:
                 raise ValueError("int_mutation_step must be >= 1.")
             creep_mutation(X_int, int_prob, step, int_lower, int_upper, rng)
-        elif int_method in {"pm", "polynomial"}:
+        elif int_method == "polynomial":
             eta = float(spec.get("int_mutation_eta", 20.0))
             if eta <= 0.0:
                 raise ValueError("int_mutation_eta must be > 0.")

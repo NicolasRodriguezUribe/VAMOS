@@ -28,7 +28,7 @@ def test_dtlz2_nsgaii_convergence():
         NSGAIIIConfig.builder()
         .pop_size(pop_size)
         .crossover("sbx", prob=0.9, eta=30.0)
-        .mutation("pm", prob=1.0 / 12, eta=20.0)
+        .mutation("polynomial", prob=1.0 / 12, eta=20.0)
         .selection("random")
         .reference_directions(divisions=12)
         .build()

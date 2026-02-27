@@ -53,7 +53,7 @@ def _build_internal_algorithm(engine: str = "numpy") -> tuple[NSGAII, dict[str, 
         NSGAIIConfig.builder()
         .pop_size(defaults.population_size)
         .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("pm", prob="1/n", eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
         .selection("tournament", size=2)
     ).build()
     cfg_dict: dict[str, Any] = dict(cfg_data.to_dict())
@@ -67,7 +67,7 @@ def _prepare_params(cfg_dict: dict[str, Any], n_var: int) -> tuple[dict[str, Any
     cross_params = dict(cross_params)
 
     mut_method, mut_params = cfg_dict["mutation"]
-    assert mut_method == "pm", "Only polynomial mutation is supported in diagnostics."
+    assert mut_method == "polynomial", "Only polynomial mutation is supported in diagnostics."
     mut_params = dict(mut_params)
     if mut_params.get("prob") == "1/n":
         mut_params["prob"] = 1.0 / n_var

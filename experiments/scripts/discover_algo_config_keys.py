@@ -55,7 +55,7 @@ def main() -> int:
     # Use a known-good operator block for NSGA-II only (others we let defaults drive)
     nsgaii_block = {
         "crossover": {"method": "sbx", "prob": 0.9, "eta": 20},
-        "mutation": {"method": "pm", "prob": "1/n", "eta": 20},
+        "mutation": {"method": "polynomial", "prob": "1/n", "eta": 20},
         "selection": {"method": "tournament", "pressure": 2},
     }
 

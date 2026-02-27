@@ -187,7 +187,7 @@ class TestFirstLaunchWalkthrough:
         _render_first_launch_walkthrough(st)
         st.markdown.assert_called_once()
         html = st.markdown.call_args[0][0]
-        assert "First time here" in html
+        assert "how to get started" in html
 
     def test_walkthrough_hidden_after_dismiss(self) -> None:
         from vamos.ux.studio.app import _render_first_launch_walkthrough

@@ -18,7 +18,7 @@ class TestNSGAIIConfigShortcuts:
 
         assert cfg.pop_size == 100
         assert cfg.crossover[0] == "sbx"
-        assert cfg.mutation[0] == "pm"
+        assert cfg.mutation[0] == "polynomial"
         assert cfg.selection[0] == "tournament"
 
     def test_default_with_custom_pop_size(self):
@@ -42,7 +42,7 @@ class TestNSGAIIConfigShortcuts:
 
     def test_builder_defaults_pop_size_and_selection(self):
         """Builder should fill defaults for pop_size and selection if omitted."""
-        cfg = NSGAIIConfig.builder().crossover("sbx", prob=1.0, eta=20.0).mutation("pm", prob=0.1, eta=20.0).build()
+        cfg = NSGAIIConfig.builder().crossover("sbx", prob=1.0, eta=20.0).mutation("polynomial", prob=0.1, eta=20.0).build()
 
         assert cfg.pop_size == 100
         assert cfg.selection[0] == "tournament"
@@ -52,7 +52,7 @@ class TestNSGAIIConfigShortcuts:
         cfg = (
             NSGAIIConfig.builder()
             .crossover("sbx", prob=1.0, eta=20.0)
-            .mutation("pm", prob=0.1, eta=20.0)
+            .mutation("polynomial", prob=0.1, eta=20.0)
             .selection("tournament", size=3)
             .build()
         )

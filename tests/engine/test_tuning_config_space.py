@@ -88,7 +88,7 @@ def test_nsgaii_config_space_builds_and_constructs_config():
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.pop_size > 0
     assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
-    assert cfg.mutation[0] in ("pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform")
+    assert cfg.mutation[0] in ("polynomial", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform")
 
 
 def test_nsgaii_archive_unbounded_disables_archive_params():
@@ -140,7 +140,7 @@ def test_agemoea_config_space_builds_and_constructs_config():
     assert cfg.pop_size > 0
     assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
     assert cfg.mutation[0] in (
-        "pm",
+        "polynomial",
         "linked_polynomial",
         "non_uniform",
         "gaussian",
@@ -160,7 +160,7 @@ def test_rvea_config_space_builds_and_constructs_config():
     assert cfg.n_partitions == int(assignment["n_partitions"])
     assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
     assert cfg.mutation[0] in (
-        "pm",
+        "polynomial",
         "linked_polynomial",
         "non_uniform",
         "gaussian",
@@ -219,7 +219,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_nsgaii_integer_config_space,
             "nsgaii_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "pm", "gaussian", "boundary"},
+            {"reset", "creep", "polynomial", "gaussian", "boundary"},
         ),
         (
             build_moead_binary_config_space,
@@ -231,7 +231,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_moead_integer_config_space,
             "moead_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "pm", "gaussian", "boundary"},
+            {"reset", "creep", "polynomial", "gaussian", "boundary"},
         ),
         (
             build_nsgaiii_binary_config_space,
@@ -243,7 +243,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_nsgaiii_integer_config_space,
             "nsgaiii_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "pm", "gaussian", "boundary"},
+            {"reset", "creep", "polynomial", "gaussian", "boundary"},
         ),
         (
             build_smsemoa_binary_config_space,
@@ -255,7 +255,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_smsemoa_integer_config_space,
             "smsemoa_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "pm", "gaussian", "boundary"},
+            {"reset", "creep", "polynomial", "gaussian", "boundary"},
         ),
         (
             build_ibea_binary_config_space,
@@ -267,7 +267,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_ibea_integer_config_space,
             "ibea_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "pm", "gaussian", "boundary"},
+            {"reset", "creep", "polynomial", "gaussian", "boundary"},
         ),
     ]
 
@@ -300,7 +300,7 @@ def test_new_permutation_binary_integer_builders_construct_configs():
             build_agemoea_integer_config_space,
             "agemoea_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "pm", "gaussian", "boundary"},
+            {"reset", "creep", "polynomial", "gaussian", "boundary"},
             False,
         ),
         (
@@ -321,7 +321,7 @@ def test_new_permutation_binary_integer_builders_construct_configs():
             build_rvea_integer_config_space,
             "rvea_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "pm", "gaussian", "boundary"},
+            {"reset", "creep", "polynomial", "gaussian", "boundary"},
             True,
         ),
         (
@@ -342,7 +342,7 @@ def test_new_permutation_binary_integer_builders_construct_configs():
             build_spea2_integer_config_space,
             "spea2_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "pm", "gaussian", "boundary"},
+            {"reset", "creep", "polynomial", "gaussian", "boundary"},
             False,
         ),
         (

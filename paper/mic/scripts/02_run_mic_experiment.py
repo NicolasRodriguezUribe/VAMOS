@@ -293,23 +293,23 @@ def _operator_pool(n_var: int) -> list[dict[str, Any]]:
     return [
         {   # Arm 0 – exploration (low eta => wide spread)
             "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": 5.0}),
-            "mutation": ("pm", {"prob": mut_prob, "eta": 5.0}),
+            "mutation": ("polynomial", {"prob": mut_prob, "eta": 5.0}),
         },
         {   # Arm 1 – standard NSGA-II default
             "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": CROSSOVER_ETA}),
-            "mutation": ("pm", {"prob": mut_prob, "eta": MUTATION_ETA}),
+            "mutation": ("polynomial", {"prob": mut_prob, "eta": MUTATION_ETA}),
         },
         {   # Arm 2 – exploitation (high eta => children near parents)
             "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": 50.0}),
-            "mutation": ("pm", {"prob": mut_prob, "eta": 50.0}),
+            "mutation": ("polynomial", {"prob": mut_prob, "eta": 50.0}),
         },
         {   # Arm 3 – structural diversity (BLX-alpha + standard PM)
             "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.5, "repair": "random"}),
-            "mutation": ("pm", {"prob": mut_prob, "eta": MUTATION_ETA}),
+            "mutation": ("polynomial", {"prob": mut_prob, "eta": MUTATION_ETA}),
         },
         {   # Arm 4 – DE/rand/1/bin (differential vectors + binomial crossover)
             "crossover": ("de", {"prob": CROSSOVER_PROB, "F": 0.5, "CR": 0.9}),
-            "mutation": ("pm", {"prob": mut_prob, "eta": MUTATION_ETA}),
+            "mutation": ("polynomial", {"prob": mut_prob, "eta": MUTATION_ETA}),
         },
     ]
 
@@ -553,7 +553,7 @@ def build_config(
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-        .mutation("pm", prob=1.0 / max(n_var, 1), eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / max(n_var, 1), eta=MUTATION_ETA)
         .selection("tournament")
     )
     kwargs = spec.aos_kwargs
@@ -763,7 +763,7 @@ def generate_reference_fronts() -> None:
             NSGAIIConfig.builder()
             .pop_size(POP_SIZE)
             .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-            .mutation("pm", prob=1.0 / max(n_var, 1), eta=MUTATION_ETA)
+            .mutation("polynomial", prob=1.0 / max(n_var, 1), eta=MUTATION_ETA)
             .selection("tournament")
             .build()
         )

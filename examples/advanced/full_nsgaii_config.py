@@ -36,7 +36,7 @@ def main() -> None:
         .offspring_size(100)  # Offspring per generation (default: pop_size)
         # ── Operators ────────────────────────────────────────────────
         .crossover("sbx", prob=0.9, eta=20.0)  # Simulated Binary Crossover
-        .mutation("pm", prob="1/n", eta=20.0)  # Polynomial Mutation (auto 1/n_var)
+        .mutation("polynomial", prob="1/n", eta=20.0)  # Polynomial Mutation (auto 1/n_var)
         .selection("tournament", size=2)  # Binary tournament selection
         # ── Initialization ───────────────────────────────────────────
         .initializer("sobol", scramble=True)  # Sobol quasi-random sequence

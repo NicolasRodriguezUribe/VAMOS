@@ -117,7 +117,7 @@ def _extend_real_crossover_params(cross: str, assignment: dict[str, Any], cross_
 
 
 def _extend_mutation_params(mut: str, assignment: dict[str, Any], mut_params: dict[str, Any]) -> None:
-    if mut in {"pm", "polynomial", "linked_polynomial"}:
+    if mut in {"polynomial", "linked_polynomial"}:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     elif mut == "creep":
         mut_params["step"] = int(assignment.get("creep_step", 1))
@@ -329,9 +329,9 @@ def _build_smpso_config(assignment: dict[str, Any]) -> SMPSOConfig:
     builder.c1(float(assignment["c1"]))
     builder.c2(float(assignment["c2"]))
     builder.vmax_fraction(float(assignment["vmax_fraction"]))
-    mut = str(assignment.get("mutation", "pm"))
+    mut = str(assignment.get("mutation", "polynomial"))
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
-    if mut in {"pm", "polynomial"}:
+    if mut == "polynomial":
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     builder.mutation(mut, **mut_params)
     _apply_optional_external_archive(builder, assignment, pop_size)
@@ -350,7 +350,7 @@ def _build_agemoea_config(assignment: dict[str, Any]) -> AGEMOEAConfig:
     _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
 
-    mut = str(assignment.get("mutation", "pm"))
+    mut = str(assignment.get("mutation", "polynomial"))
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
@@ -378,7 +378,7 @@ def _build_rvea_config(assignment: dict[str, Any]) -> RVEAConfig:
     _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
 
-    mut = str(assignment.get("mutation", "pm"))
+    mut = str(assignment.get("mutation", "polynomial"))
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)

@@ -94,7 +94,7 @@ def add_algorithm_arguments(
     parser.add_argument(
         "--nsgaii-mutation",
         choices=(
-            "pm",
+            "polynomial",
             "non_uniform",
             "swap",
             "insert",
@@ -104,8 +104,8 @@ def add_algorithm_arguments(
         ),
         default=_as_str(nsgaii_mutation.get("method")),
         help=(
-            "Mutation operator for NSGA-II. Continuous problems support pm/non_uniform "
-            "(default: pm); permutation problems support swap/insert/scramble/inversion/"
+            "Mutation operator for NSGA-II. Continuous problems support polynomial/non_uniform "
+            "(default: polynomial); permutation problems support swap/insert/scramble/inversion/"
             "displacement (default: swap)."
         ),
     )
@@ -152,7 +152,7 @@ def add_algorithm_arguments(
     )
     parser.add_argument(
         "--moead-mutation",
-        choices=("pm", "bitflip", "reset"),
+        choices=("polynomial", "bitflip", "reset"),
         default=_as_str(moead_mutation.get("method")),
         help="Mutation method for MOEA/D (pm for real, bitflip for binary, reset for integer).",
     )
@@ -197,7 +197,7 @@ def add_algorithm_arguments(
     )
     parser.add_argument(
         "--smsemoa-mutation",
-        choices=("pm", "bitflip", "reset"),
+        choices=("polynomial", "bitflip", "reset"),
         default=_as_str(smsemoa_mutation.get("method")),
         help="Mutation method for SMS-EMOA (pm for real, bitflip for binary, reset for integer).",
     )
@@ -237,7 +237,7 @@ def add_algorithm_arguments(
     )
     parser.add_argument(
         "--nsga3-mutation",
-        choices=("pm", "bitflip", "reset"),
+        choices=("polynomial", "bitflip", "reset"),
         default=_as_str(nsgaiii_mutation.get("method")),
         help="Mutation method for NSGA-III (pm for real, bitflip for binary, reset for integer).",
     )
@@ -283,9 +283,9 @@ def add_algorithm_arguments(
     )
     parser.add_argument(
         "--agemoea-mutation",
-        choices=("pm", "non_uniform"),
+        choices=("polynomial", "non_uniform"),
         default=_as_str(agemoea_mutation.get("method")),
-        help="Mutation method for AGE-MOEA (default: pm).",
+        help="Mutation method for AGE-MOEA (default: polynomial).",
     )
     parser.add_argument(
         "--agemoea-mutation-prob",
@@ -324,9 +324,9 @@ def add_algorithm_arguments(
     )
     parser.add_argument(
         "--rvea-mutation",
-        choices=("pm", "non_uniform"),
+        choices=("polynomial", "non_uniform"),
         default=_as_str(rvea_mutation.get("method")),
-        help="Mutation method for RVEA (default: pm).",
+        help="Mutation method for RVEA (default: polynomial).",
     )
     parser.add_argument(
         "--rvea-mutation-prob",
