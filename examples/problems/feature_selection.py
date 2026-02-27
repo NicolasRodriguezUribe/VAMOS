@@ -24,7 +24,7 @@ def main():
         .pop_size(16)
         .crossover("uniform", prob=0.9)
         .mutation("bitflip", prob="1/n")
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
     result = optimize(

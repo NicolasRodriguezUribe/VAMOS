@@ -180,7 +180,7 @@ cfg = (
     .offspring_size(100)
     .crossover("sbx", prob=1.0, eta=20.0)
     .mutation("pm", prob="1/n", eta=20.0)
-    .selection("tournament", pressure=2)
+    .selection("tournament", size=2)
     .build()
 )
 

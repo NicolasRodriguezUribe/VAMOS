@@ -98,9 +98,12 @@ def initialize_ibea_run(
         G = None
     n_eval = X.shape[0]
 
-    # Selection pressure
+    # Tournament size (legacy alias: pressure)
     sel_method, sel_params = cfg["selection"]
-    pressure = int(sel_params.get("pressure", 2))
+    if sel_method == "tournament":
+        pressure = int(sel_params.get("size", sel_params.get("pressure", 2)))
+    else:
+        pressure = 2
 
     # Build variation pipeline
     variation = build_variation_pipeline(cfg, encoding, n_var, xl, xu, problem)

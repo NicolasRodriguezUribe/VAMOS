@@ -558,7 +558,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     .selection("tournament")
                 )
                 if ALGORITHM == "nsgaii_ss":
-                    builder = builder.steady_state(True).offspring_size(1).replacement_size(1)
+                    builder = builder.offspring_size(1).replacement_size(1)
                 elif ALGORITHM == "nsgaii_archive":
                     builder = builder.external_archive(capacity=None)
                 algo_config = builder.build()

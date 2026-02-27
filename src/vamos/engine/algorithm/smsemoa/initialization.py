@@ -104,9 +104,12 @@ def initialize_smsemoa_run(
         mixed_spec=getattr(problem, "mixed_spec", None),
     )
 
-    # Selection pressure
+    # Tournament size (legacy alias: pressure)
     sel_method, sel_params = config["selection"]
-    pressure = sel_params.get("pressure", 2) if sel_method == "tournament" else 2
+    if sel_method == "tournament":
+        pressure = int(sel_params.get("size", sel_params.get("pressure", 2)))
+    else:
+        pressure = 2
     eliminate_duplicates = bool(config.get("eliminate_duplicates", False))
 
     # Reference point config

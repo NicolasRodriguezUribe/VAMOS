@@ -55,7 +55,7 @@ class NSGAIIState:
     pop_size: int = 100
     offspring_size: int = 100
     replacement_size: int = 1
-    steady_state: bool = False
+    incremental_mode: bool = False
 
     # Constraints
     constraint_mode: str = "feasibility"
@@ -81,7 +81,7 @@ class NSGAIIState:
     step: int = 0
     replacements: int = 0
 
-    # Cached selection metrics (steady-state incremental)
+    # Cached selection metrics (incremental replacement)
     fronts: list[list[int]] | None = None
     ranks: np.ndarray | None = None
     crowding: np.ndarray | None = None

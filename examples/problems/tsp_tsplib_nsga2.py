@@ -31,7 +31,7 @@ def main() -> None:
         .offspring_size(120)
         .crossover("ox")  # order crossover for permutations
         .mutation("swap", prob="2/n")  # swap two cities with prob. 2/n
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
 

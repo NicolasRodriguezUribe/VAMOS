@@ -78,7 +78,7 @@ def build_nsgaii_algorithm(
         s_name, s_kwargs = ensure_operator_tuple(var_cfg["selection"], key="selection")
         builder.selection(s_name, **s_kwargs)
     else:
-        builder.selection("tournament", pressure=selection_pressure)
+        builder.selection("tournament", size=selection_pressure)
 
     if "repair" in var_cfg:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
@@ -90,12 +90,7 @@ def build_nsgaii_algorithm(
             raise ValueError("adaptive_operator_selection must be a mapping.")
         builder.adaptive_operator_selection(dict(aos_cfg))
 
-    steady_state = bool(var_cfg.get("steady_state", False))
     replacement_size = var_cfg.get("replacement_size")
-    if replacement_size is not None and not steady_state:
-        steady_state = True
-    if steady_state:
-        builder.steady_state(True)
     if replacement_size is not None:
         builder.replacement_size(_as_int(replacement_size))
 
@@ -230,7 +225,7 @@ def build_nsgaiii_algorithm(
     builder.mutation(m_name, **m_kwargs)
 
     s_name, s_kwargs = ensure_operator_tuple(
-        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        var_cfg.get("selection", ("tournament", {"size": selection_pressure})),
         key="selection",
     )
     builder.selection(s_name, **s_kwargs)
@@ -280,7 +275,7 @@ def build_spea2_algorithm(
     builder.mutation(m_name, **m_kwargs)
 
     sel_name, sel_kwargs = ensure_operator_tuple(
-        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        var_cfg.get("selection", ("tournament", {"size": selection_pressure})),
         key="selection",
     )
     builder.selection(sel_name, **sel_kwargs)
@@ -319,7 +314,7 @@ def build_ibea_algorithm(
     )
     builder.mutation(m_name, **m_kwargs)
     sel_name, sel_kwargs = ensure_operator_tuple(
-        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        var_cfg.get("selection", ("tournament", {"size": selection_pressure})),
         key="selection",
     )
     builder.selection(sel_name, **sel_kwargs)
