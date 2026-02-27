@@ -54,11 +54,6 @@ def _build_steady_state_config() -> NSGAIIConfig:
     return (
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
-        # One child per step.
-        .offspring_size(1)
-        # Important in VAMOS: this explicit flag switches to steady-state logic.
-        # offspring_size(1) alone is not treated as full steady-state mode.
-        .steady_state(True)
         # Replace one individual per step (classic steady-state behavior).
         .replacement_size(1)
         .crossover("sbx", prob=0.9, eta=20.0)
