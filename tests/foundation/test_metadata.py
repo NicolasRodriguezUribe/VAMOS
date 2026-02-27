@@ -41,7 +41,7 @@ class DummyKernel:
 class DummyConfig:
     def __init__(self):
         self.crossover = ("sbx", {"prob": 0.9})
-        self.mutation = ("pm", {"prob": 0.1})
+        self.mutation = ("polynomial", {"prob": 0.1})
         self.repair = ("clip", {})
 
     def to_dict(self):

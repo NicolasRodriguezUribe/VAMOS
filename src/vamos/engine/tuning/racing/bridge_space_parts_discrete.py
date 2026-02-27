@@ -21,7 +21,7 @@ def real_operator_part_medium(
             Real("crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1]),
             Categorical(
                 "mutation",
-                ["pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform"],
+                ["polynomial", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform"],
             ),
             Real(mutation_prob_param, mutation_prob_bounds[0], mutation_prob_bounds[1]),
             Real("mutation_eta", 5.0, 40.0),
@@ -106,12 +106,12 @@ def integer_operator_part_full(
     params: list[ParamType] = [
         Categorical("crossover", ["uniform", "arithmetic", "sbx"]),
         Real("crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1]),
-        Categorical("mutation", ["reset", "creep", "pm", "gaussian", "boundary"]),
+        Categorical("mutation", ["reset", "creep", "polynomial", "gaussian", "boundary"]),
         Real(mutation_prob_param, mutation_prob_bounds[0], mutation_prob_bounds[1]),
     ]
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
-        ConditionalBlock("mutation", "pm", [Real("mutation_eta", 5.0, 40.0)]),
+        ConditionalBlock("mutation", "polynomial", [Real("mutation_eta", 5.0, 40.0)]),
         ConditionalBlock("mutation", "creep", [Int("creep_step", 1, 5)]),
         ConditionalBlock("mutation", "gaussian", [Real("gaussian_sigma", 0.1, 5.0)]),
     ]

@@ -89,12 +89,12 @@ def build_variation_operators(
         cross_params = cross_cfg or {}
 
     # Unpack mutation config
-    mut_cfg = config.get("mutation", ("pm", {}))
+    mut_cfg = config.get("mutation", ("polynomial", {}))
     if isinstance(mut_cfg, tuple):
         mut_method, mut_params = mut_cfg
         mut_params = dict(mut_params) if mut_params else {}
     else:
-        mut_method = "pm"
+        mut_method = "polynomial"
         mut_params = mut_cfg or {}
 
     cross_method = str(cross_method).lower()

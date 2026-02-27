@@ -206,7 +206,7 @@ def test_nsgaii_constrained_with_external_archive():
         .pop_size(pop)
         .offspring_size(pop)
         .crossover("sbx", prob=0.9, eta=15.0)
-        .mutation("pm", prob="1/n", eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .constraint_mode("feasibility")
         .external_archive(capacity=pop * 2, pruning="crowding")

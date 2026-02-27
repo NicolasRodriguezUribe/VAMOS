@@ -91,7 +91,6 @@ INT_MUTATION: dict[str, IntMutationOp] = {
     "reset": random_reset_mutation,
     "random_reset": random_reset_mutation,
     "creep": creep_mutation,
-    "pm": integer_polynomial_mutation,
     "polynomial": integer_polynomial_mutation,
     "gaussian": gaussian_integer_mutation,
     "boundary": boundary_integer_mutation,
@@ -334,7 +333,7 @@ def _build_continuous_operators(
             return crossover_operator(parents, _rng)
 
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
-    mut_name = (mut_method or "pm").lower()
+    mut_name = (mut_method or "polynomial").lower()
 
     registry = get_operator_registry()
     mut_kwargs = dict(mut_params)

@@ -21,7 +21,7 @@ def _base_cfg():
         "pop_size": 10,
         "offspring_size": 10,
         "crossover": ("sbx", {"prob": 0.9, "eta": 15.0}),
-        "mutation": ("pm", {"prob": "1/n", "eta": 20.0}),
+        "mutation": ("polynomial", {"prob": "1/n", "eta": 20.0}),
         "selection": ("tournament", {"pressure": 2}),
         "engine": "numpy",
         "result_mode": "population",
@@ -51,7 +51,7 @@ def test_nsgaii_aos_enabled_produces_trace_rows():
         "operator_pool": [
             {
                 "crossover": ("sbx", {"prob": 0.9, "eta": 15.0}),
-                "mutation": ("pm", {"prob": "1/n", "eta": 20.0}),
+                "mutation": ("polynomial", {"prob": "1/n", "eta": 20.0}),
             },
             {
                 "crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.5}),

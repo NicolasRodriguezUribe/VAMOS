@@ -84,7 +84,7 @@ def run_vamos(problem_name: str, seed: int) -> dict | None:
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-        .mutation("pm", prob=1.0 / N_VAR, eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / N_VAR, eta=MUTATION_ETA)
         .selection("tournament")
         .build()
     )

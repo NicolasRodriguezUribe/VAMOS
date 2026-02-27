@@ -57,7 +57,7 @@ def _real_operator_part() -> SpacePart:
         Categorical(
             "mutation",
             [
-                "pm",
+                "polynomial",
                 "linked_polynomial",
                 "non_uniform",
                 "gaussian",

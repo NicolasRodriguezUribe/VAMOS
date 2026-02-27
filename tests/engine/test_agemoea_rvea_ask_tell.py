@@ -38,7 +38,7 @@ def _eval(X: np.ndarray, problem: object) -> np.ndarray:
 
 def _agemoea_cfg(pop_size: int = 12) -> dict:
     return (
-        AGEMOEAConfig.builder().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("pm", prob=0.1, eta=20.0).build().to_dict()
+        AGEMOEAConfig.builder().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("polynomial", prob=0.1, eta=20.0).build().to_dict()
     )
 
 
@@ -50,7 +50,7 @@ def _rvea_cfg(pop_size: int = 6, n_partitions: int = 5) -> dict:
         .alpha(2.0)
         .adapt_freq(0.1)
         .crossover("sbx", prob=1.0, eta=30.0)
-        .mutation("pm", prob=0.1, eta=20.0)
+        .mutation("polynomial", prob=0.1, eta=20.0)
         .build()
         .to_dict()
     )

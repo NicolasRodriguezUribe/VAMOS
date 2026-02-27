@@ -31,7 +31,7 @@ def test_invalid_algorithm_config_pop_size_errors():
         NSGAIIConfig.builder()
         .pop_size(-4)
         .crossover("sbx", prob=1.0, eta=20.0)
-        .mutation("pm", prob=0.1, eta=20.0)
+        .mutation("polynomial", prob=0.1, eta=20.0)
         .selection("tournament")
         .build()
     )

@@ -270,11 +270,11 @@ def make_aos_cfg(
         operator_pool = [
             {
                 "crossover": ("sbx", {"prob": CROSSOVER_PROB, "eta": CROSSOVER_ETA}),
-                "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
+                "mutation": ("polynomial", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
             },
             {
                 "crossover": ("pcx", {"prob": CROSSOVER_PROB, "sigma_eta": 0.1, "sigma_zeta": 0.1}),
-                "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
+                "mutation": ("polynomial", {"prob": 1.0 / n_var, "eta": MUTATION_ETA}),
             },
             {
                 "crossover": ("undx", {"prob": CROSSOVER_PROB, "zeta": 0.5, "eta": 0.35}),
@@ -612,7 +612,7 @@ def build_config(*, variant: str, seed: int, n_var: int, tuned_cfg: dict[str, An
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
         .selection("tournament")
     )
 
@@ -660,7 +660,7 @@ def build_config(*, variant: str, seed: int, n_var: int, tuned_cfg: dict[str, An
                 pass
 
         if len(operator_pool) < 2:
-            operator_pool.append({"crossover": tuned.crossover, "mutation": ("pm", {"prob": 1.0 / n_var, "eta": MUTATION_ETA})})
+            operator_pool.append({"crossover": tuned.crossover, "mutation": ("polynomial", {"prob": 1.0 / n_var, "eta": MUTATION_ETA})})
 
         return replace(
             tuned,

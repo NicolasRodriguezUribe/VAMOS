@@ -65,7 +65,6 @@ _KNOWN_OPERATORS: dict[str, set[str]] = {
         "uniform",
     },
     "mutation": {
-        "pm",
         "polynomial",
         "non_uniform",
         "gaussian",
@@ -311,11 +310,11 @@ def _default_operators_for_encoding(
     if enc == "binary":
         return ("uniform", {"prob": 0.9}), ("bitflip", {"prob": mut_prob})
     if enc == "integer":
-        return ("sbx", {"prob": 0.9, "eta": 20.0}), ("pm", {"prob": mut_prob, "eta": 20.0})
+        return ("sbx", {"prob": 0.9, "eta": 20.0}), ("polynomial", {"prob": mut_prob, "eta": 20.0})
     if enc == "mixed":
         return ("mixed", {"prob": 0.9}), ("mixed", {"prob": mut_prob})
     # real (default)
-    return ("sbx", {"prob": 1.0, "eta": 20.0}), ("pm", {"prob": mut_prob, "eta": 20.0})
+    return ("sbx", {"prob": 1.0, "eta": 20.0}), ("polynomial", {"prob": mut_prob, "eta": 20.0})
 
 
 def _require_fields(cfg: dict[str, Any], fields: tuple[str, ...], name: str) -> None:

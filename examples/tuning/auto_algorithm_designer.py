@@ -55,7 +55,7 @@ def _conditional_params() -> dict[str, dict[str, tuple[str, Real]]]:
             "blx_alpha": ("blx_alpha", Real("blx_alpha", 0.1, 0.5)),
         },
         "mutation": {
-            "pm": ("pm_eta", Real("pm_eta", 5.0, 30.0)),
+            "polynomial": ("pm_eta", Real("pm_eta", 5.0, 30.0)),
             "gaussian": ("gauss_sigma", Real("gauss_sigma", 0.01, 0.3)),
         },
     }
@@ -164,12 +164,12 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfig:
         config = config.crossover(crossover_type, prob=crossover_prob)
 
     # Mutation configuration
-    mutation_type = assignment.get("mutation", "pm")
+    mutation_type = assignment.get("mutation", "polynomial")
     mutation_prob = float(assignment["mutation_prob"])
 
-    if mutation_type == "pm":
+    if mutation_type == "polynomial":
         eta = float(assignment.get("pm_eta", 20.0))
-        config = config.mutation("pm", prob=mutation_prob, eta=eta)
+        config = config.mutation("polynomial", prob=mutation_prob, eta=eta)
     elif mutation_type == "gaussian":
         sigma = float(assignment.get("gauss_sigma", 0.1))
         config = config.mutation("gaussian", prob=mutation_prob, sigma=sigma)

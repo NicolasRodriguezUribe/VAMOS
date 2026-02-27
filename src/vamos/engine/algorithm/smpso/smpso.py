@@ -87,7 +87,7 @@ class SMPSO:
         Algorithm configuration with keys:
         - pop_size (int): swarm size
         - archive_size (int): leaders archive capacity
-        - mutation (tuple): mutation config, e.g. ("pm", {"prob": "1/n", "eta": 20})
+        - mutation (tuple): mutation config, e.g. ("polynomial", {"prob": "1/n", "eta": 20})
         - inertia, c1, c2, vmax_fraction (float): PSO parameters
         - initializer (dict, optional): initializer config (lhs/scatter/random)
         - repair (tuple, optional): bounds repair strategy

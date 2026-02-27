@@ -53,7 +53,7 @@ def _aggregation_part(*, extended: bool = False) -> SpacePart:
 def _real_operator_part() -> SpacePart:
     params: list[ParamType] = [
         Categorical("crossover", ["sbx", "de"]),
-        Categorical("mutation", ["pm", "gaussian", "non_uniform", "cauchy", "uniform"]),
+        Categorical("mutation", ["polynomial", "gaussian", "non_uniform", "cauchy", "uniform"]),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
     ]

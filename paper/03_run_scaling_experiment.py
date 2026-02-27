@@ -111,7 +111,7 @@ def _build_nsgaii_config(*, pop_size: int, n_var: int) -> NSGAIIConfig:
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("sbx", prob=1.0, eta=20.0)
-        .mutation("pm", prob=1.0 / n_var, eta=20.0)
+        .mutation("polynomial", prob=1.0 / n_var, eta=20.0)
         .selection("tournament")
         .build()
     )

@@ -83,7 +83,7 @@ def choose_real_operator_block() -> dict:
     # We choose a conservative, known-good block (from your canonical examples)
     return {
         "crossover": {"method": "sbx", "prob": 0.9, "eta": 20},
-        "mutation": {"method": "pm", "prob": "1/n", "eta": 20},
+        "mutation": {"method": "polynomial", "prob": "1/n", "eta": 20},
         "selection": {"method": "tournament", "pressure": 2},
         "repair": None,
     }

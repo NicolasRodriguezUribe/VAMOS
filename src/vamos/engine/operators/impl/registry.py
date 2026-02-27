@@ -7,7 +7,7 @@ from __future__ import annotations
 from vamos.foundation.registry import Registry
 
 # Global registry for variation operators (classes or factories).
-# Key: operator name (e.g. "sbx", "pm").
+# Key: operator name (e.g. "sbx", "polynomial").
 # Value: Class type or factory function.
 _operator_registry: Registry[object] | None = None
 
@@ -61,7 +61,6 @@ def _get_registry() -> Registry[object]:
     reg.register("simplex", SPXCrossover)
 
     # Mutation
-    reg.register("pm", PolynomialMutation)
     reg.register("polynomial", PolynomialMutation)
     reg.register("non_uniform", NonUniformMutation)
     reg.register("gaussian", GaussianMutation)
