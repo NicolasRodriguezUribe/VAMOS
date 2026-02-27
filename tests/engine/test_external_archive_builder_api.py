@@ -12,7 +12,6 @@ from vamos.engine.algorithm.config import (
     SPEA2Config,
 )
 
-
 _BUILDERS = [
     NSGAIIConfig.builder,
     MOEADConfig.builder,

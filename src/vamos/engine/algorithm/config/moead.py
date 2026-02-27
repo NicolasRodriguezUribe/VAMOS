@@ -9,11 +9,11 @@ from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 from vamos.resources import weight_path
 
-from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _default_operators_for_encoding, _require_fields, _SerializableConfig, _validate_operators
 from .types import AggregationName, CrossoverName, InitializerName, MutationName, RepairName
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class MOEADConfig(_SerializableConfig):
     pop_size: int
     batch_size: int
@@ -39,11 +39,20 @@ class MOEADConfig(_SerializableConfig):
         pop_size: int | None = None,
         n_var: int | None = None,
         n_obj: int = 3,
+        encoding: str | None = None,
     ) -> MOEADConfig:
-        """Create a default MOEA/D configuration with sensible defaults."""
+        """Create a default MOEA/D configuration with sensible defaults.
+
+        Args:
+            pop_size: Population size (default: 91 for 3-obj, 100 otherwise)
+            n_var: Number of variables (for mutation prob)
+            n_obj: Number of objectives
+            encoding: Problem encoding. If omitted, defaults to "real".
+        """
         if pop_size is None:
             pop_size = 91 if n_obj == 3 else 100
         mut_prob = 1.0 / n_var if n_var else 0.1
+        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
         weights_dir = weight_path("W3D_91.dat").parent
         return (
             cls.builder()
@@ -52,8 +61,8 @@ class MOEADConfig(_SerializableConfig):
             .neighbor_size(20)
             .delta(0.9)
             .replace_limit(2)
-            .crossover("de", cr=1.0, f=0.5)
-            .mutation("pm", prob=mut_prob, eta=20.0)
+            .crossover(cx[0], **cx[1])
+            .mutation(mt[0], **mt[1])
             .aggregation("pbi", theta=5.0)
             .weight_vectors(path=str(weights_dir))
             .build()
@@ -174,6 +183,7 @@ class _MOEADConfigBuilder:
             ),
             "MOEA/D",
         )
+        _validate_operators(self._cfg)
         return MOEADConfig(
             pop_size=self._cfg["pop_size"],
             batch_size=int(self._cfg.get("batch_size", 1)),

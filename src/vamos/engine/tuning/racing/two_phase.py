@@ -75,6 +75,7 @@ def _screening_worker(
 # Scenario dataclass
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TwoPhaseScenario:
     """Configuration for two-phase tuning (screening + racing).
@@ -156,6 +157,7 @@ class TwoPhaseScenario:
 # Two-Phase Tuner
 # ---------------------------------------------------------------------------
 
+
 class TwoPhaseTuner:
     """Two-phase tuner combining Successive Halving with irace-style racing.
 
@@ -234,14 +236,15 @@ class TwoPhaseTuner:
         # -- Phase 2: irace-style Racing -----------------------------------
         if verbose_flag:
             _logger().info(
-                "[two-phase] Phase 2: racing %d configs at full budget "
-                "(budget_per_run=%s)",
+                "[two-phase] Phase 2: racing %d configs at full budget (budget_per_run=%s)",
                 len(survivors),
                 self.task.budget_per_run,
             )
 
         best_config, phase2_history = self._run_racing(
-            eval_fn, survivors, verbose_flag,
+            eval_fn,
+            survivors,
+            verbose_flag,
             trial_id_offset=sc.phase1_configs,
         )
 
@@ -275,9 +278,7 @@ class TwoPhaseTuner:
         seed_indices = list(range(len(self.seeds)))
         self.rng.shuffle(inst_indices)
         self.rng.shuffle(seed_indices)
-        blocks = [
-            (ii, si) for si in seed_indices for ii in inst_indices
-        ]
+        blocks = [(ii, si) for si in seed_indices for ii in inst_indices]
 
         # 3. Iterate over budget levels
         for level_idx, budget in enumerate(sc.phase1_budgets):
@@ -288,8 +289,7 @@ class TwoPhaseTuner:
 
             if verbose:
                 _logger().info(
-                    "[screening] Level %d/%d (budget=%d): evaluating %d configs "
-                    "on %d blocks",
+                    "[screening] Level %d/%d (budget=%d): evaluating %d configs on %d blocks",
                     level_idx + 1,
                     len(sc.phase1_budgets),
                     budget,
@@ -300,7 +300,12 @@ class TwoPhaseTuner:
             # Evaluate all alive configs on every block at this budget
             for inst_idx, seed_idx in blocks:
                 self._eval_block(
-                    configs, inst_idx, seed_idx, budget, level_idx, eval_fn,
+                    configs,
+                    inst_idx,
+                    seed_idx,
+                    budget,
+                    level_idx,
+                    eval_fn,
                 )
 
             # Rank-based promotion
@@ -355,16 +360,17 @@ class TwoPhaseTuner:
                     )
                     score = _failure_score(self.task.maximize)
                 configs[task_indices[i]].fidelity_scores.setdefault(
-                    level_idx, [],
+                    level_idx,
+                    [],
                 ).append(score)
         else:
             results = Parallel(n_jobs=self.scenario.n_jobs)(
-                delayed(_screening_worker)(eval_fn, cfg, ctx, self.task.maximize)
-                for cfg, ctx in tasks
+                delayed(_screening_worker)(eval_fn, cfg, ctx, self.task.maximize) for cfg, ctx in tasks
             )
             for i, score in enumerate(results):
                 configs[task_indices[i]].fidelity_scores.setdefault(
-                    level_idx, [],
+                    level_idx,
+                    [],
                 ).append(float(score))
 
     def _promote(

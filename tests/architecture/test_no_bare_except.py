@@ -49,9 +49,7 @@ class _ExceptScanner(ast.NodeVisitor):
 
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         if _is_bare_except(node):
-            self.violations.append(
-                f"{self.rel_path}:{node.lineno}: bare except: (always specify an exception type)"
-            )
+            self.violations.append(f"{self.rel_path}:{node.lineno}: bare except: (always specify an exception type)")
         elif _is_silent_swallow(node):
             self.violations.append(
                 f"{self.rel_path}:{node.lineno}: silent swallow (except ... : pass) -- "

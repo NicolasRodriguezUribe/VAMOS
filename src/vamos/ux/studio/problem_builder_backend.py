@@ -98,10 +98,7 @@ class _UserCodeSafetyVisitor(ast.NodeVisitor):
         for alias in node.names:
             root = alias.name.split(".", 1)[0]
             if root not in _ALLOWED_IMPORT_ROOTS:
-                raise ValueError(
-                    f"Import '{alias.name}' is not allowed. "
-                    f"Allowed modules: {', '.join(sorted(_ALLOWED_IMPORT_ROOTS))}."
-                )
+                raise ValueError(f"Import '{alias.name}' is not allowed. Allowed modules: {', '.join(sorted(_ALLOWED_IMPORT_ROOTS))}.")
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -109,10 +106,7 @@ class _UserCodeSafetyVisitor(ast.NodeVisitor):
             raise ValueError("Relative imports are not allowed in Studio preview code.")
         root = node.module.split(".", 1)[0]
         if node.level != 0 or root not in _ALLOWED_IMPORT_ROOTS:
-            raise ValueError(
-                f"Import from '{node.module}' is not allowed. "
-                f"Allowed modules: {', '.join(sorted(_ALLOWED_IMPORT_ROOTS))}."
-            )
+            raise ValueError(f"Import from '{node.module}' is not allowed. Allowed modules: {', '.join(sorted(_ALLOWED_IMPORT_ROOTS))}.")
         self.generic_visit(node)
 
     def visit_Name(self, node: ast.Name) -> None:

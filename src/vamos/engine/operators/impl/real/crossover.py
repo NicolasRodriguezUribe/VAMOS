@@ -397,8 +397,8 @@ class DEMatingCrossover(Crossover):
         n_groups, _, n_vars = groups.shape
 
         target = groups[:, 0, :]  # (n_groups, n_vars)
-        r1 = groups[:, 1, :]     # (n_groups, n_vars)
-        r2 = groups[:, 2, :]     # (n_groups, n_vars)
+        r1 = groups[:, 1, :]  # (n_groups, n_vars)
+        r2 = groups[:, 2, :]  # (n_groups, n_vars)
 
         # DE/rand/1 differential mutation
         mutant = target + self.F * (r1 - r2)

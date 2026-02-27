@@ -119,9 +119,16 @@ class TestRunPreviewWithConstraints:
         fn = compile_objective_function("return [x[0], x[1]]")
         g = compile_constraint_function("return [1.0 - x[0] - x[1]]")
         result = run_preview_optimization(
-            fn, n_var=2, n_obj=2, bounds=[(0, 2), (0, 2)],
-            algorithm="nsgaii", budget=500, pop_size=20, seed=42,
-            constraints=g, n_constraints=1,
+            fn,
+            n_var=2,
+            n_obj=2,
+            bounds=[(0, 2), (0, 2)],
+            algorithm="nsgaii",
+            budget=500,
+            pop_size=20,
+            seed=42,
+            constraints=g,
+            n_constraints=1,
         )
         assert result["F"].shape[1] == 2
 
@@ -134,9 +141,14 @@ class TestGenerateScriptWithConstraints:
 
         script = generate_script(
             "return [x[0], x[1]]",
-            name="test", n_var=2, n_obj=2,
-            bounds=[(0, 1), (0, 1)], algorithm="nsgaii", budget=3000,
-            constraint_code="return [1.0 - x[0] - x[1]]", n_constraints=1,
+            name="test",
+            n_var=2,
+            n_obj=2,
+            bounds=[(0, 1), (0, 1)],
+            algorithm="nsgaii",
+            budget=3000,
+            constraint_code="return [1.0 - x[0] - x[1]]",
+            n_constraints=1,
         )
         assert "constraints" in script
         assert "n_constraints" in script
@@ -147,8 +159,12 @@ class TestGenerateScriptWithConstraints:
 
         script = generate_script(
             "return [x[0], x[1]]",
-            name="test", n_var=2, n_obj=2,
-            bounds=[(0, 1), (0, 1)], algorithm="nsgaii", budget=3000,
+            name="test",
+            n_var=2,
+            n_obj=2,
+            bounds=[(0, 1), (0, 1)],
+            algorithm="nsgaii",
+            budget=3000,
         )
         assert "n_constraints" not in script
         compile(script, "<test>", "exec")

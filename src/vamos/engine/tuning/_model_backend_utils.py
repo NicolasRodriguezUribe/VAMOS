@@ -70,7 +70,7 @@ def estimate_hyperband_evals_per_iteration(max_budget: int, eta: int) -> int:
         n = int(np.ceil((B / max_budget / (s + 1)) * (eta**s)))
         n = max(1, n)
         for i in range(s + 1):
-            n_i = int(np.floor(n * (eta**(-i))))
+            n_i = int(np.floor(n * (eta ** (-i))))
             total += max(1, n_i)
     return max(1, total)
 

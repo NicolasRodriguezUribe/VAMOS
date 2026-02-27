@@ -45,8 +45,17 @@ from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.registry import Registry
 
 _REAL_CROSSOVER_KEYS = (
-    "sbx", "blx_alpha", "blx_alpha_beta", "whole_arithmetic",
-    "laplace", "fuzzy", "arithmetic", "de", "pcx", "undx", "simplex",
+    "sbx",
+    "blx_alpha",
+    "blx_alpha_beta",
+    "whole_arithmetic",
+    "laplace",
+    "fuzzy",
+    "arithmetic",
+    "de",
+    "pcx",
+    "undx",
+    "simplex",
 )
 _REAL_MUTATION_KEYS = (
     "pm",

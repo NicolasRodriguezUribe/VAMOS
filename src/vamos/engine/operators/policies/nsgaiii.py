@@ -297,13 +297,9 @@ def _build_mixed_operators(
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build mixed encoding operators."""
     if str(cross_method).lower() not in {"mixed", "uniform"}:
-        raise ValueError(
-            f"Unsupported NSGA-III crossover '{cross_method}' for mixed encoding."
-        )
+        raise ValueError(f"Unsupported NSGA-III crossover '{cross_method}' for mixed encoding.")
     if str(mut_method).lower() not in {"mixed", "gaussian"}:
-        raise ValueError(
-            f"Unsupported NSGA-III mutation '{mut_method}' for mixed encoding."
-        )
+        raise ValueError(f"Unsupported NSGA-III mutation '{mut_method}' for mixed encoding.")
 
     cross_prob = float(cross_params.get("prob", 0.9))
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))

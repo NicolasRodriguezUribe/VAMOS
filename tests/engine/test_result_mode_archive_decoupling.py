@@ -13,12 +13,7 @@ from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
 def _agemoea_builder(pop_size: int = 12):
-    return (
-        AGEMOEAConfig.builder()
-        .pop_size(pop_size)
-        .crossover("sbx", prob=0.9, eta=15.0)
-        .mutation("pm", prob=0.1, eta=20.0)
-    )
+    return AGEMOEAConfig.builder().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("pm", prob=0.1, eta=20.0)
 
 
 def _rvea_builder(pop_size: int = 6, n_partitions: int = 5):
@@ -118,12 +113,7 @@ def test_agemoea_archive_keeps_default_result_and_exposes_population():
 
 def test_agemoea_population_result_mode_with_archive():
     pop_size = 12
-    cfg = (
-        _agemoea_builder(pop_size)
-        .external_archive(capacity=pop_size * 2)
-        .result_mode("population")
-        .build()
-    )
+    cfg = _agemoea_builder(pop_size).external_archive(capacity=pop_size * 2).result_mode("population").build()
     problem = ZDT1Problem(n_var=6)
     result = AGEMOEA(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
@@ -151,12 +141,7 @@ def test_rvea_archive_keeps_default_result_and_exposes_population():
 
 def test_rvea_population_result_mode_with_archive():
     pop_size = 6
-    cfg = (
-        _rvea_builder(pop_size=pop_size, n_partitions=5)
-        .external_archive(capacity=pop_size * 2)
-        .result_mode("population")
-        .build()
-    )
+    cfg = _rvea_builder(pop_size=pop_size, n_partitions=5).external_archive(capacity=pop_size * 2).result_mode("population").build()
     problem = ZDT1Problem(n_var=6)
     result = RVEA(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,

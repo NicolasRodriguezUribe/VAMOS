@@ -374,9 +374,11 @@ class MWProblem(Problem):
             ratio = _safe_divide(f0, g)
             f1 = g * _safe_sqrt(1.1 * 1.1 - np.square(ratio))
             atan = np.arctan2(f1, f0)
-            g0 = np.square(f0 / (1.0 + self._la3(0.15, 6.0, 4.0, 10.0, atan))) + np.square(
-                f1 / (1.0 + self._la3(0.75, 6.0, 4.0, 10.0, atan))
-            ) - 1.0
+            g0 = (
+                np.square(f0 / (1.0 + self._la3(0.15, 6.0, 4.0, 10.0, atan)))
+                + np.square(f1 / (1.0 + self._la3(0.75, 6.0, 4.0, 10.0, atan)))
+                - 1.0
+            )
             F = np.column_stack([f0, f1])
             G = g0[:, None]
         elif idx == 7:
@@ -433,9 +435,9 @@ class MWProblem(Problem):
             g = self._g1(X_arr)
             f0 = g * X_arr[:, 0]
             f1 = g * (0.85 - 0.8 * (f0 / g) - 0.08 * np.abs(np.sin(3.2 * np.pi * (f0 / g))))
-            g0 = -(
-                1.0 - 0.625 * f0 - f1 + 0.08 * np.sin(2.0 * np.pi * (f1 - f0 / 1.6))
-            ) * (1.4 - 0.875 * f0 - f1 + 0.08 * np.sin(2.0 * np.pi * (f1 / 1.4 - f0 / 1.6)))
+            g0 = -(1.0 - 0.625 * f0 - f1 + 0.08 * np.sin(2.0 * np.pi * (f1 - f0 / 1.6))) * (
+                1.4 - 0.875 * f0 - f1 + 0.08 * np.sin(2.0 * np.pi * (f1 / 1.4 - f0 / 1.6))
+            )
             g1 = (1.0 - 0.8 * f0 - f1 + 0.08 * np.sin(2.0 * np.pi * (f1 - f0 / 1.5))) * (
                 1.8 - 1.125 * f0 - f1 + 0.08 * np.sin(2.0 * np.pi * (f1 / 1.8 - f0 / 1.6))
             )
@@ -448,9 +450,7 @@ class MWProblem(Problem):
             g0 = -(5.0 - (1.0 + f0 + 0.5 * f0 * f0) - 0.5 * np.sin(3.0 * np.pi * f0) - f1) * (
                 5.0 - (1.0 + 0.7 * f0) - 0.5 * np.sin(3.0 * np.pi * f0) - f1
             )
-            g1 = (5.0 - np.exp(f0) - 0.5 * np.sin(3.0 * np.pi * f0) - f1) * (
-                5.0 - (1.0 + 0.4 * f0) - 0.5 * np.sin(3.0 * np.pi * f0) - f1
-            )
+            g1 = (5.0 - np.exp(f0) - 0.5 * np.sin(3.0 * np.pi * f0) - f1) * (5.0 - (1.0 + 0.4 * f0) - 0.5 * np.sin(3.0 * np.pi * f0) - f1)
             F = np.column_stack([f0, f1])
             G = np.column_stack([g0, g1])
         elif idx == 14:

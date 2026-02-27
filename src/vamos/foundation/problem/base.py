@@ -133,9 +133,7 @@ class Problem:
         (and optionally :meth:`constraints`) instead of this method."""
         X = np.asarray(X, dtype=float)
         if X.ndim != 2 or X.shape[1] != self.n_var:
-            raise ValueError(
-                f"Expected decision matrix of shape (N, {self.n_var}), got {X.shape}."
-            )
+            raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}), got {X.shape}.")
 
         # --- objectives ---
         N = X.shape[0]

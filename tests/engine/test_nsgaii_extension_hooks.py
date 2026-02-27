@@ -57,11 +57,7 @@ def test_ask_parent_pool_respects_filter_and_non_breeding(monkeypatch: pytest.Mo
         sel_method: str,
         candidate_indices: np.ndarray | None = None,
     ) -> np.ndarray:
-        observed["candidate_indices"] = (
-            np.asarray(candidate_indices, dtype=int).copy()
-            if candidate_indices is not None
-            else None
-        )
+        observed["candidate_indices"] = np.asarray(candidate_indices, dtype=int).copy() if candidate_indices is not None else None
         return original_pool(
             kernel,
             ranks,

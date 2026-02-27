@@ -53,15 +53,18 @@ def build_mating_pool(
 
         if selection_method == "boltzmann":
             from vamos.engine.algorithm.components.selection import BoltzmannSelection
+
             sel = BoltzmannSelection(temperature=max(float(pressure), 0.1), rng=rng)
             parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
         elif selection_method == "ranking":
             from vamos.engine.algorithm.components.selection import RankingSelection
+
             sp = min(max(float(pressure) / 5.0, 1.0), 2.0)  # map pressure [2..10] -> sp [1..2]
             sel = RankingSelection(sp=sp, rng=rng)
             parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
         else:  # sus
             from vamos.engine.algorithm.components.selection import SUSSelection
+
             sel = SUSSelection(rng=rng)
             parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
         parent_indices = cand[np.asarray(parent_local, dtype=int)]

@@ -2,11 +2,10 @@
 NSGA-II with every builder parameter.
 
 Demonstrates every configurable option available on NSGAIIConfig.builder():
-  pop_size, offspring_size, replacement_size, crossover, mutation, selection,
-  initializer, repair, external_archive, constraint_mode, result_mode,
-  mutation_prob_factor, track_genealogy, live_callback_mode,
-  generation_callback, adaptive_operator_selection, immigration,
-  and parent_selection_filter.
+  pop_size, offspring_size, crossover, mutation, selection, initializer,
+  repair, external_archive, constraint_mode, result_mode, mutation_prob_factor,
+  track_genealogy, live_callback_mode, generation_callback,
+  adaptive_operator_selection, immigration, and parent_selection_filter.
 
 Usage:
     python examples/advanced/full_nsgaii_config.py

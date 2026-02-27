@@ -40,8 +40,7 @@ def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
         return np.asarray(_moocore.hv_contributions(F, ref=ref), dtype=float)
     if not _HV_FALLBACK_WARNED:
         warnings.warn(
-            "Hypervolume contributions requested but 'moocore' is not installed; "
-            "falling back to crowding distance.",
+            "Hypervolume contributions requested but 'moocore' is not installed; falling back to crowding distance.",
             UserWarning,
             stacklevel=2,
         )
@@ -198,9 +197,7 @@ class _BaseArchive:
             if keep_idx.ndim != 1:
                 raise ValueError("_select_subset() must return a 1D index array.")
             if keep_idx.size != self.truncate_size:
-                raise ValueError(
-                    f"_select_subset() returned {keep_idx.size} indices, expected {self.truncate_size}."
-                )
+                raise ValueError(f"_select_subset() returned {keep_idx.size} indices, expected {self.truncate_size}.")
             X_nd, F_nd, G_nd = _subset_arrays(X_nd, F_nd, G_nd, keep_idx)
 
         self._replace_contents(X_nd, F_nd, G_nd)
@@ -412,9 +409,7 @@ class HypervolumeArchive(_BaseArchive):
         if ref_point is not None:
             ref = np.asarray(ref_point, dtype=float)
             if ref.ndim != 1 or ref.shape[0] != self._n_obj:
-                raise ValueError(
-                    f"hv_ref_point must be 1D with length {self._n_obj}, got shape {ref.shape}."
-                )
+                raise ValueError(f"hv_ref_point must be 1D with length {self._n_obj}, got shape {ref.shape}.")
             self._fixed_ref = ref.copy()
 
     def _stable_ref(self, F: np.ndarray) -> np.ndarray:

@@ -8,11 +8,19 @@ from typing import Any
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 
-from .base import ConstraintModeStr, ResultMode, _normalize_tournament_selection_kwargs, _require_fields, _SerializableConfig
+from .base import (
+    ConstraintModeStr,
+    ResultMode,
+    _default_operators_for_encoding,
+    _normalize_tournament_selection_kwargs,
+    _require_fields,
+    _SerializableConfig,
+    _validate_operators,
+)
 from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class SPEA2Config(_SerializableConfig):
     pop_size: int
     archive_size: int  # Internal archive (part of SPEA2 algorithm)
@@ -33,15 +41,23 @@ class SPEA2Config(_SerializableConfig):
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
+        encoding: str | None = None,
     ) -> SPEA2Config:
-        """Create a default SPEA2 configuration."""
+        """Create a default SPEA2 configuration.
+
+        Args:
+            pop_size: Population size (default: 100)
+            n_var: Number of variables (for mutation prob)
+            encoding: Problem encoding. If omitted, defaults to "real".
+        """
         mut_prob = 1.0 / n_var if n_var else 0.1
+        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
         return (
             cls.builder()
             .pop_size(pop_size)
             .archive_size(pop_size)
-            .crossover("sbx", prob=1.0, eta=20.0)
-            .mutation("pm", prob=mut_prob, eta=20.0)
+            .crossover(cx[0], **cx[1])
+            .mutation(mt[0], **mt[1])
             .selection("tournament")
             .build()
         )
@@ -133,6 +149,7 @@ class _SPEA2ConfigBuilder:
             ("pop_size", "archive_size", "crossover", "mutation", "selection"),
             "SPEA2",
         )
+        _validate_operators(self._cfg)
         return SPEA2Config(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],

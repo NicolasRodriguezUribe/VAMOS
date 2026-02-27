@@ -70,9 +70,7 @@ class ZCATProblem:
 
         min_required_n_var = 1 if problem_id in _ONE_DIMENSIONAL_PARETO_SET_PROBLEMS else n_obj - 1
         if n_var < min_required_n_var:
-            raise ValueError(
-                f"ZCAT{problem_id} requires n_var >= {min_required_n_var} for n_obj={n_obj}. Received n_var={n_var}."
-            )
+            raise ValueError(f"ZCAT{problem_id} requires n_var >= {min_required_n_var} for n_obj={n_obj}. Received n_var={n_var}.")
 
         self.problem_id = int(problem_id)
         self.n_var = int(n_var)

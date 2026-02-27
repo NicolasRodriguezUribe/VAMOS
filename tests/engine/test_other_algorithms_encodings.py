@@ -128,12 +128,7 @@ def test_spea2_binary_integer_and_permutation():
 
 def test_smpso_mixed_mutation_path():
     pop_size = 14
-    cfg = (
-        SMPSOConfig.builder()
-        .pop_size(pop_size)
-        .archive_size(pop_size)
-        .mutation("mixed", prob="1/n")
-    ).build()
+    cfg = (SMPSOConfig.builder().pop_size(pop_size).archive_size(pop_size).mutation("mixed", prob="1/n")).build()
     algo = SMPSO(cfg.to_dict(), kernel=NumPyKernel())
     problem = MixedDesignProblem(n_var=9)
     res = algo.run(problem, termination=("max_evaluations", pop_size * 2), seed=3)

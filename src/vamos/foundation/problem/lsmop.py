@@ -82,10 +82,7 @@ class _LSMOPBase(Problem):
 
         self.sub_len, self.len = self._build_group_layout(self.n_var, self.n_obj, self.nk)
         if np.any(self.sub_len <= 0):
-            raise ValueError(
-                "Invalid LSMOP partitioning (some subcomponents are empty). "
-                "Increase n_var, reduce n_obj, or reduce nk."
-            )
+            raise ValueError("Invalid LSMOP partitioning (some subcomponents are empty). Increase n_var, reduce n_obj, or reduce nk.")
 
     @staticmethod
     def _build_group_layout(n_var: int, n_obj: int, nk: int) -> tuple[np.ndarray, np.ndarray]:

@@ -370,10 +370,7 @@ class RacingTuner:
         scale = mean_abs if mean_abs > 1e-12 else 1.0
         volatility = float(np.std(recent_arr) / scale)
 
-        return (
-            improvement < self.scenario.convergence_threshold
-            and volatility < self.scenario.convergence_threshold
-        )
+        return improvement < self.scenario.convergence_threshold and volatility < self.scenario.convergence_threshold
 
     def _finalize_results(self, configs: list[ConfigState]) -> tuple[EliteEntry | None, list[TrialResult]]:
         history: list[TrialResult] = []

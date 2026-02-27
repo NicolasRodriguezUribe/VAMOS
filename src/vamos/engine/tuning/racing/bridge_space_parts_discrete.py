@@ -142,9 +142,7 @@ def external_archive_part() -> SpacePart:
         Boolean("archive_unbounded"),
     ]
     archive_capacity_param = Int("archive_capacity", 20, 2000, log=True)
-    archive_prune_policy_param = Categorical(
-        "archive_prune_policy", ["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"]
-    )
+    archive_prune_policy_param = Categorical("archive_prune_policy", ["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"])
     conditionals = [
         ConditionalBlock(
             "use_external_archive",
