@@ -9,6 +9,7 @@ from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .types import CrossoverName, InitializerName, MutationName, RepairName
 
 
 @dataclass(frozen=True)
@@ -79,19 +80,19 @@ class _RVEAConfigBuilder:
         self._cfg["adapt_freq"] = None if value is None else float(value)
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder:
+    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _RVEAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _RVEAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _RVEAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _RVEAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 

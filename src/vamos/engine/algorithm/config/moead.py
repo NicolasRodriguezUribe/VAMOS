@@ -10,6 +10,7 @@ from vamos.engine.archive.bounded_archive import PrunePolicy
 from vamos.resources import weight_path
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .types import CrossoverName, InitializerName, MutationName, RepairName
 
 
 @dataclass(frozen=True)
@@ -98,11 +99,11 @@ class _MOEADConfigBuilder:
         self._cfg["replace_limit"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
@@ -118,11 +119,11 @@ class _MOEADConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 

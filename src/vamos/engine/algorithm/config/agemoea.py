@@ -9,6 +9,7 @@ from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .types import CrossoverName, InitializerName, MutationName, RepairName
 
 
 class _AGEMOEAConfigBuilder:
@@ -23,19 +24,19 @@ class _AGEMOEAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 

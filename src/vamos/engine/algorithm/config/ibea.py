@@ -16,6 +16,7 @@ from .base import (
     _require_fields,
     _SerializableConfig,
 )
+from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
 
 @dataclass(frozen=True)
@@ -68,15 +69,15 @@ class _IBEAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def selection(self, method: SelectionName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
@@ -88,11 +89,11 @@ class _IBEAConfigBuilder:
         self._cfg["kappa"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
