@@ -36,7 +36,7 @@ def evaluate_config(config: dict, ctx) -> float:
         .offspring_size(int(config["pop_size"]))
         .crossover("sbx", prob=float(config["crossover_prob"]), eta=20.0)
         .mutation("pm", prob=float(config["mutation_prob"]), eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
 

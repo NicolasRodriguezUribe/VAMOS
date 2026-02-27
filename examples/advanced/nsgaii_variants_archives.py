@@ -45,7 +45,7 @@ def _build_generational_config() -> NSGAIIConfig:
         .offspring_size(POP_SIZE)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
 
@@ -54,16 +54,11 @@ def _build_steady_state_config() -> NSGAIIConfig:
     return (
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
-        # One child per step.
-        .offspring_size(1)
-        # Important in VAMOS: this explicit flag switches to steady-state logic.
-        # offspring_size(1) alone is not treated as full steady-state mode.
-        .steady_state(True)
         # Replace one individual per step (classic steady-state behavior).
         .replacement_size(1)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
 
@@ -75,7 +70,7 @@ def _build_bounded_archive_config() -> NSGAIIConfig:
         .offspring_size(POP_SIZE)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         # For NSGA-II here, capacity + pruning are the effective controls.
         .external_archive(capacity=100, pruning="crowding")
         .build()
@@ -89,7 +84,7 @@ def _build_unbounded_archive_config() -> NSGAIIConfig:
         .offspring_size(POP_SIZE)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         # Keep all non-dominated archive insertions (no capacity cap).
         .external_archive()
         .build()

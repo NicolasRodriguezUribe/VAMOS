@@ -54,7 +54,7 @@ def _build_internal_algorithm(engine: str = "numpy") -> tuple[NSGAII, dict[str, 
         .pop_size(defaults.population_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
     ).build()
     cfg_dict: dict[str, Any] = dict(cfg_data.to_dict())
     kernel = resolve_kernel(engine)
@@ -74,7 +74,7 @@ def _prepare_params(cfg_dict: dict[str, Any], n_var: int) -> tuple[dict[str, Any
 
     sel_method, sel_params = cfg_dict["selection"]
     assert sel_method == "tournament", "Diagnostics expect tournament selection."
-    pressure = int(sel_params.get("pressure", 2))
+    pressure = int(sel_params.get("size", sel_params.get("pressure", 2)))
     return cross_params, mut_params, pressure
 
 

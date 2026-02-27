@@ -8,7 +8,14 @@ from typing import Any
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import normalize_encoding
 
-from .base import ConstraintModeStr, LiveCallbackMode, ResultMode, _require_fields, _SerializableConfig
+from .base import (
+    ConstraintModeStr,
+    LiveCallbackMode,
+    ResultMode,
+    _normalize_tournament_selection_kwargs,
+    _require_fields,
+    _SerializableConfig,
+)
 
 
 class _NSGAIIConfigBuilder:
@@ -53,11 +60,6 @@ class _NSGAIIConfigBuilder:
         self._cfg["offspring_size"] = value
         return self
 
-    def steady_state(self, enabled: bool = True) -> _NSGAIIConfigBuilder:
-        """Enable steady-state mode (incremental replacement)."""
-        self._cfg["steady_state"] = bool(enabled)
-        return self
-
     def replacement_size(self, value: int) -> _NSGAIIConfigBuilder:
         if value <= 0:
             raise ValueError("replacement size must be positive.")
@@ -69,7 +71,7 @@ class _NSGAIIConfigBuilder:
         return self
 
     def selection(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
-        self._cfg["selection"] = (method, kwargs)
+        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
     def initializer(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
@@ -158,7 +160,6 @@ class _NSGAIIConfigBuilder:
             mutation=self._cfg["mutation"],
             selection=selection,
             offspring_size=self._cfg.get("offspring_size"),
-            steady_state=bool(self._cfg.get("steady_state", False)),
             replacement_size=self._cfg.get("replacement_size"),
             repair=self._cfg.get("repair"),
             external_archive=self._cfg.get("external_archive"),
@@ -183,7 +184,6 @@ class NSGAIIConfig(_SerializableConfig):
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
     offspring_size: int | None = None
-    steady_state: bool = False
     replacement_size: int | None = None
     repair: tuple[str, dict[str, Any]] | None = None
     external_archive: ExternalArchiveConfig | None = None
