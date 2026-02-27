@@ -110,7 +110,7 @@ class _NSGAIIIConfigBuilder:
         self._cfg["pop_size_auto"] = bool(enabled)
         return self
 
-    def constraint_mode(self, value: str) -> _NSGAIIIConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _NSGAIIIConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -130,7 +130,7 @@ class _NSGAIIIConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _NSGAIIIConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _NSGAIIIConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 

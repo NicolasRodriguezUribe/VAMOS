@@ -13,7 +13,7 @@ import numbers
 from collections.abc import Mapping
 from typing import cast, overload
 
-from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, AlgorithmName, EngineName
 from vamos.experiment.auto import _compute_max_evaluations, _compute_pop_size, _resolve_problem, _select_algorithm
 from vamos.experiment.optimization_result import OptimizationResult
 from vamos.experiment.optimize import _build_algorithm_config, _OptimizeConfig, _run_config
@@ -69,10 +69,10 @@ def _extract_max_evaluations(termination: object) -> int | None:
 def optimize(
     problem: str | ProblemProtocol,
     *,
-    algorithm: str = "auto",
+    algorithm: AlgorithmName | str = "auto",
     max_evaluations: int | None = None,
     pop_size: int | None = None,
-    engine: str | None = None,
+    engine: EngineName | str | None = None,
     seed: int = 42,
     verbose: bool = False,
     n_var: int | None = None,
@@ -90,10 +90,10 @@ def optimize(
 def optimize(
     problem: str | ProblemProtocol,
     *,
-    algorithm: str = "auto",
+    algorithm: AlgorithmName | str = "auto",
     max_evaluations: int | None = None,
     pop_size: int | None = None,
-    engine: str | None = None,
+    engine: EngineName | str | None = None,
     seed: list[int] | tuple[int, ...],
     verbose: bool = False,
     n_var: int | None = None,
@@ -110,10 +110,10 @@ def optimize(
 def optimize(
     problem: str | ProblemProtocol,
     *,
-    algorithm: str = "auto",
+    algorithm: AlgorithmName | str = "auto",
     max_evaluations: int | None = None,
     pop_size: int | None = None,
-    engine: str | None = None,
+    engine: EngineName | str | None = None,
     seed: int | list[int] | tuple[int, ...] = DEFAULT_SEED,
     verbose: bool = False,
     n_var: int | None = None,

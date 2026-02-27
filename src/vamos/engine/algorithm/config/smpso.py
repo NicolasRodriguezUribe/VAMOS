@@ -85,7 +85,7 @@ class _SMPSOConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def constraint_mode(self, value: str) -> _SMPSOConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _SMPSOConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -93,7 +93,7 @@ class _SMPSOConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _SMPSOConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _SMPSOConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 

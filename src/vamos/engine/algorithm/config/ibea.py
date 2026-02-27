@@ -81,7 +81,7 @@ class _IBEAConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
-    def indicator(self, name: str) -> _IBEAConfigBuilder:
+    def indicator(self, name: IndicatorType | str) -> _IBEAConfigBuilder:
         self._cfg["indicator"] = name
         return self
 
@@ -101,7 +101,7 @@ class _IBEAConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> _IBEAConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _IBEAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -109,7 +109,7 @@ class _IBEAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _IBEAConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _IBEAConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 

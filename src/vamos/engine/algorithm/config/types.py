@@ -106,6 +106,30 @@ RepairName: TypeAlias = Literal[
     "round",
 ]
 
+# ── Algorithm, engine, and aggregation literals ──────────────────────
+
+AlgorithmName: TypeAlias = Literal[
+    "auto",
+    "nsgaii",
+    "nsgaiii",
+    "moead",
+    "smsemoa",
+    "spea2",
+    "ibea",
+    "smpso",
+    "agemoea",
+    "rvea",
+]
+
+EngineName: TypeAlias = Literal["numpy", "numba", "moocore", "jax"]
+
+AggregationName: TypeAlias = Literal[
+    "pbi",
+    "tchebycheff",
+    "weighted_sum",
+    "modified_tchebycheff",
+]
+
 __all__ = [
     "AlgorithmConfigMapping",
     "AlgorithmConfigProtocol",
@@ -114,4 +138,7 @@ __all__ = [
     "SelectionName",
     "InitializerName",
     "RepairName",
+    "AlgorithmName",
+    "EngineName",
+    "AggregationName",
 ]

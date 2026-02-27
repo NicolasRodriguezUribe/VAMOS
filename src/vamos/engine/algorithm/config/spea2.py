@@ -99,7 +99,7 @@ class _SPEA2ConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> _SPEA2ConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _SPEA2ConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -107,7 +107,7 @@ class _SPEA2ConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _SPEA2ConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _SPEA2ConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
