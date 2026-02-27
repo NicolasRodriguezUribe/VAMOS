@@ -58,8 +58,7 @@ class NSGAIII:
         - mutation (tuple): Mutation operator config
         - reference_directions (dict, optional): Reference point configuration
         - selection (tuple, optional): Parent selection config
-        - external_archive_size (int, optional): Size of external archive
-        - archive_type (str, optional): Archive type ("hypervolume" or "crowding")
+        - external_archive (dict, optional): {"capacity": int | None, "pruning": str}
         - hv_threshold (float, optional): HV threshold for early termination
     kernel : KernelBackend
         Backend for vectorized operations.

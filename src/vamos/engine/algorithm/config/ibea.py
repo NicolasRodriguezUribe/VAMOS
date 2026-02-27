@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive.bounded_archive import PrunePolicy
 
 from .base import (
     ConstraintModeStr,
@@ -111,14 +112,18 @@ class _IBEAConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _IBEAConfigBuilder:
+    def external_archive(
+        self,
+        capacity: int | None = None,
+        pruning: PrunePolicy = "crowding",
+    ) -> _IBEAConfigBuilder:
         """Configure an external archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
+            pruning: Strategy used when bounded archive exceeds capacity.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
         return self
 
     def build(self) -> IBEAConfig:

@@ -55,29 +55,25 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
     use_external_archive = bool(assignment.get("use_external_archive", False))
     if not use_external_archive:
         return
-    archive_type_raw = assignment.get("archive_type", "size_cap")
-    archive_type_norm = str(archive_type_raw).strip().lower()
-    # Prefer explicit archive_type when present. Fall back to legacy archive_unbounded only
-    # when archive_type is not provided in the assignment payload.
-    if "archive_type" in assignment:
-        archive_unbounded = archive_type_norm == "unbounded"
-    else:
-        archive_unbounded = bool(assignment.get("archive_unbounded", False))
+
+    legacy_keys = {"archive_type", "archive_size_factor", "archive_epsilon"}
+    legacy_used = sorted(k for k in legacy_keys if k in assignment)
+    if legacy_used:
+        joined = ", ".join(legacy_used)
+        raise ValueError(f"Unsupported external-archive tuning keys: {joined}. Use archive_unbounded/archive_capacity/archive_prune_policy.")
+
+    archive_unbounded = bool(assignment.get("archive_unbounded", False))
     if archive_unbounded:
         builder.external_archive(capacity=None)
         return
-    archive_type = str(archive_type_raw)
+
     prune_policy = str(assignment.get("archive_prune_policy", "crowding"))
-    archive_size_factor = int(assignment.get("archive_size_factor", 1))
-    if archive_size_factor < 1:
-        raise ValueError("archive_size_factor must be >= 1.")
-    archive_size = max(pop_size, pop_size * archive_size_factor)
-    epsilon = float(assignment.get("archive_epsilon", 0.01))
+    archive_size = int(assignment.get("archive_capacity", pop_size))
+    if archive_size <= 0:
+        raise ValueError("archive_capacity must be >= 1.")
     builder.external_archive(
         capacity=archive_size,
-        archive_type=archive_type,
         pruning=prune_policy,
-        epsilon=epsilon,
     )
 
 

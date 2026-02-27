@@ -95,11 +95,11 @@ def test_nsgaii_archive_unbounded_disables_archive_params():
     space = build_nsgaii_config_space()
     param_space = space.to_param_space()
     cfg = {"use_external_archive": True, "archive_unbounded": True}
-    assert not param_space.is_active("archive_type", cfg)
-    assert not param_space.is_active("archive_size_factor", cfg)
+    assert not param_space.is_active("archive_capacity", cfg)
+    assert not param_space.is_active("archive_prune_policy", cfg)
     cfg_bounded = {"use_external_archive": True, "archive_unbounded": False}
-    assert param_space.is_active("archive_type", cfg_bounded)
-    assert param_space.is_active("archive_size_factor", cfg_bounded)
+    assert param_space.is_active("archive_capacity", cfg_bounded)
+    assert param_space.is_active("archive_prune_policy", cfg_bounded)
 
 
 def test_nsgaii_permutation_config_space_builds_and_constructs_config():
@@ -177,15 +177,14 @@ def test_agemoea_external_archive_config():
     assignment.update(
         {
             "use_external_archive": True,
-            "archive_type": "size_cap",
+            "archive_unbounded": False,
             "archive_prune_policy": "crowding",
-            "archive_size_factor": 2,
-            "archive_epsilon": 0.01,
+            "archive_capacity": 200,
         }
     )
     cfg = config_from_assignment("agemoea", assignment)
     assert cfg.external_archive is not None
-    assert cfg.external_archive.capacity >= cfg.pop_size
+    assert cfg.external_archive.capacity == 200
     assert cfg.result_mode == "non_dominated"
 
 
@@ -197,15 +196,14 @@ def test_rvea_external_archive_config():
         {
             "n_obj": 3,
             "use_external_archive": True,
-            "archive_type": "size_cap",
+            "archive_unbounded": False,
             "archive_prune_policy": "crowding",
-            "archive_size_factor": 2,
-            "archive_epsilon": 0.01,
+            "archive_capacity": 200,
         }
     )
     cfg = config_from_assignment("rvea", assignment)
     assert cfg.external_archive is not None
-    assert cfg.external_archive.capacity >= cfg.pop_size
+    assert cfg.external_archive.capacity == 200
     assert cfg.result_mode == "non_dominated"
 
 
