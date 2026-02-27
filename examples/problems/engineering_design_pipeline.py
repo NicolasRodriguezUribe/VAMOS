@@ -23,7 +23,7 @@ def build_config(pop_size: int = 30) -> NSGAIIConfig:
         .offspring_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .constraint_mode("feasibility")
         .build()
     )

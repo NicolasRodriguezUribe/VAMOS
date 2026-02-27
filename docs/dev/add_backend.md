@@ -61,7 +61,7 @@ def test_mybackend_smoke():
         .offspring_size(6)
         .crossover("sbx", prob=1.0, eta=15)
         .mutation("pm", prob="1/n", eta=20)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
         .to_dict()
     )
