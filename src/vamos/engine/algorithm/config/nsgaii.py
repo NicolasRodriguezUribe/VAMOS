@@ -84,7 +84,7 @@ class _NSGAIIConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def result_mode(self, value: str) -> _NSGAIIConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _NSGAIIConfigBuilder:
         """Set result payload mode: ``non_dominated`` or ``population``."""
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
@@ -106,7 +106,7 @@ class _NSGAIIConfigBuilder:
         self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
         return self
 
-    def constraint_mode(self, value: str) -> _NSGAIIConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _NSGAIIConfigBuilder:
         """Set constraint handling mode: 'feasibility' or 'none'/'penalty'."""
         self._cfg["constraint_mode"] = value
         return self
@@ -133,7 +133,7 @@ class _NSGAIIConfigBuilder:
         self._cfg["parent_selection_filter"] = fn
         return self
 
-    def live_callback_mode(self, mode: str) -> _NSGAIIConfigBuilder:
+    def live_callback_mode(self, mode: LiveCallbackMode | str) -> _NSGAIIConfigBuilder:
         self._cfg["live_callback_mode"] = str(mode)
         return self
 

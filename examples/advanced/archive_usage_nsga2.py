@@ -35,6 +35,7 @@ def build_config() -> NSGAIIConfig:
         NSGAIIConfig.builder()
         .pop_size(80)
         .offspring_size(80)
+        .crossover("")
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", size=2)

@@ -10,7 +10,7 @@ from vamos.engine.archive.bounded_archive import PrunePolicy
 from vamos.resources import weight_path
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
-from .types import CrossoverName, InitializerName, MutationName, RepairName
+from .types import AggregationName, CrossoverName, InitializerName, MutationName, RepairName
 
 
 @dataclass(frozen=True)
@@ -107,7 +107,7 @@ class _MOEADConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def aggregation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def aggregation(self, method: AggregationName | str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["aggregation"] = (method, kwargs)
         return self
 
@@ -115,7 +115,7 @@ class _MOEADConfigBuilder:
         self._cfg["weight_vectors"] = {"path": path, "divisions": divisions}
         return self
 
-    def constraint_mode(self, value: str) -> _MOEADConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _MOEADConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -139,7 +139,7 @@ class _MOEADConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _MOEADConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _MOEADConfigBuilder:
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be 'non_dominated' or 'population'.")

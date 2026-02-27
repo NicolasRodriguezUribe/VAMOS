@@ -97,7 +97,7 @@ class _SMSEMOAConfigBuilder:
         }
         return self
 
-    def constraint_mode(self, value: str) -> _SMSEMOAConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _SMSEMOAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -117,7 +117,7 @@ class _SMSEMOAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _SMSEMOAConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _SMSEMOAConfigBuilder:
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be 'non_dominated' or 'population'.")

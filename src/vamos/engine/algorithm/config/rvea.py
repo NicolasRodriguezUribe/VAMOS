@@ -100,7 +100,7 @@ class _RVEAConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> _RVEAConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _RVEAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -108,7 +108,7 @@ class _RVEAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _RVEAConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _RVEAConfigBuilder:
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be 'non_dominated' or 'population'.")
