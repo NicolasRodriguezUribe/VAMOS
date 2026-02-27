@@ -63,3 +63,33 @@ def test_validate_experiment_spec_rejects_invalid_aos_block() -> None:
     spec = {"version": "1", "defaults": {"nsgaii": {"adaptive_operator_selection": []}}}
     with pytest.raises(ValueError, match="adaptive_operator_selection"):
         validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
+
+
+def test_validate_experiment_spec_accepts_simplified_archive_bounded_block() -> None:
+    spec = {
+        "version": "1",
+        "archive": {
+            "bounded": {
+                "enabled": True,
+                "size_cap": 50,
+                "prune_policy": "crowding",
+            }
+        },
+    }
+    validated = validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
+    assert validated["archive"]["bounded"]["size_cap"] == 50
+
+
+def test_validate_experiment_spec_rejects_legacy_archive_bounded_keys() -> None:
+    spec = {
+        "version": "1",
+        "archive": {
+            "bounded": {
+                "enabled": True,
+                "size_cap": 50,
+                "archive_type": "size_cap",
+            }
+        },
+    }
+    with pytest.raises(ValueError, match="archive_type"):
+        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())

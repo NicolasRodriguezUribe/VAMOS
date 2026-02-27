@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive.bounded_archive import PrunePolicy
 from vamos.foundation.encoding import normalize_encoding
 
 from .base import (
@@ -93,16 +94,15 @@ class _NSGAIIConfigBuilder:
     def external_archive(
         self,
         capacity: int | None = None,
-        **kwargs: Any,
+        pruning: PrunePolicy = "crowding",
     ) -> _NSGAIIConfigBuilder:
         """Configure an external archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`
-                (e.g. ``pruning``, ``archive_type``, ``epsilon``).
+            pruning: Strategy used when bounded archive exceeds capacity.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
         return self
 
     def constraint_mode(self, value: str) -> _NSGAIIConfigBuilder:

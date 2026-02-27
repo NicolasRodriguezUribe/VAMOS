@@ -23,10 +23,9 @@ def build_hv_stop_cfg(d: Mapping[str, object] | None) -> HVConvergenceConfig:
 
 
 def build_archive_cfg(d: Mapping[str, object] | None) -> BoundedArchiveConfig:
-    base = BoundedArchiveConfig()
-    data = dict(base.__dict__)
-    data.update({k: v for k, v in (d or {}).items() if k in data})
-    return BoundedArchiveConfig(**data)
+    if d is None:
+        return BoundedArchiveConfig()
+    return BoundedArchiveConfig(**dict(d))
 
 
 def _extract_block(spec: Mapping[str, object], key: str, problem_key: str | None) -> dict[str, object]:

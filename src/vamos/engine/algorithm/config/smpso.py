@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive.bounded_archive import PrunePolicy
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
 
@@ -95,16 +96,20 @@ class _SMPSOConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _SMPSOConfigBuilder:
+    def external_archive(
+        self,
+        capacity: int | None = None,
+        pruning: PrunePolicy = "crowding",
+    ) -> _SMPSOConfigBuilder:
         """Configure an external archive for result storage.
 
         Note: This is separate from ``archive_size`` which is the internal SMPSO archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
+            pruning: Strategy used when bounded archive exceeds capacity.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
         return self
 
     def build(self) -> SMPSOConfig:

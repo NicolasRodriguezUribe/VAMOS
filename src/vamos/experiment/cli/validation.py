@@ -50,14 +50,19 @@ def finalize_args(
             parser.error("--nsgaii-replacement-size must be <= --population-size.")
     if args.selection_pressure <= 0:
         parser.error("--selection-pressure must be a positive integer.")
+    if args.external_archive_unbounded and args.external_archive_size is not None:
+        parser.error("--external-archive-unbounded cannot be used with --external-archive-size.")
     if args.external_archive_size is not None and args.external_archive_size <= 0:
         parser.error("--external-archive-size must be a positive integer.")
-    # Convert raw CLI value to ExternalArchiveConfig
-    args.external_archive = (
-        ExternalArchiveConfig(capacity=args.external_archive_size)
-        if args.external_archive_size is not None
-        else None
-    )
+    if args.external_archive_unbounded:
+        args.external_archive = ExternalArchiveConfig(capacity=None, pruning=args.external_archive_pruning)
+    elif args.external_archive_size is not None:
+        args.external_archive = ExternalArchiveConfig(
+            capacity=args.external_archive_size,
+            pruning=args.external_archive_pruning,
+        )
+    else:
+        args.external_archive = None
     if args.max_evaluations <= 0:
         parser.error("--max-evaluations must be a positive integer.")
     if args.n_workers is not None and args.n_workers <= 0:

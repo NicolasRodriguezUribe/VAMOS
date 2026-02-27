@@ -27,7 +27,8 @@ def run_experiment(
     Execute a single problem/algorithm/engine combination.
 
     Parameters mirror the CLI; additional keyword args are passed to `run_single`
-    (e.g., `external_archive_size`, `hv_stop_config`, `track_genealogy`).
+    (e.g., `external_archive_size`, `external_archive_unbounded`,
+    `external_archive_pruning`, `hv_stop_config`, `track_genealogy`).
     """
     cfg = config or ExperimentConfig()
     selection = make_problem_selection(problem, n_var=n_var, n_obj=n_obj)

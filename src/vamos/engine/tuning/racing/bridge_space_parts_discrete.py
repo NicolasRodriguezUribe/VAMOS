@@ -141,22 +141,20 @@ def external_archive_part() -> SpacePart:
         Boolean("use_external_archive"),
         Boolean("archive_unbounded"),
     ]
-    archive_type_param = Categorical("archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"])
-    archive_size_factor_param = Categorical("archive_size_factor", [1, 2, 5, 10])
+    archive_capacity_param = Int("archive_capacity", 20, 2000, log=True)
     archive_prune_policy_param = Categorical(
         "archive_prune_policy", ["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"]
     )
-    archive_epsilon_param = Real("archive_epsilon", 1e-4, 0.1, log=True)
     conditionals = [
         ConditionalBlock(
             "use_external_archive",
             True,
-            [archive_type_param, archive_size_factor_param, archive_prune_policy_param, archive_epsilon_param],
+            [archive_capacity_param, archive_prune_policy_param],
         ),
     ]
     conditions = [
-        Condition("archive_type", "cfg['archive_unbounded'] == False"),
-        Condition("archive_size_factor", "cfg['archive_unbounded'] == False"),
+        Condition("archive_capacity", "cfg['archive_unbounded'] == False"),
+        Condition("archive_prune_policy", "cfg['archive_unbounded'] == False"),
     ]
     return params, conditionals, conditions
 

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive.bounded_archive import PrunePolicy
 from vamos.resources import weight_path
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
@@ -144,14 +145,18 @@ class _MOEADConfigBuilder:
         self._cfg["result_mode"] = mode
         return self
 
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _MOEADConfigBuilder:
+    def external_archive(
+        self,
+        capacity: int | None = None,
+        pruning: PrunePolicy = "crowding",
+    ) -> _MOEADConfigBuilder:
         """Configure an external archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
+            pruning: Strategy used when bounded archive exceeds capacity.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
         return self
 
     def build(self) -> MOEADConfig:

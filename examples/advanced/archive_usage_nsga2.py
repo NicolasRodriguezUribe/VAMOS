@@ -99,45 +99,28 @@ def _make_dense_front(n_points: int = 40) -> np.ndarray:
     return np.column_stack([t, 1.0 - t])
 
 
-def _grid_cells(F: np.ndarray, epsilon: float) -> int:
-    keys = np.floor(F / float(epsilon)).astype(int)
-    return int(np.unique(keys, axis=0).shape[0])
-
-
-def _demo_archive_type_matters() -> None:
-    # Here archive_type matters because BoundedArchive applies different
-    # reduction paths: plain size-cap pruning vs epsilon-grid compaction first.
+def _demo_prune_policy_matters() -> None:
+    # With the simplified archive config, only prune policy affects bounded behavior.
     F = _make_dense_front(40)
-    cfg_size_cap = BoundedArchiveConfig(
+    cfg_crowding = BoundedArchiveConfig(
         size_cap=8,
-        archive_type="size_cap",
         prune_policy="crowding",
-        epsilon=0.5,
     )
-    cfg_epsilon = BoundedArchiveConfig(
+    cfg_random = BoundedArchiveConfig(
         size_cap=8,
-        archive_type="epsilon_grid",
-        prune_policy="crowding",
-        epsilon=0.5,
+        prune_policy="random",
     )
 
-    arc_size_cap = BoundedArchive(cfg_size_cap)
-    upd_size_cap = arc_size_cap.add(X=None, F=F, evals=F.shape[0])
-    arc_epsilon = BoundedArchive(cfg_epsilon)
-    upd_epsilon = arc_epsilon.add(X=None, F=F, evals=F.shape[0])
+    arc_crowding = BoundedArchive(cfg_crowding)
+    upd_crowding = arc_crowding.add(X=None, F=F, evals=F.shape[0])
+    arc_random = BoundedArchive(cfg_random)
+    upd_random = arc_random.add(X=None, F=F, evals=F.shape[0])
 
-    print("\n[archive_type_demo] Same size_cap/prune_policy, different archive_type")
-    print(
-        f"  size_cap: final={upd_size_cap.after}, reason={upd_size_cap.prune_reason}, "
-        f"cells={_grid_cells(arc_size_cap.F, cfg_size_cap.epsilon)}"
-    )
-    print(
-        f"  epsilon_grid: final={upd_epsilon.after}, reason={upd_epsilon.prune_reason}, "
-        f"cells={_grid_cells(arc_epsilon.F, cfg_epsilon.epsilon)}"
-    )
-    print("  Why: epsilon_grid compacts objective-space cells before crowding prune.")
+    print("\n[prune_policy_demo] Same size_cap, different prune policy")
+    print(f"  crowding: final={upd_crowding.after}, reason={upd_crowding.prune_reason}")
+    print(f"  random:   final={upd_random.after}, reason={upd_random.prune_reason}")
 
 
 if __name__ == "__main__":
     main()
-    _demo_archive_type_matters()
+    _demo_prune_policy_matters()
