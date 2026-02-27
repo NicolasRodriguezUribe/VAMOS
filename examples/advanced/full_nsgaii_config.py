@@ -35,7 +35,6 @@ def main() -> None:
         # ── Population ───────────────────────────────────────────────
         .pop_size(100)  # Number of individuals
         .offspring_size(100)  # Offspring per generation (default: pop_size)
-        .replacement_size(100)  # Survivors kept from offspring (default: pop_size)
         # ── Operators ────────────────────────────────────────────────
         .crossover("sbx", prob=0.9, eta=20.0)  # Simulated Binary Crossover
         .mutation("pm", prob="1/n", eta=20.0)  # Polynomial Mutation (auto 1/n_var)

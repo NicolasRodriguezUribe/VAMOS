@@ -134,12 +134,6 @@ def add_algorithm_arguments(
         help="Repair strategy for NSGA-II (continuous encoding; use 'none' to disable).",
     )
     parser.add_argument(
-        "--nsgaii-replacement-size",
-        type=int,
-        default=_as_int(nsgaii_defaults.get("replacement_size")),
-        help="Replacement size per incremental NSGA-II step.",
-    )
-    parser.add_argument(
         "--moead-crossover",
         choices=("sbx", "uniform"),
         default=_as_str(moead_crossover.get("method")),

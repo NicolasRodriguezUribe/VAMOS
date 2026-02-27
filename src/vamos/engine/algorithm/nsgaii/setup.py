@@ -65,23 +65,11 @@ def initialize_run(
     rng = np.random.default_rng(seed)
 
     pop_size = int(algo.cfg["pop_size"])
-    raw_offspring_size = algo.cfg.get("offspring_size")
-    replacement_size_raw = algo.cfg.get("replacement_size")
-
-    if replacement_size_raw is not None:
-        replacement_size = int(replacement_size_raw)
-        if replacement_size <= 0:
-            raise ValueError("replacement size must be positive.")
-        if replacement_size > pop_size:
-            raise ValueError("replacement size must be <= population size.")
-        offspring_size = replacement_size
-        incremental_mode = replacement_size < pop_size
-    else:
-        offspring_size = int(raw_offspring_size or pop_size)
-        if offspring_size <= 0:
-            raise ValueError("offspring size must be positive.")
-        replacement_size = 1
-        incremental_mode = False
+    offspring_size = int(algo.cfg.get("offspring_size") or pop_size)
+    if offspring_size <= 0:
+        raise ValueError("offspring size must be positive.")
+    incremental_mode = offspring_size < pop_size
+    replacement_size = 1
 
     constraint_mode = algo.cfg.get("constraint_mode", "feasibility")
     initializer_cfg = algo.cfg.get("initializer")

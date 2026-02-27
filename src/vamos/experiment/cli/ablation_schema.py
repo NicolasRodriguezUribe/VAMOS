@@ -41,14 +41,14 @@ _ALLOWED_VARIANT_KEYS = {
 
 _OPERATOR_KEYS = {"crossover", "mutation", "selection", "repair", "aggregation"}
 _BOOL_KEYS = {"use_numba_variation"}
-_INT_KEYS = {"replacement_size", "k_neighbors", "archive_size", "n_partitions"}
+_INT_KEYS = {"k_neighbors", "archive_size", "n_partitions"}
 _FLOAT_KEYS = {"kappa", "inertia", "c1", "c2", "vmax_fraction", "alpha", "adapt_freq"}
 _STRING_KEYS = {"indicator"}
 _MAPPING_KEYS = {"adaptive_operator_selection"}
 _WEIGHT_KEYS = {"weight_vectors"}
 
 _VARIATION_ALLOWED_KEYS = {
-    "nsgaii": {"crossover", "mutation", "selection", "repair", "adaptive_operator_selection", "replacement_size"},
+    "nsgaii": {"crossover", "mutation", "selection", "repair", "adaptive_operator_selection"},
     "moead": {"crossover", "mutation", "aggregation", "repair", "weight_vectors", "use_numba_variation"},
     "smsemoa": {"crossover", "mutation", "selection", "repair"},
 }

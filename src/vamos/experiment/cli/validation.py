@@ -43,11 +43,6 @@ def finalize_args(
         args.offspring_population_size = args.population_size
     if args.offspring_population_size <= 0:
         parser.error("--offspring-population-size must be positive.")
-    if getattr(args, "nsgaii_replacement_size", None) is not None:
-        if args.nsgaii_replacement_size <= 0:
-            parser.error("--nsgaii-replacement-size must be a positive integer.")
-        if args.nsgaii_replacement_size > args.population_size:
-            parser.error("--nsgaii-replacement-size must be <= --population-size.")
     if args.selection_pressure <= 0:
         parser.error("--selection-pressure must be a positive integer.")
     if args.external_archive_unbounded and args.external_archive_size is not None:
@@ -77,7 +72,9 @@ def finalize_args(
             if problem_key.startswith("zdt") or problem_key.startswith("zcat"):
                 default_front = resolve_reference_front_path(problem_key, None, n_obj=getattr(args, "n_obj", None))
                 if default_front is None:
-                    parser.error("--hv-reference-front is required for the selected problem because no default reference front is available.")
+                    parser.error(
+                        "--hv-reference-front is required for the selected problem because no default reference front is available."
+                    )
                 args.hv_reference_front = str(default_front)
             else:
                 parser.error("--hv-reference-front is required for non-ZDT/ZCAT problems when --hv-threshold is set.")
@@ -88,9 +85,15 @@ def finalize_args(
     _algo = getattr(args, "algorithm", None)
     if _algo and _algo != "both":
         _prefixes = {
-            "nsgaii": "nsgaii_", "moead": "moead_", "smsemoa": "smsemoa_",
-            "nsgaiii": "nsgaiii_", "spea2": "spea2_", "ibea": "ibea_",
-            "smpso": "smpso_", "agemoea": "agemoea_", "rvea": "rvea_",
+            "nsgaii": "nsgaii_",
+            "moead": "moead_",
+            "smsemoa": "smsemoa_",
+            "nsgaiii": "nsgaiii_",
+            "spea2": "spea2_",
+            "ibea": "ibea_",
+            "smpso": "smpso_",
+            "agemoea": "agemoea_",
+            "rvea": "rvea_",
         }
         for algo_key, prefix in _prefixes.items():
             if algo_key == _algo:
@@ -99,7 +102,8 @@ def finalize_args(
                 if attr_name.startswith(prefix) and getattr(args, attr_name, None) is not None:
                     logging.getLogger(__name__).warning(
                         "Ignoring --%s (selected algorithm is '%s').",
-                        attr_name.replace("_", "-"), _algo,
+                        attr_name.replace("_", "-"),
+                        _algo,
                     )
 
     args.nsgaii_variation = collect_nsgaii_variation_args(args)
