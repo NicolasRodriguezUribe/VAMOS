@@ -7,15 +7,16 @@ from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
-from vamos.foundation.encoding import normalize_encoding
 
 from .base import (
     ConstraintModeStr,
     LiveCallbackMode,
     ResultMode,
+    _default_operators_for_encoding,
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
 from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
@@ -147,6 +148,7 @@ class _NSGAIIConfigBuilder:
             ("crossover", "mutation"),
             "NSGA-II",
         )
+        _validate_operators(self._cfg)
         pop_size = int(self._cfg.get("pop_size", 100))
         selection = self._cfg.get("selection", ("tournament", {}))
         return NSGAIIConfig(
@@ -171,7 +173,7 @@ class _NSGAIIConfigBuilder:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class NSGAIIConfig(_SerializableConfig):
     pop_size: int
     crossover: tuple[str, dict[str, Any]]
@@ -209,20 +211,9 @@ class NSGAIIConfig(_SerializableConfig):
         Returns:
             Frozen NSGAIIConfig ready to use
         """
-        normalized = normalize_encoding(encoding, default="real")
         mut_prob = 1.0 / n_var if n_var else 0.1
-        builder = cls.builder().pop_size(pop_size).selection("tournament")
-
-        if normalized == "permutation":
-            return builder.crossover("ox").mutation("swap").build()
-        if normalized == "binary":
-            return builder.crossover("uniform", prob=0.9).mutation("bitflip", prob=mut_prob).build()
-        if normalized == "integer":
-            return builder.crossover("sbx", prob=0.9, eta=20.0).mutation("pm", prob=mut_prob, eta=20.0).build()
-        if normalized == "mixed":
-            return builder.crossover("mixed", prob=0.9).mutation("mixed", prob=mut_prob).build()
-
-        return builder.crossover("sbx", prob=1.0, eta=20.0).mutation("pm", prob=mut_prob, eta=20.0).build()
+        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
+        return cls.builder().pop_size(pop_size).selection("tournament").crossover(cx[0], **cx[1]).mutation(mt[0], **mt[1]).build()
 
     @classmethod
     def builder(cls) -> _NSGAIIConfigBuilder:

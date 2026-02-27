@@ -245,7 +245,7 @@ class AOSController:
             if n_i < 2 or best_n < 2:
                 continue
             # Pooled standard error of the difference in means
-            se = math.sqrt((best_std ** 2 / best_n) + (std_i ** 2 / n_i))
+            se = math.sqrt((best_std**2 / best_n) + (std_i**2 / n_i))
             if se <= 0.0:
                 continue
             z = (best_mean - mean_i) / se

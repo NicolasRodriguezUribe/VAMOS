@@ -9,11 +9,19 @@ from typing import Any
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 
-from .base import ConstraintModeStr, ResultMode, _normalize_tournament_selection_kwargs, _require_fields, _SerializableConfig
+from .base import (
+    ConstraintModeStr,
+    ResultMode,
+    _default_operators_for_encoding,
+    _normalize_tournament_selection_kwargs,
+    _require_fields,
+    _SerializableConfig,
+    _validate_operators,
+)
 from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class NSGAIIIConfig(_SerializableConfig):
     pop_size: int
     crossover: tuple[str, dict[str, Any]]
@@ -36,6 +44,7 @@ class NSGAIIIConfig(_SerializableConfig):
         pop_size: int | None = None,
         n_var: int | None = None,
         n_obj: int = 3,
+        encoding: str | None = None,
     ) -> NSGAIIIConfig:
         """
         Create a default NSGA-III configuration.
@@ -44,16 +53,18 @@ class NSGAIIIConfig(_SerializableConfig):
             pop_size: Population size (default: matches reference directions)
             n_var: Number of variables (for mutation prob)
             n_obj: Number of objectives (for reference directions)
+            encoding: Problem encoding. If omitted, defaults to "real".
         """
         mut_prob = 1.0 / n_var if n_var else 0.1
         divisions = 12 if n_obj == 3 else 6
         if pop_size is None:
             pop_size = comb(divisions + n_obj - 1, n_obj - 1)
+        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
         return (
             cls.builder()
             .pop_size(pop_size)
-            .crossover("sbx", prob=1.0, eta=30.0)
-            .mutation("pm", prob=mut_prob, eta=20.0)
+            .crossover(cx[0], **cx[1])
+            .mutation(mt[0], **mt[1])
             .selection("tournament")
             .reference_directions(divisions=divisions)
             .pop_size_auto(True)
@@ -154,6 +165,7 @@ class _NSGAIIIConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection"),
             "NSGA-III",
         )
+        _validate_operators(self._cfg)
         ref_dirs = self._cfg.get("reference_directions", {})
         return NSGAIIIConfig(
             pop_size=self._cfg["pop_size"],

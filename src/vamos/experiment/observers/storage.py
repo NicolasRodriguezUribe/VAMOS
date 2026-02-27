@@ -207,7 +207,9 @@ class StorageObserver(Observer):
             "external_archive": {
                 "capacity": self.external_archive.capacity,
                 "pruning": self.external_archive.pruning,
-            } if self.external_archive is not None else None,
+            }
+            if self.external_archive is not None
+            else None,
             "hv_threshold": self.hv_stop_config.get("threshold_fraction") if self.hv_stop_config else None,
             "hv_reference_point": self.hv_stop_config.get("reference_point") if self.hv_stop_config else None,
             "hv_reference_front": self.hv_stop_config.get("reference_front_path") if self.hv_stop_config else None,

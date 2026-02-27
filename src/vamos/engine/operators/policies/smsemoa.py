@@ -305,13 +305,9 @@ def _build_mixed_operators(
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build variation operators for mixed encoding."""
     if str(cross_method).lower() not in {"mixed", "uniform"}:
-        raise ValueError(
-            f"Unsupported SMSEMOA crossover '{cross_method}' for mixed encoding."
-        )
+        raise ValueError(f"Unsupported SMSEMOA crossover '{cross_method}' for mixed encoding.")
     if str(mut_method).lower() not in {"mixed", "gaussian"}:
-        raise ValueError(
-            f"Unsupported SMSEMOA mutation '{mut_method}' for mixed encoding."
-        )
+        raise ValueError(f"Unsupported SMSEMOA mutation '{mut_method}' for mixed encoding.")
 
     cross_prob = float(cross_params.get("prob", 0.9))
     mut_prob = resolve_prob_expression(

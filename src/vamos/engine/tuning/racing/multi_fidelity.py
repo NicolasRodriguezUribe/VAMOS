@@ -212,8 +212,7 @@ def _run_stage_with_budget(
             configs[idx].last_budget_map[block_key] = budget
     else:
         results = Parallel(n_jobs=tuner.scenario.n_jobs)(
-            delayed(_eval_worker_warmstart)(eval_fn, cfg, ctx, tuner.task.maximize)
-            for cfg, ctx, _ in tasks
+            delayed(_eval_worker_warmstart)(eval_fn, cfg, ctx, tuner.task.maximize) for cfg, ctx, _ in tasks
         )
         for i, result in enumerate(results):
             idx = tasks[i][2]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 from typing import Literal, TypeAlias
 
 Encoding: TypeAlias = Literal["real", "binary", "permutation", "integer", "mixed"]
@@ -34,7 +35,11 @@ def normalize_encoding(value: str | None, *, default: Encoding = "real") -> Enco
         return default
     normalized = _ALIASES.get(key)
     if normalized is None:
-        expected = ", ".join(sorted(set(_ALIASES)))
+        all_names = sorted(set(_ALIASES))
+        matches = difflib.get_close_matches(key, all_names, n=3, cutoff=0.5)
+        if matches:
+            raise ValueError(f"Unknown encoding '{value}'. Did you mean: {', '.join(matches)}?")
+        expected = ", ".join(all_names)
         raise ValueError(f"Unknown encoding '{value}'. Expected one of: {expected}.")
     return normalized
 

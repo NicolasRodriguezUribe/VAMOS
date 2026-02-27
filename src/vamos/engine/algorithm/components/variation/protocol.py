@@ -27,8 +27,17 @@ class VariationOperator(Protocol):
 
 
 RealCrossoverName: TypeAlias = Literal[
-    "sbx", "blx_alpha", "blx_alpha_beta", "arithmetic", "whole_arithmetic",
-    "laplace", "fuzzy", "pcx", "undx", "simplex", "de",
+    "sbx",
+    "blx_alpha",
+    "blx_alpha_beta",
+    "arithmetic",
+    "whole_arithmetic",
+    "laplace",
+    "fuzzy",
+    "pcx",
+    "undx",
+    "simplex",
+    "de",
 ]
 RealMutationName: TypeAlias = Literal[
     "pm",

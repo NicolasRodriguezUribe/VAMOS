@@ -209,10 +209,7 @@ class ModelBasedSampler:
         if rng.random() < self.exploration_prob or (not self._cat_models and not self._real_models and not self._int_models):
             return self.param_space.sample(rng)
 
-        if (
-            len(self._joint_pool) >= self.min_samples_for_joint
-            and rng.random() < self.joint_sampling_prob
-        ):
+        if len(self._joint_pool) >= self.min_samples_for_joint and rng.random() < self.joint_sampling_prob:
             joint_cfg = self._sample_joint(rng)
             if joint_cfg is not None:
                 return joint_cfg

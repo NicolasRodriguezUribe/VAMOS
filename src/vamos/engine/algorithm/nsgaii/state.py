@@ -102,9 +102,7 @@ class NSGAIIState:
     # Optional extension hooks
     immigration_manager: Any | None = None
     parent_selection_filter: Any | None = None
-    non_breeding_indices: np.ndarray = field(
-        default_factory=lambda: np.zeros(0, dtype=int)
-    )
+    non_breeding_indices: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=int))
     live_callback_mode: str = "nd_only"
     generation_callback: Any | None = None
     generation_callback_copy: bool = True

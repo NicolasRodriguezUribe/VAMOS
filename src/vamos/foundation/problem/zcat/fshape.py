@@ -240,9 +240,7 @@ def f13(y: FloatArray, n_obj: int) -> FloatArray:
         f[j - 1] = 1.0 - total / (n_obj - j + 1.0)
 
     y0 = float(y[0])
-    f[n_obj - 1] = 1.0 - (
-        math.cos((2.0 * k - 1.0) * y0 * _PI) + 2.0 * y0 + 4.0 * k * (1.0 - y0) - 1.0
-    ) / (4.0 * k)
+    f[n_obj - 1] = 1.0 - (math.cos((2.0 * k - 1.0) * y0 * _PI) + 2.0 * y0 + 4.0 * k * (1.0 - y0) - 1.0) / (4.0 * k)
     return f
 
 

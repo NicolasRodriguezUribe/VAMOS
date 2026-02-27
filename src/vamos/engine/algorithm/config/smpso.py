@@ -8,11 +8,11 @@ from typing import Any
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 
-from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _default_operators_for_encoding, _require_fields, _SerializableConfig, _validate_operators
 from .types import InitializerName, MutationName, RepairName
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class SMPSOConfig(_SerializableConfig):
     pop_size: int
     archive_size: int  # Internal archive (part of SMPSO algorithm)
@@ -33,10 +33,18 @@ class SMPSOConfig(_SerializableConfig):
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
+        encoding: str | None = None,
     ) -> SMPSOConfig:
-        """Create a default SMPSO configuration."""
+        """Create a default SMPSO configuration.
+
+        Args:
+            pop_size: Population size (default: 100)
+            n_var: Number of variables (for mutation prob)
+            encoding: Problem encoding. If omitted, defaults to "real".
+        """
         mut_prob = 1.0 / n_var if n_var else 0.1
-        return cls.builder().pop_size(pop_size).archive_size(pop_size).mutation("pm", prob=mut_prob, eta=20.0).build()
+        _, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
+        return cls.builder().pop_size(pop_size).archive_size(pop_size).mutation(mt[0], **mt[1]).build()
 
     @classmethod
     def builder(cls) -> _SMPSOConfigBuilder:
@@ -119,6 +127,7 @@ class _SMPSOConfigBuilder:
             ("pop_size", "archive_size", "mutation"),
             "SMPSO",
         )
+        _validate_operators(self._cfg)
         return SMPSOConfig(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],

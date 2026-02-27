@@ -60,7 +60,9 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
     legacy_used = sorted(k for k in legacy_keys if k in assignment)
     if legacy_used:
         joined = ", ".join(legacy_used)
-        raise ValueError(f"Unsupported external-archive tuning keys: {joined}. Use archive_unbounded/archive_capacity/archive_prune_policy.")
+        raise ValueError(
+            f"Unsupported external-archive tuning keys: {joined}. Use archive_unbounded/archive_capacity/archive_prune_policy."
+        )
 
     archive_unbounded = bool(assignment.get("archive_unbounded", False))
     if archive_unbounded:

@@ -198,9 +198,7 @@ def test_zcat13_f13_last_component_matches_reference_formula():
 
     k = 3.0
     y0 = float(y[0])
-    expected_last_unscaled = 1.0 - (
-        np.cos((2.0 * k - 1.0) * y0 * np.pi) + 2.0 * y0 + 4.0 * k * (1.0 - y0) - 1.0
-    ) / (4.0 * k)
+    expected_last_unscaled = 1.0 - (np.cos((2.0 * k - 1.0) * y0 * np.pi) + 2.0 * y0 + 4.0 * k * (1.0 - y0) - 1.0) / (4.0 * k)
     expected_last = (3.0**2.0) * expected_last_unscaled
 
     assert np.isclose(out["F"][0, 2], expected_last, atol=1e-12, rtol=0.0)

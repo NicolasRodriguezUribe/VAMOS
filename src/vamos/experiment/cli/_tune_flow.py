@@ -159,7 +159,21 @@ def run_validation_stage(
             writer.writerows(validation_rows)
         else:
             writer = csv.writer(fh)
-            writer.writerow(["rank", "tune_score", "config_json", "score_agg", "score_mean", "score_median", "score_p25", "score_p10", "rows_total", "rows_ok", "fail_rate"])
+            writer.writerow(
+                [
+                    "rank",
+                    "tune_score",
+                    "config_json",
+                    "score_agg",
+                    "score_mean",
+                    "score_median",
+                    "score_p25",
+                    "score_p10",
+                    "rows_total",
+                    "rows_ok",
+                    "fail_rate",
+                ]
+            )
 
     if validation_rows:
         best_global = validation_rows[0]

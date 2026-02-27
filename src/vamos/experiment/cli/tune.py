@@ -579,7 +579,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 "split_strategy": str(args.split_strategy),
                 "train_frac": float(args.train_frac),
                 "validation_frac": float(args.validation_frac),
-            }
+            },
         },
         artifact_updates={
             "split_instances": split_csv_path.name,
