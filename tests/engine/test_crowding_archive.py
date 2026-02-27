@@ -9,6 +9,7 @@ from vamos.engine.algorithm.components.archive import (
     HypervolumeArchive,
     SPEA2Archive,
     UnboundedArchive,
+    select_top_k_crowding,
 )
 
 
@@ -147,6 +148,32 @@ def test_hv_fallback_warns_once(monkeypatch: pytest.MonkeyPatch):
         warnings.simplefilter("always")
         archive_mod._hv_contributions(F, ref)
     assert len(rec) == 0
+
+
+def test_select_top_k_crowding_returns_k_indices():
+    F = _tradeoff_front(20)
+    idx = select_top_k_crowding(F, 5)
+    assert idx.shape == (5,)
+    assert len(set(idx.tolist())) == 5
+    assert all(0 <= i < 20 for i in idx)
+
+
+def test_select_top_k_crowding_returns_all_when_k_ge_n():
+    F = _tradeoff_front(3)
+    idx = select_top_k_crowding(F, 10)
+    assert idx.shape == (3,)
+
+
+def test_select_top_k_crowding_keeps_extremes():
+    F = np.array([[0.0, 10.0], [5.0, 5.0], [10.0, 0.0], [4.0, 5.5]])
+    idx = select_top_k_crowding(F, 2)
+    assert 0 in idx and 2 in idx
+
+
+def test_select_top_k_crowding_rejects_non_positive_k():
+    F = _tradeoff_front(5)
+    with pytest.raises(ValueError, match="k must be a positive"):
+        select_top_k_crowding(F, 0)
 
 
 def test_nsgaii_constrained_with_external_archive():

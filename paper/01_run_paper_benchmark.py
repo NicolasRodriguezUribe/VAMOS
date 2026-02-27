@@ -273,6 +273,17 @@ try:
 except ImportError:
     from benchmark_utils import compute_hv, compute_igd_plus
 
+from vamos.engine.algorithm.components.archive import select_top_k_crowding
+
+TOP_K_HV = POP_SIZE  # trim archive to pop_size best-spread solutions for HV/IGD+
+
+
+def _trim_for_hv(F: np.ndarray | None, k: int = TOP_K_HV) -> np.ndarray | None:
+    """Trim a non-dominated front to the *k* most spread solutions."""
+    if F is None or F.shape[0] <= k:
+        return F
+    return F[select_top_k_crowding(F, k)]
+
 try:
     from .progress_utils import ProgressBar, joblib_progress
 except ImportError:  # pragma: no cover
@@ -620,7 +631,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 if isinstance(archive_payload, dict):
                     archive_F = archive_payload.get("F")
                     if archive_F is not None:
-                        hv_source = archive_F
+                        hv_source = _trim_for_hv(archive_F)
                         n_solutions = int(archive_F.shape[0])
             hv = compute_hv(hv_source, problem_name) if hv_source is not None else float("nan")
             igd_plus = compute_igd_plus(hv_source, problem_name) if hv_source is not None else float("nan")
@@ -786,7 +797,7 @@ def run_single_benchmark(problem_name, seed, framework):
             if ALGORITHM == "nsgaii_archive" and archive_cb is not None:
                 _, archive_F = archive_cb.archive.contents()
                 if archive_F is not None:
-                    hv_source = archive_F
+                    hv_source = _trim_for_hv(archive_F)
                     n_solutions = int(archive_F.shape[0])
             hv = compute_hv(hv_source, problem_name) if hv_source is not None else float("nan")
             igd_plus = compute_igd_plus(hv_source, problem_name) if hv_source is not None else float("nan")
@@ -924,9 +935,10 @@ def run_single_benchmark(problem_name, seed, framework):
 
             if use_archive and archive is not None:
                 _, F = archive.contents()
-                hv = compute_hv(F, problem_name)
-                igd_plus = compute_igd_plus(F, problem_name)
                 n_solutions = int(F.shape[0]) if F is not None else 0
+                F_hv = _trim_for_hv(F)
+                hv = compute_hv(F_hv, problem_name)
+                igd_plus = compute_igd_plus(F_hv, problem_name)
             else:
                 fronts = tools.sortNondominated(pop, len(pop), first_front_only=True)
                 F = np.array([ind.fitness.values for ind in fronts[0]])
@@ -1072,9 +1084,10 @@ def run_single_benchmark(problem_name, seed, framework):
 
             if ALGORITHM == "nsgaii_archive" and archive is not None:
                 _, F = archive.contents()
-                hv = compute_hv(F, problem_name)
-                igd_plus = compute_igd_plus(F, problem_name)
                 n_solutions = int(F.shape[0]) if F is not None else 0
+                F_hv = _trim_for_hv(F)
+                hv = compute_hv(F_hv, problem_name)
+                igd_plus = compute_igd_plus(F_hv, problem_name)
             else:
                 solutions = algorithm.result()  # result() is a method, not property
                 F = np.array([s.objectives for s in solutions])
@@ -1214,8 +1227,9 @@ def run_single_benchmark(problem_name, seed, framework):
 
             result_solutions = list(algorithm.result)
             F = np.array([s.objectives for s in result_solutions])
-            hv = compute_hv(F, problem_name)
-            igd_plus = compute_igd_plus(F, problem_name)
+            F_hv = _trim_for_hv(F) if ALGORITHM == "nsgaii_archive" else F
+            hv = compute_hv(F_hv, problem_name)
+            igd_plus = compute_igd_plus(F_hv, problem_name)
 
             result_entry = {
                 "framework": "Platypus",

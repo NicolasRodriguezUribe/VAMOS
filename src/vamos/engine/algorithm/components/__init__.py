@@ -19,6 +19,7 @@ from vamos.engine.algorithm.components.archive import (
     HypervolumeArchive,
     SPEA2Archive,
     _single_front_crowding,
+    select_top_k_crowding,
 )
 from vamos.engine.algorithm.components.archives import (
     resolve_external_archive,
@@ -82,6 +83,7 @@ __all__ = [
     "HypervolumeArchive",
     "SPEA2Archive",
     "_single_front_crowding",
+    "select_top_k_crowding",
     # population
     "initialize_population",
     "resolve_bounds",
