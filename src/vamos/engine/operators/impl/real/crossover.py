@@ -573,6 +573,7 @@ class BLXAlphaBetaCrossover(Crossover):
         *,
         lower: ArrayLike,
         upper: ArrayLike,
+        repair: str = "clip",
         workspace: VariationWorkspace | None = None,
         allow_inplace: bool = False,
     ) -> None:
@@ -580,8 +581,73 @@ class BLXAlphaBetaCrossover(Crossover):
         self.beta = float(beta)
         self.prob = float(prob_crossover)
         self.lower, self.upper = _ensure_bounds(lower, upper)
+        normalized = (repair or "clip").lower()
+        if normalized == "random":
+            normalized = "resample"
+        if normalized not in {"clip", "resample", "reflect", "round"}:
+            raise ValueError(f"Unsupported BLX repair strategy '{repair}'.")
+        self.repair = normalized
         self.workspace = workspace
         self.allow_inplace = bool(allow_inplace)
+
+    def _rand(self, key: str, shape: tuple[int, ...], rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(shape)
+        buf = self.workspace.request(key, shape, np.float64)
+        rng.random(out=buf)
+        return buf
+
+    def _sample_mask(self, n_pairs: int, rng: np.random.Generator) -> np.ndarray:
+        if self.workspace is None:
+            return rng.random(n_pairs) <= self.prob
+        probs = self.workspace.request("blxab_prob", (n_pairs,), np.float64)
+        rng.random(out=probs)
+        mask = self.workspace.request("blxab_mask", (n_pairs,), np.bool_)
+        np.less_equal(probs, self.prob, out=mask)
+        return mask
+
+    def _repair_random(self, values: np.ndarray, rng: np.random.Generator, key: str) -> None:
+        mask_low = values < self.lower
+        mask_high = values > self.upper
+        mask = mask_low | mask_high
+        if not np.any(mask):
+            return
+        span = self.upper - self.lower
+        rand = self._rand(key, values.shape, rng)
+        repaired = self.lower + rand * span
+        values[mask] = repaired[mask]
+
+    def _repair_reflect(self, values: np.ndarray) -> None:
+        n_vars = self.lower.shape[0]
+        for j in range(n_vars):
+            low = self.lower[j]
+            high = self.upper[j]
+            width = high - low
+            if width <= 0.0:
+                values[:, j] = low
+                continue
+            val = values[:, j] - low
+            period = 2.0 * width
+            val = np.mod(val, period)
+            over = val > width
+            val[over] = period - val[over]
+            values[:, j] = val + low
+
+    def _repair_round(self, values: np.ndarray) -> None:
+        np.rint(values, out=values)
+        np.clip(values, self.lower, self.upper, out=values)
+
+    def _apply_repair(self, child: np.ndarray, rng: np.random.Generator, key: str) -> None:
+        if self.repair == "clip":
+            np.clip(child, self.lower, self.upper, out=child)
+        elif self.repair == "resample":
+            self._repair_random(child, rng, key)
+        elif self.repair == "reflect":
+            self._repair_reflect(child)
+        elif self.repair == "round":
+            self._repair_round(child)
+        else:
+            raise ValueError(f"Unsupported BLX repair strategy '{self.repair}'.")
 
     def __call__(self, parents: ArrayLike, rng: np.random.Generator) -> ArrayLike:
         parents_arr = self._as_matings(parents, copy=False, name="parents")
@@ -590,7 +656,7 @@ class BLXAlphaBetaCrossover(Crossover):
         if n_pairs == 0:
             return offspring
 
-        mask = rng.random(n_pairs) <= self.prob
+        mask = self._sample_mask(n_pairs, rng)
         if not np.any(mask):
             return offspring
 
@@ -603,10 +669,12 @@ class BLXAlphaBetaCrossover(Crossover):
         lower_range = lo - self.alpha * span
         upper_range = hi + self.beta * span
         width = upper_range - lower_range
-        child1 = lower_range + rng.random(lower_range.shape) * width
-        child2 = lower_range + rng.random(lower_range.shape) * width
-        np.clip(child1, self.lower, self.upper, out=child1)
-        np.clip(child2, self.lower, self.upper, out=child2)
+        child1 = lower_range + self._rand("blxab_rand1", lower_range.shape, rng) * width
+        child2 = lower_range + self._rand("blxab_rand2", lower_range.shape, rng) * width
+
+        self._apply_repair(child1, rng, "blxab_rand_repair1")
+        self._apply_repair(child2, rng, "blxab_rand_repair2")
+
         active[:, 0, :] = child1
         active[:, 1, :] = child2
         offspring[mask] = active
