@@ -19,7 +19,8 @@ Environment variables:
   VAMOS_ZCAT_FRAMEWORKS      frameworks (default: vamos-numba,pymoo,jmetalpy)
   VAMOS_ZCAT_OUTPUT_CSV      output path (default: experiments/benchmark_zcat_scalability.csv)
   VAMOS_NUMBA_WARMUP_EVALS   Numba warmup evals (default: 2000)
-  VAMOS_ZCAT_SAVE_EVERY      partial save interval (default: 50)
+  VAMOS_ZCAT_SAVE_EVERY      chunk size for partial saves (default: 50)
+  VAMOS_ZCAT_SAVE_INTERVAL_MIN  time-based checkpoint interval in minutes (default: 30)
   VAMOS_ZCAT_RESUME          1/0 resume from existing CSV (default: 1)
 """
 
@@ -77,6 +78,7 @@ N_SEEDS = _int_env("VAMOS_N_SEEDS", 30)
 N_JOBS = _int_env("VAMOS_N_JOBS", max(1, (os.cpu_count() or 2) - 1))
 NUMBA_WARMUP_EVALS = _int_env("VAMOS_NUMBA_WARMUP_EVALS", 2000)
 SAVE_EVERY = _int_env("VAMOS_ZCAT_SAVE_EVERY", 50)
+SAVE_INTERVAL_MIN = _int_env("VAMOS_ZCAT_SAVE_INTERVAL_MIN", 30)
 RESUME = os.environ.get("VAMOS_ZCAT_RESUME", "1").strip().lower() not in {"0", "false", "no"}
 
 # Problem configuration
@@ -374,6 +376,15 @@ def run_single_benchmark(
 # =============================================================================
 
 
+def _save_partial(collected: list[dict[str, Any]]) -> None:
+    """Persist current results to CSV (existing + new rows already merged in memory)."""
+    rows = [r for r in collected if r is not None]
+    if not rows:
+        return
+    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_csv(OUTPUT_CSV, index=False)
+
+
 def _framework_csv_name(fw: str) -> str:
     """Map framework key to the name stored in CSV."""
     if fw.startswith("vamos-"):
@@ -392,6 +403,7 @@ def main() -> None:
     print(f"  seeds:       {N_SEEDS}")
     print(f"  frameworks:  {FRAMEWORKS}")
     print(f"  workers:     {N_JOBS}")
+    print(f"  save every:  {SAVE_EVERY} tasks or {SAVE_INTERVAL_MIN} min")
     print(f"  output:      {OUTPUT_CSV}")
 
     # Build task list
@@ -434,19 +446,30 @@ def main() -> None:
         print("Nothing to do.")
         return
 
-    # Execute
-    with joblib_progress(total=total, desc="ZCAT scalability"):
-        results = Parallel(n_jobs=N_JOBS, batch_size=1)(
-            delayed(run_single_benchmark)(**t) for t in pending
-        )
-
+    # Execute in chunks with time-based checkpointing
     collected: list[dict[str, Any]] = list(existing_rows)
-    for r in results:
-        if r is not None:
-            collected.append(r)
+    last_save = time.perf_counter()
+    save_interval = SAVE_INTERVAL_MIN * 60
 
-    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(collected).to_csv(OUTPUT_CSV, index=False)
+    for i in range(0, len(pending), SAVE_EVERY):
+        chunk = pending[i : i + SAVE_EVERY]
+        with joblib_progress(total=len(chunk), desc=f"ZCAT scalability [{i}..{i+len(chunk)}/{total}]"):
+            chunk_results = Parallel(n_jobs=N_JOBS, batch_size=1)(
+                delayed(run_single_benchmark)(**t) for t in chunk
+            )
+        for r in chunk_results:
+            if r is not None:
+                collected.append(r)
+
+        now = time.perf_counter()
+        if now - last_save >= save_interval:
+            _save_partial(collected)
+            n_new = len(collected) - len(existing_rows)
+            print(f"  [checkpoint] saved {len(collected)} rows ({n_new} new) at {(now - last_save)/60:.1f}min")
+            last_save = now
+
+    # Final save
+    _save_partial(collected)
     n_new = len(collected) - len(existing_rows)
     print(f"\nWrote {len(collected)} rows ({n_new} new) to {OUTPUT_CSV}")
 
