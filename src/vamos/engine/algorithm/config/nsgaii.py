@@ -17,6 +17,7 @@ from .base import (
     _require_fields,
     _SerializableConfig,
 )
+from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
 
 class _NSGAIIConfigBuilder:
@@ -33,7 +34,7 @@ class _NSGAIIConfigBuilder:
 
     def crossover(
         self,
-        method: str | tuple[str, dict[str, Any]],
+        method: CrossoverName | str | tuple[str, dict[str, Any]],
         params: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> _NSGAIIConfigBuilder:
@@ -45,7 +46,7 @@ class _NSGAIIConfigBuilder:
 
     def mutation(
         self,
-        method: str | tuple[str, dict[str, Any]],
+        method: MutationName | str | tuple[str, dict[str, Any]],
         params: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> _NSGAIIConfigBuilder:
@@ -67,15 +68,15 @@ class _NSGAIIConfigBuilder:
         self._cfg["replacement_size"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
+    def selection(self, method: SelectionName | str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 

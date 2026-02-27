@@ -9,6 +9,7 @@ from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 
 from .base import ConstraintModeStr, ResultMode, _normalize_tournament_selection_kwargs, _require_fields, _SerializableConfig
+from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
 
 @dataclass(frozen=True)
@@ -70,15 +71,15 @@ class _SPEA2ConfigBuilder:
         self._cfg["archive_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def selection(self, method: SelectionName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
@@ -86,11 +87,11 @@ class _SPEA2ConfigBuilder:
         self._cfg["k_neighbors"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 

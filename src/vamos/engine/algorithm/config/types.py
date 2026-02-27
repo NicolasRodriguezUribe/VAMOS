@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Protocol, TypeAlias, runtime_checkable
+from typing import Literal, Protocol, TypeAlias, runtime_checkable
 
 AlgorithmConfigMapping: TypeAlias = Mapping[str, object]
 
@@ -13,7 +13,105 @@ class AlgorithmConfigProtocol(Protocol):
     def to_dict(self) -> AlgorithmConfigMapping: ...
 
 
+# ── Operator name literals (for IDE autocompletion) ──────────────────
+
+CrossoverName: TypeAlias = Literal[
+    # Real
+    "sbx",
+    "blx_alpha",
+    "blx_alpha_beta",
+    "arithmetic",
+    "whole_arithmetic",
+    "laplace",
+    "fuzzy",
+    "de",
+    "pcx",
+    "undx",
+    "simplex",
+    # Binary
+    "one_point",
+    "two_point",
+    "binary_uniform",
+    "hux",
+    "spx",
+    # Permutation
+    "ox",
+    "order",
+    "pmx",
+    "cx",
+    "cycle",
+    "position_based",
+    "erx",
+    "aex",
+    # Integer
+    "int_uniform",
+    "int_arithmetic",
+    "int_sbx",
+    # Mixed
+    "mixed",
+]
+
+MutationName: TypeAlias = Literal[
+    # Real
+    "pm",
+    "polynomial",
+    "gaussian",
+    "uniform",
+    "uniform_reset",
+    "cauchy",
+    "non_uniform",
+    "linked_polynomial",
+    "levy_flight",
+    "power_law",
+    # Binary
+    "bitflip",
+    "segment_inversion",
+    # Permutation
+    "swap",
+    "insert",
+    "scramble",
+    "inversion",
+    "displacement",
+    "two_opt",
+    # Integer
+    "reset",
+    "int_pm",
+    "creep",
+    "boundary",
+    "int_gaussian",
+    # Mixed
+    "mixed_mutation",
+]
+
+SelectionName: TypeAlias = Literal["tournament"]
+
+InitializerName: TypeAlias = Literal[
+    "random",
+    "lhs",
+    "scatter",
+    "scatter_search",
+    "sobol",
+    "halton",
+    "obl",
+    "opposition",
+    "custom",
+]
+
+RepairName: TypeAlias = Literal[
+    "clip",
+    "clamp",
+    "reflect",
+    "random",
+    "resample",
+    "round",
+]
+
 __all__ = [
     "AlgorithmConfigMapping",
     "AlgorithmConfigProtocol",
+    "CrossoverName",
+    "MutationName",
+    "SelectionName",
+    "InitializerName",
+    "RepairName",
 ]

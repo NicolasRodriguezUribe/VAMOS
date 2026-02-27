@@ -9,6 +9,7 @@ from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 
 from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .types import InitializerName, MutationName, RepairName
 
 
 @dataclass(frozen=True)
@@ -56,7 +57,7 @@ class _SMPSOConfigBuilder:
         self._cfg["archive_size"] = value
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
@@ -76,11 +77,11 @@ class _SMPSOConfigBuilder:
         self._cfg["vmax_fraction"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
