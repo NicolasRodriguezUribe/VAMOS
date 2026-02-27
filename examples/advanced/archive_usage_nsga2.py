@@ -2,7 +2,8 @@
 External archive demo with NSGA-II on DTLZ2 (3 objectives).
 
 Shows how to configure a hypervolume/crowding archive, access its contents,
-and plot the archived Pareto set alongside the final population.
+select the top-k most spread solutions via crowding distance, and plot the
+archived Pareto set alongside the final population.
 
 Note: This example uses explicit config objects for advanced control.
 For quick runs, prefer the unified optimize(...) API.
@@ -21,6 +22,7 @@ import numpy as np
 from vamos import optimize
 from vamos.problems import DTLZ2
 from vamos.algorithms import NSGAIIConfig
+from vamos.engine.algorithm.components.archive import select_top_k_crowding
 from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig
 
 
@@ -65,8 +67,13 @@ def main() -> None:
     print(f"Population size: {len(F)}")
     if archive_F is not None:
         print(f"Archive size: {len(archive_F)}")
-        best_idx = int(np.argmin(np.sum(archive_F[:, :3], axis=1)))
-        print("Best archived objectives (sum-min heuristic):", archive_F[best_idx])
+
+        # Select the top-80 most spread solutions using crowding distance.
+        top_idx = select_top_k_crowding(archive_F, k=80)
+        top_F = archive_F[top_idx]
+        print(f"Top-{len(top_idx)} spread solutions selected from archive")
+        best_idx = int(np.argmin(np.sum(top_F[:, :3], axis=1)))
+        print("Best archived objectives (sum-min heuristic):", top_F[best_idx])
     else:
         print("No archive returned. Check external_archive config.")
 

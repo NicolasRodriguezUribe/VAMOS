@@ -200,7 +200,7 @@ class OptimizationResult:
                     raise ValueError("weights must sum to a positive value.")
                 w = w / s
             return np.asarray(F_norm @ w, dtype=float)
-        raise ValueError("Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum")
+        raise ValueError("Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum, crowding")
 
     def top_k(
         self,
@@ -218,7 +218,7 @@ class OptimizationResult:
             k: Number of rows to return (capped to available rows).
             source: One of ``result``, ``archive``, or ``population``.
             method: Ranking method: ``knee``, ``min_f1``, ``min_f2``,
-                ``balanced``, or ``weighted_sum``.
+                ``balanced``, ``weighted_sum``, or ``crowding``.
             nondominated_only: If True, rank only the first Pareto front.
             weights: Optional weights for ``weighted_sum`` ranking.
         """
@@ -239,6 +239,30 @@ class OptimizationResult:
         else:
             F_rank = F_src
             idx_rank = idx_src
+
+        key = str(method).strip().lower()
+        if key == "crowding":
+            from vamos.engine.algorithm.components.archive import (
+                _single_front_crowding,
+                select_top_k_crowding,
+            )
+
+            k_eff = min(int(k), F_rank.shape[0])
+            selected_local = select_top_k_crowding(F_rank, k_eff)
+            selected_idx = idx_rank[selected_local]
+            selected_F = F_src[selected_idx]
+            selected_X = X_src[selected_idx] if X_src is not None else None
+            selected_scores = np.asarray(
+                _single_front_crowding(F_rank)[selected_local], dtype=float
+            )
+            return {
+                "X": selected_X,
+                "F": selected_F,
+                "indices": np.asarray(selected_idx, dtype=int),
+                "scores": selected_scores,
+                "source": str(source).strip().lower(),
+                "method": "crowding",
+            }
 
         scores = self._ranking_scores(F_rank, method=method, weights=weights)
         order = np.argsort(scores)

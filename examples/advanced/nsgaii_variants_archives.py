@@ -7,8 +7,9 @@ This advanced example runs DTLZ2 (3 objectives) with four configurations:
 3) NSGA-II with bounded external archive (crowding, capacity=100)
 4) NSGA-II with unbounded external archive
 
-For the unbounded archive run, the script reports up to the top-100 compromise
-solutions, ranked by the sum of min-max normalized objectives (lower is better).
+For the unbounded archive run, the script reports two top-100 selections:
+- **crowding**: the most spread solutions selected by iterative crowding distance
+- **knee**: compromise solutions ranked by normalized objective sum (lower is better)
 
 Usage:
     python examples/advanced/nsgaii_variants_archives.py
@@ -127,23 +128,41 @@ def _print_summary(entry: dict[str, Any]) -> None:
 
 def _report_top_100_unbounded(entry: dict[str, Any]) -> None:
     result = entry["result"]
+
+    # --- Top-100 by crowding distance (most spread solutions) ---
     try:
-        top = result.top_k(k=100, source="archive", method="knee", nondominated_only=True)
+        top_cd = result.top_k(k=100, source="archive", method="crowding", nondominated_only=True)
     except ValueError:
         print("\n[unbounded_archive] No archive solutions available.")
         return
 
-    top_f = np.asarray(top["F"], dtype=float)
-    top_scores = np.asarray(top["scores"], dtype=float)
-    top_x = top["X"]
+    top_cd_f = np.asarray(top_cd["F"], dtype=float)
+    print(f"\n[unbounded_archive] Top {top_cd_f.shape[0]} most spread solutions (crowding)")
+    print("  rank | crowding | objectives")
+    for i in range(min(10, top_cd_f.shape[0])):
+        print(f"  {i + 1:4d} | {top_cd['scores'][i]:.6f} | {np.array2string(top_cd_f[i], precision=6, suppress_small=True)}")
+    if top_cd_f.shape[0] > 10:
+        print(f"  ... ({top_cd_f.shape[0] - 10} more rows)")
 
-    print(f"\n[unbounded_archive] Top {top_f.shape[0]} best compromise solutions")
+    # --- Top-100 by knee (best compromise solutions) ---
+    try:
+        top_knee = result.top_k(k=100, source="archive", method="knee", nondominated_only=True)
+    except ValueError:
+        return
+
+    top_f = np.asarray(top_knee["F"], dtype=float)
+    top_scores = np.asarray(top_knee["scores"], dtype=float)
+    top_x = top_knee["X"]
+
+    print(f"\n[unbounded_archive] Top {top_f.shape[0]} best compromise solutions (knee)")
     print("  rank | score | objectives")
-    for i in range(top_f.shape[0]):
+    for i in range(min(10, top_f.shape[0])):
         print(f"  {i + 1:4d} | {top_scores[i]:.6f} | {np.array2string(top_f[i], precision=6, suppress_small=True)}")
+    if top_f.shape[0] > 10:
+        print(f"  ... ({top_f.shape[0] - 10} more rows)")
 
     if top_x is not None and top_f.shape[0] > 0:
-        print("\n  Best decision vector (rank=1):")
+        print("\n  Best decision vector (knee, rank=1):")
         print(f"  {np.array2string(np.asarray(top_x)[0], precision=6, suppress_small=True)}")
 
 

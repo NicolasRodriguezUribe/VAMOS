@@ -26,6 +26,41 @@ def _single_front_crowding(F: np.ndarray) -> np.ndarray:
     return _compute_crowding(F, fronts)
 
 
+def select_top_k_crowding(F: np.ndarray, k: int) -> np.ndarray:
+    """Select the top-*k* most spread solutions using crowding distance.
+
+    Iteratively removes the solution with the lowest crowding distance
+    until *k* solutions remain.  Boundary solutions (with ``inf`` crowding)
+    are never removed, preserving the extremes of the front.
+
+    If the front has ``<= k`` solutions, all indices are returned.
+
+    Parameters
+    ----------
+    F:
+        Objective matrix of shape ``(n, n_obj)``.  Assumed to be a single
+        non-dominated front.
+    k:
+        Number of solutions to keep.
+
+    Returns
+    -------
+    np.ndarray
+        1-D integer array of indices into *F* for the selected solutions.
+    """
+    if k <= 0:
+        raise ValueError("k must be a positive integer.")
+    n = F.shape[0]
+    if n <= k:
+        return np.arange(n, dtype=int)
+    keep = np.arange(n, dtype=int)
+    while keep.size > k:
+        crowd = _single_front_crowding(F[keep])
+        worst_local = int(np.argmin(crowd))
+        keep = np.delete(keep, worst_local)
+    return keep
+
+
 def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
     """
     Compute hypervolume contribution of each point.
@@ -729,4 +764,5 @@ __all__ = [
     "UnboundedArchive",
     "_single_front_crowding",
     "_hv_contributions",
+    "select_top_k_crowding",
 ]

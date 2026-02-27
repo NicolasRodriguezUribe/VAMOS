@@ -346,6 +346,19 @@ class TestOptimizationResultTopK:
         with pytest.raises(ValueError, match="source must be one of"):
             result.top_k(k=1, source="invalid", method="knee")
 
+    def test_top_k_crowding_method(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        F = np.array([[0.0, 1.0], [1.0, 0.0], [0.3, 0.7], [0.5, 0.5], [0.7, 0.3]])
+        result = OptimizationResult({"F": F, "archive": {"F": F, "X": None}})
+
+        top = result.top_k(k=3, source="archive", method="crowding", nondominated_only=False)
+
+        assert top["F"].shape[0] == 3
+        assert top["method"] == "crowding"
+        # Extremes should always be preserved
+        assert 0 in top["indices"] and 1 in top["indices"]
+
     def test_top_k_report_rows(self):
         from vamos.experiment.optimization_result import OptimizationResult
 
