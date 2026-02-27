@@ -79,7 +79,7 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
         ranks, crowding = st.ranks, st.crowding
     else:
         ranks, crowding = compute_selection_metrics(algo.kernel, st.F, st.G, st.constraint_mode)
-        if st.steady_state:
+        if st.incremental_mode:
             st.ranks = ranks
             st.crowding = crowding
             st.fronts = fronts_from_ranks(ranks)
@@ -168,7 +168,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
     used_incremental = False
 
     early_reject = False
-    if st.steady_state and st.fronts is not None and st.constraint_mode == "none" and st.G is None and G_off is None and F_off is not None:
+    if st.incremental_mode and st.fronts is not None and st.constraint_mode == "none" and st.G is None and G_off is None and F_off is not None:
         worst_front = st.fronts[-1] if st.fronts else []
         if worst_front:
             F_worst = st.F[np.asarray(worst_front, dtype=int)]

@@ -59,7 +59,6 @@ def test_nsgaii_steady_state_runs():
     cfg = (
         NSGAIIConfig.builder()
         .pop_size(pop_size)
-        .steady_state(True)
         .replacement_size(1)
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("pm", prob="1/n", eta=20.0)
