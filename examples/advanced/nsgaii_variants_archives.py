@@ -45,7 +45,7 @@ def _build_generational_config() -> NSGAIIConfig:
         .offspring_size(POP_SIZE)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
 
@@ -58,7 +58,7 @@ def _build_steady_state_config() -> NSGAIIConfig:
         .replacement_size(1)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
 
@@ -70,7 +70,7 @@ def _build_bounded_archive_config() -> NSGAIIConfig:
         .offspring_size(POP_SIZE)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         # For NSGA-II here, capacity + pruning are the effective controls.
         .external_archive(capacity=100, pruning="crowding")
         .build()
@@ -84,7 +84,7 @@ def _build_unbounded_archive_config() -> NSGAIIConfig:
         .offspring_size(POP_SIZE)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         # Keep all non-dominated archive insertions (no capacity cap).
         .external_archive()
         .build()
