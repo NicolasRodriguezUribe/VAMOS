@@ -108,7 +108,6 @@ def collect_nsgaii_variation_args(args: argparse.Namespace) -> dict[str, object]
             "perturbation": getattr(args, "nsgaii_mutation_perturbation", None),
         },
         "repair": getattr(args, "nsgaii_repair", None),
-        "replacement_size": getattr(args, "nsgaii_replacement_size", None),
     }
 
 

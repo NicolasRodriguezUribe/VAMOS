@@ -62,12 +62,6 @@ class _NSGAIIConfigBuilder:
         self._cfg["offspring_size"] = value
         return self
 
-    def replacement_size(self, value: int) -> _NSGAIIConfigBuilder:
-        if value <= 0:
-            raise ValueError("replacement size must be positive.")
-        self._cfg["replacement_size"] = value
-        return self
-
     def repair(self, method: RepairName | str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
@@ -161,7 +155,6 @@ class _NSGAIIConfigBuilder:
             mutation=self._cfg["mutation"],
             selection=selection,
             offspring_size=self._cfg.get("offspring_size"),
-            replacement_size=self._cfg.get("replacement_size"),
             repair=self._cfg.get("repair"),
             external_archive=self._cfg.get("external_archive"),
             initializer=self._cfg.get("initializer"),
@@ -185,7 +178,6 @@ class NSGAIIConfig(_SerializableConfig):
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
     offspring_size: int | None = None
-    replacement_size: int | None = None
     repair: tuple[str, dict[str, Any]] | None = None
     external_archive: ExternalArchiveConfig | None = None
     initializer: dict[str, Any] | None = None

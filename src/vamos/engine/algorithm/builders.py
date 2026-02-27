@@ -90,10 +90,6 @@ def build_nsgaii_algorithm(
             raise ValueError("adaptive_operator_selection must be a mapping.")
         builder.adaptive_operator_selection(dict(aos_cfg))
 
-    replacement_size = var_cfg.get("replacement_size")
-    if replacement_size is not None:
-        builder.replacement_size(_as_int(replacement_size))
-
     if external_archive is not None:
         builder.external_archive(**asdict(external_archive))
     if track_genealogy:

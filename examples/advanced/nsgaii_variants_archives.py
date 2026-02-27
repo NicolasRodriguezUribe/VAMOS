@@ -54,8 +54,8 @@ def _build_steady_state_config() -> NSGAIIConfig:
     return (
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
-        # Replace one individual per step (classic steady-state behavior).
-        .replacement_size(1)
+        # Generate one offspring per step (classic steady-state behavior).
+        .offspring_size(1)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", size=2)
