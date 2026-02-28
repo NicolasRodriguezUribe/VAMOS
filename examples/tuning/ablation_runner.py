@@ -38,7 +38,7 @@ def main() -> None:
     algorithm = "nsgaii"
     tuned_variation = {
         "crossover": ("sbx", {"prob": 1.0, "eta": 30.0}),
-        "mutation": ("pm", {"prob": "1/n", "eta": 10.0}),
+        "mutation": ("polynomial", {"prob": "1/n", "eta": 10.0}),
     }
     variant_variations = {
         "baseline": None,

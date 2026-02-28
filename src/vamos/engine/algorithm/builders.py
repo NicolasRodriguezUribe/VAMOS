@@ -78,7 +78,7 @@ def build_nsgaii_algorithm(
         s_name, s_kwargs = ensure_operator_tuple(var_cfg["selection"], key="selection")
         builder.selection(s_name, **s_kwargs)
     else:
-        builder.selection("tournament", pressure=selection_pressure)
+        builder.selection("tournament", size=selection_pressure)
 
     if "repair" in var_cfg:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
@@ -89,15 +89,6 @@ def build_nsgaii_algorithm(
         if not isinstance(aos_cfg, Mapping):
             raise ValueError("adaptive_operator_selection must be a mapping.")
         builder.adaptive_operator_selection(dict(aos_cfg))
-
-    steady_state = bool(var_cfg.get("steady_state", False))
-    replacement_size = var_cfg.get("replacement_size")
-    if replacement_size is not None and not steady_state:
-        steady_state = True
-    if steady_state:
-        builder.steady_state(True)
-    if replacement_size is not None:
-        builder.replacement_size(_as_int(replacement_size))
 
     if external_archive is not None:
         builder.external_archive(**asdict(external_archive))
@@ -124,7 +115,7 @@ def build_moead_algorithm(
         if "crossover" not in moead_overrides:
             var_cfg["crossover"] = ("de", {"cr": 1.0, "f": 0.5})
         if "mutation" not in moead_overrides:
-            var_cfg["mutation"] = ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})
+            var_cfg["mutation"] = ("polynomial", {"prob": 1.0 / problem.n_var, "eta": 20.0})
     # Ensure default aggregation if not present
     if "aggregation" not in var_cfg:
         var_cfg["aggregation"] = ("pbi", {"theta": 5.0})
@@ -230,7 +221,7 @@ def build_nsgaiii_algorithm(
     builder.mutation(m_name, **m_kwargs)
 
     s_name, s_kwargs = ensure_operator_tuple(
-        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        var_cfg.get("selection", ("tournament", {"size": selection_pressure})),
         key="selection",
     )
     builder.selection(s_name, **s_kwargs)
@@ -274,13 +265,13 @@ def build_spea2_algorithm(
     builder.crossover(c_name, **c_kwargs)
 
     m_name, m_kwargs = ensure_operator_tuple(
-        var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
+        var_cfg.get("mutation", ("polynomial", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
         key="mutation",
     )
     builder.mutation(m_name, **m_kwargs)
 
     sel_name, sel_kwargs = ensure_operator_tuple(
-        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        var_cfg.get("selection", ("tournament", {"size": selection_pressure})),
         key="selection",
     )
     builder.selection(sel_name, **sel_kwargs)
@@ -314,12 +305,12 @@ def build_ibea_algorithm(
     c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {"prob": 1.0, "eta": 20.0})), key="crossover")
     builder.crossover(c_name, **c_kwargs)
     m_name, m_kwargs = ensure_operator_tuple(
-        var_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
+        var_cfg.get("mutation", ("polynomial", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
         key="mutation",
     )
     builder.mutation(m_name, **m_kwargs)
     sel_name, sel_kwargs = ensure_operator_tuple(
-        var_cfg.get("selection", ("tournament", {"pressure": selection_pressure})),
+        var_cfg.get("selection", ("tournament", {"size": selection_pressure})),
         key="selection",
     )
     builder.selection(sel_name, **sel_kwargs)
@@ -351,7 +342,7 @@ def build_smpso_algorithm(
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     mut_cfg = merge_variation_overrides(
         {
-            "mutation": ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
+            "mutation": ("polynomial", {"prob": 1.0 / problem.n_var, "eta": 20.0}),
         },
         smpso_variation,
     )
@@ -362,7 +353,7 @@ def build_smpso_algorithm(
     if external_archive is not None:
         builder.external_archive(**asdict(external_archive))
     m_name, m_kwargs = ensure_operator_tuple(
-        mut_cfg.get("mutation", ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
+        mut_cfg.get("mutation", ("polynomial", {"prob": 1.0 / problem.n_var, "eta": 20.0})),
         key="mutation",
     )
     builder.mutation(m_name, **m_kwargs)
@@ -408,7 +399,7 @@ def build_agemoea_algorithm(
         if "crossover" not in agemoea_overrides:
             var_cfg["crossover"] = ("sbx", {"prob": 0.9, "eta": 15.0})
         if "mutation" not in agemoea_overrides:
-            var_cfg["mutation"] = ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})
+            var_cfg["mutation"] = ("polynomial", {"prob": 1.0 / problem.n_var, "eta": 20.0})
 
     builder = AGEMOEAConfig.builder()
     builder.pop_size(pop_size)
@@ -446,7 +437,7 @@ def build_rvea_algorithm(
         if "crossover" not in rvea_overrides:
             var_cfg["crossover"] = ("sbx", {"prob": 1.0, "eta": 30.0})
         if "mutation" not in rvea_overrides:
-            var_cfg["mutation"] = ("pm", {"prob": 1.0 / problem.n_var, "eta": 20.0})
+            var_cfg["mutation"] = ("polynomial", {"prob": 1.0 / problem.n_var, "eta": 20.0})
 
     builder = RVEAConfig.builder()
     builder.pop_size(pop_size)

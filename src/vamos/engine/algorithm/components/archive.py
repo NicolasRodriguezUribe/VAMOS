@@ -26,6 +26,81 @@ def _single_front_crowding(F: np.ndarray) -> np.ndarray:
     return _compute_crowding(F, fronts)
 
 
+def select_top_k_crowding(F: np.ndarray, k: int) -> np.ndarray:
+    """Select the top-*k* most spread solutions using crowding distance.
+
+    Iteratively removes the solution with the lowest crowding distance
+    until *k* solutions remain.  Boundary solutions (with ``inf`` crowding)
+    are never removed, preserving the extremes of the front.
+
+    If the front has ``<= k`` solutions, all indices are returned.
+
+    Parameters
+    ----------
+    F:
+        Objective matrix of shape ``(n, n_obj)``.  Assumed to be a single
+        non-dominated front.
+    k:
+        Number of solutions to keep.
+
+    Returns
+    -------
+    np.ndarray
+        1-D integer array of indices into *F* for the selected solutions.
+    """
+    if k <= 0:
+        raise ValueError("k must be a positive integer.")
+    n = F.shape[0]
+    if n <= k:
+        return np.arange(n, dtype=int)
+    keep = np.arange(n, dtype=int)
+    while keep.size > k:
+        crowd = _single_front_crowding(F[keep])
+        worst_local = int(np.argmin(crowd))
+        keep = np.delete(keep, worst_local)
+    return keep
+
+
+def select_top_k_farthest(F: np.ndarray, k: int) -> np.ndarray:
+    """Select the top-*k* most diverse solutions using farthest-point sampling.
+
+    Greedy algorithm that iteratively picks the point maximising the minimum
+    Euclidean distance to the already-selected set.  This produces a more
+    uniformly spread subset than crowding distance, especially for 3+ objectives.
+
+    If the front has ``<= k`` solutions, all indices are returned.
+
+    Parameters
+    ----------
+    F:
+        Objective matrix of shape ``(n, n_obj)``.
+    k:
+        Number of solutions to keep.
+
+    Returns
+    -------
+    np.ndarray
+        1-D integer array of indices into *F* for the selected solutions.
+    """
+    if k <= 0:
+        raise ValueError("k must be a positive integer.")
+    n = F.shape[0]
+    if n <= k:
+        return np.arange(n, dtype=int)
+
+    # Start from the point with the largest norm (an extreme point)
+    selected = [int(np.argmax(np.linalg.norm(F, axis=1)))]
+    min_dists = np.full(n, np.inf)
+
+    for _ in range(k - 1):
+        dists = np.linalg.norm(F - F[selected[-1]], axis=1)
+        np.minimum(min_dists, dists, out=min_dists)
+        min_dists[selected] = -1.0
+        selected.append(int(np.argmax(min_dists)))
+
+    return np.array(selected, dtype=int)
+
+
 def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
     """
     Compute hypervolume contribution of each point.
@@ -40,8 +115,7 @@ def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
         return np.asarray(_moocore.hv_contributions(F, ref=ref), dtype=float)
     if not _HV_FALLBACK_WARNED:
         warnings.warn(
-            "Hypervolume contributions requested but 'moocore' is not installed; "
-            "falling back to crowding distance.",
+            "Hypervolume contributions requested but 'moocore' is not installed; falling back to crowding distance.",
             UserWarning,
             stacklevel=2,
         )
@@ -198,9 +272,7 @@ class _BaseArchive:
             if keep_idx.ndim != 1:
                 raise ValueError("_select_subset() must return a 1D index array.")
             if keep_idx.size != self.truncate_size:
-                raise ValueError(
-                    f"_select_subset() returned {keep_idx.size} indices, expected {self.truncate_size}."
-                )
+                raise ValueError(f"_select_subset() returned {keep_idx.size} indices, expected {self.truncate_size}.")
             X_nd, F_nd, G_nd = _subset_arrays(X_nd, F_nd, G_nd, keep_idx)
 
         self._replace_contents(X_nd, F_nd, G_nd)
@@ -412,9 +484,7 @@ class HypervolumeArchive(_BaseArchive):
         if ref_point is not None:
             ref = np.asarray(ref_point, dtype=float)
             if ref.ndim != 1 or ref.shape[0] != self._n_obj:
-                raise ValueError(
-                    f"hv_ref_point must be 1D with length {self._n_obj}, got shape {ref.shape}."
-                )
+                raise ValueError(f"hv_ref_point must be 1D with length {self._n_obj}, got shape {ref.shape}.")
             self._fixed_ref = ref.copy()
 
     def _stable_ref(self, F: np.ndarray) -> np.ndarray:
@@ -734,4 +804,6 @@ __all__ = [
     "UnboundedArchive",
     "_single_front_crowding",
     "_hv_contributions",
+    "select_top_k_crowding",
+    "select_top_k_farthest",
 ]

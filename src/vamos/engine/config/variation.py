@@ -32,8 +32,6 @@ class VariationOverrides(TypedDict, total=False):
     repair: OperatorSpecInput
     aggregation: OperatorSpecInput
     adaptive_operator_selection: Mapping[str, object]
-    steady_state: bool
-    replacement_size: int
     weight_vectors: Mapping[str, object] | str
     use_numba_variation: bool
     archive_size: int
@@ -62,7 +60,7 @@ OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
             ("simplex", {"prob": 0.9}),
         ],
         "mutation": [
-            ("pm", {"prob": "1/n", "eta": 20.0}),
+            ("polynomial", {"prob": "1/n", "eta": 20.0}),
             ("gaussian", {"prob": 0.1, "sigma": 0.1}),
             ("uniform_reset", {"prob": 0.1}),
         ],
@@ -87,7 +85,7 @@ OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
         "mutation": [
             ("reset", {"prob": "1/n"}),
             ("creep", {"prob": 0.1}),
-            ("pm", {"prob": "1/n", "eta": 20.0}),
+            ("polynomial", {"prob": "1/n", "eta": 20.0}),
             ("gaussian", {"prob": 0.1, "sigma": 1.0}),
             ("boundary", {"prob": 0.1}),
         ],
@@ -205,7 +203,7 @@ def resolve_default_variation_config(encoding: str, overrides: Mapping[str, obje
     if normalized == "real":
         base = {
             "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
-            "mutation": ("pm", {"prob": "1/n", "eta": 20.0}),
+            "mutation": ("polynomial", {"prob": "1/n", "eta": 20.0}),
         }
     elif normalized == "binary":
         base = {
@@ -230,7 +228,7 @@ def resolve_default_variation_config(encoding: str, overrides: Mapping[str, obje
     else:
         base = {
             "crossover": ("sbx", {"prob": 0.9, "eta": 20.0}),
-            "mutation": ("pm", {"prob": 0.1, "eta": 20.0}),
+            "mutation": ("polynomial", {"prob": 0.1, "eta": 20.0}),
         }
 
     if overrides:

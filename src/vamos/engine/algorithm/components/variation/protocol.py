@@ -27,11 +27,19 @@ class VariationOperator(Protocol):
 
 
 RealCrossoverName: TypeAlias = Literal[
-    "sbx", "blx_alpha", "blx_alpha_beta", "arithmetic", "whole_arithmetic",
-    "laplace", "fuzzy", "pcx", "undx", "simplex", "de",
+    "sbx",
+    "blx_alpha",
+    "blx_alpha_beta",
+    "arithmetic",
+    "whole_arithmetic",
+    "laplace",
+    "fuzzy",
+    "pcx",
+    "undx",
+    "simplex",
+    "de",
 ]
 RealMutationName: TypeAlias = Literal[
-    "pm",
     "polynomial",
     "non_uniform",
     "gaussian",
@@ -48,7 +56,7 @@ BinaryCrossoverName: TypeAlias = Literal["one_point", "single_point", "1point", 
 BinaryMutationName: TypeAlias = Literal["bitflip", "bit_flip", "segment_inversion"]
 
 IntegerCrossoverName: TypeAlias = Literal["uniform", "blend", "arithmetic", "sbx"]
-IntegerMutationName: TypeAlias = Literal["reset", "random_reset", "creep", "pm", "polynomial", "gaussian", "boundary"]
+IntegerMutationName: TypeAlias = Literal["reset", "random_reset", "creep", "polynomial", "gaussian", "boundary"]
 
 PermutationCrossoverName: TypeAlias = Literal[
     "ox",

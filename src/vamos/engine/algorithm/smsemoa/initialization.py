@@ -105,9 +105,12 @@ def initialize_smsemoa_run(
         mixed_spec=getattr(problem, "mixed_spec", None),
     )
 
-    # Selection pressure
+    # Tournament size (legacy alias: pressure)
     sel_method, sel_params = config["selection"]
-    pressure = sel_params.get("pressure", 2) if sel_method == "tournament" else 2
+    if sel_method == "tournament":
+        pressure = int(sel_params.get("size", sel_params.get("pressure", 2)))
+    else:
+        pressure = 2
     eliminate_duplicates = bool(config.get("eliminate_duplicates", False))
 
     # Reference point config
@@ -137,9 +140,7 @@ def initialize_smsemoa_run(
 
     # Setup external archive
     ext_cfg = resolve_external_archive(config)
-    archive_X, archive_F, archive_manager = setup_archive(
-        kernel, X, F, n_var, n_obj, X.dtype, ext_cfg, G
-    )
+    archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, ext_cfg, G)
 
     # Create state
     kernel_profiler = resolve_kernel_profiler(config)

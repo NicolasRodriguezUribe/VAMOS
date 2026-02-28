@@ -6,8 +6,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive.bounded_archive import PrunePolicy
 
-from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _default_operators_for_encoding, _require_fields, _SerializableConfig, _validate_operators
+from .types import CrossoverName, InitializerName, MutationName, RepairName
 
 
 class _AGEMOEAConfigBuilder:
@@ -22,19 +24,19 @@ class _AGEMOEAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -42,7 +44,7 @@ class _AGEMOEAConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> _AGEMOEAConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _AGEMOEAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -50,21 +52,25 @@ class _AGEMOEAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _AGEMOEAConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _AGEMOEAConfigBuilder:
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be 'non_dominated' or 'population'.")
         self._cfg["result_mode"] = mode
         return self
 
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _AGEMOEAConfigBuilder:
+    def external_archive(
+        self,
+        capacity: int | None = None,
+        pruning: PrunePolicy = "crowding",
+    ) -> _AGEMOEAConfigBuilder:
         """Configure an external archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
+            pruning: Strategy used when bounded archive exceeds capacity.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
         return self
 
     def build(self) -> AGEMOEAConfig:
@@ -73,6 +79,7 @@ class _AGEMOEAConfigBuilder:
             ("pop_size", "crossover", "mutation"),
             "AGE-MOEA",
         )
+        _validate_operators(self._cfg)
         return AGEMOEAConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
@@ -87,7 +94,7 @@ class _AGEMOEAConfigBuilder:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class AGEMOEAConfig(_SerializableConfig):
     pop_size: int
     crossover: tuple[str, dict[str, Any]]
@@ -105,10 +112,18 @@ class AGEMOEAConfig(_SerializableConfig):
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
+        encoding: str | None = None,
     ) -> AGEMOEAConfig:
-        """Create a default AGE-MOEA configuration."""
+        """Create a default AGE-MOEA configuration.
+
+        Args:
+            pop_size: Population size (default: 100)
+            n_var: Number of variables (for mutation prob)
+            encoding: Problem encoding. If omitted, defaults to "real".
+        """
         mut_prob = 1.0 / n_var if n_var else 0.1
-        return cls.builder().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("pm", prob=mut_prob, eta=20.0).build()
+        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
+        return cls.builder().pop_size(pop_size).crossover(cx[0], **cx[1]).mutation(mt[0], **mt[1]).build()
 
     @classmethod
     def builder(cls) -> _AGEMOEAConfigBuilder:

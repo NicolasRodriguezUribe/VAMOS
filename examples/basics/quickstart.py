@@ -24,7 +24,7 @@ def main():
     # - "nsgaii": Standard algorithm
     # - budget: Stopping criterion
     print("Running NSGA-II on ZDT1...")
-    result = optimize("zdt1", algorithm="nsgaii", max_evaluations=5000, seed=42)
+    result = optimize("zdt1", algorithm="nsgaii", max_evaluations=20000, seed=42)
 
     # 2. Analyze results
     F = result.F  # Pareto front objectives
@@ -55,6 +55,32 @@ def main():
         plt.show()
     except ImportError:
         print("\nInstall matplotlib for visualization: pip install matplotlib")
+
+    # 4. Optional: Save Pareto front to CSV
+    from pathlib import Path
+    from vamos.foundation.core.io_utils import write_population
+
+    # Determine base directory: default to project root, but prefer the
+    # directory from which the program is executed (`Path.cwd()`). The
+    # project root is two levels above this example file.
+    project_root = Path(__file__).resolve().parents[2]
+    base_dir = Path.cwd() if Path.cwd() != project_root else project_root
+    out_dir = base_dir
+
+    try:
+        write_population(out_dir, F, X=getattr(result, "X", None), G=getattr(result, "G", None))
+        print(f"\nSaved Pareto front and decision variables to {out_dir}")
+    except Exception:
+        try:
+            import numpy as _np
+
+            out_dir.mkdir(parents=True, exist_ok=True)
+            _np.savetxt(out_dir / "FUN.csv", F, delimiter=",")
+            if getattr(result, "X", None) is not None:
+                _np.savetxt(out_dir / "X.csv", result.X, delimiter=",")
+            print(f"\nSaved FUN.csv (and X.csv if available) to {out_dir}")
+        except Exception as exc:
+            print(f"\nFailed to save results: {exc}")
 
 
 if __name__ == "__main__":

@@ -77,7 +77,7 @@ def run_vamos(problem_name: str, n_var: int, n_obj: int, seed: int) -> dict | No
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
         .selection("tournament")
         .build()
     )
@@ -122,7 +122,6 @@ def run_pymoo(problem_name: str, n_var: int, n_obj: int, seed: int) -> dict | No
     from pymoo.problems import get_problem
     from pymoo.operators.crossover.sbx import SBX
     from pymoo.operators.mutation.pm import PM
-    from pymoo.operators.selection.rnd import RandomSelection
 
     # pymoo uses different naming conventions for constrained problems
     pymoo_name_map = {
@@ -135,16 +134,15 @@ def run_pymoo(problem_name: str, n_var: int, n_obj: int, seed: int) -> dict | No
     pymoo_name = pymoo_name_map.get(problem_name, problem_name)
 
     try:
-        pymoo_problem = get_problem(pymoo_name)
-    except Exception:
-        # Fall back to explicit parameters
         pymoo_problem = get_problem(pymoo_name, n_var=n_var, n_obj=n_obj)
+    except Exception:
+        # Fall back for constrained problem factories that do not accept kwargs.
+        pymoo_problem = get_problem(pymoo_name)
 
     algorithm = NSGA2(
         pop_size=POP_SIZE,
         crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
         mutation=PM(prob=1.0 / n_var, eta=MUTATION_ETA),
-        selection=RandomSelection(),
     )
 
     start = time.perf_counter()

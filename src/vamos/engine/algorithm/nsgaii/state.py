@@ -55,7 +55,7 @@ class NSGAIIState:
     pop_size: int = 100
     offspring_size: int = 100
     replacement_size: int = 1
-    steady_state: bool = False
+    incremental_mode: bool = False
 
     # Constraints
     constraint_mode: str = "feasibility"
@@ -81,7 +81,7 @@ class NSGAIIState:
     step: int = 0
     replacements: int = 0
 
-    # Cached selection metrics (steady-state incremental)
+    # Cached selection metrics (incremental replacement)
     fronts: list[list[int]] | None = None
     ranks: np.ndarray | None = None
     crowding: np.ndarray | None = None
@@ -105,9 +105,7 @@ class NSGAIIState:
     # Optional extension hooks
     immigration_manager: Any | None = None
     parent_selection_filter: Any | None = None
-    non_breeding_indices: np.ndarray = field(
-        default_factory=lambda: np.zeros(0, dtype=int)
-    )
+    non_breeding_indices: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=int))
     live_callback_mode: str = "nd_only"
     generation_callback: Any | None = None
     generation_callback_copy: bool = True

@@ -82,11 +82,6 @@ def setup_archive(
     capacity = ext_cfg.capacity
     pruning = ext_cfg.pruning
 
-    tol = ext_cfg.objective_tolerance
-    dedup_mode = ext_cfg.deduplicate_in
-    decision_tol = ext_cfg.decision_tolerance
-    truncate_size = ext_cfg.truncate_size
-
     manager: _ArchiveManager
     if capacity is None:
         # Unbounded archive
@@ -94,9 +89,6 @@ def setup_archive(
             n_var=n_var,
             n_obj=n_obj,
             dtype=dtype,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             n_con=G.shape[1] if G is not None else None,
         )
     elif pruning in {"hv_contrib", "mc_hv_contrib"}:
@@ -105,12 +97,7 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             n_con=G.shape[1] if G is not None else None,
-            ref_point=ext_cfg.hv_ref_point,
         )
     elif pruning == "spea2":
         manager = SPEA2Archive(
@@ -118,10 +105,6 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             n_con=G.shape[1] if G is not None else None,
             constraint_mode="feasibility",
         )
@@ -131,10 +114,6 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             n_con=G.shape[1] if G is not None else None,
         )
 

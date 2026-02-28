@@ -64,7 +64,7 @@ def build_mutation_operator(
         If mutation type is not supported.
     """
     normalized = normalize_encoding(encoding)
-    mut_method, mut_params = config.get("mutation", ("pm", {}))
+    mut_method, mut_params = config.get("mutation", ("polynomial", {}))
     mut_method = str(mut_method).lower()
 
     if normalized == "mixed":
@@ -88,7 +88,7 @@ def build_mutation_operator(
 
         return _MixedMutationOperator(prob, mixed_spec)
 
-    if mut_method not in {"pm", "polynomial"}:
+    if mut_method != "polynomial":
         raise ValueError(f"Unsupported SMPSO mutation '{mut_method}'.")
 
     mut_params = prepare_mutation_params(dict(mut_params or {}), normalized, n_var)

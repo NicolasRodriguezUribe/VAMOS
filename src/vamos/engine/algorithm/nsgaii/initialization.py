@@ -150,10 +150,6 @@ def setup_archive(
     capacity = ext_cfg.capacity
     pruning = ext_cfg.pruning
 
-    tol = ext_cfg.objective_tolerance
-    dedup_mode = ext_cfg.deduplicate_in
-    decision_tol = ext_cfg.decision_tolerance
-    truncate_size = ext_cfg.truncate_size
     n_con = G.shape[1] if G is not None else None
 
     manager: CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive
@@ -163,9 +159,6 @@ def setup_archive(
             n_var=n_var,
             n_obj=n_obj,
             dtype=dtype,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             n_con=n_con,
         )
     elif pruning in {"hv_contrib", "mc_hv_contrib"}:
@@ -174,12 +167,7 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             n_con=n_con,
-            ref_point=ext_cfg.hv_ref_point,
         )
     elif pruning == "spea2":
         manager = SPEA2Archive(
@@ -187,10 +175,6 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             n_con=n_con,
             constraint_mode="feasibility",
         )
@@ -200,10 +184,6 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             n_con=n_con,
         )
 
@@ -252,7 +232,7 @@ def setup_selection(
     sel_method: str,
     sel_params: dict[str, Any],
 ) -> tuple[str, int]:
-    """Parse selection config and return (method, pressure).
+    """Parse selection config and return (method, tournament size).
 
     Parameters
     ----------
@@ -264,7 +244,7 @@ def setup_selection(
     Returns
     -------
     tuple[str, int]
-        (method, tournament_pressure)
+        (method, tournament_size)
 
     Raises
     ------
@@ -274,7 +254,11 @@ def setup_selection(
     allowed = ("tournament", "random", "boltzmann", "ranking", "sus")
     if sel_method not in allowed:
         raise ValueError(f"Unsupported selection method '{sel_method}'. Must be one of {allowed}.")
-    pressure = int(sel_params.get("pressure", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
+    if sel_method == "tournament":
+        raw = sel_params.get("size", sel_params.get("pressure", DEFAULT_TOURNAMENT_PRESSURE))
+        pressure = int(raw)
+    else:
+        pressure = DEFAULT_TOURNAMENT_PRESSURE
     return sel_method, pressure
 
 
@@ -308,22 +292,12 @@ def setup_result_archive(
     if ext_cfg is None or ext_cfg.capacity is None:
         return None
 
-    truncate_size = ext_cfg.truncate_size
-    tol = ext_cfg.objective_tolerance
-    dedup_mode = ext_cfg.deduplicate_in
-    decision_tol = ext_cfg.decision_tolerance
-
     if ext_cfg.pruning in {"hv_contrib", "mc_hv_contrib"}:
         return HypervolumeArchive(
             ext_cfg.capacity,
             n_var,
             n_obj,
             dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            ref_point=ext_cfg.hv_ref_point,
         )
     if ext_cfg.pruning == "spea2":
         return SPEA2Archive(
@@ -331,10 +305,6 @@ def setup_result_archive(
             n_var,
             n_obj,
             dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
             constraint_mode="feasibility",
         )
     return CrowdingDistanceArchive(
@@ -342,10 +312,6 @@ def setup_result_archive(
         n_var,
         n_obj,
         dtype,
-        truncate_size=truncate_size,
-        objective_tolerance=tol,
-        deduplicate_in=dedup_mode,
-        decision_tolerance=decision_tol,
     )
 
 

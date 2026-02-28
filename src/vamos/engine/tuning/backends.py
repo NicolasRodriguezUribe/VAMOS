@@ -102,7 +102,9 @@ class ModelBasedTuner:
     optuna_study_name: str | None = None
     optuna_load_if_exists: bool = True
     optuna_sampler: str = "tpe"
-    _fidelity_cache: dict[int, tuple[Sequence[Instance], Sequence[int], dict[str, Any]]] = field(default_factory=dict, init=False, repr=False)
+    _fidelity_cache: dict[int, tuple[Sequence[Instance], Sequence[int], dict[str, Any]]] = field(
+        default_factory=dict, init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         frac = float(self.fidelity_min_instance_frac)

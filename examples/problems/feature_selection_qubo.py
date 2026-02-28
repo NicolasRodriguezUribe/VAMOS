@@ -25,7 +25,7 @@ def build_config(pop_size: int = 30) -> NSGAIIConfig:
         .offspring_size(pop_size)
         .crossover("uniform", prob=0.9)
         .mutation("bitflip", prob="1/n")
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .result_mode("population")
         .build()
     )

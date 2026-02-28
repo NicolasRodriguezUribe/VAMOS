@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from math import comb
 
+import pytest
+
 from vamos.algorithms import MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SMSEMOAConfig, SPEA2Config
 
 
@@ -16,7 +18,7 @@ class TestNSGAIIConfigShortcuts:
 
         assert cfg.pop_size == 100
         assert cfg.crossover[0] == "sbx"
-        assert cfg.mutation[0] == "pm"
+        assert cfg.mutation[0] == "polynomial"
         assert cfg.selection[0] == "tournament"
 
     def test_default_with_custom_pop_size(self):
@@ -40,10 +42,27 @@ class TestNSGAIIConfigShortcuts:
 
     def test_builder_defaults_pop_size_and_selection(self):
         """Builder should fill defaults for pop_size and selection if omitted."""
-        cfg = NSGAIIConfig.builder().crossover("sbx", prob=1.0, eta=20.0).mutation("pm", prob=0.1, eta=20.0).build()
+        cfg = NSGAIIConfig.builder().crossover("sbx", prob=1.0, eta=20.0).mutation("polynomial", prob=0.1, eta=20.0).build()
 
         assert cfg.pop_size == 100
         assert cfg.selection[0] == "tournament"
+
+    def test_tournament_selection_accepts_size_key(self):
+        """Tournament selection should use the new 'size' key."""
+        cfg = (
+            NSGAIIConfig.builder()
+            .crossover("sbx", prob=1.0, eta=20.0)
+            .mutation("polynomial", prob=0.1, eta=20.0)
+            .selection("tournament", size=3)
+            .build()
+        )
+        assert cfg.selection[1]["size"] == 3
+        assert "pressure" not in cfg.selection[1]
+
+    def test_tournament_selection_rejects_size_and_pressure_together(self):
+        """Tournament selection should reject mixed new/legacy keys."""
+        with pytest.raises(ValueError):
+            NSGAIIConfig.builder().selection("tournament", size=2, pressure=2)
 
 
 class TestMOEADConfigShortcuts:

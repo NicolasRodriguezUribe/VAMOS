@@ -11,7 +11,7 @@ def test_nsgaii_track_genealogy_runs_and_returns_stats():
         .pop_size(pop_size)
         .offspring_size(pop_size)
         .crossover("sbx", prob=0.9, eta=15.0)
-        .mutation("pm", prob="1/n", eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .track_genealogy(True)
         .build()

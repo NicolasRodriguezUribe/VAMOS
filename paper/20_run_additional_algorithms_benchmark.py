@@ -143,7 +143,7 @@ def run_vamos_nsgaiii(problem_name: str, seed: int) -> dict | None:
         NSGAIIIConfig.builder()
         .pop_size(pop)
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA_NSGAIII)
-        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
         .selection("tournament")
         .reference_directions(divisions=divisions)
         .pop_size_auto(True)
@@ -190,10 +190,10 @@ def run_pymoo_nsgaiii(problem_name: str, seed: int) -> dict | None:
     from pymoo.operators.mutation.pm import PM
 
     n_var, n_obj = get_problem_dims(problem_name)
-    if problem_name.startswith("wfg"):
-        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
+    if problem_name.startswith("zdt"):
+        pymoo_problem = get_problem(problem_name, n_var=n_var)
     else:
-        pymoo_problem = get_problem(problem_name)
+        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
 
     divisions = 12 if n_obj == 3 else 6
     ref_dirs = get_reference_directions("das-dennis", n_obj, n_partitions=divisions)
@@ -245,7 +245,7 @@ def run_vamos_spea2(problem_name: str, seed: int) -> dict | None:
         .pop_size(POP_SIZE)
         .archive_size(POP_SIZE)
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA_SPEA2)
-        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
         .selection("tournament")
         .build()
     )
@@ -374,7 +374,7 @@ def run_vamos_agemoea(problem_name: str, seed: int) -> dict | None:
         AGEMOEAConfig.builder()
         .pop_size(POP_SIZE)
         .crossover("sbx", prob=CROSSOVER_PROB_AGEMOEA, eta=CROSSOVER_ETA_AGEMOEA)
-        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
         .build()
     )
 
@@ -427,7 +427,7 @@ def run_vamos_rvea(problem_name: str, seed: int) -> dict | None:
         .alpha(RVEA_ALPHA)
         .adapt_freq(RVEA_ADAPT_FREQ)
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA_RVEA)
-        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
         .build()
     )
 

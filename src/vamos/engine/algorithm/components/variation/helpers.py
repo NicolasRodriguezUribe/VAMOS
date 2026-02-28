@@ -45,11 +45,19 @@ from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.registry import Registry
 
 _REAL_CROSSOVER_KEYS = (
-    "sbx", "blx_alpha", "blx_alpha_beta", "whole_arithmetic",
-    "laplace", "fuzzy", "arithmetic", "de", "pcx", "undx", "simplex",
+    "sbx",
+    "blx_alpha",
+    "blx_alpha_beta",
+    "whole_arithmetic",
+    "laplace",
+    "fuzzy",
+    "arithmetic",
+    "de",
+    "pcx",
+    "undx",
+    "simplex",
 )
 _REAL_MUTATION_KEYS = (
-    "pm",
     "polynomial",
     "non_uniform",
     "gaussian",
@@ -224,7 +232,6 @@ def _populate_defaults() -> None:
             "reset": random_reset_mutation,
             "random_reset": random_reset_mutation,
             "creep": creep_mutation,
-            "pm": integer_polynomial_mutation,
             "polynomial": integer_polynomial_mutation,
             "gaussian": gaussian_integer_mutation,
             "boundary": boundary_integer_mutation,

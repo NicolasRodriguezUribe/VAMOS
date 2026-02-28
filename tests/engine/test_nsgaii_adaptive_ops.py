@@ -21,7 +21,7 @@ def test_nsga2_with_adaptive_operator_selector_runs():
         "pop_size": 10,
         "offspring_size": 10,
         "crossover": ("sbx", {"prob": 0.9, "eta": 15.0}),
-        "mutation": ("pm", {"prob": "1/n", "eta": 20.0}),
+        "mutation": ("polynomial", {"prob": "1/n", "eta": 20.0}),
         "selection": ("tournament", {"pressure": 2}),
         "engine": "numpy",
         "result_mode": "population",
@@ -29,7 +29,7 @@ def test_nsga2_with_adaptive_operator_selector_runs():
             "enabled": True,
             "method": "ucb",
             "operator_pool": [
-                {"crossover": ("sbx", {"prob": 0.9, "eta": 15.0}), "mutation": ("pm", {"prob": "1/n", "eta": 20.0})},
+                {"crossover": ("sbx", {"prob": 0.9, "eta": 15.0}), "mutation": ("polynomial", {"prob": "1/n", "eta": 20.0})},
                 {"crossover": ("blx_alpha", {"prob": 0.9, "alpha": 0.5}), "mutation": ("gaussian", {"prob": "1/n", "sigma": 0.1})},
             ],
         },

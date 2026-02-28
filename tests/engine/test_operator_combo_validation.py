@@ -287,10 +287,7 @@ def _build_full_assignment(
             assignment[name] = _default_for_param(p)
 
     # Filter to active only.
-    return {
-        k: v for k, v in assignment.items()
-        if param_space.is_active(k, assignment)
-    }
+    return {k: v for k, v in assignment.items() if param_space.is_active(k, assignment)}
 
 
 def _operator_pairs(space: AlgorithmConfigSpace):
@@ -352,9 +349,8 @@ def test_all_discrete_combos_build_config(algo_name: str, encoding: str, builder
             failures.append((i, assignment, str(e)))
 
     assert total > 0, f"No combinations generated for {algo_name}"
-    assert not failures, (
-        f"{len(failures)}/{total} failures for {algo_name}:\n"
-        + "\n".join(f"  combo {i}: {e}" for i, _, e in failures[:20])
+    assert not failures, f"{len(failures)}/{total} failures for {algo_name}:\n" + "\n".join(
+        f"  combo {i}: {e}" for i, _, e in failures[:20]
     )
 
 
@@ -404,11 +400,7 @@ def test_all_operator_pairs_run(algo_name: str, encoding: str, builder):
             )
         except Exception as e:
             msg = str(e)
-            if (
-                "Unsupported" in msg
-                or "not supported" in msg.lower()
-                or "parents must have shape" in msg
-            ):
+            if "Unsupported" in msg or "not supported" in msg.lower() or "parents must have shape" in msg:
                 unsupported.append((pair, msg))
             else:
                 crashes.append((pair, msg))
@@ -418,12 +410,8 @@ def test_all_operator_pairs_run(algo_name: str, encoding: str, builder):
     if unsupported:
         warnings.warn(
             f"{algo_name}: {len(unsupported)}/{total} operator combos use "
-            f"unimplemented operators (skipped):\n"
-            + "\n".join(f"  {p}: {e}" for p, e in unsupported[:10]),
+            f"unimplemented operators (skipped):\n" + "\n".join(f"  {p}: {e}" for p, e in unsupported[:10]),
             stacklevel=1,
         )
 
-    assert not crashes, (
-        f"{len(crashes)}/{total} unexpected failures for {algo_name}:\n"
-        + "\n".join(f"  {p}: {e}" for p, e in crashes[:20])
-    )
+    assert not crashes, f"{len(crashes)}/{total} unexpected failures for {algo_name}:\n" + "\n".join(f"  {p}: {e}" for p, e in crashes[:20])

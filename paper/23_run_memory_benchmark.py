@@ -89,7 +89,7 @@ def run_vamos(problem_name: str, n_var: int, n_obj: int, seed: int):
         NSGAIIConfig.builder()
         .pop_size(POP_SIZE)
         .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-        .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+        .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
         .selection("tournament")
         .build()
     )
@@ -105,17 +105,15 @@ def run_pymoo(problem_name: str, n_var: int, n_obj: int, seed: int):
     from pymoo.problems import get_problem
     from pymoo.operators.crossover.sbx import SBX
     from pymoo.operators.mutation.pm import PM
-    from pymoo.operators.selection.rnd import RandomSelection
 
-    if problem_name.startswith("wfg"):
-        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
+    if problem_name.startswith("zdt"):
+        pymoo_problem = get_problem(problem_name, n_var=n_var)
     else:
-        pymoo_problem = get_problem(problem_name)
+        pymoo_problem = get_problem(problem_name, n_var=n_var, n_obj=n_obj)
     algorithm = NSGA2(
         pop_size=POP_SIZE,
         crossover=SBX(prob=CROSSOVER_PROB, eta=CROSSOVER_ETA),
         mutation=PM(prob=1.0 / n_var, eta=MUTATION_ETA),
-        selection=RandomSelection(),
     )
     minimize(pymoo_problem, algorithm, get_termination("n_eval", N_EVALS),
              seed=seed, verbose=False)

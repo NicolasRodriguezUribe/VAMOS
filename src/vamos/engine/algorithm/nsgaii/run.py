@@ -56,7 +56,7 @@ def notify_generation(
         )
         if changed:
             F = st.F
-            if st.steady_state:
+            if st.incremental_mode:
                 st.ranks = None
                 st.crowding = None
                 st.fronts = None
@@ -191,7 +191,7 @@ def _can_use_nsga2_evolve_fastpath(
         return False
     if not isinstance(live_cb, NoOpLiveVisualization):
         return False
-    if st.steady_state:
+    if st.incremental_mode:
         return False
     if st.G is not None:
         return False
@@ -330,7 +330,7 @@ def run_nsgaii(
                 st.step = step
                 st.replacements = replacements
 
-                if st.steady_state:
+                if st.incremental_mode:
                     if not stop_requested:
                         stop_requested = live_should_stop(live_cb)
                     new_generation = replacements // st.pop_size

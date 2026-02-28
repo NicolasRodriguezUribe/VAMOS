@@ -73,7 +73,6 @@ INT_MUTATION_COMMON: dict[str, IntMutationOp] = {
     "reset": random_reset_mutation,
     "random_reset": random_reset_mutation,
     "creep": creep_mutation,
-    "pm": integer_polynomial_mutation,
     "polynomial": integer_polynomial_mutation,
     "gaussian": gaussian_integer_mutation,
     "boundary": boundary_integer_mutation,

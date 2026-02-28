@@ -157,9 +157,7 @@ def _prompt_int(prompt: str, default: int, *, min_value: int = 1) -> int:
 
 def _prompt_bounds(n_var: int) -> list[tuple[float, float]]:
     print(f"\n  Variable bounds (lower,upper for each of {n_var} variables):")
-    use_same = _prompt_text(
-        "Same bounds for all variables? (y/n)", "y"
-    ).lower()
+    use_same = _prompt_text("Same bounds for all variables? (y/n)", "y").lower()
     if use_same in ("y", "yes"):
         lo = float(_prompt_text("  Lower bound for all variables", "0.0"))
         hi = float(_prompt_text("  Upper bound for all variables", "1.0"))
@@ -220,9 +218,7 @@ def _generate_functional(
     budget: int,
 ) -> str:
     func_name = _to_identifier(name)
-    bounds_desc = ", ".join(
-        f"x{i} in [{b[0]}, {b[1]}]" for i, b in enumerate(bounds)
-    )
+    bounds_desc = ", ".join(f"x{i} in [{b[0]}, {b[1]}]" for i, b in enumerate(bounds))
 
     obj_lines: list[str] = []
     return_parts: list[str] = []
@@ -257,9 +253,7 @@ def _generate_class(
 
     obj_lines: list[str] = []
     for i in range(n_obj):
-        obj_lines.append(
-            f"        f{i} = X[:, 0]  # TODO: define objective {i}"
-        )
+        obj_lines.append(f"        f{i} = X[:, 0]  # TODO: define objective {i}")
 
     stack_parts = ", ".join(f"f{i}" for i in range(n_obj))
     obj_stack = f"np.column_stack([{stack_parts}])"
@@ -287,8 +281,7 @@ def run_create_problem(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="vamos create-problem",
         description=(
-            "Guided wizard to scaffold a custom optimization problem. "
-            "Generates a ready-to-run Python file -- just fill in your objectives."
+            "Guided wizard to scaffold a custom optimization problem. Generates a ready-to-run Python file -- just fill in your objectives."
         ),
     )
     parser.add_argument("--name", help="Problem name (e.g. 'my_problem').")
@@ -299,10 +292,7 @@ def run_create_problem(argv: Sequence[str] | None = None) -> None:
         "--style",
         choices=["functional", "class"],
         default=None,
-        help=(
-            "Template style: 'functional' (simple, uses make_problem) "
-            "or 'class' (full control). Default: functional."
-        ),
+        help=("Template style: 'functional' (simple, uses make_problem) or 'class' (full control). Default: functional."),
     )
     parser.add_argument(
         "--budget",
@@ -354,9 +344,7 @@ def run_create_problem(argv: Sequence[str] | None = None) -> None:
     if args.budget is not None:
         budget = args.budget
     elif interactive:
-        budget = _prompt_int(
-            "Evaluation budget (more = better results, slower)", 5000, min_value=100
-        )
+        budget = _prompt_int("Evaluation budget (more = better results, slower)", 5000, min_value=100)
     else:
         budget = 5000
 
@@ -374,13 +362,9 @@ def run_create_problem(argv: Sequence[str] | None = None) -> None:
 
     # ---- generate ----
     if style == "class":
-        content = _generate_class(
-            name=name, n_var=n_var, n_obj=n_obj, bounds=bounds, budget=budget
-        )
+        content = _generate_class(name=name, n_var=n_var, n_obj=n_obj, bounds=bounds, budget=budget)
     else:
-        content = _generate_functional(
-            name=name, n_var=n_var, n_obj=n_obj, bounds=bounds, budget=budget
-        )
+        content = _generate_functional(name=name, n_var=n_var, n_obj=n_obj, bounds=bounds, budget=budget)
 
     # ---- write output ----
     if args.output:
@@ -396,31 +380,16 @@ def run_create_problem(argv: Sequence[str] | None = None) -> None:
     print(f"\n  Created: {output_path.resolve()}")
     print()
     print("  Next steps:")
-    print(
-        f"    1. Open {output_path} and fill in your objective "
-        "functions (look for TODO comments)"
-    )
+    print(f"    1. Open {output_path} and fill in your objective functions (look for TODO comments)")
     print(f"    2. Run it:  python {output_path}")
-    print(
-        "    3. Tweak:   adjust bounds, budget, or algorithm as needed"
-    )
+    print("    3. Tweak:   adjust bounds, budget, or algorithm as needed")
     print()
     if style == "functional":
-        print(
-            "  Tip: Your function receives a single solution x "
-            f"(array of length {n_var})."
-        )
-        print(
-            f"       Return a list of {n_obj} values -- all are minimized."
-        )
+        print(f"  Tip: Your function receives a single solution x (array of length {n_var}).")
+        print(f"       Return a list of {n_obj} values -- all are minimized.")
     else:
-        print(
-            f"  Tip: Your evaluate() receives X with shape (N, {n_var}) "
-            "-- a batch of solutions."
-        )
-        print(
-            f"       Write {n_obj} objectives per row to out['F']."
-        )
+        print(f"  Tip: Your evaluate() receives X with shape (N, {n_var}) -- a batch of solutions.")
+        print(f"       Write {n_obj} objectives per row to out['F'].")
     print()
 
 

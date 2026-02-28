@@ -66,27 +66,11 @@ def initialize_run(
     rng = np.random.default_rng(seed)
 
     pop_size = int(algo.cfg["pop_size"])
-    steady_state = bool(algo.cfg.get("steady_state", False))
-    raw_offspring_size = algo.cfg.get("offspring_size")
-    replacement_size = algo.cfg.get("replacement_size")
-
-    if steady_state:
-        if replacement_size is None:
-            if raw_offspring_size is not None and int(raw_offspring_size) != pop_size:
-                replacement_size = raw_offspring_size
-            else:
-                replacement_size = 1
-        replacement_size = int(replacement_size)
-        if replacement_size <= 0:
-            raise ValueError("replacement size must be positive.")
-        if replacement_size > pop_size:
-            raise ValueError("replacement size must be <= population size.")
-        offspring_size = replacement_size
-    else:
-        offspring_size = int(raw_offspring_size or pop_size)
-        if offspring_size <= 0:
-            raise ValueError("offspring size must be positive.")
-        replacement_size = 1
+    offspring_size = int(algo.cfg.get("offspring_size") or pop_size)
+    if offspring_size <= 0:
+        raise ValueError("offspring size must be positive.")
+    incremental_mode = offspring_size < pop_size
+    replacement_size = 1
 
     constraint_mode = algo.cfg.get("constraint_mode", "feasibility")
     initializer_cfg = algo.cfg.get("initializer")
@@ -150,7 +134,7 @@ def initialize_run(
     else:
         X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
 
-    incremental_enabled = bool(steady_state and replacement_size == 1 and constraint_mode == "none" and G is None)
+    incremental_enabled = bool(incremental_mode and replacement_size == 1 and constraint_mode == "none" and G is None)
     if incremental_enabled and getattr(algo.kernel, "name", "") == "jax" and getattr(algo.kernel, "_strict_ranking", True) is False:
         incremental_enabled = False
 
@@ -271,7 +255,7 @@ def initialize_run(
         pop_size=pop_size,
         offspring_size=offspring_size,
         replacement_size=replacement_size,
-        steady_state=steady_state,
+        incremental_mode=incremental_mode,
         constraint_mode=constraint_mode,
         archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,

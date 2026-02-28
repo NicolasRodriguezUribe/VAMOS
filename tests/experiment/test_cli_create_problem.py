@@ -163,7 +163,7 @@ class TestClassTemplate:
             budget=5000,
         )
         assert "[0.0, -5.0]" in code  # xl
-        assert "[1.0, 5.0]" in code   # xu
+        assert "[1.0, 5.0]" in code  # xu
 
 
 # ======================================================================
@@ -192,14 +192,21 @@ class TestCLI:
 
     def test_custom_metadata(self, tmp_path) -> None:
         out_file = str(tmp_path / "custom.py")
-        run_create_problem([
-            "--yes",
-            "--name", "portfolio optimizer",
-            "--n-var", "5",
-            "--n-obj", "3",
-            "--budget", "8000",
-            "--output", out_file,
-        ])
+        run_create_problem(
+            [
+                "--yes",
+                "--name",
+                "portfolio optimizer",
+                "--n-var",
+                "5",
+                "--n-obj",
+                "3",
+                "--budget",
+                "8000",
+                "--output",
+                out_file,
+            ]
+        )
         content = (tmp_path / "custom.py").read_text(encoding="utf-8")
         assert "n_var=5" in content
         assert "n_obj=3" in content

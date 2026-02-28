@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -51,8 +52,6 @@ from vamos.ux.studio.data import build_fronts, load_runs_from_study
 from vamos.ux.studio.dm import build_decision_view
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from vamos.ux.studio.data import FrontRecord, RunRecord
     from vamos.ux.studio.dm import DecisionView
 
@@ -75,6 +74,95 @@ def load_studio_data(study_dir: Path) -> tuple[list[RunRecord], list[FrontRecord
     runs = load_runs_from_study(study_dir)
     fronts = build_fronts(runs)
     return runs, fronts
+
+
+def _contains_result_files(path: Path) -> bool:
+    try:
+        next(path.rglob("FUN.csv"))
+    except StopIteration:
+        return False
+    return True
+
+
+def discover_study_directories(base_dir: Path, *, limit: int = 8) -> list[Path]:
+    """Return a short list of likely study/result directories for the UI picker."""
+    base_dir = base_dir.resolve()
+    candidates: list[Path] = []
+
+    def add_candidate(path: Path) -> None:
+        path = path.resolve()
+        if path in candidates or not path.exists() or not path.is_dir():
+            return
+        if not _contains_result_files(path):
+            return
+        candidates.append(path)
+
+    preferred_roots = [
+        base_dir / "results",
+        base_dir / "results" / "quickstart",
+        base_dir / "paper" / "results",
+    ]
+    for root in preferred_roots:
+        add_candidate(root)
+        if root.exists():
+            for child in sorted(root.iterdir()):
+                if child.is_dir():
+                    add_candidate(child)
+
+    candidates.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    return candidates[:limit]
+
+
+def build_demo_study_data() -> tuple[list[RunRecord], list[FrontRecord]]:
+    """Return a small built-in dataset so the Explore tab is useful on first launch."""
+    from vamos.ux.studio.data import FrontRecord, RunRecord
+
+    x = np.linspace(0.02, 1.0, 24)
+    nsgaii_front = np.column_stack([x, 1.02 - np.sqrt(x)])
+    moead_front = np.column_stack([x, 1.04 - np.power(x, 0.62)])
+    nsgaii_front = np.clip(nsgaii_front, 0.0, None)
+    moead_front = np.clip(moead_front, 0.0, None)
+    points_x = np.column_stack([x, 1.0 - x])
+
+    demo_runs = [
+        RunRecord(
+            suite_name="demo",
+            experiment_id="demo/nsgaii",
+            problem_name="Demo trade-off",
+            algorithm_name="NSGA-II demo",
+            seed=0,
+            fun=nsgaii_front,
+            var=points_x,
+            metadata={"demo": True},
+        ),
+        RunRecord(
+            suite_name="demo",
+            experiment_id="demo/moead",
+            problem_name="Demo trade-off",
+            algorithm_name="MOEA/D demo",
+            seed=1,
+            fun=moead_front,
+            var=points_x,
+            metadata={"demo": True},
+        ),
+    ]
+    demo_fronts = [
+        FrontRecord(
+            problem_name="Demo trade-off",
+            algorithm_name="NSGA-II demo",
+            points_F=nsgaii_front,
+            points_X=points_x,
+            extra={"demo": True, "seeds": [0], "config": None},
+        ),
+        FrontRecord(
+            problem_name="Demo trade-off",
+            algorithm_name="MOEA/D demo",
+            points_F=moead_front,
+            points_X=points_x,
+            extra={"demo": True, "seeds": [1], "config": None},
+        ),
+    ]
+    return demo_runs, demo_fronts
 
 
 def build_decision_views(
@@ -254,6 +342,8 @@ def run_with_history(
 __all__ = [
     "DynamicsCallback",
     "load_studio_data",
+    "discover_study_directories",
+    "build_demo_study_data",
     "build_decision_views",
     "run_focused_optimization",
     "run_with_history",

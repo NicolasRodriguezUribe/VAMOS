@@ -81,21 +81,15 @@ class TestMakeProblemConstruction:
         assert problem.name == "custom_problem"
 
     def test_explicit_name(self) -> None:
-        problem = make_problem(
-            lambda x: [x[0]], n_var=1, n_obj=1, name="my_problem"
-        )
+        problem = make_problem(lambda x: [x[0]], n_var=1, n_obj=1, name="my_problem")
         assert problem.name == "my_problem"
 
     def test_encoding_alias(self) -> None:
-        problem = make_problem(
-            lambda x: [x[0]], n_var=1, n_obj=1, encoding="continuous"
-        )
+        problem = make_problem(lambda x: [x[0]], n_var=1, n_obj=1, encoding="continuous")
         assert problem.encoding == "real"
 
     def test_repr(self) -> None:
-        problem = make_problem(
-            lambda x: [x[0]], n_var=2, n_obj=1, name="test"
-        )
+        problem = make_problem(lambda x: [x[0]], n_var=2, n_obj=1, name="test")
         r = repr(problem)
         assert "test" in r
         assert "n_var=2" in r
@@ -266,20 +260,19 @@ class TestValidation:
 
     def test_bounds_length_mismatch(self) -> None:
         with pytest.raises(ValueError, match="n_var=2"):
-            make_problem(
-                lambda x: [x[0]], n_var=2, n_obj=1, bounds=[(0, 1)]
-            )
+            make_problem(lambda x: [x[0]], n_var=2, n_obj=1, bounds=[(0, 1)])
 
     def test_bounds_inverted(self) -> None:
         with pytest.raises(ValueError, match="lower bound"):
-            make_problem(
-                lambda x: [x[0]], n_var=1, n_obj=1, bounds=[(5, 0)]
-            )
+            make_problem(lambda x: [x[0]], n_var=1, n_obj=1, bounds=[(5, 0)])
 
     def test_bounds_malformed(self) -> None:
         with pytest.raises(ValueError, match="pair"):
             make_problem(
-                lambda x: [x[0]], n_var=1, n_obj=1, bounds=[(1,)]  # type: ignore[arg-type]
+                lambda x: [x[0]],
+                n_var=1,
+                n_obj=1,
+                bounds=[(1,)],  # type: ignore[arg-type]
             )
 
     def test_constraints_not_callable(self) -> None:
@@ -304,9 +297,7 @@ class TestValidation:
 
     def test_bad_encoding(self) -> None:
         with pytest.raises(ValueError, match="Unknown encoding"):
-            make_problem(
-                lambda x: [x[0]], n_var=1, n_obj=1, encoding="quantum"
-            )
+            make_problem(lambda x: [x[0]], n_var=1, n_obj=1, encoding="quantum")
 
     def test_encoding_required(self) -> None:
         with pytest.raises(TypeError, match="encoding"):

@@ -263,7 +263,6 @@ class HookManager:
         else:
             payload["archive"] = {
                 "enabled": True,
-                "archive_type": self.cfg.archive_cfg.archive_type,
                 "params": self.cfg.archive_cfg.__dict__,
                 "final_size": int(self.archive.size()),
                 "total_inserted": int(self.archive.total_inserted),

@@ -55,29 +55,27 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
     use_external_archive = bool(assignment.get("use_external_archive", False))
     if not use_external_archive:
         return
-    archive_type_raw = assignment.get("archive_type", "size_cap")
-    archive_type_norm = str(archive_type_raw).strip().lower()
-    # Prefer explicit archive_type when present. Fall back to legacy archive_unbounded only
-    # when archive_type is not provided in the assignment payload.
-    if "archive_type" in assignment:
-        archive_unbounded = archive_type_norm == "unbounded"
-    else:
-        archive_unbounded = bool(assignment.get("archive_unbounded", False))
+
+    legacy_keys = {"archive_type", "archive_size_factor", "archive_epsilon"}
+    legacy_used = sorted(k for k in legacy_keys if k in assignment)
+    if legacy_used:
+        joined = ", ".join(legacy_used)
+        raise ValueError(
+            f"Unsupported external-archive tuning keys: {joined}. Use archive_unbounded/archive_capacity/archive_prune_policy."
+        )
+
+    archive_unbounded = bool(assignment.get("archive_unbounded", False))
     if archive_unbounded:
         builder.external_archive(capacity=None)
         return
-    archive_type = str(archive_type_raw)
+
     prune_policy = str(assignment.get("archive_prune_policy", "crowding"))
-    archive_size_factor = int(assignment.get("archive_size_factor", 1))
-    if archive_size_factor < 1:
-        raise ValueError("archive_size_factor must be >= 1.")
-    archive_size = max(pop_size, pop_size * archive_size_factor)
-    epsilon = float(assignment.get("archive_epsilon", 0.01))
+    archive_size = int(assignment.get("archive_capacity", pop_size))
+    if archive_size <= 0:
+        raise ValueError("archive_capacity must be >= 1.")
     builder.external_archive(
         capacity=archive_size,
-        archive_type=archive_type,
         pruning=prune_policy,
-        epsilon=epsilon,
     )
 
 
@@ -119,7 +117,7 @@ def _extend_real_crossover_params(cross: str, assignment: dict[str, Any], cross_
 
 
 def _extend_mutation_params(mut: str, assignment: dict[str, Any], mut_params: dict[str, Any]) -> None:
-    if mut in {"pm", "polynomial", "linked_polynomial"}:
+    if mut in {"polynomial", "linked_polynomial"}:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     elif mut == "creep":
         mut_params["step"] = int(assignment.get("creep_step", 1))
@@ -172,7 +170,7 @@ def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:
     _extend_mutation_params(str(mut), assignment, mut_params)
     builder.mutation(mut, **mut_params)
 
-    builder.selection(str(assignment.get("selection", "tournament")), pressure=int(assignment["selection_pressure"]))
+    builder.selection(str(assignment.get("selection", "tournament")), size=int(assignment["selection_pressure"]))
 
     _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
@@ -254,7 +252,7 @@ def _build_nsgaiii_config(assignment: dict[str, Any]) -> NSGAIIIConfig:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
-    builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    builder.selection("tournament", size=int(assignment["selection_pressure"]))
     _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
     return builder.build()
@@ -273,7 +271,7 @@ def _build_smsemoa_config(assignment: dict[str, Any]) -> SMSEMOAConfig:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
-    builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    builder.selection("tournament", size=int(assignment["selection_pressure"]))
     builder.reference_point(offset=0.1, adaptive=True)
     _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
@@ -294,7 +292,7 @@ def _build_spea2_config(assignment: dict[str, Any]) -> SPEA2Config:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
-    builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    builder.selection("tournament", size=int(assignment["selection_pressure"]))
     builder.k_neighbors(int(assignment.get("k_neighbors", max(1, int(np.sqrt(pop_size))))))
     _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
@@ -314,7 +312,7 @@ def _build_ibea_config(assignment: dict[str, Any]) -> IBEAConfig:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
-    builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    builder.selection("tournament", size=int(assignment["selection_pressure"]))
     builder.indicator(str(assignment.get("indicator", "eps")))
     builder.kappa(float(assignment.get("kappa", 1.0)))
     _apply_optional_repair(builder, assignment)
@@ -331,9 +329,9 @@ def _build_smpso_config(assignment: dict[str, Any]) -> SMPSOConfig:
     builder.c1(float(assignment["c1"]))
     builder.c2(float(assignment["c2"]))
     builder.vmax_fraction(float(assignment["vmax_fraction"]))
-    mut = str(assignment.get("mutation", "pm"))
+    mut = str(assignment.get("mutation", "polynomial"))
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
-    if mut in {"pm", "polynomial"}:
+    if mut == "polynomial":
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     builder.mutation(mut, **mut_params)
     _apply_optional_external_archive(builder, assignment, pop_size)
@@ -352,7 +350,7 @@ def _build_agemoea_config(assignment: dict[str, Any]) -> AGEMOEAConfig:
     _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
 
-    mut = str(assignment.get("mutation", "pm"))
+    mut = str(assignment.get("mutation", "polynomial"))
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
@@ -380,7 +378,7 @@ def _build_rvea_config(assignment: dict[str, Any]) -> RVEAConfig:
     _extend_real_crossover_params(cross, assignment, cross_params)
     builder.crossover(cross, **cross_params)
 
-    mut = str(assignment.get("mutation", "pm"))
+    mut = str(assignment.get("mutation", "polynomial"))
     mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)

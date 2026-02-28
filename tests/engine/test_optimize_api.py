@@ -2,6 +2,7 @@ import pytest
 
 from vamos import OptimizationResult, optimize
 from vamos.engine.algorithm.config import MOEADConfig, NSGAIIConfig
+from vamos.foundation.problem.binary import BinaryKnapsackProblem
 from vamos.foundation.exceptions import InvalidAlgorithmError
 from vamos.foundation.problem.tsp import TSPProblem
 from vamos.foundation.problem.zdt1 import ZDT1Problem
@@ -13,7 +14,7 @@ def _nsgaii_cfg():
         .pop_size(6)
         .offspring_size(6)
         .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("pm", prob="1/n", eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .result_mode("population")
         .build()
@@ -45,7 +46,7 @@ def test_optimize_explicit_algorithm_moead():
         .delta(0.9)
         .replace_limit(1)
         .crossover("sbx", prob=1.0, eta=20.0)
-        .mutation("pm", prob="1/n", eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
         .build()
     )
@@ -141,6 +142,28 @@ def test_optimize_permutation_problem_uses_encoding_defaults() -> None:
         algorithm="nsgaii",
         max_evaluations=16,
         pop_size=8,
+        seed=1,
+        engine="numpy",
+    )
+    assert isinstance(result, OptimizationResult)
+    assert result.F is not None
+    assert result.X is not None
+    assert result.X.shape[1] == problem.n_var
+
+
+@pytest.mark.parametrize(
+    ("problem", "pop_size"),
+    [
+        (TSPProblem(n_cities=8), 8),
+        (BinaryKnapsackProblem(n_var=16), 16),
+    ],
+)
+def test_optimize_moead_non_real_problem_uses_encoding_defaults(problem, pop_size: int) -> None:
+    result = optimize(
+        problem,
+        algorithm="moead",
+        max_evaluations=2 * pop_size,
+        pop_size=pop_size,
         seed=1,
         engine="numpy",
     )

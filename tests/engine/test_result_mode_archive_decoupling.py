@@ -13,12 +13,7 @@ from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
 def _agemoea_builder(pop_size: int = 12):
-    return (
-        AGEMOEAConfig.builder()
-        .pop_size(pop_size)
-        .crossover("sbx", prob=0.9, eta=15.0)
-        .mutation("pm", prob=0.1, eta=20.0)
-    )
+    return AGEMOEAConfig.builder().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("polynomial", prob=0.1, eta=20.0)
 
 
 def _rvea_builder(pop_size: int = 6, n_partitions: int = 5):
@@ -29,7 +24,7 @@ def _rvea_builder(pop_size: int = 6, n_partitions: int = 5):
         .alpha(2.0)
         .adapt_freq(0.1)
         .crossover("sbx", prob=1.0, eta=30.0)
-        .mutation("pm", prob=0.1, eta=20.0)
+        .mutation("polynomial", prob=0.1, eta=20.0)
     )
 
 
@@ -41,7 +36,7 @@ def test_moead_archive_keeps_default_nondominated_result_mode():
         .delta(0.9)
         .replace_limit(2)
         .crossover("de", cr=1.0, f=0.5)
-        .mutation("pm", prob="1/n", eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
         .external_archive(capacity=20)
         .build()
@@ -54,7 +49,7 @@ def test_smsemoa_archive_keeps_default_nondominated_result_mode():
         SMSEMOAConfig.builder()
         .pop_size(10)
         .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("pm", prob="1/n", eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
         .external_archive(capacity=20)
         .build()
@@ -71,7 +66,7 @@ def test_moead_rejects_archive_result_mode():
             .delta(0.9)
             .replace_limit(2)
             .crossover("de", cr=1.0, f=0.5)
-            .mutation("pm", prob="1/n", eta=20.0)
+            .mutation("polynomial", prob="1/n", eta=20.0)
             .aggregation("tchebycheff")
             .result_mode("archive")
             .build()
@@ -84,7 +79,7 @@ def test_smsemoa_rejects_archive_result_mode():
             SMSEMOAConfig.builder()
             .pop_size(10)
             .crossover("sbx", prob=0.9, eta=20.0)
-            .mutation("pm", prob="1/n", eta=20.0)
+            .mutation("polynomial", prob="1/n", eta=20.0)
             .selection("tournament", pressure=2)
             .result_mode("archive")
             .build()
@@ -118,12 +113,7 @@ def test_agemoea_archive_keeps_default_result_and_exposes_population():
 
 def test_agemoea_population_result_mode_with_archive():
     pop_size = 12
-    cfg = (
-        _agemoea_builder(pop_size)
-        .external_archive(capacity=pop_size * 2)
-        .result_mode("population")
-        .build()
-    )
+    cfg = _agemoea_builder(pop_size).external_archive(capacity=pop_size * 2).result_mode("population").build()
     problem = ZDT1Problem(n_var=6)
     result = AGEMOEA(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,
@@ -151,12 +141,7 @@ def test_rvea_archive_keeps_default_result_and_exposes_population():
 
 def test_rvea_population_result_mode_with_archive():
     pop_size = 6
-    cfg = (
-        _rvea_builder(pop_size=pop_size, n_partitions=5)
-        .external_archive(capacity=pop_size * 2)
-        .result_mode("population")
-        .build()
-    )
+    cfg = _rvea_builder(pop_size=pop_size, n_partitions=5).external_archive(capacity=pop_size * 2).result_mode("population").build()
     problem = ZDT1Problem(n_var=6)
     result = RVEA(cfg.to_dict(), kernel=NumPyKernel()).run(
         problem,

@@ -273,6 +273,17 @@ try:
 except ImportError:
     from benchmark_utils import compute_hv, compute_igd_plus
 
+from vamos.engine.algorithm.components.archive import select_top_k_crowding
+
+TOP_K_HV = POP_SIZE  # trim archive to pop_size best-spread solutions for HV/IGD+
+
+
+def _trim_for_hv(F: np.ndarray | None, k: int = TOP_K_HV) -> np.ndarray | None:
+    """Trim a non-dominated front to the *k* most spread solutions."""
+    if F is None or F.shape[0] <= k:
+        return F
+    return F[select_top_k_crowding(F, k)]
+
 try:
     from .progress_utils import ProgressBar, joblib_progress
 except ImportError:  # pragma: no cover
@@ -554,11 +565,11 @@ def run_single_benchmark(problem_name, seed, framework):
                     NSGAIIConfig.builder()
                     .pop_size(POP_SIZE)
                     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
                     .selection("tournament")
                 )
                 if ALGORITHM == "nsgaii_ss":
-                    builder = builder.steady_state(True).offspring_size(1).replacement_size(1)
+                    builder = builder.offspring_size(1)
                 elif ALGORITHM == "nsgaii_archive":
                     builder = builder.external_archive(capacity=None)
                 algo_config = builder.build()
@@ -568,7 +579,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     SMSEMOAConfig.builder()
                     .pop_size(POP_SIZE)
                     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
                     .selection("random")
                     .reference_point(offset=1.0, adaptive=True)
                     .eliminate_duplicates(True)
@@ -584,7 +595,7 @@ def run_single_benchmark(problem_name, seed, framework):
                     .delta(MOEAD_DELTA)
                     .replace_limit(MOEAD_REPLACE_LIMIT)
                     .crossover("sbx", prob=CROSSOVER_PROB, eta=CROSSOVER_ETA)
-                    .mutation("pm", prob=1.0 / n_var, eta=MUTATION_ETA)
+                    .mutation("polynomial", prob=1.0 / n_var, eta=MUTATION_ETA)
                     .aggregation("tchebycheff")
                     .weight_vectors(path=str(MOEAD_WEIGHTS_DIR))
                     .build()
@@ -620,7 +631,7 @@ def run_single_benchmark(problem_name, seed, framework):
                 if isinstance(archive_payload, dict):
                     archive_F = archive_payload.get("F")
                     if archive_F is not None:
-                        hv_source = archive_F
+                        hv_source = _trim_for_hv(archive_F)
                         n_solutions = int(archive_F.shape[0])
             hv = compute_hv(hv_source, problem_name) if hv_source is not None else float("nan")
             igd_plus = compute_igd_plus(hv_source, problem_name) if hv_source is not None else float("nan")
@@ -649,7 +660,6 @@ def run_single_benchmark(problem_name, seed, framework):
             from pymoo.problems import get_problem
             from pymoo.operators.crossover.sbx import SBX
             from pymoo.operators.mutation.pm import PM
-            from pymoo.operators.selection.rnd import RandomSelection
 
             if problem_name.startswith("zdt"):
                 pymoo_problem = get_problem(problem_name, n_var=n_var)
@@ -692,6 +702,8 @@ def run_single_benchmark(problem_name, seed, framework):
 
                     archive_cb = ArchiveCallback(n_var, n_obj)
             elif ALGORITHM == "smsemoa":
+                from pymoo.operators.selection.rnd import RandomSelection
+
                 algorithm = SMSEMOA(
                     pop_size=POP_SIZE,
                     n_offsprings=1,
@@ -785,7 +797,7 @@ def run_single_benchmark(problem_name, seed, framework):
             if ALGORITHM == "nsgaii_archive" and archive_cb is not None:
                 _, archive_F = archive_cb.archive.contents()
                 if archive_F is not None:
-                    hv_source = archive_F
+                    hv_source = _trim_for_hv(archive_F)
                     n_solutions = int(archive_F.shape[0])
             hv = compute_hv(hv_source, problem_name) if hv_source is not None else float("nan")
             igd_plus = compute_igd_plus(hv_source, problem_name) if hv_source is not None else float("nan")
@@ -923,9 +935,10 @@ def run_single_benchmark(problem_name, seed, framework):
 
             if use_archive and archive is not None:
                 _, F = archive.contents()
-                hv = compute_hv(F, problem_name)
-                igd_plus = compute_igd_plus(F, problem_name)
                 n_solutions = int(F.shape[0]) if F is not None else 0
+                F_hv = _trim_for_hv(F)
+                hv = compute_hv(F_hv, problem_name)
+                igd_plus = compute_igd_plus(F_hv, problem_name)
             else:
                 fronts = tools.sortNondominated(pop, len(pop), first_front_only=True)
                 F = np.array([ind.fitness.values for ind in fronts[0]])
@@ -956,6 +969,7 @@ def run_single_benchmark(problem_name, seed, framework):
             from jmetal.algorithm.multiobjective.moead import MOEAD
             from jmetal.operator.crossover import SBXCrossover
             from jmetal.operator.mutation import PolynomialMutation
+            from jmetal.operator.selection import NaryRandomSolutionSelection
             from jmetal.util.aggregation_function import Tschebycheff
             from jmetal.util.termination_criterion import StoppingByEvaluations
             from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
@@ -1052,7 +1066,19 @@ def run_single_benchmark(problem_name, seed, framework):
                     termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
                 )
             else:
-                algorithm = MOEAD(
+                # jMetalPy's MOEAD.selection() returns 3 parents (for DE crossover).
+                # Subclass to return 2 parents so SBX crossover works (matching VAMOS/pymoo).
+                class _MOEAD_SBX(MOEAD):
+                    def __init__(self, **kwargs):
+                        super().__init__(**kwargs)
+                        self.selection_operator = NaryRandomSolutionSelection(1)
+
+                    def reproduction(self, mating_population):
+                        offspring_population = self.crossover_operator.execute(mating_population)
+                        self.mutation_operator.execute(offspring_population[0])
+                        return offspring_population
+
+                algorithm = _MOEAD_SBX(
                     problem=jmetal_problem,
                     population_size=POP_SIZE,
                     mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
@@ -1071,9 +1097,10 @@ def run_single_benchmark(problem_name, seed, framework):
 
             if ALGORITHM == "nsgaii_archive" and archive is not None:
                 _, F = archive.contents()
-                hv = compute_hv(F, problem_name)
-                igd_plus = compute_igd_plus(F, problem_name)
                 n_solutions = int(F.shape[0]) if F is not None else 0
+                F_hv = _trim_for_hv(F)
+                hv = compute_hv(F_hv, problem_name)
+                igd_plus = compute_igd_plus(F_hv, problem_name)
             else:
                 solutions = algorithm.result()  # result() is a method, not property
                 F = np.array([s.objectives for s in solutions])
@@ -1213,8 +1240,9 @@ def run_single_benchmark(problem_name, seed, framework):
 
             result_solutions = list(algorithm.result)
             F = np.array([s.objectives for s in result_solutions])
-            hv = compute_hv(F, problem_name)
-            igd_plus = compute_igd_plus(F, problem_name)
+            F_hv = _trim_for_hv(F) if ALGORITHM == "nsgaii_archive" else F
+            hv = compute_hv(F_hv, problem_name)
+            igd_plus = compute_igd_plus(F_hv, problem_name)
 
             result_entry = {
                 "framework": "Platypus",

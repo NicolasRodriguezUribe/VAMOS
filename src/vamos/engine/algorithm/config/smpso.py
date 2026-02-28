@@ -6,11 +6,13 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive.bounded_archive import PrunePolicy
 
-from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _default_operators_for_encoding, _require_fields, _SerializableConfig, _validate_operators
+from .types import InitializerName, MutationName, RepairName
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class SMPSOConfig(_SerializableConfig):
     pop_size: int
     archive_size: int  # Internal archive (part of SMPSO algorithm)
@@ -31,10 +33,18 @@ class SMPSOConfig(_SerializableConfig):
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
+        encoding: str | None = None,
     ) -> SMPSOConfig:
-        """Create a default SMPSO configuration."""
+        """Create a default SMPSO configuration.
+
+        Args:
+            pop_size: Population size (default: 100)
+            n_var: Number of variables (for mutation prob)
+            encoding: Problem encoding. If omitted, defaults to "real".
+        """
         mut_prob = 1.0 / n_var if n_var else 0.1
-        return cls.builder().pop_size(pop_size).archive_size(pop_size).mutation("pm", prob=mut_prob, eta=20.0).build()
+        _, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
+        return cls.builder().pop_size(pop_size).archive_size(pop_size).mutation(mt[0], **mt[1]).build()
 
     @classmethod
     def builder(cls) -> _SMPSOConfigBuilder:
@@ -55,7 +65,7 @@ class _SMPSOConfigBuilder:
         self._cfg["archive_size"] = value
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
@@ -75,15 +85,15 @@ class _SMPSOConfigBuilder:
         self._cfg["vmax_fraction"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def constraint_mode(self, value: str) -> _SMPSOConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _SMPSOConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -91,20 +101,24 @@ class _SMPSOConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _SMPSOConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _SMPSOConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _SMPSOConfigBuilder:
+    def external_archive(
+        self,
+        capacity: int | None = None,
+        pruning: PrunePolicy = "crowding",
+    ) -> _SMPSOConfigBuilder:
         """Configure an external archive for result storage.
 
         Note: This is separate from ``archive_size`` which is the internal SMPSO archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
+            pruning: Strategy used when bounded archive exceeds capacity.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
         return self
 
     def build(self) -> SMPSOConfig:
@@ -113,6 +127,7 @@ class _SMPSOConfigBuilder:
             ("pop_size", "archive_size", "mutation"),
             "SMPSO",
         )
+        _validate_operators(self._cfg)
         return SMPSOConfig(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],

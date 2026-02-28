@@ -55,7 +55,7 @@ class MOEAD:
         Algorithm configuration with keys:
         - pop_size (int): Population size (should match number of weight vectors)
         - crossover (tuple): Crossover operator config, e.g., ("sbx", {"prob": 0.9})
-        - mutation (tuple): Mutation operator config, e.g., ("pm", {"prob": "1/n"})
+        - mutation (tuple): Mutation operator config, e.g., ("polynomial", {"prob": "1/n"})
         - weight_vectors (dict, optional): {"path": str, "divisions": int}
         - neighbor_size (int, optional): T parameter (default: 20)
         - delta (float, optional): Neighborhood selection probability (default: 0.9)

@@ -73,7 +73,7 @@ def _can_use_fused_offspring(algo: NSGAII, st: NSGAIIState) -> bool:
     generate_offspring = getattr(algo.kernel, "generate_offspring", None)
     if not callable(generate_offspring):
         return False
-    if st.steady_state:
+    if st.incremental_mode:
         return False
     if st.G is not None:
         return False
@@ -162,7 +162,7 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     else:
         with _measure("ranking"):
             ranks, crowding = compute_selection_metrics(algo.kernel, st.F, st.G, st.constraint_mode)
-        if st.steady_state:
+        if st.incremental_mode:
             st.ranks = ranks
             st.crowding = crowding
             st.fronts = fronts_from_ranks(ranks)
@@ -267,7 +267,14 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
     used_incremental = False
 
     early_reject = False
-    if st.steady_state and st.fronts is not None and st.constraint_mode == "none" and st.G is None and G_off is None and F_off is not None:
+    if (
+        st.incremental_mode
+        and st.fronts is not None
+        and st.constraint_mode == "none"
+        and st.G is None
+        and G_off is None
+        and F_off is not None
+    ):
         worst_front = st.fronts[-1] if st.fronts else []
         if worst_front:
             F_worst = st.F[np.asarray(worst_front, dtype=int)]
@@ -426,6 +433,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         # detect the infeasible→feasible transition and reset the bandit.
         if new_G is not None and new_G.size > 0:
             from vamos.foundation.constraints.utils import is_feasible as _is_feasible
+
             feas_mask = _is_feasible(new_G)
             aos_controller.observe_feasibility_rate(int(np.sum(feas_mask)), new_G.shape[0])
 

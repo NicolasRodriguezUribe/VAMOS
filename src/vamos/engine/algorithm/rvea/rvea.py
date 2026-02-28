@@ -128,7 +128,7 @@ def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, pr
 
     var_cfg = resolve_default_variation_config(encoding, explicit_overrides)
     c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {})), key="crossover")
-    m_name, m_kwargs = ensure_operator_tuple(var_cfg.get("mutation", ("pm", {})), key="mutation")
+    m_name, m_kwargs = ensure_operator_tuple(var_cfg.get("mutation", ("polynomial", {})), key="mutation")
     repair_tuple = ensure_operator_tuple_optional(var_cfg.get("repair"), key="repair")
     cross_name, mut_name = ensure_supported_operator_names(encoding, c_name, m_name)
     repair_cfg = None
@@ -150,7 +150,7 @@ def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, pr
     )
 
 
-def _build_archive(config: dict[str, Any], seed: int) -> BoundedArchive | None:
+def _build_archive(config: dict[str, Any], _seed: int) -> BoundedArchive | None:
     from vamos.engine.archive import ExternalArchiveConfig
     from vamos.engine.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
 
@@ -163,12 +163,7 @@ def _build_archive(config: dict[str, Any], seed: int) -> BoundedArchive | None:
         return None
     bac = BoundedArchiveConfig(
         size_cap=ext_cfg.capacity,
-        truncate_size=ext_cfg.truncate_size,
-        archive_type=ext_cfg.archive_type,
         prune_policy=ext_cfg.pruning,
-        epsilon=ext_cfg.epsilon,
-        rng_seed=seed,
-        nondominated_only=ext_cfg.nondominated_only,
     )
     return BoundedArchive(bac)
 

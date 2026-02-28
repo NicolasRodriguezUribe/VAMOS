@@ -27,8 +27,8 @@ def main() -> None:
         .pop_size(40)
         .offspring_size(40)
         .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("pm", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .mutation("polynomial", prob="1/n", eta=20.0)
+        .selection("tournament", size=2)
         .constraint_mode("feasibility")  # respect problem-provided G <= 0 constraints
         .build()
     )

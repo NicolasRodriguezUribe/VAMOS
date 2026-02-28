@@ -56,12 +56,10 @@ class SMSEMOA:
         - pop_size (int): Population size
         - crossover (tuple): Crossover operator config
         - mutation (tuple): Mutation operator config
-        - selection (tuple): Selection config, e.g., ("tournament", {"pressure": 2})
+        - selection (tuple): Selection config, e.g., ("tournament", {"size": 2})
         - reference_point (dict, optional): {"offset": float} or {"point": list}
-        - external_archive_size (int, optional): Size of external archive
-        - archive_type (str, optional): Archive type ("hypervolume" or "crowding")
+        - external_archive (dict, optional): {"capacity": int | None, "pruning": str}
         - hv_threshold (float, optional): HV threshold for early termination
-        - hv_ref_point (list, optional): Reference point for HV computation
     kernel : KernelBackend
         Backend for vectorized operations.
 

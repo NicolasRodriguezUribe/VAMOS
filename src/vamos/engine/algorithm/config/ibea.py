@@ -6,11 +6,22 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive.bounded_archive import PrunePolicy
 
-from .base import ConstraintModeStr, IndicatorType, ResultMode, _require_fields, _SerializableConfig
+from .base import (
+    ConstraintModeStr,
+    IndicatorType,
+    ResultMode,
+    _default_operators_for_encoding,
+    _normalize_tournament_selection_kwargs,
+    _require_fields,
+    _SerializableConfig,
+    _validate_operators,
+)
+from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class IBEAConfig(_SerializableConfig):
     pop_size: int
     crossover: tuple[str, dict[str, Any]]
@@ -31,14 +42,22 @@ class IBEAConfig(_SerializableConfig):
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
+        encoding: str | None = None,
     ) -> IBEAConfig:
-        """Create a default IBEA configuration."""
+        """Create a default IBEA configuration.
+
+        Args:
+            pop_size: Population size (default: 100)
+            n_var: Number of variables (for mutation prob)
+            encoding: Problem encoding. If omitted, defaults to "real".
+        """
         mut_prob = 1.0 / n_var if n_var else 0.1
+        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
         return (
             cls.builder()
             .pop_size(pop_size)
-            .crossover("sbx", prob=1.0, eta=20.0)
-            .mutation("pm", prob=mut_prob, eta=20.0)
+            .crossover(cx[0], **cx[1])
+            .mutation(mt[0], **mt[1])
             .selection("tournament")
             .indicator("eps")
             .kappa(1.0)
@@ -60,19 +79,19 @@ class _IBEAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def mutation(self, method: MutationName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
-        self._cfg["selection"] = (method, kwargs)
+    def selection(self, method: SelectionName | str, **kwargs: Any) -> _IBEAConfigBuilder:
+        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
-    def indicator(self, name: str) -> _IBEAConfigBuilder:
+    def indicator(self, name: IndicatorType | str) -> _IBEAConfigBuilder:
         self._cfg["indicator"] = name
         return self
 
@@ -80,11 +99,11 @@ class _IBEAConfigBuilder:
         self._cfg["kappa"] = value
         return self
 
-    def repair(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def repair(self, method: RepairName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
+    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -92,7 +111,7 @@ class _IBEAConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> _IBEAConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr | str) -> _IBEAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -100,18 +119,22 @@ class _IBEAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _IBEAConfigBuilder:
+    def result_mode(self, value: ResultMode | str) -> _IBEAConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _IBEAConfigBuilder:
+    def external_archive(
+        self,
+        capacity: int | None = None,
+        pruning: PrunePolicy = "crowding",
+    ) -> _IBEAConfigBuilder:
         """Configure an external archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
+            pruning: Strategy used when bounded archive exceeds capacity.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
         return self
 
     def build(self) -> IBEAConfig:
@@ -120,6 +143,7 @@ class _IBEAConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection", "indicator", "kappa"),
             "IBEA",
         )
+        _validate_operators(self._cfg)
         return IBEAConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],

@@ -17,7 +17,13 @@ from .crossover import (
     UNDXCrossover,
     WholeArithmeticCrossover,
 )
-from .initialize import LatinHypercubeInitializer, ScatterSearchInitializer
+from .initialize import (
+    HaltonInitializer,
+    LatinHypercubeInitializer,
+    OppositionBasedInitializer,
+    ScatterSearchInitializer,
+    SobolInitializer,
+)
 from .mutation import (
     CauchyMutation,
     GaussianMutation,
@@ -53,11 +59,13 @@ __all__ = [
     "FuzzyCrossover",
     "GaussianMutation",
     "LaplaceCrossover",
+    "HaltonInitializer",
     "LatinHypercubeInitializer",
     "LevyFlightMutation",
     "LinkedPolynomialMutation",
     "Mutation",
     "NonUniformMutation",
+    "OppositionBasedInitializer",
     "PCXCrossover",
     "PolynomialMutation",
     "PowerLawMutation",
@@ -69,6 +77,7 @@ __all__ = [
     "SPXCrossover",
     "RoundRepair",
     "ScatterSearchInitializer",
+    "SobolInitializer",
     "UniformMutation",
     "UniformResetMutation",
     "UNDXCrossover",

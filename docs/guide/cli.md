@@ -76,7 +76,7 @@ vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size
 Steady-state NSGA-II (incremental replacement):
 
 ```bash
-vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --nsgaii-steady-state --nsgaii-replacement-size 2
+vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --nsgaii-replacement-size 2
 ```
 
 Python equivalent (preferred for scripting):
@@ -166,9 +166,8 @@ Key flags
 - `--output-root`: directory for run artifacts (default: `results/`)
 - `--no-preflight`: skip optional dependency warnings
 - `--population-size`, `--offspring-population-size`
-- NSGA-II steady-state:
-  - `--nsgaii-steady-state` to enable incremental replacement
-  - `--nsgaii-replacement-size` to set replacements per step (implies steady-state)
+- NSGA-II incremental replacement:
+  - `--nsgaii-replacement-size` to set replacements per step
 - `--max-evaluations`
 - `--hv-threshold` and `--hv-reference-front`
 - `--selection-pressure`, `--external-archive-size`

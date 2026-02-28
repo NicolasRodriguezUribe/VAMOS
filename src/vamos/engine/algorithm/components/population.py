@@ -8,7 +8,13 @@ from vamos.engine.operators.impl.binary import random_binary_population
 from vamos.engine.operators.impl.integer import random_integer_population
 from vamos.engine.operators.impl.mixed import mixed_initialize
 from vamos.engine.operators.impl.permutation import random_permutation_population
-from vamos.engine.operators.impl.real import LatinHypercubeInitializer, ScatterSearchInitializer
+from vamos.engine.operators.impl.real import (
+    HaltonInitializer,
+    LatinHypercubeInitializer,
+    OppositionBasedInitializer,
+    ScatterSearchInitializer,
+    SobolInitializer,
+)
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 
@@ -54,6 +60,16 @@ def initialize_population(
         if init_type in {"scatter", "scatter_search"}:
             base = int(initializer.get("base_size", max(20, pop_size)))
             return ScatterSearchInitializer(pop_size, xl, xu, base_size=base, rng=rng)()
+        if init_type == "sobol":
+            scramble = bool(initializer.get("scramble", True))
+            return SobolInitializer(pop_size, xl, xu, rng=rng, scramble=scramble)()
+        if init_type == "halton":
+            scramble = bool(initializer.get("scramble", True))
+            return HaltonInitializer(pop_size, xl, xu, rng=rng, scramble=scramble)()
+        if init_type in {"obl", "opposition"}:
+            if problem is None:
+                raise ValueError("Opposition-based initializer requires a problem instance for fitness evaluation.")
+            return OppositionBasedInitializer(pop_size, xl, xu, problem=problem, rng=rng)()
     if normalized == "permutation":
         return random_permutation_population(pop_size, n_var, rng)
     if normalized == "binary":

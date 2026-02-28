@@ -17,7 +17,7 @@ def test_build_study_tasks_from_ablation_plan_sets_overrides():
     base_config = {"population_size": 50}
     nsgaii_variations = {"tuned": {"adaptive_operator_selection": {"enabled": True}}}
     moead_variations = {"tuned": {"aggregation": {"method": "pbi", "theta": 5.0}}}
-    smsemoa_variations = {"tuned": {"mutation": {"method": "pm", "prob": "1/n"}}}
+    smsemoa_variations = {"tuned": {"mutation": {"method": "polynomial", "prob": "1/n"}}}
 
     tasks, variant_names = build_study_tasks_from_ablation_plan(
         plan,
