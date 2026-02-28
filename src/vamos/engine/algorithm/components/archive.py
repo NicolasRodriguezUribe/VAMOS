@@ -61,6 +61,46 @@ def select_top_k_crowding(F: np.ndarray, k: int) -> np.ndarray:
     return keep
 
 
+def select_top_k_farthest(F: np.ndarray, k: int) -> np.ndarray:
+    """Select the top-*k* most diverse solutions using farthest-point sampling.
+
+    Greedy algorithm that iteratively picks the point maximising the minimum
+    Euclidean distance to the already-selected set.  This produces a more
+    uniformly spread subset than crowding distance, especially for 3+ objectives.
+
+    If the front has ``<= k`` solutions, all indices are returned.
+
+    Parameters
+    ----------
+    F:
+        Objective matrix of shape ``(n, n_obj)``.
+    k:
+        Number of solutions to keep.
+
+    Returns
+    -------
+    np.ndarray
+        1-D integer array of indices into *F* for the selected solutions.
+    """
+    if k <= 0:
+        raise ValueError("k must be a positive integer.")
+    n = F.shape[0]
+    if n <= k:
+        return np.arange(n, dtype=int)
+
+    # Start from the point with the largest norm (an extreme point)
+    selected = [int(np.argmax(np.linalg.norm(F, axis=1)))]
+    min_dists = np.full(n, np.inf)
+
+    for _ in range(k - 1):
+        dists = np.linalg.norm(F - F[selected[-1]], axis=1)
+        np.minimum(min_dists, dists, out=min_dists)
+        min_dists[selected] = -1.0
+        selected.append(int(np.argmax(min_dists)))
+
+    return np.array(selected, dtype=int)
+
+
 def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
     """
     Compute hypervolume contribution of each point.
@@ -765,4 +805,5 @@ __all__ = [
     "_single_front_crowding",
     "_hv_contributions",
     "select_top_k_crowding",
+    "select_top_k_farthest",
 ]

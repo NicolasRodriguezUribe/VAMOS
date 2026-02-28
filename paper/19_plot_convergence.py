@@ -31,6 +31,7 @@ OUTPUT_FIG = Path(__file__).parent / "manuscript" / "figures" / "convergence.png
 FRAMEWORK_STYLES = {
     "VAMOS (numba)": {"color": "#1f77b4", "label": "VAMOS", "ls": "-"},
     "pymoo": {"color": "#ff7f0e", "label": "pymoo", "ls": "--"},
+    "jMetalPy": {"color": "#2ca02c", "label": "jMetalPy", "ls": "-."},
 }
 
 PROBLEM_TITLES = {
