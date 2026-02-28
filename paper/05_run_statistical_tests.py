@@ -303,12 +303,14 @@ print("BACKEND COMPARISON: numba vs moocore")
 print("=" * 60)
 
 backend_comparison = compare_frameworks(df, "runtime_seconds", "VAMOS (numba)", "VAMOS (moocore)", higher_is_better=False)
-print(backend_comparison.to_string())
-
-numba_wins = (backend_comparison["winner"] == "VAMOS (numba)").sum()
-moocore_wins = (backend_comparison["winner"] == "VAMOS (moocore)").sum()
-print(f"\nnumba wins: {numba_wins}/{len(backend_comparison)}")
-print(f"moocore wins: {moocore_wins}/{len(backend_comparison)}")
+if backend_comparison.empty:
+    print("No backend comparison data (moocore results not present in CSV)")
+else:
+    print(backend_comparison.to_string())
+    numba_wins = (backend_comparison["winner"] == "VAMOS (numba)").sum()
+    moocore_wins = (backend_comparison["winner"] == "VAMOS (moocore)").sum()
+    print(f"\nnumba wins: {numba_wins}/{len(backend_comparison)}")
+    print(f"moocore wins: {moocore_wins}/{len(backend_comparison)}")
 
 # =============================================================================
 # LATEX TABLE GENERATION

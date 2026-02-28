@@ -218,7 +218,7 @@ class OptimizationResult:
             k: Number of rows to return (capped to available rows).
             source: One of ``result``, ``archive``, or ``population``.
             method: Ranking method: ``knee``, ``min_f1``, ``min_f2``,
-                ``balanced``, ``weighted_sum``, or ``crowding``.
+                ``balanced``, ``weighted_sum``, ``crowding``, or ``farthest``.
             nondominated_only: If True, rank only the first Pareto front.
             weights: Optional weights for ``weighted_sum`` ranking.
         """
@@ -262,6 +262,31 @@ class OptimizationResult:
                 "scores": selected_scores,
                 "source": str(source).strip().lower(),
                 "method": "crowding",
+            }
+
+        if key == "farthest":
+            from vamos.engine.algorithm.components.archive import (
+                select_top_k_farthest,
+            )
+
+            k_eff = min(int(k), F_rank.shape[0])
+            selected_local = select_top_k_farthest(F_rank, k_eff)
+            selected_idx = idx_rank[selected_local]
+            selected_F = F_src[selected_idx]
+            selected_X = X_src[selected_idx] if X_src is not None else None
+            # Score = min distance to nearest selected neighbour (higher = more spread)
+            dists = np.linalg.norm(
+                selected_F[:, None, :] - selected_F[None, :, :], axis=2
+            )
+            np.fill_diagonal(dists, np.inf)
+            selected_scores = np.min(dists, axis=1)
+            return {
+                "X": selected_X,
+                "F": selected_F,
+                "indices": np.asarray(selected_idx, dtype=int),
+                "scores": np.asarray(selected_scores, dtype=float),
+                "source": str(source).strip().lower(),
+                "method": "farthest",
             }
 
         scores = self._ranking_scores(F_rank, method=method, weights=weights)

@@ -1,0 +1,198 @@
+% VAMOS Paper: IEEE Transactions on Evolutionary Computation (IEEE TEVC)
+% =============================================================================
+% Supplementary Material
+% =============================================================================
+\documentclass[journal]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{pifont}
+\usepackage{enumitem}
+\usepackage{stfloats}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\pmark}{\ding{109}}
+\newcommand{\xmark}{\ding{55}}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{hypertexnames=false}
+\makeatletter
+\g@addto@macro\UrlBreaks{\do\.\do\_\do\-\do\/}
+\makeatother
+
+% Code listing style
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red!70!black},
+  showstringspaces=false,
+  frame=single,
+  breaklines=true,
+  numbers=left,
+  numberstyle=\tiny\color{gray}
+}
+
+\newcommand{\VAMOS}{VAMOS}
+\newcommand{\HV}{\mathrm{HV}}
+\newcommand{\Intdomain}[1]{[#1]_{\mathbb{Z}}}
+\newcommand{\Realdomain}[1]{[#1]_{\mathbb{R}}}
+
+\title{Supplementary Material: A High-Performance Vectorized Framework for Multiobjective Evolutionary Optimization in Python}
+
+% --------------------------------------------------------------------------
+%  Author block.
+% --------------------------------------------------------------------------
+\author{Nicol\'{a}s~R.~Uribe,
+        Alberto~Herr\'{a}n,
+        Antonio~J.~Nebro,
+        Javier~Del~Ser,
+        and~J.~Manuel~Colmenar%
+\thanks{N. R. Uribe, A. Herr\'{a}n, and J. M. Colmenar are with the
+  Department of Computer Sciences, Universidad Rey Juan Carlos, M\'{o}stoles,
+  28933 Madrid, Spain (e-mail: nicolas.rodriguez@urjc.es; alberto.herran@urjc.es;
+  josemanuel.colmenar@urjc.es).}%
+\thanks{A. J. Nebro is with the Department of Lenguajes y Ciencias de la
+  Computaci\'{o}n, ITIS Software, University of M\'{a}laga, 29071
+  M\'{a}laga, Spain (e-mail: ajnebro@uma.es).}%
+\thanks{J. Del Ser is with TECNALIA, Basque Research \& Technology
+  Alliance (BRTA), Derio, 48160, Spain, and also with the University
+  of the Basque Country (UPV/EHU), Leioa, 48940, Spain (e-mail: javier.delser@tecnalia.com).}%
+\thanks{Corresponding author: Alberto Herr\'{a}n (alberto.herran@urjc.es).}%
+}
+
+\markboth{IEEE Transactions on Evolutionary Computation}%
+{A Vectorized Framework for Multiobjective Evolutionary Optimization}
+
+\begin{document}
+\maketitle
+
+%==============================================================================
+\appendices
+\section{Additional runtime comparisons}
+\label{app:variants}
+Tables in this appendix report supplementary runtime comparisons for NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D under the same protocol as the Experimental Results section of the main paper.
+
+\input{frameworks_perf_variants.tex}
+
+\section{Detailed statistical analysis for NSGA-II}
+\label{app:stats_nsgaii}
+This appendix reports per-problem Wilcoxon signed-rank tests, bootstrap equivalence analyses, robustness summaries, and bootstrap confidence intervals for the NSGA-II baseline discussed in the Statistical Analysis section of the main paper.
+\begingroup
+\setlength{\tabcolsep}{2pt}
+\input{stats_nsgaii.tex}
+\endgroup
+
+\section{Reference fronts and detailed benchmark results}
+\label{app:detailed}
+%==============================================================================
+
+The repository includes dense reference Pareto fronts for all benchmark problems used for normalized hypervolume computation. These fronts are generated analytically when closed forms are available (ZDT and most DTLZ problems) and by dense sampling followed by non-dominated filtering for cases where the Pareto front is disconnected or defined implicitly (DTLZ7 and WFG). For WFG2 we use a higher sampling density to stabilize HV normalization.
+
+Fig.~\ref{fig:runtime_heatmap} presents per-problem median runtimes as a dual-panel heatmap. The left panel compares VAMOS backends (Numba, MooCore, NumPy); the right panel compares VAMOS against pymoo and jMetalPy. Color intensity indicates runtime on a logarithmic scale, with annotated values in each cell and bold values marking the fastest per problem.
+
+\begin{figure*}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/runtime_heatmap.png}
+  \caption{Per-problem median runtime (seconds) for VAMOS backends (left) and cross-framework comparison (right). Color scale is logarithmic; bold values indicate the fastest in each row. Problems are grouped by family (ZDT, DTLZ, WFG).}
+  \label{fig:runtime_heatmap}
+\end{figure*}
+
+%==============================================================================
+\section{Statistical analysis for SMS-EMOA and MOEA/D}
+\label{app:stats}
+%==============================================================================
+
+Tables in this appendix report Wilcoxon signed-rank tests, bootstrap equivalence analyses, and robustness summaries for SMS-EMOA and MOEA/D, following the same methodology as the Statistical Analysis section of the main paper.
+
+\subsection{SMS-EMOA}
+
+Tables~\ref{tab:stats_hypervolume_smsemoa}--\ref{tab:hv_robustness_summary_smsemoa} present per-problem Wilcoxon tests, equivalence summaries, and robustness summaries for SMS-EMOA. Fig.~\ref{fig:forest_ci_smsemoa} visualizes per-problem bootstrap confidence intervals.
+
+\begingroup
+\setlength{\tabcolsep}{2pt}
+\input{stats_smsemoa.tex}
+\endgroup
+
+\subsection{MOEA/D}
+
+Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_robustness_summary_moead} and Fig.~\ref{fig:forest_ci_moead} present the corresponding analyses for MOEA/D.
+
+\begingroup
+\setlength{\tabcolsep}{2pt}
+\input{stats_moead.tex}
+\endgroup
+
+%==============================================================================
+\section{Algorithm Configuration Spaces}
+\label{app:param_space}
+%==============================================================================
+
+The full parameter space for NSGA-II with real-valued encoding is presented in Table~\ref{tab:parameter_space} of the main paper.
+
+
+%==============================================================================
+\section{Code Examples}
+\label{app:code}
+%==============================================================================
+
+
+
+
+\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 37-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
+
+\begin{lstlisting}[float=*,caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1, DTLZ2, and WFG4.}},label={lst:optuna_tune}]
+import numpy as np
+from vamos import optimize
+from vamos.engine.tuning import (
+    ModelBasedTuner, TuningTask, Instance, EvalContext,
+    build_nsgaii_config_space, config_from_assignment,
+)
+
+# Build the 37-parameter NSGA-II config space
+space = build_nsgaii_config_space()
+
+# Evaluation function: returns hypervolume
+def eval_fn(config, ctx: EvalContext):
+    cfg = config_from_assignment("nsgaii", config)
+    res = optimize(ctx.instance.name, algorithm="nsgaii",    
+    algorithm_config=cfg, max_evaluations=ctx.budget, seed=ctx.seed)
+    return float(res.hypervolume(ref_point=ctx.instance.ref))
+
+# Define tuning task with one problem per family
+task = TuningTask(
+    name="tune_nsgaii",
+    param_space=space.to_param_space(),
+    instances=[
+        Instance(name="zdt1",  n_var=30, ref=[1.1, 1.1]),
+        Instance(name="dtlz2", n_var=12, ref=[1.1]*3),
+        Instance(name="wfg4",  n_var=24, ref=[3.0, 5.0]),
+    ],
+    seeds=[1, 2, 3], aggregator=np.mean,
+    budget_per_run=10000, maximize=True,
+)
+
+# Run Optuna-based tuning (TPE + multi-fidelity)
+tuner = ModelBasedTuner(
+    task=task, max_trials=50, backend="optuna",
+    seed=42, n_jobs=4,
+    budget_levels=[2000, 5000, 10000],
+)
+best_config, history = tuner.run(eval_fn)
+\end{lstlisting}
+
+
+%==============================================================================
+% Bibliography (uncomment when \cite commands are added to this document)
+%==============================================================================
+%\bibliographystyle{IEEEtran}
+%\bibliography{references}
+
+\end{document}

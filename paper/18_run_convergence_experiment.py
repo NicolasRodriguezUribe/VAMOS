@@ -28,6 +28,11 @@ import pandas as pd
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
+DESKTOP_DIR = ROOT_DIR.parent
+JMETALPY_SRC = DESKTOP_DIR / "jMetalPy" / "src"
+if JMETALPY_SRC.exists():
+    sys.path.insert(0, str(JMETALPY_SRC))
+
 try:
     from .benchmark_utils import compute_hv
 except ImportError:
@@ -133,6 +138,101 @@ class PymooConvergenceCallback:
 
 
 # =============================================================================
+# jMetalPy convergence via subclass
+# =============================================================================
+
+class JMetalPyConvergenceNSGAII:
+    """Wraps jMetalPy NSGAII to record HV at evaluation checkpoints."""
+
+    def __init__(self, problem_name: str, checkpoint_every: int):
+        self.problem_name = problem_name
+        self.checkpoint_every = checkpoint_every
+        self.trace: list[tuple[int, float]] = []
+        self._last_checkpoint = 0
+
+    def run(self, problem_name: str, seed: int) -> list[tuple[int, float]]:
+        import random
+        from jmetal.algorithm.multiobjective import NSGAII
+        from jmetal.operator.crossover import SBXCrossover
+        from jmetal.operator.mutation import PolynomialMutation
+        from jmetal.util.termination_criterion import StoppingByEvaluations
+        from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
+        from jmetal.problem import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ5, DTLZ6, DTLZ7
+        from jmetal.problem import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
+
+        random.seed(seed)
+        np.random.seed(seed)
+        try:
+            from jmetal.util.random_generator import PRNG
+            PRNG.seed(seed)
+        except Exception:
+            pass
+
+        n_var, n_obj = get_problem_dims(problem_name)
+        wfg_k = 4 if n_obj == 2 else 2 * (n_obj - 1)
+        wfg_l = WFG_N_VAR - wfg_k
+
+        problem_map = {
+            "zdt1": ZDT1(number_of_variables=ZDT_N_VAR["zdt1"]),
+            "zdt2": ZDT2(number_of_variables=ZDT_N_VAR["zdt2"]),
+            "zdt3": ZDT3(number_of_variables=ZDT_N_VAR["zdt3"]),
+            "zdt4": ZDT4(number_of_variables=ZDT_N_VAR["zdt4"]),
+            "zdt6": ZDT6(number_of_variables=ZDT_N_VAR["zdt6"]),
+            "dtlz1": DTLZ1(number_of_variables=DTLZ_N_VAR["dtlz1"], number_of_objectives=DTLZ_N_OBJ),
+            "dtlz2": DTLZ2(number_of_variables=DTLZ_N_VAR["dtlz2"], number_of_objectives=DTLZ_N_OBJ),
+            "dtlz3": DTLZ3(number_of_variables=DTLZ_N_VAR["dtlz3"], number_of_objectives=DTLZ_N_OBJ),
+            "dtlz4": DTLZ4(number_of_variables=DTLZ_N_VAR["dtlz4"], number_of_objectives=DTLZ_N_OBJ),
+            "dtlz5": DTLZ5(number_of_variables=DTLZ_N_VAR["dtlz5"], number_of_objectives=DTLZ_N_OBJ),
+            "dtlz6": DTLZ6(number_of_variables=DTLZ_N_VAR["dtlz6"], number_of_objectives=DTLZ_N_OBJ),
+            "dtlz7": DTLZ7(number_of_variables=DTLZ_N_VAR["dtlz7"], number_of_objectives=DTLZ_N_OBJ),
+            "wfg1": WFG1(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+            "wfg2": WFG2(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+            "wfg3": WFG3(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+            "wfg4": WFG4(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+            "wfg5": WFG5(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+            "wfg6": WFG6(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+            "wfg7": WFG7(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+            "wfg8": WFG8(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+            "wfg9": WFG9(number_of_variables=WFG_N_VAR, number_of_objectives=n_obj, k=wfg_k, l=wfg_l),
+        }
+
+        jmetal_problem = problem_map[problem_name]
+
+        tracker = self
+        _checkpoint_every = self.checkpoint_every
+        _problem_name = self.problem_name
+
+        class _TrackedNSGAII(NSGAII):
+            def update_progress(self_algo):
+                super().update_progress()
+                evals = self_algo.evaluations
+                while tracker._last_checkpoint + _checkpoint_every <= evals:
+                    tracker._last_checkpoint += _checkpoint_every
+                    F = np.array([s.objectives for s in self_algo.solutions])
+                    hv = compute_hv(F, _problem_name)
+                    tracker.trace.append((tracker._last_checkpoint, hv))
+
+        algorithm = _TrackedNSGAII(
+            problem=jmetal_problem,
+            population_size=POP_SIZE,
+            offspring_population_size=POP_SIZE,
+            mutation=PolynomialMutation(probability=1.0 / n_var, distribution_index=MUTATION_ETA),
+            crossover=SBXCrossover(probability=CROSSOVER_PROB, distribution_index=CROSSOVER_ETA),
+            termination_criterion=StoppingByEvaluations(max_evaluations=N_EVALS),
+        )
+
+        algorithm.run()
+
+        # Ensure final checkpoint
+        if self.trace and self.trace[-1][0] < N_EVALS:
+            F = np.array([s.objectives for s in algorithm.result()])
+            hv = compute_hv(F, problem_name)
+            self.trace.append((N_EVALS, hv))
+
+        return self.trace
+
+
+# =============================================================================
 # Run functions
 # =============================================================================
 
@@ -226,6 +326,12 @@ def run_pymoo(problem_name: str, seed: int) -> list[tuple[int, float]]:
     return callback.trace
 
 
+def run_jmetalpy(problem_name: str, seed: int) -> list[tuple[int, float]]:
+    """Run jMetalPy NSGA-II and return convergence trace [(n_evals, hv), ...]."""
+    tracker = JMetalPyConvergenceNSGAII(problem_name, CHECKPOINT_EVERY)
+    return tracker.run(problem_name, seed)
+
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -279,6 +385,21 @@ def main() -> None:
                 print(f"  pymoo seed={seed}: {len(trace)} checkpoints, final HV={trace[-1][1]:.4f}" if trace else f"  pymoo seed={seed}: no trace")
             except Exception as e:
                 print(f"  pymoo seed={seed} FAILED: {e}")
+
+            # jMetalPy
+            try:
+                trace = run_jmetalpy(problem_name, seed)
+                for n_evals, hv in trace:
+                    all_results.append({
+                        "framework": "jMetalPy",
+                        "problem": problem_name,
+                        "seed": seed,
+                        "n_evals": n_evals,
+                        "hypervolume": hv,
+                    })
+                print(f"  jMetalPy seed={seed}: {len(trace)} checkpoints, final HV={trace[-1][1]:.4f}" if trace else f"  jMetalPy seed={seed}: no trace")
+            except Exception as e:
+                print(f"  jMetalPy seed={seed} FAILED: {e}")
 
         # Save partial results after each problem
         df = pd.DataFrame(all_results)
