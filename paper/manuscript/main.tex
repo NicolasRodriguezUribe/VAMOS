@@ -544,15 +544,15 @@ The runtime advantages reported above are only meaningful if \VAMOS{} produces s
 \centering
 \caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}
 \label{tab:frameworks_hv}
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Family} & \textbf{VAMOS} & \textbf{pymoo} & \textbf{jMetalPy} & \textbf{DEAP} & \textbf{Platypus} \\
+\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall} \\
 \midrule
-ZDT & \textbf{0.991 (0.013)} & \textbf{0.991 (0.010)} & \textbf{0.991 (0.014)} & \textbf{0.991 (0.013)} & \textbf{0.991 (0.010)} \\
-DTLZ & 0.836 (0.121) & 0.829 (0.148) & 0.835 (0.110) & \textbf{0.839 (0.138)} & 0.824 (0.177) \\
-WFG & \textbf{0.934 (0.138)} & 0.846 (0.220) & 0.845 (0.223) & 0.839 (0.224) & 0.919 (0.137) \\
-\midrule
-Overall & \textbf{0.934 (0.157)} & 0.921 (0.156) & 0.924 (0.159) & 0.924 (0.156) & 0.919 (0.160) \\
+VAMOS & \textbf{0.991 (0.013)} & 0.836 (0.121) & \textbf{0.934 (0.138)} & \textbf{0.934 (0.157)} \\
+pymoo & \textbf{0.991 (0.010)} & 0.829 (0.148) & 0.846 (0.220) & 0.921 (0.156) \\
+jMetalPy & \textbf{0.991 (0.014)} & 0.835 (0.110) & 0.845 (0.223) & 0.924 (0.159) \\
+DEAP & \textbf{0.991 (0.013)} & \textbf{0.839 (0.138)} & 0.839 (0.224) & 0.924 (0.156) \\
+Platypus & \textbf{0.991 (0.010)} & 0.824 (0.177) & 0.919 (0.137) & 0.919 (0.160) \\
 \bottomrule
 \end{tabular}
 \end{table}

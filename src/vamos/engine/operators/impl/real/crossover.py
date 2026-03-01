@@ -17,6 +17,92 @@ from .utils import (
 )
 
 
+# ---------------------------------------------------------------------------
+# Numba-accelerated SBX for a single pair (batch_size == 1).
+# ---------------------------------------------------------------------------
+_sbx_single_pair_numba = None
+
+
+def _get_sbx_single_pair_numba() -> Any:
+    """Lazily compile the Numba SBX kernel on first use."""
+    global _sbx_single_pair_numba  # noqa: PLW0603
+    if _sbx_single_pair_numba is not None:
+        return _sbx_single_pair_numba
+    try:
+        from numba import njit
+
+        @njit(cache=True)
+        def _kernel(  # type: ignore[no-untyped-def]
+            p1, p2, xl, xu, eta, prob_var, rand_var, rand_sbx, rand_swap,
+        ):
+            """SBX crossover for exactly one pair, operating on 1-D arrays."""
+            n = p1.shape[0]
+            c1 = p1.copy()
+            c2 = p2.copy()
+            eps = 1.0e-14
+            inv_eta = 1.0 / (eta + 1.0)
+            neg_eta1 = -(eta + 1.0)
+            for j in range(n):
+                if rand_var[j] > prob_var:
+                    continue
+                y1 = min(p1[j], p2[j])
+                y2 = max(p1[j], p2[j])
+                diff = y2 - y1
+                if diff <= eps:
+                    continue
+                r = rand_sbx[j]
+
+                # --- child 1 (lower side) ---
+                beta = 1.0 + 2.0 * (y1 - xl[j]) / diff
+                if beta < eps:
+                    beta = eps
+                alpha = 2.0 - beta ** neg_eta1
+                if alpha < eps:
+                    alpha = eps
+                if r <= 1.0 / alpha:
+                    betaq = (r * alpha) ** inv_eta
+                else:
+                    betaq = (1.0 / (2.0 - r * alpha)) ** inv_eta
+                v1 = 0.5 * ((y1 + y2) - betaq * diff)
+
+                # --- child 2 (upper side) ---
+                beta = 1.0 + 2.0 * (xu[j] - y2) / diff
+                if beta < eps:
+                    beta = eps
+                alpha = 2.0 - beta ** neg_eta1
+                if alpha < eps:
+                    alpha = eps
+                if r <= 1.0 / alpha:
+                    betaq = (r * alpha) ** inv_eta
+                else:
+                    betaq = (1.0 / (2.0 - r * alpha)) ** inv_eta
+                v2 = 0.5 * ((y1 + y2) + betaq * diff)
+
+                # Clip
+                if v1 < xl[j]:
+                    v1 = xl[j]
+                elif v1 > xu[j]:
+                    v1 = xu[j]
+                if v2 < xl[j]:
+                    v2 = xl[j]
+                elif v2 > xu[j]:
+                    v2 = xu[j]
+
+                # Swap with 50% probability
+                if rand_swap[j] <= 0.5:
+                    c1[j] = v2
+                    c2[j] = v1
+                else:
+                    c1[j] = v1
+                    c2[j] = v2
+            return c1, c2
+
+        _sbx_single_pair_numba = _kernel
+        return _kernel
+    except ImportError:
+        return None
+
+
 class Crossover(RealOperator, ABC):
     """Base class for real-coded crossover operators."""
 
@@ -75,6 +161,32 @@ class SBXCrossover(Crossover):
             return offspring
         self._check_bounds_match(offspring[:, 0, :], self.lower)
 
+        # --- Fast Numba path for single-pair (batch_size == 1) ---
+        if n_pairs == 1:
+            kernel = _get_sbx_single_pair_numba()
+            if kernel is not None:
+                if rng.random() > self.prob:
+                    return offspring
+                n_var = offspring.shape[2]
+                # Match NumPy path RNG consumption: rand_var is only
+                # drawn when prob_var < 1.0.
+                if self.prob_var < 1.0:
+                    rand_var = np.asarray(rng.random(n_var))
+                else:
+                    rand_var = np.zeros(n_var, dtype=np.float64)
+                rand_sbx = rng.random(n_var)
+                rand_swap = rng.random(n_var)
+                c1, c2 = kernel(
+                    offspring[0, 0, :], offspring[0, 1, :],
+                    self.lower, self.upper,
+                    self.eta, self.prob_var,
+                    rand_var, rand_sbx, rand_swap,
+                )
+                offspring[0, 0, :] = c1
+                offspring[0, 1, :] = c2
+                return offspring
+
+        # --- Vectorized NumPy path (batch_size > 1) ---
         pair_mask = self._mask_pairs(n_pairs, rng)
         idx = np.flatnonzero(pair_mask)
         if idx.size == 0:
