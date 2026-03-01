@@ -120,7 +120,7 @@ AlgorithmName: TypeAlias = Literal[
     "rvea",
 ]
 
-EngineName: TypeAlias = Literal["cpp", "numpy", "numba", "numba-mixed", "moocore", "jax"]
+EngineName: TypeAlias = Literal["cpp", "numpy", "numba", "vamos-numba", "moocore", "jax"]
 
 AggregationName: TypeAlias = Literal[
     "pbi",

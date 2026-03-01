@@ -92,7 +92,7 @@ def _run_config(
 
     Args:
         config: Internal config with problem, algorithm, and settings
-        engine: Override backend engine ('cpp', 'numpy', 'numba', 'numba-mixed', 'moocore', 'jax').
+        engine: Override backend engine ('cpp', 'numpy', 'numba', 'vamos-numba', 'moocore', 'jax').
                 If provided, overrides config.engine.
 
     Returns:

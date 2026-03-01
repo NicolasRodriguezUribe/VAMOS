@@ -54,7 +54,7 @@ class NativeNsga2Bridge:
             module = import_module("vamospp")
         except ImportError as exc:
             raise ImportError(
-                "Kernel 'numba-mixed' requires the [native] extra (vamospp>=0.1). "
+                "Kernel 'vamos-numba' requires the [native] extra (vamospp>=0.1). "
                 f"Install with `{_INSTALL_HINT}`."
             ) from exc
 
@@ -71,7 +71,7 @@ class NativeNsga2Bridge:
 
         if not native:
             raise ImportError(
-                "Kernel 'numba-mixed' requires a native vamospp build. "
+                "Kernel 'vamos-numba' requires a native vamospp build. "
                 f"Install with `{_INSTALL_HINT}` and rebuild the native extension."
             )
 

@@ -100,7 +100,7 @@ class InvalidEngineError(ConfigurationError):
     """Raised when an unknown backend engine is specified."""
 
     def __init__(self, engine: str, available: list[str] | None = None) -> None:
-        available = available or ["cpp", "numpy", "numba", "numba-mixed", "moocore", "jax"]
+        available = available or ["cpp", "numpy", "numba", "vamos-numba", "moocore", "jax"]
         message = f"Unknown engine '{engine}'."
         suggestions = _suggest_names(engine, available)
         suggestion_parts = [
@@ -278,7 +278,7 @@ class BackendNotAvailableError(DependencyError):
         feature = f"the '{backend}' backend"
         if backend == "cpp":
             install_cmd = "pip install vamos[native] or pip install vamospp"
-        elif backend == "numba-mixed":
+        elif backend == "vamos-numba":
             install_cmd = "pip install vamos[compute,native] and ensure vamospp is built natively"
         elif backend == "numba":
             install_cmd = "pip install vamos[compute]"

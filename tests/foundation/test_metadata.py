@@ -100,7 +100,7 @@ def test_build_run_metadata_preserves_numba_mixed_backend(tmp_path: Path):
     metadata = build_run_metadata(
         selection,
         "nsgaii",
-        "numba-mixed",
+        "vamos-numba",
         cfg_data,
         metrics,
         kernel_backend=kernel,
@@ -109,5 +109,5 @@ def test_build_run_metadata_preserves_numba_mixed_backend(tmp_path: Path):
         project_root=tmp_path,
     )
 
-    assert metadata["backend"] == "numba-mixed"
+    assert metadata["backend"] == "vamos-numba"
     assert metadata["backend_info"]["capabilities"] == ["native", "native:rank2d", "numba"]

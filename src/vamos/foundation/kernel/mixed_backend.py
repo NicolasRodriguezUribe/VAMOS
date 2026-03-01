@@ -13,7 +13,7 @@ from .numba_backend import NumbaKernel, _compute_crowding_numba
 class NumbaMixedKernel(KernelBackend):
     """Explicit opt-in kernel that mixes Numba orchestration with safe native kernels."""
 
-    name = "numba-mixed"
+    name = "vamos-numba"
 
     def __init__(self) -> None:
         self._numba = NumbaKernel()

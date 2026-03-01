@@ -36,8 +36,8 @@ def test_kernel_registry_minimal(monkeypatch):
 
     with pytest.raises(ImportError, match="cpp"):
         registry.resolve_kernel("cpp")
-    with pytest.raises(ImportError, match="numba-mixed"):
-        registry.resolve_kernel("numba-mixed")
+    with pytest.raises(ImportError, match="vamos-numba"):
+        registry.resolve_kernel("vamos-numba")
     with pytest.raises(ImportError, match="numba"):
         registry.resolve_kernel("numba")
     with pytest.raises(ImportError, match="moocore"):

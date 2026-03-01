@@ -69,12 +69,12 @@ def _check_engine(args: object) -> None:
     engine = getattr(args, "engine", None)
     if engine == "cpp" and not _has_module("vamospp"):
         _warn(f"Engine 'cpp' selected but vamospp is not installed. Install with: {_EXTRA_HINTS['native']} or pip install vamospp.")
-    if engine == "numba-mixed":
+    if engine == "vamos-numba":
         if not _has_module("numba"):
-            _warn(f"Engine 'numba-mixed' selected but numba is not installed. Install with: {_EXTRA_HINTS['compute']}.")
+            _warn(f"Engine 'vamos-numba' selected but numba is not installed. Install with: {_EXTRA_HINTS['compute']}.")
         if not _has_module("vamospp"):
             _warn(
-                "Engine 'numba-mixed' selected but vamospp is not installed. "
+                "Engine 'vamos-numba' selected but vamospp is not installed. "
                 f"Install with: {_EXTRA_HINTS['native']} or pip install vamospp."
             )
     if engine == "numba" and not _has_module("numba"):

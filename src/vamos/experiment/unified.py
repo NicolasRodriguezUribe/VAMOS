@@ -139,7 +139,7 @@ def optimize(
         algorithm: Algorithm name or "auto" for automatic selection.
         max_evaluations: Maximum function evaluations. Auto-determined if None.
         pop_size: Population size. Auto-determined if None.
-        engine: Backend engine ("cpp", "numpy", "numba", "numba-mixed", "moocore", "jax").
+        engine: Backend engine ("cpp", "numpy", "numba", "vamos-numba", "moocore", "jax").
         seed: Random seed or list of seeds for multi-run mode.
         verbose: Print progress information.
         n_var: Override problem dimension when using a string problem key.

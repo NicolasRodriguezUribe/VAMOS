@@ -315,7 +315,7 @@ def run_quickstart(argv: Sequence[str] | None = None) -> None:
         "--engine",
         help=(
             "Backend engine. Default auto-prefers cpp when available, then numba for NSGA-II/MOEA-D; "
-            "otherwise numpy. 'numba-mixed' is an experimental explicit opt-in backend."
+            "otherwise numpy. 'vamos-numba' is an experimental explicit opt-in backend."
         ),
     )
     parser.add_argument("--budget", "--max-evaluations", dest="budget", type=int, help="Max evaluations (default: 5000).")
