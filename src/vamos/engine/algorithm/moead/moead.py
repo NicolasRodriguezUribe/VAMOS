@@ -197,6 +197,13 @@ class MOEAD:
             live_viz,
             checkpoint=checkpoint,
         )
+        # Cache values that are constant across the run to avoid
+        # recomputing them on every ask() call.
+        st = self._st
+        self._all_indices = np.arange(st.pop_size)
+        cross_method = str(self.cfg.get("crossover", ("sbx", {}))[0]).lower()
+        self._cross_is_de = cross_method in {"de", "differential", "differential_evolution"}
+        self._op_label = variation_operator_label(self.cfg, "sbx+pm")
         return live_cb, eval_strategy, max_eval, hv_tracker
 
     def ask(self) -> np.ndarray:
@@ -229,7 +236,7 @@ class MOEAD:
         use_neighbors = st.rng.random(batch_size) < st.delta
 
         # Select parent pairs
-        all_indices = np.arange(pop_size)
+        all_indices = self._all_indices
         parent_pairs = np.empty((batch_size, 2), dtype=int)
 
         for pos, i in enumerate(active):
@@ -240,8 +247,7 @@ class MOEAD:
 
         # Generate offspring
         n_var = st.X.shape[1]
-        cross_method = str(self.cfg.get("crossover", ("sbx", {}))[0]).lower()
-        if cross_method in {"de", "differential", "differential_evolution"}:
+        if self._cross_is_de:
             parents = np.empty((batch_size, 3, n_var), dtype=st.X.dtype)
             parents[:, 0, :] = st.X[parent_pairs[:, 0]]
             parents[:, 1, :] = st.X[parent_pairs[:, 1]]
@@ -264,8 +270,7 @@ class MOEAD:
         st.pending_use_neighbors = use_neighbors
 
         # Track genealogy
-        op_name = variation_operator_label(self.cfg, "sbx+pm")
-        track_offspring_genealogy(st, parents_flat, children.shape[0], op_name, "moead")
+        track_offspring_genealogy(st, parents_flat, children.shape[0], self._op_label, "moead")
 
         return children
 
