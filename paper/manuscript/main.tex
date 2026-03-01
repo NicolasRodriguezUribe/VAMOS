@@ -381,13 +381,15 @@ In the first experiment, we compare the performance of NSGA-II using the differe
 \toprule
 \textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Average} \\
 \midrule
-Numba & \textbf{2.66} & \textbf{2.95} & \textbf{3.44} & \textbf{3.02} \\
+Numba & \textbf{13.73} & \textbf{21.80} & \textbf{32.38} & \textbf{22.64} \\
+MooCore & 21.01 & 36.45 & 53.96 & 37.14 \\
+NumPy & 35.14 & 68.86 & 52.68 & 52.23 \\
 \bottomrule
 \end{tabular}
 \end{table}
 %\footnotetext{Average\textsuperscript{*} in summary tables denotes the mean of family-level medians (3 values). Per-problem runtimes are reported in Fig.~\ref{fig:runtime_heatmap}.}
 
-The Numba backend is the fastest across all three families, but the margin varies considerably. For ZDT and DTLZ, Numba and MooCore are nearly equivalent (less than 5\% difference), indicating that the JIT overhead advantage is negligible when objective function evaluations are inexpensive. In contrast, for WFG, where the number of decision variables is larger ($n=24$), Numba is 1.7$\times$ faster than MooCore and 2.6$\times$ faster than NumPy. The pure NumPy backend is consistently the slowest (2.4--2.6$\times$ slower than Numba), confirming that per-generation interpreted Python overhead dominates the cost in the absence of JIT compilation.
+The Numba backend is the fastest across all three families. MooCore is 1.5--1.7$\times$ slower than Numba, while the pure NumPy backend is 1.6--3.2$\times$ slower, confirming that per-generation interpreted Python overhead dominates the cost in the absence of JIT compilation. The gap is largest on DTLZ, where NumPy is 3.2$\times$ slower than Numba, while on WFG all three backends are closest in relative terms.
 
 %\subsection{Scalability with Population Size}
 %\label{sec:scaling}
