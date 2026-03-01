@@ -38,6 +38,23 @@ class NumbaMixedKernel(KernelBackend):
     def _can_use_native_ranking(self, F: np.ndarray) -> bool:
         return F.ndim == 2 and F.shape[1] == 2
 
+    def _can_use_native_survival(
+        self,
+        X: np.ndarray,
+        F: np.ndarray,
+        X_off: np.ndarray,
+        F_off: np.ndarray,
+    ) -> bool:
+        if not self._native_survival_enabled:
+            return False
+        if X.ndim != 2 or F.ndim != 2 or X_off.ndim != 2 or F_off.ndim != 2:
+            return False
+        if X.shape[0] != F.shape[0] or X_off.shape[0] != F_off.shape[0]:
+            return False
+        if X.shape[1] != X_off.shape[1] or F.shape[1] != F_off.shape[1]:
+            return False
+        return F.shape[1] == 2
+
     def nsga2_ranking(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         F_arr = np.asarray(F)
         if not self._can_use_native_ranking(F_arr):
@@ -110,10 +127,28 @@ class NumbaMixedKernel(KernelBackend):
         pop_size: int,
         return_indices: bool = False,
     ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-        if self._native_survival_enabled:
+        X_arr = np.asarray(X)
+        F_arr = np.asarray(F)
+        X_off_arr = np.asarray(X_off)
+        F_off_arr = np.asarray(F_off)
+        if self._can_use_native_survival(X_arr, F_arr, X_off_arr, F_off_arr):
             self._mark("nsga2_survival")
-            return self._native.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=return_indices)
-        return self._numba.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=return_indices)
+            return self._native.nsga2_survival(
+                X_arr,
+                F_arr,
+                X_off_arr,
+                F_off_arr,
+                pop_size,
+                return_indices=return_indices,
+            )
+        return self._numba.nsga2_survival(
+            X_arr,
+            F_arr,
+            X_off_arr,
+            F_off_arr,
+            pop_size,
+            return_indices=return_indices,
+        )
 
     def hypervolume(self, points: np.ndarray, reference_point: np.ndarray) -> float:
         return self._numba.hypervolume(points, reference_point)
