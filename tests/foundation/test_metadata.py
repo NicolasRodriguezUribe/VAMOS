@@ -83,3 +83,31 @@ def test_build_run_metadata_populates_core_fields(tmp_path: Path):
     assert metadata["metrics"]["evaluations"] == 200
     assert metadata["operators"]["crossover"]["name"] == "sbx"
     assert metadata["backend_info"]["device"] == "cpu"
+
+
+def test_build_run_metadata_preserves_numba_mixed_backend(tmp_path: Path):
+    selection = DummySelection(DummySpec("Test Problem", "test_key"))
+    cfg_data = DummyConfig()
+    metrics = {
+        "time_ms": 42.0,
+        "evaluations": 100,
+        "evals_per_sec": 5.0,
+        "spread": 0.25,
+    }
+    kernel = DummyKernel()
+    kernel.capabilities = lambda: ["numba", "native", "native:rank2d"]  # type: ignore[method-assign]
+    config = DummyExperimentConfig(title="Run", population_size=50, max_evaluations=200, output_root=str(tmp_path))
+    metadata = build_run_metadata(
+        selection,
+        "nsgaii",
+        "numba-mixed",
+        cfg_data,
+        metrics,
+        kernel_backend=kernel,
+        seed=7,
+        config=config,
+        project_root=tmp_path,
+    )
+
+    assert metadata["backend"] == "numba-mixed"
+    assert metadata["backend_info"]["capabilities"] == ["native", "native:rank2d", "numba"]

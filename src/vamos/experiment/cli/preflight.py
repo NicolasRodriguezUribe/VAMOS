@@ -69,6 +69,14 @@ def _check_engine(args: object) -> None:
     engine = getattr(args, "engine", None)
     if engine == "cpp" and not _has_module("vamospp"):
         _warn(f"Engine 'cpp' selected but vamospp is not installed. Install with: {_EXTRA_HINTS['native']} or pip install vamospp.")
+    if engine == "numba-mixed":
+        if not _has_module("numba"):
+            _warn(f"Engine 'numba-mixed' selected but numba is not installed. Install with: {_EXTRA_HINTS['compute']}.")
+        if not _has_module("vamospp"):
+            _warn(
+                "Engine 'numba-mixed' selected but vamospp is not installed. "
+                f"Install with: {_EXTRA_HINTS['native']} or pip install vamospp."
+            )
     if engine == "numba" and not _has_module("numba"):
         _warn(f"Engine 'numba' selected but numba is not installed. Install with: {_EXTRA_HINTS['compute']}.")
     if engine == "moocore" and not _has_module("moocore"):

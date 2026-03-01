@@ -71,7 +71,7 @@ def run_self_check(verbose: bool = False) -> list[CheckResult]:
         If the mandatory NumPy backend check fails.
     """
     checks: list[CheckResult] = []
-    for engine in ("cpp", "numpy", "numba", "moocore"):
+    for engine in ("cpp", "numpy", "numba", "numba-mixed", "moocore"):
         result = _run_backend_check(engine)
         checks.append(result)
         if verbose:

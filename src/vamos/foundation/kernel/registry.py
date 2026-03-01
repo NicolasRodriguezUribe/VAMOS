@@ -29,6 +29,18 @@ def _load_numba() -> KernelBackend:
         ) from exc
 
 
+def _load_numba_mixed() -> KernelBackend:
+    try:
+        module = import_module("vamos.foundation.kernel.mixed_backend")
+        return cast(KernelBackend, module.NumbaMixedKernel())
+    except ImportError as exc:
+        raise ImportError(
+            "Kernel 'numba-mixed' requires both the [compute] and [native] extras "
+            "(numba>=0.57 and vamospp>=0.1 with a native build). "
+            "Install with `pip install -e \".[compute,native]\"` and rebuild vamospp if needed."
+        ) from exc
+
+
 def _load_cpp() -> KernelBackend:
     try:
         module = import_module("vamos.foundation.kernel.cpp_backend")
@@ -61,6 +73,7 @@ KERNELS: dict[str, Callable[[], KernelBackend]] = {
     "cpp": _load_cpp,
     "numpy": NumPyKernel,
     "numba": _load_numba,
+    "numba-mixed": _load_numba_mixed,
     "moocore": _load_moocore,
     "jax": _load_jax,
 }

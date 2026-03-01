@@ -32,6 +32,17 @@ def test_cpp_missing_dependency(monkeypatch):
         resolve_kernel("cpp")
 
 
+def test_numba_mixed_missing_dependency(monkeypatch):
+    def fake_import(name, *args, **kwargs):
+        if name.endswith("mixed_backend"):
+            raise ImportError("forced-missing-numba-mixed")
+        return importlib.import_module(name, package=None)
+
+    monkeypatch.setattr("vamos.foundation.kernel.registry.import_module", fake_import)
+    with pytest.raises(ImportError, match="requires both the \\[compute\\] and \\[native\\] extras"):
+        resolve_kernel("numba-mixed")
+
+
 def test_moocore_missing_dependency(monkeypatch):
     def fake_import(name, *args, **kwargs):
         if name.endswith("moocore_backend"):

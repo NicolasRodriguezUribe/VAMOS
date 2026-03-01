@@ -20,6 +20,7 @@ EXPERIMENT_BACKENDS = (
     "cpp",
     "numpy",
     "numba",
+    "numba-mixed",
     "moocore",
     "jax",
 )

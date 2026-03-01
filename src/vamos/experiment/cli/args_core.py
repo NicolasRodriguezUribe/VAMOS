@@ -49,7 +49,8 @@ def add_core_arguments(
         default=spec_default(experiment_defaults, "engine", None),
         help=(
             "Kernel backend to use. Default auto-prefers cpp when available, then numba for NSGA-II/MOEA-D, "
-            "otherwise falls back to numpy. JAX strict ranking falls back to NumPy for exact fronts."
+            "otherwise falls back to numpy. 'numba-mixed' is an experimental explicit opt-in backend that "
+            "uses numba plus parity-safe native kernels. JAX strict ranking falls back to NumPy for exact fronts."
         ),
     )
     add_spec_argument(

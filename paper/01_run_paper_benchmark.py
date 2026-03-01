@@ -603,7 +603,7 @@ def run_single_benchmark(problem_name, seed, framework):
             else:
                 raise ValueError(f"Unsupported algorithm '{ALGORITHM}'.")
 
-            if backend == "numba" and NUMBA_WARMUP_EVALS > 0:
+            if backend in {"numba", "numba-mixed"} and NUMBA_WARMUP_EVALS > 0:
                 warmup_budget = min(int(NUMBA_WARMUP_EVALS), int(N_EVALS))
                 _ = optimize(
                     problem,
@@ -1288,7 +1288,7 @@ def _save_partial(results_list):
 run_objective_alignment_checks()
 
 # Build list of all jobs - split by thread-safety
-PARALLEL_FRAMEWORKS = ["vamos-numpy", "vamos-numba", "vamos-moocore", "pymoo", "jmetalpy", "deap", "platypus"]
+PARALLEL_FRAMEWORKS = ["vamos-numpy", "vamos-numba", "vamos-numba-mixed", "vamos-moocore", "pymoo", "jmetalpy", "deap", "platypus"]
 SEQUENTIAL_FRAMEWORKS = []
 
 SCHEDULE = os.environ.get("VAMOS_PAPER_SCHEDULE", "by_job").strip().lower()
