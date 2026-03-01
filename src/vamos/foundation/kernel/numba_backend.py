@@ -19,7 +19,7 @@ def njit(*args: Any, **kwargs: Any) -> Callable[[_F], _F]:
 
 
 @njit(cache=True)
-def _fast_non_dominated_sort_ranks(F: np.ndarray) -> np.ndarray:
+def _fast_non_dominated_sort_ranks_generic(F: np.ndarray) -> np.ndarray:
     N = F.shape[0]
     if N == 0:
         return np.empty(0, dtype=np.int64)
@@ -76,6 +76,75 @@ def _fast_non_dominated_sort_ranks(F: np.ndarray) -> np.ndarray:
         level += 1
 
     return ranks
+
+
+@njit(cache=True)
+def _sorted_indices_biobjective(F: np.ndarray) -> np.ndarray:
+    N = F.shape[0]
+    order = np.argsort(F[:, 0]).astype(np.int64)
+    start = 0
+    while start < N:
+        end = start + 1
+        f1 = F[order[start], 0]
+        while end < N and F[order[end], 0] == f1:
+            end += 1
+
+        for i in range(start + 1, end):
+            key = order[i]
+            key_f2 = F[key, 1]
+            j = i - 1
+            while j >= start:
+                prev = order[j]
+                prev_f2 = F[prev, 1]
+                if prev_f2 < key_f2 or (prev_f2 == key_f2 and prev <= key):
+                    break
+                order[j + 1] = prev
+                j -= 1
+            order[j + 1] = key
+        start = end
+    return order
+
+
+@njit(cache=True)
+def _fast_non_dominated_sort_ranks_biobjective(F: np.ndarray) -> np.ndarray:
+    N = F.shape[0]
+    ranks = np.empty(N, dtype=np.int64)
+    if N == 0:
+        return ranks
+
+    order = _sorted_indices_biobjective(F)
+    front_last_f1 = np.empty(N, dtype=np.float64)
+    front_last_f2 = np.empty(N, dtype=np.float64)
+    n_fronts = 0
+
+    for pos in range(N):
+        idx = order[pos]
+        f1 = F[idx, 0]
+        f2 = F[idx, 1]
+        assigned = -1
+        for front in range(n_fronts):
+            last_f1 = front_last_f1[front]
+            last_f2 = front_last_f2[front]
+            if f2 < last_f2 or (f2 == last_f2 and f1 == last_f1):
+                assigned = front
+                break
+
+        if assigned < 0:
+            assigned = n_fronts
+            n_fronts += 1
+
+        ranks[idx] = assigned
+        front_last_f1[assigned] = f1
+        front_last_f2[assigned] = f2
+
+    return ranks
+
+
+@njit(cache=True)
+def _fast_non_dominated_sort_ranks(F: np.ndarray) -> np.ndarray:
+    if F.shape[1] == 2:
+        return _fast_non_dominated_sort_ranks_biobjective(F)
+    return _fast_non_dominated_sort_ranks_generic(F)
 
 
 @njit(cache=True)
@@ -175,6 +244,45 @@ def _select_nsga2_indices(ranks: np.ndarray, crowding: np.ndarray, pop_size: int
     return selected
 
 
+@njit(cache=True)
+def _crowding_tournament_value(value: float) -> float:
+    if np.isnan(value):
+        return -np.inf
+    return value
+
+
+@njit(cache=True)
+def _tournament_winners_from_candidates(
+    ranks: np.ndarray,
+    crowding: np.ndarray,
+    candidates: np.ndarray,
+    tie_breaks: np.ndarray,
+) -> np.ndarray:
+    n_parents = candidates.shape[0]
+    pressure = candidates.shape[1]
+    winners = np.empty(n_parents, dtype=np.int64)
+    for i in range(n_parents):
+        best = candidates[i, 0]
+        best_rank = ranks[best]
+        best_crowd = _crowding_tournament_value(crowding[best])
+        n_ties = 1
+        for j in range(1, pressure):
+            cand = candidates[i, j]
+            cand_rank = ranks[cand]
+            cand_crowd = _crowding_tournament_value(crowding[cand])
+            if cand_rank < best_rank or (cand_rank == best_rank and cand_crowd > best_crowd):
+                best = cand
+                best_rank = cand_rank
+                best_crowd = cand_crowd
+                n_ties = 1
+            elif cand_rank == best_rank and cand_crowd == best_crowd:
+                n_ties += 1
+                if tie_breaks[i, j] < (1.0 / n_ties):
+                    best = cand
+        winners[i] = best
+    return winners
+
+
 class NumbaKernel(KernelBackend):
     """
     Alternative backend with critical kernels (ranking/survival) compiled with Numba.
@@ -185,6 +293,41 @@ class NumbaKernel(KernelBackend):
 
     def __init__(self) -> None:
         self._numpy_ops = _NumPyKernel()
+        self._x_comb_buffer: np.ndarray | None = None
+        self._f_comb_buffer: np.ndarray | None = None
+
+    def _combine_rows(self, left: np.ndarray, right: np.ndarray, *, attr_name: str) -> np.ndarray:
+        dtype = np.result_type(left.dtype, right.dtype)
+        shape = (left.shape[0] + right.shape[0], left.shape[1])
+        buffer = cast(np.ndarray | None, getattr(self, attr_name))
+        if buffer is None or buffer.shape != shape or buffer.dtype != np.dtype(dtype):
+            buffer = np.empty(shape, dtype=dtype)
+            setattr(self, attr_name, buffer)
+        buffer[: left.shape[0]] = left
+        buffer[left.shape[0] :] = right
+        return buffer
+
+    @staticmethod
+    def _sample_tournament_candidates(
+        population_size: int,
+        pressure: int,
+        n_parents: int,
+        rng: np.random.Generator,
+    ) -> np.ndarray:
+        if pressure == 2:
+            candidates = np.empty((n_parents, 2), dtype=np.int64)
+            candidates[:, 0] = rng.integers(0, population_size, size=n_parents, dtype=np.int64)
+            candidates[:, 1] = rng.integers(0, population_size, size=n_parents, dtype=np.int64)
+            duplicates = candidates[:, 0] == candidates[:, 1]
+            while np.any(duplicates):
+                candidates[duplicates, 1] = rng.integers(0, population_size, size=int(np.sum(duplicates)), dtype=np.int64)
+                duplicates = candidates[:, 0] == candidates[:, 1]
+            return candidates
+
+        candidates = np.empty((n_parents, pressure), dtype=np.int64)
+        for i in range(n_parents):
+            candidates[i] = rng.choice(population_size, size=pressure, replace=False)
+        return candidates
 
     def capabilities(self) -> Iterable[str]:
         return ("numba",)
@@ -195,7 +338,7 @@ class NumbaKernel(KernelBackend):
     def nsga2_ranking(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         ranks = _fast_non_dominated_sort_ranks(F)
         crowding = _compute_crowding_numba(F, ranks)
-        return ranks.astype(np.int64), crowding
+        return ranks, crowding
 
     def tournament_selection(
         self,
@@ -205,7 +348,19 @@ class NumbaKernel(KernelBackend):
         rng: np.random.Generator,
         n_parents: int,
     ) -> np.ndarray:
-        return self._numpy_ops.tournament_selection(ranks, crowding, pressure, rng, n_parents)
+        population_size = ranks.shape[0]
+        if pressure <= 0:
+            raise ValueError("pressure must be a positive integer")
+        if n_parents <= 0 or population_size == 0:
+            return np.empty(0, dtype=np.int64)
+        if pressure > population_size:
+            raise ValueError("pressure cannot exceed population size for tournament selection without replacement")
+        if pressure == 1:
+            return rng.integers(0, population_size, size=n_parents, dtype=np.int64)
+
+        candidates = self._sample_tournament_candidates(population_size, pressure, n_parents, rng)
+        tie_breaks = rng.random(candidates.shape)
+        return _tournament_winners_from_candidates(ranks, crowding, candidates, tie_breaks)
 
     def sbx_crossover(
         self,
@@ -262,8 +417,8 @@ class NumbaKernel(KernelBackend):
         pop_size: int,
         return_indices: bool = False,
     ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-        X_comb = np.vstack((X, X_off))
-        F_comb = np.vstack((F, F_off))
+        X_comb = self._combine_rows(X, X_off, attr_name="_x_comb_buffer")
+        F_comb = self._combine_rows(F, F_off, attr_name="_f_comb_buffer")
         ranks = _fast_non_dominated_sort_ranks(F_comb)
         crowding = _compute_crowding_numba(F_comb, ranks)
         sel = _select_nsga2_indices(ranks, crowding, pop_size)

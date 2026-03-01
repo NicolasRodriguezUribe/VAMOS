@@ -17,6 +17,11 @@ class Problem:
     **Optional:** override ``encoding`` and ``n_constraints`` as class-level
     attributes (not in ``__init__``).
 
+    Performance note:
+        VAMOS evaluates populations in batches. For best runtime, implement
+        :meth:`objectives` and :meth:`constraints` as vectorized NumPy code over
+        the full ``X`` matrix and avoid per-row Python loops when possible.
+
     Example — unconstrained::
 
         import numpy as np
@@ -95,7 +100,8 @@ class Problem:
     def objectives(self, X: np.ndarray) -> np.ndarray:
         """Compute objective values for a batch of solutions.
 
-        Override this method in your subclass.
+        Override this method in your subclass. The fastest implementations are
+        batched/vectorized over the full population matrix.
 
         Args:
             X: Decision matrix of shape ``(N, n_var)`` where each row is a
@@ -130,7 +136,11 @@ class Problem:
 
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         """Framework evaluation entry point.  Override :meth:`objectives`
-        (and optionally :meth:`constraints`) instead of this method."""
+        (and optionally :meth:`constraints`) instead of this method.
+
+        ``out`` may contain preallocated buffers. Writing directly into them
+        avoids extra allocations and preserves the batched fast path.
+        """
         X = np.asarray(X, dtype=float)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}), got {X.shape}.")
