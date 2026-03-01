@@ -70,6 +70,11 @@ def notify_generation(
     bool
         True if the callback requests stopping.
     """
+    from vamos.engine.hooks.live_viz import NoOpLiveVisualization
+
+    if isinstance(live_cb, NoOpLiveVisualization):
+        return False
+
     try:
         ranks, _ = kernel.nsga2_ranking(F)
         nd_mask = ranks == ranks.min(initial=0)
