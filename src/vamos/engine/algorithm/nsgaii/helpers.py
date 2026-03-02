@@ -9,7 +9,12 @@ from typing import Any, Literal, overload
 
 import numpy as np
 
-from vamos.engine.hooks.genealogy import GenealogyTracker, get_lineage
+from vamos.engine.hooks.genealogy import (
+    GenealogyTracker,
+    generation_contributions as genealogy_generation_contributions,
+    get_lineage,
+    operator_success_stats as genealogy_operator_success_stats,
+)
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
 
 
@@ -177,57 +182,11 @@ def match_ids(new_X: np.ndarray, combined_X: np.ndarray, combined_ids: np.ndarra
 
 
 def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict[str, object]]:
-    final_ancestors = set()
-    for fid in final_ids:
-        for rec in get_lineage(tracker, fid):
-            final_ancestors.add(rec.individual_id)
-    totals: dict[str, int] = {}
-    finals: dict[str, int] = {}
-    for rec in tracker.records.values():
-        if rec.operator_name is None:
-            continue
-        op = rec.operator_name
-        totals[op] = totals.get(op, 0) + 1
-        if rec.individual_id in final_ancestors:
-            finals[op] = finals.get(op, 0) + 1
-    rows: list[dict[str, object]] = []
-    for op, cnt in totals.items():
-        good = finals.get(op, 0)
-        rows.append(
-            {
-                "operator": op,
-                "total_uses": cnt,
-                "uses_in_final_lineages": good,
-                "ratio": (good / cnt) if cnt else 0.0,
-            }
-        )
-    return rows
+    return genealogy_operator_success_stats(tracker, final_ids)
 
 
 def generation_contributions(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict[str, object]]:
-    final_ancestors = set()
-    for fid in final_ids:
-        for rec in get_lineage(tracker, fid):
-            final_ancestors.add(rec.individual_id)
-    gen_totals: dict[int, int] = {}
-    gen_final: dict[int, int] = {}
-    for rec in tracker.records.values():
-        gen_totals[rec.generation] = gen_totals.get(rec.generation, 0) + 1
-        if rec.individual_id in final_ancestors:
-            gen_final[rec.generation] = gen_final.get(rec.generation, 0) + 1
-    rows: list[dict[str, object]] = []
-    for gen in sorted(gen_totals.keys()):
-        tot = gen_totals.get(gen, 0)
-        fin = gen_final.get(gen, 0)
-        rows.append(
-            {
-                "generation": gen,
-                "total": tot,
-                "final_lineage": fin,
-                "ratio": (fin / tot) if tot else 0.0,
-            }
-        )
-    return rows
+    return genealogy_generation_contributions(tracker, final_ids)
 
 
 def fronts_from_ranks(ranks: np.ndarray) -> list[list[int]]:

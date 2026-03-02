@@ -236,7 +236,7 @@ def finalize_genealogy(
     kernel : KernelBackend
         Kernel for ranking computation.
     """
-    from .helpers import generation_contributions, operator_success_stats
+    from vamos.engine.hooks.genealogy import generation_contributions, operator_success_stats
 
     if not state.track_genealogy or state.genealogy_tracker is None:
         return

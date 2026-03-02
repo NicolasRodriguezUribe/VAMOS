@@ -101,6 +101,74 @@ def get_lineage(tracker: GenealogyTracker, individual_id: IndividualID) -> list[
     return lineage
 
 
+def _resolve_final_ids(tracker: GenealogyTracker, final_ids: list[IndividualID] | None) -> list[IndividualID]:
+    if final_ids is not None:
+        return list(final_ids)
+    return [rid for rid, rec in tracker.records.items() if rec.is_final_front]
+
+
+def _final_ancestor_ids(tracker: GenealogyTracker, final_ids: list[IndividualID] | None) -> set[IndividualID]:
+    ancestors: set[IndividualID] = set()
+    for fid in _resolve_final_ids(tracker, final_ids):
+        for rec in get_lineage(tracker, fid):
+            ancestors.add(rec.individual_id)
+    return ancestors
+
+
+def operator_success_stats(
+    tracker: GenealogyTracker,
+    final_ids: list[IndividualID] | None = None,
+) -> list[dict[str, object]]:
+    final_ancestors = _final_ancestor_ids(tracker, final_ids)
+    totals: dict[str, int] = {}
+    finals: dict[str, int] = {}
+    for rec in tracker.records.values():
+        if rec.operator_name is None:
+            continue
+        op = rec.operator_name
+        totals[op] = totals.get(op, 0) + 1
+        if rec.individual_id in final_ancestors:
+            finals[op] = finals.get(op, 0) + 1
+    rows: list[dict[str, object]] = []
+    for op, cnt in totals.items():
+        good = finals.get(op, 0)
+        rows.append(
+            {
+                "operator": op,
+                "total_uses": cnt,
+                "uses_in_final_lineages": good,
+                "ratio": (good / cnt) if cnt else 0.0,
+            }
+        )
+    return rows
+
+
+def generation_contributions(
+    tracker: GenealogyTracker,
+    final_ids: list[IndividualID] | None = None,
+) -> list[dict[str, object]]:
+    final_ancestors = _final_ancestor_ids(tracker, final_ids)
+    gen_totals: dict[int, int] = {}
+    gen_final: dict[int, int] = {}
+    for rec in tracker.records.values():
+        gen_totals[rec.generation] = gen_totals.get(rec.generation, 0) + 1
+        if rec.individual_id in final_ancestors:
+            gen_final[rec.generation] = gen_final.get(rec.generation, 0) + 1
+    rows: list[dict[str, object]] = []
+    for gen in sorted(gen_totals):
+        tot = gen_totals[gen]
+        fin = gen_final.get(gen, 0)
+        rows.append(
+            {
+                "generation": gen,
+                "total": tot,
+                "final_lineage": fin,
+                "ratio": (fin / tot) if tot else 0.0,
+            }
+        )
+    return rows
+
+
 __all__ = [
     "IndividualID",
     "GenealogyRecord",
@@ -108,4 +176,6 @@ __all__ = [
     "DefaultGenealogyTracker",
     "NoOpGenealogyTracker",
     "get_lineage",
+    "operator_success_stats",
+    "generation_contributions",
 ]
