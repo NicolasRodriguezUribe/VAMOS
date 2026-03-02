@@ -59,36 +59,6 @@ def test_cli_external_archive_bounded_configuration(monkeypatch):
     assert args.external_archive.pruning == "spea2"
 
 
-def test_cli_external_archive_unbounded_configuration(monkeypatch):
-    default_cfg = ExperimentConfig()
-    argv = [
-        "prog",
-        "--problem",
-        "zdt1",
-        "--external-archive-unbounded",
-        "--external-archive-pruning",
-        "random",
-    ]
-    monkeypatch.setattr(sys, "argv", argv)
-    args = cli.parse_args(default_cfg)
-    assert args.external_archive is not None
-    assert args.external_archive.capacity is None
-    assert args.external_archive.pruning == "random"
-
-
-def test_cli_external_archive_rejects_size_and_unbounded(monkeypatch):
-    default_cfg = ExperimentConfig()
-    argv = [
-        "prog",
-        "--problem",
-        "zdt1",
-        "--external-archive-size",
-        "32",
-        "--external-archive-unbounded",
-    ]
-    monkeypatch.setattr(sys, "argv", argv)
-    with pytest.raises(SystemExit):
-        cli.parse_args(default_cfg)
 
 
 def test_build_hv_stop_config_uses_builtin_front():

@@ -45,13 +45,9 @@ def finalize_args(
         parser.error("--offspring-population-size must be positive.")
     if args.selection_pressure <= 0:
         parser.error("--selection-pressure must be a positive integer.")
-    if args.external_archive_unbounded and args.external_archive_size is not None:
-        parser.error("--external-archive-unbounded cannot be used with --external-archive-size.")
     if args.external_archive_size is not None and args.external_archive_size <= 0:
         parser.error("--external-archive-size must be a positive integer.")
-    if args.external_archive_unbounded:
-        args.external_archive = ExternalArchiveConfig(capacity=None, pruning=args.external_archive_pruning)
-    elif args.external_archive_size is not None:
+    if args.external_archive_size is not None:
         args.external_archive = ExternalArchiveConfig(
             capacity=args.external_archive_size,
             pruning=args.external_archive_pruning,

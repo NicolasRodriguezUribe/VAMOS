@@ -83,14 +83,9 @@ def run_from_args(
                 setattr(effective_args, key, override[key])
         effective_args.selection_pressure = override.get("selection_pressure", args.selection_pressure)
         _ea_override = override.get("external_archive_size")
-        _ea_unbounded_override = override.get("external_archive_unbounded")
         _ea_pruning = str(override.get("external_archive_pruning", getattr(args, "external_archive_pruning", "crowding")))
         base_external_archive = getattr(args, "external_archive", None)
-        if _ea_unbounded_override is True:
-            if _ea_override is not None:
-                raise ValueError("Problem override cannot set both external_archive_size and external_archive_unbounded=true.")
-            effective_args.external_archive = ExternalArchiveConfig(capacity=None, pruning=_ea_pruning)
-        elif _ea_override is not None:
+        if _ea_override is not None:
             effective_args.external_archive = ExternalArchiveConfig(capacity=int(str(_ea_override)), pruning=_ea_pruning)
         elif "external_archive_pruning" in override and base_external_archive is not None:
             effective_args.external_archive = ExternalArchiveConfig(

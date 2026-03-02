@@ -239,7 +239,7 @@ def _enumerate_discrete_combos(space: AlgorithmConfigSpace):
             if base_assignment.get(parent_name) != parent_value:
                 continue
             for p in block_params:
-                # Also check extra conditions (e.g., archive_unbounded == False).
+                # Also check extra conditions.
                 if not param_space.is_active(p.name, base_assignment):
                     continue
                 if isinstance(p, Categorical):

@@ -92,15 +92,18 @@ def test_nsgaii_config_space_builds_and_constructs_config():
     assert cfg.mutation[0] in ("polynomial", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform")
 
 
-def test_nsgaii_archive_unbounded_disables_archive_params():
+def test_nsgaii_archive_capacity_zero_disables_prune_policy():
     space = build_nsgaii_config_space()
     param_space = space.to_param_space()
-    cfg = {"use_external_archive": True, "archive_unbounded": True}
-    assert not param_space.is_active("archive_capacity", cfg)
-    assert not param_space.is_active("archive_prune_policy", cfg)
-    cfg_bounded = {"use_external_archive": True, "archive_unbounded": False}
+    cfg_unbounded = {"use_external_archive": True, "archive_capacity": 0}
+    assert param_space.is_active("archive_capacity", cfg_unbounded)
+    assert not param_space.is_active("archive_prune_policy", cfg_unbounded)
+    cfg_bounded = {"use_external_archive": True, "archive_capacity": 200}
     assert param_space.is_active("archive_capacity", cfg_bounded)
     assert param_space.is_active("archive_prune_policy", cfg_bounded)
+    cfg_disabled = {"use_external_archive": False}
+    assert not param_space.is_active("archive_capacity", cfg_disabled)
+    assert not param_space.is_active("archive_prune_policy", cfg_disabled)
 
 
 def test_real_tuning_spaces_expose_new_repair_choices():
@@ -199,7 +202,6 @@ def test_agemoea_external_archive_config():
     assignment.update(
         {
             "use_external_archive": True,
-            "archive_unbounded": False,
             "archive_prune_policy": "crowding",
             "archive_capacity": 200,
         }
@@ -218,7 +220,6 @@ def test_rvea_external_archive_config():
         {
             "n_obj": 3,
             "use_external_archive": True,
-            "archive_unbounded": False,
             "archive_prune_policy": "crowding",
             "archive_capacity": 200,
         }

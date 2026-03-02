@@ -74,13 +74,6 @@ def add_output_arguments(
     )
     add_spec_argument(
         parser,
-        "--external-archive-unbounded",
-        action="store_true",
-        default=bool(experiment_defaults.get("external_archive_unbounded", False)),
-        help="Use an unbounded external archive.",
-    )
-    add_spec_argument(
-        parser,
         "--external-archive-pruning",
         choices=["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"],
         default=experiment_defaults.get("external_archive_pruning", "crowding"),
