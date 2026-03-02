@@ -57,12 +57,6 @@ def polynomial_mutation_numba(
                     deltaq = 1.0 - val**mut_pow
 
                 y = y + deltaq * (yu - yl)
-
-                if y < yl:
-                    y = yl
-                if y > yu:
-                    y = yu
-
                 X[i, j] = y
 
 
@@ -160,16 +154,6 @@ def sbx_crossover_numba(
                     betaq = (1.0 / (2.0 - rand * alpha)) ** (1.0 / (eta + 1.0))
 
                 c2 = 0.5 * ((y1_val + y2_val) + betaq * (y2_val - y1_val))
-
-                # Clipping
-                if c1 < yl:
-                    c1 = yl
-                if c1 > yu:
-                    c1 = yu
-                if c2 < yl:
-                    c2 = yl
-                if c2 > yu:
-                    c2 = yu
 
                 # Random swap is implied by the fact we sorted y1/y2?
                 # Standard SBX often creates two children from y1, y2.

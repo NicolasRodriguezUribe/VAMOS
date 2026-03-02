@@ -36,7 +36,15 @@ from .mutation import (
     UniformMutation,
     UniformResetMutation,
 )
-from .repair import ClampRepair, ReflectRepair, Repair, ResampleRepair, RoundRepair
+from .repair import (
+    ClampRepair,
+    MidpointBaseRepair,
+    ReflectRepair,
+    Repair,
+    ResampleRepair,
+    RoundRepair,
+    WrappingRepair,
+)
 from .utils import (
     ArrayLike,
     RealOperator,
@@ -52,6 +60,7 @@ __all__ = [
     "BLXAlphaBetaCrossover",
     "BLXAlphaCrossover",
     "ClampRepair",
+    "MidpointBaseRepair",
     "CauchyMutation",
     "Crossover",
     "DEMatingCrossover",
@@ -83,6 +92,7 @@ __all__ = [
     "UNDXCrossover",
     "VariationWorkspace",
     "WholeArithmeticCrossover",
+    "WrappingRepair",
     "_check_nvars",
     "_clip_population",
     "_ensure_bounds",

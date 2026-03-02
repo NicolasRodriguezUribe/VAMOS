@@ -7,10 +7,11 @@ supporting continuous, binary, integer, permutation, and mixed encodings.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 
 import numpy as np
 
+from vamos.engine.algorithm.components.variation.protocol import RepairConfigValue
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.engine.operators.impl.integer import (
     creep_mutation,
@@ -35,6 +36,7 @@ from vamos.engine.operators.policies.discrete_operator_maps import (
     PermCrossoverOp,
     PermMutationOp,
 )
+from vamos.engine.operators.policies.real_repair import apply_policy_repair, resolve_policy_repair
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 __all__ = [
@@ -103,6 +105,9 @@ def build_variation_operators(
         mut_params["prob"] = 1.0 / n_var
 
     normalized = normalize_encoding(encoding)
+    repair_cfg = cast(RepairConfigValue, config.get("repair", "auto"))
+    if normalized != "real" and repair_cfg != "auto":
+        raise ValueError("Repair operators are only supported for real encoding.")
     if normalized == "binary":
         return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
     elif normalized == "integer":
@@ -122,7 +127,7 @@ def build_variation_operators(
             rng,
         )
     elif normalized == "real":
-        return _build_real_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
+        return _build_real_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng, repair_cfg)
     else:
         raise ValueError(f"SMSEMOA does not support encoding '{normalized}'.")
 
@@ -258,10 +263,13 @@ def _build_real_operators(
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
+    repair_cfg: RepairConfigValue,
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build continuous (real) encoding operators via the operator registry."""
     registry = get_operator_registry()
     workspace = VariationWorkspace()
+    repair_operator = resolve_policy_repair("real", repair_cfg)
+    assert repair_operator is not None
 
     # --- crossover ---
     cross_kwargs = dict(cross_params)
@@ -286,10 +294,12 @@ def _build_real_operators(
     mutation_operator = registry.get(mut_method)(**mut_kwargs)
 
     def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        return np.asarray(crossover_operator(parents, _rng))
+        offspring = np.asarray(crossover_operator(parents, _rng))
+        return apply_policy_repair(repair_operator, offspring, xl, xu, _rng)
 
     def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        return np.asarray(mutation_operator(X_child, _rng))
+        mutated = np.asarray(mutation_operator(X_child, _rng))
+        return apply_policy_repair(repair_operator, mutated, xl, xu, _rng)
 
     return crossover, mutation
 

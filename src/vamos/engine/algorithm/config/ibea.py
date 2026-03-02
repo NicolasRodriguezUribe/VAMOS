@@ -7,6 +7,7 @@ from typing import Any, cast
 
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
+from vamos.foundation.encoding import normalize_encoding
 
 from .base import (
     ConstraintModeStr,
@@ -18,7 +19,7 @@ from .base import (
     _SerializableConfig,
     _validate_operators,
 )
-from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
+from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
 
 
 @dataclass(frozen=True, repr=False)
@@ -29,7 +30,7 @@ class IBEAConfig(_SerializableConfig):
     selection: tuple[str, dict[str, Any]]
     indicator: IndicatorType
     kappa: float
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
@@ -52,8 +53,9 @@ class IBEAConfig(_SerializableConfig):
             encoding: Problem encoding. If omitted, defaults to "real".
         """
         mut_prob = 1.0 / n_var if n_var else 0.1
-        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
-        return (
+        normalized = normalize_encoding(encoding or "real")
+        cx, mt = _default_operators_for_encoding(normalized, mut_prob)
+        builder = (
             cls.builder()
             .pop_size(pop_size)
             .crossover(cx[0], **cx[1])
@@ -61,8 +63,10 @@ class IBEAConfig(_SerializableConfig):
             .selection("tournament")
             .indicator("eps")
             .kappa(1.0)
-            .build()
         )
+        if normalized == "real":
+            builder = builder.repair("clip")
+        return builder.build()
 
     @classmethod
     def builder(cls) -> _IBEAConfigBuilder:
@@ -151,7 +155,7 @@ class _IBEAConfigBuilder:
             selection=self._cfg["selection"],
             indicator=cast(IndicatorType, str(self._cfg["indicator"])),
             kappa=float(self._cfg["kappa"]),
-            repair=self._cfg.get("repair"),
+            repair=self._cfg.get("repair", "auto"),
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),

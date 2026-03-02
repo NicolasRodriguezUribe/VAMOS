@@ -5,7 +5,7 @@ Shared helpers for variation/default handling across CLI, runner, and factories.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeAlias, TypedDict
+from typing import Any, Literal, TypeAlias, TypedDict
 
 from vamos.foundation.encoding import normalize_encoding
 
@@ -23,13 +23,14 @@ class OperatorSpecDict(TypedDict, total=False):
 
 
 OperatorSpecInput: TypeAlias = str | OperatorTuple | OperatorSpecDict | Mapping[str, object]
+RepairSpecInput: TypeAlias = OperatorSpecInput | Literal["auto"]
 
 
 class VariationOverrides(TypedDict, total=False):
     crossover: OperatorSpecInput
     mutation: OperatorSpecInput
     selection: OperatorSpecInput
-    repair: OperatorSpecInput
+    repair: RepairSpecInput
     aggregation: OperatorSpecInput
     adaptive_operator_selection: Mapping[str, object]
     weight_vectors: Mapping[str, object] | str
@@ -161,6 +162,10 @@ def normalize_operator_tuple(spec: object) -> OperatorTuple | None:
     return None
 
 
+def _is_auto_repair(spec: object) -> bool:
+    return isinstance(spec, str) and spec.strip().lower() == "auto"
+
+
 def ensure_operator_tuple(spec: object, *, key: str) -> OperatorTuple:
     op = normalize_operator_tuple(spec)
     if op is None:
@@ -183,6 +188,9 @@ def normalize_variation_config(raw: Mapping[str, object] | None) -> VariationCon
     normalized: VariationConfig = {}
     known_op_keys = {"crossover", "mutation", "selection", "repair", "aggregation"}
     for key in known_op_keys:
+        if key == "repair" and _is_auto_repair(raw.get(key)):
+            normalized[key] = "auto"
+            continue
         op = normalize_operator_tuple(raw.get(key))
         if op:
             normalized[key] = op
@@ -204,6 +212,7 @@ def resolve_default_variation_config(encoding: str, overrides: Mapping[str, obje
         base = {
             "crossover": ("sbx", {"prob": 1.0, "eta": 20.0}),
             "mutation": ("polynomial", {"prob": "1/n", "eta": 20.0}),
+            "repair": ("clip", {}),
         }
     elif normalized == "binary":
         base = {
@@ -236,7 +245,7 @@ def resolve_default_variation_config(encoding: str, overrides: Mapping[str, obje
             base["crossover"] = overrides["crossover"]
         if "mutation" in overrides:
             base["mutation"] = overrides["mutation"]
-        if "repair" in overrides:
+        if "repair" in overrides and not _is_auto_repair(overrides["repair"]):
             base["repair"] = overrides["repair"]
         for key, value in overrides.items():
             if key in {"crossover", "mutation", "repair"}:
@@ -251,5 +260,10 @@ def merge_variation_overrides(base: Mapping[str, object] | None, override: Mappi
     if not override:
         return dict(base)
     merged = dict(base)
-    merged.update({k: v for k, v in override.items() if v is not None})
+    for key, value in override.items():
+        if value is None:
+            continue
+        if key == "repair" and _is_auto_repair(value):
+            continue
+        merged[key] = value
     return merged

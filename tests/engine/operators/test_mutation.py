@@ -7,6 +7,7 @@ from vamos.engine.operators.impl.real import (
     GaussianMutation,
     NonUniformMutation,
     PolynomialMutation,
+    UniformMutation,
     UniformResetMutation,
     VariationWorkspace,
 )
@@ -42,7 +43,7 @@ def test_polynomial_mutation_matches_reference_output():
     assert_allclose(mutated, expected)
 
 
-def test_gaussian_mutation_with_bounds_clamping():
+def test_gaussian_mutation_matches_reference_output():
     operator = GaussianMutation(
         prob_mutation=0.6,
         sigma=np.array([0.1, 0.2, 0.05]),
@@ -91,11 +92,23 @@ def test_non_uniform_mutation_with_workspace_matches_reference_output():
     mutated = operator(POPULATION, rng)
     expected = np.array(
         [
-            [-1.0, -5.0, 1.5],
-            [5.0, 1.7449649285, -3.9558739707],
+            [-1.0, -7.866553827, 1.5],
+            [8.93324473, 1.7449649285, -3.9558739707],
             [-2.5, 1.0, 0.2579058442],
-            [2.0, -1.5, 5.0],
+            [2.0, -1.5, 10.3630863699],
             [-2.8026855648, -0.5, 2.0],
         ]
     )
     assert_allclose(mutated, expected)
+
+
+def test_uniform_mutation_can_leave_bounds_without_pipeline_repair():
+    operator = UniformMutation(
+        prob=1.0,
+        perturb=1.0,
+        lower=np.zeros(4, dtype=float),
+        upper=np.ones(4, dtype=float),
+        rng=np.random.default_rng(0),
+    )
+    mutated = operator(np.full(4, 0.95, dtype=float))
+    assert np.any((mutated < 0.0) | (mutated > 1.0))

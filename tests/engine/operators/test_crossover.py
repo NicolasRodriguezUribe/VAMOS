@@ -48,7 +48,7 @@ def test_sbx_crossover_matches_reference_output():
     assert_allclose(offspring, expected)
 
 
-def test_blx_alpha_crossover_with_clipping_matches_reference_output():
+def test_blx_alpha_crossover_matches_reference_output():
     operator = BLXAlphaCrossover(alpha=0.35, prob_crossover=1.0, lower=LOWER, upper=UPPER)
     rng = np.random.default_rng(3)
     offspring = operator(PARENTS, rng)
@@ -60,6 +60,18 @@ def test_blx_alpha_crossover_with_clipping_matches_reference_output():
         ]
     )
     assert_allclose(offspring, expected)
+
+
+def test_blx_alpha_crossover_can_leave_bounds_without_pipeline_repair():
+    operator = BLXAlphaCrossover(
+        alpha=1.0,
+        prob_crossover=1.0,
+        lower=np.array([0.0]),
+        upper=np.array([1.0]),
+    )
+    rng = np.random.default_rng(0)
+    offspring = operator(np.array([[[0.0], [1.0]]], dtype=float), rng)
+    assert np.any((offspring < 0.0) | (offspring > 1.0))
 
 
 def test_arithmetic_crossover():
@@ -76,7 +88,7 @@ def test_arithmetic_crossover():
     assert_allclose(offspring, expected)
 
 
-def test_differential_crossover_respects_bounds_and_matches_reference_output():
+def test_differential_crossover_matches_reference_output():
     operator = DifferentialCrossover(F=0.6, CR=0.8, lower=LOWER, upper=UPPER)
     rng = np.random.default_rng(5)
     trial = operator(POPULATION, rng)
@@ -90,3 +102,15 @@ def test_differential_crossover_respects_bounds_and_matches_reference_output():
         ]
     )
     assert_allclose(trial, expected)
+
+
+def test_differential_crossover_can_leave_bounds_without_pipeline_repair():
+    operator = DifferentialCrossover(
+        F=1.0,
+        CR=1.0,
+        lower=np.array([0.0]),
+        upper=np.array([1.0]),
+    )
+    rng = np.random.default_rng(0)
+    trial = operator(np.array([[0.9], [1.0], [0.0]], dtype=float), rng)
+    assert np.any((trial < 0.0) | (trial > 1.0))

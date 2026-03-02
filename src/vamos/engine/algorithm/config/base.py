@@ -107,6 +107,11 @@ _KNOWN_OPERATORS: dict[str, set[str]] = {
         "random",
         "resample",
         "round",
+        "wrap",
+        "wrapping",
+        "midpoint",
+        "midpoint_base",
+        "gradient",
     },
     "initializer": {
         "random",

@@ -20,6 +20,7 @@ class TestNSGAIIConfigShortcuts:
         assert cfg.crossover[0] == "sbx"
         assert cfg.mutation[0] == "polynomial"
         assert cfg.selection[0] == "tournament"
+        assert cfg.repair == ("clip", {})
 
     def test_default_with_custom_pop_size(self):
         """default() should accept custom pop_size."""
@@ -39,6 +40,7 @@ class TestNSGAIIConfigShortcuts:
         assert cfg.crossover[0] == "ox"
         assert cfg.mutation[0] == "swap"
         assert cfg.selection[0] == "tournament"
+        assert cfg.repair == "auto"
 
     def test_builder_defaults_pop_size_and_selection(self):
         """Builder should fill defaults for pop_size and selection if omitted."""
@@ -77,6 +79,7 @@ class TestMOEADConfigShortcuts:
         assert cfg.delta == 0.9
         assert cfg.replace_limit == 2
         assert cfg.aggregation[0] == "pbi"
+        assert cfg.repair == ("clip", {})
 
 
 class TestSPEA2ConfigShortcuts:
@@ -90,6 +93,7 @@ class TestSPEA2ConfigShortcuts:
         assert cfg.archive_size == 100
         assert cfg.crossover[0] == "sbx"
         assert cfg.selection[0] == "tournament"
+        assert cfg.repair == ("clip", {})
 
 
 class TestSMSEMOAConfigShortcuts:
@@ -102,6 +106,7 @@ class TestSMSEMOAConfigShortcuts:
         assert cfg.pop_size == 100
         assert cfg.crossover[0] == "sbx"
         assert cfg.reference_point["adaptive"] is True
+        assert cfg.repair == ("clip", {})
 
 
 class TestNSGAIIIConfigShortcuts:
@@ -114,3 +119,4 @@ class TestNSGAIIIConfigShortcuts:
         assert cfg.pop_size == comb(12 + 3 - 1, 3 - 1)
         assert cfg.crossover[0] == "sbx"
         assert cfg.reference_directions["divisions"] == 12
+        assert cfg.repair == ("clip", {})

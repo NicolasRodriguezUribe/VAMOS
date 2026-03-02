@@ -7,6 +7,7 @@ from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
+from vamos.foundation.encoding import normalize_encoding
 
 from .base import (
     ConstraintModeStr,
@@ -17,7 +18,7 @@ from .base import (
     _SerializableConfig,
     _validate_operators,
 )
-from .types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
+from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
 
 
 @dataclass(frozen=True, repr=False)
@@ -29,7 +30,7 @@ class SMSEMOAConfig(_SerializableConfig):
     reference_point: dict[str, Any]
     eliminate_duplicates: bool = False
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     track_genealogy: bool = False
@@ -51,16 +52,19 @@ class SMSEMOAConfig(_SerializableConfig):
             encoding: Problem encoding. If omitted, defaults to "real".
         """
         mut_prob = 1.0 / n_var if n_var else 0.1
-        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
-        return (
+        normalized = normalize_encoding(encoding or "real")
+        cx, mt = _default_operators_for_encoding(normalized, mut_prob)
+        builder = (
             cls.builder()
             .pop_size(pop_size)
             .crossover(cx[0], **cx[1])
             .mutation(mt[0], **mt[1])
             .selection("random")
             .reference_point(adaptive=True)
-            .build()
         )
+        if normalized == "real":
+            builder = builder.repair("clip")
+        return builder.build()
 
     @classmethod
     def builder(cls) -> _SMSEMOAConfigBuilder:
@@ -170,7 +174,7 @@ class _SMSEMOAConfigBuilder:
             reference_point=reference_point,
             eliminate_duplicates=bool(self._cfg.get("eliminate_duplicates", False)),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
-            repair=self._cfg.get("repair"),
+            repair=self._cfg.get("repair", "auto"),
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),

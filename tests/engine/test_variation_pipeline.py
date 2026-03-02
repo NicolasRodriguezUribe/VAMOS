@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.operators.impl.real import VariationWorkspace
@@ -22,7 +23,7 @@ def test_variation_pipeline_real_arithmetic_crossover_constructs():
         xl=xl,
         xu=xu,
         workspace=VariationWorkspace(),
-        repair_cfg=None,
+        repair_cfg="auto",
         problem=None,
     )
 
@@ -44,7 +45,7 @@ def test_variation_pipeline_real_uniform_mutation_constructs():
         xl=xl,
         xu=xu,
         workspace=VariationWorkspace(),
-        repair_cfg=None,
+        repair_cfg="auto",
         problem=None,
     )
 
@@ -66,7 +67,7 @@ def test_variation_pipeline_real_undx_group_sizes():
         xl=xl,
         xu=xu,
         workspace=VariationWorkspace(),
-        repair_cfg=None,
+        repair_cfg="auto",
         problem=None,
     )
 
@@ -89,7 +90,7 @@ def test_variation_pipeline_integer_sbx_crossover_constructs():
         xl=xl,
         xu=xu,
         workspace=None,
-        repair_cfg=None,
+        repair_cfg="auto",
         problem=None,
     )
 
@@ -113,7 +114,7 @@ def test_variation_pipeline_binary_odd_parent_count():
         xl=xl,
         xu=xu,
         workspace=None,
-        repair_cfg=None,
+        repair_cfg="auto",
         problem=None,
     )
 
@@ -137,7 +138,7 @@ def test_variation_pipeline_permutation_odd_parent_count():
         xl=xl,
         xu=xu,
         workspace=None,
-        repair_cfg=None,
+        repair_cfg="auto",
         problem=None,
     )
 
@@ -170,7 +171,7 @@ def test_variation_pipeline_mixed_odd_parent_count():
         xl=xl,
         xu=xu,
         workspace=None,
-        repair_cfg=None,
+        repair_cfg="auto",
         problem=DummyMixedProblem(),
     )
 
@@ -179,3 +180,98 @@ def test_variation_pipeline_mixed_odd_parent_count():
     offspring = pipeline.produce_offspring(parents, rng)
 
     assert offspring.shape == parents.shape
+
+
+def test_real_pipeline_auto_defaults_to_clip():
+    xl = np.zeros(1, dtype=float)
+    xu = np.ones(1, dtype=float)
+    pipeline = VariationPipeline(
+        encoding="real",
+        cross_method="arithmetic",
+        cross_params={"prob": 1.0},
+        mut_method="polynomial",
+        mut_params={"prob": 0.0, "eta": 20.0},
+        xl=xl,
+        xu=xu,
+        workspace=VariationWorkspace(),
+        repair_cfg="auto",
+        problem=None,
+    )
+
+    assert pipeline.repair_op is not None
+    assert type(pipeline.repair_op).__name__ == "ClampRepair"
+
+
+def test_real_pipeline_repairs_after_crossover_and_after_mutation():
+    xl = np.zeros(1, dtype=float)
+    xu = np.ones(1, dtype=float)
+    pipeline = VariationPipeline(
+        encoding="real",
+        cross_method="arithmetic",
+        cross_params={"prob": 1.0},
+        mut_method="polynomial",
+        mut_params={"prob": 0.0, "eta": 20.0},
+        xl=xl,
+        xu=xu,
+        workspace=VariationWorkspace(),
+        repair_cfg="auto",
+        problem=None,
+    )
+
+    class _InspectMutation:
+        def __init__(self) -> None:
+            self.seen: np.ndarray | None = None
+
+        def __call__(self, offspring: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+            self.seen = np.array(offspring, copy=True)
+            return offspring + 0.75
+
+    inspect_mutation = _InspectMutation()
+    pipeline.crossover_op = lambda parents, rng: np.full_like(parents, 2.0)
+    pipeline.mutation_op = inspect_mutation
+
+    rng = np.random.default_rng(0)
+    offspring = pipeline.produce_offspring(np.array([[0.2], [0.8]], dtype=float), rng)
+
+    assert inspect_mutation.seen is not None
+    assert np.allclose(inspect_mutation.seen, 1.0)
+    assert np.allclose(offspring, 1.0)
+
+
+def test_non_real_pipeline_auto_means_no_repair():
+    n_var = 4
+    xl = np.zeros(n_var, dtype=np.int8)
+    xu = np.ones(n_var, dtype=np.int8)
+    pipeline = VariationPipeline(
+        encoding="binary",
+        cross_method="one_point",
+        cross_params={"prob": 1.0},
+        mut_method="bitflip",
+        mut_params={"prob": 0.5},
+        xl=xl,
+        xu=xu,
+        workspace=None,
+        repair_cfg="auto",
+        problem=None,
+    )
+
+    assert pipeline.repair_op is None
+
+
+def test_non_real_pipeline_rejects_explicit_repair_tuple():
+    xl = np.zeros(4, dtype=np.int8)
+    xu = np.ones(4, dtype=np.int8)
+
+    with pytest.raises(ValueError, match="Repair operators are only supported for real encoding"):
+        VariationPipeline(
+            encoding="binary",
+            cross_method="one_point",
+            cross_params={"prob": 1.0},
+            mut_method="bitflip",
+            mut_params={"prob": 0.5},
+            xl=xl,
+            xu=xu,
+            workspace=None,
+            repair_cfg=("clip", {}),
+            problem=None,
+        )

@@ -13,6 +13,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.engine.algorithm.smpso.helpers import resolve_repair
+from vamos.engine.operators.impl.real import ClampRepair
 from vamos.engine.operators.impl.mixed import mixed_mutation
 from vamos.engine.operators.impl.real import PolynomialMutation, VariationWorkspace
 from vamos.foundation.encoding import normalize_encoding
@@ -107,7 +108,7 @@ def build_mutation_operator(
     )
 
 
-def build_repair_operator(config: dict[str, Any]) -> Any | None:
+def build_repair_operator(config: dict[str, Any], encoding: str) -> Any | None:
     """Build the repair operator from configuration.
 
     Parameters
@@ -120,4 +121,10 @@ def build_repair_operator(config: dict[str, Any]) -> Any | None:
     Any or None
         Repair operator instance or None if not configured.
     """
-    return resolve_repair(config.get("repair"))
+    normalized = normalize_encoding(encoding)
+    repair_cfg = config.get("repair", "auto")
+    if repair_cfg == "auto":
+        if normalized == "real":
+            return ClampRepair()
+        return None
+    return resolve_repair(repair_cfg)

@@ -105,10 +105,70 @@ class RoundRepair(Repair):
         return _clip_population(rounded, lower_arr, upper_arr)
 
 
+class WrappingRepair(Repair):
+    """Repair operator that wraps out-of-bounds values toroidally into range.
+
+    Values that exceed the upper bound re-enter from the lower bound and
+    vice-versa, preserving the displacement modulo the domain width.  This is
+    useful when the search space has periodic / cyclic semantics (e.g. angles).
+    Values already inside the closed interval ``[lower, upper]`` are preserved.
+    """
+
+    def __call__(
+        self,
+        x: ArrayLike,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        rng: np.random.Generator,  # pylint: disable=unused-argument
+    ) -> ArrayLike:
+        lower_arr, upper_arr = _ensure_bounds(lower, upper)
+        result = self._as_population(x, name="x").copy()
+        width = upper_arr - lower_arr
+        mask = width > 0.0
+
+        if np.any(mask):
+            wrapped = lower_arr[mask] + np.mod(result[:, mask] - lower_arr[mask], width[mask])
+            violated = (result[:, mask] < lower_arr[mask]) | (result[:, mask] > upper_arr[mask])
+            result[:, mask] = np.where(violated, wrapped, result[:, mask])
+
+        result[:, ~mask] = lower_arr[~mask]
+        return result
+
+
+class MidpointBaseRepair(Repair):
+    """Repair operator that moves violated genes halfway from the interval midpoint.
+
+    Violations below the lower bound are mapped to the midpoint between the
+    lower bound and the interval midpoint; violations above the upper bound are
+    mapped symmetrically on the upper side. This keeps repaired values feasible
+    while avoiding the boundary-hugging behavior of pure clamping.
+    """
+
+    def __call__(
+        self,
+        x: ArrayLike,
+        lower: ArrayLike,
+        upper: ArrayLike,
+        rng: np.random.Generator,  # pylint: disable=unused-argument
+    ) -> ArrayLike:
+        lower_arr, upper_arr = _ensure_bounds(lower, upper)
+        result = self._as_population(x, name="x").copy()
+        midpoint = 0.5 * (lower_arr + upper_arr)
+        low_target = 0.5 * (lower_arr + midpoint)
+        high_target = 0.5 * (midpoint + upper_arr)
+        low_mask = result < lower_arr
+        high_mask = result > upper_arr
+        result = np.where(low_mask, low_target, result)
+        result = np.where(high_mask, high_target, result)
+        return result
+
+
 __all__ = [
     "ClampRepair",
+    "MidpointBaseRepair",
     "ReflectRepair",
     "Repair",
     "ResampleRepair",
     "RoundRepair",
+    "WrappingRepair",
 ]

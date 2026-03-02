@@ -7,9 +7,10 @@ from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
+from vamos.foundation.encoding import normalize_encoding
 
 from .base import ConstraintModeStr, ResultMode, _default_operators_for_encoding, _require_fields, _SerializableConfig, _validate_operators
-from .types import InitializerName, MutationName, RepairName
+from .types import InitializerName, MutationName, RepairConfigValue, RepairName
 
 
 @dataclass(frozen=True, repr=False)
@@ -21,7 +22,7 @@ class SMPSOConfig(_SerializableConfig):
     c1: float = 1.5
     c2: float = 1.5
     vmax_fraction: float = 0.5
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
     track_genealogy: bool = False
@@ -43,8 +44,12 @@ class SMPSOConfig(_SerializableConfig):
             encoding: Problem encoding. If omitted, defaults to "real".
         """
         mut_prob = 1.0 / n_var if n_var else 0.1
-        _, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
-        return cls.builder().pop_size(pop_size).archive_size(pop_size).mutation(mt[0], **mt[1]).build()
+        normalized = normalize_encoding(encoding or "real")
+        _, mt = _default_operators_for_encoding(normalized, mut_prob)
+        builder = cls.builder().pop_size(pop_size).archive_size(pop_size).mutation(mt[0], **mt[1])
+        if normalized == "real":
+            builder = builder.repair("clip")
+        return builder.build()
 
     @classmethod
     def builder(cls) -> _SMPSOConfigBuilder:
@@ -136,7 +141,7 @@ class _SMPSOConfigBuilder:
             c1=float(self._cfg.get("c1", 1.5)),
             c2=float(self._cfg.get("c2", 1.5)),
             vmax_fraction=float(self._cfg.get("vmax_fraction", 0.5)),
-            repair=self._cfg.get("repair"),
+            repair=self._cfg.get("repair", "auto"),
             initializer=self._cfg.get("initializer"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),

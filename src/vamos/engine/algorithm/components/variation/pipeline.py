@@ -14,6 +14,7 @@ from vamos.engine.algorithm.components.variation.helpers import (
 from vamos.engine.algorithm.components.variation.protocol import (
     CrossoverName,
     MutationName,
+    RepairConfigValue,
     RepairName,
     RepairOperator,
     VariationWorkspaceProtocol,
@@ -41,7 +42,7 @@ class VariationPipeline:
         xl: np.ndarray,
         xu: np.ndarray,
         workspace: VariationWorkspaceProtocol | None,
-        repair_cfg: tuple[RepairName, dict[str, Any]] | None = None,
+        repair_cfg: RepairConfigValue = "auto",
         problem: ProblemProtocol | None = None,
     ) -> None:
         self.encoding = normalize_encoding(encoding)
@@ -68,11 +69,15 @@ class VariationPipeline:
         self.repair_op = self._resolve_repair()
 
     def _resolve_repair(self) -> RepairOperator | None:
-        if not self.repair_cfg:
-            return None
         if self.encoding != "real":
+            if self.repair_cfg == "auto":
+                return None
             raise ValueError("Repair operators are only supported for real encoding.")
-        method, params = self.repair_cfg
+        if self.repair_cfg == "auto":
+            method: RepairName = "clip"
+            params: dict[str, Any] = {}
+        else:
+            method, params = self.repair_cfg
         try:
             op_cls = cast(type[Any], get_operator_registry().get(method.lower()))
         except KeyError as exc:
@@ -95,6 +100,9 @@ class VariationPipeline:
     def produce_offspring(self, parents: np.ndarray, rng: np.random.Generator) -> np.ndarray:
         # Crossover
         offspring = self.crossover_op(parents, rng)
+        if self.encoding == "real":
+            assert self.repair_op is not None
+            offspring = self.repair_op(offspring, self.xl, self.xu, rng)
 
         # Mutation
         offspring = self.mutation_op(offspring, rng)

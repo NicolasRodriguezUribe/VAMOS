@@ -93,9 +93,6 @@ def _extend_real_crossover_params(cross: str, assignment: dict[str, Any], cross_
         cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
     elif cross == "blx_alpha":
         cross_params["alpha"] = float(assignment.get("crossover_alpha", 0.5))
-        blx_repair = assignment.get("blx_repair")
-        if blx_repair is not None:
-            cross_params["repair"] = str(blx_repair)
     elif cross == "pcx":
         cross_params["sigma_eta"] = float(assignment.get("pcx_sigma_eta", 0.1))
         cross_params["sigma_zeta"] = float(assignment.get("pcx_sigma_zeta", 0.1))
@@ -334,6 +331,7 @@ def _build_smpso_config(assignment: dict[str, Any]) -> SMPSOConfig:
     if mut == "polynomial":
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     builder.mutation(mut, **mut_params)
+    _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
     return builder.build()
 
