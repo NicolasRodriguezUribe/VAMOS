@@ -1,126 +1,23 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, Literal
 
 import numpy as np
+
+from vamos.foundation.constraints.utils import compute_violation, is_feasible
+from vamos.foundation.quality_indicators.pareto import pareto_filter
+
+from vamos.engine.algorithm.components.subset_selection import (
+    _hv_contributions,
+    _single_front_crowding,
+)
 
 try:  # pragma: no cover - optional dependency
     import moocore as _moocore
 except ImportError:  # pragma: no cover - optional dependency
     _moocore = None
 
-from vamos.foundation.constraints.utils import compute_violation, is_feasible
-from vamos.foundation.kernel.numpy_backend import _compute_crowding
-from vamos.foundation.quality_indicators.pareto import pareto_filter
-
 DeduplicateIn = Literal["objective", "decision", "both"]
-_HV_FALLBACK_WARNED = False
-
-
-def _single_front_crowding(F: np.ndarray) -> np.ndarray:
-    """Crowding distance for a single nondominated front."""
-    if F.shape[0] == 0:
-        return np.empty(0, dtype=float)
-    fronts = [list(range(F.shape[0]))]
-    return _compute_crowding(F, fronts)
-
-
-def select_top_k_crowding(F: np.ndarray, k: int) -> np.ndarray:
-    """Select the top-*k* most spread solutions using crowding distance.
-
-    Iteratively removes the solution with the lowest crowding distance
-    until *k* solutions remain.  Boundary solutions (with ``inf`` crowding)
-    are never removed, preserving the extremes of the front.
-
-    If the front has ``<= k`` solutions, all indices are returned.
-
-    Parameters
-    ----------
-    F:
-        Objective matrix of shape ``(n, n_obj)``.  Assumed to be a single
-        non-dominated front.
-    k:
-        Number of solutions to keep.
-
-    Returns
-    -------
-    np.ndarray
-        1-D integer array of indices into *F* for the selected solutions.
-    """
-    if k <= 0:
-        raise ValueError("k must be a positive integer.")
-    n = F.shape[0]
-    if n <= k:
-        return np.arange(n, dtype=int)
-    keep = np.arange(n, dtype=int)
-    while keep.size > k:
-        crowd = _single_front_crowding(F[keep])
-        worst_local = int(np.argmin(crowd))
-        keep = np.delete(keep, worst_local)
-    return keep
-
-
-def select_top_k_farthest(F: np.ndarray, k: int) -> np.ndarray:
-    """Select the top-*k* most diverse solutions using farthest-point sampling.
-
-    Greedy algorithm that iteratively picks the point maximising the minimum
-    Euclidean distance to the already-selected set.  This produces a more
-    uniformly spread subset than crowding distance, especially for 3+ objectives.
-
-    If the front has ``<= k`` solutions, all indices are returned.
-
-    Parameters
-    ----------
-    F:
-        Objective matrix of shape ``(n, n_obj)``.
-    k:
-        Number of solutions to keep.
-
-    Returns
-    -------
-    np.ndarray
-        1-D integer array of indices into *F* for the selected solutions.
-    """
-    if k <= 0:
-        raise ValueError("k must be a positive integer.")
-    n = F.shape[0]
-    if n <= k:
-        return np.arange(n, dtype=int)
-
-    # Start from the point with the largest norm (an extreme point)
-    selected = [int(np.argmax(np.linalg.norm(F, axis=1)))]
-    min_dists = np.full(n, np.inf)
-
-    for _ in range(k - 1):
-        dists = np.linalg.norm(F - F[selected[-1]], axis=1)
-        np.minimum(min_dists, dists, out=min_dists)
-        min_dists[selected] = -1.0
-        selected.append(int(np.argmax(min_dists)))
-
-    return np.array(selected, dtype=int)
-
-
-def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
-    """
-    Compute hypervolume contribution of each point.
-
-    Uses moocore when available; otherwise falls back to crowding distance and
-    emits a one-time warning.
-    """
-    global _HV_FALLBACK_WARNED
-    if F.shape[0] == 0:
-        return np.empty(0, dtype=float)
-    if _moocore is not None:
-        return np.asarray(_moocore.hv_contributions(F, ref=ref), dtype=float)
-    if not _HV_FALLBACK_WARNED:
-        warnings.warn(
-            "Hypervolume contributions requested but 'moocore' is not installed; falling back to crowding distance.",
-            UserWarning,
-            stacklevel=2,
-        )
-        _HV_FALLBACK_WARNED = True
-    return _single_front_crowding(F)
 
 
 def _nondominated_mask(F: np.ndarray) -> np.ndarray:
@@ -802,8 +699,4 @@ __all__ = [
     "CrowdingDistanceArchive",
     "SPEA2Archive",
     "UnboundedArchive",
-    "_single_front_crowding",
-    "_hv_contributions",
-    "select_top_k_crowding",
-    "select_top_k_farthest",
 ]

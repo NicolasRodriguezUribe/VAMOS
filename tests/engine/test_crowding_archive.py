@@ -3,14 +3,14 @@ import warnings
 import numpy as np
 import pytest
 
-import vamos.engine.algorithm.components.archive as archive_mod
+import vamos.engine.algorithm.components.subset_selection as ss_mod
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
     SPEA2Archive,
     UnboundedArchive,
-    select_top_k_crowding,
 )
+from vamos.engine.algorithm.components.subset_selection import select_top_k_crowding
 
 
 def _tradeoff_front(n: int) -> np.ndarray:
@@ -136,17 +136,17 @@ def test_objective_space_dedup_collapses_equal_objectives():
 
 
 def test_hv_fallback_warns_once(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(archive_mod, "_moocore", None)
-    monkeypatch.setattr(archive_mod, "_HV_FALLBACK_WARNED", False)
+    monkeypatch.setattr(ss_mod, "_moocore", None)
+    monkeypatch.setattr(ss_mod, "_HV_FALLBACK_WARNED", False)
     F = np.array([[0.0, 1.0], [1.0, 0.0]])
     ref = np.array([2.0, 2.0])
 
     with pytest.warns(UserWarning, match="moocore"):
-        archive_mod._hv_contributions(F, ref)
+        ss_mod._hv_contributions(F, ref)
 
     with warnings.catch_warnings(record=True) as rec:
         warnings.simplefilter("always")
-        archive_mod._hv_contributions(F, ref)
+        ss_mod._hv_contributions(F, ref)
     assert len(rec) == 0
 
 

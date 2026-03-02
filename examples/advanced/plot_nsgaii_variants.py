@@ -17,7 +17,7 @@ import seaborn as sns
 
 from vamos import optimize
 from vamos.algorithms import NSGAIIConfig
-from vamos.engine.algorithm.components.archive import select_top_k_farthest
+from vamos.engine.algorithm.components.subset_selection import select_top_k_farthest
 from vamos.problems import DTLZ2
 
 ENGINE = os.environ.get("VAMOS_ADV_ENGINE", "numba")
