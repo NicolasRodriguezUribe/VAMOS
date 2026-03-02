@@ -200,7 +200,10 @@ class OptimizationResult:
                     raise ValueError("weights must sum to a positive value.")
                 w = w / s
             return np.asarray(F_norm @ w, dtype=float)
-        raise ValueError("Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum, crowding")
+        raise ValueError(
+            "Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum, "
+            "crowding, farthest, knn, reference_directions, kmeans, angle, hv_greedy"
+        )
 
     def top_k(
         self,
@@ -218,7 +221,9 @@ class OptimizationResult:
             k: Number of rows to return (capped to available rows).
             source: One of ``result``, ``archive``, or ``population``.
             method: Ranking method: ``knee``, ``min_f1``, ``min_f2``,
-                ``balanced``, ``weighted_sum``, ``crowding``, or ``farthest``.
+                ``balanced``, ``weighted_sum``, ``crowding``, ``farthest``,
+                ``knn``, ``reference_directions``, ``kmeans``, ``angle``,
+                or ``hv_greedy``.
             nondominated_only: If True, rank only the first Pareto front.
             weights: Optional weights for ``weighted_sum`` ranking.
         """
@@ -242,7 +247,7 @@ class OptimizationResult:
 
         key = str(method).strip().lower()
         if key == "crowding":
-            from vamos.engine.algorithm.components.archive import (
+            from vamos.engine.algorithm.components.subset_selection import (
                 _single_front_crowding,
                 select_top_k_crowding,
             )
@@ -265,7 +270,7 @@ class OptimizationResult:
             }
 
         if key == "farthest":
-            from vamos.engine.algorithm.components.archive import (
+            from vamos.engine.algorithm.components.subset_selection import (
                 select_top_k_farthest,
             )
 
@@ -274,7 +279,6 @@ class OptimizationResult:
             selected_idx = idx_rank[selected_local]
             selected_F = F_src[selected_idx]
             selected_X = X_src[selected_idx] if X_src is not None else None
-            # Score = min distance to nearest selected neighbour (higher = more spread)
             dists = np.linalg.norm(
                 selected_F[:, None, :] - selected_F[None, :, :], axis=2
             )
@@ -287,6 +291,128 @@ class OptimizationResult:
                 "scores": np.asarray(selected_scores, dtype=float),
                 "source": str(source).strip().lower(),
                 "method": "farthest",
+            }
+
+        if key == "knn":
+            from vamos.engine.algorithm.components.subset_selection import (
+                select_top_k_knn,
+            )
+
+            k_eff = min(int(k), F_rank.shape[0])
+            selected_local = select_top_k_knn(F_rank, k_eff)
+            selected_idx = idx_rank[selected_local]
+            selected_F = F_src[selected_idx]
+            selected_X = X_src[selected_idx] if X_src is not None else None
+            # Score = min distance to nearest selected neighbour
+            dists = np.linalg.norm(
+                selected_F[:, None, :] - selected_F[None, :, :], axis=2
+            )
+            np.fill_diagonal(dists, np.inf)
+            selected_scores = np.min(dists, axis=1)
+            return {
+                "X": selected_X,
+                "F": selected_F,
+                "indices": np.asarray(selected_idx, dtype=int),
+                "scores": np.asarray(selected_scores, dtype=float),
+                "source": str(source).strip().lower(),
+                "method": "knn",
+            }
+
+        if key == "reference_directions":
+            from vamos.engine.algorithm.components.subset_selection import (
+                select_top_k_reference_directions,
+            )
+            from vamos.engine.algorithm.components.utils import normalize_objectives
+
+            k_eff = min(int(k), F_rank.shape[0])
+            selected_local = select_top_k_reference_directions(F_rank, k_eff)
+            selected_idx = idx_rank[selected_local]
+            selected_F = F_src[selected_idx]
+            selected_X = X_src[selected_idx] if X_src is not None else None
+            # Score = norm of normalized objective vector (lower = closer to ideal)
+            F_norm = normalize_objectives(selected_F)
+            selected_scores = np.linalg.norm(F_norm, axis=1)
+            return {
+                "X": selected_X,
+                "F": selected_F,
+                "indices": np.asarray(selected_idx, dtype=int),
+                "scores": np.asarray(selected_scores, dtype=float),
+                "source": str(source).strip().lower(),
+                "method": "reference_directions",
+            }
+
+        if key == "kmeans":
+            from vamos.engine.algorithm.components.subset_selection import (
+                select_top_k_kmeans,
+            )
+            from vamos.engine.algorithm.components.utils import normalize_objectives
+
+            k_eff = min(int(k), F_rank.shape[0])
+            selected_local = select_top_k_kmeans(F_rank, k_eff)
+            selected_idx = idx_rank[selected_local]
+            selected_F = F_src[selected_idx]
+            selected_X = X_src[selected_idx] if X_src is not None else None
+            F_norm = normalize_objectives(selected_F)
+            selected_scores = np.linalg.norm(F_norm, axis=1)
+            return {
+                "X": selected_X,
+                "F": selected_F,
+                "indices": np.asarray(selected_idx, dtype=int),
+                "scores": np.asarray(selected_scores, dtype=float),
+                "source": str(source).strip().lower(),
+                "method": "kmeans",
+            }
+
+        if key == "angle":
+            from vamos.engine.algorithm.components.subset_selection import (
+                select_top_k_angle,
+            )
+
+            k_eff = min(int(k), F_rank.shape[0])
+            selected_local = select_top_k_angle(F_rank, k_eff)
+            selected_idx = idx_rank[selected_local]
+            selected_F = F_src[selected_idx]
+            selected_X = X_src[selected_idx] if X_src is not None else None
+            # Score = minimum angle to nearest selected neighbor (higher = more diverse)
+            ideal = selected_F.min(axis=0)
+            V = selected_F - ideal
+            norms = np.linalg.norm(V, axis=1, keepdims=True)
+            norms = np.maximum(norms, 1e-30)
+            V_unit = V / norms
+            cos_sim = V_unit @ V_unit.T
+            np.clip(cos_sim, -1.0, 1.0, out=cos_sim)
+            angles = np.arccos(cos_sim)
+            np.fill_diagonal(angles, np.inf)
+            selected_scores = np.min(angles, axis=1)
+            return {
+                "X": selected_X,
+                "F": selected_F,
+                "indices": np.asarray(selected_idx, dtype=int),
+                "scores": np.asarray(selected_scores, dtype=float),
+                "source": str(source).strip().lower(),
+                "method": "angle",
+            }
+
+        if key == "hv_greedy":
+            from vamos.engine.algorithm.components.subset_selection import (
+                _hv_contributions,
+                select_top_k_hv_greedy,
+            )
+
+            k_eff = min(int(k), F_rank.shape[0])
+            selected_local = select_top_k_hv_greedy(F_rank, k_eff)
+            selected_idx = idx_rank[selected_local]
+            selected_F = F_src[selected_idx]
+            selected_X = X_src[selected_idx] if X_src is not None else None
+            ref = np.max(F_rank, axis=0) + 1.0
+            selected_scores = _hv_contributions(selected_F, ref)
+            return {
+                "X": selected_X,
+                "F": selected_F,
+                "indices": np.asarray(selected_idx, dtype=int),
+                "scores": np.asarray(selected_scores, dtype=float),
+                "source": str(source).strip().lower(),
+                "method": "hv_greedy",
             }
 
         scores = self._ranking_scores(F_rank, method=method, weights=weights)

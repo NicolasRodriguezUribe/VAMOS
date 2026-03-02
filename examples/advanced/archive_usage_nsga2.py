@@ -22,7 +22,7 @@ import numpy as np
 from vamos import optimize
 from vamos.problems import DTLZ2
 from vamos.algorithms import NSGAIIConfig
-from vamos.engine.algorithm.components.archive import select_top_k_crowding
+from vamos.engine.algorithm.components.subset_selection import select_top_k_crowding
 from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig
 
 

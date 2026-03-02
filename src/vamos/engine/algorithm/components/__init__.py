@@ -18,8 +18,17 @@ from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
     SPEA2Archive,
+)
+from vamos.engine.algorithm.components.subset_selection import (
+    _hv_contributions,
     _single_front_crowding,
+    select_top_k_angle,
     select_top_k_crowding,
+    select_top_k_farthest,
+    select_top_k_hv_greedy,
+    select_top_k_kmeans,
+    select_top_k_knn,
+    select_top_k_reference_directions,
 )
 from vamos.engine.algorithm.components.archives import (
     resolve_external_archive,
@@ -82,8 +91,16 @@ __all__ = [
     "CrowdingDistanceArchive",
     "HypervolumeArchive",
     "SPEA2Archive",
+    # subset selection
+    "_hv_contributions",
     "_single_front_crowding",
+    "select_top_k_angle",
     "select_top_k_crowding",
+    "select_top_k_farthest",
+    "select_top_k_hv_greedy",
+    "select_top_k_kmeans",
+    "select_top_k_knn",
+    "select_top_k_reference_directions",
     # population
     "initialize_population",
     "resolve_bounds",

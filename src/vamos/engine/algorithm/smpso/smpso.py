@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archive import _single_front_crowding
+from vamos.engine.algorithm.components.subset_selection import _single_front_crowding
 from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,

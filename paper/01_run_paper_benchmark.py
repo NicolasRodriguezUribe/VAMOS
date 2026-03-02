@@ -273,7 +273,7 @@ try:
 except ImportError:
     from benchmark_utils import compute_hv, compute_igd_plus
 
-from vamos.engine.algorithm.components.archive import select_top_k_crowding
+from vamos.engine.algorithm.components.subset_selection import select_top_k_crowding
 
 TOP_K_HV = POP_SIZE  # trim archive to pop_size best-spread solutions for HV/IGD+
 

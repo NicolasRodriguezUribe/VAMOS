@@ -35,7 +35,7 @@ sys.path.insert(0, str(ROOT_DIR / "src"))
 
 from vamos import optimize
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.engine.algorithm.components.archive import select_top_k_farthest
+from vamos.engine.algorithm.components.subset_selection import select_top_k_farthest
 
 # ---------------------------------------------------------------------------
 # Paths
