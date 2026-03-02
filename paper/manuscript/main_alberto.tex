@@ -237,7 +237,7 @@ Fig.~\ref{fig:representation} provides an intuitive view of how these frameworks
 
 \subsection{Engine Layer}
 
-VAMOS implements the nine MOEAs shown in Table~\ref{tab:algorithms}, covering  the three major MOEA paradigms (dominance, decomposition and indicator-based), plus a particle swarm optimization algorithm (SMPSO). All nine algorithms are built on top of the shared selection/variation/survival components ensuring consistent operator semantics and enabling component-level substitution without algorithm-specific code changes, so that practitioners can compare paradigms under identical infrastructure and configuration conventions. \textcolor{red}{Table~\ref{tab:algo_overview} in Appendix~\ref{app:param_space} summarizes the configurable parameter space for each algorithm, ranging from 8 parameters (SMPSO) to 37 (NSGA-II).}
+VAMOS implements the nine MOEAs shown in Table~\ref{tab:algorithms}, covering  the three major MOEA paradigms (dominance, decomposition and indicator-based), plus a particle swarm optimization algorithm (SMPSO). All nine algorithms are built on top of the shared selection/variation/survival components ensuring consistent operator semantics and enabling component-level substitution without algorithm-specific code changes, so that practitioners can compare paradigms under identical infrastructure and configuration conventions. \textcolor{red}{Table~\ref{tab:algo_overview} in Appendix~\ref{app:param_space} summarizes the configurable parameter space for each algorithm, ranging from 8 parameters (SMPSO) to 36 (NSGA-II).}
 
 \begin{table}[htbp]
 \centering
@@ -618,7 +618,7 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_robustness_summary_moead} 
 \label{app:param_space}
 %==============================================================================
 
-\textcolor{red}{Table~\ref{tab:algo_overview} provides a compact overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces across all supported encodings. Each row summarizes the algorithm's selection paradigm, supported encodings, number of available crossover and mutation operators, selection methods, algorithm-specific parameters, and total parameter count (including conditional parameters). The parameter counts reflect the tuning configuration spaces used by the built-in autotuner (Section~\ref{sec:design_goals}) and range from 8 (SMPSO) to 37 (NSGA-II), illustrating the breadth of component-level configurability that \VAMOS{} exposes as first-class configuration options.}
+\textcolor{red}{Table~\ref{tab:algo_overview} provides a compact overview of the nine MOEAs implemented in \VAMOS{} and their configurable parameter spaces across all supported encodings. Each row summarizes the algorithm's selection paradigm, supported encodings, number of available crossover and mutation operators, selection methods, algorithm-specific parameters, and total parameter count (including conditional parameters). The parameter counts reflect the tuning configuration spaces used by the built-in autotuner (Section~\ref{sec:design_goals}) and range from 8 (SMPSO) to 36 (NSGA-II), illustrating the breadth of component-level configurability that \VAMOS{} exposes as first-class configuration options.}
 
 \begin{table*}[htbp]
 \centering
@@ -629,7 +629,7 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_robustness_summary_moead} 
 \toprule
 \textbf{Algorithm} & \textbf{Paradigm} & \textbf{Encodings} & \textbf{\#Xover} & \textbf{\#Mut} & \textbf{Specific Parameters} & \textbf{\#Params} \\
 \midrule
-NSGA-II & Dominance + crowding & R, P, B, I, M & 25 & 24 & Offspring ratio, external archive (type, size, bounded) & 37 \\
+NSGA-II & Dominance + crowding & R, P, B, I, M & 25 & 24 & Offspring ratio, repair, external archive (capacity, pruning, unbounded) & 36 \\
 AGE-MOEA & Adaptive geometry & R, P, B, I, M & 21 & 22 & Archive policies (crowding, HV, $\varepsilon$-grid, hybrid) & 26 \\
 RVEA & Reference vectors & R, P, B, I, M & 21 & 22 & Partitions, $\alpha$ decay, adaptation frequency & 28 \\
 MOEA/D & Decomposition & R, P, B, I, M & 17 & 20 & Aggregation (Tchebycheff, WS, PBI), $T$, $\delta$, $\eta$ & 18 \\
@@ -647,7 +647,7 @@ Table~\ref{tab:parameter_space} summarizes the full parameter space considered f
 
 \begin{table*}[htbp]
 \centering
-\caption{\textcolor{red}{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default configuration used in Section~\ref{sec:experiments}. The total number of configurable parameters is 37. Acronyms: LHS (Latin Hypercube Sampling), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), PM (Polynomial Mutation), SUS (Stochastic Universal Sampling).}}
+\caption{\textcolor{red}{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default configuration used in Section~\ref{sec:experiments}. The total number of configurable parameters is 36. Acronyms: LHS (Latin Hypercube Sampling), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), PM (Polynomial Mutation), SUS (Stochastic Universal Sampling).}}
 \label{tab:parameter_space}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
@@ -655,34 +655,36 @@ Table~\ref{tab:parameter_space} summarizes the full parameter space considered f
 \textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
 \multirow{8}{*}{General} & Pop.\ Size $\in \Intdomain{20, 200}$ (log-scale); default $\mathbf{100}$ & -- \\
  & Offspring Ratio $\in \{0.25, 0.5, 0.75, \mathbf{1.0}\}$ & -- \\
- & Selection $\in$ \{\textbf{Tournament}, \textcolor{red}{Boltzmann, Ranking, SUS}\} & Pressure $\in \Intdomain{\mathbf{2}, 10}$ \\
+ & Selection $\in$ \{\textbf{Tournament}, Boltzmann, Ranking, SUS\} & -- \\
+ & Selection Pressure $\in \Intdomain{\mathbf{2}, 10}$ & -- \\
  & Use External Archive $\in$ \{True, \textbf{False}\} & -- \\
  & \textit{Archive Unbounded} $\in$ \{True, False\} & \textit{Archive} = True \\
- & \textit{Archive Type} $\in$ \{size\_cap, hvc\_prune\} & \textit{Unbounded} = False \\
- & \textit{Archive Size Factor} $\in \{1, 2, 5, 10\}$ & \textit{Unbounded} = False \\ \midrule
+ & \textit{Archive Capacity} $\in \Intdomain{20, 2000}$ (log-scale) & \textit{Archive} = True, \textit{Unbounded} = False \\
+ & \textit{Archive Prune Policy} $\in$ \{crowding, hv\_contrib, mc\_hv\_contrib, spea2, random\} & \textit{Archive} = True, \textit{Unbounded} = False \\ \midrule
 \multirow{2}{*}{Initialization} & \{\textbf{Random}, LHS, Scatter\} & -- \\
  & \textit{Scatter Base Size Factor} $\in \{0.1, 0.2, 0.3, 0.5, 0.75, 1.0\}$ & \textit{Init.} = Scatter \\ \midrule
-\multirow{12}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.6, 1.0}$, Repair $\in$ \{none, \textbf{clip}, reflect, random, round\}} \\
+\multirow{1}{*}{Repair} & \{\textbf{clip}, reflect, random, round, wrap, midpoint\} & -- \\ \midrule
+\multirow{11}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.6, 1.0}$} \\
  & \textbf{SBX} & \textit{Dist.\ Index} $\in \Realdomain{5.0, 40.0}$ \\
- & BLX-$\alpha$ & $\alpha \in \Realdomain{0.0, 1.0}$, \textit{Repair} $\in$ \{clip, random, reflect, round\} \\
- & \textcolor{red}{BLX-$\alpha\beta$} & \textcolor{red}{$\alpha \in \Realdomain{0.0, 1.0}$, $\beta \in \Realdomain{0.0, 1.0}$} \\
+ & BLX-$\alpha$ & $\alpha \in \Realdomain{0.0, 1.0}$ \\
+ & BLX-$\alpha\beta$ & $\alpha \in \Realdomain{0.0, 1.0}$, $\beta \in \Realdomain{0.0, 1.0}$ \\
  & Arithmetic & -- \\
- & \textcolor{red}{WholeArithmetic} & \textcolor{red}{$\alpha \in \Realdomain{0.0, 1.0}$} \\
- & \textcolor{red}{Laplace} & \textcolor{red}{$a \in \Realdomain{-1.0, 1.0}$, $b \in \Realdomain{0.01, 2.0}$} \\
- & \textcolor{red}{Fuzzy} & \textcolor{red}{$d \in \Realdomain{0.0, 2.0}$} \\
+ & Whole Arithmetic & $\alpha \in \Realdomain{0.0, 1.0}$ \\
+ & Laplace & $a \in \Realdomain{-1.0, 1.0}$, $b \in \Realdomain{0.01, 2.0}$ \\
+ & Fuzzy & $d \in \Realdomain{0.0, 2.0}$ \\
  & PCX & $\sigma_\eta \in \Realdomain{0.01, 0.5}$, $\sigma_\zeta \in \Realdomain{0.01, 0.5}$ \\
  & UNDX & $\zeta \in \Realdomain{0.1, 1.0}$, $\eta \in \Realdomain{0.1, 1.0}$ \\
  & Simplex & $\epsilon \in \Realdomain{0.1, 1.0}$ \\ \midrule
 \multirow{10}{*}{Mutation} & \multicolumn{2}{l}{\textit{Global:} Prob.\ Factor $\in \Realdomain{0.25, 3.0}$ ($p_m = \text{factor}/n$), Dist.\ Index $\in \Realdomain{5.0, 40.0}$} \\
- & \textbf{PM} & (uses global dist.\ index) \\
- & LinkedPolynomial & (uses global dist.\ index) \\
- & NonUniform & \textit{Perturbation} $\in \Realdomain{0.05, 0.5}$ \\
+ & \textbf{Polynomial} & (uses global dist.\ index) \\
+ & Linked Polynomial & (uses global dist.\ index) \\
+ & Non-Uniform & \textit{Perturbation} $\in \Realdomain{0.05, 0.5}$ \\
  & Gaussian & $\sigma \in \Realdomain{0.001, 0.5}$ \\
  & Cauchy & $\gamma \in \Realdomain{0.001, 0.5}$ \\
  & Uniform & \textit{Perturbation} $\in \Realdomain{0.01, 0.5}$ \\
  & UniformReset & -- \\
- & \textcolor{red}{L\'evyFlight} & \textcolor{red}{$\beta \in \Realdomain{0.5, 2.0}$, \textit{Scale} $\in \Realdomain{0.001, 0.1}$} \\
- & \textcolor{red}{PowerLaw} & \textcolor{red}{\textit{Index} $\in \Realdomain{0.5, 5.0}$} \\ \bottomrule
+ & L\'evy Flight & $\beta \in \Realdomain{0.5, 2.0}$, \textit{Scale} $\in \Realdomain{0.001, 0.1}$ \\
+ & Power Law & \textit{Index} $\in \Realdomain{0.5, 5.0}$ \\ \bottomrule
 \end{tabular}%
 }
 \end{table*}
@@ -721,7 +723,7 @@ result = optimize(problem, algorithm="nsgaii",
                   max_evaluations=50000, seed=42)
 \end{lstlisting}
 
-\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 28-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
+\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 36-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
 
 \begin{lstlisting}[float=*,caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1.}},label={lst:optuna_tune}]
 import numpy as np
@@ -731,7 +733,7 @@ from vamos.engine.tuning import (
     build_nsgaii_config_space, config_from_assignment,
 )
 
-# Build the 28-parameter NSGA-II config space
+# Build the 36-parameter NSGA-II config space
 space = build_nsgaii_config_space()
 
 # Evaluation function: returns hypervolume

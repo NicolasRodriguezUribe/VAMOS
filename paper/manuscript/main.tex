@@ -252,7 +252,7 @@ Fig.~\ref{fig:representation} provides an intuitive view of how these frameworks
 \textcolor{red}{Se habla aquí de los kernels, pero no de los problemas, indicadores de calidad, etc., mencionados en la figura 1.}
 \subsection{Engine Layer}
 
-VAMOS implements the nine MOEAs \textcolor{red}{ (no todo son MOEAs - SMPSO) } shown in Table~\ref{tab:algorithms}, covering  the three major MOEA paradigms: dominance, decomposition and indicator-based. All nine algorithms are built on top of the shared selection/variation/survival components ensuring consistent operator semantics and enabling component-level substitution without algorithm-specific code changes, so that practitioners can compare paradigms under identical infrastructure and configuration conventions. In addition to the algorithm's selection paradigm, Table~\ref{tab:algorithms} summarizes the supported encodings, number of available crossover and mutation operators, algorithm-specific parameters, and the total number of configurable parameters (base + conditional) in the tuning configuration space. The parameter counts reflect the tuning configuration spaces used by the built-in autotuner (up to 37 for NSGA-II), illustrating the breadth of component-level configurability that VAMOS exposes as first-class configuration option. \textcolor{blue}{  (pero si los 37 de NSGA-II incluyen operadores de todos los encondings, los 37 parámetros no son configurables al mismo tiempo -> cuántos son para optimización continua?. No está SMPSO en la tabla? - no me parece mala idea centrarnos solo en MOEAs) }
+VAMOS implements the nine MOEAs \textcolor{red}{ (no todo son MOEAs - SMPSO) } shown in Table~\ref{tab:algorithms}, covering  the three major MOEA paradigms: dominance, decomposition and indicator-based. All nine algorithms are built on top of the shared selection/variation/survival components ensuring consistent operator semantics and enabling component-level substitution without algorithm-specific code changes, so that practitioners can compare paradigms under identical infrastructure and configuration conventions. In addition to the algorithm's selection paradigm, Table~\ref{tab:algorithms} summarizes the supported encodings, number of available crossover and mutation operators, algorithm-specific parameters, and the total number of configurable parameters (base + conditional) in the tuning configuration space. The parameter counts reflect the tuning configuration spaces used by the built-in autotuner (up to 36 for NSGA-II), illustrating the breadth of component-level configurability that VAMOS exposes as first-class configuration option. \textcolor{blue}{  (pero si los 36 de NSGA-II incluyen operadores de todos los encondings, los 36 parámetros no son configurables al mismo tiempo -> cuántos son para optimización continua?. No está SMPSO en la tabla? - no me parece mala idea centrarnos solo en MOEAs) }
 
 \begin{table*}[ht]
 \centering
@@ -264,7 +264,7 @@ VAMOS implements the nine MOEAs \textcolor{red}{ (no todo son MOEAs - SMPSO) } s
 \toprule
 \textbf{Algorithm} & \textbf{Ref.} & \textbf{Paradigm} & \textbf{Encodings} & \textbf{\#Cx} & \textbf{\#Mx} & \textbf{Specific Parameters} & \textbf{\#Params} \\
 \midrule
-NSGA-II & \cite{deb2002fast} & Dominance & R, P, B, I, M & 25 & 24 & Offspring ratio, external archive (type, size, bounded) & 37 \\
+NSGA-II & \cite{deb2002fast} & Dominance & R, P, B, I, M & 25 & 24 & Offspring ratio, repair, external archive (capacity, pruning, unbounded) & 36 \\
 NSGA-III & \cite{deb2014evolutionary} & Dominance & R, P, B, I, M & 21 & 22 & Reference directions (auto-computed) & 22 \\
 SPEA2 & \cite{zitzler2001spea2} & Dominance & R, P, B, I, M & 21 & 22 & Archive size, $k$-nearest neighbors & 24 \\
 AGE-MOEA & \cite{panichella2019adaptive} & Dominance & R, P, B, I, M & 21 & 22 & Archive policies (crowding, HV, $\varepsilon$-grid, hybrid) & 26 \\
@@ -609,15 +609,15 @@ For hypervolume, reference fronts for problems without closed-form Pareto fronts
 \section{Configurability}
 \label{sec:configurability}
 %==============================================================================
-In this section, we analyze the configurability of \VAMOS{} by examining the parameter space of NSGA-II with real-valued encoding. Table~\ref{tab:parameter_space} lists the 37 configurable parameters organized by component (general settings, initialization, crossover, and mutation). Of these, 11 are always active (e.g., population size, crossover type and probability, mutation type and probability factor) and 26 are conditional, i.e., they are activated only when their parent operator is selected (e.g., the distribution index $\eta_c$ applies only when SBX crossover is chosen). In any single configuration, between 15 and 20 parameters are simultaneously active, depending on the selected operators.
+In this section, we analyze the configurability of \VAMOS{} by examining the parameter space of NSGA-II with real-valued encoding. Table~\ref{tab:parameter_space} lists the 36 configurable parameters organized by component (general settings, initialization, repair, crossover, and mutation). Of these, 12 are always active (e.g., population size, repair strategy, crossover type and probability, mutation type and probability factor) and 24 are conditional, i.e., they are activated only when their parent operator is selected (e.g., the distribution index $\eta_c$ applies only when SBX crossover is chosen). In any single configuration, between 12 and 20 parameters are simultaneously active, depending on the selected operators.
 
 This level of granularity contrasts sharply with competing Python frameworks. In pymoo, NSGA-II exposes only a handful of top-level knobs (population size, crossover and mutation operators with their probabilities and distribution indices); obtaining a steady-state variant, attaching an external archive, or switching constraint-handling mode requires subclassing or writing custom wrappers. jMetalPy offers a broader operator catalog but still lacks declarative support for archive strategies and offspring-ratio control. PyGMO provides even less flexibility: its NSGA-II implementation accepts only the population size, crossover probability, distribution indices, and mutation probability, with no mechanism for swapping operators or enabling algorithmic variants. Platypus, although modular in design, has limited maintenance and does not expose archive configuration or backend selection.
 
-By contrast, \VAMOS{} treats all 37 parameters as first-class configuration options accessible through a unified builder API (see Appendix~\ref{app:code}). This design enables systematic exploration of the algorithm design space, which is a feature provided by \VAMOS{} (see next section), a capability that none of the compared frameworks currently offer out of the box.
+By contrast, \VAMOS{} treats all 36 parameters as first-class configuration options accessible through a unified builder API (see Appendix~\ref{app:code}). This design enables systematic exploration of the algorithm design space, which is a feature provided by \VAMOS{} (see next section), a capability that none of the compared frameworks currently offer out of the box.
 
 \begin{table*}[htbp]
 \centering
-\caption{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default parameters of NSGA-II. The total number of configurable parameters is 37. Acronyms: LHS (Latin Hypercube Sampling), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), PM (Polynomial Mutation), SUS (Stochastic Universal Sampling).}  
+\caption{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default parameters of NSGA-II. The total number of configurable parameters is 36. Acronyms: LHS (Latin Hypercube Sampling), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), PM (Polynomial Mutation), SUS (Stochastic Universal Sampling).}  
 \label{tab:parameter_space}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
@@ -625,19 +625,21 @@ By contrast, \VAMOS{} treats all 37 parameters as first-class configuration opti
 \textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
 \multirow{8}{*}{General} & Pop.\ Size $\in \Intdomain{20, 200}$ (log-scale); default $\mathbf{100}$ & -- \\
  & Offspring Ratio $\in \{0.25, 0.5, 0.75, \mathbf{1.0}\}$ & -- \\
- & Selection $\in$ \{\textbf{Tournament}, Boltzmann, Ranking, SUS\} & Pressure $\in \Intdomain{\mathbf{2}, 10}$ \\
+ & Selection $\in$ \{\textbf{Tournament}, Boltzmann, Ranking, SUS\} & -- \\
+ & Selection Pressure $\in \Intdomain{\mathbf{2}, 10}$ & -- \\
  & Use External Archive $\in$ \{True, \textbf{False}\} & -- \\
  & \textit{Archive Unbounded} $\in$ \{True, False\} & \textit{Archive} = True \\
- & \textit{Archive Type} $\in$ \{size\_cap, hvc\_prune\} & \textit{Unbounded} = False \\
- & \textit{Archive Size Factor} $\in \{1, 2, 5, 10\}$ & \textit{Unbounded} = False \\ \midrule
+ & \textit{Archive Capacity} $\in \Intdomain{20, 2000}$ (log-scale) & \textit{Archive} = True, \textit{Unbounded} = False \\
+ & \textit{Archive Prune Policy} $\in$ \{crowding, hv\_contrib, mc\_hv\_contrib, spea2, random\} & \textit{Archive} = True, \textit{Unbounded} = False \\ \midrule
 \multirow{2}{*}{Initialization} & \{\textbf{Random}, LHS, Scatter\} & -- \\
  & \textit{Scatter Base Size Factor} $\in \{0.1, 0.2, 0.3, 0.5, 0.75, 1.0\}$ & \textit{Init.} = Scatter \\ \midrule
-\multirow{12}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.6, 1.0}$, Repair $\in$ \{none, \textbf{clip}, reflect, random, round\}} \\
+\multirow{1}{*}{Repair} & \{\textbf{clip}, reflect, random, round, wrap, midpoint\} & -- \\ \midrule
+\multirow{11}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.6, 1.0}$} \\
  & \textbf{SBX} & \textit{Dist.\ Index} $\in \Realdomain{5.0, 40.0}$ \\
- & BLX-$\alpha$ & $\alpha \in \Realdomain{0.0, 1.0}$, \textit{Repair} $\in$ \{clip, random, reflect, round\} \\
+ & BLX-$\alpha$ & $\alpha \in \Realdomain{0.0, 1.0}$ \\
  & BLX-$\alpha\beta$ & $\alpha \in \Realdomain{0.0, 1.0}$, $\beta \in \Realdomain{0.0, 1.0}$ \\
  & Arithmetic & -- \\
- & WholeArithmetic & $\alpha \in \Realdomain{0.0, 1.0}$ \\
+ & Whole Arithmetic & $\alpha \in \Realdomain{0.0, 1.0}$ \\
  & Laplace & $a \in \Realdomain{-1.0, 1.0}$, $b \in \Realdomain{0.01, 2.0}$ \\
  & Fuzzy & $d \in \Realdomain{0.0, 2.0}$ \\
  & PCX & $\sigma_\eta \in \Realdomain{0.01, 0.5}$, $\sigma_\zeta \in \Realdomain{0.01, 0.5}$ \\
@@ -645,14 +647,14 @@ By contrast, \VAMOS{} treats all 37 parameters as first-class configuration opti
  & Simplex & $\epsilon \in \Realdomain{0.1, 1.0}$ \\ \midrule
 \multirow{10}{*}{Mutation} & \multicolumn{2}{l}{\textit{Global:} Prob.\ Factor $\in \Realdomain{0.25, 3.0}$ ($p_m = \text{factor}/n$), Dist.\ Index $\in \Realdomain{5.0, 40.0}$} \\
  & \textbf{Polynomial} & (uses global dist.\ index) \\
- & LinkedPolynomial & (uses global dist.\ index) \\
- & NonUniform & \textit{Perturbation} $\in \Realdomain{0.05, 0.5}$ \\
+ & Linked Polynomial & (uses global dist.\ index) \\
+ & Non-Uniform & \textit{Perturbation} $\in \Realdomain{0.05, 0.5}$ \\
  & Gaussian & $\sigma \in \Realdomain{0.001, 0.5}$ \\
  & Cauchy & $\gamma \in \Realdomain{0.001, 0.5}$ \\
  & Uniform & \textit{Perturbation} $\in \Realdomain{0.01, 0.5}$ \\
- & UniformReset & -- \\
- & L\'evyFlight & $\beta \in \Realdomain{0.5, 2.0}$, \textit{Scale} $\in \Realdomain{0.001, 0.1}$ \\
- & PowerLaw & \textit{Index} $\in \Realdomain{0.5, 5.0}$ \\ \bottomrule
+ & Uniform Reset & -- \\
+ & L\'evy Flight & $\beta \in \Realdomain{0.5, 2.0}$, \textit{Scale} $\in \Realdomain{0.001, 0.1}$ \\
+ & Power Law & \textit{Index} $\in \Realdomain{0.5, 5.0}$ \\ \bottomrule
 \end{tabular}%
 }
 \end{table*}
@@ -715,7 +717,7 @@ result = optimize(
 )
 \end{lstlisting}
 
-Finally, accessibility in \VAMOS{} extends beyond algorithm execution to encompass the complete experimentation lifecycle, including hyperparameter tuning. While manual configuration via the Builder API is powerful, finding optimal algorithm configurations is often a daunting task for both novice and expert users. \VAMOS{} addresses this by providing seamless integration with state-of-the-art Model-Based Algorithm Configuration (MBAC) tools like Optuna~\cite{akiba2019optuna}. By exposing its entire parameter space programmatically, \VAMOS{} allows these external tuners to efficiently automate the search for optimal configurations. Listing~1 in Appendix~F of the supplementary material file illustrates this integration, showing how an advanced user can leverage Optuna to automatically tune the 37 configurable parameters of NSGA-II across multiple problem families with minimal setup effort.
+Finally, accessibility in \VAMOS{} extends beyond algorithm execution to encompass the complete experimentation lifecycle, including hyperparameter tuning. While manual configuration via the Builder API is powerful, finding optimal algorithm configurations is often a daunting task for both novice and expert users. \VAMOS{} addresses this by providing seamless integration with state-of-the-art Model-Based Algorithm Configuration (MBAC) tools like Optuna~\cite{akiba2019optuna}. By exposing its entire parameter space programmatically, \VAMOS{} allows these external tuners to efficiently automate the search for optimal configurations. Listing~1 in Appendix~F of the supplementary material file illustrates this integration, showing how an advanced user can leverage Optuna to automatically tune the 36 configurable parameters of NSGA-II across multiple problem families with minimal setup effort.
 
 %==============================================================================
 \section{Conclusion}

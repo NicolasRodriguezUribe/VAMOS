@@ -207,7 +207,7 @@ def finalize_genealogy(
         return
 
     try:
-        from vamos.engine.algorithm.nsgaii.helpers import (
+        from vamos.engine.hooks.genealogy import (
             generation_contributions,
             operator_success_stats,
         )

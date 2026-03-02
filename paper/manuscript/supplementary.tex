@@ -146,7 +146,7 @@ The full parameter space for NSGA-II with real-valued encoding is presented in T
 
 
 
-\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 37-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
+\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 36-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
 
 \begin{lstlisting}[float=*,caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1, DTLZ2, and WFG4.}},label={lst:optuna_tune}]
 import numpy as np
@@ -156,7 +156,7 @@ from vamos.engine.tuning import (
     build_nsgaii_config_space, config_from_assignment,
 )
 
-# Build the 37-parameter NSGA-II config space
+# Build the 36-parameter NSGA-II config space
 space = build_nsgaii_config_space()
 
 # Evaluation function: returns hypervolume
