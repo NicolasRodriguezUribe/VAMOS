@@ -114,7 +114,7 @@ vamos tune \
 
 Notes:
 - The MOEA/D tuner explores both SBX and DE crossovers, and can select PBI aggregation (with a tunable theta). These settings align with the jMetalPy default configuration when chosen.
-- The NSGA-II tuner includes external archive controls. When `archive_unbounded=True`, the archive is unbounded, `archive_type`/`archive_size_factor` are inactive, and the archive size is treated as the initial capacity (defaults to `pop_size`).
+- The NSGA-II tuner includes external archive controls with configurable capacity and pruning policy.
 
 ### Options
 

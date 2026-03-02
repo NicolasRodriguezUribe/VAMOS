@@ -56,25 +56,24 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
     if not use_external_archive:
         return
 
-    legacy_keys = {"archive_type", "archive_size_factor", "archive_epsilon"}
+    legacy_keys = {"archive_type", "archive_size_factor", "archive_epsilon", "archive_unbounded"}
     legacy_used = sorted(k for k in legacy_keys if k in assignment)
     if legacy_used:
         joined = ", ".join(legacy_used)
         raise ValueError(
-            f"Unsupported external-archive tuning keys: {joined}. Use archive_unbounded/archive_capacity/archive_prune_policy."
+            f"Unsupported external-archive tuning keys: {joined}. Use archive_capacity/archive_prune_policy."
         )
 
-    archive_unbounded = bool(assignment.get("archive_unbounded", False))
-    if archive_unbounded:
+    archive_capacity = int(assignment.get("archive_capacity", pop_size))
+    if archive_capacity == 0:
         builder.external_archive(capacity=None)
         return
 
     prune_policy = str(assignment.get("archive_prune_policy", "crowding"))
-    archive_size = int(assignment.get("archive_capacity", pop_size))
-    if archive_size <= 0:
-        raise ValueError("archive_capacity must be >= 1.")
+    if archive_capacity < 0:
+        raise ValueError("archive_capacity must be >= 0 (0 = unbounded).")
     builder.external_archive(
-        capacity=archive_size,
+        capacity=archive_capacity,
         pruning=prune_policy,
     )
 

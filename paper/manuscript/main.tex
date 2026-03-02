@@ -617,21 +617,20 @@ By contrast, \VAMOS{} treats all 36 parameters as first-class configuration opti
 
 \begin{table*}[htbp]
 \centering
-\caption{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default parameters of NSGA-II. The total number of configurable parameters is 36. Acronyms: LHS (Latin Hypercube Sampling), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), PM (Polynomial Mutation), SUS (Stochastic Universal Sampling).}  
+\caption{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default parameters of NSGA-II. The total number of configurable parameters is 35. Acronyms: LHS (Latin Hypercube Sampling), OBL (Opposition-Based Learning), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), PM (Polynomial Mutation), SUS (Stochastic Universal Sampling).}  
 \label{tab:parameter_space}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
-\multirow{8}{*}{General} & Pop.\ Size $\in \Intdomain{20, 200}$ (log-scale); default $\mathbf{100}$ & -- \\
+\multirow{7}{*}{General} & Pop.\ Size $\in \Intdomain{20, 200}$ (log-scale); default $\mathbf{100}$ & -- \\
  & Offspring Ratio $\in \{0.25, 0.5, 0.75, \mathbf{1.0}\}$ & -- \\
  & Selection $\in$ \{\textbf{Tournament}, Boltzmann, Ranking, SUS\} & -- \\
  & Selection Pressure $\in \Intdomain{\mathbf{2}, 10}$ & -- \\
  & Use External Archive $\in$ \{True, \textbf{False}\} & -- \\
- & \textit{Archive Unbounded} $\in$ \{True, False\} & \textit{Archive} = True \\
- & \textit{Archive Capacity} $\in \Intdomain{20, 2000}$ (log-scale) & \textit{Archive} = True, \textit{Unbounded} = False \\
- & \textit{Archive Prune Policy} $\in$ \{crowding, hv\_contrib, mc\_hv\_contrib, spea2, random\} & \textit{Archive} = True, \textit{Unbounded} = False \\ \midrule
-\multirow{2}{*}{Initialization} & \{\textbf{Random}, LHS, Scatter\} & -- \\
+ & \textit{Archive Capacity} $\in \{\infty, 25, 50, 100, 200, 400, 800, 1600\}$ & \textit{Archive} = True \\
+ & \textit{Archive Prune Policy} $\in$ \{crowding, hv\_contrib, mc\_hv\_contrib, spea2, random\} & \textit{Archive} = True, \textit{Capacity} $\neq \infty$ \\ \midrule
+\multirow{2}{*}{Initialization} & \{\textbf{Random}, LHS, Scatter, Sobol, Halton, OBL\} & -- \\
  & \textit{Scatter Base Size Factor} $\in \{0.1, 0.2, 0.3, 0.5, 0.75, 1.0\}$ & \textit{Init.} = Scatter \\ \midrule
 \multirow{1}{*}{Repair} & \{\textbf{clip}, reflect, random, round, wrap, midpoint\} & -- \\ \midrule
 \multirow{11}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.6, 1.0}$} \\

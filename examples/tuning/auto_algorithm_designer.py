@@ -111,19 +111,13 @@ def build_param_space_for_encoding(encoding: str) -> ParamSpace:
     }
     conditions: list[Condition] = []
 
-    # Archive configuration (only active when result_mode == "archive")
-    params["archive_unbounded"] = Categorical("archive_unbounded", [False, True])
-    conditions.append(Condition("archive_unbounded", "cfg['result_mode'] == 'archive'"))
-
-    # Archive size cap
+    # Archive size cap (only active when result_mode == "archive")
     params["archive_size"] = Int("archive_size", 50, 300)
     conditions.append(Condition("archive_size", "cfg['result_mode'] == 'archive'"))
-    conditions.append(Condition("archive_size", "cfg['archive_unbounded'] == False"))
 
     # Prune policy for bounded archives
     params["prune_policy"] = Categorical("prune_policy", ["crowding", "hv_contrib", "random"])
     conditions.append(Condition("prune_policy", "cfg['result_mode'] == 'archive'"))
-    conditions.append(Condition("prune_policy", "cfg['archive_unbounded'] == False"))
 
     # Add conditional hyperparameters from registry
     crossover_ops = {op[0]: op[1] for op in operators_info.get("crossover", [])}
@@ -183,13 +177,9 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfig:
     # Result mode: population vs external archive
     result_mode = assignment.get("result_mode", "population")
     if result_mode == "archive":
-        archive_unbounded = bool(assignment.get("archive_unbounded", False))
         prune_policy = assignment.get("prune_policy", "crowding")
-        if archive_unbounded:
-            config = config.external_archive(capacity=None)
-        else:
-            archive_size = int(assignment.get("archive_size", 200))
-            config = config.external_archive(capacity=archive_size, pruning=prune_policy)
+        archive_size = int(assignment.get("archive_size", 200))
+        config = config.external_archive(capacity=archive_size, pruning=prune_policy)
     else:
         config = config.result_mode("population")
 
