@@ -13,12 +13,7 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.operators.impl.real import (
-    ClampRepair,
-    ReflectRepair,
-    ResampleRepair,
-    RoundRepair,
-)
+from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
 
 __all__ = [
@@ -30,13 +25,22 @@ __all__ = [
 ]
 
 
-REPAIR_MAP: dict[str, type] = {
-    "clip": ClampRepair,
-    "clamp": ClampRepair,
-    "reflect": ReflectRepair,
-    "random": ResampleRepair,
-    "resample": ResampleRepair,
-    "round": RoundRepair,
+_SMPSO_REPAIR_NAMES = (
+    "clip",
+    "clamp",
+    "reflect",
+    "random",
+    "resample",
+    "round",
+    "wrap",
+    "wrapping",
+    "midpoint",
+    "midpoint_base",
+    "gradient",
+)
+
+REPAIR_MAP: dict[str, type[Any]] = {
+    name: get_operator_registry().get(name) for name in _SMPSO_REPAIR_NAMES
 }
 
 

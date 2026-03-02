@@ -19,12 +19,14 @@ def test_normalize_variation_config_handles_ops_and_extras():
     raw = {
         "crossover": {"method": "sbx", "prob": 0.9},
         "mutation": {"name": "polynomial", "eta": 20.0},
+        "repair": "auto",
         "kappa": 0.05,
     }
     cfg = normalize_variation_config(raw)
     assert cfg == {
         "crossover": ("sbx", {"prob": 0.9}),
         "mutation": ("polynomial", {"eta": 20.0}),
+        "repair": "auto",
         "kappa": 0.05,
     }
 
@@ -42,10 +44,15 @@ def test_resolve_default_variation_config_defaults_by_encoding():
     real_cfg = resolve_default_variation_config("real", None)
     assert real_cfg["crossover"][0] == "sbx"
     assert real_cfg["mutation"][0] == "polynomial"
+    assert real_cfg["repair"] == ("clip", {})
+
+    real_cfg_auto = resolve_default_variation_config("real", {"repair": "auto"})
+    assert real_cfg_auto["repair"] == ("clip", {})
 
     binary_cfg = resolve_default_variation_config("binary", None)
     assert binary_cfg["crossover"][0] == "hux"
     assert binary_cfg["mutation"][0] == "bitflip"
+    assert "repair" not in binary_cfg
 
     perm_cfg = resolve_default_variation_config("permutation", {"repair": ("clip", {})})
     assert perm_cfg["crossover"][0] == "ox"

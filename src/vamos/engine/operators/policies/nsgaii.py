@@ -24,7 +24,7 @@ from vamos.engine.adaptation.aos.policies import (
 )
 from vamos.engine.adaptation.aos.portfolio import OperatorPortfolio
 from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
-from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairName
+from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairConfigValue
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.foundation.encoding import EncodingLike
 from vamos.foundation.problem.types import ProblemProtocol
@@ -166,7 +166,7 @@ def _build_variation_pipelines(
                     xl,
                     xu,
                     variation_workspace,
-                    cfg.get("repair"),
+                    cfg.get("repair", "auto"),
                     problem,
                 )
             )
@@ -183,7 +183,7 @@ def _build_variation_pipelines(
                 xl,
                 xu,
                 variation_workspace,
-                cfg.get("repair"),
+                cfg.get("repair", "auto"),
                 problem,
             )
         )
@@ -200,7 +200,7 @@ def _create_variation_pipeline(
     xl: np.ndarray,
     xu: np.ndarray,
     workspace: VariationWorkspace,
-    repair_cfg: Any | None,
+    repair_cfg: Any,
     problem: ProblemProtocol,
 ) -> VariationPipeline:
     """Create a single variation pipeline.
@@ -223,8 +223,8 @@ def _create_variation_pipeline(
         Upper bounds.
     workspace : VariationWorkspace
         Shared workspace.
-    repair_cfg : Any | None
-        Optional repair configuration.
+    repair_cfg : Any
+        Repair configuration or "auto".
     problem : ProblemProtocol
         The optimization problem.
 
@@ -242,7 +242,7 @@ def _create_variation_pipeline(
         xl=xl,
         xu=xu,
         workspace=workspace,
-        repair_cfg=cast(tuple[RepairName, dict[str, Any]] | None, repair_cfg),
+        repair_cfg=cast(RepairConfigValue, repair_cfg),
         problem=problem,
     )
 

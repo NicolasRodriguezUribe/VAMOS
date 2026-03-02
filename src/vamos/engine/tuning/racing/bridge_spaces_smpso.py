@@ -25,6 +25,7 @@ def _smpso_part() -> SpacePart:
         Real("c1", 0.5, 2.5),
         Real("c2", 0.5, 2.5),
         Real("vmax_fraction", 0.1, 1.0),
+        Categorical("repair", ["none", "clip", "reflect", "random", "round", "wrap", "midpoint"]),
         Real("mutation_prob", 0.01, 0.5),
         Real("mutation_eta", 5.0, 40.0),
         *ext_params,

@@ -9,10 +9,11 @@ for different encodings (continuous, binary, integer, permutation, mixed).
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 
 import numpy as np
 
+from vamos.engine.algorithm.components.variation.protocol import RepairConfigValue
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.engine.operators.impl.binary import (
     bit_flip_mutation,
@@ -49,6 +50,7 @@ from vamos.engine.operators.impl.permutation import (
 )
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.engine.operators.policies.real_repair import apply_policy_repair, resolve_policy_repair
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 # Operator registries
@@ -167,6 +169,9 @@ def build_variation_operators(
         mut_params["prob"] = 1.0 / n_var
 
     normalized = normalize_encoding(encoding)
+    repair_cfg = cast(RepairConfigValue, cfg.get("repair", "auto"))
+    if normalized != "real" and repair_cfg != "auto":
+        raise ValueError("Repair operators are only supported for real encoding.")
 
     if normalized == "binary":
         return _build_binary_operators(cross_method, cross_params, mut_method, mut_params, n_var, rng)
@@ -187,7 +192,7 @@ def build_variation_operators(
             rng,
         )
     elif normalized == "real":
-        return _build_continuous_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng)
+        return _build_continuous_operators(cross_method, cross_params, mut_method, mut_params, n_var, xl, xu, rng, repair_cfg)
     else:
         raise ValueError(f"MOEA/D does not support encoding '{normalized}'.")
 
@@ -292,10 +297,13 @@ def _build_continuous_operators(
     xl: np.ndarray,
     xu: np.ndarray,
     rng: np.random.Generator,
+    repair_cfg: RepairConfigValue,
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build variation operators for continuous/real encoding."""
     method = (cross_method or "sbx").lower()
     workspace = VariationWorkspace()
+    repair_operator = resolve_policy_repair("real", repair_cfg)
+    assert repair_operator is not None
 
     if method in {"de", "differential", "differential_evolution"}:
         cr = float(cross_params.get("cr", cross_params.get("CR", 1.0)))
@@ -315,8 +323,8 @@ def _build_continuous_operators(
             j_rand = _rng.integers(0, n_vars, size=n_pairs)
             mask[np.arange(n_pairs), j_rand] = True
             child = np.where(mask, mutant, base)
-            np.clip(child, xl, xu, out=child)
-            return child[:, None, :]
+            offspring = child[:, None, :]
+            return apply_policy_repair(repair_operator, offspring, xl, xu, _rng)
 
     else:
         registry = get_operator_registry()
@@ -330,7 +338,8 @@ def _build_continuous_operators(
         crossover_operator = registry.get(method)(**cross_kwargs)
 
         def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-            return crossover_operator(parents, _rng)
+            offspring = np.asarray(crossover_operator(parents, _rng))
+            return apply_policy_repair(repair_operator, offspring, xl, xu, _rng)
 
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     mut_name = (mut_method or "polynomial").lower()
@@ -345,7 +354,8 @@ def _build_continuous_operators(
     mutation_operator = registry.get(mut_name)(**mut_kwargs)
 
     def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        return mutation_operator(X_child, _rng)
+        mutated = np.asarray(mutation_operator(X_child, _rng))
+        return apply_policy_repair(repair_operator, mutated, xl, xu, _rng)
 
     return crossover, mutation
 

@@ -7,13 +7,11 @@ from typing import Any
 
 import numpy as np
 
-from .repair import Repair
 from .utils import (
     ArrayLike,
     RealOperator,
     VariationWorkspace,
     _check_nvars,
-    _clip_population,
     _ensure_bounds,
 )
 
@@ -101,13 +99,12 @@ class PolynomialMutation(Mutation):
                 val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (self.eta + 1.0))
                 deltaq = 1.0 - val**mut_pow
             y += deltaq * (yu - yl)
-            y = min(max(y, yl), yu)
             X[i, j] = y
         return X
 
 
 class GaussianMutation(Mutation):
-    """Gaussian mutation with optional bounds clamping."""
+    """Gaussian mutation with optional bounds metadata."""
 
     def __init__(
         self,
@@ -147,8 +144,6 @@ class GaussianMutation(Mutation):
             sigma = np.broadcast_to(self.sigma, (n_ind, n_var))
             noise = rng.normal(0.0, sigma)
         X[mask] += noise[mask]
-        if self.lower is not None and self.upper is not None:
-            X = _clip_population(X, self.lower, self.upper)
         return X
 
 
@@ -238,7 +233,6 @@ class NonUniformMutation(Mutation):
             buffered_update.fill(0.0)
             buffered_update[mask] = update[mask]
             X += buffered_update
-        np.clip(X, self.lower, self.upper, out=X)
         return X
 
 
@@ -253,7 +247,6 @@ class UniformMutation(Mutation):
         prob: float | None = None,
         lower: ArrayLike,
         upper: ArrayLike,
-        repair: Repair | None = None,
         rng: np.random.Generator | None = None,
         workspace: VariationWorkspace | None = None,
     ) -> None:
@@ -268,7 +261,6 @@ class UniformMutation(Mutation):
         self.perturb = float(np.clip(perturb, 0.0, 1.0))
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.range = self.upper - self.lower
-        self.repair = repair
         self.rng = rng
 
     def __call__(self, offspring: ArrayLike, rng: np.random.Generator | None = None) -> ArrayLike:
@@ -287,10 +279,6 @@ class UniformMutation(Mutation):
         update = delta * self.range
         X = X.copy()
         X += np.where(mask, update, 0.0)
-        if self.repair is not None:
-            X = self.repair(X, self.lower, self.upper, active_rng)
-        else:
-            X = _clip_population(X, self.lower, self.upper)
         return X[0] if squeeze else X
 
 
@@ -305,7 +293,6 @@ class LinkedPolynomialMutation(Mutation):
         prob: float | None = None,
         lower: ArrayLike,
         upper: ArrayLike,
-        repair: Repair | None = None,
         rng: np.random.Generator | None = None,
         workspace: VariationWorkspace | None = None,
     ) -> None:
@@ -320,7 +307,6 @@ class LinkedPolynomialMutation(Mutation):
         self.eta = float(eta)
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.span = self.upper - self.lower
-        self.repair = repair
         self.rng = rng
 
     def __call__(self, offspring: ArrayLike, rng: np.random.Generator | None = None) -> ArrayLike:
@@ -343,15 +329,11 @@ class LinkedPolynomialMutation(Mutation):
         update = delta * self.span
         X = X.copy()
         X += np.where(mask, update, 0.0)
-        if self.repair is not None:
-            X = self.repair(X, self.lower, self.upper, active_rng)
-        else:
-            X = _clip_population(X, self.lower, self.upper)
         return X[0] if squeeze else X
 
 
 class CauchyMutation(Mutation):
-    """Cauchy mutation with optional bounds clamping."""
+    """Cauchy mutation with heavy-tailed perturbations."""
 
     def __init__(
         self,
@@ -374,7 +356,6 @@ class CauchyMutation(Mutation):
             return X
         noise = rng.standard_cauchy(size=X.shape) * self.gamma
         X[mask] += noise[mask]
-        np.clip(X, self.lower, self.upper, out=X)
         return X
 
 
@@ -447,7 +428,6 @@ class LevyFlightMutation(Mutation):
         step = u / (np.abs(v) ** (1.0 / self.beta) + eps)
         update = self.scale * step * self.span
         X[mask] += update[mask]
-        np.clip(X, self.lower, self.upper, out=X)
         return X
 
 
@@ -506,7 +486,6 @@ class PowerLawMutation(Mutation):
         direction = np.where(rng.random(X.shape) < 0.5, -1.0, 1.0)
         update = s * direction * self.span
         X[mask] += update[mask]
-        np.clip(X, self.lower, self.upper, out=X)
         return X
 
 

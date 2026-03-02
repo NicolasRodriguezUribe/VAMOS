@@ -8,9 +8,10 @@ from typing import Any
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.archive.bounded_archive import PrunePolicy
 from vamos.resources import weight_path
+from vamos.foundation.encoding import normalize_encoding
 
 from .base import ConstraintModeStr, ResultMode, _default_operators_for_encoding, _require_fields, _SerializableConfig, _validate_operators
-from .types import AggregationName, CrossoverName, InitializerName, MutationName, RepairName
+from .types import AggregationName, CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName
 
 
 @dataclass(frozen=True, repr=False)
@@ -25,7 +26,7 @@ class MOEADConfig(_SerializableConfig):
     aggregation: tuple[str, dict[str, Any]]
     weight_vectors: dict[str, int | str | None] | None
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     use_numba_variation: bool | None = None
@@ -52,9 +53,10 @@ class MOEADConfig(_SerializableConfig):
         if pop_size is None:
             pop_size = 91 if n_obj == 3 else 100
         mut_prob = 1.0 / n_var if n_var else 0.1
-        cx, mt = _default_operators_for_encoding(encoding or "real", mut_prob)
+        normalized = normalize_encoding(encoding or "real")
+        cx, mt = _default_operators_for_encoding(normalized, mut_prob)
         weights_dir = weight_path("W3D_91.dat").parent
-        return (
+        builder = (
             cls.builder()
             .pop_size(pop_size)
             .batch_size(1)
@@ -65,8 +67,10 @@ class MOEADConfig(_SerializableConfig):
             .mutation(mt[0], **mt[1])
             .aggregation("pbi", theta=5.0)
             .weight_vectors(path=str(weights_dir))
-            .build()
         )
+        if normalized == "real":
+            builder = builder.repair("clip")
+        return builder.build()
 
     @classmethod
     def builder(cls) -> _MOEADConfigBuilder:
@@ -195,7 +199,7 @@ class _MOEADConfigBuilder:
             aggregation=self._cfg["aggregation"],
             weight_vectors=self._cfg.get("weight_vectors"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
-            repair=self._cfg.get("repair"),
+            repair=self._cfg.get("repair", "auto"),
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             use_numba_variation=self._cfg.get("use_numba_variation"),

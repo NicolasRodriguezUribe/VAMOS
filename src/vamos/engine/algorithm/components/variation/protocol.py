@@ -50,7 +50,7 @@ RealMutationName: TypeAlias = Literal[
     "levy_flight",
     "power_law",
 ]
-RealRepairName: TypeAlias = Literal["clip", "clamp", "reflect", "random", "resample", "round"]
+RealRepairName: TypeAlias = Literal["clip", "clamp", "reflect", "random", "resample", "round", "wrap", "wrapping", "midpoint", "midpoint_base", "gradient"]
 
 BinaryCrossoverName: TypeAlias = Literal["one_point", "single_point", "1point", "spx", "two_point", "2point", "uniform", "hux"]
 BinaryMutationName: TypeAlias = Literal["bitflip", "bit_flip", "segment_inversion"]
@@ -82,6 +82,7 @@ MixedMutationName: TypeAlias = Literal["mixed", "gaussian"]
 CrossoverName: TypeAlias = RealCrossoverName | BinaryCrossoverName | IntegerCrossoverName | PermutationCrossoverName | MixedCrossoverName
 MutationName: TypeAlias = RealMutationName | BinaryMutationName | IntegerMutationName | PermutationMutationName | MixedMutationName
 RepairName: TypeAlias = RealRepairName
+RepairConfigValue: TypeAlias = tuple[RepairName, dict[str, Any]] | Literal["auto"]
 OperatorName: TypeAlias = CrossoverName | MutationName | RepairName
 
 
@@ -129,6 +130,7 @@ __all__ = [
     "RealMutationName",
     "RealRepairName",
     "RepairName",
+    "RepairConfigValue",
     "CrossoverOperator",
     "MutationOperator",
     "RepairOperator",

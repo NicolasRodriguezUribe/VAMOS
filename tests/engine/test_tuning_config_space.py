@@ -23,6 +23,7 @@ from vamos.engine.tuning.racing.bridge import (
     build_rvea_config_space,
     build_rvea_integer_config_space,
     build_rvea_permutation_config_space,
+    build_smpso_config_space,
     build_smpso_mixed_config_space,
     build_smsemoa_binary_config_space,
     build_smsemoa_integer_config_space,
@@ -100,6 +101,27 @@ def test_nsgaii_archive_unbounded_disables_archive_params():
     cfg_bounded = {"use_external_archive": True, "archive_unbounded": False}
     assert param_space.is_active("archive_capacity", cfg_bounded)
     assert param_space.is_active("archive_prune_policy", cfg_bounded)
+
+
+def test_real_tuning_spaces_expose_new_repair_choices():
+    nsgaii_repair = build_nsgaii_config_space().to_param_space().params["repair"]
+    smpso_repair = build_smpso_config_space().to_param_space().params["repair"]
+
+    assert isinstance(nsgaii_repair, Categorical)
+    assert isinstance(smpso_repair, Categorical)
+    assert {"wrap", "midpoint"}.issubset(set(nsgaii_repair.choices))
+    assert {"wrap", "midpoint"}.issubset(set(smpso_repair.choices))
+
+
+def test_smpso_config_space_applies_repair_choice():
+    rng = np.random.default_rng(10)
+    space = build_smpso_config_space()
+    assignment = space.sample(rng)
+    assignment["repair"] = "wrap"
+
+    cfg = config_from_assignment("smpso", assignment)
+
+    assert cfg.repair == ("wrap", {})
 
 
 def test_nsgaii_permutation_config_space_builds_and_constructs_config():

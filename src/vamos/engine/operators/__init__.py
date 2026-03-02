@@ -38,6 +38,7 @@ from .impl.real import (
     GaussianMutation,
     LatinHypercubeInitializer,
     LinkedPolynomialMutation,
+    MidpointBaseRepair,
     Mutation,
     NonUniformMutation,
     PCXCrossover,
@@ -54,6 +55,7 @@ from .impl.real import (
     UniformMutation,
     UniformResetMutation,
     VariationWorkspace,
+    WrappingRepair,
 )
 from .impl.repair import GradientRepair
 
@@ -69,6 +71,7 @@ __all__ = [
     "GradientRepair",
     "LatinHypercubeInitializer",
     "LinkedPolynomialMutation",
+    "MidpointBaseRepair",
     "Mutation",
     "NonUniformMutation",
     "PCXCrossover",
@@ -85,6 +88,7 @@ __all__ = [
     "UniformMutation",
     "UniformResetMutation",
     "VariationWorkspace",
+    "WrappingRepair",
     "BitFlipMutation",
     "HuxCrossover",
     "OnePointCrossover",

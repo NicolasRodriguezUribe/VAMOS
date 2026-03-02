@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal, Protocol, TypeAlias, runtime_checkable
+from typing import Any, Literal, Protocol, TypeAlias, runtime_checkable
 
 AlgorithmConfigMapping: TypeAlias = Mapping[str, object]
 
@@ -103,7 +103,13 @@ RepairName: TypeAlias = Literal[
     "random",
     "resample",
     "round",
+    "wrap",
+    "wrapping",
+    "midpoint",
+    "midpoint_base",
+    "gradient",
 ]
+RepairConfigValue: TypeAlias = tuple[str, dict[str, Any]] | Literal["auto"]
 
 # ── Algorithm, engine, and aggregation literals ──────────────────────
 
@@ -137,6 +143,7 @@ __all__ = [
     "SelectionName",
     "InitializerName",
     "RepairName",
+    "RepairConfigValue",
     "AlgorithmName",
     "EngineName",
     "AggregationName",

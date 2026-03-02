@@ -267,15 +267,6 @@ class SPEA2:
         # Apply mutation
         offspring_X = st.mutation_fn(offspring_X, st.rng)
 
-        # Clip to bounds; cast bounds for integer-typed offspring to avoid
-        # numpy in-place casting errors when bounds are stored as floats.
-        xl = st.xl
-        xu = st.xu
-        if np.issubdtype(offspring_X.dtype, np.integer):
-            xl = np.asarray(xl, dtype=offspring_X.dtype)
-            xu = np.asarray(xu, dtype=offspring_X.dtype)
-        np.clip(offspring_X, xl, xu, out=offspring_X)
-
         st.pending_offspring = offspring_X
 
         # Track genealogy

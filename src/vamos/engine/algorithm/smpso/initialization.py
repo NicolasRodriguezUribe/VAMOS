@@ -146,7 +146,7 @@ def initialize_smpso_run(
 
     # Build operators
     mutation_op = build_mutation_operator(config, encoding, n_var, xl, xu, problem=problem)
-    repair_op = build_repair_operator(config)
+    repair_op = build_repair_operator(config, encoding)
 
     # HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)

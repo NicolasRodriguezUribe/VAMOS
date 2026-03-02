@@ -26,7 +26,6 @@ from vamos.engine.algorithm.components.variation.helpers import (
 from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
 from vamos.engine.config.variation import (
     ensure_operator_tuple,
-    ensure_operator_tuple_optional,
     resolve_default_variation_config,
 )
 from vamos.foundation.encoding import normalize_encoding
@@ -123,17 +122,16 @@ def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, pr
         explicit_overrides["crossover"] = config["crossover"]
     if "mutation" in config:
         explicit_overrides["mutation"] = config["mutation"]
-    if "repair" in config:
+    if "repair" in config and config["repair"] != "auto":
         explicit_overrides["repair"] = config["repair"]
 
     var_cfg = resolve_default_variation_config(encoding, explicit_overrides)
     c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {})), key="crossover")
     m_name, m_kwargs = ensure_operator_tuple(var_cfg.get("mutation", ("polynomial", {})), key="mutation")
-    repair_tuple = ensure_operator_tuple_optional(var_cfg.get("repair"), key="repair")
+    repair_cfg: tuple[str, dict[str, Any]] | str = "auto"
     cross_name, mut_name = ensure_supported_operator_names(encoding, c_name, m_name)
-    repair_cfg = None
-    if repair_tuple is not None:
-        repair_name, repair_params = repair_tuple
+    if "repair" in var_cfg:
+        repair_name, repair_params = ensure_operator_tuple(var_cfg["repair"], key="repair")
         repair_cfg = (ensure_supported_repair_name(encoding, repair_name), repair_params)
 
     return VariationPipeline(

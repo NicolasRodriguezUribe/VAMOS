@@ -32,6 +32,7 @@ def _get_registry() -> Registry[object]:
         LaplaceCrossover,
         LevyFlightMutation,
         LinkedPolynomialMutation,
+        MidpointBaseRepair,
         NonUniformMutation,
         PCXCrossover,
         PolynomialMutation,
@@ -45,7 +46,9 @@ def _get_registry() -> Registry[object]:
         UniformMutation,
         UniformResetMutation,
         WholeArithmeticCrossover,
+        WrappingRepair,
     )
+    from vamos.engine.operators.impl.repair import GradientRepair
 
     # Crossover
     reg.register("sbx", SBXCrossover)
@@ -78,6 +81,11 @@ def _get_registry() -> Registry[object]:
     reg.register("random", ResampleRepair)
     reg.register("resample", ResampleRepair)
     reg.register("round", RoundRepair)
+    reg.register("wrap", WrappingRepair)
+    reg.register("wrapping", WrappingRepair)
+    reg.register("midpoint", MidpointBaseRepair)
+    reg.register("midpoint_base", MidpointBaseRepair)
+    reg.register("gradient", GradientRepair)
 
     # Binary operators
     from vamos.engine.operators.impl.binary import (
