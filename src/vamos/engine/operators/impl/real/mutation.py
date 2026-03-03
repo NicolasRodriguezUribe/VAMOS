@@ -7,6 +7,8 @@ from typing import Any
 
 import numpy as np
 
+from vamos.foundation.kernel.operator_primitives import polynomial_mutation_population
+
 from .utils import (
     ArrayLike,
     RealOperator,
@@ -70,6 +72,16 @@ class PolynomialMutation(Mutation):
         if n_ind == 0:
             return X
         self._check_bounds_match(X, self.lower)
+        if self.workspace is None:
+            return polynomial_mutation_population(
+                X,
+                rng=rng,
+                lower=self.lower,
+                upper=self.upper,
+                prob_mutation=self.prob,
+                eta=self.eta,
+                inplace=True,
+            )
 
         # Draw full random grids to keep RNG consumption aligned with regression fixtures:
         # first grid for activation mask, second grid for delta sampling.

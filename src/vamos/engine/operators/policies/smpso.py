@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.variation import prepare_mutation_params
+from vamos.engine.variation import prepare_mutation_params
 from vamos.engine.algorithm.smpso.helpers import resolve_repair
 from vamos.engine.operators.impl.real import ClampRepair
 from vamos.engine.operators.impl.mixed import mixed_mutation

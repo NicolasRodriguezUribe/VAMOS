@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archives import update_archive
+from vamos.engine.archive.factory import update_archive
 from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,

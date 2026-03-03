@@ -8,7 +8,9 @@ from typing import Any
 
 import numpy as np
 
+from vamos.engine.algorithm.catalog import ENABLED_ALGORITHMS, OPTIONAL_ALGORITHMS
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.algorithm.variants import PERMUTATION_COMPATIBLE_ALGORITHMS
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.config.spec import ExperimentSpec, SpecBlock
 from vamos.engine.config.variation import VariationConfig
@@ -28,19 +30,16 @@ from vamos.experiment._execution_support import (
 )
 from vamos.experiment.observers.console import ConsoleObserver
 from vamos.experiment.observers.storage import StorageObserver
-from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
-from vamos.experiment.runner_utils import run_output_dir, validate_problem
-from vamos.foundation.core.algorithm_variants import PERMUTATION_COMPATIBLE_ALGORITHMS
-from vamos.foundation.core.execution import execute_algorithm
-from vamos.foundation.core.experiment_config import (
-    ENABLED_ALGORITHMS,
+from vamos.experiment.runtime.catalog import (
     EXPERIMENT_BACKENDS,
     EXPERIMENT_TYPES,
     EXTERNAL_ALGORITHM_NAMES,
-    OPTIONAL_ALGORITHMS,
-    ExperimentConfig,
     resolve_engine,
 )
+from vamos.experiment.runner_abstractions import resolve_evaluator, resolve_termination
+from vamos.experiment.runner_utils import run_output_dir, validate_problem
+from vamos.foundation.core.execution import execute_algorithm
+from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.encoding import normalize_encoding

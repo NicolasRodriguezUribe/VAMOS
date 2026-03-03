@@ -135,16 +135,16 @@ def mixed_operator_part(
 def external_archive_part() -> SpacePart:
     """External-archive params shared by all algorithms.
 
-    ``archive_capacity`` is a categorical encoding log-spaced sizes plus
-    ``0`` which represents an unbounded archive.  When the archive is
-    unbounded, ``archive_prune_policy`` is inactive.
+    ``archive_capacity_factor`` is a multiplier of the population size.
+    ``0`` represents an unbounded archive.  When the archive is unbounded,
+    ``archive_prune_policy`` is inactive.
     """
     params: list[ParamType] = [
         Boolean("use_external_archive"),
     ]
     archive_capacity_param = Categorical(
-        "archive_capacity",
-        [0, 25, 50, 100, 200, 400, 800, 1600],
+        "archive_capacity_factor",
+        [0, 0.25, 0.5, 1, 2, 5, 10],
     )
     archive_prune_policy_param = Categorical("archive_prune_policy", ["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"])
     conditionals = [
@@ -155,7 +155,7 @@ def external_archive_part() -> SpacePart:
         ),
     ]
     conditions = [
-        Condition("archive_prune_policy", "cfg['archive_capacity'] != 0"),
+        Condition("archive_prune_policy", "cfg['archive_capacity_factor'] != 0"),
     ]
     return params, conditionals, conditions
 

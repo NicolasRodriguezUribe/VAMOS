@@ -7,7 +7,7 @@ to focused component modules.
 
 from __future__ import annotations
 
-from vamos.engine.algorithm.components.archives import (
+from vamos.engine.archive.factory import (
     resolve_external_archive,
     setup_archive,
     update_archive,

@@ -1,0 +1,61 @@
+name: zcat_nvar_scaling
+
+paths:
+  vamos_root: ../..
+  jmetalpy_root: ../../../jMetalPy
+  pymoo_root: ../../../pymoo
+  reference_front_dir: ../../src/vamos/resources/reference_fronts
+  jmetalpy_reference_front_dir: ../../../jMetalPy/resources/reference_fronts
+  output_dir: ../../results/zcat_nvar_scaling
+  moead_weight_dir: ../../results/zcat_nvar_scaling/weights
+
+framework_options:
+  vamos:
+    engine: numba
+
+run:
+  workers: -1
+
+experiment:
+  frameworks: [vamos, jmetalpy, pymoo]
+  algorithms: [nsgaii]
+  problem_ids:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+  objective_counts: [2]
+  n_var: [100, 300, 1000, 3000]
+  scenarios:
+    - id: S0
+      complicated_pareto_set: false
+      level: 2
+      bias: false
+      imbalance: false
+  seeds:
+    start: 1
+    count: 10
+    step: 1
+  population_size: 100
+  max_evaluations_per_objective: 50000
+
+metrics:
+  indicators: [igd_plus, hv_normalized]
+  primary_indicator: igd_plus
+  hv_ref_point_padding: 0.1

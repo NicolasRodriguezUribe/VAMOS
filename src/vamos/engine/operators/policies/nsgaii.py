@@ -23,8 +23,8 @@ from vamos.engine.adaptation.aos.policies import (
     UCBPolicy,
 )
 from vamos.engine.adaptation.aos.portfolio import OperatorPortfolio
-from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
-from vamos.engine.algorithm.components.variation.protocol import CrossoverName, MutationName, RepairConfigValue
+from vamos.engine.variation import VariationPipeline, prepare_mutation_params
+from vamos.engine.variation.protocol import CrossoverName, MutationName, RepairConfigValue
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.foundation.encoding import EncodingLike
 from vamos.foundation.problem.types import ProblemProtocol

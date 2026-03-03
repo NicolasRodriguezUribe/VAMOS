@@ -22,7 +22,7 @@ from .param_space import Categorical, ConditionalBlock, Int, ParamType, Real
 def _core_part() -> SpacePart:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
-        Categorical("offspring_ratio", [0.25, 0.5, 0.75, 1.0]),
+        Categorical("offspring_ratio", [0, 0.25, 0.5, 0.75, 1.0]),
         Categorical("selection", ["tournament", "boltzmann", "ranking", "sus"]),
         Int("selection_pressure", 2, 10),
     ]

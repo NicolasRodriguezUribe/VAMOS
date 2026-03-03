@@ -238,9 +238,16 @@ _CMP_OPS: dict[type[ast.AST], Callable[[Any, Any], bool]] = {
 }
 
 
+class _MissingKeyError(Exception):
+    """Raised when a condition references a cfg key that is absent (inactive parent)."""
+
+
 def _safe_eval_condition(expr: str, cfg: dict[str, Any]) -> bool:
     """
     Evaluate a condition expression against cfg using a restricted AST (no calls/attrs).
+
+    If the expression references a cfg key that is missing (because its parent
+    parameter is inactive), the condition evaluates to ``False``.
     """
     try:
         tree = ast.parse(expr, mode="eval")
@@ -281,11 +288,16 @@ def _safe_eval_condition(expr: str, cfg: dict[str, Any]) -> bool:
             key = _eval(node.slice)
             try:
                 return base[key]
+            except KeyError:
+                raise _MissingKeyError(key)
             except Exception as exc:
                 raise ValueError(f"Failed to access cfg[{key!r}] in condition: {expr}") from exc
         raise ValueError(f"Unsupported expression element in condition: {expr}")
 
-    result = _eval(tree)
+    try:
+        result = _eval(tree)
+    except _MissingKeyError:
+        return False
     if not isinstance(result, bool):
         raise ValueError(f"Condition must evaluate to bool, got {result!r} for: {expr}")
     return result

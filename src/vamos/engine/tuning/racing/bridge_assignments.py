@@ -21,7 +21,7 @@ from vamos.engine.algorithm.config import (
     SPEA2Config,
 )
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
-from vamos.foundation.core.algorithm_variants import ALGORITHM_VARIANT_GROUPS
+from vamos.engine.algorithm.variants import ALGORITHM_VARIANT_GROUPS
 
 _NSGAII_NAMES = ALGORITHM_VARIANT_GROUPS["nsgaii"]
 _MOEAD_NAMES = ALGORITHM_VARIANT_GROUPS["moead"] - {"moead_permutation"}
@@ -56,22 +56,23 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
     if not use_external_archive:
         return
 
-    legacy_keys = {"archive_type", "archive_size_factor", "archive_epsilon", "archive_unbounded"}
+    legacy_keys = {"archive_type", "archive_size_factor", "archive_epsilon", "archive_unbounded", "archive_capacity"}
     legacy_used = sorted(k for k in legacy_keys if k in assignment)
     if legacy_used:
         joined = ", ".join(legacy_used)
         raise ValueError(
-            f"Unsupported external-archive tuning keys: {joined}. Use archive_capacity/archive_prune_policy."
+            f"Unsupported external-archive tuning keys: {joined}. Use archive_capacity_factor/archive_prune_policy."
         )
 
-    archive_capacity = int(assignment.get("archive_capacity", pop_size))
-    if archive_capacity == 0:
+    capacity_factor = float(assignment.get("archive_capacity_factor", 1))
+    if capacity_factor < 0:
+        raise ValueError("archive_capacity_factor must be >= 0 (0 = unbounded).")
+    if capacity_factor == 0:
         builder.external_archive(capacity=None)
         return
 
     prune_policy = str(assignment.get("archive_prune_policy", "crowding"))
-    if archive_capacity < 0:
-        raise ValueError("archive_capacity must be >= 0 (0 = unbounded).")
+    archive_capacity = max(1, int(math.floor(capacity_factor * pop_size + 0.5)))
     builder.external_archive(
         capacity=archive_capacity,
         pruning=prune_policy,
@@ -148,8 +149,13 @@ def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:
             ratio_f = float(ratio)
         except (TypeError, ValueError):
             ratio_f = 1.0
-        ratio_f = max(0.0, min(1.0, ratio_f))
-        offspring_size = int(math.floor(pop_size * ratio_f + 0.5))
+        if ratio_f < 0:
+            raise ValueError("offspring_ratio must be >= 0 (0 = steady-state).")
+        ratio_f = min(1.0, ratio_f)
+        if ratio_f == 0:
+            offspring_size = 1  # steady-state
+        else:
+            offspring_size = int(math.floor(pop_size * ratio_f + 0.5))
     offspring_size = max(1, min(pop_size, int(offspring_size)))
     builder.offspring_size(offspring_size)
 

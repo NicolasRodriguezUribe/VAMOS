@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
 import numpy as np
 
-from vamos.engine.algorithm.components.variation.protocol import RepairConfigValue
+from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.engine.operators.impl.integer import (
     creep_mutation,

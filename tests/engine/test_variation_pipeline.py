@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from vamos.engine.algorithm.components.variation import VariationPipeline
+from vamos.engine.variation import VariationPipeline
 from vamos.engine.operators.impl.real import VariationWorkspace
 
 

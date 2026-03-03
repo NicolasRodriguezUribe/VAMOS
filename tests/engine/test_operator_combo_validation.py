@@ -80,7 +80,7 @@ from vamos.engine.tuning.racing.param_space import (
     Int,
     Real,
 )
-from vamos.foundation.core.algorithm_variants import VARIANT_TO_CANONICAL
+from vamos.engine.algorithm.variants import VARIANT_TO_CANONICAL
 
 # ---------------------------------------------------------------------------
 # Registry: (algo_name, encoding, builder)

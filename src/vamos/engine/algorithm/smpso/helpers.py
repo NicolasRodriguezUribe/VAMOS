@@ -9,6 +9,7 @@ This module contains utility functions for SMPSO:
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any
 
 import numpy as np
@@ -17,7 +18,6 @@ from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
 
 __all__ = [
-    "REPAIR_MAP",
     "resolve_repair",
     "dominates",
     "update_personal_bests",
@@ -39,9 +39,14 @@ _SMPSO_REPAIR_NAMES = (
     "gradient",
 )
 
-REPAIR_MAP: dict[str, type[Any]] = {
-    name: get_operator_registry().get(name) for name in _SMPSO_REPAIR_NAMES
-}
+
+@lru_cache(maxsize=1)
+def _repair_map() -> dict[str, type[Any] | None]:
+    registry = get_operator_registry()
+    return {
+        name: registry.get(name)
+        for name in _SMPSO_REPAIR_NAMES
+    }
 
 
 def resolve_repair(cfg: Any | None) -> Any | None:
@@ -83,7 +88,7 @@ def resolve_repair(cfg: Any | None) -> Any | None:
     normalized = str(method).lower()
     if normalized in {"none", "off", "disabled"}:
         return None
-    cls = REPAIR_MAP.get(normalized)
+    cls = _repair_map().get(normalized)
     if cls is None:
         raise ValueError(f"Unknown repair strategy '{method}' for SMPSO.")
     return cls(**params)

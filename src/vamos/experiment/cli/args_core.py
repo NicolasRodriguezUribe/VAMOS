@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import argparse
 
-from vamos.foundation.core.experiment_config import (
+from vamos.engine.algorithm.catalog import (
     DEFAULT_ALGORITHM,
-    DEFAULT_PROBLEM,
     ENABLED_ALGORITHMS,
-    EXPERIMENT_BACKENDS,
-    EXTERNAL_ALGORITHM_NAMES,
     OPTIONAL_ALGORITHMS,
-    ExperimentConfig,
 )
+from vamos.experiment.runtime.catalog import DEFAULT_PROBLEM, EXPERIMENT_BACKENDS, EXTERNAL_ALGORITHM_NAMES
+from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import available_problem_names
 
 from .defaults import spec_default

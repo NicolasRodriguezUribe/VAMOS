@@ -75,15 +75,7 @@ def _suite_key(instance: Instance) -> str:
 
 @dataclass
 class ModelBasedTuner:
-    """
-    Optional model-based tuning facade for external backends.
-
-    Backends:
-    - `optuna`: TPE + MedianPruner
-    - `bohb_optuna`: TPE + HyperbandPruner
-    - `smac3`: SMAC3 MultiFidelityFacade
-    - `bohb`: hpbandster BOHB
-    """
+    """Optional facade for Optuna, BOHB, and SMAC3 tuning backends."""
 
     task: TuningTask
     max_trials: int

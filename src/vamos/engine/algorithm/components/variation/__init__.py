@@ -1,18 +1,10 @@
-# algorithm/components/variation/__init__.py
 """
-Variation operators and pipelines.
-
-This subpackage contains:
-- pipeline: VariationPipeline class for combining crossover + mutation
-- helpers: Low-level variation utilities and operator dispatch
-- core: High-level variation API and parameter preparation
+Compatibility wrapper around :mod:`vamos.engine.variation`.
 """
 
-from vamos.engine.algorithm.components.variation.core import (
+from vamos.engine.variation import (
     VariationPipeline,
     prepare_mutation_params,
-)
-from vamos.engine.algorithm.components.variation.helpers import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
     INT_CROSSOVER,
