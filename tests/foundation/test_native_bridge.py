@@ -82,3 +82,32 @@ def test_native_bridge_nsga2_survival_contract(monkeypatch: pytest.MonkeyPatch) 
     assert X_new.flags.c_contiguous
     assert F_new.flags.c_contiguous
 
+
+def test_native_bridge_crowding_distance_normalizes_inputs(monkeypatch: pytest.MonkeyPatch) -> None:
+    observed: dict[str, object] = {}
+
+    def crowding_distance(F: np.ndarray, fronts: list[list[int]] | None) -> np.ndarray:
+        observed["dtype"] = F.dtype
+        observed["c_contiguous"] = F.flags.c_contiguous
+        observed["shape"] = F.shape
+        observed["fronts"] = fronts
+        return np.array([np.inf, 1.5, np.inf], dtype=np.float64)
+
+    fake_module = SimpleNamespace(
+        is_native_backend=lambda: True,
+        backend_info=lambda: {"backend": "fake-native", "native": True},
+        crowding_distance=crowding_distance,
+    )
+    monkeypatch.setattr("vamos.foundation.kernel.native_bridge.import_module", lambda name: fake_module)
+
+    bridge = NativeNsga2Bridge()
+    F = np.arange(12, dtype=np.float32).reshape(3, 4)[:, :2]
+    crowd = bridge.crowding_distance(F, [[0, 2], [1]])
+
+    assert crowd.dtype == np.float64
+    assert crowd.flags.c_contiguous
+    assert tuple(observed["shape"]) == (3, 2)
+    assert observed["dtype"] == np.float64
+    assert observed["c_contiguous"] is True
+    assert observed["fronts"] == [[0, 2], [1]]
+
