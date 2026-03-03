@@ -11,9 +11,8 @@ from typing import Literal, overload
 
 import numpy as np
 
-from vamos.engine.operators.impl.real import PolynomialMutation, SBXCrossover
-
 from .backend import KernelBackend
+from .operator_primitives import polynomial_mutation_population, sbx_crossover_pairs
 
 
 def _fast_non_dominated_sort(F: np.ndarray) -> tuple[list[list[int]], np.ndarray]:
@@ -233,14 +232,16 @@ class NumPyKernel(KernelBackend):
             X_parents = np.vstack([X_parents, X_parents[-1:]])
             Np += 1
         lower, upper = self._normalize_bounds(xl, xu, D)
-        operator = SBXCrossover(
-            prob_crossover=_as_float(params.get("prob"), 0.9),
-            eta=_as_float(params.get("eta"), 20.0),
+        pairs = X_parents.reshape(Np // 2, 2, D)
+        offspring = sbx_crossover_pairs(
+            pairs,
+            rng=rng,
             lower=lower,
             upper=upper,
+            prob_crossover=_as_float(params.get("prob"), 0.9),
+            eta=_as_float(params.get("eta"), 20.0),
+            inplace=False,
         )
-        pairs = X_parents.reshape(Np // 2, 2, D)
-        offspring = operator(pairs, rng)
         return offspring.reshape(Np, D)
 
     def polynomial_mutation(
@@ -255,13 +256,15 @@ class NumPyKernel(KernelBackend):
             return
         n_var = X.shape[1]
         lower, upper = self._normalize_bounds(xl, xu, n_var)
-        operator = PolynomialMutation(
-            prob_mutation=_as_float(params.get("prob"), 0.1),
-            eta=_as_float(params.get("eta"), 20.0),
+        mutated = polynomial_mutation_population(
+            X,
+            rng=rng,
             lower=lower,
             upper=upper,
+            prob_mutation=_as_float(params.get("prob"), 0.1),
+            eta=_as_float(params.get("eta"), 20.0),
+            inplace=False,
         )
-        mutated = operator(X, rng)
         X[:] = mutated
 
     @overload

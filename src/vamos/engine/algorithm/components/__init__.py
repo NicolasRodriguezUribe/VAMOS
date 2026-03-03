@@ -30,11 +30,6 @@ from vamos.engine.algorithm.components.subset_selection import (
     select_top_k_knn,
     select_top_k_reference_directions,
 )
-from vamos.engine.algorithm.components.archives import (
-    resolve_external_archive,
-    setup_archive,
-    update_archive,
-)
 from vamos.engine.algorithm.components.hooks import (
     get_live_viz,
     notify_generation,
@@ -79,9 +74,6 @@ __all__ = [
     "AlgorithmState",
     "parse_termination",
     "setup_initial_population",
-    "setup_archive",
-    "update_archive",
-    "resolve_external_archive",
     "setup_hv_tracker",
     "get_live_viz",
     "notify_generation",

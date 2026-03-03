@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
-from vamos.engine.algorithm.components.variation import VariationPipeline, prepare_mutation_params
-from vamos.engine.algorithm.components.variation.protocol import RepairConfigValue
+from vamos.engine.variation import VariationPipeline, prepare_mutation_params
+from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.foundation.encoding import normalize_encoding
 

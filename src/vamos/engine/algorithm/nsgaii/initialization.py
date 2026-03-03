@@ -11,23 +11,24 @@ Operator pool building lives in operators/policies/nsgaii.py.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.algorithm.components.archive import (
-    CrowdingDistanceArchive,
-    HypervolumeArchive,
-    SPEA2Archive,
-    UnboundedArchive,
+from vamos.engine.archive.bounded_archive import ExternalArchiveConfig
+from vamos.engine.archive.factory import (
+    resolve_external_archive as _resolve_external_archive_impl,
+    setup_archive as _setup_archive_impl,
+    setup_result_archive as _setup_result_archive_impl,
 )
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
-from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend
-from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
+
+if TYPE_CHECKING:
+    from vamos.engine.archive.factory import ArchiveManager, ResultArchiveManager
 
 # Constants
 DEFAULT_TOURNAMENT_PRESSURE = 2
@@ -109,7 +110,7 @@ def setup_population(
 
 
 def setup_archive(
-    kernel: KernelBackend,
+    kernel: Any,
     X: np.ndarray,
     F: np.ndarray,
     G: np.ndarray | None,
@@ -117,7 +118,7 @@ def setup_archive(
     n_obj: int,
     dtype: np.dtype,
     ext_cfg: ExternalArchiveConfig | None,
-) -> tuple[np.ndarray | None, np.ndarray | None, CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive | None]:
+) -> tuple[np.ndarray | None, np.ndarray | None, ArchiveManager | None]:
     """Initialize archive if configured.
 
     Parameters
@@ -144,51 +145,7 @@ def setup_archive(
     tuple[np.ndarray | None, np.ndarray | None, archive_manager | None]
         (archive_X, archive_F, archive_manager)
     """
-    if ext_cfg is None:
-        return None, None, None
-
-    capacity = ext_cfg.capacity
-    pruning = ext_cfg.pruning
-
-    n_con = G.shape[1] if G is not None else None
-
-    manager: CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive
-    if capacity is None:
-        # Unbounded archive
-        manager = UnboundedArchive(
-            n_var=n_var,
-            n_obj=n_obj,
-            dtype=dtype,
-            n_con=n_con,
-        )
-    elif pruning in {"hv_contrib", "mc_hv_contrib"}:
-        manager = HypervolumeArchive(
-            capacity,
-            n_var,
-            n_obj,
-            dtype,
-            n_con=n_con,
-        )
-    elif pruning == "spea2":
-        manager = SPEA2Archive(
-            capacity,
-            n_var,
-            n_obj,
-            dtype,
-            n_con=n_con,
-            constraint_mode="feasibility",
-        )
-    else:
-        manager = CrowdingDistanceArchive(
-            capacity,
-            n_var,
-            n_obj,
-            dtype,
-            n_con=n_con,
-        )
-
-    archive_X, archive_F = manager.update(X, F, G)
-    return archive_X, archive_F, manager
+    return _setup_archive_impl(kernel, X, F, n_var, n_obj, dtype, ext_cfg, G)
 
 
 def setup_genealogy(
@@ -267,7 +224,7 @@ def setup_result_archive(
     n_var: int,
     n_obj: int,
     dtype: np.dtype,
-) -> HypervolumeArchive | CrowdingDistanceArchive | SPEA2Archive | None:
+) -> ResultArchiveManager | None:
     """Create result archive if configured.
 
     Parameters
@@ -289,30 +246,7 @@ def setup_result_archive(
     HypervolumeArchive | CrowdingDistanceArchive | None
         The result archive, or None if not configured.
     """
-    if ext_cfg is None or ext_cfg.capacity is None:
-        return None
-
-    if ext_cfg.pruning in {"hv_contrib", "mc_hv_contrib"}:
-        return HypervolumeArchive(
-            ext_cfg.capacity,
-            n_var,
-            n_obj,
-            dtype,
-        )
-    if ext_cfg.pruning == "spea2":
-        return SPEA2Archive(
-            ext_cfg.capacity,
-            n_var,
-            n_obj,
-            dtype,
-            constraint_mode="feasibility",
-        )
-    return CrowdingDistanceArchive(
-        ext_cfg.capacity,
-        n_var,
-        n_obj,
-        dtype,
-    )
+    return _setup_result_archive_impl(ext_cfg, n_var, n_obj, dtype)
 
 
 def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | None:
@@ -330,12 +264,7 @@ def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | Non
     ExternalArchiveConfig | None
         External archive configuration, or ``None``.
     """
-    raw = cfg.get("external_archive")
-    if raw is None:
-        return None
-    if isinstance(raw, ExternalArchiveConfig):
-        return raw
-    return ExternalArchiveConfig(**raw)
+    return _resolve_external_archive_impl(cfg)
 
 
 __all__ = [

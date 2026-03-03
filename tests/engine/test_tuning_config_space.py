@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from vamos.engine.tuning.racing.bridge import (
     build_agemoea_binary_config_space,
@@ -89,21 +90,122 @@ def test_nsgaii_config_space_builds_and_constructs_config():
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.pop_size > 0
     assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
-    assert cfg.mutation[0] in ("polynomial", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform")
+    assert cfg.mutation[0] in (
+        "polynomial",
+        "linked_polynomial",
+        "non_uniform",
+        "gaussian",
+        "uniform_reset",
+        "cauchy",
+        "uniform",
+        "levy_flight",
+        "power_law",
+    )
 
 
-def test_nsgaii_archive_capacity_zero_disables_prune_policy():
+def test_nsgaii_archive_capacity_factor_zero_disables_prune_policy():
     space = build_nsgaii_config_space()
     param_space = space.to_param_space()
-    cfg_unbounded = {"use_external_archive": True, "archive_capacity": 0}
-    assert param_space.is_active("archive_capacity", cfg_unbounded)
+    cfg_unbounded = {"use_external_archive": True, "archive_capacity_factor": 0}
+    assert param_space.is_active("archive_capacity_factor", cfg_unbounded)
     assert not param_space.is_active("archive_prune_policy", cfg_unbounded)
-    cfg_bounded = {"use_external_archive": True, "archive_capacity": 200}
-    assert param_space.is_active("archive_capacity", cfg_bounded)
+    cfg_bounded = {"use_external_archive": True, "archive_capacity_factor": 2}
+    assert param_space.is_active("archive_capacity_factor", cfg_bounded)
     assert param_space.is_active("archive_prune_policy", cfg_bounded)
     cfg_disabled = {"use_external_archive": False}
-    assert not param_space.is_active("archive_capacity", cfg_disabled)
+    assert not param_space.is_active("archive_capacity_factor", cfg_disabled)
     assert not param_space.is_active("archive_prune_policy", cfg_disabled)
+
+
+def test_archive_capacity_factor_uses_half_up_rounding():
+    assignment = {
+        "pop_size": 25,
+        "offspring_ratio": 1.0,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "initializer": "random",
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 20.0,
+        "mutation": "polynomial",
+        "mutation_prob_factor": 1.0,
+        "mutation_eta": 20.0,
+        "repair": "clip",
+        "use_external_archive": True,
+        "archive_capacity_factor": 0.5,
+        "archive_prune_policy": "crowding",
+    }
+
+    cfg = config_from_assignment("nsgaii", assignment)
+
+    assert cfg.external_archive is not None
+    assert cfg.external_archive.capacity == 13
+
+
+def test_archive_capacity_factor_rejects_negative_values():
+    assignment = {
+        "pop_size": 25,
+        "offspring_ratio": 1.0,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "initializer": "random",
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 20.0,
+        "mutation": "polynomial",
+        "mutation_prob_factor": 1.0,
+        "mutation_eta": 20.0,
+        "repair": "clip",
+        "use_external_archive": True,
+        "archive_capacity_factor": -0.5,
+        "archive_prune_policy": "crowding",
+    }
+
+    with pytest.raises(ValueError, match="archive_capacity_factor must be >= 0"):
+        config_from_assignment("nsgaii", assignment)
+
+
+def test_nsgaii_offspring_ratio_zero_maps_to_steady_state():
+    assignment = {
+        "pop_size": 25,
+        "offspring_ratio": 0,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "initializer": "random",
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 20.0,
+        "mutation": "polynomial",
+        "mutation_prob_factor": 1.0,
+        "mutation_eta": 20.0,
+        "repair": "clip",
+        "use_external_archive": False,
+    }
+
+    cfg = config_from_assignment("nsgaii", assignment)
+
+    assert cfg.offspring_size == 1
+
+
+def test_nsgaii_offspring_ratio_rejects_negative_values():
+    assignment = {
+        "pop_size": 25,
+        "offspring_ratio": -0.25,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "initializer": "random",
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 20.0,
+        "mutation": "polynomial",
+        "mutation_prob_factor": 1.0,
+        "mutation_eta": 20.0,
+        "repair": "clip",
+        "use_external_archive": False,
+    }
+
+    with pytest.raises(ValueError, match="offspring_ratio must be >= 0"):
+        config_from_assignment("nsgaii", assignment)
 
 
 def test_real_tuning_spaces_expose_new_repair_choices():
@@ -203,12 +305,12 @@ def test_agemoea_external_archive_config():
         {
             "use_external_archive": True,
             "archive_prune_policy": "crowding",
-            "archive_capacity": 200,
+            "archive_capacity_factor": 2,
         }
     )
     cfg = config_from_assignment("agemoea", assignment)
     assert cfg.external_archive is not None
-    assert cfg.external_archive.capacity == 200
+    assert cfg.external_archive.capacity == 2 * cfg.pop_size
     assert cfg.result_mode == "non_dominated"
 
 
@@ -221,12 +323,12 @@ def test_rvea_external_archive_config():
             "n_obj": 3,
             "use_external_archive": True,
             "archive_prune_policy": "crowding",
-            "archive_capacity": 200,
+            "archive_capacity_factor": 2,
         }
     )
     cfg = config_from_assignment("rvea", assignment)
     assert cfg.external_archive is not None
-    assert cfg.external_archive.capacity == 200
+    assert cfg.external_archive.capacity == 2 * cfg.pop_size
     assert cfg.result_mode == "non_dominated"
 
 

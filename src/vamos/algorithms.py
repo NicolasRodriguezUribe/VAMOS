@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from vamos.engine.algorithm.components.variation.helpers import (
+from vamos.engine.variation.helpers import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
     INT_CROSSOVER,

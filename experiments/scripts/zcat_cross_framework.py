@@ -254,31 +254,33 @@ def _build_tasks(
         if algo not in SUPPORTED_ALGORITHMS:
             raise ValueError(f"Unsupported algorithm '{algo}'. Supported: {SUPPORTED_ALGORITHMS}")
 
-    n_var = int(exp["n_var"])
+    raw_nvar = exp["n_var"]
+    n_var_list = [int(v) for v in raw_nvar] if isinstance(raw_nvar, list) else [int(raw_nvar)]
     pop_size = int(exp["population_size"])
     eval_factor = int(exp["max_evaluations_per_objective"])
 
     tasks: list[Task] = []
     for scenario in scenarios:
-        for n_obj in n_obj_list:
-            max_eval = eval_factor * n_obj
-            for pid in pid_list:
-                for algo in algo_list:
-                    for fw in fw_list:
-                        for seed in seed_list:
-                            tasks.append(
-                                Task(
-                                    framework=fw,
-                                    algorithm=algo,
-                                    problem_id=pid,
-                                    n_obj=n_obj,
-                                    n_var=n_var,
-                                    scenario=scenario,
-                                    seed=int(seed),
-                                    population_size=pop_size,
-                                    max_evaluations=max_eval,
+        for n_var in n_var_list:
+            for n_obj in n_obj_list:
+                max_eval = eval_factor * n_obj
+                for pid in pid_list:
+                    for algo in algo_list:
+                        for fw in fw_list:
+                            for seed in seed_list:
+                                tasks.append(
+                                    Task(
+                                        framework=fw,
+                                        algorithm=algo,
+                                        problem_id=pid,
+                                        n_obj=n_obj,
+                                        n_var=n_var,
+                                        scenario=scenario,
+                                        seed=int(seed),
+                                        population_size=pop_size,
+                                        max_evaluations=max_eval,
+                                    )
                                 )
-                            )
     return tasks
 
 
@@ -770,6 +772,7 @@ def _task_run_dir(output_dir: Path, task: Task) -> Path:
         / "raw"
         / task.scenario.scenario_id
         / f"m{task.n_obj}"
+        / f"n{task.n_var}"
         / f"zcat{task.problem_id}"
         / task.algorithm
         / task.framework
@@ -931,7 +934,9 @@ def command_validate(args: argparse.Namespace) -> int:
         f"n_points={n_points}, tolerance={tolerance}"
     )
 
-    lower, upper = _bounds(int(manifest["experiment"]["n_var"]))
+    raw_nvar = manifest["experiment"]["n_var"]
+    validate_nvar = int(raw_nvar[0]) if isinstance(raw_nvar, list) else int(raw_nvar)
+    lower, upper = _bounds(validate_nvar)
     rng = np.random.default_rng(int(args.seed))
 
     eq_rows: list[dict[str, Any]] = []
@@ -943,7 +948,7 @@ def command_validate(args: argparse.Namespace) -> int:
                     algorithm="nsgaii",
                     problem_id=problem_id,
                     n_obj=n_obj,
-                    n_var=int(manifest["experiment"]["n_var"]),
+                    n_var=validate_nvar,
                     scenario=scenario,
                     seed=0,
                     population_size=10,
@@ -1063,6 +1068,17 @@ def command_run(args: argparse.Namespace) -> int:
 
     row_pairs: list[tuple[int, dict[str, Any]]] = []
     stopped_by_deadline = False
+    checkpoint_interval = 30 * 60  # 30 minutes
+    last_checkpoint = time.monotonic()
+
+    def _maybe_checkpoint() -> None:
+        nonlocal last_checkpoint
+        now = time.monotonic()
+        if now - last_checkpoint >= checkpoint_interval:
+            partial = existing_rows + [r for _, r in sorted(row_pairs, key=lambda x: x[0])]
+            _write_rows_csv(runs_csv, partial)
+            _print(f"checkpoint: wrote {len(partial)} rows to {runs_csv}")
+            last_checkpoint = now
 
     if workers == 1:
         for idx, task in enumerate(tasks, start=1):
@@ -1106,6 +1122,7 @@ def command_run(args: argparse.Namespace) -> int:
             runtime = time.perf_counter() - start
             row = _save_run(task, output_dir=output_dir, F_raw=F, runtime_seconds=runtime, status=status, error=error)
             row_pairs.append((idx, row))
+            _maybe_checkpoint()
     else:
         repo_paths = {
             "vamos_root": str(paths["vamos_root"]),
@@ -1181,6 +1198,7 @@ def command_run(args: argparse.Namespace) -> int:
                             error=error,
                         )
                     row_pairs.append((idx, row))
+                _maybe_checkpoint()
 
                 if stopped_by_deadline and not pending:
                     break
@@ -1428,6 +1446,434 @@ def command_analyze(args: argparse.Namespace) -> int:
     return 0
 
 
+def _safe_float(raw: Any) -> float:
+    try:
+        return float(raw)
+    except Exception:
+        return float("nan")
+
+
+def _geometric_mean(values: np.ndarray) -> float:
+    arr = np.asarray(values, dtype=float)
+    arr = arr[np.isfinite(arr) & (arr > 0.0)]
+    if arr.size == 0:
+        return float("nan")
+    return float(np.exp(np.mean(np.log(arr))))
+
+
+def _summarize_values(values: list[float]) -> dict[str, float]:
+    arr = np.asarray(values, dtype=float)
+    arr = arr[np.isfinite(arr)]
+    if arr.size == 0:
+        nan = float("nan")
+        return {"mean": nan, "std": nan, "median": nan, "q25": nan, "q75": nan, "gmean": nan}
+    return {
+        "mean": float(np.mean(arr)),
+        "std": float(np.std(arr)),
+        "median": float(np.median(arr)),
+        "q25": float(np.percentile(arr, 25)),
+        "q75": float(np.percentile(arr, 75)),
+        "gmean": _geometric_mean(arr),
+    }
+
+
+def _fit_loglog_scaling(xs: list[int], ys: list[float]) -> dict[str, float]:
+    x_arr = np.asarray(xs, dtype=float)
+    y_arr = np.asarray(ys, dtype=float)
+    mask = np.isfinite(x_arr) & np.isfinite(y_arr) & (x_arr > 0.0) & (y_arr > 0.0)
+    x_arr = x_arr[mask]
+    y_arr = y_arr[mask]
+    if x_arr.size < 2:
+        nan = float("nan")
+        return {"alpha": nan, "intercept": nan, "r2": nan}
+    lx = np.log(x_arr)
+    ly = np.log(y_arr)
+    alpha, intercept = np.polyfit(lx, ly, deg=1)
+    fitted = alpha * lx + intercept
+    ss_res = float(np.sum((ly - fitted) ** 2))
+    ss_tot = float(np.sum((ly - np.mean(ly)) ** 2))
+    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0.0 else float("nan")
+    return {"alpha": float(alpha), "intercept": float(intercept), "r2": float(r2)}
+
+
+def _build_scaling_problem_rows(ok_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    from collections import defaultdict
+
+    groups: dict[tuple[str, int, int], list[dict[str, float]]] = defaultdict(list)
+    for row in ok_rows:
+        runtime = _safe_float(row.get("runtime_seconds"))
+        max_evaluations = max(1, int(row.get("max_evaluations", 1)))
+        groups[(str(row["framework"]), int(row["problem_id"]), int(row["n_var"]))].append(
+            {
+                "runtime": runtime,
+                "runtime_per_eval": runtime / float(max_evaluations) if np.isfinite(runtime) else float("nan"),
+            }
+        )
+
+    problem_rows: list[dict[str, Any]] = []
+    for (framework, problem_id, n_var), values in sorted(groups.items()):
+        runtime_stats = _summarize_values([v["runtime"] for v in values])
+        per_eval_stats = _summarize_values([v["runtime_per_eval"] for v in values])
+        problem_rows.append(
+            {
+                "framework": framework,
+                "problem_id": int(problem_id),
+                "n_var": int(n_var),
+                "n_runs": int(len(values)),
+                "mean_runtime_s": runtime_stats["mean"],
+                "std_runtime_s": runtime_stats["std"],
+                "median_runtime_s": runtime_stats["median"],
+                "q25_runtime_s": runtime_stats["q25"],
+                "q75_runtime_s": runtime_stats["q75"],
+                "gmean_runtime_s": runtime_stats["gmean"],
+                "mean_runtime_per_eval_s": per_eval_stats["mean"],
+                "std_runtime_per_eval_s": per_eval_stats["std"],
+                "median_runtime_per_eval_s": per_eval_stats["median"],
+                "q25_runtime_per_eval_s": per_eval_stats["q25"],
+                "q75_runtime_per_eval_s": per_eval_stats["q75"],
+                "gmean_runtime_per_eval_s": per_eval_stats["gmean"],
+            }
+        )
+    return problem_rows
+
+
+def _build_scaling_global_rows(problem_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    from collections import defaultdict
+
+    groups: dict[tuple[str, int], list[dict[str, float]]] = defaultdict(list)
+    for row in problem_rows:
+        groups[(str(row["framework"]), int(row["n_var"]))].append(
+            {
+                "runtime": _safe_float(row["median_runtime_s"]),
+                "runtime_per_eval": _safe_float(row["median_runtime_per_eval_s"]),
+            }
+        )
+
+    summary_rows: list[dict[str, Any]] = []
+    for (framework, n_var), values in sorted(groups.items()):
+        runtime_stats = _summarize_values([v["runtime"] for v in values])
+        per_eval_stats = _summarize_values([v["runtime_per_eval"] for v in values])
+        summary_rows.append(
+            {
+                "framework": framework,
+                "n_var": int(n_var),
+                "n_problems": int(len(values)),
+                "mean_runtime_s": runtime_stats["mean"],
+                "std_runtime_s": runtime_stats["std"],
+                "median_runtime_s": runtime_stats["median"],
+                "q25_runtime_s": runtime_stats["q25"],
+                "q75_runtime_s": runtime_stats["q75"],
+                "gmean_runtime_s": runtime_stats["gmean"],
+                "mean_runtime_per_eval_s": per_eval_stats["mean"],
+                "std_runtime_per_eval_s": per_eval_stats["std"],
+                "median_runtime_per_eval_s": per_eval_stats["median"],
+                "q25_runtime_per_eval_s": per_eval_stats["q25"],
+                "q75_runtime_per_eval_s": per_eval_stats["q75"],
+                "gmean_runtime_per_eval_s": per_eval_stats["gmean"],
+            }
+        )
+    return summary_rows
+
+
+def _build_scaling_speedup_rows(
+    problem_rows: list[dict[str, Any]],
+    *,
+    baseline_framework: str = "vamos",
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    from collections import defaultdict
+
+    baseline_map: dict[tuple[int, int], float] = {}
+    for row in problem_rows:
+        if str(row["framework"]) == baseline_framework:
+            baseline_map[(int(row["problem_id"]), int(row["n_var"]))] = _safe_float(row["median_runtime_s"])
+
+    per_problem_rows: list[dict[str, Any]] = []
+    grouped: dict[tuple[str, int], list[float]] = defaultdict(list)
+    for row in problem_rows:
+        framework = str(row["framework"])
+        n_var = int(row["n_var"])
+        problem_id = int(row["problem_id"])
+        base = baseline_map.get((problem_id, n_var))
+        cur = _safe_float(row["median_runtime_s"])
+        if framework == baseline_framework:
+            speedup = 1.0
+        elif base is None or not np.isfinite(base) or base <= 0.0 or not np.isfinite(cur) or cur <= 0.0:
+            continue
+        else:
+            speedup = cur / base
+        grouped[(framework, n_var)].append(float(speedup))
+        per_problem_rows.append(
+            {
+                "scope": "problem",
+                "framework": framework,
+                "problem_id": problem_id,
+                "n_var": n_var,
+                "speedup_vs_vamos": float(speedup),
+            }
+        )
+
+    summary_rows: list[dict[str, Any]] = []
+    for (framework, n_var), values in sorted(grouped.items()):
+        stats = _summarize_values(values)
+        summary_rows.append(
+            {
+                "scope": "global",
+                "framework": framework,
+                "n_var": int(n_var),
+                "n_problems": int(len(values)),
+                "mean_speedup_vs_vamos": stats["mean"],
+                "std_speedup_vs_vamos": stats["std"],
+                "median_speedup_vs_vamos": stats["median"],
+                "q25_speedup_vs_vamos": stats["q25"],
+                "q75_speedup_vs_vamos": stats["q75"],
+                "gmean_speedup_vs_vamos": stats["gmean"],
+            }
+        )
+    return per_problem_rows, summary_rows
+
+
+def _build_scaling_exponent_rows(problem_rows: list[dict[str, Any]], summary_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    from collections import defaultdict
+
+    rows: list[dict[str, Any]] = []
+    global_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in summary_rows:
+        global_groups[str(row["framework"])].append(row)
+    for framework, items in sorted(global_groups.items()):
+        items.sort(key=lambda r: int(r["n_var"]))
+        fit = _fit_loglog_scaling(
+            [int(r["n_var"]) for r in items],
+            [float(r["gmean_runtime_s"]) for r in items],
+        )
+        rows.append(
+            {
+                "scope": "global",
+                "framework": framework,
+                "problem_id": "",
+                "n_points": int(len(items)),
+                "metric": "gmean_runtime_s",
+                "alpha": fit["alpha"],
+                "intercept_log": fit["intercept"],
+                "r2": fit["r2"],
+            }
+        )
+
+    problem_groups: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
+    for row in problem_rows:
+        problem_groups[(str(row["framework"]), int(row["problem_id"]))].append(row)
+    for (framework, problem_id), items in sorted(problem_groups.items()):
+        items.sort(key=lambda r: int(r["n_var"]))
+        fit = _fit_loglog_scaling(
+            [int(r["n_var"]) for r in items],
+            [float(r["median_runtime_s"]) for r in items],
+        )
+        rows.append(
+            {
+                "scope": "problem",
+                "framework": framework,
+                "problem_id": int(problem_id),
+                "n_points": int(len(items)),
+                "metric": "median_runtime_s",
+                "alpha": fit["alpha"],
+                "intercept_log": fit["intercept"],
+                "r2": fit["r2"],
+            }
+        )
+    return rows
+
+
+def command_scaling(args: argparse.Namespace) -> int:
+    """Generate problem-first scaling summaries, speedups, exponents, and plots."""
+    manifest_path = Path(args.manifest).resolve()
+    _, paths = _manifest_and_paths(manifest_path)
+    output_dir = paths["output_dir"]
+    runs_csv = Path(args.runs_csv).resolve() if args.runs_csv else output_dir / "runs.csv"
+
+    if not runs_csv.exists():
+        raise FileNotFoundError(f"runs.csv not found: {runs_csv}")
+
+    rows = _load_rows_csv(runs_csv)
+    ok_rows = [r for r in rows if r.get("status") == "ok"]
+    if not ok_rows:
+        _print("No successful runs found.")
+        return 1
+
+    analysis_dir = output_dir / "analysis"
+    _ensure_dir(analysis_dir)
+
+    problem_rows = _build_scaling_problem_rows(ok_rows)
+    summary_rows = _build_scaling_global_rows(problem_rows)
+    speedup_problem_rows, speedup_summary_rows = _build_scaling_speedup_rows(problem_rows)
+    exponent_rows = _build_scaling_exponent_rows(problem_rows, summary_rows)
+
+    problem_summary_path = analysis_dir / "scaling_summary_problem.csv"
+    _write_rows_csv(problem_summary_path, problem_rows)
+    _print(f"wrote: {problem_summary_path}")
+
+    summary_path = analysis_dir / "scaling_summary.csv"
+    _write_rows_csv(summary_path, summary_rows)
+    _print(f"wrote: {summary_path}")
+
+    global_summary_path = analysis_dir / "scaling_summary_global.csv"
+    _write_rows_csv(global_summary_path, summary_rows)
+    _print(f"wrote: {global_summary_path}")
+
+    speedup_problem_path = analysis_dir / "scaling_speedup_problem.csv"
+    _write_rows_csv(speedup_problem_path, speedup_problem_rows)
+    _print(f"wrote: {speedup_problem_path}")
+
+    speedup_path = analysis_dir / "scaling_speedup.csv"
+    _write_rows_csv(speedup_path, speedup_summary_rows)
+    _print(f"wrote: {speedup_path}")
+
+    exponent_path = analysis_dir / "scaling_exponents.csv"
+    _write_rows_csv(exponent_path, exponent_rows)
+    _print(f"wrote: {exponent_path}")
+
+    # --- Plots ---
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        _print("matplotlib not available; skipping plots.")
+        return 0
+
+    fw_colors = {"vamos": "#2563EB", "VAMOS (numba)": "#2563EB", "pymoo": "#DC2626", "jmetalpy": "#059669", "jMetalPy": "#059669"}
+    fw_labels = {"vamos": "VAMOS (numba)", "VAMOS (numba)": "VAMOS (numba)", "pymoo": "pymoo", "jmetalpy": "jMetalPy", "jMetalPy": "jMetalPy"}
+
+    # 1) Log-log runtime scaling with per-problem IQR bands.
+    fig, ax = plt.subplots(figsize=(7, 5))
+    for fw in sorted({r["framework"] for r in summary_rows}):
+        fw_data = [r for r in summary_rows if r["framework"] == fw]
+        fw_data.sort(key=lambda r: r["n_var"])
+        xs = [r["n_var"] for r in fw_data]
+        ys = [r["gmean_runtime_s"] for r in fw_data]
+        lo = [max(float(r["q25_runtime_s"]), 1e-12) for r in fw_data]
+        hi = [max(float(r["q75_runtime_s"]), 1e-12) for r in fw_data]
+        color = fw_colors.get(fw, "#666666")
+        label = fw_labels.get(fw, fw)
+        ax.plot(xs, ys, "o-", color=color, label=label, linewidth=2, markersize=6)
+        ax.fill_between(xs, lo, hi, alpha=0.15, color=color)
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Number of decision variables ($n$)", fontsize=12)
+    ax.set_ylabel("Runtime (s)", fontsize=12)
+    ax.set_title("Runtime scaling with dimensionality (problem-first aggregation)", fontsize=13)
+    ax.legend(fontsize=11)
+    ax.grid(True, which="both", alpha=0.3)
+    fig.tight_layout()
+    line_path = analysis_dir / "scaling_runtime.pdf"
+    fig.savefig(line_path, dpi=300)
+    fig.savefig(analysis_dir / "scaling_runtime.png", dpi=300)
+    plt.close(fig)
+    _print(f"wrote: {line_path}")
+
+    # 2) Runtime-per-evaluation scaling.
+    fig, ax = plt.subplots(figsize=(7, 5))
+    for fw in sorted({r["framework"] for r in summary_rows}):
+        fw_data = [r for r in summary_rows if r["framework"] == fw]
+        fw_data.sort(key=lambda r: r["n_var"])
+        xs = [r["n_var"] for r in fw_data]
+        ys = [r["gmean_runtime_per_eval_s"] for r in fw_data]
+        lo = [max(float(r["q25_runtime_per_eval_s"]), 1e-15) for r in fw_data]
+        hi = [max(float(r["q75_runtime_per_eval_s"]), 1e-15) for r in fw_data]
+        color = fw_colors.get(fw, "#666666")
+        label = fw_labels.get(fw, fw)
+        ax.plot(xs, ys, "o-", color=color, label=label, linewidth=2, markersize=6)
+        ax.fill_between(xs, lo, hi, alpha=0.15, color=color)
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Number of decision variables ($n$)", fontsize=12)
+    ax.set_ylabel("Runtime per evaluation (s)", fontsize=12)
+    ax.set_title("Per-evaluation runtime scaling", fontsize=13)
+    ax.legend(fontsize=11)
+    ax.grid(True, which="both", alpha=0.3)
+    fig.tight_layout()
+    per_eval_path = analysis_dir / "scaling_runtime_per_eval.pdf"
+    fig.savefig(per_eval_path, dpi=300)
+    fig.savefig(analysis_dir / "scaling_runtime_per_eval.png", dpi=300)
+    plt.close(fig)
+    _print(f"wrote: {per_eval_path}")
+
+    # 3) Speedup vs VAMOS.
+    non_vamos = sorted({str(r["framework"]) for r in speedup_summary_rows if str(r["framework"]) != "vamos"})
+    if non_vamos:
+        fig, ax = plt.subplots(figsize=(7, 5))
+        for fw in non_vamos:
+            fw_data = [r for r in speedup_summary_rows if str(r["framework"]) == fw]
+            fw_data.sort(key=lambda r: int(r["n_var"]))
+            xs = [int(r["n_var"]) for r in fw_data]
+            ys = [float(r["gmean_speedup_vs_vamos"]) for r in fw_data]
+            lo = [max(float(r["q25_speedup_vs_vamos"]), 1e-12) for r in fw_data]
+            hi = [max(float(r["q75_speedup_vs_vamos"]), 1e-12) for r in fw_data]
+            color = fw_colors.get(fw, "#666666")
+            label = f"{fw_labels.get(fw, fw)} / VAMOS"
+            ax.plot(xs, ys, "o-", color=color, label=label, linewidth=2, markersize=6)
+            ax.fill_between(xs, lo, hi, alpha=0.15, color=color)
+
+        ax.axhline(1.0, color="#111111", linestyle="--", linewidth=1.0, alpha=0.7)
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlabel("Number of decision variables ($n$)", fontsize=12)
+        ax.set_ylabel("Runtime ratio vs VAMOS", fontsize=12)
+        ax.set_title("Cross-framework speedup relative to VAMOS", fontsize=13)
+        ax.legend(fontsize=11)
+        ax.grid(True, which="both", alpha=0.3)
+        fig.tight_layout()
+        speedup_plot_path = analysis_dir / "scaling_speedup_vs_vamos.pdf"
+        fig.savefig(speedup_plot_path, dpi=300)
+        fig.savefig(analysis_dir / "scaling_speedup_vs_vamos.png", dpi=300)
+        plt.close(fig)
+        _print(f"wrote: {speedup_plot_path}")
+
+    # 4) Boxplot of per-problem median runtimes.
+    frameworks = sorted({r["framework"] for r in problem_rows})
+    n_var_vals = sorted({int(r["n_var"]) for r in problem_rows})
+    n_fw = len(frameworks)
+
+    fig, ax = plt.subplots(figsize=(max(8, 2.5 * len(n_var_vals)), 5))
+    width = 0.7 / n_fw
+    positions_base = np.arange(len(n_var_vals))
+
+    for i, fw in enumerate(frameworks):
+        data = []
+        for nv in n_var_vals:
+            vals = [float(r["median_runtime_s"]) for r in problem_rows if r["framework"] == fw and int(r["n_var"]) == nv]
+            data.append(vals)
+        pos = positions_base + (i - (n_fw - 1) / 2) * width
+        color = fw_colors.get(fw, "#666666")
+        label = fw_labels.get(fw, fw)
+        bp = ax.boxplot(data, positions=pos, widths=width * 0.85, patch_artist=True, manage_ticks=False)
+        for patch in bp["boxes"]:
+            patch.set_facecolor(color)
+            patch.set_alpha(0.6)
+        for element in ["whiskers", "caps", "medians"]:
+            for line in bp[element]:
+                line.set_color(color)
+        # Invisible plot for legend
+        ax.plot([], [], "s", color=color, label=label, markersize=8, alpha=0.6)
+
+    ax.set_xticks(positions_base)
+    ax.set_xticklabels([str(v) for v in n_var_vals])
+    ax.set_xlabel("Number of decision variables ($n$)", fontsize=12)
+    ax.set_ylabel("Median runtime across seeds (s)", fontsize=12)
+    ax.set_title("Per-problem runtime distribution by framework and dimensionality", fontsize=13)
+    ax.legend(fontsize=11)
+    ax.grid(True, axis="y", alpha=0.3)
+    fig.tight_layout()
+    box_path = analysis_dir / "scaling_runtime_boxplot.pdf"
+    fig.savefig(box_path, dpi=300)
+    fig.savefig(analysis_dir / "scaling_runtime_boxplot.png", dpi=300)
+    plt.close(fig)
+    _print(f"wrote: {box_path}")
+
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Cross-framework ZCAT experiment runner (VAMOS vs jMetalPy vs pymoo vs pygmo).")
     parser.add_argument(
@@ -1462,6 +1908,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_analyze = sub.add_parser("analyze", help="Compute indicators and statistics from runs.csv.")
     p_analyze.add_argument("--runs-csv", default=None, help="Optional explicit runs.csv path.")
     p_analyze.set_defaults(func=command_analyze)
+
+    p_scaling = sub.add_parser("scaling", help="Generate runtime-vs-n_var summary and plots.")
+    p_scaling.add_argument("--runs-csv", default=None, help="Optional explicit runs.csv path.")
+    p_scaling.set_defaults(func=command_scaling)
 
     return parser
 

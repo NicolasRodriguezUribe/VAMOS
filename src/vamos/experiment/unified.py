@@ -17,7 +17,7 @@ from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, Algorit
 from vamos.experiment.auto import _compute_max_evaluations, _compute_pop_size, _resolve_problem, _select_algorithm
 from vamos.experiment.optimization_result import OptimizationResult
 from vamos.experiment.optimize import _build_algorithm_config, _OptimizeConfig, _run_config
-from vamos.foundation.core.experiment_config import resolve_engine
+from vamos.experiment.runtime.catalog import resolve_engine
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.logging import configure_vamos_logging

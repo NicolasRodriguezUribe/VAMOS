@@ -24,12 +24,12 @@ from vamos.engine.algorithm.config import (
     SMSEMOAConfig,
     SPEA2Config,
 )
+from vamos.engine.algorithm.catalog import DEFAULT_ALGORITHM
 from vamos.engine.algorithm.config.base import _SerializableConfig
 from vamos.engine.algorithm.config.defaults import build_default_algorithm_config
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
 from vamos.exceptions import InvalidAlgorithmError
-from vamos.foundation.core.experiment_config import DEFAULT_ALGORITHM
 
 _CONFIG_MAP: dict[str, type[_SerializableConfig]] = {
     "nsgaii": NSGAIIConfig,
