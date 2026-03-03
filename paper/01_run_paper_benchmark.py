@@ -181,6 +181,7 @@ DEFAULT_FRAMEWORKS_NS = [
     "vamos-numba",
     "pymoo",
     "jmetalpy",
+    "pygmo",
 ]
 DEFAULT_FRAMEWORKS_NS_SS = [
     "vamos-numba",
@@ -219,6 +220,10 @@ FRAMEWORKS = [f.strip() for f in _frameworks_env.split(",") if f.strip()] if _fr
 # Ensure it's not present when running the steady-state experiment.
 if ALGORITHM == "nsgaii_ss":
     FRAMEWORKS = [f for f in FRAMEWORKS if f != "platypus"]
+
+# pygmo only supports generational NSGA-II (no steady-state, archive, SMS-EMOA, MOEA/D)
+if ALGORITHM != "nsgaii":
+    FRAMEWORKS = [f for f in FRAMEWORKS if f != "pygmo"]
 
 # Build problem list
 PROBLEMS = []
@@ -345,8 +350,9 @@ def run_objective_alignment_checks() -> None:
     check_pymoo = "pymoo" in selected
     check_jmetal = "jmetalpy" in selected
     check_platypus = "platypus" in selected
+    check_pygmo = "pygmo" in selected
 
-    if not (check_pymoo or check_jmetal or check_platypus):
+    if not (check_pymoo or check_jmetal or check_platypus or check_pygmo):
         print("Objective alignment check skipped (no external frameworks selected)")
         return
 
@@ -465,6 +471,34 @@ def run_objective_alignment_checks() -> None:
             print(f"  Warning: Platypus alignment check skipped (import failed): {e}")
             check_platypus = False
 
+    pygmo_problem_map = None
+    if check_pygmo:
+        try:
+            import pygmo as pg
+
+            wfg_k_pg = 4 if WFG_N_OBJ == 2 else 2 * (WFG_N_OBJ - 1)
+
+            zdt_prob_id = {"zdt1": 1, "zdt2": 2, "zdt3": 3, "zdt4": 4, "zdt6": 6}
+            dtlz_prob_id = {
+                "dtlz1": 1, "dtlz2": 2, "dtlz3": 3, "dtlz4": 4,
+                "dtlz5": 5, "dtlz6": 6, "dtlz7": 7,
+            }
+            wfg_prob_id = {
+                "wfg1": 1, "wfg2": 2, "wfg3": 3, "wfg4": 4, "wfg5": 5,
+                "wfg6": 6, "wfg7": 7, "wfg8": 8, "wfg9": 9,
+            }
+
+            pygmo_problem_map = {}
+            for name, pid in zdt_prob_id.items():
+                pygmo_problem_map[name] = pg.problem(pg.zdt(prob_id=pid, param=ZDT_N_VAR[name]))
+            for name, pid in dtlz_prob_id.items():
+                pygmo_problem_map[name] = pg.problem(pg.dtlz(prob_id=pid, dim=DTLZ_N_VAR[name], fdim=DTLZ_N_OBJ))
+            for name, pid in wfg_prob_id.items():
+                pygmo_problem_map[name] = pg.problem(pg.wfg(prob_id=pid, dim_dvs=WFG_N_VAR, dim_obj=WFG_N_OBJ, dim_k=wfg_k_pg))
+        except Exception as e:  # pragma: no cover
+            print(f"  Warning: PyGMO alignment check skipped (import failed): {e}")
+            check_pygmo = False
+
     checked = 0
     for problem_name in PROBLEMS:
         n_var, n_obj = problem_dims(problem_name)
@@ -515,6 +549,11 @@ def run_objective_alignment_checks() -> None:
                 pp.evaluate(sol)
                 F.append(sol.objectives)
             _check("Platypus", np.asarray(F, dtype=float))
+
+        if check_pygmo and pygmo_problem_map is not None:
+            pp = pygmo_problem_map[problem_name]
+            F_pg = np.array([pp.fitness(x) for x in X], dtype=float)
+            _check("PyGMO", F_pg)
 
     print(f"Objective alignment check passed ({checked} comparisons)")
 
@@ -1259,6 +1298,72 @@ def run_single_benchmark(problem_name, seed, framework):
         except Exception as e:
             print(f"  {problem_name} Platypus seed={seed} FAILED: {e}")
 
+    # PyGMO
+    elif framework == "pygmo":
+        if ALGORITHM != "nsgaii":
+            raise ValueError("PyGMO baseline is only implemented for generational NSGA-II.")
+        try:
+            import pygmo as pg
+
+            zdt_prob_id = {"zdt1": 1, "zdt2": 2, "zdt3": 3, "zdt4": 4, "zdt6": 6}
+            dtlz_prob_id = {
+                "dtlz1": 1, "dtlz2": 2, "dtlz3": 3, "dtlz4": 4,
+                "dtlz5": 5, "dtlz6": 6, "dtlz7": 7,
+            }
+            wfg_prob_id = {
+                "wfg1": 1, "wfg2": 2, "wfg3": 3, "wfg4": 4, "wfg5": 5,
+                "wfg6": 6, "wfg7": 7, "wfg8": 8, "wfg9": 9,
+            }
+
+            if problem_name in zdt_prob_id:
+                pg_problem = pg.problem(pg.zdt(prob_id=zdt_prob_id[problem_name], param=n_var))
+            elif problem_name in dtlz_prob_id:
+                pg_problem = pg.problem(pg.dtlz(prob_id=dtlz_prob_id[problem_name], dim=n_var, fdim=n_obj))
+            elif problem_name in wfg_prob_id:
+                wfg_k = 4 if n_obj == 2 else 2 * (n_obj - 1)
+                pg_problem = pg.problem(pg.wfg(prob_id=wfg_prob_id[problem_name], dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k))
+            else:
+                raise ValueError(f"Problem {problem_name} not available in PyGMO")
+
+            generations = N_EVALS // POP_SIZE - 1
+
+            # pygmo requires cr strictly < 1.0; cap at nearest representable value
+            cr = min(CROSSOVER_PROB, 1.0 - 1e-16)
+            uda = pg.nsga2(
+                gen=generations,
+                seed=seed,
+                cr=cr,
+                eta_c=CROSSOVER_ETA,
+                m=1.0 / n_var,
+                eta_m=MUTATION_ETA,
+            )
+            algo = pg.algorithm(uda)
+
+            pop = pg.population(pg_problem, size=POP_SIZE, seed=seed)
+
+            start = time.perf_counter()
+            pop = algo.evolve(pop)
+            elapsed = time.perf_counter() - start
+
+            F = np.asarray(pop.get_f(), dtype=float)
+            hv = compute_hv(F, problem_name)
+            igd_plus = compute_igd_plus(F, problem_name)
+
+            result_entry = {
+                "framework": "PyGMO",
+                "problem": problem_name,
+                "algorithm": ALGORITHM_DISPLAY,
+                "n_evals": N_EVALS,
+                "seed": seed,
+                "runtime_seconds": elapsed,
+                "n_solutions": int(F.shape[0]),
+                "hypervolume": hv,
+                "igd_plus": igd_plus,
+            }
+            print(f"  {problem_name} PyGMO seed={seed}: {elapsed:.2f}s")
+        except Exception as e:
+            print(f"  {problem_name} PyGMO seed={seed} FAILED: {e}")
+
     return result_entry
 
 
@@ -1288,7 +1393,7 @@ def _save_partial(results_list):
 run_objective_alignment_checks()
 
 # Build list of all jobs - split by thread-safety
-PARALLEL_FRAMEWORKS = ["vamos-numpy", "vamos-numba", "vamos-moocore", "pymoo", "jmetalpy", "deap", "platypus"]
+PARALLEL_FRAMEWORKS = ["vamos-numpy", "vamos-numba", "vamos-moocore", "pymoo", "jmetalpy", "deap", "platypus", "pygmo"]
 SEQUENTIAL_FRAMEWORKS = []
 
 SCHEDULE = os.environ.get("VAMOS_PAPER_SCHEDULE", "by_job").strip().lower()
@@ -1309,6 +1414,8 @@ def _framework_result_name(framework: str) -> str:
         return "DEAP"
     if framework == "platypus":
         return "Platypus"
+    if framework == "pygmo":
+        return "PyGMO"
     return framework
 
 completed_keys: set[tuple[str, str, str, int, int]] = set()
