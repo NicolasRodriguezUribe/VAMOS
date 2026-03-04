@@ -105,7 +105,7 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
         _bench_main(argv[1:])
         return True
     if command in {"studio"}:
-        from vamos.ux.studio.launcher import main as _studio_main
+        from vamos.ux.panel.launcher import main as _studio_main
 
         exit_code = int(_studio_main(argv[1:]))
         if exit_code != 0:

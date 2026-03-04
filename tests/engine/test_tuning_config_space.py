@@ -191,6 +191,12 @@ def test_nsgaii_archive_unbounded_disables_archive_params():
     assert param_space.is_active("archive_prune_policy", cfg_bounded)
 
 
+def test_real_tuning_spaces_do_not_expose_none_repair():
+    nsgaii_repair = build_nsgaii_config_space().to_param_space().params["repair"]
+    assert isinstance(nsgaii_repair, Categorical)
+    assert "none" not in nsgaii_repair.choices
+
+
 def test_nsgaii_permutation_config_space_builds_and_constructs_config():
     rng = np.random.default_rng(3)
     space = build_nsgaii_permutation_config_space()

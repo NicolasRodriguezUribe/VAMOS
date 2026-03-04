@@ -421,7 +421,6 @@ Table~\ref{tab:frameworks_perf} compares the runtime of generational NSGA-II acr
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} \\
 \midrule
 VAMOS & 13.73 & 21.80 & 32.38 \\
-VAMOS (current numba-mixed native path) & 3.17 & 4.83 & 9.36 \\
 pymoo & 39.90 & 60.43 & 77.12 \\
 jMetalPy & 24.09 & 32.30 & 421.20 \\
 DEAP & 163.78 & 226.99 & 1154.80 \\
@@ -611,7 +610,7 @@ For hypervolume, reference fronts for problems without closed-form Pareto fronts
 \section{Configurability}
 \label{sec:configurability}
 %==============================================================================
-In this section, we analyze the configurability of \VAMOS{} by examining the parameter space of NSGA-II with real-valued encoding. Table~\ref{tab:parameter_space} lists the 35 configurable parameters organized by component (general settings, initialization, repair, crossover, and mutation). Of these, 11 are always active (e.g., population size, repair strategy, crossover type and probability, mutation type and probability factor) and 24 are conditional, i.e., they are activated only when their parent operator is selected (e.g., the distribution index $\eta_c$ applies only when SBX crossover is chosen). In any single configuration, between 11 and 19 parameters are simultaneously active, depending on the selected operators.
+In this section, we analyze the configurability of \VAMOS{} by examining the parameter space of NSGA-II with real-valued encoding. Table~\ref{tab:parameter_space} lists the 35 configurable parameters organized by component (general settings, initialization, variation, crossover, and mutation). Of these, 11 are always active (e.g., population size, boundary-repair strategy, crossover type and probability, mutation type and probability factor) and 24 are conditional, i.e., they are activated only when their parent operator is selected (e.g., the distribution index $\eta_c$ applies only when SBX crossover is chosen). In any single configuration, between 11 and 19 parameters are simultaneously active, depending on the selected operators. Tables~\ref{tab:parameter_space_pymoo} and~\ref{tab:parameter_space_jmetalpy} summarize the analogous constructor-level NSGA-II configuration surfaces of pymoo and jMetalPy, focusing on algorithmic knobs rather than auxiliary objects such as termination criteria, evaluators, or display hooks.
 
 This level of granularity contrasts sharply with competing Python frameworks. In pymoo, NSGA-II exposes only a handful of top-level knobs (population size, crossover and mutation operators with their probabilities and distribution indices); obtaining a steady-state variant, attaching an external archive, or switching constraint-handling mode requires subclassing or writing custom wrappers. jMetalPy offers a broader operator catalog but still lacks declarative support for archive strategies and offspring-ratio control. PyGMO provides even less flexibility: its NSGA-II implementation accepts only the population size, crossover probability, distribution indices, and mutation probability, with no mechanism for swapping operators or enabling algorithmic variants. Platypus, although modular in design, has limited maintenance and does not expose archive configuration or backend selection.
 
@@ -634,7 +633,7 @@ By contrast, \VAMOS{} treats all 35 parameters as first-class configuration opti
  & \textit{Archive Prune Policy} $\in$ \{\textbf{crowding}, hv, mc\_hv, knn, maxmin, ref\_dirs\} & \textit{Archive} = True, \textit{Mode} = bounded \\ \midrule
 \multirow{2}{*}{Initialization} & \{\textbf{Random}, LHS, Scatter, Sobol, Halton, OBL\} & -- \\
  & \textit{Scatter Base Size Factor} $\in \{0.1, 0.2, 0.3, 0.5, 0.75, 1.0\}$ & \textit{Init.} = Scatter \\ \midrule
-\multirow{1}{*}{Repair} & \{none, \textbf{clip}, reflect, random, round, wrap, midpoint\} & -- \\ \midrule
+\multirow{1}{*}{Variation} & Boundary Repair $\in \{\textbf{clip}, reflect, random, round, wrap, midpoint\}$ & Applied after crossover and mutation \\ \midrule
 \multirow{11}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.6, 1.0}$} \\
  & \textbf{SBX} & \textit{Dist.\ Index} $\in \Realdomain{5.0, 40.0}$ \\
  & BLX-$\alpha$ & $\alpha \in \Realdomain{0.0, 1.0}$ \\
@@ -656,6 +655,67 @@ By contrast, \VAMOS{} treats all 35 parameters as first-class configuration opti
  & Uniform Reset & -- \\
  & L\'evy Flight & $\beta \in \Realdomain{0.5, 2.0}$, \textit{Scale} $\in \Realdomain{0.001, 0.1}$ \\
  & Power Law & \textit{Index} $\in \Realdomain{0.5, 5.0}$ \\ \bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{table*}[htbp]
+\centering
+\caption{Built-in NSGA-II configuration surface in pymoo for real-valued problems. Unlike \VAMOS{}, pymoo configures NSGA-II by passing operator objects, so the table summarizes the built-in operator families shipped with the repository rather than a closed declarative tuning space. Defaults correspond to the standard NSGA-II constructor.}
+\label{tab:parameter_space_pymoo}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
+\multirow{6}{*}{General} & Pop.\ Size $\in \mathbb{N}_{>0}$; default $\mathbf{100}$ & -- \\
+ & Offspring Count $\in \mathbb{N}_{>0}$; default $\mathbf{pop\_size}$ & -- \\
+ & Selection $\in$ \{\textbf{Tournament}, Random\} & -- \\
+ & \textit{Tournament Pressure} $\in \mathbb{N}_{\ge 2}$; default $\mathbf{2}$ & \textit{Selection} = Tournament \\
+ & Eliminate Duplicates $\in \{\textbf{True}, False\}$ & -- \\
+ & External Archive & Not available in the standard NSGA-II API \\ \midrule
+\multirow{4}{*}{Initialization} & \{\textbf{Random}, LHS\} & -- \\
+ & \textit{LHS Smooth} $\in \{\textbf{True}, False\}$ & \textit{Sampling} = LHS \\
+ & \textit{LHS Iterations} $\in \mathbb{N}_{>0}$; default $\mathbf{20}$ & \textit{Sampling} = LHS \\
+ & \textit{LHS Criterion} $\in \{\textbf{maxmin}, corr, none\}$ & \textit{Sampling} = LHS \\ \midrule
+\multirow{1}{*}{Variation} & Repair $\in \{\textbf{none}, to\_bound, bounce\_back, inverse\_penalty\}$ & Optional global repair; operator-local bound handling may still apply \\ \midrule
+\multirow{4}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in [0, 1]$} \\
+ & \textbf{SBX} & $\eta$, $p_{\mathrm{var}}$, $p_{\mathrm{exch}}$, $p_{\mathrm{bin}}$, \textit{offsprings} $\in \{1, 2\}$ \\
+ & PCX & $\eta$, $\zeta$ \\
+ & DEX & $F$, $CR$, \textit{variant} $\in \{\text{bin}, \text{exp}\}$, \textit{n\_diffs}, \textit{dither}, \textit{jitter}, \textit{n\_iter} \\ \midrule
+\multirow{3}{*}{Mutation} & \multicolumn{2}{l}{\textit{Global:} Probability $\in [0, 1]$, Prob.\ Var.\ $\in [0, 1]$ (default $\min(0.5, 1/n)$)} \\
+ & \textbf{Polynomial} & $\eta$, \textit{at\_least\_once} $\in \{\textbf{False}, True\}$ \\
+ & Gaussian & $\sigma$ \\ \bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{table*}[htbp]
+\centering
+\caption{Built-in NSGA-II configuration surface in jMetalPy for real-valued problems. As in pymoo, NSGA-II is configured by supplying operator objects; the table summarizes the real-valued operators shipped with the repository rather than a closed tuning space. Defaults correspond to the standard NSGA-II constructor.}
+\label{tab:parameter_space_jmetalpy}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
+\multirow{5}{*}{General} & Pop.\ Size $\in \mathbb{N}_{>0}$ & -- \\
+ & Offspring Pop.\ Size $\in \mathbb{N}_{>0}$; steady-state with 1 & -- \\
+ & Selection $\in$ \{\textbf{Binary Tournament}, Tournament, Random, Roulette Wheel, Best Solution, Binary Tournament 2\} & -- \\
+ & \textit{Tournament Size} $\in \mathbb{N}_{\ge 2}$; default $\mathbf{2}$ & \textit{Selection} = Tournament \\
+ & External Archive & Not available in the standard NSGA-II API \\ \midrule
+\multirow{1}{*}{Initialization} & Population Generator = custom generator; default RandomGenerator & -- \\ \midrule
+\multirow{1}{*}{Variation} & Float Repair $\in \{\textbf{clamp}, random\_uniform, reflective, bound\_swap\}$ & Passed inside float crossover/mutation operators; no separate global repair stage \\ \midrule
+\multirow{6}{*}{Crossover} & \textbf{SBX} & Probability, Dist.\ Index, optional repair \\
+ & BLX-$\alpha$ & Probability, $\alpha$, optional repair \\
+ & BLX-$\alpha\beta$ & Probability, $\alpha$, $\beta$, optional repair \\
+ & Arithmetic & Probability, optional repair \\
+ & UNDX & Probability, $\zeta$, $\eta$, optional repair \\
+ & Differential Evolution & $CR$, $F$, $K$ \\ \midrule
+\multirow{6}{*}{Mutation} & \textbf{Polynomial} & Probability, Dist.\ Index, optional repair \\
+ & Simple Random & Probability \\
+ & Uniform & Probability, Perturbation, optional repair \\
+ & Non-Uniform & Probability, Perturbation, Max Iterations, optional repair \\
+ & L\'evy Flight & Probability, $\beta$, Step Size, optional repair \\
+ & Power Law & Probability, $\delta$, optional repair \\ \bottomrule
 \end{tabular}%
 }
 \end{table*}
