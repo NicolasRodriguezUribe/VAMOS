@@ -36,7 +36,9 @@ _RVEA_NAMES = ALGORITHM_VARIANT_GROUPS["rvea"]
 
 def _apply_initializer(builder: Any, assignment: dict[str, Any], pop_size: int) -> None:
     initializer = str(assignment.get("initializer", "random")).strip().lower()
-    if initializer == "lhs":
+    if initializer == "random":
+        builder.initializer("random")
+    elif initializer == "lhs":
         builder.initializer("lhs")
     elif initializer == "scatter":
         factor = assignment.get("scatter_base_size_factor", 0.25)
@@ -48,6 +50,12 @@ def _apply_initializer(builder: Any, assignment: dict[str, Any], pop_size: int) 
         base_size = int(math.floor(pop_size * factor_f + 0.5))
         base_size = max(2, min(pop_size, base_size))
         builder.initializer("scatter", base_size=base_size)
+    elif initializer == "sobol":
+        builder.initializer("sobol")
+    elif initializer == "halton":
+        builder.initializer("halton")
+    elif initializer in {"obl", "opposition"}:
+        builder.initializer("obl")
 
 
 def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], pop_size: int) -> None:
@@ -55,25 +63,14 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
     use_external_archive = bool(assignment.get("use_external_archive", False))
     if not use_external_archive:
         return
-    archive_type_raw = assignment.get("archive_type", "size_cap")
-    archive_type_norm = str(archive_type_raw).strip().lower()
-    # Prefer explicit archive_type when present. Fall back to legacy archive_unbounded only
-    # when archive_type is not provided in the assignment payload.
-    if "archive_type" in assignment:
-        archive_unbounded = archive_type_norm == "unbounded"
-    else:
-        archive_unbounded = bool(assignment.get("archive_unbounded", False))
+    archive_unbounded = bool(assignment.get("archive_unbounded", False))
     if archive_unbounded:
         builder.external_archive(capacity=None)
         return
-    archive_type = str(archive_type_raw)
     prune_policy = str(assignment.get("archive_prune_policy", "crowding"))
-    epsilon = float(assignment.get("archive_epsilon", 0.01))
     builder.external_archive(
         capacity=pop_size,
-        archive_type=archive_type,
         pruning=prune_policy,
-        epsilon=epsilon,
     )
 
 
@@ -168,7 +165,11 @@ def _build_nsgaii_config(assignment: dict[str, Any]) -> NSGAIIConfig:
     _extend_mutation_params(str(mut), assignment, mut_params)
     builder.mutation(mut, **mut_params)
 
-    builder.selection(str(assignment.get("selection", "tournament")), pressure=int(assignment["selection_pressure"]))
+    selection = str(assignment.get("selection", "tournament"))
+    if selection == "tournament":
+        builder.selection(selection, size=int(assignment.get("selection_size", 2)))
+    else:
+        builder.selection(selection)
 
     _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
@@ -250,7 +251,7 @@ def _build_nsgaiii_config(assignment: dict[str, Any]) -> NSGAIIIConfig:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
-    builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    builder.selection("tournament", size=int(assignment["selection_pressure"]))
     _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
     return builder.build()
@@ -269,7 +270,7 @@ def _build_smsemoa_config(assignment: dict[str, Any]) -> SMSEMOAConfig:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
-    builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    builder.selection("tournament", size=int(assignment["selection_pressure"]))
     builder.reference_point(offset=0.1, adaptive=True)
     _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
@@ -290,7 +291,7 @@ def _build_spea2_config(assignment: dict[str, Any]) -> SPEA2Config:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
-    builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    builder.selection("tournament", size=int(assignment["selection_pressure"]))
     builder.k_neighbors(int(assignment.get("k_neighbors", max(1, int(np.sqrt(pop_size))))))
     _apply_optional_repair(builder, assignment)
     _apply_optional_external_archive(builder, assignment, pop_size)
@@ -310,7 +311,7 @@ def _build_ibea_config(assignment: dict[str, Any]) -> IBEAConfig:
     mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
     _extend_mutation_params(mut, assignment, mut_params)
     builder.mutation(mut, **mut_params)
-    builder.selection("tournament", pressure=int(assignment["selection_pressure"]))
+    builder.selection("tournament", size=int(assignment["selection_pressure"]))
     builder.indicator(str(assignment.get("indicator", "eps")))
     builder.kappa(float(assignment.get("kappa", 1.0)))
     _apply_optional_repair(builder, assignment)

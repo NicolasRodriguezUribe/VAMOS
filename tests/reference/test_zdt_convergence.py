@@ -22,7 +22,7 @@ def test_zdt1_nsgaii_convergence():
         .offspring_size(100)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("polynomial", prob=1.0 / 30, eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
 
@@ -89,7 +89,7 @@ def test_zdt2_nsgaii_convergence():
         .offspring_size(100)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("polynomial", prob=1.0 / 30, eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .build()
     )
 

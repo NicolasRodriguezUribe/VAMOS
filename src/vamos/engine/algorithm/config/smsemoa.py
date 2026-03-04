@@ -7,7 +7,7 @@ from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 
-from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _normalize_tournament_selection_kwargs, _require_fields, _SerializableConfig
 
 
 @dataclass(frozen=True)
@@ -74,7 +74,7 @@ class _SMSEMOAConfigBuilder:
         return self
 
     def selection(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
-        self._cfg["selection"] = (method, kwargs)
+        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
     def eliminate_duplicates(self, enabled: bool = True) -> _SMSEMOAConfigBuilder:

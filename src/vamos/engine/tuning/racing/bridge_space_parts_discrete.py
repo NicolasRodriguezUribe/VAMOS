@@ -139,25 +139,20 @@ def external_archive_part() -> SpacePart:
     """External-archive params shared by all algorithms."""
     params: list[ParamType] = [
         Boolean("use_external_archive"),
-        Boolean("archive_unbounded"),
     ]
-    archive_type_param = Categorical("archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"])
+    archive_unbounded_param = Boolean("archive_unbounded")
     archive_prune_policy_param = Categorical(
         "archive_prune_policy", ["crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"]
     )
-    archive_epsilon_param = Real("archive_epsilon", 1e-4, 0.1, log=True)
     conditionals = [
         ConditionalBlock(
             "use_external_archive",
             True,
-            [archive_type_param, archive_prune_policy_param, archive_epsilon_param],
+            [archive_unbounded_param, archive_prune_policy_param],
         ),
     ]
     conditions = [
-        Condition("archive_type", "cfg['archive_unbounded'] == False"),
         Condition("archive_prune_policy", "cfg['archive_unbounded'] == False"),
-        Condition("archive_epsilon", "cfg['archive_unbounded'] == False"),
-        Condition("archive_epsilon", "cfg['archive_type'] == 'epsilon_grid' or cfg['archive_type'] == 'hybrid'"),
     ]
     return params, conditionals, conditions
 

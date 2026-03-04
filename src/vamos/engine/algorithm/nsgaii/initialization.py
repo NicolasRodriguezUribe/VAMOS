@@ -283,7 +283,7 @@ def setup_selection(
     sel_method: str,
     sel_params: dict[str, Any],
 ) -> tuple[str, int]:
-    """Parse selection config and return (method, pressure).
+    """Parse selection config and return (method, tournament_size).
 
     Parameters
     ----------
@@ -295,7 +295,7 @@ def setup_selection(
     Returns
     -------
     tuple[str, int]
-        (method, tournament_pressure)
+        (method, tournament_size)
 
     Raises
     ------
@@ -305,8 +305,10 @@ def setup_selection(
     allowed = ("tournament", "random", "boltzmann", "ranking", "sus")
     if sel_method not in allowed:
         raise ValueError(f"Unsupported selection method '{sel_method}'. Must be one of {allowed}.")
-    pressure = int(sel_params.get("pressure", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
-    return sel_method, pressure
+    if sel_method == "tournament" and "pressure" in sel_params and sel_params.get("pressure") is not None:
+        raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+    tournament_size = int(sel_params.get("size", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
+    return sel_method, tournament_size
 
 
 def setup_result_archive(

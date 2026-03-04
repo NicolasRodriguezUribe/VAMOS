@@ -34,9 +34,9 @@ This package implements **irace-inspired algorithm configuration** with modern e
 - `config_space.py`: `AlgorithmConfigSpace` - algorithm-specific space builders
 - External archive knobs are modeled as:
   - `use_external_archive`
-  - `archive_unbounded`
-  - bounded-only `archive_type`, `archive_prune_policy`, and conditional `archive_epsilon`
-  - bounded archive capacity equals `pop_size` in `config_from_assignment()`
+  - archive-enabled `archive_unbounded`
+  - bounded-only `archive_prune_policy`
+  - bounded archives are always `size_cap` and their capacity equals `pop_size` in `config_from_assignment()`
 
 ### Utilities
 - `bridge.py`: `build_nsgaii_config_space()`, `config_from_assignment()` - algorithm integration

@@ -23,11 +23,11 @@ def _core_part() -> SpacePart:
     params: list[ParamType] = [
         Int("pop_size", 20, 200, log=True),
         Categorical("offspring_ratio", [0, 0.25, 0.5, 0.75, 1.0]),
-        Categorical("selection", ["tournament", "boltzmann", "ranking", "sus"]),
-        Int("selection_pressure", 2, 10),
+        Categorical("selection", ["tournament", "random", "boltzmann", "ranking", "sus"]),
     ]
     arch_params, arch_conds, arch_conditions = external_archive_part()
-    return [*params, *arch_params], arch_conds, arch_conditions
+    conditionals = [*arch_conds, ConditionalBlock("selection", "tournament", [Int("selection_size", 2, 10)])]
+    return [*params, *arch_params], conditionals, arch_conditions
 
 
 # ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ def _core_part() -> SpacePart:
 
 def _real_operator_part() -> SpacePart:
     params: list[ParamType] = [
-        Categorical("initializer", ["random", "lhs", "scatter"]),
+        Categorical("initializer", ["random", "lhs", "scatter", "sobol", "halton", "obl"]),
         Categorical(
             "crossover",
             [

@@ -15,7 +15,7 @@ def _run_nsga2(problem, crossover, mutation, pop_size=10, n_eval=40):
         .offspring_size(pop_size)
         .crossover(*crossover)
         .mutation(*mutation)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
     ).build()
     algo = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
     res = algo.run(problem, termination=("max_evaluations", n_eval), seed=0)

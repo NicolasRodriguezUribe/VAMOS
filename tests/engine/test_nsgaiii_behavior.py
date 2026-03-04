@@ -14,7 +14,7 @@ def _make_config(pop_size=10, divisions=3, prob="1/n"):
         .pop_size(pop_size)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("polynomial", prob=prob, eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .reference_directions(divisions=divisions)
         .build()
     ).to_dict()
@@ -35,7 +35,7 @@ def test_reference_directions_truncate_when_excess():
         .pop_size(6)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("polynomial", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .reference_directions(divisions=10)  # generates more than pop_size
         .build()
     ).to_dict()

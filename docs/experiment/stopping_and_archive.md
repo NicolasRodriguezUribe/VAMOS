@@ -63,7 +63,7 @@ Metadata:
 - `metadata.json` additions under `archive`
 
 Notes:
-- In the tuning spaces, bounded external archives use the population size as their capacity.
+- In the tuning spaces, bounded external archives use `size_cap` with the population size as their capacity.
 - When an algorithm is configured with an external archive, top-level results come from that archive by default unless `result_mode="population"` is requested.
 
 ## Reproducibility

@@ -8,7 +8,14 @@ from typing import Any
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import normalize_encoding
 
-from .base import ConstraintModeStr, LiveCallbackMode, ResultMode, _require_fields, _SerializableConfig
+from .base import (
+    ConstraintModeStr,
+    LiveCallbackMode,
+    ResultMode,
+    _normalize_tournament_selection_kwargs,
+    _require_fields,
+    _SerializableConfig,
+)
 
 
 class _NSGAIIConfigBuilder:
@@ -69,7 +76,7 @@ class _NSGAIIConfigBuilder:
         return self
 
     def selection(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
-        self._cfg["selection"] = (method, kwargs)
+        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
     def initializer(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:

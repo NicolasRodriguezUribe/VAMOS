@@ -98,10 +98,12 @@ def initialize_ibea_run(
         G = None
     n_eval = X.shape[0]
 
-    # Tournament size (legacy alias: pressure)
+    # Tournament size
     sel_method, sel_params = cfg["selection"]
     if sel_method == "tournament":
-        pressure = int(sel_params.get("size", sel_params.get("pressure", 2)))
+        if "pressure" in sel_params and sel_params.get("pressure") is not None:
+            raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+        pressure = int(sel_params.get("size", 2))
     else:
         pressure = 2
 

@@ -74,7 +74,7 @@ def _prepare_params(cfg_dict: dict[str, Any], n_var: int) -> tuple[dict[str, Any
 
     sel_method, sel_params = cfg_dict["selection"]
     assert sel_method == "tournament", "Diagnostics expect tournament selection."
-    pressure = int(sel_params.get("size", sel_params.get("pressure", 2)))
+    pressure = int(sel_params.get("size", 2))
     return cross_params, mut_params, pressure
 
 
