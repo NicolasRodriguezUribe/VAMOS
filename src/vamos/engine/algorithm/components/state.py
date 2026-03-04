@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from vamos.engine.algorithm.components.archive import (
         CrowdingDistanceArchive,
         HypervolumeArchive,
+        MaxMinArchive,
+        ReferenceDirectionsArchive,
         SPEA2Archive,
         UnboundedArchive,
     )
@@ -52,7 +54,9 @@ class AlgorithmState:
     archive_size: int | None = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
-    archive_manager: CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive | None = None
+    archive_manager: (
+        CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive | None
+    ) = None
     result_mode: str = "non_dominated"
 
     # Termination

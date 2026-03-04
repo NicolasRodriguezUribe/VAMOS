@@ -6,15 +6,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
-from vamos.engine.archive.bounded_archive import PrunePolicy
 from vamos.resources import weight_path
-from vamos.foundation.encoding import normalize_encoding
 
-from .base import ConstraintModeStr, ResultMode, _default_operators_for_encoding, _require_fields, _SerializableConfig, _validate_operators
-from .types import AggregationName, CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName
+from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(frozen=True)
 class MOEADConfig(_SerializableConfig):
     pop_size: int
     batch_size: int
@@ -26,7 +23,7 @@ class MOEADConfig(_SerializableConfig):
     aggregation: tuple[str, dict[str, Any]]
     weight_vectors: dict[str, int | str | None] | None
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: RepairConfigValue = "auto"
+    repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     use_numba_variation: bool | None = None
@@ -40,37 +37,25 @@ class MOEADConfig(_SerializableConfig):
         pop_size: int | None = None,
         n_var: int | None = None,
         n_obj: int = 3,
-        encoding: str | None = None,
     ) -> MOEADConfig:
-        """Create a default MOEA/D configuration with sensible defaults.
-
-        Args:
-            pop_size: Population size (default: 91 for 3-obj, 100 otherwise)
-            n_var: Number of variables (for mutation prob)
-            n_obj: Number of objectives
-            encoding: Problem encoding. If omitted, defaults to "real".
-        """
+        """Create a default MOEA/D configuration with sensible defaults."""
         if pop_size is None:
             pop_size = 91 if n_obj == 3 else 100
         mut_prob = 1.0 / n_var if n_var else 0.1
-        normalized = normalize_encoding(encoding or "real")
-        cx, mt = _default_operators_for_encoding(normalized, mut_prob)
         weights_dir = weight_path("W3D_91.dat").parent
-        builder = (
+        return (
             cls.builder()
             .pop_size(pop_size)
             .batch_size(1)
             .neighbor_size(20)
             .delta(0.9)
             .replace_limit(2)
-            .crossover(cx[0], **cx[1])
-            .mutation(mt[0], **mt[1])
+            .crossover("de", cr=1.0, f=0.5)
+            .mutation("pm", prob=mut_prob, eta=20.0)
             .aggregation("pbi", theta=5.0)
             .weight_vectors(path=str(weights_dir))
+            .build()
         )
-        if normalized == "real":
-            builder = builder.repair("clip")
-        return builder.build()
 
     @classmethod
     def builder(cls) -> _MOEADConfigBuilder:
@@ -112,15 +97,15 @@ class _MOEADConfigBuilder:
         self._cfg["replace_limit"] = value
         return self
 
-    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def crossover(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: MutationName | str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def mutation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def aggregation(self, method: AggregationName | str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def aggregation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["aggregation"] = (method, kwargs)
         return self
 
@@ -128,15 +113,15 @@ class _MOEADConfigBuilder:
         self._cfg["weight_vectors"] = {"path": path, "divisions": divisions}
         return self
 
-    def constraint_mode(self, value: ConstraintModeStr | str) -> _MOEADConfigBuilder:
+    def constraint_mode(self, value: str) -> _MOEADConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
-    def repair(self, method: RepairName | str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def repair(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _MOEADConfigBuilder:
+    def initializer(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -152,25 +137,22 @@ class _MOEADConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: ResultMode | str) -> _MOEADConfigBuilder:
+    def result_mode(self, value: str) -> _MOEADConfigBuilder:
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be 'non_dominated' or 'population'.")
         self._cfg["result_mode"] = mode
         return self
 
-    def external_archive(
-        self,
-        capacity: int | None = None,
-        pruning: PrunePolicy = "crowding",
-    ) -> _MOEADConfigBuilder:
+    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _MOEADConfigBuilder:
         """Configure an external archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            pruning: Strategy used when bounded archive exceeds capacity.
+            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def build(self) -> MOEADConfig:
@@ -187,7 +169,6 @@ class _MOEADConfigBuilder:
             ),
             "MOEA/D",
         )
-        _validate_operators(self._cfg)
         return MOEADConfig(
             pop_size=self._cfg["pop_size"],
             batch_size=int(self._cfg.get("batch_size", 1)),

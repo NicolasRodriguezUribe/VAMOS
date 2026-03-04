@@ -11,24 +11,25 @@ Operator pool building lives in operators/policies/nsgaii.py.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 
-from vamos.engine.archive.bounded_archive import ExternalArchiveConfig
-from vamos.engine.archive.factory import (
-    resolve_external_archive as _resolve_external_archive_impl,
-    setup_archive as _setup_archive_impl,
-    setup_result_archive as _setup_result_archive_impl,
+from vamos.engine.algorithm.components.archive import (
+    CrowdingDistanceArchive,
+    HypervolumeArchive,
+    MaxMinArchive,
+    ReferenceDirectionsArchive,
+    SPEA2Archive,
+    UnboundedArchive,
 )
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
+from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.hooks.genealogy import DefaultGenealogyTracker, GenealogyTracker
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend
+from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
-
-if TYPE_CHECKING:
-    from vamos.engine.archive.factory import ArchiveManager, ResultArchiveManager
 
 # Constants
 DEFAULT_TOURNAMENT_PRESSURE = 2
@@ -110,7 +111,7 @@ def setup_population(
 
 
 def setup_archive(
-    kernel: Any,
+    kernel: KernelBackend,
     X: np.ndarray,
     F: np.ndarray,
     G: np.ndarray | None,
@@ -118,7 +119,11 @@ def setup_archive(
     n_obj: int,
     dtype: np.dtype,
     ext_cfg: ExternalArchiveConfig | None,
-) -> tuple[np.ndarray | None, np.ndarray | None, ArchiveManager | None]:
+) -> tuple[
+    np.ndarray | None,
+    np.ndarray | None,
+    CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive | None,
+]:
     """Initialize archive if configured.
 
     Parameters
@@ -145,7 +150,96 @@ def setup_archive(
     tuple[np.ndarray | None, np.ndarray | None, archive_manager | None]
         (archive_X, archive_F, archive_manager)
     """
-    return _setup_archive_impl(kernel, X, F, n_var, n_obj, dtype, ext_cfg, G)
+    if ext_cfg is None:
+        return None, None, None
+
+    capacity = ext_cfg.capacity
+    pruning = ext_cfg.pruning
+
+    tol = ext_cfg.objective_tolerance
+    dedup_mode = ext_cfg.deduplicate_in
+    decision_tol = ext_cfg.decision_tolerance
+    truncate_size = ext_cfg.truncate_size
+    n_con = G.shape[1] if G is not None else None
+
+    manager: CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive
+    if capacity is None:
+        # Unbounded archive
+        manager = UnboundedArchive(
+            n_var=n_var,
+            n_obj=n_obj,
+            dtype=dtype,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+        )
+    elif pruning in {"hv", "mc_hv"}:
+        manager = HypervolumeArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+            ref_point=ext_cfg.hv_ref_point,
+        )
+    elif pruning == "knn":
+        manager = SPEA2Archive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+            constraint_mode="feasibility",
+        )
+    elif pruning == "maxmin":
+        manager = MaxMinArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+        )
+    elif pruning == "ref_dirs":
+        manager = ReferenceDirectionsArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            rng_seed=ext_cfg.rng_seed,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+        )
+    else:
+        manager = CrowdingDistanceArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=n_con,
+        )
+
+    archive_X, archive_F = manager.update(X, F, G)
+    return archive_X, archive_F, manager
 
 
 def setup_genealogy(
@@ -189,7 +283,7 @@ def setup_selection(
     sel_method: str,
     sel_params: dict[str, Any],
 ) -> tuple[str, int]:
-    """Parse selection config and return (method, tournament size).
+    """Parse selection config and return (method, pressure).
 
     Parameters
     ----------
@@ -201,7 +295,7 @@ def setup_selection(
     Returns
     -------
     tuple[str, int]
-        (method, tournament_size)
+        (method, tournament_pressure)
 
     Raises
     ------
@@ -211,11 +305,7 @@ def setup_selection(
     allowed = ("tournament", "random", "boltzmann", "ranking", "sus")
     if sel_method not in allowed:
         raise ValueError(f"Unsupported selection method '{sel_method}'. Must be one of {allowed}.")
-    if sel_method == "tournament":
-        raw = sel_params.get("size", sel_params.get("pressure", DEFAULT_TOURNAMENT_PRESSURE))
-        pressure = int(raw)
-    else:
-        pressure = DEFAULT_TOURNAMENT_PRESSURE
+    pressure = int(sel_params.get("pressure", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
     return sel_method, pressure
 
 
@@ -224,15 +314,16 @@ def setup_result_archive(
     n_var: int,
     n_obj: int,
     dtype: np.dtype,
-) -> ResultArchiveManager | None:
+) -> HypervolumeArchive | CrowdingDistanceArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | None:
     """Create result archive if configured.
 
     Parameters
     ----------
     ext_cfg : ExternalArchiveConfig | None
         External archive configuration. The ``pruning`` field determines
-        the archive class (``"hv_contrib"`` -> HypervolumeArchive,
-        ``"spea2"`` -> SPEA2Archive, otherwise CrowdingDistanceArchive).
+        the archive class (``"hv"`` -> HypervolumeArchive,
+        ``"knn"`` -> SPEA2Archive, ``"maxmin"`` -> MaxMinArchive,
+        ``"ref_dirs"`` -> ReferenceDirectionsArchive, otherwise CrowdingDistanceArchive).
         ``None`` or unbounded (``capacity is None``) disables the result archive.
     n_var : int
         Number of decision variables.
@@ -243,10 +334,74 @@ def setup_result_archive(
 
     Returns
     -------
-    HypervolumeArchive | CrowdingDistanceArchive | None
+    HypervolumeArchive | CrowdingDistanceArchive | MaxMinArchive | ReferenceDirectionsArchive | None
         The result archive, or None if not configured.
     """
-    return _setup_result_archive_impl(ext_cfg, n_var, n_obj, dtype)
+    if ext_cfg is None or ext_cfg.capacity is None:
+        return None
+
+    truncate_size = ext_cfg.truncate_size
+    tol = ext_cfg.objective_tolerance
+    dedup_mode = ext_cfg.deduplicate_in
+    decision_tol = ext_cfg.decision_tolerance
+
+    if ext_cfg.pruning in {"hv", "mc_hv"}:
+        return HypervolumeArchive(
+            ext_cfg.capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            ref_point=ext_cfg.hv_ref_point,
+        )
+    if ext_cfg.pruning == "knn":
+        return SPEA2Archive(
+            ext_cfg.capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            constraint_mode="feasibility",
+        )
+    if ext_cfg.pruning == "maxmin":
+        return MaxMinArchive(
+            ext_cfg.capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+        )
+    if ext_cfg.pruning == "ref_dirs":
+        return ReferenceDirectionsArchive(
+            ext_cfg.capacity,
+            n_var,
+            n_obj,
+            dtype,
+            rng_seed=ext_cfg.rng_seed,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+        )
+    return CrowdingDistanceArchive(
+        ext_cfg.capacity,
+        n_var,
+        n_obj,
+        dtype,
+        truncate_size=truncate_size,
+        objective_tolerance=tol,
+        deduplicate_in=dedup_mode,
+        decision_tolerance=decision_tol,
+    )
 
 
 def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | None:
@@ -264,7 +419,12 @@ def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | Non
     ExternalArchiveConfig | None
         External archive configuration, or ``None``.
     """
-    return _resolve_external_archive_impl(cfg)
+    raw = cfg.get("external_archive")
+    if raw is None:
+        return None
+    if isinstance(raw, ExternalArchiveConfig):
+        return raw
+    return ExternalArchiveConfig(**raw)
 
 
 __all__ = [

@@ -10,11 +10,12 @@ Note: SPEA2 has two archives:
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
 
+from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
 from vamos.engine.algorithm.components.state import AlgorithmState
 
 
@@ -47,6 +48,7 @@ class SPEA2State(AlgorithmState):
     mutation_fn: Callable[[np.ndarray, np.random.Generator], np.ndarray] | None = None
     xl: np.ndarray | None = None
     xu: np.ndarray | None = None
+    _fused_offspring: np.ndarray | None = field(default=None, repr=False, compare=False)
 
 
 def build_spea2_result(state: SPEA2State, hv_reached: bool = False) -> dict[str, Any]:
@@ -65,23 +67,35 @@ def build_spea2_result(state: SPEA2State, hv_reached: bool = False) -> dict[str,
         Result dictionary with X, F, evaluations, archive, population,
         and optionally G for constrained problems.
     """
+    archive_contents = get_external_archive_contents(state)
+    if wants_population_result(state):
+        result_X = state.X
+        result_F = state.F
+        result_G = state.G if state.constraint_mode != "none" else None
+    elif archive_contents is not None:
+        result_X, result_F = archive_contents
+        result_G = None
+    else:
+        result_X = state.env_X
+        result_F = state.env_F
+        result_G = state.env_G if state.constraint_mode != "none" else None
+
     result: dict[str, Any] = {
-        "X": state.env_X,
-        "F": state.env_F,
+        "X": result_X,
+        "F": result_F,
         "evaluations": state.n_eval,
         "hv_reached": hv_reached,
     }
-    if state.env_G is not None and state.constraint_mode != "none":
-        result["G"] = state.env_G
+    if state.kernel_profiler is not None:
+        result["kernel_profile"] = state.kernel_profiler.summary()
+    if result_G is not None:
+        result["G"] = result_G
     result["archive"] = {"X": state.env_X, "F": state.env_F}
     result["population"] = {"X": state.X, "F": state.F}
 
-    # Add external archive if present (from base class)
-    if state.archive_X is not None:
-        result["external_archive"] = {
-            "X": state.archive_X,
-            "F": state.archive_F,
-        }
+    if archive_contents is not None:
+        archive_X, archive_F = archive_contents
+        result["external_archive"] = {"X": archive_X, "F": archive_F}
 
     return result
 

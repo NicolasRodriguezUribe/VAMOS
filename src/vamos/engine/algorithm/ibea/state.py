@@ -10,6 +10,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
 from vamos.engine.algorithm.components.state import AlgorithmState
 from vamos.engine.algorithm.components.variation import VariationPipeline
 
@@ -65,22 +66,29 @@ def build_ibea_result(
         Result dictionary with X, F, G, population, archive data, and metadata.
         X and F contain only non-dominated solutions when kernel is provided.
     """
-    # Filter to non-dominated solutions only
-    if kernel is not None:
-        try:
-            ranks, _ = kernel.nsga2_ranking(state.F)
-            nd_mask = ranks == ranks.min(initial=0)
-            result_X = state.X[nd_mask].copy()
-            result_F = state.F[nd_mask].copy()
-            result_G = state.G[nd_mask].copy() if state.G is not None else None
-        except (ValueError, IndexError):
+    archive_contents = get_external_archive_contents(state)
+    if archive_contents is not None and not wants_population_result(state):
+        archive_X, archive_F = archive_contents
+        result_X = archive_X.copy()
+        result_F = archive_F.copy()
+        result_G = None
+    else:
+        should_filter = kernel is not None and not wants_population_result(state)
+        if should_filter:
+            try:
+                ranks, _ = kernel.nsga2_ranking(state.F)
+                nd_mask = ranks == ranks.min(initial=0)
+                result_X = state.X[nd_mask].copy()
+                result_F = state.F[nd_mask].copy()
+                result_G = state.G[nd_mask].copy() if state.G is not None else None
+            except (ValueError, IndexError):
+                result_X = state.X.copy()
+                result_F = state.F.copy()
+                result_G = state.G.copy() if state.G is not None else None
+        else:
             result_X = state.X.copy()
             result_F = state.F.copy()
             result_G = state.G.copy() if state.G is not None else None
-    else:
-        result_X = state.X.copy()
-        result_F = state.F.copy()
-        result_G = state.G.copy() if state.G is not None else None
 
     result = {
         "X": result_X,
@@ -93,10 +101,10 @@ def build_ibea_result(
         "population": {"X": state.X.copy(), "F": state.F.copy()},
     }
 
-    # Include archive if present
-    if state.archive_X is not None and state.archive_F is not None and state.archive_X.size > 0:
-        result["archive_X"] = state.archive_X.copy()
-        result["archive_F"] = state.archive_F.copy()
+    if archive_contents is not None:
+        archive_X, archive_F = archive_contents
+        result["archive_X"] = archive_X.copy()
+        result["archive_F"] = archive_F.copy()
 
     return result
 

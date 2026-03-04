@@ -1,23 +1,53 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Literal
 
 import numpy as np
-
-from vamos.foundation.constraints.utils import compute_violation, is_feasible
-from vamos.foundation.quality_indicators.pareto import pareto_filter
-
-from vamos.engine.algorithm.components.subset_selection import (
-    _hv_contributions,
-    _single_front_crowding,
-)
 
 try:  # pragma: no cover - optional dependency
     import moocore as _moocore
 except ImportError:  # pragma: no cover - optional dependency
     _moocore = None
 
+from vamos.engine.archive.pruning_selectors import select_maxmin_subset, select_ref_dirs_subset
+from vamos.foundation.constraints.utils import compute_violation, is_feasible
+from vamos.foundation.kernel.numpy_backend import _compute_crowding
+from vamos.foundation.quality_indicators.pareto import pareto_filter
+
 DeduplicateIn = Literal["objective", "decision", "both"]
+_HV_FALLBACK_WARNED = False
+
+
+def _single_front_crowding(F: np.ndarray) -> np.ndarray:
+    """Crowding distance for a single nondominated front."""
+    if F.shape[0] == 0:
+        return np.empty(0, dtype=float)
+    fronts = [list(range(F.shape[0]))]
+    return _compute_crowding(F, fronts)
+
+
+def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
+    """
+    Compute hypervolume contribution of each point.
+
+    Uses moocore when available; otherwise falls back to crowding distance and
+    emits a one-time warning.
+    """
+    global _HV_FALLBACK_WARNED
+    if F.shape[0] == 0:
+        return np.empty(0, dtype=float)
+    if _moocore is not None:
+        return np.asarray(_moocore.hv_contributions(F, ref=ref), dtype=float)
+    if not _HV_FALLBACK_WARNED:
+        warnings.warn(
+            "Hypervolume contributions requested but 'moocore' is not installed; "
+            "falling back to crowding distance.",
+            UserWarning,
+            stacklevel=2,
+        )
+        _HV_FALLBACK_WARNED = True
+    return _single_front_crowding(F)
 
 
 def _nondominated_mask(F: np.ndarray) -> np.ndarray:
@@ -169,7 +199,9 @@ class _BaseArchive:
             if keep_idx.ndim != 1:
                 raise ValueError("_select_subset() must return a 1D index array.")
             if keep_idx.size != self.truncate_size:
-                raise ValueError(f"_select_subset() returned {keep_idx.size} indices, expected {self.truncate_size}.")
+                raise ValueError(
+                    f"_select_subset() returned {keep_idx.size} indices, expected {self.truncate_size}."
+                )
             X_nd, F_nd, G_nd = _subset_arrays(X_nd, F_nd, G_nd, keep_idx)
 
         self._replace_contents(X_nd, F_nd, G_nd)
@@ -381,7 +413,9 @@ class HypervolumeArchive(_BaseArchive):
         if ref_point is not None:
             ref = np.asarray(ref_point, dtype=float)
             if ref.ndim != 1 or ref.shape[0] != self._n_obj:
-                raise ValueError(f"hv_ref_point must be 1D with length {self._n_obj}, got shape {ref.shape}.")
+                raise ValueError(
+                    f"hv_ref_point must be 1D with length {self._n_obj}, got shape {ref.shape}."
+                )
             self._fixed_ref = ref.copy()
 
     def _stable_ref(self, F: np.ndarray) -> np.ndarray:
@@ -487,6 +521,57 @@ class SPEA2Archive(_BaseArchive):
             break
 
         return np.asarray(selected, dtype=int)
+
+
+class MaxMinArchive(_BaseArchive):
+    """Bounded archive with greedy max-min distance truncation."""
+
+    def _select_subset(
+        self,
+        F: np.ndarray,
+        target_size: int,
+        G: np.ndarray | None = None,
+    ) -> np.ndarray:
+        return select_maxmin_subset(F, target_size)
+
+
+class ReferenceDirectionsArchive(_BaseArchive):
+    """Bounded archive with NSGA-III-style reference-direction niching."""
+
+    def __init__(
+        self,
+        capacity: int,
+        n_var: int,
+        n_obj: int,
+        dtype: Any,
+        *,
+        rng_seed: int = 0,
+        truncate_size: int | None = None,
+        objective_tolerance: float = 1e-10,
+        deduplicate_in: DeduplicateIn = "objective",
+        decision_tolerance: float = 1e-32,
+        n_con: int | None = None,
+    ) -> None:
+        super().__init__(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=objective_tolerance,
+            deduplicate_in=deduplicate_in,
+            decision_tolerance=decision_tolerance,
+            n_con=n_con,
+        )
+        self._rng = np.random.default_rng(rng_seed)
+
+    def _select_subset(
+        self,
+        F: np.ndarray,
+        target_size: int,
+        G: np.ndarray | None = None,
+    ) -> np.ndarray:
+        return select_ref_dirs_subset(F, target_size, self._rng)
 
 
 class UnboundedArchive:
@@ -698,5 +783,9 @@ __all__ = [
     "HypervolumeArchive",
     "CrowdingDistanceArchive",
     "SPEA2Archive",
+    "MaxMinArchive",
+    "ReferenceDirectionsArchive",
     "UnboundedArchive",
+    "_single_front_crowding",
+    "_hv_contributions",
 ]

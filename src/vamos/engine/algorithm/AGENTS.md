@@ -12,7 +12,7 @@ building blocks used across multiple algorithms.
 ## Structure
 
 - `components/`: reusable components
-  - `archive.py`: external archives (crowding distance, hypervolume)
+  - `archive.py`: external archives and bounded-archive pruning policies (`crowding`, `hv`, `mc_hv`, `knn`, `maxmin`, `ref_dirs`)
   - `population.py`: population initialization and evaluation helpers
   - `selection.py`: parent selection strategies
   - `termination.py`: termination criteria / trackers (e.g. `HVTracker`)
@@ -24,7 +24,8 @@ building blocks used across multiple algorithms.
   - Operator wiring lives in `src/vamos/engine/operators/policies/`
 - Config subfolder: `config/`
   - `base.py`, `nsgaii.py`, `moead.py`, `spea2.py`, `ibea.py`, `smsemoa.py`, `smpso.py`, `nsgaiii.py`, `agemoea.py`, `rvea.py`
-  - **Unified Archive API**: All configs must support `.archive(size, **kwargs)` using `BoundedArchive` parameters.
+  - **Unified Archive API**: All configs must support `.external_archive(capacity, **kwargs)` using `ExternalArchiveConfig`.
+  - Archive-enabled configs default to archive-backed top-level results unless `result_mode("population")` is set explicitly.
 - Registry/factory: `registry.py`, `factory.py`, `builders.py`
 
 ## Conventions
@@ -53,6 +54,7 @@ building blocks used across multiple algorithms.
 Algorithms are tunable via `vamos.engine.tuning.racing`:
 - Use `build_{algo}_config_space()` from `bridge.py` to get parameter space
 - Use `config_from_assignment(algo_name, params)` to convert tuned params to config
+- For tuned bounded external archives, the capacity is the population size; there is no `archive_size_factor` in the public tuning space.
 - Multi-fidelity tuning passes varying `budget` via `EvalContext`
 - Warm-start support: algorithms can checkpoint population state for continuation
 

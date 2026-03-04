@@ -7,22 +7,11 @@ from math import comb
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
-from vamos.engine.archive.bounded_archive import PrunePolicy
-from vamos.foundation.encoding import normalize_encoding
 
-from .base import (
-    ConstraintModeStr,
-    ResultMode,
-    _default_operators_for_encoding,
-    _normalize_tournament_selection_kwargs,
-    _require_fields,
-    _SerializableConfig,
-    _validate_operators,
-)
-from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
+from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(frozen=True)
 class NSGAIIIConfig(_SerializableConfig):
     pop_size: int
     crossover: tuple[str, dict[str, Any]]
@@ -32,7 +21,7 @@ class NSGAIIIConfig(_SerializableConfig):
     enforce_ref_dirs: bool = True
     pop_size_auto: bool = False
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: RepairConfigValue = "auto"
+    repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     track_genealogy: bool = False
@@ -45,7 +34,6 @@ class NSGAIIIConfig(_SerializableConfig):
         pop_size: int | None = None,
         n_var: int | None = None,
         n_obj: int = 3,
-        encoding: str | None = None,
     ) -> NSGAIIIConfig:
         """
         Create a default NSGA-III configuration.
@@ -54,26 +42,21 @@ class NSGAIIIConfig(_SerializableConfig):
             pop_size: Population size (default: matches reference directions)
             n_var: Number of variables (for mutation prob)
             n_obj: Number of objectives (for reference directions)
-            encoding: Problem encoding. If omitted, defaults to "real".
         """
         mut_prob = 1.0 / n_var if n_var else 0.1
         divisions = 12 if n_obj == 3 else 6
         if pop_size is None:
             pop_size = comb(divisions + n_obj - 1, n_obj - 1)
-        normalized = normalize_encoding(encoding or "real")
-        cx, mt = _default_operators_for_encoding(normalized, mut_prob)
-        builder = (
+        return (
             cls.builder()
             .pop_size(pop_size)
-            .crossover(cx[0], **cx[1])
-            .mutation(mt[0], **mt[1])
+            .crossover("sbx", prob=1.0, eta=30.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("tournament")
             .reference_directions(divisions=divisions)
             .pop_size_auto(True)
+            .build()
         )
-        if normalized == "real":
-            builder = builder.repair("clip")
-        return builder.build()
 
     @classmethod
     def builder(cls) -> _NSGAIIIConfigBuilder:
@@ -96,16 +79,16 @@ class _NSGAIIIConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
-    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
+    def crossover(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: MutationName | str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
+    def mutation(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: SelectionName | str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
-        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
+    def selection(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
+        self._cfg["selection"] = (method, kwargs)
         return self
 
     def reference_directions(
@@ -125,15 +108,15 @@ class _NSGAIIIConfigBuilder:
         self._cfg["pop_size_auto"] = bool(enabled)
         return self
 
-    def constraint_mode(self, value: ConstraintModeStr | str) -> _NSGAIIIConfigBuilder:
+    def constraint_mode(self, value: str) -> _NSGAIIIConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
-    def repair(self, method: RepairName | str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
+    def repair(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
+    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -145,22 +128,19 @@ class _NSGAIIIConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: ResultMode | str) -> _NSGAIIIConfigBuilder:
+    def result_mode(self, value: str) -> _NSGAIIIConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(
-        self,
-        capacity: int | None = None,
-        pruning: PrunePolicy = "crowding",
-    ) -> _NSGAIIIConfigBuilder:
+    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         """Configure an external archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            pruning: Strategy used when bounded archive exceeds capacity.
+            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def build(self) -> NSGAIIIConfig:
@@ -169,7 +149,6 @@ class _NSGAIIIConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection"),
             "NSGA-III",
         )
-        _validate_operators(self._cfg)
         ref_dirs = self._cfg.get("reference_directions", {})
         return NSGAIIIConfig(
             pop_size=self._cfg["pop_size"],

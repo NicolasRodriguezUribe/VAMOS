@@ -21,21 +21,24 @@ def real_operator_part_medium(
             Real("crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1]),
             Categorical(
                 "mutation",
-                ["polynomial", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform"],
+                ["pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform"],
             ),
             Real(mutation_prob_param, mutation_prob_bounds[0], mutation_prob_bounds[1]),
             Real("mutation_eta", 5.0, 40.0),
         ]
     )
     if include_repair:
-        params.append(Categorical("repair", ["none", "clip", "reflect", "random", "round", "wrap", "midpoint"]))
+        params.append(Categorical("repair", ["none", "clip", "reflect", "random", "round"]))
 
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
         ConditionalBlock(
             "crossover",
             "blx_alpha",
-            [Real("crossover_alpha", 0.0, 1.0)],
+            [
+                Real("crossover_alpha", 0.0, 1.0),
+                Categorical("blx_repair", ["clip", "random", "reflect", "round"]),
+            ],
         ),
         ConditionalBlock(
             "crossover",
@@ -103,12 +106,12 @@ def integer_operator_part_full(
     params: list[ParamType] = [
         Categorical("crossover", ["uniform", "arithmetic", "sbx"]),
         Real("crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1]),
-        Categorical("mutation", ["reset", "creep", "polynomial", "gaussian", "boundary"]),
+        Categorical("mutation", ["reset", "creep", "pm", "gaussian", "boundary"]),
         Real(mutation_prob_param, mutation_prob_bounds[0], mutation_prob_bounds[1]),
     ]
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
-        ConditionalBlock("mutation", "polynomial", [Real("mutation_eta", 5.0, 40.0)]),
+        ConditionalBlock("mutation", "pm", [Real("mutation_eta", 5.0, 40.0)]),
         ConditionalBlock("mutation", "creep", [Int("creep_step", 1, 5)]),
         ConditionalBlock("mutation", "gaussian", [Real("gaussian_sigma", 0.1, 5.0)]),
     ]
@@ -133,29 +136,28 @@ def mixed_operator_part(
 
 
 def external_archive_part() -> SpacePart:
-    """External-archive params shared by all algorithms.
-
-    ``archive_capacity_factor`` is a multiplier of the population size.
-    ``0`` represents an unbounded archive.  When the archive is unbounded,
-    ``archive_prune_policy`` is inactive.
-    """
+    """External-archive params shared by all algorithms."""
     params: list[ParamType] = [
         Boolean("use_external_archive"),
+        Boolean("archive_unbounded"),
     ]
-    archive_capacity_param = Categorical(
-        "archive_capacity_factor",
-        [0, 0.25, 0.5, 1, 2, 5, 10],
+    archive_type_param = Categorical("archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"])
+    archive_prune_policy_param = Categorical(
+        "archive_prune_policy", ["crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"]
     )
-    archive_prune_policy_param = Categorical("archive_prune_policy", ["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"])
+    archive_epsilon_param = Real("archive_epsilon", 1e-4, 0.1, log=True)
     conditionals = [
         ConditionalBlock(
             "use_external_archive",
             True,
-            [archive_capacity_param, archive_prune_policy_param],
+            [archive_type_param, archive_prune_policy_param, archive_epsilon_param],
         ),
     ]
     conditions = [
-        Condition("archive_prune_policy", "cfg['archive_capacity_factor'] != 0"),
+        Condition("archive_type", "cfg['archive_unbounded'] == False"),
+        Condition("archive_prune_policy", "cfg['archive_unbounded'] == False"),
+        Condition("archive_epsilon", "cfg['archive_unbounded'] == False"),
+        Condition("archive_epsilon", "cfg['archive_type'] == 'epsilon_grid' or cfg['archive_type'] == 'hybrid'"),
     ]
     return params, conditionals, conditions
 

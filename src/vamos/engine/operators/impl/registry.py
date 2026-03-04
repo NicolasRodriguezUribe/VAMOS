@@ -65,6 +65,7 @@ def _get_registry() -> Registry[object]:
 
     # Mutation
     reg.register("polynomial", PolynomialMutation)
+    reg.register("pm", PolynomialMutation)
     reg.register("non_uniform", NonUniformMutation)
     reg.register("gaussian", GaussianMutation)
     reg.register("uniform_reset", UniformResetMutation)
@@ -155,6 +156,7 @@ def _get_registry() -> Registry[object]:
     reg.register("int_sbx", IntegerSBXCrossover)
     reg.register("reset", RandomResetMutation)
     reg.register("int_pm", IntegerPolynomialMutation)
+    reg.register("pm_int", IntegerPolynomialMutation)
     reg.register("creep", CreepMutation)
     reg.register("boundary", BoundaryIntegerMutation)
     reg.register("int_gaussian", GaussianIntegerMutation)

@@ -6,22 +6,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
-from vamos.engine.archive.bounded_archive import PrunePolicy
-from vamos.foundation.encoding import normalize_encoding
 
-from .base import (
-    ConstraintModeStr,
-    ResultMode,
-    _default_operators_for_encoding,
-    _normalize_tournament_selection_kwargs,
-    _require_fields,
-    _SerializableConfig,
-    _validate_operators,
-)
-from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
+from .base import ConstraintModeStr, ResultMode, _require_fields, _SerializableConfig
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(frozen=True)
 class SPEA2Config(_SerializableConfig):
     pop_size: int
     archive_size: int  # Internal archive (part of SPEA2 algorithm)
@@ -29,7 +18,7 @@ class SPEA2Config(_SerializableConfig):
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
     k_neighbors: int | None = None
-    repair: RepairConfigValue = "auto"
+    repair: tuple[str, dict[str, Any]] | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
@@ -42,29 +31,18 @@ class SPEA2Config(_SerializableConfig):
         cls,
         pop_size: int = 100,
         n_var: int | None = None,
-        encoding: str | None = None,
     ) -> SPEA2Config:
-        """Create a default SPEA2 configuration.
-
-        Args:
-            pop_size: Population size (default: 100)
-            n_var: Number of variables (for mutation prob)
-            encoding: Problem encoding. If omitted, defaults to "real".
-        """
+        """Create a default SPEA2 configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
-        normalized = normalize_encoding(encoding or "real")
-        cx, mt = _default_operators_for_encoding(normalized, mut_prob)
-        builder = (
+        return (
             cls.builder()
             .pop_size(pop_size)
             .archive_size(pop_size)
-            .crossover(cx[0], **cx[1])
-            .mutation(mt[0], **mt[1])
+            .crossover("sbx", prob=1.0, eta=20.0)
+            .mutation("pm", prob=mut_prob, eta=20.0)
             .selection("tournament")
+            .build()
         )
-        if normalized == "real":
-            builder = builder.repair("clip")
-        return builder.build()
 
     @classmethod
     def builder(cls) -> _SPEA2ConfigBuilder:
@@ -91,27 +69,27 @@ class _SPEA2ConfigBuilder:
         self._cfg["archive_size"] = value
         return self
 
-    def crossover(self, method: CrossoverName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def crossover(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
-    def mutation(self, method: MutationName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def mutation(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
-    def selection(self, method: SelectionName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
-        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
+    def selection(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+        self._cfg["selection"] = (method, kwargs)
         return self
 
     def k_neighbors(self, value: int) -> _SPEA2ConfigBuilder:
         self._cfg["k_neighbors"] = value
         return self
 
-    def repair(self, method: RepairName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def repair(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
-    def initializer(self, method: InitializerName | str, **kwargs: Any) -> _SPEA2ConfigBuilder:
+    def initializer(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
@@ -119,7 +97,7 @@ class _SPEA2ConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: ConstraintModeStr | str) -> _SPEA2ConfigBuilder:
+    def constraint_mode(self, value: str) -> _SPEA2ConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -127,24 +105,21 @@ class _SPEA2ConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: ResultMode | str) -> _SPEA2ConfigBuilder:
+    def result_mode(self, value: str) -> _SPEA2ConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
-    def external_archive(
-        self,
-        capacity: int | None = None,
-        pruning: PrunePolicy = "crowding",
-    ) -> _SPEA2ConfigBuilder:
+    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _SPEA2ConfigBuilder:
         """Configure an external archive for result storage.
 
         Note: This is separate from ``archive_size`` which is the internal SPEA2 archive.
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            pruning: Strategy used when bounded archive exceeds capacity.
+            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, pruning=pruning)
+        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def build(self) -> SPEA2Config:
@@ -153,7 +128,6 @@ class _SPEA2ConfigBuilder:
             ("pop_size", "archive_size", "crossover", "mutation", "selection"),
             "SPEA2",
         )
-        _validate_operators(self._cfg)
         return SPEA2Config(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],

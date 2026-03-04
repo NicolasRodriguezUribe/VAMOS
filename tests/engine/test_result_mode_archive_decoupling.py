@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 from vamos.engine.algorithm.agemoea import AGEMOEA
 from vamos.engine.algorithm.config import (
@@ -7,7 +8,9 @@ from vamos.engine.algorithm.config import (
     RVEAConfig,
     SMSEMOAConfig,
 )
+from vamos.engine.algorithm.moead import MOEAD
 from vamos.engine.algorithm.rvea import RVEA
+from vamos.engine.algorithm.smsemoa import SMSEMOA
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
@@ -43,6 +46,18 @@ def test_moead_archive_keeps_default_nondominated_result_mode():
     )
     assert cfg.result_mode == "non_dominated"
 
+    problem = ZDT1Problem(n_var=6)
+    result = MOEAD(cfg.to_dict(), kernel=NumPyKernel()).run(
+        problem,
+        termination=("max_evaluations", 20),
+        seed=0,
+    )
+
+    assert result["archive"]["F"].shape[0] > 0
+    assert result["population"]["F"].shape[0] == 10
+    np.testing.assert_allclose(result["F"], result["archive"]["F"])
+    np.testing.assert_allclose(result["X"], result["archive"]["X"])
+
 
 def test_smsemoa_archive_keeps_default_nondominated_result_mode():
     cfg = (
@@ -55,6 +70,18 @@ def test_smsemoa_archive_keeps_default_nondominated_result_mode():
         .build()
     )
     assert cfg.result_mode == "non_dominated"
+
+    problem = ZDT1Problem(n_var=6)
+    result = SMSEMOA(cfg.to_dict(), kernel=NumPyKernel()).run(
+        problem,
+        termination=("max_evaluations", 20),
+        seed=0,
+    )
+
+    assert result["archive"]["F"].shape[0] > 0
+    assert result["population"]["F"].shape[0] == 10
+    np.testing.assert_allclose(result["F"], result["archive"]["F"])
+    np.testing.assert_allclose(result["X"], result["archive"]["X"])
 
 
 def test_moead_rejects_archive_result_mode():
@@ -106,9 +133,10 @@ def test_agemoea_archive_keeps_default_result_and_exposes_population():
         seed=0,
     )
 
-    assert result["F"].shape[0] <= result["population"]["F"].shape[0]
     assert result["population"]["F"].shape[0] == pop_size
     assert result["archive"]["F"].shape[0] > 0
+    np.testing.assert_allclose(result["F"], result["archive"]["F"])
+    np.testing.assert_allclose(result["X"], result["archive"]["X"])
 
 
 def test_agemoea_population_result_mode_with_archive():
@@ -135,8 +163,9 @@ def test_rvea_archive_keeps_default_result_and_exposes_population():
         seed=0,
     )
 
-    assert result["F"].shape[0] <= result["population"]["F"].shape[0]
     assert result["archive"]["F"].shape[0] > 0
+    np.testing.assert_allclose(result["F"], result["archive"]["F"])
+    np.testing.assert_allclose(result["X"], result["archive"]["X"])
 
 
 def test_rvea_population_result_mode_with_archive():
