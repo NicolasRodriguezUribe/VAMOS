@@ -104,6 +104,9 @@ docs = [
 openai = [
   "openai>=1.0.0",
 ]
+anthropic = [
+  "anthropic>=0.30.0",
+]
 # Development and documentation
 dev = [
   "pytest>=7.0",
