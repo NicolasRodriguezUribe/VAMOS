@@ -24,7 +24,6 @@ from vamos.engine.tuning.racing.bridge import (
     build_rvea_config_space,
     build_rvea_integer_config_space,
     build_rvea_permutation_config_space,
-    build_smpso_config_space,
     build_smpso_mixed_config_space,
     build_smsemoa_binary_config_space,
     build_smsemoa_integer_config_space,
@@ -90,143 +89,22 @@ def test_nsgaii_config_space_builds_and_constructs_config():
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.pop_size > 0
     assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
-    assert cfg.mutation[0] in (
-        "polynomial",
-        "linked_polynomial",
-        "non_uniform",
-        "gaussian",
-        "uniform_reset",
-        "cauchy",
-        "uniform",
-        "levy_flight",
-        "power_law",
-    )
+    assert cfg.mutation[0] in ("pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform")
 
 
-def test_nsgaii_archive_capacity_factor_zero_disables_prune_policy():
+def test_nsgaii_archive_unbounded_disables_archive_params():
     space = build_nsgaii_config_space()
     param_space = space.to_param_space()
-    cfg_unbounded = {"use_external_archive": True, "archive_capacity_factor": 0}
-    assert param_space.is_active("archive_capacity_factor", cfg_unbounded)
-    assert not param_space.is_active("archive_prune_policy", cfg_unbounded)
-    cfg_bounded = {"use_external_archive": True, "archive_capacity_factor": 2}
-    assert param_space.is_active("archive_capacity_factor", cfg_bounded)
+    cfg = {"use_external_archive": True, "archive_unbounded": True}
+    assert not param_space.is_active("archive_type", cfg)
+    assert not param_space.is_active("archive_prune_policy", cfg)
+    assert not param_space.is_active("archive_epsilon", cfg)
+    cfg_bounded = {"use_external_archive": True, "archive_unbounded": False, "archive_type": "size_cap"}
+    assert param_space.is_active("archive_type", cfg_bounded)
     assert param_space.is_active("archive_prune_policy", cfg_bounded)
-    cfg_disabled = {"use_external_archive": False}
-    assert not param_space.is_active("archive_capacity_factor", cfg_disabled)
-    assert not param_space.is_active("archive_prune_policy", cfg_disabled)
-
-
-def test_archive_capacity_factor_uses_half_up_rounding():
-    assignment = {
-        "pop_size": 25,
-        "offspring_ratio": 1.0,
-        "selection": "tournament",
-        "selection_pressure": 2,
-        "initializer": "random",
-        "crossover": "sbx",
-        "crossover_prob": 0.9,
-        "crossover_eta": 20.0,
-        "mutation": "polynomial",
-        "mutation_prob_factor": 1.0,
-        "mutation_eta": 20.0,
-        "repair": "clip",
-        "use_external_archive": True,
-        "archive_capacity_factor": 0.5,
-        "archive_prune_policy": "crowding",
-    }
-
-    cfg = config_from_assignment("nsgaii", assignment)
-
-    assert cfg.external_archive is not None
-    assert cfg.external_archive.capacity == 13
-
-
-def test_archive_capacity_factor_rejects_negative_values():
-    assignment = {
-        "pop_size": 25,
-        "offspring_ratio": 1.0,
-        "selection": "tournament",
-        "selection_pressure": 2,
-        "initializer": "random",
-        "crossover": "sbx",
-        "crossover_prob": 0.9,
-        "crossover_eta": 20.0,
-        "mutation": "polynomial",
-        "mutation_prob_factor": 1.0,
-        "mutation_eta": 20.0,
-        "repair": "clip",
-        "use_external_archive": True,
-        "archive_capacity_factor": -0.5,
-        "archive_prune_policy": "crowding",
-    }
-
-    with pytest.raises(ValueError, match="archive_capacity_factor must be >= 0"):
-        config_from_assignment("nsgaii", assignment)
-
-
-def test_nsgaii_offspring_ratio_zero_maps_to_steady_state():
-    assignment = {
-        "pop_size": 25,
-        "offspring_ratio": 0,
-        "selection": "tournament",
-        "selection_pressure": 2,
-        "initializer": "random",
-        "crossover": "sbx",
-        "crossover_prob": 0.9,
-        "crossover_eta": 20.0,
-        "mutation": "polynomial",
-        "mutation_prob_factor": 1.0,
-        "mutation_eta": 20.0,
-        "repair": "clip",
-        "use_external_archive": False,
-    }
-
-    cfg = config_from_assignment("nsgaii", assignment)
-
-    assert cfg.offspring_size == 1
-
-
-def test_nsgaii_offspring_ratio_rejects_negative_values():
-    assignment = {
-        "pop_size": 25,
-        "offspring_ratio": -0.25,
-        "selection": "tournament",
-        "selection_pressure": 2,
-        "initializer": "random",
-        "crossover": "sbx",
-        "crossover_prob": 0.9,
-        "crossover_eta": 20.0,
-        "mutation": "polynomial",
-        "mutation_prob_factor": 1.0,
-        "mutation_eta": 20.0,
-        "repair": "clip",
-        "use_external_archive": False,
-    }
-
-    with pytest.raises(ValueError, match="offspring_ratio must be >= 0"):
-        config_from_assignment("nsgaii", assignment)
-
-
-def test_real_tuning_spaces_expose_new_repair_choices():
-    nsgaii_repair = build_nsgaii_config_space().to_param_space().params["repair"]
-    smpso_repair = build_smpso_config_space().to_param_space().params["repair"]
-
-    assert isinstance(nsgaii_repair, Categorical)
-    assert isinstance(smpso_repair, Categorical)
-    assert {"wrap", "midpoint"}.issubset(set(nsgaii_repair.choices))
-    assert {"wrap", "midpoint"}.issubset(set(smpso_repair.choices))
-
-
-def test_smpso_config_space_applies_repair_choice():
-    rng = np.random.default_rng(10)
-    space = build_smpso_config_space()
-    assignment = space.sample(rng)
-    assignment["repair"] = "wrap"
-
-    cfg = config_from_assignment("smpso", assignment)
-
-    assert cfg.repair == ("wrap", {})
+    assert not param_space.is_active("archive_epsilon", cfg_bounded)
+    cfg_grid = {"use_external_archive": True, "archive_unbounded": False, "archive_type": "epsilon_grid"}
+    assert param_space.is_active("archive_epsilon", cfg_grid)
 
 
 def test_nsgaii_permutation_config_space_builds_and_constructs_config():
@@ -267,7 +145,7 @@ def test_agemoea_config_space_builds_and_constructs_config():
     assert cfg.pop_size > 0
     assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
     assert cfg.mutation[0] in (
-        "polynomial",
+        "pm",
         "linked_polynomial",
         "non_uniform",
         "gaussian",
@@ -287,7 +165,7 @@ def test_rvea_config_space_builds_and_constructs_config():
     assert cfg.n_partitions == int(assignment["n_partitions"])
     assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
     assert cfg.mutation[0] in (
-        "polynomial",
+        "pm",
         "linked_polynomial",
         "non_uniform",
         "gaussian",
@@ -304,13 +182,14 @@ def test_agemoea_external_archive_config():
     assignment.update(
         {
             "use_external_archive": True,
+            "archive_type": "size_cap",
             "archive_prune_policy": "crowding",
-            "archive_capacity_factor": 2,
+            "archive_epsilon": 0.01,
         }
     )
     cfg = config_from_assignment("agemoea", assignment)
     assert cfg.external_archive is not None
-    assert cfg.external_archive.capacity == 2 * cfg.pop_size
+    assert cfg.external_archive.capacity == cfg.pop_size
     assert cfg.result_mode == "non_dominated"
 
 
@@ -322,14 +201,170 @@ def test_rvea_external_archive_config():
         {
             "n_obj": 3,
             "use_external_archive": True,
+            "archive_type": "size_cap",
             "archive_prune_policy": "crowding",
-            "archive_capacity_factor": 2,
+            "archive_epsilon": 0.01,
         }
     )
     cfg = config_from_assignment("rvea", assignment)
     assert cfg.external_archive is not None
-    assert cfg.external_archive.capacity == 2 * cfg.pop_size
+    assert cfg.external_archive.capacity == cfg.pop_size
     assert cfg.result_mode == "non_dominated"
+
+
+def test_external_archive_config_uses_hv_policy_names():
+    assignment = {
+        "pop_size": 32,
+        "offspring_size": 32,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob": "1/n",
+        "mutation_eta": 20.0,
+        "use_external_archive": True,
+        "archive_type": "size_cap",
+        "archive_prune_policy": "hv",
+        "archive_epsilon": 0.01,
+    }
+    cfg = config_from_assignment("nsgaii", assignment)
+    assert cfg.external_archive is not None
+    assert cfg.external_archive.capacity == cfg.pop_size
+    assert cfg.external_archive.pruning == "hv"
+
+
+def test_external_archive_config_uses_knn_policy_name():
+    assignment = {
+        "pop_size": 32,
+        "offspring_size": 32,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob": "1/n",
+        "mutation_eta": 20.0,
+        "use_external_archive": True,
+        "archive_type": "size_cap",
+        "archive_prune_policy": "knn",
+        "archive_epsilon": 0.01,
+    }
+    cfg = config_from_assignment("nsgaii", assignment)
+    assert cfg.external_archive is not None
+    assert cfg.external_archive.capacity == cfg.pop_size
+    assert cfg.external_archive.pruning == "knn"
+
+
+def test_external_archive_config_uses_maxmin_policy_name():
+    assignment = {
+        "pop_size": 32,
+        "offspring_size": 32,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob": "1/n",
+        "mutation_eta": 20.0,
+        "use_external_archive": True,
+        "archive_type": "size_cap",
+        "archive_prune_policy": "maxmin",
+        "archive_epsilon": 0.01,
+    }
+    cfg = config_from_assignment("nsgaii", assignment)
+    assert cfg.external_archive is not None
+    assert cfg.external_archive.capacity == cfg.pop_size
+    assert cfg.external_archive.pruning == "maxmin"
+
+
+def test_external_archive_config_uses_ref_dirs_policy_name():
+    assignment = {
+        "pop_size": 32,
+        "offspring_size": 32,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob": "1/n",
+        "mutation_eta": 20.0,
+        "use_external_archive": True,
+        "archive_type": "size_cap",
+        "archive_prune_policy": "ref_dirs",
+        "archive_epsilon": 0.01,
+    }
+    cfg = config_from_assignment("nsgaii", assignment)
+    assert cfg.external_archive is not None
+    assert cfg.external_archive.capacity == cfg.pop_size
+    assert cfg.external_archive.pruning == "ref_dirs"
+
+
+def test_external_archive_config_rejects_legacy_hv_policy_aliases():
+    assignment = {
+        "pop_size": 32,
+        "offspring_size": 32,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob": "1/n",
+        "mutation_eta": 20.0,
+        "use_external_archive": True,
+        "archive_type": "size_cap",
+        "archive_prune_policy": "hv_contrib",
+        "archive_epsilon": 0.01,
+    }
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'hv_contrib'"):
+        config_from_assignment("nsgaii", assignment)
+
+
+def test_external_archive_config_rejects_spea2_prune_policy_name():
+    assignment = {
+        "pop_size": 32,
+        "offspring_size": 32,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob": "1/n",
+        "mutation_eta": 20.0,
+        "use_external_archive": True,
+        "archive_type": "size_cap",
+        "archive_prune_policy": "spea2",
+        "archive_epsilon": 0.01,
+    }
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'spea2'"):
+        config_from_assignment("nsgaii", assignment)
+
+
+def test_external_archive_config_rejects_random_prune_policy_name():
+    assignment = {
+        "pop_size": 32,
+        "offspring_size": 32,
+        "selection": "tournament",
+        "selection_pressure": 2,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob": "1/n",
+        "mutation_eta": 20.0,
+        "use_external_archive": True,
+        "archive_type": "size_cap",
+        "archive_prune_policy": "random",
+        "archive_epsilon": 0.01,
+    }
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'random'"):
+        config_from_assignment("nsgaii", assignment)
 
 
 def test_binary_integer_config_spaces_build_and_construct_config():
@@ -344,7 +379,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_nsgaii_integer_config_space,
             "nsgaii_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "polynomial", "gaussian", "boundary"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
         ),
         (
             build_moead_binary_config_space,
@@ -356,7 +391,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_moead_integer_config_space,
             "moead_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "polynomial", "gaussian", "boundary"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
         ),
         (
             build_nsgaiii_binary_config_space,
@@ -368,7 +403,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_nsgaiii_integer_config_space,
             "nsgaiii_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "polynomial", "gaussian", "boundary"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
         ),
         (
             build_smsemoa_binary_config_space,
@@ -380,7 +415,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_smsemoa_integer_config_space,
             "smsemoa_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "polynomial", "gaussian", "boundary"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
         ),
         (
             build_ibea_binary_config_space,
@@ -392,7 +427,7 @@ def test_binary_integer_config_spaces_build_and_construct_config():
             build_ibea_integer_config_space,
             "ibea_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "polynomial", "gaussian", "boundary"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
         ),
     ]
 
@@ -425,7 +460,7 @@ def test_new_permutation_binary_integer_builders_construct_configs():
             build_agemoea_integer_config_space,
             "agemoea_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "polynomial", "gaussian", "boundary"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
             False,
         ),
         (
@@ -446,7 +481,7 @@ def test_new_permutation_binary_integer_builders_construct_configs():
             build_rvea_integer_config_space,
             "rvea_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "polynomial", "gaussian", "boundary"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
             True,
         ),
         (
@@ -467,7 +502,7 @@ def test_new_permutation_binary_integer_builders_construct_configs():
             build_spea2_integer_config_space,
             "spea2_integer",
             {"uniform", "arithmetic", "sbx"},
-            {"reset", "creep", "polynomial", "gaussian", "boundary"},
+            {"reset", "creep", "pm", "gaussian", "boundary"},
             False,
         ),
         (

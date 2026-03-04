@@ -49,10 +49,10 @@ archive:
     archive_type: size_cap     # size_cap|epsilon_grid|hvc_prune|hybrid
     size_cap: 200
     nondominated_only: true
-    prune_policy: crowding     # crowding|hv_contrib|random|mc_hv_contrib
+    prune_policy: crowding     # default; crowding|hv|mc_hv|knn|maxmin|ref_dirs
     epsilon: 0.01              # grid resolution for epsilon_grid/hybrid
-    hv_ref_point: null         # optional; required for hv_contrib policies
-    hv_samples: 20000          # for mc_hv_contrib
+    hv_ref_point: null         # optional; required for hv-based policies
+    hv_samples: 20000          # for mc_hv
     rng_seed: 0
 ```
 
@@ -61,6 +61,10 @@ Artifacts:
 
 Metadata:
 - `metadata.json` additions under `archive`
+
+Notes:
+- In the tuning spaces, bounded external archives use the population size as their capacity.
+- When an algorithm is configured with an external archive, top-level results come from that archive by default unless `result_mode="population"` is requested.
 
 ## Reproducibility
 

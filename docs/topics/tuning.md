@@ -114,7 +114,8 @@ vamos tune \
 
 Notes:
 - The MOEA/D tuner explores both SBX and DE crossovers, and can select PBI aggregation (with a tunable theta). These settings align with the jMetalPy default configuration when chosen.
-- The NSGA-II tuner includes external archive controls with configurable capacity and pruning policy.
+- The tuning spaces include external archive controls. When `use_external_archive=True`, you can choose bounded vs unbounded archiving. For bounded archives, the archive capacity is the population size, `archive_prune_policy` defaults to `crowding`, and `archive_epsilon` is only active for `epsilon_grid` or `hybrid`.
+- When an external archive is enabled, top-level results come from that archive by default. Use `result_mode="population"` only when you explicitly want the final population instead.
 
 ### Options
 

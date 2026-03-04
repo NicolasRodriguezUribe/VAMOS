@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
 from vamos.engine.algorithm.components.state import AlgorithmState
 
 if TYPE_CHECKING:
@@ -109,20 +110,23 @@ def build_moead_result(
         Result dictionary with X, F, weights, evaluations, population, and optional archive.
         X and F contain only non-dominated solutions when kernel is provided.
     """
-    mode = getattr(state, "result_mode", "population")
-    should_filter = kernel is not None and mode is not None and mode != "population"
-
-    if should_filter:
-        try:
-            ranks, _ = kernel.nsga2_ranking(state.F)
-            nd_mask = ranks == ranks.min(initial=0)
-            result_X = state.X[nd_mask]
-            result_F = state.F[nd_mask]
-            result_G = state.G[nd_mask] if state.G is not None else None
-        except (ValueError, IndexError):
-            result_X, result_F, result_G = state.X, state.F, state.G
+    archive_contents = get_external_archive_contents(state)
+    if archive_contents is not None and not wants_population_result(state):
+        result_X, result_F = archive_contents
+        result_G = None
     else:
-        result_X, result_F, result_G = state.X, state.F, state.G
+        should_filter = kernel is not None and not wants_population_result(state)
+        if should_filter:
+            try:
+                ranks, _ = kernel.nsga2_ranking(state.F)
+                nd_mask = ranks == ranks.min(initial=0)
+                result_X = state.X[nd_mask]
+                result_F = state.F[nd_mask]
+                result_G = state.G[nd_mask] if state.G is not None else None
+            except (ValueError, IndexError):
+                result_X, result_F, result_G = state.X, state.F, state.G
+        else:
+            result_X, result_F, result_G = state.X, state.F, state.G
 
     result: dict[str, Any] = {
         "X": result_X,
@@ -136,12 +140,9 @@ def build_moead_result(
     if result_G is not None:
         result["G"] = result_G
 
-    # Add archive contents
-    if state.archive_manager is not None:
-        arch_X, arch_F = state.archive_manager.contents()
+    if archive_contents is not None:
+        arch_X, arch_F = archive_contents
         result["archive"] = {"X": arch_X, "F": arch_F}
-    elif state.archive_X is not None and state.archive_F is not None:
-        result["archive"] = {"X": state.archive_X, "F": state.archive_F}
 
     return result
 

@@ -1,34 +1,107 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 
-PrunePolicy = Literal["crowding", "hv_contrib", "random", "mc_hv_contrib", "spea2"]
+from vamos.engine.archive.pruning_selectors import select_maxmin_subset, select_ref_dirs_subset
+
+ArchiveType = Literal["size_cap", "epsilon_grid", "hvc_prune", "hybrid"]
+CanonicalPrunePolicy = Literal["crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"]
+PrunePolicy = CanonicalPrunePolicy
+DeduplicateIn = Literal["objective", "decision", "both"]
+
+_VALID_PRUNE_POLICIES = {"crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"}
+
+
+def normalize_prune_policy(policy: str) -> CanonicalPrunePolicy:
+    normalized = policy
+    if normalized not in _VALID_PRUNE_POLICIES:
+        valid = ", ".join(sorted(_VALID_PRUNE_POLICIES))
+        raise ValueError(f"Unsupported prune_policy '{policy}'. Expected one of: {valid}.")
+    return cast(CanonicalPrunePolicy, normalized)
 
 
 @dataclass(frozen=True)
 class ExternalArchiveConfig:
-    """Configuration for an external (result-collection) archive."""
+    """Configuration for an external (result-collection) archive.
+
+    Parameters
+    ----------
+    capacity : int | None
+        Maximum number of solutions. ``None`` means unbounded.
+    pruning : PrunePolicy
+        Strategy used when the archive exceeds *capacity*.
+    archive_type : ArchiveType
+        Bounding strategy (grid, HV-contribution, hybrid, or plain cap).
+    nondominated_only : bool
+        If True, dominated solutions are discarded on insertion.
+    epsilon : float
+        Grid cell width for ``epsilon_grid`` / ``hybrid`` archive types.
+    hv_ref_point : list[float] | None
+        Explicit reference point for HV-contribution pruning.
+    hv_samples : int
+        Monte-Carlo samples for HV-contribution approximation (m > 2).
+    rng_seed : int
+        Seed for stochastic pruning policies.
+    """
 
     capacity: int | None = None
     pruning: PrunePolicy = "crowding"
+    archive_type: ArchiveType = "size_cap"
+    nondominated_only: bool = True
+    epsilon: float = 0.01
+    hv_ref_point: list[float] | None = None
+    hv_samples: int = 20000
+    rng_seed: int = 0
+    objective_tolerance: float = 1e-10
+    truncate_size: int | None = None
+    deduplicate_in: DeduplicateIn = "objective"
+    decision_tolerance: float = 1e-32
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "pruning", normalize_prune_policy(self.pruning))
         if self.capacity is not None and self.capacity <= 0:
             raise ValueError("capacity must be > 0 when provided.")
+        if self.truncate_size is not None:
+            if self.capacity is None:
+                raise ValueError("truncate_size requires a finite capacity.")
+            if self.truncate_size <= 0:
+                raise ValueError("truncate_size must be > 0.")
+            if self.truncate_size > self.capacity:
+                raise ValueError("truncate_size must be <= capacity.")
+        if self.objective_tolerance < 0.0:
+            raise ValueError("objective_tolerance must be >= 0.")
+        if self.decision_tolerance < 0.0:
+            raise ValueError("decision_tolerance must be >= 0.")
 
 
 @dataclass(frozen=True)
 class BoundedArchiveConfig:
     enabled: bool = True
+    archive_type: ArchiveType = "size_cap"
+    nondominated_only: bool = True
+
     size_cap: int = 200
+    truncate_size: int | None = None
+    epsilon: float = 0.01  # for epsilon_grid (objective space)
     prune_policy: PrunePolicy = "crowding"
 
+    # HV contribution pruning
+    hv_ref_point: list[float] | None = None
+    hv_samples: int = 20000  # for Monte Carlo contributions (m>2 fallback)
+    rng_seed: int = 0
+
     def __post_init__(self) -> None:
+        object.__setattr__(self, "prune_policy", normalize_prune_policy(self.prune_policy))
         if self.size_cap <= 0:
             raise ValueError("size_cap must be > 0")
+        if self.truncate_size is not None:
+            if self.truncate_size <= 0:
+                raise ValueError("truncate_size must be > 0")
+            if self.truncate_size > self.size_cap:
+                raise ValueError("truncate_size must be <= size_cap")
 
 
 @dataclass
@@ -133,7 +206,7 @@ class BoundedArchive:
         self.cfg = cfg
         self.X: np.ndarray | None = None
         self.F: np.ndarray = np.zeros((0, 0), dtype=float)
-        self._rng = np.random.default_rng(0)
+        self._rng = np.random.default_rng(cfg.rng_seed)
         self.total_inserted = 0
         self.total_pruned = 0
 
@@ -159,8 +232,8 @@ class BoundedArchive:
         self.total_inserted += inserted
 
         prune_reason = "none"
-        # Always keep only nondominated points.
-        if self.size() > 1:
+        # Optionally keep only nondominated
+        if self.cfg.nondominated_only and self.size() > 1:
             mask = pareto_nondominated_mask(self.F)
             pruned_nd = int(np.sum(~mask))
             if pruned_nd > 0:
@@ -190,9 +263,18 @@ class BoundedArchive:
     def _prune_to_cap(self) -> tuple[int, str]:
         n = self.size()
         cap = self.cfg.size_cap
-        target = cap
+        target = self.cfg.truncate_size if self.cfg.truncate_size is not None else cap
         if n <= cap:
             return 0, "none"
+
+        # epsilon grid compaction (keeps one rep per cell, then cap-prunes)
+        if self.cfg.archive_type in ("epsilon_grid", "hybrid"):
+            self._apply_epsilon_grid()
+
+        # If still above cap, prune by policy
+        n = self.size()
+        if n <= cap:
+            return 0, "epsilon_grid"
 
         policy = self.cfg.prune_policy
         if policy == "crowding":
@@ -207,10 +289,17 @@ class BoundedArchive:
                 self.X = self.X[keep]
             return int(np.sum(~keep)), "crowding"
 
-        if policy in ("hv_contrib", "mc_hv_contrib"):
+        if policy in ("hv", "mc_hv"):
             m = self.F.shape[1]
             ref = self._ref_point(m)
             if m == 2:
+                # ensure ND for contribution meaning
+                if self.cfg.nondominated_only:
+                    mask = pareto_nondominated_mask(self.F)
+                    self.F = self.F[mask]
+                    if self.X is not None:
+                        self.X = self.X[mask]
+                    n = self.size()
                 contrib = hv_contrib_2d(self.F, ref=np.asarray(ref, dtype=float))
                 # prune smallest contribution
                 kill = np.argsort(contrib)[: (n - target)]
@@ -225,7 +314,7 @@ class BoundedArchive:
                 self.X = self.X[keep]
             return int(np.sum(~keep)), policy
 
-        if policy == "spea2":
+        if policy == "knn":
             from vamos.engine.algorithm.spea2.helpers import (
                 dominance_matrix,
                 strength_raw_fitness,
@@ -251,18 +340,48 @@ class BoundedArchive:
             self.F = self.F[keep]
             if self.X is not None:
                 self.X = self.X[keep]
-            return int(np.sum(~keep)), "spea2"
+            return int(np.sum(~keep)), "knn"
 
-        # random fallback
-        kill = self._rng.choice(n, size=(n - target), replace=False)
-        keep = np.ones(n, dtype=bool)
-        keep[kill] = False
-        self.F = self.F[keep]
+        if policy == "maxmin":
+            keep = select_maxmin_subset(self.F, target)
+            mask = np.zeros(n, dtype=bool)
+            mask[np.asarray(keep, dtype=int)] = True
+            self.F = self.F[mask]
+            if self.X is not None:
+                self.X = self.X[mask]
+            return int(np.sum(~mask)), "maxmin"
+
+        if policy == "ref_dirs":
+            keep = select_ref_dirs_subset(self.F, target, self._rng)
+            mask = np.zeros(n, dtype=bool)
+            mask[np.asarray(keep, dtype=int)] = True
+            self.F = self.F[mask]
+            if self.X is not None:
+                self.X = self.X[mask]
+            return int(np.sum(~mask)), "ref_dirs"
+
+        raise RuntimeError(f"Unsupported validated prune policy '{policy}'.")
+
+    def _apply_epsilon_grid(self) -> None:
+        eps = float(self.cfg.epsilon)
+        if eps <= 0:
+            return
+        F = self.F
+        # grid key by floor(F/eps)
+        key = np.floor(F / eps).astype(int)
+        # keep first occurrence per cell (can be improved: keep best by dominance/crowding)
+        # stable unique
+        _, idx = np.unique(key, axis=0, return_index=True)
+        idx = np.sort(idx)
+        self.F = F[idx]
         if self.X is not None:
-            self.X = self.X[keep]
-        return int(np.sum(~keep)), "random"
+            self.X = self.X[idx]
 
     def _ref_point(self, m: int) -> list[float]:
+        if self.cfg.hv_ref_point is not None:
+            if len(self.cfg.hv_ref_point) != m:
+                raise ValueError("hv_ref_point dimension mismatch")
+            return list(map(float, self.cfg.hv_ref_point))
         # conservative: ref = max(F) + 1 in each dim
         mx = np.max(self.F, axis=0) if self.size() else np.ones((m,))
         return [float(x + 1.0) for x in mx]
@@ -280,7 +399,7 @@ class BoundedArchive:
         # Avoid degenerate boxes
         span = np.maximum(hi - lo, 1e-12)
 
-        S = 20000
+        S = int(self.cfg.hv_samples)
         U = self._rng.random((S, m))
         samples = lo + U * span  # uniform in box
 

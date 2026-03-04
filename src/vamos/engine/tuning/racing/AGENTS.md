@@ -32,6 +32,11 @@ This package implements **irace-inspired algorithm configuration** with modern e
 - `param_space.py`: `ParamSpace`, `Real`, `Int`, `Categorical`, `Boolean`, `Condition`
 - `sampler.py`: `UniformSampler`, `ModelBasedSampler`
 - `config_space.py`: `AlgorithmConfigSpace` - algorithm-specific space builders
+- External archive knobs are modeled as:
+  - `use_external_archive`
+  - `archive_unbounded`
+  - bounded-only `archive_type`, `archive_prune_policy`, and conditional `archive_epsilon`
+  - bounded archive capacity equals `pop_size` in `config_from_assignment()`
 
 ### Utilities
 - `bridge.py`: `build_nsgaii_config_space()`, `config_from_assignment()` - algorithm integration
@@ -72,6 +77,7 @@ best, history = tuner.run(evaluator)
 - Eval functions return `(score, checkpoint)` tuple when warm-starting
 - Scores are aggregated via `TuningTask.aggregator` (default: `np.mean`)
 - Higher scores are better when `maximize=True`
+- Do not reintroduce `archive_size_factor`; bounded archive size is fixed to the tuned population size.
 
 ## Adding New Features
 

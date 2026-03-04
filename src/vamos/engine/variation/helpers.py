@@ -232,6 +232,7 @@ def _populate_defaults() -> None:
             "reset": random_reset_mutation,
             "random_reset": random_reset_mutation,
             "creep": creep_mutation,
+            "pm": integer_polynomial_mutation,
             "polynomial": integer_polynomial_mutation,
             "gaussian": gaussian_integer_mutation,
             "boundary": boundary_integer_mutation,
@@ -257,6 +258,7 @@ def _populate_defaults() -> None:
     registry = get_operator_registry()
     _populate(real_crossover, {k: registry.get(k) for k in _REAL_CROSSOVER_KEYS})
     _populate(real_mutation, {k: registry.get(k) for k in _REAL_MUTATION_KEYS})
+    real_mutation.register("pm", registry.get("polynomial"))
     _DEFAULTS_POPULATED = True
 
 

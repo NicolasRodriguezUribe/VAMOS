@@ -17,6 +17,8 @@ This package contains building blocks used across multiple algorithms:
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
+    MaxMinArchive,
+    ReferenceDirectionsArchive,
     SPEA2Archive,
 )
 from vamos.engine.algorithm.components.subset_selection import (
@@ -82,6 +84,8 @@ __all__ = [
     # archive
     "CrowdingDistanceArchive",
     "HypervolumeArchive",
+    "MaxMinArchive",
+    "ReferenceDirectionsArchive",
     "SPEA2Archive",
     # subset selection
     "_hv_contributions",

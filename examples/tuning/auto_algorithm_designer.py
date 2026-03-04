@@ -55,7 +55,7 @@ def _conditional_params() -> dict[str, dict[str, tuple[str, Real]]]:
             "blx_alpha": ("blx_alpha", Real("blx_alpha", 0.1, 0.5)),
         },
         "mutation": {
-            "polynomial": ("pm_eta", Real("pm_eta", 5.0, 30.0)),
+            "pm": ("pm_eta", Real("pm_eta", 5.0, 30.0)),
             "gaussian": ("gauss_sigma", Real("gauss_sigma", 0.01, 0.3)),
         },
     }
@@ -111,12 +111,16 @@ def build_param_space_for_encoding(encoding: str) -> ParamSpace:
     }
     conditions: list[Condition] = []
 
-    # Archive size cap (only active when result_mode == "archive")
-    params["archive_size"] = Int("archive_size", 50, 300)
-    conditions.append(Condition("archive_size", "cfg['result_mode'] == 'archive'"))
+    # Archive configuration (only active when result_mode == "archive")
+    params["archive_type"] = Categorical("archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"])
+    conditions.append(Condition("archive_type", "cfg['result_mode'] == 'archive'"))
+
+    # Epsilon for grid-based archives (will be ignored for non-epsilon types)
+    params["archive_epsilon"] = Real("archive_epsilon", 0.001, 0.1, log=True)
+    conditions.append(Condition("archive_epsilon", "cfg['result_mode'] == 'archive'"))
 
     # Prune policy for bounded archives
-    params["prune_policy"] = Categorical("prune_policy", ["crowding", "hv_contrib", "random"])
+    params["prune_policy"] = Categorical("prune_policy", ["crowding", "hv", "knn", "maxmin", "ref_dirs"])
     conditions.append(Condition("prune_policy", "cfg['result_mode'] == 'archive'"))
 
     # Add conditional hyperparameters from registry
@@ -158,12 +162,12 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfig:
         config = config.crossover(crossover_type, prob=crossover_prob)
 
     # Mutation configuration
-    mutation_type = assignment.get("mutation", "polynomial")
+    mutation_type = assignment.get("mutation", "pm")
     mutation_prob = float(assignment["mutation_prob"])
 
-    if mutation_type == "polynomial":
+    if mutation_type == "pm":
         eta = float(assignment.get("pm_eta", 20.0))
-        config = config.mutation("polynomial", prob=mutation_prob, eta=eta)
+        config = config.mutation("pm", prob=mutation_prob, eta=eta)
     elif mutation_type == "gaussian":
         sigma = float(assignment.get("gauss_sigma", 0.1))
         config = config.mutation("gaussian", prob=mutation_prob, sigma=sigma)
@@ -177,13 +181,24 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfig:
     # Result mode: population vs external archive
     result_mode = assignment.get("result_mode", "population")
     if result_mode == "archive":
+        archive_type = assignment.get("archive_type", "size_cap")
+        archive_size = int(assignment["pop_size"])
         prune_policy = assignment.get("prune_policy", "crowding")
-        archive_size = int(assignment.get("archive_size", 200))
-        config = config.external_archive(capacity=archive_size, pruning=prune_policy)
+
+        archive_kwargs: dict[str, Any] = {
+            "archive_type": archive_type,
+            "pruning": prune_policy,
+        }
+
+        # Add epsilon for grid-based archives
+        if archive_type in ("epsilon_grid", "hybrid"):
+            archive_kwargs["epsilon"] = float(assignment.get("archive_epsilon", 0.01))
+
+        config = config.external_archive(capacity=archive_size, **archive_kwargs)
     else:
         config = config.result_mode("population")
 
-    return config.selection("tournament", size=2).build()
+    return config.selection("tournament", pressure=2).build()
 
 
 # =============================================================================
