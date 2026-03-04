@@ -72,10 +72,11 @@ class ProblemBuilderState(param.Parameterized):
 
     # ---- AI Assistant ----
     ai_provider = param.Selector(
-        default="openai",
-        objects=["openai", "anthropic"],
+        default="gemini",
+        objects=["gemini", "openai", "anthropic"],
         doc="LLM provider for code generation.",
     )
+    ai_api_key = param.String(default="", doc="API key (optional if set via env var).")
     ai_description = param.String(default="", doc="Natural language problem description.")
     ai_status = param.String(default="", precedence=-1)
 
@@ -290,7 +291,7 @@ class ProblemBuilderState(param.Parameterized):
             return
         self.ai_status = f"Generating with {self.ai_provider}..."
         try:
-            result = llm_generate_problem_code(self.ai_description, provider=self.ai_provider)
+            result = llm_generate_problem_code(self.ai_description, provider=self.ai_provider, api_key=self.ai_api_key)
             self.objective_code = result["objective_code"]
             self.constraint_code = result.get("constraint_code", "")
             self.n_var = int(result["n_var"])
@@ -396,6 +397,11 @@ def render_problem_builder() -> pn.Column:
 
     # ==== Tab 1: AI Assistant ====
     ai_provider_select = pn.widgets.Select.from_param(state.param.ai_provider, name="LLM Provider")
+    ai_api_key_input = pn.widgets.PasswordInput.from_param(
+        state.param.ai_api_key,
+        name="API Key",
+        placeholder="Paste your API key here (or set via environment variable)",
+    )
     ai_description_input = pn.widgets.TextAreaInput.from_param(
         state.param.ai_description,
         name="Describe your optimization problem",
@@ -420,7 +426,7 @@ def render_problem_builder() -> pn.Column:
             "the **Problem Definition** tab.",
         ),
         pn.layout.Divider(),
-        ai_provider_select,
+        pn.Row(ai_provider_select, ai_api_key_input, sizing_mode="stretch_width"),
         ai_description_input,
         ai_generate_btn,
         ai_status_pane,
