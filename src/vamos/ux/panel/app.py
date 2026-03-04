@@ -8,6 +8,8 @@ from typing import Any
 import panel as pn
 import param
 
+pn.extension("codeeditor", "plotly", "tabulator", sizing_mode="stretch_width")
+
 from vamos.ux.panel.shell import PAGES, build_sidebar_nav, build_template
 
 

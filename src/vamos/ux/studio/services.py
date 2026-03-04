@@ -60,6 +60,23 @@ class DynamicsCallback:
     def __init__(self) -> None:
         self.history: list[np.ndarray] = []
 
+    def on_start(self, ctx: Any) -> None:
+        pass
+
+    def on_generation(self, generation: int, *, F: Any = None, **kwargs: Any) -> None:
+        try:
+            if F is not None:
+                self.history.append(np.array(F))
+        except Exception:
+            _logger().debug("Failed to capture population snapshot in DynamicsCallback", exc_info=True)
+
+    def on_end(self, *, final_F: Any = None) -> None:
+        try:
+            if final_F is not None:
+                self.history.append(np.array(final_F))
+        except Exception:
+            _logger().debug("Failed to capture final front in DynamicsCallback", exc_info=True)
+
     def __call__(self, algorithm: Any) -> None:
         try:
             if hasattr(algorithm, "pop") and algorithm.pop is not None:

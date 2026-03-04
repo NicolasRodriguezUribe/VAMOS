@@ -42,6 +42,8 @@ def get_family(problem_name: str) -> str:
         return "DTLZ"
     if problem_name.startswith("wfg"):
         return "WFG"
+    if problem_name.startswith("zcat"):
+        return "ZCAT"
     return "Other"
 
 
@@ -170,7 +172,7 @@ def make_latex_table_a2(df_table: pd.DataFrame) -> str:
 
 def make_latex_table_3(vamos_fam: pd.DataFrame) -> str:
     """Table 3: VAMOS backend comparison by family (ZDT, DTLZ, WFG)."""
-    families = [col for col in ["ZDT", "DTLZ", "WFG"] if col in vamos_fam.columns]
+    families = [col for col in ["ZDT", "DTLZ", "WFG", "ZCAT"] if col in vamos_fam.columns]
     col_spec = "l" + "c" * len(families) + "c"
     header_cols = " & ".join([f"\\textbf{{{f}}}" for f in families]) + " & \\textbf{Average}"
 
@@ -236,7 +238,7 @@ def make_latex_table_4(family_df: pd.DataFrame) -> str:
 
     idx_list = sorted(idx_list, key=sort_key)
 
-    families = [col for col in ["ZDT", "DTLZ", "WFG"] if col in family_df.columns]
+    families = [col for col in ["ZDT", "DTLZ", "WFG", "ZCAT"] if col in family_df.columns]
 
     lines = [
         r"\begin{table}[htbp]",
@@ -278,7 +280,7 @@ def make_latex_table_hv_summary(median_df: pd.DataFrame, iqr_df: pd.DataFrame) -
 
     Rows = problem families + Overall; Columns = frameworks.
     """
-    families = [col for col in ["ZDT", "DTLZ", "WFG"] if col in median_df.columns]
+    families = [col for col in ["ZDT", "DTLZ", "WFG", "ZCAT"] if col in median_df.columns]
     rows = families + ["Overall"]
 
     order_map = {"VAMOS": 0, "pymoo": 1, "jMetalPy": 2, "DEAP": 3, "Platypus": 4}

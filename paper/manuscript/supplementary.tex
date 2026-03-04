@@ -76,8 +76,68 @@
 
 %==============================================================================
 \appendices
+
+%==============================================================================
+\section{Convergence Analysis}
+\label{app:convergence}
+%==============================================================================
+
+\begin{figure*}[!t]
+  \centering
+  \includegraphics[width=0.9\textwidth]{figures/convergence.png}
+  \caption{Convergence of normalized hypervolume over 50{,}000 evaluations for \VAMOS{} (Numba), pymoo, and jMetalPy on DTLZ2 (3 objectives, 12 variables), WFG4 (2 objectives, 24 variables), and ZDT1 (2 objectives, 30 variables). Solid/dashed lines show median HV across 30 seeds; shaded regions indicate the interquartile range. All three frameworks follow nearly identical convergence trajectories, confirming that the semantic alignment protocol produces equivalent algorithmic behavior.}
+  \label{fig:convergence}
+\end{figure*}
+
+To verify that runtime speedups do not come at the expense of convergence rate, we track normalized hypervolume at 1{,}000-evaluation intervals over the full 50{,}000-evaluation budget. Fig.~\ref{fig:convergence} compares \VAMOS{}, pymoo, and jMetalPy on three representative problems: DTLZ2 (3 objectives, 12 variables), WFG4 (2 objectives, 24 variables), and ZDT1 (2 objectives, 30 variables). The convergence curves are nearly indistinguishable across all three frameworks, with overlapping interquartile ranges across all 30 seeds. All frameworks reach the same final quality at the same evaluation counts, confirming that the performance gains observed in runtime measurements are not accompanied by degraded convergence behavior.
+
+
+%==============================================================================
+\section{Solution Quality Analysis}
+\label{app:quality}
+%==============================================================================
+The runtime advantages reported above are only meaningful if \VAMOS{} produces solutions of comparable quality. To verify this, we compare normalized hypervolume (HV) across frameworks using the protocol described in Section~V-E of the main paper: for each problem we compute the median HV across 30 seeds, and then summarize these per-problem medians by family using the median and interquartile range (IQR). Table~\ref{tab:frameworks_hv} presents the results for generational NSGA-II.
+
+\begin{table}[htbp]
+\centering
+\caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}
+\label{tab:frameworks_hv}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{Overall} \\
+\midrule
+VAMOS & \textbf{0.991 (0.013)} & 0.836 (0.121) & \textbf{0.934 (0.138)} & \textbf{0.934 (0.157)} \\
+pymoo & \textbf{0.991 (0.010)} & 0.829 (0.148) & 0.846 (0.220) & 0.921 (0.156) \\
+jMetalPy & \textbf{0.991 (0.014)} & 0.835 (0.110) & 0.845 (0.223) & 0.924 (0.159) \\
+DEAP & \textbf{0.991 (0.013)} & \textbf{0.839 (0.138)} & 0.839 (0.224) & 0.924 (0.156) \\
+Platypus & \textbf{0.991 (0.010)} & 0.824 (0.177) & 0.919 (0.137) & 0.919 (0.160) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Across ZDT, all frameworks attain nearly identical normalized HV, confirming that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks. WFG exhibits the largest dispersion; notably, \VAMOS{} achieves the highest median on WFG (0.934 vs.\ 0.846 for pymoo), which may reflect subtle differences in WFG parameterization or boundary handling across implementations. Together with the runtime results, these summaries confirm that \VAMOS{} achieves comparable or superior solution quality while delivering faster runtimes under the fixed-reference-front protocol.
+
+Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, all three frameworks achieve nearly identical overall HV. For the archive variant, all three frameworks reach comparable normalized HV across ZDT and DTLZ families (1.000), confirming that the unbounded archive accumulates equivalent approximation sets regardless of the framework.
+
+\input{frameworks_hv_variants.tex}
+
+%\textcolor{red}{As a complementary quality indicator, Table~\ref{tab:frameworks_igd_merged} reports IGD+ summaries across frameworks for NSGA-II, SMS-EMOA, and MOEA/D. For NSGA-II, IGD+ values are tightly clustered across frameworks (overall median 0.0108 for \VAMOS{} and pymoo, 0.0105 for jMetalPy), mirroring the HV equivalence. SMS-EMOA achieves the lowest IGD+ overall (0.0078 for all three frameworks), reflecting the steady-state indicator-based selection's effectiveness at maintaining proximity and diversity. For MOEA/D, \VAMOS{} (0.0102) and jMetalPy (0.0102) outperform pymoo (0.0160), consistent with the known difficulty of MOEA/D under certain weight-vector configurations.}
+
+%\input{frameworks_igd_merged.tex}
+
+%==============================================================================
+\section{Statistical Analysis}
+\label{app:stats_main}
+%==============================================================================
+
+The descriptive summaries in the previous section suggest quality equivalence, but median and IQR alone cannot determine whether observed differences are statistically significant. We therefore apply Wilcoxon signed-rank tests (paired by seed) comparing \VAMOS{} against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). As a measure of practical significance, we report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{vargha2000critique} alongside each test ($\hat{A}_{12}>0.5$ favors \VAMOS{}; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also compute paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
+
+Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 21 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.3\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: \VAMOS{} is equivalent to pymoo on 14/21 problems and non-inferior on 16/21, with a median $\Delta$HV of $-0.03\%$. Similar patterns hold for jMetalPy. Table~\ref{tab:hv_robustness_summary_nsgaii} details robustness, and Fig.~\ref{fig:forest_ci_nsgaii} visualizes per-problem CIs as a forest plot. Detailed NSGA-II statistical tables are provided in Appendix~\ref{app:stats_nsgaii}, and corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
+
+%==============================================================================
 \section{Additional runtime comparisons}
 \label{app:variants}
+%==============================================================================
 Tables in this appendix report supplementary runtime comparisons for NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D under the same protocol as the Experimental Results section of the main paper.
 
 \input{frameworks_perf_variants.tex}
@@ -190,9 +250,9 @@ best_config, history = tuner.run(eval_fn)
 
 
 %==============================================================================
-% Bibliography (uncomment when \cite commands are added to this document)
+% Bibliography
 %==============================================================================
-%\bibliographystyle{IEEEtran}
-%\bibliography{references}
+\bibliographystyle{IEEEtran}
+\bibliography{references}
 
 \end{document}

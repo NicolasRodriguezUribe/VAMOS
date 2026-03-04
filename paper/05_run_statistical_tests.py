@@ -406,13 +406,15 @@ def get_family(p):
         return "DTLZ"
     if p.startswith("wfg"):
         return "WFG"
+    if p.startswith("zcat"):
+        return "ZCAT"
     return "Other"
 
 
 df["family"] = df["problem"].apply(get_family)
 
 print("\nSpeedup by family:")
-for family in ["ZDT", "DTLZ", "WFG"]:
+for family in ["ZDT", "DTLZ", "WFG", "ZCAT"]:
     v = df[(df["framework"] == BASELINE_FRAMEWORK) & (df["family"] == family)]["runtime_seconds"].median()
     if not (np.isfinite(v) and v > 0):
         continue
