@@ -7,6 +7,8 @@ import vamos.engine.algorithm.components.archive as archive_mod
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
+    MaxMinArchive,
+    ReferenceDirectionsArchive,
     SPEA2Archive,
     UnboundedArchive,
 )
@@ -63,6 +65,45 @@ def test_spea2_archive_truncates_to_target_size():
     archive.update(X, F)
     _, kept_F = archive.contents()
     assert kept_F.shape[0] == 5
+
+
+def test_maxmin_archive_truncates_to_target_size():
+    archive = MaxMinArchive(capacity=3, n_var=1, n_obj=2, dtype=float)
+    X = np.arange(5, dtype=float).reshape(-1, 1)
+    F = np.array(
+        [
+            [0.0, 10.0],
+            [1.0, 9.0],
+            [5.0, 5.0],
+            [9.0, 1.0],
+            [10.0, 0.0],
+        ]
+    )
+    archive.update(X, F)
+    _, kept_F = archive.contents()
+    assert kept_F.shape[0] == 3
+    assert np.any(np.all(kept_F == np.array([0.0, 10.0]), axis=1))
+    assert np.any(np.all(kept_F == np.array([10.0, 0.0]), axis=1))
+
+
+def test_ref_dirs_archive_truncates_to_target_size():
+    archive = ReferenceDirectionsArchive(capacity=3, n_var=1, n_obj=3, dtype=float, rng_seed=0)
+    X = np.arange(5, dtype=float).reshape(-1, 1)
+    F = np.array(
+        [
+            [0.90, 0.05, 0.05],
+            [0.05, 0.90, 0.05],
+            [0.05, 0.05, 0.90],
+            [0.34, 0.34, 0.34],
+            [0.60, 0.20, 0.20],
+        ]
+    )
+    archive.update(X, F)
+    _, kept_F = archive.contents()
+    assert kept_F.shape[0] == 3
+    assert np.any(np.all(kept_F == np.array([0.90, 0.05, 0.05]), axis=1))
+    assert np.any(np.all(kept_F == np.array([0.05, 0.90, 0.05]), axis=1))
+    assert np.any(np.all(kept_F == np.array([0.05, 0.05, 0.90]), axis=1))
 
 
 def test_archive_feasibility_prefers_feasible_points():
@@ -190,6 +231,49 @@ def test_nsgaii_constrained_with_external_archive():
     problem = _ConstrainedBiobj()
     # Must complete without ValueError from shape mismatch
     result = algo.run(problem, termination=("max_evaluations", pop * 4), seed=42)
+
+    assert result["F"].shape[0] > 0
+    assert "archive" in result
+    assert result["archive"]["F"].shape[0] > 0
+
+
+@pytest.mark.parametrize("pruning", ["maxmin", "ref_dirs"])
+def test_nsgaii_runs_with_new_external_archive_policies(pruning: str):
+    from vamos.engine.algorithm.config import NSGAIIConfig
+    from vamos.engine.algorithm.nsgaii import NSGAII
+    from vamos.foundation.kernel.numpy_backend import NumPyKernel
+
+    class _ThreeObj:
+        n_var = 3
+        n_obj = 3
+        n_constr = 0
+        xl = np.zeros(3)
+        xu = np.ones(3)
+        encoding = "real"
+
+        def evaluate(self, X, out):
+            out["F"] = np.column_stack(
+                [
+                    X[:, 0],
+                    1.0 - X[:, 0] + 0.2 * X[:, 1],
+                    0.5 * X[:, 1] + 1.0 - X[:, 2],
+                ]
+            )
+
+    pop = 12
+    cfg = (
+        NSGAIIConfig.builder()
+        .pop_size(pop)
+        .offspring_size(pop)
+        .crossover("sbx", prob=0.9, eta=15.0)
+        .mutation("pm", prob="1/n", eta=20.0)
+        .selection("tournament", pressure=2)
+        .external_archive(capacity=pop * 2, pruning=pruning)
+        .build()
+    )
+
+    algo = NSGAII(cfg.to_dict(), kernel=NumPyKernel())
+    result = algo.run(_ThreeObj(), termination=("max_evaluations", pop * 4), seed=7)
 
     assert result["F"].shape[0] > 0
     assert "archive" in result

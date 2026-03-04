@@ -11,6 +11,8 @@ import numpy as np
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
+    MaxMinArchive,
+    ReferenceDirectionsArchive,
     SPEA2Archive,
     UnboundedArchive,
 )
@@ -20,7 +22,9 @@ if TYPE_CHECKING:
     from vamos.engine.algorithm.components.state import AlgorithmState
     from vamos.foundation.kernel.backend import KernelBackend
 
-_ArchiveManager = CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive
+_ArchiveManager = (
+    CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive
+)
 
 
 def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | None:
@@ -99,7 +103,7 @@ def setup_archive(
             decision_tolerance=decision_tol,
             n_con=G.shape[1] if G is not None else None,
         )
-    elif pruning in {"hv_contrib", "mc_hv_contrib"}:
+    elif pruning in {"hv", "mc_hv"}:
         manager = HypervolumeArchive(
             capacity,
             n_var,
@@ -112,7 +116,7 @@ def setup_archive(
             n_con=G.shape[1] if G is not None else None,
             ref_point=ext_cfg.hv_ref_point,
         )
-    elif pruning == "spea2":
+    elif pruning == "knn":
         manager = SPEA2Archive(
             capacity,
             n_var,
@@ -124,6 +128,31 @@ def setup_archive(
             decision_tolerance=decision_tol,
             n_con=G.shape[1] if G is not None else None,
             constraint_mode="feasibility",
+        )
+    elif pruning == "maxmin":
+        manager = MaxMinArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=G.shape[1] if G is not None else None,
+        )
+    elif pruning == "ref_dirs":
+        manager = ReferenceDirectionsArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            rng_seed=ext_cfg.rng_seed,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            n_con=G.shape[1] if G is not None else None,
         )
     else:
         manager = CrowdingDistanceArchive(

@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
 from vamos.engine.algorithm.components.state import AlgorithmState
 
 if TYPE_CHECKING:
@@ -32,20 +33,24 @@ def build_agemoea_result(
     kernel: Any = None,
 ) -> dict[str, Any]:
     """Build AGE-MOEA result dictionary from state."""
-    mode = getattr(state, "result_mode", "non_dominated")
-
-    if mode != "population" and kernel is not None:
-        try:
-            ranks, _ = kernel.nsga2_ranking(state.F)
-            nd_mask = ranks == 0
-            result_X = state.X[nd_mask].copy()
-            result_F = state.F[nd_mask].copy()
-        except (ValueError, IndexError):
+    archive_contents = get_external_archive_contents(state)
+    if archive_contents is not None and not wants_population_result(state):
+        archive_X, archive_F = archive_contents
+        result_X = archive_X.copy()
+        result_F = archive_F.copy()
+    else:
+        if not wants_population_result(state) and kernel is not None:
+            try:
+                ranks, _ = kernel.nsga2_ranking(state.F)
+                nd_mask = ranks == 0
+                result_X = state.X[nd_mask].copy()
+                result_F = state.F[nd_mask].copy()
+            except (ValueError, IndexError):
+                result_X = state.X.copy()
+                result_F = state.F.copy()
+        else:
             result_X = state.X.copy()
             result_F = state.F.copy()
-    else:
-        result_X = state.X.copy()
-        result_F = state.F.copy()
 
     result: dict[str, Any] = {
         "X": result_X,
@@ -54,8 +59,9 @@ def build_agemoea_result(
         "n_gen": state.generation,
         "population": {"X": state.X.copy(), "F": state.F.copy()},
     }
-    if state.archive is not None:
-        result["archive"] = {"X": state.archive.X, "F": state.archive.F}
+    if archive_contents is not None:
+        archive_X, archive_F = archive_contents
+        result["archive"] = {"X": archive_X, "F": archive_F}
     return result
 
 

@@ -101,6 +101,7 @@ class _NSGAIIConfigBuilder:
                 (e.g. ``pruning``, ``archive_type``, ``epsilon``).
         """
         self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def constraint_mode(self, value: str) -> _NSGAIIConfigBuilder:

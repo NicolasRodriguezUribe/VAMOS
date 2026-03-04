@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
-from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig
+from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig, ExternalArchiveConfig
 
 
 def test_bounded_archive_size_cap_and_nondominated():
@@ -54,3 +55,79 @@ def test_epsilon_grid_compaction():
     A.add(X=None, F=F, evals=10)
     # Expect fewer points after compaction if grid merges
     assert A.size() <= F.shape[0]
+
+
+def test_legacy_prune_policy_aliases_are_rejected():
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'hv_contrib'"):
+        ExternalArchiveConfig(capacity=10, pruning="hv_contrib")
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'mc_hv_contrib'"):
+        ExternalArchiveConfig(capacity=10, pruning="mc_hv_contrib")
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'hv_contrib'"):
+        BoundedArchiveConfig(prune_policy="hv_contrib")
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'mc_hv_contrib'"):
+        BoundedArchiveConfig(prune_policy="mc_hv_contrib")
+
+
+def test_spea2_prune_policy_name_is_rejected_in_favor_of_knn():
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'spea2'"):
+        ExternalArchiveConfig(capacity=10, pruning="spea2")
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'spea2'"):
+        BoundedArchiveConfig(prune_policy="spea2")
+
+
+def test_random_prune_policy_name_is_rejected():
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'random'"):
+        ExternalArchiveConfig(capacity=10, pruning="random")
+    with pytest.raises(ValueError, match="Unsupported prune_policy 'random'"):
+        BoundedArchiveConfig(prune_policy="random")
+
+
+def test_knn_prune_policy_name_is_accepted():
+    assert ExternalArchiveConfig(capacity=10, pruning="knn").pruning == "knn"
+    assert BoundedArchiveConfig(prune_policy="knn").prune_policy == "knn"
+
+
+def test_maxmin_and_ref_dirs_prune_policy_names_are_accepted():
+    assert ExternalArchiveConfig(capacity=10, pruning="maxmin").pruning == "maxmin"
+    assert ExternalArchiveConfig(capacity=10, pruning="ref_dirs").pruning == "ref_dirs"
+    assert BoundedArchiveConfig(prune_policy="maxmin").prune_policy == "maxmin"
+    assert BoundedArchiveConfig(prune_policy="ref_dirs").prune_policy == "ref_dirs"
+
+
+def test_bounded_archive_maxmin_prunes_to_target_size():
+    cfg = BoundedArchiveConfig(size_cap=3, prune_policy="maxmin", nondominated_only=True)
+    archive = BoundedArchive(cfg)
+    F = np.array(
+        [
+            [0.0, 10.0],
+            [1.0, 9.0],
+            [5.0, 5.0],
+            [9.0, 1.0],
+            [10.0, 0.0],
+        ]
+    )
+    archive.add(X=None, F=F, evals=10)
+    kept = archive.F
+    assert kept.shape[0] == 3
+    assert np.any(np.all(kept == np.array([0.0, 10.0]), axis=1))
+    assert np.any(np.all(kept == np.array([10.0, 0.0]), axis=1))
+
+
+def test_bounded_archive_ref_dirs_prunes_to_target_size():
+    cfg = BoundedArchiveConfig(size_cap=3, prune_policy="ref_dirs", nondominated_only=True)
+    archive = BoundedArchive(cfg)
+    F = np.array(
+        [
+            [0.90, 0.05, 0.05],
+            [0.05, 0.90, 0.05],
+            [0.05, 0.05, 0.90],
+            [0.34, 0.34, 0.34],
+            [0.60, 0.20, 0.20],
+        ]
+    )
+    archive.add(X=None, F=F, evals=10)
+    kept = archive.F
+    assert kept.shape[0] == 3
+    assert np.any(np.all(kept == np.array([0.90, 0.05, 0.05]), axis=1))
+    assert np.any(np.all(kept == np.array([0.05, 0.90, 0.05]), axis=1))
+    assert np.any(np.all(kept == np.array([0.05, 0.05, 0.90]), axis=1))

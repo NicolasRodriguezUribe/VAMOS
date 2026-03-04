@@ -68,13 +68,9 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
         return
     archive_type = str(archive_type_raw)
     prune_policy = str(assignment.get("archive_prune_policy", "crowding"))
-    archive_size_factor = int(assignment.get("archive_size_factor", 1))
-    if archive_size_factor < 1:
-        raise ValueError("archive_size_factor must be >= 1.")
-    archive_size = max(pop_size, pop_size * archive_size_factor)
     epsilon = float(assignment.get("archive_epsilon", 0.01))
     builder.external_archive(
-        capacity=archive_size,
+        capacity=pop_size,
         archive_type=archive_type,
         pruning=prune_policy,
         epsilon=epsilon,

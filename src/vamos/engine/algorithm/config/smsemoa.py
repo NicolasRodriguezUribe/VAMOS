@@ -130,6 +130,7 @@ class _SMSEMOAConfigBuilder:
             **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
         self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def build(self) -> SMSEMOAConfig:

@@ -115,16 +115,12 @@ def build_param_space_for_encoding(encoding: str) -> ParamSpace:
     params["archive_type"] = Categorical("archive_type", ["size_cap", "epsilon_grid", "hvc_prune", "hybrid"])
     conditions.append(Condition("archive_type", "cfg['result_mode'] == 'archive'"))
 
-    # Archive size cap
-    params["archive_size"] = Int("archive_size", 50, 300)
-    conditions.append(Condition("archive_size", "cfg['result_mode'] == 'archive'"))
-
     # Epsilon for grid-based archives (will be ignored for non-epsilon types)
     params["archive_epsilon"] = Real("archive_epsilon", 0.001, 0.1, log=True)
     conditions.append(Condition("archive_epsilon", "cfg['result_mode'] == 'archive'"))
 
     # Prune policy for bounded archives
-    params["prune_policy"] = Categorical("prune_policy", ["crowding", "hv_contrib", "random"])
+    params["prune_policy"] = Categorical("prune_policy", ["crowding", "hv", "knn", "maxmin", "ref_dirs"])
     conditions.append(Condition("prune_policy", "cfg['result_mode'] == 'archive'"))
 
     # Add conditional hyperparameters from registry
@@ -186,7 +182,7 @@ def make_algo_config(assignment: dict[str, Any], encoding: str) -> NSGAIIConfig:
     result_mode = assignment.get("result_mode", "population")
     if result_mode == "archive":
         archive_type = assignment.get("archive_type", "size_cap")
-        archive_size = int(assignment.get("archive_size", 200))
+        archive_size = int(assignment["pop_size"])
         prune_policy = assignment.get("prune_policy", "crowding")
 
         archive_kwargs: dict[str, Any] = {

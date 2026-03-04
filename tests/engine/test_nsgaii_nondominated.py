@@ -72,7 +72,7 @@ def test_nsgaii_population_key_contains_full_population():
     assert result["F"].shape[0] > 0
 
 
-def test_nsgaii_archive_keeps_default_nondominated_result_mode():
+def test_nsgaii_archive_is_default_result_source():
     pop_size = 16
     cfg = (
         NSGAIIConfig.builder()
@@ -90,10 +90,11 @@ def test_nsgaii_archive_keeps_default_nondominated_result_mode():
     problem = ZDT1Problem(n_var=8)
     result = algorithm.run(problem, termination=("max_evaluations", pop_size * 2), seed=7)
 
-    assert result["F"].shape[0] <= pop_size
     assert "archive" in result
     assert result["archive"]["F"].shape[0] > 0
     assert result["population"]["F"].shape == (pop_size, problem.n_obj)
+    np.testing.assert_allclose(result["F"], result["archive"]["F"])
+    np.testing.assert_allclose(result["X"], result["archive"]["X"])
 
 
 def test_nsgaii_archive_population_mode_returns_full_population_and_archive():

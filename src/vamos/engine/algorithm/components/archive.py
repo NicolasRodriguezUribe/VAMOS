@@ -10,6 +10,7 @@ try:  # pragma: no cover - optional dependency
 except ImportError:  # pragma: no cover - optional dependency
     _moocore = None
 
+from vamos.engine.archive.pruning_selectors import select_maxmin_subset, select_ref_dirs_subset
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
 from vamos.foundation.kernel.numpy_backend import _compute_crowding
 from vamos.foundation.quality_indicators.pareto import pareto_filter
@@ -522,6 +523,57 @@ class SPEA2Archive(_BaseArchive):
         return np.asarray(selected, dtype=int)
 
 
+class MaxMinArchive(_BaseArchive):
+    """Bounded archive with greedy max-min distance truncation."""
+
+    def _select_subset(
+        self,
+        F: np.ndarray,
+        target_size: int,
+        G: np.ndarray | None = None,
+    ) -> np.ndarray:
+        return select_maxmin_subset(F, target_size)
+
+
+class ReferenceDirectionsArchive(_BaseArchive):
+    """Bounded archive with NSGA-III-style reference-direction niching."""
+
+    def __init__(
+        self,
+        capacity: int,
+        n_var: int,
+        n_obj: int,
+        dtype: Any,
+        *,
+        rng_seed: int = 0,
+        truncate_size: int | None = None,
+        objective_tolerance: float = 1e-10,
+        deduplicate_in: DeduplicateIn = "objective",
+        decision_tolerance: float = 1e-32,
+        n_con: int | None = None,
+    ) -> None:
+        super().__init__(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=objective_tolerance,
+            deduplicate_in=deduplicate_in,
+            decision_tolerance=decision_tolerance,
+            n_con=n_con,
+        )
+        self._rng = np.random.default_rng(rng_seed)
+
+    def _select_subset(
+        self,
+        F: np.ndarray,
+        target_size: int,
+        G: np.ndarray | None = None,
+    ) -> np.ndarray:
+        return select_ref_dirs_subset(F, target_size, self._rng)
+
+
 class UnboundedArchive:
     """
     Archive that keeps all non-dominated solutions without size limit.
@@ -731,6 +783,8 @@ __all__ = [
     "HypervolumeArchive",
     "CrowdingDistanceArchive",
     "SPEA2Archive",
+    "MaxMinArchive",
+    "ReferenceDirectionsArchive",
     "UnboundedArchive",
     "_single_front_crowding",
     "_hv_contributions",

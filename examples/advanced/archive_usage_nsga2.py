@@ -23,11 +23,11 @@ from vamos.problems import ZDT1
 from vamos.algorithms import NSGAIIConfig
 
 
-def build_config(pruning: str = "hv_contrib") -> NSGAIIConfig:
+def build_config(pruning: str = "hv") -> NSGAIIConfig:
     """
     Configure NSGA-II with an external archive.
 
-    pruning: "hv_contrib" (default, prefers high HV) or "crowding" (spread)
+    pruning: "hv" (default, prefers high HV) or "crowding" (spread)
     """
     return (
         NSGAIIConfig.builder()
@@ -36,14 +36,14 @@ def build_config(pruning: str = "hv_contrib") -> NSGAIIConfig:
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("pm", prob="1/n", eta=20.0)
         .selection("tournament", pressure=2)
-        .external_archive(capacity=100, pruning=pruning)
+        .external_archive(capacity=80, pruning=pruning)
         .build()
     )
 
 
 def main() -> None:
     problem = ZDT1(n_var=30)
-    cfg = build_config(pruning="hv_contrib")
+    cfg = build_config(pruning="hv")
 
     result = optimize(
         problem,
@@ -55,14 +55,18 @@ def main() -> None:
     )
 
     F = result.F
+    population = result.data.get("population") or {}
+    population_F = population.get("F")
     archive = result.data.get("archive") or {}
     archive_F = archive.get("F")
     archive_X = archive.get("X")
 
-    print(f"Population size: {len(F)}")
+    print(f"Result size: {len(F)}")
+    if population_F is not None:
+        print(f"Population size: {len(population_F)}")
     if archive_F is not None:
         ea = cfg.external_archive
-        print(f"Archive size ({ea.pruning if ea else 'hv_contrib'}): {len(archive_F)}")
+        print(f"Archive size ({ea.pruning if ea else 'hv'}): {len(archive_F)}")
         hv_best_idx = int(np.argmin(archive_F[:, 0] + archive_F[:, 1]))
         print("Best archived objectives (sum-min heuristic):", archive_F[hv_best_idx])
     else:
@@ -72,7 +76,8 @@ def main() -> None:
         import matplotlib.pyplot as plt
 
         plt.figure(figsize=(8, 6))
-        plt.scatter(F[:, 0], F[:, 1], c="lightgray", label="Final population", alpha=0.6)
+        if population_F is not None:
+            plt.scatter(population_F[:, 0], population_F[:, 1], c="lightgray", label="Final population", alpha=0.6)
         if archive_F is not None:
             plt.scatter(archive_F[:, 0], archive_F[:, 1], c="crimson", label="External archive", alpha=0.85)
         plt.xlabel("f1")

@@ -19,9 +19,12 @@ from vamos.engine.adaptation.aos.controller import AOSController
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
+    MaxMinArchive,
+    ReferenceDirectionsArchive,
     SPEA2Archive,
     UnboundedArchive,
 )
+from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.hooks.genealogy import GenealogyTracker
@@ -64,8 +67,10 @@ class NSGAIIState:
     archive_size: int | None = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
-    archive_manager: CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive | None = None
-    result_archive: HypervolumeArchive | CrowdingDistanceArchive | SPEA2Archive | None = None
+    archive_manager: (
+        CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive | None
+    ) = None
+    result_archive: HypervolumeArchive | CrowdingDistanceArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | None = None
     result_mode: str = "non_dominated"
 
     # Termination
@@ -149,22 +154,26 @@ def build_result(
         X and F contain only non-dominated solutions when kernel is provided.
         Full population is always available in 'population' key.
     """
-    # Filter to non-dominated solutions only (if requested)
-    mode = getattr(state, "result_mode", "non_dominated")
-    should_filter = kernel is not None and mode == "non_dominated"
+    archive_contents = get_external_archive_contents(state)
+    should_use_archive = archive_contents is not None and not wants_population_result(state)
 
-    if should_filter:
-        try:
-            ranks, _ = kernel.nsga2_ranking(state.F)
-            nd_mask = ranks == ranks.min(initial=0)
-            result_X = state.X[nd_mask]
-            result_F = state.F[nd_mask]
-            result_G = state.G[nd_mask] if state.G is not None else None
-        except (ValueError, IndexError) as exc:
-            _logger().warning("Failed to filter non-dominated solutions: %s", exc)
-            result_X, result_F, result_G = state.X, state.F, state.G
+    if should_use_archive:
+        result_X, result_F = archive_contents
+        result_G = None
     else:
-        result_X, result_F, result_G = state.X, state.F, state.G
+        should_filter = kernel is not None and not wants_population_result(state)
+        if should_filter:
+            try:
+                ranks, _ = kernel.nsga2_ranking(state.F)
+                nd_mask = ranks == ranks.min(initial=0)
+                result_X = state.X[nd_mask]
+                result_F = state.F[nd_mask]
+                result_G = state.G[nd_mask] if state.G is not None else None
+            except (ValueError, IndexError) as exc:
+                _logger().warning("Failed to filter non-dominated solutions: %s", exc)
+                result_X, result_F, result_G = state.X, state.F, state.G
+        else:
+            result_X, result_F, result_G = state.X, state.F, state.G
 
     result: dict[str, Any] = {
         "X": result_X,
@@ -178,14 +187,9 @@ def build_result(
     if result_G is not None:
         result["G"] = result_G
 
-    # Add archive contents
-    if state.result_archive is not None:
-        arch_X, arch_F = state.result_archive.contents()
+    if archive_contents is not None:
+        arch_X, arch_F = archive_contents
         result["archive"] = {"X": arch_X, "F": arch_F}
-    elif state.archive_manager is not None:
-        archive_contents = get_archive_contents(state)
-        if archive_contents is not None:
-            result["archive"] = archive_contents
 
     if state.aos_controller is not None:
         summary_rows = []
@@ -221,10 +225,11 @@ def get_archive_contents(state: NSGAIIState) -> dict[str, Any] | None:
     dict[str, Any] | None
         Archive contents with X and F, or None if no archive.
     """
-    if state.archive_manager is not None:
-        final_X, final_F = state.archive_manager.contents()
-        return {"X": final_X, "F": final_F}
-    return None
+    archive_contents = get_external_archive_contents(state)
+    if archive_contents is None:
+        return None
+    final_X, final_F = archive_contents
+    return {"X": final_X, "F": final_F}
 
 
 def finalize_genealogy(

@@ -1,13 +1,26 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 
+from vamos.engine.archive.pruning_selectors import select_maxmin_subset, select_ref_dirs_subset
+
 ArchiveType = Literal["size_cap", "epsilon_grid", "hvc_prune", "hybrid"]
-PrunePolicy = Literal["crowding", "hv_contrib", "random", "mc_hv_contrib", "spea2"]
+CanonicalPrunePolicy = Literal["crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"]
+PrunePolicy = CanonicalPrunePolicy
 DeduplicateIn = Literal["objective", "decision", "both"]
+
+_VALID_PRUNE_POLICIES = {"crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"}
+
+
+def normalize_prune_policy(policy: str) -> CanonicalPrunePolicy:
+    normalized = policy
+    if normalized not in _VALID_PRUNE_POLICIES:
+        valid = ", ".join(sorted(_VALID_PRUNE_POLICIES))
+        raise ValueError(f"Unsupported prune_policy '{policy}'. Expected one of: {valid}.")
+    return cast(CanonicalPrunePolicy, normalized)
 
 
 @dataclass(frozen=True)
@@ -48,6 +61,7 @@ class ExternalArchiveConfig:
     decision_tolerance: float = 1e-32
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "pruning", normalize_prune_policy(self.pruning))
         if self.capacity is not None and self.capacity <= 0:
             raise ValueError("capacity must be > 0 when provided.")
         if self.truncate_size is not None:
@@ -80,6 +94,7 @@ class BoundedArchiveConfig:
     rng_seed: int = 0
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "prune_policy", normalize_prune_policy(self.prune_policy))
         if self.size_cap <= 0:
             raise ValueError("size_cap must be > 0")
         if self.truncate_size is not None:
@@ -274,7 +289,7 @@ class BoundedArchive:
                 self.X = self.X[keep]
             return int(np.sum(~keep)), "crowding"
 
-        if policy in ("hv_contrib", "mc_hv_contrib"):
+        if policy in ("hv", "mc_hv"):
             m = self.F.shape[1]
             ref = self._ref_point(m)
             if m == 2:
@@ -299,7 +314,7 @@ class BoundedArchive:
                 self.X = self.X[keep]
             return int(np.sum(~keep)), policy
 
-        if policy == "spea2":
+        if policy == "knn":
             from vamos.engine.algorithm.spea2.helpers import (
                 dominance_matrix,
                 strength_raw_fitness,
@@ -325,16 +340,27 @@ class BoundedArchive:
             self.F = self.F[keep]
             if self.X is not None:
                 self.X = self.X[keep]
-            return int(np.sum(~keep)), "spea2"
+            return int(np.sum(~keep)), "knn"
 
-        # random fallback
-        kill = self._rng.choice(n, size=(n - target), replace=False)
-        keep = np.ones(n, dtype=bool)
-        keep[kill] = False
-        self.F = self.F[keep]
-        if self.X is not None:
-            self.X = self.X[keep]
-        return int(np.sum(~keep)), "random"
+        if policy == "maxmin":
+            keep = select_maxmin_subset(self.F, target)
+            mask = np.zeros(n, dtype=bool)
+            mask[np.asarray(keep, dtype=int)] = True
+            self.F = self.F[mask]
+            if self.X is not None:
+                self.X = self.X[mask]
+            return int(np.sum(~mask)), "maxmin"
+
+        if policy == "ref_dirs":
+            keep = select_ref_dirs_subset(self.F, target, self._rng)
+            mask = np.zeros(n, dtype=bool)
+            mask[np.asarray(keep, dtype=int)] = True
+            self.F = self.F[mask]
+            if self.X is not None:
+                self.X = self.X[mask]
+            return int(np.sum(~mask)), "ref_dirs"
+
+        raise RuntimeError(f"Unsupported validated prune policy '{policy}'.")
 
     def _apply_epsilon_grid(self) -> None:
         eps = float(self.cfg.epsilon)

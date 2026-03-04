@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.state import AlgorithmState
 
@@ -54,4 +56,35 @@ def build_result(
     return result
 
 
-__all__ = ["build_result"]
+def get_external_archive_contents(state: Any) -> tuple[np.ndarray, np.ndarray] | None:
+    """Return external archive contents regardless of the concrete archive holder."""
+    result_archive = getattr(state, "result_archive", None)
+    if result_archive is not None:
+        archive_X, archive_F = result_archive.contents()
+        return archive_X, archive_F
+
+    archive_manager = getattr(state, "archive_manager", None)
+    if archive_manager is not None:
+        archive_X, archive_F = archive_manager.contents()
+        return archive_X, archive_F
+
+    archive = getattr(state, "archive", None)
+    if archive is not None:
+        archive_X = getattr(archive, "X", None)
+        archive_F = getattr(archive, "F", None)
+        if archive_X is not None and archive_F is not None:
+            return archive_X, archive_F
+
+    archive_X = getattr(state, "archive_X", None)
+    archive_F = getattr(state, "archive_F", None)
+    if archive_X is not None and archive_F is not None:
+        return archive_X, archive_F
+    return None
+
+
+def wants_population_result(state: Any) -> bool:
+    mode = str(getattr(state, "result_mode", "non_dominated") or "non_dominated").strip().lower()
+    return mode == "population"
+
+
+__all__ = ["build_result", "get_external_archive_contents", "wants_population_result"]
