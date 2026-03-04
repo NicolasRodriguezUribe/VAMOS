@@ -36,9 +36,9 @@ class ProblemBuilderState(param.Parameterized):
         objects=["nsgaii", "moead", "spea2", "smsemoa", "nsgaiii", "ibea", "agemoea", "rvea", "smpso"],
         doc="Algorithm for preview.",
     )
-    pop_size = param.Integer(default=50, bounds=(10, 500), doc="Population size for preview.")
-    max_gen = param.Integer(default=100, bounds=(10, 1000), doc="Max generations for preview.")
-    seed = param.Integer(default=42, bounds=(0, 99999), doc="Random seed.")
+    pop_size = param.Integer(default=100, bounds=(10, 500), doc="Population size for preview.")
+    max_gen = param.Integer(default=250, bounds=(10, 1000), doc="Max generations for preview.")
+    seed = param.Integer(default=0, bounds=(0, 99999), doc="Random seed.")
 
     # Outputs
     preview_plot = param.Parameter(default=None, precedence=-1)
@@ -167,7 +167,7 @@ def render_problem_builder() -> pn.Column:
     code_editor = pn.widgets.CodeEditor.from_param(
         state.param.objective_code,
         language="python",
-        theme="monokai",
+        theme="chrome",
         height=200,
         name="Objective code",
     )
@@ -183,7 +183,7 @@ def render_problem_builder() -> pn.Column:
     constraint_editor = pn.widgets.CodeEditor.from_param(
         state.param.constraint_code,
         language="python",
-        theme="monokai",
+        theme="chrome",
         height=100,
         name="Constraint code (optional)",
     )
@@ -215,37 +215,52 @@ def render_problem_builder() -> pn.Column:
     )
 
     # ---- Assemble ----
-    config_panel = pn.Column(
-        "## Problem Builder",
-        template_select,
-        pn.layout.Divider(),
-        "### Objectives",
-        code_editor,
-        pn.layout.Divider(),
-        "### Variables & Bounds",
-        var_controls,
-        pn.layout.Divider(),
-        "### Constraints",
-        constraint_editor,
-        pn.layout.Divider(),
-        "### Algorithm & Preview",
-        algo_controls,
-        pn.Row(preview_btn, generate_btn),
-        status_pane,
-        sizing_mode="stretch_width",
-        max_width=500,
+    # Top row: template selector + preview plot side-by-side
+    top_row = pn.Row(
+        pn.Column(
+            template_select,
+            pn.layout.Divider(),
+            "### Objectives",
+            code_editor,
+            sizing_mode="stretch_width",
+            max_width=500,
+        ),
+        pn.Column(
+            plot_pane,
+            sizing_mode="stretch_both",
+        ),
+        sizing_mode="stretch_both",
     )
 
-    output_panel = pn.Column(
-        "## Preview",
-        plot_pane,
-        pn.layout.Divider(),
-        "### Generated Script",
-        script_pane,
+    # Bottom row: config + generated script side-by-side
+    bottom_row = pn.Row(
+        pn.Column(
+            "### Variables & Bounds",
+            var_controls,
+            pn.layout.Divider(),
+            "### Constraints",
+            constraint_editor,
+            pn.layout.Divider(),
+            "### Algorithm & Preview",
+            algo_controls,
+            pn.Row(preview_btn, generate_btn),
+            status_pane,
+            sizing_mode="stretch_width",
+            max_width=500,
+        ),
+        pn.Column(
+            "### Generated Script",
+            script_pane,
+            sizing_mode="stretch_both",
+        ),
         sizing_mode="stretch_both",
     )
 
     return pn.Column(
-        pn.Row(config_panel, output_panel, sizing_mode="stretch_both"),
+        "## Problem Builder",
+        pn.layout.Divider(),
+        top_row,
+        pn.layout.Divider(),
+        bottom_row,
         sizing_mode="stretch_both",
     )

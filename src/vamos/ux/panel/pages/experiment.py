@@ -21,7 +21,7 @@ class ExperimentState(param.Parameterized):
         objects=["nsgaii", "moead", "spea2", "smsemoa", "nsgaiii", "ibea", "agemoea", "rvea", "smpso"],
     )
     pop_size = param.Integer(default=100, bounds=(10, 500))
-    max_evaluations = param.Integer(default=10000, bounds=(100, 500000))
+    max_evaluations = param.Integer(default=25000, bounds=(100, 500000))
     seed = param.Integer(default=0, bounds=(0, 99999))
 
     # ---- NSGA-II conditional params ----
