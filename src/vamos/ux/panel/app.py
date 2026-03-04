@@ -66,10 +66,6 @@ class StudioApp(param.Parameterized):
             from vamos.ux.panel.pages.problem_builder import render_problem_builder
 
             return render_problem_builder()
-        if slug == "experiment":
-            from vamos.ux.panel.pages.experiment import render_experiment
-
-            return render_experiment()
         if slug == "batch":
             from vamos.ux.panel.pages.batch import render_batch
 

@@ -103,7 +103,6 @@ h1, h2, h3, h4, h5 {{
 PAGES: dict[str, tuple[str, str]] = {
     "welcome": ("Welcome", ""),
     "problem_builder": ("Problem Builder", ""),
-    "experiment": ("Run Experiment", ""),
     "batch": ("Batch Comparison", ""),
     "results": ("Explore Results", ""),
 }
