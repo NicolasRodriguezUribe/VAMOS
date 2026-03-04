@@ -391,6 +391,37 @@ Return ONLY the JSON object, nothing else.
 """
 
 
+def _llm_generate_gemini(description: str, *, api_key: str = "") -> dict[str, Any]:
+    """Call Google Gemini to generate VAMOS problem code."""
+    import json
+    import os
+
+    key = api_key or os.getenv("GEMINI_API_KEY", "")
+    if not key:
+        raise RuntimeError("No Gemini API key provided. Paste it in the API Key field or set GEMINI_API_KEY.")
+    try:
+        from google import genai  # type: ignore[import-not-found]
+    except ImportError as exc:
+        raise RuntimeError(
+            "google-genai package not installed. Run: pip install google-genai"
+        ) from exc
+
+    client = genai.Client(api_key=key)
+    response = client.models.generate_content(
+        model=os.getenv("VAMOS_ASSIST_GEMINI_MODEL", "gemini-2.0-flash"),
+        contents=f"{_VAMOS_CODE_SYSTEM_PROMPT}\n\nUser request:\n{description}",
+    )
+    raw = response.text
+    if not raw or not raw.strip():
+        raise RuntimeError("Empty response from Gemini.")
+    text = raw.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+    return json.loads(text.strip())
+
+
 def _llm_generate_openai(description: str) -> dict[str, Any]:
     """Call OpenAI to generate VAMOS problem code from a natural-language description."""
     import json
@@ -459,12 +490,15 @@ def _llm_generate_anthropic(description: str) -> dict[str, Any]:
 def llm_generate_problem_code(
     description: str,
     provider: str = "openai",
+    api_key: str = "",
 ) -> dict[str, Any]:
     """Generate VAMOS problem code from a natural-language description using an LLM.
 
     Returns a dict with keys: objective_code, constraint_code, n_var, n_obj, bounds.
     """
-    if provider == "anthropic":
+    if provider == "gemini":
+        result = _llm_generate_gemini(description, api_key=api_key)
+    elif provider == "anthropic":
         result = _llm_generate_anthropic(description)
     else:
         result = _llm_generate_openai(description)
