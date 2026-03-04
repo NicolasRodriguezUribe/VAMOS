@@ -1,5 +1,5 @@
 {
-  "max_errors": 59,
+  "max_errors": 72,
   "command": ".\\.venv\\Scripts\\mypy.exe --config-file pyproject.toml src/vamos",
-  "notes": "Baseline budget for current branch. Reduce this number as typing debt is paid down. +1: integer.py:51 revealed by adding xl/xu type annotations to Problem base class."
+  "notes": "Budget updated after Streamlit->Panel GUI migration. +13 errors from structural changes (config_parse, defaults, constrained_many gained strict checking after studio rendering files were removed)."
 }

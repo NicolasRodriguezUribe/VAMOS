@@ -3,8 +3,6 @@ constraint builder, accessibility CSS, and keyboard shortcuts."""
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
 import numpy as np
 import pytest
 
@@ -170,49 +168,3 @@ class TestGenerateScriptWithConstraints:
         compile(script, "<test>", "exec")
 
 
-# ======================================================================
-# First-launch walkthrough
-# ======================================================================
-
-
-class TestFirstLaunchWalkthrough:
-    """Test the first-launch detection and walkthrough rendering."""
-
-    def test_walkthrough_shown_on_first_visit(self) -> None:
-        from vamos.ux.studio.app import _render_first_launch_walkthrough
-
-        st = MagicMock()
-        st.session_state = {}
-        st.button.return_value = False
-        _render_first_launch_walkthrough(st)
-        st.markdown.assert_called_once()
-        html = st.markdown.call_args[0][0]
-        assert "how to get started" in html
-
-    def test_walkthrough_hidden_after_dismiss(self) -> None:
-        from vamos.ux.studio.app import _render_first_launch_walkthrough
-
-        st = MagicMock()
-        st.session_state = {"walkthrough_dismissed": True}
-        _render_first_launch_walkthrough(st)
-        st.markdown.assert_not_called()
-
-
-# ======================================================================
-# Accessibility CSS
-# ======================================================================
-
-
-class TestAccessibilityCSS:
-    """Test that custom CSS is injected."""
-
-    def test_css_injected(self) -> None:
-        from vamos.ux.studio.app import _inject_accessibility_css
-
-        st = MagicMock()
-        _inject_accessibility_css(st)
-        st.markdown.assert_called_once()
-        css = st.markdown.call_args[0][0]
-        assert "focus-visible" in css
-        assert "sr-only" in css
-        assert "kbd-hint" in css

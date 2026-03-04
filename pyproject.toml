@@ -77,9 +77,11 @@ tuning = [
   "ConfigSpace>=1.2",
   "hpbandster>=0.7.4",
 ]
-# Studio UI
+# Studio UI (Panel-based)
 studio = [
-  "streamlit>=1.29",
+  "panel>=1.4",
+  "param>=2.0",
+  "bokeh>=3.3",
   "plotly>=5.18",
   "pandas>=1.5",
 ]
@@ -142,7 +144,9 @@ all = [
   "smac>=2.0",
   "ConfigSpace>=1.2",
   "hpbandster>=0.7.4",
-  "streamlit>=1.29",
+  "panel>=1.4",
+  "param>=2.0",
+  "bokeh>=3.3",
   "jax>=0.4",
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
@@ -196,6 +200,12 @@ module = [
 strict = true
 
 [[tool.mypy.overrides]]
+module = "vamos.ux.panel.*"
+disallow_untyped_calls = false
+disallow_subclassing_any = false
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
 module = "vamos.engine.algorithm.registry"
 disallow_untyped_defs = true
 
@@ -222,7 +232,11 @@ module = [
   "pygmo.*",
   "sklearn",
   "sklearn.*",
-  "streamlit",
+  "panel",
+  "panel.*",
+  "param",
+  "bokeh",
+  "bokeh.*",
 ]
 ignore_missing_imports = true
 
@@ -234,7 +248,7 @@ markers = [
   "examples: notebook or example smoke tests",
   "notebooks: notebook-dependent tests",
   "backends: optional backend-dependent tests",
-  "studio: streamlit/UI dependent tests",
+  "studio: Panel/UI dependent tests",
   "autodiff: tests requiring JAX/autodiff extras",
   "cli: command-line interface smoke tests",
   "numba: tests requiring the numba backend",

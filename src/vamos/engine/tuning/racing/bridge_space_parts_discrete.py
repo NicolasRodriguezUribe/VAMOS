@@ -28,7 +28,7 @@ def real_operator_part_medium(
         ]
     )
     if include_repair:
-        params.append(Categorical("repair", ["none", "clip", "reflect", "random", "round"]))
+        params.append(Categorical("repair", ["clip", "reflect", "random", "round"]))
 
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
