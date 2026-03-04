@@ -15,7 +15,7 @@ def _nsgaii_cfg():
         .offspring_size(6)
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("polynomial", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .result_mode("population")
         .build()
     )

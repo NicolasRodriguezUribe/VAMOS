@@ -88,23 +88,107 @@ def test_nsgaii_config_space_builds_and_constructs_config():
     assignment = space.sample(rng)
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.pop_size > 0
-    assert cfg.crossover[0] in ("sbx", "blx_alpha", "arithmetic", "pcx", "undx", "simplex")
-    assert cfg.mutation[0] in ("pm", "linked_polynomial", "non_uniform", "gaussian", "uniform_reset", "cauchy", "uniform")
+    assert cfg.crossover[0] in (
+        "sbx",
+        "blx_alpha",
+        "blx_alpha_beta",
+        "arithmetic",
+        "whole_arithmetic",
+        "laplace",
+        "fuzzy",
+        "pcx",
+        "undx",
+        "simplex",
+    )
+    assert cfg.mutation[0] in (
+        "polynomial",
+        "linked_polynomial",
+        "non_uniform",
+        "gaussian",
+        "uniform_reset",
+        "cauchy",
+        "uniform",
+        "levy_flight",
+        "power_law",
+    )
+
+
+@pytest.mark.parametrize("initializer", ["random", "lhs", "scatter", "sobol", "halton", "obl"])
+def test_nsgaii_config_space_supports_full_real_initializer_catalog(initializer: str):
+    assignment = {
+        "pop_size": 32,
+        "offspring_ratio": 1.0,
+        "selection": "tournament",
+        "selection_size": 2,
+        "use_external_archive": False,
+        "archive_unbounded": False,
+        "initializer": initializer,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob_factor": 1.0,
+        "mutation_eta": 20.0,
+        "repair": "clip",
+    }
+    if initializer == "scatter":
+        assignment["scatter_base_size_factor"] = 0.5
+
+    cfg = config_from_assignment("nsgaii", assignment)
+
+    assert cfg.initializer is not None
+    assert cfg.initializer["type"] == initializer
+
+
+@pytest.mark.parametrize("selection", ["tournament", "random", "boltzmann", "ranking", "sus"])
+def test_nsgaii_config_space_supports_full_selection_catalog(selection: str):
+    assignment = {
+        "pop_size": 32,
+        "offspring_ratio": 1.0,
+        "selection": selection,
+        "use_external_archive": False,
+        "archive_unbounded": False,
+        "initializer": "random",
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "polynomial",
+        "mutation_prob_factor": 1.0,
+        "mutation_eta": 20.0,
+        "repair": "clip",
+    }
+    if selection == "tournament":
+        assignment["selection_size"] = 2
+
+    cfg = config_from_assignment("nsgaii", assignment)
+
+    assert cfg.selection[0] == selection
+    if selection == "tournament":
+        assert cfg.selection[1]["size"] == 2
+    else:
+        assert cfg.selection[1] == {}
 
 
 def test_nsgaii_archive_unbounded_disables_archive_params():
     space = build_nsgaii_config_space()
     param_space = space.to_param_space()
+    assert "archive_type" not in param_space.params
+    assert "archive_epsilon" not in param_space.params
+    assert "selection_size" in param_space.params
+    cfg_disabled = {"use_external_archive": False}
+    assert not param_space.is_active("selection_size", cfg_disabled)
+    assert not param_space.is_active("archive_unbounded", cfg_disabled)
+    assert not param_space.is_active("archive_prune_policy", cfg_disabled)
+    cfg_random = {"selection": "random", "use_external_archive": False}
+    assert not param_space.is_active("selection_size", cfg_random)
+    cfg_tournament = {"selection": "tournament", "use_external_archive": False}
+    assert param_space.is_active("selection_size", cfg_tournament)
     cfg = {"use_external_archive": True, "archive_unbounded": True}
-    assert not param_space.is_active("archive_type", cfg)
+    assert param_space.is_active("archive_unbounded", cfg)
     assert not param_space.is_active("archive_prune_policy", cfg)
-    assert not param_space.is_active("archive_epsilon", cfg)
-    cfg_bounded = {"use_external_archive": True, "archive_unbounded": False, "archive_type": "size_cap"}
-    assert param_space.is_active("archive_type", cfg_bounded)
+    cfg_bounded = {"use_external_archive": True, "archive_unbounded": False}
+    assert param_space.is_active("archive_unbounded", cfg_bounded)
     assert param_space.is_active("archive_prune_policy", cfg_bounded)
-    assert not param_space.is_active("archive_epsilon", cfg_bounded)
-    cfg_grid = {"use_external_archive": True, "archive_unbounded": False, "archive_type": "epsilon_grid"}
-    assert param_space.is_active("archive_epsilon", cfg_grid)
 
 
 def test_nsgaii_permutation_config_space_builds_and_constructs_config():
@@ -182,9 +266,8 @@ def test_agemoea_external_archive_config():
     assignment.update(
         {
             "use_external_archive": True,
-            "archive_type": "size_cap",
+            "archive_unbounded": False,
             "archive_prune_policy": "crowding",
-            "archive_epsilon": 0.01,
         }
     )
     cfg = config_from_assignment("agemoea", assignment)
@@ -201,9 +284,8 @@ def test_rvea_external_archive_config():
         {
             "n_obj": 3,
             "use_external_archive": True,
-            "archive_type": "size_cap",
+            "archive_unbounded": False,
             "archive_prune_policy": "crowding",
-            "archive_epsilon": 0.01,
         }
     )
     cfg = config_from_assignment("rvea", assignment)
@@ -217,7 +299,7 @@ def test_external_archive_config_uses_hv_policy_names():
         "pop_size": 32,
         "offspring_size": 32,
         "selection": "tournament",
-        "selection_pressure": 2,
+        "selection_size": 2,
         "crossover": "sbx",
         "crossover_prob": 0.9,
         "crossover_eta": 15.0,
@@ -225,9 +307,8 @@ def test_external_archive_config_uses_hv_policy_names():
         "mutation_prob": "1/n",
         "mutation_eta": 20.0,
         "use_external_archive": True,
-        "archive_type": "size_cap",
+        "archive_unbounded": False,
         "archive_prune_policy": "hv",
-        "archive_epsilon": 0.01,
     }
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.external_archive is not None
@@ -240,7 +321,7 @@ def test_external_archive_config_uses_knn_policy_name():
         "pop_size": 32,
         "offspring_size": 32,
         "selection": "tournament",
-        "selection_pressure": 2,
+        "selection_size": 2,
         "crossover": "sbx",
         "crossover_prob": 0.9,
         "crossover_eta": 15.0,
@@ -248,9 +329,8 @@ def test_external_archive_config_uses_knn_policy_name():
         "mutation_prob": "1/n",
         "mutation_eta": 20.0,
         "use_external_archive": True,
-        "archive_type": "size_cap",
+        "archive_unbounded": False,
         "archive_prune_policy": "knn",
-        "archive_epsilon": 0.01,
     }
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.external_archive is not None
@@ -263,7 +343,7 @@ def test_external_archive_config_uses_maxmin_policy_name():
         "pop_size": 32,
         "offspring_size": 32,
         "selection": "tournament",
-        "selection_pressure": 2,
+        "selection_size": 2,
         "crossover": "sbx",
         "crossover_prob": 0.9,
         "crossover_eta": 15.0,
@@ -271,9 +351,8 @@ def test_external_archive_config_uses_maxmin_policy_name():
         "mutation_prob": "1/n",
         "mutation_eta": 20.0,
         "use_external_archive": True,
-        "archive_type": "size_cap",
+        "archive_unbounded": False,
         "archive_prune_policy": "maxmin",
-        "archive_epsilon": 0.01,
     }
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.external_archive is not None
@@ -286,7 +365,7 @@ def test_external_archive_config_uses_ref_dirs_policy_name():
         "pop_size": 32,
         "offspring_size": 32,
         "selection": "tournament",
-        "selection_pressure": 2,
+        "selection_size": 2,
         "crossover": "sbx",
         "crossover_prob": 0.9,
         "crossover_eta": 15.0,
@@ -294,9 +373,8 @@ def test_external_archive_config_uses_ref_dirs_policy_name():
         "mutation_prob": "1/n",
         "mutation_eta": 20.0,
         "use_external_archive": True,
-        "archive_type": "size_cap",
+        "archive_unbounded": False,
         "archive_prune_policy": "ref_dirs",
-        "archive_epsilon": 0.01,
     }
     cfg = config_from_assignment("nsgaii", assignment)
     assert cfg.external_archive is not None
@@ -309,7 +387,7 @@ def test_external_archive_config_rejects_legacy_hv_policy_aliases():
         "pop_size": 32,
         "offspring_size": 32,
         "selection": "tournament",
-        "selection_pressure": 2,
+        "selection_size": 2,
         "crossover": "sbx",
         "crossover_prob": 0.9,
         "crossover_eta": 15.0,
@@ -317,9 +395,8 @@ def test_external_archive_config_rejects_legacy_hv_policy_aliases():
         "mutation_prob": "1/n",
         "mutation_eta": 20.0,
         "use_external_archive": True,
-        "archive_type": "size_cap",
+        "archive_unbounded": False,
         "archive_prune_policy": "hv_contrib",
-        "archive_epsilon": 0.01,
     }
     with pytest.raises(ValueError, match="Unsupported prune_policy 'hv_contrib'"):
         config_from_assignment("nsgaii", assignment)
@@ -330,7 +407,7 @@ def test_external_archive_config_rejects_spea2_prune_policy_name():
         "pop_size": 32,
         "offspring_size": 32,
         "selection": "tournament",
-        "selection_pressure": 2,
+        "selection_size": 2,
         "crossover": "sbx",
         "crossover_prob": 0.9,
         "crossover_eta": 15.0,
@@ -338,9 +415,8 @@ def test_external_archive_config_rejects_spea2_prune_policy_name():
         "mutation_prob": "1/n",
         "mutation_eta": 20.0,
         "use_external_archive": True,
-        "archive_type": "size_cap",
+        "archive_unbounded": False,
         "archive_prune_policy": "spea2",
-        "archive_epsilon": 0.01,
     }
     with pytest.raises(ValueError, match="Unsupported prune_policy 'spea2'"):
         config_from_assignment("nsgaii", assignment)
@@ -351,7 +427,7 @@ def test_external_archive_config_rejects_random_prune_policy_name():
         "pop_size": 32,
         "offspring_size": 32,
         "selection": "tournament",
-        "selection_pressure": 2,
+        "selection_size": 2,
         "crossover": "sbx",
         "crossover_prob": 0.9,
         "crossover_eta": 15.0,
@@ -359,9 +435,8 @@ def test_external_archive_config_rejects_random_prune_policy_name():
         "mutation_prob": "1/n",
         "mutation_eta": 20.0,
         "use_external_archive": True,
-        "archive_type": "size_cap",
+        "archive_unbounded": False,
         "archive_prune_policy": "random",
-        "archive_epsilon": 0.01,
     }
     with pytest.raises(ValueError, match="Unsupported prune_policy 'random'"):
         config_from_assignment("nsgaii", assignment)

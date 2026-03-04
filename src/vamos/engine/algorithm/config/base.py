@@ -331,19 +331,10 @@ def _require_fields(cfg: dict[str, Any], fields: tuple[str, ...], name: str) -> 
 
 
 def _normalize_tournament_selection_kwargs(method: str, kwargs: dict[str, Any]) -> dict[str, Any]:
-    """Normalize tournament selection kwargs to use ``size`` as the public key.
-
-    Backward compatibility: ``pressure`` is accepted as a legacy alias.
-    """
+    """Validate tournament selection kwargs to use ``size`` as the public key."""
     if str(method).strip().lower() != "tournament":
         return kwargs
 
-    has_size = "size" in kwargs and kwargs.get("size") is not None
-    has_pressure = "pressure" in kwargs and kwargs.get("pressure") is not None
-    if has_size and has_pressure:
-        raise ValueError("Tournament selection accepts either 'size' or legacy 'pressure', not both.")
-
-    normalized = dict(kwargs)
-    if has_pressure and not has_size:
-        normalized["size"] = normalized.pop("pressure")
-    return normalized
+    if "pressure" in kwargs and kwargs.get("pressure") is not None:
+        raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+    return dict(kwargs)

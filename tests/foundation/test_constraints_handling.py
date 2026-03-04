@@ -31,7 +31,7 @@ def _make_nsgaii(cfg_mode: str):
         .offspring_size(10)
         .crossover("sbx", prob=0.9, eta=15.0)
         .mutation("polynomial", prob="1/n", eta=20.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .constraint_mode(cfg_mode)
         .result_mode("population")
         .build()

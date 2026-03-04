@@ -7,7 +7,14 @@ from typing import Any, cast
 
 from vamos.engine.archive import ExternalArchiveConfig
 
-from .base import ConstraintModeStr, IndicatorType, ResultMode, _require_fields, _SerializableConfig
+from .base import (
+    ConstraintModeStr,
+    IndicatorType,
+    ResultMode,
+    _normalize_tournament_selection_kwargs,
+    _require_fields,
+    _SerializableConfig,
+)
 
 
 @dataclass(frozen=True)
@@ -69,7 +76,7 @@ class _IBEAConfigBuilder:
         return self
 
     def selection(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
-        self._cfg["selection"] = (method, kwargs)
+        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
 
     def indicator(self, name: str) -> _IBEAConfigBuilder:

@@ -18,9 +18,9 @@ class TestNSGAIIConfigShortcuts:
 
         assert cfg.pop_size == 100
         assert cfg.crossover[0] == "sbx"
-        assert cfg.mutation[0] == "polynomial"
+        assert cfg.mutation[0] == "pm"
         assert cfg.selection[0] == "tournament"
-        assert cfg.repair == ("clip", {})
+        assert cfg.repair == "auto"
 
     def test_default_with_custom_pop_size(self):
         """default() should accept custom pop_size."""
@@ -61,10 +61,10 @@ class TestNSGAIIConfigShortcuts:
         assert cfg.selection[1]["size"] == 3
         assert "pressure" not in cfg.selection[1]
 
-    def test_tournament_selection_rejects_size_and_pressure_together(self):
-        """Tournament selection should reject mixed new/legacy keys."""
-        with pytest.raises(ValueError):
-            NSGAIIConfig.builder().selection("tournament", size=2, pressure=2)
+    def test_tournament_selection_rejects_pressure_alias(self):
+        """Tournament selection should reject the removed pressure alias."""
+        with pytest.raises(ValueError, match="uses 'size'"):
+            NSGAIIConfig.builder().selection("tournament", pressure=2)
 
 
 class TestMOEADConfigShortcuts:
@@ -79,7 +79,7 @@ class TestMOEADConfigShortcuts:
         assert cfg.delta == 0.9
         assert cfg.replace_limit == 2
         assert cfg.aggregation[0] == "pbi"
-        assert cfg.repair == ("clip", {})
+        assert cfg.repair == "auto"
 
 
 class TestSPEA2ConfigShortcuts:
@@ -93,7 +93,7 @@ class TestSPEA2ConfigShortcuts:
         assert cfg.archive_size == 100
         assert cfg.crossover[0] == "sbx"
         assert cfg.selection[0] == "tournament"
-        assert cfg.repair == ("clip", {})
+        assert cfg.repair == "auto"
 
 
 class TestSMSEMOAConfigShortcuts:
@@ -106,7 +106,7 @@ class TestSMSEMOAConfigShortcuts:
         assert cfg.pop_size == 100
         assert cfg.crossover[0] == "sbx"
         assert cfg.reference_point["adaptive"] is True
-        assert cfg.repair == ("clip", {})
+        assert cfg.repair == "auto"
 
 
 class TestNSGAIIIConfigShortcuts:
@@ -119,4 +119,4 @@ class TestNSGAIIIConfigShortcuts:
         assert cfg.pop_size == comb(12 + 3 - 1, 3 - 1)
         assert cfg.crossover[0] == "sbx"
         assert cfg.reference_directions["divisions"] == 12
-        assert cfg.repair == ("clip", {})
+        assert cfg.repair == "auto"

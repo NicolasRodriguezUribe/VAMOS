@@ -47,7 +47,7 @@ def test_live_viz_callbacks_invoked(monkeypatch, tmp_path):
         .offspring_size(6)
         .crossover("sbx", prob=0.9, eta=10.0)
         .mutation("polynomial", prob="1/n", eta=10.0)
-        .selection("tournament", pressure=2)
+        .selection("tournament", size=2)
         .result_mode("population")
         .build()
     )
