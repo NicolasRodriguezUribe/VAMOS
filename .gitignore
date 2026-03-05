@@ -6,6 +6,8 @@ __pycache__/
 .venv/
 .venv*/
 .venv-wsl/
+.micromamba/
+tools/micromamba/
 .uv/
 .env
 .ipynb_checkpoints/

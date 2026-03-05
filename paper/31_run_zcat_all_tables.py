@@ -27,6 +27,7 @@ Environment variables:
   VAMOS_NUMBA_WARMUP_EVALS   Numba warmup evals (default: 2000)
   VAMOS_ZCAT_SAVE_EVERY      chunk size for partial saves (default: 50)
   VAMOS_ZCAT_RESUME          1/0 resume from existing CSV (default: 1)
+  VAMOS_DEAP_N_JOBS          DEAP pool workers (default: 1; Windows-safe)
 """
 
 from __future__ import annotations
@@ -83,13 +84,20 @@ def _parse_str_list(raw: str) -> list[str]:
     return [x.strip() for x in raw.split(",") if x.strip()]
 
 
+def _unique_preserve_order(items: list[str]) -> list[str]:
+    return list(dict.fromkeys(items))
+
+
 N_EVALS = _int_env("VAMOS_N_EVALS", 50_000)
 N_SEEDS = _int_env("VAMOS_N_SEEDS", 30)
 N_JOBS = _int_env("VAMOS_N_JOBS", max(1, (os.cpu_count() or 2) - 1))
 NUMBA_WARMUP_EVALS = _int_env("VAMOS_NUMBA_WARMUP_EVALS", 2000)
 SAVE_EVERY = _int_env("VAMOS_ZCAT_SAVE_EVERY", 50)
 RESUME = os.environ.get("VAMOS_ZCAT_RESUME", "1").strip().lower() not in {"0", "false", "no"}
-DEAP_N_JOBS = _int_env("VAMOS_DEAP_N_JOBS", 2)
+DEAP_N_JOBS = _int_env("VAMOS_DEAP_N_JOBS", 1)
+if os.name == "nt" and DEAP_N_JOBS > 1:
+    print("Info: forcing DEAP workers to 1 on Windows (spawn mode cannot pickle local evaluator).")
+    DEAP_N_JOBS = 1
 
 # ZCAT problem configuration: 2 objectives, 30 variables (standard)
 N_OBJ = 2
@@ -129,7 +137,7 @@ ALGO_DISPLAY = {
 
 # Framework availability per algorithm (matches script 01)
 ALGO_FRAMEWORKS = {
-    "nsgaii": ["vamos-numba", "vamos-numpy", "vamos-moocore", "pymoo", "jmetalpy", "deap", "platypus"],
+    "nsgaii": ["vamos-numba", "vamos-numpy", "vamos-moocore", "pymoo", "jmetalpy", "deap", "platypus", "pygmo"],
     "nsgaii_ss": ["vamos-numba", "pymoo", "jmetalpy"],
     "nsgaii_archive": ["vamos-numba", "pymoo", "jmetalpy"],
     "smsemoa": ["vamos-numba", "pymoo", "jmetalpy"],
@@ -257,6 +265,31 @@ def _make_platypus_zcat(pid: int, n_var: int, n_obj: int):
     return _ZCATWrapper()
 
 
+def _make_pygmo_zcat(pid: int, n_var: int, n_obj: int):
+    """Create a PyGMO UDP wrapping VAMOS ZCAT evaluation."""
+    vamos_prob = _make_vamos_zcat(pid, n_var, n_obj)
+    xl = np.asarray(vamos_prob.xl, dtype=float)
+    xu = np.asarray(vamos_prob.xu, dtype=float)
+
+    class _ZCATUDP:
+        def fitness(self, x):
+            X = np.asarray(x, dtype=float).reshape(1, -1)
+            out = {"F": np.zeros((1, n_obj), dtype=float)}
+            vamos_prob.evaluate(X, out)
+            return out["F"][0].tolist()
+
+        def get_nobj(self) -> int:
+            return n_obj
+
+        def get_bounds(self):
+            return xl.tolist(), xu.tolist()
+
+        def get_name(self) -> str:
+            return f"ZCAT{pid}"
+
+    return _ZCATUDP()
+
+
 def load_moead_weights(n_obj: int, pop_size: int) -> np.ndarray:
     if n_obj <= 1:
         return np.ones((pop_size, max(1, n_obj)), dtype=float)
@@ -288,6 +321,8 @@ def _framework_csv_name(fw: str) -> str:
         return "DEAP"
     if fw == "platypus":
         return "Platypus"
+    if fw == "pygmo":
+        return "PyGMO"
     return fw
 
 
@@ -900,6 +935,56 @@ def run_single_benchmark(
         except Exception as e:
             print(f"  {problem_label} Platypus {algorithm} seed={seed} FAILED: {e}")
 
+    # --- PyGMO ---
+    elif framework == "pygmo":
+        if algorithm != "nsgaii":
+            print(f"  PyGMO does not support {algorithm}, skipping")
+            return None
+        try:
+            import pygmo as pg
+
+            random.seed(seed)
+            np.random.seed(seed)
+
+            pygmo_problem = pg.problem(_make_pygmo_zcat(pid, n_var, n_obj))
+            generations = max(0, N_EVALS // POP_SIZE - 1)
+
+            # pygmo requires cr strictly < 1.0
+            cr = min(CROSSOVER_PROB, 1.0 - 1e-16)
+            uda = pg.nsga2(
+                gen=generations,
+                seed=seed,
+                cr=cr,
+                eta_c=CROSSOVER_ETA,
+                m=1.0 / n_var,
+                eta_m=MUTATION_ETA,
+            )
+            algo = pg.algorithm(uda)
+            pop = pg.population(pygmo_problem, size=POP_SIZE, seed=seed)
+
+            start = time.perf_counter()
+            pop = algo.evolve(pop)
+            elapsed = time.perf_counter() - start
+
+            F = np.asarray(pop.get_f(), dtype=float)
+            hv = compute_hv(F, ref_name)
+            igd_plus = compute_igd_plus(F, ref_name)
+
+            result_entry = {
+                "framework": "PyGMO",
+                "problem": problem_label,
+                "algorithm": algo_display,
+                "n_evals": N_EVALS,
+                "seed": seed,
+                "runtime_seconds": elapsed,
+                "n_solutions": int(F.shape[0]),
+                "hypervolume": hv,
+                "igd_plus": igd_plus,
+            }
+            print(f"  {problem_label} PyGMO {algorithm} seed={seed}: {elapsed:.2f}s")
+        except Exception as e:
+            print(f"  {problem_label} PyGMO {algorithm} seed={seed} FAILED: {e}")
+
     else:
         print(f"  Unknown framework: {framework}")
 
@@ -934,6 +1019,50 @@ def _save_partial(results_list: list[dict[str, Any]], output_csv: Path) -> None:
     df.to_csv(output_csv, index=False)
 
 
+def _dedupe_existing_csv(output_csv: Path) -> int:
+    """Deduplicate an existing CSV in-place by benchmark key columns."""
+    if not output_csv.is_file():
+        return 0
+    try:
+        df = pd.read_csv(output_csv)
+    except Exception as exc:
+        print(f"Warning: could not read {output_csv} for dedupe: {exc}")
+        return 0
+
+    required = ["framework", "problem", "algorithm", "n_evals", "seed"]
+    key_cols = [c for c in required if c in df.columns]
+    if not key_cols:
+        return 0
+
+    before_raw = len(df)
+
+    # Drop accidental header-as-row artifacts and invalid numeric keys.
+    if set(required).issubset(df.columns):
+        fw = df["framework"].astype(str).str.strip().str.lower()
+        pr = df["problem"].astype(str).str.strip().str.lower()
+        alg = df["algorithm"].astype(str).str.strip().str.lower()
+        bad_header = (
+            fw.eq("framework")
+            | pr.eq("problem")
+            | alg.eq("algorithm")
+        )
+        if bad_header.any():
+            df = df.loc[~bad_header].copy()
+
+        df["seed"] = pd.to_numeric(df["seed"], errors="coerce")
+        df["n_evals"] = pd.to_numeric(df["n_evals"], errors="coerce")
+        df = df.dropna(subset=["seed", "n_evals"])
+        df["seed"] = df["seed"].astype(int)
+        df["n_evals"] = df["n_evals"].astype(int)
+
+    df = df.drop_duplicates(subset=key_cols, keep="last")
+    removed = before_raw - len(df)
+    if removed > 0:
+        output_csv.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(output_csv, index=False)
+    return removed
+
+
 def _load_completed_keys(output_csv: Path, algo_display: str) -> set[tuple[str, str, int]]:
     """Load already-completed (framework, problem, seed) combos."""
     keys: set[tuple[str, str, int]] = set()
@@ -941,12 +1070,18 @@ def _load_completed_keys(output_csv: Path, algo_display: str) -> set[tuple[str, 
         return keys
     try:
         df = pd.read_csv(output_csv)
+        required_cols = {"framework", "problem", "algorithm", "n_evals", "seed"}
+        if not required_cols.issubset(df.columns):
+            return keys
         # Filter to matching algorithm and budget
         df = df[(df["algorithm"] == algo_display) & (df["n_evals"] == N_EVALS)]
         # Only consider ZCAT problems
         df = df[df["problem"].astype(str).str.startswith("zcat")]
         for _, row in df.iterrows():
-            keys.add((str(row["framework"]), str(row["problem"]), int(row["seed"])))
+            try:
+                keys.add((str(row["framework"]), str(row["problem"]), int(row["seed"])))
+            except Exception:
+                continue
     except Exception as e:
         print(f"Warning: could not load {output_csv} for resume: {e}")
     return keys
@@ -978,15 +1113,20 @@ def main() -> None:
 
         # Determine frameworks for this algorithm
         if _fw_override:
-            frameworks = _parse_str_list(_fw_override)
+            frameworks = _unique_preserve_order(_parse_str_list(_fw_override))
         else:
-            frameworks = ALGO_FRAMEWORKS.get(algorithm, ["vamos-numba", "pymoo", "jmetalpy"])
+            frameworks = _unique_preserve_order(ALGO_FRAMEWORKS.get(algorithm, ["vamos-numba", "pymoo", "jmetalpy"]))
 
         print(f"\n{'='*60}")
         print(f"Algorithm: {algo_display} ({algorithm})")
         print(f"Output:    {output_csv}")
         print(f"Frameworks: {frameworks}")
         print(f"{'='*60}")
+
+        if RESUME:
+            removed = _dedupe_existing_csv(output_csv)
+            if removed > 0:
+                print(f"Resume cleanup: removed {removed} duplicate rows from {output_csv.name}")
 
         # Load completed keys for resume
         completed = _load_completed_keys(output_csv, algo_display)
