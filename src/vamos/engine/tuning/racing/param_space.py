@@ -2,15 +2,22 @@
 Hyperparameter space definitions for VAMOS tuning.
 
 All parameter types use name as the first argument:
-- Real(name, low, high, log=False)
-- Int(name, low, high, log=False)
-- Categorical(name, choices)
-- Boolean(name)
+- Real(name, low, high, log=False, role="operator_rate")
+- Int(name, low, high, log=False, role="population")
+- Categorical(name, choices, role="operator")
+- Boolean(name, role="adaptive")
 
 All types support:
 - sample(rng) - draw a random value
 - to_unit(value) - map to [0, 1] space for optimization
 - from_unit(value) - map from [0, 1] space back to parameter value
+
+Parameter roles (used by MOEATuner for hierarchical search):
+- "structural": algorithm paradigm choices (decomposition, reference points)
+- "operator": discrete operator family choices (crossover type, mutation type)
+- "operator_rate": continuous operator parameters (eta, probabilities, sigma)
+- "population": resource allocation (pop_size, offspring_ratio, archive_size)
+- "adaptive": meta-parameters (immigration, adaptive operator selection)
 """
 
 from __future__ import annotations
@@ -33,6 +40,7 @@ class Real:
     low: float
     high: float
     log: bool = False
+    role: str = "operator_rate"
 
     def __post_init__(self) -> None:
         if self.high < self.low:
@@ -71,6 +79,7 @@ class Int:
     low: int
     high: int
     log: bool = False
+    role: str = "population"
 
     def __post_init__(self) -> None:
         if self.high < self.low:
@@ -109,6 +118,7 @@ class Categorical:
 
     name: str
     choices: Sequence[Any]
+    role: str = "operator"
 
     def sample(self, rng: np.random.Generator) -> Any:
         return self.choices[int(rng.integers(0, len(self.choices)))]
@@ -130,6 +140,7 @@ class Boolean:
     """Boolean hyperparameter (True/False)."""
 
     name: str
+    role: str = "adaptive"
 
     def sample(self, rng: np.random.Generator) -> bool:
         return bool(rng.integers(0, 2))
@@ -168,6 +179,9 @@ class ConditionalBlock:
 
 # Type alias for any parameter type
 ParamType = Real | Int | Categorical | Boolean
+
+# Valid parameter roles for MOEA-aware tuning
+PARAM_ROLES = frozenset({"structural", "operator", "operator_rate", "population", "adaptive"})
 
 
 @dataclass
@@ -312,6 +326,7 @@ __all__ = [
     "Condition",
     "ConditionalBlock",
     "ParamType",
+    "PARAM_ROLES",
     # Aliases
     "FloatParam",
     "IntegerParam",

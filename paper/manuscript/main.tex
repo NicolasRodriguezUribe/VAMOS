@@ -21,6 +21,7 @@
 \usepackage{cite}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{arydshln}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{multirow}
@@ -122,7 +123,7 @@ Evolutionary algorithms, Multiobjective optimization, Software framework, Vector
 
 \IEEEPARstart{M}{ulti-objective} optimization problems (MOPs) arise whenever trade-offs exist between conflicting objectives, requiring the computation of an accurate approximation of the Pareto-optimal set rather than a single optimum~\cite{Deb01}. Such problems are common in engineering design, machine learning, scheduling, and resource allocation, among other domains. In this field, multi-objective evolutionary algorithms (MOEAs) remain a dominant approach due to their robustness, population-based anytime behavior, and ability to return a set of non-dominated solutions in a single run~\cite{coello2007evolutionary}.
 
-The widespread adoption of MOEAs has been fueled in large part by the availability of software frameworks that lower the implementation barrier and facilitate reproducible experimentation. Early efforts such as \textit{PISA}~\cite{bleuler2003pisa} established the concept of modular, platform-independent interfaces for multi-objective search. The \textit{jMetal} framework~\cite{durillo2011jmetal} later consolidated a comprehensive Java-based toolkit that became a reference for algorithm development and research studies. More recently, \textit{PlatEMO}~\cite{tian2017platemo} has provided a MATLAB platform with a large catalog of algorithms and test problems. In parallel, the Python ecosystem has seen the emergence of dedicated libraries, such as \textit{pymoo}~\cite{blank2020pymoo}, \textit{jMetalPy}~\cite{benitez2019jmetalpy}, Platypus~\cite{hadka2015platypus}, and \textit{DEAP}~\cite{fortin2012deap}, that leverage Python's accessibility and rich scientific stack. 
+The widespread adoption of MOEAs has been fueled in large part by the availability of software frameworks that lower the implementation barrier and facilitate reproducible experimentation. Early efforts such as \textit{PISA}~\cite{bleuler2003pisa} established the concept of modular, platform-independent interfaces for multi-objective search. The \textit{jMetal} framework~\cite{durillo2011jmetal} later consolidated a comprehensive Java-based framework that became a reference for algorithm development and research studies. More recently, \textit{PlatEMO}~\cite{tian2017platemo} has provided a MATLAB platform with a large catalog of algorithms and test problems. In parallel, the Python ecosystem has seen the emergence of dedicated libraries, such as \textit{pymoo}~\cite{blank2020pymoo}, \textit{jMetalPy}~\cite{benitez2019jmetalpy}, \textit{Platypus}~\cite{hadka2015platypus}, and \textit{DEAP}~\cite{fortin2012deap}, that leverage Python's accessibility and rich scientific stack. 
 
 As Python has become a widely adopted platform for MOEA research and experimentation, three practical limitations hinder its broader adoption. First, the interpreted nature of Python, combined with libraries that keep hot-path computations inside the interpreter~\cite{benitez2019jmetalpy,fortin2012deap,hadka2015platypus}, makes the inner loops of pure-Python implementations inherently slower than those of frameworks written in compiled languages such as C++ or Java. Second, existing MOEA frameworks often provide limited configurability at the component level and do not allow attaching external archives, useful to allow NSGA-II to handle problems with more than two objectives~\cite{IshibuchiPS20}, with the exception of \textit{jMetal}~\cite{durillo2011jmetal}. Third, most existing frameworks present a high entry barrier for non-expert users while simultaneously lacking the necessary flexibility for advanced researchers to achieve fine-grained algorithmic configuration. To overcome these limitations, we introduce VAMOS, a Python-based package designed with a single guiding principle: keep algorithm state in dense arrays and push hot loops into vectorized kernels. Specifically, the main contributions of VAMOS are summarized as follows:
 
@@ -178,7 +179,7 @@ Active maintenance                  & \cmark & \pmark & \pmark & \pmark & \cmark
 \end{tabular}
 \end{table}
 
-In this section, we review the most relevant Python libraries for MOEAs, namely \textit{pymoo}, \textit{jMetalPy}, \textit{DEAP}, \textit{Platypus}, and \textit{PyGMO}. Table~\ref{tab:framework-comparison} summarizes the main differences between Python multi-objective optimization frameworks relevant to this work, including all the features required for a high performance, configurable and accessible framework. In this table, features 1–4 evaluate performance, 5–9 assess configurability, and 10–12 highlight accessibility. VAMOS is the only framework that combines a dense array population model, pluggable computation backends, rich component-level configurability, a minimal two-line entry point (measured as lines of code needed for a minimal NSGA-II run on a built-in benchmark) and a graphical user interface.
+In this section, we review the most relevant Python libraries for MOEAs, namely \textit{pymoo}, \textit{jMetalPy}, \textit{DEAP}, \textit{Platypus}, and \textit{PyGMO}. Table~\ref{tab:framework-comparison} summarizes the main differences between Python multi-objective optimization frameworks relevant to this work, including all the features required for a high performance, configurable and accessible framework. In this table, features 1–4 evaluate performance, 5–9 assess configurability, and 10–14 highlight accessibility. VAMOS is the only framework that combines a dense array population model, pluggable computation backends, rich component-level configurability, a minimal two-line entry point (measured as lines of code needed for a minimal NSGA-II run on a built-in benchmark) and a graphical user interface.
 
 % \textit{pymoo}~\cite{blank2020pymoo} is arguably the most comprehensive Python framework currently available, offering a wide range of MOEAs, alongside utilities for performance indicator computation, visualization, and constraint handling. Its object-oriented architecture encourages algorithm customization through subclassing, and its documentation and community support are well-established. However, \textit{pymoo}'s design tightly couples algorithmic logic with its internal data structures, making it difficult to swap computation backends or to systematically push hot-path computations into compiled kernels. Component-level configurability, such as interchangeable variation operators or configurable archiving strategies, also requires non-trivial subclassing efforts.
 \textit{pymoo}~\cite{blank2020pymoo} is a comprehensive and widely used framework offering diverse MOEAs and utilities. While its object-oriented architecture via subclassing promotes customization, it tightly couples algorithmic logic to internal data structures, complicating the systematic vectorization of computations. 
@@ -207,11 +208,11 @@ Overall, while existing libraries span a wide spectrum between usability and per
 
 The design of VAMOS is motivated by three practical gaps identified in existing Python MOEA libraries: \textit{performance}, \textit{configurability}, and \textit{accessibility}.
 
-\paragraph{Performance} As the population state remains in dense arrays throughout the optimization loop, hot-path computations are dispatched to vectorized or compiled kernels. As we will see in Section~\ref{sec:performance}, this design yields substantial runtime reductions across multiple MOEA variants and benchmark families without degrading solution quality. Moreover, switching the compute backend only requires a single-parameter change transparent to algorithm code. No other Python MOEA framework allows swapping the entire computational substrate, from array operations to compiled kernels, without modifying the algorithm implementation. Similarly, evaluation strategies (serial, multiprocessing or distributed) are selected via configuration rather than code changes. 
+\paragraph{Performance} As the population state remains in dense arrays throughout the optimization loop, hot-path computations are dispatched to vectorized or compiled kernels. As we will see in Section~\ref{sec:performance}, this design yields substantial runtime reductions across multiple MOEA variants and benchmark families without degrading solution quality. Moreover, switching the compute backend only requires a single-parameter change transparent to algorithm code. No other Python MOEA framework allows swapping the entire computational substrate, from array operations to compiled kernels, without modifying the algorithm implementation. 
 
-\paragraph{Configurability} Most frameworks provide a small set of high-level parameters (population size, crossover/mutation probabilities), but do not expose fine-grained control over offspring batch size, archive attachment, or operator adaptation. VAMOS exposes all of these as first-class configuration options through a builder API. Moreover, VAMOS includes a tuning module exposed both programmatically and via the CLI. It supports random search and a racing procedure with multi-fidelity evaluation, warm-starting and parallel execution. The same interface can also delegate to model-based backends such as Optuna~\cite{akiba2019optuna}, SMAC3~\cite{lindauer2022smac3}, and BOHB~\cite{falkner2018bohb}, which are provided as optional dependencies.
+\paragraph{Configurability} Most frameworks provide a small set of high-level parameters (population size, crossover/mutation probabilities), but do not expose fine-grained control over offspring batch size, archive attachment, or different initialization methods. VAMOS exposes all of these as first-class configuration options through a builder API. Moreover, VAMOS includes a tuning module exposed. It supports random search, and model-based backends such as Optuna~\cite{akiba2019optuna}, SMAC3~\cite{lindauer2022smac3}, and BOHB~\cite{falkner2018bohb}.
 
-\paragraph{Accessibility} Most frameworks require importing separate modules for the algorithm selection, problem definition, used operators, and termination criteria, then wiring them together. This level of boilerplate assumes familiarity with MOEA terminology and framework implementation details, which is a barrier for domain experts who need to solve MOPs but lack a background in metaheuristics. VAMOS addresses this gap at multiple levels (see Section~\ref{sec:accessibility}): 1) two lines of code are sufficient to run a complete optimization with sensible defaults; 2) a problem factory turns any Python callable into a problem object without subclassing, and an interactive CLI wizard provides a ready-to-run script from a guided questionnaire; 3) VAMOS provides automatic algorithm selection that maps problem traits to a suitable default algorithm. Additionally, when finer control is needed, the builder API ensures that the framework scales from novice to expert use without a different API.
+\paragraph{Accessibility} Most frameworks require importing separate modules for the algorithm selection, problem definition, used operators, and termination criteria, then wiring them together. This level of boilerplate assumes familiarity with MOEA terminology and framework implementation details, which is a barrier for domain experts who need to solve MOPs but lack a background in metaheuristics. VAMOS addresses this gap at multiple levels (see Section~\ref{sec:accessibility}): 1) two lines of code are sufficient to run a complete optimization with sensible defaults; 2) a problem factory turns any Python callable into a problem object without subclassing; 3) when finer control is needed, the builder API ensures that the framework scales from novice to expert use without a different API.
 
 
 
@@ -219,7 +220,7 @@ The design of VAMOS is motivated by three practical gaps identified in existing 
 \section{VAMOS Architecture} \label{sec:architecture}
 %==============================================================================
 
-The core architecture of VAMOS is organized into four layers, as shown in Fig.~\ref{fig:architecture}: a) the \textit{Foundation Layer} providing compute kernels, problem definitions, quality indicators, encodings, constraints, and evaluation backends; b) the \textit{Engine Layer} implementing MOEAs on top of shared components, variation operators, external archives, and a tuning subsystem; c) the \textit{Experiment Layer} exposing the unified \texttt{optimize()} entry point, CLI tools, benchmarking utilities, and results analysis; and d) the \textit{UX Layer} providing VAMOS Studio (a Streamlit-based interactive dashboard), a visual Problem Builder, a Results Explorer, and an onboarding wizard.
+The core architecture of VAMOS is organized into four layers, as shown in Fig.~\ref{fig:architecture}: a) the \textit{Foundation Layer} providing compute kernels, problem definitions, quality indicators, encodings, constraints, and evaluation backends; b) the \textit{Engine Layer} implementing MOEAs on top of shared components, variation operators, external archives, and a tuning subsystem; c) the \textit{Experiment Layer} exposing the unified \texttt{optimize()} entry point, CLI tools, benchmarking utilities, and results analysis; and d) the \textit{UX Layer} providing VAMOS Studio (a interactive dashboard), a visual Problem Builder, a Results Explorer, and an onboarding wizard.
 
 \begin{figure}[htbp]
 \centering
@@ -249,7 +250,7 @@ Fig.~\ref{fig:representation} provides an intuitive view of how these frameworks
   \label{fig:representation}
 \end{figure*}
 
-Beyond kernels, the Foundation Layer hosts the problem abstraction, a base \texttt{Problem} class that declares the number of decision variables, objectives, and optional constraints. A problem registry enables lookup by name (e.g., \texttt{"zdt1"}, \texttt{"dtlz2"}), and a \texttt{make\_problem} factory converts any Python callable into a problem object without subclassing. Built-in benchmark families include ZDT~\cite{zitzler2000zdt}, DTLZ~\cite{deb2002dtlz}, WFG~\cite{huband2006wfg}, ZCAT~\cite{ZCAT2023}, CEC~2009~\cite{zhang2008cec09}, and the real-world problems collections RE~\cite{RE2023} and RWA~\cite{RWA2023}. The layer also provides five variable encodings (real, binary, integer, permutation, and mixed), a constraint-handling module with a declarative DSL, quality indicators (hypervolume, generational distance, inverted generational distance, and spread), and pluggable evaluation backends (serial, multiprocessing, and distributed via Dask) that are selected through configuration rather than code changes.
+Beyond kernels, the Foundation Layer hosts the problem abstraction, a base \texttt{Problem} class that declares the number of decision variables, objectives, and optional constraints. A problem registry enables lookup by name (e.g., \texttt{"zdt1"}, \texttt{"dtlz2"}), and a \texttt{make\_problem} factory converts any Python callable into a problem object without subclassing. Built-in benchmark families include ZDT~\cite{zitzler2000zdt}, DTLZ~\cite{deb2002dtlz}, WFG~\cite{huband2006wfg}, ZCAT~\cite{ZCAT2023}, CEC~2009~\cite{zhang2008cec09}, and the real-world problems collections RE~\cite{RE2023} and RWA~\cite{RWA2023}. The layer also provides five variable encodings (real, binary, integer, permutation, and mixed), a constraint-handling module with a declarative DSL, quality indicators (hypervolume, generational distance, inverted generational distance, and spread).%, and pluggable evaluation backends (serial, multiprocessing, and distributed via Dask) that are selected through configuration rather than code changes.
 
 \subsection{Engine Layer}
 
@@ -279,7 +280,8 @@ IBEA & \cite{zitzler2004indicator} & Indicator & R, P, B, I, M & 21 & 22 & Indic
 }
 \end{table*}
 
-Algorithms in VAMOS expose a uniform \texttt{run(problem, termination, seed, eval\_backend, live\_viz)} interface, which the high-level \texttt{optimize()} entry point delegates to after resolving defaults and configuring operators. Several algorithms also support an \emph{ask--tell} loop for streaming or interactive use. Objective evaluations are dispatched through a pluggable evaluation-backend protocol, enabling serial evaluation for controlled benchmarking and parallel evaluation (multiprocessing or distributed) when objective functions are expensive. Because evaluation is decoupled from algorithmic state, the algorithm core remains deterministic under a fixed random seed regardless of whether evaluations run serially or in parallel.
+Algorithms in VAMOS expose a uniform \texttt{run(problem, termination, seed, eval\_backend, live\_viz)} interface, which the high-level \texttt{optimize()} entry point delegates to after resolving defaults and configuring operators. All algorithms also support an \emph{ask--tell} loop for streaming or interactive use. %Objective evaluations are dispatched through a pluggable evaluation-backend protocol, enabling serial evaluation for controlled benchmarking and parallel evaluation (multiprocessing or distributed) when objective functions are expensive. 
+%Because evaluation is decoupled from algorithmic state, the algorithm core remains deterministic under a fixed random seed regardless of whether evaluations run serially or in parallel.
 
 VAMOS supports real-valued, binary, integer, permutation, and mixed-variable encodings through a variation pipeline that composes selection, crossover, mutation, and optional repair operators. For continuous domains, the default configuration uses Simulated Binary Crossover (SBX) and Polynomial Mutation (PM), with mutation probability typically set to $1/n$ where $n$ is the number of decision variables. Binary and integer encodings use standard crossover (one-point, two-point, or uniform) and bit-flip or bounded mutation, while permutation encodings provide order and cycle crossover with insertion mutation. Mixed-variable problems combine encoding-specific operators transparently. Encodings are normalized internally to ensure consistent operator resolution and avoid silent configuration mismatches.
 
@@ -314,7 +316,7 @@ Our choice of algorithms restricts the comparison of \VAMOS{} to only two of the
 
 \subsection{Benchmark Suites}
 
-We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives; ZDT5 is excluded because it uses a binary encoding), DTLZ1--7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2/3/4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$). Non-standard DTLZ dimensionalities are permitted but explicitly flagged to avoid accidental comparisons against canonical settings. Unless otherwise stated, each (problem, framework) configuration is executed for 50{,}000 objective evaluations with 30 independent seeds. We have fixed the number of evaluations to simplify the comparisons, although it is well-known that the stopping condition to solve the ZDT and bi-objective WFG benchmarks is typically 20{,}000/25{,}000 evaluations.
+We evaluate runtime and solution quality on widely used synthetic benchmarks: ZDT1--4 and ZDT6~\cite{zitzler2000zdt} (two objectives; ZDT5 is excluded because it uses a binary encoding), DTLZ1--7~\cite{deb2002dtlz} (three objectives), and WFG1--9~\cite{huband2006wfg} (two objectives). Problem dimensionalities are fixed to standard definitions: for example, DTLZ2-4 use $n = m + k - 1$ with $m=3$ and $k=10$ (thus $n=12$). Non-standard DTLZ dimensionalities are permitted but explicitly flagged to avoid accidental comparisons against canonical settings. Unless otherwise stated, each (problem, framework) configuration is executed for 50{,}000 objective evaluations with 30 independent seeds. We have fixed the number of evaluations to simplify the comparisons, although it is well-known that the stopping condition to solve the ZDT and bi-objective WFG benchmarks is typically 20{,}000-25{,}000 evaluations.
 
 %Additionally, we have selected the ZCAT test suite~\cite{ZCAT2023} to evaluate the computing times of NSGA-II when solving scalable problems. Specifically, we configure all 20 ZCAT problems with basic settings (bias, imbalance, and complicated Pareto set properties are off and the difficulty level is set to 1) and $n=30$ decision variables, while varying the number of objectives to $m \in \{2, 3, 4, 6\}$ to assess many-objective scalability.
 
@@ -341,7 +343,7 @@ Crucially, we align \emph{semantics} (not only parameter names) and enforce cons
 
 For WFG we adopt pymoo's canonical parameterization for two objectives ($k=4$, $l=20$ for $n=24$) and pass parameters explicitly when a toolkit exposes different defaults. While full equivalence cannot be guaranteed due to framework-specific details (tie-breaking, boundary handling, duplicate elimination, etc.), these choices aim to make the comparison as fair as possible by removing confounders unrelated to algorithmic overhead and numerical kernels.
 
-As an additional validity check, we sample 64 random decision vectors per problem uniformly within the specified bounds and verify that objective values match across implementations within a relative tolerance of $10^{-6}$ and an absolute tolerance of $10^{-8}$. This guards against silent benchmark-definition drift (e.g., differing domains or parameterizations) that could invalidate hypervolume comparisons.
+% As an additional validity check, we sample 64 random decision vectors per problem uniformly within the specified bounds and verify that objective values match across implementations within a relative tolerance of $10^{-6}$ and an absolute tolerance of $10^{-8}$. This guards against silent benchmark-definition drift (e.g., differing domains or parameterizations) that could invalidate hypervolume comparisons.
 
 \subsection{Runtime measurement}
 
@@ -407,13 +409,13 @@ Fig.~\ref{fig:scaling} shows that the runtime gap between NumPy and Numba widens
 In this subsection we first compare the runtime of \VAMOS{} against other Python frameworks using generational NSGA-II. Then, we extend the comparison to NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D.
 
 %\paragraph{NSGA-II with standard settings.}
-Table~\ref{tab:frameworks_perf} compares the runtime of generational NSGA-II across five Python frameworks. \VAMOS{} (Numba backend) is the fastest in all three problem families. jMetalPy is the closest competitor on ZDT and DTLZ (1.8$\times$ and 1.5$\times$ slower, respectively), but its WFG runtime explodes to 13$\times$ due to per-solution overhead amplified by higher dimensionality. pymoo is consistently 2.4--2.9$\times$ slower across all families. DEAP and Platypus are substantially slower (10--37$\times$), reflecting the overhead of per-solution object-oriented representations and interpreted inner loops.
+Table~\ref{tab:frameworks_perf} compares the runtime of generational NSGA-II across five pure-Python frameworks and PyGMO, a compiled C++ baseline (Python bindings to the PaGMO2 library). Among pure-Python frameworks, \VAMOS{} (Numba backend) is the fastest in all three problem families. jMetalPy is the closest competitor on ZDT and DTLZ (1.8$\times$ and 1.5$\times$ slower, respectively), but its WFG runtime explodes to 13$\times$ due to per-solution overhead amplified by higher dimensionality. pymoo is consistently 2.4--2.9$\times$ slower across all families. DEAP and Platypus are substantially slower (10--37$\times$), reflecting the overhead of per-solution object-oriented representations and interpreted inner loops. PyGMO is 10--14$\times$ faster than \VAMOS{} across all families, as expected given that both its algorithms and benchmark functions execute entirely in compiled C++ code; it serves as a performance ceiling for what compiled implementations can achieve.
 %We repeat the same runtime protocol for NSGA-II variants (steady-state and external archive), SMS-EMOA (steady-state, one offspring per iteration), and MOEA/D (decomposition with differential-evolution variation), reported in Tables~\ref{tab:frameworks_perf_nsgaii_ss} and~\ref{tab:frameworks_perf_nsgaii_archive} and Tables~\ref{tab:frameworks_perf_smsemoa} and~\ref{tab:frameworks_perf_moead}.
 %These supplementary runtime tables are placed in Appendix~\ref{app:variants} to keep the main results focused.
 
 \begin{table}[htbp]
 \centering
-\caption{NSGA-II with standard settings. Median runtime (seconds) by problem family across all frameworks.}
+\caption{NSGA-II with standard settings. Median runtime (seconds) by problem family across all frameworks; PyGMO (C++) is included as a compiled baseline}
 \label{tab:frameworks_perf}
 \begin{tabular}{lcccc}
 \toprule
@@ -424,7 +426,8 @@ pymoo & 39.90 & 60.43 & 77.12 & --- \\
 jMetalPy & 24.09 & 32.30 & 421.20 & --- \\
 DEAP & 163.78 & 226.99 & 1154.80 & --- \\
 Platypus & 203.58 & 270.24 & 1188.44 & --- \\
-PyGMO & \textbf{1.00} & \textbf{1.46} & \textbf{2.59} & --- \\
+\hdashline
+PyGMO (C++) & \textbf{1.00} & \textbf{1.46} & \textbf{2.59} & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -446,7 +449,7 @@ We now compare the runtime of NSGA-II variants (steady-state and external unboun
 
 In the \textit{steady-state} variant of NSGA-II, only one offspring is produced per iteration, so the main loop executes $N$ times more iterations than the generational variant for the same evaluation budget, introducing additional per-iteration overhead. The variant with an \textit{external unbounded archive} implies that whenever a new solution is evaluated, it is compared with the archive: if the new solution is non-dominated, it is inserted and any archive members it dominates are removed. This process becomes more time-consuming as the archive grows. Once the algorithm terminates, a subset of $N$ diverse solutions is selected from the archive and returned as the final approximation set.
 
-\textit{SMS-EMOA} uses the hypervolume contribution as density estimator to select the worst individual to remove from the population in the replacement step, which is a time-consuming procedure given that the computation of the hypervolume contribution grows exponentially with the number of objectives. \textit{MOEA/D} uses a decomposition strategy that, a priori, should not introduce a noticeable overhead.
+SMS-EMOA uses the hypervolume contribution as density estimator to select the worst individual to remove from the population in the replacement step, which is a time-consuming procedure given that the computation of the hypervolume contribution grows exponentially with the number of objectives. MOEA/D uses a decomposition strategy that, a priori, should not introduce a noticeable overhead.
 
 
 \begin{table}[htbp]
@@ -554,7 +557,7 @@ The memory footprint measurements (Fig.~\ref{fig:memory_comparison}) further ill
 
 Despite careful alignment of dimensions, budgets, problem definitions, and operator settings, cross-framework comparisons remain subject to several threats: (i) operator implementations may differ in subtle details (e.g., boundary handling, duplicate elimination, tie-breaking in survival), (ii) random number generation and seeding semantics vary across libraries, and (iii) library-specific overheads (data conversion, object materialization) may affect measured runtime. We mitigate major sources of unfairness by enforcing consistent benchmark bounds (e.g., ZDT4) and matching operator semantics where APIs differ (e.g., mutation probability in pymoo).
 
-Our cross-framework comparison is deliberately scoped to Python MOEA libraries whose inner loops are predominantly executed in Python. Libraries such as PyGMO (Python bindings to the C++ PaGMO2 library) execute algorithms and benchmark functions fully in compiled code, yielding fundamentally different runtime profiles; we therefore treat them as an orthogonal C++ baseline and leave their inclusion to future work with an explicit language/runtime study design.
+Our cross-framework comparison focuses on Python MOEA libraries whose inner loops are predominantly executed in Python. PyGMO (Python bindings to the C++ PaGMO2 library) is included as a compiled baseline for reference (Table~\ref{tab:frameworks_perf}), but it executes algorithms and benchmark functions fully in compiled code, yielding fundamentally different runtime profiles; its results are therefore not directly comparable with those of the pure-Python frameworks.
 
 For hypervolume, reference fronts for problems without closed-form Pareto fronts are necessarily approximations; while we generate them densely and fix them across runs, remaining discrepancies can affect absolute normalized values, especially on WFG problems. We therefore treat normalized HV primarily as a comparative metric under a fixed protocol, and we report distributions across multiple seeds rather than relying on single-run outcomes.
 
@@ -570,7 +573,7 @@ By contrast, \VAMOS{} treats all 36 parameters as first-class configuration opti
 
 \begin{table*}[htbp]
 \centering
-\caption{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default parameters of NSGA-II. The total number of configurable parameters is 35. Acronyms: LHS (Latin Hypercube Sampling), OBL (Opposition-Based Learning), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), PM (Polynomial Mutation), SUS (Stochastic Universal Sampling). The steady-state setting corresponds to producing one offspring per iteration; in the tuning backend, this case is internally encoded as \texttt{offspring\_ratio}=0. When a bounded external archive is enabled in the tuning space, its type is fixed to \texttt{size\_cap} and its capacity is fixed to the population size, so neither is itself tunable}
+\caption{Summary of the considered parameter space for NSGA-II (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate the default parameters of NSGA-II. The total number of configurable parameters is 35. Acronyms: LHS (Latin Hypercube Sampling), OBL (Opposition-Based Learning), SBX (Simulated Binary Crossover), BLX (Blend Crossover), PCX (Parent Centric Crossover), UNDX (Unimodal Normal Distribution Crossover), SPX (Simplex Crossover), SUS (Stochastic Universal Sampling). The steady-state setting corresponds to producing one offspring per iteration.}
 \label{tab:parameter_space}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
@@ -585,7 +588,7 @@ By contrast, \VAMOS{} treats all 36 parameters as first-class configuration opti
  & \textit{Archive Prune Policy} $\in$ \{\textbf{crowding}, hv, mc\_hv, knn, maxmin, ref\_dirs\} & \textit{Archive} = True, \textit{Mode} = bounded \\ \midrule
 \multirow{2}{*}{Initialization} & \{\textbf{Random}, LHS, Scatter, Sobol, Halton, OBL\} & -- \\
  & \textit{Scatter Base Size Factor} $\in \{0.1, 0.2, 0.3, 0.5, 0.75, 1.0\}$ & \textit{Init.} = Scatter \\ \midrule
-\multirow{1}{*}{Repair} & \{\textbf{clip}, reflect, random, round, wrap, midpoint\} & -- \\ \midrule
+\multirow{1}{*}{Repair} & \{\textbf{clip}, reflect, random, round, wrap, midpoint\} & After crossover and mutations operations. \\ \midrule
 \multirow{11}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0.6, 1.0}$} \\
  & \textbf{SBX} & \textit{Dist.\ Index} $\in \Realdomain{5.0, 40.0}$ \\
  & BLX-$\alpha$ & $\alpha \in \Realdomain{0.0, 1.0}$ \\
@@ -613,7 +616,7 @@ By contrast, \VAMOS{} treats all 36 parameters as first-class configuration opti
 
 \begin{table*}[htbp]
 \centering
-\caption{Parameter space for NSGA-II in pymoo (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 20 (11 always active, 9~conditional). External archives are available via utility classes (\texttt{MultiObjectiveArchive}) but require a custom \texttt{Callback} to integrate with NSGA-II. Acronyms: SBX (Simulated Binary Crossover), PCX (Parent Centric Crossover), DEX (Differential Evolution Crossover), PM (Polynomial Mutation), LHS (Latin Hypercube Sampling)}
+\caption{Parameter space for NSGA-II in pymoo (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 20 (11 always active, 9~conditional).}
 \label{tab:parameter_space_pymoo}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
@@ -639,7 +642,7 @@ By contrast, \VAMOS{} treats all 36 parameters as first-class configuration opti
 
 \begin{table*}[htbp]
 \centering
-\caption{Parameter space for NSGA-II in jMetalPy (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 29 (10 always active, 19~conditional). External archives can be attached via a custom evaluator (\texttt{SequentialEvaluatorWithArchive}), not a constructor parameter. Acronyms: SBX (Simulated Binary Crossover), BLX (Blend Crossover), UNDX (Unimodal Normal Distribution Crossover), DE (Differential Evolution), PM (Polynomial Mutation)}
+\caption{Parameter space for NSGA-II in jMetalPy (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 29 (10 always active, 19~conditional).}
 \label{tab:parameter_space_jmetalpy}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
@@ -674,59 +677,34 @@ By contrast, \VAMOS{} treats all 36 parameters as first-class configuration opti
 
 The supplementary material contains the full parameter space of all the MOEAs included in \VAMOS{} and an explanation of the parameters of each algorithm.
 
-\subsection{Automatic Algorithm Configuration}
+\subsection{Automatic algorithm configuration}
 \label{sec:aac}
 
-The parameter spaces described in the previous section highlight a practical challenge: with up to 35 configurable parameters for a single algorithm, manually finding a good configuration for a given problem or problem family is impractical. Even experienced practitioners typically rely on well-known defaults (e.g., SBX with $\eta_c=20$, polynomial mutation with $p_m=1/n$), which may be far from optimal for specific problem characteristics. Automatic Algorithm Configuration (AAC) addresses this challenge by systematically exploring the configuration space and identifying high-performing settings without manual intervention.
+The parameter spaces described in the previous section highlight a practical challenge: with up to 35 configurable parameters for a single algorithm, manually finding a good configuration for a given problem or problem family is impractical. Even experienced practitioners typically rely on well-known defaults (e.g., SBX with $\eta_c=20$, polynomial mutation with $p_m=1/n$), which may be far from optimal for specific problem characteristics. automatic algorithm configuration addresses this challenge by systematically exploring the configuration space and identifying high-performing settings without manual intervention.
 
 The optimization and machine learning communities have developed several well-established tools for this purpose. Optuna~\cite{akiba2019optuna} is a widely adopted hyperparameter optimization framework that uses Tree-structured Parzen Estimators (TPE) and other Bayesian methods to efficiently navigate large search spaces. SMAC3~\cite{lindauer2022smac3} combines Random Forest surrogate models with an aggressive racing mechanism, and has a long track record in the algorithm configuration literature, particularly for high-dimensional spaces with conditional parameters. BOHB~\cite{falkner2018bohb} merges Bayesian optimization with HyperBand's multi-fidelity scheduling, allocating computational budget efficiently by evaluating many configurations cheaply at low fidelity and progressively investing more resources in the most promising candidates.
 
-Rather than expecting users to install, configure, and interface with these tools independently, \VAMOS{} integrates all three as tuning backends accessible through a unified API. The \texttt{ModelBasedTuner} facade provides a single entry point: users select the desired backend with a single parameter (\texttt{backend="optuna"}, \texttt{"smac3"}, or \texttt{"bohb"}) and \VAMOS{} handles the translation between its internal configuration space and each backend's native format. This means that conditional parameter dependencies---such as the SBX distribution index being active only when SBX is the selected crossover operator---are automatically encoded in the backend's search space without requiring any manual definition from the user.
+Rather than expecting users to install, configure, and interface with these tools independently, \VAMOS{} integrates all three as tuning backends accessible through a unified API. The \texttt{ModelBasedTuner} facade provides a single entry point: users select the desired backend with a single parameter (\texttt{backend="optuna"}, \texttt{"smac3"}, or \texttt{"bohb"}) and \VAMOS{} handles the translation between its internal configuration space and each backend's native format. This means that conditional parameter dependencies (such as the SBX distribution index being active only when SBX is the selected crossover operator) are automatically encoded in the backend's search space without requiring any manual definition from the user.
 
-Table~\ref{tab:tuning_backends} summarizes the three integrated backends and their characteristics. Optuna offers the broadest selection of sampling strategies (TPE, CMA-ES, Gaussian Process, NSGA-II/III, Quasi-Monte Carlo) and supports distributed tuning via database-backed studies. SMAC3 excels in mixed configuration spaces where categorical, integer, and continuous parameters coexist with conditional dependencies. BOHB is particularly well suited when the evaluation budget varies, as its HyperBand scheduling automatically decides how many resources to allocate to each configuration. All three are provided as optional dependencies that can be installed with a single command (\texttt{pip install vamos[tuning]}).
+%Table~\ref{tab:tuning_backends} summarizes the three integrated backends and their characteristics. 
 
-\begin{table}[htbp]
-\centering
-\caption{Integrated algorithm configuration backends in \VAMOS{}}
-\label{tab:tuning_backends}
-\begin{tabular}{llp{3.2cm}}
-\toprule
-\textbf{Backend} & \textbf{Approach} & \textbf{Best suited for} \\
-\midrule
-Optuna & Bayesian (TPE) & Fast surrogate-based search, distributed tuning \\
-SMAC3 & Random Forest & High-dimensional mixed and conditional spaces \\
-BOHB & Bayesian + HyperBand & Budget-aware multi-fidelity tuning \\
-\bottomrule
-\end{tabular}
-\end{table}
+Optuna offers the broadest selection of sampling strategies (TPE, CMA-ES, Gaussian Process, NSGA-II/III, Quasi-Monte Carlo) and supports distributed tuning via database-backed studies. SMAC3 excels in mixed configuration spaces where categorical, integer, and continuous parameters coexist with conditional dependencies. BOHB is particularly well suited when the evaluation budget varies, as its HyperBand scheduling automatically decides how many resources to allocate to each configuration.
 
-The integration also supports multi-fidelity evaluation: configurations can be evaluated at lower budgets first, with warm-start checkpoints so that promising configurations resume from where they left off at higher budgets, avoiding redundant computation. Furthermore, configurations are tested across multiple problem instances and seeds, following best practices from the AAC literature, and the results are aggregated with proper statistical procedures.
+% \begin{table}[htbp]
+% \centering
+% \caption{Integrated algorithm configuration backends in \VAMOS{}}
+% \label{tab:tuning_backends}
+% \begin{tabular}{llp{3.2cm}}
+% \toprule
+% \textbf{Backend} & \textbf{Approach} & \textbf{Best suited for} \\
+% \midrule
+% Optuna & Bayesian (TPE) & Fast surrogate-based search, distributed tuning \\
+% SMAC3 & Random Forest & High-dimensional mixed and conditional spaces \\
+% BOHB & Bayesian + HyperBand & Budget-aware multi-fidelity tuning \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
 
-From a practical standpoint, the tuning module is accessible both programmatically and through the command line. Listing~\ref{lst:tuning} illustrates how an advanced user can leverage Optuna to tune the configurable parameters of NSGA-II across multiple problem instances with minimal setup effort. The same interface generalizes to all eight algorithms implemented in \VAMOS{}, not just NSGA-II.
-
-\begin{lstlisting}[float=tbp,caption={Tuning NSGA-II with Optuna in \VAMOS{}.},label={lst:tuning}]
-from vamos.engine.tuning import (
-    ModelBasedTuner, TuningTask, Instance,
-    build_nsgaii_config_space,
-)
-
-task = TuningTask(
-    name="tune_nsgaii",
-    param_space=build_nsgaii_config_space(),
-    instances=[Instance("zdt1", 2),
-               Instance("dtlz2", 3)],
-    seeds=[0, 1, 2],
-    budget_per_run=50000,
-)
-
-tuner = ModelBasedTuner(
-    task=task, max_trials=100,
-    backend="optuna",  # or "smac3", "bohb"
-)
-best_config, history = tuner.run(eval_fn)
-\end{lstlisting}
-
-Alternatively, the \texttt{vamos tune} command-line interface provides a no-code entry point for users who prefer not to write Python scripts. Users specify the algorithm, problem instances, and tuning budget; \VAMOS{} handles the rest, including configuration space generation, backend setup, and results reporting.
 
 %==============================================================================
 \section{Accessibility}
@@ -774,7 +752,7 @@ cfg = (NSGAIIConfig.builder()
        .crossover("sbx", prob=1.0, eta=20)
        .mutation("pm", prob="1/n", eta=20)
        .selection("tournament", pressure=4)
-       .external_archive(capacity=None)
+       .external_archive()
        .build())
 
 result = optimize(
@@ -784,14 +762,37 @@ result = optimize(
 )
 \end{lstlisting}
 
-Finally, accessibility in \VAMOS{} extends beyond algorithm execution to encompass the complete experimentation lifecycle, including automatic algorithm configuration. While manual configuration via the Builder API is powerful, finding optimal settings among the dozens of available parameters is often a daunting task for both novice and expert users. As described in Section~\ref{sec:aac}, \VAMOS{} addresses this by integrating three established algorithm configuration tools---Optuna~\cite{akiba2019optuna}, SMAC3~\cite{lindauer2022smac3}, and BOHB~\cite{falkner2018bohb}---as interchangeable backends accessible through a unified interface. By exposing its entire parameter space programmatically for all eight implemented algorithms, \VAMOS{} allows these external tuners to efficiently automate the search for optimal configurations. Users can switch between backends with a single parameter change, and the \texttt{vamos tune} command-line interface provides a no-code alternative for those who prefer not to write Python scripts (see Listing~\ref{lst:tuning}).
+Finally, accessibility in \VAMOS{} extends beyond algorithm execution to encompass automatic algorithm configuration. Manual configuration is difficult and choosing the best settings from the many available parameters is often also an overwhelming challenge for both beginners and advanced users. As described in Section~\ref{sec:aac}, \VAMOS{} addresses this by integrating three established algorithm configuration tools (Optuna~\cite{akiba2019optuna}, SMAC3~\cite{lindauer2022smac3}, and BOHB~\cite{falkner2018bohb}) as interchangeable backends accessible through a unified interface. By exposing its entire parameter space for all eight implemented algorithms, \VAMOS{} allows these external tuners to efficiently automate the search for optimal configurations. Users can switch between backends with a single parameter change. Listing~\ref{lst:tuning} illustrates how a researcher can tune NSGA-II across multiple problem instances with minimal setup effort; the same interface generalizes to all eight algorithms.
+
+\begin{lstlisting}[float=tbp,caption={Tuning NSGA-II with Optuna in \VAMOS{}.},label={lst:tuning}]
+from vamos.engine.tuning import (
+    ModelBasedTuner, TuningTask, Instance,
+    build_nsgaii_config_space,
+)
+
+task = TuningTask(
+    name="tune_nsgaii",
+    param_space=build_nsgaii_config_space(),
+    instances=[Instance("zdt1", 2),
+               Instance("dtlz2", 3)],
+    seeds=[0, 1, 2],
+    budget_per_run=50000,
+)
+
+tuner = ModelBasedTuner(
+    task=task, max_trials=100,
+    backend="optuna",  # or "smac3", "bohb"
+)
+best_config, history = tuner.run(eval_fn)
+\end{lstlisting}
 
 %==============================================================================
 \section{Conclusion}
 \label{sec:conclusions}
 %==============================================================================
 
-We presented \VAMOS{}, a high-performance Python framework for multi-objective optimization studies that addresses three practical gaps in existing frameworks: (i)~a vectorized core with pluggable compute kernels that reduces inner-loop overhead by 4--10$\times$ relative to object-centric libraries; (ii)~rich component-level configurability---including interchangeable variation operators, configurable offspring batch size for steady-state variants, optional bounded or unbounded external archives, multiple constraint-handling modes---with up to 35 parameters exposed as first-class configuration options; and (iii)~an accessible API and graphical interface that lowers the entry barrier for domain experts, requiring as few as two lines of code for a complete optimization run. We also release a reproducible cross-framework benchmarking pipeline with semantic alignment and fixed reference Pareto fronts for normalized hypervolume reporting. Under this protocol, \VAMOS{} achieves statistically equivalent solution quality to state-of-the-art frameworks (equivalent on 14/21 problems, non-inferior on 16/21) while substantially reducing runtime (Table~\ref{tab:frameworks_perf_variants}). Convergence analysis and Pareto front visualization (Fig.~\ref{fig:pareto_fronts_variants}) confirm that these speedups do not degrade convergence behavior, while also reducing peak memory usage by $3\times$ relative to pymoo.
+We presented \VAMOS{}, a high-performance Python framework for multi-objective optimization studies that addresses three practical gaps in existing frameworks: (i)~a vectorized core with pluggable compute kernels that reduces inner-loop overhead by 4--10$\times$ relative to object-centric libraries; (ii)~rich component-level configurability (including interchangeable variation operators, configurable offspring batch size for steady-state variants, optional bounded or unbounded external archives) with up to 35 parameters exposed as first-class configuration options; and (iii)~an accessible API and graphical interface that lowers the entry barrier for domain experts, requiring as few as two lines of code for a complete optimization run. We also release a reproducible cross-framework benchmarking pipeline with semantic alignment and fixed reference Pareto fronts for normalized hypervolume reporting. %Under this protocol, \VAMOS{} achieves statistically equivalent solution quality to state-of-the-art frameworks (equivalent on 14/21 problems, non-inferior on 16/21) while substantially reducing runtime (Table~\ref{tab:frameworks_perf_variants}). 
+Convergence analysis and Pareto front visualization (Fig.~\ref{fig:pareto_fronts_variants}) confirm that these speedups do not degrade convergence behavior, while also reducing peak memory usage by $3\times$ relative to pymoo.
 
 \subsection{Future work}
 \begin{itemize}
