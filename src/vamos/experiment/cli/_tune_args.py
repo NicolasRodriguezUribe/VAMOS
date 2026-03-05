@@ -63,6 +63,18 @@ def build_parser(
     parser.add_argument("--fidelity-warm-start", dest="fidelity_warm_start", action=argparse.BooleanOptionalAction, default=True)
 
     parser.add_argument("--initial-configs", type=int, default=20, help="Initial sampled configs for racing.")
+    parser.add_argument(
+        "--use-knowledge-base",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Enable MOEA tuner knowledge-base warm starts and persistence.",
+    )
+    parser.add_argument(
+        "--knowledge-base-path",
+        type=Path,
+        default=None,
+        help="Optional JSON path for MOEA tuner knowledge base.",
+    )
     parser.add_argument("--elimination-fraction", type=float, default=0.25, help="Racing elimination fraction.")
     parser.add_argument("--min-blocks-before-elimination", type=int, default=3, help="Racing grace blocks before pruning.")
     parser.add_argument("--use-statistical-tests", action=argparse.BooleanOptionalAction, default=True)

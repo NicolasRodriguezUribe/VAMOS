@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 
-from .param_space import Condition, ParamSpace, ParamType
+from .param_space import PARAM_ROLES, Condition, ParamSpace, ParamType
 from .parameters import ConditionalBlock
 
 # Type alias for composable space parts: (params, conditionals, conditions).
@@ -103,6 +103,19 @@ class AlgorithmConfigSpace:
                 assignment[p.name] = p.from_unit(float(u[idx]))
                 idx += 1
         return assignment
+
+    def group_by_role(self) -> dict[str, list[ParamType]]:
+        """Group all parameters (including conditionals) by their role.
+
+        Returns a dict mapping role name to list of parameters with that role.
+        Useful for hierarchical tuning where different roles are tuned in phases.
+        """
+        groups: dict[str, list[ParamType]] = {role: [] for role in PARAM_ROLES}
+        for p in self.params:
+            groups.setdefault(p.role, []).append(p)
+        for p in self._conditional_params():
+            groups.setdefault(p.role, []).append(p)
+        return {k: v for k, v in groups.items() if v}
 
     def to_param_space(self) -> ParamSpace:
         """

@@ -21,12 +21,15 @@ from .param_space import Categorical, ConditionalBlock, Int, ParamType, Real
 
 def _core_part() -> SpacePart:
     params: list[ParamType] = [
-        Int("pop_size", 20, 200, log=True),
-        Categorical("offspring_ratio", [0, 0.25, 0.5, 0.75, 1.0]),
-        Categorical("selection", ["tournament", "random", "boltzmann", "ranking", "sus"]),
+        Int("pop_size", 20, 200, log=True, role="population"),
+        Categorical("offspring_ratio", [0, 0.25, 0.5, 0.75, 1.0], role="population"),
+        Categorical("selection", ["tournament", "random", "boltzmann", "ranking", "sus"], role="structural"),
     ]
     arch_params, arch_conds, arch_conditions = external_archive_part()
-    conditionals = [*arch_conds, ConditionalBlock("selection", "tournament", [Int("selection_size", 2, 10)])]
+    conditionals = [
+        *arch_conds,
+        ConditionalBlock("selection", "tournament", [Int("selection_size", 2, 10, role="structural")]),
+    ]
     return [*params, *arch_params], conditionals, arch_conditions
 
 
@@ -37,7 +40,7 @@ def _core_part() -> SpacePart:
 
 def _real_operator_part() -> SpacePart:
     params: list[ParamType] = [
-        Categorical("initializer", ["random", "lhs", "scatter", "sobol", "halton", "obl"]),
+        Categorical("initializer", ["random", "lhs", "scatter", "sobol", "halton", "obl"], role="structural"),
         Categorical(
             "crossover",
             [
@@ -52,8 +55,9 @@ def _real_operator_part() -> SpacePart:
                 "undx",
                 "simplex",
             ],
+            role="operator",
         ),
-        Real("crossover_prob", 0.6, 1.0),
+        Real("crossover_prob", 0.6, 1.0, role="operator_rate"),
         Categorical(
             "mutation",
             [
@@ -67,10 +71,11 @@ def _real_operator_part() -> SpacePart:
                 "levy_flight",
                 "power_law",
             ],
+            role="operator",
         ),
-        Real("mutation_prob_factor", 0.25, 3.0),
-        Real("mutation_eta", 5.0, 40.0),
-        Categorical("repair", ["clip", "reflect", "random", "round", "wrap", "midpoint"]),
+        Real("mutation_prob_factor", 0.25, 3.0, role="operator_rate"),
+        Real("mutation_eta", 5.0, 40.0, role="operator_rate"),
+        Categorical("repair", ["clip", "reflect", "random", "round", "wrap", "midpoint"], role="structural"),
     ]
     conditionals = [
         ConditionalBlock("crossover", "sbx", [Real("crossover_eta", 5.0, 40.0)]),
