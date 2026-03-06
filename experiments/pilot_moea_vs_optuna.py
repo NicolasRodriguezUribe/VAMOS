@@ -98,7 +98,8 @@ def _run_optuna(
         optuna_sampler="tpe",
     )
     best_config, history = tuner.run(eval_fn, verbose=False)
-    best_hv = max(t.score for t in history) if history else 0.0
+    finite = [t.score for t in history if np.isfinite(t.score)]
+    best_hv = max(finite) if finite else 0.0
     return best_config, best_hv, len(history)
 
 
@@ -123,7 +124,8 @@ def _run_moea_tuner(
         config=cfg,
     )
     best_config, history = tuner.run(eval_fn, verbose=False)
-    best_hv = max(t.score for t in history) if history else 0.0
+    finite = [t.score for t in history if np.isfinite(t.score)]
+    best_hv = max(finite) if finite else 0.0
     return best_config, best_hv, len(history)
 
 

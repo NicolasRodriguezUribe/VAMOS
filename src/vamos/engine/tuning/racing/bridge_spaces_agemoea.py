@@ -22,7 +22,7 @@ from .param_space import Int, ParamType
 
 def _core_part() -> SpacePart:
     params: list[ParamType] = [
-        Int("pop_size", 20, 200, log=True),
+        Int("pop_size", 20, 200, log=True, role="population"),
     ]
     arch_params, arch_conds, arch_conditions = external_archive_part()
     return [*params, *arch_params], arch_conds, arch_conditions

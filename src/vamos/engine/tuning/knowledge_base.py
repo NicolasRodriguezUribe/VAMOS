@@ -174,6 +174,24 @@ class KnowledgeBase:
         entries = self.query_similar(features, algorithm=algorithm, k=k)
         return [e.best_config for e in entries]
 
+    @staticmethod
+    def is_negative_transfer(
+        warm_config_perf: float,
+        random_perfs: list[float],
+        percentile: float = 25.0,
+    ) -> bool:
+        """Check if a warm-start config is performing worse than random.
+
+        Returns True if ``warm_config_perf`` is below the given percentile
+        of ``random_perfs``, indicating the source problem was too dissimilar
+        and the transferred config is hurting rather than helping.
+        """
+        if not random_perfs:
+            return False
+        import numpy as _np
+
+        return float(warm_config_perf) < float(_np.percentile(random_perfs, percentile))
+
     def __len__(self) -> int:
         return len(self._entries)
 

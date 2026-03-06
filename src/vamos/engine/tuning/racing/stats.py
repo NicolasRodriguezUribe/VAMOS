@@ -192,7 +192,50 @@ def select_configs_by_paired_test(
     return keep
 
 
+def vargha_delaney_a12(a: np.ndarray, b: np.ndarray) -> float:
+    """Compute Vargha-Delaney A12 effect size.
+
+    A12 = P(a > b) + 0.5 * P(a == b)
+
+    Interpretation:
+      0.5  = no effect
+      >0.56 = small effect
+      >0.64 = medium effect
+      >0.71 = large effect
+
+    Returns a value in [0, 1].
+    """
+    a = np.asarray(a, dtype=float).ravel()
+    b = np.asarray(b, dtype=float).ravel()
+    m, n = len(a), len(b)
+    if m == 0 or n == 0:
+        return 0.5
+    more = 0.0
+    equal = 0.0
+    for ai in a:
+        for bi in b:
+            if ai > bi:
+                more += 1.0
+            elif ai == bi:
+                equal += 1.0
+    return (more + 0.5 * equal) / (m * n)
+
+
+def a12_magnitude(a12: float) -> str:
+    """Return the effect size magnitude for an A12 value."""
+    d = abs(a12 - 0.5)
+    if d < 0.06:
+        return "negligible"
+    if d < 0.14:
+        return "small"
+    if d < 0.21:
+        return "medium"
+    return "large"
+
+
 __all__ = [
+    "a12_magnitude",
     "build_score_matrix",
     "select_configs_by_paired_test",
+    "vargha_delaney_a12",
 ]
