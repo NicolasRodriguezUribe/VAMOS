@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -24,7 +24,7 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-DEFAULT_KB_PATH = Path.home() / ".vamos" / "tuning_knowledge.json"
+DEFAULT_KB_PATH = ".vamos/tuning_knowledge.json"
 
 
 @dataclass
@@ -78,7 +78,7 @@ class KnowledgeBase:
     """
 
     def __init__(self, path: Path | str | None = None) -> None:
-        self.path = Path(path) if path is not None else DEFAULT_KB_PATH
+        self.path = Path(path) if path is not None else (Path.home() / DEFAULT_KB_PATH)
         self._entries: list[KnowledgeEntry] = []
         self._load()
 

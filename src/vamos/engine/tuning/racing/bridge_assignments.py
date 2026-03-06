@@ -32,6 +32,7 @@ _IBEA_NAMES = ALGORITHM_VARIANT_GROUPS["ibea"]
 _SMPSO_NAMES = ALGORITHM_VARIANT_GROUPS["smpso"]
 _AGEMOEA_NAMES = ALGORITHM_VARIANT_GROUPS["agemoea"]
 _RVEA_NAMES = ALGORITHM_VARIANT_GROUPS["rvea"]
+_TUNING_ARCHIVE_PRUNE_POLICIES = {"crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"}
 
 
 def _apply_initializer(builder: Any, assignment: dict[str, Any], pop_size: int) -> None:
@@ -68,6 +69,9 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
         builder.external_archive(capacity=None)
         return
     prune_policy = str(assignment.get("archive_prune_policy", "crowding"))
+    if prune_policy not in _TUNING_ARCHIVE_PRUNE_POLICIES:
+        valid = ", ".join(sorted(_TUNING_ARCHIVE_PRUNE_POLICIES))
+        raise ValueError(f"Unsupported prune_policy '{prune_policy}'. Expected one of: {valid}.")
     builder.external_archive(
         capacity=pop_size,
         pruning=prune_policy,
@@ -76,6 +80,8 @@ def _apply_optional_external_archive(builder: Any, assignment: dict[str, Any], p
 
 def _apply_optional_repair(builder: Any, assignment: dict[str, Any]) -> None:
     repair = assignment.get("repair")
+    if str(assignment.get("crossover", "")).strip().lower() == "blx_alpha" and assignment.get("blx_repair") is not None:
+        repair = assignment.get("blx_repair")
     if repair is None:
         return
     repair_name = str(repair).strip().lower()
@@ -88,9 +94,6 @@ def _extend_real_crossover_params(cross: str, assignment: dict[str, Any], cross_
         cross_params["eta"] = float(assignment.get("crossover_eta", 20.0))
     elif cross == "blx_alpha":
         cross_params["alpha"] = float(assignment.get("crossover_alpha", 0.5))
-        blx_repair = assignment.get("blx_repair")
-        if blx_repair is not None:
-            cross_params["repair"] = str(blx_repair)
     elif cross == "pcx":
         cross_params["sigma_eta"] = float(assignment.get("pcx_sigma_eta", 0.1))
         cross_params["sigma_zeta"] = float(assignment.get("pcx_sigma_zeta", 0.1))

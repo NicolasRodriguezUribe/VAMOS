@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.archive.factory import update_archive
 from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
@@ -27,6 +26,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from vamos.engine.algorithm.components.utils import variation_operator_label
+from vamos.engine.archive.factory import update_archive
 from vamos.foundation.constraints.utils import compute_violation
 from vamos.foundation.kernel import default_kernel
 

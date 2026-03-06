@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TypedDict
+from typing import TypedDict, cast
 
-from vamos.engine.archive import BoundedArchiveConfig
+from vamos.engine.archive import BoundedArchiveConfig, PrunePolicy
 from vamos.engine.hooks.hv_convergence import HVConvergenceConfig
 
 
@@ -25,7 +25,55 @@ def build_hv_stop_cfg(d: Mapping[str, object] | None) -> HVConvergenceConfig:
 def build_archive_cfg(d: Mapping[str, object] | None) -> BoundedArchiveConfig:
     if d is None:
         return BoundedArchiveConfig()
-    return BoundedArchiveConfig(**dict(d))
+    data = dict(d)
+    if "archive_type" in data:
+        raise TypeError("build_archive_cfg() does not accept legacy 'archive_type'; use 'size_cap' and 'prune_policy'.")
+
+    size_cap = data.get("size_cap", 200)
+    if not isinstance(size_cap, int):
+        raise TypeError("archive.size_cap must be an integer.")
+
+    truncate_size = data.get("truncate_size")
+    if truncate_size is not None and not isinstance(truncate_size, int):
+        raise TypeError("archive.truncate_size must be an integer or null.")
+
+    epsilon = data.get("epsilon", 0.01)
+    if not isinstance(epsilon, (int, float)):
+        raise TypeError("archive.epsilon must be numeric.")
+
+    hv_samples = data.get("hv_samples", 20000)
+    if not isinstance(hv_samples, int):
+        raise TypeError("archive.hv_samples must be an integer.")
+
+    rng_seed = data.get("rng_seed", 0)
+    if not isinstance(rng_seed, int):
+        raise TypeError("archive.rng_seed must be an integer.")
+
+    hv_ref_point_raw = data.get("hv_ref_point")
+    hv_ref_point: list[float] | None
+    if hv_ref_point_raw is None:
+        hv_ref_point = None
+    elif isinstance(hv_ref_point_raw, list):
+        hv_ref_point = [float(value) for value in hv_ref_point_raw]
+    else:
+        raise TypeError("archive.hv_ref_point must be a list of floats or null.")
+
+    prune_policy = data.get("prune_policy", "crowding")
+
+    if not isinstance(prune_policy, str):
+        raise TypeError("archive.prune_policy must be a string.")
+
+    return BoundedArchiveConfig(
+        enabled=bool(data.get("enabled", True)),
+        nondominated_only=bool(data.get("nondominated_only", True)),
+        size_cap=size_cap,
+        truncate_size=truncate_size,
+        epsilon=float(epsilon),
+        prune_policy=cast(PrunePolicy, prune_policy),
+        hv_ref_point=hv_ref_point,
+        hv_samples=hv_samples,
+        rng_seed=rng_seed,
+    )
 
 
 def _extract_block(spec: Mapping[str, object], key: str, problem_key: str | None) -> dict[str, object]:

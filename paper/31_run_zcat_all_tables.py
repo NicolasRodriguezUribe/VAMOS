@@ -95,6 +95,7 @@ N_JOBS = _int_env("VAMOS_N_JOBS", max(1, (os.cpu_count() or 2) - 1))
 NUMBA_WARMUP_EVALS = _int_env("VAMOS_NUMBA_WARMUP_EVALS", 2000)
 SAVE_EVERY = _int_env("VAMOS_ZCAT_SAVE_EVERY", 50)
 RESUME = os.environ.get("VAMOS_ZCAT_RESUME", "1").strip().lower() not in {"0", "false", "no"}
+ALLOW_PARTIAL = os.environ.get("VAMOS_ZCAT_ALLOW_PARTIAL", "0").strip().lower() in {"1", "true", "yes"}
 DEAP_N_JOBS = _int_env("VAMOS_DEAP_N_JOBS", 1)
 if os.name == "nt" and DEAP_N_JOBS > 1:
     print("Info: forcing DEAP workers to 1 on Windows (spawn mode cannot pickle local evaluator).")
@@ -1182,7 +1183,14 @@ def main() -> None:
             _save_partial(results_list, output_csv)
 
         n_ok = len(results_list)
+        n_fail = len(tasks) - n_ok
         print(f"Completed {n_ok} runs for {algo_display}, saved to {output_csv}")
+        if n_fail > 0:
+            msg = f"{algo_display} finished with {n_fail} failed runs out of {len(tasks)}."
+            if ALLOW_PARTIAL:
+                print(f"Warning: {msg}")
+            else:
+                raise RuntimeError(msg + " Re-run with VAMOS_ZCAT_ALLOW_PARTIAL=1 to keep partial results.")
 
     print("\nDone!")
 

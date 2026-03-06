@@ -21,17 +21,6 @@ from vamos.engine.algorithm.components.archive import (
     ReferenceDirectionsArchive,
     SPEA2Archive,
 )
-from vamos.engine.algorithm.components.subset_selection import (
-    _hv_contributions,
-    _single_front_crowding,
-    select_top_k_angle,
-    select_top_k_crowding,
-    select_top_k_farthest,
-    select_top_k_hv_greedy,
-    select_top_k_kmeans,
-    select_top_k_knn,
-    select_top_k_reference_directions,
-)
 from vamos.engine.algorithm.components.hooks import (
     get_live_viz,
     notify_generation,
@@ -55,6 +44,17 @@ from vamos.engine.algorithm.components.protocol import (
 from vamos.engine.algorithm.components.results import build_result
 from vamos.engine.algorithm.components.selection import RandomSelection, TournamentSelection
 from vamos.engine.algorithm.components.state import AlgorithmState
+from vamos.engine.algorithm.components.subset_selection import (
+    _hv_contributions,
+    _single_front_crowding,
+    select_top_k_angle,
+    select_top_k_crowding,
+    select_top_k_farthest,
+    select_top_k_hv_greedy,
+    select_top_k_kmeans,
+    select_top_k_knn,
+    select_top_k_reference_directions,
+)
 from vamos.engine.algorithm.components.termination import HVTracker, parse_termination
 from vamos.engine.algorithm.components.utils import (
     compute_ideal_nadir,

@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from vamos.experiment.benchmark.suites import BenchmarkExperiment, BenchmarkSuite
-from vamos.experiment.runtime.catalog import resolve_engine
 from vamos.experiment.runner import run_single
+from vamos.experiment.runtime.catalog import resolve_engine
 from vamos.experiment.study.persistence import CSVPersister
 from vamos.experiment.study.runner import StudyResult, StudyRunner, StudyTask
 

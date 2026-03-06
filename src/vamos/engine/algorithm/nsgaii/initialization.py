@@ -307,7 +307,9 @@ def setup_selection(
         raise ValueError(f"Unsupported selection method '{sel_method}'. Must be one of {allowed}.")
     if sel_method == "tournament" and "pressure" in sel_params and sel_params.get("pressure") is not None:
         raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
-    tournament_size = int(sel_params.get("size", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
+    tournament_size = (
+        int(sel_params.get("size", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
+    )
     return sel_method, tournament_size
 
 

@@ -35,8 +35,7 @@ Use the sidebar on the left to navigate between pages.
     )
 
     tips = pn.pane.Alert(
-        "**Tip:** Install the full studio extras with "
-        "`pip install -e \".[studio]\"` for interactive charts and tables.",
+        '**Tip:** Install the full studio extras with `pip install -e ".[studio]"` for interactive charts and tables.',
         alert_type="info",
     )
 

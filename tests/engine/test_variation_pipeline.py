@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from vamos.engine.variation import VariationPipeline
 from vamos.engine.operators.impl.real import VariationWorkspace
+from vamos.engine.variation import VariationPipeline
 
 
 def _bounds(n_var: int) -> tuple[np.ndarray, np.ndarray]:

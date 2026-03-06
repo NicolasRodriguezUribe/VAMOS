@@ -36,7 +36,6 @@ stopping:
 archive:
   bounded:
     enabled: true
-    archive_type: size_cap
     size_cap: 120
     nondominated_only: true
     prune_policy: crowding

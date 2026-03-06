@@ -70,25 +70,9 @@ def main() -> int:
                     "archive": {
                         "bounded": {
                             "enabled": True,
-                            "archive_type": "size_cap",
                             "size_cap": 400,
                             "nondominated_only": True,
                             "prune_policy": "crowding",
-                        }
-                    },
-                },
-            },
-            {
-                "name": "archive_epsgrid",
-                "patch": {
-                    "stopping": {"hv_convergence": {"enabled": False}},
-                    "archive": {
-                        "bounded": {
-                            "enabled": True,
-                            "archive_type": "epsilon_grid",
-                            "size_cap": 400,
-                            "epsilon": 0.01,
-                            "nondominated_only": True,
                         }
                     },
                 },
@@ -133,7 +117,6 @@ def main() -> int:
                     "archive": {
                         "bounded": {
                             "enabled": True,
-                            "archive_type": "size_cap",
                             "size_cap": 400,
                             "nondominated_only": True,
                             "prune_policy": "crowding",

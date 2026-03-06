@@ -181,7 +181,7 @@ class ConditionalBlock:
 ParamType = Real | Int | Categorical | Boolean
 
 # Valid parameter roles for MOEA-aware tuning
-PARAM_ROLES = frozenset({"structural", "operator", "operator_rate", "population", "adaptive"})
+PARAM_ROLES = {"structural", "operator", "operator_rate", "population", "adaptive"}
 
 
 @dataclass
@@ -302,8 +302,8 @@ def _safe_eval_condition(expr: str, cfg: dict[str, Any]) -> bool:
             key = _eval(node.slice)
             try:
                 return base[key]
-            except KeyError:
-                raise _MissingKeyError(key)
+            except KeyError as exc:
+                raise _MissingKeyError(key) from exc
             except Exception as exc:
                 raise ValueError(f"Failed to access cfg[{key!r}] in condition: {expr}") from exc
         raise ValueError(f"Unsupported expression element in condition: {expr}")

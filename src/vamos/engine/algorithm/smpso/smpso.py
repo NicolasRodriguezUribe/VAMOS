@@ -15,13 +15,13 @@ from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
-from vamos.engine.algorithm.components.subset_selection import _single_front_crowding
 from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     notify_generation,
     track_offspring_genealogy,
 )
+from vamos.engine.algorithm.components.subset_selection import _single_front_crowding
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.foundation.kernel import default_kernel
 

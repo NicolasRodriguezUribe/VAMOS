@@ -142,12 +142,14 @@ class TestSelectTopKKmeans:
 class TestSelectTopKAngle:
     def test_keeps_diverse_directions(self):
         # Points at very different angles from ideal
-        F = np.array([
-            [0.0, 10.0],  # straight up
-            [10.0, 0.0],  # straight right
-            [5.0, 5.0],   # diagonal
-            [4.8, 5.2],   # near-duplicate of diagonal
-        ])
+        F = np.array(
+            [
+                [0.0, 10.0],  # straight up
+                [10.0, 0.0],  # straight right
+                [5.0, 5.0],  # diagonal
+                [4.8, 5.2],  # near-duplicate of diagonal
+            ]
+        )
         idx = select_top_k_angle(F, 3)
         assert len(idx) == 3
         # Should remove the near-duplicate direction
@@ -163,12 +165,14 @@ class TestSelectTopKAngle:
 class TestSelectTopKHvGreedy:
     def test_selects_hv_contributing_points(self):
         # Near-duplicate pair + two spread points: greedy should skip the duplicate
-        F = np.array([
-            [0.0, 10.0],  # extreme
-            [10.0, 0.0],  # extreme
-            [5.0, 5.0],   # unique region
-            [5.1, 4.9],   # near-duplicate of [5.0, 5.0]
-        ])
+        F = np.array(
+            [
+                [0.0, 10.0],  # extreme
+                [10.0, 0.0],  # extreme
+                [5.0, 5.0],  # unique region
+                [5.1, 4.9],  # near-duplicate of [5.0, 5.0]
+            ]
+        )
         idx = select_top_k_hv_greedy(F, 3)
         assert len(idx) == 3
         # Should not include both near-duplicates

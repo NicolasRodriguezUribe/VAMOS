@@ -268,6 +268,7 @@ print(f"Using {N_JOBS} parallel workers")
 DEAP_N_JOBS = int(os.environ.get("VAMOS_DEAP_N_JOBS", "2"))
 SAVE_EVERY = int(os.environ.get("VAMOS_PAPER_SAVE_EVERY", "50"))
 RESUME = os.environ.get("VAMOS_PAPER_RESUME", "1").strip().lower() not in {"0", "false", "no"}
+ALLOW_PARTIAL = os.environ.get("VAMOS_PAPER_ALLOW_PARTIAL", "0").strip().lower() in {"1", "true", "yes"}
 
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos import optimize
@@ -341,6 +342,114 @@ def _as_1d_bounds(xl: object, xu: object, n_var: int) -> tuple[np.ndarray, np.nd
     return xl_arr, xu_arr
 
 
+_JMETAL_WFG_FALLBACK_WARNED = False
+
+
+def _jmetal_problem_class_maps() -> tuple[dict[str, type], dict[str, type], dict[str, type]]:
+    from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
+    from jmetal.problem import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ5, DTLZ6, DTLZ7
+
+    zdt = {
+        "zdt1": ZDT1,
+        "zdt2": ZDT2,
+        "zdt3": ZDT3,
+        "zdt4": ZDT4,
+        "zdt6": ZDT6,
+    }
+    dtlz = {
+        "dtlz1": DTLZ1,
+        "dtlz2": DTLZ2,
+        "dtlz3": DTLZ3,
+        "dtlz4": DTLZ4,
+        "dtlz5": DTLZ5,
+        "dtlz6": DTLZ6,
+        "dtlz7": DTLZ7,
+    }
+    try:
+        from jmetal.problem import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
+    except Exception:
+        wfg: dict[str, type] = {}
+    else:
+        wfg = {
+            "wfg1": WFG1,
+            "wfg2": WFG2,
+            "wfg3": WFG3,
+            "wfg4": WFG4,
+            "wfg5": WFG5,
+            "wfg6": WFG6,
+            "wfg7": WFG7,
+            "wfg8": WFG8,
+            "wfg9": WFG9,
+        }
+    return zdt, dtlz, wfg
+
+
+def _make_jmetal_wrapped_problem(problem_name: str, n_var: int, n_obj: int):
+    """FloatProblem wrapper around VAMOS definitions (fallback when jMetalPy lacks a native problem)."""
+    from jmetal.core.problem import FloatProblem
+
+    selection = make_problem_selection(problem_name, n_var=n_var, n_obj=n_obj)
+    vamos_problem = selection.instantiate()
+    xl, xu = _as_1d_bounds(vamos_problem.xl, vamos_problem.xu, n_var)
+
+    class _Wrapper(FloatProblem):
+        def __init__(self):
+            super().__init__()
+            self.lower_bound = xl.tolist()
+            self.upper_bound = xu.tolist()
+            self._vamos = vamos_problem
+
+        def name(self) -> str:
+            return problem_name.upper()
+
+        def number_of_objectives(self) -> int:
+            return n_obj
+
+        def number_of_constraints(self) -> int:
+            return 0
+
+        def number_of_variables(self) -> int:
+            return n_var
+
+        def evaluate(self, solution):
+            X = np.asarray(solution.variables, dtype=float).reshape(1, -1)
+            out = {"F": np.zeros((1, n_obj), dtype=float)}
+            self._vamos.evaluate(X, out)
+            solution.objectives = out["F"][0].tolist()
+            return solution
+
+    return _Wrapper()
+
+
+def _make_jmetal_problem(problem_name: str, n_var: int, n_obj: int):
+    zdt_classes, dtlz_classes, wfg_classes = _jmetal_problem_class_maps()
+    if problem_name in zdt_classes:
+        return zdt_classes[problem_name](number_of_variables=ZDT_N_VAR[problem_name])
+    if problem_name in dtlz_classes:
+        return dtlz_classes[problem_name](number_of_variables=DTLZ_N_VAR[problem_name], number_of_objectives=DTLZ_N_OBJ)
+    if problem_name in WFG_PROBLEMS:
+        if problem_name in wfg_classes:
+            wfg_k = 4 if WFG_N_OBJ == 2 else 2 * (WFG_N_OBJ - 1)
+            wfg_l = WFG_N_VAR - wfg_k
+            return wfg_classes[problem_name](
+                number_of_variables=WFG_N_VAR,
+                number_of_objectives=WFG_N_OBJ,
+                k=wfg_k,
+                l=wfg_l,
+            )
+
+        global _JMETAL_WFG_FALLBACK_WARNED
+        if not _JMETAL_WFG_FALLBACK_WARNED:
+            print(
+                "Warning: jMetalPy WFG problems are not available in this environment; "
+                "falling back to VAMOS-wrapped WFG definitions."
+            )
+            _JMETAL_WFG_FALLBACK_WARNED = True
+        return _make_jmetal_wrapped_problem(problem_name, n_var=n_var, n_obj=n_obj)
+
+    raise ValueError(f"Problem {problem_name} not available in jMetalPy")
+
+
 def run_objective_alignment_checks() -> None:
     if not ALIGN_CHECK_ENABLED:
         print("Objective alignment check disabled (VAMOS_OBJECTIVE_ALIGNMENT_CHECK=0)")
@@ -375,38 +484,10 @@ def run_objective_alignment_checks() -> None:
     jmetal_problem_map = None
     if check_jmetal:
         try:
-            from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
-            from jmetal.problem import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ5, DTLZ6, DTLZ7
-            from jmetal.problem import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
-
-            # jMetalPy's WFG defaults use k=2 for m=2, while VAMOS/pymoo use k=4.
-            # To avoid cross-toolkit semantic drift, pass (k,l) explicitly.
-            wfg_k = 4 if WFG_N_OBJ == 2 else 2 * (WFG_N_OBJ - 1)
-            wfg_l = WFG_N_VAR - wfg_k
-
-            jmetal_problem_map = {
-                "zdt1": ZDT1(number_of_variables=ZDT_N_VAR["zdt1"]),
-                "zdt2": ZDT2(number_of_variables=ZDT_N_VAR["zdt2"]),
-                "zdt3": ZDT3(number_of_variables=ZDT_N_VAR["zdt3"]),
-                "zdt4": ZDT4(number_of_variables=ZDT_N_VAR["zdt4"]),
-                "zdt6": ZDT6(number_of_variables=ZDT_N_VAR["zdt6"]),
-                "dtlz1": DTLZ1(number_of_variables=DTLZ_N_VAR["dtlz1"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz2": DTLZ2(number_of_variables=DTLZ_N_VAR["dtlz2"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz3": DTLZ3(number_of_variables=DTLZ_N_VAR["dtlz3"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz4": DTLZ4(number_of_variables=DTLZ_N_VAR["dtlz4"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz5": DTLZ5(number_of_variables=DTLZ_N_VAR["dtlz5"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz6": DTLZ6(number_of_variables=DTLZ_N_VAR["dtlz6"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz7": DTLZ7(number_of_variables=DTLZ_N_VAR["dtlz7"], number_of_objectives=DTLZ_N_OBJ),
-                "wfg1": WFG1(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg2": WFG2(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg3": WFG3(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg4": WFG4(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg5": WFG5(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg6": WFG6(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg7": WFG7(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg8": WFG8(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg9": WFG9(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-            }
+            jmetal_problem_map = {}
+            for pname in PROBLEMS:
+                n_var_p, n_obj_p = problem_dims(pname)
+                jmetal_problem_map[pname] = _make_jmetal_problem(pname, n_var_p, n_obj_p)
         except Exception as e:  # pragma: no cover
             print(f"  Warning: jMetalPy alignment check skipped (import failed): {e}")
             check_jmetal = False
@@ -1011,9 +1092,6 @@ def run_single_benchmark(problem_name, seed, framework):
             from jmetal.operator.selection import NaryRandomSolutionSelection
             from jmetal.util.aggregation_function import Tschebycheff
             from jmetal.util.termination_criterion import StoppingByEvaluations
-            from jmetal.problem import ZDT1, ZDT2, ZDT3, ZDT4, ZDT6
-            from jmetal.problem import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ5, DTLZ6, DTLZ7
-            from jmetal.problem import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
             import random
 
             random.seed(seed)
@@ -1025,38 +1103,7 @@ def run_single_benchmark(problem_name, seed, framework):
             except Exception:
                 pass
 
-            # Align WFG parameterization with VAMOS/pymoo defaults (k=4 for m=2).
-            wfg_k = 4 if WFG_N_OBJ == 2 else 2 * (WFG_N_OBJ - 1)
-            wfg_l = WFG_N_VAR - wfg_k
-
-            problem_map = {
-                "zdt1": ZDT1(number_of_variables=ZDT_N_VAR["zdt1"]),
-                "zdt2": ZDT2(number_of_variables=ZDT_N_VAR["zdt2"]),
-                "zdt3": ZDT3(number_of_variables=ZDT_N_VAR["zdt3"]),
-                "zdt4": ZDT4(number_of_variables=ZDT_N_VAR["zdt4"]),
-                "zdt6": ZDT6(number_of_variables=ZDT_N_VAR["zdt6"]),
-                "dtlz1": DTLZ1(number_of_variables=DTLZ_N_VAR["dtlz1"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz2": DTLZ2(number_of_variables=DTLZ_N_VAR["dtlz2"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz3": DTLZ3(number_of_variables=DTLZ_N_VAR["dtlz3"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz4": DTLZ4(number_of_variables=DTLZ_N_VAR["dtlz4"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz5": DTLZ5(number_of_variables=DTLZ_N_VAR["dtlz5"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz6": DTLZ6(number_of_variables=DTLZ_N_VAR["dtlz6"], number_of_objectives=DTLZ_N_OBJ),
-                "dtlz7": DTLZ7(number_of_variables=DTLZ_N_VAR["dtlz7"], number_of_objectives=DTLZ_N_OBJ),
-                "wfg1": WFG1(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg2": WFG2(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg3": WFG3(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg4": WFG4(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg5": WFG5(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg6": WFG6(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg7": WFG7(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg8": WFG8(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-                "wfg9": WFG9(number_of_variables=WFG_N_VAR, number_of_objectives=WFG_N_OBJ, k=wfg_k, l=wfg_l),
-            }
-
-            if problem_name not in problem_map:
-                raise ValueError(f"Problem {problem_name} not available in jMetalPy")
-
-            jmetal_problem = problem_map[problem_name]
+            jmetal_problem = _make_jmetal_problem(problem_name, n_var=n_var, n_obj=n_obj)
 
             archive = None
             if ALGORITHM in {"nsgaii", "nsgaii_ss", "nsgaii_archive"}:
@@ -1533,10 +1580,9 @@ print(f"\nRunning {len(sequential_jobs)} sequential jobs...")
 seq_bar = ProgressBar(total=len(sequential_jobs), desc="Sequential jobs") if sequential_jobs else None
 for p, s, b in sequential_jobs:
     result = run_single_benchmark(p, s, b)
-    if result:
-        results_list.append(result)
-        if SAVE_EVERY > 0 and len(results_list) % SAVE_EVERY == 0:
-            _save_partial(results_list)
+    results_list.append(result)
+    if SAVE_EVERY > 0 and len(results_list) % SAVE_EVERY == 0:
+        _save_partial(results_list)
     if seq_bar is not None:
         seq_bar.update(1)
 if seq_bar is not None:
@@ -1544,8 +1590,15 @@ if seq_bar is not None:
 
 # Filter out None results (failed runs)
 results = [r for r in results_list if r is not None]
+failed_runs = len(results_list) - len(results)
 
 # Save results
 _save_partial(results)
 print(f"\nSaved results to {OUTPUT_CSV}")
+if failed_runs > 0:
+    msg = f"Benchmark finished with {failed_runs} failed runs out of {len(results_list)}."
+    if ALLOW_PARTIAL:
+        print(f"Warning: {msg}")
+    else:
+        raise SystemExit(msg + " Re-run with VAMOS_PAPER_ALLOW_PARTIAL=1 to keep partial results.")
 print("\nDone!")

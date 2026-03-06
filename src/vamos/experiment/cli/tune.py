@@ -10,13 +10,14 @@ from typing import Any, cast
 
 import numpy as np
 
+from vamos.engine.algorithm.variants import canonical_algorithm_name
 from vamos.engine.tuning import (
     AlgorithmConfigSpace,
     EvalContext,
     Instance,
+    ModelBasedTuner,
     MOEATuner,
     MOEATunerConfig,
-    ModelBasedTuner,
     ParamSpace,
     RacingTuner,
     RandomSearchTuner,
@@ -64,7 +65,6 @@ from vamos.engine.tuning import (
 from vamos.engine.tuning.racing.eval_types import EvalFn
 from vamos.engine.tuning.racing.warm_start import WarmStartEvaluator
 from vamos.experiment.unified import optimize
-from vamos.engine.algorithm.variants import canonical_algorithm_name
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 

@@ -66,17 +66,19 @@ class BatchState(param.Parameterized):
                         F = result.get("F")
                         if F is not None:
                             hv_values.append(float(np.max(np.asarray(F)[:, 0])))
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        self.status = f"Run failed for {algo_name} on {prob_name}: {exc}"
 
                 if hv_values:
-                    rows.append({
-                        "Problem": prob_name,
-                        "Algorithm": algo_name,
-                        "Mean": float(np.mean(hv_values)),
-                        "Std": float(np.std(hv_values)),
-                        "Runs": len(hv_values),
-                    })
+                    rows.append(
+                        {
+                            "Problem": prob_name,
+                            "Algorithm": algo_name,
+                            "Mean": float(np.mean(hv_values)),
+                            "Std": float(np.std(hv_values)),
+                            "Runs": len(hv_values),
+                        }
+                    )
 
         if rows:
             self.results_df = pd.DataFrame(rows)

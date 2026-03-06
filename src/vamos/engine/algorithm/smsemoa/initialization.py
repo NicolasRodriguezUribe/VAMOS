@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -23,6 +22,7 @@ from vamos.engine.algorithm.components.population import (
 )
 from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
+from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.operators.policies.smsemoa import build_variation_operators
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 

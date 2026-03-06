@@ -86,7 +86,10 @@ def run_from_args(
         _ea_pruning = str(override.get("external_archive_pruning", getattr(args, "external_archive_pruning", "crowding")))
         base_external_archive = getattr(args, "external_archive", None)
         if _ea_override is not None:
-            effective_args.external_archive = ExternalArchiveConfig(capacity=int(str(_ea_override)), pruning=_ea_pruning)
+            effective_args.external_archive = ExternalArchiveConfig(
+                capacity=int(str(_ea_override)),
+                pruning=_ea_pruning,
+            )
         elif "external_archive_pruning" in override and base_external_archive is not None:
             effective_args.external_archive = ExternalArchiveConfig(
                 capacity=base_external_archive.capacity,

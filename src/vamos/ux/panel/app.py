@@ -8,9 +8,11 @@ from typing import Any
 import panel as pn
 import param
 
-pn.extension("codeeditor", "plotly", "tabulator", sizing_mode="stretch_width")
-
 from vamos.ux.panel.shell import PAGES, build_sidebar_nav, build_template
+
+
+def _ensure_panel_extension() -> None:
+    pn.extension("codeeditor", "plotly", "tabulator", sizing_mode="stretch_width")
 
 
 class StudioApp(param.Parameterized):
@@ -80,11 +82,13 @@ class StudioApp(param.Parameterized):
 
     def view(self) -> pn.template.FastListTemplate:
         tmpl = build_template()
-        tmpl.sidebar.append(pn.pane.Markdown(
-            "### VAMOS Studio",
-            align="center",
-            styles={"text-align": "center", "padding": "0.5rem 0"},
-        ))
+        tmpl.sidebar.append(
+            pn.pane.Markdown(
+                "### VAMOS Studio",
+                align="center",
+                styles={"text-align": "center", "padding": "0.5rem 0"},
+            )
+        )
         tmpl.sidebar.append(pn.layout.Divider())
         tmpl.sidebar.append(self._nav_col)
         tmpl.main.append(self._main_area)
@@ -95,11 +99,9 @@ class StudioApp(param.Parameterized):
 # Servable entry point (used by `panel serve app.py`)
 # ---------------------------------------------------------------------------
 
+
 def create_app() -> pn.template.FastListTemplate:
     """Factory called when Panel serves this module."""
+    _ensure_panel_extension()
     app = StudioApp()
     return app.view()
-
-
-# Allow `panel serve src/vamos/ux/panel/app.py`
-create_app().servable()

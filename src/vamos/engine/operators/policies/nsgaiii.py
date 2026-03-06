@@ -11,7 +11,6 @@ from typing import Any, TypeAlias, cast
 
 import numpy as np
 
-from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.engine.operators.impl.integer import (
     creep_mutation,
@@ -37,6 +36,7 @@ from vamos.engine.operators.policies.discrete_operator_maps import (
     PermMutationOp,
 )
 from vamos.engine.operators.policies.real_repair import apply_policy_repair, resolve_policy_repair
+from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 __all__ = [

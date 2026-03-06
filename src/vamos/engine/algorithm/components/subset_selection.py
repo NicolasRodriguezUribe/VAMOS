@@ -9,7 +9,6 @@ array of length ``min(k, n)`` into *F*.
 from __future__ import annotations
 
 import warnings
-from typing import Any
 
 import numpy as np
 
@@ -195,9 +194,7 @@ def select_top_k_knn(F: np.ndarray, k: int, *, neighbors: int = 1) -> np.ndarray
 # ---------------------------------------------------------------------------
 
 
-def select_top_k_reference_directions(
-    F: np.ndarray, k: int, *, divisions: int | None = None
-) -> np.ndarray:
+def select_top_k_reference_directions(F: np.ndarray, k: int, *, divisions: int | None = None) -> np.ndarray:
     """Select the top-*k* solutions via reference-direction association.
 
     Generates *k* uniformly distributed reference directions on the simplex
@@ -242,7 +239,7 @@ def select_top_k_reference_directions(
 
     # Perpendicular distance from each solution to each reference direction
     # d_perp(x, w) = ||x - (x·w / w·w) * w||
-    w_norm_sq = np.sum(weights ** 2, axis=1)  # (k_ref,)
+    w_norm_sq = np.sum(weights**2, axis=1)  # (k_ref,)
     proj_coeff = (F_norm @ weights.T) / np.maximum(w_norm_sq, 1e-30)  # (n, k_ref)
     proj = proj_coeff[:, :, None] * weights[None, :, :]  # (n, k_ref, n_obj)
     d_perp = np.linalg.norm(F_norm[:, None, :] - proj, axis=2)  # (n, k_ref)
@@ -329,7 +326,7 @@ def select_top_k_kmeans(
     best_centroids: np.ndarray | None = None
     best_inertia = np.inf
 
-    for _ in range(max_init := max(1, int(n_init))):
+    for _ in range(max(1, int(n_init))):
         # k-means++ initialization
         centroids = np.empty((k, F_norm.shape[1]), dtype=float)
         centroids[0] = F_norm[rng.integers(n)]
@@ -338,7 +335,7 @@ def select_top_k_kmeans(
                 np.linalg.norm(F_norm[:, None, :] - centroids[None, :c, :], axis=2),
                 axis=1,
             )
-            probs = dists ** 2
+            probs = dists**2
             total = probs.sum()
             if total > 0:
                 probs /= total
@@ -348,9 +345,7 @@ def select_top_k_kmeans(
 
         # Lloyd iterations
         for _ in range(max(1, int(max_iter))):
-            dists_to_c = np.linalg.norm(
-                F_norm[:, None, :] - centroids[None, :, :], axis=2
-            )
+            dists_to_c = np.linalg.norm(F_norm[:, None, :] - centroids[None, :, :], axis=2)
             labels = np.argmin(dists_to_c, axis=1)
             new_centroids = np.empty_like(centroids)
             for c in range(k):
@@ -364,9 +359,7 @@ def select_top_k_kmeans(
                 break
             centroids = new_centroids
 
-        inertia = sum(
-            np.sum((F_norm[labels == c] - centroids[c]) ** 2) for c in range(k)
-        )
+        inertia = sum(np.sum((F_norm[labels == c] - centroids[c]) ** 2) for c in range(k))
         if inertia < best_inertia:
             best_inertia = inertia
             best_labels = labels.copy()
