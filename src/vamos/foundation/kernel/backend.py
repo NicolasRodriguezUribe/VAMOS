@@ -150,3 +150,15 @@ class KernelBackend(ABC):
         should also list "hypervolume" in quality_indicators().
         """
         raise NotImplementedError(f"Backend '{self.__class__.__name__}' does not support hypervolume.")
+
+    def hypervolume_contributions(self, points: np.ndarray, reference_point: np.ndarray) -> np.ndarray:
+        """
+        Optional least-contributor support for hypervolume-based survival.
+
+        The default implementation delegates to the shared indicator module so
+        algorithms can rely on a backend-owned hook without requiring every
+        backend to provide a native implementation.
+        """
+        from vamos.foundation.quality_indicators.hypervolume import hypervolume_contributions as hv_contrib_fn
+
+        return hv_contrib_fn(points, reference_point)

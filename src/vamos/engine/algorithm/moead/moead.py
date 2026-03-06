@@ -30,7 +30,7 @@ from vamos.engine.archive.factory import update_archive
 from vamos.foundation.constraints.utils import compute_violation
 from vamos.foundation.kernel import default_kernel
 
-from .helpers import update_neighborhood
+from .helpers import update_neighborhood, update_neighborhood_batch
 from .initialization import initialize_moead_run
 from .state import MOEADState, build_moead_result
 
@@ -92,6 +92,10 @@ class MOEAD:
         self.cfg = config
         self.kernel = kernel or default_kernel()
         self._st: MOEADState | None = None
+        self._candidate_lengths: np.ndarray | None = None
+        self._candidate_orders: np.ndarray | None = None
+        self._parent_pairs: np.ndarray | None = None
+        self._row_index: np.ndarray = np.empty(0, dtype=np.int64)
 
     def run(
         self,
@@ -199,12 +203,88 @@ class MOEAD:
         )
         # Cache values that are constant across the run to avoid
         # recomputing them on every ask() call.
-        st = self._st
-        self._all_indices = np.arange(st.pop_size)
         cross_method = str(self.cfg.get("crossover", ("sbx", {}))[0]).lower()
         self._cross_is_de = cross_method in {"de", "differential", "differential_evolution"}
         self._op_label = variation_operator_label(self.cfg, "sbx+pm")
         return live_cb, eval_strategy, max_eval, hv_tracker
+
+    def _ensure_parent_pair_buffer(self, batch_size: int) -> np.ndarray:
+        if self._parent_pairs is None or self._parent_pairs.shape[0] < batch_size:
+            self._parent_pairs = np.empty((batch_size, 2), dtype=int)
+        return self._parent_pairs[:batch_size]
+
+    def _ensure_candidate_order_buffers(self, batch_size: int, pop_size: int) -> tuple[np.ndarray, np.ndarray]:
+        if self._candidate_orders is None or self._candidate_orders.shape[0] < batch_size or self._candidate_orders.shape[1] != pop_size:
+            self._candidate_orders = np.empty((batch_size, pop_size), dtype=int)
+        if self._candidate_lengths is None or self._candidate_lengths.shape[0] < batch_size:
+            self._candidate_lengths = np.empty(batch_size, dtype=np.int64)
+        return self._candidate_orders[:batch_size], self._candidate_lengths[:batch_size]
+
+    def _ensure_row_index(self, length: int) -> np.ndarray:
+        if self._row_index.shape[0] < length:
+            self._row_index = np.arange(length, dtype=np.int64)
+        return self._row_index[:length]
+
+    def _sample_parent_pairs(
+        self,
+        st: MOEADState,
+        active: np.ndarray,
+        use_neighbors: np.ndarray,
+    ) -> np.ndarray:
+        """Sample one ordered parent pair per active subproblem without Python loops."""
+        batch_size = active.shape[0]
+        parent_pairs = self._ensure_parent_pair_buffer(batch_size)
+        if batch_size == 0:
+            return parent_pairs
+
+        neighbor_mask = np.asarray(use_neighbors, dtype=bool)
+        if bool(np.any(neighbor_mask)):
+            active_neighbors = st.neighbors[active[neighbor_mask]]
+            local_count = active_neighbors.shape[0]
+            local_size = active_neighbors.shape[1]
+            first_local = st.rng.integers(0, local_size, size=local_count, dtype=np.int64)
+            second_local = st.rng.integers(0, local_size - 1, size=local_count, dtype=np.int64)
+            second_local += second_local >= first_local
+            rows = self._ensure_row_index(local_count)
+            parent_pairs[neighbor_mask, 0] = active_neighbors[rows, first_local]
+            parent_pairs[neighbor_mask, 1] = active_neighbors[rows, second_local]
+
+        global_mask = ~neighbor_mask
+        if bool(np.any(global_mask)):
+            global_count = int(np.sum(global_mask))
+            first_global = st.rng.integers(0, st.pop_size, size=global_count, dtype=np.int64)
+            second_global = st.rng.integers(0, st.pop_size - 1, size=global_count, dtype=np.int64)
+            second_global += second_global >= first_global
+            parent_pairs[global_mask, 0] = first_global
+            parent_pairs[global_mask, 1] = second_global
+
+        return parent_pairs
+
+    def _build_candidate_orders(
+        self,
+        st: MOEADState,
+        active: np.ndarray,
+        use_neighbors: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Precompute candidate replacement orders for a batch of offspring."""
+        batch_size = active.shape[0]
+        candidate_orders, candidate_lengths = self._ensure_candidate_order_buffers(batch_size, st.pop_size)
+        if batch_size == 0:
+            return candidate_orders, candidate_lengths
+
+        neighbor_mask = np.asarray(use_neighbors, dtype=bool)
+        if bool(np.any(neighbor_mask)):
+            neighbor_rows = st.neighbors[active[neighbor_mask]]
+            neighbor_size = neighbor_rows.shape[1]
+            candidate_orders[neighbor_mask, :neighbor_size] = neighbor_rows
+            candidate_lengths[neighbor_mask] = neighbor_size
+
+        global_positions = np.flatnonzero(~neighbor_mask)
+        for pos in global_positions:
+            candidate_orders[pos, : st.pop_size] = st.rng.permutation(st.pop_size)
+            candidate_lengths[pos] = st.pop_size
+
+        return candidate_orders, candidate_lengths
 
     def ask(self) -> np.ndarray:
         """
@@ -236,14 +316,7 @@ class MOEAD:
         use_neighbors = st.rng.random(batch_size) < st.delta
 
         # Select parent pairs
-        all_indices = self._all_indices
-        parent_pairs = np.empty((batch_size, 2), dtype=int)
-
-        for pos, i in enumerate(active):
-            mating_pool = st.neighbors[i] if use_neighbors[pos] else all_indices
-            if mating_pool.size < 2:
-                mating_pool = all_indices
-            parent_pairs[pos] = st.rng.choice(mating_pool, size=2, replace=False)
+        parent_pairs = self._sample_parent_pairs(st, active, use_neighbors)
 
         # Generate offspring
         n_var = st.X.shape[1]
@@ -324,24 +397,34 @@ class MOEAD:
         st.ideal = np.minimum(st.ideal, F_child.min(axis=0))
 
         # Update neighborhoods
-        for pos, i in enumerate(active):
-            child = children[pos]
-            child_f = F_child[pos]
-            child_g = G_child[pos] if G_child is not None else None
-            cv_penalty = float(cv_child[pos]) if cv_child is not None else 0.0
-            if use_neighbors[pos]:
-                candidate_order = st.neighbors[i]
+        if batch_size == 1:
+            child = children[0]
+            child_f = F_child[0]
+            child_g = G_child[0] if G_child is not None else None
+            cv_penalty = float(cv_child[0]) if cv_child is not None else 0.0
+            if use_neighbors[0]:
+                candidate_order = st.neighbors[active[0]]
             else:
                 candidate_order = st.rng.permutation(pop_size)
-
             update_neighborhood(
                 st=st,
-                idx=i,
+                idx=int(active[0]),
                 child=child,
                 child_f=child_f,
                 child_g=child_g,
                 cv_penalty=cv_penalty,
                 candidate_order=candidate_order,
+            )
+        else:
+            candidate_orders, candidate_lengths = self._build_candidate_orders(st, active, use_neighbors)
+            update_neighborhood_batch(
+                st=st,
+                children=children,
+                children_f=F_child,
+                children_g=G_child,
+                children_cv=cv_child,
+                candidate_orders=candidate_orders,
+                candidate_lengths=candidate_lengths,
             )
 
         # Update archive

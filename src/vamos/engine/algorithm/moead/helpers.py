@@ -46,6 +46,7 @@ _AGGREGATION_IDS: dict[str, int] = {
 }
 
 _UPDATE_NEIGHBORHOOD_JIT: Callable[..., int] | None = None
+_UPDATE_NEIGHBORHOOD_BATCH_JIT: Callable[..., None] | None = None
 _UPDATE_NEIGHBORHOOD_DISABLED = False
 _DUMMY_G: np.ndarray | None = None
 _DUMMY_CV: np.ndarray | None = None
@@ -232,7 +233,7 @@ def _use_numba_moead() -> bool:
 
 
 def _get_update_neighborhood_numba() -> Callable[..., int] | None:
-    global _UPDATE_NEIGHBORHOOD_JIT, _UPDATE_NEIGHBORHOOD_DISABLED
+    global _UPDATE_NEIGHBORHOOD_BATCH_JIT, _UPDATE_NEIGHBORHOOD_DISABLED, _UPDATE_NEIGHBORHOOD_JIT
     if _UPDATE_NEIGHBORHOOD_DISABLED:
         return None
     if _UPDATE_NEIGHBORHOOD_JIT is not None:
@@ -261,6 +262,7 @@ def _get_update_neighborhood_numba() -> Callable[..., int] | None:
         child_g: np.ndarray,
         child_cv: float,
         candidate_order: np.ndarray,
+        candidate_length: int,
         replace_limit: int,
         agg_id: int,
         agg_theta: float,
@@ -269,7 +271,7 @@ def _get_update_neighborhood_numba() -> Callable[..., int] | None:
     ) -> int:
         replacements = 0
         n_obj = ideal.shape[0]
-        for idx in range(candidate_order.shape[0]):
+        for idx in range(candidate_length):
             k = int(candidate_order[idx])
 
             # Compute aggregation for current and child.
@@ -363,8 +365,64 @@ def _get_update_neighborhood_numba() -> Callable[..., int] | None:
                 break
         return replacements
 
+    @njit(cache=True)  # type: ignore[untyped-decorator]
+    def _update_neighborhood_batch_numba(
+        X: np.ndarray,
+        F: np.ndarray,
+        G: np.ndarray,
+        cv: np.ndarray,
+        weights: np.ndarray,
+        weights_safe: np.ndarray,
+        weights_unit: np.ndarray,
+        ideal: np.ndarray,
+        children: np.ndarray,
+        children_f: np.ndarray,
+        children_g: np.ndarray,
+        children_cv: np.ndarray,
+        candidate_orders: np.ndarray,
+        candidate_lengths: np.ndarray,
+        replace_limit: int,
+        agg_id: int,
+        agg_theta: float,
+        agg_rho: float,
+        use_constraints: int,
+    ) -> None:
+        for pos in range(children.shape[0]):
+            _update_neighborhood_numba(
+                X,
+                F,
+                G,
+                cv,
+                weights,
+                weights_safe,
+                weights_unit,
+                ideal,
+                children[pos],
+                children_f[pos],
+                children_g[pos],
+                float(children_cv[pos]),
+                candidate_orders[pos],
+                int(candidate_lengths[pos]),
+                replace_limit,
+                agg_id,
+                agg_theta,
+                agg_rho,
+                use_constraints,
+            )
+
     _UPDATE_NEIGHBORHOOD_JIT = _update_neighborhood_numba
+    _UPDATE_NEIGHBORHOOD_BATCH_JIT = _update_neighborhood_batch_numba
     return _UPDATE_NEIGHBORHOOD_JIT
+
+
+def _get_update_neighborhood_batch_numba() -> Callable[..., None] | None:
+    if _UPDATE_NEIGHBORHOOD_DISABLED:
+        return None
+    if _UPDATE_NEIGHBORHOOD_BATCH_JIT is not None:
+        return _UPDATE_NEIGHBORHOOD_BATCH_JIT
+    if _get_update_neighborhood_numba() is None:
+        return None
+    return _UPDATE_NEIGHBORHOOD_BATCH_JIT
 
 
 def _update_neighborhood_python(
@@ -381,6 +439,7 @@ def _update_neighborhood_python(
     child_g: np.ndarray,
     child_cv: float,
     candidate_order: np.ndarray,
+    candidate_length: int,
     replace_limit: int,
     agg_id: int,
     agg_theta: float,
@@ -389,7 +448,7 @@ def _update_neighborhood_python(
 ) -> int:
     """Pure-Python fallback for neighborhood updates when numba is unavailable."""
     replacements = 0
-    for idx in range(candidate_order.shape[0]):
+    for idx in range(candidate_length):
         k = int(candidate_order[idx])
 
         diff_current = np.abs(F[k] - ideal)
@@ -440,6 +499,52 @@ def _update_neighborhood_python(
         if replacements >= replace_limit:
             break
     return replacements
+
+
+def _update_neighborhood_batch_python(
+    X: np.ndarray,
+    F: np.ndarray,
+    G: np.ndarray,
+    cv: np.ndarray,
+    weights: np.ndarray,
+    weights_safe: np.ndarray,
+    weights_unit: np.ndarray,
+    ideal: np.ndarray,
+    children: np.ndarray,
+    children_f: np.ndarray,
+    children_g: np.ndarray,
+    children_cv: np.ndarray,
+    candidate_orders: np.ndarray,
+    candidate_lengths: np.ndarray,
+    replace_limit: int,
+    agg_id: int,
+    agg_theta: float,
+    agg_rho: float,
+    use_constraints: int,
+) -> None:
+    """Pure-Python batch fallback mirroring the JIT neighborhood update semantics."""
+    for pos in range(children.shape[0]):
+        _update_neighborhood_python(
+            X,
+            F,
+            G,
+            cv,
+            weights,
+            weights_safe,
+            weights_unit,
+            ideal,
+            children[pos],
+            children_f[pos],
+            children_g[pos],
+            float(children_cv[pos]),
+            candidate_orders[pos],
+            int(candidate_lengths[pos]),
+            replace_limit,
+            agg_id,
+            agg_theta,
+            agg_rho,
+            use_constraints,
+        )
 
 
 # =============================================================================
@@ -534,6 +639,65 @@ def update_neighborhood(
         child_g if child_g is not None else dummy_child_g,
         float(child_cv),
         candidate_order,
+        int(candidate_order.shape[0]),
+        int(st.replace_limit),
+        int(st.aggregation_id),
+        float(st.aggregation_theta),
+        float(st.aggregation_rho),
+        1 if use_constraints else 0,
+    )
+
+
+def update_neighborhood_batch(
+    st: MOEADState,
+    children: np.ndarray,
+    children_f: np.ndarray,
+    children_g: np.ndarray | None,
+    children_cv: np.ndarray | None,
+    candidate_orders: np.ndarray,
+    candidate_lengths: np.ndarray,
+) -> None:
+    """Update neighborhoods for a batch of offspring using precomputed candidate orders."""
+    if children.shape[0] == 0:
+        return
+
+    constraint_mode = st.constraint_mode
+    if constraint_mode == "none" or st.G is None or children_g is None:
+        constraint_mode = "none"
+    use_constraints = constraint_mode != "none"
+
+    if use_constraints and st.cv is None and st.G is not None:
+        st.cv = compute_violation(st.G)
+
+    batch_updater = _get_update_neighborhood_batch_numba()
+    if batch_updater is None:
+        batch_updater = _update_neighborhood_batch_python
+
+    dummy_g, dummy_cv, dummy_child_g = _dummy_buffers()
+    if use_constraints:
+        if children_cv is None:
+            raise ValueError("Constraint-aware MOEA/D batch update requires child violations.")
+        child_g_batch = children_g
+        child_cv_batch = children_cv
+    else:
+        child_g_batch = np.empty((children.shape[0], 0), dtype=float)
+        child_cv_batch = np.zeros(children.shape[0], dtype=float)
+
+    batch_updater(
+        st.X,
+        st.F,
+        st.G if st.G is not None else dummy_g,
+        st.cv if st.cv is not None else dummy_cv,
+        st.weights,
+        st.weights_safe,
+        st.weights_unit,
+        st.ideal,
+        children,
+        children_f,
+        child_g_batch if child_g_batch is not None else dummy_child_g.reshape(1, -1),
+        child_cv_batch,
+        candidate_orders,
+        candidate_lengths,
         int(st.replace_limit),
         int(st.aggregation_id),
         float(st.aggregation_theta),
@@ -551,4 +715,5 @@ __all__ = [
     "resolve_aggregation_spec",
     "compute_neighbors",
     "update_neighborhood",
+    "update_neighborhood_batch",
 ]

@@ -25,6 +25,7 @@ from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.foundation.kernel import default_kernel
 
 from .helpers import (
+    refresh_selection_cache,
     survival_selection,
 )
 from .initialization import initialize_smsemoa_run
@@ -191,15 +192,14 @@ class SMSEMOA:
 
     def _generate_offspring(self, st: SMSEMOAState) -> np.ndarray:
         """Generate offspring using parent selection and variation."""
-        sel_cfg = self.cfg.get("selection", ("random", {}))
-        if isinstance(sel_cfg, tuple):
-            sel_method, _ = sel_cfg
-        else:
-            sel_method = sel_cfg
+        sel_method = st.selection_method
 
         if sel_method == "tournament":
-            ranks, crowd = self.kernel.nsga2_ranking(st.F)
-            parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=2)
+            if st.ranks is None or st.crowding is None:
+                refresh_selection_cache(st, self.kernel)
+            if st.ranks is None or st.crowding is None:
+                raise RuntimeError("SMS-EMOA selection cache is unavailable.")
+            parents_idx = self.kernel.tournament_selection(st.ranks, st.crowding, st.pressure, st.rng, n_parents=2)
         else:
             if st.X.shape[0] == 0:
                 raise ValueError("Cannot select parents from an empty population.")
