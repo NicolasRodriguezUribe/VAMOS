@@ -28,6 +28,7 @@ from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 from .helpers import (
     initialize_reference_point,
+    refresh_selection_cache,
 )
 from .state import SMSEMOAState
 
@@ -91,7 +92,7 @@ def initialize_smsemoa_run(
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
     n_obj = problem.n_obj
-    constraint_mode = config.get("constraint_mode", "penalty")
+    constraint_mode = config.get("constraint_mode", "feasibility")
 
     # Build variation operators
     crossover_fn, mutation_fn = build_variation_operators(
@@ -158,6 +159,7 @@ def initialize_smsemoa_run(
         ref_offset=ref_offset,
         ref_adaptive=ref_adaptive,
         pressure=pressure,
+        selection_method=str(sel_method),
         eliminate_duplicates=eliminate_duplicates,
         crossover_fn=crossover_fn,
         mutation_fn=mutation_fn,
@@ -174,6 +176,8 @@ def initialize_smsemoa_run(
         ids=ids,
         result_mode=config.get("result_mode", "non_dominated"),
     )
+
+    refresh_selection_cache(state, kernel)
 
     return state, live_cb, eval_strategy, max_eval, hv_tracker
 

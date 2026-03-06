@@ -42,12 +42,17 @@ class SMSEMOAState(AlgorithmState):
     ref_offset: float = 0.1
     ref_adaptive: bool = True
     pressure: int = 2
+    selection_method: str = "random"
     eliminate_duplicates: bool = False
     crossover_fn: Callable[[np.ndarray], np.ndarray] | None = None
     mutation_fn: Callable[[np.ndarray], np.ndarray] | None = None
+    fronts: list[list[int]] | None = None
+    ranks: np.ndarray | None = None
+    crowding: np.ndarray | None = None
 
     # Workspace buffers (avoid per-iteration allocations in steady-state SMS-EMOA)
     _survival_F: np.ndarray | None = field(default=None, repr=False, compare=False)
+    _survival_G: np.ndarray | None = field(default=None, repr=False, compare=False)
 
 
 def build_smsemoa_result(

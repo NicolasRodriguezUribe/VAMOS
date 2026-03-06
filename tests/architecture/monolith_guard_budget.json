@@ -1,7 +1,7 @@
 {
   "file_violations": {
     "src/vamos/engine/algorithm/components/archive.py": 736,
-    "src/vamos/engine/algorithm/moead/helpers.py": 473,
+    "src/vamos/engine/algorithm/moead/helpers.py": 626,
     "src/vamos/engine/tuning/backends.py": 525,
     "src/vamos/engine/tuning/moea_tuner.py": 507,
     "src/vamos/experiment/cli/create_problem.py": 356,
@@ -21,6 +21,7 @@
     "src/vamos/experiment/cli/args_algorithms.py:add_algorithm_arguments": 311
   },
   "class_violations": {
+    "src/vamos/engine/algorithm/moead/moead.py:MOEAD": 408,
     "src/vamos/engine/tuning/backends.py:ModelBasedTuner": 493,
     "src/vamos/engine/algorithm/nsgaiii/nsgaiii.py:NSGAIII": 412
   },
