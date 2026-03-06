@@ -21,10 +21,10 @@ from .param_space import Categorical, ConditionalBlock, Int, ParamType, Real
 
 def _core_part() -> SpacePart:
     params: list[ParamType] = [
-        Int("pop_size", 20, 200, log=True),
-        Int("neighbor_size", 5, 40),
-        Real("delta", 0.5, 0.95),
-        Int("replace_limit", 1, 5),
+        Int("pop_size", 20, 200, log=True, role="population"),
+        Int("neighbor_size", 5, 40, role="population"),
+        Real("delta", 0.5, 0.95, role="operator_rate"),
+        Int("replace_limit", 1, 5, role="population"),
     ]
     arch_params, arch_conds, arch_conditions = external_archive_part()
     return [*params, *arch_params], arch_conds, arch_conditions
@@ -36,13 +36,13 @@ def _aggregation_part(*, extended: bool = False) -> SpacePart:
     if extended:
         choices.append("modified_tchebycheff")
     conditionals: list[ConditionalBlock] = [
-        ConditionalBlock("aggregation", "pbi", [Real("pbi_theta", 1.0, 10.0)]),
+        ConditionalBlock("aggregation", "pbi", [Real("pbi_theta", 1.0, 10.0, role="operator_rate")]),
     ]
     if extended:
         conditionals.append(
-            ConditionalBlock("aggregation", "modified_tchebycheff", [Real("mtch_rho", 0.0001, 0.1)]),
+            ConditionalBlock("aggregation", "modified_tchebycheff", [Real("mtch_rho", 0.0001, 0.1, role="operator_rate")]),
         )
-    return [Categorical("aggregation", choices)], conditionals, []
+    return [Categorical("aggregation", choices, role="structural")], conditionals, []
 
 
 # ---------------------------------------------------------------------------
@@ -52,18 +52,18 @@ def _aggregation_part(*, extended: bool = False) -> SpacePart:
 
 def _real_operator_part() -> SpacePart:
     params: list[ParamType] = [
-        Categorical("crossover", ["sbx", "de"]),
-        Categorical("mutation", ["polynomial", "gaussian", "non_uniform", "cauchy", "uniform"]),
-        Real("mutation_prob", 0.01, 0.5),
-        Real("mutation_eta", 5.0, 40.0),
+        Categorical("crossover", ["sbx", "de"], role="operator"),
+        Categorical("mutation", ["polynomial", "gaussian", "non_uniform", "cauchy", "uniform"], role="operator"),
+        Real("mutation_prob", 0.01, 0.5, role="operator_rate"),
+        Real("mutation_eta", 5.0, 40.0, role="operator_rate"),
     ]
     conditionals = [
-        ConditionalBlock("crossover", "sbx", [Real("crossover_prob", 0.6, 1.0), Real("crossover_eta", 10.0, 40.0)]),
-        ConditionalBlock("crossover", "de", [Real("de_cr", 0.0, 1.0), Real("de_f", 0.0, 1.0)]),
-        ConditionalBlock("mutation", "non_uniform", [Real("nonuniform_perturbation", 0.05, 0.5)]),
-        ConditionalBlock("mutation", "gaussian", [Real("gaussian_sigma", 0.001, 0.5)]),
-        ConditionalBlock("mutation", "cauchy", [Real("cauchy_gamma", 0.001, 0.5)]),
-        ConditionalBlock("mutation", "uniform", [Real("uniform_perturb", 0.01, 0.5)]),
+        ConditionalBlock("crossover", "sbx", [Real("crossover_prob", 0.6, 1.0, role="operator_rate"), Real("crossover_eta", 10.0, 40.0, role="operator_rate")]),
+        ConditionalBlock("crossover", "de", [Real("de_cr", 0.0, 1.0, role="operator_rate"), Real("de_f", 0.0, 1.0, role="operator_rate")]),
+        ConditionalBlock("mutation", "non_uniform", [Real("nonuniform_perturbation", 0.05, 0.5, role="operator_rate")]),
+        ConditionalBlock("mutation", "gaussian", [Real("gaussian_sigma", 0.001, 0.5, role="operator_rate")]),
+        ConditionalBlock("mutation", "cauchy", [Real("cauchy_gamma", 0.001, 0.5, role="operator_rate")]),
+        ConditionalBlock("mutation", "uniform", [Real("uniform_perturb", 0.01, 0.5, role="operator_rate")]),
     ]
     return params, conditionals, []
 

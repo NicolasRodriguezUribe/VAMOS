@@ -38,6 +38,7 @@ import random
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -1087,6 +1088,13 @@ def _load_completed_keys(output_csv: Path, algo_display: str) -> set[tuple[str, 
     return keys
 
 
+def _run_chunk_threadpool(chunk: list[dict[str, Any]], n_jobs: int) -> list[dict[str, Any] | None]:
+    """Run one chunk with native threads (no multiprocessing backend)."""
+    with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+        futures = [executor.submit(run_single_benchmark, **task) for task in chunk]
+        return [future.result() for future in futures]
+
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -1150,12 +1158,26 @@ def main() -> None:
 
         # Run in chunks with periodic saves
         results_list: list[dict[str, Any]] = []
+        use_thread_backend = False
         for i in range(0, len(tasks), SAVE_EVERY):
             chunk = tasks[i : i + SAVE_EVERY]
             with joblib_progress(total=len(chunk), desc=f"ZCAT {algorithm} [{i}..{i+len(chunk)}/{len(tasks)}]"):
-                chunk_results = Parallel(n_jobs=N_JOBS, batch_size=1)(
-                    delayed(run_single_benchmark)(**t) for t in chunk
-                )
+                if use_thread_backend:
+                    chunk_results = _run_chunk_threadpool(chunk, N_JOBS)
+                else:
+                    try:
+                        chunk_results = Parallel(n_jobs=N_JOBS, batch_size=1)(
+                            delayed(run_single_benchmark)(**t) for t in chunk
+                        )
+                    except PermissionError as exc:
+                        if N_JOBS <= 1:
+                            raise
+                        use_thread_backend = True
+                        print(
+                            "Warning: multiprocessing backend unavailable "
+                            f"({exc}); retrying with ThreadPoolExecutor backend."
+                        )
+                        chunk_results = _run_chunk_threadpool(chunk, N_JOBS)
             results_list.extend([r for r in chunk_results if r is not None])
             _save_partial(results_list, output_csv)
 

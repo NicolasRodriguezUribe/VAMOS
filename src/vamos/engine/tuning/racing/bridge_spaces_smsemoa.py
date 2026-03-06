@@ -22,8 +22,8 @@ from .param_space import Int, ParamType
 
 def _core_part() -> SpacePart:
     params: list[ParamType] = [
-        Int("pop_size", 20, 200, log=True),
-        Int("selection_pressure", 2, 10),
+        Int("pop_size", 20, 200, log=True, role="population"),
+        Int("selection_pressure", 2, 10, role="structural"),
     ]
     arch_params, arch_conds, arch_conditions = external_archive_part()
     return [*params, *arch_params], arch_conds, arch_conditions

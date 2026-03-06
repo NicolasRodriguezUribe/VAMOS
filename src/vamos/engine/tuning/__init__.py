@@ -12,6 +12,7 @@ and config space builders for each algorithm.
 
 from .ablation import AblationPlan, AblationTask, AblationVariant, build_ablation_plan
 from .backends import ModelBasedTuner, available_model_based_backends
+from .racing.stats import a12_magnitude, vargha_delaney_a12
 from .convergence import ConvergenceDiagnostic, ConvergenceProfile, TuningCallback, diagnose, score_with_profile
 from .knowledge_base import KnowledgeBase, KnowledgeEntry
 from .moea_tuner import MOEATuner, MOEATunerConfig, PhaseResult
@@ -208,4 +209,7 @@ __all__ = [
     "ProblemFeatures",
     "extract_features_from_instances",
     "extract_features_from_problem",
+    # Statistical utilities
+    "vargha_delaney_a12",
+    "a12_magnitude",
 ]

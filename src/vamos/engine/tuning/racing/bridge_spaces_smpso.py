@@ -19,15 +19,15 @@ from .param_space import Categorical, Int, ParamType, Real
 def _smpso_part() -> SpacePart:
     ext_params, ext_conds, ext_conditions = external_archive_part()
     params: list[ParamType] = [
-        Int("pop_size", 20, 200, log=True),
-        Int("archive_size", 20, 200, log=True),
-        Real("inertia", 0.1, 0.9),
-        Real("c1", 0.5, 2.5),
-        Real("c2", 0.5, 2.5),
-        Real("vmax_fraction", 0.1, 1.0),
-        Categorical("repair", ["clip", "reflect", "random", "round", "wrap", "midpoint"]),
-        Real("mutation_prob", 0.01, 0.5),
-        Real("mutation_eta", 5.0, 40.0),
+        Int("pop_size", 20, 200, log=True, role="population"),
+        Int("archive_size", 20, 200, log=True, role="population"),
+        Real("inertia", 0.1, 0.9, role="operator_rate"),
+        Real("c1", 0.5, 2.5, role="operator_rate"),
+        Real("c2", 0.5, 2.5, role="operator_rate"),
+        Real("vmax_fraction", 0.1, 1.0, role="operator_rate"),
+        Categorical("repair", ["clip", "reflect", "random", "round", "wrap", "midpoint"], role="structural"),
+        Real("mutation_prob", 0.01, 0.5, role="operator_rate"),
+        Real("mutation_eta", 5.0, 40.0, role="operator_rate"),
         *ext_params,
     ]
     return params, ext_conds, ext_conditions
@@ -36,14 +36,14 @@ def _smpso_part() -> SpacePart:
 def _smpso_mixed_part() -> SpacePart:
     ext_params, ext_conds, ext_conditions = external_archive_part()
     params: list[ParamType] = [
-        Int("pop_size", 20, 200, log=True),
-        Int("archive_size", 20, 200, log=True),
-        Real("inertia", 0.1, 0.9),
-        Real("c1", 0.5, 2.5),
-        Real("c2", 0.5, 2.5),
-        Real("vmax_fraction", 0.1, 1.0),
-        Categorical("mutation", ["mixed", "gaussian"]),
-        Real("mutation_prob", 0.01, 0.5),
+        Int("pop_size", 20, 200, log=True, role="population"),
+        Int("archive_size", 20, 200, log=True, role="population"),
+        Real("inertia", 0.1, 0.9, role="operator_rate"),
+        Real("c1", 0.5, 2.5, role="operator_rate"),
+        Real("c2", 0.5, 2.5, role="operator_rate"),
+        Real("vmax_fraction", 0.1, 1.0, role="operator_rate"),
+        Categorical("mutation", ["mixed", "gaussian"], role="operator"),
+        Real("mutation_prob", 0.01, 0.5, role="operator_rate"),
         *ext_params,
     ]
     return params, ext_conds, ext_conditions

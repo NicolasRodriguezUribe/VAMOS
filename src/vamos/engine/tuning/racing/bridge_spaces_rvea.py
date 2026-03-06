@@ -22,9 +22,9 @@ from .param_space import Int, ParamType, Real
 
 def _core_part() -> SpacePart:
     params: list[ParamType] = [
-        Int("n_partitions", 4, 12),
-        Real("alpha", 1.0, 4.0),
-        Real("adapt_freq", 0.05, 0.3),
+        Int("n_partitions", 4, 12, role="structural"),
+        Real("alpha", 1.0, 4.0, role="operator_rate"),
+        Real("adapt_freq", 0.05, 0.3, role="adaptive"),
     ]
     arch_params, arch_conds, arch_conditions = external_archive_part()
     return [*params, *arch_params], arch_conds, arch_conditions
