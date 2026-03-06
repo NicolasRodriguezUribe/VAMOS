@@ -10,6 +10,7 @@
     "src/vamos/engine/operators/impl/permutation.py": 525,
     "src/vamos/engine/operators/impl/real/crossover.py": 707,
     "src/vamos/engine/operators/impl/real/mutation.py": 456,
+    "src/vamos/foundation/kernel/numba_backend.py": 463,
     "src/vamos/ux/studio/problem_builder.py": 357,
     "src/vamos/ux/studio/problem_builder_backend.py": 450,
     "src/vamos/ux/studio/services.py": 440

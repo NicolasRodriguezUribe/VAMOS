@@ -65,6 +65,17 @@ def test_sbx_crossover_numba_change():
 
 
 @pytest.mark.numba
+def test_sbx_crossover_numba_preserves_odd_last_parent():
+    parents = np.random.default_rng(0).random((5, 3))
+    lower = np.zeros(3)
+    upper = np.ones(3)
+
+    offspring = sbx_crossover_numba(parents, 1.0, 20.0, lower, upper)
+
+    np.testing.assert_allclose(offspring[-1], parents[-1])
+
+
+@pytest.mark.numba
 def test_numba_backend_integration():
     """Verify NumbaBackend uses the new ops correctly."""
     from vamos.foundation.kernel.numba_backend import NumbaKernel

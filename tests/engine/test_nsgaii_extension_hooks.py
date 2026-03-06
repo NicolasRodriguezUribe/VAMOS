@@ -7,6 +7,7 @@ import pytest
 
 import vamos.engine.algorithm.nsgaii.ask_tell as ask_tell_module
 from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.engine.algorithm.nsgaii.helpers import build_mating_pool
 from vamos.engine.algorithm.nsgaii.injection import ImmigrationManager
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 
@@ -75,6 +76,35 @@ def test_ask_parent_pool_respects_filter_and_non_breeding(monkeypatch: pytest.Mo
 
     assert observed["candidate_indices"] is not None
     np.testing.assert_array_equal(observed["candidate_indices"], np.array([0, 2], dtype=int))
+
+
+def test_build_mating_pool_none_matches_explicit_full_population() -> None:
+    kernel = NumPyKernel()
+    ranks = np.array([0, 1, 0, 2, 1, 0], dtype=int)
+    crowding = np.array([np.inf, 0.3, 0.7, np.nan, 0.1, 0.5], dtype=float)
+    full = np.arange(ranks.size, dtype=int)
+
+    selected_default = build_mating_pool(
+        kernel,
+        ranks,
+        crowding,
+        pressure=2,
+        rng=np.random.default_rng(0),
+        parent_count=8,
+        selection_method="tournament",
+    )
+    selected_explicit = build_mating_pool(
+        kernel,
+        ranks,
+        crowding,
+        pressure=2,
+        rng=np.random.default_rng(0),
+        parent_count=8,
+        selection_method="tournament",
+        candidate_indices=full,
+    )
+
+    np.testing.assert_array_equal(selected_default, selected_explicit)
 
 
 @pytest.mark.parametrize(
@@ -157,6 +187,59 @@ def test_generation_callback_population_archive_payload_is_rich() -> None:
     assert isinstance(archive.get("X"), np.ndarray)
     assert isinstance(stats, dict)
     assert isinstance(stats.get("archive"), dict)
+
+
+def test_bounded_external_archive_uses_single_archive_object() -> None:
+    cfg = _base_cfg()
+    cfg["external_archive"] = {"capacity": 24, "pruning": "crowding"}
+
+    algo = NSGAII(cfg, NumPyKernel())
+    algo._initialize_run(IdentityProblem(), termination=("max_evaluations", 24), seed=0, eval_strategy=None, live_viz=None)
+
+    st = algo._st
+    assert st is not None
+    assert st.archive_manager is not None
+    assert st.result_archive is st.archive_manager
+
+
+def test_generational_archive_updates_only_nondominated_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
+    cfg = _base_cfg()
+    cfg["pop_size"] = 2
+    cfg["offspring_size"] = 2
+    cfg["external_archive"] = {"capacity": 4, "pruning": "crowding"}
+
+    algo = NSGAII(cfg, NumPyKernel())
+    algo._initialize_run(IdentityProblem(), termination=("max_evaluations", 4), seed=0, eval_strategy=None, live_viz=None)
+
+    st = algo._st
+    assert st is not None
+    st.X = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=float)
+    st.F = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=float)
+    st.G = None
+    st.pending_offspring = np.array([[0.5, 0.5], [0.9, 0.9]], dtype=float)
+
+    captured: dict[str, np.ndarray] = {}
+    original_update_archives = ask_tell_module.update_archives
+
+    def _spy_update_archives(
+        state: object,
+        kernel: object,
+        *,
+        X: np.ndarray | None = None,
+        F: np.ndarray | None = None,
+        G: np.ndarray | None = None,
+    ) -> None:
+        assert F is not None
+        captured["F"] = np.asarray(F, dtype=float).copy()
+        original_update_archives(state, kernel, X=X, F=F, G=G)
+
+    monkeypatch.setattr(ask_tell_module, "update_archives", _spy_update_archives)
+    algo.tell(SimpleNamespace(F=np.array([[0.5, 0.5], [0.9, 0.9]], dtype=float), G=None))
+
+    archive_F = captured["F"]
+    assert archive_F.shape == (3, 2)
+    assert np.any(np.all(np.isclose(archive_F, np.array([0.5, 0.5])), axis=1))
+    assert not np.any(np.all(np.isclose(archive_F, np.array([0.9, 0.9])), axis=1))
 
 
 def test_freeze_reinsert_reinjects_missing_active_candidate() -> None:

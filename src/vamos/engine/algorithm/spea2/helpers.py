@@ -178,19 +178,57 @@ def truncate_by_distance(dist_matrix: np.ndarray, keep: int) -> np.ndarray:
     np.ndarray
         Indices of retained solutions.
     """
-    candidates = list(range(dist_matrix.shape[0]))
-    if len(candidates) <= keep:
-        return np.asarray(candidates, dtype=int)
+    n = int(dist_matrix.shape[0])
+    if n <= keep:
+        return np.arange(n, dtype=int)
+    if keep <= 0:
+        return np.empty(0, dtype=int)
 
-    dist = dist_matrix.copy()
-    while len(candidates) > keep:
-        sub = dist[np.ix_(candidates, candidates)]
-        np.fill_diagonal(sub, np.inf)
-        nearest = np.partition(sub, 1, axis=1)[:, 1]
-        remove_pos = int(np.argmin(nearest))
-        del candidates[remove_pos]
+    dist = np.asarray(dist_matrix, dtype=float)
+    if dist.ndim != 2 or dist.shape[1] != n:
+        raise ValueError("dist_matrix must be a square 2D array.")
 
-    return np.asarray(candidates, dtype=int)
+    order = np.argsort(dist, axis=1, kind="mergesort")
+    active = np.ones(n, dtype=bool)
+    first_ptr = np.full(n, -1, dtype=int)
+    second_ptr = np.full(n, -1, dtype=int)
+    second_neighbor = np.full(n, np.inf, dtype=float)
+
+    def _refresh_neighbors(i: int) -> None:
+        first = -1
+        second = -1
+        for pos in range(n):
+            idx = int(order[i, pos])
+            if idx == i or not active[idx]:
+                continue
+            if first < 0:
+                first = pos
+            else:
+                second = pos
+                break
+        first_ptr[i] = first
+        second_ptr[i] = second
+        second_neighbor[i] = dist[i, int(order[i, second])] if second >= 0 else np.inf
+
+    for i in range(n):
+        _refresh_neighbors(i)
+
+    remaining = n
+    while remaining > keep:
+        ranking = second_neighbor.copy()
+        ranking[~active] = np.inf
+        remove_idx = int(np.argmin(ranking))
+        active[remove_idx] = False
+        second_neighbor[remove_idx] = np.inf
+        remaining -= 1
+
+        for i in np.flatnonzero(active):
+            if (first_ptr[i] >= 0 and int(order[i, first_ptr[i]]) == remove_idx) or (
+                second_ptr[i] >= 0 and int(order[i, second_ptr[i]]) == remove_idx
+            ):
+                _refresh_neighbors(int(i))
+
+    return np.flatnonzero(active)
 
 
 def environmental_selection(
