@@ -130,7 +130,7 @@ Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II stea
 \label{app:stats_main}
 %==============================================================================
 
-The descriptive summaries in the previous section suggest quality equivalence, but median and IQR alone cannot determine whether observed differences are statistically significant. We therefore apply Wilcoxon signed-rank tests (paired by seed) comparing \VAMOS{} against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). As a measure of practical significance, we report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{vargha2000critique} alongside each test ($\hat{A}_{12}>0.5$ favors \VAMOS{}; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also compute paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
+The descriptive summaries in the previous section suggest quality equivalence, but median and IQR alone cannot determine whether observed differences are statistically significant. We therefore apply Wilcoxon signed-rank tests (paired by seed) comparing \VAMOS{} against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). As a measure of practical significance, we report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{VD00} alongside each test ($\hat{A}_{12}>0.5$ favors \VAMOS{}; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also compute paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
 
 Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 21 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.3\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: \VAMOS{} is equivalent to pymoo on 14/21 problems and non-inferior on 16/21, with a median $\Delta$HV of $-0.03\%$. Similar patterns hold for jMetalPy. Table~\ref{tab:hv_robustness_summary_nsgaii} details robustness, and Fig.~\ref{fig:forest_ci_nsgaii} visualizes per-problem CIs as a forest plot. Detailed NSGA-II statistical tables are provided in Appendix~\ref{app:stats_nsgaii}, and corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
 
@@ -248,6 +248,74 @@ tuner = ModelBasedTuner(
 best_config, history = tuner.run(eval_fn)
 \end{lstlisting}
 
+
+%==============================================================================
+\section{Parameter Spaces for pymoo and jMetalPy}
+\label{app:parameter_spaces}
+%==============================================================================
+
+Tables~\ref{tab:parameter_space_pymoo} and~\ref{tab:parameter_space_jmetalpy} detail the configurable parameter spaces for NSGA-II in pymoo and jMetalPy, respectively.
+
+\begin{table*}[htbp]
+\centering
+\caption{Parameter space for NSGA-II in pymoo (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 20 (11 always active, 9~conditional).}
+\label{tab:parameter_space_pymoo}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
+\multirow{2}{*}{General} & Pop.\ Size: integer; default $\mathbf{100}$ & -- \\
+ & Offspring Count (\texttt{n\_offsprings}): integer; default = Pop.\ Size & -- \\ \midrule
+\multirow{1}{*}{Initialization} & \{\textbf{Random}, LHS\} & -- \\ \midrule
+\multirow{3}{*}{Selection} & \{\textbf{Tournament}, Random\} & -- \\
+ & \textit{Tournament Size} (\texttt{pressure}): integer; default $\mathbf{2}$ & \textit{Selection} = Tournament \\
+ & Crowding Metric $\in$ \{\textbf{cd}, pcd, ce, mnn, 2nn\} & -- \\ \midrule
+\multirow{4}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0, 1}$; default $\mathbf{0.9}$} \\
+ & \textbf{SBX} & \textit{Dist.\ Index} $\eta \in \Realdomain{3, 30}$; default $\mathbf{15}$. \textit{Per-var.\ prob.}\ $\in \Realdomain{0.1, 0.9}$; default $\mathbf{0.5}$ \\
+ & PCX & $\eta \in \Realdomain{0.01, 0.3}$, $\zeta \in \Realdomain{0.01, 0.3}$ \\
+ & DEX & $CR \in \Realdomain{0, 1}$; default $0.7$. $F$: real or \texttt{None} \\ \midrule
+\multirow{3}{*}{Mutation} & \multicolumn{2}{l}{\textit{Global:} Prob.\ $\in \Realdomain{0, 1}$; default $\mathbf{0.9}$. Per-var.\ prob.; default $\min(0.5, 1/n)$} \\
+ & \textbf{Polynomial} & \textit{Dist.\ Index} $\eta \in \Realdomain{3, 30}$; default $\mathbf{20}$ \\
+ & Gaussian & $\sigma \in \Realdomain{0.01, 0.25}$; default $0.1$ \\ \midrule
+\multirow{1}{*}{Repair} & \{\textbf{clip}, bounce-back, to-bound\} & -- \\ \bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{table*}[htbp]
+\centering
+\caption{Parameter space for NSGA-II in jMetalPy (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 29 (10 always active, 19~conditional).}
+\label{tab:parameter_space_jmetalpy}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
+\multirow{5}{*}{General} & Pop.\ Size: integer & -- \\
+ & Offspring Pop.\ Size: integer; $= 1$ for steady-state & -- \\
+ & Use External Archive $\in$ \{True, \textbf{False}\} & -- \\
+ & \textit{Archive Type} $\in$ \{NonDominated, CrowdingDist., DistanceBased\} & \textit{Archive} = True \\
+ & \textit{Archive Max Size}: integer & \textit{Archive} = True, bounded \\ \midrule
+\multirow{1}{*}{Initialization} & \{\textbf{Random}, Injector\} & -- \\ \midrule
+\multirow{2}{*}{Selection} & \{\textbf{Binary Tournament}, Tournament, Random\} & -- \\
+ & \textit{Tournament Size}: integer $\geq 2$ & \textit{Selection} = Tournament \\ \midrule
+\multirow{7}{*}{Crossover} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0, 1}$} \\
+ & \textbf{SBX} & \textit{Dist.\ Index}; default $\mathbf{20}$ \\
+ & BLX-$\alpha$ & $\alpha$; default $0.5$ \\
+ & BLX-$\alpha\beta$ & $\alpha$, $\beta$; default $0.5$ each \\
+ & Arithmetic & -- \\
+ & UNDX & $\zeta$; default $0.5$. $\eta$; default $0.35$ \\
+ & DE & $CR \in \Realdomain{0, 1}$, $F \in \Realdomain{0, 2}$, $K \in \Realdomain{0, 1}$ \\ \midrule
+\multirow{7}{*}{Mutation} & \multicolumn{2}{l}{\textit{Global:} Probability $\in \Realdomain{0, 1}$; conventionally $1/n$} \\
+ & \textbf{Polynomial} & \textit{Dist.\ Index}; default $\mathbf{20}$ \\
+ & Simple Random & -- \\
+ & Uniform & \textit{Perturbation}; default $0.5$ \\
+ & Non-Uniform & \textit{Perturbation}, \textit{Max Iterations} \\
+ & L\'evy Flight & $\beta$; default $1.5$. \textit{Step size}; default $0.01$ \\
+ & Power Law & $\delta$; default $1.0$ \\ \midrule
+\multirow{1}{*}{Repair} & \{\textbf{Clamp}, Random Uniform, Reflective, Bound Swap\} & -- \\ \bottomrule
+\end{tabular}%
+}
+\end{table*}
 
 %==============================================================================
 % Bibliography
