@@ -50,7 +50,9 @@ RealMutationName: TypeAlias = Literal[
     "levy_flight",
     "power_law",
 ]
-RealRepairName: TypeAlias = Literal["clip", "clamp", "reflect", "random", "resample", "round", "wrap", "wrapping", "midpoint", "midpoint_base", "gradient"]
+RealRepairName: TypeAlias = Literal[
+    "clip", "clamp", "reflect", "random", "resample", "round", "wrap", "wrapping", "midpoint", "midpoint_base", "gradient"
+]
 
 BinaryCrossoverName: TypeAlias = Literal["one_point", "single_point", "1point", "spx", "two_point", "2point", "uniform", "hux"]
 BinaryMutationName: TypeAlias = Literal["bitflip", "bit_flip", "segment_inversion"]

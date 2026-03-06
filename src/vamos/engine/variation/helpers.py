@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from vamos.engine.variation.protocol import CrossoverName, MutationName, RepairName
 from vamos.engine.operators.impl.binary import (
     bit_flip_mutation,
     hux_crossover,
@@ -41,6 +40,7 @@ from vamos.engine.operators.impl.permutation import (
     two_opt_mutation,
 )
 from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.engine.variation.protocol import CrossoverName, MutationName, RepairName
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.registry import Registry
 

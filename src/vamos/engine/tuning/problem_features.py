@@ -51,12 +51,8 @@ class ProblemFeatures:
         # Normalized numeric distances
         d += abs(self.n_var - other.n_var) / max(self.n_var, other.n_var, 1)
         d += abs(self.n_obj - other.n_obj) / max(self.n_obj, other.n_obj, 1)
-        d += abs(self.n_constraints - other.n_constraints) / max(
-            self.n_constraints, other.n_constraints, 1
-        )
-        d += abs(self.var_range_ratio - other.var_range_ratio) / max(
-            self.var_range_ratio, other.var_range_ratio, 1.0
-        )
+        d += abs(self.n_constraints - other.n_constraints) / max(self.n_constraints, other.n_constraints, 1)
+        d += abs(self.var_range_ratio - other.var_range_ratio) / max(self.var_range_ratio, other.var_range_ratio, 1.0)
         # Categorical mismatches
         if self.encoding != other.encoding:
             d += 1.0

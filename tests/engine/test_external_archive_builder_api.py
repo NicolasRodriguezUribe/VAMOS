@@ -28,10 +28,10 @@ _BUILDERS = [
 @pytest.mark.parametrize("builder_factory", _BUILDERS)
 def test_external_archive_builder_accepts_capacity_and_pruning_only(builder_factory):
     builder = builder_factory()
-    builder.external_archive(capacity=50, pruning="random")
+    builder.external_archive(capacity=50, pruning="knn")
     ext_cfg = builder._cfg["external_archive"]  # type: ignore[attr-defined]
     assert ext_cfg.capacity == 50
-    assert ext_cfg.pruning == "random"
+    assert ext_cfg.pruning == "knn"
 
 
 @pytest.mark.parametrize("builder_factory", _BUILDERS)

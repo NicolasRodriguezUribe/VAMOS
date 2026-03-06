@@ -8,6 +8,7 @@ from typing import Any, cast
 
 import numpy as np
 
+from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.engine.variation.helpers import (
     validate_operator_support,
 )
@@ -20,7 +21,6 @@ from vamos.engine.variation.protocol import (
     VariationWorkspaceProtocol,
 )
 from vamos.engine.variation.strategies import VariationContext, make_encoding_strategy
-from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.problem.types import ProblemProtocol
 

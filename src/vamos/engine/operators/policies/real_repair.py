@@ -6,8 +6,8 @@ from typing import Any, cast
 
 import numpy as np
 
-from vamos.engine.variation.protocol import RepairConfigValue, RepairName, RepairOperator
 from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.engine.variation.protocol import RepairConfigValue, RepairName, RepairOperator
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 __all__ = ["apply_policy_repair", "resolve_policy_repair"]

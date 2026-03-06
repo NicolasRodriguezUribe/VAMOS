@@ -15,12 +15,12 @@ DeduplicateIn = Literal["objective", "decision", "both"]
 _VALID_PRUNE_POLICIES = {"crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"}
 
 
-def normalize_prune_policy(policy: str) -> CanonicalPrunePolicy:
+def normalize_prune_policy(policy: str) -> PrunePolicy:
     normalized = policy
     if normalized not in _VALID_PRUNE_POLICIES:
         valid = ", ".join(sorted(_VALID_PRUNE_POLICIES))
         raise ValueError(f"Unsupported prune_policy '{policy}'. Expected one of: {valid}.")
-    return cast(CanonicalPrunePolicy, normalized)
+    return cast(PrunePolicy, normalized)
 
 
 @dataclass(frozen=True)
@@ -289,7 +289,7 @@ class BoundedArchive:
                 self.X = self.X[keep]
             return int(np.sum(~keep)), "crowding"
 
-        if policy in ("hv", "mc_hv"):
+        if policy in {"hv", "mc_hv"}:
             m = self.F.shape[1]
             ref = self._ref_point(m)
             if m == 2:

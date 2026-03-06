@@ -4,10 +4,16 @@ from typing import Any
 
 from vamos.engine.hooks.genealogy import (
     DefaultGenealogyTracker as GenealogyTracker,
+)
+from vamos.engine.hooks.genealogy import (
     GenealogyRecord,
     IndividualID,
-    generation_contributions as _generation_contributions,
     get_lineage,
+)
+from vamos.engine.hooks.genealogy import (
+    generation_contributions as _generation_contributions,
+)
+from vamos.engine.hooks.genealogy import (
     operator_success_stats as _operator_success_stats,
 )
 

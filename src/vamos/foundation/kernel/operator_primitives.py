@@ -17,7 +17,15 @@ def _get_sbx_single_pair_numba() -> Any:
 
         @njit(cache=True)
         def _kernel(  # type: ignore[no-untyped-def]
-            p1, p2, xl, xu, eta, prob_var, rand_var, rand_sbx, rand_swap,
+            p1,
+            p2,
+            xl,
+            xu,
+            eta,
+            prob_var,
+            rand_var,
+            rand_sbx,
+            rand_swap,
         ):
             n = p1.shape[0]
             c1 = p1.copy()
@@ -37,7 +45,7 @@ def _get_sbx_single_pair_numba() -> Any:
                 beta = 1.0 + 2.0 * (y1 - xl[j]) / diff
                 if beta < eps:
                     beta = eps
-                alpha = 2.0 - beta ** neg_eta1
+                alpha = 2.0 - beta**neg_eta1
                 if alpha < eps:
                     alpha = eps
                 if r <= 1.0 / alpha:
@@ -49,7 +57,7 @@ def _get_sbx_single_pair_numba() -> Any:
                 beta = 1.0 + 2.0 * (xu[j] - y2) / diff
                 if beta < eps:
                     beta = eps
-                alpha = 2.0 - beta ** neg_eta1
+                alpha = 2.0 - beta**neg_eta1
                 if alpha < eps:
                     alpha = eps
                 if r <= 1.0 / alpha:

@@ -13,7 +13,9 @@ import time
 from typing import Any
 
 import numpy as np
-from vamos.ux.studio.problem_builder_templates import _DEFAULT_TEMPLATE, example_objectives
+
+from vamos.ux.studio.problem_builder_templates import example_objectives
+
 _MAX_USER_CODE_CHARS = 12000
 _PREVIEW_TIMEOUT_SECONDS = 10.0
 _DEFAULT_SANDBOX_PROFILE = "basic"

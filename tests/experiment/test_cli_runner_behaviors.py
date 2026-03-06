@@ -50,15 +50,13 @@ def test_cli_external_archive_bounded_configuration(monkeypatch):
         "--external-archive-size",
         "64",
         "--external-archive-pruning",
-        "spea2",
+        "knn",
     ]
     monkeypatch.setattr(sys, "argv", argv)
     args = cli.parse_args(default_cfg)
     assert args.external_archive is not None
     assert args.external_archive.capacity == 64
-    assert args.external_archive.pruning == "spea2"
-
-
+    assert args.external_archive.pruning == "knn"
 
 
 def test_build_hv_stop_config_uses_builtin_front():

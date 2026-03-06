@@ -7,7 +7,14 @@ from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 
-from .base import ConstraintModeStr, ResultMode, _normalize_tournament_selection_kwargs, _require_fields, _SerializableConfig
+from .base import (
+    ConstraintModeStr,
+    ResultMode,
+    _build_external_archive_config,
+    _normalize_tournament_selection_kwargs,
+    _require_fields,
+    _SerializableConfig,
+)
 
 
 @dataclass(frozen=True)
@@ -129,7 +136,7 @@ class _SMSEMOAConfigBuilder:
             capacity: Maximum number of solutions. ``None`` means unbounded.
             **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
         self._cfg.setdefault("result_mode", "non_dominated")
         return self
 

@@ -7,11 +7,6 @@ to focused component modules.
 
 from __future__ import annotations
 
-from vamos.engine.archive.factory import (
-    resolve_external_archive,
-    setup_archive,
-    update_archive,
-)
 from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     get_live_viz,
@@ -29,6 +24,11 @@ from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.results import build_result
 from vamos.engine.algorithm.components.state import AlgorithmState
 from vamos.engine.algorithm.components.termination import parse_termination
+from vamos.engine.archive.factory import (
+    resolve_external_archive,
+    setup_archive,
+    update_archive,
+)
 
 __all__ = [
     # State

@@ -41,8 +41,7 @@ def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
         return np.asarray(_moocore.hv_contributions(F, ref=ref), dtype=float)
     if not _HV_FALLBACK_WARNED:
         warnings.warn(
-            "Hypervolume contributions requested but 'moocore' is not installed; "
-            "falling back to crowding distance.",
+            "Hypervolume contributions requested but 'moocore' is not installed; falling back to crowding distance.",
             UserWarning,
             stacklevel=2,
         )
@@ -72,17 +71,43 @@ def _unique_rows_with_tolerance(values: np.ndarray, tol: float) -> np.ndarray:
         unique_idx.sort()
         return np.asarray(unique_idx, dtype=int)
 
-    keep = np.ones(n, dtype=bool)
+    # Fast exact no-duplicate check:
+    # If all rows are separated by more than `tol` in the first coordinate,
+    # no pair can satisfy the all-dim <= tol duplicate criterion.
+    first = np.asarray(values[:, 0], dtype=float)
+    order = np.argsort(first, kind="mergesort")
+    if np.all(np.diff(first[order]) > tol):
+        return np.arange(n, dtype=int)
+
+    # Keep-first deduplication with 1D bucket indexing on the first coordinate.
+    # Two rows can only be duplicates if their first coordinates differ by <= tol,
+    # so only bucket neighbors [b-1, b, b+1] need exact all-dim checks.
+    buckets: dict[int, list[int]] = {}
+    keep_idx: list[int] = []
     for i in range(n):
-        if not keep[i]:
+        fi = first[i]
+        if not np.isfinite(fi):
+            # Preserve previous semantics: non-finite rows are not considered duplicates
+            # because comparisons produce NaN/inf and fail the <= tol test.
+            keep_idx.append(i)
             continue
-        diff = np.abs(values[i + 1 :] - values[i])
-        if diff.size == 0:
-            continue
-        dup_mask = np.all(diff <= tol, axis=1)
-        if dup_mask.any():
-            keep[i + 1 :][dup_mask] = False
-    return np.flatnonzero(keep)
+
+        bucket = int(np.floor(fi / tol))
+        row = values[i]
+        is_dup = False
+        for b in (bucket - 1, bucket, bucket + 1):
+            for k in buckets.get(b, ()):
+                if np.all(np.abs(row - values[k]) <= tol):
+                    is_dup = True
+                    break
+            if is_dup:
+                break
+
+        if not is_dup:
+            keep_idx.append(i)
+            buckets.setdefault(bucket, []).append(i)
+
+    return np.asarray(keep_idx, dtype=int)
 
 
 def _subset_arrays(
@@ -199,9 +224,7 @@ class _BaseArchive:
             if keep_idx.ndim != 1:
                 raise ValueError("_select_subset() must return a 1D index array.")
             if keep_idx.size != self.truncate_size:
-                raise ValueError(
-                    f"_select_subset() returned {keep_idx.size} indices, expected {self.truncate_size}."
-                )
+                raise ValueError(f"_select_subset() returned {keep_idx.size} indices, expected {self.truncate_size}.")
             X_nd, F_nd, G_nd = _subset_arrays(X_nd, F_nd, G_nd, keep_idx)
 
         self._replace_contents(X_nd, F_nd, G_nd)
@@ -413,9 +436,7 @@ class HypervolumeArchive(_BaseArchive):
         if ref_point is not None:
             ref = np.asarray(ref_point, dtype=float)
             if ref.ndim != 1 or ref.shape[0] != self._n_obj:
-                raise ValueError(
-                    f"hv_ref_point must be 1D with length {self._n_obj}, got shape {ref.shape}."
-                )
+                raise ValueError(f"hv_ref_point must be 1D with length {self._n_obj}, got shape {ref.shape}.")
             self._fixed_ref = ref.copy()
 
     def _stable_ref(self, F: np.ndarray) -> np.ndarray:

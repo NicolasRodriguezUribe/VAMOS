@@ -18,6 +18,7 @@ from typing import Any
 
 import pytest
 
+from vamos.engine.algorithm.variants import VARIANT_TO_CANONICAL
 from vamos.engine.tuning.racing.bridge import (
     # AGE-MOEA
     build_agemoea_binary_config_space,
@@ -80,7 +81,6 @@ from vamos.engine.tuning.racing.param_space import (
     Int,
     Real,
 )
-from vamos.engine.algorithm.variants import VARIANT_TO_CANONICAL
 
 # ---------------------------------------------------------------------------
 # Registry: (algo_name, encoding, builder)

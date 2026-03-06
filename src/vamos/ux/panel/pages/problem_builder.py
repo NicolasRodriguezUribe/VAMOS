@@ -204,14 +204,16 @@ class ProblemBuilderState(param.Parameterized):
                     fig.update_layout(title="Pareto Front Preview")
                 elif F_arr.shape[1] == 3:
                     fig = px.scatter_3d(
-                        x=F_arr[:, 0], y=F_arr[:, 1], z=F_arr[:, 2],
+                        x=F_arr[:, 0],
+                        y=F_arr[:, 1],
+                        z=F_arr[:, 2],
                         labels={"x": "f1", "y": "f2", "z": "f3"},
                     )
                     fig.update_layout(title="Pareto Front Preview (3D)")
                 else:
                     import pandas as pd
 
-                    df = pd.DataFrame(F_arr, columns=[f"f{i+1}" for i in range(F_arr.shape[1])])
+                    df = pd.DataFrame(F_arr, columns=[f"f{i + 1}" for i in range(F_arr.shape[1])])
                     fig = px.parallel_coordinates(df)
                     fig.update_layout(title="Pareto Front Preview (Parallel Coordinates)")
                 self.preview_plot = fig
@@ -368,7 +370,8 @@ def render_problem_builder() -> pn.Column:
     preview_btn.on_click(state.run_preview)
 
     run_btn = pn.widgets.Button(
-        name="Run Full Experiment", button_type="success",
+        name="Run Full Experiment",
+        button_type="success",
         disabled=pn.bind(lambda r: r, state.param.running),
     )
     run_btn.on_click(state.run_full_experiment)
@@ -406,8 +409,8 @@ def render_problem_builder() -> pn.Column:
         state.param.ai_description,
         name="Describe your optimization problem",
         placeholder="E.g.: Minimize cost and deflection of a cantilever beam. "
-                    "Width between 0.5 and 5 cm, height between 1 and 10 cm. "
-                    "Stress must not exceed 100 MPa.",
+        "Width between 0.5 and 5 cm, height between 1 and 10 cm. "
+        "Stress must not exceed 100 MPa.",
         height=150,
     )
     ai_generate_btn = pn.widgets.Button(name="Generate Code", button_type="primary")

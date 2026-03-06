@@ -2,8 +2,8 @@ import pytest
 
 from vamos import OptimizationResult, optimize
 from vamos.engine.algorithm.config import MOEADConfig, NSGAIIConfig
-from vamos.foundation.problem.binary import BinaryKnapsackProblem
 from vamos.foundation.exceptions import InvalidAlgorithmError
+from vamos.foundation.problem.binary import BinaryKnapsackProblem
 from vamos.foundation.problem.tsp import TSPProblem
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 

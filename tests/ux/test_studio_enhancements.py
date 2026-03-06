@@ -166,5 +166,3 @@ class TestGenerateScriptWithConstraints:
         )
         assert "n_constraints" not in script
         compile(script, "<test>", "exec")
-
-

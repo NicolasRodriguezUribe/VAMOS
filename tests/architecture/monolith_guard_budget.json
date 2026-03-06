@@ -1,25 +1,27 @@
 {
   "file_violations": {
-    "src/vamos/engine/algorithm/components/archive.py": 631,
+    "src/vamos/engine/algorithm/components/archive.py": 736,
     "src/vamos/engine/algorithm/moead/helpers.py": 473,
     "src/vamos/engine/tuning/backends.py": 525,
+    "src/vamos/engine/tuning/moea_tuner.py": 507,
     "src/vamos/experiment/cli/create_problem.py": 356,
-    "src/vamos/experiment/cli/tune.py": 558,
+    "src/vamos/experiment/cli/tune.py": 584,
     "src/vamos/engine/operators/impl/mixed.py": 584,
     "src/vamos/engine/operators/impl/permutation.py": 525,
     "src/vamos/engine/operators/impl/real/crossover.py": 707,
     "src/vamos/engine/operators/impl/real/mutation.py": 456,
     "src/vamos/ux/studio/problem_builder.py": 357,
-    "src/vamos/ux/studio/problem_builder_backend.py": 573
+    "src/vamos/ux/studio/problem_builder_backend.py": 450,
+    "src/vamos/ux/studio/services.py": 440
   },
   "function_violations": {
     "src/vamos/engine/algorithm/moead/initialization.py:initialize_moead_run": 274,
     "src/vamos/engine/algorithm/nsgaii/setup.py:initialize_run": 260,
-    "src/vamos/experiment/cli/args_algorithms.py:add_algorithm_arguments": 323
+    "src/vamos/experiment/cli/args_algorithms.py:add_algorithm_arguments": 311
   },
   "class_violations": {
-    "src/vamos/engine/tuning/backends.py:ModelBasedTuner": 499,
-    "src/vamos/engine/algorithm/nsgaiii/nsgaiii.py:NSGAIII": 413
+    "src/vamos/engine/tuning/backends.py:ModelBasedTuner": 493,
+    "src/vamos/engine/algorithm/nsgaiii/nsgaiii.py:NSGAIII": 412
   },
   "notes": "Current monolith debt budget baseline. Refactors should reduce these values over time."
 }

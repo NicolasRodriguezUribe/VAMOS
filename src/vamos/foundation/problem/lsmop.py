@@ -1,22 +1,27 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import cast
 
 import numpy as np
 
 from vamos.foundation.problem.base import Problem
 
 
+def _as_float_vector(values: object) -> np.ndarray:
+    return cast(np.ndarray, np.asarray(values, dtype=float))
+
+
 def _sphere(x: np.ndarray) -> np.ndarray:
-    return np.sum(np.square(x), axis=1)
+    return _as_float_vector(np.sum(np.square(x), axis=1))
 
 
 def _schwefel(x: np.ndarray) -> np.ndarray:
-    return np.max(np.abs(x), axis=1)
+    return _as_float_vector(np.max(np.abs(x), axis=1))
 
 
 def _rastrigin(x: np.ndarray) -> np.ndarray:
-    return np.sum(np.square(x) - 10.0 * np.cos(2.0 * np.pi * x) + 10.0, axis=1)
+    return _as_float_vector(np.sum(np.square(x) - 10.0 * np.cos(2.0 * np.pi * x) + 10.0, axis=1))
 
 
 def _rosenbrock(x: np.ndarray) -> np.ndarray:
@@ -24,7 +29,7 @@ def _rosenbrock(x: np.ndarray) -> np.ndarray:
         return np.zeros(x.shape[0], dtype=float)
     a = x[:, :-1]
     b = x[:, 1:]
-    return np.sum(100.0 * np.square(np.square(a) - b) + np.square(a - 1.0), axis=1)
+    return _as_float_vector(np.sum(100.0 * np.square(np.square(a) - b) + np.square(a - 1.0), axis=1))
 
 
 def _ackley(x: np.ndarray) -> np.ndarray:
@@ -33,7 +38,7 @@ def _ackley(x: np.ndarray) -> np.ndarray:
         return np.zeros(x.shape[0], dtype=float)
     sum_sq = np.sum(np.square(x), axis=1)
     sum_cos = np.sum(np.cos(2.0 * np.pi * x), axis=1)
-    return 20.0 - 20.0 * np.exp(-0.2 * np.sqrt(sum_sq / d)) - np.exp(sum_cos / d) + np.e
+    return _as_float_vector(20.0 - 20.0 * np.exp(-0.2 * np.sqrt(sum_sq / d)) - np.exp(sum_cos / d) + np.e)
 
 
 def _griewank(x: np.ndarray) -> np.ndarray:
@@ -43,7 +48,7 @@ def _griewank(x: np.ndarray) -> np.ndarray:
     sum_term = np.sum(np.square(x) / 4000.0, axis=1)
     denom = np.sqrt(np.arange(1, d + 1, dtype=float))
     prod_term = np.prod(np.cos(x / denom), axis=1)
-    return sum_term - prod_term + 1.0
+    return _as_float_vector(sum_term - prod_term + 1.0)
 
 
 class _LSMOPBase(Problem):
@@ -162,7 +167,7 @@ class _LSMOP1To4Base(_LSMOPBase):
         right[:, 1:] = 1.0 - np.flip(X[:, : self.n_obj - 1], axis=1)
 
         operand = left * right
-        return (1.0 + G_norm) * operand
+        return _as_float_vector((1.0 + G_norm) * operand)
 
 
 class _LSMOP5To8Base(_LSMOPBase):
@@ -180,7 +185,7 @@ class _LSMOP5To8Base(_LSMOPBase):
 
         operand = left * right
         shifted = np.concatenate((G_norm[:, 1:], np.zeros((n, 1), dtype=float)), axis=1)
-        return (1.0 + G_norm + shifted) * operand
+        return _as_float_vector((1.0 + G_norm + shifted) * operand)
 
 
 class LSMOP1(_LSMOP1To4Base):

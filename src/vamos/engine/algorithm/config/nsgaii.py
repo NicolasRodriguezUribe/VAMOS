@@ -12,6 +12,7 @@ from .base import (
     ConstraintModeStr,
     LiveCallbackMode,
     ResultMode,
+    _build_external_archive_config,
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
@@ -104,10 +105,9 @@ class _NSGAIIConfigBuilder:
 
         Args:
             capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`
-                (e.g. ``pruning``, ``archive_type``, ``epsilon``).
+            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
         """
-        self._cfg["external_archive"] = ExternalArchiveConfig(capacity=capacity, **kwargs)
+        self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
         self._cfg.setdefault("result_mode", "non_dominated")
         return self
 

@@ -10,14 +10,18 @@ if TYPE_CHECKING:
     from vamos.engine.algorithm.components.archive import (
         CrowdingDistanceArchive,
         HypervolumeArchive,
+        MaxMinArchive,
+        ReferenceDirectionsArchive,
         SPEA2Archive,
         UnboundedArchive,
     )
     from vamos.engine.algorithm.components.state import AlgorithmState
     from vamos.foundation.kernel.backend import KernelBackend
 
-    ArchiveManager = CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive | UnboundedArchive
-    ResultArchiveManager = CrowdingDistanceArchive | HypervolumeArchive | SPEA2Archive
+    ArchiveManager = (
+        CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive
+    )
+    ResultArchiveManager = CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive
 else:
     ArchiveManager = Any
     ResultArchiveManager = Any
@@ -51,6 +55,8 @@ def setup_archive(
     from vamos.engine.algorithm.components.archive import (
         CrowdingDistanceArchive,
         HypervolumeArchive,
+        MaxMinArchive,
+        ReferenceDirectionsArchive,
         SPEA2Archive,
         UnboundedArchive,
     )
@@ -67,7 +73,7 @@ def setup_archive(
             dtype=dtype,
             n_con=n_con,
         )
-    elif pruning in {"hv_contrib", "mc_hv_contrib"}:
+    elif pruning in {"hv", "mc_hv"}:
         manager = HypervolumeArchive(
             capacity,
             n_var,
@@ -75,7 +81,7 @@ def setup_archive(
             dtype,
             n_con=n_con,
         )
-    elif pruning == "spea2":
+    elif pruning == "knn":
         manager = SPEA2Archive(
             capacity,
             n_var,
@@ -83,6 +89,23 @@ def setup_archive(
             dtype,
             n_con=n_con,
             constraint_mode="feasibility",
+        )
+    elif pruning == "maxmin":
+        manager = MaxMinArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            n_con=n_con,
+        )
+    elif pruning == "ref_dirs":
+        manager = ReferenceDirectionsArchive(
+            capacity,
+            n_var,
+            n_obj,
+            dtype,
+            rng_seed=ext_cfg.rng_seed,
+            n_con=n_con,
         )
     else:
         manager = CrowdingDistanceArchive(
@@ -110,23 +133,40 @@ def setup_result_archive(
     from vamos.engine.algorithm.components.archive import (
         CrowdingDistanceArchive,
         HypervolumeArchive,
+        MaxMinArchive,
+        ReferenceDirectionsArchive,
         SPEA2Archive,
     )
 
-    if ext_cfg.pruning in {"hv_contrib", "mc_hv_contrib"}:
+    if ext_cfg.pruning in {"hv", "mc_hv"}:
         return HypervolumeArchive(
             ext_cfg.capacity,
             n_var,
             n_obj,
             dtype,
         )
-    if ext_cfg.pruning == "spea2":
+    if ext_cfg.pruning == "knn":
         return SPEA2Archive(
             ext_cfg.capacity,
             n_var,
             n_obj,
             dtype,
             constraint_mode="feasibility",
+        )
+    if ext_cfg.pruning == "maxmin":
+        return MaxMinArchive(
+            ext_cfg.capacity,
+            n_var,
+            n_obj,
+            dtype,
+        )
+    if ext_cfg.pruning == "ref_dirs":
+        return ReferenceDirectionsArchive(
+            ext_cfg.capacity,
+            n_var,
+            n_obj,
+            dtype,
+            rng_seed=ext_cfg.rng_seed,
         )
     return CrowdingDistanceArchive(
         ext_cfg.capacity,

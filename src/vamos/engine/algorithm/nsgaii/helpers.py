@@ -11,8 +11,11 @@ import numpy as np
 
 from vamos.engine.hooks.genealogy import (
     GenealogyTracker,
+)
+from vamos.engine.hooks.genealogy import (
     generation_contributions as genealogy_generation_contributions,
-    get_lineage,
+)
+from vamos.engine.hooks.genealogy import (
     operator_success_stats as genealogy_operator_success_stats,
 )
 from vamos.foundation.constraints.utils import compute_violation, is_feasible

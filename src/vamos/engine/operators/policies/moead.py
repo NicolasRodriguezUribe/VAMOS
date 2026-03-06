@@ -13,7 +13,6 @@ from typing import Any, TypeAlias, cast
 
 import numpy as np
 
-from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.engine.algorithm.components.utils import resolve_prob_expression
 from vamos.engine.operators.impl.binary import (
     bit_flip_mutation,
@@ -51,6 +50,7 @@ from vamos.engine.operators.impl.permutation import (
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.engine.operators.policies.real_repair import apply_policy_repair, resolve_policy_repair
+from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
 # Operator registries

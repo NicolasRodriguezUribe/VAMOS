@@ -46,7 +46,7 @@ def _logger() -> logging.Logger:
 PHASE_A_ROLES = ("structural", "population")
 PHASE_B_ROLES = ("operator",)
 PHASE_C_ROLES = ("operator_rate", "adaptive")
-_CONDITION_CFG_KEY_RE = re.compile(r"cfg\['([^']+)'\]")
+_CONDITION_CFG_KEY_PATTERN = r"cfg\['([^']+)'\]"
 
 
 @dataclass
@@ -313,10 +313,7 @@ class MOEATuner:
                 _logger().info("[moea-tuner] No active params in phase %s; skipping.", phase_name)
             return PhaseResult(phase=phase_name, best_config={}, history=[], diagnostics=[])
 
-        active_conditions = [
-            c for c in (full_param_space.conditions or [])
-            if c.param_name in active_params
-        ]
+        active_conditions = [c for c in (full_param_space.conditions or []) if c.param_name in active_params]
         context_params = self._build_condition_context_params(
             conditions=active_conditions,
             active_params=active_params,
@@ -472,10 +469,7 @@ class MOEATuner:
         diag = phase_result.diagnostics[-1]
         if diag.confidence < 0.5:
             return
-        candidate_params = [
-            p for p in role_groups.get(diag.suggestion, [])
-            if p.name in frozen_params
-        ]
+        candidate_params = [p for p in role_groups.get(diag.suggestion, []) if p.name in frozen_params]
         if not candidate_params:
             return
 
@@ -532,7 +526,7 @@ def _allocate_phase_experiments(
 
 
 def _extract_cfg_keys(expr: str) -> list[str]:
-    return [m.group(1) for m in _CONDITION_CFG_KEY_RE.finditer(expr)]
+    return [m.group(1) for m in re.finditer(_CONDITION_CFG_KEY_PATTERN, expr)]
 
 
 def _default_value(spec: ParamType) -> Any:

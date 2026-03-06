@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import math
+from typing import cast
 
 import numpy as np
 
 from vamos.foundation.problem.base import Problem
+
+
+def _as_float_vector(values: object) -> np.ndarray:
+    return cast(np.ndarray, np.asarray(values, dtype=float))
 
 
 def _safe_divide(num: np.ndarray, den: np.ndarray, *, eps: float = 1e-12) -> np.ndarray:
@@ -16,11 +21,11 @@ def _safe_divide(num: np.ndarray, den: np.ndarray, *, eps: float = 1e-12) -> np.
 
 
 def _safe_sqrt(expr: np.ndarray | float) -> np.ndarray:
-    return np.sqrt(np.maximum(np.asarray(expr, dtype=float), 0.0))
+    return _as_float_vector(np.sqrt(np.maximum(np.asarray(expr, dtype=float), 0.0)))
 
 
 def _safe_arcsin(x: np.ndarray) -> np.ndarray:
-    return np.arcsin(np.clip(np.asarray(x, dtype=float), -1.0, 1.0))
+    return _as_float_vector(np.arcsin(np.clip(np.asarray(x, dtype=float), -1.0, 1.0)))
 
 
 def _prepare_output(
@@ -43,11 +48,11 @@ def _prepare_output(
 
 
 def _dtlz_g1(X_m: np.ndarray, k: int) -> np.ndarray:
-    return 100.0 * (k + np.sum(np.square(X_m - 0.5) - np.cos(20.0 * np.pi * (X_m - 0.5)), axis=1))
+    return _as_float_vector(100.0 * (k + np.sum(np.square(X_m - 0.5) - np.cos(20.0 * np.pi * (X_m - 0.5)), axis=1)))
 
 
 def _dtlz_g2(X_m: np.ndarray) -> np.ndarray:
-    return np.sum(np.square(X_m - 0.5), axis=1)
+    return _as_float_vector(np.sum(np.square(X_m - 0.5), axis=1))
 
 
 def _dtlz1_objectives(X_head: np.ndarray, g: np.ndarray, n_obj: int) -> np.ndarray:
@@ -79,12 +84,12 @@ def _dtlz23_objectives(X_head: np.ndarray, g: np.ndarray, n_obj: int) -> np.ndar
 
 
 def _constraint_c1_linear(F: np.ndarray) -> np.ndarray:
-    return -(1.0 - F[:, -1] / 0.6 - np.sum(F[:, :-1] / 0.5, axis=1))
+    return _as_float_vector(-(1.0 - F[:, -1] / 0.6 - np.sum(F[:, :-1] / 0.5, axis=1)))
 
 
 def _constraint_c1_spherical(F: np.ndarray, r: float) -> np.ndarray:
     radius = np.sum(F * F, axis=1)
-    return -(radius - 16.0) * (radius - r * r)
+    return _as_float_vector(-(radius - 16.0) * (radius - r * r))
 
 
 def _constraint_c2(F: np.ndarray, r: float) -> np.ndarray:
@@ -98,7 +103,7 @@ def _constraint_c2(F: np.ndarray, r: float) -> np.ndarray:
 
     a = 1.0 / np.sqrt(float(n_obj))
     v2 = np.sum(np.square(F - a), axis=1) - r * r
-    return np.minimum(v1, v2)
+    return _as_float_vector(np.minimum(v1, v2))
 
 
 def _constraint_c3_linear(F: np.ndarray) -> np.ndarray:
@@ -293,15 +298,15 @@ class MWProblem(Problem):
 
     @staticmethod
     def _la1(A: float, B: float, C: float, D: float, theta: np.ndarray) -> np.ndarray:
-        return A * np.power(np.sin(B * np.pi * np.power(theta, C)), D)
+        return _as_float_vector(A * np.power(np.sin(B * np.pi * np.power(theta, C)), D))
 
     @staticmethod
     def _la2(A: float, B: float, C: float, D: float, theta: np.ndarray) -> np.ndarray:
-        return A * np.power(np.sin(B * np.power(theta, C)), D)
+        return _as_float_vector(A * np.power(np.sin(B * np.power(theta, C)), D))
 
     @staticmethod
     def _la3(A: float, B: float, C: float, D: float, theta: np.ndarray) -> np.ndarray:
-        return A * np.power(np.cos(B * np.power(theta, C)), D)
+        return _as_float_vector(A * np.power(np.cos(B * np.power(theta, C)), D))
 
     def _g1(self, X: np.ndarray) -> np.ndarray:
         d = self.n_var
@@ -309,18 +314,18 @@ class MWProblem(Problem):
         i = np.arange(self.n_obj - 1, d, dtype=float)
         z = np.power(X[:, self.n_obj - 1 :], n)
         exp_term = 1.0 - np.exp(-10.0 * np.square(z - 0.5 - i / (2.0 * d)))
-        return 1.0 + np.sum(exp_term, axis=1)
+        return _as_float_vector(1.0 + np.sum(exp_term, axis=1))
 
     def _g2(self, X: np.ndarray) -> np.ndarray:
         d = self.n_var
         i = np.arange(self.n_obj - 1, d, dtype=float)
         z = 1.0 - np.exp(-10.0 * np.square(X[:, self.n_obj - 1 :] - i / d))
         contrib = (0.1 / d) * z * z + 1.5 - 1.5 * np.cos(2.0 * np.pi * z)
-        return 1.0 + np.sum(contrib, axis=1)
+        return _as_float_vector(1.0 + np.sum(contrib, axis=1))
 
     def _g3(self, X: np.ndarray) -> np.ndarray:
         contrib = 2.0 * np.square(X[:, self.n_obj - 1 :] + np.square(X[:, self.n_obj - 2 : -1] - 0.5) - 1.0)
-        return 1.0 + np.sum(contrib, axis=1)
+        return _as_float_vector(1.0 + np.sum(contrib, axis=1))
 
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         X_arr, F_out = _prepare_output(X, out, n_var=self.n_var, n_obj=self.n_obj)

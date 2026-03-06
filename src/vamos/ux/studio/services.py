@@ -12,6 +12,7 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+from vamos.engine.algorithm.catalog import DEFAULT_ALGORITHM
 from vamos.engine.algorithm.config import (
     AGEMOEAConfig,
     GenericAlgorithmConfig,
@@ -24,7 +25,6 @@ from vamos.engine.algorithm.config import (
     SMSEMOAConfig,
     SPEA2Config,
 )
-from vamos.engine.algorithm.catalog import DEFAULT_ALGORITHM
 from vamos.engine.algorithm.config.base import _SerializableConfig
 from vamos.engine.algorithm.config.defaults import build_default_algorithm_config
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
@@ -400,11 +400,9 @@ def _llm_generate_gemini(description: str, *, api_key: str = "") -> dict[str, An
     if not key:
         raise RuntimeError("No Gemini API key provided. Paste it in the API Key field or set GEMINI_API_KEY.")
     try:
-        from google import genai  # type: ignore[import-not-found]
+        from google import genai  # type: ignore[import-not-found,import-untyped]
     except ImportError as exc:
-        raise RuntimeError(
-            "google-genai package not installed. Run: pip install google-genai"
-        ) from exc
+        raise RuntimeError("google-genai package not installed. Run: pip install google-genai") from exc
 
     client = genai.Client(api_key=key)
     response = client.models.generate_content(
@@ -419,7 +417,7 @@ def _llm_generate_gemini(description: str, *, api_key: str = "") -> dict[str, An
         text = text.split("\n", 1)[1] if "\n" in text else text[3:]
         if text.endswith("```"):
             text = text[:-3]
-    return json.loads(text.strip())
+    return cast(dict[str, Any], json.loads(text.strip()))
 
 
 def _llm_generate_openai(description: str) -> dict[str, Any]:
@@ -433,9 +431,7 @@ def _llm_generate_openai(description: str) -> dict[str, Any]:
     try:
         from openai import OpenAI  # type: ignore[import-not-found]
     except ImportError as exc:
-        raise RuntimeError(
-            "openai package not installed. Run: pip install vamos-optimization[openai]"
-        ) from exc
+        raise RuntimeError("openai package not installed. Run: pip install vamos-optimization[openai]") from exc
 
     client = OpenAI()
     response = client.responses.create(
@@ -450,7 +446,7 @@ def _llm_generate_openai(description: str) -> dict[str, Any]:
     raw = getattr(response, "output_text", None)
     if not isinstance(raw, str) or not raw.strip():
         raise RuntimeError("Empty response from OpenAI.")
-    return json.loads(raw)
+    return cast(dict[str, Any], json.loads(raw))
 
 
 def _llm_generate_anthropic(description: str) -> dict[str, Any]:
@@ -464,9 +460,7 @@ def _llm_generate_anthropic(description: str) -> dict[str, Any]:
     try:
         from anthropic import Anthropic  # type: ignore[import-not-found]
     except ImportError as exc:
-        raise RuntimeError(
-            "anthropic package not installed. Run: pip install vamos-optimization[anthropic]"
-        ) from exc
+        raise RuntimeError("anthropic package not installed. Run: pip install vamos-optimization[anthropic]") from exc
 
     client = Anthropic()
     message = client.messages.create(
@@ -484,7 +478,7 @@ def _llm_generate_anthropic(description: str) -> dict[str, Any]:
         text = text.split("\n", 1)[1] if "\n" in text else text[3:]
         if text.endswith("```"):
             text = text[:-3]
-    return json.loads(text)
+    return cast(dict[str, Any], json.loads(text))
 
 
 def llm_generate_problem_code(

@@ -203,7 +203,7 @@ def _validate_archive_block(block: object, *, path: str) -> None:
     if bounded is None:
         return
     bounded_dict = _as_str_dict(bounded, path=f"'{path}.bounded'")
-    allowed = set(_dataclass_field_names(BoundedArchiveConfig))
+    allowed = set(_dataclass_field_names(BoundedArchiveConfig)) - {"archive_type"}
     unknown_bounded = _unknown_keys(bounded_dict, allowed)
     if unknown_bounded:
         raise ValueError(f"Unknown keys in '{path}.bounded': {', '.join(unknown_bounded)}")

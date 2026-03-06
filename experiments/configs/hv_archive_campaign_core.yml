@@ -56,22 +56,9 @@ variants:
     archive:
       bounded:
         enabled: true
-        archive_type: size_cap
         size_cap: 400
         nondominated_only: true
         prune_policy: crowding
-- name: archive_epsgrid
-  patch:
-    stopping:
-      hv_convergence:
-        enabled: false
-    archive:
-      bounded:
-        enabled: true
-        archive_type: epsilon_grid
-        size_cap: 400
-        epsilon: 0.01
-        nondominated_only: true
 - name: stop_only
   patch:
     stopping:
@@ -106,7 +93,6 @@ variants:
     archive:
       bounded:
         enabled: true
-        archive_type: size_cap
         size_cap: 400
         nondominated_only: true
         prune_policy: crowding

@@ -38,7 +38,12 @@ def _eval(X: np.ndarray, problem: object) -> np.ndarray:
 
 def _agemoea_cfg(pop_size: int = 12) -> dict:
     return (
-        AGEMOEAConfig.builder().pop_size(pop_size).crossover("sbx", prob=0.9, eta=15.0).mutation("polynomial", prob=0.1, eta=20.0).build().to_dict()
+        AGEMOEAConfig.builder()
+        .pop_size(pop_size)
+        .crossover("sbx", prob=0.9, eta=15.0)
+        .mutation("polynomial", prob=0.1, eta=20.0)
+        .build()
+        .to_dict()
     )
 
 

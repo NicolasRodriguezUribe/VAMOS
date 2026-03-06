@@ -12,7 +12,6 @@ and config space builders for each algorithm.
 
 from .ablation import AblationPlan, AblationTask, AblationVariant, build_ablation_plan
 from .backends import ModelBasedTuner, available_model_based_backends
-from .racing.stats import a12_magnitude, vargha_delaney_a12
 from .convergence import ConvergenceDiagnostic, ConvergenceProfile, TuningCallback, diagnose, score_with_profile
 from .knowledge_base import KnowledgeBase, KnowledgeEntry
 from .moea_tuner import MOEATuner, MOEATunerConfig, PhaseResult
@@ -101,6 +100,7 @@ from .racing import (
     save_history_csv,
     save_history_json,
 )
+from .racing.stats import a12_magnitude, vargha_delaney_a12
 
 __all__ = [
     # Ablation planning

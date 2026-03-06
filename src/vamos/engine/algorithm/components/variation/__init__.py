@@ -3,8 +3,6 @@ Compatibility wrapper around :mod:`vamos.engine.variation`.
 """
 
 from vamos.engine.variation import (
-    VariationPipeline,
-    prepare_mutation_params,
     BINARY_CROSSOVER,
     BINARY_MUTATION,
     INT_CROSSOVER,
@@ -13,6 +11,8 @@ from vamos.engine.variation import (
     MIXED_MUTATION,
     PERM_CROSSOVER,
     PERM_MUTATION,
+    VariationPipeline,
+    prepare_mutation_params,
     resolve_prob_expression,
     validate_operator_support,
 )

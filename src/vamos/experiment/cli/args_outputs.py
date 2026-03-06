@@ -75,7 +75,7 @@ def add_output_arguments(
     add_spec_argument(
         parser,
         "--external-archive-pruning",
-        choices=["crowding", "hv_contrib", "mc_hv_contrib", "spea2", "random"],
+        choices=["crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"],
         default=experiment_defaults.get("external_archive_pruning", "crowding"),
         help="Pruning policy for bounded external archive.",
     )

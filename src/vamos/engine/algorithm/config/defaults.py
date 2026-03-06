@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable
 
+from vamos.foundation.encoding import normalize_encoding
+
 from .agemoea import AGEMOEAConfig
+from .base import _default_operators_for_encoding
 from .ibea import IBEAConfig
 from .moead import MOEADConfig
 from .nsgaii import NSGAIIConfig
@@ -18,16 +22,22 @@ from .types import AlgorithmConfigProtocol
 DefaultConfigBuilder = Callable[[int | None, int | None, int | None, str | None], AlgorithmConfigProtocol]
 
 
+def _mutation_prob(n_var: int | None) -> float:
+    return 1.0 / n_var if n_var else 0.1
+
+
+def _call_default(default_fn: Callable[..., AlgorithmConfigProtocol], **kwargs: int | str | None) -> AlgorithmConfigProtocol:
+    accepted = inspect.signature(default_fn).parameters
+    return default_fn(**{key: value for key, value in kwargs.items() if key in accepted})
+
+
 def _nsgaii_default(
     pop_size: int | None,
     n_var: int | None,
     _n_obj: int | None,
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
-    kwargs: dict[str, int] = {}
-    if pop_size is not None:
-        kwargs["pop_size"] = pop_size
-    return NSGAIIConfig.default(n_var=n_var, encoding=encoding, **kwargs)
+    return _call_default(NSGAIIConfig.default, pop_size=pop_size, n_var=n_var, encoding=encoding)
 
 
 def _moead_default(
@@ -37,7 +47,20 @@ def _moead_default(
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
     n_obj_value = 3 if n_obj is None else n_obj
-    return MOEADConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj_value, encoding=encoding)
+    normalized = normalize_encoding(encoding, default="real")
+    if normalized == "real":
+        return _call_default(MOEADConfig.default, pop_size=pop_size, n_var=n_var, n_obj=n_obj_value)
+
+    cx, mt = _default_operators_for_encoding(normalized, _mutation_prob(n_var))
+    builder = MOEADConfig.builder()
+    builder.pop_size(100 if pop_size is None else pop_size)
+    builder.neighbor_size(20)
+    builder.delta(0.9)
+    builder.replace_limit(2)
+    builder.crossover(cx[0], **cx[1])
+    builder.mutation(mt[0], **mt[1])
+    builder.aggregation("pbi", theta=5.0)
+    return builder.build()
 
 
 def _smsemoa_default(
@@ -46,10 +69,7 @@ def _smsemoa_default(
     _n_obj: int | None,
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
-    kwargs: dict[str, int] = {}
-    if pop_size is not None:
-        kwargs["pop_size"] = pop_size
-    return SMSEMOAConfig.default(n_var=n_var, encoding=encoding, **kwargs)
+    return _call_default(SMSEMOAConfig.default, pop_size=pop_size, n_var=n_var)
 
 
 def _nsgaiii_default(
@@ -59,7 +79,7 @@ def _nsgaiii_default(
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
     n_obj_value = 3 if n_obj is None else n_obj
-    return NSGAIIIConfig.default(pop_size=pop_size, n_var=n_var, n_obj=n_obj_value, encoding=encoding)
+    return _call_default(NSGAIIIConfig.default, pop_size=pop_size, n_var=n_var, n_obj=n_obj_value)
 
 
 def _spea2_default(
@@ -68,10 +88,7 @@ def _spea2_default(
     _n_obj: int | None,
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
-    kwargs: dict[str, int] = {}
-    if pop_size is not None:
-        kwargs["pop_size"] = pop_size
-    return SPEA2Config.default(n_var=n_var, encoding=encoding, **kwargs)
+    return _call_default(SPEA2Config.default, pop_size=100 if pop_size is None else pop_size, n_var=n_var)
 
 
 def _ibea_default(
@@ -80,10 +97,7 @@ def _ibea_default(
     _n_obj: int | None,
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
-    kwargs: dict[str, int] = {}
-    if pop_size is not None:
-        kwargs["pop_size"] = pop_size
-    return IBEAConfig.default(n_var=n_var, encoding=encoding, **kwargs)
+    return _call_default(IBEAConfig.default, pop_size=100 if pop_size is None else pop_size, n_var=n_var)
 
 
 def _smpso_default(
@@ -92,10 +106,7 @@ def _smpso_default(
     _n_obj: int | None,
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
-    kwargs: dict[str, int] = {}
-    if pop_size is not None:
-        kwargs["pop_size"] = pop_size
-    return SMPSOConfig.default(n_var=n_var, encoding=encoding, **kwargs)
+    return _call_default(SMPSOConfig.default, pop_size=100 if pop_size is None else pop_size, n_var=n_var)
 
 
 def _agemoea_default(
@@ -104,10 +115,7 @@ def _agemoea_default(
     _n_obj: int | None,
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
-    kwargs: dict[str, int] = {}
-    if pop_size is not None:
-        kwargs["pop_size"] = pop_size
-    return AGEMOEAConfig.default(n_var=n_var, encoding=encoding, **kwargs)
+    return _call_default(AGEMOEAConfig.default, pop_size=100 if pop_size is None else pop_size, n_var=n_var)
 
 
 def _rvea_default(
@@ -116,10 +124,7 @@ def _rvea_default(
     _n_obj: int | None,
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
-    kwargs: dict[str, int] = {}
-    if pop_size is not None:
-        kwargs["pop_size"] = pop_size
-    return RVEAConfig.default(n_var=n_var, encoding=encoding, **kwargs)
+    return _call_default(RVEAConfig.default, pop_size=100 if pop_size is None else pop_size, n_var=n_var)
 
 
 _DEFAULT_BUILDERS: dict[str, DefaultConfigBuilder] = {

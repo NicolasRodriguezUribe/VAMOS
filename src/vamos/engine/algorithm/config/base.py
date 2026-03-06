@@ -10,6 +10,8 @@ import warnings
 from dataclasses import asdict
 from typing import Any, Literal, cast
 
+from vamos.engine.archive import ExternalArchiveConfig
+
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
@@ -126,6 +128,19 @@ _KNOWN_OPERATORS: dict[str, set[str]] = {
     },
 }
 
+_EXTERNAL_ARCHIVE_ALLOWED_KWARGS = {
+    "pruning",
+    "nondominated_only",
+    "epsilon",
+    "hv_ref_point",
+    "hv_samples",
+    "rng_seed",
+    "objective_tolerance",
+    "truncate_size",
+    "deduplicate_in",
+    "decision_tolerance",
+}
+
 
 def _validate_operator_name(name: str, category: str) -> None:
     """Validate an operator name against known operators.
@@ -182,8 +197,6 @@ class _SerializableConfig:
                 continue
             # Reconstruct nested ExternalArchiveConfig from plain dict
             if key == "external_archive" and isinstance(value, dict):
-                from vamos.engine.archive import ExternalArchiveConfig
-
                 value = ExternalArchiveConfig(**value)
             filtered[key] = value
         return cls(**filtered)
@@ -328,6 +341,14 @@ def _require_fields(cfg: dict[str, Any], fields: tuple[str, ...], name: str) -> 
     if missing:
         joined = ", ".join(missing)
         raise ValueError(f"{name} configuration missing required fields: {joined}")
+
+
+def _build_external_archive_config(capacity: int | None, kwargs: dict[str, Any]) -> ExternalArchiveConfig:
+    unexpected = sorted(set(kwargs) - _EXTERNAL_ARCHIVE_ALLOWED_KWARGS)
+    if unexpected:
+        names = ", ".join(unexpected)
+        raise TypeError(f"external_archive() got unexpected keyword argument(s): {names}")
+    return ExternalArchiveConfig(capacity=capacity, **kwargs)
 
 
 def _normalize_tournament_selection_kwargs(method: str, kwargs: dict[str, Any]) -> dict[str, Any]:

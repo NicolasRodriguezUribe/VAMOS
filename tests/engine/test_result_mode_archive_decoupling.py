@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 
 from vamos.engine.algorithm.agemoea import AGEMOEA
 from vamos.engine.algorithm.config import (

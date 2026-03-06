@@ -13,7 +13,7 @@ The MOEATuner uses convergence profiles for:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -265,11 +265,7 @@ def diagnose(profile: ConvergenceProfile) -> ConvergenceDiagnostic:
             )
 
     # Low diversity with good convergence → exploitation too strong
-    if (
-        profile.diversity_curve is not None
-        and len(profile.diversity_curve) >= 2
-        and profile.stagnation_ratio > 0.4
-    ):
+    if profile.diversity_curve is not None and len(profile.diversity_curve) >= 2 and profile.stagnation_ratio > 0.4:
         final_div = float(profile.diversity_curve[-1])
         initial_div = float(profile.diversity_curve[0]) if profile.diversity_curve[0] > 0 else 1.0
         div_ratio = final_div / initial_div

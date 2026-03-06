@@ -195,5 +195,5 @@ def test_moea_backend_passes_knowledge_base_flags(monkeypatch, tmp_path: Path):
     tune_cli._run_backend(args, task, _simple_eval, resolved_jobs=1)  # noqa: SLF001
 
     cfg = captured["config"]
-    assert bool(getattr(cfg, "use_knowledge_base")) is True
-    assert str(getattr(cfg, "knowledge_base_path")) == str(kb_path)
+    assert bool(cfg.use_knowledge_base) is True
+    assert str(cfg.knowledge_base_path) == str(kb_path)

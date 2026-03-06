@@ -13,6 +13,7 @@ from typing import Any, Protocol, cast
 
 import numpy as np
 
+from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.engine.variation.helpers import (
     BINARY_CROSSOVER,
     BINARY_MUTATION,
@@ -30,7 +31,6 @@ from vamos.engine.variation.protocol import (
     MutationOperator,
     VariationWorkspaceProtocol,
 )
-from vamos.engine.operators.impl.registry import get_operator_registry
 from vamos.foundation.encoding import Encoding
 from vamos.foundation.problem.types import ProblemProtocol
 
@@ -218,7 +218,7 @@ class IntegerEncodingStrategy:
         if method == "creep":
             step = int(params.get("step", 1))
             extra: float | int | None = step
-        elif method == "polynomial":
+        elif method in {"pm", "polynomial"}:
             extra = float(params.get("eta", 20.0))
         elif method == "gaussian":
             extra = float(params.get("sigma", 1.0))

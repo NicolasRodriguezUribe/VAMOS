@@ -10,8 +10,8 @@ from pathlib import Path
 from vamos.engine.algorithm.catalog import ENABLED_ALGORITHMS
 from vamos.engine.config.spec import EXPERIMENT_SPEC_VERSION
 from vamos.experiment.presentation import run_experiments_from_args
-from vamos.experiment.runtime.catalog import EXPERIMENT_BACKENDS
 from vamos.experiment.runner_utils import problem_output_dir, run_output_dir
+from vamos.experiment.runtime.catalog import EXPERIMENT_BACKENDS
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.problem.registry import available_problem_names, make_problem_selection
