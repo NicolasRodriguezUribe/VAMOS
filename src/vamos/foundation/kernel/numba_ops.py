@@ -15,6 +15,54 @@ def njit(*args: Any, **kwargs: Any) -> Callable[[_F], _F]:
 
 
 @njit(cache=True)
+def _polynomial_mutation_numba_impl(
+    X: np.ndarray,
+    prob: float,
+    eta: float,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    rnd_mask: np.ndarray,
+    rnd_delta: np.ndarray,
+) -> None:
+    """Apply polynomial mutation in-place using caller-provided random draws."""
+    n_ind, n_var = X.shape
+    mut_pow = 1.0 / (eta + 1.0)
+
+    for i in range(n_ind):
+        for j in range(n_var):
+            if rnd_mask[i, j] > prob:
+                continue
+
+            y = X[i, j]
+            yl = lower[j]
+            yu = upper[j]
+
+            if yl >= yu:
+                continue
+
+            delta1 = (y - yl) / (yu - yl)
+            delta2 = (yu - y) / (yu - yl)
+
+            rnd = rnd_delta[i, j]
+
+            if rnd <= 0.5:
+                xy = 1.0 - delta1
+                val = 2.0 * rnd + (1.0 - 2.0 * rnd) * (xy ** (eta + 1.0))
+                deltaq = val**mut_pow - 1.0
+            else:
+                xy = 1.0 - delta2
+                val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (eta + 1.0))
+                deltaq = 1.0 - val**mut_pow
+
+            y = y + deltaq * (yu - yl)
+            if y < yl:
+                y = yl
+            elif y > yu:
+                y = yu
+            X[i, j] = y
+
+
+@njit(cache=True)
 def polynomial_mutation_numba(
     X: np.ndarray,
     prob: float,
@@ -22,42 +70,10 @@ def polynomial_mutation_numba(
     lower: np.ndarray,
     upper: np.ndarray,
 ) -> None:
-    """
-    Apply polynomial mutation in-place.
-    """
-    n_ind, n_var = X.shape
-    mut_pow = 1.0 / (eta + 1.0)
-
-    # Pre-calculate span for optimization if needed, but per-gene is safer for varying bounds
-    # Assuming bounds are (n_var,)
-
-    for i in range(n_ind):
-        for j in range(n_var):
-            if np.random.random() <= prob:
-                y = X[i, j]
-                yl = lower[j]
-                yu = upper[j]
-
-                if yl >= yu:
-                    continue
-
-                delta1 = (y - yl) / (yu - yl)
-                delta2 = (yu - y) / (yu - yl)
-
-                rnd = np.random.random()
-                mut_pow = 1.0 / (eta + 1.0)
-
-                if rnd <= 0.5:
-                    xy = 1.0 - delta1
-                    val = 2.0 * rnd + (1.0 - 2.0 * rnd) * (xy ** (eta + 1.0))
-                    deltaq = val**mut_pow - 1.0
-                else:
-                    xy = 1.0 - delta2
-                    val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (eta + 1.0))
-                    deltaq = 1.0 - val**mut_pow
-
-                y = y + deltaq * (yu - yl)
-                X[i, j] = y
+    """Apply polynomial mutation in-place using Numba's internal RNG state."""
+    rnd_mask = np.random.random(X.shape)
+    rnd_delta = np.random.random(X.shape)
+    _polynomial_mutation_numba_impl(X, prob, eta, lower, upper, rnd_mask, rnd_delta)
 
 
 @njit(cache=True)
@@ -69,36 +85,10 @@ def sbx_crossover_numba(
     upper: np.ndarray,
     prob_var: float = 0.5,
 ) -> np.ndarray:
-    """
-    Apply SBX crossover.
-    X_parents: (N, 2, n_var)
-    Returns: offspring (N, 2, n_var) # Note: SBX normally returns same shape
-    """
-    # X_parents is shaped (n_pairs, 2, n_vars) based on operators.real.crossover usage
-    # Wait, numpy config might flatten it?
-    # Let's check numba_backend.py:
-    #   Np, D = X_parents.shape
-    #   pairs = X_parents.reshape(Np // 2, 2, D)
-    # So the input to the actual op logic should probably be the Pairs.
-    # Numba backend implementation of `sbx_crossover` currently receives (Np, D) flattened.
-    # It reshapes it to (Np//2, 2, D).
-
-    n_parents, n_var = X_parents.shape
-    # Handle odd number of parents by ignoring the last one or duplicating.
-    # The caller (numba_backend.py) handles resizing if needed.
-
-    # We will assume X_parents is (N, n_var) and we process in pairs (0,1), (2,3)...
-    # This avoids reshaping overhead inside the JIT function if possible, or we just reshape.
-    # Actually, JIT works fine with 3D arrays. Let's accept (n_pairs, 2, n_var) for clarity.
-
-    # BUT `numba_backend.sbx_crossover` signature receives `X_parents` (N, D).
-    # I should align with that or do the reshape inside/outside.
-    # Doing it inside is cleaner.
-
-    # Let's stick to the signature: receives flattened parents, returns flattened offspring.
-
+    """Apply SBX crossover to a flat parent matrix shaped ``(N, n_var)``."""
+    n_parents_total, n_var = X_parents.shape
+    n_parents = n_parents_total
     if n_parents % 2 != 0:
-        # Should have been handled by caller, but safety check
         n_parents -= 1
 
     offspring = np.empty_like(X_parents)
@@ -175,5 +165,9 @@ def sbx_crossover_numba(
             for j in range(n_var):
                 offspring[i, j] = X_parents[i, j]
                 offspring[i + 1, j] = X_parents[i + 1, j]
+
+    if n_parents_total % 2 != 0:
+        for j in range(n_var):
+            offspring[n_parents_total - 1, j] = X_parents[n_parents_total - 1, j]
 
     return offspring

@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from vamos import optimize
 from vamos.engine.algorithm.config import NSGAIIConfig
@@ -31,5 +32,36 @@ def test_optimize_reproducible_with_seed():
         termination=("max_evaluations", 30),
         seed=42,
         engine="numpy",
+    )
+    assert np.array_equal(res1.F, res2.F)
+
+
+@pytest.mark.numba
+def test_optimize_numba_reproducible_with_seed():
+    problem = ZDT1Problem(n_var=8)
+    cfg = (
+        NSGAIIConfig.builder()
+        .pop_size(10)
+        .offspring_size(10)
+        .crossover("sbx", prob=0.9, eta=15.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
+        .selection("tournament", size=2)
+        .build()
+    )
+    res1 = optimize(
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("max_evaluations", 30),
+        seed=42,
+        engine="numba",
+    )
+    res2 = optimize(
+        problem,
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        termination=("max_evaluations", 30),
+        seed=42,
+        engine="numba",
     )
     assert np.array_equal(res1.F, res2.F)

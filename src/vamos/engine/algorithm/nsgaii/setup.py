@@ -28,7 +28,6 @@ from .initialization import (
     setup_archive,
     setup_genealogy,
     setup_population,
-    setup_result_archive,
     setup_selection,
 )
 from .injection import ImmigrationManager
@@ -133,7 +132,7 @@ def initialize_run(
     else:
         X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
 
-    incremental_enabled = bool(incremental_mode and replacement_size == 1 and constraint_mode == "none" and G is None)
+    incremental_enabled = bool(incremental_mode and replacement_size == 1 and G is None)
     if incremental_enabled and getattr(algo.kernel, "name", "") == "jax" and getattr(algo.kernel, "_strict_ranking", True) is False:
         incremental_enabled = False
 
@@ -213,20 +212,9 @@ def initialize_run(
     result_mode = str(algo.cfg.get("result_mode", "non_dominated")).strip().lower()
     if result_mode not in {"non_dominated", "population"}:
         raise ValueError("result_mode must be one of: non_dominated, population")
-    result_archive = setup_result_archive(
-        ext_cfg,
-        n_var,
-        problem.n_obj,
-        X.dtype,
-    )
-    if result_archive is not None and checkpoint is not None:
-        try:
-            source_X = checkpoint_archive_X if checkpoint_archive_X is not None else X
-            source_F = checkpoint_archive_F if checkpoint_archive_F is not None else F
-            source_G = None if checkpoint_archive_X is not None else G
-            result_archive.update(source_X, source_F, source_G)
-        except Exception:  # pragma: no cover - defensive
-            _logger().debug("Failed to seed result archive from checkpoint", exc_info=True)
+    result_archive = None
+    if ext_cfg is not None and ext_cfg.capacity is not None and archive_manager is not None:
+        result_archive = cast(Any, archive_manager)
 
     immigration_cfg = algo.cfg.get("immigration")
     immigration_manager = None

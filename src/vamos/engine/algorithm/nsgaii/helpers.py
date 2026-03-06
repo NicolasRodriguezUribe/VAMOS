@@ -37,54 +37,67 @@ def build_mating_pool(
     if parent_count % group_size != 0:
         raise ValueError("parent_count must be divisible by group_size.")
     assert ranks.shape == crowding.shape, "ranks and crowding must align"
+    cand: np.ndarray | None = None
     if candidate_indices is not None:
         cand = np.asarray(candidate_indices, dtype=int)
         cand = cand[(cand >= 0) & (cand < ranks.size)]
         cand = np.unique(cand)
         if cand.size == 0:
-            cand = np.arange(ranks.size, dtype=int)
-    else:
-        cand = np.arange(ranks.size, dtype=int)
+            cand = None
 
     if selection_method == "random":
-        parent_indices = rng.choice(cand, size=parent_count, replace=True)
+        if cand is None:
+            parent_indices = rng.integers(0, ranks.size, size=parent_count, dtype=int)
+        else:
+            parent_indices = rng.choice(cand, size=parent_count, replace=True)
     elif selection_method in ("boltzmann", "ranking", "sus"):
         # Build a composite fitness score from ranks and crowding.
         # Lower rank is better; within the same rank, higher crowding is better.
-        cand_ranks = ranks[cand]
-        cand_crowd = crowding[cand]
+        cand_ranks = ranks if cand is None else ranks[cand]
+        cand_crowd = crowding if cand is None else crowding[cand]
         max_rank = int(cand_ranks.max()) if cand_ranks.size else 0
         max_crowd = float(np.nanmax(cand_crowd[np.isfinite(cand_crowd)])) if np.any(np.isfinite(cand_crowd)) else 1.0
         # Normalise crowding to [0, 1] (inf -> 1.0)
         norm_crowd = np.where(np.isfinite(cand_crowd), cand_crowd / (max_crowd + 1e-30), 1.0)
         fitness = (max_rank - cand_ranks).astype(float) + norm_crowd
+        local_items = list(range(cand_ranks.size))
 
         if selection_method == "boltzmann":
             from vamos.engine.algorithm.components.selection import BoltzmannSelection
 
             sel = BoltzmannSelection(temperature=max(float(pressure), 0.1), rng=rng)
-            parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
+            parent_local = sel(local_items, parent_count, fitness=fitness)
         elif selection_method == "ranking":
             from vamos.engine.algorithm.components.selection import RankingSelection
 
             sp = min(max(float(pressure) / 5.0, 1.0), 2.0)  # map pressure [2..10] -> sp [1..2]
             sel = RankingSelection(sp=sp, rng=rng)
-            parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
+            parent_local = sel(local_items, parent_count, fitness=fitness)
         else:  # sus
             from vamos.engine.algorithm.components.selection import SUSSelection
 
             sel = SUSSelection(rng=rng)
-            parent_local = sel(list(range(cand.size)), parent_count, fitness=fitness)
-        parent_indices = cand[np.asarray(parent_local, dtype=int)]
+            parent_local = sel(local_items, parent_count, fitness=fitness)
+        parent_local_arr = np.asarray(parent_local, dtype=int)
+        parent_indices = parent_local_arr if cand is None else cand[parent_local_arr]
     else:
-        parent_local = kernel.tournament_selection(
-            ranks[cand],
-            crowding[cand],
-            pressure,
-            rng,
-            n_parents=parent_count,
-        )
-        parent_indices = cand[np.asarray(parent_local, dtype=int)]
+        if cand is None:
+            parent_indices = kernel.tournament_selection(
+                ranks,
+                crowding,
+                pressure,
+                rng,
+                n_parents=parent_count,
+            )
+        else:
+            parent_local = kernel.tournament_selection(
+                ranks[cand],
+                crowding[cand],
+                pressure,
+                rng,
+                n_parents=parent_count,
+            )
+            parent_indices = cand[np.asarray(parent_local, dtype=int)]
     if parent_indices.size != parent_count:
         raise ValueError("Selection operator returned an unexpected number of parents.")
     return parent_indices.reshape(parent_count // group_size, group_size)
@@ -199,6 +212,31 @@ def fronts_from_ranks(ranks: np.ndarray) -> list[list[int]]:
     return [np.flatnonzero(ranks == r).tolist() for r in range(max_rank + 1)]
 
 
+def compute_front_crowding(F: np.ndarray, front: np.ndarray | list[int]) -> np.ndarray:
+    """Compute crowding distance for a single front."""
+    front_arr = np.asarray(front, dtype=int)
+    if front_arr.size == 0:
+        return np.empty(0, dtype=float)
+    if front_arr.size == 1:
+        return np.array([np.inf], dtype=float)
+
+    fvals = F[front_arr]
+    n_obj = fvals.shape[1]
+    d = np.zeros(front_arr.size, dtype=float)
+    for m in range(n_obj):
+        order = np.argsort(fvals[:, m], kind="mergesort")
+        sorted_vals = fvals[order, m]
+        d[order[0]] = np.inf
+        d[order[-1]] = np.inf
+        span = sorted_vals[-1] - sorted_vals[0]
+        if span <= 0.0:
+            continue
+        contrib = np.zeros_like(sorted_vals)
+        contrib[1:-1] = (sorted_vals[2:] - sorted_vals[:-2]) / span
+        d[order[1:-1]] += contrib[1:-1]
+    return d
+
+
 def compute_crowding(F: np.ndarray, fronts: list[list[int]]) -> np.ndarray:
     """Compute crowding distance for the provided fronts."""
     N = F.shape[0]
@@ -207,24 +245,7 @@ def compute_crowding(F: np.ndarray, fronts: list[list[int]]) -> np.ndarray:
         if not front:
             continue
         front_arr = np.asarray(front, dtype=int)
-        if front_arr.size == 1:
-            crowding[front_arr[0]] = np.inf
-            continue
-        fvals = F[front_arr]
-        n_obj = fvals.shape[1]
-        d = np.zeros(front_arr.size, dtype=float)
-        for m in range(n_obj):
-            order = np.argsort(fvals[:, m], kind="mergesort")
-            sorted_vals = fvals[order, m]
-            d[order[0]] = np.inf
-            d[order[-1]] = np.inf
-            span = sorted_vals[-1] - sorted_vals[0]
-            if span <= 0.0:
-                continue
-            contrib = np.zeros_like(sorted_vals)
-            contrib[1:-1] = (sorted_vals[2:] - sorted_vals[:-2]) / span
-            d[order[1:-1]] += contrib[1:-1]
-        crowding[front_arr] = d
+        crowding[front_arr] = compute_front_crowding(F, front_arr)
     return crowding
 
 
@@ -346,6 +367,7 @@ __all__ = [
     "operator_success_stats",
     "generation_contributions",
     "fronts_from_ranks",
+    "compute_front_crowding",
     "compute_crowding",
     "select_nsga2",
     "incremental_insert_fronts",

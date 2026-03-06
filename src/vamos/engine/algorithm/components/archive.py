@@ -509,39 +509,17 @@ class SPEA2Archive(_BaseArchive):
         target_size: int,
         G: np.ndarray | None = None,
     ) -> np.ndarray:
-        from vamos.engine.algorithm.spea2.helpers import (
-            dominance_matrix,
-            strength_raw_fitness,
-            truncate_by_distance,
-        )
+        from vamos.engine.algorithm.spea2.helpers import truncate_by_distance
 
         n = int(F.shape[0])
         if n <= target_size:
             return np.arange(n, dtype=int)
 
-        mode = self._constraint_mode if G is not None else "none"
-        dom, _, _ = dominance_matrix(F, G, mode)
-        raw_fitness = strength_raw_fitness(dom)
-
-        selected: list[int] = []
-        unique_raw = np.sort(np.unique(raw_fitness))
-        for fit in unique_raw:
-            front = np.flatnonzero(raw_fitness == fit)
-            if len(selected) + front.size <= target_size:
-                selected.extend(front.tolist())
-                continue
-
-            remaining = target_size - len(selected)
-            if remaining <= 0:
-                break
-
-            front_F = F[front]
-            dist_matrix = np.linalg.norm(front_F[:, None, :] - front_F[None, :, :], axis=2)
-            keep_local = truncate_by_distance(dist_matrix, remaining)
-            selected.extend(front[keep_local].tolist())
-            break
-
-        return np.asarray(selected, dtype=int)
+        # _BaseArchive.update() already reduced the candidate set to a single
+        # feasible nondominated front, so SPEA2 truncation only needs the
+        # distance-based diversity phase here.
+        dist_matrix = np.linalg.norm(F[:, None, :] - F[None, :, :], axis=2)
+        return truncate_by_distance(dist_matrix, target_size)
 
 
 class MaxMinArchive(_BaseArchive):

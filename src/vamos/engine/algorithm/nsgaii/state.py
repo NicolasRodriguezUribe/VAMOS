@@ -351,7 +351,7 @@ def update_archives(
     F: np.ndarray | None = None,
     G: np.ndarray | None = None,
 ) -> None:
-    """Update result archive and external archive.
+    """Update external archive state and synchronize cached snapshots.
 
     Parameters
     ----------
@@ -366,11 +366,15 @@ def update_archives(
     G : np.ndarray | None
         Candidate constraints to insert (defaults to state.G).
     """
+    del kernel
     X_use = state.X if X is None else X
     F_use = state.F if F is None else F
     G_use = state.G if G is None else G
-    if state.result_archive is not None:
-        state.result_archive.update(X_use, F_use, G_use)
-
     if state.archive_manager is not None:
         state.archive_X, state.archive_F = state.archive_manager.update(X_use, F_use, G_use)
+        if state.result_archive is state.archive_manager:
+            return
+
+    if state.result_archive is not None:
+        state.result_archive.update(X_use, F_use, G_use)
+        state.archive_X, state.archive_F = state.result_archive.contents()

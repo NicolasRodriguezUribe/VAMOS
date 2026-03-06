@@ -13,6 +13,7 @@ from vamos.engine.algorithm.components.archive import (
     UnboundedArchive,
 )
 from vamos.engine.algorithm.components.subset_selection import select_top_k_crowding
+from vamos.engine.algorithm.spea2.helpers import truncate_by_distance
 
 
 def _tradeoff_front(n: int) -> np.ndarray:
@@ -63,6 +64,50 @@ def test_spea2_archive_truncates_to_target_size():
             np.abs(np.linspace(-0.5, 0.5, 12)),
         ]
     )
+    archive.update(X, F)
+    _, kept_F = archive.contents()
+    assert kept_F.shape[0] == 5
+
+
+def _legacy_truncate_by_distance(dist_matrix: np.ndarray, keep: int) -> np.ndarray:
+    candidates = list(range(dist_matrix.shape[0]))
+    if len(candidates) <= keep:
+        return np.asarray(candidates, dtype=int)
+
+    dist = np.asarray(dist_matrix, dtype=float)
+    while len(candidates) > keep:
+        sub = dist[np.ix_(candidates, candidates)]
+        np.fill_diagonal(sub, np.inf)
+        second_neighbor = np.partition(sub, 1, axis=1)[:, 1]
+        remove_pos = int(np.argmin(second_neighbor))
+        del candidates[remove_pos]
+
+    return np.asarray(candidates, dtype=int)
+
+
+def test_truncate_by_distance_matches_legacy_selection_rule():
+    rng = np.random.default_rng(0)
+    for n, keep in [(8, 4), (11, 5), (14, 6)]:
+        F = rng.random((n, 3))
+        dist = np.linalg.norm(F[:, None, :] - F[None, :, :], axis=2)
+        expected = _legacy_truncate_by_distance(dist, keep)
+        actual = truncate_by_distance(dist, keep)
+        np.testing.assert_array_equal(actual, expected)
+
+
+def test_spea2_archive_skips_strength_ranking_for_nondominated_front(monkeypatch: pytest.MonkeyPatch):
+    import vamos.engine.algorithm.spea2.helpers as spea2_helpers
+
+    def _unexpected_call(*_args, **_kwargs):
+        raise AssertionError("dominance_matrix should not be used for archive truncation.")
+
+    monkeypatch.setattr(spea2_helpers, "dominance_matrix", _unexpected_call)
+
+    archive = SPEA2Archive(capacity=5, n_var=1, n_obj=2, dtype=float)
+    X = np.arange(12, dtype=float).reshape(-1, 1)
+    x = np.linspace(0.0, 1.0, 12)
+    F = np.column_stack([x, 1.0 - x])
+
     archive.update(X, F)
     _, kept_F = archive.contents()
     assert kept_F.shape[0] == 5
