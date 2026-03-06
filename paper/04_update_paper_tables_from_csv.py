@@ -220,56 +220,65 @@ def make_latex_table_3(vamos_fam: pd.DataFrame) -> str:
 
 
 def make_latex_table_4(family_df: pd.DataFrame) -> str:
-    """Table 4: Framework comparison by family."""
-    # family_df index = Frameworks, cols = ZDT, DTLZ, WFG, Average
-
-    # Sort frameworks
-    idx_list = sorted(family_df.index.tolist())
-
-    order_map = {"VAMOS": 0, "pymoo": 1, "jMetalPy": 2, "DEAP": 3, "Platypus": 4}
-
-    def sort_key(c):
-        for k, v in order_map.items():
-            if k.lower() == c.lower():
-                return v
-            if k in c:
-                return v
-        return 99
-
-    idx_list = sorted(idx_list, key=sort_key)
-
+    """Table 4: Framework comparison by family (pure Python + PyGMO baseline)."""
     families = [col for col in ["ZDT", "DTLZ", "WFG", "ZCAT"] if col in family_df.columns]
+
+    def _find_framework(name: str) -> str | None:
+        for idx in family_df.index:
+            if str(idx).strip().lower() == name.lower():
+                return str(idx)
+        return None
+
+    pure_python_order = ["VAMOS", "pymoo", "jMetalPy", "DEAP", "Platypus"]
+    pure_python_rows: list[tuple[str, str]] = []
+    for fw in pure_python_order:
+        src = _find_framework(fw)
+        if src is not None:
+            pure_python_rows.append((fw, src))
+
+    pygmo_src = _find_framework("PyGMO")
+
+    # Bold best (minimum runtime) among pure-Python frameworks per family.
+    col_mins: dict[str, float] = {}
+    for fam in families:
+        vals = [float(family_df.at[src, fam]) for _, src in pure_python_rows if pd.notna(family_df.at[src, fam])]
+        col_mins[fam] = min(vals) if vals else float("nan")
 
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption{Median runtime (seconds) by problem family across all frameworks}",
+        r"\caption{NSGA-II with standard settings. Median runtime (seconds) by problem family across all frameworks; PyGMO (C++) is included as a compiled baseline}",
         r"\label{tab:frameworks_perf}",
-        r"\begin{tabular}{l" + "c" * len(families) + "c}",
+        r"\begin{tabular}{l" + "c" * len(families) + "}",
         r"\toprule",
+        r"\textbf{Framework} & " + " & ".join([f"\\textbf{{{f}}}" for f in families]) + r" \\",
+        r"\midrule",
     ]
 
-    header = " & ".join([f"\\textbf{{{f}}}" for f in families]) + " & \\textbf{Average}"
-    lines.append(f"\\textbf{{Framework}} & {header} \\\\")
-    lines.append(r"\midrule")
-
-    for fw in idx_list:
-        row = family_df.loc[fw]
-
-        # Determine if this row has the best average? Or bolding per column?
-        # Let's bold the best per column
-
-        row_str = []
-        for col in families + ["Average"]:
-            val = row[col]
-            # Check if this is the min in the column
-            col_min = family_df[col].min()
-            if abs(val - col_min) < 1e-9:
-                row_str.append(f"\\textbf{{{val:.2f}}}")
-            else:
-                row_str.append(f"{val:.2f}")
-
+    for fw, src in pure_python_rows:
+        row_str: list[str] = []
+        for fam in families:
+            val = family_df.at[src, fam]
+            if pd.isna(val):
+                row_str.append("---")
+                continue
+            cell = f"{float(val):.2f}"
+            if pd.notna(col_mins[fam]) and abs(float(val) - col_mins[fam]) < 1e-9:
+                cell = f"\\textbf{{{cell}}}"
+            row_str.append(cell)
         lines.append(f"{fw} & {' & '.join(row_str)} \\\\")
+
+    if pygmo_src is not None:
+        lines.append(r"[0.5ex]")
+        lines.append(r"\hdashline\noalign{\vskip 0.5ex}")
+        pygmo_cells: list[str] = []
+        for fam in families:
+            val = family_df.at[pygmo_src, fam]
+            if pd.isna(val):
+                pygmo_cells.append("---")
+            else:
+                pygmo_cells.append(f"\\textbf{{{float(val):.2f}}}")
+        lines.append(f"PyGMO (C++) & {' & '.join(pygmo_cells)} \\\\")
 
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     return "\n".join(lines)
@@ -435,7 +444,11 @@ def main() -> None:
 
     df["family"] = df["problem"].apply(get_family)
 
-    family = df.groupby(["framework", "family"])["runtime_seconds"].median().unstack()
+    # Family runtime protocol used in the manuscript:
+    # 1) sum problem runtimes within each family for each seed
+    # 2) report the median of those family sums across seeds
+    family_seed = df.groupby(["framework", "seed", "family"], as_index=False)["runtime_seconds"].sum()
+    family = family_seed.groupby(["framework", "family"])["runtime_seconds"].median().unstack()
     family["Average"] = family.mean(axis=1)
 
     vamos_family = family.loc[family.index.str.contains("VAMOS")].copy()
@@ -544,10 +557,10 @@ def main() -> None:
     original_len = len(content)
 
     replaced_any = False
-    # tab:frameworks_perf removed (redundant with time_comparison figure)
     # tab:detailed_backends and tab:detailed_comparison replaced by runtime heatmap figure
     for label, table in [
         ("tab:backends", table_3_latex),
+        ("tab:frameworks_perf", table_4_latex),
         ("tab:frameworks_hv", table_10_latex),
     ]:
         content, replaced = replace_table_in_tex(content, label, table)
