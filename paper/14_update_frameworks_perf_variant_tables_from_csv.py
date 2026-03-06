@@ -18,6 +18,7 @@ import pandas as pd
 ROOT_DIR = Path(__file__).parent.parent
 DATA_DIR = ROOT_DIR / "experiments"
 MANUSCRIPT_DIR = Path(__file__).parent / "manuscript"
+MAIN_TEX = MANUSCRIPT_DIR / "main.tex"
 
 
 ALGO_SPECS = [
@@ -30,6 +31,7 @@ ALGO_SPECS = [
 MERGED_OUTPUT = MANUSCRIPT_DIR / "frameworks_perf_variants.tex"
 MERGED_LABEL = "tab:frameworks_perf_variants"
 MERGED_CAPTION = "Median runtime (seconds) by problem family for algorithm variants"
+MAIN_TABLE_CAPTION = "Median runtime (seconds) by problem family for NSGA-II variants, SMS-EMOA, and MOEA/D."
 
 
 def _make_merged_table(sections: list[tuple[str, pd.DataFrame]], *, label: str, caption: str, generator: str) -> str:
@@ -69,6 +71,97 @@ def _make_merged_table(sections: list[tuple[str, pd.DataFrame]], *, label: str, 
 
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}", ""])
     return "\n".join(lines)
+
+
+def _algo_cell(display_name: str, row_idx: int) -> str:
+    """Render algorithm label in 1-2 lines to match main.tex style."""
+    if " (" in display_name and display_name.endswith(")"):
+        head, tail = display_name.split(" (", 1)
+        if row_idx == 0:
+            return head
+        if row_idx == 1:
+            return f"({tail}"
+        return ""
+    return display_name if row_idx == 0 else ""
+
+
+def _make_main_table(
+    sections: list[tuple[str, pd.DataFrame]],
+    *,
+    label: str,
+    caption: str,
+) -> str:
+    """Build the table format used directly in manuscript/main.tex."""
+    families = ["ZDT", "DTLZ", "WFG", "ZCAT"]
+    fw_order = ["VAMOS", "pymoo", "jMetalPy"]
+
+    lines = [
+        r"\begin{table}[htbp]",
+        r"\centering",
+        rf"\caption{{{caption}}}",
+        rf"\label{{{label}}}",
+        r"\begin{tabular}{ll" + "c" * len(families) + "}",
+        r"\toprule",
+        r"\textbf{Algorithm} & \textbf{Framework} & " + " & ".join([f"\\textbf{{{f}}}" for f in families]) + r" \\",
+    ]
+
+    for sec_idx, (display_name, family_df) in enumerate(sections):
+        lines.append(r"\midrule")
+
+        present_rows = [fw for fw in fw_order if fw in family_df.index]
+        if not present_rows:
+            continue
+
+        col_mins: dict[str, float] = {}
+        for fam in families:
+            vals = [float(family_df.at[fw, fam]) for fw in present_rows if fam in family_df.columns and pd.notna(family_df.at[fw, fam])]
+            col_mins[fam] = min(vals) if vals else float("nan")
+
+        for i, fw in enumerate(present_rows):
+            row = family_df.loc[fw]
+            cells: list[str] = []
+            for fam in families:
+                val = row[fam] if fam in family_df.columns else float("nan")
+                if pd.isna(val):
+                    cells.append("---")
+                else:
+                    sval = f"{float(val):.2f}"
+                    if pd.notna(col_mins[fam]) and abs(float(val) - col_mins[fam]) < 1e-9:
+                        sval = f"\\textbf{{{sval}}}"
+                    cells.append(sval)
+            lines.append(f"{_algo_cell(display_name, i)} & {fw} & {' & '.join(cells)} \\\\")
+
+    lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}", ""])
+    return "\n".join(lines)
+
+
+def _find_table_bounds(content: str, label: str) -> tuple[int, int] | None:
+    needle = f"\\label{{{label}}}"
+    label_pos = content.find(needle)
+    if label_pos < 0:
+        return None
+    begin_pos = content.rfind(r"\begin{table}", 0, label_pos)
+    if begin_pos < 0:
+        begin_pos = content.rfind(r"\begin{table*}", 0, label_pos)
+    if begin_pos < 0:
+        return None
+    end_pos = content.find(r"\end{table}", label_pos)
+    if end_pos < 0:
+        end_pos = content.find(r"\end{table*}", label_pos)
+        if end_pos < 0:
+            return None
+        end_pos += len(r"\end{table*}")
+    else:
+        end_pos += len(r"\end{table}")
+    return begin_pos, end_pos
+
+
+def _replace_table_in_tex(content: str, label: str, new_table: str) -> tuple[str, bool]:
+    bounds = _find_table_bounds(content, label)
+    if bounds is None:
+        return content, False
+    b, e = bounds
+    return content[:b] + new_table + content[e:], True
 
 
 def _get_family(problem_name: str) -> str:
@@ -140,8 +233,10 @@ def _load_family_table(csv_path: Path) -> pd.DataFrame:
         raise SystemExit(f"No rows in CSV: {csv_path}")
 
     df["family"] = df["problem"].astype(str).apply(_get_family)
-
-    family = df.groupby(["framework", "family"])["runtime_seconds"].median().unstack()
+    # Family runtime protocol in the manuscript:
+    # sum per family for each seed, then median across seeds.
+    family_seed = df.groupby(["framework", "seed", "family"], as_index=False)["runtime_seconds"].sum()
+    family = family_seed.groupby(["framework", "family"])["runtime_seconds"].median().unstack()
 
     # Keep only standard families; drop "Other" if present.
     family = family[[c for c in ["ZDT", "DTLZ", "WFG", "ZCAT"] if c in family.columns]]
@@ -190,6 +285,20 @@ def main() -> None:
     )
     MERGED_OUTPUT.write_text(latex, encoding="utf-8")
     print(f"Updated: {MERGED_OUTPUT}")
+
+    if MAIN_TEX.is_file():
+        main_table = _make_main_table(
+            sections,
+            label=MERGED_LABEL,
+            caption=MAIN_TABLE_CAPTION,
+        )
+        content = MAIN_TEX.read_text(encoding="utf-8")
+        content_new, replaced = _replace_table_in_tex(content, MERGED_LABEL, main_table)
+        if replaced:
+            MAIN_TEX.write_text(content_new, encoding="utf-8")
+            print(f"Updated: {MAIN_TEX} ({MERGED_LABEL})")
+        else:
+            print(f"Warning: label {MERGED_LABEL} not found in {MAIN_TEX}")
 
 
 if __name__ == "__main__":

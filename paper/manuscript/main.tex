@@ -419,9 +419,9 @@ In the first experiment, we compare the performance of NSGA-II using the differe
 \toprule
 \textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} & \textbf{Average} \\
 \midrule
-Numba & \textbf{2.66} & \textbf{2.95} & \textbf{3.44} & \textbf{6.32} & \textbf{3.84} \\
-MooCore & 4.17 & 4.00 & 4.63 & 6.40 & 4.80 \\
-NumPy & 6.35 & 9.33 & 5.39 & 8.82 & 7.47 \\
+Numba & \textbf{13.73} & \textbf{21.80} & \textbf{32.38} & \textbf{126.11} & \textbf{48.51} \\
+MooCore & 21.01 & 36.45 & 53.96 & 127.46 & 59.72 \\
+NumPy & 35.14 & 68.86 & 52.68 & 177.06 & 83.44 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -458,14 +458,14 @@ Table~\ref{tab:frameworks_perf} compares the runtime of generational NSGA-II acr
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} \\
 \midrule
-VAMOS & \textbf{13.73} & \textbf{21.80} & \textbf{32.38} & --- \\
-pymoo & 39.90 & 60.43 & 77.12 & --- \\
-jMetalPy & 24.09 & 32.30 & 421.20 & --- \\
-DEAP & 163.78 & 226.99 & 1154.80 & --- \\
-Platypus & 203.58 & 270.24 & 1188.44 & --- \\
+VAMOS & \textbf{13.73} & \textbf{21.80} & \textbf{32.38} & \textbf{126.11} \\
+pymoo & 39.90 & 60.43 & 77.12 & 231.29 \\
+jMetalPy & 24.09 & 32.30 & 421.20 & 196.02 \\
+DEAP & 163.78 & 226.99 & 1154.80 & 378.59 \\
+Platypus & 203.58 & 270.24 & 1188.44 & 445.80 \\
 [0.5ex]
 \hdashline\noalign{\vskip 0.5ex}
-PyGMO (C++) & \textbf{1.00} & \textbf{1.46} & \textbf{2.59} & --- \\
+PyGMO (C++) & \textbf{3.41} & \textbf{5.69} & \textbf{11.07} & \textbf{98.55} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -496,24 +496,26 @@ SMS-EMOA uses the hypervolume contribution as density estimator to select the wo
 \toprule
 \textbf{Algorithm} & \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} \\
 \midrule
-NSGA-II & VAMOS & \textbf{569.64} & \textbf{963.46} & \textbf{1631.19} & --- \\
-(steady-state) & pymoo & 5747.47 & 7259.88 & 6382.73 & --- \\
- & jMetalPy & 1930.43 & 2506.83 & 2756.07 & --- \\
+NSGA-II & VAMOS & \textbf{569.64} & \textbf{963.46} & \textbf{1631.19} & \textbf{707.25} \\
+(steady-state) & pymoo & 5747.47 & 7259.88 & 6382.73 & 4569.01 \\
+ & jMetalPy & 1930.43 & 2506.83 & 2756.07 & 1947.76 \\
 \midrule
-NSGA-II & VAMOS & \textbf{633.53} & \textbf{3043.39} & \textbf{253.26} & --- \\
-(ext. archive) & pymoo & 1422.71 & 7208.12 & 1515.89 & --- \\
- & jMetalPy & 744.93 & 3993.47 & 1736.74 & --- \\
+NSGA-II & VAMOS & \textbf{633.53} & \textbf{3043.39} & \textbf{253.26} & 819.91 \\
+(ext. archive) & pymoo & 1422.71 & 7208.12 & 1515.89 & 1511.36 \\
+ & jMetalPy & 744.93 & 3993.47 & 1736.74 & \textbf{602.88} \\
 \midrule
-SMS-EMOA & VAMOS & \textbf{363.02} & 642.53 & 1342.82 & --- \\
- & pymoo & 1658.10 & 2439.60 & 3410.49 & --- \\
- & jMetalPy & 377.01 & \textbf{529.49} & \textbf{1161.51} & --- \\
+SMS-EMOA & VAMOS & \textbf{363.02} & 642.53 & 1342.82 & \textbf{513.25} \\
+ & pymoo & 1658.10 & 2439.60 & 3410.49 & 2967.14 \\
+ & jMetalPy & 377.01 & \textbf{529.49} & \textbf{1161.51} & 2670.22 \\
 \midrule
-MOEA/D & VAMOS & \textbf{190.11} & \textbf{292.53} & \textbf{1686.29} & --- \\
- & pymoo & 1325.29 & 1735.46 & 4143.63 & --- \\
- & jMetalPy & 303.00 & 430.14 & 4267.52 & --- \\
+MOEA/D & VAMOS & \textbf{190.11} & \textbf{292.53} & \textbf{1686.29} & \textbf{276.29} \\
+ & pymoo & 1325.29 & 1735.46 & 4143.63 & 1023.63 \\
+ & jMetalPy & 303.00 & 430.14 & 4267.52 & 354.29 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+
 
 \VAMOS{} is the fastest framework for the steady-state NSGA-II, external archive, and MOEA/D configurations across all problem families. The speedup is most pronounced for the steady-state variant, where \VAMOS{} is 3.9--10$\times$ faster than pymoo and 1.7--3.4$\times$ faster than jMetalPy. These large margins are expected: steady-state algorithms execute $N$ iterations per generation, amplifying the per-iteration overhead of object-oriented frameworks. For the external archive variant, \VAMOS{} is 2.2--6$\times$ faster than pymoo and 1.2--6.9$\times$ faster than jMetalPy. For MOEA/D, \VAMOS{} is 2.5--7$\times$ faster than pymoo and 1.5--2.5$\times$ faster than jMetalPy across all families. For SMS-EMOA, \VAMOS{} is 2.5--4.6$\times$ faster than pymoo, but jMetalPy is slightly faster than \VAMOS{} on DTLZ and WFG (0.8--0.9$\times$), while \VAMOS{} retains the lead on ZDT.
 %\paragraph{Steady-state NSGA-II.}
