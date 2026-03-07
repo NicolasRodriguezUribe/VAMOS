@@ -419,7 +419,7 @@ In the first experiment, we compare the performance of NSGA-II using the differe
 \toprule
 \textbf{Backend} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} & \textbf{Average} \\
 \midrule
-Numba & \textbf{13.73} & \textbf{21.80} & \textbf{32.38} & \textbf{126.11} & \textbf{48.51} \\
+Numba & \textbf{4.89} & \textbf{8.14} & \textbf{14.33} & \textbf{87.43} & \textbf{28.70} \\
 MooCore & 21.01 & 36.45 & 53.96 & 127.46 & 59.72 \\
 NumPy & 35.14 & 68.86 & 52.68 & 177.06 & 83.44 \\
 \bottomrule
@@ -458,7 +458,7 @@ Table~\ref{tab:frameworks_perf} compares the runtime of generational NSGA-II acr
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} \\
 \midrule
-VAMOS & \textbf{13.73} & \textbf{21.80} & \textbf{32.38} & \textbf{126.11} \\
+VAMOS & \textbf{4.89} & \textbf{8.14} & \textbf{14.33} & \textbf{87.43} \\
 pymoo & 39.90 & 60.43 & 77.12 & 231.29 \\
 jMetalPy & 24.09 & 32.30 & 421.20 & 196.02 \\
 DEAP & 163.78 & 226.99 & 1154.80 & 378.59 \\
@@ -496,24 +496,25 @@ SMS-EMOA uses the hypervolume contribution as density estimator to select the wo
 \toprule
 \textbf{Algorithm} & \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} \\
 \midrule
-NSGA-II & VAMOS & \textbf{569.64} & \textbf{963.46} & \textbf{1631.19} & \textbf{707.25} \\
+NSGA-II & VAMOS & \textbf{150.21} & \textbf{244.80} & \textbf{799.29} & \textbf{715.29} \\
 (steady-state) & pymoo & 5747.47 & 7259.88 & 6382.73 & 4569.01 \\
  & jMetalPy & 1930.43 & 2506.83 & 2756.07 & 1947.76 \\
 \midrule
-NSGA-II & VAMOS & \textbf{633.53} & \textbf{3043.39} & \textbf{253.26} & 819.91 \\
+NSGA-II & VAMOS & \textbf{10.43} & \textbf{87.56} & \textbf{23.33} & \textbf{106.30} \\
 (ext. archive) & pymoo & 1422.71 & 7208.12 & 1515.89 & 1511.36 \\
- & jMetalPy & 744.93 & 3993.47 & 1736.74 & \textbf{602.88} \\
+ & jMetalPy & 744.93 & 3993.47 & 1736.74 & 602.88 \\
 \midrule
-SMS-EMOA & VAMOS & \textbf{363.02} & 642.53 & 1342.82 & \textbf{513.25} \\
+SMS-EMOA & VAMOS & \textbf{124.94} & \textbf{187.16} & \textbf{734.42} & \textbf{521.22} \\
  & pymoo & 1658.10 & 2439.60 & 3410.49 & 2967.14 \\
- & jMetalPy & 377.01 & \textbf{529.49} & \textbf{1161.51} & 2670.22 \\
+ & jMetalPy & 377.01 & 529.49 & 1161.51 & 2670.22 \\
 \midrule
-MOEA/D & VAMOS & \textbf{190.11} & \textbf{292.53} & \textbf{1686.29} & \textbf{276.29} \\
+MOEA/D & VAMOS & \textbf{76.19} & \textbf{118.98} & \textbf{647.96} & \textbf{340.78} \\
  & pymoo & 1325.29 & 1735.46 & 4143.63 & 1023.63 \\
  & jMetalPy & 303.00 & 430.14 & 4267.52 & 354.29 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
 
 
 
