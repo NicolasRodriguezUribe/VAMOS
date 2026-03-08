@@ -12,7 +12,7 @@ All types support:
 - to_unit(value) - map to [0, 1] space for optimization
 - from_unit(value) - map from [0, 1] space back to parameter value
 
-Parameter roles (used by MOEATuner for hierarchical search):
+Parameter roles (used by structured tuning workflows):
 - "structural": algorithm paradigm choices (decomposition, reference points)
 - "operator": discrete operator family choices (crossover type, mutation type)
 - "operator_rate": continuous operator parameters (eta, probabilities, sigma)
@@ -180,7 +180,7 @@ class ConditionalBlock:
 # Type alias for any parameter type
 ParamType = Real | Int | Categorical | Boolean
 
-# Valid parameter roles for MOEA-aware tuning
+# Valid parameter roles for structured tuning workflows
 PARAM_ROLES = {"structural", "operator", "operator_rate", "population", "adaptive"}
 
 

@@ -1,14 +1,9 @@
 """
-Convergence-aware evaluation for MOEA tuning.
+Convergence-aware evaluation for tuning workflows.
 
 Provides a TuningCallback that captures per-generation metrics during an
 algorithm run and produces a ConvergenceProfile summarizing convergence
 behavior, diversity dynamics, and stagnation characteristics.
-
-The MOEATuner uses convergence profiles for:
-- Adaptive early stopping (HV plateau detection)
-- Score enrichment (composite scoring beyond final HV)
-- Diagnostic-driven sampling (bias next configs based on observed deficiencies)
 """
 
 from __future__ import annotations
