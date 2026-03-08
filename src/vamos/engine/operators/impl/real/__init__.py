@@ -17,6 +17,7 @@ from .crossover import (
     UNDXCrossover,
     WholeArithmeticCrossover,
 )
+from ._intensification_base import IntensificationOperator
 from .initialize import (
     HaltonInitializer,
     LatinHypercubeInitializer,
@@ -24,6 +25,8 @@ from .initialize import (
     ScatterSearchInitializer,
     SobolInitializer,
 )
+from .intensification_directional import DirectionalIntensification
+from .intensification_pave import PAVEIntensification
 from .mutation import (
     CauchyMutation,
     GaussianMutation,
@@ -65,10 +68,12 @@ __all__ = [
     "Crossover",
     "DEMatingCrossover",
     "DifferentialCrossover",
+    "DirectionalIntensification",
     "FuzzyCrossover",
     "GaussianMutation",
     "LaplaceCrossover",
     "HaltonInitializer",
+    "IntensificationOperator",
     "LatinHypercubeInitializer",
     "LevyFlightMutation",
     "LinkedPolynomialMutation",
@@ -76,6 +81,7 @@ __all__ = [
     "NonUniformMutation",
     "OppositionBasedInitializer",
     "PCXCrossover",
+    "PAVEIntensification",
     "PolynomialMutation",
     "PowerLawMutation",
     "RealOperator",

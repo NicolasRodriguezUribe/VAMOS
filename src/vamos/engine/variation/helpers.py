@@ -40,7 +40,7 @@ from vamos.engine.operators.impl.permutation import (
     two_opt_mutation,
 )
 from vamos.engine.operators.impl.registry import get_operator_registry
-from vamos.engine.variation.protocol import CrossoverName, MutationName, RepairName
+from vamos.engine.variation.protocol import CrossoverName, IntensificationName, MutationName, RepairName
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.registry import Registry
 
@@ -57,6 +57,7 @@ _REAL_CROSSOVER_KEYS = (
     "undx",
     "simplex",
 )
+_REAL_INTENSIFICATION_KEYS = ("pave", "directional")
 _REAL_MUTATION_KEYS = (
     "polynomial",
     "non_uniform",
@@ -111,6 +112,7 @@ if TYPE_CHECKING:
     MIXED_CROSSOVER: Registry[Any]
     MIXED_MUTATION: Registry[Any]
     REAL_CROSSOVER: Registry[Any]
+    REAL_INTENSIFICATION: Registry[Any]
     REAL_MUTATION: Registry[Any]
 
 _REGISTRY_LABELS = {
@@ -123,6 +125,7 @@ _REGISTRY_LABELS = {
     "MIXED_CROSSOVER": "Mixed Crossover",
     "MIXED_MUTATION": "Mixed Mutation",
     "REAL_CROSSOVER": "Real Crossover",
+    "REAL_INTENSIFICATION": "Real Intensification",
     "REAL_MUTATION": "Real Mutation",
 }
 _REGISTRIES: dict[str, Registry[Any]] = {}
@@ -159,6 +162,7 @@ def _populate_defaults() -> None:
     mixed_crossover_registry = _get_registry("MIXED_CROSSOVER")
     mixed_mutation_registry = _get_registry("MIXED_MUTATION")
     real_crossover = _get_registry("REAL_CROSSOVER")
+    real_intensification = _get_registry("REAL_INTENSIFICATION")
     real_mutation = _get_registry("REAL_MUTATION")
 
     _populate(
@@ -257,6 +261,7 @@ def _populate_defaults() -> None:
 
     registry = get_operator_registry()
     _populate(real_crossover, {k: registry.get(k) for k in _REAL_CROSSOVER_KEYS})
+    _populate(real_intensification, {k: registry.get(k) for k in _REAL_INTENSIFICATION_KEYS})
     _populate(real_mutation, {k: registry.get(k) for k in _REAL_MUTATION_KEYS})
     real_mutation.register("pm", registry.get("polynomial"))
     _DEFAULTS_POPULATED = True
@@ -302,6 +307,16 @@ def validate_operator_support(encoding: EncodingLike, crossover: CrossoverName, 
             raise ValueError(f"Unsupported mutation '{mutation}' for real encoding.")
 
 
+def validate_intensification_support(encoding: EncodingLike, intensification: IntensificationName) -> None:
+    _populate_defaults()
+    normalized = normalize_encoding(encoding)
+    if normalized != "real":
+        raise ValueError(f"Intensification operator '{intensification}' is only supported for real encoding.")
+    real_intensification = _get_registry("REAL_INTENSIFICATION")
+    if intensification not in real_intensification:
+        raise ValueError(f"Unsupported intensification '{intensification}' for real encoding.")
+
+
 def ensure_supported_operator_names(
     encoding: EncodingLike,
     crossover: str,
@@ -330,6 +345,7 @@ def __getattr__(name: str) -> Registry[Any]:
 __all__ = [
     "resolve_prob_expression",
     "prepare_mutation_params",
+    "validate_intensification_support",
     "validate_operator_support",
     "ensure_supported_operator_names",
     "ensure_supported_repair_name",
@@ -341,4 +357,5 @@ __all__ = [
     "INT_MUTATION",
     "MIXED_CROSSOVER",
     "MIXED_MUTATION",
+    "REAL_INTENSIFICATION",
 ]

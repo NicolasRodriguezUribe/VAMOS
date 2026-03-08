@@ -204,6 +204,7 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     parent_idx = mating_pairs.reshape(-1)
     if st.immigration_manager is not None:
         st.immigration_manager.record_parent_indices(st.generation, parent_idx)
+    st.variation_workspace.bind_population(st.X, st.F)
     X_parents = st.variation.gather_parents(st.X, parent_idx)
     X_off = st.variation.produce_offspring(X_parents, st.rng)
 

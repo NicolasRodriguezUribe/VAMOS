@@ -192,6 +192,7 @@ def initialize_run(
     mut_method = mut_method.lower()
     mut_factor = algo.cfg.get("mutation_prob_factor")
     mut_params = prepare_mutation_params(mut_params, encoding, n_var, prob_factor=mut_factor)
+    intensification_cfg = algo.cfg.get("intensification")
 
     variation_workspace = VariationWorkspace()
     operator_pool, aos_controller = build_operator_pool(
@@ -201,6 +202,7 @@ def initialize_run(
         cross_params,
         mut_method,
         mut_params,
+        intensification_cfg,
         n_var,
         xl,
         xu,

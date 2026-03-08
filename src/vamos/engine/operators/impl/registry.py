@@ -27,6 +27,7 @@ def _get_registry() -> Registry[object]:
         CauchyMutation,
         ClampRepair,
         DEMatingCrossover,
+        DirectionalIntensification,
         FuzzyCrossover,
         GaussianMutation,
         LaplaceCrossover,
@@ -34,6 +35,7 @@ def _get_registry() -> Registry[object]:
         LinkedPolynomialMutation,
         MidpointBaseRepair,
         NonUniformMutation,
+        PAVEIntensification,
         PCXCrossover,
         PolynomialMutation,
         PowerLawMutation,
@@ -62,6 +64,10 @@ def _get_registry() -> Registry[object]:
     reg.register("pcx", PCXCrossover)
     reg.register("undx", UNDXCrossover)
     reg.register("simplex", SPXCrossover)
+
+    # Intensification
+    reg.register("pave", PAVEIntensification)
+    reg.register("directional", DirectionalIntensification)
 
     # Mutation
     reg.register("polynomial", PolynomialMutation)

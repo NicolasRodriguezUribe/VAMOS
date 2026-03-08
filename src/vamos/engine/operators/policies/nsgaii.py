@@ -25,9 +25,24 @@ from vamos.engine.adaptation.aos.policies import (
 from vamos.engine.adaptation.aos.portfolio import OperatorPortfolio
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.engine.variation import VariationPipeline, prepare_mutation_params
-from vamos.engine.variation.protocol import CrossoverName, MutationName, RepairConfigValue
+from vamos.engine.variation.protocol import CrossoverName, IntensificationName, MutationName, RepairConfigValue
 from vamos.foundation.encoding import EncodingLike
 from vamos.foundation.problem.types import ProblemProtocol
+
+
+def _normalize_intensification(
+    spec: Any | None,
+) -> tuple[IntensificationName | None, dict[str, Any]]:
+    if spec is None:
+        return None, {}
+    if isinstance(spec, tuple):
+        method, params = spec
+        if params is None:
+            return cast(IntensificationName, str(method).lower()), {}
+        return cast(IntensificationName, str(method).lower()), dict(params)
+    if isinstance(spec, str):
+        return cast(IntensificationName, spec.lower()), {}
+    raise ValueError(f"Invalid intensification spec: {spec!r}")
 
 
 def build_operator_pool(
@@ -37,6 +52,7 @@ def build_operator_pool(
     cross_params: dict[str, Any],
     mut_method: str,
     mut_params: dict[str, Any],
+    intensification_cfg: Any | None,
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
@@ -56,10 +72,12 @@ def build_operator_pool(
         Default crossover method.
     cross_params : dict[str, Any]
         Default crossover parameters.
-    mut_method : str
+        mut_method : str
         Default mutation method.
     mut_params : dict[str, Any]
         Default mutation parameters.
+    intensification_cfg : Any | None
+        Optional intensification operator config.
     n_var : int
         Number of decision variables.
     xl : np.ndarray
@@ -83,6 +101,7 @@ def build_operator_pool(
         cross_params,
         mut_method,
         mut_params,
+        intensification_cfg,
         n_var,
         xl,
         xu,
@@ -101,6 +120,7 @@ def _build_variation_pipelines(
     cross_params: dict[str, Any],
     mut_method: str,
     mut_params: dict[str, Any],
+    intensification_cfg: Any | None,
     n_var: int,
     xl: np.ndarray,
     xu: np.ndarray,
@@ -120,10 +140,12 @@ def _build_variation_pipelines(
         Default crossover method.
     cross_params : dict[str, Any]
         Default crossover parameters.
-    mut_method : str
+        mut_method : str
         Default mutation method.
     mut_params : dict[str, Any]
         Default mutation parameters.
+    intensification_cfg : Any | None
+        Optional intensification operator config.
     n_var : int
         Number of decision variables.
     xl : np.ndarray
@@ -150,6 +172,7 @@ def _build_variation_pipelines(
         for entry in op_configs:
             c_method, c_params = entry.get("crossover", (cross_method, cross_params))
             m_method, m_params = entry.get("mutation", (mut_method, mut_params))
+            i_cfg = entry.get("intensification", intensification_cfg)
             m_params = prepare_mutation_params(
                 cast(dict[str, float | int | str | None], m_params),
                 encoding,
@@ -163,6 +186,7 @@ def _build_variation_pipelines(
                     c_params,
                     m_method,
                     m_params,
+                    i_cfg,
                     xl,
                     xu,
                     variation_workspace,
@@ -180,6 +204,7 @@ def _build_variation_pipelines(
                 cross_params,
                 mut_method,
                 mut_params,
+                intensification_cfg,
                 xl,
                 xu,
                 variation_workspace,
@@ -197,6 +222,7 @@ def _create_variation_pipeline(
     cross_params: dict[str, Any],
     mut_method: str,
     mut_params: dict[str, Any],
+    intensification_cfg: Any | None,
     xl: np.ndarray,
     xu: np.ndarray,
     workspace: VariationWorkspace,
@@ -217,6 +243,8 @@ def _create_variation_pipeline(
         Mutation method name.
     mut_params : dict[str, Any]
         Mutation parameters.
+    intensification_cfg : Any | None
+        Optional intensification operator config.
     xl : np.ndarray
         Lower bounds.
     xu : np.ndarray
@@ -233,12 +261,15 @@ def _create_variation_pipeline(
     VariationPipeline
         Configured variation pipeline.
     """
+    intensification_method, intensification_params = _normalize_intensification(intensification_cfg)
     return VariationPipeline(
         encoding=encoding,
         cross_method=cast(CrossoverName, str(cross_method).lower()),
         cross_params=cross_params,
         mut_method=cast(MutationName, str(mut_method).lower()),
         mut_params=mut_params,
+        intensification_method=intensification_method,
+        intensification_params=intensification_params,
         xl=xl,
         xu=xu,
         workspace=workspace,
@@ -314,6 +345,8 @@ def _setup_aos_controller(
     pairs = []
     for idx, pipeline in enumerate(operator_pool):
         op_name = f"{pipeline.cross_method}+{pipeline.mut_method}"
+        if pipeline.intensification_method is not None:
+            op_name = f"{op_name}+{pipeline.intensification_method}"
         pairs.append((str(idx), op_name))
     portfolio = OperatorPortfolio.from_pairs(pairs)
 

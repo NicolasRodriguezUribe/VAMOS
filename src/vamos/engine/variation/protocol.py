@@ -39,6 +39,7 @@ RealCrossoverName: TypeAlias = Literal[
     "simplex",
     "de",
 ]
+RealIntensificationName: TypeAlias = Literal["pave", "directional"]
 RealMutationName: TypeAlias = Literal[
     "polynomial",
     "non_uniform",
@@ -82,17 +83,26 @@ MixedCrossoverName: TypeAlias = Literal["mixed", "uniform"]
 MixedMutationName: TypeAlias = Literal["mixed", "gaussian"]
 
 CrossoverName: TypeAlias = RealCrossoverName | BinaryCrossoverName | IntegerCrossoverName | PermutationCrossoverName | MixedCrossoverName
+IntensificationName: TypeAlias = RealIntensificationName
 MutationName: TypeAlias = RealMutationName | BinaryMutationName | IntegerMutationName | PermutationMutationName | MixedMutationName
 RepairName: TypeAlias = RealRepairName
 RepairConfigValue: TypeAlias = tuple[RepairName, dict[str, Any]] | Literal["auto"]
-OperatorName: TypeAlias = CrossoverName | MutationName | RepairName
+OperatorName: TypeAlias = CrossoverName | IntensificationName | MutationName | RepairName
 
 
 @runtime_checkable
 class VariationWorkspaceProtocol(Protocol):
     """Workspace contract for reusable NumPy buffers (see `VariationWorkspace`)."""
 
+    population: np.ndarray | None
+    objectives: np.ndarray | None
+    decision_vectors: np.ndarray | None
+
     def request(self, key: str, shape: tuple[int, ...], dtype: Any) -> np.ndarray: ...
+
+    def bind_population(self, X: np.ndarray, F: np.ndarray | None = None) -> None: ...
+
+    def clear_population(self) -> None: ...
 
 
 @runtime_checkable
@@ -110,6 +120,19 @@ class MutationOperator(Protocol):
 
 
 @runtime_checkable
+class IntensificationOperator(Protocol):
+    """Vectorized intensification operator: offspring -> offspring."""
+
+    def __call__(
+        self,
+        offspring: np.ndarray,
+        rng: np.random.Generator,
+        *,
+        parents: np.ndarray | None = None,
+    ) -> np.ndarray: ...
+
+
+@runtime_checkable
 class RepairOperator(Protocol):
     """Vectorized repair operator: clamp/reflect/resample etc."""
 
@@ -121,6 +144,8 @@ __all__ = [
     "BinaryMutationName",
     "CrossoverName",
     "IntegerCrossoverName",
+    "IntensificationName",
+    "IntensificationOperator",
     "IntegerMutationName",
     "MixedCrossoverName",
     "MixedMutationName",
@@ -129,6 +154,7 @@ __all__ = [
     "PermutationCrossoverName",
     "PermutationMutationName",
     "RealCrossoverName",
+    "RealIntensificationName",
     "RealMutationName",
     "RealRepairName",
     "RepairName",

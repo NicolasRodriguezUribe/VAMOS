@@ -66,6 +66,10 @@ _KNOWN_OPERATORS: dict[str, set[str]] = {
         "blend",
         "uniform",
     },
+    "intensification": {
+        "pave",
+        "directional",
+    },
     "mutation": {
         "polynomial",
         "non_uniform",
@@ -167,7 +171,7 @@ def _validate_operator_name(name: str, category: str) -> None:
 
 def _validate_operators(cfg: dict[str, Any]) -> None:
     """Validate all operator names found in a builder cfg dict."""
-    for key in ("crossover", "mutation", "selection", "repair"):
+    for key in ("crossover", "intensification", "mutation", "selection", "repair"):
         val = cfg.get(key)
         if val is not None and isinstance(val, tuple) and len(val) >= 1:
             _validate_operator_name(str(val[0]), key)

@@ -27,6 +27,8 @@ from vamos.engine.variation.helpers import (
 from vamos.engine.variation.protocol import (
     CrossoverName,
     CrossoverOperator,
+    IntensificationName,
+    IntensificationOperator,
     MutationName,
     MutationOperator,
     VariationWorkspaceProtocol,
@@ -52,6 +54,15 @@ class EncodingStrategy(Protocol):
     def children_per_group(self, cross_method: CrossoverName) -> int: ...
 
     def build_crossover(self, method: CrossoverName, params: dict[str, Any]) -> CrossoverOperator: ...
+
+    def build_intensification(
+        self,
+        method: IntensificationName,
+        params: dict[str, Any],
+        *,
+        parents_per_group: int,
+        children_per_group: int,
+    ) -> IntensificationOperator: ...
 
     def build_mutation(self, method: MutationName, params: dict[str, Any]) -> MutationOperator: ...
 
@@ -113,6 +124,51 @@ class RealEncodingStrategy:
             return offspring
 
         return crossover
+
+    def build_intensification(
+        self,
+        method: IntensificationName,
+        params: dict[str, Any],
+        *,
+        parents_per_group: int,
+        children_per_group: int,
+    ) -> IntensificationOperator:
+        registry = get_operator_registry()
+        try:
+            op_cls = cast(type[Any], registry.get(method))
+        except KeyError as exc:
+            available = ", ".join(registry.list())
+            raise ValueError(f"Unknown real intensification '{method}'. Available: {available}") from exc
+
+        kwargs = dict(params)
+        prob = kwargs.pop("prob", None)
+        if prob is not None and "prob_intensification" in kwargs:
+            raise ValueError("Use either 'prob' or 'prob_intensification', not both.")
+        kwargs.setdefault("prob_intensification", 1.0 if prob is None else float(prob))
+        kwargs.setdefault("allow_inplace", True)
+        kwargs.setdefault("lower", self.ctx.xl)
+        kwargs.setdefault("upper", self.ctx.xu)
+        kwargs.setdefault("workspace", self.ctx.workspace)
+        kwargs.setdefault("parents_per_group", parents_per_group)
+        kwargs.setdefault("children_per_group", children_per_group)
+
+        try:
+            op = op_cls(**kwargs)
+        except TypeError as exc:
+            raise ValueError(
+                f"Failed to initialize intensification '{method}' with params {kwargs}. Error: {exc}"
+            ) from exc
+
+        def intensify(
+            offspring: np.ndarray,
+            rng: np.random.Generator,
+            *,
+            parents: np.ndarray | None = None,
+        ) -> np.ndarray:
+            return cast(np.ndarray, op(offspring, rng, parents=parents))
+
+        setattr(intensify, "_operator", op)
+        return intensify
 
     def build_mutation(self, method: MutationName, params: dict[str, Any]) -> MutationOperator:
         registry = get_operator_registry()
@@ -182,6 +238,16 @@ class PairwiseEncodingStrategy:
 
         return mutate
 
+    def build_intensification(
+        self,
+        method: IntensificationName,
+        params: dict[str, Any],
+        *,
+        parents_per_group: int,
+        children_per_group: int,
+    ) -> IntensificationOperator:
+        raise ValueError(f"Intensification operator '{method}' is not supported for {self.encoding} encoding.")
+
 
 @dataclass(frozen=True)
 class IntegerEncodingStrategy:
@@ -234,6 +300,16 @@ class IntegerEncodingStrategy:
 
         return mutate
 
+    def build_intensification(
+        self,
+        method: IntensificationName,
+        params: dict[str, Any],
+        *,
+        parents_per_group: int,
+        children_per_group: int,
+    ) -> IntensificationOperator:
+        raise ValueError(f"Intensification operator '{method}' is not supported for {self.encoding} encoding.")
+
 
 @dataclass(frozen=True)
 class MixedEncodingStrategy:
@@ -270,6 +346,16 @@ class MixedEncodingStrategy:
             return offspring
 
         return mutate
+
+    def build_intensification(
+        self,
+        method: IntensificationName,
+        params: dict[str, Any],
+        *,
+        parents_per_group: int,
+        children_per_group: int,
+    ) -> IntensificationOperator:
+        raise ValueError(f"Intensification operator '{method}' is not supported for {self.encoding} encoding.")
 
 
 def make_encoding_strategy(encoding: Encoding, ctx: VariationContext) -> EncodingStrategy:

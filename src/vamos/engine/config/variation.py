@@ -28,6 +28,7 @@ RepairSpecInput: TypeAlias = OperatorSpecInput | Literal["auto"]
 
 class VariationOverrides(TypedDict, total=False):
     crossover: OperatorSpecInput
+    intensification: OperatorSpecInput
     mutation: OperatorSpecInput
     selection: OperatorSpecInput
     repair: RepairSpecInput
@@ -59,6 +60,10 @@ OPERATORS_BY_ENCODING: dict[str, dict[str, list[OperatorTuple]]] = {
             ("pcx", {"prob": 0.9}),
             ("undx", {"prob": 0.9}),
             ("simplex", {"prob": 0.9}),
+        ],
+        "intensification": [
+            ("pave", {"prob": 0.9, "k_neighbors": 5, "alpha": 0.35, "beta": 0.2, "lambda_distance": 0.5}),
+            ("directional", {"prob": 0.9, "k_neighbors": 5, "alpha": 0.25, "beta": 0.1}),
         ],
         "mutation": [
             ("polynomial", {"prob": "1/n", "eta": 20.0}),
@@ -186,7 +191,7 @@ def normalize_variation_config(raw: Mapping[str, object] | None) -> VariationCon
     if not raw:
         return None
     normalized: VariationConfig = {}
-    known_op_keys = {"crossover", "mutation", "selection", "repair", "aggregation"}
+    known_op_keys = {"crossover", "intensification", "mutation", "selection", "repair", "aggregation"}
     for key in known_op_keys:
         if key == "repair" and _is_auto_repair(raw.get(key)):
             normalized[key] = "auto"
@@ -243,12 +248,14 @@ def resolve_default_variation_config(encoding: str, overrides: Mapping[str, obje
     if overrides:
         if "crossover" in overrides:
             base["crossover"] = overrides["crossover"]
+        if "intensification" in overrides:
+            base["intensification"] = overrides["intensification"]
         if "mutation" in overrides:
             base["mutation"] = overrides["mutation"]
         if "repair" in overrides and not _is_auto_repair(overrides["repair"]):
             base["repair"] = overrides["repair"]
         for key, value in overrides.items():
-            if key in {"crossover", "mutation", "repair"}:
+            if key in {"crossover", "intensification", "mutation", "repair"}:
                 continue
             base[key] = value
 

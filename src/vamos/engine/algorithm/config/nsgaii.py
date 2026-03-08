@@ -55,6 +55,21 @@ class _NSGAIIConfigBuilder:
         self._cfg["mutation"] = (method, cfg_kwargs)
         return self
 
+    def intensification(
+        self,
+        method: str | tuple[str, dict[str, Any]] | None,
+        params: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> _NSGAIIConfigBuilder:
+        if method is None:
+            self._cfg["intensification"] = None
+            return self
+        if isinstance(method, tuple) and params is None and not kwargs:
+            method, params = method
+        cfg_kwargs = params or kwargs
+        self._cfg["intensification"] = (method, cfg_kwargs)
+        return self
+
     def offspring_size(self, value: int) -> _NSGAIIConfigBuilder:
         if value <= 0:
             raise ValueError("offspring size must be positive.")
@@ -163,6 +178,7 @@ class _NSGAIIConfigBuilder:
         return NSGAIIConfig(
             pop_size=pop_size,
             crossover=self._cfg["crossover"],
+            intensification=self._cfg.get("intensification"),
             mutation=self._cfg["mutation"],
             selection=selection,
             offspring_size=self._cfg.get("offspring_size"),
@@ -190,6 +206,7 @@ class NSGAIIConfig(_SerializableConfig):
     crossover: tuple[str, dict[str, Any]]
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
+    intensification: tuple[str, dict[str, Any]] | None = None
     offspring_size: int | None = None
     steady_state: bool = False
     replacement_size: int | None = None

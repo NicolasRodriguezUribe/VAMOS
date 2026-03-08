@@ -8,6 +8,7 @@ def test_available_crossover_methods_real():
     # Check for known real crossovers
     assert "sbx" in methods
     assert "blx_alpha" in methods
+    assert "pave" not in methods
     # Should not contain binary/perm operators
     assert "one_point" not in methods
     assert "pmx" not in methods

@@ -55,6 +55,54 @@ def test_variation_pipeline_real_uniform_mutation_constructs():
     assert offspring.shape == parents.shape
 
 
+def test_variation_pipeline_real_pave_intensification_constructs():
+    n_var = 4
+    xl, xu = _bounds(n_var)
+    pipeline = VariationPipeline(
+        encoding="real",
+        cross_method="sbx",
+        cross_params={"prob": 1.0, "eta": 10.0},
+        mut_method="polynomial",
+        mut_params={"prob": 0.5, "eta": 15.0},
+        intensification_method="pave",
+        intensification_params={"prob": 1.0, "k_neighbors": 2, "alpha": 0.25, "beta": 0.15, "lambda_distance": 0.5},
+        xl=xl,
+        xu=xu,
+        workspace=VariationWorkspace(),
+        repair_cfg="auto",
+        problem=None,
+    )
+
+    rng = np.random.default_rng(0)
+    parents = rng.random((6, n_var))
+    offspring = pipeline.produce_offspring(parents, rng)
+    assert offspring.shape == parents.shape
+
+
+def test_variation_pipeline_real_directional_intensification_constructs():
+    n_var = 4
+    xl, xu = _bounds(n_var)
+    pipeline = VariationPipeline(
+        encoding="real",
+        cross_method="sbx",
+        cross_params={"prob": 1.0, "eta": 10.0},
+        mut_method="polynomial",
+        mut_params={"prob": 0.5, "eta": 15.0},
+        intensification_method="directional",
+        intensification_params={"prob": 1.0, "k_neighbors": 2, "alpha": 0.2, "beta": 0.1},
+        xl=xl,
+        xu=xu,
+        workspace=VariationWorkspace(),
+        repair_cfg="auto",
+        problem=None,
+    )
+
+    rng = np.random.default_rng(0)
+    parents = rng.random((6, n_var))
+    offspring = pipeline.produce_offspring(parents, rng)
+    assert offspring.shape == parents.shape
+
+
 def test_variation_pipeline_real_undx_group_sizes():
     n_var = 4
     xl, xu = _bounds(n_var)
@@ -235,6 +283,67 @@ def test_real_pipeline_repairs_after_crossover_and_after_mutation():
 
     assert inspect_mutation.seen is not None
     assert np.allclose(inspect_mutation.seen, 1.0)
+    assert np.allclose(offspring, 1.0)
+
+
+def test_real_pipeline_intensification_runs_after_mutation_before_repair():
+    xl = np.zeros(1, dtype=float)
+    xu = np.ones(1, dtype=float)
+    pipeline = VariationPipeline(
+        encoding="real",
+        cross_method="arithmetic",
+        cross_params={"prob": 1.0},
+        mut_method="polynomial",
+        mut_params={"prob": 0.0, "eta": 20.0},
+        intensification_method="pave",
+        intensification_params={"prob": 1.0},
+        xl=xl,
+        xu=xu,
+        workspace=VariationWorkspace(),
+        repair_cfg="auto",
+        problem=None,
+    )
+
+    class _InspectMutation:
+        def __init__(self) -> None:
+            self.seen: np.ndarray | None = None
+
+        def __call__(self, offspring: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+            self.seen = np.array(offspring, copy=True)
+            return offspring + 0.75
+
+    class _InspectIntensification:
+        def __init__(self) -> None:
+            self.seen: np.ndarray | None = None
+            self.parents: np.ndarray | None = None
+
+        def __call__(
+            self,
+            offspring: np.ndarray,
+            rng: np.random.Generator,
+            *,
+            parents: np.ndarray | None = None,
+        ) -> np.ndarray:
+            self.seen = np.array(offspring, copy=True)
+            self.parents = None if parents is None else np.array(parents, copy=True)
+            return offspring + 0.5
+
+    inspect_mutation = _InspectMutation()
+    inspect_intensification = _InspectIntensification()
+    pipeline.crossover_op = lambda parents, rng: np.full_like(parents, 2.0)
+    pipeline.mutation_op = inspect_mutation
+    pipeline.intensification_op = inspect_intensification
+
+    parents = np.array([[0.2], [0.8]], dtype=float)
+    rng = np.random.default_rng(0)
+    offspring = pipeline.produce_offspring(parents, rng)
+
+    assert inspect_mutation.seen is not None
+    assert inspect_intensification.seen is not None
+    assert inspect_intensification.parents is not None
+    assert np.allclose(inspect_mutation.seen, 2.0)
+    assert np.allclose(inspect_intensification.seen, 2.75)
+    assert np.allclose(inspect_intensification.parents, parents)
     assert np.allclose(offspring, 1.0)
 
 

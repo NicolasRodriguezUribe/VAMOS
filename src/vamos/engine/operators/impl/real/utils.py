@@ -37,10 +37,16 @@ class VariationWorkspace:
     """
     Simple buffer registry that hands out reusable NumPy arrays keyed by name.
     Operators can reuse temporary arrays across generations to avoid reallocations.
+    The workspace can also expose the current population context for operators
+    that need population-level information during variation.
     """
 
     def __init__(self) -> None:
         self._buffers: dict[str, np.ndarray] = {}
+        self.context: dict[str, np.ndarray] = {}
+        self.population: np.ndarray | None = None
+        self.objectives: np.ndarray | None = None
+        self.decision_vectors: np.ndarray | None = None
 
     def request(self, key: str, shape: tuple[int, ...], dtype: Any) -> np.ndarray:
         dtype = np.dtype(dtype)
@@ -49,6 +55,36 @@ class VariationWorkspace:
             buf = np.empty(shape, dtype=dtype)
             self._buffers[key] = buf
         return buf
+
+    def bind_population(self, X: ArrayLike, F: ArrayLike | None = None) -> None:
+        """Bind the current population and optional objectives for this generation."""
+        population = np.asarray(X)
+        self.population = population
+        self.decision_vectors = population
+        self.context["population"] = population
+        self.context["decision_vectors"] = population
+        self.context["X"] = population
+
+        if F is None:
+            self.objectives = None
+            self.context.pop("objectives", None)
+            self.context.pop("objective_values", None)
+            self.context.pop("F", None)
+            return
+
+        objectives = np.asarray(F)
+        self.objectives = objectives
+        self.context["objectives"] = objectives
+        self.context["objective_values"] = objectives
+        self.context["F"] = objectives
+
+    def clear_population(self) -> None:
+        """Clear the bound population context while retaining scratch buffers."""
+        self.population = None
+        self.objectives = None
+        self.decision_vectors = None
+        for key in ("population", "decision_vectors", "X", "objectives", "objective_values", "F"):
+            self.context.pop(key, None)
 
 
 class RealOperator:
