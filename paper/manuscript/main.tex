@@ -409,7 +409,7 @@ For WFG problems, the reference front is necessarily an approximation; we use la
 
 \subsection{\VAMOS{} backend comparison}
 
-In the first experiment, we compare the performance of NSGA-II using the different backends of \VAMOS{} on the ZDT, DTLZ and WFG families. For each family, we sum the execution times of solving all the problems in the family and report the median runtime of repeating this process 30 times. The results are included in Table~\ref{tab:backends}.
+In the first experiment, we compare the performance of NSGA-II using the different backends of \VAMOS{} on the ZDT, DTLZ, WFG, and ZCAT families. For each family, we sum the execution times of solving all the problems in the family and report the median runtime of repeating this process 30 times. The results are included in Table~\ref{tab:backends}.
 
 \begin{table}[htbp]
 \centering
@@ -427,7 +427,7 @@ NumPy & 35.14 & 68.86 & 52.68 & 177.06 & 83.44 \\
 \end{table}
 %\footnotetext{Average\textsuperscript{*} in summary tables denotes the mean of family-level medians (3 values). Per-problem runtimes are reported in Fig.~\ref{fig:runtime_heatmap}.}
 
-The Numba backend is the fastest across all three families. MooCore is 1.5--1.7$\times$ slower than Numba, while the pure NumPy backend is 1.6--3.2$\times$ slower, confirming that per-generation interpreted Python overhead dominates the cost in the absence of JIT compilation. The gap is largest on DTLZ, where NumPy is 3.2$\times$ slower than Numba, while on WFG all three backends are closest in relative terms.
+The Numba backend is the fastest across all four families. MooCore is 1.5--4.5$\times$ slower than Numba, while the pure NumPy backend is 2.0--8.5$\times$ slower, confirming that per-generation interpreted Python overhead dominates the cost in the absence of JIT compilation. The largest gap appears on DTLZ, where NumPy is 8.5$\times$ slower than Numba; the smallest relative difference is between Numba and MooCore on ZCAT (1.5$\times$).
 
 %\subsection{Scalability with Population Size}
 %\label{sec:scaling}
@@ -446,7 +446,7 @@ Fig.~\ref{fig:scaling} shows that the runtime gap between NumPy and Numba widens
 In this subsection we first compare the runtime of \VAMOS{} against other Python frameworks using generational NSGA-II. Then, we extend the comparison to NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D.
 
 %\paragraph{NSGA-II with standard settings.}
-Table~\ref{tab:frameworks_perf} compares the runtime of generational NSGA-II across five pure-Python frameworks and PyGMO, a compiled C++ baseline (Python bindings to the PaGMO2 library). Among pure-Python frameworks, \VAMOS{} (Numba backend) is the fastest in all four families (ZDT, DTLZ, WFG, and ZCAT). jMetalPy is the closest competitor on ZDT and DTLZ (1.8$\times$ and 1.5$\times$ slower, respectively), but its WFG runtime explodes to 13$\times$ due to per-solution overhead amplified by higher dimensionality. pymoo is 1.8--2.9$\times$ slower, while DEAP and Platypus are 3--37$\times$ slower. PyGMO remains faster than \VAMOS{} (1.3--4$\times$ depending on family), as expected given that both its algorithms and benchmark functions execute entirely in compiled C++ code; it serves as a performance ceiling for what compiled implementations can achieve.
+Table~\ref{tab:frameworks_perf} compares the runtime of generational NSGA-II across five pure-Python frameworks and PyGMO, a compiled C++ baseline (Python bindings to the PaGMO2 library). Among pure-Python frameworks, \VAMOS{} (Numba backend) is the fastest in all four families (ZDT, DTLZ, WFG, and ZCAT). jMetalPy is the closest competitor on ZDT, DTLZ, and ZCAT, yet it remains 2.2--4.9$\times$ slower on those families and 29.4$\times$ slower on WFG. pymoo is 2.7--8.2$\times$ slower, while DEAP and Platypus are 4.3--82.9$\times$ slower. PyGMO remains faster than \VAMOS{} on ZDT, DTLZ, and WFG (1.3--1.4$\times$), as expected given that both its algorithms and benchmark functions execute entirely in compiled C++ code; however, \VAMOS{} is slightly faster on ZCAT (87.43\,s vs.\ 98.55\,s).
 %We repeat the same runtime protocol for NSGA-II variants (steady-state and external archive), SMS-EMOA (steady-state, one offspring per iteration), and MOEA/D (decomposition with differential-evolution variation), reported in Tables~\ref{tab:frameworks_perf_nsgaii_ss} and~\ref{tab:frameworks_perf_nsgaii_archive} and Tables~\ref{tab:frameworks_perf_smsemoa} and~\ref{tab:frameworks_perf_moead}.
 %These supplementary runtime tables are placed in Appendix~\ref{app:variants} to keep the main results focused.
 
@@ -518,7 +518,7 @@ MOEA/D & VAMOS & \textbf{76.19} & \textbf{118.98} & \textbf{647.96} & \textbf{34
 
 
 
-\VAMOS{} is the fastest framework for steady-state NSGA-II and MOEA/D across all problem families. The speedup is most pronounced for the steady-state variant, where \VAMOS{} is 3.9--10$\times$ faster than pymoo and 1.7--3.4$\times$ faster than jMetalPy. These large margins are expected: steady-state algorithms execute $N$ iterations per generation, amplifying the per-iteration overhead of object-oriented frameworks. For the external-archive variant, \VAMOS{} is 1.8--6$\times$ faster than pymoo and 1.2--6.9$\times$ faster than jMetalPy on ZDT/DTLZ/WFG, while jMetalPy is faster on ZCAT (602.88\,s vs.\ 819.91\,s). For MOEA/D, \VAMOS{} is 2.5--7$\times$ faster than pymoo and 1.3--2.5$\times$ faster than jMetalPy across all families. For SMS-EMOA, \VAMOS{} is 2.5--5.8$\times$ faster than pymoo, but jMetalPy is slightly faster than \VAMOS{} on DTLZ and WFG (0.8--0.9$\times$), while \VAMOS{} retains the lead on ZDT and ZCAT.
+\VAMOS{} is the fastest framework for all four algorithm variants across all problem families. The speedup is most pronounced for the steady-state variant, where \VAMOS{} is 6.4--38.3$\times$ faster than pymoo and 2.7--12.9$\times$ faster than jMetalPy. These large margins are expected: steady-state algorithms execute $N$ iterations per generation, amplifying the per-iteration overhead of object-oriented frameworks. For the external-archive variant, \VAMOS{} is 14.2--136.4$\times$ faster than pymoo and 5.7--74.4$\times$ faster than jMetalPy. For MOEA/D, \VAMOS{} is 3.0--17.4$\times$ faster than pymoo and 1.0--6.6$\times$ faster than jMetalPy, with the narrowest gap on ZCAT. For SMS-EMOA, \VAMOS{} is 4.6--13.3$\times$ faster than pymoo and 1.6--5.1$\times$ faster than jMetalPy, with the smallest margin on WFG.
 %\paragraph{Steady-state NSGA-II.}
 %We now benchmark the steady-state variant of NSGA-II across \VAMOS{}, pymoo, and jMetalPy. In this mode, only one offspring is produced per iteration, so the main loop executes $N$ times more iterations than the generational variant for the same evaluation budget, introducing additional per-iteration overhead.
 
@@ -560,7 +560,7 @@ MOEA/D & VAMOS & \textbf{76.19} & \textbf{118.98} & \textbf{647.96} & \textbf{34
 \end{figure*}
 
 %\subsection{Memory Footprint}
-To complement the runtime comparison, we measure peak resident-set-size (RSS) overhead during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework (Fig.~\ref{fig:memory_comparison}). \VAMOS{} achieves a median peak memory of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). The lower memory footprint reflects the array-native representation, which stores the entire population in contiguous NumPy arrays rather than materializing individual solution objects with per-instance attribute dictionaries.
+To complement the runtime comparison, we also measured peak resident-set-size (RSS) overhead during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} achieves a median peak memory of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). The lower memory footprint reflects the array-native representation, which stores the entire population in contiguous NumPy arrays rather than materializing individual solution objects with per-instance attribute dictionaries.
 
 %\begin{figure}[htbp]
 %\centering
@@ -570,7 +570,7 @@ To complement the runtime comparison, we measure peak resident-set-size (RSS) ov
 %\end{figure}
 
 \subsection{Convergence, Solution Quality, and Statistical Analysis}
-To verify that the runtime speedups do not compromise solution quality, the supplementary material provides three complementary analyses. Appendix~A presents a convergence analysis: normalized hypervolume is tracked at 1{,}000-evaluation intervals over 50{,}000 evaluations on three representative problems (DTLZ2, WFG4, ZDT1), showing that \VAMOS{}, pymoo, and jMetalPy follow nearly indistinguishable trajectories. Appendix~B reports the solution quality comparison: all frameworks attain virtually identical normalized HV on ZDT, medians are tightly clustered on DTLZ, and \VAMOS{} achieves the highest median on WFG (0.934 vs.\ 0.846 for pymoo). Appendix~C details the statistical analysis: Wilcoxon signed-rank tests with Holm correction reveal only one significant difference out of 21 problems (ZDT6, $\Delta \approx 0.3\%$), and paired-bootstrap equivalence tests confirm that \VAMOS{} is equivalent to pymoo on 14/21 problems and non-inferior on 16/21. Taken together, these results confirm that \VAMOS{} delivers faster runtimes without sacrificing convergence behavior or final solution quality.
+To verify that the runtime speedups do not compromise solution quality, the supplementary material provides three complementary analyses. Appendix~A presents a convergence analysis: normalized hypervolume is tracked at 1{,}000-evaluation intervals over 50{,}000 evaluations on three representative problems (DTLZ2, WFG4, ZDT1), showing that \VAMOS{}, pymoo, and jMetalPy follow nearly indistinguishable trajectories. Appendix~B reports the solution quality comparison: all frameworks attain virtually identical normalized HV on ZDT, medians are tightly clustered on DTLZ, and \VAMOS{} achieves the highest family-level median on WFG for the NSGA-II baseline (0.934 vs.\ 0.846 for pymoo in the supplementary summary). Appendix~C details the statistical analysis: for the 41 NSGA-II benchmark problems, Wilcoxon signed-rank tests with Holm correction reveal only one significant difference (ZDT6, $\Delta \approx 0.4\%$), and paired-bootstrap equivalence tests confirm that \VAMOS{} is equivalent to pymoo on 37/41 problems and non-inferior on 38/41. Taken together, these results confirm that \VAMOS{} delivers faster runtimes without sacrificing convergence behavior or final solution quality.
 
 \subsection{Discussion}
 \label{sec:discussion}
@@ -579,9 +579,9 @@ The observed speedups are primarily due to (i) the array-based representation th
 
 The cross-framework gaps are problem-family dependent: WFG problems exhibit the largest relative slowdowns for object-centric libraries, consistent with their higher dimensionality amplifying per-solution overhead. The magnitude of the speedup also varies across algorithm variants in a pattern consistent with this overhead model. Steady-state variants (Table~\ref{tab:frameworks_perf_variants}) show the largest relative speedups because they perform one selection--variation--survival cycle per offspring: frameworks with high per-iteration Python overhead incur that cost 50{,}000 times (one per evaluation) rather than 500 times (one per generation of 100 offspring). \VAMOS{}'s array-kernel dispatch amortizes this overhead more effectively, widening the gap.
 
-Not all comparisons favor \VAMOS{}. For SMS-EMOA on DTLZ and WFG (Table~\ref{tab:frameworks_perf_variants}), jMetalPy is slightly faster than \VAMOS{} (0.8--0.9$\times$). Unlike steady-state NSGA-II---where \VAMOS{}'s Numba-accelerated ranking and crowding-distance computation dominate the per-iteration cost---SMS-EMOA's survival selection is bottlenecked by the hypervolume contribution calculation on the worst-ranked front. Both frameworks delegate this computation to the same C library (\texttt{moocore}), so \VAMOS{}'s kernel acceleration does not yield a differential advantage. The remaining per-iteration overhead from array-based dispatch in \VAMOS{} then becomes visible, narrowing the gap and allowing jMetalPy's leaner per-offspring loop to edge ahead on the higher-dimensional DTLZ and WFG families.
+Not all comparisons yield equally large margins. The smallest gap appears for SMS-EMOA on WFG, where jMetalPy is only 1.6$\times$ slower than \VAMOS{}, and for MOEA/D on ZCAT, where the gap narrows to near parity (1.04$\times$). Unlike steady-state NSGA-II---where \VAMOS{}'s Numba-accelerated ranking and crowding-distance computation dominate the per-iteration cost---SMS-EMOA's survival selection is bottlenecked by the hypervolume contribution calculation on the worst-ranked front. Both frameworks delegate this computation to the same C library (\texttt{moocore}), so \VAMOS{}'s kernel acceleration yields a smaller differential advantage in that setting. Similarly, MOEA/D spends most of its time in neighborhood replacement rather than in generic ranking kernels, which limits the benefit of the backend distinction on ZCAT.
 
-These speedups have direct practical implications. A 4--10$\times$ reduction in per-run wall-clock time means that the same compute budget can accommodate proportionally more independent seeds, larger population sizes, or denser hyperparameter sweeps---precisely the conditions required for statistically rigorous benchmarking studies. Moreover, the scaling study (Fig.~\ref{fig:scaling}) shows that the advantage grows with population size, so the benefit is amplified in exactly the large-scale regimes where it matters most.
+These multi-fold runtime reductions have direct practical implications. They mean that the same compute budget can accommodate proportionally more independent seeds, larger population sizes, or denser hyperparameter sweeps---precisely the conditions required for statistically rigorous benchmarking studies. Moreover, the scaling study (Fig.~\ref{fig:scaling}) shows that the advantage grows with population size, so the benefit is amplified in exactly the large-scale regimes where it matters most.
 
 %We also note that both \VAMOS{} and pymoo obtain zero normalized hypervolume on DTLZ3 under MOEA/D with 50{,}000 evaluations. This is a known difficulty: DTLZ3 is a multimodal problem designed to test convergence, and MOEA/D with PBI scalarization and the evaluation budget used here is insufficient to escape local fronts consistently. This outcome is not framework-specific but reflects the interaction between algorithm configuration and problem difficulty.
 
@@ -732,7 +732,8 @@ def my_objectives(x):
 
 problem = make_problem(
     my_objectives, n_var=2, n_obj=2, 
-    bounds=[(0, 2), (0, 2)]
+    bounds=[(0, 2), (0, 2)],
+    encoding="real",
 )
 result = optimize(
     problem, algorithm="nsgaii", 
@@ -750,7 +751,7 @@ cfg = (NSGAIIConfig.builder()
        .pop_size(100)
        .crossover("sbx", prob=1.0, eta=20)
        .mutation("pm", prob="1/n", eta=20)
-       .selection("tournament", pressure=4)
+       .selection("tournament", size=4)
        .external_archive()
        .build())
 
@@ -764,16 +765,32 @@ result = optimize(
 Finally, accessibility in \VAMOS{} extends beyond algorithm execution to encompass automatic algorithm configuration. Manual configuration is difficult and choosing the best settings from the many available parameters is often also an overwhelming challenge for both beginners and advanced users. As described in Section~\ref{sec:aac}, \VAMOS{} addresses this by integrating three established algorithm configuration tools (Optuna~\cite{ASY+19}, SMAC3~\cite{LEF+22}, and BOHB~\cite{FKH18}) as interchangeable backends accessible through a unified interface. By exposing its entire parameter space for all eight implemented algorithms, \VAMOS{} allows these external tuners to efficiently automate the search for optimal configurations. Users can switch between backends with a single parameter change. Listing~\ref{lst:tuning} illustrates how a researcher can tune NSGA-II across multiple problem instances with minimal setup effort; the same interface generalizes to all eight algorithms.
 
 \begin{lstlisting}[float=tbp,caption={Tuning NSGA-II with Optuna in \VAMOS{}.},label={lst:tuning}]
+from vamos import optimize, make_problem_selection
 from vamos.engine.tuning import (
-    ModelBasedTuner, TuningTask, Instance,
-    build_nsgaii_config_space,
+    EvalContext, ModelBasedTuner, TuningTask,
+    Instance, build_nsgaii_config_space,
+    config_from_assignment,
 )
+from vamos.foundation.quality_indicators import compute_normalized_hv
+
+def eval_fn(config, ctx: EvalContext):
+    selection = make_problem_selection(
+        ctx.instance.name, n_var=ctx.instance.n_var
+    )
+    result = optimize(
+        selection.instantiate(),
+        algorithm="nsgaii",
+        algorithm_config=config_from_assignment("nsgaii", config),
+        max_evaluations=ctx.budget,
+        seed=ctx.seed,
+    )
+    return compute_normalized_hv(result.F, ctx.instance.name)
 
 task = TuningTask(
     name="tune_nsgaii",
-    param_space=build_nsgaii_config_space(),
-    instances=[Instance("zdt1", 2),
-               Instance("dtlz2", 3)],
+    param_space=build_nsgaii_config_space().to_param_space(),
+    instances=[Instance("zdt1", 30),
+               Instance("zdt2", 30)],
     seeds=[0, 1, 2],
     budget_per_run=50000,
 )
@@ -790,7 +807,7 @@ best_config, history = tuner.run(eval_fn)
 \label{sec:conclusions}
 %==============================================================================
 
-We presented \VAMOS{}, a high-performance Python framework for multi-objective optimization studies that addresses three practical gaps in existing frameworks: (i)~a vectorized core with pluggable compute kernels that reduces inner-loop overhead by 4--10$\times$ relative to object-centric libraries, with the exception of SMS-EMOA on higher-dimensional problems where jMetalPy's leaner per-offspring loop narrows the gap; (ii)~rich component-level configurability---with up to 36 parameters, 41 strategies and operators (roughly $3\times$ the variety offered by pymoo), including interchangeable variation operators, configurable offspring batch size for steady-state variants, and optional bounded or unbounded external archives---all exposed as first-class configuration options through a unified builder API; and (iii)~an accessible API and graphical interface that lowers the entry barrier for domain experts, requiring as few as two lines of code for a complete optimization run. We also release a reproducible cross-framework benchmarking pipeline with semantic alignment and fixed reference Pareto fronts for normalized hypervolume reporting. Under this protocol, paired Wilcoxon signed-rank tests with Holm correction confirm that \VAMOS{} achieves statistically equivalent solution quality to state-of-the-art frameworks (equivalent on 14/21 problems, non-inferior on 16/21) while substantially reducing runtime. Convergence analysis and Pareto front visualization (Fig.~\ref{fig:pareto_fronts_variants}) further confirm that these speedups do not degrade convergence behavior.
+We presented \VAMOS{}, a high-performance Python framework for multi-objective optimization studies that addresses three practical gaps in existing frameworks: (i)~a vectorized core with pluggable compute kernels that substantially reduces runtime relative to object-centric libraries, with the largest gains on steady-state and archive-intensive variants and the smallest gaps on SMS-EMOA/WFG and MOEA/D/ZCAT; (ii)~rich component-level configurability---with up to 36 parameters, 41 strategies and operators (roughly $3\times$ the variety offered by pymoo), including interchangeable variation operators, configurable offspring batch size for steady-state variants, and optional bounded or unbounded external archives---all exposed as first-class configuration options through a unified builder API; and (iii)~an accessible API and graphical interface that lowers the entry barrier for domain experts, requiring as few as two lines of code for a complete optimization run. We also release a reproducible cross-framework benchmarking pipeline with semantic alignment and fixed reference Pareto fronts for normalized hypervolume reporting. Under this protocol, paired Wilcoxon signed-rank tests with Holm correction confirm that \VAMOS{} achieves statistically equivalent solution quality to state-of-the-art frameworks (equivalent on 37/41 NSGA-II problems, non-inferior on 38/41) while substantially reducing runtime. Convergence analysis and Pareto front visualization (Fig.~\ref{fig:pareto_fronts_variants}) further confirm that these speedups do not degrade convergence behavior.
 
 \begin{itemize}
   \item \textbf{Many-objective benchmarking}: extend the experimental protocol beyond $m=3$ with scalable indicators.

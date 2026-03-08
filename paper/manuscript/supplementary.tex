@@ -117,7 +117,7 @@ Platypus & \textbf{0.991 (0.010)} & 0.824 (0.177) & 0.919 (0.137) & --- & 0.919 
 
 Across ZDT, all frameworks attain nearly identical normalized HV, confirming that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks. WFG exhibits the largest dispersion; notably, \VAMOS{} achieves the highest median on WFG (0.934 vs.\ 0.846 for pymoo), which may reflect subtle differences in WFG parameterization or boundary handling across implementations. Together with the runtime results, these summaries confirm that \VAMOS{} achieves comparable or superior solution quality while delivering faster runtimes under the fixed-reference-front protocol.
 
-Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, all three frameworks achieve nearly identical overall HV. For the archive variant, all three frameworks reach comparable normalized HV across ZDT and DTLZ families (1.000), confirming that the unbounded archive accumulates equivalent approximation sets regardless of the framework.
+Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, the overall normalized HV is effectively identical across frameworks (all three reach 0.989 overall), although \VAMOS{} attains a clearly higher median on WFG (0.939 vs.\ 0.849 for pymoo and 0.848 for jMetalPy). For the archive variant, the three frameworks remain closely matched across all families: ZDT and ZCAT are virtually identical, DTLZ differs by at most 0.003, and the WFG medians lie in the narrow 0.846--0.852 range.
 
 \input{frameworks_hv_variants.tex}
 
@@ -132,7 +132,7 @@ Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II stea
 
 The descriptive summaries in the previous section suggest quality equivalence, but median and IQR alone cannot determine whether observed differences are statistically significant. We therefore apply Wilcoxon signed-rank tests (paired by seed) comparing \VAMOS{} against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). As a measure of practical significance, we report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{VD00} alongside each test ($\hat{A}_{12}>0.5$ favors \VAMOS{}; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also compute paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
 
-Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 21 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.3\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: \VAMOS{} is equivalent to pymoo on 14/21 problems and non-inferior on 16/21, with a median $\Delta$HV of $-0.03\%$. Similar patterns hold for jMetalPy. Table~\ref{tab:hv_robustness_summary_nsgaii} details robustness, and Fig.~\ref{fig:forest_ci_nsgaii} visualizes per-problem CIs as a forest plot. Detailed NSGA-II statistical tables are provided in Appendix~\ref{app:stats_nsgaii}, and corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
+Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 41 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.4\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: \VAMOS{} is equivalent to pymoo on 37/41 problems and non-inferior on 38/41, with a median $\Delta$HV of $-0.01\%$. Similar patterns hold for jMetalPy and the other frameworks. Table~\ref{tab:hv_robustness_summary_nsgaii} details robustness, and Fig.~\ref{fig:forest_ci_nsgaii} visualizes per-problem CIs as a forest plot. Detailed NSGA-II statistical tables are provided in Appendix~\ref{app:stats_nsgaii}, and corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
 
 %==============================================================================
 \section{Additional runtime comparisons}
@@ -206,34 +206,50 @@ The full parameter space for NSGA-II with real-valued encoding is presented in T
 
 
 
-\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function returns the 35-parameter space; \texttt{ModelBasedTuner} drives the search with TPE sampling and optional multi-fidelity evaluation.}
+\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function defines the NSGA-II tuning space, which is converted to a \texttt{ParamSpace} before calling \texttt{ModelBasedTuner}.}
 
 \begin{lstlisting}[float=*,caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1, DTLZ2, and WFG4.}},label={lst:optuna_tune}]
 import numpy as np
-from vamos import optimize
+from vamos import optimize, make_problem_selection
 from vamos.engine.tuning import (
     ModelBasedTuner, TuningTask, Instance, EvalContext,
     build_nsgaii_config_space, config_from_assignment,
 )
-
-# Build the 35-parameter NSGA-II config space
-space = build_nsgaii_config_space()
+from vamos.foundation.quality_indicators import HVIndicator
 
 # Evaluation function: returns hypervolume
 def eval_fn(config, ctx: EvalContext):
     cfg = config_from_assignment("nsgaii", config)
-    res = optimize(ctx.instance.name, algorithm="nsgaii",    
-    algorithm_config=cfg, max_evaluations=ctx.budget, seed=ctx.seed)
-    return float(res.hypervolume(ref_point=ctx.instance.ref))
+    selection = make_problem_selection(
+        ctx.instance.name,
+        n_var=ctx.instance.n_var,
+        n_obj=ctx.instance.kwargs.get("n_obj"),
+    )
+    res = optimize(
+        selection.instantiate(),
+        algorithm="nsgaii",
+        algorithm_config=cfg,
+        max_evaluations=ctx.budget,
+        seed=ctx.seed,
+    )
+    hv = HVIndicator(reference_point=np.asarray(
+        ctx.instance.kwargs["ref_point"]
+    ))
+    return float(hv.compute(res.F).value)
 
 # Define tuning task with one problem per family
 task = TuningTask(
     name="tune_nsgaii",
-    param_space=space.to_param_space(),
+    param_space=build_nsgaii_config_space().to_param_space(),
     instances=[
-        Instance(name="zdt1",  n_var=30, ref=[1.1, 1.1]),
-        Instance(name="dtlz2", n_var=12, ref=[1.1]*3),
-        Instance(name="wfg4",  n_var=24, ref=[3.0, 5.0]),
+        Instance(name="zdt1", n_var=30,
+                 kwargs={"ref_point": [1.1, 1.1]}),
+        Instance(name="dtlz2", n_var=12,
+                 kwargs={"n_obj": 3,
+                         "ref_point": [1.1, 1.1, 1.1]}),
+        Instance(name="wfg4", n_var=24,
+                 kwargs={"n_obj": 2,
+                         "ref_point": [3.0, 5.0]}),
     ],
     seeds=[1, 2, 3], aggregator=np.mean,
     budget_per_run=10000, maximize=True,
