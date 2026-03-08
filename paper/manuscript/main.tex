@@ -466,18 +466,6 @@ PyGMO (C++) & \textbf{3.41} & \textbf{5.69} & \textbf{11.07} & \textbf{98.55} \\
 \end{table}
 
 
-%Fig.~\ref{fig:runtime_comparison} compares \VAMOS{} against other Python frameworks on runtime. \VAMOS{} is evaluated with its accelerated backend (Numba) for the headline comparison, while additional backends are reported in the appendix.
-%We repeat the same runtime protocol for NSGA-II variants (steady-state and external archive), SMS-EMOA (steady-state, one offspring per iteration), and MOEA/D (decomposition with differential-evolution variation), reported in Table~\ref{tab:frameworks_perf_variants} (Appendix~\ref{app:variants}).
-
-%Fig.~\ref{fig:runtime_comparison} visualizes relative runtimes of pymoo and jMetalPy, the two fastest competitors, against \VAMOS{}. DEAP and Platypus are omitted from the figure for clarity, as their runtimes are consistently higher than jMetalPy's. Each bar represents the ratio of a competitor's median family-level runtime to \VAMOS{} (Numba); the dashed line at $2^0=1$ marks parity. jMetalPy is consistently $3\text{--}11\times$ slower, with the largest gaps on WFG problems where per-solution overhead is amplified by higher dimensionality ($n=24$). pymoo is the closest competitor, staying within $1.1\text{--}1.2\times$ of \VAMOS{} on ZDT and DTLZ, though the gap widens on WFG. Error bars indicate variability across per-problem medians within each family.
-
-%\begin{figure*}[htbp]
-%  \centering
-%  \includegraphics[width=0.9\textwidth]{figures/time_comparison.png}
-%  \caption{Runtime of each framework relative to \VAMOS{} (Numba) for generational NSGA-II, grouped by problem family ($\log_2$ scale). Bars above the dashed parity line ($2^0=1$) indicate that the competitor is slower. Error bars show variability across per-problem medians within each family. All runs use 50{,}000 evaluations and 30 seeds.}
-%  \label{fig:runtime_comparison}
-%\end{figure*}
-
 We now compare the runtime of NSGA-II variants (steady-state and external unbounded archive), SMS-EMOA, and MOEA/D across the three frameworks that support them. The median runtimes are reported in Table~\ref{tab:frameworks_perf_variants}. In the \textit{steady-state} variant of NSGA-II, only one offspring is produced per iteration, so the main loop executes $N$ times more iterations than the generational variant for the same evaluation budget, introducing additional per-iteration overhead. The variant with an \textit{external unbounded archive} implies that whenever a new solution is evaluated, it is compared with the archive: if the new solution is non-dominated, it is inserted and any archive members it dominates are removed. This process becomes more time-consuming as the archive grows. Once the algorithm terminates, a subset of $N$ diverse solutions is selected from the archive and returned as the final approximation set.
 
 SMS-EMOA uses the hypervolume contribution as density estimator to select the worst individual to remove from the population in the replacement step, which is a time-consuming procedure given that the computation of the hypervolume contribution grows exponentially with the number of objectives. MOEA/D uses a decomposition strategy that, a priori, should not introduce a noticeable overhead.
@@ -529,18 +517,6 @@ MOEA/D & VAMOS & \textbf{76.19} & \textbf{118.98} & \textbf{647.96} & \textbf{34
 %To assess the overhead of maintaining an external elite set, we also benchmark NSGA-II with an \emph{unbounded} external archive that accumulates non-dominated solutions throughout the run.
 %For this variant, we compute normalized hypervolume on the archive contents (rather than the final population) to reflect the larger retained approximation set.
 %In \VAMOS{}, we enable an external archive with \texttt{unbounded=True} and size initialized to the population size; in pymoo we maintain a separate unbounded archive updated from the evolving population/offspring; in jMetalPy we use an NSGA-II implementation with an archive hook.
-
-%(Table~\ref{tab:frameworks_perf_variants})
-
-
-%\subsection{Many-Objective Scalability on ZCAT}
-%
-%
-%\begin{figure}[htbp]
-%  \centering
-%  \includegraphics[width=\columnwidth]{figures/zcat_scalability.png}
-%  \label{fig:zcat_scalability}
-%\end{figure}
 
 \begin{figure*}[htbp]
   \centering
