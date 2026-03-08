@@ -253,11 +253,12 @@ VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
   - `notebooks/1_intermediate/16_interactive_explorer.ipynb` -- Interactive Pareto front explorer
   - `notebooks/1_intermediate/19_algorithm_families_beyond_nsgaii.ipynb` -- Current recipes for the other VAMOS MOEAs
 - **2. Advanced**: Custom extensions, tuning, and research benchmarks.
-  - `notebooks/2_advanced/20_hyperparameter_tuning.ipynb` -- Algorithm tuning
+  - `notebooks/2_advanced/21_programmatic_tuning.ipynb` -- Canonical Optuna tuning workflow
   - `notebooks/2_advanced/23_backends_and_performance.ipynb` -- Backend tradeoffs and benchmarking
   - `notebooks/2_advanced/30_paper_benchmarking.ipynb` -- Publication-ready benchmarks
   - `notebooks/2_advanced/31_adaptive_operator_selection.ipynb` -- AOS analysis
   - `notebooks/2_advanced/32_ablation_planning.ipynb` -- Ablation studies
+  - `notebooks/2_advanced/33_optuna_tuning_advanced.ipynb` -- Multi-fidelity and persistent Optuna workflows
   - `notebooks/2_advanced/34_extension_workflows.ipynb` -- Custom problem and custom algorithm extension patterns
 
 ## 🛠️ Tooling Ecosystem
