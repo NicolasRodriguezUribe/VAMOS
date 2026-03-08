@@ -22,7 +22,7 @@ FIG_DIR = Path(__file__).parent / "manuscript" / "figures"
 INPUT_CSV = DATA_DIR / "memory_benchmark.csv"
 OUTPUT_PNG = FIG_DIR / "memory_comparison.png"
 
-# Display order and colours (match time_comparison.py style)
+# Display order and colours for the paper comparison figures
 FRAMEWORK_ORDER = ["VAMOS", "pymoo", "jMetalPy"]
 FRAMEWORK_COLORS = {"VAMOS": "#4C72B0", "pymoo": "#DD8452", "jMetalPy": "#55A868"}
 PROBLEM_ORDER = ["zdt1", "dtlz2", "wfg4"]

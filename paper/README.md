@@ -19,6 +19,8 @@ Install dependencies (includes benchmark frameworks used in the paper):
 Regenerate LaTeX tables from the committed CSVs:
 - Runtime + solution-quality summary tables: `python paper/04_update_paper_tables_from_csv.py`
 - Variant runtime tables (NSGA-II variants, SMS-EMOA, MOEA/D): `python paper/14_update_frameworks_perf_variant_tables_from_csv.py`
+- Statistical appendix tables: `python paper/05_run_statistical_tests.py`
+- Accessibility proxy tables: `python paper/33_update_accessibility_tables.py`
 
 Use `--empty` on the table-update scripts to write placeholder tables when the corresponding CSV is not available yet.
 
@@ -43,6 +45,19 @@ Controls:
 - `VAMOS_N_EVALS` (default `50000`), `VAMOS_N_SEEDS` (default `30`), `VAMOS_N_JOBS`
 - `VAMOS_PAPER_FRAMEWORKS` (comma-separated: `vamos-numpy,vamos-numba,vamos-moocore,pymoo,jmetalpy,deap,platypus`)
 - `VAMOS_PAPER_ALGORITHM` (`nsgaii`, `smsemoa`, `moead`, or `all`) and `VAMOS_PAPER_UPDATE_MAIN_TEX` (`0`/`1`, defaults to `1` for NSGA-II)
+
+## Active supplementary / figure refresh scripts
+
+These scripts still feed figures or appendix artifacts used by the current manuscript build:
+
+- Scaling: `python paper/03_run_scaling_experiment.py` then `python paper/30_plot_scaling.py`
+- Convergence: `python paper/18_run_convergence_experiment.py` then `python paper/19_plot_convergence.py`
+- Memory: `python paper/23_run_memory_benchmark.py` then `python paper/26_plot_memory_comparison.py`
+- Runtime heatmap: `python paper/28_plot_runtime_heatmap.py`
+- Forest confidence intervals: `python paper/27_plot_forest_ci.py`
+- Pareto front variants: `python paper/32_run_pareto_front_variants.py`
+- Accessibility appendix tables: `python paper/33_update_accessibility_tables.py`
+- ZCAT runtime rows used by the current tables: `python paper/31_run_zcat_all_tables.py`
 
 ## Submission packaging (Elsevier / SwEvo)
 
