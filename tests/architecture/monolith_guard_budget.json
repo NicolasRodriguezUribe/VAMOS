@@ -3,7 +3,6 @@
     "src/vamos/engine/algorithm/components/archive.py": 736,
     "src/vamos/engine/algorithm/moead/helpers.py": 626,
     "src/vamos/engine/tuning/backends.py": 525,
-    "src/vamos/engine/tuning/moea_tuner.py": 507,
     "src/vamos/experiment/cli/create_problem.py": 356,
     "src/vamos/experiment/cli/tune.py": 584,
     "src/vamos/engine/operators/impl/mixed.py": 584,

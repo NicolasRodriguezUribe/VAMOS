@@ -13,9 +13,6 @@ and config space builders for each algorithm.
 from .ablation import AblationPlan, AblationTask, AblationVariant, build_ablation_plan
 from .backends import ModelBasedTuner, available_model_based_backends
 from .convergence import ConvergenceDiagnostic, ConvergenceProfile, TuningCallback, diagnose, score_with_profile
-from .knowledge_base import KnowledgeBase, KnowledgeEntry
-from .moea_tuner import MOEATuner, MOEATunerConfig, PhaseResult
-from .problem_features import ProblemFeatures, extract_features_from_instances, extract_features_from_problem
 from .racing import (
     # Config space
     AlgorithmConfigSpace,
@@ -192,23 +189,12 @@ __all__ = [
     "build_nsgaii_binary_config_space",
     "build_nsgaii_integer_config_space",
     "config_from_assignment",
-    # MOEA-aware tuner
-    "MOEATuner",
-    "MOEATunerConfig",
-    "PhaseResult",
     # Convergence-aware evaluation
     "ConvergenceProfile",
     "ConvergenceDiagnostic",
     "TuningCallback",
     "diagnose",
     "score_with_profile",
-    # Knowledge base
-    "KnowledgeBase",
-    "KnowledgeEntry",
-    # Problem features
-    "ProblemFeatures",
-    "extract_features_from_instances",
-    "extract_features_from_problem",
     # Statistical utilities
     "vargha_delaney_a12",
     "a12_magnitude",

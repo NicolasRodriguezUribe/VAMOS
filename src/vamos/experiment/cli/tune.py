@@ -16,8 +16,6 @@ from vamos.engine.tuning import (
     EvalContext,
     Instance,
     ModelBasedTuner,
-    MOEATuner,
-    MOEATunerConfig,
     ParamSpace,
     RacingTuner,
     RandomSearchTuner,
@@ -155,7 +153,7 @@ BUILDERS: dict[str, Callable[[], AlgorithmConfigSpace | ParamSpace]] = {
 }
 
 MODEL_BACKENDS = ("optuna", "bohb_optuna", "smac3", "bohb")
-NON_MODEL_BACKENDS = ("racing", "random", "moea_tuner")
+NON_MODEL_BACKENDS = ("racing", "random")
 ALL_BACKENDS = NON_MODEL_BACKENDS + MODEL_BACKENDS
 
 
@@ -342,30 +340,6 @@ def _run_backend(
             verbose=True,
         )
 
-    if args.backend == "moea_tuner":
-        # Resolve the AlgorithmConfigSpace (not just ParamSpace)
-        builder = BUILDERS.get(str(args.algorithm))
-        config_space_obj = builder() if builder else None
-        if not isinstance(config_space_obj, AlgorithmConfigSpace):
-            _logger().warning("[tune] moea_tuner requires AlgorithmConfigSpace; falling back to racing.")
-        else:
-            kb_enabled = bool(getattr(args, "use_knowledge_base", False))
-            kb_path = getattr(args, "knowledge_base_path", None)
-            moea_config = MOEATunerConfig(
-                max_experiments=int(args.tune_budget),
-                max_initial_configs=int(args.initial_configs),
-                seed=int(args.seed),
-                n_jobs=int(resolved_jobs),
-                use_knowledge_base=kb_enabled,
-                knowledge_base_path=str(kb_path) if kb_path else None,
-            )
-            moea_tuner = MOEATuner(
-                config_space=config_space_obj,
-                task=task,
-                config=moea_config,
-            )
-            return moea_tuner.run(eval_fn, verbose=True)
-
     scenario = Scenario(
         max_experiments=int(args.tune_budget),
         elimination_fraction=float(args.elimination_fraction),
@@ -439,7 +413,6 @@ def _print_backend_table() -> None:
     print("Backend availability:")
     print("  racing       : True")
     print("  random       : True")
-    print("  moea_tuner   : True")
     for name in MODEL_BACKENDS:
         print(f"  {name:12s}: {bool(flags.get(name, False))}")
 

@@ -162,38 +162,3 @@ def test_backend_fallback_error_mode_raises(monkeypatch):
             ]
         )
 
-
-def test_moea_backend_passes_knowledge_base_flags(monkeypatch, tmp_path: Path):
-    captured: dict[str, object] = {}
-
-    class _DummyMOEATuner:
-        def __init__(self, *, config_space, task, config):  # noqa: ANN001
-            _ = config_space, task
-            captured["config"] = config
-
-        def run(self, eval_fn, verbose=True):  # noqa: ANN001
-            _ = eval_fn, verbose
-            return {"pop_size": 20}, []
-
-    monkeypatch.setattr(tune_cli, "MOEATuner", _DummyMOEATuner)
-
-    kb_path = tmp_path / "kb.json"
-    args = tune_cli._parse_args(  # noqa: SLF001
-        [
-            "--algorithm",
-            "nsgaii",
-            "--backend",
-            "moea_tuner",
-            "--use-knowledge-base",
-            "--knowledge-base-path",
-            str(kb_path),
-        ]
-    )
-    algo_space = tune_cli.BUILDERS["nsgaii"]()
-    param_space = algo_space.to_param_space()
-    task = tune_cli._build_task(args, param_space, budget_per_run=100)  # noqa: SLF001
-    tune_cli._run_backend(args, task, _simple_eval, resolved_jobs=1)  # noqa: SLF001
-
-    cfg = captured["config"]
-    assert bool(cfg.use_knowledge_base) is True
-    assert str(cfg.knowledge_base_path) == str(kb_path)
