@@ -50,24 +50,23 @@ def dominance_matrix(F: np.ndarray, G: np.ndarray | None, constraint_mode: str) 
         feas = is_feasible(G)
 
     dom = np.zeros((n, n), dtype=bool)
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                continue
-            # Feasibility-based dominance
-            if feas is not None and cv is not None:
-                if feas[i] and not feas[j]:
-                    dom[i, j] = True
-                    continue
-                if not feas[i] and feas[j]:
-                    continue
-                if not feas[i] and not feas[j]:
-                    if cv[i] < cv[j]:
-                        dom[i, j] = True
-                    continue
-            # Standard Pareto dominance
-            if np.all(F[i] <= F[j]) and np.any(F[i] < F[j]):
-                dom[i, j] = True
+    if feas is not None and cv is not None:
+        feas_col = feas[:, None]
+        feasible_dom = feas_col & ~feas[None, :]
+        infeasible_dom = (~feas_col) & (~feas[None, :]) & (cv[:, None] < cv[None, :])
+        dom |= feasible_dom | infeasible_dom
+
+        if feas.any():
+            less_equal = F[:, None, :] <= F[None, :, :]
+            strictly_less = F[:, None, :] < F[None, :, :]
+            pareto = np.all(less_equal, axis=2) & np.any(strictly_less, axis=2)
+            dom |= (feas_col & feas[None, :]) & pareto
+    else:
+        less_equal = F[:, None, :] <= F[None, :, :]
+        strictly_less = F[:, None, :] < F[None, :, :]
+        dom = np.all(less_equal, axis=2) & np.any(strictly_less, axis=2)
+
+    np.fill_diagonal(dom, False)
 
     return dom, feas, cv
 
@@ -136,12 +135,8 @@ def strength_raw_fitness(dom: np.ndarray) -> np.ndarray:
     n = dom.shape[0]
     if n == 0:
         return np.empty(0, dtype=float)
-    strength = dom.sum(axis=1)
-    raw_fitness = np.zeros(n, dtype=float)
-    for i in range(n):
-        dominators = np.where(dom[:, i])[0]
-        raw_fitness[i] = strength[dominators].sum()
-    return raw_fitness
+    strength = dom.sum(axis=1, dtype=np.int64)
+    return (dom.T @ strength).astype(float, copy=False)
 
 
 def knn_density(F: np.ndarray, k: int = 1) -> np.ndarray:
@@ -159,6 +154,47 @@ def knn_density(F: np.ndarray, k: int = 1) -> np.ndarray:
     dist = np.linalg.norm(F[:, None, :] - F[None, :, :], axis=2)
     kth = np.partition(dist, kth=k, axis=1)[:, k]
     return kth
+
+
+def selection_fitness_density(
+    F: np.ndarray,
+    G: np.ndarray | None,
+    constraint_mode: str,
+    k_neighbors: int | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute the cached SPEA2 tournament metrics for a population/archive."""
+    if F.size == 0:
+        return np.empty(0, dtype=float), np.empty(0, dtype=float)
+
+    dom, _, _ = dominance_matrix(F, G, constraint_mode)
+    raw_fitness = strength_raw_fitness(dom)
+    density = knn_density(F, int(k_neighbors) if k_neighbors is not None else 1)
+    return raw_fitness, density
+
+
+def truncate_by_kth_distance(dist_matrix: np.ndarray, keep: int, k: int) -> np.ndarray:
+    """Sequentially truncate by the current k-th nearest-neighbor distance."""
+    n = int(dist_matrix.shape[0])
+    if n <= keep:
+        return np.arange(n, dtype=int)
+    if keep <= 0:
+        return np.empty(0, dtype=int)
+
+    dist = np.asarray(dist_matrix, dtype=float)
+    if dist.ndim != 2 or dist.shape[1] != n:
+        raise ValueError("dist_matrix must be a square 2D array.")
+
+    active = np.arange(n, dtype=int)
+    kth_neighbor = max(1, int(k))
+
+    while active.size > keep:
+        active_dist = dist[np.ix_(active, active)]
+        active_k = min(kth_neighbor, active_dist.shape[0] - 1)
+        kth = np.partition(active_dist, kth=active_k, axis=1)[:, active_k]
+        order = np.argsort(-kth, kind="mergesort")
+        active = active[order[:-1]]
+
+    return active
 
 
 def truncate_by_distance(dist_matrix: np.ndarray, keep: int) -> np.ndarray:
@@ -286,14 +322,10 @@ def environmental_selection(
         if remaining <= 0:
             break
 
-        # Sequential truncation within the splitting front (jMetalPy-style).
-        keep = front.tolist()
-        while len(keep) > remaining:
-            density = knn_density(F[np.asarray(keep)], k)
-            order = np.argsort(-density, kind="mergesort")
-            keep = [keep[i] for i in order]
-            keep.pop()
-        selected.extend(keep)
+        front_F = F[front]
+        dist_matrix = np.linalg.norm(front_F[:, None, :] - front_F[None, :, :], axis=2)
+        keep_idx = truncate_by_kth_distance(dist_matrix, remaining, k)
+        selected.extend(front[keep_idx].tolist())
         break
 
     selected_idx = np.asarray(selected, dtype=int)
@@ -352,7 +384,9 @@ __all__ = [
     "spea2_fitness",
     "strength_raw_fitness",
     "knn_density",
+    "selection_fitness_density",
     "truncate_by_distance",
+    "truncate_by_kth_distance",
     "environmental_selection",
     "compute_selection_metrics",
 ]

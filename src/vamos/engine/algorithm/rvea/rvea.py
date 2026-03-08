@@ -87,6 +87,9 @@ def _apd_survival(
     n_max_gen: int,
     alpha: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+    if F.size == 0:
+        return np.empty(0, dtype=int), ideal, None
+
     n_obj = F.shape[1]
     ideal = np.minimum(F.min(axis=0), ideal)
 
@@ -99,19 +102,19 @@ def _apd_survival(
     acute_angle = np.arccos(cos_theta)
     niches = acute_angle.argmin(axis=1)
 
-    survivor_indices: list[int] = []
-    for k in range(len(V)):
-        assigned = np.where(niches == k)[0]
-        if assigned.size == 0:
-            continue
-        theta = acute_angle[assigned, k]
-        M = float(n_obj) if n_obj > 2 else 1.0
-        penalty = M * ((n_gen / n_max_gen) ** alpha) * (theta / gamma[k])
-        apd = dist_to_ideal[assigned] * (1.0 + penalty)
-        survivor = assigned[int(np.argmin(apd))]
-        survivor_indices.append(int(survivor))
+    M = float(n_obj) if n_obj > 2 else 1.0
+    progress = (n_gen / n_max_gen) ** alpha
+    theta = acute_angle[np.arange(F.shape[0]), niches]
+    penalty = M * progress * (theta / gamma[niches])
+    apd = dist_to_ideal * (1.0 + penalty)
 
-    survivors = np.asarray(survivor_indices, dtype=int)
+    order = np.lexsort((np.arange(F.shape[0]), apd, niches))
+    sorted_niches = niches[order]
+    first_in_niche = np.empty(sorted_niches.shape[0], dtype=bool)
+    first_in_niche[0] = True
+    first_in_niche[1:] = sorted_niches[1:] != sorted_niches[:-1]
+    survivors = order[first_in_niche]
+
     nadir = F[survivors].max(axis=0) if survivors.size else None
     return survivors, ideal, nadir
 

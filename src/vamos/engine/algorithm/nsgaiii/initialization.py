@@ -189,6 +189,7 @@ def initialize_nsgaiii_run(
     # Setup external archive
     ext_cfg = resolve_external_archive(config)
     archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, ext_cfg, G)
+    selection_ranks, selection_crowding = kernel.nsga2_ranking(F)
 
     # Create state
     state = NSGAIIIState(
@@ -209,6 +210,8 @@ def initialize_nsgaiii_run(
         ideal_point=np.full(n_obj, np.inf),
         worst_point=np.full(n_obj, -np.inf),
         extreme_points=None,
+        selection_ranks=np.asarray(selection_ranks, dtype=int),
+        selection_crowding=np.asarray(selection_crowding, dtype=float),
         # Archive
         archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,

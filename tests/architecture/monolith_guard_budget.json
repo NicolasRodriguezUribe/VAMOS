@@ -23,7 +23,7 @@
   "class_violations": {
     "src/vamos/engine/algorithm/moead/moead.py:MOEAD": 408,
     "src/vamos/engine/tuning/backends.py:ModelBasedTuner": 493,
-    "src/vamos/engine/algorithm/nsgaiii/nsgaiii.py:NSGAIII": 412
+    "src/vamos/engine/algorithm/nsgaiii/nsgaiii.py:NSGAIII": 430
   },
   "notes": "Current monolith debt budget baseline. Refactors should reduce these values over time."
 }

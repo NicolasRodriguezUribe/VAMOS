@@ -139,6 +139,11 @@ def initialize_smpso_run(
     # Leader archive
     leader_archive = CrowdingDistanceArchive(archive_size, n_var, n_obj, X.dtype)
     archive_X, archive_F = leader_archive.update(X, F, G)
+    archive_crowding = None
+    if archive_F is not None and archive_F.size:
+        from vamos.engine.algorithm.components.subset_selection import _single_front_crowding
+
+        archive_crowding = _single_front_crowding(archive_F)
 
     # Genealogy tracking
     track_genealogy = bool(config.get("track_genealogy", False))
@@ -197,6 +202,7 @@ def initialize_smpso_run(
         xu=xu,
         mutation_op=mutation_op,
         repair_op=repair_op,
+        archive_crowding=archive_crowding,
         # Genealogy
         track_genealogy=track_genealogy,
         genealogy_tracker=genealogy_tracker,
