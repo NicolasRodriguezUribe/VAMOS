@@ -30,7 +30,7 @@ from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.engine.archive.factory import update_archive
 from vamos.foundation.kernel import default_kernel
 
-from .helpers import dominance_matrix, environmental_selection, knn_density, strength_raw_fitness
+from .helpers import environmental_selection, selection_fitness_density
 from .initialization import initialize_spea2_run
 from .state import SPEA2State, build_spea2_result
 
@@ -55,24 +55,41 @@ def _tournament_by_strength(
         return np.zeros((n_pairs, 2), dtype=int)
 
     n_parents = n_pairs * 2
+    first = rng.integers(0, n, size=n_parents, dtype=int)
+    second = rng.integers(0, n - 1, size=n_parents, dtype=int)
+    second += second >= first
+
+    fa = raw_fitness[first]
+    fb = raw_fitness[second]
+    da = density[first]
+    db = density[second]
+
     winners = np.empty(n_parents, dtype=int)
-    for i in range(n_parents):
-        a, b = rng.choice(n, size=2, replace=False)
-        fa = raw_fitness[a]
-        fb = raw_fitness[b]
-        if fa < fb:
-            winners[i] = a
-        elif fb < fa:
-            winners[i] = b
-        else:
-            da = density[a]
-            db = density[b]
-            if da > db:
-                winners[i] = a
-            elif db > da:
-                winners[i] = b
-            else:
-                winners[i] = a if rng.random() < 0.5 else b
+    better_first = fa < fb
+    better_second = fb < fa
+    winners[better_first] = first[better_first]
+    winners[better_second] = second[better_second]
+
+    tied = ~(better_first | better_second)
+    if tied.any():
+        tied_first = first[tied]
+        tied_second = second[tied]
+        tied_density_first = da[tied]
+        tied_density_second = db[tied]
+
+        density_first = tied_density_first > tied_density_second
+        density_second = tied_density_second > tied_density_first
+        tied_winners = np.empty(tied_first.shape[0], dtype=int)
+        tied_winners[density_first] = tied_first[density_first]
+        tied_winners[density_second] = tied_second[density_second]
+
+        density_tied = ~(density_first | density_second)
+        if density_tied.any():
+            flip = rng.integers(0, 2, size=int(density_tied.sum()), dtype=int)
+            tied_winners[density_tied] = np.where(flip == 0, tied_first[density_tied], tied_second[density_tied])
+
+        winners[tied] = tied_winners
+
     return winners.reshape(n_pairs, 2)
 
 
@@ -120,6 +137,15 @@ class SPEA2:
         self._max_eval: int = 0
         self._hv_tracker: HVTracker | None = None
         self._problem: ProblemProtocol | None = None
+
+    def _refresh_selection_metrics(self, st: SPEA2State) -> None:
+        if st.env_F is None:
+            st.selection_raw_fitness = None
+            st.selection_density = None
+            return
+        raw_fitness, density = selection_fitness_density(st.env_F, st.env_G, st.constraint_mode, st.k_neighbors)
+        st.selection_raw_fitness = raw_fitness
+        st.selection_density = density
 
     def run(
         self,
@@ -249,10 +275,11 @@ class SPEA2:
         n_pairs = st.offspring_size
 
         # Fitness-based binary tournament selection (SPEA2)
-        dom, _, _ = dominance_matrix(st.env_F, st.env_G, st.constraint_mode)
-        raw_fitness = strength_raw_fitness(dom)
-        density = knn_density(st.env_F, st.k_neighbors or 1)
-        parent_idx = _tournament_by_strength(raw_fitness, density, st.rng, n_pairs)
+        if st.selection_raw_fitness is None or st.selection_density is None or st.selection_raw_fitness.shape[0] != st.env_F.shape[0]:
+            self._refresh_selection_metrics(st)
+        assert st.selection_raw_fitness is not None
+        assert st.selection_density is not None
+        parent_idx = _tournament_by_strength(st.selection_raw_fitness, st.selection_density, st.rng, n_pairs)
 
         # Gather parents in shape (n_pairs, 2, n_var)
         n_var = st.env_X.shape[1]
@@ -350,6 +377,7 @@ class SPEA2:
             st.k_neighbors,
             st.constraint_mode,
         )
+        self._refresh_selection_metrics(st)
 
         # Update population reference
         st.X = st.env_X

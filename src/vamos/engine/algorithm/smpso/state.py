@@ -48,6 +48,7 @@ class SMPSOState(AlgorithmState):
 
     mutation_op: Any = None
     repair_op: Any = None
+    archive_crowding: np.ndarray | None = field(default=None, repr=False, compare=False)
 
 
 def build_smpso_result(state: SMPSOState, hv_reached: bool = False) -> dict[str, Any]:

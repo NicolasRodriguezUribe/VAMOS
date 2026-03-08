@@ -93,6 +93,11 @@ class NSGAIII:
         self._hv_tracker: HVTracker | None = None
         self._problem: ProblemProtocol | None = None
 
+    def _refresh_selection_metrics(self, st: NSGAIIIState) -> None:
+        ranks, crowd = self.kernel.nsga2_ranking(st.F)
+        st.selection_ranks = np.asarray(ranks, dtype=int)
+        st.selection_crowding = np.asarray(crowd, dtype=float)
+
     # -------------------------------------------------------------------------
     # Main run method (batch mode)
     # -------------------------------------------------------------------------
@@ -181,7 +186,9 @@ class NSGAIII:
                 st.ideal_point,
                 st.extreme_points,
                 st.worst_point,
+                kernel=self.kernel,
             )
+            self._refresh_selection_metrics(st)
 
             # Update ids based on survival selection
             if ids_combined is not None:
@@ -216,8 +223,17 @@ class NSGAIII:
         n_var = st.X.shape[1]
         n_parents = 2 * (st.pop_size // 2)
 
-        ranks, crowd = self.kernel.nsga2_ranking(st.F)
-        parents_idx = self.kernel.tournament_selection(ranks, crowd, st.pressure, st.rng, n_parents=n_parents)
+        if st.selection_ranks is None or st.selection_crowding is None or st.selection_ranks.shape[0] != st.F.shape[0]:
+            self._refresh_selection_metrics(st)
+        assert st.selection_ranks is not None
+        assert st.selection_crowding is not None
+        parents_idx = self.kernel.tournament_selection(
+            st.selection_ranks,
+            st.selection_crowding,
+            st.pressure,
+            st.rng,
+            n_parents=n_parents,
+        )
 
         X_parents = st.X[parents_idx].reshape(-1, 2, n_var)
         if st.crossover_fn is None or st.mutation_fn is None:
@@ -386,7 +402,9 @@ class NSGAIII:
             st.ideal_point,
             st.extreme_points,
             st.worst_point,
+            kernel=self.kernel,
         )
+        self._refresh_selection_metrics(st)
 
         # Update ids based on survival selection
         if ids_combined is not None:

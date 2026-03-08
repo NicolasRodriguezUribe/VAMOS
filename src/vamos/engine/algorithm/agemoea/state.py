@@ -5,7 +5,7 @@ This module provides the state dataclass for AGE-MOEA's ask/tell interface.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
@@ -26,6 +26,8 @@ class AGEMOEAState(AlgorithmState):
     max_evals: int = 0
     variation: VariationPipeline | None = None
     archive: BoundedArchive | None = None
+    selection_ranks: Any = field(default=None, repr=False, compare=False)
+    selection_crowding: Any = field(default=None, repr=False, compare=False)
 
 
 def build_agemoea_result(

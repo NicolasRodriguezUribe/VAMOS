@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
+    from vamos.foundation.kernel.backend import KernelBackend
     from vamos.foundation.problem.types import ProblemProtocol
 
 
@@ -30,7 +31,34 @@ __all__ = [
 ]
 
 
-def fast_non_dominated_sort(F: np.ndarray) -> list[list[int]]:
+def _fronts_from_ranks(ranks: np.ndarray) -> list[np.ndarray]:
+    """Rebuild front index arrays from a rank vector in stable index order."""
+    if ranks.size == 0:
+        return []
+
+    rank_values = np.asarray(ranks, dtype=int)
+    max_rank = int(rank_values.max(initial=-1))
+    if max_rank < 0:
+        return []
+
+    counts = np.bincount(rank_values, minlength=max_rank + 1)
+    offsets = np.empty(max_rank + 2, dtype=int)
+    offsets[0] = 0
+    np.cumsum(counts, out=offsets[1:])
+
+    grouped = np.empty(rank_values.size, dtype=int)
+    cursor = offsets[:-1].copy()
+    for idx, rank in enumerate(rank_values):
+        grouped[cursor[rank]] = idx
+        cursor[rank] += 1
+
+    return [grouped[offsets[rank] : offsets[rank + 1]].copy() for rank in range(max_rank + 1) if counts[rank] > 0]
+
+
+def fast_non_dominated_sort(
+    F: np.ndarray,
+    kernel: KernelBackend | None = None,
+) -> list[list[int]]:
     """Fast non-dominated sorting.
 
     Parameters
@@ -43,6 +71,10 @@ def fast_non_dominated_sort(F: np.ndarray) -> list[list[int]]:
     list[list[int]]
         List of fronts, where each front is a list of indices.
     """
+    if kernel is not None:
+        ranks, _ = kernel.nsga2_ranking(F)
+        return [front.tolist() for front in _fronts_from_ranks(ranks)]
+
     n = F.shape[0]
     S: list[list[int]] = [[] for _ in range(n)]
     domination_count = np.zeros(n, dtype=int)
@@ -249,6 +281,7 @@ def nsgaiii_survival(
     ideal_point: np.ndarray,
     extreme_points: np.ndarray | None,
     worst_point: np.ndarray,
+    kernel: KernelBackend | None = None,
 ) -> tuple[
     np.ndarray,
     np.ndarray,
@@ -291,15 +324,18 @@ def nsgaiii_survival(
     F_all = np.vstack([F, F_off])
     G_all = np.vstack([G, G_off]) if G is not None and G_off is not None else None
 
-    fronts = fast_non_dominated_sort(F_all)
+    if kernel is not None:
+        ranks, _ = kernel.nsga2_ranking(F_all)
+        fronts = _fronts_from_ranks(ranks)
+    else:
+        fronts = [np.asarray(front, dtype=int) for front in fast_non_dominated_sort(F_all)]
     survivor_indices: list[int] = []
-    new_G: list[np.ndarray] | None = [] if G_all is not None else None
 
     ideal_point = np.minimum(ideal_point, F_all.min(axis=0))
     worst_point = np.maximum(worst_point, F_all.max(axis=0))
 
     if fronts:
-        front0 = np.asarray(fronts[0], dtype=int)
+        front0 = fronts[0]
         nd_F = F_all[front0]
     else:
         nd_F = F_all
@@ -318,29 +354,24 @@ def nsgaiii_survival(
 
     last_front: np.ndarray | None = None
     for front in fronts:
-        front_arr = np.asarray(front, dtype=int)
-        if len(survivor_indices) + front_arr.size <= pop_size:
-            survivor_indices.extend(front)
-            if new_G is not None and G_all is not None:
-                new_G.extend(G_all[front_arr])
+        if len(survivor_indices) + front.size <= pop_size:
+            survivor_indices.extend(front.tolist())
             for idx in front:
-                niche_counts[associations[idx]] += 1
+                niche_counts[associations[int(idx)]] += 1
         else:
-            last_front = front_arr
+            last_front = front
             break
 
     if last_front is not None and len(survivor_indices) < pop_size:
         remaining = pop_size - len(survivor_indices)
         selected_idx = niche_selection(last_front, remaining, niche_counts, associations, distances, rng)
         survivor_indices.extend(selected_idx.tolist())
-        if new_G is not None and G_all is not None:
-            new_G.extend(G_all[selected_idx])
 
     survivor_arr = np.asarray(survivor_indices, dtype=int)
     return (
         X_all[survivor_arr],
         F_all[survivor_arr],
-        np.asarray(new_G) if new_G is not None else None,
+        G_all[survivor_arr] if G_all is not None else None,
         survivor_arr,
         ideal_point,
         extreme_points,

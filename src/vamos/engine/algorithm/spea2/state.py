@@ -49,6 +49,8 @@ class SPEA2State(AlgorithmState):
     xl: np.ndarray | None = None
     xu: np.ndarray | None = None
     _fused_offspring: np.ndarray | None = field(default=None, repr=False, compare=False)
+    selection_raw_fitness: np.ndarray | None = field(default=None, repr=False, compare=False)
+    selection_density: np.ndarray | None = field(default=None, repr=False, compare=False)
 
 
 def build_spea2_result(state: SPEA2State, hv_reached: bool = False) -> dict[str, Any]:

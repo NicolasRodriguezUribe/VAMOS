@@ -3,6 +3,7 @@ import pytest
 
 from vamos.engine.algorithm.config import NSGAIIIConfig
 from vamos.engine.algorithm.nsgaiii import NSGAIII, associate, nsgaiii_survival
+from vamos.foundation.kernel.numba_backend import NumbaKernel
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.dtlz import DTLZ2Problem
 from vamos.foundation.problem.zdt1 import ZDT1Problem
@@ -97,3 +98,63 @@ def test_directional_diversity_preserved():
     # Expect at least one solution per principal direction
     associations, _ = associate(F_sel - F_sel.min(axis=0), ref_dirs_norm)
     assert set(associations) == set(range(n_obj))
+
+
+def test_nsgaiii_survival_matches_backend_rank_path():
+    rng = np.random.default_rng(12)
+    X = rng.random((18, 5))
+    F = rng.random((18, 3))
+    X_off = rng.random((18, 5))
+    F_off = rng.random((18, 3))
+    ref_dirs = rng.random((18, 3))
+    ref_dirs_norm = ref_dirs / np.linalg.norm(ref_dirs, axis=1, keepdims=True)
+    ideal = np.full(3, np.inf)
+    worst = np.full(3, -np.inf)
+
+    expected = nsgaiii_survival(
+        X,
+        F,
+        None,
+        X_off,
+        F_off,
+        None,
+        18,
+        ref_dirs_norm,
+        np.random.default_rng(7),
+        ideal.copy(),
+        None,
+        worst.copy(),
+        kernel=NumPyKernel(),
+    )
+    actual = nsgaiii_survival(
+        X,
+        F,
+        None,
+        X_off,
+        F_off,
+        None,
+        18,
+        ref_dirs_norm,
+        np.random.default_rng(7),
+        ideal.copy(),
+        None,
+        worst.copy(),
+        kernel=NumbaKernel(),
+    )
+
+    for left, right in zip(expected[:6], actual[:6], strict=False):
+        if left is None or right is None:
+            assert left is right
+        else:
+            assert np.array_equal(left, right)
+
+
+def test_nsgaiii_numba_same_seed_reproducible():
+    cfg = _make_config(pop_size=15, divisions=4)
+    problem = DTLZ2Problem(n_var=12, n_obj=3)
+
+    result_a = NSGAIII(cfg, kernel=NumbaKernel()).run(problem, termination=("max_evaluations", 45), seed=3)
+    result_b = NSGAIII(cfg, kernel=NumbaKernel()).run(problem, termination=("max_evaluations", 45), seed=3)
+
+    assert np.array_equal(result_a["F"], result_b["F"])
+    assert np.array_equal(result_a["X"], result_b["X"])

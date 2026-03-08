@@ -44,7 +44,7 @@ __all__ = ["SMPSO"]
 
 def _select_global_best(
     arch_X: np.ndarray,
-    arch_F: np.ndarray,
+    crowding: np.ndarray,
     rng: np.random.Generator,
     n_select: int,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -60,21 +60,24 @@ def _select_global_best(
         leader_idx = np.zeros(n_select, dtype=int)
         return leaders, leader_idx
 
-    crowding = _single_front_crowding(arch_F)
-    leaders = np.empty((n_select, arch_X.shape[1]), dtype=arch_X.dtype)
+    first = rng.integers(0, size, size=n_select, dtype=int)
+    second = rng.integers(0, size - 1, size=n_select, dtype=int)
+    second += second >= first
+    crowding_first = np.nan_to_num(crowding[first], nan=-np.inf)
+    crowding_second = np.nan_to_num(crowding[second], nan=-np.inf)
+
     leader_idx = np.empty(n_select, dtype=int)
-    for i in range(n_select):
-        a, b = rng.choice(size, size=2, replace=False)
-        ca = crowding[a]
-        cb = crowding[b]
-        if ca > cb:
-            winner = a
-        elif cb > ca:
-            winner = b
-        else:
-            winner = a if rng.random() < 0.5 else b
-        leaders[i] = arch_X[winner]
-        leader_idx[i] = winner
+    better_first = crowding_first > crowding_second
+    better_second = crowding_second > crowding_first
+    leader_idx[better_first] = first[better_first]
+    leader_idx[better_second] = second[better_second]
+
+    tied = ~(better_first | better_second)
+    if tied.any():
+        flip = rng.integers(0, 2, size=int(tied.sum()), dtype=int)
+        leader_idx[tied] = np.where(flip == 0, first[tied], second[tied])
+
+    leaders = arch_X[leader_idx]
     return leaders, leader_idx
 
 
@@ -124,6 +127,12 @@ class SMPSO:
         self._max_eval: int = 0
         self._hv_tracker: HVTracker | None = None
         self._problem: ProblemProtocol | None = None
+
+    def _refresh_archive_crowding(self, st: SMPSOState) -> None:
+        if st.archive_F is None or st.archive_F.size == 0:
+            st.archive_crowding = None
+            return
+        st.archive_crowding = _single_front_crowding(st.archive_F)
 
     # -------------------------------------------------------------------------
     # Main run method (batch mode)
@@ -269,7 +278,10 @@ class SMPSO:
             leader_idx = np.asarray(st.rng.integers(0, st.X.shape[0], size=st.X.shape[0]), dtype=int)
             leaders = st.X[leader_idx]
         else:
-            leaders, leader_idx = _select_global_best(arch_X, arch_F, st.rng, st.X.shape[0])
+            if st.archive_crowding is None or st.archive_crowding.shape[0] != arch_F.shape[0]:
+                self._refresh_archive_crowding(st)
+            assert st.archive_crowding is not None
+            leaders, leader_idx = _select_global_best(arch_X, st.archive_crowding, st.rng, st.X.shape[0])
 
         # PSO velocity update (SMPSO with constriction)
         pop_size, n_var = st.X.shape
@@ -386,6 +398,7 @@ class SMPSO:
         # Update leader archive
         if st.archive_manager is not None:
             st.archive_X, st.archive_F = st.archive_manager.update(X_new, F, G)
+            self._refresh_archive_crowding(st)
 
         if st.hv_tracker is not None and st.hv_tracker.enabled:
             return st.hv_tracker.reached(st.hv_points())

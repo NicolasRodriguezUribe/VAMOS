@@ -45,6 +45,8 @@ class NSGAIIIState(AlgorithmState):
     ideal_point: np.ndarray = field(default_factory=lambda: np.array([]))
     worst_point: np.ndarray = field(default_factory=lambda: np.array([]))
     extreme_points: np.ndarray | None = None
+    selection_ranks: np.ndarray | None = field(default=None, repr=False, compare=False)
+    selection_crowding: np.ndarray | None = field(default=None, repr=False, compare=False)
 
 
 def build_nsgaiii_result(

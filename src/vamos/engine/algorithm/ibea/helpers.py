@@ -174,21 +174,24 @@ def environmental_selection(
         (X_selected, F_selected, G_selected, fitness)
     """
     ind = compute_indicator_matrix(F, indicator)
-    fitness = ibea_fitness(ind, kappa)
+    contrib = np.exp(-ind / kappa)
+    contrib[~np.isfinite(contrib)] = 0.0
+    np.fill_diagonal(contrib, 0.0)
+    fitness = np.asarray(-np.sum(contrib, axis=1), dtype=float)
     fitness = apply_constraint_penalty(fitness, G)
+    active = np.arange(X.shape[0], dtype=int)
 
-    while X.shape[0] > pop_size:
-        worst = int(np.argmin(fitness))
-        delta = np.exp(-ind[:, worst] / kappa)
-        delta[worst] = 0.0
-        fitness += delta
-        X = np.delete(X, worst, axis=0)
-        F = np.delete(F, worst, axis=0)
-        if G is not None:
-            G = np.delete(G, worst, axis=0)
-        ind = np.delete(np.delete(ind, worst, axis=0), worst, axis=1)
-        fitness = np.delete(fitness, worst, axis=0)
-    return X, F, G, fitness
+    while active.size > pop_size:
+        active_fitness = fitness[active]
+        worst_pos = int(np.argmin(active_fitness))
+        worst = int(active[worst_pos])
+        delta = contrib[active, worst].copy()
+        delta[worst_pos] = 0.0
+        fitness[active] += delta
+        active = np.delete(active, worst_pos)
+
+    selected = active
+    return X[selected], F[selected], G[selected] if G is not None else None, fitness[selected]
 
 
 def combine_constraints(G: np.ndarray | None, G_off: np.ndarray | None) -> np.ndarray | None:

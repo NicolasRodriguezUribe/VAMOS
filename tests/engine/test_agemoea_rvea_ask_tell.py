@@ -11,6 +11,7 @@ from vamos.engine.algorithm.agemoea import AGEMOEA
 from vamos.engine.algorithm.config import AGEMOEAConfig, RVEAConfig
 from vamos.engine.algorithm.rvea import RVEA
 from vamos.foundation.eval.backends import SerialEvalBackend
+from vamos.foundation.kernel.numba_backend import NumbaKernel
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
@@ -162,6 +163,17 @@ class TestAGEMOEAAskTell:
         assert algo.state is not None
         assert algo.state.max_evals == 3 * pop_size
 
+    def test_numba_same_seed_reproducible(self) -> None:
+        pop_size = 12
+        cfg = _agemoea_cfg(pop_size)
+        problem = ZDT1Problem(n_var=6)
+
+        result_a = AGEMOEA(cfg, NumbaKernel()).run(problem, termination=("max_evaluations", pop_size * 3), seed=9)
+        result_b = AGEMOEA(cfg, NumbaKernel()).run(problem, termination=("max_evaluations", pop_size * 3), seed=9)
+
+        np.testing.assert_array_equal(result_a["F"], result_b["F"])
+        np.testing.assert_array_equal(result_a["X"], result_b["X"])
+
 
 # ---------------------------------------------------------------------------
 # RVEA ask/tell tests
@@ -279,3 +291,14 @@ class TestRVEAAskTell:
 
         result = algo.result()
         assert np.isfinite(result["F"]).all()
+
+    def test_numba_same_seed_reproducible(self) -> None:
+        pop_size = 6
+        cfg = _rvea_cfg(pop_size, n_partitions=5)
+        problem = ZDT1Problem(n_var=6)
+
+        result_a = RVEA(cfg, NumbaKernel()).run(problem, termination=("max_evaluations", pop_size * 3), seed=9)
+        result_b = RVEA(cfg, NumbaKernel()).run(problem, termination=("max_evaluations", pop_size * 3), seed=9)
+
+        np.testing.assert_array_equal(result_a["F"], result_b["F"])
+        np.testing.assert_array_equal(result_a["X"], result_b["X"])

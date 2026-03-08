@@ -40,16 +40,14 @@ def _logger() -> logging.Logger:
 
 
 def _point_to_line_distance(P: np.ndarray, A: np.ndarray, B: np.ndarray) -> np.ndarray:
-    d = np.zeros(P.shape[0], dtype=float)
     ba = B - A
     denom = np.dot(ba, ba)
     if denom == 0.0:
-        return d
-    for i in range(P.shape[0]):
-        pa = P[i] - A
-        t = np.dot(pa, ba) / denom
-        d[i] = np.sum((pa - t * ba) ** 2)
-    return d
+        return np.zeros(P.shape[0], dtype=float)
+    pa = P - A
+    t = (pa @ ba) / denom
+    residual = pa - t[:, None] * ba
+    return np.sum(residual * residual, axis=1)
 
 
 def _find_corner_solutions(front: np.ndarray) -> np.ndarray:
@@ -90,21 +88,13 @@ def _normalize_front(front: np.ndarray, extreme: np.ndarray) -> tuple[np.ndarray
 
 
 def _pairwise_distances(front: np.ndarray, p: float) -> np.ndarray:
-    m = front.shape[0]
-    distances = np.zeros((m, m), dtype=float)
-    for i in range(m):
-        distances[i] = np.sum(np.abs(front[i] - front) ** p, axis=1) ** (1.0 / p)
-    return distances
+    diff = np.abs(front[:, None, :] - front[None, :, :])
+    return np.sum(diff**p, axis=2) ** (1.0 / p)
 
 
 def _minkowski_distances(A: np.ndarray, B: np.ndarray, p: float) -> np.ndarray:
-    m1 = A.shape[0]
-    m2 = B.shape[0]
-    distances = np.zeros((m1, m2), dtype=float)
-    for i in range(m1):
-        for j in range(m2):
-            distances[i][j] = np.sum(np.abs(A[i] - B[j]) ** p) ** (1.0 / p)
-    return distances
+    diff = np.abs(A[:, None, :] - B[None, :, :])
+    return np.sum(diff**p, axis=2) ** (1.0 / p)
 
 
 def _compute_geometry(front: np.ndarray, extreme: np.ndarray, n_obj: int) -> float:
@@ -149,25 +139,53 @@ def _survival_score(front: np.ndarray, ideal_point: np.ndarray) -> tuple[np.ndar
     distances[distances < 1e-8] = 1e-8
     distances = distances / nn[:, None]
 
-    neighbors = 2
-    remaining = list(np.arange(m)[~selected])
-    for _ in range(m - np.sum(selected)):
-        selected_idx = np.arange(selected.shape[0])[selected]
-        mg = np.meshgrid(selected_idx, remaining, copy=False, sparse=False)
-        D_mg = distances[tuple(mg)]
+    remaining = np.flatnonzero(~selected)
+    selected_idx = np.flatnonzero(selected)
+    if remaining.size == 0:
+        return crowd_dist, p, normalization
 
-        if D_mg.shape[1] > 1:
-            maxim = np.argpartition(D_mg, neighbors - 1, axis=1)[:, :neighbors]
-            tmp = np.sum(np.take_along_axis(D_mg, maxim, axis=1), axis=1)
-            index = int(np.argmax(tmp))
-            d = tmp[index]
-        else:
-            index = int(np.argmax(D_mg[:, 0]))
-            d = D_mg[index, 0]
+    D_init = distances[np.ix_(remaining, selected_idx)]
+    if D_init.shape[1] > 1:
+        nearest = np.partition(D_init, kth=1, axis=1)[:, :2]
+        best1 = nearest[:, 0].copy()
+        best2 = nearest[:, 1].copy()
+        scores = best1 + best2
+    else:
+        best1 = D_init[:, 0].copy()
+        best2 = np.zeros_like(best1)
+        scores = best1.copy()
 
-        best = remaining.pop(index)
+    selected_count = selected_idx.size
+    while remaining.size > 0:
+        index = int(np.argmax(scores))
+        best = int(remaining[index])
+        d = float(scores[index])
         selected[best] = True
         crowd_dist[best] = d
+
+        remaining = np.delete(remaining, index)
+        best1 = np.delete(best1, index)
+        best2 = np.delete(best2, index)
+        scores = np.delete(scores, index)
+        selected_count += 1
+        if remaining.size == 0:
+            break
+
+        new_dist = distances[remaining, best]
+        if selected_count == 2:
+            lo = np.minimum(best1, new_dist)
+            hi = np.maximum(best1, new_dist)
+            best1 = lo
+            best2 = hi
+            scores = best1 + best2
+            continue
+
+        better_first = new_dist < best1
+        best2 = np.where(better_first, best1, best2)
+        best1 = np.where(better_first, new_dist, best1)
+        better_second = (~better_first) & (new_dist < best2)
+        best2 = np.where(better_second, new_dist, best2)
+        scores = best1 + best2
 
     return crowd_dist, p, normalization
 
@@ -298,6 +316,11 @@ class AGEMOEA:
         self.kernel = kernel or default_kernel()
         self._st: AGEMOEAState | None = None
 
+    def _refresh_selection_metrics(self, st: AGEMOEAState) -> None:
+        ranks, crowding = self.kernel.nsga2_ranking(st.F)
+        st.selection_ranks = np.asarray(ranks, dtype=int)
+        st.selection_crowding = np.asarray(crowding, dtype=float)
+
     # -------------------------------------------------------------------------
     # Main run method (batch mode)
     # -------------------------------------------------------------------------
@@ -367,6 +390,7 @@ class AGEMOEA:
         archive = _build_archive(self.cfg, seed)
         if archive is not None:
             archive.add(X, F, X.shape[0])
+        selection_ranks, selection_crowding = self.kernel.nsga2_ranking(F)
 
         result_mode = str(self.cfg.get("result_mode", "non_dominated")).strip().lower()
         if result_mode not in {"non_dominated", "population"}:
@@ -383,6 +407,8 @@ class AGEMOEA:
             max_evals=max_evals,
             variation=variation,
             archive=archive,
+            selection_ranks=np.asarray(selection_ranks, dtype=int),
+            selection_crowding=np.asarray(selection_crowding, dtype=float),
             result_mode=result_mode,
         )
 
@@ -405,11 +431,14 @@ class AGEMOEA:
             raise RuntimeError("Previous offspring not yet consumed by tell().")
 
         st = self._st
-        ranks, crowding = self.kernel.nsga2_ranking(st.F)
+        if st.selection_ranks is None or st.selection_crowding is None or st.selection_ranks.shape[0] != st.F.shape[0]:
+            self._refresh_selection_metrics(st)
+        assert st.selection_ranks is not None
+        assert st.selection_crowding is not None
         n_parents = 2 * (st.pop_size // 2)
         parents_idx = self.kernel.tournament_selection(
-            ranks=ranks,
-            crowding=crowding,
+            ranks=st.selection_ranks,
+            crowding=st.selection_crowding,
             pressure=2,
             rng=st.rng,
             n_parents=n_parents,
@@ -466,6 +495,7 @@ class AGEMOEA:
         survivors = _age_survival(F_combined, st.pop_size, self.kernel)
         st.X = X_combined[survivors]
         st.F = F_combined[survivors]
+        self._refresh_selection_metrics(st)
 
         st.pending_offspring = None
         st.generation += 1
