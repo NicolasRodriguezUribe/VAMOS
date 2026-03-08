@@ -25,7 +25,7 @@ Smoke tests
 
 - Core check: `vamos check`
 - Guided quickstart: `vamos quickstart` (use `--template list` to see domain templates)
-- Quick NSGA-II run: `vamos optimize --problem zdt1 --max-evaluations 2000`
+- Quick NSGA-II run: `vamos --problem zdt1 --max-evaluations 2000`
 - Full test suite (core): `pytest`
 - With extras installed: `pytest -m "not slow"`
 - List all subcommands: `vamos help`
@@ -116,6 +116,6 @@ Use the lightest interface that still makes the run reproducible.
 Benchmarks and studies
 ----------------------
 
-- Compare backends: `vamos optimize --experiment backends --problem zdt1`
+- Compare backends: `vamos --experiment backends --problem zdt1`
 - Run a predefined suite: `vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/`
 - Batch problem x algorithm sweeps: `vamos --problem-set families --algorithm both`

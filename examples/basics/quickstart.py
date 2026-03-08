@@ -7,7 +7,7 @@ For a no-code option, try the CLI wizard: `vamos quickstart`.
 Use `vamos quickstart --template list` to explore domain templates.
 
 Usage:
-    python examples/quickstart.py
+    python examples/basics/quickstart.py
 
 Requirements:
     pip install -e .  # Core only

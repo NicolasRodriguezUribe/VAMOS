@@ -2,7 +2,7 @@
 Binary feature-selection example on a small classification dataset.
 
 Usage:
-    python examples/feature_selection.py
+    python examples/problems/feature_selection.py
 
 Requirements:
     pip install -e ".[examples]"  # scikit-learn, matplotlib

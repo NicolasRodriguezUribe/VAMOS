@@ -4,7 +4,7 @@ Multi-objective TSP (TSPLIB KroA100) solved with NSGA-II.
 Demonstrates permutation encoding, TSPLIB loading, and Pareto front plotting.
 
 Usage:
-    python examples/tsp_tsplib_nsga2.py
+    python examples/problems/tsp_tsplib_nsga2.py
 
 Requirements:
     pip install -e ".[examples]"  # matplotlib for plotting

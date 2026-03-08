@@ -4,7 +4,7 @@ Mixed-encoding welded beam design example.
 Demonstrates constraints and mixed decision variables.
 
 Usage:
-    python examples/engineering_design.py
+    python examples/problems/engineering_design.py
 
 Requirements:
     pip install -e ".[examples]"  # matplotlib (optional)
@@ -24,8 +24,8 @@ def main():
     cfg = (
         NSGAIIConfig.builder()
         .pop_size(20)
-        .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("polynomial", prob="1/n", eta=20.0)
+        .crossover("mixed")
+        .mutation("mixed")
         .selection("tournament", size=2)
         .constraint_mode("feasibility")
         .build()

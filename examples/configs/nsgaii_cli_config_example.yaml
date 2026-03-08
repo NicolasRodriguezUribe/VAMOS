@@ -1,5 +1,5 @@
 # Example config for the CLI:
-#   python -m vamos.experiment.cli.main --config examples/nsgaii_cli_config_example.yaml
+#   vamos --config examples/configs/nsgaii_cli_config_example.yaml
 #
 # Values under `defaults` apply to every problem unless overridden below.
 version: "1"

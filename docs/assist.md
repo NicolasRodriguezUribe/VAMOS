@@ -255,4 +255,4 @@ Run directory (`assist run` / `assist go --smoke`):
 - Run diagnostics first: `vamos assist doctor`.
 - Invalid auto overrides: VAMOS filters/rejects unsupported keys and records requested/applied/rejected overrides in `plan.json`.
 
-For development installs, you can also use `python -m vamos.experiment.cli.main assist ...`.
+For development installs, you can also use the same `vamos assist ...` commands after installing the repo in editable mode.
