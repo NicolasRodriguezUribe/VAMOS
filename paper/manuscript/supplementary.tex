@@ -257,6 +257,18 @@ The full parameter space for NSGA-II with real-valued encoding is presented in t
 
 
 %==============================================================================
+\section{Accessibility Proxy Protocol}
+\label{app:accessibility_protocol}
+%==============================================================================
+
+To complement the accessibility discussion in the main paper, we evaluate three onboarding tasks: (i)~run NSGA-II on a built-in benchmark, (ii)~define and optimize a small custom two-objective problem, and (iii)~move from defaults to explicit operator-level configuration. For each framework, we selected a canonical snippet from the shortest documented path available in March~2026. For \VAMOS{}, the snippets align with the public API examples used in the manuscript; for pymoo and jMetalPy, the canonical sources are the public documentation pages listed in Table~\ref{tab:accessibility_proxy_details}.
+
+Metrics count only non-empty, non-comment lines and explicit \texttt{import}/\texttt{from} statements. Plotting, result serialization, and explanatory comments are excluded because they do not affect the onboarding burden of the optimization call itself. The underlying artifact file used to generate the accessibility-proxy table in the main paper and Table~\ref{tab:accessibility_proxy_details} below is \texttt{paper/accessibility\_proxy\_snippets.json}.
+
+\input{accessibility_proxy_details.tex}
+
+
+%==============================================================================
 \section{Code Examples}
 \label{app:code}
 %==============================================================================

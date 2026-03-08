@@ -703,7 +703,7 @@ Optuna offers the broadest selection of sampling strategies (TPE, CMA-ES, Gaussi
 \label{sec:accessibility}
 %==============================================================================
 
-A key design goal of \VAMOS{} is to lower the barrier to entry for multi-objective optimization without sacrificing the granular control required by expert researchers. In this paper, we assess accessibility through objective proxies: the amount of boilerplate needed for a standard run, whether custom problems require subclassing, the availability of guided tooling, and whether the same interface scales from novice to expert use.
+A key design goal of \VAMOS{} is to lower the barrier to entry for multi-objective optimization without sacrificing the granular control required by expert researchers. We operationalize accessibility here through three onboarding tasks aligned with common first-use workflows: executing a built-in benchmark, defining a small custom problem, and moving from defaults to explicit algorithm configuration. For \VAMOS{}, pymoo, and jMetalPy, we curated canonical snippets from the shortest documented path for each task and use them as objective accessibility proxies.
 
 Fig.~\ref{fig:accessibility} summarizes this progressive-disclosure workflow. The same framework supports a two-line quick start for built-in problems, callable-based custom problem definition, expert-level configuration through the Builder API, and guided tooling through the command-line interface and VAMOS Studio.
 
@@ -714,7 +714,11 @@ Fig.~\ref{fig:accessibility} summarizes this progressive-disclosure workflow. Th
 \label{fig:accessibility}
 \end{figure*}
 
-For domain experts lacking a background in metaheuristics, \VAMOS{} eliminates the boilerplate code typically required to set up an optimization pipeline. As shown in Listing~\ref{lst:quickstart}, executing a standard algorithm with sensible defaults on a built-in benchmark requires only two lines of code.
+Table~\ref{tab:accessibility_proxies} summarizes the resulting proxy measurements. \VAMOS{} has the lowest setup cost for the initial built-in run and for the callable-based custom-problem task, while pymoo becomes slightly shorter once the workflow shifts to explicit operator-level configuration. We interpret this pattern as evidence for progressive disclosure rather than universal terseness: \VAMOS{} minimizes the initial setup burden and then scales to expert control without leaving the public API, while also providing guided tooling beyond the Python interface.
+
+\input{accessibility_proxies.tex}
+
+Listing~\ref{lst:quickstart} shows the corresponding minimal \VAMOS{} example. Executing a standard algorithm with sensible defaults on a built-in benchmark requires only two lines of code.
 
 \begin{lstlisting}[float=tbp,caption={Minimal NSGA-II run on ZDT1 in \VAMOS{}.},label={lst:quickstart}]
 from vamos import optimize
@@ -722,7 +726,7 @@ from vamos import optimize
 result = optimize("zdt1", algorithm="nsgaii")
 \end{lstlisting}
 
-Furthermore, defining custom problems does not require complex object-oriented subclassing. The \texttt{make\_problem} factory converts any standard Python callable into a problem object, allowing users to define their objectives and constraints naturally, as demonstrated in Listing~\ref{lst:make_problem}.
+For custom problems, \texttt{make\_problem} converts a standard Python callable into a problem object without introducing framework-specific base classes, as shown in Listing~\ref{lst:make_problem}.
 
 \begin{lstlisting}[float=tbp,caption={Defining and optimizing a custom problem.},label={lst:make_problem}]
 from vamos import make_problem, optimize
@@ -743,7 +747,7 @@ result = optimize(
 )
 \end{lstlisting}
 
-Conversely, for advanced users who need to conduct systematic algorithm configuration and experimentation, \VAMOS{} provides a unified Builder API. This API exposes every configurable parameter of an algorithm without requiring different entry points or custom wrappers. Listing~\ref{lst:builder} illustrates how a researcher can precisely define the population size, configure specific crossover and mutation operators, and attach an external archive, seamlessly integrating fine-grained component control into the same execution model.
+For advanced users who need systematic algorithm configuration and experimentation, \VAMOS{} provides a unified Builder API. Listing~\ref{lst:builder} illustrates how a researcher can define the population size, configure specific crossover and mutation operators, and attach an external archive within the same execution model.
 
 \begin{lstlisting}[float=tbp,caption={Builder API for fine-grained configuration.},label={lst:builder}]
 from vamos import optimize
@@ -764,7 +768,7 @@ result = optimize(
 )
 \end{lstlisting}
 
-Taken together, these examples illustrate the progressive-disclosure model of \VAMOS{}: a built-in benchmark can be executed in two lines, a custom problem can be defined from a plain callable without subclassing, and the same API extends naturally to fully specified configurations when expert control is needed. Beyond the Python API, \VAMOS{} also provides guided CLI entry points (e.g., \texttt{vamos quickstart} and \texttt{vamos create-problem}) and VAMOS Studio for browser-based onboarding and experiment exploration. Automatic algorithm configuration is discussed separately in Section~\ref{sec:aac}, where it is treated as part of configurability rather than as the primary accessibility argument.
+Taken together, these examples illustrate the progressive-disclosure model of \VAMOS{}: a built-in benchmark can be executed in two lines, a custom problem can be defined from a plain callable without subclassing, and the same API extends naturally to fully specified configurations when expert control is needed. Beyond the Python API, \VAMOS{} also provides guided CLI entry points (e.g., \texttt{vamos quickstart} and \texttt{vamos create-problem}) and VAMOS Studio for browser-based onboarding and experiment exploration. The Supplementary Material details the canonical snippets and measurement rules used for the proxy comparison.
 
 We therefore frame accessibility here through objective proxies rather than controlled user studies. A formal usability evaluation with domain-expert participants is left to future work.
 
