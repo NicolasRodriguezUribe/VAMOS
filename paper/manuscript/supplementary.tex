@@ -98,11 +98,13 @@ To verify that runtime speedups do not come at the expense of convergence rate, 
 %==============================================================================
 The runtime advantages reported above are only meaningful if \VAMOS{} produces solutions of comparable quality. To verify this, we compare normalized hypervolume (HV) across frameworks using the protocol described in Section~V-E of the main paper: for each problem we compute the median HV across 30 seeds, and then summarize these per-problem medians by family using the median and interquartile range (IQR). Table~\ref{tab:frameworks_hv} presents the results for generational NSGA-II.
 
-\begin{table}[htbp]
+\begin{table*}[htbp]
 \centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}
 \label{tab:frameworks_hv}
-\begin{tabular}{lccccc}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} & \textbf{Overall} \\
 \midrule
@@ -113,15 +115,32 @@ DEAP & \textbf{0.991 (0.013)} & \textbf{0.839 (0.138)} & 0.839 (0.224) & --- & 0
 Platypus & \textbf{0.991 (0.010)} & 0.824 (0.177) & 0.919 (0.137) & --- & 0.919 (0.160) \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Across ZDT, all frameworks attain nearly identical normalized HV, confirming that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks. WFG exhibits the largest dispersion; notably, \VAMOS{} achieves the highest median on WFG (0.934 vs.\ 0.846 for pymoo), which may reflect subtle differences in WFG parameterization or boundary handling across implementations. Together with the runtime results, these summaries confirm that \VAMOS{} achieves comparable or superior solution quality while delivering faster runtimes under the fixed-reference-front protocol.
 
 Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, the overall normalized HV is effectively identical across frameworks (all three reach 0.989 overall), although \VAMOS{} attains a clearly higher median on WFG (0.939 vs.\ 0.849 for pymoo and 0.848 for jMetalPy). For the archive variant, the three frameworks remain closely matched across all families: ZDT and ZCAT are virtually identical, DTLZ differs by at most 0.003, and the WFG medians lie in the narrow 0.846--0.852 range.
 
-\input{frameworks_hv_variants.tex}
-
-%\textcolor{red}{As a complementary quality indicator, Table~\ref{tab:frameworks_igd_merged} reports IGD+ summaries across frameworks for NSGA-II, SMS-EMOA, and MOEA/D. For NSGA-II, IGD+ values are tightly clustered across frameworks (overall median 0.0108 for \VAMOS{} and pymoo, 0.0105 for jMetalPy), mirroring the HV equivalence. SMS-EMOA achieves the lowest IGD+ overall (0.0078 for all three frameworks), reflecting the steady-state indicator-based selection's effectiveness at maintaining proximity and diversity. For MOEA/D, \VAMOS{} (0.0102) and jMetalPy (0.0102) outperform pymoo (0.0160), consistent with the known difficulty of MOEA/D under certain weight-vector configurations.}
+\begin{table*}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{Normalized hypervolume summary (median (IQR)) by problem family for NSGA-II variants}
+\label{tab:frameworks_hv_variants}
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+\textbf{Algorithm} & \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} & \textbf{Overall} \\
+\midrule
+NSGA-II (SS) & VAMOS & 0.993 (0.009) & 0.846 (0.091) & 0.939 (0.138) & 0.994 (0.004) & 0.989 (0.055) \\
+ & pymoo & 0.993 (0.008) & 0.847 (0.160) & 0.849 (0.218) & 0.994 (0.004) & 0.989 (0.073) \\
+ & jMetalPy & 0.993 (0.009) & 0.849 (0.101) & 0.848 (0.153) & 0.994 (0.004) & 0.989 (0.073) \\
+\midrule
+NSGA-II (Archive) & VAMOS & 0.993 (0.010) & 0.855 (0.106) & 0.846 (0.219) & 0.993 (0.005) & 0.987 (0.079) \\
+ & pymoo & 0.993 (0.009) & 0.853 (0.139) & 0.852 (0.223) & 0.993 (0.005) & 0.988 (0.080) \\
+ & jMetalPy & 0.993 (0.010) & 0.856 (0.104) & 0.846 (0.149) & 0.993 (0.005) & 0.987 (0.073) \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 %\input{frameworks_igd_merged.tex}
 
@@ -140,7 +159,46 @@ Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon resul
 %==============================================================================
 Tables in this appendix report supplementary runtime comparisons for NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D under the same protocol as the Experimental Results section of the main paper.
 
-\input{frameworks_perf_variants.tex}
+\begin{table*}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{Median runtime (seconds) by problem family for algorithm variants}
+\label{tab:frameworks_perf_variants}
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+\textbf{Algorithm} & \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} & \textbf{Average} \\
+\midrule
+NSGA-II (SS) & VAMOS & \textbf{150.21} & \textbf{244.80} & \textbf{799.29} & \textbf{715.29} & \textbf{477.40} \\
+ & pymoo & 5747.47 & 7259.88 & 6382.73 & 4569.01 & 5989.77 \\
+ & jMetalPy & 1930.43 & 2506.83 & 2756.07 & 1947.76 & 2285.27 \\
+\midrule
+NSGA-II (Arch.) & VAMOS & \textbf{10.43} & \textbf{87.56} & \textbf{23.33} & \textbf{106.30} & \textbf{56.91} \\
+ & pymoo & 1422.71 & 7208.12 & 1515.89 & 1511.36 & 2914.52 \\
+ & jMetalPy & 744.93 & 3993.47 & 1736.74 & 602.88 & 1769.51 \\
+\midrule
+SMS-EMOA & VAMOS & \textbf{124.94} & \textbf{187.16} & \textbf{734.42} & \textbf{521.22} & \textbf{391.94} \\
+ & pymoo & 1658.10 & 2439.60 & 3410.49 & 2967.14 & 2618.83 \\
+ & jMetalPy & 377.01 & 529.49 & 1161.51 & 2670.22 & 1184.56 \\
+\midrule
+MOEA/D & VAMOS & \textbf{76.19} & \textbf{118.98} & \textbf{647.96} & \textbf{340.78} & \textbf{295.98} \\
+ & pymoo & 1325.29 & 1735.46 & 4143.63 & 1023.63 & 2057.00 \\
+ & jMetalPy & 303.00 & 430.14 & 4267.52 & 354.29 & 1338.74 \\
+ & Platypus & nan & nan & nan & 412.92 & 412.92 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Memory footprint}
+
+Peak resident-set-size (RSS) was measured during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} achieves a median peak RSS of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). These measurements are consistent with the array-native representation reducing per-individual object overhead.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/memory_comparison.png}
+\caption{Peak memory footprint (MB) during NSGA-II optimization on three representative problems (50{,}000 evaluations, median of 5 seeds). \VAMOS{} consistently uses less memory than both pymoo and jMetalPy across the measured problems.}
+\label{fig:memory_comparison}
+\end{figure}
 
 \section{Detailed statistical analysis for NSGA-II}
 \label{app:stats_nsgaii}
@@ -195,7 +253,7 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_robustness_summary_moead} 
 \label{app:param_space}
 %==============================================================================
 
-The full parameter space for NSGA-II with real-valued encoding is presented in Table~\ref{tab:parameter_space} of the main paper.
+The full parameter space for NSGA-II with real-valued encoding is presented in the main paper.
 
 
 %==============================================================================
@@ -206,9 +264,9 @@ The full parameter space for NSGA-II with real-valued encoding is presented in T
 
 
 
-\textcolor{red}{Listing~\ref{lst:optuna_tune} shows how to autotune the full NSGA-II parameter space (Table~\ref{tab:parameter_space}) using the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function defines the NSGA-II tuning space, which is converted to a \texttt{ParamSpace} before calling \texttt{ModelBasedTuner}.}
+Listing~\ref{lst:optuna_tune} shows how to autotune the NSGA-II tuning space with the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function defines the search space, which is converted to a \texttt{ParamSpace} before calling \texttt{ModelBasedTuner}.
 
-\begin{lstlisting}[float=*,caption={\textcolor{red}{Autotuning NSGA-II with Optuna on ZDT1, DTLZ2, and WFG4.}},label={lst:optuna_tune}]
+\begin{lstlisting}[float=*,caption={Autotuning NSGA-II with Optuna on ZDT1, DTLZ2, and WFG4.},label={lst:optuna_tune}]
 import numpy as np
 from vamos import optimize, make_problem_selection
 from vamos.engine.tuning import (
