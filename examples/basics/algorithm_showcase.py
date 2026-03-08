@@ -1,7 +1,7 @@
 """
-New Algorithms Demo: AGE-MOEA and RVEA.
+Algorithm showcase: AGE-MOEA and RVEA.
 
-Demonstrates the usage of the newly added algorithms.
+Demonstrates two alternative MOEA families beyond NSGA-II.
 """
 
 from __future__ import annotations

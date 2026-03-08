@@ -8,7 +8,7 @@ Note: This example uses explicit config objects for advanced control.
 For quick runs, prefer the unified optimize(...) API.
 
 Usage:
-    python examples/archive_usage_nsga2.py
+    python examples/advanced/archive_usage_nsga2.py
 
 Requirements:
     pip install -e ".[examples]"  # matplotlib for plotting

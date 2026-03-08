@@ -5,7 +5,7 @@ Note: This example uses explicit config objects for reproducibility and tuning c
 For quick runs, prefer the unified optimize(...) API.
 
 Usage:
-    python examples/hyperparam_tuning.py
+    python examples/tuning/hyperparam_tuning.py
 
 Requirements:
     pip install -e ".[examples]"  # scikit-learn, matplotlib

@@ -2,7 +2,7 @@
 Binary feature selection / QUBO-style pipeline on a real dataset.
 
 Usage:
-    python examples/feature_selection_qubo.py
+    python examples/problems/feature_selection_qubo.py
 
 Requirements:
     pip install -e ".[examples]"  # scikit-learn, matplotlib

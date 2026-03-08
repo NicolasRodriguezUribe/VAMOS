@@ -51,4 +51,4 @@ The script performs:
 2. create temporary virtual environment
 3. install the newest wheel from `dist/`
 4. `python -c "import vamos; print('ok')"`
-5. `python -m vamos.experiment.cli.main assist doctor --json`
+5. `vamos assist doctor --json`

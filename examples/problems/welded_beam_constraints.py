@@ -4,7 +4,7 @@ Constrained welded beam design example with feasibility filtering.
 Shows how to enable constraint handling in NSGA-II and plot feasible vs. infeasible solutions.
 
 Usage:
-    python examples/welded_beam_constraints.py
+    python examples/problems/welded_beam_constraints.py
 
 Requirements:
     pip install -e ".[examples]"  # matplotlib for plotting

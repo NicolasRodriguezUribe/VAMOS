@@ -5,7 +5,7 @@ Demonstrates how to use the 'jax' engine for massive population sizes.
 Requires `jax` and `jaxlib` installed (and a GPU for best performance).
 
 Usage:
-    python examples/jax_gpu_demo.py
+    python examples/advanced/jax_gpu_demo.py
 """
 
 from __future__ import annotations

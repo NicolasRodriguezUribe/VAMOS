@@ -2,7 +2,7 @@
 Mixed-encoding engineering design example (welded beam surrogate).
 
 Usage:
-    python examples/engineering_design_pipeline.py
+    python examples/problems/engineering_design_pipeline.py
 
 Requirements:
     pip install -e ".[examples]"  # matplotlib
@@ -21,8 +21,8 @@ def build_config(pop_size: int = 30) -> NSGAIIConfig:
         NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
-        .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("polynomial", prob="1/n", eta=20.0)
+        .crossover("mixed")
+        .mutation("mixed")
         .selection("tournament", size=2)
         .constraint_mode("feasibility")
         .build()

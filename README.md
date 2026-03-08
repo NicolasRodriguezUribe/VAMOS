@@ -242,18 +242,23 @@ Reminder: plain dict configs are intentionally not accepted (use `GenericAlgorit
 VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
 
 - **0. Basic**: Essential concepts and API basics.
+  - `notebooks/INDEX.ipynb` -- Maintained catalog of the full learning surface
   - `notebooks/0_basic/01_quickstart.ipynb` -- First optimization run
   - `notebooks/0_basic/05_interactive_tutorial.ipynb` -- Guided hands-on walkthrough
+  - `notebooks/0_basic/06_optuna_tuning_basics.ipynb` -- Introductory Optuna tuning
 - **1. Intermediate**: Real-world problems, constraints, and deeper analysis.
   - `notebooks/1_intermediate/10_discrete_problems.ipynb` -- Binary, integer, and permutation encodings
   - `notebooks/1_intermediate/11_constrained_optimization.ipynb` -- Constraint handling
   - `notebooks/1_intermediate/15_mcdm.ipynb` -- Multi-criteria decision making
   - `notebooks/1_intermediate/16_interactive_explorer.ipynb` -- Interactive Pareto front explorer
+  - `notebooks/1_intermediate/19_algorithm_families_beyond_nsgaii.ipynb` -- Current recipes for the other VAMOS MOEAs
 - **2. Advanced**: Custom extensions, tuning, and research benchmarks.
   - `notebooks/2_advanced/20_hyperparameter_tuning.ipynb` -- Algorithm tuning
+  - `notebooks/2_advanced/23_backends_and_performance.ipynb` -- Backend tradeoffs and benchmarking
   - `notebooks/2_advanced/30_paper_benchmarking.ipynb` -- Publication-ready benchmarks
   - `notebooks/2_advanced/31_adaptive_operator_selection.ipynb` -- AOS analysis
   - `notebooks/2_advanced/32_ablation_planning.ipynb` -- Ablation studies
+  - `notebooks/2_advanced/34_extension_workflows.ipynb` -- Custom problem and custom algorithm extension patterns
 
 ## 🛠️ Tooling Ecosystem
 
@@ -276,10 +281,6 @@ All tools are available as `vamos <subcommand>`. Run `vamos help` for the full l
   vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1
   ```
 - Full tuning reference (canonical docs): `docs/topics/tuning.md`.
-- Generic tuning example (script-based):
-  ```bash
-  python examples/tuning/racing_tuner_generic.py --algorithm nsgaii --multi-fidelity --fidelity-levels 500,1000,1500
-  ```
 - **`vamos check`**: Verify your installation and backend availability.
 
 ## 🤝 Contributing

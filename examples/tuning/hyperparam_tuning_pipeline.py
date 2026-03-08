@@ -2,7 +2,7 @@
 End-to-end example: multi-objective hyperparameter tuning on a real dataset.
 
 Usage:
-    python examples/hyperparam_tuning_pipeline.py
+    python examples/tuning/hyperparam_tuning_pipeline.py
 
 Requirements:
     pip install -e ".[examples]"  # scikit-learn, matplotlib
