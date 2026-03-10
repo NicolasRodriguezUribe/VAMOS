@@ -5,8 +5,8 @@ Runs four NSGA-II variants on ZDT4 and DTLZ2, saves obtained fronts as CSV,
 and generates publication-quality Pareto front plots.
 
 Variants:
-  1. ZDT4  – Standard NSGA-II          (20 000 evaluations)
-  2. ZDT4  – Steady-State NSGA-II      (20 000 evaluations)
+  1. ZDT4  – Standard NSGA-II          (30 000 evaluations)
+  2. ZDT4  – Steady-State NSGA-II      (30 000 evaluations)
   3. DTLZ2 – Standard NSGA-II          (40 000 evaluations)
   4. DTLZ2 – Unbounded-Archive NSGA-II (40 000 evaluations)
 
@@ -50,13 +50,16 @@ FIG_DIR.mkdir(parents=True, exist_ok=True)
 # ---------------------------------------------------------------------------
 SEED = 42
 POP_SIZE = 100
+# ZDT4's multimodality makes the fixed-seed 20k runs occasionally miss the
+# right-hand extreme; 30k yields a representative front for both variants.
+ZDT4_PLOT_EVALS = 30_000
 
 EXPERIMENTS = [
     {
         "problem": "zdt4",
         "n_var": 10,
         "n_obj": 2,
-        "n_evals": 20_000,
+        "n_evals": ZDT4_PLOT_EVALS,
         "variant": "standard",
         "csv_name": "FUN.NSGAII.ZDT4.csv",
         "fig_name": "front_zdt4_standard.png",
@@ -66,7 +69,7 @@ EXPERIMENTS = [
         "problem": "zdt4",
         "n_var": 10,
         "n_obj": 2,
-        "n_evals": 20_000,
+        "n_evals": ZDT4_PLOT_EVALS,
         "variant": "steady_state",
         "csv_name": "FUN.NSGAII.ZDT4.steady_state.csv",
         "fig_name": "front_zdt4_steady_state.png",
