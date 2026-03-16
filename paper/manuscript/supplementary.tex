@@ -74,8 +74,7 @@
 \begin{document}
 \maketitle
 
-%==============================================================================
-\appendices
+This supplementary PDF accompanies the main manuscript and contains the extended convergence, solution-quality, runtime, statistical, configurability, and accessibility results referenced there.
 
 %==============================================================================
 \section{Convergence Analysis}
@@ -142,6 +141,8 @@ NSGA-II (Archive) & VAMOS & 0.993 (0.010) & 0.855 (0.106) & 0.846 (0.219) & 0.99
 \end{tabular}
 \end{table*}
 
+%\input{frameworks_igd_merged.tex}
+
 %==============================================================================
 \section{Statistical Analysis}
 \label{app:stats_main}
@@ -149,13 +150,13 @@ NSGA-II (Archive) & VAMOS & 0.993 (0.010) & 0.855 (0.106) & 0.846 (0.219) & 0.99
 
 The descriptive summaries in the previous section suggest quality equivalence, but median and IQR alone cannot determine whether observed differences are statistically significant. We therefore apply Wilcoxon signed-rank tests (paired by seed) comparing \VAMOS{} against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). As a measure of practical significance, we report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{VD00} alongside each test ($\hat{A}_{12}>0.5$ favors \VAMOS{}; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also compute paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
 
-Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 41 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.4\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: \VAMOS{} is equivalent to pymoo on 37/41 problems and non-inferior on 38/41, with a median $\Delta$HV of $-0.01\%$. Similar patterns hold for jMetalPy and the other frameworks. Table~\ref{tab:hv_robustness_summary_nsgaii} details robustness, and Fig.~\ref{fig:forest_ci_nsgaii} visualizes per-problem CIs as a forest plot. Detailed NSGA-II statistical tables are provided in Appendix~\ref{app:stats_nsgaii}, and corresponding analyses for SMS-EMOA and MOEA/D are provided in Appendix~\ref{app:stats}.
+Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 41 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.4\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: \VAMOS{} is equivalent to pymoo on 37/41 problems and non-inferior on 38/41, with a median $\Delta$HV of $-0.01\%$. Similar patterns hold for jMetalPy and the other frameworks. Table~\ref{tab:hv_robustness_summary_nsgaii} details robustness, and Fig.~\ref{fig:forest_ci_nsgaii} visualizes per-problem CIs as a forest plot. Detailed NSGA-II statistical tables are provided in Section~\ref{app:stats_nsgaii}, and corresponding analyses for SMS-EMOA and MOEA/D are provided in Section~\ref{app:stats}.
 
 %==============================================================================
 \section{Additional runtime comparisons}
 \label{app:variants}
 %==============================================================================
-Tables in this appendix report supplementary runtime comparisons for NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D under the same protocol as the Experimental Results section of the main paper.
+This section reports supplementary runtime comparisons for NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D under the same protocol as the Experimental Results section of the main paper.
 
 \begin{table*}[htbp]
 \centering
@@ -200,7 +201,7 @@ Peak resident-set-size (RSS) was measured during NSGA-II runs on three represent
 
 \section{Detailed statistical analysis for NSGA-II}
 \label{app:stats_nsgaii}
-This appendix reports per-problem Wilcoxon signed-rank tests, bootstrap equivalence analyses, robustness summaries, and bootstrap confidence intervals for the NSGA-II baseline discussed in the Statistical Analysis section of the main paper.
+This section reports per-problem Wilcoxon signed-rank tests, bootstrap equivalence analyses, robustness summaries, and bootstrap confidence intervals for the NSGA-II baseline discussed in the Statistical Analysis section of the main paper.
 \begingroup
 \setlength{\tabcolsep}{2pt}
 \input{stats_nsgaii.tex}
@@ -226,7 +227,7 @@ Fig.~\ref{fig:runtime_heatmap} presents per-problem median runtimes as a dual-pa
 \label{app:stats}
 %==============================================================================
 
-Tables in this appendix report Wilcoxon signed-rank tests, bootstrap equivalence analyses, and robustness summaries for SMS-EMOA and MOEA/D, following the same methodology as the Statistical Analysis section of the main paper.
+This section reports Wilcoxon signed-rank tests, bootstrap equivalence analyses, and robustness summaries for SMS-EMOA and MOEA/D, following the same methodology as the Statistical Analysis section of the main paper.
 
 \subsection{SMS-EMOA}
 
