@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Literal, cast
 
 import numpy as np
+
+try:  # pragma: no cover - optional dependency
+    import moocore as _moocore
+except ImportError:  # pragma: no cover - optional dependency
+    _moocore = None
 
 from vamos.engine.archive.pruning_selectors import select_maxmin_subset, select_ref_dirs_subset
 
@@ -13,6 +19,7 @@ PrunePolicy = CanonicalPrunePolicy
 DeduplicateIn = Literal["objective", "decision", "both"]
 
 _VALID_PRUNE_POLICIES = {"crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"}
+_HV_EXACT_FALLBACK_WARNED = False
 
 
 def normalize_prune_policy(policy: str) -> PrunePolicy:
@@ -194,6 +201,35 @@ def hv_contrib_2d(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
     return out
 
 
+def hv_contrib_exact(F: np.ndarray, ref: np.ndarray, *, assume_nondominated: bool) -> np.ndarray | None:
+    """
+    Best-effort exact HV contributions.
+
+    Returns ``None`` when an exact backend is unavailable for the requested
+    dimensionality.
+    """
+    if F.shape[0] == 0:
+        return np.array([], dtype=float)
+    if F.shape[1] == 2 and assume_nondominated:
+        return hv_contrib_2d(F, ref=ref)
+    if _moocore is None:
+        return None
+    return np.asarray(_moocore.hv_contributions(F, ref=ref), dtype=float)
+
+
+def warn_hv_exact_fallback(n_obj: int) -> None:
+    global _HV_EXACT_FALLBACK_WARNED
+    if _HV_EXACT_FALLBACK_WARNED:
+        return
+    warnings.warn(
+        "Exact hypervolume pruning for archive policy 'hv' requires 'moocore' "
+        f"for {n_obj} objectives; falling back to Monte Carlo contributions.",
+        UserWarning,
+        stacklevel=3,
+    )
+    _HV_EXACT_FALLBACK_WARNED = True
+
+
 class BoundedArchive:
     """
     Stores (X,F) pairs optionally; pruning is objective-space driven.
@@ -291,21 +327,21 @@ class BoundedArchive:
 
         if policy in {"hv", "mc_hv"}:
             m = self.F.shape[1]
-            ref = self._ref_point(m)
-            if m == 2:
-                # ensure ND for contribution meaning
-                if self.cfg.nondominated_only:
-                    mask = pareto_nondominated_mask(self.F)
-                    self.F = self.F[mask]
-                    if self.X is not None:
-                        self.X = self.X[mask]
-                    n = self.size()
-                contrib = hv_contrib_2d(self.F, ref=np.asarray(ref, dtype=float))
-                # prune smallest contribution
+            ref = np.asarray(self._ref_point(m), dtype=float)
+            exact_contrib: np.ndarray | None = None
+            if policy == "hv":
+                exact_contrib = hv_contrib_exact(self.F, ref=ref, assume_nondominated=self.cfg.nondominated_only)
+                if exact_contrib is None:
+                    warn_hv_exact_fallback(m)
+            if exact_contrib is not None:
+                kill = np.argsort(exact_contrib)[: (n - target)]
+            elif m == 2 and self.cfg.nondominated_only:
+                # Preserve the dependency-free exact 2D path for ND sets even if
+                # the helper above returns None in the absence of MooCore.
+                contrib = hv_contrib_2d(self.F, ref=ref)
                 kill = np.argsort(contrib)[: (n - target)]
             else:
-                # Monte Carlo approx contributions for m>2
-                kill = self._mc_hv_contrib_prune(ref, n - target)
+                kill = self._mc_hv_contrib_prune(ref.tolist(), n - target)
 
             keep = np.ones(self.size(), dtype=bool)
             keep[kill] = False

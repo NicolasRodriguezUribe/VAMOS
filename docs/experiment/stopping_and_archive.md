@@ -65,6 +65,7 @@ Metadata:
 Notes:
 - In the tuning spaces, bounded external archives use `size_cap` with the population size as their capacity.
 - When an algorithm is configured with an external archive, top-level results come from that archive by default unless `result_mode="population"` is requested.
+- `prune_policy: hv` uses exact HV contributions in 2D and, when `moocore` is installed, exact higher-dimensional contributions as well. `mc_hv` always uses the Monte Carlo proxy.
 
 ## Reproducibility
 

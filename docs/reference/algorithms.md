@@ -8,6 +8,7 @@ Algorithms (internal)
   - External archive configuration (`.external_archive(...)`) becomes the default result source unless you explicitly set `result_mode="population"`.
   - When archive is enabled, results still include `result["archive"]` alongside `result["population"]`.
   - Supported external-archive prune policies are `crowding`, `hv`, `mc_hv`, `knn`, `maxmin`, and `ref_dirs`.
+  - `hv` uses exact hypervolume contributions in 2D and exact higher-dimensional contributions when `moocore` is available; `mc_hv` keeps the Monte Carlo approximation path.
 - NSGA-III: many-objective real/binary/integer; reference direction support. Matching `pop_size` to the number of reference directions is recommended (with divisions p: `comb(p + n_obj - 1, n_obj - 1)`); mismatches emit a warning unless strict enforcement is enabled.
 - MOEA/D: real/binary/integer; aggregation methods (tchebycheff, weighted sum, pbi). Defaults align with jMetalPy (PBI aggregation, DE crossover CR=1.0/F=0.5, packaged weight vectors for n_obj > 2).
   - `result_mode` accepts `non_dominated` (default) or `population`.
