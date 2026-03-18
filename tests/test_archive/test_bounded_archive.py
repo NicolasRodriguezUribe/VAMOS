@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig, ExternalArchiveConfig
+from vamos.engine.archive import bounded_archive as ba
 
 
 def test_bounded_archive_size_cap_and_nondominated():
@@ -131,3 +132,63 @@ def test_bounded_archive_ref_dirs_prunes_to_target_size():
     assert np.any(np.all(kept == np.array([0.90, 0.05, 0.05]), axis=1))
     assert np.any(np.all(kept == np.array([0.05, 0.90, 0.05]), axis=1))
     assert np.any(np.all(kept == np.array([0.05, 0.05, 0.90]), axis=1))
+
+
+def test_bounded_archive_hv_uses_moocore_for_many_objective_pruning(monkeypatch: pytest.MonkeyPatch):
+    calls: list[tuple[np.ndarray, np.ndarray]] = []
+
+    class _FakeMooCore:
+        @staticmethod
+        def hv_contributions(F: np.ndarray, *, ref: np.ndarray) -> np.ndarray:
+            calls.append((F.copy(), ref.copy()))
+            return np.array([0.4, 0.1, 0.3, 0.2], dtype=float)
+
+    monkeypatch.setattr(ba, "_moocore", _FakeMooCore)
+
+    cfg = BoundedArchiveConfig(size_cap=3, prune_policy="hv", nondominated_only=True, hv_ref_point=[2.0, 2.0, 2.0])
+    archive = BoundedArchive(cfg)
+    F = np.array(
+        [
+            [0.9, 0.2, 0.2],
+            [0.2, 0.9, 0.2],
+            [0.2, 0.2, 0.9],
+            [0.45, 0.45, 0.45],
+        ]
+    )
+
+    archive.add(X=None, F=F, evals=10)
+
+    assert len(calls) == 1
+    assert archive.F.shape[0] == 3
+    assert not np.any(np.all(archive.F == F[1], axis=1))
+
+
+def test_bounded_archive_mc_hv_keeps_monte_carlo_path_even_with_moocore(monkeypatch: pytest.MonkeyPatch):
+    class _FakeMooCore:
+        @staticmethod
+        def hv_contributions(F: np.ndarray, *, ref: np.ndarray) -> np.ndarray:
+            raise AssertionError("mc_hv should not call moocore.hv_contributions")
+
+    monkeypatch.setattr(ba, "_moocore", _FakeMooCore)
+
+    cfg = BoundedArchiveConfig(size_cap=3, prune_policy="mc_hv", nondominated_only=True, hv_ref_point=[2.0, 2.0, 2.0])
+    archive = BoundedArchive(cfg)
+    monkeypatch.setattr(
+        archive,
+        "_mc_hv_contrib_prune",
+        lambda ref, k: np.array([2], dtype=int),
+    )
+
+    F = np.array(
+        [
+            [0.9, 0.2, 0.2],
+            [0.2, 0.9, 0.2],
+            [0.2, 0.2, 0.9],
+            [0.45, 0.45, 0.45],
+        ]
+    )
+
+    archive.add(X=None, F=F, evals=10)
+
+    assert archive.F.shape[0] == 3
+    assert not np.any(np.all(archive.F == F[2], axis=1))
