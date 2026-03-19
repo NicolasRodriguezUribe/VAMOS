@@ -322,6 +322,30 @@ def test_external_archive_config_uses_hv_policy_names():
     assert cfg.external_archive.pruning == "hv"
 
 
+def test_unbounded_external_archive_omits_pruning_from_serialized_config():
+    assignment = {
+        "pop_size": 32,
+        "offspring_size": 32,
+        "selection": "tournament",
+        "selection_size": 2,
+        "crossover": "sbx",
+        "crossover_prob": 0.9,
+        "crossover_eta": 15.0,
+        "mutation": "pm",
+        "mutation_prob": "1/n",
+        "mutation_eta": 20.0,
+        "use_external_archive": True,
+        "archive_unbounded": True,
+        "archive_prune_policy": "mc_hv",
+    }
+    cfg = config_from_assignment("nsgaii", assignment)
+    assert cfg.external_archive is not None
+    assert cfg.external_archive.capacity is None
+    serialized = cfg.to_dict()
+    assert serialized["external_archive"]["capacity"] is None
+    assert "pruning" not in serialized["external_archive"]
+
+
 def test_external_archive_config_uses_knn_policy_name():
     assignment = {
         "pop_size": 32,

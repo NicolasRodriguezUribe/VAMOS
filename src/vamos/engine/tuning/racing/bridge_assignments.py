@@ -35,6 +35,15 @@ _RVEA_NAMES = ALGORITHM_VARIANT_GROUPS["rvea"]
 _TUNING_ARCHIVE_PRUNE_POLICIES = {"crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"}
 
 
+def _sanitize_assignment(assignment: dict[str, Any]) -> dict[str, Any]:
+    sanitized = dict(assignment)
+    use_external_archive = bool(sanitized.get("use_external_archive", False))
+    archive_unbounded = bool(sanitized.get("archive_unbounded", False))
+    if not use_external_archive or archive_unbounded:
+        sanitized.pop("archive_prune_policy", None)
+    return sanitized
+
+
 def _apply_initializer(builder: Any, assignment: dict[str, Any], pop_size: int) -> None:
     initializer = str(assignment.get("initializer", "random")).strip().lower()
     if initializer == "random":
@@ -397,6 +406,7 @@ def config_from_assignment(algorithm_name: str, assignment: dict[str, Any]) -> A
     """
 
     algo = algorithm_name.lower()
+    assignment = _sanitize_assignment(assignment)
     if algo in _NSGAII_NAMES:
         return _build_nsgaii_config(assignment)
     if algo in _MOEAD_NAMES:

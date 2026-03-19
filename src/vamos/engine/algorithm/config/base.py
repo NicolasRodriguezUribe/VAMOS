@@ -182,7 +182,8 @@ class _SerializableConfig:
     __dataclass_fields__: dict[str, Any]
 
     def to_dict(self) -> dict[str, object]:
-        return cast(dict[str, object], asdict(cast(Any, self)))
+        payload = cast(dict[str, object], asdict(cast(Any, self)))
+        return _omit_inactive_archive_fields(payload)
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), sort_keys=True)
@@ -349,6 +350,13 @@ def _build_external_archive_config(capacity: int | None, kwargs: dict[str, Any])
         names = ", ".join(unexpected)
         raise TypeError(f"external_archive() got unexpected keyword argument(s): {names}")
     return ExternalArchiveConfig(capacity=capacity, **kwargs)
+
+
+def _omit_inactive_archive_fields(payload: dict[str, object]) -> dict[str, object]:
+    external_archive = payload.get("external_archive")
+    if isinstance(external_archive, dict) and external_archive.get("capacity") is None:
+        external_archive.pop("pruning", None)
+    return payload
 
 
 def _normalize_tournament_selection_kwargs(method: str, kwargs: dict[str, Any]) -> dict[str, Any]:
