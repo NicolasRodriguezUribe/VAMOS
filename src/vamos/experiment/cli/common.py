@@ -108,6 +108,11 @@ def collect_nsgaii_variation_args(args: argparse.Namespace) -> dict[str, object]
             "perturbation": getattr(args, "nsgaii_mutation_perturbation", None),
         },
         "repair": getattr(args, "nsgaii_repair", None),
+        "archive_mode": getattr(args, "nsgaii_archive_mode", None),
+        "archive_subset_size": getattr(args, "nsgaii_archive_subset_size", None),
+        "archive_hybrid_alpha": getattr(args, "nsgaii_archive_hybrid_alpha", None),
+        "archive_hybrid_k": getattr(args, "nsgaii_archive_hybrid_k", None),
+        "archive_hybrid_normalization": getattr(args, "nsgaii_archive_hybrid_normalization", None),
     }
 
 

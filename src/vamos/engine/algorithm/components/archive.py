@@ -230,11 +230,31 @@ class _BaseArchive:
         self._replace_contents(X_nd, F_nd, G_nd)
         return self._snapshot()
 
+    def __len__(self) -> int:
+        return int(self._size)
+
     def contents(self) -> tuple[np.ndarray, np.ndarray]:
         return self._snapshot()
 
+    def contents_with_constraints(self) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        return self._snapshot_with_constraints()
+
+    def contents_payload(self) -> dict[str, Any]:
+        X, F, G = self._snapshot_with_constraints()
+        return {
+            "X": X,
+            "F": F,
+            "G": G,
+            "size": int(F.shape[0]),
+        }
+
     def _snapshot(self) -> tuple[np.ndarray, np.ndarray]:
         return self._X[: self._size].copy(), self._F[: self._size].copy()
+
+    def _snapshot_with_constraints(self) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        X, F = self._snapshot()
+        G = self._G[: self._size].copy() if self._G is not None else None
+        return X, F, G
 
     def _merge_with_existing(
         self,
@@ -657,11 +677,31 @@ class UnboundedArchive:
         self._replace_contents(X_nd, F_nd, G_nd)
         return self._snapshot()
 
+    def __len__(self) -> int:
+        return int(self._size)
+
     def contents(self) -> tuple[np.ndarray, np.ndarray]:
         return self._snapshot()
 
+    def contents_with_constraints(self) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        return self._snapshot_with_constraints()
+
+    def contents_payload(self) -> dict[str, Any]:
+        X, F, G = self._snapshot_with_constraints()
+        return {
+            "X": X,
+            "F": F,
+            "G": G,
+            "size": int(F.shape[0]),
+        }
+
     def _snapshot(self) -> tuple[np.ndarray, np.ndarray]:
         return self._X[: self._size].copy(), self._F[: self._size].copy()
+
+    def _snapshot_with_constraints(self) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        X, F = self._snapshot()
+        G = self._G[: self._size].copy() if self._G is not None else None
+        return X, F, G
 
     def _merge_with_existing(
         self,

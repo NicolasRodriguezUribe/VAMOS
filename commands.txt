@@ -1,0 +1,1 @@
+python experiments/scripts/run_archive_family_pilot.py --config experiments/configs/archive_family_pilot_core.yml

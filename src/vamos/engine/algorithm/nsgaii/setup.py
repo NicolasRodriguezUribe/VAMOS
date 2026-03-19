@@ -82,6 +82,7 @@ def initialize_run(
 
     checkpoint_archive_X: np.ndarray | None = None
     checkpoint_archive_F: np.ndarray | None = None
+    checkpoint_archive_G: np.ndarray | None = None
 
     if checkpoint is not None:
         try:
@@ -120,9 +121,11 @@ def initialize_run(
 
             archive_x_raw = checkpoint.get("archive_X")
             archive_f_raw = checkpoint.get("archive_F")
+            archive_g_raw = checkpoint.get("archive_G")
             if archive_x_raw is not None and archive_f_raw is not None:
                 checkpoint_archive_X = np.asarray(archive_x_raw)
                 checkpoint_archive_F = np.asarray(archive_f_raw)
+                checkpoint_archive_G = np.asarray(archive_g_raw) if archive_g_raw is not None else None
         except Exception as exc:
             _logger().warning("Invalid checkpoint provided, reinitializing population: %s", exc)
             X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
@@ -171,7 +174,7 @@ def initialize_run(
     if checkpoint_archive_X is not None and checkpoint_archive_F is not None and ext_cfg is not None:
         try:
             if archive_manager is not None:
-                archive_X, archive_F = archive_manager.update(checkpoint_archive_X, checkpoint_archive_F)
+                archive_X, archive_F = archive_manager.update(checkpoint_archive_X, checkpoint_archive_F, checkpoint_archive_G)
             else:
                 archive_X = checkpoint_archive_X
                 archive_F = checkpoint_archive_F
@@ -212,9 +215,33 @@ def initialize_run(
     result_mode = str(algo.cfg.get("result_mode", "non_dominated")).strip().lower()
     if result_mode not in {"non_dominated", "population"}:
         raise ValueError("result_mode must be one of: non_dominated, population")
+    archive_mode = str(algo.cfg.get("archive_mode", "off") or "off").strip().lower()
+    if archive_mode not in {"off", "passive", "hybrid_survival"}:
+        raise ValueError("archive_mode must be one of: off, passive, hybrid_survival")
+    archive_subset_size_raw = algo.cfg.get("archive_subset_size")
+    archive_subset_size = int(archive_subset_size_raw) if archive_subset_size_raw is not None else None
+    if archive_subset_size is not None and archive_subset_size <= 0:
+        raise ValueError("archive_subset_size must be a positive integer.")
+    archive_hybrid_alpha = float(algo.cfg.get("archive_hybrid_alpha", 0.5))
+    if not 0.0 <= archive_hybrid_alpha <= 1.0:
+        raise ValueError("archive_hybrid_alpha must be between 0 and 1.")
+    archive_hybrid_k = int(algo.cfg.get("archive_hybrid_k", 3))
+    if archive_hybrid_k <= 0:
+        raise ValueError("archive_hybrid_k must be a positive integer.")
+    archive_hybrid_normalization = str(
+        algo.cfg.get("archive_hybrid_normalization", "minmax_archive_split") or "minmax_archive_split"
+    ).strip().lower()
+    if archive_hybrid_normalization != "minmax_archive_split":
+        raise ValueError("archive_hybrid_normalization must be one of: minmax_archive_split")
     result_archive = None
     if ext_cfg is not None and ext_cfg.capacity is not None and archive_manager is not None:
         result_archive = cast(Any, archive_manager)
+
+    archive_G = None
+    if archive_manager is not None:
+        contents_with_constraints = getattr(archive_manager, "contents_with_constraints", None)
+        if callable(contents_with_constraints):
+            archive_X, archive_F, archive_G = contents_with_constraints()
 
     immigration_cfg = algo.cfg.get("immigration")
     immigration_manager = None
@@ -246,9 +273,22 @@ def initialize_run(
         archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
+        archive_G=archive_G,
         archive_manager=archive_manager,
         result_archive=result_archive,
         result_mode=result_mode,
+        archive_mode=archive_mode,
+        archive_subset_size=archive_subset_size,
+        archive_hybrid_alpha=archive_hybrid_alpha,
+        archive_hybrid_k=archive_hybrid_k,
+        archive_hybrid_normalization=archive_hybrid_normalization,
+        archive_hybrid_last_status="pending" if archive_mode == "hybrid_survival" else "inactive",
+        archive_hybrid_last_split_mode="inactive",
+        archive_hybrid_last_split_reason=None,
+        archive_hybrid_generations=0,
+        archive_hybrid_archive_reference_generations=0,
+        archive_hybrid_local_only_generations=0,
+        archive_hybrid_no_split_generations=0,
         hv_tracker=hv_tracker,
         track_genealogy=track_genealogy,
         genealogy_tracker=genealogy_tracker,

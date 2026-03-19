@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -64,8 +65,16 @@ def friedman_test(scores: np.ndarray, higher_is_better: bool = True) -> Friedman
         raise ValueError("scores must be 2-dimensional (n_problems, n_algorithms).")
     ranks = compute_ranks(scores, higher_is_better=higher_is_better)
     avg_ranks = np.mean(ranks, axis=0)
+    normalized_scores = scores if higher_is_better else -scores
+    if np.allclose(normalized_scores, normalized_scores[:, [0]]):
+        return FriedmanResult(statistic=0.0, p_value=1.0, ranks=ranks, avg_ranks=avg_ranks)
     # scipy expects columns; we run on raw scores as in classic use
-    stat, p = spstats.friedmanchisquare(*[scores[:, j] if higher_is_better else -scores[:, j] for j in range(scores.shape[1])])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        stat, p = spstats.friedmanchisquare(*[normalized_scores[:, j] for j in range(scores.shape[1])])
+    if not np.isfinite(stat) or not np.isfinite(p):
+        stat = 0.0
+        p = 1.0
     return FriedmanResult(statistic=stat, p_value=p, ranks=ranks, avg_ranks=avg_ranks)
 
 
@@ -92,7 +101,23 @@ def pairwise_wilcoxon(
             if not higher_is_better:
                 a = -a
                 b = -b
-            stat, p = spstats.wilcoxon(a, b, zero_method="pratt", alternative="two-sided")
+            finite_mask = np.isfinite(a) & np.isfinite(b)
+            a = a[finite_mask]
+            b = b[finite_mask]
+            if a.size < 2 or np.allclose(a, b):
+                stat = 0.0
+                p = 1.0
+            else:
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", RuntimeWarning)
+                        stat, p = spstats.wilcoxon(a, b, zero_method="pratt", alternative="two-sided")
+                except ValueError:
+                    stat = 0.0
+                    p = 1.0
+                if not np.isfinite(stat) or not np.isfinite(p):
+                    stat = 0.0
+                    p = 1.0
             results.append(WilcoxonResult(algo_i=algo_names[i], algo_j=algo_names[j], statistic=stat, p_value=p))
     return results
 

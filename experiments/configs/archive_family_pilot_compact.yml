@@ -1,0 +1,12 @@
+campaign: archive_family_pilot_compact
+output_root: results/archive_family_pilot_compact
+benchmark_config: experiments/configs/nsgaii_archive_family_pilot_compact.yaml
+
+suites:
+  - NSGAII_archive_family_ZDT
+  - NSGAII_archive_family_DTLZ
+  - NSGAII_archive_family_WFG
+
+analysis:
+  enabled: true
+  output_dir: pilot_summary

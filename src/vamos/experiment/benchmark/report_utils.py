@@ -26,7 +26,7 @@ def import_pandas() -> Any:
 
 def higher_is_better(metric: str) -> bool:
     m = metric.lower()
-    if m in {"igd", "igd+", "igd_plus", "epsilon", "epsilon_additive", "epsilon_mult"}:
+    if any(token in m for token in {"igd", "epsilon"}):
         return False
     return True
 

@@ -93,3 +93,49 @@ def test_cli_runs_spea2_from_config(monkeypatch, tmp_path):
 
     assert fun_path.exists()
     assert archive_path.exists()
+
+
+def test_cli_persists_archive_diagnostics_metadata(monkeypatch, tmp_path):
+    output_root = tmp_path / "results"
+    config_file = tmp_path / "archive_diag_spec.json"
+    spec = {
+        "version": "1",
+        "defaults": {
+            "algorithm": "nsgaii",
+            "engine": "numpy",
+            "population_size": 8,
+            "max_evaluations": 24,
+            "output_root": str(output_root),
+            "nsgaii": {
+                "archive_mode": "passive",
+                "crossover": {"method": "sbx", "prob": 0.9, "eta": 15.0},
+            },
+        },
+        "problems": {"zdt1": {"seed": 3}},
+    }
+    config_file.write_text(json.dumps(spec), encoding="utf-8")
+
+    monkeypatch.setenv("PYTHONHASHSEED", "0")
+    monkeypatch.setattr(plotting, "plot_pareto_front", lambda *args, **kwargs: None)
+
+    argv = ["prog", "--config", str(config_file)]
+    monkeypatch.setattr(sys, "argv", argv)
+
+    from vamos.experiment.cli.main import main
+
+    main()
+
+    run_dir = output_root / "ZDT1" / "nsgaii" / "numpy" / "seed_3"
+    meta_path = run_dir / "metadata.json"
+    archive_fun = run_dir / "ARCHIVE_FUN.csv"
+    archive_subset_fun = run_dir / "ARCHIVE_SUBSET_FUN.csv"
+
+    assert meta_path.exists()
+    assert archive_fun.exists()
+    assert archive_subset_fun.exists()
+
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    diagnostics = meta["archive_diagnostics"]
+    assert diagnostics["archive_mode"] == "passive"
+    assert diagnostics["execution_mode"] == "passive_archive"
+    assert diagnostics["survival_path"] == "standard"

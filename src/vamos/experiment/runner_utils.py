@@ -17,7 +17,8 @@ from vamos.foundation.problem.types import ProblemProtocol
 def validate_problem(problem: ProblemProtocol) -> None:
     if problem.n_var <= 0 or problem.n_obj <= 0:
         raise ValueError("Problem must have positive n_var and n_obj.")
-    if problem.n_constraints < 0:
+    n_constraints = getattr(problem, "n_constraints", getattr(problem, "n_constr", 0))
+    if n_constraints < 0:
         raise ValueError("n_constraints must be >= 0.")
     xl = np.asarray(problem.xl)
     xu = np.asarray(problem.xu)

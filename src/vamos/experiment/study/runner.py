@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import logging
 from collections.abc import Callable, Iterable, Sequence
+from collections import defaultdict
 from typing import Any
 
 import numpy as np
@@ -100,28 +101,47 @@ class StudyRunner:
 
     def _attach_hypervolume(self, results: Iterable[StudyResult]) -> None:
         results = list(results)
-        fronts = [res.metrics["F"] for res in results if res.metrics.get("F") is not None]
-        if not fronts:
-            return
-        hv_ref_point = compute_hv_reference(fronts)
-        for res in results:
-            metrics = res.metrics
-            backend = metrics.pop("_kernel_backend", None)
-            F_res = metrics.get("F")
-            if F_res is None:
-                metrics["hv"] = None
-                metrics["hv_source"] = "none"
-                metrics["hv_reference"] = hv_ref_point
+        for grouped_results in self._group_results_by_objectives(results).values():
+            fronts: list[np.ndarray] = []
+            for res in grouped_results:
+                F_main = res.metrics.get("F")
+                if F_main is not None:
+                    fronts.append(F_main)
+                F_subset = res.metrics.get("archive_subset_F")
+                if F_subset is not None:
+                    fronts.append(F_subset)
+            if not fronts:
                 continue
-            if backend and backend.supports_quality_indicator("hypervolume"):
-                hv_val = backend.hypervolume(F_res, hv_ref_point)
-                hv_source = backend.__class__.__name__
-            else:
-                hv_val = hypervolume(F_res, hv_ref_point)
-                hv_source = "global"
-            metrics["hv"] = hv_val
-            metrics["hv_source"] = hv_source
-            metrics["hv_reference"] = hv_ref_point
+            hv_ref_point = compute_hv_reference(fronts)
+            for res in grouped_results:
+                metrics = res.metrics
+                backend = metrics.pop("_kernel_backend", None)
+                F_res = metrics.get("F")
+                F_subset = metrics.get("archive_subset_F")
+                if F_res is None:
+                    metrics["hv"] = None
+                    metrics["hv_source"] = "none"
+                    metrics["hv_reference"] = hv_ref_point
+                else:
+                    if backend and backend.supports_quality_indicator("hypervolume"):
+                        hv_val = backend.hypervolume(F_res, hv_ref_point)
+                        hv_source = backend.__class__.__name__
+                    else:
+                        hv_val = hypervolume(F_res, hv_ref_point)
+                        hv_source = "global"
+                    metrics["hv"] = hv_val
+                    metrics["hv_source"] = hv_source
+                metrics["hv_reference"] = hv_ref_point
+                if F_subset is not None:
+                    if backend and backend.supports_quality_indicator("hypervolume"):
+                        metrics["archive_subset_hv"] = backend.hypervolume(F_subset, hv_ref_point)
+                        metrics["archive_subset_hv_source"] = backend.__class__.__name__
+                    else:
+                        metrics["archive_subset_hv"] = hypervolume(F_subset, hv_ref_point)
+                        metrics["archive_subset_hv_source"] = "global"
+                else:
+                    metrics["archive_subset_hv"] = None
+                    metrics["archive_subset_hv_source"] = "none"
 
     @staticmethod
     def _nondominated_union(fronts: list[np.ndarray]) -> np.ndarray:
@@ -136,6 +156,23 @@ class StudyRunner:
         first = fronts_idx[0]
         return F[first] if first else F
 
+    @staticmethod
+    def _group_results_by_objectives(results: Iterable[StudyResult]) -> dict[int, list[StudyResult]]:
+        groups: dict[int, list[StudyResult]] = defaultdict(list)
+        for res in results:
+            n_obj = None
+            F_main = res.metrics.get("F")
+            if F_main is not None:
+                n_obj = int(np.asarray(F_main).shape[1])
+            else:
+                F_subset = res.metrics.get("archive_subset_F")
+                if F_subset is not None:
+                    n_obj = int(np.asarray(F_subset).shape[1])
+            if n_obj is None:
+                n_obj = int(res.selection.n_obj)
+            groups[n_obj].append(res)
+        return groups
+
     def _attach_indicators(self, results: Iterable[StudyResult]) -> None:
         if not self.indicators:
             return
@@ -143,28 +180,48 @@ class StudyRunner:
             if self.verbose:
                 _logger().info("[Study] MooCore not available; skipping indicator computation.")
             return
-        fronts = [res.metrics["F"] for res in results]
-        if not fronts:
-            return
-        ref_front = self._nondominated_union(fronts)
-        hv_ref_point = compute_hv_reference(fronts)
-        for res in results:
-            vals: dict[str, float | np.ndarray | None] = {}
-            for name in self.indicators:
-                try:
-                    if name in {"hv", "hypervolume"}:
-                        vals[name] = HVIndicator(reference_point=hv_ref_point).compute(res.metrics["F"]).value
-                    elif name in {"igd", "igd+", "igd_plus", "epsilon_additive", "epsilon_mult", "avg_hausdorff"}:
-                        indicator: QualityIndicator = get_indicator(name, reference_front=ref_front)
-                        vals[name] = indicator.compute(res.metrics["F"]).value
-                    else:
-                        indicator = get_indicator(name)
-                        vals[name] = indicator.compute(res.metrics["F"]).value
-                except Exception as exc:
-                    if self.verbose:
-                        _logger().warning("[Study] indicator '%s' failed: %s", name, exc)
-                    vals[name] = None
-            res.metrics["indicator_values"] = vals
+        for grouped_results in self._group_results_by_objectives(results).values():
+            fronts: list[np.ndarray] = []
+            for res in grouped_results:
+                F_main = res.metrics.get("F")
+                if F_main is not None:
+                    fronts.append(F_main)
+                F_subset = res.metrics.get("archive_subset_F")
+                if F_subset is not None:
+                    fronts.append(F_subset)
+            if not fronts:
+                continue
+            ref_front = self._nondominated_union(fronts)
+            hv_ref_point = compute_hv_reference(fronts)
+            for res in grouped_results:
+                vals: dict[str, float | np.ndarray | None] = {}
+                subset_vals: dict[str, float | np.ndarray | None] = {}
+                main_F = res.metrics.get("F")
+                subset_F = res.metrics.get("archive_subset_F")
+                for name in self.indicators:
+                    try:
+                        if name in {"hv", "hypervolume"}:
+                            vals[name] = (
+                                HVIndicator(reference_point=hv_ref_point).compute(main_F).value if main_F is not None else None
+                            )
+                            subset_vals[name] = (
+                                HVIndicator(reference_point=hv_ref_point).compute(subset_F).value if subset_F is not None else None
+                            )
+                        elif name in {"igd", "igd+", "igd_plus", "epsilon_additive", "epsilon_mult", "avg_hausdorff"}:
+                            indicator = get_indicator(name, reference_front=ref_front)
+                            vals[name] = indicator.compute(main_F).value if main_F is not None else None
+                            subset_vals[name] = indicator.compute(subset_F).value if subset_F is not None else None
+                        else:
+                            indicator = get_indicator(name)
+                            vals[name] = indicator.compute(main_F).value if main_F is not None else None
+                            subset_vals[name] = indicator.compute(subset_F).value if subset_F is not None else None
+                    except Exception as exc:
+                        if self.verbose:
+                            _logger().warning("[Study] indicator '%s' failed: %s", name, exc)
+                        vals[name] = None
+                        subset_vals[name] = None
+                res.metrics["indicator_values"] = vals
+                res.metrics["archive_subset_indicator_values"] = subset_vals
 
 
 __all__ = ["StudyRunner", "StudyTask", "StudyResult"]

@@ -61,7 +61,10 @@ def build_nsgaii_algorithm(
     track_genealogy: bool,
 ) -> tuple[NSGAII, AlgorithmConfigProtocol]:
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
-    var_cfg = resolve_default_variation_config(encoding, nsgaii_variation)
+    nsgaii_overrides = nsgaii_variation or {}
+    var_cfg = resolve_default_variation_config(encoding, nsgaii_overrides)
+    extra_cfg = {k: v for k, v in nsgaii_overrides.items() if k not in var_cfg}
+    var_cfg.update(extra_cfg)
 
     builder = NSGAIIConfig.builder()
     builder.pop_size(pop_size)
@@ -89,6 +92,18 @@ def build_nsgaii_algorithm(
         if not isinstance(aos_cfg, Mapping):
             raise ValueError("adaptive_operator_selection must be a mapping.")
         builder.adaptive_operator_selection(dict(aos_cfg))
+
+    archive_mode = var_cfg.get("archive_mode")
+    if archive_mode is not None:
+        builder.archive_mode(str(archive_mode))
+    if "archive_subset_size" in var_cfg:
+        builder.archive_subset_size(cast(int | None, var_cfg.get("archive_subset_size")))
+    if "archive_hybrid_alpha" in var_cfg and var_cfg["archive_hybrid_alpha"] is not None:
+        builder.archive_hybrid_alpha(_as_float(var_cfg["archive_hybrid_alpha"]))
+    if "archive_hybrid_k" in var_cfg and var_cfg["archive_hybrid_k"] is not None:
+        builder.archive_hybrid_k(_as_int(var_cfg["archive_hybrid_k"]))
+    if "archive_hybrid_normalization" in var_cfg and var_cfg["archive_hybrid_normalization"] is not None:
+        builder.archive_hybrid_normalization(str(var_cfg["archive_hybrid_normalization"]))
 
     if external_archive is not None:
         builder.external_archive(**asdict(external_archive))

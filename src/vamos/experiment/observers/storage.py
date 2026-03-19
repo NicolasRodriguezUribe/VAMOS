@@ -86,6 +86,7 @@ class StorageObserver(Observer):
         X_to_save = payload.get("X")
         G_to_save = payload.get("G")
         archive = payload.get("archive")
+        archive_subset = archive.get("subset") if isinstance(archive, dict) else None
 
         artifacts = write_population(
             self.output_dir,
@@ -93,6 +94,7 @@ class StorageObserver(Observer):
             archive,
             X=X_to_save,
             G=G_to_save,
+            archive_subset=archive_subset if isinstance(archive_subset, dict) else None,
         )
 
         if payload.get("genealogy"):
@@ -157,6 +159,8 @@ class StorageObserver(Observer):
 
         if payload.get("genealogy"):
             metadata["genealogy"] = payload["genealogy"]
+        if payload.get("archive_diagnostics"):
+            metadata["archive_diagnostics"] = payload["archive_diagnostics"]
         if autodiff_info is not None:
             metadata["autodiff_constraints"] = autodiff_info
         hook_metadata = final_stats.get("hook_metadata")
@@ -174,6 +178,9 @@ class StorageObserver(Observer):
             "archive_fun": artifacts.get("archive_fun"),
             "archive_x": artifacts.get("archive_x"),
             "archive_g": artifacts.get("archive_g"),
+            "archive_subset_fun": artifacts.get("archive_subset_fun"),
+            "archive_subset_x": artifacts.get("archive_subset_x"),
+            "archive_subset_g": artifacts.get("archive_subset_g"),
             "genealogy": artifacts.get("genealogy"),
             "autodiff_constraints": artifacts.get("autodiff_constraints"),
             "aos_trace": artifacts.get("aos_trace"),

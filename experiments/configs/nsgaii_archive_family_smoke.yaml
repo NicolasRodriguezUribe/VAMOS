@@ -1,0 +1,4 @@
+engine: numpy
+population_size: 20
+offspring_population_size: 20
+eval_strategy: serial

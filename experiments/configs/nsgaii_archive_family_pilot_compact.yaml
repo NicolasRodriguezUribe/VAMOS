@@ -1,0 +1,5 @@
+engine: numpy
+population_size: 64
+offspring_population_size: 64
+eval_strategy: multiprocessing
+n_workers: -1

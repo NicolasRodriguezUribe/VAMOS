@@ -24,11 +24,18 @@ from vamos.engine.algorithm.components.archive import (
     SPEA2Archive,
     UnboundedArchive,
 )
-from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
+from vamos.engine.algorithm.components.results import (
+    get_external_archive_payload,
+    wants_population_result,
+)
+from vamos.engine.algorithm.components.subset_selection import select_top_k_crowding
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.hooks.genealogy import GenealogyTracker
 from vamos.engine.operators.impl.real import VariationWorkspace
+
+ARCHIVE_SUBSET_SELECTOR = "crowding"
+ARCHIVE_POPULATION_RESULT_MODES = {"passive", "hybrid_survival"}
 
 
 def _logger() -> logging.Logger:
@@ -67,11 +74,25 @@ class NSGAIIState:
     archive_size: int | None = None
     archive_X: np.ndarray | None = None
     archive_F: np.ndarray | None = None
+    archive_G: np.ndarray | None = None
     archive_manager: (
         CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive | None
     ) = None
     result_archive: HypervolumeArchive | CrowdingDistanceArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | None = None
     result_mode: str = "non_dominated"
+    archive_mode: str = "off"
+    archive_subset_size: int | None = None
+    archive_hybrid_alpha: float = 0.5
+    archive_hybrid_k: int = 3
+    archive_hybrid_normalization: str = "minmax_archive_split"
+    archive_hybrid_last_status: str = "inactive"
+    archive_hybrid_fallback_reason: str | None = None
+    archive_hybrid_last_split_mode: str = "inactive"
+    archive_hybrid_last_split_reason: str | None = None
+    archive_hybrid_generations: int = 0
+    archive_hybrid_archive_reference_generations: int = 0
+    archive_hybrid_local_only_generations: int = 0
+    archive_hybrid_no_split_generations: int = 0
 
     # Termination
     hv_tracker: HVTracker | None = None
@@ -117,9 +138,113 @@ class NSGAIIState:
 
     def hv_points_fn(self) -> np.ndarray:
         """Get points for hypervolume computation (archive if available, else population)."""
-        if self.archive_F is not None and self.archive_F.size > 0:
+        if self.archive_mode not in ARCHIVE_POPULATION_RESULT_MODES and self.archive_F is not None and self.archive_F.size > 0:
             return self.archive_F
         return self.F
+
+
+def _archive_subset_target_size(state: NSGAIIState, archive_size: int) -> int:
+    target = state.archive_subset_size
+    if target is None:
+        target = int(state.pop_size)
+    target = int(target)
+    if target <= 0:
+        raise ValueError("archive_subset_size must be a positive integer.")
+    return min(target, archive_size)
+
+
+def _build_archive_subset_payload(
+    state: NSGAIIState,
+    archive_payload: dict[str, Any],
+) -> dict[str, Any]:
+    archive_F = np.asarray(archive_payload["F"], dtype=float)
+    archive_X_raw = archive_payload.get("X")
+    archive_G_raw = archive_payload.get("G")
+    archive_X = None if archive_X_raw is None else np.asarray(archive_X_raw)
+    archive_G = None if archive_G_raw is None else np.asarray(archive_G_raw, dtype=float)
+    archive_size = int(archive_F.shape[0])
+    target_size = _archive_subset_target_size(state, archive_size) if archive_size > 0 else 0
+
+    if archive_size == 0:
+        empty_indices = np.empty(0, dtype=int)
+        subset_payload: dict[str, Any] = {
+            "F": archive_F[:0],
+            "indices": empty_indices,
+            "selector": ARCHIVE_SUBSET_SELECTOR,
+            "size": 0,
+            "target_size": target_size,
+        }
+        if archive_X is not None:
+            subset_payload["X"] = archive_X[:0]
+        if archive_G is not None:
+            subset_payload["G"] = archive_G[:0]
+        return subset_payload
+
+    subset_idx = select_top_k_crowding(archive_F, target_size)
+    subset_payload = {
+        "F": archive_F[subset_idx],
+        "indices": np.asarray(subset_idx, dtype=int),
+        "selector": ARCHIVE_SUBSET_SELECTOR,
+        "size": int(subset_idx.shape[0]),
+        "target_size": target_size,
+    }
+    if archive_X is not None:
+        subset_payload["X"] = archive_X[subset_idx]
+    if archive_G is not None:
+        subset_payload["G"] = archive_G[subset_idx]
+    return subset_payload
+
+
+def _build_archive_export_payload(
+    state: NSGAIIState,
+    archive_payload: dict[str, Any],
+) -> dict[str, Any]:
+    archive_export = dict(archive_payload)
+    archive_size = int(np.asarray(archive_export["F"]).shape[0])
+    archive_export["size"] = archive_size
+    archive_export["subset"] = _build_archive_subset_payload(state, archive_export)
+    return archive_export
+
+
+def _archive_execution_mode(state: NSGAIIState) -> str:
+    mode = str(state.archive_mode or "off").strip().lower()
+    hybrid_status = str(state.archive_hybrid_last_status or "inactive").strip().lower()
+    if mode == "off":
+        return "standard"
+    if mode == "passive":
+        return "passive_archive"
+    if mode == "hybrid_survival":
+        if hybrid_status == "hybrid":
+            return "hybrid_survival"
+        if hybrid_status == "fallback":
+            return "hybrid_fallback"
+        return "hybrid_requested"
+    return mode
+
+
+def _build_archive_diagnostics(
+    state: NSGAIIState,
+    archive_export: dict[str, Any] | None,
+) -> dict[str, Any]:
+    archive_subset = archive_export.get("subset") if isinstance(archive_export, dict) else None
+    hybrid_active = str(state.archive_hybrid_last_status or "inactive").strip().lower() == "hybrid"
+    return {
+        "archive_mode": state.archive_mode,
+        "execution_mode": _archive_execution_mode(state),
+        "survival_path": "hybrid" if hybrid_active else "standard",
+        "archive_present": archive_export is not None,
+        "archive_size": int(archive_export["size"]) if archive_export is not None else 0,
+        "archive_subset_size": int(archive_subset["size"]) if isinstance(archive_subset, dict) else 0,
+        "archive_subset_selector": archive_subset.get("selector") if isinstance(archive_subset, dict) else None,
+        "hybrid_status": state.archive_hybrid_last_status,
+        "hybrid_fallback_reason": state.archive_hybrid_fallback_reason,
+        "hybrid_split_front_mode": state.archive_hybrid_last_split_mode,
+        "hybrid_split_front_reason": state.archive_hybrid_last_split_reason,
+        "hybrid_generations": int(state.archive_hybrid_generations),
+        "hybrid_archive_reference_generations": int(state.archive_hybrid_archive_reference_generations),
+        "hybrid_local_only_generations": int(state.archive_hybrid_local_only_generations),
+        "hybrid_no_split_generations": int(state.archive_hybrid_no_split_generations),
+    }
 
 
 def build_result(
@@ -149,12 +274,19 @@ def build_result(
         X and F contain only non-dominated solutions when kernel is provided.
         Full population is always available in 'population' key.
     """
-    archive_contents = get_external_archive_contents(state)
-    should_use_archive = archive_contents is not None and not wants_population_result(state)
+    archive_payload = get_external_archive_payload(state)
+    archive_export = _build_archive_export_payload(state, archive_payload) if archive_payload is not None else None
+    should_use_archive = (
+        archive_payload is not None
+        and state.archive_mode not in ARCHIVE_POPULATION_RESULT_MODES
+        and not wants_population_result(state)
+    )
 
     if should_use_archive:
-        result_X, result_F = archive_contents
-        result_G = None
+        result_X = np.asarray(archive_payload["X"])
+        result_F = np.asarray(archive_payload["F"], dtype=float)
+        archive_G_raw = archive_payload.get("G")
+        result_G = None if archive_G_raw is None else np.asarray(archive_G_raw, dtype=float)
     else:
         should_filter = kernel is not None and not wants_population_result(state)
         if should_filter:
@@ -180,9 +312,9 @@ def build_result(
     if result_G is not None:
         result["G"] = result_G
 
-    if archive_contents is not None:
-        arch_X, arch_F = archive_contents
-        result["archive"] = {"X": arch_X, "F": arch_F}
+    if archive_export is not None:
+        result["archive"] = archive_export
+    result["archive_diagnostics"] = _build_archive_diagnostics(state, archive_export)
 
     if state.aos_controller is not None:
         summary_rows = []
@@ -218,11 +350,10 @@ def get_archive_contents(state: NSGAIIState) -> dict[str, Any] | None:
     dict[str, Any] | None
         Archive contents with X and F, or None if no archive.
     """
-    archive_contents = get_external_archive_contents(state)
-    if archive_contents is None:
+    archive_payload = get_external_archive_payload(state)
+    if archive_payload is None:
         return None
-    final_X, final_F = archive_contents
-    return {"X": final_X, "F": final_F}
+    return dict(archive_payload)
 
 
 def finalize_genealogy(
@@ -371,10 +502,25 @@ def update_archives(
     F_use = state.F if F is None else F
     G_use = state.G if G is None else G
     if state.archive_manager is not None:
-        state.archive_X, state.archive_F = state.archive_manager.update(X_use, F_use, G_use)
+        state.archive_manager.update(X_use, F_use, G_use)
         if state.result_archive is state.archive_manager:
+            archive_payload = get_external_archive_payload(state)
+            if archive_payload is not None:
+                state.archive_X = np.asarray(archive_payload["X"])
+                state.archive_F = np.asarray(archive_payload["F"], dtype=float)
+                archive_G_raw = archive_payload.get("G")
+                state.archive_G = None if archive_G_raw is None else np.asarray(archive_G_raw, dtype=float)
             return
 
     if state.result_archive is not None:
         state.result_archive.update(X_use, F_use, G_use)
-        state.archive_X, state.archive_F = state.result_archive.contents()
+    archive_payload = get_external_archive_payload(state)
+    if archive_payload is None:
+        state.archive_X = None
+        state.archive_F = None
+        state.archive_G = None
+        return
+    state.archive_X = np.asarray(archive_payload["X"])
+    state.archive_F = np.asarray(archive_payload["F"], dtype=float)
+    archive_G_raw = archive_payload.get("G")
+    state.archive_G = None if archive_G_raw is None else np.asarray(archive_G_raw, dtype=float)

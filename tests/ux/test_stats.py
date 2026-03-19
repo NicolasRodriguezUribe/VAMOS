@@ -55,6 +55,19 @@ def test_pairwise_wilcoxon_pair_count_and_order():
     assert p_ab <= p_bc
 
 
+def test_pairwise_wilcoxon_degenerate_scores_return_neutral_result():
+    # Arrange
+    scores = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+
+    # Act
+    results = pairwise_wilcoxon(scores, ["A", "B"], higher_is_better=True)
+
+    # Assert
+    assert len(results) == 1
+    assert results[0].statistic == 0.0
+    assert results[0].p_value == 1.0
+
+
 def test_plot_critical_distance_smoke():
     # Arrange
     avg_ranks = np.array([1.2, 2.5, 2.3])

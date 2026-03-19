@@ -45,6 +45,7 @@ class StudyResult:
             "n_var": self.selection.n_var,
             "n_obj": self.selection.n_obj,
             "algorithm": self.metrics["algorithm"],
+            "algorithm_base": self.metrics.get("algorithm_base", self.task.algorithm),
             "engine": self.metrics["engine"],
             "seed": self.task.seed,
             "time_ms": self.metrics["time_ms"],
@@ -53,11 +54,30 @@ class StudyResult:
             "spread": self.metrics.get("spread"),
             "hv": self.metrics.get("hv"),
             "hv_source": self.metrics.get("hv_source"),
+            "archive_subset_hv": self.metrics.get("archive_subset_hv"),
+            "archive_subset_hv_source": self.metrics.get("archive_subset_hv_source"),
             "hv_reference": hv_ref_str,
             "backend_device": self.metrics.get("backend_device"),
             "backend_capabilities": ",".join(self.metrics.get("backend_capabilities", [])),
             "output_dir": self.metrics.get("output_dir"),
+            "archive_mode": self.metrics.get("archive_mode"),
+            "archive_execution_mode": self.metrics.get("archive_execution_mode"),
+            "archive_survival_path": self.metrics.get("archive_survival_path"),
+            "archive_present": self.metrics.get("archive_present"),
+            "archive_size": self.metrics.get("archive_size"),
+            "archive_subset_size": self.metrics.get("archive_subset_size"),
+            "archive_subset_selector": self.metrics.get("archive_subset_selector"),
+            "hybrid_status": self.metrics.get("hybrid_status"),
+            "hybrid_fallback_reason": self.metrics.get("hybrid_fallback_reason"),
+            "hybrid_split_front_mode": self.metrics.get("hybrid_split_front_mode"),
+            "hybrid_split_front_reason": self.metrics.get("hybrid_split_front_reason"),
+            "hybrid_generations": self.metrics.get("hybrid_generations"),
+            "hybrid_archive_reference_generations": self.metrics.get("hybrid_archive_reference_generations"),
+            "hybrid_local_only_generations": self.metrics.get("hybrid_local_only_generations"),
+            "hybrid_no_split_generations": self.metrics.get("hybrid_no_split_generations"),
         }
         for name, value in (self.metrics.get("indicator_values") or {}).items():
             row[f"indicator_{name}"] = value
+        for name, value in (self.metrics.get("archive_subset_indicator_values") or {}).items():
+            row[f"archive_subset_{name}"] = value
         return row

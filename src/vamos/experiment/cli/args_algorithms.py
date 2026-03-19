@@ -134,6 +134,36 @@ def add_algorithm_arguments(
         help="Repair strategy for NSGA-II (continuous encoding; use 'none' to disable).",
     )
     parser.add_argument(
+        "--nsgaii-archive-mode",
+        choices=("off", "passive", "hybrid_survival"),
+        default=_as_str(nsgaii_defaults.get("archive_mode")),
+        help="NSGA-II archive mode: off, passive, or hybrid_survival.",
+    )
+    parser.add_argument(
+        "--nsgaii-archive-subset-size",
+        type=int,
+        default=_as_int(nsgaii_defaults.get("archive_subset_size")),
+        help="Export size for the crowding-selected archive subset (default: population size).",
+    )
+    parser.add_argument(
+        "--nsgaii-archive-hybrid-alpha",
+        type=float,
+        default=_as_float(nsgaii_defaults.get("archive_hybrid_alpha")),
+        help="Hybrid split-front weight on local crowding (default: 0.5).",
+    )
+    parser.add_argument(
+        "--nsgaii-archive-hybrid-k",
+        type=int,
+        default=_as_int(nsgaii_defaults.get("archive_hybrid_k")),
+        help="Hybrid split-front archive novelty uses the k-th nearest archived point (default: 3).",
+    )
+    parser.add_argument(
+        "--nsgaii-archive-hybrid-normalization",
+        choices=("minmax_archive_split",),
+        default=_as_str(nsgaii_defaults.get("archive_hybrid_normalization")),
+        help="Hybrid split-front normalization mode.",
+    )
+    parser.add_argument(
         "--moead-crossover",
         choices=("sbx", "uniform"),
         default=_as_str(moead_crossover.get("method")),

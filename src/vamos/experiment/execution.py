@@ -60,6 +60,40 @@ def _logger() -> logging.Logger:
 Metrics = dict[str, Any]
 
 
+def _extract_archive_metrics(payload: dict[str, Any]) -> dict[str, Any]:
+    archive = payload.get("archive")
+    archive_diagnostics = payload.get("archive_diagnostics")
+    if not isinstance(archive_diagnostics, dict):
+        archive_diagnostics = {}
+
+    archive_subset = archive.get("subset") if isinstance(archive, dict) else None
+    archive_subset_F = None
+    if isinstance(archive_subset, dict) and archive_subset.get("F") is not None:
+        archive_subset_F = np.asarray(archive_subset["F"], dtype=float)
+
+    return {
+        "archive_mode": archive_diagnostics.get("archive_mode"),
+        "archive_execution_mode": archive_diagnostics.get("execution_mode"),
+        "archive_survival_path": archive_diagnostics.get("survival_path"),
+        "archive_present": bool(archive_diagnostics.get("archive_present", False)),
+        "archive_size": int(archive_diagnostics.get("archive_size", 0) or 0),
+        "archive_subset_size": int(archive_diagnostics.get("archive_subset_size", 0) or 0),
+        "archive_subset_selector": archive_diagnostics.get("archive_subset_selector"),
+        "hybrid_status": archive_diagnostics.get("hybrid_status"),
+        "hybrid_fallback_reason": archive_diagnostics.get("hybrid_fallback_reason"),
+        "hybrid_split_front_mode": archive_diagnostics.get("hybrid_split_front_mode"),
+        "hybrid_split_front_reason": archive_diagnostics.get("hybrid_split_front_reason"),
+        "hybrid_generations": int(archive_diagnostics.get("hybrid_generations", 0) or 0),
+        "hybrid_archive_reference_generations": int(
+            archive_diagnostics.get("hybrid_archive_reference_generations", 0) or 0
+        ),
+        "hybrid_local_only_generations": int(archive_diagnostics.get("hybrid_local_only_generations", 0) or 0),
+        "hybrid_no_split_generations": int(archive_diagnostics.get("hybrid_no_split_generations", 0) or 0),
+        "archive_subset_F": archive_subset_F,
+        "archive_diagnostics": dict(archive_diagnostics),
+    }
+
+
 def _default_weight_path(problem_name: str, n_obj: int, pop_size: int) -> str:
     return _default_weight_path_impl(problem_name, n_obj, pop_size)
 
@@ -259,6 +293,7 @@ def run_single(
         "payload": payload,  # Pass payload for StorageObserver to extract archives etc.
         "autodiff_info": autodiff_info,
     }
+    metrics.update(_extract_archive_metrics(payload))
 
     if hook_mgr is not None:
         metrics["hook_metadata"] = hook_mgr.metadata_payload()

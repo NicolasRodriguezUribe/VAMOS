@@ -221,6 +221,49 @@ def test_objective_space_dedup_collapses_equal_objectives():
     assert kept_F.shape[0] == 1
 
 
+def test_unbounded_archive_removes_dominated_entries_when_better_point_arrives():
+    archive = UnboundedArchive(n_var=1, n_obj=2, dtype=float, n_con=1)
+
+    X0 = np.array([[0.0], [1.0]])
+    F0 = np.array([[1.0, 3.0], [3.0, 1.0]])
+    G0 = np.zeros((2, 1), dtype=float)
+    archive.update(X0, F0, G0)
+
+    X1 = np.array([[2.0]])
+    F1 = np.array([[0.5, 0.5]])
+    G1 = np.zeros((1, 1), dtype=float)
+    archive.update(X1, F1, G1)
+
+    kept_X, kept_F, kept_G = archive.contents_with_constraints()
+    np.testing.assert_allclose(kept_X, np.array([[2.0]]))
+    np.testing.assert_allclose(kept_F, np.array([[0.5, 0.5]]))
+    assert kept_G is not None
+    np.testing.assert_allclose(kept_G, np.zeros((1, 1), dtype=float))
+
+
+def test_unbounded_archive_objective_dedup_keeps_first_inserted_solution_and_constraints():
+    archive = UnboundedArchive(
+        n_var=1,
+        n_obj=2,
+        dtype=float,
+        n_con=1,
+        deduplicate_in="objective",
+        objective_tolerance=1e-10,
+    )
+
+    X = np.array([[0.0], [1.0]])
+    F = np.array([[1.0, 1.0], [1.0 + 1e-12, 1.0 - 1e-12]])
+    G = np.array([[0.0], [0.5]])
+
+    archive.update(X, F, G)
+    kept_X, kept_F, kept_G = archive.contents_with_constraints()
+
+    np.testing.assert_allclose(kept_X, np.array([[0.0]]))
+    np.testing.assert_allclose(kept_F, np.array([[1.0, 1.0]]))
+    assert kept_G is not None
+    np.testing.assert_allclose(kept_G, np.array([[0.0]]))
+
+
 def test_hv_fallback_warns_once(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(ss_mod, "_moocore", None)
     monkeypatch.setattr(ss_mod, "_HV_FALLBACK_WARNED", False)

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+import numpy as np
 
 from vamos.experiment.benchmark.lab_compat import build_quality_indicator_summary
 from vamos.experiment.benchmark.lab_plots import generate_boxplots
@@ -128,16 +131,23 @@ class BenchmarkReport:
         pivot = subset.pivot_table(index="seed", columns="algorithm", values="value")
         if best_alg not in pivot.columns:
             return markers
-        best_values = pivot[best_alg].dropna()
         for alg in pivot.columns:
             if alg == best_alg:
                 continue
-            other = pivot[alg].dropna()
-            if best_values.empty or other.empty:
+            paired = pivot[[best_alg, alg]].dropna()
+            if paired.shape[0] < 2:
+                continue
+            best_values = paired[best_alg]
+            other = paired[alg]
+            if best_values.empty or other.empty or best_values.equals(other):
                 continue
             try:
-                stat, p = spstats.wilcoxon(best_values, other, zero_method="pratt", alternative="two-sided")
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    stat, p = spstats.wilcoxon(best_values, other, zero_method="pratt", alternative="two-sided")
             except ValueError:
+                continue
+            if not np.isfinite(stat) or not np.isfinite(p):
                 continue
             if p < self.config.alpha:
                 higher = higher_is_better(metric)

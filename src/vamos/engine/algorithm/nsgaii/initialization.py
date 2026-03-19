@@ -15,6 +15,15 @@ from typing import Any
 
 import numpy as np
 
+from vamos.engine.archive.factory import (
+    resolve_external_archive as _resolve_shared_external_archive,
+)
+from vamos.engine.archive.factory import (
+    setup_archive as _setup_shared_archive,
+)
+from vamos.engine.archive.factory import (
+    setup_result_archive as _setup_shared_result_archive,
+)
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
@@ -150,96 +159,16 @@ def setup_archive(
     tuple[np.ndarray | None, np.ndarray | None, archive_manager | None]
         (archive_X, archive_F, archive_manager)
     """
-    if ext_cfg is None:
-        return None, None, None
-
-    capacity = ext_cfg.capacity
-    pruning = ext_cfg.pruning
-
-    tol = ext_cfg.objective_tolerance
-    dedup_mode = ext_cfg.deduplicate_in
-    decision_tol = ext_cfg.decision_tolerance
-    truncate_size = ext_cfg.truncate_size
-    n_con = G.shape[1] if G is not None else None
-
-    manager: CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive
-    if capacity is None:
-        # Unbounded archive
-        manager = UnboundedArchive(
-            n_var=n_var,
-            n_obj=n_obj,
-            dtype=dtype,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            n_con=n_con,
-        )
-    elif pruning in {"hv", "mc_hv"}:
-        manager = HypervolumeArchive(
-            capacity,
-            n_var,
-            n_obj,
-            dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            n_con=n_con,
-            ref_point=ext_cfg.hv_ref_point,
-        )
-    elif pruning == "knn":
-        manager = SPEA2Archive(
-            capacity,
-            n_var,
-            n_obj,
-            dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            n_con=n_con,
-            constraint_mode="feasibility",
-        )
-    elif pruning == "maxmin":
-        manager = MaxMinArchive(
-            capacity,
-            n_var,
-            n_obj,
-            dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            n_con=n_con,
-        )
-    elif pruning == "ref_dirs":
-        manager = ReferenceDirectionsArchive(
-            capacity,
-            n_var,
-            n_obj,
-            dtype,
-            rng_seed=ext_cfg.rng_seed,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            n_con=n_con,
-        )
-    else:
-        manager = CrowdingDistanceArchive(
-            capacity,
-            n_var,
-            n_obj,
-            dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            n_con=n_con,
-        )
-
-    archive_X, archive_F = manager.update(X, F, G)
-    return archive_X, archive_F, manager
+    return _setup_shared_archive(
+        kernel,
+        X,
+        F,
+        n_var,
+        n_obj,
+        dtype,
+        ext_cfg,
+        G,
+    )
 
 
 def setup_genealogy(
@@ -341,70 +270,11 @@ def setup_result_archive(
     HypervolumeArchive | CrowdingDistanceArchive | MaxMinArchive | ReferenceDirectionsArchive | None
         The result archive, or None if not configured.
     """
-    if ext_cfg is None or ext_cfg.capacity is None:
-        return None
-
-    truncate_size = ext_cfg.truncate_size
-    tol = ext_cfg.objective_tolerance
-    dedup_mode = ext_cfg.deduplicate_in
-    decision_tol = ext_cfg.decision_tolerance
-
-    if ext_cfg.pruning in {"hv", "mc_hv"}:
-        return HypervolumeArchive(
-            ext_cfg.capacity,
-            n_var,
-            n_obj,
-            dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            ref_point=ext_cfg.hv_ref_point,
-        )
-    if ext_cfg.pruning == "knn":
-        return SPEA2Archive(
-            ext_cfg.capacity,
-            n_var,
-            n_obj,
-            dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-            constraint_mode="feasibility",
-        )
-    if ext_cfg.pruning == "maxmin":
-        return MaxMinArchive(
-            ext_cfg.capacity,
-            n_var,
-            n_obj,
-            dtype,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-        )
-    if ext_cfg.pruning == "ref_dirs":
-        return ReferenceDirectionsArchive(
-            ext_cfg.capacity,
-            n_var,
-            n_obj,
-            dtype,
-            rng_seed=ext_cfg.rng_seed,
-            truncate_size=truncate_size,
-            objective_tolerance=tol,
-            deduplicate_in=dedup_mode,
-            decision_tolerance=decision_tol,
-        )
-    return CrowdingDistanceArchive(
-        ext_cfg.capacity,
+    return _setup_shared_result_archive(
+        ext_cfg,
         n_var,
         n_obj,
         dtype,
-        truncate_size=truncate_size,
-        objective_tolerance=tol,
-        deduplicate_in=dedup_mode,
-        decision_tolerance=decision_tol,
     )
 
 
@@ -423,12 +293,7 @@ def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | Non
     ExternalArchiveConfig | None
         External archive configuration, or ``None``.
     """
-    raw = cfg.get("external_archive")
-    if raw is None:
-        return None
-    if isinstance(raw, ExternalArchiveConfig):
-        return raw
-    return ExternalArchiveConfig(**raw)
+    return _resolve_shared_external_archive(cfg)
 
 
 __all__ = [

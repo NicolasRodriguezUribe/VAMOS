@@ -9,9 +9,11 @@ from vamos.experiment.benchmark.report_utils import ensure_dir, import_pandas
 _INDICATOR_ALIASES = {
     "hv": "HV",
     "hypervolume": "HV",
+    "archive_subset_hv": "ArchiveSubsetHV",
     "igd": "IGD",
     "igd+": "IGD+",
     "igd_plus": "IGD+",
+    "archive_subset_igd_plus": "ArchiveSubsetIGD+",
     "epsilon": "EP",
     "epsilon_additive": "EP",
     "eps": "EP",

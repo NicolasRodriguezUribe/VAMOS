@@ -17,6 +17,9 @@ RESULT_FILES = {
     "archive_fun": "ARCHIVE_FUN.csv",
     "archive_x": "ARCHIVE_X.csv",
     "archive_g": "ARCHIVE_G.csv",
+    "archive_subset_fun": "ARCHIVE_SUBSET_FUN.csv",
+    "archive_subset_x": "ARCHIVE_SUBSET_X.csv",
+    "archive_subset_g": "ARCHIVE_SUBSET_G.csv",
     "metadata": "metadata.json",
     "resolved_config": "resolved_config.json",
     "time": "time.txt",
@@ -32,10 +35,11 @@ def ensure_dir(path: str | Path) -> Path:
 def write_population(
     output_dir: str | Path,
     F: np.ndarray,
-    archive: dict[str, np.ndarray] | None = None,
+    archive: dict[str, Any] | None = None,
     *,
     X: np.ndarray | None = None,
     G: np.ndarray | None = None,
+    archive_subset: dict[str, Any] | None = None,
 ) -> dict[str, str]:
     """
     Save population (F and optionally X/G) and optional archive to CSV files.
@@ -76,6 +80,23 @@ def write_population(
             archive_g = output_dir / RESULT_FILES["archive_g"]
             np.savetxt(archive_g, archive_G, delimiter=",")
             out["archive_g"] = archive_g.name
+
+    if archive_subset is not None:
+        archive_subset_F = archive_subset.get("F")
+        archive_subset_X = archive_subset.get("X")
+        archive_subset_G = archive_subset.get("G")
+        if archive_subset_F is not None:
+            archive_subset_fun = output_dir / RESULT_FILES["archive_subset_fun"]
+            np.savetxt(archive_subset_fun, archive_subset_F, delimiter=",")
+            out["archive_subset_fun"] = archive_subset_fun.name
+        if archive_subset_X is not None:
+            archive_subset_x = output_dir / RESULT_FILES["archive_subset_x"]
+            np.savetxt(archive_subset_x, archive_subset_X, delimiter=",")
+            out["archive_subset_x"] = archive_subset_x.name
+        if archive_subset_G is not None:
+            archive_subset_g = output_dir / RESULT_FILES["archive_subset_g"]
+            np.savetxt(archive_subset_g, archive_subset_G, delimiter=",")
+            out["archive_subset_g"] = archive_subset_g.name
 
     return out
 

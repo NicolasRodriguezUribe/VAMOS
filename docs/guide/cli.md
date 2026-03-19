@@ -277,3 +277,35 @@ summary_dir: results/ablation_demo/summary
 ```
 
 The CLI writes a summary CSV by default to `<output_root>/summary/ablation_metrics.csv` (override with `summary_path` or `summary_dir`).
+
+Archive-family benchmark recipe
+-------------------------------
+
+The NSGA-II archive-family benchmark compares the implemented config-level modes:
+
+- `archive_mode="off"`
+- `archive_mode="passive"`
+- `archive_mode="hybrid_survival"`
+
+Run the compact smoke suite:
+
+```bash
+vamos bench NSGAII_archive_family_smoke \
+  --output results/archive_family_smoke \
+  --config experiments/configs/nsgaii_archive_family_smoke.yaml
+```
+
+Run the paper-facing core suite:
+
+```bash
+vamos bench NSGAII_archive_family_core \
+  --output results/archive_family_core \
+  --config experiments/configs/nsgaii_archive_family_benchmark.yaml
+```
+
+The benchmark summary folder includes:
+
+- `metrics.csv`: per-run metrics and archive diagnostics.
+- `archive_family_runs.csv`: focused per-run archive-family summary.
+- `archive_family_means.csv`: grouped means by problem/objectives/variant.
+- `archive_family_summary.json`: compact variant-level diagnostics totals.

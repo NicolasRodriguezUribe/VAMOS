@@ -42,9 +42,18 @@ class MultiprocessingEvalBackend(EvaluationBackend):
     """
 
     def __init__(self, n_workers: int | None = None, chunk_size: int | None = None, timeout: float | None = None) -> None:
-        self.n_workers = max(1, n_workers or os.cpu_count() or 1)
+        self.n_workers = self._resolve_workers(n_workers)
         self.chunk_size = chunk_size
         self.timeout = timeout
+
+    @staticmethod
+    def _resolve_workers(n_workers: int | None) -> int:
+        cpu = os.cpu_count() or 1
+        if n_workers in (None, 0):
+            return max(1, cpu)
+        if n_workers == -1:
+            return max(1, cpu - 1)
+        return max(1, int(n_workers))
 
     def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         if self.n_workers <= 1 or X.shape[0] <= 1:

@@ -26,6 +26,7 @@ from .helpers import (
     select_nsga2,
 )
 from .state import compute_selection_metrics, track_offspring_genealogy, update_archives
+from .survival import archive_aware_nsga2_survival, supports_archive_hybrid_survival
 
 if TYPE_CHECKING:
     from .nsgaii import NSGAII
@@ -266,6 +267,21 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         and X_off.shape[0] == 1
         and not _prefer_full_numba_steady_state_survival(st, algo.kernel)
     )
+    hybrid_requested = st.archive_mode == "hybrid_survival"
+    hybrid_supported, hybrid_reason = supports_archive_hybrid_survival(st, G_off=G_off) if hybrid_requested else (False, None)
+    if hybrid_requested:
+        if hybrid_supported:
+            st.archive_hybrid_last_status = "pending"
+            st.archive_hybrid_fallback_reason = None
+            st.archive_hybrid_last_split_mode = "pending"
+            st.archive_hybrid_last_split_reason = None
+        else:
+            st.archive_hybrid_last_status = "fallback"
+            st.archive_hybrid_fallback_reason = hybrid_reason
+            st.archive_hybrid_last_split_mode = "inactive"
+            st.archive_hybrid_last_split_reason = None
+            _logger().debug("Hybrid archive-aware survival requested but falling back to standard path: %s", hybrid_reason)
+
     if early_reject:
         new_X = st.X
         new_F = st.F
@@ -297,6 +313,49 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         st.ranks = new_ranks
         st.crowding = new_crowding
         used_incremental = True
+    elif hybrid_requested and hybrid_supported:
+        archive_history_F = None if st.archive_F is None else np.asarray(st.archive_F, dtype=float).copy()
+        if aos_controller is not None:
+            new_X, new_F, selected_idx, hybrid_details = archive_aware_nsga2_survival(
+                algo.kernel,
+                st.X,
+                st.F,
+                X_off,
+                F_off,
+                st.pop_size,
+                archive_F=archive_history_F,
+                alpha=st.archive_hybrid_alpha,
+                k=st.archive_hybrid_k,
+                normalization=st.archive_hybrid_normalization,
+                return_indices=True,
+                return_details=True,
+            )
+        else:
+            new_X, new_F, hybrid_details = archive_aware_nsga2_survival(
+                algo.kernel,
+                st.X,
+                st.F,
+                X_off,
+                F_off,
+                st.pop_size,
+                archive_F=archive_history_F,
+                alpha=st.archive_hybrid_alpha,
+                k=st.archive_hybrid_k,
+                normalization=st.archive_hybrid_normalization,
+                return_details=True,
+            )
+        new_G = None
+        st.archive_hybrid_last_status = "hybrid"
+        st.archive_hybrid_fallback_reason = None
+        st.archive_hybrid_last_split_mode = str(hybrid_details.get("split_front_mode", "not_applicable"))
+        st.archive_hybrid_last_split_reason = hybrid_details.get("novelty_fallback_reason")
+        st.archive_hybrid_generations += 1
+        if st.archive_hybrid_last_split_mode == "archive":
+            st.archive_hybrid_archive_reference_generations += 1
+        elif st.archive_hybrid_last_split_mode == "local_only":
+            st.archive_hybrid_local_only_generations += 1
+        else:
+            st.archive_hybrid_no_split_generations += 1
     elif st.G is None or G_off is None or st.constraint_mode == "none":
         if aos_controller is not None:
             new_X, new_F, selected_idx = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size, return_indices=True)

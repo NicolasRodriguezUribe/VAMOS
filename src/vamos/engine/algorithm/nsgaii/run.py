@@ -93,6 +93,9 @@ def notify_generation(
                 "X": np.asarray(archive_payload.get("X")),
                 "F": np.asarray(archive_payload.get("F")),
             }
+            archive_G = archive_payload.get("G")
+            if archive_G is not None:
+                stats["archive"]["G"] = np.asarray(archive_G)
 
     if stats:
         live_cb.on_generation(generation, F=live_F, X=live_X, stats=stats)
@@ -133,6 +136,10 @@ def notify_generation(
                     "X": x_arch.copy() if copy_arrays else x_arch,
                     "F": f_arch.copy() if copy_arrays else f_arch,
                 }
+                archive_G = archive_payload.get("G")
+                if archive_G is not None:
+                    g_arch = np.asarray(archive_G)
+                    payload["archive"]["G"] = g_arch.copy() if copy_arrays else g_arch
             callback_stop = bool(st.generation_callback(payload))
             if callback_stop:
                 return True
@@ -163,6 +170,7 @@ def save_checkpoint(algo: NSGAII, checkpoint_dir: str, seed: int, generation: in
         G=st.G,
         archive_X=st.archive_X,
         archive_F=st.archive_F,
+        archive_G=st.archive_G,
         extra={
             "step": st.step,
             "replacements": st.replacements,
@@ -290,6 +298,7 @@ def run_nsgaii(
         "rng_state": cast(dict[str, Any], st.rng.bit_generator.state),
         "archive_X": st.archive_X,
         "archive_F": st.archive_F,
+        "archive_G": st.archive_G,
         "extra": {
             "step": st.step,
             "replacements": st.replacements,

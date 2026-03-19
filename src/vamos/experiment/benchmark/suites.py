@@ -4,6 +4,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from vamos.foundation.exceptions import _suggest_names
+from vamos.experiment.benchmark.archive_family import (
+    ARCHIVE_FAMILY_DEFAULT_ALGORITHMS,
+    ARCHIVE_FAMILY_DEFAULT_METRICS,
+)
 
 _BENCH_DOCS = "docs/guide/cli.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
@@ -252,5 +256,121 @@ def _init_default_suites() -> None:
             default_metrics=["hv", "igd_plus", "epsilon_additive"],
             description="Mixed and real-world examples (requires examples/analysis extras for some problems).",
             default_seeds=list(range(3)),
+        )
+    )
+
+    archive_zdt_experiments = [
+        BenchmarkExperiment("zdt1", {"n_var": 30}, evaluation_budget=12000),
+        BenchmarkExperiment("zdt2", {"n_var": 30}, evaluation_budget=12000),
+        BenchmarkExperiment("zdt3", {"n_var": 30}, evaluation_budget=12000),
+        BenchmarkExperiment("zdt4", {"n_var": 10}, evaluation_budget=16000),
+        BenchmarkExperiment("zdt6", {"n_var": 10}, evaluation_budget=16000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="NSGAII_archive_family_ZDT",
+            experiments=archive_zdt_experiments,
+            default_algorithms=list(ARCHIVE_FAMILY_DEFAULT_ALGORITHMS),
+            default_metrics=list(ARCHIVE_FAMILY_DEFAULT_METRICS),
+            description="NSGA-II archive-family comparison on ZDT benchmarks (2 objectives).",
+            default_seeds=list(range(10)),
+        )
+    )
+
+    archive_dtlz_experiments = [
+        BenchmarkExperiment("dtlz1", {"n_var": 6, "n_obj": 2}, evaluation_budget=18000),
+        BenchmarkExperiment("dtlz2", {"n_var": 11, "n_obj": 2}, evaluation_budget=16000),
+        BenchmarkExperiment("dtlz7", {"n_var": 21, "n_obj": 2}, evaluation_budget=18000),
+        BenchmarkExperiment("dtlz1", {"n_var": 7, "n_obj": 3}, evaluation_budget=22000),
+        BenchmarkExperiment("dtlz2", {"n_var": 12, "n_obj": 3}, evaluation_budget=20000),
+        BenchmarkExperiment("dtlz7", {"n_var": 22, "n_obj": 3}, evaluation_budget=22000),
+        BenchmarkExperiment("dtlz1", {"n_var": 9, "n_obj": 5}, evaluation_budget=30000),
+        BenchmarkExperiment("dtlz2", {"n_var": 14, "n_obj": 5}, evaluation_budget=26000),
+        BenchmarkExperiment("dtlz7", {"n_var": 24, "n_obj": 5}, evaluation_budget=30000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="NSGAII_archive_family_DTLZ",
+            experiments=archive_dtlz_experiments,
+            default_algorithms=list(ARCHIVE_FAMILY_DEFAULT_ALGORITHMS),
+            default_metrics=list(ARCHIVE_FAMILY_DEFAULT_METRICS),
+            description="NSGA-II archive-family comparison on DTLZ benchmarks at 2, 3, and 5 objectives.",
+            default_seeds=list(range(10)),
+        )
+    )
+
+    archive_wfg_experiments = [
+        BenchmarkExperiment("wfg1", {"n_var": 22, "n_obj": 2}, evaluation_budget=18000),
+        BenchmarkExperiment("wfg4", {"n_var": 22, "n_obj": 2}, evaluation_budget=18000),
+        BenchmarkExperiment("wfg9", {"n_var": 22, "n_obj": 2}, evaluation_budget=20000),
+        BenchmarkExperiment("wfg1", {"n_var": 24, "n_obj": 3}, evaluation_budget=22000),
+        BenchmarkExperiment("wfg4", {"n_var": 24, "n_obj": 3}, evaluation_budget=22000),
+        BenchmarkExperiment("wfg9", {"n_var": 24, "n_obj": 3}, evaluation_budget=24000),
+        BenchmarkExperiment("wfg1", {"n_var": 28, "n_obj": 5}, evaluation_budget=30000),
+        BenchmarkExperiment("wfg4", {"n_var": 28, "n_obj": 5}, evaluation_budget=30000),
+        BenchmarkExperiment("wfg9", {"n_var": 28, "n_obj": 5}, evaluation_budget=32000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="NSGAII_archive_family_WFG",
+            experiments=archive_wfg_experiments,
+            default_algorithms=list(ARCHIVE_FAMILY_DEFAULT_ALGORITHMS),
+            default_metrics=list(ARCHIVE_FAMILY_DEFAULT_METRICS),
+            description="NSGA-II archive-family comparison on WFG benchmarks at 2, 3, and 5 objectives.",
+            default_seeds=list(range(10)),
+        )
+    )
+
+    archive_zcat_experiments = [
+        BenchmarkExperiment("zcat1", {"n_var": 30, "n_obj": 2}, evaluation_budget=16000),
+        BenchmarkExperiment("zcat10", {"n_var": 30, "n_obj": 2}, evaluation_budget=16000),
+        BenchmarkExperiment("zcat20", {"n_var": 30, "n_obj": 2}, evaluation_budget=18000),
+        BenchmarkExperiment("zcat1", {"n_var": 30, "n_obj": 3}, evaluation_budget=20000),
+        BenchmarkExperiment("zcat10", {"n_var": 30, "n_obj": 3}, evaluation_budget=20000),
+        BenchmarkExperiment("zcat20", {"n_var": 30, "n_obj": 3}, evaluation_budget=22000),
+        BenchmarkExperiment("zcat1", {"n_var": 30, "n_obj": 5}, evaluation_budget=28000),
+        BenchmarkExperiment("zcat10", {"n_var": 30, "n_obj": 5}, evaluation_budget=28000),
+        BenchmarkExperiment("zcat20", {"n_var": 30, "n_obj": 5}, evaluation_budget=30000),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="NSGAII_archive_family_ZCAT",
+            experiments=archive_zcat_experiments,
+            default_algorithms=list(ARCHIVE_FAMILY_DEFAULT_ALGORITHMS),
+            default_metrics=list(ARCHIVE_FAMILY_DEFAULT_METRICS),
+            description="NSGA-II archive-family comparison on ZCAT benchmarks at 2, 3, and 5 objectives.",
+            default_seeds=list(range(10)),
+        )
+    )
+
+    archive_core_experiments = archive_zdt_experiments + archive_dtlz_experiments + archive_wfg_experiments + archive_zcat_experiments
+    _register_suite(
+        BenchmarkSuite(
+            name="NSGAII_archive_family_core",
+            experiments=archive_core_experiments,
+            default_algorithms=list(ARCHIVE_FAMILY_DEFAULT_ALGORITHMS),
+            default_metrics=list(ARCHIVE_FAMILY_DEFAULT_METRICS),
+            description=(
+                "Compact paper-facing NSGA-II archive-family suite across ZDT, DTLZ, WFG, and ZCAT. "
+                "Hybrid survival is fully active only on standard generational unconstrained runs."
+            ),
+            default_seeds=list(range(10)),
+        )
+    )
+
+    archive_smoke_experiments = [
+        BenchmarkExperiment("zdt1", {"n_var": 30}, evaluation_budget=60),
+        BenchmarkExperiment("dtlz2", {"n_var": 12, "n_obj": 3}, evaluation_budget=90),
+        BenchmarkExperiment("wfg4", {"n_var": 24, "n_obj": 3}, evaluation_budget=90),
+        BenchmarkExperiment("zcat1", {"n_var": 30, "n_obj": 3}, evaluation_budget=90),
+    ]
+    _register_suite(
+        BenchmarkSuite(
+            name="NSGAII_archive_family_smoke",
+            experiments=archive_smoke_experiments,
+            default_algorithms=list(ARCHIVE_FAMILY_DEFAULT_ALGORITHMS),
+            default_metrics=list(ARCHIVE_FAMILY_DEFAULT_METRICS),
+            description="Tiny smoke suite for the NSGA-II archive-family benchmark path.",
+            default_seeds=[1],
         )
     )

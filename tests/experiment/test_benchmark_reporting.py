@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import warnings
 
 import numpy as np
 import pytest
@@ -81,3 +82,56 @@ def test_report_pipeline_on_fake_csv(tmp_path: Path):
 
     # Plots are optional; ensure the function does not raise.
     report.generate_plots()
+
+
+def test_report_pipeline_skips_degenerate_wilcoxon_cases_without_runtime_warning(tmp_path: Path):
+    pd = pytest.importorskip("pandas")
+    suite = get_benchmark_suite("ZDT_small")
+    summary_dir = tmp_path / "summary"
+    summary_dir.mkdir(parents=True, exist_ok=True)
+
+    rows = []
+    for problem in ["zdt1", "zdt2", "zdt3"]:
+        for alg in ["a1", "a2", "a3"]:
+            rows.append(
+                {
+                    "problem": problem,
+                    "algorithm": alg,
+                    "engine": "numpy",
+                    "seed": 0,
+                    "n_var": 30,
+                    "n_obj": 2,
+                    "hv": 0.8,
+                    "indicator_igd_plus": 0.2,
+                }
+            )
+    df = pd.DataFrame(rows)
+    summary_path = summary_dir / "metrics.csv"
+    df.to_csv(summary_path, index=False)
+    (summary_dir / "suite.json").write_text(
+        json.dumps({"suite": suite.name, "algorithms": ["a1", "a2", "a3"], "metrics": ["hv", "igd_plus"]}),
+        encoding="utf-8",
+    )
+
+    result = BenchmarkResult(
+        suite=suite,
+        algorithms=["a1", "a2", "a3"],
+        metrics=["hv", "igd_plus"],
+        base_output_dir=tmp_path,
+        summary_path=summary_path,
+        runs=[],
+        raw_results=None,
+    )
+    report = BenchmarkReport(
+        result=result,
+        config=BenchmarkReportConfig(metrics=["hv", "igd_plus"], alpha=0.1),
+        output_dir=summary_dir,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        stats = report.compute_statistics()
+        tables = report.generate_latex_tables()
+
+    assert "hv" in stats
+    assert tables["hv"].exists()

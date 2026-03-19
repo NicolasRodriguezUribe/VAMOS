@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from vamos.foundation.eval.backends import MultiprocessingEvalBackend, SerialEvalBackend
@@ -36,3 +38,8 @@ def test_multiprocessing_eval_strategy_matches_serial():
 
     np.testing.assert_allclose(mp.F, serial.F)
     assert mp.G is None
+
+
+def test_multiprocessing_backend_resolves_minus_one_workers():
+    backend = MultiprocessingEvalBackend(n_workers=-1)
+    assert backend.n_workers == max(1, (os.cpu_count() or 1) - 1)

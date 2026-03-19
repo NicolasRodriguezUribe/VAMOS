@@ -6,6 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from vamos.experiment.benchmark.archive_family import (
+    is_archive_family_suite,
+    resolve_benchmark_algorithm_alias,
+    write_archive_family_summary,
+)
 from vamos.experiment.benchmark.suites import BenchmarkExperiment, BenchmarkSuite
 from vamos.experiment.runner import run_single
 from vamos.experiment.runtime.catalog import resolve_engine
@@ -50,7 +55,7 @@ def _prepare_tasks(
     metrics: Sequence[str],
     base_output_dir: Path,
     global_config_overrides: dict[str, Any] | None,
-) -> tuple[list[StudyTask], dict[str, Any], Path]:
+) -> tuple[list[StudyTask], dict[str, Any], Path, list[str]]:
     overrides = dict(global_config_overrides or {})
     raw_root = base_output_dir / "raw_runs" / suite.name
     overrides.setdefault("output_root", str(raw_root))
@@ -68,24 +73,31 @@ def _prepare_tasks(
         "live_viz_max_points",
     }
     tasks: list[StudyTask] = []
+    task_labels: list[str] = []
     for exp in suite.experiments:
         seeds = exp.seeds or suite.default_seeds
         for algo in algorithms:
+            alias = resolve_benchmark_algorithm_alias(algo)
+            execution_algorithm = alias.execution_algorithm if alias is not None else algo
             for seed in seeds:
                 cfg = {k: v for k, v in overrides.items() if k in allowed_cfg_keys}
                 cfg["max_evaluations"] = _derive_budget(exp, cfg)
+                if alias is not None:
+                    cfg["output_root"] = str(raw_root / alias.output_root_suffix)
                 tasks.append(
                     StudyTask(
-                        algorithm=algo,
-                        engine=resolve_engine(overrides.get("engine"), algorithm=algo),
+                        algorithm=execution_algorithm,
+                        engine=resolve_engine(overrides.get("engine"), algorithm=execution_algorithm),
                         problem=exp.problem_name,
                         n_var=exp.problem_params.get("n_var"),
                         n_obj=exp.problem_params.get("n_obj"),
                         seed=seed,
                         config_overrides=cfg,
+                        nsgaii_variation=dict(alias.nsgaii_variation) if alias is not None and alias.nsgaii_variation is not None else None,
                     )
                 )
-    return tasks, overrides, raw_root
+                task_labels.append(alias.label if alias is not None else execution_algorithm)
+    return tasks, overrides, raw_root, task_labels
 
 
 def run_benchmark_suite(
@@ -100,9 +112,18 @@ def run_benchmark_suite(
     algos = list(algorithms) if algorithms else list(suite.default_algorithms)
     metric_list = list(metrics) if metrics else list(suite.default_metrics)
     base_output_dir = base_output_dir.resolve()
-    tasks, overrides, raw_root = _prepare_tasks(suite, algos, metric_list, base_output_dir, global_config_overrides)
-    # hv computed separately; ask for additional indicators only
-    indicator_metrics = [m for m in metric_list if m.lower() not in {"hv", "hypervolume"}]
+    tasks, overrides, raw_root, task_labels = _prepare_tasks(suite, algos, metric_list, base_output_dir, global_config_overrides)
+    # HV is computed separately. Archive-subset indicator names map back to the
+    # same base indicator computation and are exported as separate columns.
+    indicator_metrics: list[str] = []
+    for metric in metric_list:
+        name = metric.lower()
+        if name in {"hv", "hypervolume", "archive_subset_hv"}:
+            continue
+        if name.startswith("archive_subset_"):
+            name = name.removeprefix("archive_subset_")
+        if name not in indicator_metrics:
+            indicator_metrics.append(name)
     persister = CSVPersister(mirror_roots=())
     runner = study_runner_cls(verbose=True, indicators=indicator_metrics, persister=persister)
     summary_dir = _ensure_dir(base_output_dir / "summary")
@@ -110,7 +131,12 @@ def run_benchmark_suite(
         tasks,
         run_single_fn=run_single,
     )
+    for res, label in zip(results, task_labels):
+        res.metrics["algorithm_base"] = res.task.algorithm
+        res.metrics["algorithm"] = label
     persister.save_results(results, summary_dir / "metrics.csv")
+    archive_family_requested = is_archive_family_suite(suite.name) or any(resolve_benchmark_algorithm_alias(name) is not None for name in algos)
+    archive_family_artifacts = write_archive_family_summary(results, summary_dir) if archive_family_requested else {}
     runs: list[SingleRunInfo] = []
     for res in results:
         algorithm_name = res.metrics.get("algorithm") or res.task.algorithm
@@ -142,6 +168,8 @@ def run_benchmark_suite(
             for exp in suite.experiments
         ],
     }
+    if archive_family_artifacts:
+        meta["archive_family_artifacts"] = {name: str(path) for name, path in archive_family_artifacts.items()}
     meta_path = summary_dir / "suite.json"
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
 

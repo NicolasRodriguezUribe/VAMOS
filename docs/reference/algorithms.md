@@ -7,6 +7,12 @@ Algorithms (internal)
   - `result_mode` accepts only `non_dominated` (default) or `population`.
   - External archive configuration (`.external_archive(...)`) becomes the default result source unless you explicitly set `result_mode="population"`.
   - When archive is enabled, results still include `result["archive"]` alongside `result["population"]`.
+  - `archive_mode="off"` keeps baseline NSGA-II behavior.
+  - `archive_mode="passive"` keeps a separate exact unbounded archive without changing mating, survival, or the primary top-level result. The archive payload exposes the full archive plus a crowding-selected subset of size `archive_subset_size` (default: `pop_size`).
+  - `archive_mode="hybrid_survival"` keeps NSGA-II ranking/full-front acceptance unchanged and changes only split-front truncation using `archive_hybrid_alpha` (default `0.5`) and objective-space archive `k`-NN novelty with `archive_hybrid_k` (default `3`). The current normalization mode is `archive_hybrid_normalization="minmax_archive_split"`.
+  - `hybrid_survival` is currently supported only on the standard generational unconstrained path; constrained and steady-state/incremental runs fall back to the standard survival path.
+  - Archive-family runs expose compact execution metadata in `result["archive_diagnostics"]`, including whether passive or hybrid mode ran, whether hybrid fell back, and whether split-front novelty used archive or local-only scoring.
+  - Archive-assisted mating is not implemented.
   - Supported external-archive prune policies are `crowding`, `hv`, `mc_hv`, `knn`, `maxmin`, and `ref_dirs`.
   - `hv` uses exact hypervolume contributions in 2D and exact higher-dimensional contributions when `moocore` is available; `mc_hv` keeps the Monte Carlo approximation path.
 - NSGA-III: many-objective real/binary/integer; reference direction support. Matching `pop_size` to the number of reference directions is recommended (with divisions p: `comb(p + n_obj - 1, n_obj - 1)`); mismatches emit a warning unless strict enforcement is enabled.

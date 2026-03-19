@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import normalize_encoding
@@ -17,6 +17,9 @@ from .base import (
     _require_fields,
     _SerializableConfig,
 )
+
+ArchiveMode = Literal["off", "passive", "hybrid_survival"]
+ArchiveHybridNormalization = Literal["minmax_archive_split"]
 
 
 class _NSGAIIConfigBuilder:
@@ -111,6 +114,44 @@ class _NSGAIIConfigBuilder:
         self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
+    def archive_mode(self, value: str) -> _NSGAIIConfigBuilder:
+        mode = str(value).strip().lower()
+        if mode not in {"off", "passive", "hybrid_survival"}:
+            raise ValueError("archive_mode must be 'off', 'passive', or 'hybrid_survival'.")
+        self._cfg["archive_mode"] = mode
+        return self
+
+    def archive_subset_size(self, value: int | None) -> _NSGAIIConfigBuilder:
+        if value is None:
+            self._cfg["archive_subset_size"] = None
+            return self
+        parsed = int(value)
+        if parsed <= 0:
+            raise ValueError("archive_subset_size must be a positive integer.")
+        self._cfg["archive_subset_size"] = parsed
+        return self
+
+    def archive_hybrid_alpha(self, value: float) -> _NSGAIIConfigBuilder:
+        alpha = float(value)
+        if not 0.0 <= alpha <= 1.0:
+            raise ValueError("archive_hybrid_alpha must be between 0 and 1.")
+        self._cfg["archive_hybrid_alpha"] = alpha
+        return self
+
+    def archive_hybrid_k(self, value: int) -> _NSGAIIConfigBuilder:
+        k = int(value)
+        if k <= 0:
+            raise ValueError("archive_hybrid_k must be a positive integer.")
+        self._cfg["archive_hybrid_k"] = k
+        return self
+
+    def archive_hybrid_normalization(self, value: str) -> _NSGAIIConfigBuilder:
+        normalization = str(value).strip().lower()
+        if normalization != "minmax_archive_split":
+            raise ValueError("archive_hybrid_normalization must be 'minmax_archive_split'.")
+        self._cfg["archive_hybrid_normalization"] = normalization
+        return self
+
     def constraint_mode(self, value: str) -> _NSGAIIConfigBuilder:
         """Set constraint handling mode: 'feasibility' or 'none'/'penalty'."""
         self._cfg["constraint_mode"] = value
@@ -160,6 +201,14 @@ class _NSGAIIConfigBuilder:
         )
         pop_size = int(self._cfg.get("pop_size", 100))
         selection = self._cfg.get("selection", ("tournament", {}))
+        archive_mode = str(self._cfg.get("archive_mode", "off")).strip().lower()
+        if archive_mode not in {"off", "passive", "hybrid_survival"}:
+            raise ValueError("archive_mode must be 'off', 'passive', or 'hybrid_survival'.")
+        ext_cfg = self._cfg.get("external_archive")
+        if archive_mode in {"passive", "hybrid_survival"} and ext_cfg is not None and ext_cfg.capacity is not None:
+            raise ValueError(
+                f"archive_mode='{archive_mode}' requires external_archive.capacity=None or no external_archive configuration."
+            )
         return NSGAIIConfig(
             pop_size=pop_size,
             crossover=self._cfg["crossover"],
@@ -173,6 +222,11 @@ class _NSGAIIConfigBuilder:
             initializer=self._cfg.get("initializer"),
             mutation_prob_factor=self._cfg.get("mutation_prob_factor"),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
+            archive_mode=archive_mode,
+            archive_subset_size=self._cfg.get("archive_subset_size"),
+            archive_hybrid_alpha=float(self._cfg.get("archive_hybrid_alpha", 0.5)),
+            archive_hybrid_k=int(self._cfg.get("archive_hybrid_k", 3)),
+            archive_hybrid_normalization=self._cfg.get("archive_hybrid_normalization", "minmax_archive_split"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             adaptive_operator_selection=self._cfg.get("adaptive_operator_selection"),
@@ -198,6 +252,11 @@ class NSGAIIConfig(_SerializableConfig):
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     result_mode: ResultMode | None = None
+    archive_mode: ArchiveMode = "off"
+    archive_subset_size: int | None = None
+    archive_hybrid_alpha: float = 0.5
+    archive_hybrid_k: int = 3
+    archive_hybrid_normalization: ArchiveHybridNormalization = "minmax_archive_split"
     constraint_mode: ConstraintModeStr = "feasibility"
     track_genealogy: bool = False
     adaptive_operator_selection: dict[str, Any] | None = None
