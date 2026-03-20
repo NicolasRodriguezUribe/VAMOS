@@ -25,8 +25,8 @@ def main():
     cfg = (
         NSGAIIConfig.builder()
         .pop_size(12)
-        .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("polynomial", prob="1/n", eta=20.0)
+        .crossover("mixed", prob=0.9)
+        .mutation("mixed", prob="1/n")
         .selection("tournament", size=2)
         .build()
     )

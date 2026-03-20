@@ -16,9 +16,7 @@ defaults:
 
 problems:
   zdt1:
-    nsgaii:
-      adaptive_operator_selection:
-        enabled: false
+    nsgaii: {}
 
 stopping:
   hv_convergence:

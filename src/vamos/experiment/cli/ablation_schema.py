@@ -44,7 +44,6 @@ _BOOL_KEYS = {"use_numba_variation"}
 _INT_KEYS = {"k_neighbors", "archive_size", "n_partitions"}
 _FLOAT_KEYS = {"kappa", "inertia", "c1", "c2", "vmax_fraction", "alpha", "adapt_freq"}
 _STRING_KEYS = {"indicator"}
-_MAPPING_KEYS: set[str] = set()
 _WEIGHT_KEYS = {"weight_vectors"}
 
 _VARIATION_ALLOWED_KEYS = {
@@ -93,10 +92,6 @@ def _validate_variation_schema(variation: Mapping[str, Any], *, kind: str) -> No
             continue
         if key in _OPERATOR_KEYS:
             _validate_operator_spec(value, key=key)
-            continue
-        if key in _MAPPING_KEYS:
-            if not isinstance(value, Mapping):
-                raise TypeError(f"{kind}_variation '{key}' must be a mapping.")
             continue
         if key in _WEIGHT_KEYS:
             if not isinstance(value, (Mapping, str)):
