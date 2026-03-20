@@ -1,0 +1,219 @@
+{
+  "suite": "NSGAII_archive_family_WFG",
+  "description": "NSGA-II archive-family comparison on WFG benchmarks at 2, 3, and 5 objectives.",
+  "algorithms": [
+    "nsgaii_archive_off",
+    "nsgaii_archive_passive",
+    "nsgaii_archive_hybrid"
+  ],
+  "metrics": [
+    "hv",
+    "igd_plus",
+    "archive_subset_hv",
+    "archive_subset_igd_plus"
+  ],
+  "config_overrides": {
+    "engine": "numpy",
+    "population_size": 80,
+    "offspring_population_size": 80,
+    "eval_strategy": "multiprocessing",
+    "n_workers": -1,
+    "output_root": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_WFG/raw_runs/NSGAII_archive_family_WFG"
+  },
+  "experiments": [
+    {
+      "problem": "wfg1",
+      "params": {
+        "n_var": 22,
+        "n_obj": 2
+      },
+      "evaluation_budget": 18000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "wfg4",
+      "params": {
+        "n_var": 22,
+        "n_obj": 2
+      },
+      "evaluation_budget": 18000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "wfg9",
+      "params": {
+        "n_var": 22,
+        "n_obj": 2
+      },
+      "evaluation_budget": 20000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "wfg1",
+      "params": {
+        "n_var": 24,
+        "n_obj": 3
+      },
+      "evaluation_budget": 22000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "wfg4",
+      "params": {
+        "n_var": 24,
+        "n_obj": 3
+      },
+      "evaluation_budget": 22000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "wfg9",
+      "params": {
+        "n_var": 24,
+        "n_obj": 3
+      },
+      "evaluation_budget": 24000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "wfg1",
+      "params": {
+        "n_var": 28,
+        "n_obj": 5
+      },
+      "evaluation_budget": 30000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "wfg4",
+      "params": {
+        "n_var": 28,
+        "n_obj": 5
+      },
+      "evaluation_budget": 30000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "wfg9",
+      "params": {
+        "n_var": 28,
+        "n_obj": 5
+      },
+      "evaluation_budget": 32000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  ],
+  "archive_family_artifacts": {
+    "runs": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_WFG/summary/archive_family_runs.csv",
+    "means": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_WFG/summary/archive_family_means.csv",
+    "summary": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_WFG/summary/archive_family_summary.json"
+  }
+}

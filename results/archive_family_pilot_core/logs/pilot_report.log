@@ -1,0 +1,7 @@
+tables: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/pilot_summary/archive_family_pilot_tables.csv
+by_family: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/pilot_summary/archive_family_pilot_by_family.csv
+by_objectives: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/pilot_summary/archive_family_pilot_by_objectives.csv
+overhead: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/pilot_summary/archive_family_pilot_overhead.csv
+diagnostics: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/pilot_summary/archive_family_pilot_diagnostics.csv
+regimes: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/pilot_summary/archive_family_pilot_regimes.csv
+summary: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/pilot_summary/archive_family_pilot_summary.md

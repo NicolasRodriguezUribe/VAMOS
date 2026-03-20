@@ -1,0 +1,30 @@
+{
+  "agemoea_variation": null,
+  "algorithm": "nsgaii",
+  "config_source": null,
+  "encoding": "real",
+  "engine": "numpy",
+  "external_archive": null,
+  "hv_reference_front": null,
+  "hv_reference_point": null,
+  "hv_threshold": null,
+  "ibea_variation": null,
+  "max_evaluations": 28000,
+  "moead_variation": null,
+  "n_obj": 5,
+  "n_var": 30,
+  "nsgaii_variation": {
+    "archive_mode": "off"
+  },
+  "nsgaiii_variation": null,
+  "offspring_population_size": 80,
+  "population_size": 80,
+  "problem": "zcat10",
+  "problem_override": null,
+  "rvea_variation": null,
+  "seed": 9,
+  "selection_pressure": 2,
+  "smpso_variation": null,
+  "smsemoa_variation": null,
+  "spea2_variation": null
+}

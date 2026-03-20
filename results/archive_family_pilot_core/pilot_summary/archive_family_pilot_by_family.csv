@@ -1,0 +1,17 @@
+family,scope,comparison,regimes,metrics,mean_signed_effect,median_signed_effect,mean_signed_delta,positive_regimes,negative_regimes
+DTLZ,archive_subset,hybrid_vs_passive,6,"archive_subset_hv,archive_subset_igd_plus",-0.027761817085622087,-0.00015657357062204963,-977350613.6835862,0,6
+DTLZ,final_population,hybrid_vs_off,6,"hv,indicator_igd_plus",-0.02755075182807591,-0.0005449978595070032,-3897595280.258245,0,6
+DTLZ,final_population,hybrid_vs_passive,6,"hv,indicator_igd_plus",-0.02755075182807591,-0.0005449978595070032,-3897595280.258245,0,6
+DTLZ,final_population,passive_vs_off,6,"hv,indicator_igd_plus",0.0,0.0,0.0,0,0
+WFG,archive_subset,hybrid_vs_passive,6,"archive_subset_hv,archive_subset_igd_plus",-0.02467381641809288,-0.01091749020364038,-22.573295410638178,0,6
+WFG,final_population,hybrid_vs_off,6,"hv,indicator_igd_plus",-0.1557299917870746,-0.14851189149729835,-352.9908426693631,0,6
+WFG,final_population,hybrid_vs_passive,6,"hv,indicator_igd_plus",-0.1557299917870746,-0.14851189149729835,-352.9908426693631,0,6
+WFG,final_population,passive_vs_off,6,"hv,indicator_igd_plus",0.0,0.0,0.0,0,0
+ZCAT,archive_subset,hybrid_vs_passive,6,"archive_subset_hv,archive_subset_igd_plus",-0.07916980344415968,-0.008552416145471104,-5191008.8021021625,1,5
+ZCAT,final_population,hybrid_vs_off,6,"hv,indicator_igd_plus",-0.20192772506027645,-0.06447925491649237,-21651799.03204433,0,6
+ZCAT,final_population,hybrid_vs_passive,6,"hv,indicator_igd_plus",-0.20192772506027645,-0.06447925491649237,-21651799.03204433,0,6
+ZCAT,final_population,passive_vs_off,6,"hv,indicator_igd_plus",0.0,0.0,0.0,0,0
+ZDT,archive_subset,hybrid_vs_passive,2,"archive_subset_hv,archive_subset_igd_plus",0.00174147262614755,0.00174147262614755,0.0010247708432609137,2,0
+ZDT,final_population,hybrid_vs_off,2,"hv,indicator_igd_plus",0.0009266572949054904,0.0009266572949054904,0.0004877878352500531,2,0
+ZDT,final_population,hybrid_vs_passive,2,"hv,indicator_igd_plus",0.0009266572949054904,0.0009266572949054904,0.0004877878352500531,2,0
+ZDT,final_population,passive_vs_off,2,"hv,indicator_igd_plus",0.0,0.0,0.0,0,0

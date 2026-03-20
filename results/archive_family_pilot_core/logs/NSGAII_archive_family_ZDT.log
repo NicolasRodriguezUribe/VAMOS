@@ -1,0 +1,2707 @@
+[Study] (1/150) nsgaii | numpy | zdt1 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6718.16 ms | Eval/s: 1786.2
+Objective 1 spread: 0.996342
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_0
+[Study] (2/150) nsgaii | numpy | zdt1 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6748.20 ms | Eval/s: 1778.3
+Objective 1 spread: 0.999120
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_1
+[Study] (3/150) nsgaii | numpy | zdt1 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6794.21 ms | Eval/s: 1766.2
+Objective 1 spread: 0.999320
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_2
+[Study] (4/150) nsgaii | numpy | zdt1 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6789.14 ms | Eval/s: 1767.5
+Objective 1 spread: 0.999936
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_3
+[Study] (5/150) nsgaii | numpy | zdt1 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6874.46 ms | Eval/s: 1745.6
+Objective 1 spread: 0.998645
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_4
+[Study] (6/150) nsgaii | numpy | zdt1 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6717.40 ms | Eval/s: 1786.4
+Objective 1 spread: 0.998924
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_5
+[Study] (7/150) nsgaii | numpy | zdt1 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6714.83 ms | Eval/s: 1787.1
+Objective 1 spread: 0.998633
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_6
+[Study] (8/150) nsgaii | numpy | zdt1 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6659.88 ms | Eval/s: 1801.8
+Objective 1 spread: 0.998356
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_7
+[Study] (9/150) nsgaii | numpy | zdt1 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6747.93 ms | Eval/s: 1778.3
+Objective 1 spread: 0.999900
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_8
+[Study] (10/150) nsgaii | numpy | zdt1 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6754.29 ms | Eval/s: 1776.6
+Objective 1 spread: 0.997980
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT1/nsgaii/numpy/seed_9
+[Study] (11/150) nsgaii | numpy | zdt1 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7005.14 ms | Eval/s: 1713.0
+Objective 1 spread: 0.996342
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_0
+[Study] (12/150) nsgaii | numpy | zdt1 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6972.45 ms | Eval/s: 1721.1
+Objective 1 spread: 0.999120
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_1
+[Study] (13/150) nsgaii | numpy | zdt1 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6891.40 ms | Eval/s: 1741.3
+Objective 1 spread: 0.999320
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_2
+[Study] (14/150) nsgaii | numpy | zdt1 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6910.78 ms | Eval/s: 1736.4
+Objective 1 spread: 0.999936
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_3
+[Study] (15/150) nsgaii | numpy | zdt1 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6923.47 ms | Eval/s: 1733.2
+Objective 1 spread: 0.998645
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_4
+[Study] (16/150) nsgaii | numpy | zdt1 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6936.46 ms | Eval/s: 1730.0
+Objective 1 spread: 0.998924
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_5
+[Study] (17/150) nsgaii | numpy | zdt1 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6836.00 ms | Eval/s: 1755.4
+Objective 1 spread: 0.998633
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_6
+[Study] (18/150) nsgaii | numpy | zdt1 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6950.59 ms | Eval/s: 1726.5
+Objective 1 spread: 0.998356
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_7
+[Study] (19/150) nsgaii | numpy | zdt1 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6884.02 ms | Eval/s: 1743.2
+Objective 1 spread: 0.999900
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_8
+[Study] (20/150) nsgaii | numpy | zdt1 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6924.13 ms | Eval/s: 1733.1
+Objective 1 spread: 0.997980
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT1/nsgaii/numpy/seed_9
+[Study] (21/150) nsgaii | numpy | zdt1 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6972.80 ms | Eval/s: 1721.0
+Objective 1 spread: 0.998335
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_0
+[Study] (22/150) nsgaii | numpy | zdt1 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6972.69 ms | Eval/s: 1721.0
+Objective 1 spread: 0.995270
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_1
+[Study] (23/150) nsgaii | numpy | zdt1 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7023.11 ms | Eval/s: 1708.6
+Objective 1 spread: 0.997962
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_2
+[Study] (24/150) nsgaii | numpy | zdt1 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7083.86 ms | Eval/s: 1694.0
+Objective 1 spread: 0.992319
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_3
+[Study] (25/150) nsgaii | numpy | zdt1 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7167.35 ms | Eval/s: 1674.3
+Objective 1 spread: 0.997555
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_4
+[Study] (26/150) nsgaii | numpy | zdt1 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7174.03 ms | Eval/s: 1672.7
+Objective 1 spread: 0.995209
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_5
+[Study] (27/150) nsgaii | numpy | zdt1 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7143.68 ms | Eval/s: 1679.8
+Objective 1 spread: 0.999598
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_6
+[Study] (28/150) nsgaii | numpy | zdt1 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7108.32 ms | Eval/s: 1688.2
+Objective 1 spread: 0.998289
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_7
+[Study] (29/150) nsgaii | numpy | zdt1 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7201.14 ms | Eval/s: 1666.4
+Objective 1 spread: 0.999758
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_8
+[Study] (30/150) nsgaii | numpy | zdt1 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT1
+Description: Classic bi-objective benchmark with a convex Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7125.65 ms | Eval/s: 1684.1
+Objective 1 spread: 0.998036
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT1/nsgaii/numpy/seed_9
+[Study] (31/150) nsgaii | numpy | zdt2 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6900.22 ms | Eval/s: 1739.1
+Objective 1 spread: 0.999618
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_0
+[Study] (32/150) nsgaii | numpy | zdt2 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6948.75 ms | Eval/s: 1726.9
+Objective 1 spread: 0.994568
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_1
+[Study] (33/150) nsgaii | numpy | zdt2 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6874.51 ms | Eval/s: 1745.6
+Objective 1 spread: 0.999241
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_2
+[Study] (34/150) nsgaii | numpy | zdt2 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6888.25 ms | Eval/s: 1742.1
+Objective 1 spread: 0.998664
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_3
+[Study] (35/150) nsgaii | numpy | zdt2 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6831.90 ms | Eval/s: 1756.5
+Objective 1 spread: 0.997527
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_4
+[Study] (36/150) nsgaii | numpy | zdt2 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6847.89 ms | Eval/s: 1752.4
+Objective 1 spread: 0.999334
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_5
+[Study] (37/150) nsgaii | numpy | zdt2 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6945.84 ms | Eval/s: 1727.7
+Objective 1 spread: 0.999573
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_6
+[Study] (38/150) nsgaii | numpy | zdt2 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6960.23 ms | Eval/s: 1724.1
+Objective 1 spread: 0.995796
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_7
+[Study] (39/150) nsgaii | numpy | zdt2 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 6924.50 ms | Eval/s: 1733.0
+Objective 1 spread: 0.520190
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_8
+[Study] (40/150) nsgaii | numpy | zdt2 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7059.92 ms | Eval/s: 1699.7
+Objective 1 spread: 0.999405
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT2/nsgaii/numpy/seed_9
+[Study] (41/150) nsgaii | numpy | zdt2 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7182.07 ms | Eval/s: 1670.8
+Objective 1 spread: 0.999618
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_0
+[Study] (42/150) nsgaii | numpy | zdt2 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7152.69 ms | Eval/s: 1677.7
+Objective 1 spread: 0.994568
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_1
+[Study] (43/150) nsgaii | numpy | zdt2 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7126.04 ms | Eval/s: 1684.0
+Objective 1 spread: 0.999241
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_2
+[Study] (44/150) nsgaii | numpy | zdt2 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7165.98 ms | Eval/s: 1674.6
+Objective 1 spread: 0.998664
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_3
+[Study] (45/150) nsgaii | numpy | zdt2 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7259.01 ms | Eval/s: 1653.1
+Objective 1 spread: 0.997527
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_4
+[Study] (46/150) nsgaii | numpy | zdt2 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7220.21 ms | Eval/s: 1662.0
+Objective 1 spread: 0.999334
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_5
+[Study] (47/150) nsgaii | numpy | zdt2 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7199.10 ms | Eval/s: 1666.9
+Objective 1 spread: 0.999573
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_6
+[Study] (48/150) nsgaii | numpy | zdt2 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7226.44 ms | Eval/s: 1660.6
+Objective 1 spread: 0.995796
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_7
+[Study] (49/150) nsgaii | numpy | zdt2 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7215.99 ms | Eval/s: 1663.0
+Objective 1 spread: 0.520190
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_8
+[Study] (50/150) nsgaii | numpy | zdt2 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7119.49 ms | Eval/s: 1685.5
+Objective 1 spread: 0.999405
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT2/nsgaii/numpy/seed_9
+[Study] (51/150) nsgaii | numpy | zdt2 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7186.69 ms | Eval/s: 1669.8
+Objective 1 spread: 0.766246
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_0
+[Study] (52/150) nsgaii | numpy | zdt2 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7145.95 ms | Eval/s: 1679.3
+Objective 1 spread: 0.997056
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_1
+[Study] (53/150) nsgaii | numpy | zdt2 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7224.94 ms | Eval/s: 1660.9
+Objective 1 spread: 0.908815
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_2
+[Study] (54/150) nsgaii | numpy | zdt2 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7203.63 ms | Eval/s: 1665.8
+Objective 1 spread: 0.997273
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_3
+[Study] (55/150) nsgaii | numpy | zdt2 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7275.76 ms | Eval/s: 1649.3
+Objective 1 spread: 0.997982
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_4
+[Study] (56/150) nsgaii | numpy | zdt2 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7332.97 ms | Eval/s: 1636.4
+Objective 1 spread: 0.707062
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_5
+[Study] (57/150) nsgaii | numpy | zdt2 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7252.84 ms | Eval/s: 1654.5
+Objective 1 spread: 0.998989
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_6
+[Study] (58/150) nsgaii | numpy | zdt2 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7243.28 ms | Eval/s: 1656.7
+Objective 1 spread: 0.999684
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_7
+[Study] (59/150) nsgaii | numpy | zdt2 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7256.70 ms | Eval/s: 1653.6
+Objective 1 spread: 0.998340
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_8
+[Study] (60/150) nsgaii | numpy | zdt2 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT2
+Description: ZDT variant with a concave Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7239.41 ms | Eval/s: 1657.6
+Objective 1 spread: 0.996873
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT2/nsgaii/numpy/seed_9
+[Study] (61/150) nsgaii | numpy | zdt3 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7048.17 ms | Eval/s: 1702.6
+Objective 1 spread: 0.850947
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_0
+[Study] (62/150) nsgaii | numpy | zdt3 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7064.88 ms | Eval/s: 1698.5
+Objective 1 spread: 0.850821
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_1
+[Study] (63/150) nsgaii | numpy | zdt3 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7078.89 ms | Eval/s: 1695.2
+Objective 1 spread: 0.852466
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_2
+[Study] (64/150) nsgaii | numpy | zdt3 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7077.38 ms | Eval/s: 1695.5
+Objective 1 spread: 0.851952
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_3
+[Study] (65/150) nsgaii | numpy | zdt3 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7144.58 ms | Eval/s: 1679.6
+Objective 1 spread: 0.851626
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_4
+[Study] (66/150) nsgaii | numpy | zdt3 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7172.99 ms | Eval/s: 1672.9
+Objective 1 spread: 0.851135
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_5
+[Study] (67/150) nsgaii | numpy | zdt3 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7151.68 ms | Eval/s: 1677.9
+Objective 1 spread: 0.851927
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_6
+[Study] (68/150) nsgaii | numpy | zdt3 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7169.73 ms | Eval/s: 1673.7
+Objective 1 spread: 0.853137
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_7
+[Study] (69/150) nsgaii | numpy | zdt3 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7100.80 ms | Eval/s: 1690.0
+Objective 1 spread: 0.851283
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_8
+[Study] (70/150) nsgaii | numpy | zdt3 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7127.64 ms | Eval/s: 1683.6
+Objective 1 spread: 0.850115
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT3/nsgaii/numpy/seed_9
+[Study] (71/150) nsgaii | numpy | zdt3 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7229.89 ms | Eval/s: 1659.8
+Objective 1 spread: 0.850947
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_0
+[Study] (72/150) nsgaii | numpy | zdt3 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7192.88 ms | Eval/s: 1668.3
+Objective 1 spread: 0.850821
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_1
+[Study] (73/150) nsgaii | numpy | zdt3 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7306.18 ms | Eval/s: 1642.4
+Objective 1 spread: 0.852466
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_2
+[Study] (74/150) nsgaii | numpy | zdt3 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7292.58 ms | Eval/s: 1645.5
+Objective 1 spread: 0.851952
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_3
+[Study] (75/150) nsgaii | numpy | zdt3 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7292.02 ms | Eval/s: 1645.6
+Objective 1 spread: 0.851626
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_4
+[Study] (76/150) nsgaii | numpy | zdt3 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7362.53 ms | Eval/s: 1629.9
+Objective 1 spread: 0.851135
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_5
+[Study] (77/150) nsgaii | numpy | zdt3 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7417.72 ms | Eval/s: 1617.7
+Objective 1 spread: 0.851927
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_6
+[Study] (78/150) nsgaii | numpy | zdt3 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7383.12 ms | Eval/s: 1625.3
+Objective 1 spread: 0.853137
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_7
+[Study] (79/150) nsgaii | numpy | zdt3 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7459.20 ms | Eval/s: 1608.8
+Objective 1 spread: 0.851283
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_8
+[Study] (80/150) nsgaii | numpy | zdt3 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7395.26 ms | Eval/s: 1622.7
+Objective 1 spread: 0.850115
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT3/nsgaii/numpy/seed_9
+[Study] (81/150) nsgaii | numpy | zdt3 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7509.49 ms | Eval/s: 1598.0
+Objective 1 spread: 0.852401
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_0
+[Study] (82/150) nsgaii | numpy | zdt3 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7529.46 ms | Eval/s: 1593.7
+Objective 1 spread: 0.850573
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_1
+[Study] (83/150) nsgaii | numpy | zdt3 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7575.12 ms | Eval/s: 1584.1
+Objective 1 spread: 0.849338
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_2
+[Study] (84/150) nsgaii | numpy | zdt3 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7567.72 ms | Eval/s: 1585.7
+Objective 1 spread: 0.651784
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_3
+[Study] (85/150) nsgaii | numpy | zdt3 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7609.44 ms | Eval/s: 1577.0
+Objective 1 spread: 0.850336
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_4
+[Study] (86/150) nsgaii | numpy | zdt3 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7569.46 ms | Eval/s: 1585.3
+Objective 1 spread: 0.850589
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_5
+[Study] (87/150) nsgaii | numpy | zdt3 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7575.03 ms | Eval/s: 1584.2
+Objective 1 spread: 0.853137
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_6
+[Study] (88/150) nsgaii | numpy | zdt3 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7500.75 ms | Eval/s: 1599.8
+Objective 1 spread: 0.851783
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_7
+[Study] (89/150) nsgaii | numpy | zdt3 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7503.51 ms | Eval/s: 1599.3
+Objective 1 spread: 0.850826
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_8
+[Study] (90/150) nsgaii | numpy | zdt3 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT3
+Description: ZDT benchmark with a disconnected Pareto front.
+Decision variables: 30
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 12000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 7536.19 ms | Eval/s: 1592.3
+Objective 1 spread: 0.852846
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT3/nsgaii/numpy/seed_9
+[Study] (91/150) nsgaii | numpy | zdt4 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9909.64 ms | Eval/s: 1614.6
+Objective 1 spread: 0.999218
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_0
+[Study] (92/150) nsgaii | numpy | zdt4 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9820.54 ms | Eval/s: 1629.2
+Objective 1 spread: 0.965991
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_1
+[Study] (93/150) nsgaii | numpy | zdt4 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9949.76 ms | Eval/s: 1608.1
+Objective 1 spread: 0.639703
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_2
+[Study] (94/150) nsgaii | numpy | zdt4 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9929.59 ms | Eval/s: 1611.3
+Objective 1 spread: 0.847048
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_3
+[Study] (95/150) nsgaii | numpy | zdt4 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9870.87 ms | Eval/s: 1620.9
+Objective 1 spread: 0.836673
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_4
+[Study] (96/150) nsgaii | numpy | zdt4 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9941.16 ms | Eval/s: 1609.5
+Objective 1 spread: 0.999466
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_5
+[Study] (97/150) nsgaii | numpy | zdt4 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9915.34 ms | Eval/s: 1613.7
+Objective 1 spread: 0.740974
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_6
+[Study] (98/150) nsgaii | numpy | zdt4 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9905.12 ms | Eval/s: 1615.3
+Objective 1 spread: 0.844334
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_7
+[Study] (99/150) nsgaii | numpy | zdt4 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9905.40 ms | Eval/s: 1615.3
+Objective 1 spread: 0.846309
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_8
+[Study] (100/150) nsgaii | numpy | zdt4 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9758.06 ms | Eval/s: 1639.7
+Objective 1 spread: 0.626451
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT4/nsgaii/numpy/seed_9
+[Study] (101/150) nsgaii | numpy | zdt4 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10039.04 ms | Eval/s: 1593.8
+Objective 1 spread: 0.999218
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_0
+[Study] (102/150) nsgaii | numpy | zdt4 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10215.25 ms | Eval/s: 1566.3
+Objective 1 spread: 0.965991
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_1
+[Study] (103/150) nsgaii | numpy | zdt4 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10114.09 ms | Eval/s: 1582.0
+Objective 1 spread: 0.639703
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_2
+[Study] (104/150) nsgaii | numpy | zdt4 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10172.86 ms | Eval/s: 1572.8
+Objective 1 spread: 0.847048
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_3
+[Study] (105/150) nsgaii | numpy | zdt4 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10141.98 ms | Eval/s: 1577.6
+Objective 1 spread: 0.836673
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_4
+[Study] (106/150) nsgaii | numpy | zdt4 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10170.27 ms | Eval/s: 1573.2
+Objective 1 spread: 0.999466
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_5
+[Study] (107/150) nsgaii | numpy | zdt4 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10271.75 ms | Eval/s: 1557.7
+Objective 1 spread: 0.740974
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_6
+[Study] (108/150) nsgaii | numpy | zdt4 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10276.80 ms | Eval/s: 1556.9
+Objective 1 spread: 0.844334
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_7
+[Study] (109/150) nsgaii | numpy | zdt4 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10177.39 ms | Eval/s: 1572.1
+Objective 1 spread: 0.846309
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_8
+[Study] (110/150) nsgaii | numpy | zdt4 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10101.39 ms | Eval/s: 1583.9
+Objective 1 spread: 0.626451
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT4/nsgaii/numpy/seed_9
+[Study] (111/150) nsgaii | numpy | zdt4 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10194.83 ms | Eval/s: 1569.4
+Objective 1 spread: 0.854900
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_0
+[Study] (112/150) nsgaii | numpy | zdt4 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10094.59 ms | Eval/s: 1585.0
+Objective 1 spread: 0.999523
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_1
+[Study] (113/150) nsgaii | numpy | zdt4 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10154.62 ms | Eval/s: 1575.6
+Objective 1 spread: 0.951639
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_2
+[Study] (114/150) nsgaii | numpy | zdt4 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10191.70 ms | Eval/s: 1569.9
+Objective 1 spread: 0.949311
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_3
+[Study] (115/150) nsgaii | numpy | zdt4 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10200.45 ms | Eval/s: 1568.6
+Objective 1 spread: 0.661707
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_4
+[Study] (116/150) nsgaii | numpy | zdt4 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10170.24 ms | Eval/s: 1573.2
+Objective 1 spread: 0.827896
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_5
+[Study] (117/150) nsgaii | numpy | zdt4 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10399.52 ms | Eval/s: 1538.5
+Objective 1 spread: 0.994331
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_6
+[Study] (118/150) nsgaii | numpy | zdt4 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10282.80 ms | Eval/s: 1556.0
+Objective 1 spread: 0.978024
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_7
+[Study] (119/150) nsgaii | numpy | zdt4 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10169.76 ms | Eval/s: 1573.3
+Objective 1 spread: 0.939151
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_8
+[Study] (120/150) nsgaii | numpy | zdt4 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT4
+Description: ZDT benchmark with multimodal landscape and mixed bounds.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10278.92 ms | Eval/s: 1556.6
+Objective 1 spread: 0.712303
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT4/nsgaii/numpy/seed_9
+[Study] (121/150) nsgaii | numpy | zdt6 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9819.58 ms | Eval/s: 1629.4
+Objective 1 spread: 0.719225
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_0
+[Study] (122/150) nsgaii | numpy | zdt6 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9976.28 ms | Eval/s: 1603.8
+Objective 1 spread: 0.719070
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_1
+[Study] (123/150) nsgaii | numpy | zdt6 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9923.63 ms | Eval/s: 1612.3
+Objective 1 spread: 0.719224
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_2
+[Study] (124/150) nsgaii | numpy | zdt6 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10020.21 ms | Eval/s: 1596.8
+Objective 1 spread: 0.719166
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_3
+[Study] (125/150) nsgaii | numpy | zdt6 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9983.43 ms | Eval/s: 1602.7
+Objective 1 spread: 0.719225
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_4
+[Study] (126/150) nsgaii | numpy | zdt6 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9887.83 ms | Eval/s: 1618.2
+Objective 1 spread: 0.719208
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_5
+[Study] (127/150) nsgaii | numpy | zdt6 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10031.15 ms | Eval/s: 1595.0
+Objective 1 spread: 0.719223
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_6
+[Study] (128/150) nsgaii | numpy | zdt6 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10001.06 ms | Eval/s: 1599.8
+Objective 1 spread: 0.719225
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_7
+[Study] (129/150) nsgaii | numpy | zdt6 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9951.67 ms | Eval/s: 1607.8
+Objective 1 spread: 0.719224
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_8
+[Study] (130/150) nsgaii | numpy | zdt6 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 9944.25 ms | Eval/s: 1609.0
+Objective 1 spread: 0.719222
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_off/ZDT6/nsgaii/numpy/seed_9
+[Study] (131/150) nsgaii | numpy | zdt6 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10130.99 ms | Eval/s: 1579.3
+Objective 1 spread: 0.719225
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_0
+[Study] (132/150) nsgaii | numpy | zdt6 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10107.90 ms | Eval/s: 1582.9
+Objective 1 spread: 0.719070
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_1
+[Study] (133/150) nsgaii | numpy | zdt6 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10080.76 ms | Eval/s: 1587.2
+Objective 1 spread: 0.719224
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_2
+[Study] (134/150) nsgaii | numpy | zdt6 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10102.17 ms | Eval/s: 1583.8
+Objective 1 spread: 0.719166
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_3
+[Study] (135/150) nsgaii | numpy | zdt6 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10244.00 ms | Eval/s: 1561.9
+Objective 1 spread: 0.719225
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_4
+[Study] (136/150) nsgaii | numpy | zdt6 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10167.22 ms | Eval/s: 1573.7
+Objective 1 spread: 0.719208
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_5
+[Study] (137/150) nsgaii | numpy | zdt6 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10141.27 ms | Eval/s: 1577.7
+Objective 1 spread: 0.719223
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_6
+[Study] (138/150) nsgaii | numpy | zdt6 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10060.09 ms | Eval/s: 1590.4
+Objective 1 spread: 0.719225
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_7
+[Study] (139/150) nsgaii | numpy | zdt6 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10061.13 ms | Eval/s: 1590.3
+Objective 1 spread: 0.719224
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_8
+[Study] (140/150) nsgaii | numpy | zdt6 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10088.22 ms | Eval/s: 1586.0
+Objective 1 spread: 0.719222
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_passive/ZDT6/nsgaii/numpy/seed_9
+[Study] (141/150) nsgaii | numpy | zdt6 | seed=0
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10205.21 ms | Eval/s: 1567.8
+Objective 1 spread: 0.719225
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_0
+[Study] (142/150) nsgaii | numpy | zdt6 | seed=1
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10218.41 ms | Eval/s: 1565.8
+Objective 1 spread: 0.719192
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_1
+[Study] (143/150) nsgaii | numpy | zdt6 | seed=2
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10086.20 ms | Eval/s: 1586.3
+Objective 1 spread: 0.719012
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_2
+[Study] (144/150) nsgaii | numpy | zdt6 | seed=3
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10069.45 ms | Eval/s: 1589.0
+Objective 1 spread: 0.719205
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_3
+[Study] (145/150) nsgaii | numpy | zdt6 | seed=4
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10209.73 ms | Eval/s: 1567.1
+Objective 1 spread: 0.719201
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_4
+[Study] (146/150) nsgaii | numpy | zdt6 | seed=5
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10319.44 ms | Eval/s: 1550.5
+Objective 1 spread: 0.719223
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_5
+[Study] (147/150) nsgaii | numpy | zdt6 | seed=6
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10387.52 ms | Eval/s: 1540.3
+Objective 1 spread: 0.718899
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_6
+[Study] (148/150) nsgaii | numpy | zdt6 | seed=7
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10214.20 ms | Eval/s: 1566.4
+Objective 1 spread: 0.719225
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_7
+[Study] (149/150) nsgaii | numpy | zdt6 | seed=8
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10386.87 ms | Eval/s: 1540.4
+Objective 1 spread: 0.719170
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_8
+[Study] (150/150) nsgaii | numpy | zdt6 | seed=9
+================================================================================
+VAMOS Experiment Runner
+================================================================================
+Problem: ZDT6
+Description: ZDT benchmark with non-uniform density over the Pareto set.
+Decision variables: 10
+Objectives: 2
+Encoding: real
+Algorithm: NSGAII
+Backend: numpy
+Population size: 80
+Offspring population size: 80
+Max evaluations: 16000
+--------------------------------------------------------------------------------
+nsgaii -> Time: 10375.84 ms | Eval/s: 1542.0
+Objective 1 spread: 0.718976
+Results stored in: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT/nsgaii_archive_hybrid/ZDT6/nsgaii/numpy/seed_9
+[Persister] CSV exported to /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/metrics.csv
+[Benchmark] Suite 'NSGAII_archive_family_ZDT' completed.
+[Benchmark] Summary CSV: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/metrics.csv
+[Benchmark] Tidy metrics: /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/metrics_tidy.csv
+[Benchmark] LaTeX tables in /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/tables
+[Benchmark] Plots in /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/plots
+[Benchmark] Lab outputs in /home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/lab
