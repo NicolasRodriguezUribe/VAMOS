@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from .bridge_space_parts_discrete import external_archive_part
 from .config_space import AlgorithmConfigSpace, SpacePart, compose_config_space
-from .param_space import Categorical, Int, ParamType, Real
+from .param_space import Categorical, ConditionalBlock, Int, ParamType, Real
 
 # ---------------------------------------------------------------------------
 # SMPSO has a single encoding; no core/operator split needed.
@@ -42,11 +42,26 @@ def _smpso_mixed_part() -> SpacePart:
         Real("c1", 0.5, 2.5, role="operator_rate"),
         Real("c2", 0.5, 2.5, role="operator_rate"),
         Real("vmax_fraction", 0.1, 1.0, role="operator_rate"),
-        Categorical("mutation", ["mixed", "gaussian"], role="operator"),
+        Categorical("mutation", ["mixed"], role="operator"),
         Real("mutation_prob", 0.01, 0.5, role="operator_rate"),
+        Categorical("perm_mutation", ["swap", "insert", "scramble", "inversion", "displacement", "two_opt"], role="operator"),
+        Real("perm_mutation_prob", 0.01, 0.5, role="operator_rate"),
+        Categorical("real_mutation", ["gaussian", "uniform_reset", "polynomial"], role="operator"),
+        Real("real_mutation_prob", 0.01, 0.5, role="operator_rate"),
+        Categorical("int_mutation", ["reset", "creep", "polynomial"], role="operator"),
+        Real("int_mutation_prob", 0.01, 0.5, role="operator_rate"),
+        Categorical("cat_mutation", ["reset"], role="operator"),
+        Real("cat_mutation_prob", 0.01, 0.5, role="operator_rate"),
         *ext_params,
     ]
-    return params, ext_conds, ext_conditions
+    conditionals = [
+        *ext_conds,
+        ConditionalBlock("real_mutation", "gaussian", [Real("real_mutation_sigma_factor", 0.01, 0.5, role="operator_rate")]),
+        ConditionalBlock("real_mutation", "polynomial", [Real("real_mutation_eta", 5.0, 40.0, role="operator_rate")]),
+        ConditionalBlock("int_mutation", "creep", [Int("int_mutation_step", 1, 5, role="operator_rate")]),
+        ConditionalBlock("int_mutation", "polynomial", [Real("int_mutation_eta", 5.0, 40.0, role="operator_rate")]),
+    ]
+    return params, conditionals, ext_conditions
 
 
 # ---------------------------------------------------------------------------
