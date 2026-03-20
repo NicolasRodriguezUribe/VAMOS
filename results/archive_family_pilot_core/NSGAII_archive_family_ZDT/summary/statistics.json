@@ -1,0 +1,20 @@
+{
+  "hv": {
+    "friedman": {
+      "statistic": 0.4000000000000057,
+      "p_value": 0.8187307530779795
+    }
+  },
+  "igd_plus": {
+    "friedman": {
+      "statistic": 0.4000000000000057,
+      "p_value": 0.8187307530779795
+    }
+  },
+  "archive_subset_hv": {
+    "friedman": null
+  },
+  "archive_subset_igd_plus": {
+    "friedman": null
+  }
+}

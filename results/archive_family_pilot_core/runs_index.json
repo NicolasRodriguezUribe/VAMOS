@@ -1,0 +1,42 @@
+[
+  {
+    "campaign": "archive_family_pilot_core",
+    "suite": "NSGAII_archive_family_ZDT",
+    "output_dir": "results/archive_family_pilot_core/NSGAII_archive_family_ZDT",
+    "benchmark_config": "experiments/configs/nsgaii_archive_family_pilot_core.yaml",
+    "log": "results/archive_family_pilot_core/logs/NSGAII_archive_family_ZDT.log",
+    "returncode": 0
+  },
+  {
+    "campaign": "archive_family_pilot_core",
+    "suite": "NSGAII_archive_family_DTLZ",
+    "output_dir": "results/archive_family_pilot_core/NSGAII_archive_family_DTLZ",
+    "benchmark_config": "experiments/configs/nsgaii_archive_family_pilot_core.yaml",
+    "log": "results/archive_family_pilot_core/logs/NSGAII_archive_family_DTLZ.log",
+    "returncode": 0
+  },
+  {
+    "campaign": "archive_family_pilot_core",
+    "suite": "NSGAII_archive_family_WFG",
+    "output_dir": "results/archive_family_pilot_core/NSGAII_archive_family_WFG",
+    "benchmark_config": "experiments/configs/nsgaii_archive_family_pilot_core.yaml",
+    "log": "results/archive_family_pilot_core/logs/NSGAII_archive_family_WFG.log",
+    "returncode": 0
+  },
+  {
+    "campaign": "archive_family_pilot_core",
+    "suite": "NSGAII_archive_family_ZCAT",
+    "output_dir": "results/archive_family_pilot_core/NSGAII_archive_family_ZCAT",
+    "benchmark_config": "experiments/configs/nsgaii_archive_family_pilot_core.yaml",
+    "log": "results/archive_family_pilot_core/logs/NSGAII_archive_family_ZCAT.log",
+    "returncode": 0
+  },
+  {
+    "campaign": "archive_family_pilot_core",
+    "suite": "__pilot_report__",
+    "output_dir": "results/archive_family_pilot_core/pilot_summary",
+    "benchmark_config": "",
+    "log": "results/archive_family_pilot_core/logs/pilot_report.log",
+    "returncode": 0
+  }
+]

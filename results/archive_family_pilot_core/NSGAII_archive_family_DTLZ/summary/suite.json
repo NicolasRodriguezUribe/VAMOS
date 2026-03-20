@@ -1,0 +1,219 @@
+{
+  "suite": "NSGAII_archive_family_DTLZ",
+  "description": "NSGA-II archive-family comparison on DTLZ benchmarks at 2, 3, and 5 objectives.",
+  "algorithms": [
+    "nsgaii_archive_off",
+    "nsgaii_archive_passive",
+    "nsgaii_archive_hybrid"
+  ],
+  "metrics": [
+    "hv",
+    "igd_plus",
+    "archive_subset_hv",
+    "archive_subset_igd_plus"
+  ],
+  "config_overrides": {
+    "engine": "numpy",
+    "population_size": 80,
+    "offspring_population_size": 80,
+    "eval_strategy": "multiprocessing",
+    "n_workers": -1,
+    "output_root": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_DTLZ/raw_runs/NSGAII_archive_family_DTLZ"
+  },
+  "experiments": [
+    {
+      "problem": "dtlz1",
+      "params": {
+        "n_var": 6,
+        "n_obj": 2
+      },
+      "evaluation_budget": 18000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "dtlz2",
+      "params": {
+        "n_var": 11,
+        "n_obj": 2
+      },
+      "evaluation_budget": 16000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "dtlz7",
+      "params": {
+        "n_var": 21,
+        "n_obj": 2
+      },
+      "evaluation_budget": 18000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "dtlz1",
+      "params": {
+        "n_var": 7,
+        "n_obj": 3
+      },
+      "evaluation_budget": 22000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "dtlz2",
+      "params": {
+        "n_var": 12,
+        "n_obj": 3
+      },
+      "evaluation_budget": 20000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "dtlz7",
+      "params": {
+        "n_var": 22,
+        "n_obj": 3
+      },
+      "evaluation_budget": 22000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "dtlz1",
+      "params": {
+        "n_var": 9,
+        "n_obj": 5
+      },
+      "evaluation_budget": 30000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "dtlz2",
+      "params": {
+        "n_var": 14,
+        "n_obj": 5
+      },
+      "evaluation_budget": 26000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "dtlz7",
+      "params": {
+        "n_var": 24,
+        "n_obj": 5
+      },
+      "evaluation_budget": 30000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  ],
+  "archive_family_artifacts": {
+    "runs": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_DTLZ/summary/archive_family_runs.csv",
+    "means": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_DTLZ/summary/archive_family_means.csv",
+    "summary": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_DTLZ/summary/archive_family_summary.json"
+  }
+}

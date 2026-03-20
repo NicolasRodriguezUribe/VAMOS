@@ -1,0 +1,130 @@
+{
+  "suite": "NSGAII_archive_family_ZDT",
+  "description": "NSGA-II archive-family comparison on ZDT benchmarks (2 objectives).",
+  "algorithms": [
+    "nsgaii_archive_off",
+    "nsgaii_archive_passive",
+    "nsgaii_archive_hybrid"
+  ],
+  "metrics": [
+    "hv",
+    "igd_plus",
+    "archive_subset_hv",
+    "archive_subset_igd_plus"
+  ],
+  "config_overrides": {
+    "engine": "numpy",
+    "population_size": 80,
+    "offspring_population_size": 80,
+    "eval_strategy": "multiprocessing",
+    "n_workers": -1,
+    "output_root": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/raw_runs/NSGAII_archive_family_ZDT"
+  },
+  "experiments": [
+    {
+      "problem": "zdt1",
+      "params": {
+        "n_var": 30
+      },
+      "evaluation_budget": 12000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "zdt2",
+      "params": {
+        "n_var": 30
+      },
+      "evaluation_budget": 12000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "zdt3",
+      "params": {
+        "n_var": 30
+      },
+      "evaluation_budget": 12000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "zdt4",
+      "params": {
+        "n_var": 10
+      },
+      "evaluation_budget": 16000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "problem": "zdt6",
+      "params": {
+        "n_var": 10
+      },
+      "evaluation_budget": 16000,
+      "max_generations": null,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  ],
+  "archive_family_artifacts": {
+    "runs": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/archive_family_runs.csv",
+    "means": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/archive_family_means.csv",
+    "summary": "/home/nico/Documents/GitHub/VAMOS/results/archive_family_pilot_core/NSGAII_archive_family_ZDT/summary/archive_family_summary.json"
+  }
+}

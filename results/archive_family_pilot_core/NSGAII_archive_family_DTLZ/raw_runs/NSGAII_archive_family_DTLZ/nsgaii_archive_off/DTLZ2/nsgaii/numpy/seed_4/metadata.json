@@ -1,0 +1,123 @@
+{
+  "algorithm": "nsgaii",
+  "archive_diagnostics": {
+    "archive_mode": "off",
+    "archive_present": false,
+    "archive_size": 0,
+    "archive_subset_selector": null,
+    "archive_subset_size": 0,
+    "execution_mode": "standard",
+    "hybrid_archive_reference_generations": 0,
+    "hybrid_fallback_reason": null,
+    "hybrid_generations": 0,
+    "hybrid_local_only_generations": 0,
+    "hybrid_no_split_generations": 0,
+    "hybrid_split_front_mode": "inactive",
+    "hybrid_split_front_reason": null,
+    "hybrid_status": "inactive",
+    "survival_path": "standard"
+  },
+  "artifacts": {
+    "fun": "FUN.csv",
+    "time_ms": "time.txt",
+    "x": "X.csv"
+  },
+  "backend": "numpy",
+  "backend_info": {
+    "capabilities": [
+      "cpu"
+    ],
+    "device": "cpu",
+    "name": "NumPyKernel"
+  },
+  "config": {
+    "adaptive_operator_selection": null,
+    "archive_hybrid_alpha": 0.5,
+    "archive_hybrid_k": 3,
+    "archive_hybrid_normalization": "minmax_archive_split",
+    "archive_mode": "off",
+    "archive_subset_size": null,
+    "constraint_mode": "feasibility",
+    "crossover": [
+      "sbx",
+      {
+        "eta": 20.0,
+        "prob": 1.0
+      }
+    ],
+    "external_archive": null,
+    "generation_callback": null,
+    "generation_callback_copy": true,
+    "immigration": null,
+    "initializer": null,
+    "live_callback_mode": "nd_only",
+    "mutation": [
+      "polynomial",
+      {
+        "eta": 20.0,
+        "prob": "1/n"
+      }
+    ],
+    "mutation_prob_factor": null,
+    "offspring_size": 80,
+    "parent_selection_filter": null,
+    "pop_size": 80,
+    "repair": [
+      "clip",
+      {}
+    ],
+    "replacement_size": null,
+    "result_mode": "population",
+    "selection": [
+      "tournament",
+      {
+        "size": 2
+      }
+    ],
+    "steady_state": false,
+    "track_genealogy": false
+  },
+  "config_source": null,
+  "git_revision": "e81062120500b1a7149c5bf95af1124a53538b54",
+  "max_evaluations": 26000,
+  "metrics": {
+    "evals_per_sec": 1262.2253954836383,
+    "evaluations": 26000,
+    "spread": 2.066963308602182,
+    "termination": "max_evaluations",
+    "time_ms": 20598.539763999725
+  },
+  "operators": {
+    "crossover": {
+      "name": "sbx",
+      "params": {
+        "eta": 20.0,
+        "prob": 1.0
+      }
+    },
+    "mutation": {
+      "name": "polynomial",
+      "params": {
+        "eta": 20.0,
+        "prob": "1/n"
+      }
+    },
+    "repair": {
+      "name": "clip",
+      "params": {}
+    }
+  },
+  "population_size": 80,
+  "problem": {
+    "description": "DTLZ2 with configurable objectives (defaults to 3).",
+    "encoding": "real",
+    "key": "dtlz2",
+    "label": "DTLZ2",
+    "n_obj": 5,
+    "n_var": 14
+  },
+  "seed": 4,
+  "timestamp": "2026-03-19T18:11:31.688362+00:00",
+  "title": "VAMOS Experiment Runner",
+  "vamos_version": "0.1.0"
+}

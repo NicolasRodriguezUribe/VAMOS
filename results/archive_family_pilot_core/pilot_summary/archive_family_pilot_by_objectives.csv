@@ -1,0 +1,13 @@
+n_obj,scope,comparison,regimes,metrics,mean_signed_effect,median_signed_effect,mean_signed_delta,positive_regimes,negative_regimes
+2,archive_subset,hybrid_vs_passive,8,"archive_subset_hv,archive_subset_igd_plus",-0.0015803320018329952,-0.00047817640833540767,-0.004202001803662689,2,6
+2,final_population,hybrid_vs_off,8,"hv,indicator_igd_plus",-0.008403182616121663,-0.004655656954823753,-0.011757360505140268,2,6
+2,final_population,hybrid_vs_passive,8,"hv,indicator_igd_plus",-0.008403182616121663,-0.004655656954823753,-0.011757360505140268,2,6
+2,final_population,passive_vs_off,8,"hv,indicator_igd_plus",0.0,0.0,0.0,0,0
+3,archive_subset,hybrid_vs_passive,6,"archive_subset_hv,archive_subset_igd_plus",-0.006121310302607181,-0.003381225386627368,-0.44474140581155447,1,5
+3,final_population,hybrid_vs_off,6,"hv,indicator_igd_plus",-0.07192122322263915,-0.03846050713120127,-2.4825807402321947,0,6
+3,final_population,hybrid_vs_passive,6,"hv,indicator_igd_plus",-0.07192122322263915,-0.03846050713120127,-2.4825807402321947,0,6
+3,final_population,passive_vs_off,6,"hv,indicator_igd_plus",0.0,0.0,0.0,0,0
+5,archive_subset,hybrid_vs_passive,6,"archive_subset_hv,archive_subset_igd_plus",-0.12279652643410761,-0.09313534061721518,-982541644.6082984,0,6
+5,final_population,hybrid_vs_off,6,"hv,indicator_igd_plus",-0.30177411619965705,-0.29057444232641233,-3919247429.7827115,0,6
+5,final_population,hybrid_vs_passive,6,"hv,indicator_igd_plus",-0.30177411619965705,-0.29057444232641233,-3919247429.7827115,0,6
+5,final_population,passive_vs_off,6,"hv,indicator_igd_plus",0.0,0.0,0.0,0,0
