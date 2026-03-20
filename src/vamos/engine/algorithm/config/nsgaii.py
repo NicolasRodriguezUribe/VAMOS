@@ -120,13 +120,6 @@ class _NSGAIIConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def adaptive_operator_selection(self, config: dict[str, Any] | None) -> _NSGAIIConfigBuilder:
-        if config is None:
-            self._cfg["adaptive_operator_selection"] = None
-        else:
-            self._cfg["adaptive_operator_selection"] = dict(config)
-        return self
-
     def immigration(self, config: dict[str, Any] | None) -> _NSGAIIConfigBuilder:
         if config is None:
             self._cfg["immigration"] = None
@@ -175,7 +168,6 @@ class _NSGAIIConfigBuilder:
             result_mode=self._cfg.get("result_mode", "non_dominated"),
             constraint_mode=self._cfg.get("constraint_mode", "feasibility"),
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
-            adaptive_operator_selection=self._cfg.get("adaptive_operator_selection"),
             immigration=self._cfg.get("immigration"),
             parent_selection_filter=self._cfg.get("parent_selection_filter"),
             live_callback_mode=self._cfg.get("live_callback_mode", "nd_only"),
@@ -200,7 +192,6 @@ class NSGAIIConfig(_SerializableConfig):
     result_mode: ResultMode | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
     track_genealogy: bool = False
-    adaptive_operator_selection: dict[str, Any] | None = None
     immigration: dict[str, Any] | None = None
     parent_selection_filter: Any | None = None
     live_callback_mode: LiveCallbackMode = "nd_only"

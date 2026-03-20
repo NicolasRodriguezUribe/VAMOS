@@ -11,11 +11,6 @@ base_config:
 variants:
   - name: baseline
     label: Baseline
-  - name: aos
-    label: AOS
-    nsgaii_variation:
-      adaptive_operator_selection:
-        enabled: true
   - name: tuned
     label: Tuned
     config_overrides:

@@ -32,7 +32,6 @@ class VariationOverrides(TypedDict, total=False):
     selection: OperatorSpecInput
     repair: RepairSpecInput
     aggregation: OperatorSpecInput
-    adaptive_operator_selection: Mapping[str, object]
     weight_vectors: Mapping[str, object] | str
     use_numba_variation: bool
     archive_size: int

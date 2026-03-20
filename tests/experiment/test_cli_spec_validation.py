@@ -59,12 +59,6 @@ def test_validate_experiment_spec_rejects_non_mapping_defaults() -> None:
         validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
 
 
-def test_validate_experiment_spec_rejects_invalid_aos_block() -> None:
-    spec = {"version": "1", "defaults": {"nsgaii": {"adaptive_operator_selection": []}}}
-    with pytest.raises(ValueError, match="adaptive_operator_selection"):
-        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
-
-
 def test_validate_experiment_spec_accepts_simplified_archive_bounded_block() -> None:
     spec = {
         "version": "1",

@@ -194,7 +194,7 @@ def initialize_run(
     mut_params = prepare_mutation_params(mut_params, encoding, n_var, prob_factor=mut_factor)
 
     variation_workspace = VariationWorkspace()
-    operator_pool, aos_controller = build_operator_pool(
+    operator_pool = build_operator_pool(
         algo.cfg,
         encoding,
         cross_method,
@@ -253,7 +253,6 @@ def initialize_run(
         track_genealogy=track_genealogy,
         genealogy_tracker=genealogy_tracker,
         ids=ids,
-        aos_controller=aos_controller,
         fronts=fronts,
         ranks=ranks,
         crowding=crowding,

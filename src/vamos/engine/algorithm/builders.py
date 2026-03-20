@@ -84,12 +84,6 @@ def build_nsgaii_algorithm(
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
-    if "adaptive_operator_selection" in var_cfg:
-        aos_cfg = var_cfg["adaptive_operator_selection"]
-        if not isinstance(aos_cfg, Mapping):
-            raise ValueError("adaptive_operator_selection must be a mapping.")
-        builder.adaptive_operator_selection(dict(aos_cfg))
-
     if external_archive is not None:
         builder.external_archive(**asdict(external_archive))
     if track_genealogy:

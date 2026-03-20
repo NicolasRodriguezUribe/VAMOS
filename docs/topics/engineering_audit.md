@@ -68,7 +68,7 @@ Top 20 largest Python files under `src/vamos/` by non-blank LOC (static scan):
 | `src/vamos/engine/algorithm/smsemoa/smsemoa.py` | 322 | SMS-EMOA algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/smpso/smpso.py` | 311 | SMPSO algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/experiment/studio/app.py` | 310 | Streamlit UI, data loading, MCDM, focused runs, plots | High: UI + analysis + execution mixed |
-| `src/vamos/engine/algorithm/nsgaii/nsgaii.py` | 307 | NSGA-II algorithm loop, AOS integration | Medium: large but cohesive |
+| `src/vamos/engine/algorithm/nsgaii/nsgaii.py` | 307 | NSGA-II algorithm loop | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/ibea/ibea.py` | 298 | IBEA algorithm loop and helpers | Medium: large but cohesive |
 | `src/vamos/engine/algorithm/nsgaiii/helpers.py` | 291 | NSGA-III helper routines | Low/Medium: helper module scale |
 | `src/vamos/engine/algorithm/nsgaii/state.py` | 291 | NSGA-II state, result building, genealogy/archives | Medium: algorithm + instrumentation coupling |

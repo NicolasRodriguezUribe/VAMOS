@@ -26,13 +26,6 @@ Algorithms (internal)
   - `result_mode` accepts `non_dominated` (default) or `population`.
   - External archive configuration (`.external_archive(...)`) becomes the default result source unless you explicitly set `result_mode="population"`.
 
-Enable AOS
-----------
-
-Adaptive Operator Selection (AOS) is an opt-in layer for NSGA-II. See
-`docs/paper/aos-method.md` for the contract and
-`examples/configs/nsgaii_aos_min.yml` for a runnable example.
-
 Optional baselines (install extras)
 -----------------------------------
 
