@@ -5,7 +5,7 @@ Demonstrates every configurable option available on NSGAIIConfig.builder():
   pop_size, offspring_size, crossover, mutation, selection, initializer,
   repair, external_archive, constraint_mode, result_mode, mutation_prob_factor,
   track_genealogy, live_callback_mode, generation_callback,
-  adaptive_operator_selection, immigration, and parent_selection_filter.
+  immigration, and parent_selection_filter.
 
 Usage:
     python examples/advanced/full_nsgaii_config.py
@@ -56,7 +56,6 @@ def main() -> None:
         .live_callback_mode("nd_only")  # Send only non-dominated to callbacks
         .generation_callback(_generation_logger, copy_arrays=True)
         # ── Advanced (optional) ──────────────────────────────────────
-        .adaptive_operator_selection(None)  # No AOS (set dict to enable)
         .immigration(None)  # No immigration (set dict to enable)
         .parent_selection_filter(None)  # No parent filter (set callable to enable)
         .build()

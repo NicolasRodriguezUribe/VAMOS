@@ -141,10 +141,6 @@ def _validate_algorithm_block(block: SpecBlock, *, config_cls: type, path: str) 
             continue
         _validate_operator_spec(spec, path=f"{path}.{op_key}")
 
-    aos = block.get("adaptive_operator_selection")
-    if aos is not None and not isinstance(aos, Mapping):
-        raise ValueError(f"'{path}.adaptive_operator_selection' must be a mapping when provided.")
-
 
 def _validate_operator_spec(spec: object, *, path: str) -> None:
     if isinstance(spec, str):

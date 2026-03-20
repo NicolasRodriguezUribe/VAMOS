@@ -1,9 +1,8 @@
 # operators/policies/nsgaii.py
 """
-Operator pool building and adaptive operator selection for NSGA-II.
+Operator pool building for NSGA-II.
 
-This module handles the construction of variation pipelines and optional
-adaptive operator selection mechanisms.
+This module handles the construction of variation pipelines.
 """
 
 from __future__ import annotations
@@ -12,17 +11,6 @@ from typing import Any, cast
 
 import numpy as np
 
-from vamos.engine.adaptation.aos.config import AdaptiveOperatorSelectionConfig
-from vamos.engine.adaptation.aos.controller import AOSController
-from vamos.engine.adaptation.aos.policies import (
-    EpsGreedyPolicy,
-    EXP3Policy,
-    OperatorBanditPolicy,
-    SlidingWindowUCBPolicy,
-    ThompsonSamplingPolicy,
-    UCBPolicy,
-)
-from vamos.engine.adaptation.aos.portfolio import OperatorPortfolio
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.engine.variation import VariationPipeline, prepare_mutation_params
 from vamos.engine.variation.protocol import CrossoverName, MutationName, RepairConfigValue
@@ -43,8 +31,8 @@ def build_operator_pool(
     variation_workspace: VariationWorkspace,
     problem: ProblemProtocol,
     mut_factor: float | None,
-) -> tuple[list[VariationPipeline], AOSController | None]:
-    """Build the operator pool and optional adaptive selector.
+) -> list[VariationPipeline]:
+    """Build the operator pool.
 
     Parameters
     ----------
@@ -74,9 +62,9 @@ def build_operator_pool(
         Optional mutation probability factor.
 
     Returns:
-        (operator_pool, aos_controller)
+        operator_pool
     """
-    operator_pool = _build_variation_pipelines(
+    return _build_variation_pipelines(
         cfg,
         encoding,
         cross_method,
@@ -90,8 +78,6 @@ def build_operator_pool(
         problem,
         mut_factor,
     )
-    aos_controller = _setup_aos_controller(cfg, operator_pool)
-    return operator_pool, aos_controller
 
 
 def _build_variation_pipelines(
@@ -143,50 +129,22 @@ def _build_variation_pipelines(
         List of configured variation pipelines.
     """
     operator_pool: list[VariationPipeline] = []
-    aos_cfg = cfg.get("adaptive_operator_selection") or {}
-    op_configs = aos_cfg.get("operator_pool")
 
-    if op_configs:
-        for entry in op_configs:
-            c_method, c_params = entry.get("crossover", (cross_method, cross_params))
-            m_method, m_params = entry.get("mutation", (mut_method, mut_params))
-            m_params = prepare_mutation_params(
-                cast(dict[str, float | int | str | None], m_params),
-                encoding,
-                n_var,
-                prob_factor=mut_factor,
-            )
-            operator_pool.append(
-                _create_variation_pipeline(
-                    encoding,
-                    c_method,
-                    c_params,
-                    m_method,
-                    m_params,
-                    xl,
-                    xu,
-                    variation_workspace,
-                    cfg.get("repair", "auto"),
-                    problem,
-                )
-            )
-
-    # Default pipeline if none configured
-    if not operator_pool:
-        operator_pool.append(
-            _create_variation_pipeline(
-                encoding,
-                cross_method,
-                cross_params,
-                mut_method,
-                mut_params,
-                xl,
-                xu,
-                variation_workspace,
-                cfg.get("repair", "auto"),
-                problem,
-            )
+    # Default pipeline
+    operator_pool.append(
+        _create_variation_pipeline(
+            encoding,
+            cross_method,
+            cross_params,
+            mut_method,
+            mut_params,
+            xl,
+            xu,
+            variation_workspace,
+            cfg.get("repair", "auto"),
+            problem,
         )
+    )
 
     return operator_pool
 
@@ -245,76 +203,3 @@ def _create_variation_pipeline(
         repair_cfg=cast(RepairConfigValue, repair_cfg),
         problem=problem,
     )
-
-
-def _setup_aos_controller(
-    cfg: dict[str, Any],
-    operator_pool: list[VariationPipeline],
-) -> AOSController | None:
-    selector_cfg = cfg.get("adaptive_operator_selection")
-    aos_config = AdaptiveOperatorSelectionConfig.from_dict(selector_cfg)
-    if not aos_config.enabled or len(operator_pool) <= 1:
-        return None
-
-    policy_name = aos_config.method
-    reward_scope = aos_config.reward_scope
-    valid_scopes = {
-        "survival",
-        "survival_rate",
-        "nd",
-        "nd_insertion",
-        "nd_insertions",
-        "hv",
-        "hv_delta",
-        "hypervolume",
-        "combined",
-    }
-    if reward_scope not in valid_scopes:
-        raise ValueError(f"Unsupported reward_scope '{reward_scope}'.")
-
-    policy: OperatorBanditPolicy
-    if policy_name == "epsilon_greedy":
-        policy = EpsGreedyPolicy(
-            len(operator_pool),
-            epsilon=aos_config.epsilon,
-            rng_seed=aos_config.rng_seed,
-            min_usage=aos_config.min_usage,
-        )
-    elif policy_name == "ucb":
-        policy = UCBPolicy(
-            len(operator_pool),
-            c=aos_config.c,
-            min_usage=aos_config.min_usage,
-        )
-    elif policy_name == "exp3":
-        policy = EXP3Policy(
-            len(operator_pool),
-            gamma=aos_config.gamma,
-            rng_seed=aos_config.rng_seed,
-        )
-    elif policy_name == "thompson_sampling":
-        policy = ThompsonSamplingPolicy(
-            len(operator_pool),
-            rng_seed=aos_config.rng_seed,
-            min_usage=aos_config.min_usage,
-            window_size=aos_config.window_size,
-        )
-    elif policy_name == "sliding_ucb":
-        if aos_config.window_size <= 0:
-            raise ValueError("sliding_ucb requires window_size > 0.")
-        policy = SlidingWindowUCBPolicy(
-            len(operator_pool),
-            c=aos_config.c,
-            min_usage=aos_config.min_usage,
-            window_size=aos_config.window_size,
-        )
-    else:
-        raise ValueError(f"Unsupported AOS method '{policy_name}'.")
-
-    pairs = []
-    for idx, pipeline in enumerate(operator_pool):
-        op_name = f"{pipeline.cross_method}+{pipeline.mut_method}"
-        pairs.append((str(idx), op_name))
-    portfolio = OperatorPortfolio.from_pairs(pairs)
-
-    return AOSController(config=aos_config, portfolio=portfolio, policy=policy)

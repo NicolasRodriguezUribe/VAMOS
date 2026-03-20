@@ -14,9 +14,6 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-from vamos.foundation.quality_indicators.hypervolume import hypervolume
-from vamos.foundation.quality_indicators.pareto import pareto_filter
-
 from .helpers import (
     build_mating_pool,
     compute_crowding,
@@ -138,17 +135,6 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     if st is None:
         raise RuntimeError("ask() called before initialization.")
 
-    if st.aos_controller is not None:
-        aos_step = st.step
-        st.aos_controller.start_generation(aos_step)
-        arm = st.aos_controller.select_arm(mating_id=0, batch_size=st.offspring_size)
-        idx = st.aos_controller.portfolio.index_of(arm.op_id)
-        st.variation = st.operator_pool[idx]
-        st.aos_last_op_id = arm.op_id
-        st.aos_last_op_name = arm.name
-        st.aos_last_batch_size = st.offspring_size
-        st.aos_step = aos_step
-
     if st.incremental_enabled and st.ranks is not None and st.crowding is not None and st.G is None:
         ranks, crowding = st.ranks, st.crowding
     else:
@@ -211,10 +197,6 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
         X_off = X_off[: st.offspring_size]
     st.pending_offspring = X_off
 
-    if st.aos_controller is not None and st.aos_last_op_id is not None:
-        st.aos_last_batch_size = X_off.shape[0]
-        st.aos_controller.observe_offspring(st.aos_last_op_id, X_off.shape[0])
-
     track_offspring_genealogy(st, parent_idx, X_off.shape[0])
     return X_off
 
@@ -231,16 +213,12 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
 
     F_off = eval_result.F
     G_off = eval_result.G if st.constraint_mode != "none" else None
-    aos_controller = st.aos_controller
     assert st.hv_tracker is not None
 
     combined_X = np.vstack([st.X, X_off])
     combined_F = np.vstack([st.F, F_off])
     combined_G = np.vstack([st.G, G_off]) if st.G is not None and G_off is not None else None
     combined_ids = combine_ids(st)
-    parent_count = st.X.shape[0]
-    selected_idx = None
-    prev_F = st.F
     used_incremental = False
 
     early_reject = False
@@ -270,8 +248,6 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         new_X = st.X
         new_F = st.F
         new_G = st.G
-        if aos_controller is not None:
-            selected_idx = np.arange(parent_count, dtype=int)
         used_incremental = True
     elif use_incremental:
         if st.fronts is None or st.ranks is None or st.crowding is None:
@@ -298,20 +274,12 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         st.crowding = new_crowding
         used_incremental = True
     elif st.G is None or G_off is None or st.constraint_mode == "none":
-        if aos_controller is not None:
-            new_X, new_F, selected_idx = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size, return_indices=True)
-        else:
-            new_X, new_F = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size)
+        new_X, new_F = algo.kernel.nsga2_survival(st.X, st.F, X_off, F_off, st.pop_size)
         new_G = None
     else:
         from .helpers import feasible_nsga2_survival
 
-        if aos_controller is not None:
-            new_X, new_F, new_G, selected_idx = feasible_nsga2_survival(
-                algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size, return_indices=True
-            )
-        else:
-            new_X, new_F, new_G = feasible_nsga2_survival(algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size)
+        new_X, new_F, new_G = feasible_nsga2_survival(algo.kernel, st.X, st.F, st.G, X_off, F_off, G_off, st.pop_size)
 
     if combined_ids is not None:
         from .helpers import match_ids
@@ -326,95 +294,6 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         st.ranks = ranks
         st.crowding = crowding
         st.fronts = fronts_from_ranks(ranks)
-
-    if aos_controller is not None and selected_idx is not None and st.aos_last_op_id is not None:
-
-        def _normalized_hv(F: np.ndarray | None, ref: np.ndarray, hv_ref: float) -> float:
-            if F is None:
-                return 0.0
-            front = pareto_filter(np.asarray(F, dtype=float))
-            if front is None or front.size == 0:
-                return 0.0
-            if front.ndim != 2 or ref.ndim != 1 or front.shape[1] != ref.shape[0]:
-                return 0.0
-            front = front[np.all(front <= ref, axis=1)]
-            if front.size == 0:
-                return 0.0
-            hv = float(hypervolume(front, ref, allow_ref_expand=False))
-            return hv / hv_ref if hv_ref > 0.0 else 0.0
-
-        hv_delta_rate = 0.0
-        try:
-            reward_weights = getattr(aos_controller.config, "reward_weights", {}) or {}
-            hv_weight = float(reward_weights.get("hv_delta", 0.0))
-            reward_scope = str(getattr(aos_controller.config, "reward_scope", "combined") or "combined").lower()
-            wants_hv = hv_weight > 0.0 or reward_scope in {"hv", "hv_delta", "hypervolume"}
-            if wants_hv:
-                hv_delta_rate = 0.5
-            hv_ref_point = getattr(aos_controller.config, "hv_reference_point", None)
-            hv_ref_hv = getattr(aos_controller.config, "hv_reference_hv", None)
-            if wants_hv and hv_ref_point is not None and hv_ref_hv is not None:
-                ref = np.asarray(hv_ref_point, dtype=float)
-                hv_ref = float(hv_ref_hv)
-                hv_prev = _normalized_hv(prev_F, ref, hv_ref)
-                hv_new = _normalized_hv(new_F, ref, hv_ref)
-                denom = abs(hv_prev) if abs(hv_prev) > 1e-12 else 1e-12
-                ratio = (hv_new - hv_prev) / denom
-                hv_delta_rate = float(0.5 + 0.5 * np.tanh(ratio))
-            elif (
-                wants_hv
-                and prev_F is not None
-                and new_F is not None
-                and prev_F.ndim == 2
-                and new_F.ndim == 2
-                and prev_F.shape[1] == new_F.shape[1]
-                and prev_F.shape[1] <= 3
-                and prev_F.size > 0
-                and new_F.size > 0
-            ):
-                ref = np.maximum(np.max(prev_F, axis=0), np.max(new_F, axis=0)) + 1.0
-                hv_prev = float(algo.kernel.hypervolume(prev_F, ref))
-                hv_new = float(algo.kernel.hypervolume(new_F, ref))
-                denom = abs(hv_prev) if abs(hv_prev) > 1e-12 else 1e-12
-                ratio = (hv_new - hv_prev) / denom
-                hv_delta_rate = float(0.5 + 0.5 * np.tanh(ratio))
-        except Exception:
-            hv_delta_rate = 0.0
-
-        try:
-            ranks, _ = algo.kernel.nsga2_ranking(st.F)
-            nd_mask = ranks == ranks.min(initial=0)
-        except (ValueError, IndexError):
-            nd_mask = np.zeros(st.F.shape[0], dtype=bool)
-        is_offspring = selected_idx >= parent_count
-        n_survivors = int(np.sum(is_offspring))
-        n_nd_insertions = int(np.sum(is_offspring & nd_mask))
-        aos_controller.observe_survivors(st.aos_last_op_id, n_survivors)
-        aos_controller.observe_nd_insertions(st.aos_last_op_id, n_nd_insertions)
-
-        # Phase-detection: report population feasibility so the controller can
-        # detect the infeasible→feasible transition and reset the bandit.
-        if new_G is not None and new_G.size > 0:
-            from vamos.foundation.constraints.utils import is_feasible as _is_feasible
-
-            feas_mask = _is_feasible(new_G)
-            aos_controller.observe_feasibility_rate(int(np.sum(feas_mask)), new_G.shape[0])
-
-        trace_rows = aos_controller.finalize_generation(st.aos_step or 0, hv_delta_rate=hv_delta_rate)
-        for row in trace_rows:
-            st.aos_trace_rows.append(
-                {
-                    "step": row.step,
-                    "mating_id": row.mating_id,
-                    "op_id": row.op_id,
-                    "op_name": row.op_name,
-                    "reward": row.reward,
-                    "reward_survival": row.reward_survival,
-                    "reward_nd_insertions": row.reward_nd_insertions,
-                    "reward_hv_delta": row.reward_hv_delta,
-                    "batch_size": row.batch_size,
-                }
-            )
 
     if early_reject:
         update_archives(st, algo.kernel, X=st.X, F=st.F)

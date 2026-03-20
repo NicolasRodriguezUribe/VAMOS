@@ -60,7 +60,6 @@ nav:
     - Extending VAMOS: topics/extending.md
     - Plugin Guide: topics/plugin_guide.md
     - Engineering Audit: topics/engineering_audit.md
-    - AOS Method: paper/aos-method.md
     - Scaling with Dask: scaling/dask.md
   - Developer Guides:
     - Add a Problem: dev/add_problem.md

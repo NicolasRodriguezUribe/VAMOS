@@ -293,5 +293,4 @@ If pandas is installed, `aggregate_results` returns a DataFrame; otherwise it re
 
 *   Check out the [Cookbook](cookbook.md) for deeper recipes.
 *   Browse the [CLI Guide](cli.md) for full command reference.
-*   Read the [AOS Method](../paper/aos-method.md) to understand the adaptive operator selection.
 *   Explore [VAMOS Studio](studio.md) for interactive dashboards.

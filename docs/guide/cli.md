@@ -269,10 +269,6 @@ base_config:
   offspring_population_size: 60
 variants:
   - name: baseline
-  - name: aos
-    nsgaii_variation:
-      adaptive_operator_selection:
-        enabled: true
 summary_dir: results/ablation_demo/summary
 ```
 

@@ -7,7 +7,6 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.adaptation.aos.logging import write_aos_summary, write_aos_trace
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.core.io_utils import ensure_dir, write_metadata, write_population, write_timing
 from vamos.foundation.core.metadata import build_run_metadata
@@ -106,17 +105,6 @@ class StorageObserver(Observer):
             autodiff_path.write_text(json.dumps(autodiff_info, indent=2), encoding="utf-8")
             artifacts["autodiff_constraints"] = autodiff_path.name
 
-        aos_payload = payload.get("aos") or {}
-        trace_rows = aos_payload.get("trace_rows")
-        summary_rows = aos_payload.get("summary")
-        if trace_rows and summary_rows:
-            trace_path = self.output_dir / "aos_trace.csv"
-            summary_path = self.output_dir / "aos_summary.csv"
-            write_aos_trace(trace_path, trace_rows)
-            write_aos_summary(summary_path, summary_rows)
-            artifacts["aos_trace"] = trace_path.name
-            artifacts["aos_summary"] = summary_path.name
-
         total_time_ms = final_stats.get("time_ms", 0.0)
         write_timing(self.output_dir, total_time_ms)
 
@@ -176,8 +164,6 @@ class StorageObserver(Observer):
             "archive_g": artifacts.get("archive_g"),
             "genealogy": artifacts.get("genealogy"),
             "autodiff_constraints": artifacts.get("autodiff_constraints"),
-            "aos_trace": artifacts.get("aos_trace"),
-            "aos_summary": artifacts.get("aos_summary"),
             "time_ms": "time.txt",
         }
         hv_trace = self.output_dir / "hv_trace.csv"
@@ -224,15 +210,6 @@ class StorageObserver(Observer):
             "config_source": self.config_source,
             "problem_override": self.problem_override,
         }
-
-        # AOS config if present
-        aos_config = getattr(ctx, "aos_config", None)
-        if aos_config is None:
-            nsgaii_variation = self.variations.get("nsgaii_variation")
-            if isinstance(nsgaii_variation, dict):
-                aos_config = nsgaii_variation.get("adaptive_operator_selection")
-        if aos_config is not None:
-            resolved_cfg["adaptive_operator_selection"] = aos_config
 
         write_metadata(self.output_dir, metadata, resolved_cfg)
 

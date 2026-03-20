@@ -15,7 +15,6 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.adaptation.aos.controller import AOSController
 from vamos.engine.algorithm.components.archive import (
     CrowdingDistanceArchive,
     HypervolumeArchive,
@@ -91,14 +90,6 @@ class NSGAIIState:
     ranks: np.ndarray | None = None
     crowding: np.ndarray | None = None
     incremental_enabled: bool = False
-
-    # Adaptive operator selection (AOS)
-    aos_controller: AOSController | None = None
-    aos_trace_rows: list[dict[str, Any]] = field(default_factory=list)
-    aos_last_op_id: str | None = None
-    aos_last_op_name: str | None = None
-    aos_last_batch_size: int | None = None
-    aos_step: int | None = None
 
     # Pending offspring (from ask)
     pending_offspring: np.ndarray | None = None
@@ -183,24 +174,6 @@ def build_result(
     if archive_contents is not None:
         arch_X, arch_F = archive_contents
         result["archive"] = {"X": arch_X, "F": arch_F}
-
-    if state.aos_controller is not None:
-        summary_rows = []
-        for row in state.aos_controller.summary_rows():
-            summary_rows.append(
-                {
-                    "op_id": row.op_id,
-                    "op_name": row.op_name,
-                    "pulls": row.pulls,
-                    "mean_reward": row.mean_reward,
-                    "total_reward": row.total_reward,
-                    "usage_fraction": row.usage_fraction,
-                }
-            )
-        result["aos"] = {
-            "trace_rows": list(state.aos_trace_rows),
-            "summary": summary_rows,
-        }
 
     return result
 

@@ -21,9 +21,7 @@ from vamos.experiment.study.api import run_study
 def main() -> None:
     variants = [
         AblationVariant(name="baseline", label="Baseline"),
-        AblationVariant(name="aos", label="AOS"),
         AblationVariant(name="tuned", label="Tuned", config_overrides={"population_size": 80}),
-        AblationVariant(name="tuned_aos", label="Tuned + AOS", config_overrides={"population_size": 80}),
     ]
 
     plan = build_ablation_plan(
@@ -42,12 +40,7 @@ def main() -> None:
     }
     variant_variations = {
         "baseline": None,
-        "aos": {"adaptive_operator_selection": {"enabled": True}},
         "tuned": tuned_variation,
-        "tuned_aos": {
-            **tuned_variation,
-            "adaptive_operator_selection": {"enabled": True},
-        },
     }
 
     study_tasks: list[StudyTask] = []
