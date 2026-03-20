@@ -23,8 +23,8 @@ def build_config(pop_size: int = 24) -> NSGAIIConfig:
         NSGAIIConfig.builder()
         .pop_size(pop_size)
         .offspring_size(pop_size)
-        .crossover("sbx", prob=0.9, eta=15.0)
-        .mutation("polynomial", prob="1/n", eta=20.0)
+        .crossover("mixed", prob=0.9)
+        .mutation("mixed", prob="1/n")
         .selection("tournament", size=2)
         .result_mode("population")
         .build()
@@ -54,7 +54,7 @@ def main(seed: int = 17) -> None:
     print(f"Evaluated {F.shape[0]} candidate models.")
 
     # Pick a simple knee by minimizing the L1 norm of normalized objectives.
-    norm = (F - F.min(axis=0)) / (F.ptp(axis=0) + 1e-8)
+    norm = (F - F.min(axis=0)) / ((F.max(axis=0) - F.min(axis=0)) + 1e-8)
     knee_idx = int(np.argmin(norm.sum(axis=1)))
     print("Knee solution objectives (val. error, complexity):", F[knee_idx])
     if X is not None and hasattr(problem, "_decode_params"):

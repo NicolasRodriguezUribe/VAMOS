@@ -6,6 +6,7 @@ Demonstrates two alternative MOEA families beyond NSGA-II.
 
 from __future__ import annotations
 from vamos import optimize
+from vamos.algorithms import RVEAConfig
 
 
 def run_agemoea():
@@ -19,11 +20,20 @@ def run_agemoea():
 def run_rvea():
     print("\n=== RVEA on DTLZ2 (3-obj) ===")
     # RVEA uses reference vectors, good for many-objective
+    cfg = (
+        RVEAConfig.builder()
+        .pop_size(105)
+        .n_partitions(13)  # H=13 for M=3 -> 105 refs
+        .alpha(2.0)
+        .crossover("sbx", prob=0.9, eta=20.0)
+        .mutation("polynomial", prob=0.1, eta=20.0)
+        .build()
+    )
     result = optimize(
         "dtlz2",
         algorithm="rvea",
+        algorithm_config=cfg,
         n_obj=3,
-        pop_size=105,  # H=14 for M=3 -> 105 refs
         max_evaluations=10000,
         seed=1,
         verbose=True,

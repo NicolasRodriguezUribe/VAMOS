@@ -12,7 +12,8 @@
     "src/vamos/foundation/kernel/numba_backend.py": 463,
     "src/vamos/ux/studio/problem_builder.py": 357,
     "src/vamos/ux/studio/problem_builder_backend.py": 450,
-    "src/vamos/ux/studio/services.py": 440
+    "src/vamos/ux/studio/services.py": 440,
+    "src/vamos/engine/tuning/racing/bridge_assignments.py": 452
   },
   "function_violations": {
     "src/vamos/engine/algorithm/moead/initialization.py:initialize_moead_run": 274,
