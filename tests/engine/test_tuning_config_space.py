@@ -213,8 +213,63 @@ def test_nsgaii_mixed_config_space_builds_and_constructs_config():
     assignment = space.sample(rng)
     cfg = config_from_assignment("nsgaii_mixed", assignment)
     assert cfg.pop_size > 0
-    assert cfg.crossover[0] in ("mixed", "uniform")
-    assert cfg.mutation[0] in ("mixed", "gaussian")
+    assert cfg.crossover[0] == "mixed"
+    assert cfg.mutation[0] == "mixed"
+    assert "perm_crossover" in assignment
+    assert "perm_mutation" in assignment
+    assert "int_crossover" in assignment
+    assert "int_mutation" in assignment
+    assert cfg.crossover[1]["perm_crossover"] == assignment["perm_crossover"]
+    assert cfg.crossover[1]["int_crossover"] == assignment["int_crossover"]
+    assert cfg.mutation[1]["perm_mutation"] == assignment["perm_mutation"]
+    assert cfg.mutation[1]["int_mutation"] == assignment["int_mutation"]
+
+
+def test_nsgaii_mixed_config_accepts_segment_operator_assignment():
+    assignment = {
+        "pop_size": 32,
+        "offspring_ratio": 1.0,
+        "selection": "tournament",
+        "selection_size": 2,
+        "use_external_archive": False,
+        "archive_unbounded": False,
+        "crossover": "mixed",
+        "crossover_prob": 0.9,
+        "mutation": "mixed",
+        "mutation_prob_factor": 1.0,
+        "perm_crossover": "position",
+        "perm_crossover_prob": 0.8,
+        "perm_mutation": "swap",
+        "perm_mutation_prob": 0.2,
+        "real_crossover": "mean",
+        "real_crossover_prob": 0.7,
+        "real_mutation": "gaussian",
+        "real_mutation_prob": 0.1,
+        "real_mutation_sigma_factor": 0.15,
+        "int_crossover": "sbx",
+        "int_crossover_prob": 0.6,
+        "int_crossover_eta": 20.0,
+        "int_mutation": "polynomial",
+        "int_mutation_prob": 0.05,
+        "int_mutation_eta": 30.0,
+        "cat_crossover": "uniform",
+        "cat_crossover_prob": 0.5,
+        "cat_mutation": "reset",
+        "cat_mutation_prob": 0.25,
+    }
+
+    cfg = config_from_assignment("nsgaii_mixed", assignment)
+
+    assert cfg.crossover[0] == "mixed"
+    assert cfg.mutation[0] == "mixed"
+    assert cfg.crossover[1]["perm_crossover"] == "position"
+    assert cfg.crossover[1]["int_crossover"] == "sbx"
+    assert cfg.crossover[1]["int_crossover_eta"] == 20.0
+    assert cfg.mutation[1]["perm_mutation"] == "swap"
+    assert cfg.mutation[1]["int_mutation"] == "polynomial"
+    assert cfg.mutation[1]["int_mutation_eta"] == 30.0
+    assert cfg.mutation[1]["real_mutation"] == "gaussian"
+    assert cfg.mutation[1]["real_mutation_sigma_factor"] == 0.15
 
 
 def test_moead_permutation_config_space_builds_and_constructs_config():
@@ -648,7 +703,9 @@ def test_smpso_mixed_builder_and_assignment():
     space = build_smpso_mixed_config_space()
     assignment = space.sample(rng)
     cfg = config_from_assignment("smpso_mixed", assignment)
-    assert cfg.mutation[0] in {"mixed", "gaussian"}
+    assert cfg.mutation[0] == "mixed"
+    assert cfg.mutation[1]["perm_mutation"] == assignment["perm_mutation"]
+    assert cfg.mutation[1]["int_mutation"] == assignment["int_mutation"]
 
 
 def test_new_integer_parameter_mapping_in_assignment():

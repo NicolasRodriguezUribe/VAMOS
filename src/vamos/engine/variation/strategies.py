@@ -246,10 +246,19 @@ class MixedEncodingStrategy:
     def children_per_group(self, cross_method: CrossoverName) -> int:
         return 2
 
-    def build_crossover(self, method: CrossoverName, params: dict[str, Any]) -> CrossoverOperator:
-        spec = getattr(self.ctx.problem, "mixed_spec", None)
-        if spec is None:
+    def _merged_spec(self, params: dict[str, Any]) -> dict[str, Any]:
+        base_spec = getattr(self.ctx.problem, "mixed_spec", None)
+        if base_spec is None:
             raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
+        merged = dict(base_spec)
+        for key, value in params.items():
+            if key == "prob":
+                continue
+            merged[key] = value
+        return merged
+
+    def build_crossover(self, method: CrossoverName, params: dict[str, Any]) -> CrossoverOperator:
+        spec = self._merged_spec(params)
         cross_prob = float(params.get("prob", 1.0))
         cross_fn = cast(Any, MIXED_CROSSOVER[method])
 
@@ -259,9 +268,7 @@ class MixedEncodingStrategy:
         return crossover
 
     def build_mutation(self, method: MutationName, params: dict[str, Any]) -> MutationOperator:
-        spec = getattr(self.ctx.problem, "mixed_spec", None)
-        if spec is None:
-            raise ValueError("Mixed-encoding problems must define 'mixed_spec'.")
+        spec = self._merged_spec(params)
         mut_prob = float(params.get("prob", 0.0))
         mut_fn = cast(Any, MIXED_MUTATION[method])
 

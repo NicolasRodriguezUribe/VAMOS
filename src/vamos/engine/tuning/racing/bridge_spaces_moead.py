@@ -77,10 +77,7 @@ def _permutation_operator_part() -> SpacePart:
 
 
 def _mixed_operator_part() -> SpacePart:
-    return mixed_operator_part(
-        crossover_choices=("mixed", "uniform"),
-        mutation_choices=("mixed", "gaussian"),
-    )
+    return mixed_operator_part()
 
 
 def _binary_operator_part() -> SpacePart:
