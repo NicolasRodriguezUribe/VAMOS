@@ -76,6 +76,11 @@ def build_mutation_operator(
         mut_params = prepare_mutation_params(dict(mut_params or {}), normalized, n_var)
         prob_raw = mut_params.get("prob")
         prob = float(prob_raw) if prob_raw is not None else 1.0 / max(1, n_var)
+        spec = dict(mixed_spec)
+        for key, value in mut_params.items():
+            if key == "prob":
+                continue
+            spec[key] = value
 
         class _MixedMutationOperator:
             def __init__(self, mutation_prob: float, spec: dict[str, np.ndarray]) -> None:
@@ -86,7 +91,7 @@ def build_mutation_operator(
                 mixed_mutation(X, self._prob, self._spec, rng)
                 return X
 
-        return _MixedMutationOperator(prob, mixed_spec)
+        return _MixedMutationOperator(prob, spec)
 
     if mut_method != "polynomial":
         raise ValueError(f"Unsupported SMPSO mutation '{mut_method}'.")

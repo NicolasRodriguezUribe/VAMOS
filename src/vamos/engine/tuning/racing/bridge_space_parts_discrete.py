@@ -138,8 +138,31 @@ def mixed_operator_part(
         Real("crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1], role="operator_rate"),
         Categorical("mutation", list(mutation_choices), role="operator"),
         Real(mutation_prob_param, mutation_prob_bounds[0], mutation_prob_bounds[1], role="operator_rate"),
+        Categorical("perm_crossover", ["ox", "pmx", "edge", "cycle", "position", "aex"], role="operator"),
+        Real("perm_crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1], role="operator_rate"),
+        Categorical("perm_mutation", ["swap", "insert", "scramble", "inversion", "displacement", "two_opt"], role="operator"),
+        Real("perm_mutation_prob", mutation_prob_bounds[0], mutation_prob_bounds[1], role="operator_rate"),
+        Categorical("real_crossover", ["arithmetic", "mean"], role="operator"),
+        Real("real_crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1], role="operator_rate"),
+        Categorical("real_mutation", ["gaussian", "uniform_reset", "polynomial"], role="operator"),
+        Real("real_mutation_prob", mutation_prob_bounds[0], mutation_prob_bounds[1], role="operator_rate"),
+        Categorical("int_crossover", ["uniform", "arithmetic", "sbx"], role="operator"),
+        Real("int_crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1], role="operator_rate"),
+        Categorical("int_mutation", ["reset", "creep", "polynomial"], role="operator"),
+        Real("int_mutation_prob", mutation_prob_bounds[0], mutation_prob_bounds[1], role="operator_rate"),
+        Categorical("cat_crossover", ["uniform"], role="operator"),
+        Real("cat_crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1], role="operator_rate"),
+        Categorical("cat_mutation", ["reset"], role="operator"),
+        Real("cat_mutation_prob", mutation_prob_bounds[0], mutation_prob_bounds[1], role="operator_rate"),
     ]
-    return params, [], []
+    conditionals = [
+        ConditionalBlock("real_mutation", "gaussian", [Real("real_mutation_sigma_factor", 0.01, 0.5, role="operator_rate")]),
+        ConditionalBlock("real_mutation", "polynomial", [Real("real_mutation_eta", 5.0, 40.0, role="operator_rate")]),
+        ConditionalBlock("int_crossover", "sbx", [Real("int_crossover_eta", 5.0, 40.0, role="operator_rate")]),
+        ConditionalBlock("int_mutation", "creep", [Int("int_mutation_step", 1, 5, role="operator_rate")]),
+        ConditionalBlock("int_mutation", "polynomial", [Real("int_mutation_eta", 5.0, 40.0, role="operator_rate")]),
+    ]
+    return params, conditionals, []
 
 
 def external_archive_part() -> SpacePart:

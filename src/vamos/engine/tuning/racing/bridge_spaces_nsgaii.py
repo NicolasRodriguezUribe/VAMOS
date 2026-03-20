@@ -144,8 +144,6 @@ def _permutation_operator_part() -> SpacePart:
 
 def _mixed_operator_part() -> SpacePart:
     return mixed_operator_part(
-        crossover_choices=("mixed", "uniform"),
-        mutation_choices=("mixed", "gaussian"),
         mutation_prob_param="mutation_prob_factor",
         mutation_prob_bounds=(0.25, 3.0),
     )
