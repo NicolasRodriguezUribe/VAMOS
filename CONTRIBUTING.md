@@ -29,7 +29,7 @@ Thank you for considering a contribution! This project is organized to make addi
 - If you change public APIs, update the snapshot: `python tools/update_public_api_snapshot.py`.
 
 ## Continuous Integration
-- CI runs the architecture health gates, ruff lint/format, mypy budget, build smoke, and full tests.
+- CI runs the architecture health gates, `ruff check`, `ruff format --check`, full `mypy src/vamos`, build smoke, and the test suite.
 - Before opening a PR, run the same locally:
   - `python tools/health.py`
   - `pytest -q`

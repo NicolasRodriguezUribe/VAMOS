@@ -112,7 +112,6 @@ dev = [
   "pytest>=7.0",
   "pytest-cov>=4.1",
   "mypy>=1.9",
-  "black>=23.0",
   "ruff>=0.6",
   "build>=1.2",
   "wheel>=0.40",
@@ -156,10 +155,11 @@ all = [
   "mkdocstrings[python]>=0.24",
   "jinja2>=3.1",
   "pyyaml>=6.0",
+  "openai>=1.0.0",
+  "anthropic>=0.30.0",
   "pytest>=7.0",
   "pytest-cov>=4.1",
   "mypy>=1.9",
-  "black>=23.0",
   "ruff>=0.6",
   "build>=1.2",
   "wheel>=0.40",
@@ -282,7 +282,7 @@ select = ["E", "F", "W", "UP", "I", "B", "C4"]
 ignore = [
     "E402",  # Module level import not at top - intentional for sys.path and matplotlib backend
     "E741",  # Ambiguous variable name 'l' - used in WFG problems (standard math notation)
-    "E501",  # Line too long - handled by black formatter
+    "E501",  # Line too long - handled by ruff format
     "B007",  # Loop control variable not used - intentional destructuring
     "B905",  # zip() without strict= - existing codebase pattern
     "C408",  # Unnecessary dict() call - dict() reads better in plotly marker kwargs

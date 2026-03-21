@@ -158,7 +158,7 @@ def run_algorithm(config_dict, ctx: EvalContext, checkpoint=None):
         selection.instantiate(),
         algorithm="nsgaii",
         algorithm_config=algo_config,
-        termination=("max_evaluations", extra_budget),
+        max_evaluations=extra_budget,
         seed=ctx.seed,
     )
     

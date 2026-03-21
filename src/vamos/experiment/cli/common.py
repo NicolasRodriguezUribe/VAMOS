@@ -94,7 +94,7 @@ def _normalize_operator_args(parser: argparse.ArgumentParser, args: argparse.Nam
 
 
 def collect_nsgaii_variation_args(args: argparse.Namespace) -> dict[str, object]:
-    return {
+    variation: dict[str, object] = {
         "crossover": {
             "method": getattr(args, "nsgaii_crossover", None),
             "prob": getattr(args, "nsgaii_crossover_prob", None),
@@ -107,8 +107,11 @@ def collect_nsgaii_variation_args(args: argparse.Namespace) -> dict[str, object]
             "eta": getattr(args, "nsgaii_mutation_eta", None),
             "perturbation": getattr(args, "nsgaii_mutation_perturbation", None),
         },
-        "repair": getattr(args, "nsgaii_repair", None),
     }
+    repair = getattr(args, "nsgaii_repair", None)
+    if repair is not None:
+        variation["repair"] = repair
+    return variation
 
 
 def _collect_generic_variation(args: argparse.Namespace, prefix: str) -> dict[str, object]:

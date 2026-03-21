@@ -15,7 +15,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -26,7 +28,7 @@ class IBEAConfig(_SerializableConfig):
     selection: tuple[str, dict[str, Any]]
     indicator: IndicatorType
     kappa: float
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
@@ -129,6 +131,7 @@ class _IBEAConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection", "indicator", "kappa"),
             "IBEA",
         )
+        _validate_operators(self._cfg)
         return IBEAConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],

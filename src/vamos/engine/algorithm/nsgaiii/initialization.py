@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
-from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
+from vamos.engine.algorithm.components.lifecycle import evaluate_batch, get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.population import initialize_population as initialize_decision_population
 from vamos.engine.algorithm.components.termination import parse_termination
@@ -28,7 +28,6 @@ from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.operators.policies.nsgaiii import build_variation_operators
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
-from .helpers import evaluate_population_with_constraints
 from .state import NSGAIIIState
 
 if TYPE_CHECKING:
@@ -177,6 +176,7 @@ def initialize_nsgaiii_run(
         xu,
         rng,
         problem,
+        eval_strategy,
         constraint_mode,
         initializer=config.get("initializer"),
     )
@@ -237,6 +237,7 @@ def initialize_population(
     xu: np.ndarray,
     rng: np.random.Generator,
     problem: ProblemProtocol,
+    eval_strategy: EvaluationBackend,
     constraint_mode: str,
     initializer: dict[str, Any] | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
@@ -269,7 +270,5 @@ def initialize_population(
     normalized = normalize_encoding(encoding)
     X = initialize_decision_population(pop_size, n_var, xl, xu, normalized, rng, problem, initializer=initializer)
 
-    F, G = evaluate_population_with_constraints(problem, X)
-    if constraint_mode == "none":
-        G = None
+    F, G = evaluate_batch(problem, eval_strategy, X, constraint_mode)
     return X, F, G

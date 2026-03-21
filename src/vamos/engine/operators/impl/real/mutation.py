@@ -253,23 +253,15 @@ class UniformMutation(Mutation):
 
     def __init__(
         self,
-        prob_mutation: float | None = None,
+        prob_mutation: float,
         perturb: float = 0.1,
         *,
-        prob: float | None = None,
         lower: ArrayLike,
         upper: ArrayLike,
         rng: np.random.Generator | None = None,
         workspace: VariationWorkspace | None = None,
     ) -> None:
-        if prob_mutation is None and prob is None:
-            raise TypeError("UniformMutation requires 'prob' (legacy) or 'prob_mutation'.")
-        if prob_mutation is not None and prob is not None:
-            raise TypeError("UniformMutation received both 'prob' and 'prob_mutation'. Use only one.")
-        prob_value = prob_mutation if prob is None else prob
-        if prob_value is None:  # pragma: no cover - guarded by checks above
-            raise TypeError("UniformMutation requires a mutation probability.")
-        self.prob = float(prob_value)
+        self.prob = float(prob_mutation)
         self.perturb = float(np.clip(perturb, 0.0, 1.0))
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.range = self.upper - self.lower
@@ -299,23 +291,15 @@ class LinkedPolynomialMutation(Mutation):
 
     def __init__(
         self,
-        prob_mutation: float | None = None,
+        prob_mutation: float,
         eta: float = 20.0,
         *,
-        prob: float | None = None,
         lower: ArrayLike,
         upper: ArrayLike,
         rng: np.random.Generator | None = None,
         workspace: VariationWorkspace | None = None,
     ) -> None:
-        if prob_mutation is None and prob is None:
-            raise TypeError("LinkedPolynomialMutation requires 'prob' (legacy) or 'prob_mutation'.")
-        if prob_mutation is not None and prob is not None:
-            raise TypeError("LinkedPolynomialMutation received both 'prob' and 'prob_mutation'. Use only one.")
-        prob_value = prob_mutation if prob is None else prob
-        if prob_value is None:  # pragma: no cover - guarded by checks above
-            raise TypeError("LinkedPolynomialMutation requires a mutation probability.")
-        self.prob = float(prob_value)
+        self.prob = float(prob_mutation)
         self.eta = float(eta)
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.span = self.upper - self.lower

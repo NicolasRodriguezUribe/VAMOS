@@ -24,7 +24,7 @@ Problems
 Config and CLI
 --------------
 
-- For new CLI flags or config keys, update `src/vamos/cli.py` and `src/vamos/experiment_config.py`.
+- For new CLI flags or config keys, update `src/vamos/experiment/cli/` and `src/vamos/foundation/core/experiment_config.py`.
 - Keep YAML/JSON specs aligned with CLI defaults; add examples when new knobs appear.
 
 Documentation and tests
@@ -32,5 +32,5 @@ Documentation and tests
 
 - Update relevant docs pages when adding public features.
 - Add pytest coverage mirroring `src` layout; include determinism checks for stochastic pieces where practical.
-- Run `ruff check src tests`, `black src tests`, and `pytest` before opening a PR.
+- Run `ruff check src tests`, `ruff format src tests`, and `pytest` before opening a PR.
 

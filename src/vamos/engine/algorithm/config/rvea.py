@@ -7,7 +7,8 @@ from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 
-from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -18,7 +19,7 @@ class RVEAConfig(_SerializableConfig):
     adapt_freq: float | None
     crossover: tuple[str, dict[str, Any]]
     mutation: tuple[str, dict[str, Any]]
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
@@ -130,6 +131,7 @@ class _RVEAConfigBuilder:
             ("pop_size", "n_partitions", "alpha", "crossover", "mutation"),
             "RVEA",
         )
+        _validate_operators(self._cfg)
         return RVEAConfig(
             pop_size=self._cfg["pop_size"],
             n_partitions=self._cfg.get("n_partitions", 12),

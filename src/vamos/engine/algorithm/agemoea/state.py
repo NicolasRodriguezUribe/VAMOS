@@ -13,7 +13,6 @@ from vamos.engine.algorithm.components.state import AlgorithmState
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
-    from vamos.engine.archive.bounded_archive import BoundedArchive
 
 
 @dataclass
@@ -25,7 +24,6 @@ class AGEMOEAState(AlgorithmState):
 
     max_evals: int = 0
     variation: VariationPipeline | None = None
-    archive: BoundedArchive | None = None
     selection_ranks: Any = field(default=None, repr=False, compare=False)
     selection_crowding: Any = field(default=None, repr=False, compare=False)
 

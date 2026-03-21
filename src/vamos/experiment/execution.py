@@ -8,12 +8,12 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.algorithm.catalog import ENABLED_ALGORITHMS, OPTIONAL_ALGORITHMS
+from vamos.engine.algorithm.catalog import ENABLED_ALGORITHMS
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.algorithm.registry import get_algorithms_registry
 from vamos.engine.algorithm.variants import PERMUTATION_COMPATIBLE_ALGORITHMS
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.config.spec import ExperimentSpec, SpecBlock
-from vamos.engine.config.variation import VariationConfig
 from vamos.engine.hooks import (
     HookManager,
     HookManagerConfig,
@@ -300,12 +300,7 @@ def execute_problem_suite(
     *,
     run_single_fn: Callable[..., Metrics],
     hv_stop_config: dict[str, Any] | None = None,
-    nsgaii_variation: VariationConfig | None = None,
-    spea2_variation: VariationConfig | None = None,
-    ibea_variation: VariationConfig | None = None,
-    smpso_variation: VariationConfig | None = None,
-    agemoea_variation: VariationConfig | None = None,
-    rvea_variation: VariationConfig | None = None,
+    variations: VariationConfigs | None = None,
     include_external: bool = False,
     config_source: str | None = None,
     config_spec: ExperimentSpec | None = None,
@@ -323,6 +318,7 @@ def execute_problem_suite(
     else:
         engines = (getattr(args, "engine", None),)
     algorithms = list(ENABLED_ALGORITHMS) if args.algorithm == "both" else [args.algorithm]
+    registered_algorithms = set(get_algorithms_registry().keys())
     use_native_external_problem = args.external_problem_source == "native"
 
     if include_external and problem_selection.spec.key != "zdt1":
@@ -334,20 +330,16 @@ def execute_problem_suite(
             if ext not in algorithms:
                 algorithms.append(ext)
 
-    internal_algorithms = [a for a in algorithms if a in ENABLED_ALGORITHMS]
-    optional_algorithms = [a for a in algorithms if a in OPTIONAL_ALGORITHMS]
+    runnable_algorithms = [a for a in algorithms if a in registered_algorithms]
     external_algorithms = [a for a in algorithms if a in EXTERNAL_ALGORITHM_NAMES]
 
-    # Extract args-sourced values once to avoid repetition and silent getattr typos.
     _track_genealogy: bool = getattr(args, "track_genealogy", False)
     _autodiff_constraints: bool = getattr(args, "autodiff_constraints", False)
-    _moead_variation: VariationConfig | None = getattr(args, "moead_variation", None)
-    _smsemoa_variation: VariationConfig | None = getattr(args, "smsemoa_variation", None)
-    _nsgaiii_variation: VariationConfig | None = getattr(args, "nsgaiii_variation", None)
+    _variations = variations or VariationConfigs.from_namespace(args)
 
     results: list[Metrics] = []
     for engine in engines:
-        for algorithm_name in internal_algorithms + optional_algorithms:
+        for algorithm_name in runnable_algorithms:
             live_viz = None
             engine_name = resolve_engine(engine, algorithm=algorithm_name)
             if live_viz_factory is not None:
@@ -365,20 +357,12 @@ def execute_problem_suite(
                     config,
                     external_archive=args.external_archive,
                     selection_pressure=args.selection_pressure,
-                    nsgaii_variation=nsgaii_variation,
-                    moead_variation=_moead_variation,
-                    smsemoa_variation=_smsemoa_variation,
-                    nsgaiii_variation=_nsgaiii_variation,
-                    spea2_variation=spea2_variation,
-                    ibea_variation=ibea_variation,
-                    smpso_variation=smpso_variation,
-                    agemoea_variation=agemoea_variation,
-                    rvea_variation=rvea_variation,
+                    variations=_variations,
                     hv_stop_config=hv_stop_config if algorithm_name == "nsgaii" else None,
                     config_source=config_source,
                     config_spec=config_spec,
                     problem_override=problem_override,
-                    track_genealogy=(_track_genealogy and algorithm_name == "nsgaii"),
+                    track_genealogy=_track_genealogy,
                     autodiff_constraints=_autodiff_constraints,
                     live_viz=live_viz,
                 )

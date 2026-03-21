@@ -21,12 +21,12 @@ from vamos.engine.algorithm.components.hooks import (
     live_should_stop,
     track_offspring_genealogy,
 )
+from vamos.engine.algorithm.components.lifecycle import evaluate_batch
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.foundation.kernel import default_kernel
 
 from .helpers import (
-    evaluate_population_with_constraints,
     nsgaiii_survival,
 )
 from .initialization import initialize_nsgaiii_run
@@ -263,10 +263,7 @@ class NSGAIII:
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
-        F, G = evaluate_population_with_constraints(problem, X)
-        if constraint_mode == "none":
-            G = None
-        return F, G
+        return evaluate_batch(problem, eval_strategy, X, constraint_mode)
 
     # -------------------------------------------------------------------------
     # Ask/Tell Interface

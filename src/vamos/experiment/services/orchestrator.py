@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.algorithm.factory import build_algorithm
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.engine.config.spec import ExperimentSpec, SpecBlock
 from vamos.engine.hooks import LiveVisualization
-from vamos.experiment.execution import VariationConfigs
+from vamos.experiment._execution_support import VariationConfigs
 from vamos.experiment.execution import run_single as execute_run_single
-from vamos.experiment.services.config import VariationConfig, normalize_variations
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 
@@ -17,17 +17,10 @@ def run_single(
     selection: ProblemSelection,
     config: ExperimentConfig,
     *,
+    algorithm_config: AlgorithmConfigProtocol | None = None,
     external_archive: ExternalArchiveConfig | None = None,
     selection_pressure: int = 2,
-    nsgaii_variation: VariationConfig | None = None,
-    moead_variation: VariationConfig | None = None,
-    smsemoa_variation: VariationConfig | None = None,
-    nsgaiii_variation: VariationConfig | None = None,
-    spea2_variation: VariationConfig | None = None,
-    ibea_variation: VariationConfig | None = None,
-    smpso_variation: VariationConfig | None = None,
-    agemoea_variation: VariationConfig | None = None,
-    rvea_variation: VariationConfig | None = None,
+    variations: VariationConfigs | None = None,
     hv_stop_config: dict[str, object] | None = None,
     evaluator: object | None = None,
     termination: tuple[str, object] | None = None,
@@ -39,43 +32,28 @@ def run_single(
     live_viz: LiveVisualization | None = None,
 ) -> dict[str, object]:
     problem = selection.instantiate()
-    (
-        nsgaii_variation,
-        moead_variation,
-        smsemoa_variation,
-        nsgaiii_variation,
-        spea2_variation,
-        ibea_variation,
-        smpso_variation,
-        agemoea_variation,
-        rvea_variation,
-    ) = normalize_variations(
-        nsgaii_variation=nsgaii_variation,
-        moead_variation=moead_variation,
-        smsemoa_variation=smsemoa_variation,
-        nsgaiii_variation=nsgaiii_variation,
-        spea2_variation=spea2_variation,
-        ibea_variation=ibea_variation,
-        smpso_variation=smpso_variation,
-        agemoea_variation=agemoea_variation,
-        rvea_variation=rvea_variation,
-    )
+    if track_genealogy and algorithm_name.lower() != "nsgaii":
+        raise ValueError("track_genealogy is currently supported only for NSGA-II in the experiment/CLI runner.")
+    variations = variations or VariationConfigs()
     algorithm, cfg_data = build_algorithm(
         algorithm_name,
         engine_name,
         problem,
         config,
+        algorithm_config=algorithm_config,
         external_archive=external_archive,
         selection_pressure=selection_pressure,
-        nsgaii_variation=nsgaii_variation,
-        moead_variation=moead_variation,
-        smsemoa_variation=smsemoa_variation,
-        nsgaiii_variation=nsgaiii_variation,
-        spea2_variation=spea2_variation,
-        ibea_variation=ibea_variation,
-        smpso_variation=smpso_variation,
-        agemoea_variation=agemoea_variation,
-        rvea_variation=rvea_variation,
+        variations={
+            "nsgaii": variations.nsgaii,
+            "moead": variations.moead,
+            "smsemoa": variations.smsemoa,
+            "nsgaiii": variations.nsgaiii,
+            "spea2": variations.spea2,
+            "ibea": variations.ibea,
+            "smpso": variations.smpso,
+            "agemoea": variations.agemoea,
+            "rvea": variations.rvea,
+        },
         track_genealogy=track_genealogy,
     )
     return execute_run_single(
@@ -88,17 +66,7 @@ def run_single(
         problem=problem,
         external_archive=external_archive,
         selection_pressure=selection_pressure,
-        variations=VariationConfigs(
-            nsgaii=nsgaii_variation,
-            moead=moead_variation,
-            smsemoa=smsemoa_variation,
-            nsgaiii=nsgaiii_variation,
-            spea2=spea2_variation,
-            ibea=ibea_variation,
-            smpso=smpso_variation,
-            agemoea=agemoea_variation,
-            rvea=rvea_variation,
-        ),
+        variations=variations,
         hv_stop_config=hv_stop_config,
         evaluator=evaluator,
         termination=termination,

@@ -8,7 +8,8 @@ from typing import Any
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.resources import weight_path
 
-from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -23,7 +24,7 @@ class MOEADConfig(_SerializableConfig):
     aggregation: tuple[str, dict[str, Any]]
     weight_vectors: dict[str, int | str | None] | None
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     use_numba_variation: bool | None = None
@@ -169,6 +170,7 @@ class _MOEADConfigBuilder:
             ),
             "MOEA/D",
         )
+        _validate_operators(self._cfg)
         return MOEADConfig(
             pop_size=self._cfg["pop_size"],
             batch_size=int(self._cfg.get("batch_size", 1)),

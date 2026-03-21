@@ -32,8 +32,7 @@ stopping:
     ref_point: [2.0, 2.0]
 
 archive:
-  bounded:
+  external:
     enabled: true
-    size_cap: 120
-    nondominated_only: true
-    prune_policy: crowding
+    capacity: 120
+    pruning: crowding

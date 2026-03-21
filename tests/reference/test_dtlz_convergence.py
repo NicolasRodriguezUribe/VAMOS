@@ -38,7 +38,7 @@ def test_dtlz2_nsgaii_convergence():
         problem,
         algorithm="nsgaiii",
         algorithm_config=algo_cfg,
-        termination=("max_evaluations", 5000),
+        max_evaluations=5000,
         seed=42,
         engine="numpy",
     )

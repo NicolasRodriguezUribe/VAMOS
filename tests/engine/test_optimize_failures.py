@@ -40,7 +40,7 @@ def test_invalid_algorithm_config_pop_size_errors():
             ZDT1Problem(n_var=4),
             algorithm="nsgaii",
             algorithm_config=cfg,
-            termination=("max_evaluations", 4),
+            max_evaluations=4,
             seed=0,
         )
 

@@ -16,7 +16,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import RepairConfigValue
 
 
 class _NSGAIIConfigBuilder:
@@ -151,6 +153,7 @@ class _NSGAIIConfigBuilder:
             ("crossover", "mutation"),
             "NSGA-II",
         )
+        _validate_operators(self._cfg)
         pop_size = int(self._cfg.get("pop_size", 100))
         selection = self._cfg.get("selection", ("tournament", {}))
         return NSGAIIConfig(
@@ -185,7 +188,7 @@ class NSGAIIConfig(_SerializableConfig):
     offspring_size: int | None = None
     steady_state: bool = False
     replacement_size: int | None = None
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     external_archive: ExternalArchiveConfig | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None

@@ -104,7 +104,7 @@ def test_non_uniform_mutation_with_workspace_matches_reference_output():
 
 def test_uniform_mutation_can_leave_bounds_without_pipeline_repair():
     operator = UniformMutation(
-        prob=1.0,
+        prob_mutation=1.0,
         perturb=1.0,
         lower=np.zeros(4, dtype=float),
         upper=np.ones(4, dtype=float),

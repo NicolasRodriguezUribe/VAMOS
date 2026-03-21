@@ -16,6 +16,37 @@ if TYPE_CHECKING:
     from vamos.foundation.problem.types import ProblemProtocol
 
 
+def evaluate_batch(
+    problem: ProblemProtocol,
+    eval_strategy: EvaluationBackend,
+    X: np.ndarray,
+    constraint_mode: str,
+) -> tuple[np.ndarray, np.ndarray | None]:
+    """
+    Evaluate a decision batch through the configured backend.
+
+    Parameters
+    ----------
+    problem : ProblemProtocol
+        The optimization problem.
+    eval_strategy : EvaluationBackend
+        Backend for evaluating solutions.
+    X : np.ndarray
+        Decision vectors to evaluate.
+    constraint_mode : str
+        Constraint handling mode.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray | None]
+        Objective and optional constraint arrays.
+    """
+    eval_result = eval_strategy.evaluate(X, problem)
+    F = eval_result.F
+    G = eval_result.G if constraint_mode != "none" else None
+    return F, G
+
+
 def setup_initial_population(
     problem: ProblemProtocol,
     eval_strategy: EvaluationBackend,
@@ -52,9 +83,7 @@ def setup_initial_population(
     xl, xu = resolve_bounds(problem, encoding)
 
     X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
-    eval_result = eval_strategy.evaluate(X, problem)
-    F = eval_result.F
-    G = eval_result.G if constraint_mode != "none" else None
+    F, G = evaluate_batch(problem, eval_strategy, X, constraint_mode)
 
     return X, F, G, X.shape[0]
 
@@ -78,4 +107,4 @@ def get_eval_strategy(
     return eval_strategy or SerialEvalBackend()
 
 
-__all__ = ["setup_initial_population", "get_eval_strategy"]
+__all__ = ["setup_initial_population", "get_eval_strategy", "evaluate_batch"]
