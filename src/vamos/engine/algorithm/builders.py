@@ -87,6 +87,8 @@ def build_nsgaii_algorithm(
         builder.external_archive(**asdict(external_archive))
     if track_genealogy:
         builder.track_genealogy(True)
+    if nsgaii_variation is not None and nsgaii_variation.get("online_control") is not None:
+        builder.online_control(cast(dict[str, Any], nsgaii_variation["online_control"]))
 
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("nsgaii")
@@ -147,6 +149,8 @@ def build_moead_algorithm(
     if "repair" in var_cfg:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
+    if moead_overrides.get("online_control") is not None:
+        builder.online_control(cast(dict[str, Any], moead_overrides["online_control"]))
 
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
     algo_ctor = resolve_algorithm("moead")

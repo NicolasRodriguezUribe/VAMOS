@@ -198,9 +198,9 @@ def main() -> int:
                         if op_payload:
                             cfg["defaults"][algo] = op_payload
 
-                        # disable AOS explicitly
+                        # disable online_control explicitly
                         cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault(
-                            "adaptive_operator_selection", {}
+                            "online_control", {}
                         )["enabled"] = False
 
                         # apply variant patch (stopping/archive)

@@ -10,6 +10,9 @@ from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
+from vamos.engine.adaptation.online_control import OperatorFamily, build_online_control_controller
+from vamos.engine.adaptation.online_control.adapters.base import available_real_families, scalar_quality_indicator
+from vamos.engine.adaptation.online_control.adapters.nsgaii import NSGAIIOnlineControlAdapter
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
@@ -227,6 +230,10 @@ def initialize_run(
         raise ValueError("live_callback_mode must be one of: nd_only, population, population_archive")
     generation_callback = algo.cfg.get("generation_callback")
     generation_callback_copy = bool(algo.cfg.get("generation_callback_copy", True))
+    online_control_controller = build_online_control_controller(algo.cfg.get("online_control"))
+    online_control_adapter = NSGAIIOnlineControlAdapter() if online_control_controller is not None else None
+    online_control_families = available_real_families() if encoding == "real" else (OperatorFamily.SBX_LIKE,)
+    quality_indicator = scalar_quality_indicator(F, G)
 
     algo._st = NSGAIIState(
         X=X,
@@ -236,6 +243,11 @@ def initialize_run(
         variation=operator_pool[0],
         operator_pool=operator_pool,
         variation_workspace=variation_workspace,
+        encoding=encoding,
+        xl=xl,
+        xu=xu,
+        problem=problem,
+        repair_cfg=algo.cfg.get("repair", "auto"),
         sel_method=sel_method,
         pressure=pressure,
         pop_size=pop_size,
@@ -260,11 +272,19 @@ def initialize_run(
         generation=generation,
         step=step,
         replacements=replacements,
+        n_eval=n_eval,
+        max_evaluations=max_eval,
+        quality_indicator=quality_indicator,
+        best_quality_indicator=quality_indicator,
+        stagnant_steps=0,
         immigration_manager=immigration_manager,
         parent_selection_filter=parent_selection_filter,
         live_callback_mode=live_callback_mode,
         generation_callback=generation_callback,
         generation_callback_copy=generation_callback_copy,
+        online_control_controller=online_control_controller,
+        online_control_adapter=online_control_adapter,
+        online_control_families=online_control_families,
     )
     return live_cb, eval_strategy, max_eval, n_eval, hv_tracker
 

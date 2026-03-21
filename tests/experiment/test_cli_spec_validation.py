@@ -87,3 +87,40 @@ def test_validate_experiment_spec_rejects_legacy_archive_bounded_keys() -> None:
     }
     with pytest.raises(ValueError, match="archive_type"):
         validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
+
+
+def test_validate_experiment_spec_accepts_online_control_block() -> None:
+    spec = {
+        "version": "1",
+        "defaults": {
+            "nsgaii": {
+                "online_control": {
+                    "enabled": True,
+                    "router": "heuristic",
+                    "policy": "adaptive_flat_parameter",
+                    "credit_model": "cost_aware",
+                    "trace_level": "basic",
+                    "fixed_family": "sbx_like",
+                    "prototype_set": "default",
+                }
+            }
+        },
+    }
+    validated = validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
+    assert validated["defaults"]["nsgaii"]["online_control"]["enabled"] is True
+
+
+def test_validate_experiment_spec_rejects_unknown_online_control_key() -> None:
+    spec = {
+        "version": "1",
+        "defaults": {
+            "nsgaii": {
+                "online_control": {
+                    "enabled": True,
+                    "mystery": "value",
+                }
+            }
+        },
+    }
+    with pytest.raises(ValueError, match="Unknown online_control keys"):
+        validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())

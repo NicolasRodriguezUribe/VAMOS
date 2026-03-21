@@ -157,7 +157,7 @@ def main() -> int:
             "operator_blocks": str(OUT_OP_BLOCKS.relative_to(REPO)),
         },
         "common": {
-            "aos_enabled": False,
+            "online_control_enabled": False,
             "track_genealogy": False,
         },
         "matrix": {

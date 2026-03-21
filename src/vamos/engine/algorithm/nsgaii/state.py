@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -28,6 +28,11 @@ from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.hooks.genealogy import GenealogyTracker
 from vamos.engine.operators.impl.real import VariationWorkspace
+
+if TYPE_CHECKING:
+    from vamos.engine.adaptation.online_control import HierarchicalAction, OnlineControlController, OperatorFamily, SearchState
+    from vamos.engine.adaptation.online_control.adapters.base import VariationDescriptor
+    from vamos.engine.adaptation.online_control.adapters.nsgaii import NSGAIIOnlineControlAdapter
 
 
 def _logger() -> logging.Logger:
@@ -48,6 +53,11 @@ class NSGAIIState:
     variation: VariationPipeline
     operator_pool: list[VariationPipeline]
     variation_workspace: VariationWorkspace
+    encoding: str
+    xl: np.ndarray
+    xu: np.ndarray
+    problem: Any
+    repair_cfg: Any = "auto"
 
     # Selection
     sel_method: str = "tournament"
@@ -84,6 +94,11 @@ class NSGAIIState:
     generation: int = 0
     step: int = 0
     replacements: int = 0
+    n_eval: int = 0
+    max_evaluations: int = 0
+    quality_indicator: float = 0.0
+    best_quality_indicator: float | None = None
+    stagnant_steps: int = 0
 
     # Cached selection metrics (incremental replacement)
     fronts: list[list[int]] | None = None
@@ -102,6 +117,14 @@ class NSGAIIState:
     live_callback_mode: str = "nd_only"
     generation_callback: Any | None = None
     generation_callback_copy: bool = True
+    online_control_controller: OnlineControlController | None = None
+    online_control_adapter: NSGAIIOnlineControlAdapter | None = None
+    online_control_families: tuple[OperatorFamily, ...] = field(default_factory=tuple)
+    current_online_descriptor: VariationDescriptor | None = None
+    pending_online_descriptor: VariationDescriptor | None = None
+    pending_online_action: HierarchicalAction | None = None
+    pending_search_state: SearchState | None = None
+    pending_online_overhead_ms: float | None = None
 
     # HV points function (computed lazily)
     _hv_points_fn: Callable[[], np.ndarray] | None = field(default=None, repr=False)
@@ -174,6 +197,8 @@ def build_result(
     if archive_contents is not None:
         arch_X, arch_F = archive_contents
         result["archive"] = {"X": arch_X, "F": arch_F}
+    if state.online_control_controller is not None:
+        result["online_control"] = state.online_control_controller.result_payload()
 
     return result
 

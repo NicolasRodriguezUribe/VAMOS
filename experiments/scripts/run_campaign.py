@@ -52,10 +52,10 @@ def keep_keys(d: dict, allowed: set[str]) -> dict:
     return {k: v for k, v in d.items() if k in allowed}
 
 
-def set_aos_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
+def set_online_control_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
     try:
-        aos = cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("adaptive_operator_selection", {})
-        aos["enabled"] = bool(enabled)
+        online_control = cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("online_control", {})
+        online_control["enabled"] = bool(enabled)
     except Exception:
         pass
 
@@ -108,7 +108,7 @@ def build_config(
     off: int,
     maxeval: int,
     output_root: Path,
-    aos_enabled: bool,
+    online_control_enabled: bool,
     algo_keys: set[str],
     operator_block: dict,
     track_genealogy: bool | None,
@@ -140,8 +140,8 @@ def build_config(
     if op_payload:
         cfg["defaults"][algo] = op_payload
 
-    # Always attempt to disable AOS for safety (will be ignored if unsupported)
-    set_aos_enabled(cfg, problem, algo, aos_enabled)
+    # Always attempt to disable online_control for safety when not explicitly requested.
+    set_online_control_enabled(cfg, problem, algo, online_control_enabled)
 
     return cfg
 
@@ -169,7 +169,7 @@ def main() -> int:
     operator_blocks = load_yaml((repo / inputs["operator_blocks"]).resolve())
 
     common = spec.get("common", {})
-    aos_enabled = bool(common.get("aos_enabled", False))
+    online_control_enabled = bool(common.get("online_control_enabled", False))
     track_genealogy = common.get("track_genealogy", None)
 
     matrix = spec["matrix"]
@@ -218,7 +218,7 @@ def main() -> int:
                         off=off,
                         maxeval=maxeval,
                         output_root=output_root,
-                        aos_enabled=aos_enabled,
+                        online_control_enabled=online_control_enabled,
                         algo_keys=algo_keys,
                         operator_block=operator_block,
                         track_genealogy=track_genealogy,

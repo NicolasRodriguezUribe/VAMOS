@@ -73,7 +73,7 @@ def main() -> int:
                 "seed": seed,
                 "selection_pressure": 2,
             },
-            "problems": {problem: {algo: {"adaptive_operator_selection": {"enabled": False}}}},
+            "problems": {problem: {algo: {"online_control": {"enabled": False}}}},
         }
         if algo == "nsgaii":
             cfg["defaults"]["nsgaii"] = deep_copy(nsgaii_block)

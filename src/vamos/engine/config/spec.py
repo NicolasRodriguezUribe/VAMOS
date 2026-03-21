@@ -9,6 +9,7 @@ from dataclasses import fields
 from difflib import get_close_matches
 from typing import TypedDict, cast
 
+from vamos.engine.adaptation.online_control import normalize_online_control_config
 from vamos.engine.algorithm.config import (
     IBEAConfig,
     MOEADConfig,
@@ -140,6 +141,9 @@ def _validate_algorithm_block(block: SpecBlock, *, config_cls: type, path: str) 
         if spec is None:
             continue
         _validate_operator_spec(spec, path=f"{path}.{op_key}")
+    if "online_control" in block and block.get("online_control") is not None:
+        oc_dict = _as_str_dict(block.get("online_control"), path=f"'{path}.online_control'")
+        normalize_online_control_config(oc_dict)
 
 
 def _validate_operator_spec(spec: object, *, path: str) -> None:

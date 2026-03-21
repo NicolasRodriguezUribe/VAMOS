@@ -5,9 +5,12 @@ Ask/tell operations for NSGA-II.
 from __future__ import annotations
 
 import logging
+import time
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
+
+from vamos.engine.adaptation.online_control.adapters.base import count_matching_rows, scalar_quality_indicator, update_quality_stagnation
 
 
 def _logger() -> logging.Logger:
@@ -143,6 +146,16 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
             st.ranks = ranks
             st.crowding = crowding
             st.fronts = fronts_from_ranks(ranks)
+
+    if st.online_control_controller is not None and st.online_control_adapter is not None:
+        online_t0 = time.perf_counter()
+        search_state = st.online_control_adapter.build_search_state(st)
+        st.pending_search_state = search_state
+        st.online_control_controller.start_step(search_state)
+        st.pending_online_action = st.online_control_controller.select_action()
+        st.variation = st.online_control_adapter.decode_action(st.pending_online_action, st)
+        st.pending_online_overhead_ms = (time.perf_counter() - online_t0) * 1000.0
+
     parents_per_group = st.variation.parents_per_group
     children_per_group = st.variation.children_per_group
     parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
@@ -214,6 +227,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
     F_off = eval_result.F
     G_off = eval_result.G if st.constraint_mode != "none" else None
     assert st.hv_tracker is not None
+    st.n_eval += int(X_off.shape[0])
 
     combined_X = np.vstack([st.X, X_off])
     combined_F = np.vstack([st.F, F_off])
@@ -288,6 +302,13 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
 
     st.X, st.F, st.G = new_X, new_F, new_G
     st.pending_offspring_ids = None
+    current_quality = scalar_quality_indicator(st.F, st.G)
+    st.best_quality_indicator, st.stagnant_steps = update_quality_stagnation(
+        best_quality=st.best_quality_indicator,
+        stagnant_steps=st.stagnant_steps,
+        current_quality=current_quality,
+    )
+    st.quality_indicator = current_quality
 
     if st.incremental_enabled and not used_incremental:
         ranks, crowding = algo.kernel.nsga2_ranking(st.F)
@@ -308,6 +329,27 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         update_archives(st, algo.kernel, X=archive_X, F=archive_F, G=archive_G)
 
     hv_reached = st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points_fn())
+    if st.online_control_controller is not None and st.online_control_adapter is not None:
+        before = st.pending_search_state
+        action = st.pending_online_action
+        if before is not None and action is not None:
+            after = st.online_control_adapter.build_search_state(st)
+            outcome = st.online_control_adapter.build_outcome(
+                before=before,
+                after=after,
+                action=action,
+                host_state=st,
+                metadata={
+                    "survived_offspring": count_matching_rows(new_X, X_off),
+                    "offspring_count": int(X_off.shape[0]),
+                    "overhead_ms": st.pending_online_overhead_ms,
+                },
+            )
+            st.online_control_controller.finalize_step(outcome)
+    st.pending_search_state = None
+    st.pending_online_action = None
+    st.pending_online_descriptor = None
+    st.pending_online_overhead_ms = None
 
     return hv_reached
 

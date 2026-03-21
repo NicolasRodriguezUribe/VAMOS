@@ -15,17 +15,18 @@ References:
 
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from vamos.engine.adaptation.online_control.adapters.base import scalar_quality_indicator, update_quality_stagnation
 from vamos.engine.algorithm.components.hooks import (
     finalize_genealogy,
     live_should_stop,
     notify_generation,
     track_offspring_genealogy,
 )
-from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.engine.archive.factory import update_archive
 from vamos.foundation.constraints.utils import compute_violation
 from vamos.foundation.kernel import default_kernel
@@ -201,11 +202,6 @@ class MOEAD:
             live_viz,
             checkpoint=checkpoint,
         )
-        # Cache values that are constant across the run to avoid
-        # recomputing them on every ask() call.
-        cross_method = str(self.cfg.get("crossover", ("sbx", {}))[0]).lower()
-        self._cross_is_de = cross_method in {"de", "differential", "differential_evolution"}
-        self._op_label = variation_operator_label(self.cfg, "sbx+pm")
         return live_cb, eval_strategy, max_eval, hv_tracker
 
     def _ensure_parent_pair_buffer(self, batch_size: int) -> np.ndarray:
@@ -305,6 +301,20 @@ class MOEAD:
             raise RuntimeError("ask() called before initialization.")
         if st.crossover_fn is None or st.mutation_fn is None:
             raise RuntimeError("MOEA/D variation operators are not initialized.")
+        if st.online_control_controller is not None and st.online_control_adapter is not None:
+            online_t0 = time.perf_counter()
+            search_state = st.online_control_adapter.build_search_state(st)
+            st.pending_search_state = search_state
+            st.online_control_controller.start_step(search_state)
+            st.pending_online_action = st.online_control_controller.select_action()
+            decoded = st.online_control_adapter.decode_action(st.pending_online_action, st)
+            st.crossover_fn = decoded.crossover_fn
+            st.mutation_fn = decoded.mutation_fn
+            st.current_online_descriptor = decoded.descriptor
+            st.current_cross_method = decoded.descriptor.cross_method
+            st.current_mutation_method = decoded.descriptor.mut_method
+            st.current_cross_is_de = decoded.cross_is_de
+            st.pending_online_overhead_ms = (time.perf_counter() - online_t0) * 1000.0
 
         pop_size = st.pop_size
         batch_size = int(st.batch_size)
@@ -320,7 +330,7 @@ class MOEAD:
 
         # Generate offspring
         n_var = st.X.shape[1]
-        if self._cross_is_de:
+        if st.current_cross_is_de:
             parents = np.empty((batch_size, 3, n_var), dtype=st.X.dtype)
             parents[:, 0, :] = st.X[parent_pairs[:, 0]]
             parents[:, 1, :] = st.X[parent_pairs[:, 1]]
@@ -343,7 +353,8 @@ class MOEAD:
         st.pending_use_neighbors = use_neighbors
 
         # Track genealogy
-        track_offspring_genealogy(st, parents_flat, children.shape[0], self._op_label, "moead")
+        operator_label = f"{st.current_cross_method}+{st.current_mutation_method}".strip("+") or "variation"
+        track_offspring_genealogy(st, parents_flat, children.shape[0], operator_label, "moead")
 
         return children
 
@@ -384,6 +395,9 @@ class MOEAD:
         cv_child = compute_violation(G_child) if G_child is not None else None
         batch_size = children.shape[0]
         st.n_eval += batch_size
+        X_before = st.X.copy()
+        before = st.pending_search_state
+        action = st.pending_online_action
 
         # Clear pending
         st.pending_offspring = None
@@ -429,6 +443,29 @@ class MOEAD:
 
         # Update archive
         update_archive(st, st.X, st.F, st.G)
+        replaced = int(np.sum(np.any(np.abs(st.X - X_before) > 1e-12, axis=1)))
+        current_quality = scalar_quality_indicator(st.F, st.G)
+        st.best_quality_indicator, st.stagnant_steps = update_quality_stagnation(
+            best_quality=st.best_quality_indicator,
+            stagnant_steps=st.stagnant_steps,
+            current_quality=current_quality,
+        )
+        st.quality_indicator = current_quality
+
+        if st.online_control_controller is not None and st.online_control_adapter is not None and before is not None and action is not None:
+            after = st.online_control_adapter.build_search_state(st)
+            outcome = st.online_control_adapter.build_outcome(
+                before=before,
+                after=after,
+                action=action,
+                host_state=st,
+                metadata={"replaced": replaced, "batch_size": batch_size, "overhead_ms": st.pending_online_overhead_ms},
+            )
+            st.online_control_controller.finalize_step(outcome)
+        st.pending_search_state = None
+        st.pending_online_action = None
+        st.pending_online_descriptor = None
+        st.pending_online_overhead_ms = None
 
         # Check HV termination
         hv_reached = st.hv_tracker is not None and st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points())

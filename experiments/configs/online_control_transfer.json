@@ -1,0 +1,25 @@
+{
+  "engine": "numpy",
+  "directions": [
+    [
+      "nsgaii",
+      "moead"
+    ],
+    [
+      "moead",
+      "nsgaii"
+    ]
+  ],
+  "problems": [
+    "zdt1"
+  ],
+  "seeds": [
+    0,
+    1
+  ],
+  "n_var": 10,
+  "population_size": 24,
+  "source_max_evaluations": 160,
+  "target_max_evaluations": 160,
+  "credit_model": "simple_improvement"
+}

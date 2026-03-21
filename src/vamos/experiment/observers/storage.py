@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import logging
 from pathlib import Path
@@ -22,6 +23,55 @@ def _project_root() -> Path:
     # Adjust as needed (assuming src/vamos/experiment/observers/storage.py)
     # Root is typically 4 levels up from this file
     return Path(__file__).resolve().parents[4]
+
+
+def _csv_value(value: Any) -> Any:
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return json.dumps(value, sort_keys=True)
+
+
+def _write_csv_rows(path: Path, rows: list[dict[str, Any]]) -> str | None:
+    if not rows:
+        return None
+    fieldnames: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        for key in row.keys():
+            if key not in seen:
+                seen.add(key)
+                fieldnames.append(key)
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: _csv_value(value) for key, value in row.items()})
+    return path.name
+
+
+def _write_online_control_artifacts(output_dir: Path, payload: dict[str, Any]) -> dict[str, str]:
+    artifacts: dict[str, str] = {}
+    trace_rows = payload.get("trace_rows")
+    if isinstance(trace_rows, list):
+        trace_name = _write_csv_rows(output_dir / "online_control_trace.csv", [row for row in trace_rows if isinstance(row, dict)])
+        if trace_name is not None:
+            artifacts["online_control_trace"] = trace_name
+    summary_rows = payload.get("summary")
+    if isinstance(summary_rows, list):
+        summary_name = _write_csv_rows(output_dir / "online_control_summary.csv", [row for row in summary_rows if isinstance(row, dict)])
+        if summary_name is not None:
+            artifacts["online_control_summary"] = summary_name
+    run_summary = payload.get("run_summary")
+    if isinstance(run_summary, dict):
+        run_summary_path = output_dir / "online_control_run_summary.json"
+        run_summary_path.write_text(json.dumps(run_summary, indent=2, sort_keys=True), encoding="utf-8")
+        artifacts["online_control_run_summary"] = run_summary_path.name
+    policy_state = payload.get("policy_state")
+    if isinstance(policy_state, dict):
+        policy_state_path = output_dir / "online_control_policy_state.json"
+        policy_state_path.write_text(json.dumps(policy_state, indent=2, sort_keys=True), encoding="utf-8")
+        artifacts["online_control_policy_state"] = policy_state_path.name
+    return artifacts
 
 
 class StorageObserver(Observer):
@@ -85,6 +135,7 @@ class StorageObserver(Observer):
         X_to_save = payload.get("X")
         G_to_save = payload.get("G")
         archive = payload.get("archive")
+        online_control = payload.get("online_control")
 
         artifacts = write_population(
             self.output_dir,
@@ -104,6 +155,8 @@ class StorageObserver(Observer):
             autodiff_path = self.output_dir / "autodiff_constraints.json"
             autodiff_path.write_text(json.dumps(autodiff_info, indent=2), encoding="utf-8")
             artifacts["autodiff_constraints"] = autodiff_path.name
+        if isinstance(online_control, dict):
+            artifacts.update(_write_online_control_artifacts(self.output_dir, online_control))
 
         total_time_ms = final_stats.get("time_ms", 0.0)
         write_timing(self.output_dir, total_time_ms)
@@ -164,6 +217,10 @@ class StorageObserver(Observer):
             "archive_g": artifacts.get("archive_g"),
             "genealogy": artifacts.get("genealogy"),
             "autodiff_constraints": artifacts.get("autodiff_constraints"),
+            "online_control_trace": artifacts.get("online_control_trace"),
+            "online_control_summary": artifacts.get("online_control_summary"),
+            "online_control_run_summary": artifacts.get("online_control_run_summary"),
+            "online_control_policy_state": artifacts.get("online_control_policy_state"),
             "time_ms": "time.txt",
         }
         hv_trace = self.output_dir / "hv_trace.csv"

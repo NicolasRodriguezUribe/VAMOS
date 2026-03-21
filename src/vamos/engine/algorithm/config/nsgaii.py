@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from vamos.engine.adaptation.online_control import normalize_online_control_config
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import normalize_encoding
 
@@ -145,6 +147,18 @@ class _NSGAIIConfigBuilder:
         self._cfg["generation_callback_copy"] = bool(copy_arrays)
         return self
 
+    def online_control(
+        self,
+        config: Mapping[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> _NSGAIIConfigBuilder:
+        payload = dict(config or {})
+        payload.update(kwargs)
+        if not payload:
+            payload = {"enabled": True}
+        self._cfg["online_control"] = normalize_online_control_config(payload)
+        return self
+
     def build(self) -> NSGAIIConfig:
         _require_fields(
             self._cfg,
@@ -173,6 +187,7 @@ class _NSGAIIConfigBuilder:
             live_callback_mode=self._cfg.get("live_callback_mode", "nd_only"),
             generation_callback=self._cfg.get("generation_callback"),
             generation_callback_copy=bool(self._cfg.get("generation_callback_copy", True)),
+            online_control=self._cfg.get("online_control"),
         )
 
 
@@ -197,6 +212,7 @@ class NSGAIIConfig(_SerializableConfig):
     live_callback_mode: LiveCallbackMode = "nd_only"
     generation_callback: Any | None = None
     generation_callback_copy: bool = True
+    online_control: dict[str, Any] | None = None
 
     @classmethod
     def default(

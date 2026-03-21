@@ -5,7 +5,7 @@ inputs:
   algo_config_keys: experiments\catalog\algo_config_keys.json
   operator_blocks: experiments\catalog\operator_blocks.yml
 common:
-  aos_enabled: false
+  online_control_enabled: false
   track_genealogy: false
 matrix:
   engines:

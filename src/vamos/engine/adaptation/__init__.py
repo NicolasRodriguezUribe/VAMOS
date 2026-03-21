@@ -1,5 +1,5 @@
-"""
-Adaptation utilities for VAMOS.
-"""
+"""Adaptation utilities for VAMOS."""
 
-__all__ = []
+from . import online_control
+
+__all__ = ["online_control"]

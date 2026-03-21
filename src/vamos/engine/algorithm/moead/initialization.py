@@ -14,6 +14,9 @@ from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
+from vamos.engine.adaptation.online_control import OperatorFamily, build_online_control_controller
+from vamos.engine.adaptation.online_control.adapters.base import available_real_families, scalar_quality_indicator
+from vamos.engine.adaptation.online_control.adapters.moead import MOEADOnlineControlAdapter
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
 from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
@@ -228,6 +231,8 @@ def initialize_moead_run(
         set_numba_variation(bool(numba_variation))
 
     # Build variation operators
+    cross_method, cross_params = cfg["crossover"]
+    mut_method, mut_params = cfg["mutation"]
     crossover_fn, mutation_fn = build_variation_operators(
         cfg,
         encoding,
@@ -264,6 +269,11 @@ def initialize_moead_run(
     if batch_size > pop_size:
         batch_size = pop_size
 
+    online_control_controller = build_online_control_controller(cfg.get("online_control"))
+    online_control_adapter = MOEADOnlineControlAdapter() if online_control_controller is not None else None
+    quality_indicator = scalar_quality_indicator(F, G)
+    online_control_families = available_real_families() if encoding == "real" else (OperatorFamily.SBX_LIKE,)
+
     # Create state
     state = MOEADState(
         X=X,
@@ -295,6 +305,20 @@ def initialize_moead_run(
         mutation_fn=mutation_fn,
         xl=xl,
         xu=xu,
+        encoding=encoding,
+        problem=problem,
+        max_evaluations=max_eval,
+        quality_indicator=quality_indicator,
+        best_quality_indicator=quality_indicator,
+        stagnant_steps=0,
+        current_cross_method=str(cross_method).lower(),
+        current_mutation_method=str(mut_method).lower(),
+        current_cross_is_de=str(cross_method).lower() in {"de", "differential", "differential_evolution"},
+        base_variation_config={
+            **dict(cfg),
+            "crossover": (cross_method, dict(cross_params)),
+            "mutation": (mut_method, dict(mut_params)),
+        },
         # Archive
         archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
@@ -307,6 +331,9 @@ def initialize_moead_run(
         genealogy_tracker=genealogy_tracker,
         ids=ids,
         result_mode=cfg.get("result_mode", "non_dominated"),
+        online_control_controller=online_control_controller,
+        online_control_adapter=online_control_adapter,
+        online_control_families=online_control_families,
     )
 
     state.generation = generation

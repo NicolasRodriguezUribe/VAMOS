@@ -17,7 +17,9 @@ from vamos.engine.algorithm.components.results import get_external_archive_conte
 from vamos.engine.algorithm.components.state import AlgorithmState
 
 if TYPE_CHECKING:
-    pass
+    from vamos.engine.adaptation.online_control import HierarchicalAction, OnlineControlController, OperatorFamily, SearchState
+    from vamos.engine.adaptation.online_control.adapters.base import VariationDescriptor
+    from vamos.engine.adaptation.online_control.adapters.moead import MOEADOnlineControlAdapter
 
 
 @dataclass
@@ -79,11 +81,29 @@ class MOEADState(AlgorithmState):
     # Bounds for integer/real encodings
     xl: np.ndarray | None = None
     xu: np.ndarray | None = None
+    encoding: str = "real"
+    problem: Any | None = None
+    max_evaluations: int = 0
+    quality_indicator: float = 0.0
+    best_quality_indicator: float | None = None
+    stagnant_steps: int = 0
+    current_cross_method: str = ""
+    current_mutation_method: str = ""
+    current_cross_is_de: bool = False
+    base_variation_config: dict[str, Any] = field(default_factory=dict)
 
     # Pending offspring tracking for ask/tell
     pending_active_indices: np.ndarray | None = None
     pending_parent_pairs: np.ndarray | None = None
     pending_use_neighbors: np.ndarray | None = None
+    online_control_controller: OnlineControlController | None = None
+    online_control_adapter: MOEADOnlineControlAdapter | None = None
+    online_control_families: tuple[OperatorFamily, ...] = field(default_factory=tuple)
+    current_online_descriptor: VariationDescriptor | None = None
+    pending_online_descriptor: VariationDescriptor | None = None
+    pending_online_action: HierarchicalAction | None = None
+    pending_search_state: SearchState | None = None
+    pending_online_overhead_ms: float | None = None
 
 
 def build_moead_result(
@@ -143,6 +163,8 @@ def build_moead_result(
     if archive_contents is not None:
         arch_X, arch_F = archive_contents
         result["archive"] = {"X": arch_X, "F": arch_F}
+    if state.online_control_controller is not None:
+        result["online_control"] = state.online_control_controller.result_payload()
 
     return result
 

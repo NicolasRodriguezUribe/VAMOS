@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from vamos.engine.adaptation.online_control import normalize_online_control_config
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.resources import weight_path
 
@@ -30,6 +32,7 @@ class MOEADConfig(_SerializableConfig):
     track_genealogy: bool = False
     result_mode: ResultMode | None = None
     external_archive: ExternalArchiveConfig | None = None
+    online_control: dict[str, Any] | None = None
 
     @classmethod
     def default(
@@ -155,6 +158,18 @@ class _MOEADConfigBuilder:
         self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
+    def online_control(
+        self,
+        config: Mapping[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> _MOEADConfigBuilder:
+        payload = dict(config or {})
+        payload.update(kwargs)
+        if not payload:
+            payload = {"enabled": True}
+        self._cfg["online_control"] = normalize_online_control_config(payload)
+        return self
+
     def build(self) -> MOEADConfig:
         _require_fields(
             self._cfg,
@@ -187,4 +202,5 @@ class _MOEADConfigBuilder:
             track_genealogy=bool(self._cfg.get("track_genealogy", False)),
             result_mode=self._cfg.get("result_mode", "non_dominated"),
             external_archive=self._cfg.get("external_archive"),
+            online_control=self._cfg.get("online_control"),
         )

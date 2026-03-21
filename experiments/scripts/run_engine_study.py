@@ -26,11 +26,11 @@ def deep_copy(x: Any) -> Any:
     return json.loads(json.dumps(x))
 
 
-def set_aos_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
-    # Try to toggle AOS in the per-problem override block if present
+def set_online_control_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
+    # Try to toggle online_control in the per-problem override block if present.
     try:
-        aos = cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("adaptive_operator_selection", {})
-        aos["enabled"] = bool(enabled)
+        online_control = cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("online_control", {})
+        online_control["enabled"] = bool(enabled)
     except Exception:
         pass
 
@@ -72,7 +72,7 @@ def main() -> int:
     seeds: list[int] = spec["matrix"]["seeds"]
     problems: list[dict] = spec["matrix"]["problems"]
 
-    aos_enabled = bool(spec.get("common", {}).get("aos_enabled", False))
+    online_control_enabled = bool(spec.get("common", {}).get("online_control_enabled", False))
     selection_pressure = int(spec.get("common", {}).get("selection_pressure", 2))
 
     # Algo blocks (operators)
@@ -110,8 +110,8 @@ def main() -> int:
                     if algo in algo_blocks:
                         cfg["defaults"][algo] = deep_copy(algo_blocks[algo])
 
-                    # Ensure AOS disabled unless explicitly enabled
-                    set_aos_enabled(cfg, prob, algo, aos_enabled)
+                    # Ensure online_control disabled unless explicitly enabled.
+                    set_online_control_enabled(cfg, prob, algo, online_control_enabled)
 
                     cfg_name = f"{campaign}__{algo}__{prob}__{eng}__seed{seed}.yml"
                     cfg_path = cfg_root / cfg_name

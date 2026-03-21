@@ -105,8 +105,8 @@ def build_config_base(
     if op_payload:
         cfg["defaults"][algo] = op_payload
 
-    # Disable AOS unless explicitly configured elsewhere
-    cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("adaptive_operator_selection", {})["enabled"] = (
+    # Disable online_control unless explicitly configured elsewhere.
+    cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("online_control", {})["enabled"] = (
         False
     )
     return cfg

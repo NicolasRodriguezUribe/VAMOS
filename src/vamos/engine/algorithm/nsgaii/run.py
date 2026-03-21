@@ -230,7 +230,7 @@ def run_nsgaii(
             X_off = algo.ask()
             eval_off = eval_strategy.evaluate(X_off, problem)
             hv_reached = algo.tell(eval_off)
-            n_eval += X_off.shape[0]
+            n_eval = st.n_eval
             replacements += X_off.shape[0]
 
             step += 1
