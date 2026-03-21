@@ -136,7 +136,8 @@ def strength_raw_fitness(dom: np.ndarray) -> np.ndarray:
     if n == 0:
         return np.empty(0, dtype=float)
     strength = dom.sum(axis=1, dtype=np.int64)
-    return (dom.T @ strength).astype(float, copy=False)
+    raw = (dom.T @ strength).astype(float, copy=False)
+    return np.asarray(raw, dtype=float)
 
 
 def knn_density(F: np.ndarray, k: int = 1) -> np.ndarray:
@@ -258,11 +259,11 @@ def truncate_by_distance(dist_matrix: np.ndarray, keep: int) -> np.ndarray:
         second_neighbor[remove_idx] = np.inf
         remaining -= 1
 
-        for i in np.flatnonzero(active):
-            if (first_ptr[i] >= 0 and int(order[i, first_ptr[i]]) == remove_idx) or (
-                second_ptr[i] >= 0 and int(order[i, second_ptr[i]]) == remove_idx
+        for active_idx in np.flatnonzero(active):
+            if (first_ptr[active_idx] >= 0 and int(order[active_idx, first_ptr[active_idx]]) == remove_idx) or (
+                second_ptr[active_idx] >= 0 and int(order[active_idx, second_ptr[active_idx]]) == remove_idx
             ):
-                _refresh_neighbors(int(i))
+                _refresh_neighbors(int(active_idx))
 
     return np.flatnonzero(active)
 

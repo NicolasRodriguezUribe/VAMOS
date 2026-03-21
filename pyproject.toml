@@ -7,7 +7,7 @@ name = "vamos-optimization"
 version = "0.1.0"
 description = "Vectorized Architecture for Multiobjective Optimization Studies"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
   { name = "VAMOS contributors" }
 ]
@@ -232,6 +232,8 @@ module = [
   "pymoo.*",
   "jmetal.*",
   "jmetalpy.*",
+  "hpbandster",
+  "hpbandster.*",
   "pygmo.*",
   "sklearn",
   "sklearn.*",

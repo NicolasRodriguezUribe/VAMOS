@@ -6,7 +6,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from typing import TypeVar, cast
 
-from vamos.engine.archive import ExternalArchiveConfig, PrunePolicy, normalize_prune_policy
+from vamos.engine.archive import ExternalArchiveConfig, normalize_prune_policy
 from vamos.engine.config.spec import ExperimentSpec, ProblemOverrides, SpecBlock
 from vamos.engine.config.variation import VariationOverrides, merge_variation_overrides
 from vamos.engine.hooks import LiveVisualization
@@ -84,10 +84,7 @@ def run_from_args(
                 setattr(effective_args, key, override[key])
         effective_args.selection_pressure = override.get("selection_pressure", args.selection_pressure)
         _ea_override = override.get("external_archive_size")
-        _ea_pruning = cast(
-            PrunePolicy,
-            normalize_prune_policy(str(override.get("external_archive_pruning", getattr(args, "external_archive_pruning", "crowding")))),
-        )
+        _ea_pruning = normalize_prune_policy(str(override.get("external_archive_pruning", getattr(args, "external_archive_pruning", "crowding"))))
         base_external_archive = getattr(args, "external_archive", None)
         if _ea_override is not None:
             effective_args.external_archive = ExternalArchiveConfig(

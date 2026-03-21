@@ -208,7 +208,6 @@ def _stable_merge_sort_order(values: np.ndarray, order: np.ndarray, temp: np.nda
                 left_val = values[left_idx]
                 right_val = values[right_idx]
 
-                # Preserve NumPy mergesort semantics by taking the left element on ties.
                 if left_val <= right_val:
                     temp[k] = left_idx
                     i += 1
@@ -257,7 +256,6 @@ def _compute_crowding_numba(F: np.ndarray, ranks: np.ndarray) -> np.ndarray:
     for rank in range(max_rank + 1):
         cursor[rank] = offsets[rank]
 
-    # Group each front in ascending solution-index order to match the NumPy path.
     for idx in range(N):
         rank = ranks[idx]
         front_indices[cursor[rank]] = idx
@@ -541,7 +539,9 @@ class NumbaKernel(KernelBackend):
     ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
         X_comb, F_comb = self._combine(X, F, X_off, F_off)
         if not np.isfinite(F_comb).all():
-            return self._numpy_ops.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=return_indices)
+            if return_indices:
+                return self._numpy_ops.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=True)
+            return self._numpy_ops.nsga2_survival(X, F, X_off, F_off, pop_size, return_indices=False)
         ranks, crowding = self._rank_and_crowding(F_comb)
         sel = _select_nsga2(_fronts_from_ranks(ranks), crowding, pop_size)
         self._ensure_output_buffers(pop_size, X_comb.shape[1], F_comb.shape[1], X_comb.dtype)

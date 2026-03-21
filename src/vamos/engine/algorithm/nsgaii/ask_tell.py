@@ -5,7 +5,7 @@ Ask/tell operations for NSGA-II.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -34,7 +34,7 @@ def combine_ids(st: NSGAIIState) -> np.ndarray | None:
         return None
     current_ids = st.ids if st.ids is not None else np.array([], dtype=int)
     pending_ids = st.pending_offspring_ids if st.pending_offspring_ids is not None else np.array([], dtype=int)
-    return cast(np.ndarray, np.concatenate([current_ids, pending_ids]))
+    return np.asarray(np.concatenate([current_ids, pending_ids]), dtype=int)
 
 
 def _coerce_parent_candidates(raw: Any, size: int) -> np.ndarray | None:

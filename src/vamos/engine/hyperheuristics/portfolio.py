@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Protocol, cast
+from typing import Protocol
 
 import numpy as np
 
@@ -59,7 +59,7 @@ class AlgorithmPortfolio:
                 if np.all(union[j] <= union[i]) and np.any(union[j] < union[i]):
                     mask[i] = False
                     break
-        return cast(np.ndarray, union[mask])
+        return np.asarray(union[mask])
 
     def step(self, step_evaluations: int) -> None:
         idx = self.selector.select_operator()

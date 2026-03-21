@@ -48,7 +48,7 @@ from vamos.engine.operators.impl.permutation import (
     two_opt_mutation,
 )
 from vamos.engine.operators.impl.real import VariationWorkspace
-from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.engine.operators.policies._real_operator_builder import instantiate_operator
 from vamos.engine.operators.policies.real_repair import apply_policy_repair, resolve_policy_repair
 from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
@@ -327,7 +327,6 @@ def _build_continuous_operators(
             return apply_policy_repair(repair_operator, offspring, xl, xu, _rng)
 
     else:
-        registry = get_operator_registry()
         cross_kwargs = dict(cross_params)
         prob = cross_kwargs.pop("prob", None)
         cross_kwargs.setdefault("prob_crossover", 0.9 if prob is None else float(prob))
@@ -335,7 +334,7 @@ def _build_continuous_operators(
         cross_kwargs.setdefault("lower", xl)
         cross_kwargs.setdefault("upper", xu)
         cross_kwargs.setdefault("workspace", workspace)
-        crossover_operator = registry.get(method)(**cross_kwargs)
+        crossover_operator = instantiate_operator(method, cross_kwargs, label="crossover")
 
         def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
             offspring = np.asarray(crossover_operator(parents, _rng))
@@ -344,14 +343,13 @@ def _build_continuous_operators(
     mut_prob = resolve_prob_expression(mut_params.get("prob"), n_var, 1.0 / max(1, n_var))
     mut_name = (mut_method or "polynomial").lower()
 
-    registry = get_operator_registry()
     mut_kwargs = dict(mut_params)
     mut_kwargs.pop("prob", None)
     mut_kwargs.setdefault("prob_mutation", mut_prob)
     mut_kwargs.setdefault("lower", xl)
     mut_kwargs.setdefault("upper", xu)
     mut_kwargs.setdefault("workspace", workspace)
-    mutation_operator = registry.get(mut_name)(**mut_kwargs)
+    mutation_operator = instantiate_operator(mut_name, mut_kwargs, label="mutation")
 
     def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
         mutated = np.asarray(mutation_operator(X_child, _rng))

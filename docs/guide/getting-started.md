@@ -60,6 +60,8 @@ result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10_000, pop_size=1
 print(result_summary_text(result))
 ```
 
+`engine=None` is deterministic and resolves to `numpy`. Use `engine="auto"` only when you explicitly want heuristic backend selection.
+
 **2. Your own problem (no class needed):**
 
 ```python

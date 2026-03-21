@@ -1,11 +1,16 @@
 # Extending VAMOS
 
+This is the canonical extension guide. Keep other contributor docs thin and point back here.
+
 Algorithms
 ----------
 
-- Add new classes under `src/vamos/engine/algorithm/`, register in `algorithm/registry.py`, and expose defaults in `algorithm/config.py`/`ExperimentConfig` if needed.
+- Add new classes under `src/vamos/engine/algorithm/`.
+- Register them in `src/vamos/engine/algorithm/registry.py`.
+- Put typed config builders under `src/vamos/engine/algorithm/config/` when you need a reproducible public config object.
 - Use existing kernels where possible; follow existing patterns for `run()` returning `{"X": ..., "F": ..., "archive": ...}`.
 - Add smoke tests under `tests/` (see `test_algorithms_smoke.py`).
+- Use `docs/dev/add_algorithm.md` for a concrete step-by-step template.
 
 Operators and kernels
 ---------------------
@@ -26,6 +31,7 @@ Config and CLI
 
 - For new CLI flags or config keys, update `src/vamos/experiment/cli/` and `src/vamos/foundation/core/experiment_config.py`.
 - Keep YAML/JSON specs aligned with CLI defaults; add examples when new knobs appear.
+- Prefer the high-level `optimize(...)` API in public examples. Use `algorithm_config` objects only when the extra control is essential.
 
 Documentation and tests
 -----------------------

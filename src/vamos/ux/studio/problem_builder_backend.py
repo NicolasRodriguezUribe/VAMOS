@@ -152,7 +152,7 @@ def _apply_process_sandbox(*, profile: str, timeout_seconds: float) -> None:
     if profile_name == "none":
         return
     try:
-        import resource  # type: ignore[attr-defined]
+        import resource
     except Exception:
         # Resource limits are not available on all platforms (e.g., Windows).
         return

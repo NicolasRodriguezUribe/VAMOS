@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
-from vamos.exceptions import InvalidAlgorithmError
+from vamos.exceptions import ConfigurationError, InvalidAlgorithmError
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.eval.backends import resolve_eval_strategy
 from vamos.foundation.kernel.registry import resolve_kernel
@@ -44,18 +44,18 @@ def _normalize_cfg(cfg: AlgorithmConfigProtocol) -> dict[str, object]:
 
 def _parse_positive_int(value: object, *, label: str) -> int:
     if isinstance(value, bool):
-        raise TypeError(f"{label} must be an integer.")
+        raise ConfigurationError(f"{label} must be an integer.")
     if isinstance(value, numbers.Integral):
         parsed = int(value)
     elif isinstance(value, str):
         try:
             parsed = int(value)
         except ValueError as exc:
-            raise TypeError(f"{label} must be an integer.") from exc
+            raise ConfigurationError(f"{label} must be an integer.") from exc
     else:
-        raise TypeError(f"{label} must be an integer.")
+        raise ConfigurationError(f"{label} must be an integer.")
     if parsed <= 0:
-        raise ValueError(f"{label} must be a positive integer.")
+        raise ConfigurationError(f"{label} must be a positive integer.")
     return parsed
 
 
@@ -104,18 +104,18 @@ def _run_config(
         result = _run_config(config)
     """
     if not isinstance(config, _OptimizeConfig):
-        raise TypeError("_run_config() expects an internal optimize config instance.")
+        raise ConfigurationError("_run_config() expects an internal optimize config instance.")
     cfg = config
 
     cfg_dict = _normalize_cfg(cfg.algorithm_config)
     _validate_algorithm_config(cfg_dict)
     if "engine" in cfg_dict:
-        raise ValueError("engine must be configured via optimize(engine=...) rather than algorithm_config.")
+        raise ConfigurationError("engine must be configured via optimize(engine=...) rather than algorithm_config.")
     algorithm_raw = cfg.algorithm or ""
     algorithm_name = algorithm_raw.lower()
     available = sorted(get_algorithms_registry().keys())
     if not algorithm_name:
-        raise ValueError(f"algorithm must be specified. Available: {', '.join(available)}.")
+        raise ConfigurationError(f"algorithm must be specified. Available: {', '.join(available)}.")
     registry = get_algorithms_registry()
     if algorithm_name not in registry:
         raise InvalidAlgorithmError(algorithm_raw, available=available)
@@ -147,7 +147,7 @@ def _run_config(
         if "checkpoint" in sig.parameters or any(param.kind == inspect.Parameter.VAR_KEYWORD for param in sig.parameters.values()):
             kwargs["checkpoint"] = cfg.checkpoint
         else:
-            raise TypeError(f"Algorithm '{algorithm_name}' does not support checkpoints.")
+            raise ConfigurationError(f"Algorithm '{algorithm_name}' does not support checkpoints.")
     result = run_fn(**kwargs)
     from .optimization_result import OptimizationResult
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TypedDict, cast
 
-from vamos.engine.archive import ExternalArchiveConfig, PrunePolicy
+from vamos.engine.archive import DeduplicateIn, ExternalArchiveConfig, PrunePolicy
 from vamos.engine.hooks.hv_convergence import HVConvergenceConfig
 
 
@@ -79,7 +79,7 @@ def build_archive_cfg(d: Mapping[str, object] | None) -> ExternalArchiveConfig:
         hv_ref_point=hv_ref_point,
         rng_seed=rng_seed,
         objective_tolerance=float(objective_tolerance),
-        deduplicate_in=deduplicate_in,
+        deduplicate_in=cast(DeduplicateIn, deduplicate_in),
         decision_tolerance=float(decision_tolerance),
     )
 

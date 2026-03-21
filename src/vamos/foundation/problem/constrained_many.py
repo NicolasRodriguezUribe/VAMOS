@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from typing import cast
 
 import numpy as np
 
@@ -9,7 +8,7 @@ from vamos.foundation.problem.base import Problem
 
 
 def _as_float_vector(values: object) -> np.ndarray:
-    return cast(np.ndarray, np.asarray(values, dtype=float))
+    return np.asarray(values, dtype=float)
 
 
 def _safe_divide(num: np.ndarray, den: np.ndarray, *, eps: float = 1e-12) -> np.ndarray:

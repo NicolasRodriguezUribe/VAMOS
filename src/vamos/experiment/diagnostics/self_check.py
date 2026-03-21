@@ -96,18 +96,20 @@ def run_self_check(verbose: bool = False) -> list[CheckResult]:
     return checks
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> int:
     """Entry-point for `python -m vamos.experiment.diagnostics.self_check`."""
+    _ = argv
     _configure_cli_logging()
     checks = run_self_check(verbose=True)
     failed = [c for c in checks if c.status == "failed"]
     skipped = [c for c in checks if c.status == "skipped"]
     if failed:
-        raise SystemExit(1)
+        return 1
     if skipped:
         _logger().info("[self-check] Skipped: %s", ", ".join(c.name for c in skipped))
     _logger().info("[self-check] Completed.")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

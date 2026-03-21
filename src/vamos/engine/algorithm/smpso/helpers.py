@@ -10,7 +10,7 @@ This module contains utility functions for SMPSO:
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -43,7 +43,7 @@ _SMPSO_REPAIR_NAMES = (
 @lru_cache(maxsize=1)
 def _repair_map() -> dict[str, type[Any] | None]:
     registry = get_operator_registry()
-    return {name: registry.get(name) for name in _SMPSO_REPAIR_NAMES}
+    return {name: cast(type[Any] | None, registry.get(name, None)) for name in _SMPSO_REPAIR_NAMES}
 
 
 def resolve_repair(cfg: Any | None) -> Any | None:

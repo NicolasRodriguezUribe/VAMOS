@@ -21,16 +21,18 @@ class MyAlgorithm:
         return {"X": np.empty((0, problem.n_var)), "F": np.empty((0, problem.n_obj))}
 ```
 
-2) Add a config dataclass/builder to `src/vamos/engine/algorithm/config.py` if needed so configs are serializable and validated.
+2) Add a config dataclass/builder under `src/vamos/engine/algorithm/config/` if needed so configs are serializable, validated, and usable from `optimize(..., algorithm_config=...)`.
 
 3) Register the algorithm in `src/vamos/engine/algorithm/registry.py`:
 
 ```python
 from .my_algorithm import MyAlgorithm
-ALGORITHMS["my_algorithm"] = lambda cfg, kernel: MyAlgorithm(cfg, kernel=kernel)
+from vamos.engine.algorithm.registry import register_algorithm
+
+register_algorithm("my_algorithm", lambda cfg, kernel: MyAlgorithm(cfg, kernel=kernel))
 ```
 
-4) (Optional) Wire it into the factory (`src/vamos/engine/algorithm/factory.py`) if you want it accessible via runner/CLI presets.
+4) If you want a typed public config object or CLI-facing defaults, add those through the existing config and registry layers. Do not add a second facade.
 
 5) Add a fast smoke test under `tests/`:
 
@@ -46,4 +48,4 @@ def test_my_algorithm_smoke():
     assert "F" in res and res["F"].shape[1] == problem.n_obj
 ```
 
-6) Document any new CLI flags/config keys in `docs/algorithms.md` or relevant docs.
+6) Document any new public knobs in `docs/topics/extending.md` or the relevant user guide page, and add a smoke test for the documented path.

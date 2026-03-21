@@ -142,7 +142,7 @@ class HookManager:
     def _ensure_archive(self, F: np.ndarray) -> None:
         if not self.cfg.archive_enabled or self.archive is not None:
             return
-        archive = setup_result_archive(self.cfg.archive_cfg, n_var=0, n_obj=F.shape[1], dtype=float)
+        archive = setup_result_archive(self.cfg.archive_cfg, n_var=0, n_obj=F.shape[1], dtype=np.dtype(float))
         if archive is None:
             raise ValueError("Hook archive requires a finite archive.external.capacity.")
         self.archive = archive

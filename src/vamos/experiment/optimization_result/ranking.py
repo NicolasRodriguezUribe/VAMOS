@@ -109,7 +109,8 @@ def _extract_source(result: Any, source: str) -> tuple[np.ndarray, np.ndarray | 
 
 
 def _normalize_front(F: np.ndarray) -> np.ndarray:
-    return (F - F.min(axis=0)) / (np.ptp(F, axis=0) + 1e-12)
+    normalized = (F - F.min(axis=0)) / (np.ptp(F, axis=0) + 1e-12)
+    return np.asarray(normalized, dtype=float)
 
 
 def _ranking_scores(F: np.ndarray, *, method: str, weights: NDArray[np.float64] | None = None) -> NDArray[np.float64]:
@@ -201,7 +202,7 @@ def _top_k_subset_method(
 def _min_pairwise_distance(points: np.ndarray) -> np.ndarray:
     dists = np.linalg.norm(points[:, None, :] - points[None, :, :], axis=2)
     np.fill_diagonal(dists, np.inf)
-    return np.min(dists, axis=1)
+    return np.asarray(np.min(dists, axis=1), dtype=float)
 
 
 def _minimum_angles(points: np.ndarray) -> np.ndarray:
@@ -213,7 +214,7 @@ def _minimum_angles(points: np.ndarray) -> np.ndarray:
     np.clip(cos_sim, -1.0, 1.0, out=cos_sim)
     angles = np.arccos(cos_sim)
     np.fill_diagonal(angles, np.inf)
-    return np.min(angles, axis=1)
+    return np.asarray(np.min(angles, axis=1), dtype=float)
 
 
 __all__ = ["top_k", "top_k_report"]
