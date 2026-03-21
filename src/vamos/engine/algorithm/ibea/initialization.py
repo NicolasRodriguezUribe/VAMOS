@@ -13,10 +13,9 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealogy
-from vamos.engine.algorithm.components.lifecycle import get_eval_strategy
+from vamos.engine.algorithm.components.lifecycle import evaluate_batch, get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.population import (
-    evaluate_population,
     initialize_population,
     resolve_bounds,
 )
@@ -24,7 +23,6 @@ from vamos.engine.algorithm.components.termination import parse_termination
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.operators.policies.ibea import build_variation_pipeline
 from vamos.foundation.encoding import normalize_encoding
-from vamos.foundation.eval.population import evaluate_population_with_constraints
 
 from .helpers import environmental_selection
 from .state import IBEAState
@@ -90,12 +88,7 @@ def initialize_ibea_run(
     # Initialize population
     initializer_cfg = cfg.get("initializer")
     X = initialize_population(pop_size, n_var, xl, xu, encoding, rng, problem, initializer=initializer_cfg)
-
-    if constraint_mode and constraint_mode != "none":
-        F, G = evaluate_population_with_constraints(problem, X)
-    else:
-        F = evaluate_population(problem, X)
-        G = None
+    F, G = evaluate_batch(problem, eval_strategy, X, constraint_mode)
     n_eval = X.shape[0]
 
     # Tournament size

@@ -15,9 +15,9 @@ Useful extras:
 - `research`: external baselines + benchmarks (pymoo, jmetalpy, pygmo)
 - `analysis`: plotting + notebook deps (matplotlib/plotly/scikit-learn, ipywidgets, nbconvert)
 - `tuning`: model-based hyperparameter tuning backends (Optuna, SMAC3, BOHB)
-- `dev`: pytest, ruff, black, nbformat/nbconvert for notebook checks
+- `dev`: pytest, ruff, mypy, nbformat/nbconvert for notebook checks
 - `examples`: minimal plotting + scikit-learn deps
-- `studio`: streamlit + plotly dashboard
+- `studio`: Panel-based dashboard and visualization app
 - `autodiff`: JAX for constraint autodiff helpers
 
 Smoke tests
@@ -91,7 +91,7 @@ result = optimize(
     problem,
     algorithm="nsgaii",
     algorithm_config=algo_cfg,
-    termination=("max_evaluations", 10_000),
+    max_evaluations=10_000,
     seed=42,
     engine="numpy",
 )
@@ -109,7 +109,7 @@ Use the lightest interface that still makes the run reproducible.
 | Quick scripts, notebooks | Unified `optimize(...)` | `optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)` |
 | Your own problem | `make_problem(fn, ...)` | `make_problem(my_fn, n_var=2, n_obj=2, bounds=[(0,1),(0,1)], encoding="real")` |
 | Scaffold a problem file | CLI wizard | `vamos create-problem` |
-| Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit termination | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, termination=("max_evaluations", 5000))` |
+| Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit budget | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, max_evaluations=5000)` |
 | Plugin algorithms | `GenericAlgorithmConfig` | `optimize(problem, algorithm="my_algo", algorithm_config=GenericAlgorithmConfig({...}))` |
 | Small study in one call | `seed=[...]` | `optimize("zdt1", seed=[0, 1, 2])` |
 

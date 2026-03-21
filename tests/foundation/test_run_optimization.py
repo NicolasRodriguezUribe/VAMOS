@@ -115,7 +115,7 @@ class TestUnifiedBackendParameter:
             problem,
             algorithm="nsgaii",
             algorithm_config=cfg,
-            termination=("max_evaluations", 500),
+            max_evaluations=500,
             seed=42,
             engine="numpy",
         )

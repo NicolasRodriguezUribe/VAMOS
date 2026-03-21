@@ -4,6 +4,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 from vamos.engine.tuning.ablation import AblationPlan
+from vamos.experiment._execution_support import VariationConfigs
 from vamos.experiment.services.orchestrator import run_single
 
 from .persistence import CSVPersister
@@ -25,9 +26,7 @@ def _apply_overrides(tasks: Iterable[StudyTask], overrides: dict[str, Any]) -> l
                 seed=task.seed,
                 selection_pressure=task.selection_pressure,
                 external_archive=task.external_archive,
-                nsgaii_variation=task.nsgaii_variation,
-                moead_variation=task.moead_variation,
-                smsemoa_variation=task.smsemoa_variation,
+                variations=task.variations.copy() if task.variations is not None else None,
                 config_overrides=merged,
             )
         )
@@ -48,20 +47,12 @@ def run_study(
     return runner.run(list(tasks), run_single_fn=run_single)
 
 
-def _as_dict(value: Mapping[str, Any] | None) -> dict[str, Any] | None:
-    if value is None:
-        return None
-    return dict(value)
-
-
 def build_study_tasks_from_ablation_plan(
     plan: AblationPlan,
     *,
     algorithm: str,
     base_config: Mapping[str, Any] | None = None,
-    nsgaii_variations: Mapping[str, Mapping[str, Any]] | None = None,
-    moead_variations: Mapping[str, Mapping[str, Any]] | None = None,
-    smsemoa_variations: Mapping[str, Mapping[str, Any]] | None = None,
+    variations_by_variant: Mapping[str, VariationConfigs] | None = None,
     engine: str | None = None,
 ) -> tuple[list[StudyTask], list[str]]:
     tasks: list[StudyTask] = []
@@ -72,9 +63,11 @@ def build_study_tasks_from_ablation_plan(
         overrides = ablation_task.variant.apply(base_cfg)
         overrides["max_evaluations"] = ablation_task.max_evals
         task_engine = engine or ablation_task.engine or plan.engine or "numpy"
-        nsgaii_variation = _as_dict(nsgaii_variations.get(ablation_task.variant.name) if nsgaii_variations is not None else None)
-        moead_variation = _as_dict(moead_variations.get(ablation_task.variant.name) if moead_variations is not None else None)
-        smsemoa_variation = _as_dict(smsemoa_variations.get(ablation_task.variant.name) if smsemoa_variations is not None else None)
+        task_variations = None
+        if variations_by_variant is not None:
+            variant_variations = variations_by_variant.get(ablation_task.variant.name)
+            if variant_variations is not None:
+                task_variations = variant_variations.copy()
         tasks.append(
             StudyTask(
                 algorithm=algorithm,
@@ -82,9 +75,7 @@ def build_study_tasks_from_ablation_plan(
                 problem=ablation_task.problem,
                 seed=ablation_task.seed,
                 config_overrides=overrides,
-                nsgaii_variation=nsgaii_variation,
-                moead_variation=moead_variation,
-                smsemoa_variation=smsemoa_variation,
+                variations=task_variations,
             )
         )
         variant_names.append(ablation_task.variant.name)
@@ -97,9 +88,7 @@ def run_ablation_plan(
     *,
     algorithm: str,
     base_config: Mapping[str, Any] | None = None,
-    nsgaii_variations: Mapping[str, Mapping[str, Any]] | None = None,
-    moead_variations: Mapping[str, Mapping[str, Any]] | None = None,
-    smsemoa_variations: Mapping[str, Mapping[str, Any]] | None = None,
+    variations_by_variant: Mapping[str, VariationConfigs] | None = None,
     engine: str | None = None,
     config_overrides: dict[str, Any] | None = None,
     mirror_output_roots: Sequence[str] | None = ("results",),
@@ -108,9 +97,7 @@ def run_ablation_plan(
         plan,
         algorithm=algorithm,
         base_config=base_config,
-        nsgaii_variations=nsgaii_variations,
-        moead_variations=moead_variations,
-        smsemoa_variations=smsemoa_variations,
+        variations_by_variant=variations_by_variant,
         engine=engine,
     )
     results = run_study(tasks, config_overrides=config_overrides, mirror_output_roots=mirror_output_roots)

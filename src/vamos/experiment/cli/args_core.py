@@ -7,6 +7,7 @@ from vamos.engine.algorithm.catalog import (
     ENABLED_ALGORITHMS,
     OPTIONAL_ALGORITHMS,
 )
+from vamos.engine.algorithm.registry import get_algorithms_registry
 from vamos.experiment.runtime.catalog import DEFAULT_PROBLEM, EXPERIMENT_BACKENDS, EXTERNAL_ALGORITHM_NAMES
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import available_problem_names
@@ -24,16 +25,22 @@ def add_core_arguments(
 ) -> None:
     """Register core experiment arguments on the parser."""
     experiment_defaults = spec_defaults.experiment_defaults
+    algorithm_choices = tuple(
+        dict.fromkeys(
+            (
+                *sorted(get_algorithms_registry().keys()),
+                *ENABLED_ALGORITHMS,
+                *OPTIONAL_ALGORITHMS,
+                *EXTERNAL_ALGORITHM_NAMES,
+                "both",
+            )
+        )
+    )
 
     add_spec_argument(
         parser,
         "--algorithm",
-        choices=(
-            *ENABLED_ALGORITHMS,
-            *OPTIONAL_ALGORITHMS,
-            *EXTERNAL_ALGORITHM_NAMES,
-            "both",
-        ),
+        choices=algorithm_choices,
         default=spec_default(experiment_defaults, "algorithm", DEFAULT_ALGORITHM),
         help=(
             "Algorithm to run (use 'both' to execute the default internal algorithms sequentially; "

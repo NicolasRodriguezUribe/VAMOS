@@ -28,19 +28,11 @@ from vamos.foundation.constraints.utils import compute_violation, is_feasible
 
 
 class TestComputeViolationGNone:
-    """compute_violation must gracefully handle unconstrained (G=None) inputs."""
+    """compute_violation must require an explicit size for unconstrained inputs."""
 
-    def test_returns_empty_array_by_default(self):
-        # Arrange
-        G = None
-
-        # Act
-        result = compute_violation(G)
-
-        # Assert
-        assert isinstance(result, np.ndarray)
-        assert result.shape == (0,)
-        assert result.dtype == float
+    def test_requires_explicit_length(self):
+        with pytest.raises(ValueError, match="requires 'n'"):
+            compute_violation(None)
 
     def test_returns_zeros_of_length_n(self):
         # Arrange
@@ -63,13 +55,10 @@ class TestComputeViolationGNone:
         assert result.shape == (1,)
         assert result[0] == 0.0
 
-    def test_n_zero_same_as_default(self):
-        # Arrange / Act
-        default_result = compute_violation(None)
-        explicit_result = compute_violation(None, n=0)
-
-        # Assert
-        np.testing.assert_array_equal(default_result, explicit_result)
+    def test_n_zero_returns_empty_array(self):
+        result = compute_violation(None, n=0)
+        assert result.shape == (0,)
+        assert result.dtype == float
 
 
 # ------------------------------------------------------------------ #
@@ -78,19 +67,11 @@ class TestComputeViolationGNone:
 
 
 class TestIsFeasibleGNone:
-    """is_feasible must return all-True masks for unconstrained problems."""
+    """is_feasible must require an explicit size for unconstrained problems."""
 
-    def test_returns_empty_true_array_by_default(self):
-        # Arrange
-        G = None
-
-        # Act
-        result = is_feasible(G)
-
-        # Assert
-        assert isinstance(result, np.ndarray)
-        assert result.shape == (0,)
-        assert result.dtype == bool
+    def test_requires_explicit_length(self):
+        with pytest.raises(ValueError, match="requires 'n'"):
+            is_feasible(None)
 
     def test_returns_all_true_of_length_n(self):
         # Arrange
@@ -114,13 +95,10 @@ class TestIsFeasibleGNone:
         assert result.shape == (1,)
         assert result[0] is np.bool_(True)
 
-    def test_n_zero_same_as_default(self):
-        # Arrange / Act
-        default_result = is_feasible(None)
-        explicit_result = is_feasible(None, n=0)
-
-        # Assert
-        np.testing.assert_array_equal(default_result, explicit_result)
+    def test_n_zero_returns_empty_true_array(self):
+        result = is_feasible(None, n=0)
+        assert result.shape == (0,)
+        assert result.dtype == bool
 
 
 # ------------------------------------------------------------------ #

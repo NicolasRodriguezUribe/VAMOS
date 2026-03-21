@@ -63,6 +63,10 @@ def setup_archive(
 
     capacity = ext_cfg.capacity
     pruning = ext_cfg.pruning
+    tol = ext_cfg.objective_tolerance
+    dedup_mode = ext_cfg.deduplicate_in
+    decision_tol = ext_cfg.decision_tolerance
+    truncate_size = ext_cfg.truncate_size
     n_con = G.shape[1] if G is not None else None
 
     manager: ArchiveManager
@@ -71,6 +75,9 @@ def setup_archive(
             n_var=n_var,
             n_obj=n_obj,
             dtype=dtype,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
             n_con=n_con,
         )
     elif pruning in {"hv", "mc_hv"}:
@@ -79,7 +86,12 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
             n_con=n_con,
+            ref_point=ext_cfg.hv_ref_point,
         )
     elif pruning == "knn":
         manager = SPEA2Archive(
@@ -87,6 +99,10 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
             n_con=n_con,
             constraint_mode="feasibility",
         )
@@ -96,6 +112,10 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
             n_con=n_con,
         )
     elif pruning == "ref_dirs":
@@ -105,6 +125,10 @@ def setup_archive(
             n_obj,
             dtype,
             rng_seed=ext_cfg.rng_seed,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
             n_con=n_con,
         )
     else:
@@ -113,6 +137,10 @@ def setup_archive(
             n_var,
             n_obj,
             dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
             n_con=n_con,
         )
 
@@ -138,12 +166,22 @@ def setup_result_archive(
         SPEA2Archive,
     )
 
+    truncate_size = ext_cfg.truncate_size
+    tol = ext_cfg.objective_tolerance
+    dedup_mode = ext_cfg.deduplicate_in
+    decision_tol = ext_cfg.decision_tolerance
+
     if ext_cfg.pruning in {"hv", "mc_hv"}:
         return HypervolumeArchive(
             ext_cfg.capacity,
             n_var,
             n_obj,
             dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
+            ref_point=ext_cfg.hv_ref_point,
         )
     if ext_cfg.pruning == "knn":
         return SPEA2Archive(
@@ -151,6 +189,10 @@ def setup_result_archive(
             n_var,
             n_obj,
             dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
             constraint_mode="feasibility",
         )
     if ext_cfg.pruning == "maxmin":
@@ -159,6 +201,10 @@ def setup_result_archive(
             n_var,
             n_obj,
             dtype,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
         )
     if ext_cfg.pruning == "ref_dirs":
         return ReferenceDirectionsArchive(
@@ -167,12 +213,20 @@ def setup_result_archive(
             n_obj,
             dtype,
             rng_seed=ext_cfg.rng_seed,
+            truncate_size=truncate_size,
+            objective_tolerance=tol,
+            deduplicate_in=dedup_mode,
+            decision_tolerance=decision_tol,
         )
     return CrowdingDistanceArchive(
         ext_cfg.capacity,
         n_var,
         n_obj,
         dtype,
+        truncate_size=truncate_size,
+        objective_tolerance=tol,
+        deduplicate_in=dedup_mode,
+        decision_tolerance=decision_tol,
     )
 
 

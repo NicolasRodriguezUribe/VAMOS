@@ -52,6 +52,7 @@ CrossoverName: TypeAlias = Literal[
 ]
 
 MutationName: TypeAlias = Literal[
+    "pm",
     # Real
     "polynomial",
     "gaussian",

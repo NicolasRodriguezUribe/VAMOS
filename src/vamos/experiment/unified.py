@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import numbers
 from collections.abc import Mapping
-from typing import cast, overload
+from typing import overload
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, AlgorithmName, EngineName
 from vamos.experiment.auto import _compute_max_evaluations, _compute_pop_size, _resolve_problem, _select_algorithm
@@ -56,15 +56,6 @@ def _resolve_problem_label(problem: object, instance: ProblemProtocol) -> str:
     return instance.__class__.__name__
 
 
-def _extract_max_evaluations(termination: object) -> int | None:
-    if not isinstance(termination, tuple) or len(termination) != 2:
-        return None
-    kind, value = cast(tuple[object, object], termination)
-    if isinstance(kind, str) and kind == "max_evaluations":
-        return _coerce_int("termination max_evaluations", value, min_value=1)
-    return None
-
-
 @overload
 def optimize(
     problem: str | ProblemProtocol,
@@ -79,7 +70,6 @@ def optimize(
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
-    termination: tuple[str, object] | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
     live_viz: object | None = None,
     checkpoint: object | None = None,
@@ -100,7 +90,6 @@ def optimize(
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
-    termination: tuple[str, object] | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
     live_viz: object | None = None,
     checkpoint: object | None = None,
@@ -120,7 +109,6 @@ def optimize(
     n_obj: int | None = None,
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
-    termination: tuple[str, object] | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
     live_viz: object | None = None,
     checkpoint: object | None = None,
@@ -146,7 +134,6 @@ def optimize(
         n_obj: Override objective count when using a string problem key.
         problem_kwargs: Extra kwargs forwarded to problem instantiation for string problems.
         algorithm_config: Optional algorithm config object.
-        termination: Optional termination tuple; overrides max_evaluations if provided.
         eval_strategy: Evaluation backend name or instance (e.g., "serial", "dask").
         live_viz: Optional live visualization callback.
         checkpoint: Optional checkpoint payload to warm-start compatible algorithms.
@@ -155,9 +142,8 @@ def optimize(
         OptimizationResult for single seed, or list[OptimizationResult] for multiple seeds.
 
     Raises:
-        ValueError: If the problem name is unknown, or if *checkpoint* is
-            provided for multi-seed runs, or if conflicting termination
-            options are given.
+        ValueError: If the problem name is unknown or if *checkpoint* is
+            provided for multi-seed runs.
         ConfigurationError: If the algorithm/engine combination is invalid.
         OptimizationError: If the optimization run fails internally.
 
@@ -171,7 +157,6 @@ def optimize(
         # Multi-seed study
         >>> results = vamos.optimize("zdt1", seed=[0, 1, 2, 3, 4])
     """
-    # Multi-seed mode
     if isinstance(seed, (list, tuple)):
         if checkpoint is not None:
             raise ValueError("checkpoint is only supported for single-seed runs.")
@@ -188,7 +173,6 @@ def optimize(
                 n_obj,
                 problem_kwargs,
                 algorithm_config,
-                termination,
                 eval_strategy,
                 live_viz,
                 checkpoint,
@@ -209,7 +193,6 @@ def optimize(
         n_obj,
         problem_kwargs,
         algorithm_config,
-        termination,
         eval_strategy,
         live_viz,
         checkpoint,
@@ -228,7 +211,6 @@ def _run_single(
     n_obj: int | None,
     problem_kwargs: Mapping[str, object] | None,
     algorithm_config: AlgorithmConfigProtocol | None,
-    termination: tuple[str, object] | None,
     eval_strategy: EvaluationBackend | str | None,
     live_viz: object | None,
     checkpoint: object | None,
@@ -246,14 +228,6 @@ def _run_single(
         max_evaluations = _coerce_int("max_evaluations", max_evaluations, min_value=1)
     if isinstance(seed, bool) or not isinstance(seed, numbers.Integral):
         raise TypeError("seed must be an integer.")
-    if termination is not None:
-        if not isinstance(termination, tuple) or len(termination) != 2:
-            raise TypeError("termination must be a (kind, value) tuple.")
-        term_kind, term_value = termination
-        if not isinstance(term_kind, str):
-            raise TypeError("termination kind must be a string.")
-        if term_kind == "hv" and not isinstance(term_value, Mapping):
-            raise TypeError("termination=('hv', ...) requires a mapping payload.")
     if isinstance(eval_strategy, str):
         eval_key = eval_strategy.lower()
         if eval_key not in _ALLOWED_EVAL_STRATEGIES:
@@ -286,20 +260,10 @@ def _run_single(
     effective_pop_size = pop_size if pop_size else _compute_pop_size(n_var, n_obj)
     if not pop_size:
         _auto_defaults["pop_size"] = effective_pop_size
-    term_max_evaluations = _extract_max_evaluations(termination) if termination is not None else None
-    if termination is not None and max_evaluations is not None:
-        if term_max_evaluations is None:
-            raise ValueError("max_evaluations can only be combined with termination=('max_evaluations', max_evaluations).")
-        if term_max_evaluations != max_evaluations:
-            raise ValueError(f"max_evaluations={max_evaluations} conflicts with termination={termination}.")
-    if termination is not None:
-        effective_max_evaluations = term_max_evaluations
-        effective_termination = termination
-    else:
-        effective_max_evaluations = max_evaluations if max_evaluations is not None else _compute_max_evaluations(n_var, n_obj)
-        if max_evaluations is None:
-            _auto_defaults["max_evaluations"] = effective_max_evaluations
-        effective_termination = ("max_evaluations", effective_max_evaluations)
+    effective_max_evaluations = max_evaluations if max_evaluations is not None else _compute_max_evaluations(n_var, n_obj)
+    if max_evaluations is None:
+        _auto_defaults["max_evaluations"] = effective_max_evaluations
+    effective_termination = ("max_evaluations", effective_max_evaluations)
     effective_engine = resolve_engine(engine, algorithm=algorithm)
 
     if _auto_defaults:
@@ -382,7 +346,7 @@ def _run_single(
         "encoding": encoding,
     }
     pop_size_source = "config" if algorithm_config is not None else ("explicit" if pop_size is not None else "auto")
-    max_evaluations_source = "explicit" if termination is not None or max_evaluations is not None else "auto"
+    max_evaluations_source = "explicit" if max_evaluations is not None else "auto"
     result.meta["resolved_config"] = resolved_config
     result.meta["default_sources"] = {
         "algorithm": "auto" if algorithm_was_auto else "explicit",

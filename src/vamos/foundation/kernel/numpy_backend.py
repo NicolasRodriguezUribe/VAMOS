@@ -194,6 +194,32 @@ class NumPyKernel(KernelBackend):
         if pressure == 1:
             return rng.integers(0, N, size=n_parents, dtype=int)
 
+        if pressure == 2:
+            first = rng.integers(0, N, size=n_parents, dtype=int)
+            second = rng.integers(0, N - 1, size=n_parents, dtype=int)
+            second = second + (second >= first)
+
+            rank_first = ranks[first]
+            rank_second = ranks[second]
+            crowd_first = np.nan_to_num(crowding[first], nan=-np.inf)
+            crowd_second = np.nan_to_num(crowding[second], nan=-np.inf)
+
+            pick_first = rank_first < rank_second
+            pick_second = rank_second < rank_first
+            unresolved = ~(pick_first | pick_second)
+
+            crowd_first_better = crowd_first > crowd_second
+            crowd_second_better = crowd_second > crowd_first
+            pick_first = pick_first | (unresolved & crowd_first_better)
+            pick_second = pick_second | (unresolved & crowd_second_better)
+
+            ties = ~(pick_first | pick_second)
+            winners = np.where(pick_first, first, second)
+            if np.any(ties):
+                tie_coin = rng.integers(0, 2, size=int(np.sum(ties)), dtype=int).astype(bool)
+                winners[ties] = np.where(tie_coin, first[ties], second[ties])
+            return winners.astype(int, copy=False)
+
         candidates = np.empty((n_parents, pressure), dtype=int)
         for i in range(n_parents):
             candidates[i] = rng.choice(N, size=pressure, replace=False)

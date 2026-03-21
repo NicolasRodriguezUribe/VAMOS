@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from vamos.engine.tuning.ablation import AblationVariant
+from vamos.experiment._execution_support import VariationConfigs
 
 
 def as_mapping(value: object, name: str) -> dict[str, Any]:
@@ -63,16 +64,9 @@ def normalize_variants(
     base_output_root: str | None,
     output_root_by_variant: Mapping[str, str],
     per_variant_output_root: bool,
-) -> tuple[
-    list[AblationVariant],
-    dict[str, Mapping[str, Any]],
-    dict[str, Mapping[str, Any]],
-    dict[str, Mapping[str, Any]],
-]:
+) -> tuple[list[AblationVariant], dict[str, VariationConfigs]]:
     variants: list[AblationVariant] = []
-    nsgaii_variations: dict[str, Mapping[str, Any]] = {}
-    moead_variations: dict[str, Mapping[str, Any]] = {}
-    smsemoa_variations: dict[str, Mapping[str, Any]] = {}
+    variations_by_variant: dict[str, VariationConfigs] = {}
     for entry in raw_variants:
         if not isinstance(entry, Mapping):
             raise TypeError("Each variant entry must be a mapping.")
@@ -101,23 +95,17 @@ def normalize_variants(
         )
         variants.append(variant)
 
-        nsgaii_variation = entry.get("nsgaii_variation")
-        if nsgaii_variation is not None:
-            if not isinstance(nsgaii_variation, Mapping):
-                raise TypeError("nsgaii_variation must be a mapping when provided.")
-            nsgaii_variations[str(name)] = dict(nsgaii_variation)
-        moead_variation = entry.get("moead_variation")
-        if moead_variation is not None:
-            if not isinstance(moead_variation, Mapping):
-                raise TypeError("moead_variation must be a mapping when provided.")
-            moead_variations[str(name)] = dict(moead_variation)
-        smsemoa_variation = entry.get("smsemoa_variation")
-        if smsemoa_variation is not None:
-            if not isinstance(smsemoa_variation, Mapping):
-                raise TypeError("smsemoa_variation must be a mapping when provided.")
-            smsemoa_variations[str(name)] = dict(smsemoa_variation)
+        raw_variations = entry.get("variations")
+        variations_map = dict(raw_variations) if isinstance(raw_variations, Mapping) else {}
+        variant_variations = VariationConfigs(
+            nsgaii=dict(variations_map["nsgaii"]) if isinstance(variations_map.get("nsgaii"), Mapping) else None,
+            moead=dict(variations_map["moead"]) if isinstance(variations_map.get("moead"), Mapping) else None,
+            smsemoa=dict(variations_map["smsemoa"]) if isinstance(variations_map.get("smsemoa"), Mapping) else None,
+        )
+        if variant_variations.has_any():
+            variations_by_variant[str(name)] = variant_variations
 
-    return variants, nsgaii_variations, moead_variations, smsemoa_variations
+    return variants, variations_by_variant
 
 
 __all__ = ["as_mapping", "as_sequence", "parse_budget_overrides", "normalize_variants"]

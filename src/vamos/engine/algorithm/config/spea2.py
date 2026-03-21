@@ -14,7 +14,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -25,7 +27,7 @@ class SPEA2Config(_SerializableConfig):
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
     k_neighbors: int | None = None
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
@@ -135,6 +137,7 @@ class _SPEA2ConfigBuilder:
             ("pop_size", "archive_size", "crossover", "mutation", "selection"),
             "SPEA2",
         )
+        _validate_operators(self._cfg)
         return SPEA2Config(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],

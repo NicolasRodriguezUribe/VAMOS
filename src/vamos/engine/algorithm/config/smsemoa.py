@@ -14,7 +14,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -26,7 +28,7 @@ class SMSEMOAConfig(_SerializableConfig):
     reference_point: dict[str, Any]
     eliminate_duplicates: bool = False
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     track_genealogy: bool = False
@@ -146,6 +148,7 @@ class _SMSEMOAConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection"),
             "SMS-EMOA",
         )
+        _validate_operators(self._cfg)
         reference_point = self._cfg.get("reference_point", {"offset": 1.0, "adaptive": True})
         return SMSEMOAConfig(
             pop_size=self._cfg["pop_size"],

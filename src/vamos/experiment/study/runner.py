@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from vamos.experiment._execution_support import VariationConfigs
 from vamos.experiment.study.persistence import StudyPersister
 from vamos.experiment.study.types import StudyResult, StudyTask
 from vamos.foundation.core.experiment_config import ExperimentConfig
@@ -75,6 +76,11 @@ class StudyRunner:
                 extra_kwargs["evaluator"] = self.evaluator
             if self.termination is not None and "termination" in run_sig.parameters:
                 extra_kwargs["termination"] = self.termination
+            task_variations = task.variations.copy() if task.variations is not None else VariationConfigs()
+            if task_variations.has_any() and (
+                "variations" in run_sig.parameters or any(param.kind == inspect.Parameter.VAR_KEYWORD for param in run_sig.parameters.values())
+            ):
+                extra_kwargs["variations"] = task_variations
             metrics = run_single_fn(
                 task.engine,
                 task.algorithm,
@@ -82,7 +88,6 @@ class StudyRunner:
                 task_config,
                 external_archive=task.external_archive,
                 selection_pressure=task.selection_pressure,
-                nsgaii_variation=task.nsgaii_variation,
                 **extra_kwargs,
             )
 

@@ -46,7 +46,7 @@ variants:
       hv_convergence:
         enabled: false
     archive:
-      bounded:
+      external:
         enabled: false
 - name: archive_sizecap
   patch:
@@ -54,11 +54,10 @@ variants:
       hv_convergence:
         enabled: false
     archive:
-      bounded:
+      external:
         enabled: true
-        size_cap: 400
-        nondominated_only: true
-        prune_policy: crowding
+        capacity: 400
+        pruning: crowding
 - name: stop_only
   patch:
     stopping:
@@ -74,7 +73,7 @@ variants:
         confidence: null
         ref_point: auto
     archive:
-      bounded:
+      external:
         enabled: false
 - name: stop_plus_archive
   patch:
@@ -91,8 +90,7 @@ variants:
         confidence: null
         ref_point: auto
     archive:
-      bounded:
+      external:
         enabled: true
-        size_cap: 400
-        nondominated_only: true
-        prune_policy: crowding
+        capacity: 400
+        pruning: crowding

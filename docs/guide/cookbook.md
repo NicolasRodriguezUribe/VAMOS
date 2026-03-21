@@ -201,16 +201,23 @@ result = optimize("zdt1", algorithm="nsgaii", max_evaluations=6000, eval_strateg
 
 ## 12. Hypervolume-Based Early Stopping
 
-Stop once the hypervolume reaches a target fraction of the reference front.
+Use the lower-level experiment runner when you need non-default termination logic.
 
 ```python
-from vamos import optimize
+from vamos.experiment.runner import run_experiment
+from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
 
 hv_cfg = build_hv_stop_config(hv_threshold=0.9, hv_reference_front=None, problem_key="zdt1")
 hv_cfg["max_evaluations"] = 12000
 
-result = optimize("zdt1", algorithm="nsgaii", termination=("hv", hv_cfg), seed=3)
+metrics = run_experiment(
+    problem="zdt1",
+    algorithm="nsgaii",
+    engine="numpy",
+    config=ExperimentConfig(max_evaluations=12000, seed=3),
+    termination=("hv", hv_cfg),
+)
 ```
 
 ## 13. Save Results for Offline Analysis

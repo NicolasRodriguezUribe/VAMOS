@@ -24,11 +24,10 @@ from vamos.engine.algorithm.components.hooks import (
     live_should_stop,
     track_offspring_genealogy,
 )
-from vamos.engine.algorithm.components.population import evaluate_population
+from vamos.engine.algorithm.components.lifecycle import evaluate_batch
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.engine.algorithm.nsgaii.helpers import build_mating_pool
-from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.foundation.kernel import default_kernel
 
 from .helpers import combine_constraints, environmental_selection
@@ -215,12 +214,7 @@ class IBEA:
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
-        if constraint_mode and constraint_mode != "none":
-            F, G = evaluate_population_with_constraints(problem, X)
-        else:
-            F = evaluate_population(problem, X)
-            G = None
-        return F, G
+        return evaluate_batch(problem, eval_strategy, X, constraint_mode)
 
     # -------------------------------------------------------------------------
     # Ask/Tell Interface

@@ -7,7 +7,8 @@ from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 
-from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -19,7 +20,7 @@ class SMPSOConfig(_SerializableConfig):
     c1: float = 1.5
     c2: float = 1.5
     vmax_fraction: float = 0.5
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
     track_genealogy: bool = False
@@ -114,6 +115,7 @@ class _SMPSOConfigBuilder:
             ("pop_size", "archive_size", "mutation"),
             "SMPSO",
         )
+        _validate_operators(self._cfg)
         return SMPSOConfig(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],

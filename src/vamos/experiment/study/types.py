@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.experiment._execution_support import VariationConfigs
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import ProblemSelection
 
@@ -24,9 +25,7 @@ class StudyTask:
     seed: int = ExperimentConfig().seed
     selection_pressure: int = 2
     external_archive: ExternalArchiveConfig | None = None
-    nsgaii_variation: dict[str, Any] | None = None
-    moead_variation: dict[str, Any] | None = None
-    smsemoa_variation: dict[str, Any] | None = None
+    variations: VariationConfigs | None = None
     config_overrides: dict[str, Any] | None = None
 
 

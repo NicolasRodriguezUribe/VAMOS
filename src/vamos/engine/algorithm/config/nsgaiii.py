@@ -15,7 +15,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -28,7 +30,7 @@ class NSGAIIIConfig(_SerializableConfig):
     enforce_ref_dirs: bool = True
     pop_size_auto: bool = False
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     track_genealogy: bool = False
@@ -156,6 +158,7 @@ class _NSGAIIIConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection"),
             "NSGA-III",
         )
+        _validate_operators(self._cfg)
         ref_dirs = self._cfg.get("reference_directions", {})
         return NSGAIIIConfig(
             pop_size=self._cfg["pop_size"],

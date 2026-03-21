@@ -1,9 +1,11 @@
 import sys
+from dataclasses import dataclass
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
+from vamos.engine.algorithm.registry import ALGORITHMS
 from vamos.experiment import cli, runner
 from vamos.experiment.study.persistence import CSVPersister
 from vamos.experiment.study.runner import StudyRunner
@@ -11,6 +13,7 @@ from vamos.experiment.study.types import StudyTask
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
 from vamos.foundation.exceptions import ConfigurationError
+from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.problem.tsp import TSPProblem
 
 
@@ -76,6 +79,63 @@ def test_permutation_problem_rejects_unsupported_algorithm():
             selection,
             config,
         )
+
+
+def test_runner_rejects_genealogy_for_non_nsgaii():
+    selection = make_problem_selection("zdt1", n_var=4)
+    config = ExperimentConfig(population_size=6, offspring_population_size=6, max_evaluations=12, seed=1)
+    with pytest.raises(ValueError, match="NSGA-II"):
+        runner.run_single("numpy", "ibea", selection, config, track_genealogy=True)
+
+
+def test_runner_plugin_algorithm_uses_registry_path():
+    algo_key = "_runner_mock_algo"
+
+    def mock_algo_builder(cfg, kernel):
+        class MockAlgo:
+            def __init__(self, config_dict):
+                self.config_dict = config_dict
+                self.kernel = kernel
+
+            def run(self, problem, termination, seed, eval_strategy=None, live_viz=None):
+                return {
+                    "X": np.zeros((3, problem.n_var)),
+                    "F": np.full((3, problem.n_obj), 0.4, dtype=float),
+                    "evaluations": 3,
+                }
+
+        return MockAlgo(dict(cfg))
+
+    if algo_key not in ALGORITHMS:
+        ALGORITHMS.register(algo_key, mock_algo_builder)
+
+    @dataclass(frozen=True)
+    class DummyConfig:
+        pop_size: int = 5
+
+        def to_dict(self) -> dict[str, object]:
+            return {"pop_size": self.pop_size}
+
+    selection = make_problem_selection("zdt1", n_var=4)
+    config = ExperimentConfig(population_size=5, offspring_population_size=5, max_evaluations=10, seed=1)
+
+    result = runner.run_single("numpy", algo_key, selection, config, algorithm_config=DummyConfig())
+
+    assert result["algorithm"] == algo_key
+    assert result["F"].shape == (3, 2)
+
+
+def test_cli_accepts_registered_plugin_algorithm(monkeypatch):
+    algo_key = "_cli_mock_algo"
+    if algo_key not in ALGORITHMS:
+        ALGORITHMS.register(algo_key, lambda cfg, kernel: None)
+
+    default_cfg = ExperimentConfig()
+    argv = ["prog", "--problem", "zdt1", "--algorithm", algo_key]
+    monkeypatch.setattr(sys, "argv", argv)
+    args = cli.parse_args(default_cfg)
+
+    assert args.algorithm == algo_key
 
 
 def test_study_runner_mirrors_outputs(monkeypatch, tmp_path):

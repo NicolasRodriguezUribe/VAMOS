@@ -47,7 +47,6 @@ jobs:
             tests/architecture/test_report_retention_policy.py \
             tests/architecture/test_ruff_gate.py \
             tests/architecture/test_ruff_format_gate.py \
-            tests/architecture/test_mypy_error_budget.py \
             tests/architecture/test_build_smoke.py \
             tests/architecture/test_py_typed_present.py
       - name: Run tests
@@ -95,7 +94,7 @@ jobs:
           import importlib.resources as res
           import vamos
           import vamos.api
-          path = res.files("vamos.foundation.data.reference_fronts") / "ZDT1.csv"
+          path = res.files("vamos.resources.reference_fronts") / "ZDT1.csv"
           assert path.is_file(), "Reference front missing in wheel"
           print("Wheel smoke OK:", vamos.__version__)
           PY

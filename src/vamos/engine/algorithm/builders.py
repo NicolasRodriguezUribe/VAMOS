@@ -79,7 +79,7 @@ def build_nsgaii_algorithm(
     else:
         builder.selection("tournament", size=selection_pressure)
 
-    if "repair" in var_cfg:
+    if "repair" in var_cfg and var_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
@@ -144,7 +144,7 @@ def build_moead_algorithm(
     if "use_numba_variation" in var_cfg:
         builder.use_numba_variation(bool(var_cfg["use_numba_variation"]))
 
-    if "repair" in var_cfg:
+    if "repair" in var_cfg and var_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
@@ -180,7 +180,7 @@ def build_smsemoa_algorithm(
     s_name, s_kwargs = ensure_operator_tuple(var_cfg.get("selection", ("random", {})), key="selection")
     builder.selection(s_name, **s_kwargs)
 
-    if "repair" in var_cfg:
+    if "repair" in var_cfg and var_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
@@ -219,7 +219,7 @@ def build_nsgaiii_algorithm(
     )
     builder.selection(s_name, **s_kwargs)
 
-    if "repair" in var_cfg:
+    if "repair" in var_cfg and var_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
@@ -269,7 +269,7 @@ def build_spea2_algorithm(
     )
     builder.selection(sel_name, **sel_kwargs)
 
-    if "repair" in var_cfg:
+    if "repair" in var_cfg and var_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
@@ -315,7 +315,7 @@ def build_ibea_algorithm(
     else:
         raise ValueError("IBEA indicator must be a string.")
     builder.kappa(_as_float(var_cfg.get("kappa", 1.0)))
-    if "repair" in var_cfg:
+    if "repair" in var_cfg and var_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
@@ -358,7 +358,7 @@ def build_smpso_algorithm(
         builder.c2(_as_float(mut_cfg["c2"]))
     if "vmax_fraction" in mut_cfg:
         builder.vmax_fraction(_as_float(mut_cfg["vmax_fraction"]))
-    if "repair" in mut_cfg:
+    if "repair" in mut_cfg and mut_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(mut_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
     cfg_data = cast(AlgorithmConfigProtocol, builder.build())
@@ -403,7 +403,7 @@ def build_agemoea_algorithm(
     m_name, m_kwargs = ensure_operator_tuple(var_cfg["mutation"], key="mutation")
     builder.mutation(m_name, **m_kwargs)
 
-    if "repair" in var_cfg:
+    if "repair" in var_cfg and var_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 
@@ -447,7 +447,7 @@ def build_rvea_algorithm(
     m_name, m_kwargs = ensure_operator_tuple(var_cfg["mutation"], key="mutation")
     builder.mutation(m_name, **m_kwargs)
 
-    if "repair" in var_cfg:
+    if "repair" in var_cfg and var_cfg["repair"] is not None:
         r_name, r_kwargs = ensure_operator_tuple(var_cfg["repair"], key="repair")
         builder.repair(ensure_supported_repair_name(encoding, r_name), **r_kwargs)
 

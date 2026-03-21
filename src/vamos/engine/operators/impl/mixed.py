@@ -163,7 +163,7 @@ def _validate_segment_bounds(
         raise ValueError(f"{lower_name}/{upper_name} lengths must match {index_name} size.")
 
 
-def _mixed_crossover_legacy(
+def _mixed_crossover_default(
     X_parents: np.ndarray,
     prob: float,
     spec: dict[str, Any],
@@ -229,7 +229,7 @@ def _mixed_crossover_legacy(
     return offspring
 
 
-def _mixed_mutation_legacy(
+def _mixed_mutation_default(
     X: np.ndarray,
     prob: float,
     spec: dict[str, Any],
@@ -343,7 +343,7 @@ def mixed_crossover(
       - ``cat_crossover`` in {"uniform"}
     """
     if not _has_customized_segment_settings(spec, _CUSTOM_CROSSOVER_KEYS):
-        return _mixed_crossover_legacy(X_parents, prob, spec, rng)
+        return _mixed_crossover_default(X_parents, prob, spec, rng)
 
     Np, D = X_parents.shape
     if Np == 0:
@@ -471,7 +471,7 @@ def mixed_mutation(
       - ``cat_mutation`` in {"reset"}
     """
     if not _has_customized_segment_settings(spec, _CUSTOM_MUTATION_KEYS):
-        _mixed_mutation_legacy(X, prob, spec, rng)
+        _mixed_mutation_default(X, prob, spec, rng)
         return
 
     if X.size == 0:

@@ -67,6 +67,7 @@ _KNOWN_OPERATORS: dict[str, set[str]] = {
         "uniform",
     },
     "mutation": {
+        "pm",
         "polynomial",
         "non_uniform",
         "gaussian",

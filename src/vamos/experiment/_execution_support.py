@@ -11,6 +11,18 @@ from vamos.engine.config.variation import VariationConfig
 from vamos.foundation.observer import Observer, RunContext
 from vamos.resources import weight_path
 
+_VARIATION_FIELDS = (
+    "nsgaii",
+    "moead",
+    "smsemoa",
+    "nsgaiii",
+    "spea2",
+    "ibea",
+    "smpso",
+    "agemoea",
+    "rvea",
+)
+
 
 @_dataclass
 class VariationConfigs:
@@ -52,6 +64,22 @@ class VariationConfigs:
             "agemoea_variation": self.agemoea,
             "rvea_variation": self.rvea,
         }
+
+    def has_any(self) -> bool:
+        return any(getattr(self, field_name) is not None for field_name in _VARIATION_FIELDS)
+
+    def for_algorithm(self, algorithm: str) -> VariationConfigs:
+        key = algorithm.strip().lower()
+        if key not in _VARIATION_FIELDS:
+            return VariationConfigs()
+        return VariationConfigs(**{key: self.copy_field(key)})
+
+    def copy(self) -> VariationConfigs:
+        return VariationConfigs(**{field_name: self.copy_field(field_name) for field_name in _VARIATION_FIELDS})
+
+    def copy_field(self, field_name: str) -> VariationConfig | None:
+        value = getattr(self, field_name)
+        return None if value is None else dict(value)
 
 
 class CompositeObserver(Observer):

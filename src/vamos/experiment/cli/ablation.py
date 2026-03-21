@@ -8,6 +8,7 @@ from typing import Any
 
 from vamos.engine.config.loader import load_experiment_spec
 from vamos.engine.tuning.ablation import AblationVariant, build_ablation_plan
+from vamos.experiment._execution_support import VariationConfigs
 from vamos.experiment.study.api import run_ablation_plan
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
@@ -59,18 +60,34 @@ def _normalize_variant_payloads(
     base_output_root: str | None,
     output_root_by_variant: Mapping[str, str],
     per_variant_output_root: bool,
-) -> tuple[
-    list[AblationVariant],
-    dict[str, Mapping[str, Any]],
-    dict[str, Mapping[str, Any]],
-    dict[str, Mapping[str, Any]],
-]:
+) -> tuple[list[AblationVariant], dict[str, VariationConfigs]]:
     return normalize_variants(
         raw_variants,
         base_output_root=base_output_root,
         output_root_by_variant=output_root_by_variant,
         per_variant_output_root=per_variant_output_root,
     )
+
+
+def _filter_variations_by_algorithm(
+    variations_by_variant: Mapping[str, VariationConfigs],
+    *,
+    algorithm: str,
+) -> dict[str, VariationConfigs]:
+    algorithm_key = algorithm.lower()
+    if algorithm_key != "nsgaii" and any(cfg.nsgaii is not None for cfg in variations_by_variant.values()):
+        _logger().warning("[Ablation] variations.nsgaii provided but algorithm=%s; ignoring those overrides.", algorithm)
+    if algorithm_key != "moead" and any(cfg.moead is not None for cfg in variations_by_variant.values()):
+        _logger().warning("[Ablation] variations.moead provided but algorithm=%s; ignoring those overrides.", algorithm)
+    if algorithm_key != "smsemoa" and any(cfg.smsemoa is not None for cfg in variations_by_variant.values()):
+        _logger().warning("[Ablation] variations.smsemoa provided but algorithm=%s; ignoring those overrides.", algorithm)
+
+    filtered: dict[str, VariationConfigs] = {}
+    for name, cfg in variations_by_variant.items():
+        restricted = cfg.for_algorithm(algorithm_key)
+        if restricted.has_any():
+            filtered[name] = restricted
+    return filtered
 
 
 def run_ablation(argv: Sequence[str] | None = None) -> None:
@@ -107,7 +124,7 @@ def run_ablation(argv: Sequence[str] | None = None) -> None:
         raise ValueError("default_max_evals must be a positive integer.")
 
     raw_variants = as_sequence(raw.get("variants"), "variants")
-    variants, nsgaii_variations, moead_variations, smsemoa_variations = _normalize_variant_payloads(
+    variants, variations_by_variant = _normalize_variant_payloads(
         raw_variants,
         base_output_root=str(base_output_root) if base_output_root else None,
         output_root_by_variant=output_root_by_variant,
@@ -144,23 +161,13 @@ def run_ablation(argv: Sequence[str] | None = None) -> None:
             raise TypeError("mirror_output_roots must be a list of paths.")
         mirror = tuple(str(p) for p in mirror_output_roots)
 
-    if algorithm != "nsgaii" and nsgaii_variations:
-        _logger().warning("[Ablation] nsgaii_variation provided but algorithm=%s; ignoring variations.", algorithm)
-        nsgaii_variations = {}
-    if algorithm != "moead" and moead_variations:
-        _logger().warning("[Ablation] moead_variation provided but algorithm=%s; ignoring variations.", algorithm)
-        moead_variations = {}
-    if algorithm != "smsemoa" and smsemoa_variations:
-        _logger().warning("[Ablation] smsemoa_variation provided but algorithm=%s; ignoring variations.", algorithm)
-        smsemoa_variations = {}
+    variations_by_variant = _filter_variations_by_algorithm(variations_by_variant, algorithm=algorithm)
 
     results, variant_names = run_ablation_plan(
         plan,
         algorithm=algorithm,
         base_config=base_config,
-        nsgaii_variations=nsgaii_variations or None,
-        moead_variations=moead_variations or None,
-        smsemoa_variations=smsemoa_variations or None,
+        variations_by_variant=variations_by_variant or None,
         engine=str(engine) if engine is not None else None,
         mirror_output_roots=mirror,
     )
