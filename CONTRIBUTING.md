@@ -25,7 +25,6 @@ Thank you for considering a contribution! This project is organized to make addi
 ## Architecture health (mandatory)
 - Read the ADRs before any architectural change: `docs/dev/adr/index.md`.
 - Run the local health command (same gates as CI): `python tools/health.py`.
-- Optional strict typing: `python tools/health.py --mypy-full` (stricter than CI).
 - If you change public APIs, update the snapshot: `python tools/update_public_api_snapshot.py`.
 
 ## Continuous Integration
@@ -41,7 +40,7 @@ Thank you for considering a contribution! This project is organized to make addi
 
 ## Tuning package layout
 - All tuning utilities (parameter spaces, samplers, racing loop, random search) live under `src/vamos/engine/tuning/racing/`.
-- Import from `vamos.engine.tuning` or use the user-friendly facade `vamos.tuning`.
+- Import from `vamos.engine.tuning`. Do not document or depend on a `vamos.tuning` facade; it is not part of the public API.
 
 ## Self-check
 - After changes, run `vamos check` for a quick sanity check.

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Literal, TypedDict, overload
+from typing import Any, Literal, TypedDict, cast, overload
 
 import numpy as np
 from numpy.typing import NDArray
@@ -112,13 +112,16 @@ class OptimizationResult:
         nondominated_only: bool = True,
         weights: NDArray[np.float64] | None = None,
     ) -> TopKResult:
-        return rank_top_k(
-            self,
-            k=k,
-            source=source,
-            method=method,
-            nondominated_only=nondominated_only,
-            weights=weights,
+        return cast(
+            TopKResult,
+            rank_top_k(
+                self,
+                k=k,
+                source=source,
+                method=method,
+                nondominated_only=nondominated_only,
+                weights=weights,
+            ),
         )
 
     def top_k_report(

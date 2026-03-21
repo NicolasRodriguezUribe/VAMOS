@@ -22,7 +22,8 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from vamos.foundation.encoding import normalize_encoding
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
+from vamos.foundation.exceptions import BoundsError, ConfigurationError, ProblemDimensionError
 from vamos.foundation.problem.base import Problem
 
 
@@ -41,7 +42,7 @@ class FunctionalProblem(Problem):
         n_obj: int,
         xl: np.ndarray,
         xu: np.ndarray,
-        encoding: str,
+        encoding: EncodingLike,
         vectorized: bool,
         name: str,
         constraints_fn: Callable[..., object] | None,
@@ -246,7 +247,7 @@ def make_problem(
     """
     # ---- validate callable ----
     if not callable(fn):
-        raise TypeError(
+        raise ConfigurationError(
             f"First argument must be a callable, got {type(fn).__name__}."
             "\n\nHint: make_problem(my_function, ...) where my_function(x) "
             "returns a list of objective values."
@@ -254,24 +255,24 @@ def make_problem(
 
     # ---- validate dimensions ----
     if not isinstance(n_var, int) or n_var < 1:
-        raise ValueError("n_var must be a positive integer.")
+        raise ProblemDimensionError("n_var must be a positive integer.", n_var=n_var)
     if not isinstance(n_obj, int) or n_obj < 1:
-        raise ValueError("n_obj must be a positive integer.")
+        raise ProblemDimensionError("n_obj must be a positive integer.", n_obj=n_obj)
 
     # ---- resolve bounds ----
     if bounds is not None and (xl is not None or xu is not None):
-        raise ValueError("Use either 'bounds' or 'xl'/'xu', not both.\n\nHint: bounds=[(0, 1), (0, 1)] is equivalent to xl=0.0, xu=1.0")
+        raise BoundsError("Use either 'bounds' or 'xl'/'xu', not both.\n\nHint: bounds=[(0, 1), (0, 1)] is equivalent to xl=0.0, xu=1.0")
 
     if bounds is not None:
         if len(bounds) != n_var:
-            raise ValueError(
+            raise BoundsError(
                 f"bounds has {len(bounds)} entries but n_var={n_var}.\n\nHint: provide exactly one (lower, upper) pair per variable."
             )
         for i, b in enumerate(bounds):
             if not (isinstance(b, (tuple, list)) and len(b) == 2):
-                raise ValueError(f"bounds[{i}] must be a (lower, upper) pair, got {b!r}.")
+                raise BoundsError(f"bounds[{i}] must be a (lower, upper) pair, got {b!r}.")
             if b[0] > b[1]:
-                raise ValueError(f"bounds[{i}]: lower bound ({b[0]}) > upper bound ({b[1]}).")
+                raise BoundsError(f"bounds[{i}]: lower bound ({b[0]}) > upper bound ({b[1]}).")
         xl_arr = np.array([b[0] for b in bounds], dtype=float)
         xu_arr = np.array([b[1] for b in bounds], dtype=float)
     else:
@@ -285,15 +286,15 @@ def make_problem(
     # ---- validate constraints ----
     if constraints is not None:
         if not callable(constraints):
-            raise TypeError("'constraints' must be a callable.")
+            raise ConfigurationError("'constraints' must be a callable.")
         if n_constraints < 1:
-            raise ValueError(
+            raise ProblemDimensionError(
                 "n_constraints must be >= 1 when a constraints function is provided."
                 "\n\nHint: n_constraints is the number of constraint values "
                 "your function returns."
             )
     if n_constraints > 0 and constraints is None:
-        raise ValueError(
+        raise ProblemDimensionError(
             f"n_constraints={n_constraints} but no constraints function was provided."
             "\n\nHint: pass constraints=your_function where your_function(x) "
             "returns a list of n_constraints values (g(x) <= 0 is feasible)."
@@ -306,7 +307,10 @@ def make_problem(
             name = "custom_problem"
 
     # ---- normalize encoding ----
-    enc = normalize_encoding(encoding)
+    try:
+        enc = normalize_encoding(encoding)
+    except ValueError as exc:
+        raise ConfigurationError(str(exc)) from exc
 
     return FunctionalProblem(
         fn,

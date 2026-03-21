@@ -78,6 +78,8 @@ def build_spea2_result(state: SPEA2State, hv_reached: bool = False) -> dict[str,
         result_X, result_F = archive_contents
         result_G = None
     else:
+        assert state.env_X is not None
+        assert state.env_F is not None
         result_X = state.env_X
         result_F = state.env_F
         result_G = state.env_G if state.constraint_mode != "none" else None

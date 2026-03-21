@@ -5,12 +5,13 @@ import pytest
 
 pytestmark = pytest.mark.notebooks
 
+NOTEBOOK_SMOKE_MANIFEST = [
+    Path("notebooks/0_basic/01_quickstart.ipynb"),
+]
+
 
 def _iter_notebooks():
-    nb_dir = Path("notebooks")
-    if not nb_dir.exists():
-        return []
-    return sorted(nb_dir.glob("0*_*.ipynb"))
+    return [path for path in NOTEBOOK_SMOKE_MANIFEST if path.exists()]
 
 
 @pytest.mark.examples

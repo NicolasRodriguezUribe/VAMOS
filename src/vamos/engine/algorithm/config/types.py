@@ -110,7 +110,7 @@ RepairName: TypeAlias = Literal[
     "midpoint_base",
     "gradient",
 ]
-RepairConfigValue: TypeAlias = tuple[str, dict[str, Any]] | Literal["auto"]
+RepairConfigValue: TypeAlias = tuple[RepairName, dict[str, Any]] | Literal["auto"]
 
 # ── Algorithm, engine, and aggregation literals ──────────────────────
 

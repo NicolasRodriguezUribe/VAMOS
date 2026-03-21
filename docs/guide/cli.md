@@ -159,7 +159,7 @@ Key flags
 ---------
 
 - `--algorithm`: nsgaii, moead, smsemoa, nsgaiii, spea2, ibea, smpso, both, or external baselines (pymoo_nsga2, jmetalpy_nsga2, pygmo_nsga2)
-- `--engine`: numpy | numba | moocore | jax (strict ranking uses NumPy fallback; set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking)
+- `--engine`: numpy | numba | moocore | jax | auto. The deterministic default is `numpy`; use `auto` only when you explicitly want heuristic backend selection.
 - `--problem`: any registry key (see Problems page)
 - `--problem-set`: predefined sets (e.g., `families`)
 - `--validate-config`: validate `--config` and exit

@@ -89,7 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> int:
     _configure_cli_logging()
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -103,7 +103,8 @@ def main(argv: list[str] | None = None) -> None:
         _run_cmd(args)
     else:
         parser.print_help()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -54,7 +54,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> int:
     _configure_cli_logging()
     parser = build_arg_parser()
     args = parser.parse_args(argv)
@@ -63,7 +63,7 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.list or not args.suite:
         _logger().info("Available benchmark suites: %s", ", ".join(list_benchmark_suites()))
-        return
+        return 0
 
     suite = get_benchmark_suite(args.suite)
     algorithms = args.algorithms or suite.default_algorithms
@@ -113,7 +113,8 @@ def main(argv: list[str] | None = None) -> None:
         _logger().info("[Benchmark] Plots in %s", report_output / "plots")
     if lab_outputs:
         _logger().info("[Benchmark] Lab outputs in %s", report_output / "lab")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

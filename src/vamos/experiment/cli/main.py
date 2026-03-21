@@ -48,6 +48,12 @@ _SUBCOMMANDS: dict[str, str] = {
 }
 
 
+def _raise_on_nonzero(result: int | None) -> None:
+    exit_code = 0 if result is None else int(result)
+    if exit_code != 0:
+        raise SystemExit(exit_code)
+
+
 def _dispatch_subcommand(argv: list[str]) -> bool:
     if not argv:
         return False
@@ -97,12 +103,12 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
     if command in {"check", "self-check", "self_check"}:
         from vamos.experiment.diagnostics.self_check import main as _self_check_main
 
-        _self_check_main()
+        _raise_on_nonzero(_self_check_main(argv[1:]))
         return True
     if command in {"bench", "benchmark"}:
         from vamos.experiment.benchmark.cli import main as _bench_main
 
-        _bench_main(argv[1:])
+        _raise_on_nonzero(_bench_main(argv[1:]))
         return True
     if command in {"studio"}:
         from vamos.ux.panel.launcher import main as _studio_main
@@ -114,17 +120,17 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
     if command in {"zoo"}:
         from vamos.experiment.zoo.cli import main as _zoo_main
 
-        _zoo_main(argv[1:])
+        _raise_on_nonzero(_zoo_main(argv[1:]))
         return True
     if command in {"tune"}:
         from vamos.experiment.cli.tune import main as _tune_main
 
-        _tune_main(argv[1:])
+        _raise_on_nonzero(_tune_main(argv[1:]))
         return True
     if command in {"profile"}:
         from vamos.experiment.profiler.cli import main as _profile_main
 
-        _profile_main(argv[1:])
+        _raise_on_nonzero(_profile_main(argv[1:]))
         return True
 
     return False

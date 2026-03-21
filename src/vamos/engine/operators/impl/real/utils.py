@@ -24,7 +24,8 @@ def _ensure_bounds(lower: ArrayLike, upper: ArrayLike) -> tuple[np.ndarray, np.n
 
 def _clip_population(x: ArrayLike, lower: ArrayLike, upper: ArrayLike) -> np.ndarray:
     """Return a clipped copy of x inside [lower, upper]."""
-    return np.clip(x, lower, upper)
+    clipped = np.clip(x, lower, upper)
+    return np.asarray(clipped)
 
 
 def _check_nvars(n_vars: int, bounds: np.ndarray) -> None:

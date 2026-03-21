@@ -22,13 +22,13 @@ from vamos.engine.algorithm.components.variation.helpers import (
     ensure_supported_repair_name,
 )
 from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
-from vamos.engine.algorithm.config.types import RepairConfigValue
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.config.variation import (
     ensure_operator_tuple,
     resolve_default_variation_config,
 )
 from vamos.engine.hooks.live_viz import LiveVisualization
+from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.kernel import default_kernel

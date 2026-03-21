@@ -618,8 +618,8 @@ def mixed_mutation(
         mask = rng.random((X.shape[0], cat_idx.size)) <= cat_prob
         if np.any(mask):
             cats = np.empty((X.shape[0], cat_idx.size), dtype=np.int32)
-            for j in range(cat_idx.size):
-                cats[:, j] = rng.integers(0, int(cat_cardinality[j]), size=X.shape[0], dtype=np.int32)
+            for cat_pos in range(int(cat_idx.size)):
+                cats[:, cat_pos] = rng.integers(0, int(cat_cardinality[cat_pos]), size=X.shape[0], dtype=np.int32)
             X_cat = np.rint(X[:, cat_idx]).astype(np.int32, copy=True)
             X_cat[mask] = cats[mask]
             X[:, cat_idx] = X_cat

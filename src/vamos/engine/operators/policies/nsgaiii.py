@@ -19,8 +19,7 @@ from vamos.engine.operators.impl.integer import (
     integer_sbx_crossover,
 )
 from vamos.engine.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.engine.operators.impl.real import VariationWorkspace
-from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.engine.operators.policies._real_operator_builder import build_real_variation_pair
 from vamos.engine.operators.policies.discrete_operator_maps import (
     BINARY_CROSSOVER_COMMON,
     BINARY_MUTATION_COMMON,
@@ -35,7 +34,6 @@ from vamos.engine.operators.policies.discrete_operator_maps import (
     PermCrossoverOp,
     PermMutationOp,
 )
-from vamos.engine.operators.policies.real_repair import apply_policy_repair, resolve_policy_repair
 from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 
@@ -258,40 +256,23 @@ def _build_real_operators(
     repair_cfg: RepairConfigValue,
 ) -> tuple[VariationCrossoverFn, VariationMutationFn]:
     """Build continuous (real) encoding operators via the operator registry."""
-    registry = get_operator_registry()
-    workspace = VariationWorkspace()
-    repair_operator = resolve_policy_repair("real", repair_cfg)
-    assert repair_operator is not None
-
-    # --- crossover ---
-    cross_kwargs = dict(cross_params)
-    prob = cross_kwargs.pop("prob", None)
-    cross_kwargs.setdefault("prob_crossover", 0.9 if prob is None else float(prob))
-    cross_kwargs.setdefault("allow_inplace", True)
-    cross_kwargs.setdefault("lower", xl)
-    cross_kwargs.setdefault("upper", xu)
-    cross_kwargs.setdefault("workspace", workspace)
-    crossover_operator = registry.get(cross_method)(**cross_kwargs)
-
-    # --- mutation ---
-    mut_kwargs = dict(mut_params)
-    m_prob = mut_kwargs.pop("prob", None)
-    mut_kwargs.setdefault(
-        "prob_mutation",
-        resolve_prob_expression(m_prob, n_var, 1.0 / max(1, n_var)),
+    base_crossover, base_mutation = build_real_variation_pair(
+        cross_method=cross_method,
+        cross_params=cross_params,
+        mut_method=mut_method,
+        mut_params=mut_params,
+        n_var=n_var,
+        xl=xl,
+        xu=xu,
+        rng=rng,
+        repair_cfg=repair_cfg,
     )
-    mut_kwargs.setdefault("lower", xl)
-    mut_kwargs.setdefault("upper", xu)
-    mut_kwargs.setdefault("workspace", workspace)
-    mutation_operator = registry.get(mut_method)(**mut_kwargs)
 
-    def crossover(parents: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        offspring = np.asarray(crossover_operator(parents, _rng))
-        return apply_policy_repair(repair_operator, offspring, xl, xu, _rng)
+    def crossover(parents: np.ndarray) -> np.ndarray:
+        return base_crossover(parents, rng)
 
-    def mutation(X_child: np.ndarray, _rng: np.random.Generator = rng) -> np.ndarray:
-        mutated = np.asarray(mutation_operator(X_child, _rng))
-        return apply_policy_repair(repair_operator, mutated, xl, xu, _rng)
+    def mutation(X_child: np.ndarray) -> np.ndarray:
+        return base_mutation(X_child, rng)
 
     return crossover, mutation
 
