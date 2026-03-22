@@ -61,6 +61,18 @@ _MIXED_MUTATION_ASSIGNMENT_KEYS = (
     "cat_mutation",
     "cat_mutation_prob",
 )
+_MIXED_CROSSOVER_RATE_KEYS = (
+    "perm_crossover_prob",
+    "real_crossover_prob",
+    "int_crossover_prob",
+    "cat_crossover_prob",
+)
+_MIXED_MUTATION_RATE_KEYS = (
+    "perm_mutation_prob",
+    "real_mutation_prob",
+    "int_mutation_prob",
+    "cat_mutation_prob",
+)
 
 
 def _sanitize_assignment(assignment: dict[str, Any]) -> dict[str, Any]:
@@ -73,6 +85,11 @@ def _sanitize_assignment(assignment: dict[str, Any]) -> dict[str, Any]:
         sanitized.setdefault("crossover", "mixed")
     if any(key in sanitized for key in _MIXED_MUTATION_ASSIGNMENT_KEYS):
         sanitized.setdefault("mutation", "mixed")
+    if any(key in sanitized for key in _MIXED_CROSSOVER_RATE_KEYS):
+        sanitized.pop("crossover_prob", None)
+    if any(key in sanitized for key in _MIXED_MUTATION_RATE_KEYS):
+        sanitized.pop("mutation_prob", None)
+        sanitized.pop("mutation_prob_factor", None)
     return sanitized
 
 
@@ -237,13 +254,17 @@ def _build_nsgaii_config(assignment: dict[str, Any], *, mixed: bool = False) -> 
     builder.offspring_size(offspring_size)
 
     cross = assignment["crossover"]
-    cross_params: dict[str, Any] = {"prob": float(assignment["crossover_prob"])}
+    cross_params: dict[str, Any] = {}
+    if "crossover_prob" in assignment:
+        cross_params["prob"] = float(assignment["crossover_prob"])
     _extend_crossover_params(str(cross), assignment, cross_params, mixed=mixed)
     builder.crossover(cross, **cross_params)
 
     mut = assignment["mutation"]
     mut_factor = assignment.get("mutation_prob_factor")
-    mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = assignment["mutation_prob"]
     if mut_factor is not None:
         builder.mutation_prob_factor(float(mut_factor))
     _extend_operator_mutation_params(str(mut), assignment, mut_params, mixed=mixed)
@@ -275,12 +296,16 @@ def _build_moead_config(assignment: dict[str, Any], *, mixed: bool = False) -> M
             f=float(assignment.get("de_f", 0.5)),
         )
     else:
-        cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 1.0))}
+        cross_params: dict[str, Any] = {}
+        if "crossover_prob" in assignment:
+            cross_params["prob"] = float(assignment["crossover_prob"])
         _extend_crossover_params(cross, assignment, cross_params, mixed=mixed)
         builder.crossover(cross, **cross_params)
 
     mut = str(assignment["mutation"])
-    mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = float(assignment["mutation_prob"])
     _extend_operator_mutation_params(mut, assignment, mut_params, mixed=mixed)
     builder.mutation(mut, **mut_params)
 
@@ -328,11 +353,15 @@ def _build_nsgaiii_config(assignment: dict[str, Any], *, mixed: bool = False) ->
     builder.pop_size(pop_size)
     _apply_initializer(builder, assignment, pop_size)
     cross = str(assignment["crossover"])
-    cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 1.0))}
+    cross_params: dict[str, Any] = {}
+    if "crossover_prob" in assignment:
+        cross_params["prob"] = float(assignment["crossover_prob"])
     _extend_crossover_params(cross, assignment, cross_params, mixed=mixed)
     builder.crossover(cross, **cross_params)
     mut = str(assignment["mutation"])
-    mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = float(assignment["mutation_prob"])
     _extend_operator_mutation_params(mut, assignment, mut_params, mixed=mixed)
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", size=int(assignment["selection_pressure"]))
@@ -347,11 +376,15 @@ def _build_smsemoa_config(assignment: dict[str, Any], *, mixed: bool = False) ->
     builder.pop_size(pop_size)
     _apply_initializer(builder, assignment, pop_size)
     cross = str(assignment["crossover"])
-    cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 1.0))}
+    cross_params: dict[str, Any] = {}
+    if "crossover_prob" in assignment:
+        cross_params["prob"] = float(assignment["crossover_prob"])
     _extend_crossover_params(cross, assignment, cross_params, mixed=mixed)
     builder.crossover(cross, **cross_params)
     mut = str(assignment["mutation"])
-    mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = float(assignment["mutation_prob"])
     _extend_operator_mutation_params(mut, assignment, mut_params, mixed=mixed)
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", size=int(assignment["selection_pressure"]))
@@ -368,11 +401,15 @@ def _build_spea2_config(assignment: dict[str, Any], *, mixed: bool = False) -> S
     builder.archive_size(int(assignment.get("archive_size", pop_size)))
     _apply_initializer(builder, assignment, pop_size)
     cross = str(assignment["crossover"])
-    cross_params: dict[str, Any] = {"prob": float(assignment["crossover_prob"])}
+    cross_params: dict[str, Any] = {}
+    if "crossover_prob" in assignment:
+        cross_params["prob"] = float(assignment["crossover_prob"])
     _extend_crossover_params(cross, assignment, cross_params, mixed=mixed)
     builder.crossover(cross, **cross_params)
     mut = str(assignment["mutation"])
-    mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = float(assignment["mutation_prob"])
     _extend_operator_mutation_params(mut, assignment, mut_params, mixed=mixed)
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", size=int(assignment["selection_pressure"]))
@@ -388,11 +425,15 @@ def _build_ibea_config(assignment: dict[str, Any], *, mixed: bool = False) -> IB
     builder.pop_size(pop_size)
     _apply_initializer(builder, assignment, pop_size)
     cross = str(assignment["crossover"])
-    cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 0.9))}
+    cross_params: dict[str, Any] = {}
+    if "crossover_prob" in assignment:
+        cross_params["prob"] = float(assignment["crossover_prob"])
     _extend_crossover_params(cross, assignment, cross_params, mixed=mixed)
     builder.crossover(cross, **cross_params)
     mut = str(assignment["mutation"])
-    mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = float(assignment["mutation_prob"])
     _extend_operator_mutation_params(mut, assignment, mut_params, mixed=mixed)
     builder.mutation(mut, **mut_params)
     builder.selection("tournament", size=int(assignment["selection_pressure"]))
@@ -413,7 +454,9 @@ def _build_smpso_config(assignment: dict[str, Any], *, mixed: bool = False) -> S
     builder.c2(float(assignment["c2"]))
     builder.vmax_fraction(float(assignment["vmax_fraction"]))
     mut = str(assignment.get("mutation", "pm"))
-    mut_params: dict[str, Any] = {"prob": float(assignment["mutation_prob"])}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = float(assignment["mutation_prob"])
     if mut in {"pm", "polynomial"}:
         mut_params["eta"] = float(assignment.get("mutation_eta", 20.0))
     elif mixed or _has_mixed_mutation_assignment(assignment):
@@ -431,12 +474,16 @@ def _build_agemoea_config(assignment: dict[str, Any], *, mixed: bool = False) ->
     _apply_initializer(builder, assignment, pop_size)
 
     cross = str(assignment.get("crossover", "sbx"))
-    cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 0.9))}
+    cross_params: dict[str, Any] = {}
+    if "crossover_prob" in assignment:
+        cross_params["prob"] = float(assignment["crossover_prob"])
     _extend_crossover_params(cross, assignment, cross_params, mixed=mixed)
     builder.crossover(cross, **cross_params)
 
     mut = str(assignment.get("mutation", "pm"))
-    mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = assignment["mutation_prob"]
     _extend_operator_mutation_params(mut, assignment, mut_params, mixed=mixed)
     builder.mutation(mut, **mut_params)
 
@@ -459,12 +506,16 @@ def _build_rvea_config(assignment: dict[str, Any], *, mixed: bool = False) -> RV
     _apply_initializer(builder, assignment, pop_size)
 
     cross = str(assignment.get("crossover", "sbx"))
-    cross_params: dict[str, Any] = {"prob": float(assignment.get("crossover_prob", 1.0))}
+    cross_params: dict[str, Any] = {}
+    if "crossover_prob" in assignment:
+        cross_params["prob"] = float(assignment["crossover_prob"])
     _extend_crossover_params(cross, assignment, cross_params, mixed=mixed)
     builder.crossover(cross, **cross_params)
 
     mut = str(assignment.get("mutation", "pm"))
-    mut_params: dict[str, Any] = {"prob": assignment.get("mutation_prob", 0.1)}
+    mut_params: dict[str, Any] = {}
+    if "mutation_prob" in assignment:
+        mut_params["prob"] = assignment["mutation_prob"]
     _extend_operator_mutation_params(mut, assignment, mut_params, mixed=mixed)
     builder.mutation(mut, **mut_params)
 

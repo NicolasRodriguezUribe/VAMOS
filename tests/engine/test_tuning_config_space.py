@@ -215,6 +215,8 @@ def test_nsgaii_mixed_config_space_builds_and_constructs_config():
     assert cfg.pop_size > 0
     assert cfg.crossover[0] == "mixed"
     assert cfg.mutation[0] == "mixed"
+    assert "crossover_prob" not in assignment
+    assert "mutation_prob_factor" not in assignment
     assert "perm_crossover" in assignment
     assert "perm_mutation" in assignment
     assert "int_crossover" in assignment
@@ -223,6 +225,8 @@ def test_nsgaii_mixed_config_space_builds_and_constructs_config():
     assert cfg.crossover[1]["int_crossover"] == assignment["int_crossover"]
     assert cfg.mutation[1]["perm_mutation"] == assignment["perm_mutation"]
     assert cfg.mutation[1]["int_mutation"] == assignment["int_mutation"]
+    assert "prob" not in cfg.crossover[1]
+    assert "prob" not in cfg.mutation[1]
 
 
 def test_nsgaii_mixed_config_accepts_segment_operator_assignment():
@@ -234,9 +238,7 @@ def test_nsgaii_mixed_config_accepts_segment_operator_assignment():
         "use_external_archive": False,
         "archive_unbounded": False,
         "crossover": "mixed",
-        "crossover_prob": 0.9,
         "mutation": "mixed",
-        "mutation_prob_factor": 1.0,
         "perm_crossover": "position",
         "perm_crossover_prob": 0.8,
         "perm_mutation": "swap",
@@ -270,6 +272,8 @@ def test_nsgaii_mixed_config_accepts_segment_operator_assignment():
     assert cfg.mutation[1]["int_mutation_eta"] == 30.0
     assert cfg.mutation[1]["real_mutation"] == "gaussian"
     assert cfg.mutation[1]["real_mutation_sigma_factor"] == 0.15
+    assert "prob" not in cfg.crossover[1]
+    assert "prob" not in cfg.mutation[1]
 
 
 def test_moead_permutation_config_space_builds_and_constructs_config():
