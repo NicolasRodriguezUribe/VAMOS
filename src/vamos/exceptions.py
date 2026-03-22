@@ -21,9 +21,11 @@ from .foundation.exceptions import (
     InvalidProblemError,
     InvalidResultsError,
     MissingConfigError,
+    NoSolutionsError,
     OptimizationError,
     ProblemDimensionError,
     ProblemError,
+    ResultSelectionError,
     ResultsNotFoundError,
     VAMOSError,
 )
@@ -46,6 +48,8 @@ __all__ = [
     "DataError",
     "ResultsNotFoundError",
     "InvalidResultsError",
+    "ResultSelectionError",
+    "NoSolutionsError",
     "DependencyError",
     "BackendNotAvailableError",
 ]

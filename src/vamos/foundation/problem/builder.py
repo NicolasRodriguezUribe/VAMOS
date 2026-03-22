@@ -280,8 +280,16 @@ def make_problem(
             xl = 0.0
         if xu is None:
             xu = 1.0
-        xl_arr = np.broadcast_to(np.asarray(xl, dtype=float), (n_var,)).copy()
-        xu_arr = np.broadcast_to(np.asarray(xu, dtype=float), (n_var,)).copy()
+        try:
+            xl_arr = np.broadcast_to(np.asarray(xl, dtype=float), (n_var,)).copy()
+            xu_arr = np.broadcast_to(np.asarray(xu, dtype=float), (n_var,)).copy()
+        except ValueError as exc:
+            raise BoundsError(
+                f"Could not broadcast xl/xu to shape ({n_var},)."
+                "\n\nHint: pass scalars or one value per decision variable."
+            ) from exc
+        if np.any(xl_arr > xu_arr):
+            raise BoundsError("Lower bounds must not exceed upper bounds.")
 
     # ---- validate constraints ----
     if constraints is not None:

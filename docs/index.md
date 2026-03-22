@@ -25,6 +25,7 @@ pip install -e ".[tuning]"
 New to Python? Start here:
 - Minimal Python Track: `docs/guide/minimal-python.md`
 - Guided wizard: `vamos quickstart`
+- Customization and plugins: `docs/topics/extending.md`
 
 Docs roadmap:
 - `Guide`: Getting Started, CLI, Studio, Cookbook, Troubleshooting

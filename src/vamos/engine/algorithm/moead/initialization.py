@@ -57,30 +57,7 @@ def initialize_moead_run(
     live_viz: LiveVisualization | None = None,
     checkpoint: Mapping[str, Any] | None = None,
 ) -> tuple[MOEADState, Any, Any, int, HVTracker]:
-    """Initialize all components for a MOEA/D run.
-
-    Parameters
-    ----------
-    cfg : dict[str, Any]
-        Algorithm configuration.
-    kernel : KernelBackend
-        Backend for vectorized operations.
-    problem : ProblemProtocol
-        The optimization problem.
-    termination : tuple[str, Any]
-        Termination criterion.
-    seed : int
-        Random seed.
-    eval_strategy : EvaluationBackend | None
-        Optional evaluation backend.
-    live_viz : LiveVisualization | None
-        Optional live visualization callback.
-
-    Returns
-    -------
-    tuple[MOEADState, Any, Any, int, HVTracker]
-        (state, live_cb, eval_strategy, max_eval, hv_tracker)
-    """
+    """Initialize MOEA/D state and run-level helpers."""
     max_eval, hv_config = parse_termination(termination, "MOEA/D")
 
     eval_strategy = get_eval_strategy(eval_strategy)
@@ -97,7 +74,6 @@ def initialize_moead_run(
     n_var = problem.n_var
     n_obj = problem.n_obj
 
-    # Initialize or restore population
     X: np.ndarray
     F: np.ndarray
     G: np.ndarray | None
@@ -197,7 +173,6 @@ def initialize_moead_run(
 
     cv = compute_violation(G) if constraint_mode != "none" and G is not None else None
 
-    # Setup weight vectors and neighborhoods
     weight_cfg = cfg.get("weight_vectors", {}) or {}
     weights = load_or_generate_weight_vectors(
         pop_size,
@@ -217,7 +192,6 @@ def initialize_moead_run(
     neighbor_size = max(2, min(neighbor_size, pop_size))
     neighbors = compute_neighbors(weights, neighbor_size)
 
-    # Setup aggregation
     aggregation = cfg.get("aggregation", ("pbi", {"theta": 5.0}))
     agg_method, agg_params = aggregation
     aggregator = build_aggregator(agg_method, agg_params)
@@ -227,7 +201,6 @@ def initialize_moead_run(
     if numba_variation is not None:
         set_numba_variation(bool(numba_variation))
 
-    # Build variation operators
     crossover_fn, mutation_fn = build_variation_operators(
         cfg,
         encoding,
@@ -238,14 +211,11 @@ def initialize_moead_run(
         mixed_spec=getattr(problem, "mixed_spec", None),
     )
 
-    # Setup archive
     ext_cfg = resolve_external_archive(cfg)
     archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, ext_cfg, G)
 
-    # Setup HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)
 
-    # Setup genealogy
     track_genealogy = bool(cfg.get("track_genealogy", False))
     genealogy_tracker, ids = setup_genealogy(pop_size, F, track_genealogy, "moead")
 
@@ -264,7 +234,6 @@ def initialize_moead_run(
     if batch_size > pop_size:
         batch_size = pop_size
 
-    # Create state
     state = MOEADState(
         X=X,
         F=F,
@@ -274,7 +243,6 @@ def initialize_moead_run(
         offspring_size=batch_size,
         constraint_mode=constraint_mode,
         n_eval=n_eval,
-        # MOEA/D-specific
         weights=weights,
         weights_safe=weights_safe,
         weights_unit=weights_unit,
@@ -295,14 +263,11 @@ def initialize_moead_run(
         mutation_fn=mutation_fn,
         xl=xl,
         xu=xu,
-        # Archive
         archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
         archive_manager=archive_manager,
-        # Termination
         hv_tracker=hv_tracker,
-        # Genealogy
         track_genealogy=track_genealogy,
         genealogy_tracker=genealogy_tracker,
         ids=ids,

@@ -1,19 +1,6 @@
 {
-  "file_violations": {
-    "src/vamos/engine/operators/impl/mixed.py": 584,
-    "src/vamos/engine/operators/impl/permutation.py": 525,
-    "src/vamos/engine/tuning/racing/bridge_assignments.py": 452,
-    "src/vamos/foundation/kernel/numba_backend.py": 463,
-    "src/vamos/ux/studio/problem_builder_backend.py": 450,
-    "src/vamos/ux/studio/services.py": 440
-  },
-  "function_violations": {
-    "src/vamos/engine/algorithm/moead/initialization.py:initialize_moead_run": 274,
-    "src/vamos/experiment/cli/args_algorithms.py:add_algorithm_arguments": 311
-  },
-  "class_violations": {
-    "src/vamos/engine/algorithm/moead/moead.py:MOEAD": 408,
-    "src/vamos/engine/algorithm/nsgaiii/nsgaiii.py:NSGAIII": 427
-  },
-  "notes": "Current monolith debt budget baseline. Refactors should reduce these values over time."
+  "file_violations": {},
+  "function_violations": {},
+  "class_violations": {},
+  "notes": "No current monolith budget exceptions. Keep this file empty unless a temporary budget is explicitly approved."
 }
