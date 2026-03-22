@@ -5,7 +5,8 @@ import numbers
 from dataclasses import dataclass, fields, replace
 from typing import TYPE_CHECKING, Any, cast
 
-from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
+from vamos.engine.algorithm.config.base import ResultMode
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, EngineName
 from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
 from vamos.exceptions import ConfigurationError, InvalidAlgorithmError
 from vamos.foundation.eval import EvaluationBackend
@@ -32,7 +33,7 @@ class _OptimizeConfig:
     algorithm_config: AlgorithmConfigProtocol
     termination: tuple[str, Any]
     seed: int
-    engine: str = "numpy"
+    engine: EngineName = "numpy"
     eval_strategy: EvaluationBackend | str | None = None  # name or backend instance
     live_viz: Any = None
     checkpoint: Any = None
@@ -72,7 +73,7 @@ def _validate_algorithm_config(cfg: dict[str, object]) -> None:
         _validate_positive_int_field(cfg, key)
 
 
-def _with_result_mode(cfg_data: Any, result_mode: str) -> Any:
+def _with_result_mode(cfg_data: Any, result_mode: ResultMode) -> Any:
     try:
         allowed = {field.name for field in fields(cfg_data)}
     except TypeError:
@@ -85,7 +86,7 @@ def _with_result_mode(cfg_data: Any, result_mode: str) -> Any:
 def _run_config(
     config: _OptimizeConfig,
     *,
-    engine: str | None = None,
+    engine: EngineName | None = None,
 ) -> OptimizationResult:
     """
     Run a single optimization for the provided problem/config pair.
@@ -172,7 +173,7 @@ def _build_algorithm_config(
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
     algorithm = algorithm.lower()
-    result_mode = "population"
+    result_mode: ResultMode = "population"
 
     from vamos.engine.algorithm.config import GenericAlgorithmConfig
     from vamos.engine.algorithm.config.defaults import build_default_algorithm_config

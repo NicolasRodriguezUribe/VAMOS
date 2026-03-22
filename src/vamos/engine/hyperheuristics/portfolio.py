@@ -6,8 +6,8 @@ from typing import Protocol
 
 import numpy as np
 
-from vamos.engine.hyperheuristics.indicator import IndicatorEvaluator
-from vamos.engine.hyperheuristics.operator_selector import compute_reward, make_operator_selector
+from vamos.engine.hyperheuristics.indicator import IndicatorEvaluator, IndicatorMode
+from vamos.engine.hyperheuristics.operator_selector import OperatorSelectorMethod, compute_reward, make_operator_selector
 
 
 class PortfolioAlgorithm(Protocol):
@@ -33,8 +33,8 @@ class AlgorithmPortfolio:
         self,
         entries: list[PortfolioEntry],
         indicator: str = "hv",
-        mode: str = "maximize",
-        selector_method: str = "epsilon_greedy",
+        mode: IndicatorMode = "maximize",
+        selector_method: OperatorSelectorMethod = "epsilon_greedy",
         selector_kwargs: Mapping[str, object] | None = None,
     ) -> None:
         if not entries:

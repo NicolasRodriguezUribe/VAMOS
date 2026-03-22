@@ -8,9 +8,10 @@ import json
 import sys
 import warnings
 from dataclasses import asdict
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypeAlias, cast
 
 from vamos.engine.archive import ExternalArchiveConfig
+from vamos.foundation.encoding import EncodingLike
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -22,6 +23,7 @@ ResultMode = Literal["non_dominated", "population"]
 ConstraintModeStr = Literal["none", "feasibility", "penalty", "epsilon"]
 LiveCallbackMode = Literal["nd_only", "all"]
 IndicatorType = Literal["eps", "hypervolume"]
+OperatorCategory: TypeAlias = Literal["crossover", "mutation", "selection", "repair", "initializer"]
 
 # ── Known operator names (runtime registry + aliases) ────────────────
 # Plain set literals (no frozenset() calls) to avoid import-time side effects.
@@ -290,7 +292,7 @@ class _SerializableConfig:
         return "\n".join([header, *diffs])
 
     @staticmethod
-    def available_operators(category: str | None = None) -> dict[str, list[str]]:
+    def available_operators(category: OperatorCategory | None = None) -> dict[str, list[str]]:
         """Return known operator names, optionally filtered by *category*.
 
         Args:
@@ -307,7 +309,7 @@ class _SerializableConfig:
         return {k: sorted(v) for k, v in _KNOWN_OPERATORS.items()}
 
     @staticmethod
-    def default_operators(encoding: str = "real") -> dict[str, tuple[str, dict[str, Any]]]:
+    def default_operators(encoding: EncodingLike = "real") -> dict[str, tuple[str, dict[str, Any]]]:
         """Return the default crossover/mutation operators for *encoding*.
 
         >>> NSGAIIConfig.default_operators("permutation")
@@ -318,7 +320,7 @@ class _SerializableConfig:
 
 
 def _default_operators_for_encoding(
-    encoding: str,
+    encoding: EncodingLike,
     mut_prob: float,
 ) -> tuple[tuple[str, dict[str, Any]], tuple[str, dict[str, Any]]]:
     """Return (crossover_tuple, mutation_tuple) defaults for the given encoding."""

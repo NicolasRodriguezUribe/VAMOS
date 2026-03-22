@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, overload
 
 from vamos.engine.archive import ExternalArchiveConfig
 
 from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
-from .types import RepairConfigValue
+from .types import InitializerName, MutationName, RepairConfigValue, RepairName
 
 
 @dataclass(frozen=True)
@@ -56,6 +56,12 @@ class _SMPSOConfigBuilder:
         self._cfg["archive_size"] = value
         return self
 
+    @overload
+    def mutation(self, method: MutationName, **kwargs: Any) -> _SMPSOConfigBuilder: ...
+
+    @overload
+    def mutation(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder: ...
+
     def mutation(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
@@ -76,15 +82,27 @@ class _SMPSOConfigBuilder:
         self._cfg["vmax_fraction"] = value
         return self
 
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> _SMPSOConfigBuilder: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder: ...
+
     def repair(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> _SMPSOConfigBuilder: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder: ...
 
     def initializer(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
         return self
 
-    def constraint_mode(self, value: str) -> _SMPSOConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr) -> _SMPSOConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -92,7 +110,7 @@ class _SMPSOConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _SMPSOConfigBuilder:
+    def result_mode(self, value: ResultMode) -> _SMPSOConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
