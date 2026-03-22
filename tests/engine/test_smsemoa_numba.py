@@ -15,7 +15,7 @@ class SimpleConstrainedProblem:
     def __init__(self) -> None:
         self.n_var = 2
         self.n_obj = 2
-        self.n_constr = 1
+        self.n_constraints = 1
         self.xl = np.array([0.0, 0.0])
         self.xu = np.array([1.0, 1.0])
 

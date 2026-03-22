@@ -69,13 +69,7 @@ def test_live_viz_callbacks_invoked(monkeypatch, tmp_path):
 
 def test_agemoea_live_viz_callbacks_invoked(monkeypatch):
     monkeypatch.setenv("MPLBACKEND", "Agg")
-    cfg = (
-        AGEMOEAConfig.builder()
-        .pop_size(8)
-        .crossover("sbx", prob=0.9, eta=10.0)
-        .mutation("polynomial", prob=0.25, eta=10.0)
-        .build()
-    )
+    cfg = AGEMOEAConfig.builder().pop_size(8).crossover("sbx", prob=0.9, eta=10.0).mutation("polynomial", prob=0.25, eta=10.0).build()
     algo = AGEMOEA(cfg.to_dict(), kernel=NumPyKernel())
     recorder = RecorderViz()
 

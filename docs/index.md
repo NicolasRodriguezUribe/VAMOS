@@ -3,7 +3,7 @@
 VAMOS (Vectorized Architecture for Multiobjective Optimization Studies) ships vectorized evolutionary algorithms, multiple kernels, benchmark suites, and orchestration tools for experiments and analysis.
 
 - Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA with continuous, permutation, binary, integer, and mixed encodings.
-- Backends: NumPy (default), Numba, MooCore, and optional JAX kernels.
+- Backends: NumPy (default exact reference), Numba for accelerated core kernels, MooCore, and experimental JAX kernels.
 - Problems: ZDT, DTLZ, WFG, LZ09, CEC2009 UF/CF, TSP/TSPLIB, binary, integer, mixed, and real-data examples.
 - Tooling: CLI runner, study runner, tuning/meta-optimization, benchmarking CLI, self-check, live visualization, and Studio (optional).
 

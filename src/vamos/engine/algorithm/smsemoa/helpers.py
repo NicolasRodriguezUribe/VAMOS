@@ -282,13 +282,13 @@ def _ensure_objective_buffer(st: SMSEMOAState, pop_n: int, n_obj: int) -> np.nda
 def _ensure_constraint_buffer(
     st: SMSEMOAState,
     pop_n: int,
-    n_constr: int,
+    n_constraints: int,
 ) -> np.ndarray:
     if st.G is None:
         raise ValueError("Constraint buffer requested without state.G.")
     G_work = st._survival_G
-    if G_work is None or G_work.shape != (pop_n + 1, n_constr):
-        G_work = np.empty((pop_n + 1, n_constr), dtype=st.G.dtype)
+    if G_work is None or G_work.shape != (pop_n + 1, n_constraints):
+        G_work = np.empty((pop_n + 1, n_constraints), dtype=st.G.dtype)
         st._survival_G = G_work
     return G_work
 
@@ -417,11 +417,11 @@ def evaluate_population_with_constraints(
 ) -> tuple[np.ndarray, np.ndarray | None]:
     """Evaluate population and compute constraints if present."""
     n_obj = problem.n_obj
-    n_constr = getattr(problem, "n_constr", getattr(problem, "n_con", 0)) or 0
+    n_constraints = getattr(problem, "n_constraints", 0) or 0
 
     out: dict[str, np.ndarray] = {"F": np.empty((X.shape[0], n_obj), dtype=np.float64)}
-    if n_constr > 0:
-        out["G"] = np.empty((X.shape[0], n_constr), dtype=np.float64)
+    if n_constraints > 0:
+        out["G"] = np.empty((X.shape[0], n_constraints), dtype=np.float64)
 
     problem.evaluate(X, out)
     return out["F"], out.get("G")

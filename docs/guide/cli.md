@@ -101,7 +101,7 @@ vamos --problem zdt1 --experiment backends --max-evaluations 2000
 
 Optional backends need extras: `numba`/`moocore` require `pip install -e ".[compute]"` (or `pip install "vamos-optimization[compute]"`), and `jax` requires `pip install -e ".[autodiff]"` (or `pip install "vamos-optimization[autodiff]"`). Missing backends are skipped.
 
-JAX run (strict ranking fallback for exact Pareto fronts):
+Experimental JAX run (strict ranking falls back to NumPy for exact Pareto fronts):
 
 ```bash
 vamos --problem zdt1 --algorithm nsgaii --engine jax --max-evaluations 5000
@@ -159,7 +159,7 @@ Key flags
 ---------
 
 - `--algorithm`: nsgaii, moead, smsemoa, nsgaiii, spea2, ibea, smpso, both, or external baselines (pymoo_nsga2, jmetalpy_nsga2, pygmo_nsga2)
-- `--engine`: numpy | numba | moocore | jax | auto. The deterministic default is `numpy`; use `auto` only when you explicitly want heuristic backend selection.
+- `--engine`: numpy | numba | moocore | jax | auto. The deterministic default is `numpy`; use `auto` only when you explicitly want heuristic backend selection. Treat `jax` as experimental.
 - `--problem`: any registry key (see Problems page)
 - `--problem-set`: predefined sets (e.g., `families`)
 - `--validate-config`: validate `--config` and exit

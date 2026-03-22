@@ -3,12 +3,57 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Literal, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
 from vamos.foundation.quality_indicators.pareto import pareto_filter
+
+BestMethod: TypeAlias = Literal["knee", "min_f1", "min_f2", "balanced"]
+RankingMethod: TypeAlias = Literal[
+    "knee",
+    "min_f1",
+    "min_f2",
+    "balanced",
+    "weighted_sum",
+    "crowding",
+    "farthest",
+    "knn",
+    "reference_directions",
+    "kmeans",
+    "angle",
+    "hv_greedy",
+]
+
+_BEST_METHODS = {"knee", "min_f1", "min_f2", "balanced"}
+_RANKING_METHODS = _BEST_METHODS | {
+    "weighted_sum",
+    "crowding",
+    "farthest",
+    "knn",
+    "reference_directions",
+    "kmeans",
+    "angle",
+    "hv_greedy",
+}
+
+
+def normalize_best_method(method: BestMethod | str) -> BestMethod:
+    key = str(method).strip().lower()
+    if key not in _BEST_METHODS:
+        raise ValueError(f"Unknown method '{method}'. Use: knee, min_f1, min_f2, balanced")
+    return key  # type: ignore[return-value]
+
+
+def normalize_ranking_method(method: RankingMethod | str) -> RankingMethod:
+    key = str(method).strip().lower()
+    if key not in _RANKING_METHODS:
+        raise ValueError(
+            "Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum, "
+            "crowding, farthest, knn, reference_directions, kmeans, angle, hv_greedy"
+        )
+    return key  # type: ignore[return-value]
 
 
 def top_k(
@@ -16,7 +61,7 @@ def top_k(
     *,
     k: int,
     source: str,
-    method: str,
+    method: RankingMethod | str,
     nondominated_only: bool,
     weights: NDArray[np.float64] | None,
 ) -> dict[str, Any]:
@@ -36,11 +81,11 @@ def top_k(
         F_rank = F_src
         idx_rank = idx_src
 
-    key = str(method).strip().lower()
+    key = normalize_ranking_method(method)
     if key in {"crowding", "farthest", "knn", "reference_directions", "kmeans", "angle", "hv_greedy"}:
         return _top_k_subset_method(F_src, X_src, F_rank, idx_rank, k=int(k), source=source, method=key)
 
-    scores = _ranking_scores(F_rank, method=method, weights=weights)
+    scores = _ranking_scores(F_rank, method=key, weights=weights)
     order = np.argsort(scores)[: min(int(k), scores.shape[0])]
     selected_idx = idx_rank[order]
     return {
@@ -49,7 +94,7 @@ def top_k(
         "indices": np.asarray(selected_idx, dtype=int),
         "scores": np.asarray(scores[order], dtype=float),
         "source": str(source).strip().lower(),
-        "method": str(method).strip().lower(),
+        "method": key,
     }
 
 
@@ -58,7 +103,7 @@ def top_k_report(
     *,
     k: int,
     source: str,
-    method: str,
+    method: RankingMethod | str,
     nondominated_only: bool,
     weights: NDArray[np.float64] | None,
 ) -> list[dict[str, Any]]:
@@ -113,8 +158,13 @@ def _normalize_front(F: np.ndarray) -> np.ndarray:
     return np.asarray(normalized, dtype=float)
 
 
-def _ranking_scores(F: np.ndarray, *, method: str, weights: NDArray[np.float64] | None = None) -> NDArray[np.float64]:
-    key = str(method).strip().lower()
+def _ranking_scores(
+    F: np.ndarray,
+    *,
+    method: RankingMethod | str,
+    weights: NDArray[np.float64] | None = None,
+) -> NDArray[np.float64]:
+    key = normalize_ranking_method(method)
     if key == "knee":
         return np.asarray(_normalize_front(F).sum(axis=1), dtype=float)
     if key == "min_f1":
@@ -140,10 +190,7 @@ def _ranking_scores(F: np.ndarray, *, method: str, weights: NDArray[np.float64] 
                 raise ValueError("weights must sum to a positive value.")
             w = w / total
         return np.asarray(F_norm @ w, dtype=float)
-    raise ValueError(
-        "Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum, "
-        "crowding, farthest, knn, reference_directions, kmeans, angle, hv_greedy"
-    )
+    raise AssertionError(f"Unhandled ranking method '{key}'.")
 
 
 def _top_k_subset_method(
@@ -217,4 +264,11 @@ def _minimum_angles(points: np.ndarray) -> np.ndarray:
     return np.asarray(np.min(angles, axis=1), dtype=float)
 
 
-__all__ = ["top_k", "top_k_report"]
+__all__ = [
+    "BestMethod",
+    "RankingMethod",
+    "normalize_best_method",
+    "normalize_ranking_method",
+    "top_k",
+    "top_k_report",
+]

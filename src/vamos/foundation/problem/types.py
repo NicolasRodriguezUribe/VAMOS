@@ -15,9 +15,6 @@ class ProblemProtocol(Protocol):
     xu: float | int | np.ndarray
     encoding: EncodingLike
 
-    @property
-    def n_constr(self) -> int: ...
-
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None: ...
 
 

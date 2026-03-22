@@ -1,8 +1,8 @@
 """
-JAX-based kernel implementation for GPU acceleration.
+Experimental JAX-based kernel implementation.
 
-This backend leverages JAX to execute critical components (non-dominated sorting,
-crowding distance) on CPU/GPU/TPU with auto-vectorization and JIT compilation.
+This backend keeps VAMOS importable with JAX and exposes exploratory JAX-based
+kernels, but exact Pareto ranking still defaults to the NumPy reference path.
 """
 
 from __future__ import annotations
@@ -122,11 +122,10 @@ def _build_jax_kernels(jnp: Any, jit: Any) -> tuple[Callable[[Any], Any], Callab
 
 class JaxKernel(KernelBackend):
     """
-    Kernel backend using JAX for hardware acceleration.
+    Experimental kernel backend using JAX.
 
     Features:
     - JIT-compiled domination checks (approximate ranking when enabled)
-    - GPU/TPU support automatically provided by JAX
     - Strict ranking fallback for exact Pareto fronts
     """
 

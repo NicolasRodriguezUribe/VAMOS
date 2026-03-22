@@ -27,7 +27,7 @@ class MyProblem:
     def __init__(self) -> None:
         self.n_var = 2
         self.n_obj = 2
-        self.n_constr = 0
+        self.n_constraints = 0
         self.xl = np.array([0.0, 0.0])
         self.xu = np.array([1.0, 1.0])
         self.encoding = "real"
@@ -43,7 +43,7 @@ problem = MyProblem()
 
 ## 2. Handling Constraints
 
-Box constraints are handled via `xl` and `xu`. For other constraints, fill `out["G"]`. VAMOS expects g(x) <= 0 for feasible solutions. Set `n_constr` to the number of constraints if you want the count explicitly tracked.
+Box constraints are handled via `xl` and `xu`. For other constraints, fill `out["G"]`. VAMOS expects g(x) <= 0 for feasible solutions. Set `n_constraints` to the number of constraints if you want the count explicitly tracked.
 
 ```python
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
@@ -137,6 +137,8 @@ print(result.explain_defaults())
 The output includes:
 
 - `resolved_config`: resolved problem/algorithm/engine/budget/pop size
+- `resolved_config.engine_source`: whether the backend came from an explicit choice, the deterministic default, or `auto`
+- `resolved_config.kernel_backend`: the kernel actually used for the run
 - `default_sources`: which values were inferred (`auto`) vs set explicitly
 
 ## 8. Operator Facade Access
@@ -244,9 +246,9 @@ choice = result.best("knee")
 print(choice["F"])
 ```
 
-## 15. JAX Engine (Strict Ranking Default)
+## 15. JAX Engine (Experimental, Strict Ranking Default)
 
-Use JAX for acceleration. Strict ranking is on by default and falls back to NumPy for exact Pareto fronts.
+Use JAX experimentally. Strict ranking is on by default and falls back to NumPy for exact Pareto fronts, so NumPy or Numba remain the recommended production backends.
 
 ```python
 from vamos import optimize

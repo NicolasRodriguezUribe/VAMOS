@@ -82,15 +82,6 @@ class Problem:
     """Number of inequality constraints.  Default: ``0`` (unconstrained)."""
 
     # ------------------------------------------------------------------
-    # Engine compatibility
-    # ------------------------------------------------------------------
-
-    @property
-    def n_constr(self) -> int:
-        """Alias for :attr:`n_constraints`, used by evaluation backends."""
-        return self.n_constraints
-
-    # ------------------------------------------------------------------
     # User-overridable interface
     # ------------------------------------------------------------------
 

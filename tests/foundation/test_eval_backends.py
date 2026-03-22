@@ -7,7 +7,7 @@ class DummyProblem:
     def __init__(self):
         self.n_var = 2
         self.n_obj = 1
-        self.n_constr = 0
+        self.n_constraints = 0
         self.xl = -5.0
         self.xu = 5.0
         self.encoding = "real"

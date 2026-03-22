@@ -1,6 +1,8 @@
 # JAX Backend
 
-The JAX backend provides GPU/TPU acceleration for VAMOS kernels.
+The JAX backend is experimental.
+
+Use it when you want to explore JAX-based execution or pair VAMOS with the autodiff helpers. It is not the primary publication-grade performance path for the framework.
 
 ## Installation
 
@@ -34,20 +36,11 @@ Set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking.
 | Scenario | Recommended Engine |
 |----------|-------------------|
 | Small populations (<500) | numpy |
-| Large populations (>1000) | jax |
-| GPU available | jax |
+| Reproducible exact fronts | numpy |
+| Accelerated core kernels | numba |
+| JAX/autodiff experimentation | jax |
 | Quick experiments | numpy |
-| Production runs | jax (strict ranking) |
-
-## Expected Speedup
-
-| Population Size | NumPy | JAX (CPU) | JAX (GPU) |
-|----------------|-------|-----------|-----------|
-| 500 | 1.0x | 0.8x | 2x |
-| 2000 | 1.0x | 1.5x | 10x |
-| 10000 | 1.0x | 3x | 50x+ |
-
-*Note: First run includes JIT compilation overhead.*
+| Production runs | numpy or numba |
 
 ## Verifying GPU
 

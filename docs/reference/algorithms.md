@@ -38,6 +38,30 @@ Backends
 - NumPy (default): vectorized CPU kernels.
 - Numba: JIT acceleration for supported kernels (set `VAMOS_USE_NUMBA_VARIATION=1` for permutation/binary/integer variation).
 - MooCore: accelerated kernels via `moocore` (install `compute` extra).
+- JAX: experimental backend kept for exploratory/autodiff workflows, not the primary production acceleration path.
+
+Backend capability matrix
+-------------------------
+
+| Backend | Status | Best use |
+|---------|--------|----------|
+| `numpy` | Stable | Exact reference backend and deterministic default. |
+| `numba` | Stable optional | Faster core kernels: mutation, tournament selection, and MOEA/D neighborhood updates. |
+| `moocore` | Stable optional | Hypervolume and related quality-indicator acceleration. |
+| `jax` | Experimental optional | Exploratory research workflows where JAX interop matters more than backend parity. |
+
+Probability shorthand
+---------------------
+
+- Operator probabilities accept either a numeric value or the string literal `"1/n"`.
+- `"1/n"` resolves to `1.0 / n_var` at runtime and is the recommended mutation default for many encodings.
+- Example: `NSGAIIConfig.builder().mutation("pm", prob="1/n", eta=20.0)`
+
+Comparative benchmarking
+------------------------
+
+- Kernel-focused benchmarks: `python tools/benchmark_kernels.py --smoke --output reports/performance/kernel_smoke.json`
+- VAMOS vs pymoo seeded comparisons: `python tools/benchmark_compare_pymoo.py --output reports/performance/pymoo_comparison.json --markdown reports/performance/pymoo_comparison.md`
 
 Live visualization
 ------------------

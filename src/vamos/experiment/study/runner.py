@@ -78,7 +78,8 @@ class StudyRunner:
                 extra_kwargs["termination"] = self.termination
             task_variations = task.variations.copy() if task.variations is not None else VariationConfigs()
             if task_variations.has_any() and (
-                "variations" in run_sig.parameters or any(param.kind == inspect.Parameter.VAR_KEYWORD for param in run_sig.parameters.values())
+                "variations" in run_sig.parameters
+                or any(param.kind == inspect.Parameter.VAR_KEYWORD for param in run_sig.parameters.values())
             ):
                 extra_kwargs["variations"] = task_variations
             metrics = run_single_fn(

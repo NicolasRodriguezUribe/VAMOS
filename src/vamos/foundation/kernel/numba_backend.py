@@ -1,23 +1,14 @@
-# kernel/numba_backend.py
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Literal, TypeVar, cast, overload
+from collections.abc import Iterable, Mapping
+from typing import Any, Literal, overload
 
 import numpy as np
-from numba import njit as _numba_njit
 
 from .backend import KernelBackend
-from .numba_ops import _polynomial_mutation_numba_impl
+from .numba_ops import _polynomial_mutation_numba_impl, njit, tournament_winners_numba
 from .numpy_backend import NumPyKernel as _NumPyKernel
-from .numpy_backend import _as_float, _select_nsga2
-
-_F = TypeVar("_F", bound=Callable[..., object])
-
-
-def njit(*args: Any, **kwargs: Any) -> Callable[[_F], _F]:
-    """Typed wrapper around numba.njit to keep mypy happy."""
-    return cast(Callable[[_F], _F], _numba_njit(*args, **kwargs))
+from .numpy_backend import _as_float, _sample_tournament_candidates, _select_nsga2
 
 
 @njit(cache=True)
@@ -356,12 +347,7 @@ def _fronts_from_ranks(ranks: np.ndarray) -> list[list[int]]:
 
 
 class NumbaKernel(KernelBackend):
-    """
-    Alternative backend with critical kernels (ranking/survival) compiled with Numba.
-    Binary tournament selection and mutation use Numba-backed paths.
-    Crossover still reuses the NumPy implementation.
-    Mutation uses the Numba kernel, but randomness still comes from the caller RNG.
-    """
+    """Numba-accelerated kernel backend for ranking, selection, survival, and mutation."""
 
     name = "numba"
 
@@ -417,7 +403,6 @@ class NumbaKernel(KernelBackend):
     def _rank_and_crowding(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         F_arr = np.asarray(F, dtype=np.float64, order="C")
         if not np.isfinite(F_arr).all():
-            # Preserve NumPy semantics on invalid fronts instead of diverging in JIT code.
             ranks, crowding = self._numpy_ops.nsga2_ranking(F_arr)
             return ranks.astype(np.int64, copy=False), crowding
         ranks = _fast_non_dominated_sort_ranks(F_arr)
@@ -461,7 +446,19 @@ class NumbaKernel(KernelBackend):
             tie_break = rng.integers(0, 2, size=n_parents, dtype=np.int64)
             return _binary_tournament_winners_numba(ranks_arr, crowding_arr, first, second, tie_break)
 
-        return self._numpy_ops.tournament_selection(ranks, crowding, pressure, rng, n_parents)
+        candidates = _sample_tournament_candidates(
+            rng,
+            n_candidates=n_candidates,
+            n_parents=n_parents,
+            pressure=pressure,
+        )
+        tie_break_keys = rng.random(candidates.shape)
+        return tournament_winners_numba(
+            np.asarray(ranks, dtype=np.int64),
+            np.asarray(crowding, dtype=np.float64),
+            np.asarray(candidates, dtype=np.int64),
+            np.asarray(tie_break_keys, dtype=np.float64),
+        )
 
     def sbx_crossover(
         self,

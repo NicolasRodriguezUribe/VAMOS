@@ -20,7 +20,7 @@ def compute_constraint_info(G: np.ndarray | None, eps: float = 0.0) -> Constrain
     """Compute aggregate constraint violation and feasibility mask.
 
     Args:
-        G: (n_points, n_constr) constraint values, <=0 means satisfied.
+        G: (n_points, n_constraints) constraint values, <=0 means satisfied.
             When ``None`` (unconstrained), a trivially-feasible result is
             returned with zero-column G and zero violation.
         eps: tolerance. Constraints <= eps are treated as satisfied.
@@ -34,7 +34,7 @@ def compute_constraint_info(G: np.ndarray | None, eps: float = 0.0) -> Constrain
         )
     G = np.asarray(G, dtype=float)
     if G.ndim != 2:
-        raise ValueError("G must be a 2D array of shape (n_points, n_constr).")
+        raise ValueError("G must be a 2D array of shape (n_points, n_constraints).")
     positive = np.maximum(G - eps, 0.0)
     cv = np.asarray(np.sum(positive, axis=1), dtype=float)
     feasible = np.asarray(np.all(G <= eps, axis=1), dtype=bool)

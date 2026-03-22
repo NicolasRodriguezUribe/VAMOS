@@ -70,4 +70,23 @@ assert result.F is not None
 assert result.F.shape[1] == problem.n_obj
 """,
     ),
+    DocSmokeCase(
+        name="cookbook_resolved_backend_metadata",
+        source_path="docs/guide/cookbook.md",
+        code="""
+from vamos import optimize
+
+result = optimize(
+    "zdt1",
+    algorithm="nsgaii",
+    max_evaluations=200,
+    pop_size=40,
+    seed=42,
+)
+resolved = result.explain_defaults()["resolved_config"]
+assert resolved["engine"] == "numpy"
+assert resolved["engine_source"] == "default"
+assert resolved["kernel_backend"] == "numpy"
+""",
+    ),
 ]

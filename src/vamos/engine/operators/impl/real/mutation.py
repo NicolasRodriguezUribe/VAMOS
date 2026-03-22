@@ -87,32 +87,17 @@ class PolynomialMutation(Mutation):
         # first grid for activation mask, second grid for delta sampling.
         rnd_mask = rng.random(X.shape)
         rnd_delta = rng.random(X.shape)
-        mask = rnd_mask <= self.prob
-        if not np.any(mask):
-            return X
-
-        mut_pow = 1.0 / (self.eta + 1.0)
-        rows, cols = np.nonzero(mask)
-        for i, j in zip(rows, cols):
-            y = X[i, j]
-            yl = self.lower[j]
-            yu = self.upper[j]
-            if yu <= yl:
-                continue
-            delta1 = (y - yl) / (yu - yl)
-            delta2 = (yu - y) / (yu - yl)
-            rnd = rnd_delta[i, j]
-            if rnd <= 0.5:
-                xy = 1.0 - delta1
-                val = 2.0 * rnd + (1.0 - 2.0 * rnd) * (xy ** (self.eta + 1.0))
-                deltaq = val**mut_pow - 1.0
-            else:
-                xy = 1.0 - delta2
-                val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (self.eta + 1.0))
-                deltaq = 1.0 - val**mut_pow
-            y += deltaq * (yu - yl)
-            X[i, j] = y
-        return X
+        return polynomial_mutation_population(
+            X,
+            rng=rng,
+            lower=self.lower,
+            upper=self.upper,
+            prob_mutation=self.prob,
+            eta=self.eta,
+            rnd_mask=rnd_mask,
+            rnd_delta=rnd_delta,
+            inplace=True,
+        )
 
 
 class GaussianMutation(Mutation):

@@ -35,26 +35,22 @@ class _NSGAIIConfigBuilder:
 
     def crossover(
         self,
-        method: str | tuple[str, dict[str, Any]],
-        params: dict[str, Any] | None = None,
+        method: str,
         **kwargs: Any,
     ) -> _NSGAIIConfigBuilder:
-        if isinstance(method, tuple) and params is None and not kwargs:
-            method, params = method
-        cfg_kwargs = params or kwargs
-        self._cfg["crossover"] = (method, cfg_kwargs)
+        if not isinstance(method, str):
+            raise TypeError("crossover() expects a method name followed by keyword arguments, e.g. crossover('sbx', prob=1.0, eta=20.0).")
+        self._cfg["crossover"] = (method, kwargs)
         return self
 
     def mutation(
         self,
-        method: str | tuple[str, dict[str, Any]],
-        params: dict[str, Any] | None = None,
+        method: str,
         **kwargs: Any,
     ) -> _NSGAIIConfigBuilder:
-        if isinstance(method, tuple) and params is None and not kwargs:
-            method, params = method
-        cfg_kwargs = params or kwargs
-        self._cfg["mutation"] = (method, cfg_kwargs)
+        if not isinstance(method, str):
+            raise TypeError("mutation() expects a method name followed by keyword arguments, e.g. mutation('pm', prob='1/n', eta=20.0).")
+        self._cfg["mutation"] = (method, kwargs)
         return self
 
     def offspring_size(self, value: int) -> _NSGAIIConfigBuilder:
