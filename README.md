@@ -4,7 +4,7 @@
 
 ![VAMOS Banner](docs/assets/vamos1.png)
 
-VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels with NumPy as the exact reference path, optional Numba acceleration for core kernels, and experimental JAX support.
+VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels with NumPy as the exact reference path and optional Numba acceleration for core kernels.
 
 ## 🚀 Key Features
 
@@ -13,7 +13,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 - **Unified Archiving**: Consistent external archive configuration via `.external_archive(capacity=..., pruning=...)`, with bounded or unbounded archives and pruning policies `crowding`, `hv`, `mc_hv`, `knn`, `maxmin`, and `ref_dirs`. When an external archive is enabled, top-level results come from it by default unless `result_mode="population"` is requested.
 - **Multi-Fidelity Tuning**: Hyperband-style racing with warm-start checkpoints for sample-efficient algorithm configuration.
 - **Ready-to-use Tuning Backends**: `racing` and `random` work out of the box; install the optional `tuning` extra to enable `optuna`, `bohb_optuna`, `smac3`, and `bohb` via `vamos tune`.
-- **Performance Driven**: Vectorized NumPy kernels, optional Numba JIT acceleration for core kernels, and experimental JAX support.
+- **Performance Driven**: Vectorized NumPy kernels with optional Numba JIT acceleration for core kernels.
 - **Interactive Analysis**: Built-in dashboards with `explore_result_front(result)` and publication-ready LaTeX tables.
 - **Visual Problem Builder**: Define custom problems in the browser with live Pareto front preview via VAMOS Studio.
 - **Extensible**: Standardized protocols for adding custom problems, operators, and algorithms.
@@ -65,7 +65,6 @@ pip install "smac>=2.0"
 | `numpy` | Stable | Exact reference backend and deterministic default. |
 | `numba` | Stable optional | Accelerates core numeric kernels such as variation, tournament selection, and MOEA/D neighborhood updates. |
 | `moocore` | Stable optional | Adds accelerated quality-indicator support, especially hypervolume-style metrics. |
-| `jax` | Experimental optional | Importable for exploratory work, but not treated as the primary production acceleration path. |
 
 Operator shorthand accepts either numeric probabilities or the string literal `"1/n"` for per-variable mutation rates.
 

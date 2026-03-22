@@ -83,7 +83,6 @@ def run_single(
     config_spec: ExperimentSpec | None = None,
     problem_override: SpecBlock | None = None,
     track_genealogy: bool = False,
-    autodiff_constraints: bool = False,
     live_viz: LiveVisualization | None = None,
 ) -> Metrics:
     problem = problem or selection.instantiate()
@@ -167,26 +166,6 @@ def run_single(
     # 3. Notify Start
     main_observer.on_start(ctx)
 
-    autodiff_info: dict[str, Any] | None = None
-    if autodiff_constraints:
-        autodiff_info = {"status": "unavailable"}
-        try:
-            from vamos.foundation.constraints.autodiff import build_jax_constraint_functions
-
-            cm = getattr(problem, "constraint_model", None)
-            if callable(cm):
-                cm = cm()
-            if cm is not None:
-                build_jax_constraint_functions(cm)
-                autodiff_info = {
-                    "status": "ok",
-                    "n_constraints": len(getattr(cm, "constraints", []) or []),
-                }
-            else:
-                autodiff_info = {"status": "no_constraint_model"}
-        except Exception as exc:
-            autodiff_info = {"status": "error", "message": str(exc)}
-
     eval_strategy = resolve_evaluator(evaluator, config)
 
     kernel_backend = getattr(algorithm, "kernel", None)
@@ -257,7 +236,6 @@ def run_single(
         "backend_capabilities": sorted(set(kernel_backend.capabilities())) if kernel_backend else [],
         "output_dir": output_dir,  # Needed?
         "payload": payload,  # Pass payload for StorageObserver to extract archives etc.
-        "autodiff_info": autodiff_info,
     }
 
     if hook_mgr is not None:
@@ -306,7 +284,6 @@ def execute_problem_suite(
     config_spec: ExperimentSpec | None = None,
     problem_override: SpecBlock | None = None,
     track_genealogy: bool = False,
-    autodiff_constraints: bool = False,
     live_viz_factory: Callable[..., LiveVisualization | None] | None = None,
     plotter: Callable[..., Any] | None = None,
 ) -> None:
@@ -334,7 +311,6 @@ def execute_problem_suite(
     external_algorithms = [a for a in algorithms if a in EXTERNAL_ALGORITHM_NAMES]
 
     _track_genealogy: bool = getattr(args, "track_genealogy", False)
-    _autodiff_constraints: bool = getattr(args, "autodiff_constraints", False)
     _variations = variations or VariationConfigs.from_namespace(args)
 
     results: list[Metrics] = []
@@ -363,7 +339,6 @@ def execute_problem_suite(
                     config_spec=config_spec,
                     problem_override=problem_override,
                     track_genealogy=_track_genealogy,
-                    autodiff_constraints=_autodiff_constraints,
                     live_viz=live_viz,
                 )
             except ImportError as exc:

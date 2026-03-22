@@ -99,12 +99,6 @@ class StorageObserver(Observer):
             genealogy_path.write_text(json.dumps(payload["genealogy"], indent=2), encoding="utf-8")
             artifacts["genealogy"] = genealogy_path.name
 
-        autodiff_info = final_stats.get("autodiff_info")
-        if autodiff_info is not None:
-            autodiff_path = self.output_dir / "autodiff_constraints.json"
-            autodiff_path.write_text(json.dumps(autodiff_info, indent=2), encoding="utf-8")
-            artifacts["autodiff_constraints"] = autodiff_path.name
-
         total_time_ms = final_stats.get("time_ms", 0.0)
         write_timing(self.output_dir, total_time_ms)
 
@@ -145,8 +139,6 @@ class StorageObserver(Observer):
 
         if payload.get("genealogy"):
             metadata["genealogy"] = payload["genealogy"]
-        if autodiff_info is not None:
-            metadata["autodiff_constraints"] = autodiff_info
         hook_metadata = final_stats.get("hook_metadata")
         if isinstance(hook_metadata, dict):
             if "stopping" in hook_metadata:
@@ -163,7 +155,6 @@ class StorageObserver(Observer):
             "archive_x": artifacts.get("archive_x"),
             "archive_g": artifacts.get("archive_g"),
             "genealogy": artifacts.get("genealogy"),
-            "autodiff_constraints": artifacts.get("autodiff_constraints"),
             "time_ms": "time.txt",
         }
         hv_trace = self.output_dir / "hv_trace.csv"

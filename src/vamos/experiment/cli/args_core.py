@@ -54,8 +54,7 @@ def add_core_arguments(
         default=spec_default(experiment_defaults, "engine", None),
         help=(
             "Kernel backend to use. Default is deterministic numpy. Use 'auto' to "
-            "heuristically prefer optional accelerated backends. Treat JAX as experimental; "
-            "strict ranking falls back to NumPy for exact fronts."
+            "heuristically prefer optional accelerated backends."
         ),
     )
     add_spec_argument(
@@ -83,13 +82,6 @@ def add_core_arguments(
         "--dask-address",
         default=experiment_defaults.get("dask_address"),
         help="Address of Dask scheduler (e.g. 'tcp://localhost:8786'). Only used with --eval-strategy dask.",
-    )
-    add_spec_argument(
-        parser,
-        "--autodiff-constraints",
-        action="store_true",
-        default=bool(experiment_defaults.get("autodiff_constraints", False)),
-        help="Attempt to build JAX-based constraint evaluators when a ConstraintModel is available (requires autodiff extra).",
     )
     add_spec_argument(
         parser,

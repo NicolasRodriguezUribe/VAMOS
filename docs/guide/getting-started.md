@@ -18,7 +18,6 @@ Useful extras:
 - `dev`: pytest, ruff, mypy, nbformat/nbconvert for notebook checks
 - `examples`: minimal plotting + scikit-learn deps
 - `studio`: Panel-based dashboard and visualization app
-- `autodiff`: JAX for constraint autodiff helpers
 
 Smoke tests
 -----------

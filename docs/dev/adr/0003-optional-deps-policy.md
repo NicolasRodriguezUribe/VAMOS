@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-Optional dependencies (benchmarks, plotting, UI, autodiff) should not be required
+Optional dependencies (benchmarks, plotting, UI) should not be required
 to import or use core optimization logic.
 
 ## Decision

@@ -132,8 +132,6 @@ def initialize_run(
         X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
 
     incremental_enabled = bool(incremental_mode and replacement_size == 1 and G is None)
-    if incremental_enabled and getattr(algo.kernel, "name", "") == "jax" and getattr(algo.kernel, "_strict_ranking", True) is False:
-        incremental_enabled = False
 
     ranks = crowding = None
     fronts = None

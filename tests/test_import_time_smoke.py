@@ -7,7 +7,6 @@ import sys
 BLACKLIST = (
     "torch",
     "tensorflow",
-    "jax",
     "sklearn",
     "pymoo",
     "jmetalpy",

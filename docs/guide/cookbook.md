@@ -246,19 +246,7 @@ choice = result.best("knee")
 print(choice["F"])
 ```
 
-## 15. JAX Engine (Experimental, Strict Ranking Default)
-
-Use JAX experimentally. Strict ranking is on by default and falls back to NumPy for exact Pareto fronts, so NumPy or Numba remain the recommended production backends.
-
-```python
-from vamos import optimize
-
-result = optimize("zdt1", algorithm="nsgaii", engine="jax", max_evaluations=5000)
-```
-
-Set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking if you want maximum speed (may not match the exact Pareto front).
-
-## 16. Reproduce a Run from resolved_config.json
+## 15. Reproduce a Run from resolved_config.json
 
 If you ran via the CLI, each run stores a `resolved_config.json`. You can replay it:
 
@@ -282,7 +270,7 @@ result = optimize(
 )
 ```
 
-## 17. Validate a Config File (CLI)
+## 16. Validate a Config File (CLI)
 
 Check a YAML/JSON experiment spec before running:
 
@@ -290,7 +278,7 @@ Check a YAML/JSON experiment spec before running:
 vamos --config configs/experiment.yaml --validate-config
 ```
 
-## 18. Convert Results to a DataFrame (pandas)
+## 17. Convert Results to a DataFrame (pandas)
 
 Export results for analysis in pandas (requires the `analysis` extra).
 
@@ -303,7 +291,7 @@ df = result_to_dataframe(result)
 df.to_csv("results/zdt1_nsgaii_front.csv", index=False)
 ```
 
-## 19. Combine Fronts from Multiple Runs
+## 18. Combine Fronts from Multiple Runs
 
 Merge fronts from multiple runs and keep the non-dominated set.
 

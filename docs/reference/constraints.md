@@ -1,4 +1,4 @@
-# Constraints and autodiff
+# Constraints
 
 Constraint handling strategies
 ------------------------------
@@ -42,19 +42,6 @@ Example (vector constants are not supported):
 # Supported:
 cm.add(x0 <= 1.0)
 cm.add(x1 <= 2.0)
-```
-
-Autodiff (JAX)
---------------
-
-Install `pip install -e ".[autodiff]"` to enable JAX-backed functions.
-
-```python
-from vamos.foundation.constraints.autodiff import build_jax_constraint_functions
-
-fun, jac = build_jax_constraint_functions(cm)
-vals = fun(X)        # same shape as G above
-jacobian = jac(X)    # per-point Jacobians
 ```
 
 Using constraints in algorithms

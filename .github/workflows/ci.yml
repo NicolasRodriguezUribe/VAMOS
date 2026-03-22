@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies (full extras)
         run: |
           python -m pip install -U pip
-          python -m pip install -c constraints/ci.txt -e ".[dev,compute,research,analysis,examples,studio,autodiff,docs]"
+          python -m pip install -c constraints/ci.txt -e ".[dev,compute,research,analysis,examples,studio,docs]"
       - name: Lint (ruff)
         run: ruff check .
       - name: Type check (mypy)
