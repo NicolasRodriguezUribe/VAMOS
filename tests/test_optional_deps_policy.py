@@ -10,7 +10,6 @@ BLACKLIST = {
     "streamlit",
     "torch",
     "tensorflow",
-    "jax",
     "sklearn",
 }
 

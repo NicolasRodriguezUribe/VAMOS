@@ -14,7 +14,7 @@ class KernelBackend(ABC):
     Performance-sensitive: implementations should be vectorized/SoA and avoid Python loops.
     """
 
-    # Stable backend identifier (e.g., "numpy", "numba", "moocore", "jax").
+    # Stable backend identifier (e.g., "numpy", "numba", "moocore").
     name: str = "unknown"
 
     # -------- Computation device / capability metadata --------

@@ -43,7 +43,7 @@ All VAMOS functionality is available via `vamos <subcommand>`. Run `vamos help` 
 |------|-------------|---------|
 | `--problem` | Problem name (zdt1, dtlz2, etc.) | zdt1 |
 | `--algorithm` | Algorithm (nsgaii, moead, spea2, etc.) | nsgaii |
-| `--engine` | Backend (numpy, numba, moocore, jax) | numpy |
+| `--engine` | Backend (numpy, numba, moocore) | numpy |
 | `--max-evaluations` | Termination budget | 25000 |
 | `--population-size` | Population size | 100 |
 | `--n-var` | Number of variables | problem default |

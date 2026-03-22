@@ -28,7 +28,6 @@ def run_single(
     config_spec: ExperimentSpec | None = None,
     problem_override: SpecBlock | None = None,
     track_genealogy: bool = False,
-    autodiff_constraints: bool = False,
     live_viz: LiveVisualization | None = None,
 ) -> dict[str, object]:
     problem = selection.instantiate()
@@ -74,6 +73,5 @@ def run_single(
         config_spec=config_spec,
         problem_override=problem_override,
         track_genealogy=track_genealogy,
-        autodiff_constraints=autodiff_constraints,
         live_viz=live_viz,
     )

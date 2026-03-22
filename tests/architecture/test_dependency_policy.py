@@ -10,7 +10,6 @@ except ImportError:  # pragma: no cover - Python < 3.11
 
 
 BANNED_CORE = {
-    "jax",
     "jmetalpy",
     "matplotlib",
     "moocore",

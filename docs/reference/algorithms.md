@@ -38,7 +38,6 @@ Backends
 - NumPy (default): vectorized CPU kernels.
 - Numba: JIT acceleration for supported kernels (set `VAMOS_USE_NUMBA_VARIATION=1` for permutation/binary/integer variation).
 - MooCore: accelerated kernels via `moocore` (install `compute` extra).
-- JAX: experimental backend kept for exploratory/autodiff workflows, not the primary production acceleration path.
 
 Backend capability matrix
 -------------------------
@@ -48,7 +47,6 @@ Backend capability matrix
 | `numpy` | Stable | Exact reference backend and deterministic default. |
 | `numba` | Stable optional | Faster core kernels: mutation, tournament selection, and MOEA/D neighborhood updates. |
 | `moocore` | Stable optional | Hypervolume and related quality-indicator acceleration. |
-| `jax` | Experimental optional | Exploratory research workflows where JAX interop matters more than backend parity. |
 
 Probability shorthand
 ---------------------

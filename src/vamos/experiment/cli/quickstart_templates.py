@@ -49,7 +49,6 @@ _EXTRA_MODULES: dict[str, tuple[str, ...]] = {
 }
 _EXTRA_HINTS: dict[str, str] = {
     "analysis": 'pip install -e ".[analysis]"',
-    "autodiff": 'pip install -e ".[autodiff]"',
     "compute": 'pip install -e ".[compute]"',
     "examples": 'pip install -e ".[examples]"',
     "research": 'pip install -e ".[research]"',

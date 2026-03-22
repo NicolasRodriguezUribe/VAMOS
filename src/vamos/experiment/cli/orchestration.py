@@ -110,7 +110,6 @@ def run_from_args(
         effective_args.live_viz_interval = override.get("live_viz_interval", args.live_viz_interval)
         effective_args.live_viz_max_points = override.get("live_viz_max_points", args.live_viz_max_points)
         effective_args.track_genealogy = override.get("track_genealogy", getattr(args, "track_genealogy", False))
-        effective_args.autodiff_constraints = override.get("autodiff_constraints", getattr(args, "autodiff_constraints", False))
         effective_args.nsgaii_variation = merge_variation_overrides(base_variation, _override_mapping(override, "nsgaii"))
         effective_args.moead_variation = merge_variation_overrides(
             getattr(args, "moead_variation", None), _override_mapping(override, "moead")
@@ -170,7 +169,6 @@ def run_from_args(
             config_spec=config_spec,
             problem_override=override,
             track_genealogy=effective_args.track_genealogy,
-            autodiff_constraints=effective_args.autodiff_constraints,
             live_viz_factory=live_viz_factory,
             plotter=plotter,
         )
