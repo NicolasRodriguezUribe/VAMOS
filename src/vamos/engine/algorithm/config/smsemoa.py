@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, overload
 
 from vamos.engine.archive import ExternalArchiveConfig
 
@@ -16,7 +16,7 @@ from .base import (
     _SerializableConfig,
     _validate_operators,
 )
-from .types import RepairConfigValue
+from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
 
 
 @dataclass(frozen=True)
@@ -74,13 +74,31 @@ class _SMSEMOAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
+    @overload
+    def crossover(self, method: CrossoverName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
+
+    @overload
+    def crossover(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
+
     def crossover(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
+    @overload
+    def mutation(self, method: MutationName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
+
+    @overload
+    def mutation(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
+
     def mutation(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
+
+    @overload
+    def selection(self, method: SelectionName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
+
+    @overload
+    def selection(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
 
     def selection(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
@@ -104,13 +122,25 @@ class _SMSEMOAConfigBuilder:
         }
         return self
 
-    def constraint_mode(self, value: str) -> _SMSEMOAConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr) -> _SMSEMOAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
+
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
 
     def repair(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
 
     def initializer(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
@@ -124,7 +154,7 @@ class _SMSEMOAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _SMSEMOAConfigBuilder:
+    def result_mode(self, value: ResultMode) -> _SMSEMOAConfigBuilder:
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be 'non_dominated' or 'population'.")
