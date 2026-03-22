@@ -30,9 +30,7 @@ def main() -> int:
                     continue
                 target_path = (notebook.parent / target).resolve()
                 if not target_path.exists():
-                    errors.append(
-                        f"{notebook.relative_to(REPO_ROOT)} cell {cell_idx}: missing link target {target!r}"
-                    )
+                    errors.append(f"{notebook.relative_to(REPO_ROOT)} cell {cell_idx}: missing link target {target!r}")
 
     if errors:
         for error in errors:

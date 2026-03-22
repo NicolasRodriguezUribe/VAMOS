@@ -17,7 +17,7 @@ class SimpleConstrainedProblem:
     def __init__(self):
         self.n_var = 2
         self.n_obj = 2
-        self.n_constr = 2
+        self.n_constraints = 2
         self.xl = np.array([0.0, 0.0])
         self.xu = np.array([1.0, 1.0])
 
@@ -44,7 +44,7 @@ class OSYProblem:
     def __init__(self):
         self.n_var = 6
         self.n_obj = 2
-        self.n_constr = 6
+        self.n_constraints = 6
         self.xl = np.array([0, 0, 1, 0, 1, 0], dtype=float)
         self.xu = np.array([10, 10, 5, 6, 5, 10], dtype=float)
 

@@ -1,0 +1,105 @@
+{
+  "generated_at_utc": "2026-03-21T22:06:44.243512+00:00",
+  "vamos_engine": "numpy",
+  "cases": [
+    "zdt1"
+  ],
+  "algorithms": [
+    "nsgaii"
+  ],
+  "seeds": [
+    42
+  ],
+  "smoke": true,
+  "summary": [
+    {
+      "case": "zdt1",
+      "algorithm": "nsgaii",
+      "framework": "pymoo",
+      "engine": "pymoo",
+      "kernel_backend": "pymoo",
+      "engine_source": "external",
+      "runs": 1,
+      "max_evaluations": 400,
+      "pop_size": 40,
+      "runtime_ms_mean": 36.860099993646145,
+      "runtime_ms_std": 0.0,
+      "hv_mean": 0.0,
+      "hv_std": 0.0,
+      "igd_plus_mean": 1.2804619867938845,
+      "igd_plus_std": 0.0,
+      "epsilon_additive_mean": 1.5702246975500829,
+      "epsilon_additive_std": 0.0,
+      "n_solutions_mean": 16.0,
+      "n_solutions_std": 0.0
+    },
+    {
+      "case": "zdt1",
+      "algorithm": "nsgaii",
+      "framework": "vamos",
+      "engine": "numpy",
+      "kernel_backend": "numpy",
+      "engine_source": "explicit",
+      "runs": 1,
+      "max_evaluations": 400,
+      "pop_size": 40,
+      "runtime_ms_mean": 13.017000048421323,
+      "runtime_ms_std": 0.0,
+      "hv_mean": 0.0,
+      "hv_std": 0.0,
+      "igd_plus_mean": 1.4168425162365623,
+      "igd_plus_std": 0.0,
+      "epsilon_additive_mean": 1.8016774518314542,
+      "epsilon_additive_std": 0.0,
+      "n_solutions_mean": 9.0,
+      "n_solutions_std": 0.0
+    }
+  ],
+  "runs": [
+    {
+      "framework": "vamos",
+      "algorithm": "nsgaii",
+      "case": "zdt1",
+      "problem": "zdt1",
+      "seed": 42,
+      "runtime_ms": 13.017000048421323,
+      "engine": "numpy",
+      "kernel_backend": "numpy",
+      "engine_source": "explicit",
+      "max_evaluations": 400,
+      "pop_size": 40,
+      "hv": 0.0,
+      "igd_plus": 1.4168425162365623,
+      "epsilon_additive": 1.8016774518314542,
+      "n_solutions": 9.0
+    },
+    {
+      "framework": "pymoo",
+      "algorithm": "nsgaii",
+      "case": "zdt1",
+      "problem": "zdt1",
+      "seed": 42,
+      "runtime_ms": 36.860099993646145,
+      "engine": "pymoo",
+      "kernel_backend": "pymoo",
+      "engine_source": "external",
+      "max_evaluations": 400,
+      "pop_size": 40,
+      "hv": 0.0,
+      "igd_plus": 1.2804619867938845,
+      "epsilon_additive": 1.5702246975500829,
+      "n_solutions": 16.0
+    }
+  ],
+  "case_configs": [
+    {
+      "name": "zdt1",
+      "problem": "zdt1",
+      "n_var": 30,
+      "n_obj": 2,
+      "pop_size": 40,
+      "max_evaluations": 400,
+      "divisions": 39
+    }
+  ]
+}

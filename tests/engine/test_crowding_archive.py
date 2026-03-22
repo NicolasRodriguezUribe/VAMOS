@@ -277,7 +277,7 @@ def test_nsgaii_constrained_with_external_archive():
     class _ConstrainedBiobj:
         n_var = 2
         n_obj = 2
-        n_constr = 1
+        n_constraints = 1
         xl = np.array([0.0, 0.0])
         xu = np.array([1.0, 1.0])
         encoding = "real"
@@ -318,7 +318,7 @@ def test_nsgaii_runs_with_new_external_archive_policies(pruning: str):
     class _ThreeObj:
         n_var = 3
         n_obj = 3
-        n_constr = 0
+        n_constraints = 0
         xl = np.zeros(3)
         xu = np.ones(3)
         encoding = "real"

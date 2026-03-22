@@ -156,6 +156,7 @@ def _run_config(
         meta={
             "algorithm": algorithm_name,
             "engine": effective_engine,
+            "kernel_backend": kernel.name,
             "seed": cfg.seed,
             "termination": cfg.termination,
         },

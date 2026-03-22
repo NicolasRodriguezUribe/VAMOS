@@ -49,6 +49,13 @@ class TestNSGAIIConfigShortcuts:
         assert cfg.pop_size == 100
         assert cfg.selection[0] == "tournament"
 
+    def test_builder_rejects_legacy_tuple_operator_syntax(self):
+        with pytest.raises(TypeError, match="keyword arguments"):
+            NSGAIIConfig.builder().crossover(("sbx", {"prob": 1.0}))  # type: ignore[arg-type]
+
+        with pytest.raises(TypeError, match="keyword arguments"):
+            NSGAIIConfig.builder().mutation(("pm", {"prob": "1/n"}))  # type: ignore[arg-type]
+
     def test_tournament_selection_accepts_size_key(self):
         """Tournament selection should use the new 'size' key."""
         cfg = (
@@ -72,12 +79,7 @@ class TestNSGAIIConfigShortcuts:
 
     def test_builder_validates_operator_names_eagerly(self):
         with pytest.raises(ValueError, match="Unknown mutation"):
-            (
-                NSGAIIConfig.builder()
-                .crossover("sbx", prob=1.0, eta=20.0)
-                .mutation("polynomia", prob=0.1, eta=20.0)
-                .build()
-            )
+            (NSGAIIConfig.builder().crossover("sbx", prob=1.0, eta=20.0).mutation("polynomia", prob=0.1, eta=20.0).build())
 
     def test_repair_auto_round_trips(self):
         cfg = NSGAIIConfig.default(pop_size=25, n_var=5)

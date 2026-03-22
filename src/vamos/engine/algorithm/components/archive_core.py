@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Literal
 
 import numpy as np
+from scipy.spatial import cKDTree  # type: ignore[import-untyped]
 
 try:  # pragma: no cover - optional dependency
     import moocore as _moocore
@@ -26,7 +27,7 @@ def _nondominated_mask(F: np.ndarray) -> np.ndarray:
     return mask
 
 
-def _unique_rows_with_tolerance(values: np.ndarray, tol: float) -> np.ndarray:
+def _unique_rows_with_tolerance_bucket(values: np.ndarray, tol: float) -> np.ndarray:
     n = int(values.shape[0])
     if n <= 1 or tol < 0.0:
         return np.arange(n, dtype=int)
@@ -62,6 +63,48 @@ def _unique_rows_with_tolerance(values: np.ndarray, tol: float) -> np.ndarray:
         if not is_dup:
             keep_idx.append(i)
             buckets.setdefault(bucket, []).append(i)
+
+    return np.asarray(keep_idx, dtype=int)
+
+
+def _unique_rows_with_tolerance(values: np.ndarray, tol: float) -> np.ndarray:
+    n = int(values.shape[0])
+    if n <= 1 or tol < 0.0:
+        return np.arange(n, dtype=int)
+    if tol == 0.0:
+        _, unique_idx = np.unique(values, axis=0, return_index=True)
+        unique_idx.sort()
+        return np.asarray(unique_idx, dtype=int)
+
+    first = np.asarray(values[:, 0], dtype=float)
+    order = np.argsort(first, kind="mergesort")
+    if np.all(np.diff(first[order]) > tol):
+        return np.arange(n, dtype=int)
+
+    finite_rows = np.all(np.isfinite(values), axis=1)
+    finite_idx = np.flatnonzero(finite_rows)
+    if finite_idx.size <= 32:
+        return _unique_rows_with_tolerance_bucket(values, tol)
+
+    finite_values = np.ascontiguousarray(values[finite_idx], dtype=float)
+    tree = cKDTree(finite_values)
+    removed = np.zeros(finite_idx.shape[0], dtype=bool)
+    local_lookup = np.full(n, -1, dtype=int)
+    local_lookup[finite_idx] = np.arange(finite_idx.shape[0], dtype=int)
+
+    keep_idx: list[int] = []
+    for orig_idx in range(n):
+        local_idx = int(local_lookup[orig_idx])
+        if local_idx < 0:
+            keep_idx.append(orig_idx)
+            continue
+        if removed[local_idx]:
+            continue
+        keep_idx.append(orig_idx)
+        neighbors = tree.query_ball_point(finite_values[local_idx], r=tol, p=np.inf)
+        for neighbor_local in neighbors:
+            if finite_idx[neighbor_local] > orig_idx:
+                removed[neighbor_local] = True
 
     return np.asarray(keep_idx, dtype=int)
 

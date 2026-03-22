@@ -8,7 +8,7 @@ import numpy as np
 
 
 def compute_violation(G: np.ndarray | None, *, n: int | None = None) -> np.ndarray:
-    """Sum of positive parts per-solution; assumes G shape (N, n_constr), g<=0 satisfied.
+    """Sum of positive parts per-solution; assumes G shape (N, n_constraints), g<=0 satisfied.
 
     When *G* is ``None`` (unconstrained), ``n`` must be provided so the output
     length is explicit.
@@ -22,7 +22,7 @@ def compute_violation(G: np.ndarray | None, *, n: int | None = None) -> np.ndarr
 
 
 def is_feasible(G: np.ndarray | None, *, n: int | None = None, eps: float = 0.0) -> np.ndarray:
-    """Boolean feasibility mask; assumes G shape (N, n_constr).
+    """Boolean feasibility mask; assumes G shape (N, n_constraints).
 
     When *G* is ``None`` (unconstrained), ``n`` must be provided so the output
     length is explicit.

@@ -8,6 +8,7 @@ from numpy.typing import NDArray
 
 from vamos.foundation.quality_indicators.pareto import pareto_filter
 
+from .ranking import BestMethod, RankingMethod, normalize_best_method
 from .ranking import top_k as rank_top_k
 from .ranking import top_k_report as build_top_k_report
 
@@ -25,7 +26,7 @@ class TopKResult(TypedDict):
     indices: NDArray[np.int_]
     scores: NDArray[np.float64]
     source: str
-    method: str
+    method: RankingMethod
 
 
 class OptimizationResult:
@@ -69,7 +70,7 @@ class OptimizationResult:
             return pareto_filter(self.F, return_indices=True)
         return pareto_filter(self.F, return_indices=False)
 
-    def best(self, method: str = "knee") -> BestResult:
+    def best(self, method: BestMethod = "knee") -> BestResult:
         if self.F is None or len(self.F) == 0:
             raise ValueError("No solutions available")
 
@@ -80,20 +81,21 @@ class OptimizationResult:
         if len(front_F) == 0:
             raise ValueError("No solutions available")
 
-        if method == "knee":
+        resolved_method = normalize_best_method(method)
+        if resolved_method == "knee":
             F_norm = (front_F - front_F.min(axis=0)) / (np.ptp(front_F, axis=0) + 1e-12)
             front_pos = int(np.argmin(F_norm.sum(axis=1)))
-        elif method == "min_f1":
+        elif resolved_method == "min_f1":
             front_pos = int(np.argmin(front_F[:, 0]))
-        elif method == "min_f2":
+        elif resolved_method == "min_f2":
             if front_F.shape[1] < 2:
                 raise ValueError(f"'min_f2' requires at least 2 objectives, but this result has {front_F.shape[1]}.")
             front_pos = int(np.argmin(front_F[:, 1]))
-        elif method == "balanced":
+        elif resolved_method == "balanced":
             F_norm = (front_F - front_F.min(axis=0)) / (np.ptp(front_F, axis=0) + 1e-12)
             front_pos = int(np.argmin(F_norm.max(axis=1)))
         else:
-            raise ValueError(f"Unknown method '{method}'. Use: knee, min_f1, min_f2, balanced")
+            raise AssertionError(f"Unhandled best() method '{resolved_method}'.")
 
         idx = int(front_idx[front_pos])
         return {
@@ -108,7 +110,7 @@ class OptimizationResult:
         k: int = 100,
         *,
         source: str = "archive",
-        method: str = "knee",
+        method: RankingMethod = "knee",
         nondominated_only: bool = True,
         weights: NDArray[np.float64] | None = None,
     ) -> TopKResult:
@@ -129,7 +131,7 @@ class OptimizationResult:
         k: int = 100,
         *,
         source: str = "archive",
-        method: str = "knee",
+        method: RankingMethod = "knee",
         nondominated_only: bool = True,
         weights: NDArray[np.float64] | None = None,
     ) -> list[dict[str, Any]]:

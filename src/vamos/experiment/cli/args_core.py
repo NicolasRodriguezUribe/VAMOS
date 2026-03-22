@@ -54,8 +54,8 @@ def add_core_arguments(
         default=spec_default(experiment_defaults, "engine", None),
         help=(
             "Kernel backend to use. Default is deterministic numpy. Use 'auto' to "
-            "heuristically prefer optional accelerated backends. JAX strict ranking "
-            "falls back to NumPy for exact fronts."
+            "heuristically prefer optional accelerated backends. Treat JAX as experimental; "
+            "strict ranking falls back to NumPy for exact fronts."
         ),
     )
     add_spec_argument(

@@ -61,7 +61,7 @@ import numpy as np
 class MyProblem(ProblemProtocol):
     n_var = 10
     n_obj = 2
-    n_constr = 0
+    n_constraints = 0
     xl = np.zeros(10)
     xu = np.ones(10)
     encoding = "continuous"

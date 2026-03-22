@@ -1,11 +1,8 @@
-"""
-Performance tests for JAX backend validation.
-"""
+"""Smoke tests for the experimental JAX backend."""
 
 from __future__ import annotations
 
 import importlib.util
-import time
 
 import numpy as np
 import pytest
@@ -16,8 +13,8 @@ def has_jax() -> bool:
 
 
 @pytest.mark.skipif(not has_jax(), reason="JAX not installed")
-class TestJaxSpeedup:
-    """Validate JAX kernel provides speedup over NumPy."""
+class TestJaxBackendSmoke:
+    """Validate the experimental JAX kernel executes and returns sane results."""
 
     def test_jax_devices_available(self):
         """Verify JAX can detect devices."""
@@ -27,10 +24,9 @@ class TestJaxSpeedup:
         assert len(devices) > 0, "No JAX devices found"
         print(f"JAX devices: {devices}")
 
-    def test_nsga2_ranking_speedup(self):
-        """Test JAX ranking is faster than NumPy for large populations."""
+    def test_nsga2_ranking_executes_for_large_population(self):
+        """JAX ranking should execute successfully for a larger population."""
         from vamos.foundation.kernel.jax_backend import JaxKernel
-        from vamos.foundation.kernel.numpy_backend import NumPyKernel
 
         # Generate test data - large population
         np.random.seed(42)
@@ -38,33 +34,12 @@ class TestJaxSpeedup:
         n_obj = 3
         F = np.random.rand(n_pop, n_obj)
 
-        numpy_kernel = NumPyKernel()
         jax_kernel = JaxKernel()
 
         # Warmup JAX (JIT compilation)
         _ = jax_kernel.nsga2_ranking(F[:100])
 
-        # Benchmark NumPy
-        start = time.perf_counter()
-        for _ in range(3):
-            ranks_np, cd_np = numpy_kernel.nsga2_ranking(F)
-        numpy_time = (time.perf_counter() - start) / 3
-
-        # Benchmark JAX
-        start = time.perf_counter()
-        for _ in range(3):
-            ranks_jax, cd_jax = jax_kernel.nsga2_ranking(F)
-        jax_time = (time.perf_counter() - start) / 3
-
-        speedup = numpy_time / jax_time if jax_time > 0 else 0
-
-        print(f"\nNumPy time: {numpy_time:.4f}s")
-        print(f"JAX time: {jax_time:.4f}s")
-        print(f"Speedup: {speedup:.2f}x")
-
-        # Note: On CPU, JAX may not always be faster due to JIT overhead
-        # On GPU, expect significant speedup
-        # We just verify it runs successfully
+        ranks_jax, cd_jax = jax_kernel.nsga2_ranking(F)
         assert ranks_jax is not None
         assert cd_jax is not None
         assert len(ranks_jax) == n_pop

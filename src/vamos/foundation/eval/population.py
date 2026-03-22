@@ -10,9 +10,9 @@ def evaluate_population_with_constraints(problem: Any, X: np.ndarray) -> tuple[n
     Evaluate population and optionally return constraints G if provided by the problem.
     """
     out = {"F": np.empty((X.shape[0], problem.n_obj))}
-    n_constr = getattr(problem, "n_constr", 0)
-    if n_constr and n_constr > 0:
-        out["G"] = np.empty((X.shape[0], n_constr))
+    n_constraints = getattr(problem, "n_constraints", 0)
+    if n_constraints and n_constraints > 0:
+        out["G"] = np.empty((X.shape[0], n_constraints))
     problem.evaluate(X, out)
     return out["F"], out.get("G")
 

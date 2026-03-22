@@ -83,6 +83,9 @@ MutationName: TypeAlias = Literal[
     "mixed_mutation",
 ]
 
+ProbabilityExpression: TypeAlias = Literal["1/n"]
+ProbabilityValue: TypeAlias = float | ProbabilityExpression
+
 SelectionName: TypeAlias = Literal["tournament"]
 
 InitializerName: TypeAlias = Literal[
@@ -141,6 +144,8 @@ __all__ = [
     "AlgorithmConfigProtocol",
     "CrossoverName",
     "MutationName",
+    "ProbabilityExpression",
+    "ProbabilityValue",
     "SelectionName",
     "InitializerName",
     "RepairName",

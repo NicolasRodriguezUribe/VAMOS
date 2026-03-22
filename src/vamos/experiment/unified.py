@@ -344,6 +344,8 @@ def _run_single(
         "problem": problem_label,
         "algorithm": algorithm,
         "engine": effective_engine,
+        "engine_source": engine_source,
+        "kernel_backend": result.meta.get("kernel_backend", effective_engine),
         "pop_size": resolved_pop_size,
         "max_evaluations": effective_max_evaluations,
         "seed": seed,
@@ -354,6 +356,8 @@ def _run_single(
     pop_size_source = "config" if algorithm_config is not None else ("explicit" if pop_size is not None else "auto")
     max_evaluations_source = "explicit" if max_evaluations is not None else "auto"
     result.meta["resolved_config"] = resolved_config
+    result.meta["engine_source"] = engine_source
+    result.meta["kernel_backend"] = result.meta.get("kernel_backend", effective_engine)
     result.meta["default_sources"] = {
         "algorithm": "auto" if algorithm_was_auto else "explicit",
         "pop_size": pop_size_source,

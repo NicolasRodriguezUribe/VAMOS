@@ -161,4 +161,3 @@ def test_backend_fallback_error_mode_raises(monkeypatch):
                 "--no-run-statistical-finisher",
             ]
         )
-

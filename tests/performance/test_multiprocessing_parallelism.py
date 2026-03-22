@@ -13,7 +13,7 @@ class _PidProblem:
     def __init__(self, *, delay: float = 0.02) -> None:
         self.n_var = 2
         self.n_obj = 1
-        self.n_constr = 0
+        self.n_constraints = 0
         self.delay = float(delay)
 
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
