@@ -256,6 +256,25 @@ class InvalidResultsError(DataError):
         super().__init__(message, suggestion, {"path": path})
 
 
+class ResultSelectionError(InvalidResultsError, ValueError):
+    """Raised when selecting or ranking solutions from a result fails."""
+
+    def __init__(self, message: str) -> None:
+        suggestion = (
+            "Check the ranking method, source, weights, and whether the result "
+            "contains non-empty objective data."
+        )
+        VAMOSError.__init__(self, message, suggestion)
+
+
+class NoSolutionsError(ResultSelectionError):
+    """Raised when a result does not contain selectable solutions."""
+
+    def __init__(self, message: str = "No solutions available.") -> None:
+        suggestion = "Run the optimization longer or inspect archive/population sources before selecting solutions."
+        VAMOSError.__init__(self, message, suggestion)
+
+
 # =============================================================================
 # Dependency Errors
 # =============================================================================
@@ -312,6 +331,8 @@ __all__ = [
     "DataError",
     "ResultsNotFoundError",
     "InvalidResultsError",
+    "ResultSelectionError",
+    "NoSolutionsError",
     # Dependencies
     "DependencyError",
     "BackendNotAvailableError",

@@ -6,9 +6,10 @@ from typing import Any, Literal, TypedDict, cast, overload
 import numpy as np
 from numpy.typing import NDArray
 
+from vamos.foundation.exceptions import NoSolutionsError, ResultSelectionError
 from vamos.foundation.quality_indicators.pareto import pareto_filter
 
-from .ranking import BestMethod, RankingMethod, normalize_best_method
+from .ranking import BestMethod, RankingMethod, RankingSource, normalize_best_method
 from .ranking import top_k as rank_top_k
 from .ranking import top_k_report as build_top_k_report
 
@@ -25,7 +26,7 @@ class TopKResult(TypedDict):
     F: NDArray[Any]
     indices: NDArray[np.int_]
     scores: NDArray[np.float64]
-    source: str
+    source: RankingSource
     method: RankingMethod
 
 
@@ -72,14 +73,14 @@ class OptimizationResult:
 
     def best(self, method: BestMethod = "knee") -> BestResult:
         if self.F is None or len(self.F) == 0:
-            raise ValueError("No solutions available")
+            raise NoSolutionsError("No solutions available.")
 
         front = self.front(return_indices=True)
         if front is None:
-            raise ValueError("No solutions available")
+            raise NoSolutionsError("No solutions available.")
         front_F, front_idx = front
         if len(front_F) == 0:
-            raise ValueError("No solutions available")
+            raise NoSolutionsError("No solutions available.")
 
         resolved_method = normalize_best_method(method)
         if resolved_method == "knee":
@@ -89,7 +90,9 @@ class OptimizationResult:
             front_pos = int(np.argmin(front_F[:, 0]))
         elif resolved_method == "min_f2":
             if front_F.shape[1] < 2:
-                raise ValueError(f"'min_f2' requires at least 2 objectives, but this result has {front_F.shape[1]}.")
+                raise ResultSelectionError(
+                    f"'min_f2' requires at least 2 objectives, but this result has {front_F.shape[1]}."
+                )
             front_pos = int(np.argmin(front_F[:, 1]))
         elif resolved_method == "balanced":
             F_norm = (front_F - front_F.min(axis=0)) / (np.ptp(front_F, axis=0) + 1e-12)
@@ -109,7 +112,7 @@ class OptimizationResult:
         self,
         k: int = 100,
         *,
-        source: str = "archive",
+        source: RankingSource = "archive",
         method: RankingMethod = "knee",
         nondominated_only: bool = True,
         weights: NDArray[np.float64] | None = None,
@@ -130,7 +133,7 @@ class OptimizationResult:
         self,
         k: int = 100,
         *,
-        source: str = "archive",
+        source: RankingSource = "archive",
         method: RankingMethod = "knee",
         nondominated_only: bool = True,
         weights: NDArray[np.float64] | None = None,

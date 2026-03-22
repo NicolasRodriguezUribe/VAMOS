@@ -71,6 +71,47 @@ assert result.F.shape[1] == problem.n_obj
 """,
     ),
     DocSmokeCase(
+        name="extending_custom_algorithm",
+        source_path="docs/topics/extending.md",
+        code="""
+from typing import Any
+
+import numpy as np
+
+from vamos import make_problem
+from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
+from vamos.foundation.kernel.backend import KernelBackend
+
+
+class MyAlgorithm:
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None) -> None:
+        self.config = dict(config)
+        self.kernel = kernel
+
+    def run(self, problem, termination=("max_evaluations", 10), seed=0, eval_strategy=None, live_viz=None):
+        return {
+            "X": np.zeros((1, problem.n_var)),
+            "F": np.zeros((1, problem.n_obj)),
+            "evaluations": 0,
+        }
+
+
+def build_my_algorithm(cfg: dict[str, Any], kernel: KernelBackend | None = None) -> MyAlgorithm:
+    return MyAlgorithm(cfg, kernel=kernel)
+
+
+registry = get_algorithms_registry()
+name = "_docs_smoke_algorithm"
+if name not in registry:
+    registry.register(name, build_my_algorithm)
+
+problem = make_problem(lambda x: [x[0], x[1]], n_var=2, n_obj=2, bounds=[(0.0, 1.0), (0.0, 1.0)], encoding="real")
+algo = resolve_algorithm(name)({"pop_size": 4}, None)
+payload = algo.run(problem, termination=("max_evaluations", 10), seed=0)
+assert payload["F"].shape == (1, 2)
+""",
+    ),
+    DocSmokeCase(
         name="cookbook_resolved_backend_metadata",
         source_path="docs/guide/cookbook.md",
         code="""

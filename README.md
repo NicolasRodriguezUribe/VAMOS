@@ -18,6 +18,8 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 - **Visual Problem Builder**: Define custom problems in the browser with live Pareto front preview via VAMOS Studio.
 - **Extensible**: Standardized protocols for adding custom problems, operators, and algorithms.
 
+Canonical customization guide: `docs/topics/extending.md`.
+
 ## 📦 Quick Install
 
 ```bash

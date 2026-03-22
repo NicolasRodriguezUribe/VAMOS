@@ -7,11 +7,6 @@ from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
-
-def _logger() -> logging.Logger:
-    return logging.getLogger(__name__)
-
-
 from vamos.engine.algorithm.catalog import DEFAULT_ALGORITHM
 from vamos.engine.algorithm.config import (
     AGEMOEAConfig,
@@ -30,6 +25,19 @@ from vamos.engine.algorithm.config.defaults import build_default_algorithm_confi
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
 from vamos.exceptions import InvalidAlgorithmError
+from vamos.foundation.eval import EvaluationBackend
+from vamos.foundation.eval.backends import resolve_eval_strategy
+from vamos.foundation.kernel.registry import resolve_kernel
+from vamos.foundation.problem.registry import make_problem_selection
+from vamos.foundation.problem.types import ProblemProtocol
+from vamos.ux.analysis.mcdm import reference_point_scores
+from vamos.ux.studio._studio_llm import llm_generate_problem_code
+from vamos.ux.studio.data import build_fronts, load_runs_from_study
+from vamos.ux.studio.dm import build_decision_view
+
+if TYPE_CHECKING:
+    from vamos.ux.studio.data import FrontRecord, RunRecord
+    from vamos.ux.studio.dm import DecisionView
 
 _CONFIG_MAP: dict[str, type[_SerializableConfig]] = {
     "nsgaii": NSGAIIConfig,
@@ -42,18 +50,10 @@ _CONFIG_MAP: dict[str, type[_SerializableConfig]] = {
     "agemoea": AGEMOEAConfig,
     "rvea": RVEAConfig,
 }
-from vamos.foundation.eval import EvaluationBackend
-from vamos.foundation.eval.backends import resolve_eval_strategy
-from vamos.foundation.kernel.registry import resolve_kernel
-from vamos.foundation.problem.registry import make_problem_selection
-from vamos.foundation.problem.types import ProblemProtocol
-from vamos.ux.analysis.mcdm import reference_point_scores
-from vamos.ux.studio.data import build_fronts, load_runs_from_study
-from vamos.ux.studio.dm import build_decision_view
 
-if TYPE_CHECKING:
-    from vamos.ux.studio.data import FrontRecord, RunRecord
-    from vamos.ux.studio.dm import DecisionView
+
+def _logger() -> logging.Logger:
+    return logging.getLogger(__name__)
 
 
 class DynamicsCallback:
@@ -114,11 +114,7 @@ def discover_study_directories(base_dir: Path, *, limit: int = 8) -> list[Path]:
             return
         candidates.append(path)
 
-    preferred_roots = [
-        base_dir / "results",
-        base_dir / "results" / "quickstart",
-        base_dir / "paper" / "results",
-    ]
+    preferred_roots = [base_dir / "results", base_dir / "results" / "quickstart", base_dir / "paper" / "results"]
     for root in preferred_roots:
         add_candidate(root)
         if root.exists():
@@ -142,42 +138,12 @@ def build_demo_study_data() -> tuple[list[RunRecord], list[FrontRecord]]:
     points_x = np.column_stack([x, 1.0 - x])
 
     demo_runs = [
-        RunRecord(
-            suite_name="demo",
-            experiment_id="demo/nsgaii",
-            problem_name="Demo trade-off",
-            algorithm_name="NSGA-II demo",
-            seed=0,
-            fun=nsgaii_front,
-            var=points_x,
-            metadata={"demo": True},
-        ),
-        RunRecord(
-            suite_name="demo",
-            experiment_id="demo/moead",
-            problem_name="Demo trade-off",
-            algorithm_name="MOEA/D demo",
-            seed=1,
-            fun=moead_front,
-            var=points_x,
-            metadata={"demo": True},
-        ),
+        RunRecord("demo", "demo/nsgaii", "Demo trade-off", "NSGA-II demo", 0, nsgaii_front, points_x, metadata={"demo": True}),
+        RunRecord("demo", "demo/moead", "Demo trade-off", "MOEA/D demo", 1, moead_front, points_x, metadata={"demo": True}),
     ]
     demo_fronts = [
-        FrontRecord(
-            problem_name="Demo trade-off",
-            algorithm_name="NSGA-II demo",
-            points_F=nsgaii_front,
-            points_X=points_x,
-            extra={"demo": True, "seeds": [0], "config": None},
-        ),
-        FrontRecord(
-            problem_name="Demo trade-off",
-            algorithm_name="MOEA/D demo",
-            points_F=moead_front,
-            points_X=points_x,
-            extra={"demo": True, "seeds": [1], "config": None},
-        ),
+        FrontRecord("Demo trade-off", "NSGA-II demo", nsgaii_front, points_x, extra={"demo": True, "seeds": [0], "config": None}),
+        FrontRecord("Demo trade-off", "MOEA/D demo", moead_front, points_x, extra={"demo": True, "seeds": [1], "config": None}),
     ]
     return demo_runs, demo_fronts
 
@@ -188,18 +154,15 @@ def build_decision_views(
     reference_point: np.ndarray | None,
     method: str,
 ) -> list[DecisionView]:
-    views = []
-    for front in fronts:
-        view = build_decision_view(front, weights=weights, reference_point=reference_point, methods=[method, "weighted_sum", "knee"])
-        views.append(view)
-    return views
+    return [
+        build_decision_view(front, weights=weights, reference_point=reference_point, methods=[method, "weighted_sum", "knee"])
+        for front in fronts
+    ]
 
 
 def _with_result_mode(cfg_data: AlgorithmConfigProtocol, result_mode: str) -> AlgorithmConfigProtocol:
     fields_map = getattr(cfg_data, "__dataclass_fields__", None)
-    if not isinstance(fields_map, dict):
-        return cfg_data
-    if "result_mode" not in fields_map:
+    if not isinstance(fields_map, dict) or "result_mode" not in fields_map:
         return cfg_data
     return cast(AlgorithmConfigProtocol, replace(cast(Any, cfg_data), result_mode=result_mode))
 
@@ -236,8 +199,7 @@ def _build_algorithm_config(
             base["n_obj"] = n_obj
         return GenericAlgorithmConfig(base)
 
-    available = sorted(registry.keys())
-    raise InvalidAlgorithmError(algorithm, available=available)
+    raise InvalidAlgorithmError(algorithm, available=sorted(registry.keys()))
 
 
 def _run_algorithm(
@@ -264,8 +226,7 @@ def _run_algorithm(
 
     algo_ctor = resolve_algorithm(algorithm)
     algorithm_instance = algo_ctor(cfg_dict, kernel)
-    run_fn = algorithm_instance.run
-    result = run_fn(
+    result = algorithm_instance.run(
         problem=problem,
         termination=termination,
         seed=seed,
@@ -318,7 +279,6 @@ def run_with_history(
 ) -> tuple[dict[str, Any], list[np.ndarray]]:
     selection = make_problem_selection(problem_name)
     problem = selection.instantiate()
-
     algo_name = str(config.get("algorithm", DEFAULT_ALGORITHM))
     algo_cfg_raw = config.get("algorithm_config", {})
 
@@ -343,7 +303,6 @@ def run_with_history(
 
     algo_cfg = _coerce_algo_config(algo_cfg_raw)
     callback = DynamicsCallback()
-
     result = _run_algorithm(
         problem,
         algorithm=algo_name,
@@ -356,162 +315,13 @@ def run_with_history(
     return result, callback.history
 
 
-_VAMOS_CODE_SYSTEM_PROMPT = """\
-You are a code generator for the VAMOS multi-objective optimization framework.
-
-The user will describe an optimization problem in natural language.  You must
-return a JSON object with these fields:
-
-  objective_code : str — Raw Python statements (NOT a function def).
-      The variable `x` is a 1-D NumPy array of length n_var.
-      Must end with `return [f0, f1, ...]` (one value per objective).
-      Allowed imports: `math`, `numpy` (as np).
-
-  constraint_code : str — Same format but for constraints (may be empty "").
-      Convention: g(x) <= 0 is feasible.
-      E.g. for stress <= 100: `return [stress - 100.0]`
-
-  n_var : int — Number of decision variables.
-  n_obj : int — Number of objectives (>= 2).
-  bounds : str — Bounds as "lo, hi" per variable, one pair per line,
-      or a single line if all variables share the same bounds.
-      Example: "0.0, 5.0\\n1.0, 10.0"
-
-Example — beam design (minimise cost and deflection, stress <= 100):
-
-{
-  "objective_code": "area = x[0] * x[1]\\ncost = 2.0 * x[0] + 3.0 * x[1]\\ndeflection = 1000.0 / (x[0] * x[1] ** 3 + 1e-6)\\nreturn [cost, deflection]",
-  "constraint_code": "stress = 600.0 / (x[0] * x[1] ** 2 + 1e-6)\\nreturn [stress - 100.0]",
-  "n_var": 2,
-  "n_obj": 2,
-  "bounds": "0.5, 5.0\\n1.0, 10.0"
-}
-
-Return ONLY the JSON object, nothing else.
-"""
-
-
-def _llm_generate_gemini(description: str, *, api_key: str = "") -> dict[str, Any]:
-    """Call Google Gemini to generate VAMOS problem code."""
-    import json
-    import os
-
-    key = api_key or os.getenv("GEMINI_API_KEY", "")
-    if not key:
-        raise RuntimeError("No Gemini API key provided. Paste it in the API Key field or set GEMINI_API_KEY.")
-    try:
-        from google import genai  # type: ignore[import-untyped]
-    except ImportError as exc:
-        raise RuntimeError("google-genai package not installed. Run: pip install google-genai") from exc
-
-    client = genai.Client(api_key=key)
-    response = client.models.generate_content(
-        model=os.getenv("VAMOS_ASSIST_GEMINI_MODEL", "gemini-2.0-flash"),
-        contents=f"{_VAMOS_CODE_SYSTEM_PROMPT}\n\nUser request:\n{description}",
-    )
-    raw = response.text
-    if not raw or not raw.strip():
-        raise RuntimeError("Empty response from Gemini.")
-    text = raw.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-    return cast(dict[str, Any], json.loads(text.strip()))
-
-
-def _llm_generate_openai(description: str) -> dict[str, Any]:
-    """Call OpenAI to generate VAMOS problem code from a natural-language description."""
-    import json
-    import os
-
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY environment variable is not set.")
-    try:
-        from openai import OpenAI  # type: ignore[import-not-found]
-    except ImportError as exc:
-        raise RuntimeError("openai package not installed. Run: pip install vamos-optimization[openai]") from exc
-
-    client = OpenAI()
-    response = client.responses.create(
-        model=os.getenv("VAMOS_ASSIST_OPENAI_MODEL", "gpt-4o"),
-        input=[
-            {"role": "system", "content": _VAMOS_CODE_SYSTEM_PROMPT},
-            {"role": "user", "content": description},
-        ],
-        temperature=0.2,
-        max_output_tokens=1500,
-    )
-    raw = getattr(response, "output_text", None)
-    if not isinstance(raw, str) or not raw.strip():
-        raise RuntimeError("Empty response from OpenAI.")
-    return cast(dict[str, Any], json.loads(raw))
-
-
-def _llm_generate_anthropic(description: str) -> dict[str, Any]:
-    """Call Anthropic Claude to generate VAMOS problem code."""
-    import json
-    import os
-
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY environment variable is not set.")
-    try:
-        from anthropic import Anthropic  # type: ignore[import-not-found]
-    except ImportError as exc:
-        raise RuntimeError("anthropic package not installed. Run: pip install vamos-optimization[anthropic]") from exc
-
-    client = Anthropic()
-    message = client.messages.create(
-        model=os.getenv("VAMOS_ASSIST_ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
-        max_tokens=1500,
-        system=_VAMOS_CODE_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": description}],
-    )
-    raw = message.content[0].text
-    if not raw.strip():
-        raise RuntimeError("Empty response from Anthropic.")
-    # Strip markdown code fences if present
-    text = raw.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-    return cast(dict[str, Any], json.loads(text))
-
-
-def llm_generate_problem_code(
-    description: str,
-    provider: str = "openai",
-    api_key: str = "",
-) -> dict[str, Any]:
-    """Generate VAMOS problem code from a natural-language description using an LLM.
-
-    Returns a dict with keys: objective_code, constraint_code, n_var, n_obj, bounds.
-    """
-    if provider == "gemini":
-        result = _llm_generate_gemini(description, api_key=api_key)
-    elif provider == "anthropic":
-        result = _llm_generate_anthropic(description)
-    else:
-        result = _llm_generate_openai(description)
-
-    # Validate required keys
-    for key in ("objective_code", "n_var", "n_obj", "bounds"):
-        if key not in result:
-            raise RuntimeError(f"LLM response missing required field: {key}")
-    result.setdefault("constraint_code", "")
-    return result
-
-
 __all__ = [
     "DynamicsCallback",
-    "load_studio_data",
-    "discover_study_directories",
-    "build_demo_study_data",
     "build_decision_views",
+    "build_demo_study_data",
+    "discover_study_directories",
+    "llm_generate_problem_code",
+    "load_studio_data",
     "run_focused_optimization",
     "run_with_history",
-    "llm_generate_problem_code",
 ]

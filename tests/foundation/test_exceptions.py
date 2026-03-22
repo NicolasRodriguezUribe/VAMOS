@@ -163,6 +163,22 @@ class TestDataErrors:
         assert "Corrupted" in str(err)
         assert "re-running" in str(err)
 
+    def test_result_selection_error_is_value_error_compatible(self):
+        """ResultSelectionError should remain ValueError-compatible for callers."""
+        from vamos.foundation.exceptions import ResultSelectionError
+
+        err = ResultSelectionError("Unknown method")
+        assert isinstance(err, ValueError)
+        assert "Unknown method" in str(err)
+
+    def test_no_solutions_error(self):
+        """NoSolutionsError should provide a user-facing suggestion."""
+        from vamos.foundation.exceptions import NoSolutionsError
+
+        err = NoSolutionsError()
+        assert "No solutions" in str(err)
+        assert "Run the optimization longer" in str(err)
+
 
 class TestDependencyErrors:
     """Test dependency errors."""
@@ -195,8 +211,10 @@ class TestExceptionHierarchy:
             DataError,
             DependencyError,
             InvalidAlgorithmError,
+            NoSolutionsError,
             OptimizationError,
             ProblemError,
+            ResultSelectionError,
             VAMOSError,
         )
 
@@ -206,6 +224,8 @@ class TestExceptionHierarchy:
         assert issubclass(OptimizationError, VAMOSError)
         assert issubclass(DataError, VAMOSError)
         assert issubclass(DependencyError, VAMOSError)
+        assert issubclass(ResultSelectionError, DataError)
+        assert issubclass(NoSolutionsError, ResultSelectionError)
 
     def test_catch_all_vamos_errors(self):
         """Should be able to catch all VAMOS errors with VAMOSError."""
@@ -250,9 +270,11 @@ class TestExceptionUsage:
             InvalidProblemError,
             InvalidResultsError,
             MissingConfigError,
+            NoSolutionsError,
             OptimizationError,
             ProblemDimensionError,
             ProblemError,
+            ResultSelectionError,
             ResultsNotFoundError,
             VAMOSError,
         )
@@ -277,6 +299,8 @@ class TestExceptionUsage:
                 DataError,
                 ResultsNotFoundError,
                 InvalidResultsError,
+                ResultSelectionError,
+                NoSolutionsError,
                 DependencyError,
                 BackendNotAvailableError,
             ]

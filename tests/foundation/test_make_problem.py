@@ -267,6 +267,10 @@ class TestValidation:
         with pytest.raises(BoundsError, match="lower bound"):
             make_problem(lambda x: [x[0]], n_var=1, n_obj=1, bounds=[(5, 0)])
 
+    def test_xl_xu_inverted(self) -> None:
+        with pytest.raises(BoundsError, match="Lower bounds must not exceed upper bounds"):
+            make_problem(lambda x: [x[0]], n_var=2, n_obj=1, xl=[1.0, 0.0], xu=[0.0, 1.0])
+
     def test_bounds_malformed(self) -> None:
         with pytest.raises(BoundsError, match="pair"):
             make_problem(
@@ -285,6 +289,10 @@ class TestValidation:
                 constraints="bad",  # type: ignore[arg-type]
                 n_constraints=1,
             )
+
+    def test_xl_xu_broadcast_shape_error(self) -> None:
+        with pytest.raises(BoundsError, match="broadcast xl/xu"):
+            make_problem(lambda x: [x[0]], n_var=3, n_obj=1, xl=[0.0, 1.0], xu=1.0)
 
     def test_constraints_without_n_constraints(self) -> None:
         with pytest.raises(ProblemDimensionError, match="n_constraints"):
