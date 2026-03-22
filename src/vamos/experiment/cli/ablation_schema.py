@@ -34,9 +34,7 @@ _ALLOWED_VARIANT_KEYS = {
     "label",
     "tags",
     "config_overrides",
-    "nsgaii_variation",
-    "moead_variation",
-    "smsemoa_variation",
+    "variations",
 }
 
 _OPERATOR_KEYS = {"crossover", "mutation", "selection", "repair", "aggregation"}
@@ -86,7 +84,7 @@ def _validate_variation_schema(variation: Mapping[str, Any], *, kind: str) -> No
     allowed = _VARIATION_ALLOWED_KEYS[kind]
     unknown = set(variation) - allowed
     if unknown:
-        raise ValueError(f"{kind}_variation has unsupported keys: {', '.join(sorted(unknown))}.")
+        raise ValueError(f"variations.{kind} has unsupported keys: {', '.join(sorted(unknown))}.")
     for key, value in variation.items():
         if value is None:
             continue
@@ -95,23 +93,23 @@ def _validate_variation_schema(variation: Mapping[str, Any], *, kind: str) -> No
             continue
         if key in _WEIGHT_KEYS:
             if not isinstance(value, (Mapping, str)):
-                raise TypeError(f"{kind}_variation '{key}' must be a mapping or string path.")
+                raise TypeError(f"variations.{kind}.{key} must be a mapping or string path.")
             continue
         if key in _BOOL_KEYS:
             if not isinstance(value, bool):
-                raise TypeError(f"{kind}_variation '{key}' must be a boolean.")
+                raise TypeError(f"variations.{kind}.{key} must be a boolean.")
             continue
         if key in _INT_KEYS:
             if not isinstance(value, int) or isinstance(value, bool):
-                raise TypeError(f"{kind}_variation '{key}' must be an integer.")
+                raise TypeError(f"variations.{kind}.{key} must be an integer.")
             continue
         if key in _FLOAT_KEYS:
             if not isinstance(value, (int, float)) or isinstance(value, bool):
-                raise TypeError(f"{kind}_variation '{key}' must be a number.")
+                raise TypeError(f"variations.{kind}.{key} must be a number.")
             continue
         if key in _STRING_KEYS:
             if not isinstance(value, str):
-                raise TypeError(f"{kind}_variation '{key}' must be a string.")
+                raise TypeError(f"variations.{kind}.{key} must be a string.")
             continue
 
 
@@ -237,16 +235,23 @@ def validate_ablation_spec(spec: Mapping[str, Any]) -> None:
             for tag in tags:
                 if not isinstance(tag, str):
                     raise TypeError("Variant 'tags' entries must be strings.")
-        for key in ("config_overrides", "nsgaii_variation", "moead_variation", "smsemoa_variation"):
-            if key in entry and entry[key] is not None and not isinstance(entry[key], Mapping):
-                raise TypeError(f"Variant '{key}' must be a mapping when provided.")
+        if "config_overrides" in entry and entry["config_overrides"] is not None and not isinstance(entry["config_overrides"], Mapping):
+            raise TypeError("Variant 'config_overrides' must be a mapping when provided.")
+        if "variations" in entry and entry["variations"] is not None and not isinstance(entry["variations"], Mapping):
+            raise TypeError("Variant 'variations' must be a mapping when provided.")
 
-        if "nsgaii_variation" in entry and entry["nsgaii_variation"] is not None:
-            _validate_variation_schema(dict(entry["nsgaii_variation"]), kind="nsgaii")
-        if "moead_variation" in entry and entry["moead_variation"] is not None:
-            _validate_variation_schema(dict(entry["moead_variation"]), kind="moead")
-        if "smsemoa_variation" in entry and entry["smsemoa_variation"] is not None:
-            _validate_variation_schema(dict(entry["smsemoa_variation"]), kind="smsemoa")
+        variations = entry.get("variations")
+        if variations is not None:
+            variations_map = dict(variations)
+            unknown_variants = set(variations_map) - set(_VARIATION_ALLOWED_KEYS)
+            if unknown_variants:
+                raise ValueError(f"Variant 'variations' has unsupported algorithm keys: {', '.join(sorted(unknown_variants))}.")
+            for kind, value in variations_map.items():
+                if value is None:
+                    continue
+                if not isinstance(value, Mapping):
+                    raise TypeError(f"variations.{kind} must be a mapping when provided.")
+                _validate_variation_schema(dict(value), kind=kind)
 
 
 __all__ = ["validate_ablation_spec"]

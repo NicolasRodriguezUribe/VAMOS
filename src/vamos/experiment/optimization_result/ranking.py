@@ -3,44 +3,99 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Literal, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
+from vamos.foundation.exceptions import NoSolutionsError, ResultSelectionError
 from vamos.foundation.quality_indicators.pareto import pareto_filter
+
+BestMethod: TypeAlias = Literal["knee", "min_f1", "min_f2", "balanced"]
+RankingSource: TypeAlias = Literal["result", "archive", "population"]
+RankingMethod: TypeAlias = Literal[
+    "knee",
+    "min_f1",
+    "min_f2",
+    "balanced",
+    "weighted_sum",
+    "crowding",
+    "farthest",
+    "knn",
+    "reference_directions",
+    "kmeans",
+    "angle",
+    "hv_greedy",
+]
+
+_BEST_METHODS = {"knee", "min_f1", "min_f2", "balanced"}
+_RANKING_METHODS = _BEST_METHODS | {
+    "weighted_sum",
+    "crowding",
+    "farthest",
+    "knn",
+    "reference_directions",
+    "kmeans",
+    "angle",
+    "hv_greedy",
+}
+_RANKING_SOURCES = {"result", "archive", "population"}
+
+
+def normalize_best_method(method: BestMethod | str) -> BestMethod:
+    key = str(method).strip().lower()
+    if key not in _BEST_METHODS:
+        raise ResultSelectionError(f"Unknown method '{method}'. Use: knee, min_f1, min_f2, balanced.")
+    return key  # type: ignore[return-value]
+
+
+def normalize_ranking_method(method: RankingMethod | str) -> RankingMethod:
+    key = str(method).strip().lower()
+    if key not in _RANKING_METHODS:
+        raise ResultSelectionError(
+            "Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum, "
+            "crowding, farthest, knn, reference_directions, kmeans, angle, hv_greedy"
+        )
+    return key  # type: ignore[return-value]
+
+
+def normalize_ranking_source(source: RankingSource | str) -> RankingSource:
+    key = str(source).strip().lower()
+    if key not in _RANKING_SOURCES:
+        raise ResultSelectionError("source must be one of: result, archive, population")
+    return key  # type: ignore[return-value]
 
 
 def top_k(
     result: Any,
     *,
     k: int,
-    source: str,
-    method: str,
+    source: RankingSource | str,
+    method: RankingMethod | str,
     nondominated_only: bool,
     weights: NDArray[np.float64] | None,
 ) -> dict[str, Any]:
     if k <= 0:
-        raise ValueError("k must be a positive integer.")
+        raise ResultSelectionError("k must be a positive integer.")
     F_src, X_src = _extract_source(result, source)
     idx_src = np.arange(F_src.shape[0], dtype=int)
     if nondominated_only:
         front = pareto_filter(F_src, return_indices=True)
         if front is None:
-            raise ValueError("No solutions available after Pareto filtering.")
+            raise NoSolutionsError("No solutions available after Pareto filtering.")
         F_rank, idx_rank = front
         idx_rank = np.asarray(idx_rank, dtype=int)
         if F_rank.size == 0:
-            raise ValueError("No solutions available after Pareto filtering.")
+            raise NoSolutionsError("No solutions available after Pareto filtering.")
     else:
         F_rank = F_src
         idx_rank = idx_src
 
-    key = str(method).strip().lower()
+    key = normalize_ranking_method(method)
     if key in {"crowding", "farthest", "knn", "reference_directions", "kmeans", "angle", "hv_greedy"}:
         return _top_k_subset_method(F_src, X_src, F_rank, idx_rank, k=int(k), source=source, method=key)
 
-    scores = _ranking_scores(F_rank, method=method, weights=weights)
+    scores = _ranking_scores(F_rank, method=key, weights=weights)
     order = np.argsort(scores)[: min(int(k), scores.shape[0])]
     selected_idx = idx_rank[order]
     return {
@@ -49,7 +104,7 @@ def top_k(
         "indices": np.asarray(selected_idx, dtype=int),
         "scores": np.asarray(scores[order], dtype=float),
         "source": str(source).strip().lower(),
-        "method": str(method).strip().lower(),
+        "method": key,
     }
 
 
@@ -57,8 +112,8 @@ def top_k_report(
     result: Any,
     *,
     k: int,
-    source: str,
-    method: str,
+    source: RankingSource | str,
+    method: RankingMethod | str,
     nondominated_only: bool,
     weights: NDArray[np.float64] | None,
 ) -> list[dict[str, Any]]:
@@ -87,40 +142,44 @@ def top_k_report(
     return rows
 
 
-def _extract_source(result: Any, source: str) -> tuple[np.ndarray, np.ndarray | None]:
-    src = str(source).strip().lower()
+def _extract_source(result: Any, source: RankingSource | str) -> tuple[np.ndarray, np.ndarray | None]:
+    src = normalize_ranking_source(source)
     if src == "result":
         F = result.F
         X = result.X
     else:
         payload = result.data.get("archive" if src == "archive" else "population")
-        if src not in {"archive", "population"}:
-            raise ValueError("source must be one of: result, archive, population")
         if not isinstance(payload, Mapping):
-            raise ValueError(f"{src.title()} data is not available in this result.")
+            raise ResultSelectionError(f"{src.title()} data is not available in this result.")
         F = payload.get("F")
         X = payload.get("X")
     if F is None:
-        raise ValueError(f"No objective values available for source='{src}'.")
+        raise NoSolutionsError(f"No objective values available for source='{src}'.")
     F_arr = np.asarray(F, dtype=float)
     if F_arr.ndim != 2 or F_arr.shape[0] == 0:
-        raise ValueError(f"Empty or invalid objective array for source='{src}'.")
+        raise NoSolutionsError(f"Empty or invalid objective array for source='{src}'.")
     return F_arr, None if X is None else np.asarray(X)
 
 
 def _normalize_front(F: np.ndarray) -> np.ndarray:
-    return (F - F.min(axis=0)) / (np.ptp(F, axis=0) + 1e-12)
+    normalized = (F - F.min(axis=0)) / (np.ptp(F, axis=0) + 1e-12)
+    return np.asarray(normalized, dtype=float)
 
 
-def _ranking_scores(F: np.ndarray, *, method: str, weights: NDArray[np.float64] | None = None) -> NDArray[np.float64]:
-    key = str(method).strip().lower()
+def _ranking_scores(
+    F: np.ndarray,
+    *,
+    method: RankingMethod | str,
+    weights: NDArray[np.float64] | None = None,
+) -> NDArray[np.float64]:
+    key = normalize_ranking_method(method)
     if key == "knee":
         return np.asarray(_normalize_front(F).sum(axis=1), dtype=float)
     if key == "min_f1":
         return np.asarray(F[:, 0], dtype=float)
     if key == "min_f2":
         if F.shape[1] < 2:
-            raise ValueError(f"'min_f2' requires at least 2 objectives, but this set has {F.shape[1]}.")
+            raise ResultSelectionError(f"'min_f2' requires at least 2 objectives, but this set has {F.shape[1]}.")
         return np.asarray(F[:, 1], dtype=float)
     if key == "balanced":
         return np.asarray(_normalize_front(F).max(axis=1), dtype=float)
@@ -131,18 +190,15 @@ def _ranking_scores(F: np.ndarray, *, method: str, weights: NDArray[np.float64] 
         else:
             w = np.asarray(weights, dtype=float)
             if w.ndim != 1 or w.shape[0] != F.shape[1]:
-                raise ValueError(f"weights must be a 1D array with length {F.shape[1]}.")
+                raise ResultSelectionError(f"weights must be a 1D array with length {F.shape[1]}.")
             if np.any(w < 0.0):
-                raise ValueError("weights must be non-negative.")
+                raise ResultSelectionError("weights must be non-negative.")
             total = float(w.sum())
             if total <= 0.0:
-                raise ValueError("weights must sum to a positive value.")
+                raise ResultSelectionError("weights must sum to a positive value.")
             w = w / total
         return np.asarray(F_norm @ w, dtype=float)
-    raise ValueError(
-        "Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum, "
-        "crowding, farthest, knn, reference_directions, kmeans, angle, hv_greedy"
-    )
+    raise AssertionError(f"Unhandled ranking method '{key}'.")
 
 
 def _top_k_subset_method(
@@ -201,7 +257,7 @@ def _top_k_subset_method(
 def _min_pairwise_distance(points: np.ndarray) -> np.ndarray:
     dists = np.linalg.norm(points[:, None, :] - points[None, :, :], axis=2)
     np.fill_diagonal(dists, np.inf)
-    return np.min(dists, axis=1)
+    return np.asarray(np.min(dists, axis=1), dtype=float)
 
 
 def _minimum_angles(points: np.ndarray) -> np.ndarray:
@@ -213,7 +269,16 @@ def _minimum_angles(points: np.ndarray) -> np.ndarray:
     np.clip(cos_sim, -1.0, 1.0, out=cos_sim)
     angles = np.arccos(cos_sim)
     np.fill_diagonal(angles, np.inf)
-    return np.min(angles, axis=1)
+    return np.asarray(np.min(angles, axis=1), dtype=float)
 
 
-__all__ = ["top_k", "top_k_report"]
+__all__ = [
+    "BestMethod",
+    "RankingMethod",
+    "RankingSource",
+    "normalize_best_method",
+    "normalize_ranking_method",
+    "normalize_ranking_source",
+    "top_k",
+    "top_k_report",
+]

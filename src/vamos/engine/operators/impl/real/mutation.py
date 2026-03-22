@@ -87,32 +87,17 @@ class PolynomialMutation(Mutation):
         # first grid for activation mask, second grid for delta sampling.
         rnd_mask = rng.random(X.shape)
         rnd_delta = rng.random(X.shape)
-        mask = rnd_mask <= self.prob
-        if not np.any(mask):
-            return X
-
-        mut_pow = 1.0 / (self.eta + 1.0)
-        rows, cols = np.nonzero(mask)
-        for i, j in zip(rows, cols):
-            y = X[i, j]
-            yl = self.lower[j]
-            yu = self.upper[j]
-            if yu <= yl:
-                continue
-            delta1 = (y - yl) / (yu - yl)
-            delta2 = (yu - y) / (yu - yl)
-            rnd = rnd_delta[i, j]
-            if rnd <= 0.5:
-                xy = 1.0 - delta1
-                val = 2.0 * rnd + (1.0 - 2.0 * rnd) * (xy ** (self.eta + 1.0))
-                deltaq = val**mut_pow - 1.0
-            else:
-                xy = 1.0 - delta2
-                val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (self.eta + 1.0))
-                deltaq = 1.0 - val**mut_pow
-            y += deltaq * (yu - yl)
-            X[i, j] = y
-        return X
+        return polynomial_mutation_population(
+            X,
+            rng=rng,
+            lower=self.lower,
+            upper=self.upper,
+            prob_mutation=self.prob,
+            eta=self.eta,
+            rnd_mask=rnd_mask,
+            rnd_delta=rnd_delta,
+            inplace=True,
+        )
 
 
 class GaussianMutation(Mutation):
@@ -253,23 +238,15 @@ class UniformMutation(Mutation):
 
     def __init__(
         self,
-        prob_mutation: float | None = None,
+        prob_mutation: float,
         perturb: float = 0.1,
         *,
-        prob: float | None = None,
         lower: ArrayLike,
         upper: ArrayLike,
         rng: np.random.Generator | None = None,
         workspace: VariationWorkspace | None = None,
     ) -> None:
-        if prob_mutation is None and prob is None:
-            raise TypeError("UniformMutation requires 'prob' (legacy) or 'prob_mutation'.")
-        if prob_mutation is not None and prob is not None:
-            raise TypeError("UniformMutation received both 'prob' and 'prob_mutation'. Use only one.")
-        prob_value = prob_mutation if prob is None else prob
-        if prob_value is None:  # pragma: no cover - guarded by checks above
-            raise TypeError("UniformMutation requires a mutation probability.")
-        self.prob = float(prob_value)
+        self.prob = float(prob_mutation)
         self.perturb = float(np.clip(perturb, 0.0, 1.0))
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.range = self.upper - self.lower
@@ -299,23 +276,15 @@ class LinkedPolynomialMutation(Mutation):
 
     def __init__(
         self,
-        prob_mutation: float | None = None,
+        prob_mutation: float,
         eta: float = 20.0,
         *,
-        prob: float | None = None,
         lower: ArrayLike,
         upper: ArrayLike,
         rng: np.random.Generator | None = None,
         workspace: VariationWorkspace | None = None,
     ) -> None:
-        if prob_mutation is None and prob is None:
-            raise TypeError("LinkedPolynomialMutation requires 'prob' (legacy) or 'prob_mutation'.")
-        if prob_mutation is not None and prob is not None:
-            raise TypeError("LinkedPolynomialMutation received both 'prob' and 'prob_mutation'. Use only one.")
-        prob_value = prob_mutation if prob is None else prob
-        if prob_value is None:  # pragma: no cover - guarded by checks above
-            raise TypeError("LinkedPolynomialMutation requires a mutation probability.")
-        self.prob = float(prob_value)
+        self.prob = float(prob_mutation)
         self.eta = float(eta)
         self.lower, self.upper = _ensure_bounds(lower, upper)
         self.span = self.upper - self.lower

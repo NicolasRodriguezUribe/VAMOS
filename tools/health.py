@@ -27,11 +27,6 @@ def main() -> int:
         action="store_true",
         help="Run all checks even if one fails.",
     )
-    parser.add_argument(
-        "--mypy-full",
-        action="store_true",
-        help="Run full mypy and fail on any errors (stricter than CI).",
-    )
     args = parser.parse_args()
 
     python = sys.executable
@@ -51,15 +46,12 @@ def main() -> int:
         ("Report retention policy", [python, "-m", "pytest", "-q", "tests/architecture/test_report_retention_policy.py"]),
         ("Ruff lint gate", [python, "-m", "pytest", "-q", "tests/architecture/test_ruff_gate.py"]),
         ("Ruff format gate", [python, "-m", "pytest", "-q", "tests/architecture/test_ruff_format_gate.py"]),
-        ("Mypy error budget", [python, "-m", "pytest", "-q", "tests/architecture/test_mypy_error_budget.py"]),
+        ("Mypy", [python, "-m", "mypy", "--config-file", "pyproject.toml", "src/vamos"]),
         ("Build smoke", [python, "-m", "pytest", "-q", "tests/architecture/test_build_smoke.py"]),
         ("py.typed present", [python, "-m", "pytest", "-q", "tests/architecture/test_py_typed_present.py"]),
         ("Ruff check", [python, "-m", "ruff", "check", "src/vamos", "tests"]),
-        ("Ruff format", [python, "-m", "ruff", "format", "--check", "src/vamos", "tests"]),
         ("Build", [python, "-m", "build"]),
     ]
-    if args.mypy_full:
-        commands.append(("Mypy (full)", [python, "-m", "mypy", "--config-file", "pyproject.toml", "src/vamos"]))
 
     failures = 0
     for label, cmd in commands:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal, TypeAlias
 
 import numpy as np
 
@@ -15,6 +15,8 @@ except Exception:  # pragma: no cover - optional moocore dependency
 
 get_indicator: Callable[..., Any] | None = _get_indicator
 
+IndicatorMode: TypeAlias = Literal["maximize", "minimize"]
+
 
 class IndicatorEvaluator:
     """
@@ -22,7 +24,7 @@ class IndicatorEvaluator:
     Supports 'hv' and a subset of MooCore indicators when available.
     """
 
-    def __init__(self, name: str, reference_point: np.ndarray | None = None, mode: str = "maximize"):
+    def __init__(self, name: str, reference_point: np.ndarray | None = None, mode: IndicatorMode = "maximize"):
         self.name = name.lower()
         self.mode = mode
         self.reference_point = reference_point
@@ -42,3 +44,6 @@ class IndicatorEvaluator:
         if self._indicator is not None:
             return float(self._indicator.compute(F).value)
         raise ValueError(f"Unsupported indicator '{self.name}'.")
+
+
+__all__ = ["IndicatorEvaluator", "IndicatorMode", "get_indicator"]

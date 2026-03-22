@@ -3,9 +3,13 @@ import pytest
 
 pytest.importorskip("matplotlib")
 
-from vamos.engine.algorithm.config import NSGAIIConfig
+from vamos.engine.algorithm.agemoea import AGEMOEA
+from vamos.engine.algorithm.config import AGEMOEAConfig, NSGAIIConfig, RVEAConfig
 from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.engine.algorithm.rvea import RVEA
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.problem.dtlz import DTLZ2Problem
+from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.ux.visualization.live_viz import LiveParetoPlot, LiveVisualization
 
 
@@ -58,6 +62,43 @@ def test_live_viz_callbacks_invoked(monkeypatch, tmp_path):
     result = algo.run(problem, termination=("max_evaluations", 12), seed=1, live_viz=recorder)
 
     assert result["F"].shape[0] == cfg.pop_size
+    assert recorder.starts == 1
+    assert recorder.ends == 1
+    assert recorder.gens >= 1
+
+
+def test_agemoea_live_viz_callbacks_invoked(monkeypatch):
+    monkeypatch.setenv("MPLBACKEND", "Agg")
+    cfg = AGEMOEAConfig.builder().pop_size(8).crossover("sbx", prob=0.9, eta=10.0).mutation("polynomial", prob=0.25, eta=10.0).build()
+    algo = AGEMOEA(cfg.to_dict(), kernel=NumPyKernel())
+    recorder = RecorderViz()
+
+    result = algo.run(ZDT1Problem(n_var=4), termination=("max_evaluations", 16), seed=2, live_viz=recorder)
+
+    assert result["F"].shape[0] > 0
+    assert recorder.starts == 1
+    assert recorder.ends == 1
+    assert recorder.gens >= 1
+
+
+def test_rvea_live_viz_callbacks_invoked(monkeypatch):
+    monkeypatch.setenv("MPLBACKEND", "Agg")
+    cfg = (
+        RVEAConfig.builder()
+        .pop_size(10)
+        .n_partitions(3)
+        .alpha(2.0)
+        .adapt_freq(0.1)
+        .crossover("sbx", prob=1.0, eta=30.0)
+        .mutation("polynomial", prob=1.0 / 6.0, eta=20.0)
+        .build()
+    )
+    algo = RVEA(cfg.to_dict(), kernel=NumPyKernel())
+    recorder = RecorderViz()
+
+    result = algo.run(DTLZ2Problem(n_var=6, n_obj=3), termination=("max_evaluations", 20), seed=3, live_viz=recorder)
+
+    assert result["F"].shape[0] > 0
     assert recorder.starts == 1
     assert recorder.ends == 1
     assert recorder.gens >= 1

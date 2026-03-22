@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 from vamos.engine.variation import VariationPipeline
+from vamos.engine.variation.protocol import CrossoverName, MutationName
 
 from ..contracts import HierarchicalAction, HostAdapter, Outcome, SearchState
 from .base import (
@@ -26,8 +27,8 @@ class NSGAIIOnlineControlAdapter(HostAdapter):
     host_name = "nsgaii"
 
     def build_search_state(self, host_state: Any) -> SearchState:
-        X = np.asarray(getattr(host_state, "X"))
-        F = np.asarray(getattr(host_state, "F"))
+        X = np.asarray(host_state.X)
+        F = np.asarray(host_state.F)
         G = getattr(host_state, "G", None)
         is_constrained, feasible_ratio, mean_violation = summarize_constraints(G)
         quality = float(getattr(host_state, "quality_indicator", scalar_quality_indicator(F, G)))
@@ -46,7 +47,7 @@ class NSGAIIOnlineControlAdapter(HostAdapter):
             feasible_ratio=feasible_ratio,
             mean_constraint_violation=mean_violation,
             extent=normalized_objective_extent(F),
-            diversity=normalized_population_diversity(X, getattr(host_state, "xl"), getattr(host_state, "xu")),
+            diversity=normalized_population_diversity(X, host_state.xl, host_state.xu),
             stagnation=normalized_stagnation(int(getattr(host_state, "stagnant_steps", 0))),
             quality_indicator=quality,
             available_families=families,
@@ -63,22 +64,22 @@ class NSGAIIOnlineControlAdapter(HostAdapter):
     def decode_action(self, action: HierarchicalAction, host_state: Any) -> Any:
         descriptor = semantic_variation_descriptor(
             action,
-            n_var=int(getattr(host_state, "X").shape[1]),
+            n_var=int(host_state.X.shape[1]),
             metadata={"host": self.host_name},
         )
         host_state.pending_online_descriptor = descriptor
         host_state.current_online_descriptor = descriptor
         return VariationPipeline(
-            encoding=getattr(host_state, "encoding"),
-            cross_method=descriptor.cross_method,
+            encoding=host_state.encoding,
+            cross_method=cast(CrossoverName, descriptor.cross_method),
             cross_params=dict(descriptor.cross_params),
-            mut_method=descriptor.mut_method,
+            mut_method=cast(MutationName, descriptor.mut_method),
             mut_params=dict(descriptor.mut_params),
-            xl=getattr(host_state, "xl"),
-            xu=getattr(host_state, "xu"),
-            workspace=getattr(host_state, "variation_workspace"),
+            xl=host_state.xl,
+            xu=host_state.xu,
+            workspace=host_state.variation_workspace,
             repair_cfg=getattr(host_state, "repair_cfg", "auto"),
-            problem=getattr(host_state, "problem"),
+            problem=host_state.problem,
         )
 
     def build_outcome(

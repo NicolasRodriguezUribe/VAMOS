@@ -114,7 +114,7 @@ vamos tune \
 
 Notes:
 - The MOEA/D tuner explores both SBX and DE crossovers, and can select PBI aggregation (with a tunable theta). These settings align with the jMetalPy default configuration when chosen.
-- The tuning spaces include external archive controls. When `use_external_archive=True`, you can choose bounded vs unbounded archiving. For bounded archives, the archive type is fixed to `size_cap`, the archive capacity is the population size, and `archive_prune_policy` defaults to `crowding`.
+- The tuning spaces include external archive controls. When `use_external_archive=True`, you can choose a finite archive `capacity` or an unbounded archive. Finite archives default to `pruning="crowding"` and use the population size as their capacity.
 - When an external archive is enabled, top-level results come from that archive by default. Use `result_mode="population"` only when you explicitly want the final population instead.
 
 ### Options
@@ -193,7 +193,7 @@ Optional fields:
 - `per_variant_output_root` (default: true)
 - `output_root_by_variant` (map of variant name -> output root override)
 - `budget_by_problem`, `budget_by_variant`, `budget_overrides`
-- `nsgaii_variation`, `moead_variation`, `smsemoa_variation` per variant (algorithm-specific)
+- `variations` per variant (algorithm-keyed overrides such as `nsgaii`, `moead`, `smsemoa`)
 - `summary_dir` or `summary_path` (CSV output; default: `<output_root>/summary/ablation_metrics.csv`)
 
 Example:
@@ -212,18 +212,20 @@ variants:
 summary_dir: results/ablation_demo/summary
 ```
 
-Algorithm-specific variations live inside each variant block:
+Algorithm-specific variations live inside a single `variations` mapping on each variant:
 
 ```yaml
 variants:
   - name: moead_pbi
-    moead_variation:
-      aggregation:
-        method: pbi
-        theta: 5.0
+    variations:
+      moead:
+        aggregation:
+          method: pbi
+          theta: 5.0
   - name: smsemoa_fast
-    smsemoa_variation:
-      mutation:
-        method: pm
-        prob: "1/n"
+    variations:
+      smsemoa:
+        mutation:
+          method: pm
+          prob: "1/n"
 ```

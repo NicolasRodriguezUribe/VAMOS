@@ -9,225 +9,37 @@ Reference:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from vamos.engine.archive.bounded_archive import BoundedArchive
+from typing import Any
 
 import numpy as np
 
+from vamos.engine.algorithm.components.hooks import get_live_viz, live_should_stop
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
 from vamos.engine.algorithm.components.variation.helpers import (
     ensure_supported_operator_names,
     ensure_supported_repair_name,
 )
 from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
+from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.config.variation import (
     ensure_operator_tuple,
     resolve_default_variation_config,
 )
+from vamos.engine.hooks.live_viz import LiveVisualization
+from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
 from vamos.foundation.kernel import default_kernel
 from vamos.foundation.kernel.backend import KernelBackend
+from vamos.foundation.observer import RunContext
 from vamos.foundation.problem.types import ProblemProtocol
 
+from .geometry import age_survival
 from .state import AGEMOEAState, build_agemoea_result
 
 
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
-
-
-def _point_to_line_distance(P: np.ndarray, A: np.ndarray, B: np.ndarray) -> np.ndarray:
-    ba = B - A
-    denom = np.dot(ba, ba)
-    if denom == 0.0:
-        return np.zeros(P.shape[0], dtype=float)
-    pa = P - A
-    t = (pa @ ba) / denom
-    residual = pa - t[:, None] * ba
-    return np.sum(residual * residual, axis=1)
-
-
-def _find_corner_solutions(front: np.ndarray) -> np.ndarray:
-    m, n = front.shape
-    if m <= n:
-        return np.arange(m)
-    W = 1e-6 + np.eye(n)
-    indexes = np.zeros(n, dtype=int)
-    selected = np.zeros(m, dtype=bool)
-    for i in range(n):
-        dists = _point_to_line_distance(front, np.zeros(n), W[i, :])
-        dists[selected] = np.inf
-        idx = int(np.argmin(dists))
-        indexes[i] = idx
-        selected[idx] = True
-    return indexes
-
-
-def _normalize_front(front: np.ndarray, extreme: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    if len(extreme) != len(np.unique(extreme, axis=0)):
-        normalization = np.max(front, axis=0)
-        normalization[normalization == 0.0] = 1.0
-        return front / normalization, normalization
-
-    try:
-        hyperplane = np.linalg.solve(front[extreme], np.ones(front.shape[1]))
-        if np.any(~np.isfinite(hyperplane)) or np.any(hyperplane <= 0):
-            normalization = np.max(front, axis=0)
-        else:
-            normalization = 1.0 / hyperplane
-            if np.any(~np.isfinite(normalization)):
-                normalization = np.max(front, axis=0)
-    except np.linalg.LinAlgError:
-        normalization = np.max(front, axis=0)
-
-    normalization[normalization == 0.0] = 1.0
-    return front / normalization, normalization
-
-
-def _pairwise_distances(front: np.ndarray, p: float) -> np.ndarray:
-    diff = np.abs(front[:, None, :] - front[None, :, :])
-    return np.sum(diff**p, axis=2) ** (1.0 / p)
-
-
-def _minkowski_distances(A: np.ndarray, B: np.ndarray, p: float) -> np.ndarray:
-    diff = np.abs(A[:, None, :] - B[None, :, :])
-    return np.sum(diff**p, axis=2) ** (1.0 / p)
-
-
-def _compute_geometry(front: np.ndarray, extreme: np.ndarray, n_obj: int) -> float:
-    d = _point_to_line_distance(front, np.zeros(n_obj), np.ones(n_obj))
-    d[extreme] = np.inf
-    index = int(np.argmin(d))
-    mean_val = np.mean(front[index, :])
-    if mean_val <= 0.0:
-        return 1.0
-    p = np.log(n_obj) / np.log(1.0 / mean_val)
-    if np.isnan(p) or p <= 0.1:
-        p = 1.0
-    elif p > 20.0:
-        p = 20.0
-    return float(p)
-
-
-def _survival_score(front: np.ndarray, ideal_point: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
-    front = np.round(front, 12, out=front.copy())
-    m, n = front.shape
-    crowd_dist = np.zeros(m, dtype=float)
-
-    if m < n:
-        p = 1.0
-        normalization = np.max(front, axis=0)
-        normalization[normalization == 0.0] = 1.0
-        return crowd_dist, p, normalization
-
-    front = front - ideal_point
-    extreme = _find_corner_solutions(front)
-    front, normalization = _normalize_front(front, extreme)
-
-    crowd_dist[extreme] = np.inf
-    selected = np.full(m, False)
-    selected[extreme] = True
-
-    p = _compute_geometry(front, extreme, n)
-    nn = np.linalg.norm(front, ord=p, axis=1)
-    nn[nn < 1e-8] = 1.0
-
-    distances = _pairwise_distances(front, p)
-    distances[distances < 1e-8] = 1e-8
-    distances = distances / nn[:, None]
-
-    remaining = np.flatnonzero(~selected)
-    selected_idx = np.flatnonzero(selected)
-    if remaining.size == 0:
-        return crowd_dist, p, normalization
-
-    D_init = distances[np.ix_(remaining, selected_idx)]
-    if D_init.shape[1] > 1:
-        nearest = np.partition(D_init, kth=1, axis=1)[:, :2]
-        best1 = nearest[:, 0].copy()
-        best2 = nearest[:, 1].copy()
-        scores = best1 + best2
-    else:
-        best1 = D_init[:, 0].copy()
-        best2 = np.zeros_like(best1)
-        scores = best1.copy()
-
-    selected_count = selected_idx.size
-    while remaining.size > 0:
-        index = int(np.argmax(scores))
-        best = int(remaining[index])
-        d = float(scores[index])
-        selected[best] = True
-        crowd_dist[best] = d
-
-        remaining = np.delete(remaining, index)
-        best1 = np.delete(best1, index)
-        best2 = np.delete(best2, index)
-        scores = np.delete(scores, index)
-        selected_count += 1
-        if remaining.size == 0:
-            break
-
-        new_dist = distances[remaining, best]
-        if selected_count == 2:
-            lo = np.minimum(best1, new_dist)
-            hi = np.maximum(best1, new_dist)
-            best1 = lo
-            best2 = hi
-            scores = best1 + best2
-            continue
-
-        better_first = new_dist < best1
-        best2 = np.where(better_first, best1, best2)
-        best1 = np.where(better_first, new_dist, best1)
-        better_second = (~better_first) & (new_dist < best2)
-        best2 = np.where(better_second, new_dist, best2)
-        scores = best1 + best2
-
-    return crowd_dist, p, normalization
-
-
-def _age_survival(F: np.ndarray, n_survive: int, kernel: KernelBackend) -> np.ndarray:
-    ranks, _ = kernel.nsga2_ranking(F)
-    max_rank = int(ranks.max()) if ranks.size else 0
-
-    fronts = []
-    ranked = 0
-    last_rank = 0
-    for r in range(max_rank + 1):
-        front = np.where(ranks == r)[0]
-        fronts.append(front)
-        if ranked + front.size >= n_survive:
-            last_rank = r
-            break
-        ranked += front.size
-
-    selected = ranks < last_rank
-    crowd_dist = np.zeros(F.shape[0], dtype=float)
-
-    front0 = F[ranks == 0, :]
-    ideal_point = np.min(front0, axis=0)
-    crowd_dist[ranks == 0], p, normalization = _survival_score(front0, ideal_point)
-
-    for r in range(1, last_rank):
-        front_idx = fronts[r]
-        if front_idx.size == 0:
-            continue
-        front = F[front_idx] / normalization
-        dist = _minkowski_distances(front, ideal_point[None, :], p).squeeze()
-        dist = np.where(dist < 1e-12, 1e-12, dist)
-        crowd_dist[front_idx] = 1.0 / dist
-
-    last = fronts[last_rank]
-    if last.size > 0:
-        order = np.argsort(crowd_dist[last])[::-1]
-        remaining = n_survive - int(np.sum(selected))
-        selected[last[order[:remaining]]] = True
-
-    return np.flatnonzero(selected)
 
 
 def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, problem: ProblemProtocol) -> VariationPipeline:
@@ -242,7 +54,7 @@ def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, pr
     var_cfg = resolve_default_variation_config(encoding, explicit_overrides)
     c_name, c_kwargs = ensure_operator_tuple(var_cfg.get("crossover", ("sbx", {})), key="crossover")
     m_name, m_kwargs = ensure_operator_tuple(var_cfg.get("mutation", ("polynomial", {})), key="mutation")
-    repair_cfg: tuple[str, dict[str, Any]] | str = "auto"
+    repair_cfg: RepairConfigValue = "auto"
     cross_name, mut_name = ensure_supported_operator_names(encoding, c_name, m_name)
     if "repair" in var_cfg:
         repair_name, repair_params = ensure_operator_tuple(var_cfg["repair"], key="repair")
@@ -260,24 +72,6 @@ def _build_variation(config: dict[str, Any], encoding: Any, xl: Any, xu: Any, pr
         repair_cfg=repair_cfg,
         problem=problem,
     )
-
-
-def _build_archive(config: dict[str, Any], _seed: int) -> BoundedArchive | None:
-    from vamos.engine.archive import ExternalArchiveConfig
-    from vamos.engine.archive.bounded_archive import BoundedArchive, BoundedArchiveConfig
-
-    ext_cfg = config.get("external_archive")
-    if ext_cfg is None:
-        return None
-    if isinstance(ext_cfg, dict):
-        ext_cfg = ExternalArchiveConfig(**ext_cfg)
-    if ext_cfg.capacity is None or ext_cfg.capacity <= 0:
-        return None
-    bac = BoundedArchiveConfig(
-        size_cap=ext_cfg.capacity,
-        prune_policy=ext_cfg.pruning,
-    )
-    return BoundedArchive(bac)
 
 
 class AGEMOEA:
@@ -315,6 +109,7 @@ class AGEMOEA:
         self.cfg = config
         self.kernel = kernel or default_kernel()
         self._st: AGEMOEAState | None = None
+        self._live_cb: LiveVisualization | None = None
 
     def _refresh_selection_metrics(self, st: AGEMOEAState) -> None:
         ranks, crowding = self.kernel.nsga2_ranking(st.F)
@@ -331,17 +126,20 @@ class AGEMOEA:
         termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
-        live_viz: Any | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
         """Run AGE-MOEA optimization."""
-        self.initialize(problem, termination, seed, eval_strategy)
+        self.initialize(problem, termination, seed, eval_strategy, live_viz)
         backend = eval_strategy or SerialEvalBackend()
 
         assert self._st is not None
+        stop_requested = False
         while not self.should_terminate():
             X_off = self.ask()
             F_off = np.asarray(backend.evaluate(X_off, problem).F, dtype=float)
-            self.tell(F_off)
+            stop_requested = self.tell(F_off)
+            if stop_requested:
+                break
 
         return self.result()
 
@@ -355,6 +153,7 @@ class AGEMOEA:
         termination: tuple[str, Any] = ("max_evaluations", 25000),
         seed: int = 0,
         eval_strategy: EvaluationBackend | None = None,
+        live_viz: LiveVisualization | None = None,
     ) -> None:
         """Initialize algorithm state for ask/tell loop.
 
@@ -368,9 +167,12 @@ class AGEMOEA:
             Random seed for reproducibility.
         eval_strategy : EvaluationBackend, optional
             Evaluation backend for the initial population.
+        live_viz : LiveVisualization, optional
+            Live visualization callback.
         """
         rng = np.random.default_rng(seed)
         backend = eval_strategy or SerialEvalBackend()
+        live_cb = get_live_viz(live_viz)
 
         pop_size = int(self.cfg.get("pop_size", 100))
         term_key, term_val = termination
@@ -387,15 +189,24 @@ class AGEMOEA:
         F = np.asarray(backend.evaluate(X, problem).F, dtype=float)
 
         variation = _build_variation(self.cfg, encoding, xl, xu, problem)
-        archive = _build_archive(self.cfg, seed)
-        if archive is not None:
-            archive.add(X, F, X.shape[0])
+        ext_cfg = resolve_external_archive(self.cfg)
+        archive_X, archive_F, archive_manager = setup_archive(
+            self.kernel,
+            X,
+            F,
+            problem.n_var,
+            problem.n_obj,
+            X.dtype,
+            ext_cfg,
+            None,
+        )
         selection_ranks, selection_crowding = self.kernel.nsga2_ranking(F)
 
         result_mode = str(self.cfg.get("result_mode", "non_dominated")).strip().lower()
         if result_mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be one of: non_dominated, population")
 
+        self._live_cb = live_cb
         self._st = AGEMOEAState(
             X=X,
             F=F,
@@ -406,10 +217,22 @@ class AGEMOEA:
             generation=0,
             max_evals=max_evals,
             variation=variation,
-            archive=archive,
+            archive_size=ext_cfg.capacity if ext_cfg is not None else None,
+            archive_X=archive_X,
+            archive_F=archive_F,
+            archive_manager=archive_manager,
             selection_ranks=np.asarray(selection_ranks, dtype=int),
             selection_crowding=np.asarray(selection_crowding, dtype=float),
             result_mode=result_mode,
+        )
+        live_cb.on_start(
+            RunContext(
+                problem=problem,
+                algorithm=self,
+                config=self.cfg,
+                algorithm_name="agemoea",
+                engine_name=str(self.kernel.name),
+            )
         )
 
     def ask(self) -> np.ndarray:
@@ -486,19 +309,21 @@ class AGEMOEA:
 
         st.n_eval += X_off.shape[0]
 
-        if st.archive is not None:
-            st.archive.add(X_off, F_off, st.n_eval)
-
         X_combined = np.vstack([st.X, X_off])
         F_combined = np.vstack([st.F, F_off])
 
-        survivors = _age_survival(F_combined, st.pop_size, self.kernel)
+        survivors = age_survival(F_combined, st.pop_size, self.kernel)
         st.X = X_combined[survivors]
         st.F = F_combined[survivors]
         self._refresh_selection_metrics(st)
+        if st.archive_manager is not None:
+            st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F, st.G)
 
         st.pending_offspring = None
         st.generation += 1
+        if self._live_cb is not None:
+            self._live_cb.on_generation(st.generation, F=st.F, stats={"evals": st.n_eval})
+            return live_should_stop(self._live_cb)
         return False
 
     def should_terminate(self) -> bool:
@@ -518,6 +343,8 @@ class AGEMOEA:
         """
         if self._st is None:
             raise RuntimeError("Algorithm not initialized.")
+        if self._live_cb is not None:
+            self._live_cb.on_end(final_F=self._st.F)
         return build_agemoea_result(self._st, kernel=self.kernel)
 
     @property

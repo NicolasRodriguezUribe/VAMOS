@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, overload
 
 from vamos.engine.adaptation.online_control import normalize_online_control_config
 from vamos.engine.archive import ExternalArchiveConfig
@@ -18,7 +18,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
 
 
 class _NSGAIIConfigBuilder:
@@ -33,28 +35,52 @@ class _NSGAIIConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
+    @overload
     def crossover(
         self,
-        method: str | tuple[str, dict[str, Any]],
-        params: dict[str, Any] | None = None,
+        method: CrossoverName,
+        **kwargs: Any,
+    ) -> _NSGAIIConfigBuilder: ...
+
+    @overload
+    def crossover(
+        self,
+        method: str,
+        **kwargs: Any,
+    ) -> _NSGAIIConfigBuilder: ...
+
+    def crossover(
+        self,
+        method: str,
         **kwargs: Any,
     ) -> _NSGAIIConfigBuilder:
-        if isinstance(method, tuple) and params is None and not kwargs:
-            method, params = method
-        cfg_kwargs = params or kwargs
-        self._cfg["crossover"] = (method, cfg_kwargs)
+        if not isinstance(method, str):
+            raise TypeError("crossover() expects a method name followed by keyword arguments, e.g. crossover('sbx', prob=1.0, eta=20.0).")
+        self._cfg["crossover"] = (method, kwargs)
         return self
+
+    @overload
+    def mutation(
+        self,
+        method: MutationName,
+        **kwargs: Any,
+    ) -> _NSGAIIConfigBuilder: ...
+
+    @overload
+    def mutation(
+        self,
+        method: str,
+        **kwargs: Any,
+    ) -> _NSGAIIConfigBuilder: ...
 
     def mutation(
         self,
-        method: str | tuple[str, dict[str, Any]],
-        params: dict[str, Any] | None = None,
+        method: str,
         **kwargs: Any,
     ) -> _NSGAIIConfigBuilder:
-        if isinstance(method, tuple) and params is None and not kwargs:
-            method, params = method
-        cfg_kwargs = params or kwargs
-        self._cfg["mutation"] = (method, cfg_kwargs)
+        if not isinstance(method, str):
+            raise TypeError("mutation() expects a method name followed by keyword arguments, e.g. mutation('pm', prob='1/n', eta=20.0).")
+        self._cfg["mutation"] = (method, kwargs)
         return self
 
     def offspring_size(self, value: int) -> _NSGAIIConfigBuilder:
@@ -74,13 +100,31 @@ class _NSGAIIConfigBuilder:
         self._cfg["replacement_size"] = value
         return self
 
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
+
     def repair(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
 
+    @overload
+    def selection(self, method: SelectionName, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
+
+    @overload
+    def selection(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
+
     def selection(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
 
     def initializer(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
@@ -90,7 +134,7 @@ class _NSGAIIConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def result_mode(self, value: str) -> _NSGAIIConfigBuilder:
+    def result_mode(self, value: ResultMode) -> _NSGAIIConfigBuilder:
         """Set result payload mode: ``non_dominated`` or ``population``."""
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
@@ -113,7 +157,7 @@ class _NSGAIIConfigBuilder:
         self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
-    def constraint_mode(self, value: str) -> _NSGAIIConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr) -> _NSGAIIConfigBuilder:
         """Set constraint handling mode: 'feasibility' or 'none'/'penalty'."""
         self._cfg["constraint_mode"] = value
         return self
@@ -133,7 +177,7 @@ class _NSGAIIConfigBuilder:
         self._cfg["parent_selection_filter"] = fn
         return self
 
-    def live_callback_mode(self, mode: str) -> _NSGAIIConfigBuilder:
+    def live_callback_mode(self, mode: LiveCallbackMode) -> _NSGAIIConfigBuilder:
         self._cfg["live_callback_mode"] = str(mode)
         return self
 
@@ -165,6 +209,7 @@ class _NSGAIIConfigBuilder:
             ("crossover", "mutation"),
             "NSGA-II",
         )
+        _validate_operators(self._cfg)
         pop_size = int(self._cfg.get("pop_size", 100))
         selection = self._cfg.get("selection", ("tournament", {}))
         return NSGAIIConfig(
@@ -200,7 +245,7 @@ class NSGAIIConfig(_SerializableConfig):
     offspring_size: int | None = None
     steady_state: bool = False
     replacement_size: int | None = None
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     external_archive: ExternalArchiveConfig | None = None
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None

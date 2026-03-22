@@ -50,9 +50,8 @@ nav:
   - Reference:
     - API Reference: reference/api_reference.md
     - Algorithms & Backends: reference/algorithms.md
-    - JAX Backend: backends/jax.md
     - Problems: reference/problems.md
-    - Constraints & Autodiff: reference/constraints.md
+    - Constraints: reference/constraints.md
     - Stopping & Archive: experiment/stopping_and_archive.md
   - Topics:
     - Hyperparameter Tuning: topics/tuning.md

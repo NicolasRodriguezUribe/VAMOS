@@ -1,11 +1,5 @@
 """Host-agnostic semantic online-control runtime."""
 
-from .controller import (
-    ONLINE_CONTROL_ALLOWED_KEYS,
-    OnlineControlController,
-    build_online_control_controller,
-    normalize_online_control_config,
-)
 from .contracts import (
     Credit,
     CreditModel,
@@ -19,6 +13,12 @@ from .contracts import (
     RegimeRouter,
     SearchState,
 )
+from .controller import (
+    ONLINE_CONTROL_ALLOWED_KEYS,
+    OnlineControlController,
+    build_online_control_controller,
+    normalize_online_control_config,
+)
 from .credit import CostAwareCreditModel, NoOpCreditModel, SimpleImprovementCreditModel
 from .policies import (
     AdaptiveFlatOperatorPolicy,
@@ -28,7 +28,12 @@ from .policies import (
     FlatParameterPolicy,
     HierarchicalJointPolicy,
 )
-from .prototypes import DEFAULT_PROTOTYPE_SET, available_intent_prototypes, build_intent_prototype, normalize_prototype_set
+from .prototypes import (
+    DEFAULT_PROTOTYPE_SET,
+    available_intent_prototypes,
+    build_intent_prototype,
+    normalize_prototype_set,
+)
 from .routers import HeuristicRegimeRouter
 from .storage import InMemoryTraceStore, TraceRow
 

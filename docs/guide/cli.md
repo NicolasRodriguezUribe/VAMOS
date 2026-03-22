@@ -99,15 +99,7 @@ Compare backends on one problem:
 vamos --problem zdt1 --experiment backends --max-evaluations 2000
 ```
 
-Optional backends need extras: `numba`/`moocore` require `pip install -e ".[compute]"` (or `pip install "vamos-optimization[compute]"`), and `jax` requires `pip install -e ".[autodiff]"` (or `pip install "vamos-optimization[autodiff]"`). Missing backends are skipped.
-
-JAX run (strict ranking fallback for exact Pareto fronts):
-
-```bash
-vamos --problem zdt1 --algorithm nsgaii --engine jax --max-evaluations 5000
-```
-
-Requires the optional `autodiff` extra (`pip install -e ".[autodiff]"` or `pip install "vamos-optimization[autodiff]"`).
+Optional backends need extras: `numba` and `moocore` require `pip install -e ".[compute]"` (or `pip install "vamos-optimization[compute]"`). Missing backends are skipped.
 
 Multiprocessing evaluation for expensive problems:
 
@@ -159,7 +151,7 @@ Key flags
 ---------
 
 - `--algorithm`: nsgaii, moead, smsemoa, nsgaiii, spea2, ibea, smpso, both, or external baselines (pymoo_nsga2, jmetalpy_nsga2, pygmo_nsga2)
-- `--engine`: numpy | numba | moocore | jax (strict ranking uses NumPy fallback; set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking)
+- `--engine`: numpy | numba | moocore | auto. The deterministic default is `numpy`; use `auto` only when you explicitly want heuristic backend selection.
 - `--problem`: any registry key (see Problems page)
 - `--problem-set`: predefined sets (e.g., `families`)
 - `--validate-config`: validate `--config` and exit

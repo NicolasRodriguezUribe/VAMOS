@@ -18,6 +18,8 @@
     "MOEADConfig",
     "NSGAIIConfig",
     "NSGAIIIConfig",
+    "ProbabilityExpression",
+    "ProbabilityValue",
     "RVEAConfig",
     "SMPSOConfig",
     "SMSEMOAConfig",

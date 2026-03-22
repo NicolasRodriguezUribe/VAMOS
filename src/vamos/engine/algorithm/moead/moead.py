@@ -43,51 +43,7 @@ from vamos.engine.hooks.live_viz import LiveVisualization
 
 
 class MOEAD:
-    """
-    Multi-Objective Evolutionary Algorithm based on Decomposition.
-
-    MOEA/D decomposes a multi-objective problem into scalar subproblems using
-    weight vectors and optimizes them collaboratively via neighborhood-based
-    mating and replacement.
-
-    Parameters
-    ----------
-    config : dict
-        Algorithm configuration with keys:
-        - pop_size (int): Population size (should match number of weight vectors)
-        - crossover (tuple): Crossover operator config, e.g., ("sbx", {"prob": 0.9})
-        - mutation (tuple): Mutation operator config, e.g., ("polynomial", {"prob": "1/n"})
-        - weight_vectors (dict, optional): {"path": str, "divisions": int}
-        - neighbor_size (int, optional): T parameter (default: 20)
-        - delta (float, optional): Neighborhood selection probability (default: 0.9)
-        - replace_limit (int, optional): Max replacements per offspring (default: 2)
-        - aggregation (tuple, optional): ("pbi", {"theta": 5.0}) or similar
-        - constraint_mode (str, optional): "feasibility" or "none"
-        - archive (dict, optional): {"size": int, "type": str}
-    kernel : KernelBackend
-        Backend for vectorized operations.
-
-    Attributes
-    ----------
-    cfg : dict
-        Stored configuration.
-    kernel : KernelBackend
-        Kernel backend instance.
-
-    Examples
-    --------
-    >>> from vamos.algorithms import MOEADConfig
-    >>> config = MOEADConfig.builder().pop_size(100).crossover("sbx", prob=0.9).build()
-    >>> moead = MOEAD(config, kernel)
-    >>> result = moead.run(problem, ("max_evaluations", 10000), seed=42)
-
-    Using ask/tell for external evaluation:
-    >>> moead._initialize_run(problem, ("max_evaluations", 10000), seed=42)
-    >>> while moead._st.n_eval < 10000:
-    ...     X_off = moead.ask()
-    ...     F_off = my_external_evaluator(X_off)
-    ...     moead.tell(EvalResult(F=F_off, G=None))
-    """
+    """Multi-Objective Evolutionary Algorithm based on Decomposition."""
 
     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None) -> None:
         self.cfg = config
@@ -107,29 +63,7 @@ class MOEAD:
         live_viz: LiveVisualization | None = None,
         checkpoint: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """
-        Run the MOEA/D algorithm.
-
-        Parameters
-        ----------
-        problem : ProblemProtocol
-            The optimization problem to solve.
-        termination : tuple[str, Any]
-            Termination criterion: ("max_evaluations", N) or ("hv", {...}).
-        seed : int
-            Random seed for reproducibility.
-        eval_strategy : EvaluationBackend | None
-            Optional evaluation backend for parallel evaluation.
-        live_viz : LiveVisualization | None
-            Optional live visualization callback.
-        checkpoint : dict[str, Any] | None
-            Optional checkpoint payload to warm-start the run.
-
-        Returns
-        -------
-        dict[str, Any]
-            Result dictionary with X, F, weights, evaluations, and optional archive.
-        """
+        """Run MOEA/D until the termination criterion is met."""
         live_cb, eval_strategy, max_eval, hv_tracker = self._initialize_run(
             problem,
             termination,
@@ -227,7 +161,7 @@ class MOEAD:
         active: np.ndarray,
         use_neighbors: np.ndarray,
     ) -> np.ndarray:
-        """Sample one ordered parent pair per active subproblem without Python loops."""
+        """Sample one ordered parent pair per active subproblem."""
         batch_size = active.shape[0]
         parent_pairs = self._ensure_parent_pair_buffer(batch_size)
         if batch_size == 0:
@@ -283,19 +217,7 @@ class MOEAD:
         return candidate_orders, candidate_lengths
 
     def ask(self) -> np.ndarray:
-        """
-        Generate offspring solutions to be evaluated.
-
-        Returns
-        -------
-        np.ndarray
-            Offspring decision variables to evaluate, shape (batch_size, n_var).
-
-        Raises
-        ------
-        RuntimeError
-            If called before initialization.
-        """
+        """Generate offspring solutions to be evaluated."""
         st = self._st
         if st is None:
             raise RuntimeError("ask() called before initialization.")
@@ -325,10 +247,8 @@ class MOEAD:
         active = self._next_active_indices(st, batch_size)
         use_neighbors = st.rng.random(batch_size) < st.delta
 
-        # Select parent pairs
         parent_pairs = self._sample_parent_pairs(st, active, use_neighbors)
 
-        # Generate offspring
         n_var = st.X.shape[1]
         if st.current_cross_is_de:
             parents = np.empty((batch_size, 3, n_var), dtype=st.X.dtype)
@@ -346,39 +266,18 @@ class MOEAD:
 
         children = st.mutation_fn(children, st.rng)
 
-        # Store pending info for tell()
         st.pending_offspring = children
         st.pending_active_indices = active
         st.pending_parent_pairs = parent_pairs
         st.pending_use_neighbors = use_neighbors
 
-        # Track genealogy
         operator_label = f"{st.current_cross_method}+{st.current_mutation_method}".strip("+") or "variation"
         track_offspring_genealogy(st, parents_flat, children.shape[0], operator_label, "moead")
 
         return children
 
     def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
-        """
-        Receive evaluated offspring and update algorithm state.
-
-        Parameters
-        ----------
-        eval_result : Any
-            Evaluation result with F (objectives) and optionally G (constraints).
-        problem : ProblemProtocol | None
-            Problem instance (optional, for constraint evaluation).
-
-        Returns
-        -------
-        bool
-            True if HV threshold reached.
-
-        Raises
-        ------
-        RuntimeError
-            If called before initialization or without pending ask().
-        """
+        """Receive evaluated offspring and update the current MOEA/D state."""
         st = self._st
         if st is None:
             raise RuntimeError("tell() called before initialization.")
@@ -399,7 +298,6 @@ class MOEAD:
         before = st.pending_search_state
         action = st.pending_online_action
 
-        # Clear pending
         st.pending_offspring = None
         st.pending_active_indices = None
         st.pending_parent_pairs = None
@@ -407,10 +305,8 @@ class MOEAD:
 
         pop_size = st.pop_size
 
-        # Update ideal point
         st.ideal = np.minimum(st.ideal, F_child.min(axis=0))
 
-        # Update neighborhoods
         if batch_size == 1:
             child = children[0]
             child_f = F_child[0]
@@ -441,7 +337,6 @@ class MOEAD:
                 candidate_lengths=candidate_lengths,
             )
 
-        # Update archive
         update_archive(st, st.X, st.F, st.G)
         replaced = int(np.sum(np.any(np.abs(st.X - X_before) > 1e-12, axis=1)))
         current_quality = scalar_quality_indicator(st.F, st.G)
@@ -467,9 +362,7 @@ class MOEAD:
         st.pending_online_descriptor = None
         st.pending_online_overhead_ms = None
 
-        # Check HV termination
-        hv_reached = st.hv_tracker is not None and st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points())
-        return hv_reached
+        return st.hv_tracker is not None and st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points())
 
     @staticmethod
     def _next_active_indices(st: MOEADState, batch_size: int) -> np.ndarray:

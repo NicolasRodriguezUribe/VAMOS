@@ -2,7 +2,7 @@ import pytest
 
 from vamos import optimize
 from vamos.engine.algorithm.config import NSGAIIConfig
-from vamos.foundation.exceptions import InvalidAlgorithmError
+from vamos.foundation.exceptions import ConfigurationError, InvalidAlgorithmError
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
 
@@ -17,12 +17,12 @@ def test_unknown_problem_selection_errors():
 
 
 def test_invalid_max_evaluations_errors():
-    with pytest.raises(ValueError, match="max_evaluations must be a positive integer"):
+    with pytest.raises(ConfigurationError, match="max_evaluations must be a positive integer"):
         optimize(ZDT1Problem(n_var=4), algorithm="nsgaii", max_evaluations=0, pop_size=4, seed=0)
 
 
 def test_invalid_pop_size_errors():
-    with pytest.raises(ValueError, match="pop_size must be a positive integer"):
+    with pytest.raises(ConfigurationError, match="pop_size must be a positive integer"):
         optimize(ZDT1Problem(n_var=4), algorithm="nsgaii", max_evaluations=4, pop_size=-1, seed=0)
 
 
@@ -35,18 +35,18 @@ def test_invalid_algorithm_config_pop_size_errors():
         .selection("tournament")
         .build()
     )
-    with pytest.raises(ValueError, match=r"algorithm_config\.pop_size"):
+    with pytest.raises(ConfigurationError, match=r"algorithm_config\.pop_size"):
         optimize(
             ZDT1Problem(n_var=4),
             algorithm="nsgaii",
             algorithm_config=cfg,
-            termination=("max_evaluations", 4),
+            max_evaluations=4,
             seed=0,
         )
 
 
 def test_invalid_eval_strategy_errors():
-    with pytest.raises(ValueError, match="eval_strategy must be one of"):
+    with pytest.raises(ConfigurationError, match="eval_strategy must be one of"):
         optimize(
             ZDT1Problem(n_var=4),
             algorithm="nsgaii",

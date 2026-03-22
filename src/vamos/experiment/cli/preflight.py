@@ -14,7 +14,6 @@ _PROBLEM_EXTRA_REQUIREMENTS: dict[str, str] = {
 
 _EXTRA_HINTS: dict[str, str] = {
     "analysis": 'pip install -e ".[analysis]"',
-    "autodiff": 'pip install -e ".[autodiff]"',
     "compute": 'pip install -e ".[compute]"',
     "examples": 'pip install -e ".[examples]"',
     "research": 'pip install -e ".[research]"',
@@ -72,11 +71,6 @@ def _check_engine(args: object) -> None:
         _warn(f"Engine 'moocore' selected but moocore is not installed. Install with: {_EXTRA_HINTS['compute']}.")
 
 
-def _check_autodiff(args: object) -> None:
-    if getattr(args, "autodiff_constraints", False) and not _has_module("jax"):
-        _warn(f"Autodiff constraints requested but JAX is not installed. Install with: {_EXTRA_HINTS['autodiff']}.")
-
-
 def _check_external(args: object) -> None:
     algorithm = getattr(args, "algorithm", "")
     wants_external = bool(getattr(args, "include_external", False) or algorithm in EXTERNAL_ALGORITHM_NAMES)
@@ -106,7 +100,6 @@ def run_preflight_checks(args: object) -> None:
     """
     _check_plotting(args)
     _check_engine(args)
-    _check_autodiff(args)
     _check_external(args)
     _check_problem_extras(args)
 

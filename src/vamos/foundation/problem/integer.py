@@ -44,11 +44,12 @@ class IntegerResourceAllocationProblem(Problem):
         F[:, 1] = -total_reward
 
     def describe(self) -> dict[str, float | int]:
+        upper_bounds = np.asarray(self.xu, dtype=int)
         return {
             "n_var": self.n_var,
             "avg_cost": float(self.task_cost.mean()),
             "avg_reward": float(self.task_reward.mean()),
-            "max_per_task": int(self.xu[0]),
+            "max_per_task": int(upper_bounds[0]),
         }
 
 

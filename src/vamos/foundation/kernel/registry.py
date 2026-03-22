@@ -39,19 +39,10 @@ def _load_moocore() -> KernelBackend:
         ) from exc
 
 
-def _load_jax() -> KernelBackend:
-    try:
-        module = import_module("vamos.foundation.kernel.jax_backend")
-        return cast(KernelBackend, module.JaxKernel())
-    except ImportError as exc:
-        raise ImportError("Kernel 'jax' requires the [autodiff] extra (jax>=0.4). Install with `pip install -e \".[autodiff]\"`.") from exc
-
-
 KERNELS: dict[str, Callable[[], KernelBackend]] = {
     "numpy": NumPyKernel,
     "numba": _load_numba,
     "moocore": _load_moocore,
-    "jax": _load_jax,
 }
 
 _ENGINE_DOCS = "docs/reference/algorithms.md"

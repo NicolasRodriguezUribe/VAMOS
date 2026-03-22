@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, overload
 
 from vamos.engine.adaptation.online_control import normalize_online_control_config
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.resources import weight_path
 
-from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
+from .types import AggregationName, CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName
 
 
 @dataclass(frozen=True)
@@ -25,7 +26,7 @@ class MOEADConfig(_SerializableConfig):
     aggregation: tuple[str, dict[str, Any]]
     weight_vectors: dict[str, int | str | None] | None
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     use_numba_variation: bool | None = None
@@ -100,13 +101,31 @@ class _MOEADConfigBuilder:
         self._cfg["replace_limit"] = value
         return self
 
+    @overload
+    def crossover(self, method: CrossoverName, **kwargs: Any) -> _MOEADConfigBuilder: ...
+
+    @overload
+    def crossover(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
+
     def crossover(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
+    @overload
+    def mutation(self, method: MutationName, **kwargs: Any) -> _MOEADConfigBuilder: ...
+
+    @overload
+    def mutation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
+
     def mutation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
+
+    @overload
+    def aggregation(self, method: AggregationName, **kwargs: Any) -> _MOEADConfigBuilder: ...
+
+    @overload
+    def aggregation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
 
     def aggregation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["aggregation"] = (method, kwargs)
@@ -116,13 +135,25 @@ class _MOEADConfigBuilder:
         self._cfg["weight_vectors"] = {"path": path, "divisions": divisions}
         return self
 
-    def constraint_mode(self, value: str) -> _MOEADConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr) -> _MOEADConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
+
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> _MOEADConfigBuilder: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
 
     def repair(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> _MOEADConfigBuilder: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
 
     def initializer(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
@@ -140,7 +171,7 @@ class _MOEADConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _MOEADConfigBuilder:
+    def result_mode(self, value: ResultMode) -> _MOEADConfigBuilder:
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be 'non_dominated' or 'population'.")
@@ -184,6 +215,7 @@ class _MOEADConfigBuilder:
             ),
             "MOEA/D",
         )
+        _validate_operators(self._cfg)
         return MOEADConfig(
             pop_size=self._cfg["pop_size"],
             batch_size=int(self._cfg.get("batch_size", 1)),

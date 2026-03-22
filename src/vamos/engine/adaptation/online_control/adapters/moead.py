@@ -27,8 +27,8 @@ class MOEADOnlineControlAdapter(HostAdapter):
     host_name = "moead"
 
     def build_search_state(self, host_state: Any) -> SearchState:
-        X = np.asarray(getattr(host_state, "X"))
-        F = np.asarray(getattr(host_state, "F"))
+        X = np.asarray(host_state.X)
+        F = np.asarray(host_state.F)
         G = getattr(host_state, "G", None)
         is_constrained, feasible_ratio, mean_violation = summarize_constraints(G)
         quality = float(getattr(host_state, "quality_indicator", scalar_quality_indicator(F, G)))
@@ -47,7 +47,7 @@ class MOEADOnlineControlAdapter(HostAdapter):
             feasible_ratio=feasible_ratio,
             mean_constraint_violation=mean_violation,
             extent=normalized_objective_extent(F),
-            diversity=normalized_population_diversity(X, getattr(host_state, "xl"), getattr(host_state, "xu")),
+            diversity=normalized_population_diversity(X, host_state.xl, host_state.xu),
             stagnation=normalized_stagnation(int(getattr(host_state, "stagnant_steps", 0))),
             quality_indicator=quality,
             available_families=families,
@@ -62,7 +62,7 @@ class MOEADOnlineControlAdapter(HostAdapter):
     def decode_action(self, action: HierarchicalAction, host_state: Any) -> Any:
         descriptor = semantic_variation_descriptor(
             action,
-            n_var=int(getattr(host_state, "X").shape[1]),
+            n_var=int(host_state.X.shape[1]),
             metadata={"host": self.host_name},
         )
         cfg = dict(getattr(host_state, "base_variation_config", {}))
@@ -70,11 +70,11 @@ class MOEADOnlineControlAdapter(HostAdapter):
         cfg["mutation"] = (descriptor.mut_method, dict(descriptor.mut_params))
         crossover_fn, mutation_fn = build_variation_operators(
             cfg,
-            getattr(host_state, "encoding"),
-            int(getattr(host_state, "X").shape[1]),
-            getattr(host_state, "xl"),
-            getattr(host_state, "xu"),
-            getattr(host_state, "rng"),
+            host_state.encoding,
+            int(host_state.X.shape[1]),
+            host_state.xl,
+            host_state.xu,
+            host_state.rng,
             mixed_spec=getattr(getattr(host_state, "problem", None), "mixed_spec", None),
         )
         host_state.pending_online_descriptor = descriptor

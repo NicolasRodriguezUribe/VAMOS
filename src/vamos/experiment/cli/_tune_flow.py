@@ -154,12 +154,12 @@ def run_validation_stage(
     val_csv_path = out_dir / "validation_metrics.csv"
     with val_csv_path.open("w", encoding="utf-8", newline="") as fh:
         if validation_rows:
-            writer = csv.DictWriter(fh, fieldnames=list(validation_rows[0].keys()))
-            writer.writeheader()
-            writer.writerows(validation_rows)
+            dict_writer = csv.DictWriter(fh, fieldnames=list(validation_rows[0].keys()))
+            dict_writer.writeheader()
+            dict_writer.writerows(validation_rows)
         else:
-            writer = csv.writer(fh)
-            writer.writerow(
+            plain_writer = csv.writer(fh)
+            plain_writer.writerow(
                 [
                     "rank",
                     "tune_score",

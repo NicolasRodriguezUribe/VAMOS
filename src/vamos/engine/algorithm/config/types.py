@@ -30,28 +30,38 @@ CrossoverName: TypeAlias = Literal[
     "simplex",
     # Binary
     "one_point",
+    "single_point",
+    "1point",
     "two_point",
     "binary_uniform",
+    "uniform",
     "hux",
     "spx",
     # Permutation
     "ox",
+    "oxd",
     "order",
     "pmx",
     "cx",
     "cycle",
     "position_based",
+    "position",
+    "pos",
     "erx",
+    "edge",
+    "edge_recombination",
     "aex",
     # Integer
     "int_uniform",
     "int_arithmetic",
     "int_sbx",
+    "blend",
     # Mixed
     "mixed",
 ]
 
 MutationName: TypeAlias = Literal[
+    "pm",
     # Real
     "polynomial",
     "gaussian",
@@ -64,6 +74,7 @@ MutationName: TypeAlias = Literal[
     "power_law",
     # Binary
     "bitflip",
+    "bit_flip",
     "segment_inversion",
     # Permutation
     "swap",
@@ -74,15 +85,20 @@ MutationName: TypeAlias = Literal[
     "two_opt",
     # Integer
     "reset",
+    "random_reset",
     "int_pm",
     "creep",
     "boundary",
     "int_gaussian",
     # Mixed
     "mixed_mutation",
+    "mixed",
 ]
 
-SelectionName: TypeAlias = Literal["tournament"]
+ProbabilityExpression: TypeAlias = Literal["1/n"]
+ProbabilityValue: TypeAlias = float | ProbabilityExpression
+
+SelectionName: TypeAlias = Literal["tournament", "random", "boltzmann", "ranking", "sus"]
 
 InitializerName: TypeAlias = Literal[
     "random",
@@ -109,7 +125,7 @@ RepairName: TypeAlias = Literal[
     "midpoint_base",
     "gradient",
 ]
-RepairConfigValue: TypeAlias = tuple[str, dict[str, Any]] | Literal["auto"]
+RepairConfigValue: TypeAlias = tuple[RepairName, dict[str, Any]] | Literal["auto"]
 
 # ── Algorithm, engine, and aggregation literals ──────────────────────
 
@@ -126,7 +142,7 @@ AlgorithmName: TypeAlias = Literal[
     "rvea",
 ]
 
-EngineName: TypeAlias = Literal["numpy", "numba", "moocore", "jax"]
+EngineName: TypeAlias = Literal["numpy", "numba", "moocore"]
 
 AggregationName: TypeAlias = Literal[
     "pbi",
@@ -140,6 +156,8 @@ __all__ = [
     "AlgorithmConfigProtocol",
     "CrossoverName",
     "MutationName",
+    "ProbabilityExpression",
+    "ProbabilityValue",
     "SelectionName",
     "InitializerName",
     "RepairName",

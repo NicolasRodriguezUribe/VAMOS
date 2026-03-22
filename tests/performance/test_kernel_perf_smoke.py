@@ -1,23 +1,31 @@
 from __future__ import annotations
 
-import time
+import json
+import subprocess
+import sys
+from pathlib import Path
 
-import numpy as np
 import pytest
 
-from vamos.foundation.kernel.numpy_backend import NumPyKernel
 
+@pytest.mark.smoke
+def test_kernel_benchmark_harness_smoke(tmp_path: Path) -> None:
+    output = tmp_path / "kernel_benchmarks.json"
+    cmd = [
+        sys.executable,
+        "tools/benchmark_kernels.py",
+        "--smoke",
+        "--output",
+        str(output),
+    ]
+    subprocess.run(cmd, check=True)
 
-@pytest.mark.slow
-def test_numpy_nsga2_ranking_perf_smoke() -> None:
-    rng = np.random.default_rng(0)
-    F = rng.random((400, 3))
-    kernel = NumPyKernel()
+    data = json.loads(output.read_text(encoding="utf-8"))
+    assert data["meta"]["smoke"] is True
+    assert "polynomial_mutation.numpy" in data["benchmarks"]
+    assert "tournament_selection.numpy" in data["benchmarks"]
+    assert "archive_deduplication" in data["benchmarks"]
+    assert "moead_neighborhood.python" in data["benchmarks"]
 
-    start = time.perf_counter()
-    ranks, crowding = kernel.nsga2_ranking(F)
-    elapsed = time.perf_counter() - start
-
-    assert ranks.shape == (F.shape[0],)
-    assert crowding.shape == (F.shape[0],)
-    assert elapsed < 5.0
+    for benchmark in data["benchmarks"].values():
+        assert benchmark["timing"]["median_seconds"] >= 0.0

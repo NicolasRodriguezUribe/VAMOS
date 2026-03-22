@@ -167,6 +167,7 @@ def build_result(
     should_use_archive = archive_contents is not None and not wants_population_result(state)
 
     if should_use_archive:
+        assert archive_contents is not None
         result_X, result_F = archive_contents
         result_G = None
     else:

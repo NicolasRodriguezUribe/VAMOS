@@ -7,7 +7,8 @@ from typing import Any
 
 import numpy as np
 
-from vamos.engine.archive import BoundedArchive, BoundedArchiveConfig
+from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive.factory import ResultArchiveManager, setup_result_archive
 from vamos.engine.hooks.hv_convergence import HVConvergenceConfig, HVConvergenceMonitor, HVDecision
 from vamos.foundation.observer import RunContext
 from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
@@ -67,7 +68,7 @@ class HookManagerConfig:
     stopping_enabled: bool
     stop_cfg: HVConvergenceConfig
     archive_enabled: bool
-    archive_cfg: BoundedArchiveConfig
+    archive_cfg: ExternalArchiveConfig
     hv_ref_point: list[float] | None = None
 
 
@@ -114,7 +115,7 @@ class CompositeLiveVisualization:
 class HookManager:
     """
     Orchestrates:
-      - bounded archive updates
+      - external archive updates
       - HV trace computation
       - HV convergence stopping
       - incremental artifact writing
@@ -129,11 +130,22 @@ class HookManager:
         self.archive_stats_path = out_dir / "archive_stats.csv"
 
         self.monitor = HVConvergenceMonitor(cfg.stop_cfg) if cfg.stopping_enabled else None
-        self.archive = BoundedArchive(cfg.archive_cfg) if cfg.archive_enabled else None
+        self.archive: ResultArchiveManager | None = None
+        self._archive_F: np.ndarray | None = None
+        self._archive_total_inserted = 0
+        self._archive_total_pruned = 0
 
         self._last_hv: float | None = None
         self._last_sample_evals: int | None = None
         self._stop_decision: HVDecision | None = None
+
+    def _ensure_archive(self, F: np.ndarray) -> None:
+        if not self.cfg.archive_enabled or self.archive is not None:
+            return
+        archive = setup_result_archive(self.cfg.archive_cfg, n_var=0, n_obj=F.shape[1], dtype=np.dtype(float))
+        if archive is None:
+            raise ValueError("Hook archive requires a finite archive.external.capacity.")
+        self.archive = archive
 
     def on_start(self, ctx: RunContext) -> None:
         return None
@@ -177,18 +189,29 @@ class HookManager:
         F: np.ndarray,
         X: np.ndarray | None = None,
     ) -> None:
+        del X
         # Update archive (optional)
+        if self.cfg.archive_enabled:
+            self._ensure_archive(F)
         if self.archive is not None:
-            upd = self.archive.add(X=X, F=F, evals=int(evals))
+            before = 0 if self._archive_F is None else int(self._archive_F.shape[0])
+            dummy_X = np.empty((F.shape[0], 0), dtype=float)
+            _, archive_F = self.archive.update(dummy_X, np.asarray(F, dtype=float), None)
+            after = int(archive_F.shape[0])
+            inserted = int(F.shape[0])
+            pruned = max(0, before + inserted - after)
+            self._archive_total_inserted += inserted
+            self._archive_total_pruned += pruned
+            self._archive_F = archive_F
             _append_csv_row(
                 self.archive_stats_path,
                 fieldnames=["evals", "archive_size", "inserted", "pruned", "prune_reason"],
                 row={
                     "evals": int(evals),
-                    "archive_size": int(self.archive.size()),
-                    "inserted": int(upd.inserted),
-                    "pruned": int(upd.pruned),
-                    "prune_reason": str(upd.prune_reason),
+                    "archive_size": after,
+                    "inserted": inserted,
+                    "pruned": pruned,
+                    "prune_reason": self.cfg.archive_cfg.pruning if pruned > 0 else "none",
                 },
             )
 
@@ -198,8 +221,8 @@ class HookManager:
 
         # Choose set to compute HV on: archive if enabled else provided F
         hv_set = F
-        if self.archive is not None and self.archive.size() > 0:
-            hv_set = self.archive.F
+        if self._archive_F is not None and self._archive_F.size > 0:
+            hv_set = self._archive_F
 
         hv = _try_compute_hv(hv_set, ref=self.cfg.hv_ref_point)
         hv_delta = None
@@ -261,12 +284,13 @@ class HookManager:
         if self.archive is None:
             payload["archive"] = {"enabled": False}
         else:
+            final_size = 0 if self._archive_F is None else int(self._archive_F.shape[0])
             payload["archive"] = {
                 "enabled": True,
                 "params": self.cfg.archive_cfg.__dict__,
-                "final_size": int(self.archive.size()),
-                "total_inserted": int(self.archive.total_inserted),
-                "total_pruned": int(self.archive.total_pruned),
+                "final_size": final_size,
+                "total_inserted": int(self._archive_total_inserted),
+                "total_pruned": int(self._archive_total_pruned),
             }
 
         return payload

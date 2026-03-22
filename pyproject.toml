@@ -7,7 +7,7 @@ name = "vamos-optimization"
 version = "0.1.0"
 description = "Vectorized Architecture for Multiobjective Optimization Studies"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
   { name = "VAMOS contributors" }
 ]
@@ -90,10 +90,6 @@ examples = [
   "matplotlib>=3.7",
   "scikit-learn>=1.3",
 ]
-# Autodiff helpers (JAX)
-autodiff = [
-  "jax>=0.4",
-]
 # Documentation
 docs = [
   "mkdocs>=1.6",
@@ -112,7 +108,6 @@ dev = [
   "pytest>=7.0",
   "pytest-cov>=4.1",
   "mypy>=1.9",
-  "black>=23.0",
   "ruff>=0.6",
   "build>=1.2",
   "wheel>=0.40",
@@ -150,16 +145,16 @@ all = [
   "panel>=1.4",
   "param>=2.0",
   "bokeh>=3.3",
-  "jax>=0.4",
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
   "mkdocstrings[python]>=0.24",
   "jinja2>=3.1",
   "pyyaml>=6.0",
+  "openai>=1.0.0",
+  "anthropic>=0.30.0",
   "pytest>=7.0",
   "pytest-cov>=4.1",
   "mypy>=1.9",
-  "black>=23.0",
   "ruff>=0.6",
   "build>=1.2",
   "wheel>=0.40",
@@ -224,14 +219,14 @@ module = [
   "pandas.*",
   "dask",
   "dask.*",
-  "jax",
-  "jax.*",
   "numba",
   "plotly",
   "plotly.*",
   "pymoo.*",
   "jmetal.*",
   "jmetalpy.*",
+  "hpbandster",
+  "hpbandster.*",
   "pygmo.*",
   "sklearn",
   "sklearn.*",
@@ -252,7 +247,6 @@ markers = [
   "notebooks: notebook-dependent tests",
   "backends: optional backend-dependent tests",
   "studio: Panel/UI dependent tests",
-  "autodiff: tests requiring JAX/autodiff extras",
   "cli: command-line interface smoke tests",
   "numba: tests requiring the numba backend",
   "moocore: tests requiring the moocore backend",
@@ -282,7 +276,7 @@ select = ["E", "F", "W", "UP", "I", "B", "C4"]
 ignore = [
     "E402",  # Module level import not at top - intentional for sys.path and matplotlib backend
     "E741",  # Ambiguous variable name 'l' - used in WFG problems (standard math notation)
-    "E501",  # Line too long - handled by black formatter
+    "E501",  # Line too long - handled by ruff format
     "B007",  # Loop control variable not used - intentional destructuring
     "B905",  # zip() without strict= - existing codebase pattern
     "C408",  # Unnecessary dict() call - dict() reads better in plotly marker kwargs

@@ -125,6 +125,48 @@ def _as_float(value: object | None, default: float) -> float:
     return float(default)
 
 
+def _sample_tournament_candidates(
+    rng: np.random.Generator,
+    *,
+    n_candidates: int,
+    n_parents: int,
+    pressure: int,
+) -> np.ndarray:
+    if pressure >= n_candidates:
+        keys = rng.random((n_parents, n_candidates))
+        return np.argpartition(keys, kth=n_candidates - 1, axis=1).astype(np.int64, copy=False)
+
+    if n_parents * n_candidates <= 2_000_000:
+        keys = rng.random((n_parents, n_candidates))
+        return np.argpartition(keys, kth=pressure - 1, axis=1)[:, :pressure].astype(np.int64, copy=False)
+
+    candidates = np.empty((n_parents, pressure), dtype=np.int64)
+    for i in range(n_parents):
+        candidates[i] = rng.choice(n_candidates, size=pressure, replace=False)
+    return candidates
+
+
+def _tournament_winners_numpy(
+    ranks: np.ndarray,
+    crowding: np.ndarray,
+    candidates: np.ndarray,
+    tie_break: np.ndarray,
+    row_index: np.ndarray,
+) -> np.ndarray:
+    candidate_ranks = ranks[candidates]
+    best_rank = candidate_ranks.min(axis=1, keepdims=True)
+    best_rank_mask = candidate_ranks == best_rank
+
+    candidate_crowding = np.nan_to_num(crowding[candidates], nan=-np.inf)
+    filtered_crowding = np.where(best_rank_mask, candidate_crowding, -np.inf)
+    best_crowding = filtered_crowding.max(axis=1, keepdims=True)
+    best_mask = filtered_crowding == best_crowding
+
+    tie_keys = np.where(best_mask, tie_break, np.inf)
+    winner_pos = np.argmin(tie_keys, axis=1)
+    return np.asarray(candidates[row_index, winner_pos], dtype=int)
+
+
 class NumPyKernel(KernelBackend):
     """
     Backend with pure NumPy implementations of the NSGA-II kernels.
@@ -194,27 +236,47 @@ class NumPyKernel(KernelBackend):
         if pressure == 1:
             return rng.integers(0, N, size=n_parents, dtype=int)
 
-        candidates = np.empty((n_parents, pressure), dtype=int)
-        for i in range(n_parents):
-            candidates[i] = rng.choice(N, size=pressure, replace=False)
+        if pressure == 2:
+            first = rng.integers(0, N, size=n_parents, dtype=int)
+            second = rng.integers(0, N - 1, size=n_parents, dtype=int)
+            second = second + (second >= first)
 
-        winners = np.empty(n_parents, dtype=int)
-        for i in range(n_parents):
-            row = candidates[i]
-            row_ranks = ranks[row]
-            min_rank = row_ranks.min()
-            best = row[row_ranks == min_rank]
-            if best.size == 1:
-                winners[i] = int(best[0])
-                continue
-            # NaN crowding (e.g. degenerate fronts with identical objective
-            # values) is mapped to -inf so those solutions always lose the
-            # tournament — they contribute no diversity information.
-            best_crowd = np.nan_to_num(crowding[best], nan=-np.inf)
-            max_crowd = best_crowd.max()
-            tied = best[best_crowd == max_crowd]
-            winners[i] = int(rng.choice(tied)) if tied.size > 1 else int(tied[0])
-        return winners
+            rank_first = ranks[first]
+            rank_second = ranks[second]
+            crowd_first = np.nan_to_num(crowding[first], nan=-np.inf)
+            crowd_second = np.nan_to_num(crowding[second], nan=-np.inf)
+
+            pick_first = rank_first < rank_second
+            pick_second = rank_second < rank_first
+            unresolved = ~(pick_first | pick_second)
+
+            crowd_first_better = crowd_first > crowd_second
+            crowd_second_better = crowd_second > crowd_first
+            pick_first = pick_first | (unresolved & crowd_first_better)
+            pick_second = pick_second | (unresolved & crowd_second_better)
+
+            ties = ~(pick_first | pick_second)
+            winners = np.where(pick_first, first, second)
+            if np.any(ties):
+                tie_coin = rng.integers(0, 2, size=int(np.sum(ties)), dtype=int).astype(bool)
+                winners[ties] = np.where(tie_coin, first[ties], second[ties])
+            return winners.astype(int, copy=False)
+
+        candidates = _sample_tournament_candidates(
+            rng,
+            n_candidates=N,
+            n_parents=n_parents,
+            pressure=pressure,
+        )
+        row_index = self._ensure_row_index(n_parents)
+        tie_break = rng.random(candidates.shape)
+        return _tournament_winners_numpy(
+            np.asarray(ranks, dtype=np.int64),
+            np.asarray(crowding, dtype=np.float64),
+            candidates,
+            tie_break,
+            row_index,
+        )
 
     def sbx_crossover(
         self,

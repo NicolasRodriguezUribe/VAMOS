@@ -6,7 +6,7 @@ from math import comb
 
 import pytest
 
-from vamos.algorithms import MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SMSEMOAConfig, SPEA2Config
+from vamos.algorithms import IBEAConfig, MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SMSEMOAConfig, SPEA2Config
 
 
 class TestNSGAIIConfigShortcuts:
@@ -49,6 +49,13 @@ class TestNSGAIIConfigShortcuts:
         assert cfg.pop_size == 100
         assert cfg.selection[0] == "tournament"
 
+    def test_builder_rejects_legacy_tuple_operator_syntax(self):
+        with pytest.raises(TypeError, match="keyword arguments"):
+            NSGAIIConfig.builder().crossover(("sbx", {"prob": 1.0}))  # type: ignore[arg-type]
+
+        with pytest.raises(TypeError, match="keyword arguments"):
+            NSGAIIConfig.builder().mutation(("pm", {"prob": "1/n"}))  # type: ignore[arg-type]
+
     def test_tournament_selection_accepts_size_key(self):
         """Tournament selection should use the new 'size' key."""
         cfg = (
@@ -66,6 +73,19 @@ class TestNSGAIIConfigShortcuts:
         with pytest.raises(ValueError, match="uses 'size'"):
             NSGAIIConfig.builder().selection("tournament", pressure=2)
 
+    def test_available_operators_lists_pm_alias(self):
+        operators = NSGAIIConfig.available_operators("mutation")
+        assert "pm" in operators["mutation"]
+
+    def test_builder_validates_operator_names_eagerly(self):
+        with pytest.raises(ValueError, match="Unknown mutation"):
+            (NSGAIIConfig.builder().crossover("sbx", prob=1.0, eta=20.0).mutation("polynomia", prob=0.1, eta=20.0).build())
+
+    def test_repair_auto_round_trips(self):
+        cfg = NSGAIIConfig.default(pop_size=25, n_var=5)
+        restored = NSGAIIConfig.from_dict(cfg.to_dict())
+        assert restored.repair == "auto"
+
 
 class TestMOEADConfigShortcuts:
     """Test MOEADConfig.default()."""
@@ -80,6 +100,16 @@ class TestMOEADConfigShortcuts:
         assert cfg.replace_limit == 2
         assert cfg.aggregation[0] == "pbi"
         assert cfg.repair == "auto"
+
+    def test_default_mutation_alias_is_valid(self):
+        cfg = MOEADConfig.default()
+        assert cfg.mutation[0] == "pm"
+
+
+class TestIBEAConfigShortcuts:
+    def test_default_mutation_alias_is_valid(self):
+        cfg = IBEAConfig.default()
+        assert cfg.mutation[0] == "pm"
 
 
 class TestSPEA2ConfigShortcuts:

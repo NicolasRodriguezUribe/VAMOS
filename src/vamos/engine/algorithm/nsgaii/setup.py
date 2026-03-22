@@ -16,6 +16,7 @@ from vamos.engine.adaptation.online_control.adapters.nsgaii import NSGAIIOnlineC
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
+from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.engine.operators.policies.nsgaii import build_operator_pool
@@ -27,8 +28,6 @@ from vamos.foundation.observer import RunContext
 from .helpers import fronts_from_ranks
 from .initialization import (
     parse_termination,
-    resolve_external_archive,
-    setup_archive,
     setup_genealogy,
     setup_population,
     setup_selection,
@@ -136,8 +135,6 @@ def initialize_run(
         X, F, G, n_eval = setup_population(problem, eval_strategy, rng, pop_size, constraint_mode, initializer_cfg)
 
     incremental_enabled = bool(incremental_mode and replacement_size == 1 and G is None)
-    if incremental_enabled and getattr(algo.kernel, "name", "") == "jax" and getattr(algo.kernel, "_strict_ranking", True) is False:
-        incremental_enabled = False
 
     ranks = crowding = None
     fronts = None
@@ -164,11 +161,11 @@ def initialize_run(
         algo.kernel,
         X,
         F,
-        G,
         n_var,
         problem.n_obj,
         X.dtype,
         ext_cfg,
+        G,
     )
 
     if checkpoint_archive_X is not None and checkpoint_archive_F is not None and ext_cfg is not None:

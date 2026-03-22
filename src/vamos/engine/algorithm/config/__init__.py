@@ -23,7 +23,12 @@ from .rvea import RVEAConfig
 from .smpso import SMPSOConfig
 from .smsemoa import SMSEMOAConfig
 from .spea2 import SPEA2Config
-from .types import AlgorithmConfigMapping, AlgorithmConfigProtocol
+from .types import (
+    AlgorithmConfigMapping,
+    AlgorithmConfigProtocol,
+    ProbabilityExpression,
+    ProbabilityValue,
+)
 
 __all__ = [
     # NSGA-II
@@ -49,4 +54,6 @@ __all__ = [
     # Typing helpers
     "AlgorithmConfigMapping",
     "AlgorithmConfigProtocol",
+    "ProbabilityExpression",
+    "ProbabilityValue",
 ]

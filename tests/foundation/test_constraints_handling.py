@@ -11,7 +11,7 @@ class LinearConstraintProblem:
     def __init__(self):
         self.n_var = 2
         self.n_obj = 1
-        self.n_constr = 1
+        self.n_constraints = 1
         self.xl = 0.0
         self.xu = 2.0
         self.encoding = "real"

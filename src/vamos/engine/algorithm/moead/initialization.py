@@ -9,7 +9,7 @@ weight vectors, neighborhoods, and other setup tasks.
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -50,6 +50,48 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+def _setup_decomposition_components(
+    cfg: dict[str, Any],
+    *,
+    pop_size: int,
+    n_obj: int,
+) -> tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    int,
+    Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray],
+    int,
+    float,
+    float,
+]:
+    weight_cfg = cfg.get("weight_vectors", {}) or {}
+    weights = load_or_generate_weight_vectors(
+        pop_size,
+        n_obj,
+        path=weight_cfg.get("path"),
+        divisions=weight_cfg.get("divisions"),
+        mode="jmetalpy",
+    )
+    from .helpers import ZERO_WEIGHT_EPS
+
+    weights_safe = np.where(weights == 0, ZERO_WEIGHT_EPS, weights)
+    weight_norms = np.linalg.norm(weights, axis=1)
+    weight_norms = np.where(weight_norms > 0, weight_norms, 1.0)
+    weights_unit = weights / weight_norms[:, None]
+
+    neighbor_size = cfg.get("neighbor_size", min(20, pop_size))
+    neighbor_size = max(2, min(neighbor_size, pop_size))
+    neighbors = compute_neighbors(weights, neighbor_size)
+
+    aggregation = cfg.get("aggregation", ("pbi", {"theta": 5.0}))
+    agg_method, agg_params = aggregation
+    aggregator = build_aggregator(agg_method, agg_params)
+    agg_id, agg_theta, agg_rho = resolve_aggregation_spec(agg_method, agg_params)
+    return weights, weights_safe, weights_unit, neighbors, neighbor_size, aggregator, agg_id, agg_theta, agg_rho
+
+
 def initialize_moead_run(
     cfg: dict[str, Any],
     kernel: KernelBackend,
@@ -60,30 +102,7 @@ def initialize_moead_run(
     live_viz: LiveVisualization | None = None,
     checkpoint: Mapping[str, Any] | None = None,
 ) -> tuple[MOEADState, Any, Any, int, HVTracker]:
-    """Initialize all components for a MOEA/D run.
-
-    Parameters
-    ----------
-    cfg : dict[str, Any]
-        Algorithm configuration.
-    kernel : KernelBackend
-        Backend for vectorized operations.
-    problem : ProblemProtocol
-        The optimization problem.
-    termination : tuple[str, Any]
-        Termination criterion.
-    seed : int
-        Random seed.
-    eval_strategy : EvaluationBackend | None
-        Optional evaluation backend.
-    live_viz : LiveVisualization | None
-        Optional live visualization callback.
-
-    Returns
-    -------
-    tuple[MOEADState, Any, Any, int, HVTracker]
-        (state, live_cb, eval_strategy, max_eval, hv_tracker)
-    """
+    """Initialize MOEA/D state and run-level helpers."""
     max_eval, hv_config = parse_termination(termination, "MOEA/D")
 
     eval_strategy = get_eval_strategy(eval_strategy)
@@ -100,7 +119,6 @@ def initialize_moead_run(
     n_var = problem.n_var
     n_obj = problem.n_obj
 
-    # Initialize or restore population
     X: np.ndarray
     F: np.ndarray
     G: np.ndarray | None
@@ -200,37 +218,18 @@ def initialize_moead_run(
 
     cv = compute_violation(G) if constraint_mode != "none" and G is not None else None
 
-    # Setup weight vectors and neighborhoods
-    weight_cfg = cfg.get("weight_vectors", {}) or {}
-    weights = load_or_generate_weight_vectors(
-        pop_size,
-        n_obj,
-        path=weight_cfg.get("path"),
-        divisions=weight_cfg.get("divisions"),
-        mode="jmetalpy",
+    weights, weights_safe, weights_unit, neighbors, neighbor_size, aggregator, agg_id, agg_theta, agg_rho = (
+        _setup_decomposition_components(
+            cfg,
+            pop_size=pop_size,
+            n_obj=n_obj,
+        )
     )
-    from .helpers import ZERO_WEIGHT_EPS
-
-    weights_safe = np.where(weights == 0, ZERO_WEIGHT_EPS, weights)
-    weight_norms = np.linalg.norm(weights, axis=1)
-    weight_norms = np.where(weight_norms > 0, weight_norms, 1.0)
-    weights_unit = weights / weight_norms[:, None]
-
-    neighbor_size = cfg.get("neighbor_size", min(20, pop_size))
-    neighbor_size = max(2, min(neighbor_size, pop_size))
-    neighbors = compute_neighbors(weights, neighbor_size)
-
-    # Setup aggregation
-    aggregation = cfg.get("aggregation", ("pbi", {"theta": 5.0}))
-    agg_method, agg_params = aggregation
-    aggregator = build_aggregator(agg_method, agg_params)
-    agg_id, agg_theta, agg_rho = resolve_aggregation_spec(agg_method, agg_params)
 
     numba_variation = cfg.get("use_numba_variation")
     if numba_variation is not None:
         set_numba_variation(bool(numba_variation))
 
-    # Build variation operators
     cross_method, cross_params = cfg["crossover"]
     mut_method, mut_params = cfg["mutation"]
     crossover_fn, mutation_fn = build_variation_operators(
@@ -243,14 +242,11 @@ def initialize_moead_run(
         mixed_spec=getattr(problem, "mixed_spec", None),
     )
 
-    # Setup archive
     ext_cfg = resolve_external_archive(cfg)
     archive_X, archive_F, archive_manager = setup_archive(kernel, X, F, n_var, n_obj, X.dtype, ext_cfg, G)
 
-    # Setup HV tracker
     hv_tracker = setup_hv_tracker(hv_config, kernel)
 
-    # Setup genealogy
     track_genealogy = bool(cfg.get("track_genealogy", False))
     genealogy_tracker, ids = setup_genealogy(pop_size, F, track_genealogy, "moead")
 
@@ -273,8 +269,6 @@ def initialize_moead_run(
     online_control_adapter = MOEADOnlineControlAdapter() if online_control_controller is not None else None
     quality_indicator = scalar_quality_indicator(F, G)
     online_control_families = available_real_families() if encoding == "real" else (OperatorFamily.SBX_LIKE,)
-
-    # Create state
     state = MOEADState(
         X=X,
         F=F,
@@ -284,7 +278,6 @@ def initialize_moead_run(
         offspring_size=batch_size,
         constraint_mode=constraint_mode,
         n_eval=n_eval,
-        # MOEA/D-specific
         weights=weights,
         weights_safe=weights_safe,
         weights_unit=weights_unit,
@@ -319,14 +312,11 @@ def initialize_moead_run(
             "crossover": (cross_method, dict(cross_params)),
             "mutation": (mut_method, dict(mut_params)),
         },
-        # Archive
         archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,
         archive_F=archive_F,
         archive_manager=archive_manager,
-        # Termination
         hv_tracker=hv_tracker,
-        # Genealogy
         track_genealogy=track_genealogy,
         genealogy_tracker=genealogy_tracker,
         ids=ids,

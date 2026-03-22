@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from vamos.foundation.encoding import EncodingLike
+
 
 class Problem:
     """Base class for class-based custom optimization problems.
@@ -72,21 +74,12 @@ class Problem:
     # Class-level defaults — override at class body level, not in __init__
     # ------------------------------------------------------------------
 
-    encoding: str = "real"
+    encoding: EncodingLike = "real"
     """Variable encoding.  Supported values: ``"real"``, ``"integer"``,
     ``"binary"``, ``"permutation"``, ``"mixed"``.  Default: ``"real"``."""
 
     n_constraints: int = 0
     """Number of inequality constraints.  Default: ``0`` (unconstrained)."""
-
-    # ------------------------------------------------------------------
-    # Engine compatibility
-    # ------------------------------------------------------------------
-
-    @property
-    def n_constr(self) -> int:
-        """Alias for :attr:`n_constraints`, used by evaluation backends."""
-        return self.n_constraints
 
     # ------------------------------------------------------------------
     # User-overridable interface
@@ -99,12 +92,12 @@ class Problem:
 
         Args:
             X: Decision matrix of shape ``(N, n_var)`` where each row is a
-               candidate solution.
+                candidate solution.
 
         Returns:
             Array of shape ``(N, n_obj)`` with objective values to
-            **minimize**.  A single-objective problem may return a 1-D array
-            of length ``N``.
+                **minimize**.  A single-objective problem may return a 1-D array
+                of length ``N``.
         """
         raise NotImplementedError(f"{type(self).__name__} must implement objectives(self, X).")
 

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol, TypeAlias
 
 import numpy as np
+
+OperatorSelectorMethod: TypeAlias = Literal["epsilon_greedy", "egreedy", "eps", "ucb", "ucb1"]
+RewardMode: TypeAlias = Literal["maximize", "minimize"]
 
 
 class OperatorSelector(Protocol):
@@ -64,7 +67,7 @@ class UCBOperatorSelector(BanditOperatorSelector):
         return int(np.argmax(ucb))
 
 
-def make_operator_selector(method: str, n_ops: int, **kwargs: Any) -> OperatorSelector:
+def make_operator_selector(method: OperatorSelectorMethod | str, n_ops: int, **kwargs: Any) -> OperatorSelector:
     method = method.lower()
     if method in {"epsilon_greedy", "egreedy", "eps"}:
         return EpsilonGreedyOperatorSelector(n_ops, epsilon=kwargs.get("epsilon", 0.1), rng=kwargs.get("rng"))
@@ -73,10 +76,23 @@ def make_operator_selector(method: str, n_ops: int, **kwargs: Any) -> OperatorSe
     raise ValueError(f"Unknown operator selector method '{method}'.")
 
 
-def compute_reward(old_value: float, new_value: float, mode: str = "maximize") -> float:
+def compute_reward(old_value: float, new_value: float, mode: RewardMode = "maximize") -> float:
     """
     Compute reward based on improvement in indicator value.
     """
     if mode == "maximize":
         return new_value - old_value
     return old_value - new_value
+
+
+__all__ = [
+    "OperatorEntry",
+    "OperatorSelector",
+    "BanditOperatorSelector",
+    "EpsilonGreedyOperatorSelector",
+    "UCBOperatorSelector",
+    "OperatorSelectorMethod",
+    "RewardMode",
+    "make_operator_selector",
+    "compute_reward",
+]

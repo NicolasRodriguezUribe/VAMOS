@@ -4,7 +4,7 @@
 
 ![VAMOS Banner](docs/assets/vamos1.png)
 
-VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels (NumPy, Numba, JAX) for maximum performance.
+VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels with NumPy as the exact reference path and optional Numba acceleration for core kernels.
 
 ## 🚀 Key Features
 
@@ -13,10 +13,12 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 - **Unified Archiving**: Consistent external archive configuration via `.external_archive(capacity=..., pruning=...)`, with bounded or unbounded archives and pruning policies `crowding`, `hv`, `mc_hv`, `knn`, `maxmin`, and `ref_dirs`. When an external archive is enabled, top-level results come from it by default unless `result_mode="population"` is requested.
 - **Multi-Fidelity Tuning**: Hyperband-style racing with warm-start checkpoints for sample-efficient algorithm configuration.
 - **Ready-to-use Tuning Backends**: `racing` and `random` work out of the box; install the optional `tuning` extra to enable `optuna`, `bohb_optuna`, `smac3`, and `bohb` via `vamos tune`.
-- **Performance Driven**: Vectorized kernels, GPU acceleration (JAX), and optional Numba JIT compilation.
+- **Performance Driven**: Vectorized NumPy kernels with optional Numba JIT acceleration for core kernels.
 - **Interactive Analysis**: Built-in dashboards with `explore_result_front(result)` and publication-ready LaTeX tables.
 - **Visual Problem Builder**: Define custom problems in the browser with live Pareto front preview via VAMOS Studio.
 - **Extensible**: Standardized protocols for adding custom problems, operators, and algorithms.
+
+Canonical customization guide: `docs/topics/extending.md`.
 
 ## 📦 Quick Install
 
@@ -57,6 +59,16 @@ pip install "vamos-optimization[tuning]"
 ```bash
 pip install "smac>=2.0"
 ```
+
+## Backend Capability Matrix
+
+| Backend | Status | Role |
+|---------|--------|------|
+| `numpy` | Stable | Exact reference backend and deterministic default. |
+| `numba` | Stable optional | Accelerates core numeric kernels such as variation, tournament selection, and MOEA/D neighborhood updates. |
+| `moocore` | Stable optional | Adds accelerated quality-indicator support, especially hypervolume-style metrics. |
+
+Operator shorthand accepts either numeric probabilities or the string literal `"1/n"` for per-variable mutation rates.
 
 ## ⚡ Quickstart
 
@@ -222,13 +234,19 @@ result = optimize(
     problem,
     algorithm="nsgaii",
     algorithm_config=algo,
-    termination=("max_evaluations", 10000),
+    max_evaluations=10000,
     seed=42,
     engine="numpy",
 )
 ```
 
 Reminder: plain dict configs are intentionally not accepted (use `GenericAlgorithmConfig` for plugin algorithms).
+
+For comparative evidence against pymoo on fixed seeded cases, run:
+
+```bash
+python tools/benchmark_compare_pymoo.py --output reports/performance/pymoo_comparison.json --markdown reports/performance/pymoo_comparison.md
+```
 
 ## Notes
 

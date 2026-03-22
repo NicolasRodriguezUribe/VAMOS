@@ -6,6 +6,7 @@ from vamos.engine.algorithm.config import (
     IBEAConfig,
     MOEADConfig,
     NSGAIIConfig,
+    NSGAIIIConfig,
     SMPSOConfig,
     SMSEMOAConfig,
     SPEA2Config,
@@ -13,10 +14,12 @@ from vamos.engine.algorithm.config import (
 from vamos.engine.algorithm.ibea import IBEA
 from vamos.engine.algorithm.moead import MOEAD
 from vamos.engine.algorithm.nsgaii import NSGAII
+from vamos.engine.algorithm.nsgaiii import NSGAIII
 from vamos.engine.algorithm.smpso import SMPSO
 from vamos.engine.algorithm.smsemoa import SMSEMOA
 from vamos.engine.algorithm.spea2 import SPEA2
 from vamos.foundation.kernel.numpy_backend import NumPyKernel
+from vamos.foundation.problem.dtlz import DTLZ2Problem
 from vamos.foundation.problem.tsp import TSPProblem
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 from vamos.foundation.problem.zdt2 import ZDT2Problem
@@ -203,6 +206,71 @@ def test_ibea_smoke_indicator_eps():
     assert np.isfinite(result["F"]).all()
     # Full population still available
     assert result["population"]["F"].shape == (pop_size, problem.n_obj)
+
+
+def test_ibea_uses_eval_strategy():
+    pop_size = 10
+    cfg = (
+        IBEAConfig.builder()
+        .pop_size(pop_size)
+        .crossover("sbx", prob=0.9, eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
+        .selection("tournament", size=2)
+        .indicator("eps")
+        .kappa(0.05)
+        .build()
+    )
+    algorithm = IBEA(cfg.to_dict(), kernel=NumPyKernel())
+    problem = ZDT2Problem(n_var=6)
+
+    class CountingBackend:
+        def __init__(self) -> None:
+            self.calls: list[int] = []
+
+        def evaluate(self, X, problem):  # noqa: ANN001 - protocol-style test double
+            from vamos.foundation.eval import EvaluationResult
+
+            self.calls.append(int(X.shape[0]))
+            F = np.full((X.shape[0], problem.n_obj), 0.2, dtype=float)
+            return EvaluationResult(F=F, G=None)
+
+    backend = CountingBackend()
+    algorithm.run(problem, termination=("max_evaluations", pop_size + 4), seed=8, eval_strategy=backend)
+
+    assert backend.calls[0] == pop_size
+    assert backend.calls[1:] == [pop_size]
+
+
+def test_nsgaiii_uses_eval_strategy():
+    pop_size = 6
+    cfg = (
+        NSGAIIIConfig.builder()
+        .pop_size(pop_size)
+        .crossover("sbx", prob=1.0, eta=20.0)
+        .mutation("polynomial", prob="1/n", eta=20.0)
+        .selection("tournament", size=2)
+        .reference_directions(divisions=2)
+        .build()
+    )
+    algorithm = NSGAIII(cfg.to_dict(), kernel=NumPyKernel())
+    problem = DTLZ2Problem(n_var=6, n_obj=3)
+
+    class CountingBackend:
+        def __init__(self) -> None:
+            self.calls: list[int] = []
+
+        def evaluate(self, X, problem):  # noqa: ANN001 - protocol-style test double
+            from vamos.foundation.eval import EvaluationResult
+
+            self.calls.append(int(X.shape[0]))
+            F = np.full((X.shape[0], problem.n_obj), 0.3, dtype=float)
+            return EvaluationResult(F=F, G=None)
+
+    backend = CountingBackend()
+    algorithm.run(problem, termination=("max_evaluations", pop_size * 2), seed=12, eval_strategy=backend)
+
+    assert backend.calls[0] == pop_size
+    assert backend.calls[1:] == [pop_size]
 
 
 def test_smpso_smoke_runs():

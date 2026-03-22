@@ -39,7 +39,7 @@ def _simplex_lattice(n_obj: int, divisions: int, limit: int | None) -> np.ndarra
     arr /= divisions
     row_sums = arr.sum(axis=1, keepdims=True)
     arr = np.divide(arr, np.where(row_sums > 0.0, row_sums, 1.0), out=np.zeros_like(arr), where=row_sums > 0.0)
-    return arr
+    return np.asarray(arr, dtype=float)
 
 
 def _generate_reference_directions(pop_size: int, n_obj: int) -> np.ndarray:
@@ -157,7 +157,7 @@ def normalize_for_ref_dirs(F: np.ndarray) -> np.ndarray:
 
     normalized = (data - ideal) / denom
     normalized[~np.isfinite(normalized)] = 0.0
-    return normalized
+    return np.asarray(normalized, dtype=float)
 
 
 def select_maxmin_subset(F: np.ndarray, target_size: int) -> np.ndarray:

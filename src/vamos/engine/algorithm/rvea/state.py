@@ -15,7 +15,6 @@ from vamos.engine.algorithm.components.state import AlgorithmState
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
-    from vamos.engine.archive.bounded_archive import BoundedArchive
 
 
 @dataclass
@@ -29,7 +28,6 @@ class RVEAState(AlgorithmState):
     max_evals: int = 0
     max_gen: int = 1
     variation: VariationPipeline | None = None
-    archive: BoundedArchive | None = None
     ref_dirs: np.ndarray = field(default_factory=lambda: np.array([]))
     V: np.ndarray = field(default_factory=lambda: np.array([]))
     gamma: np.ndarray = field(default_factory=lambda: np.array([]))

@@ -18,9 +18,16 @@ from .prototypes import normalize_prototype_set
 from .routers import HeuristicRegimeRouter
 from .storage import InMemoryTraceStore, TraceRow
 
-ONLINE_CONTROL_ALLOWED_KEYS = frozenset(
-    {"enabled", "router", "policy", "credit_model", "trace_level", "fixed_family", "prototype_set", "policy_state"}
-)
+ONLINE_CONTROL_ALLOWED_KEYS = {
+    "enabled",
+    "router",
+    "policy",
+    "credit_model",
+    "trace_level",
+    "fixed_family",
+    "prototype_set",
+    "policy_state",
+}
 _TRACE_LEVELS = {"basic", "off"}
 _ROUTERS = {"heuristic"}
 _POLICIES = {

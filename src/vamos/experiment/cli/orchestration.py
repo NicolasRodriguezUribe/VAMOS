@@ -6,10 +6,11 @@ from collections.abc import Callable
 from copy import deepcopy
 from typing import TypeVar, cast
 
-from vamos.engine.archive import ExternalArchiveConfig
+from vamos.engine.archive import ExternalArchiveConfig, normalize_prune_policy
 from vamos.engine.config.spec import ExperimentSpec, ProblemOverrides, SpecBlock
 from vamos.engine.config.variation import VariationOverrides, merge_variation_overrides
 from vamos.engine.hooks import LiveVisualization
+from vamos.experiment._execution_support import VariationConfigs
 from vamos.experiment.execution import execute_problem_suite
 from vamos.experiment.services.orchestrator import run_single
 from vamos.foundation.core.experiment_config import ExperimentConfig
@@ -83,7 +84,9 @@ def run_from_args(
                 setattr(effective_args, key, override[key])
         effective_args.selection_pressure = override.get("selection_pressure", args.selection_pressure)
         _ea_override = override.get("external_archive_size")
-        _ea_pruning = str(override.get("external_archive_pruning", getattr(args, "external_archive_pruning", "crowding")))
+        _ea_pruning = normalize_prune_policy(
+            str(override.get("external_archive_pruning", getattr(args, "external_archive_pruning", "crowding")))
+        )
         base_external_archive = getattr(args, "external_archive", None)
         if _ea_override is not None:
             effective_args.external_archive = ExternalArchiveConfig(
@@ -107,7 +110,6 @@ def run_from_args(
         effective_args.live_viz_interval = override.get("live_viz_interval", args.live_viz_interval)
         effective_args.live_viz_max_points = override.get("live_viz_max_points", args.live_viz_max_points)
         effective_args.track_genealogy = override.get("track_genealogy", getattr(args, "track_genealogy", False))
-        effective_args.autodiff_constraints = override.get("autodiff_constraints", getattr(args, "autodiff_constraints", False))
         effective_args.nsgaii_variation = merge_variation_overrides(base_variation, _override_mapping(override, "nsgaii"))
         effective_args.moead_variation = merge_variation_overrides(
             getattr(args, "moead_variation", None), _override_mapping(override, "moead")
@@ -154,25 +156,19 @@ def run_from_args(
                 effective_selection.spec.key,
                 n_obj=effective_selection.n_obj,
             )
-        nsgaii_variation = getattr(effective_args, "nsgaii_variation", None)
+        variations = VariationConfigs.from_namespace(effective_args)
         execute_problem_suite(
             effective_args,
             effective_selection,
             effective_config,
             run_single_fn=run_single,
             hv_stop_config=hv_stop_config,
-            nsgaii_variation=nsgaii_variation,
-            spea2_variation=effective_args.spea2_variation,
-            ibea_variation=effective_args.ibea_variation,
-            smpso_variation=effective_args.smpso_variation,
-            agemoea_variation=effective_args.agemoea_variation,
-            rvea_variation=effective_args.rvea_variation,
+            variations=variations,
             include_external=effective_args.include_external,
             config_source=config_source,
             config_spec=config_spec,
             problem_override=override,
             track_genealogy=effective_args.track_genealogy,
-            autodiff_constraints=effective_args.autodiff_constraints,
             live_viz_factory=live_viz_factory,
             plotter=plotter,
         )

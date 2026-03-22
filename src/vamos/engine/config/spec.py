@@ -19,7 +19,6 @@ from vamos.engine.algorithm.config import (
     SMSEMOAConfig,
     SPEA2Config,
 )
-from vamos.engine.archive.bounded_archive import BoundedArchiveConfig
 from vamos.engine.hooks.hv_convergence import HVConvergenceConfig
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import available_problem_names
@@ -49,6 +48,17 @@ _ALGORITHM_BLOCKS: dict[str, type] = {
 }
 
 _OPERATOR_SPEC_KEYS = ("crossover", "mutation", "selection", "repair", "aggregation")
+_HOOK_ARCHIVE_KEYS = {
+    "enabled",
+    "capacity",
+    "truncate_size",
+    "pruning",
+    "hv_ref_point",
+    "rng_seed",
+    "objective_tolerance",
+    "deduplicate_in",
+    "decision_tolerance",
+}
 
 
 def allowed_override_keys(extra_keys: Iterable[str] | None = None) -> set[str]:
@@ -196,17 +206,16 @@ def _validate_archive_block(block: object, *, path: str) -> None:
     if block is None:
         return
     block_dict = _as_str_dict(block, path=f"'{path}'")
-    unknown = _unknown_keys(block_dict, {"bounded"})
+    unknown = _unknown_keys(block_dict, {"external"})
     if unknown:
         raise ValueError(f"Unknown keys in '{path}': {', '.join(unknown)}")
-    bounded = block_dict.get("bounded")
-    if bounded is None:
+    external = block_dict.get("external")
+    if external is None:
         return
-    bounded_dict = _as_str_dict(bounded, path=f"'{path}.bounded'")
-    allowed = set(_dataclass_field_names(BoundedArchiveConfig)) - {"archive_type"}
-    unknown_bounded = _unknown_keys(bounded_dict, allowed)
-    if unknown_bounded:
-        raise ValueError(f"Unknown keys in '{path}.bounded': {', '.join(unknown_bounded)}")
+    external_dict = _as_str_dict(external, path=f"'{path}.external'")
+    unknown_external = _unknown_keys(external_dict, _HOOK_ARCHIVE_KEYS)
+    if unknown_external:
+        raise ValueError(f"Unknown keys in '{path}.external': {', '.join(unknown_external)}")
 
 
 def _dataclass_field_names(cls: object) -> list[str]:

@@ -7,9 +7,10 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from collections.abc import Sequence
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     """Entry point for ``vamos profile`` CLI."""
     logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(prog="vamos profile", description="Profile VAMOS optimization across different backends")
@@ -20,7 +21,7 @@ def main() -> int:
     parser.add_argument("--output", "-o", help="Output CSV file path (optional)")
     parser.add_argument("--no-hv", action="store_true", help="Skip hypervolume computation")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Parse engines
     engines = [e.strip() for e in args.engines.split(",")]

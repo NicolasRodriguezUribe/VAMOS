@@ -184,11 +184,12 @@ class TestOptimizationResultBest:
     def test_best_invalid_method(self):
         """best() with invalid method should raise."""
         from vamos.experiment.optimization_result import OptimizationResult
+        from vamos.foundation.exceptions import ResultSelectionError
 
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         result = OptimizationResult({"F": F})
 
-        with pytest.raises(ValueError, match="Unknown method"):
+        with pytest.raises(ResultSelectionError, match="Unknown method"):
             result.best("invalid")
 
 
@@ -339,12 +340,22 @@ class TestOptimizationResultTopK:
 
     def test_top_k_invalid_source(self):
         from vamos.experiment.optimization_result import OptimizationResult
+        from vamos.foundation.exceptions import ResultSelectionError
 
         F = np.array([[0.1, 0.9], [0.9, 0.1]])
         result = OptimizationResult({"F": F})
 
-        with pytest.raises(ValueError, match="source must be one of"):
+        with pytest.raises(ResultSelectionError, match="source must be one of"):
             result.top_k(k=1, source="invalid", method="knee")
+
+    def test_best_empty_result_raises_no_solutions(self):
+        from vamos.experiment.optimization_result import OptimizationResult
+        from vamos.foundation.exceptions import NoSolutionsError
+
+        result = OptimizationResult({"F": np.empty((0, 2))})
+
+        with pytest.raises(NoSolutionsError, match="No solutions available"):
+            result.best("knee")
 
     def test_top_k_crowding_method(self):
         from vamos.experiment.optimization_result import OptimizationResult

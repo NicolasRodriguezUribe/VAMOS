@@ -12,7 +12,7 @@ from collections.abc import Callable, Mapping
 from typing import Any, Protocol
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigMapping
-from vamos.foundation.exceptions import _suggest_names
+from vamos.foundation.exceptions import InvalidAlgorithmError, _suggest_names
 from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.registry import Registry
@@ -129,7 +129,7 @@ def resolve_algorithm(name: str) -> AlgorithmBuilder:
         return registry[key]
     except KeyError as exc:
         available = sorted(registry.keys())
-        raise ValueError(_format_unknown_algorithm(name, available)) from exc
+        raise InvalidAlgorithmError(name, available=available) from exc
 
 
 def __getattr__(name: str) -> Any:

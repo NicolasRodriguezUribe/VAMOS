@@ -21,12 +21,12 @@ from vamos.engine.algorithm.components.hooks import (
     live_should_stop,
     track_offspring_genealogy,
 )
+from vamos.engine.algorithm.components.lifecycle import evaluate_batch
 from vamos.engine.algorithm.components.termination import HVTracker
 from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.foundation.kernel import default_kernel
 
 from .helpers import (
-    evaluate_population_with_constraints,
     nsgaiii_survival,
 )
 from .initialization import initialize_nsgaiii_run
@@ -43,45 +43,7 @@ __all__ = ["NSGAIII"]
 
 
 class NSGAIII:
-    """Non-dominated Sorting Genetic Algorithm III for many-objective optimization.
-
-    NSGA-III uses reference points for diversity maintenance, making it suitable
-    for problems with 3 or more objectives where crowding distance is less effective.
-    Reference points guide the search toward a well-distributed Pareto front.
-
-    Parameters
-    ----------
-    config : dict
-        Algorithm configuration with keys:
-        - pop_size (int): Population size (recommended to align with reference points)
-        - crossover (tuple): Crossover operator config
-        - mutation (tuple): Mutation operator config
-        - reference_directions (dict, optional): Reference point configuration
-        - selection (tuple, optional): Parent selection config
-        - external_archive (dict, optional): {"capacity": int | None, "pruning": str}
-        - hv_threshold (float, optional): HV threshold for early termination
-    kernel : KernelBackend
-        Backend for vectorized operations.
-
-    Examples
-    --------
-    Basic usage:
-
-    >>> from vamos.algorithms import NSGAIIIConfig
-    >>> config = NSGA3Config().pop_size(92).divisions(12).build()
-    >>> nsga3 = NSGAIII(config, kernel)
-    >>> result = nsga3.run(problem, ("max_evaluations", 20000), seed=42)
-
-    Ask/tell interface:
-
-    >>> nsga3 = NSGAIII(config, kernel)
-    >>> nsga3.initialize(problem, ("max_evaluations", 20000), seed=42)
-    >>> while not nsga3.should_terminate():
-    ...     X = nsga3.ask()
-    ...     F = evaluate(X)
-    ...     nsga3.tell(F)
-    >>> result = nsga3.result()
-    """
+    """Non-dominated Sorting Genetic Algorithm III for many-objective optimization."""
 
     def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
         self.cfg = config
@@ -110,26 +72,7 @@ class NSGAIII:
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> dict[str, Any]:
-        """Run NSGA-III optimization loop.
-
-        Parameters
-        ----------
-        problem : ProblemProtocol
-            Problem to optimize.
-        termination : tuple
-            Termination criterion, e.g., ("max_evaluations", 10000).
-        seed : int
-            Random seed for reproducibility.
-        eval_strategy : EvaluationBackend, optional
-            Evaluation backend for parallel evaluation.
-        live_viz : LiveVisualization, optional
-            Live visualization callback.
-
-        Returns
-        -------
-        dict
-            Result dictionary with X, F, G, reference_directions, archive data.
-        """
+        """Run NSGA-III until the termination criterion is met."""
         self._st, live_cb, eval_strategy, max_eval, hv_tracker = initialize_nsgaiii_run(
             self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
@@ -152,19 +95,14 @@ class NSGAIII:
         hv_reached = False
         stop_requested = False
         while st.n_eval < max_eval and not stop_requested:
-            # Generate and evaluate offspring
             X_off = self._generate_offspring(st)
-
-            # Evaluate offspring
             F_off, G_off = self._evaluate_offspring(problem, X_off, eval_strategy, st.constraint_mode)
             st.n_eval += X_off.shape[0]
 
-            # Combine ids for genealogy if tracking
             ids_combined = None
             if st.ids is not None and st.pending_offspring_ids is not None:
                 ids_combined = np.concatenate([st.ids, st.pending_offspring_ids])
 
-            # NSGA-III survival selection
             (
                 st.X,
                 st.F,
@@ -190,21 +128,17 @@ class NSGAIII:
             )
             self._refresh_selection_metrics(st)
 
-            # Update ids based on survival selection
             if ids_combined is not None:
                 st.ids = ids_combined[survivor_indices]
 
             st.generation += 1
 
-            # Update archive
             if st.archive_manager is not None:
                 st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F, st.G)
 
-            # Live callback
             live_cb.on_generation(st.generation, F=st.F, stats={"evals": st.n_eval})
             stop_requested = live_should_stop(live_cb)
 
-            # Check HV threshold
             if hv_tracker is not None and hv_tracker.enabled and hv_tracker.reached(st.hv_points()):
                 hv_reached = True
                 break
@@ -242,7 +176,6 @@ class NSGAIII:
         X_off = offspring_pairs.reshape(-1, n_var)
         X_off = st.mutation_fn(X_off)
 
-        # Track genealogy
         if st.genealogy_tracker is not None:
             parent_pairs = parents_idx.flatten()
             track_offspring_genealogy(
@@ -263,10 +196,7 @@ class NSGAIII:
         constraint_mode: str,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Evaluate offspring and compute constraints."""
-        F, G = evaluate_population_with_constraints(problem, X)
-        if constraint_mode == "none":
-            G = None
-        return F, G
+        return evaluate_batch(problem, eval_strategy, X, constraint_mode)
 
     # -------------------------------------------------------------------------
     # Ask/Tell Interface
@@ -280,21 +210,7 @@ class NSGAIII:
         eval_strategy: EvaluationBackend | None = None,
         live_viz: LiveVisualization | None = None,
     ) -> None:
-        """Initialize algorithm for ask/tell loop.
-
-        Parameters
-        ----------
-        problem : ProblemProtocol
-            Problem to optimize.
-        termination : tuple
-            Termination criterion.
-        seed : int
-            Random seed.
-        eval_strategy : EvaluationBackend, optional
-            Evaluation backend.
-        live_viz : LiveVisualization, optional
-            Live visualization callback.
-        """
+        """Initialize the algorithm for an ask/tell loop."""
         self._st, self._live_cb, self._eval_strategy, self._max_eval, self._hv_tracker = initialize_nsgaiii_run(
             self.cfg, self.kernel, problem, termination, seed, eval_strategy, live_viz
         )
@@ -313,18 +229,7 @@ class NSGAIII:
             self._live_cb.on_start(ctx)
 
     def ask(self) -> np.ndarray:
-        """Generate offspring for evaluation.
-
-        Returns
-        -------
-        np.ndarray
-            Offspring decision vectors to evaluate.
-
-        Raises
-        ------
-        RuntimeError
-            If algorithm not initialized or previous offspring not consumed.
-        """
+        """Generate offspring for evaluation."""
         if self._st is None:
             raise RuntimeError("Algorithm not initialized. Call initialize() first.")
         if self._st.pending_offspring is not None:
@@ -335,26 +240,7 @@ class NSGAIII:
         return offspring.copy()
 
     def tell(self, eval_result: Any, problem: ProblemProtocol | None = None) -> bool:
-        """Receive evaluated offspring and update population.
-
-        Parameters
-        ----------
-        eval_result : Any
-            Objective values as ``np.ndarray``, or an object with ``.F``
-            attribute, or a dict with ``"F"`` key.
-        problem : ProblemProtocol | None
-            Unused, kept for interface consistency.
-
-        Returns
-        -------
-        bool
-            Always ``False`` (NSGA-III has no early-stop criterion via tell).
-
-        Raises
-        ------
-        RuntimeError
-            If algorithm not initialized or no pending offspring.
-        """
+        """Receive evaluated offspring and update the population."""
         if self._st is None:
             raise RuntimeError("Algorithm not initialized. Call initialize() first.")
         if self._st.pending_offspring is None:
@@ -375,12 +261,10 @@ class NSGAIII:
             F = np.asarray(eval_result, dtype=float)
             G = None
 
-        # Combine ids for genealogy if tracking
         ids_combined = None
         if st.ids is not None and st.pending_offspring_ids is not None:
             ids_combined = np.concatenate([st.ids, st.pending_offspring_ids])
 
-        # NSGA-III survival selection
         (
             st.X,
             st.F,
@@ -406,35 +290,25 @@ class NSGAIII:
         )
         self._refresh_selection_metrics(st)
 
-        # Update ids based on survival selection
         if ids_combined is not None:
             st.ids = ids_combined[survivor_indices]
 
         st.n_eval += X_off.shape[0]
         st.generation += 1
 
-        # Update archive
         if st.archive_manager is not None:
             st.archive_X, st.archive_F = st.archive_manager.update(st.X, st.F, st.G)
 
-        # Live callback
         if self._live_cb is not None:
             self._live_cb.on_generation(st.generation, F=st.F)
 
-        # Check HV tracker
         if st.hv_tracker is not None and st.hv_tracker.enabled:
             st.hv_tracker.reached(st.hv_points())
 
         return False
 
     def should_terminate(self) -> bool:
-        """Check if termination criterion is met.
-
-        Returns
-        -------
-        bool
-            True if algorithm should stop.
-        """
+        """Check whether the current run should terminate."""
         if self._st is None:
             return True
         if self._st.n_eval >= self._max_eval:
@@ -444,18 +318,7 @@ class NSGAIII:
         return False
 
     def result(self) -> dict[str, Any]:
-        """Get current result.
-
-        Returns
-        -------
-        dict
-            Result dictionary with X, F, G, reference_directions, archive data.
-
-        Raises
-        ------
-        RuntimeError
-            If algorithm not initialized.
-        """
+        """Get the current result snapshot."""
         if self._st is None:
             raise RuntimeError("Algorithm not initialized.")
 

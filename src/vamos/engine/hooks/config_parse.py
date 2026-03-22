@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TypedDict, cast
 
-from vamos.engine.archive import BoundedArchiveConfig, PrunePolicy
+from vamos.engine.archive import DeduplicateIn, ExternalArchiveConfig, PrunePolicy
 from vamos.engine.hooks.hv_convergence import HVConvergenceConfig
 
 
@@ -11,7 +11,7 @@ class StoppingArchiveConfig(TypedDict):
     stopping_enabled: bool
     stop_cfg: HVConvergenceConfig
     archive_enabled: bool
-    archive_cfg: BoundedArchiveConfig
+    archive_cfg: ExternalArchiveConfig
     hv_ref_point: list[float] | None
 
 
@@ -22,28 +22,26 @@ def build_hv_stop_cfg(d: Mapping[str, object] | None) -> HVConvergenceConfig:
     return HVConvergenceConfig(**data)
 
 
-def build_archive_cfg(d: Mapping[str, object] | None) -> BoundedArchiveConfig:
+def build_archive_cfg(d: Mapping[str, object] | None) -> ExternalArchiveConfig:
     if d is None:
-        return BoundedArchiveConfig()
+        return ExternalArchiveConfig(capacity=200)
     data = dict(d)
-    if "archive_type" in data:
-        raise TypeError("build_archive_cfg() does not accept legacy 'archive_type'; use 'size_cap' and 'prune_policy'.")
+    legacy_keys = {"archive_type", "size_cap", "prune_policy", "epsilon", "hv_samples", "nondominated_only"}
+    legacy_hits = sorted(key for key in legacy_keys if key in data)
+    if legacy_hits:
+        joined = ", ".join(legacy_hits)
+        raise TypeError(
+            f"build_archive_cfg() no longer accepts legacy bounded-archive keys: {joined}. "
+            "Use archive.external with 'capacity' and 'pruning'."
+        )
 
-    size_cap = data.get("size_cap", 200)
-    if not isinstance(size_cap, int):
-        raise TypeError("archive.size_cap must be an integer.")
+    capacity = data.get("capacity", 200)
+    if not isinstance(capacity, int):
+        raise TypeError("archive.capacity must be an integer.")
 
     truncate_size = data.get("truncate_size")
     if truncate_size is not None and not isinstance(truncate_size, int):
         raise TypeError("archive.truncate_size must be an integer or null.")
-
-    epsilon = data.get("epsilon", 0.01)
-    if not isinstance(epsilon, (int, float)):
-        raise TypeError("archive.epsilon must be numeric.")
-
-    hv_samples = data.get("hv_samples", 20000)
-    if not isinstance(hv_samples, int):
-        raise TypeError("archive.hv_samples must be an integer.")
 
     rng_seed = data.get("rng_seed", 0)
     if not isinstance(rng_seed, int):
@@ -58,21 +56,31 @@ def build_archive_cfg(d: Mapping[str, object] | None) -> BoundedArchiveConfig:
     else:
         raise TypeError("archive.hv_ref_point must be a list of floats or null.")
 
-    prune_policy = data.get("prune_policy", "crowding")
+    pruning = data.get("pruning", "crowding")
+    if not isinstance(pruning, str):
+        raise TypeError("archive.pruning must be a string.")
 
-    if not isinstance(prune_policy, str):
-        raise TypeError("archive.prune_policy must be a string.")
+    objective_tolerance = data.get("objective_tolerance", 1e-10)
+    if not isinstance(objective_tolerance, (int, float)):
+        raise TypeError("archive.objective_tolerance must be numeric.")
 
-    return BoundedArchiveConfig(
-        enabled=bool(data.get("enabled", True)),
-        nondominated_only=bool(data.get("nondominated_only", True)),
-        size_cap=size_cap,
+    decision_tolerance = data.get("decision_tolerance", 1e-32)
+    if not isinstance(decision_tolerance, (int, float)):
+        raise TypeError("archive.decision_tolerance must be numeric.")
+
+    deduplicate_in = data.get("deduplicate_in", "objective")
+    if not isinstance(deduplicate_in, str):
+        raise TypeError("archive.deduplicate_in must be a string.")
+
+    return ExternalArchiveConfig(
+        capacity=capacity,
         truncate_size=truncate_size,
-        epsilon=float(epsilon),
-        prune_policy=cast(PrunePolicy, prune_policy),
+        pruning=cast(PrunePolicy, pruning),
         hv_ref_point=hv_ref_point,
-        hv_samples=hv_samples,
         rng_seed=rng_seed,
+        objective_tolerance=float(objective_tolerance),
+        deduplicate_in=cast(DeduplicateIn, deduplicate_in),
+        decision_tolerance=float(decision_tolerance),
     )
 
 
@@ -119,7 +127,7 @@ def parse_stopping_archive(spec: Mapping[str, object] | None, problem_key: str |
         hv_ref_point = None
     stop_cfg = build_hv_stop_cfg({k: v for k, v in hv_block.items() if k not in ("enabled", "ref_point")})
 
-    arch_raw = archive.get("bounded") if isinstance(archive, Mapping) else None
+    arch_raw = archive.get("external") if isinstance(archive, Mapping) else None
     arch_block = arch_raw if isinstance(arch_raw, Mapping) else {}
     arch_enabled = bool(arch_block.get("enabled", False))
     arch_cfg = build_archive_cfg({k: v for k, v in arch_block.items() if k != "enabled"})

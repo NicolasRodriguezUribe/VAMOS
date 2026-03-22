@@ -182,7 +182,7 @@ class SUSSelection:
         pointers = start + step * np.arange(n_parents)
         selected = np.searchsorted(cumsum, pointers, side="left")
         np.clip(selected, 0, pop_size - 1, out=selected)
-        return selected
+        return np.asarray(selected, dtype=int)
 
 
 __all__ = [

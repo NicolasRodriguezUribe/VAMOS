@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, cast, overload
 
 from vamos.engine.archive import ExternalArchiveConfig
 
@@ -15,7 +15,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
 
 
 @dataclass(frozen=True)
@@ -26,7 +28,7 @@ class IBEAConfig(_SerializableConfig):
     selection: tuple[str, dict[str, Any]]
     indicator: IndicatorType
     kappa: float
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
@@ -68,17 +70,41 @@ class _IBEAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
+    @overload
+    def crossover(self, method: CrossoverName, **kwargs: Any) -> _IBEAConfigBuilder: ...
+
+    @overload
+    def crossover(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder: ...
+
     def crossover(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
+
+    @overload
+    def mutation(self, method: MutationName, **kwargs: Any) -> _IBEAConfigBuilder: ...
+
+    @overload
+    def mutation(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder: ...
 
     def mutation(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
+    @overload
+    def selection(self, method: SelectionName, **kwargs: Any) -> _IBEAConfigBuilder: ...
+
+    @overload
+    def selection(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder: ...
+
     def selection(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
         return self
+
+    @overload
+    def indicator(self, name: IndicatorType) -> _IBEAConfigBuilder: ...
+
+    @overload
+    def indicator(self, name: str) -> _IBEAConfigBuilder: ...
 
     def indicator(self, name: str) -> _IBEAConfigBuilder:
         self._cfg["indicator"] = name
@@ -88,9 +114,21 @@ class _IBEAConfigBuilder:
         self._cfg["kappa"] = value
         return self
 
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> _IBEAConfigBuilder: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder: ...
+
     def repair(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> _IBEAConfigBuilder: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder: ...
 
     def initializer(self, method: str, **kwargs: Any) -> _IBEAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
@@ -100,7 +138,7 @@ class _IBEAConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> _IBEAConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr) -> _IBEAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -108,7 +146,7 @@ class _IBEAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _IBEAConfigBuilder:
+    def result_mode(self, value: ResultMode) -> _IBEAConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
@@ -129,6 +167,7 @@ class _IBEAConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection", "indicator", "kappa"),
             "IBEA",
         )
+        _validate_operators(self._cfg)
         return IBEAConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],

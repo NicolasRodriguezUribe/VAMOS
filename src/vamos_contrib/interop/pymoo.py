@@ -39,7 +39,7 @@ class PymooProblemAdapter(ProblemProtocol):
         self._problem = problem
         self.n_var = problem.n_var
         self.n_obj = problem.n_obj
-        self.n_constr = problem.n_constr
+        self.n_constraints = problem.n_constr
         self.xl = problem.xl
         self.xu = problem.xu
         # Assume real encoding unless pymoo says otherwise (pymoo usually has explicit types,

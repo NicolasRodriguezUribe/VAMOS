@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from vamos.foundation.exceptions import BoundsError, ConfigurationError, ProblemDimensionError
 from vamos.foundation.problem.builder import FunctionalProblem
 from vamos.foundation.problem.builder import make_problem as _make_problem
 
@@ -237,19 +238,19 @@ class TestValidation:
     """Input validation should raise helpful errors."""
 
     def test_fn_not_callable(self) -> None:
-        with pytest.raises(TypeError, match="callable"):
+        with pytest.raises(ConfigurationError, match="callable"):
             make_problem("not_a_function", n_var=2, n_obj=2)  # type: ignore[arg-type]
 
     def test_n_var_zero(self) -> None:
-        with pytest.raises(ValueError, match="n_var"):
+        with pytest.raises(ProblemDimensionError, match="n_var"):
             make_problem(lambda x: [x[0]], n_var=0, n_obj=1)
 
     def test_n_obj_zero(self) -> None:
-        with pytest.raises(ValueError, match="n_obj"):
+        with pytest.raises(ProblemDimensionError, match="n_obj"):
             make_problem(lambda x: [x[0]], n_var=1, n_obj=0)
 
     def test_bounds_and_xl_xu_exclusive(self) -> None:
-        with pytest.raises(ValueError, match="either"):
+        with pytest.raises(BoundsError, match="either"):
             make_problem(
                 lambda x: [x[0]],
                 n_var=1,
@@ -259,15 +260,19 @@ class TestValidation:
             )
 
     def test_bounds_length_mismatch(self) -> None:
-        with pytest.raises(ValueError, match="n_var=2"):
+        with pytest.raises(BoundsError, match="n_var=2"):
             make_problem(lambda x: [x[0]], n_var=2, n_obj=1, bounds=[(0, 1)])
 
     def test_bounds_inverted(self) -> None:
-        with pytest.raises(ValueError, match="lower bound"):
+        with pytest.raises(BoundsError, match="lower bound"):
             make_problem(lambda x: [x[0]], n_var=1, n_obj=1, bounds=[(5, 0)])
 
+    def test_xl_xu_inverted(self) -> None:
+        with pytest.raises(BoundsError, match="Lower bounds must not exceed upper bounds"):
+            make_problem(lambda x: [x[0]], n_var=2, n_obj=1, xl=[1.0, 0.0], xu=[0.0, 1.0])
+
     def test_bounds_malformed(self) -> None:
-        with pytest.raises(ValueError, match="pair"):
+        with pytest.raises(BoundsError, match="pair"):
             make_problem(
                 lambda x: [x[0]],
                 n_var=1,
@@ -276,7 +281,7 @@ class TestValidation:
             )
 
     def test_constraints_not_callable(self) -> None:
-        with pytest.raises(TypeError, match="callable"):
+        with pytest.raises(ConfigurationError, match="callable"):
             make_problem(
                 lambda x: [x[0]],
                 n_var=1,
@@ -285,8 +290,12 @@ class TestValidation:
                 n_constraints=1,
             )
 
+    def test_xl_xu_broadcast_shape_error(self) -> None:
+        with pytest.raises(BoundsError, match="broadcast xl/xu"):
+            make_problem(lambda x: [x[0]], n_var=3, n_obj=1, xl=[0.0, 1.0], xu=1.0)
+
     def test_constraints_without_n_constraints(self) -> None:
-        with pytest.raises(ValueError, match="n_constraints"):
+        with pytest.raises(ProblemDimensionError, match="n_constraints"):
             make_problem(
                 lambda x: [x[0]],
                 n_var=1,
@@ -296,7 +305,7 @@ class TestValidation:
             )
 
     def test_bad_encoding(self) -> None:
-        with pytest.raises(ValueError, match="Unknown encoding"):
+        with pytest.raises(ConfigurationError, match="Unknown encoding"):
             make_problem(lambda x: [x[0]], n_var=1, n_obj=1, encoding="quantum")
 
     def test_encoding_required(self) -> None:

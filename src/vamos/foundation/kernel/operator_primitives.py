@@ -201,6 +201,8 @@ def polynomial_mutation_population(
     upper: np.ndarray,
     prob_mutation: float,
     eta: float = 20.0,
+    rnd_mask: np.ndarray | None = None,
+    rnd_delta: np.ndarray | None = None,
     inplace: bool = False,
 ) -> np.ndarray:
     X = offspring if inplace else np.array(offspring, copy=True, dtype=float)
@@ -211,33 +213,70 @@ def polynomial_mutation_population(
         return X
 
     lower_arr, upper_arr = _ensure_bounds(lower, upper, n_var)
-    rnd_mask = rng.random(X.shape)
-    rnd_delta = rng.random(X.shape)
-    mask = rnd_mask <= prob_mutation
-    if not np.any(mask):
-        return X
-
-    mut_pow = 1.0 / (eta + 1.0)
-    rows, cols = np.nonzero(mask)
-    for i, j in zip(rows, cols):
-        y = X[i, j]
-        yl = lower_arr[j]
-        yu = upper_arr[j]
-        if yu <= yl:
-            continue
-        delta1 = (y - yl) / (yu - yl)
-        delta2 = (yu - y) / (yu - yl)
-        rnd = rnd_delta[i, j]
-        if rnd <= 0.5:
-            xy = 1.0 - delta1
-            val = 2.0 * rnd + (1.0 - 2.0 * rnd) * (xy ** (eta + 1.0))
-            deltaq = val**mut_pow - 1.0
-        else:
-            xy = 1.0 - delta2
-            val = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (xy ** (eta + 1.0))
-            deltaq = 1.0 - val**mut_pow
-        X[i, j] = y + deltaq * (yu - yl)
+    active_mask = rnd_mask if rnd_mask is not None else rng.random(X.shape)
+    delta_draws = rnd_delta if rnd_delta is not None else rng.random(X.shape)
+    _polynomial_mutation_inplace(
+        X,
+        lower=lower_arr,
+        upper=upper_arr,
+        prob_mutation=float(prob_mutation),
+        eta=float(eta),
+        rnd_mask=np.asarray(active_mask, dtype=float),
+        rnd_delta=np.asarray(delta_draws, dtype=float),
+    )
     return X
+
+
+def _polynomial_mutation_inplace(
+    X: np.ndarray,
+    *,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    prob_mutation: float,
+    eta: float,
+    rnd_mask: np.ndarray,
+    rnd_delta: np.ndarray,
+) -> None:
+    active = rnd_mask <= prob_mutation
+    if not np.any(active):
+        return
+
+    valid_bounds = upper > lower
+    if not np.any(valid_bounds):
+        return
+    active &= valid_bounds.reshape(1, -1)
+
+    rows, cols = np.nonzero(active)
+    if rows.size == 0:
+        return
+
+    y = X[rows, cols]
+    yl = lower[cols]
+    yu = upper[cols]
+    span = yu - yl
+    rnd = rnd_delta[rows, cols]
+    delta1 = (y - yl) / span
+    delta2 = (yu - y) / span
+    deltaq = np.empty_like(y)
+    mut_pow = 1.0 / (eta + 1.0)
+
+    lower_branch = rnd <= 0.5
+    if np.any(lower_branch):
+        rnd_low = rnd[lower_branch]
+        xy_low = 1.0 - delta1[lower_branch]
+        val_low = 2.0 * rnd_low + (1.0 - 2.0 * rnd_low) * np.power(xy_low, eta + 1.0)
+        deltaq[lower_branch] = np.power(val_low, mut_pow) - 1.0
+
+    upper_branch = ~lower_branch
+    if np.any(upper_branch):
+        rnd_high = rnd[upper_branch]
+        xy_high = 1.0 - delta2[upper_branch]
+        val_high = 2.0 * (1.0 - rnd_high) + 2.0 * (rnd_high - 0.5) * np.power(xy_high, eta + 1.0)
+        deltaq[upper_branch] = 1.0 - np.power(val_high, mut_pow)
+
+    mutated = y + deltaq * span
+    np.clip(mutated, yl, yu, out=mutated)
+    X[rows, cols] = mutated
 
 
 __all__ = [

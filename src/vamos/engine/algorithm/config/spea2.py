@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, overload
 
 from vamos.engine.archive import ExternalArchiveConfig
 
@@ -14,7 +14,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
 
 
 @dataclass(frozen=True)
@@ -25,7 +27,7 @@ class SPEA2Config(_SerializableConfig):
     mutation: tuple[str, dict[str, Any]]
     selection: tuple[str, dict[str, Any]]
     k_neighbors: int | None = None
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     constraint_mode: ConstraintModeStr = "feasibility"
@@ -76,13 +78,31 @@ class _SPEA2ConfigBuilder:
         self._cfg["archive_size"] = value
         return self
 
+    @overload
+    def crossover(self, method: CrossoverName, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
+
+    @overload
+    def crossover(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
+
     def crossover(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
+    @overload
+    def mutation(self, method: MutationName, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
+
+    @overload
+    def mutation(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
+
     def mutation(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
+
+    @overload
+    def selection(self, method: SelectionName, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
+
+    @overload
+    def selection(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
 
     def selection(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
@@ -92,9 +112,21 @@ class _SPEA2ConfigBuilder:
         self._cfg["k_neighbors"] = value
         return self
 
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
+
     def repair(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder: ...
 
     def initializer(self, method: str, **kwargs: Any) -> _SPEA2ConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
@@ -104,7 +136,7 @@ class _SPEA2ConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> _SPEA2ConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr) -> _SPEA2ConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -112,7 +144,7 @@ class _SPEA2ConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _SPEA2ConfigBuilder:
+    def result_mode(self, value: ResultMode) -> _SPEA2ConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
@@ -135,6 +167,7 @@ class _SPEA2ConfigBuilder:
             ("pop_size", "archive_size", "crossover", "mutation", "selection"),
             "SPEA2",
         )
+        _validate_operators(self._cfg)
         return SPEA2Config(
             pop_size=self._cfg["pop_size"],
             archive_size=self._cfg["archive_size"],

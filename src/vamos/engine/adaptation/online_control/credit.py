@@ -28,8 +28,9 @@ def _component_map(outcome: Outcome) -> dict[str, float]:
         accepted = outcome.survivor_ratio
     if accepted is not None:
         components["accepted_ratio"] = _clamp01(float(accepted))
-    if _available_component(outcome.nd_insertions_ratio):
-        components["nd_insertions_ratio"] = _clamp01(float(outcome.nd_insertions_ratio))
+    nd_insertions_ratio = outcome.nd_insertions_ratio
+    if nd_insertions_ratio is not None:
+        components["nd_insertions_ratio"] = _clamp01(float(nd_insertions_ratio))
     feasible_gain = _positive_gain(outcome.feasible_delta)
     if feasible_gain is not None:
         components["feasible_delta"] = feasible_gain

@@ -4,42 +4,19 @@ Shared helpers and operator registries for variation pipelines.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, cast
 
-from vamos.engine.operators.impl.binary import (
-    bit_flip_mutation,
-    hux_crossover,
-    one_point_crossover,
-    segment_inversion_mutation,
-    two_point_crossover,
-    uniform_crossover,
-)
-from vamos.engine.operators.impl.integer import (
-    arithmetic_integer_crossover,
-    boundary_integer_mutation,
-    creep_mutation,
-    gaussian_integer_mutation,
-    integer_polynomial_mutation,
-    integer_sbx_crossover,
-    random_reset_mutation,
-    uniform_integer_crossover,
-)
 from vamos.engine.operators.impl.mixed import mixed_crossover, mixed_mutation
-from vamos.engine.operators.impl.permutation import (
-    alternating_edges_crossover,
-    cycle_crossover,
-    displacement_mutation,
-    edge_recombination_crossover,
-    insert_mutation,
-    inversion_mutation,
-    order_crossover,
-    pmx_crossover,
-    position_based_crossover,
-    scramble_mutation,
-    swap_mutation,
-    two_opt_mutation,
-)
 from vamos.engine.operators.impl.registry import get_operator_registry
+from vamos.engine.operators.policies.discrete_operator_maps import (
+    BINARY_CROSSOVER_COMMON,
+    BINARY_MUTATION_COMMON,
+    INT_CROSSOVER_COMMON,
+    INT_MUTATION_COMMON,
+    PERM_CROSSOVER_COMMON,
+    PERM_MUTATION_COMMON,
+)
 from vamos.engine.variation.protocol import CrossoverName, MutationName, RepairName
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.registry import Registry
@@ -137,7 +114,7 @@ def _get_registry(name: str) -> Registry[Any]:
     return registry
 
 
-def _populate(reg: Registry[Any], items: dict[str, object]) -> None:
+def _populate(reg: Registry[Any], items: Mapping[str, object]) -> None:
     for key, value in items.items():
         reg.register(key, value)
 
@@ -164,80 +141,16 @@ def _populate_defaults() -> None:
     _populate(
         perm_crossover,
         {
-            "ox": order_crossover,
-            "order": order_crossover,
-            "oxd": order_crossover,
-            "pmx": pmx_crossover,
-            "cycle": cycle_crossover,
-            "cx": cycle_crossover,
-            "position": position_based_crossover,
-            "position_based": position_based_crossover,
-            "pos": position_based_crossover,
-            "edge": edge_recombination_crossover,
-            "edge_recombination": edge_recombination_crossover,
-            "erx": edge_recombination_crossover,
-            "aex": alternating_edges_crossover,
-            "alternating_edges": alternating_edges_crossover,
+            **PERM_CROSSOVER_COMMON,
+            "oxd": PERM_CROSSOVER_COMMON["order"],
         },
     )
 
-    _populate(
-        perm_mutation,
-        {
-            "swap": swap_mutation,
-            "insert": insert_mutation,
-            "scramble": scramble_mutation,
-            "inversion": inversion_mutation,
-            "displacement": displacement_mutation,
-            "two_opt": two_opt_mutation,
-        },
-    )
-
-    _populate(
-        binary_crossover,
-        {
-            "one_point": one_point_crossover,
-            "single_point": one_point_crossover,
-            "1point": one_point_crossover,
-            "spx": one_point_crossover,
-            "two_point": two_point_crossover,
-            "2point": two_point_crossover,
-            "uniform": uniform_crossover,
-            "hux": hux_crossover,
-        },
-    )
-
-    _populate(
-        binary_mutation,
-        {
-            "bitflip": bit_flip_mutation,
-            "bit_flip": bit_flip_mutation,
-            "segment_inversion": segment_inversion_mutation,
-        },
-    )
-
-    _populate(
-        int_crossover,
-        {
-            "uniform": uniform_integer_crossover,
-            "blend": arithmetic_integer_crossover,
-            "arithmetic": arithmetic_integer_crossover,
-            "sbx": integer_sbx_crossover,
-        },
-    )
-
-    _populate(
-        int_mutation,
-        {
-            "reset": random_reset_mutation,
-            "random_reset": random_reset_mutation,
-            "creep": creep_mutation,
-            "pm": integer_polynomial_mutation,
-            "polynomial": integer_polynomial_mutation,
-            "gaussian": gaussian_integer_mutation,
-            "boundary": boundary_integer_mutation,
-        },
-    )
+    _populate(perm_mutation, PERM_MUTATION_COMMON)
+    _populate(binary_crossover, {**BINARY_CROSSOVER_COMMON, "spx": BINARY_CROSSOVER_COMMON["one_point"]})
+    _populate(binary_mutation, BINARY_MUTATION_COMMON)
+    _populate(int_crossover, INT_CROSSOVER_COMMON)
+    _populate(int_mutation, {**INT_MUTATION_COMMON, "pm": INT_MUTATION_COMMON["polynomial"]})
 
     _populate(
         mixed_crossover_registry,

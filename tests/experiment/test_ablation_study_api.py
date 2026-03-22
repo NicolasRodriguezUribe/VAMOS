@@ -1,4 +1,5 @@
 from vamos.engine.tuning.api import AblationVariant, build_ablation_plan
+from vamos.experiment._execution_support import VariationConfigs
 from vamos.experiment.study.api import build_study_tasks_from_ablation_plan
 
 
@@ -15,17 +16,19 @@ def test_build_study_tasks_from_ablation_plan_sets_overrides():
         engine="numpy",
     )
     base_config = {"population_size": 50}
-    nsgaii_variations = {"tuned": {"crossover": ("sbx", {"prob": 0.9, "eta": 20.0})}}
-    moead_variations = {"tuned": {"aggregation": {"method": "pbi", "theta": 5.0}}}
-    smsemoa_variations = {"tuned": {"mutation": {"method": "polynomial", "prob": "1/n"}}}
+    variations_by_variant = {
+        "tuned": VariationConfigs(
+            nsgaii={"crossover": ("sbx", {"prob": 0.9, "eta": 20.0})},
+            moead={"aggregation": {"method": "pbi", "theta": 5.0}},
+            smsemoa={"mutation": {"method": "polynomial", "prob": "1/n"}},
+        )
+    }
 
     tasks, variant_names = build_study_tasks_from_ablation_plan(
         plan,
         algorithm="nsgaii",
         base_config=base_config,
-        nsgaii_variations=nsgaii_variations,
-        moead_variations=moead_variations,
-        smsemoa_variations=smsemoa_variations,
+        variations_by_variant=variations_by_variant,
     )
 
     assert len(tasks) == len(plan.tasks)
@@ -37,11 +40,10 @@ def test_build_study_tasks_from_ablation_plan_sets_overrides():
         assert task.engine == "numpy"
         if name == "tuned":
             assert overrides["population_size"] == 80
-            assert task.nsgaii_variation == nsgaii_variations["tuned"]
-            assert task.moead_variation == moead_variations["tuned"]
-            assert task.smsemoa_variation == smsemoa_variations["tuned"]
+            assert task.variations is not None
+            assert task.variations.nsgaii == variations_by_variant["tuned"].nsgaii
+            assert task.variations.moead == variations_by_variant["tuned"].moead
+            assert task.variations.smsemoa == variations_by_variant["tuned"].smsemoa
         else:
             assert overrides["population_size"] == 50
-            assert task.nsgaii_variation is None
-            assert task.moead_variation is None
-            assert task.smsemoa_variation is None
+            assert task.variations is None

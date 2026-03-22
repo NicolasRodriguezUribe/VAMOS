@@ -56,6 +56,13 @@ def test_bench_help():
 
 
 @pytest.mark.cli
+def test_profile_help():
+    proc = _run_vamos("profile", "--help")
+    assert proc.returncode == 0, proc.stderr.decode()
+    assert "vamos profile" in proc.stdout.decode()
+
+
+@pytest.mark.cli
 def test_zoo_help():
     proc = _run_vamos("zoo", "--help")
     assert proc.returncode == 0

@@ -1,8 +1,8 @@
 import pytest
 
-from vamos import OptimizationResult, optimize
+from vamos import OptimizationResult, make_problem, optimize
 from vamos.engine.algorithm.config import MOEADConfig, NSGAIIConfig
-from vamos.foundation.exceptions import InvalidAlgorithmError
+from vamos.foundation.exceptions import ConfigurationError, InvalidAlgorithmError
 from vamos.foundation.problem.binary import BinaryKnapsackProblem
 from vamos.foundation.problem.tsp import TSPProblem
 from vamos.foundation.problem.zdt1 import ZDT1Problem
@@ -28,7 +28,7 @@ def test_optimize_explicit_algorithm_nsga2():
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("max_evaluations", 12),
+        max_evaluations=12,
         seed=1,
         engine="numpy",
     )
@@ -54,7 +54,7 @@ def test_optimize_explicit_algorithm_moead():
         problem,
         algorithm="moead",
         algorithm_config=cfg_data,
-        termination=("max_evaluations", 8),
+        max_evaluations=8,
         seed=2,
         engine="numpy",
     )
@@ -70,8 +70,10 @@ def test_optimize_unknown_algorithm_errors():
 
 def test_optimize_rejects_legacy_signature():
     problem = ZDT1Problem(n_var=4)
-    with pytest.raises(TypeError, match="algorithm_config"):
+    with pytest.raises(ConfigurationError, match="algorithm_config"):
         optimize(problem, algorithm="nsgaii", max_evaluations=4, algorithm_config={})  # type: ignore[arg-type]
+    result = optimize(problem, algorithm="nsgaii", termination=("max_evaluations", 6), seed=1, engine="numpy")
+    assert result.meta["termination"] == ("max_evaluations", 6)
     with pytest.raises(TypeError):
         optimize(problem, _nsgaii_cfg(), ("max_evaluations", 6), 3)  # type: ignore[arg-type]
 
@@ -94,7 +96,7 @@ def test_optimize_resolves_pop_size_consistently() -> None:
         problem,
         algorithm="nsgaii",
         algorithm_config=cfg,
-        termination=("max_evaluations", max_evaluations),
+        max_evaluations=max_evaluations,
         seed=1,
         engine="numpy",
     )
@@ -121,18 +123,43 @@ def test_optimize_accepts_max_evaluations() -> None:
     assert defaults["resolved_config"]["max_evaluations"] == 12
 
 
-def test_optimize_accepts_max_evaluations_termination() -> None:
+def test_optimize_records_backend_resolution_metadata() -> None:
     problem = ZDT1Problem(n_var=6)
     result = optimize(
         problem,
         algorithm="nsgaii",
+        max_evaluations=12,
         pop_size=6,
-        termination=("max_evaluations", 12),
         seed=1,
-        engine="numpy",
     )
+
     defaults = result.explain_defaults()
+    assert defaults["resolved_config"]["engine"] == "numpy"
+    assert defaults["resolved_config"]["engine_source"] == "default"
+    assert defaults["resolved_config"]["kernel_backend"] == "numpy"
+    assert result.meta["engine_source"] == "default"
+    assert result.meta["kernel_backend"] == "numpy"
+
+
+def test_optimize_accepts_termination_keyword() -> None:
+    problem = ZDT1Problem(n_var=6)
+    result = optimize(problem, algorithm="nsgaii", pop_size=6, termination=("max_evaluations", 12), seed=1, engine="numpy")
+    defaults = result.explain_defaults()
+    assert defaults["resolved_config"]["termination"] == ("max_evaluations", 12)
     assert defaults["resolved_config"]["max_evaluations"] == 12
+
+
+def test_optimize_auto_rejects_single_objective_problem() -> None:
+    problem = make_problem(
+        lambda x: [x[0] ** 2],
+        n_var=2,
+        n_obj=1,
+        bounds=[(0.0, 1.0), (0.0, 1.0)],
+        encoding="real",
+    )
+
+    with pytest.raises(ConfigurationError, match="multi-objective"):
+        optimize(problem, algorithm="auto", max_evaluations=12, pop_size=6, seed=1)
 
 
 def test_optimize_permutation_problem_uses_encoding_defaults() -> None:

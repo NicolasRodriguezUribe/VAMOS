@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import Any
 
 from .contracts import Credit, HierarchicalAction, Outcome, SearchState
 
@@ -31,6 +30,12 @@ def _share_map(values: list[str]) -> dict[str, float]:
     counts = Counter(values)
     total = float(len(values))
     return {key: float(count / total) for key, count in sorted(counts.items())}
+
+
+def _dominant_key(shares: dict[str, float]) -> str | None:
+    if not shares:
+        return None
+    return max(shares.items(), key=lambda item: item[1])[0]
 
 
 @dataclass(frozen=True)
@@ -202,9 +207,9 @@ class InMemoryTraceStore:
             "regime_shares": regime_shares,
             "family_shares": family_shares,
             "intent_shares": intent_shares,
-            "dominant_regime": max(regime_shares, key=regime_shares.get),
-            "dominant_family": max(family_shares, key=family_shares.get),
-            "dominant_intent": max(intent_shares, key=intent_shares.get),
+            "dominant_regime": _dominant_key(regime_shares),
+            "dominant_family": _dominant_key(family_shares),
+            "dominant_intent": _dominant_key(intent_shares),
             "regime_concentration": sum(share * share for share in regime_shares.values()),
             "family_concentration": sum(share * share for share in family_shares.values()),
             "intent_concentration": sum(share * share for share in intent_shares.values()),

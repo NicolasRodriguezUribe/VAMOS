@@ -157,7 +157,6 @@ class StorageObserver(Observer):
             artifacts["autodiff_constraints"] = autodiff_path.name
         if isinstance(online_control, dict):
             artifacts.update(_write_online_control_artifacts(self.output_dir, online_control))
-
         total_time_ms = final_stats.get("time_ms", 0.0)
         write_timing(self.output_dir, total_time_ms)
 
@@ -198,14 +197,14 @@ class StorageObserver(Observer):
 
         if payload.get("genealogy"):
             metadata["genealogy"] = payload["genealogy"]
-        if autodiff_info is not None:
-            metadata["autodiff_constraints"] = autodiff_info
         hook_metadata = final_stats.get("hook_metadata")
         if isinstance(hook_metadata, dict):
             if "stopping" in hook_metadata:
                 metadata["stopping"] = hook_metadata["stopping"]
             if "archive" in hook_metadata:
                 metadata["archive"] = hook_metadata["archive"]
+        if autodiff_info is not None:
+            metadata["autodiff_constraints"] = autodiff_info
 
         # Artifact entries
         artifact_entries = {
@@ -234,6 +233,11 @@ class StorageObserver(Observer):
         # Resolved Config
         problem_key = getattr(getattr(ctx.selection, "spec", None), "key", "unknown")
         encoding = normalize_encoding(getattr(ctx.problem, "encoding", "real"))
+        external_archive_meta: dict[str, object] | None = None
+        if self.external_archive is not None:
+            external_archive_meta = {"capacity": self.external_archive.capacity}
+            if self.external_archive.capacity is not None:
+                external_archive_meta["pruning"] = self.external_archive.pruning
 
         resolved_cfg = {
             "algorithm": ctx.algorithm_name,
@@ -247,18 +251,7 @@ class StorageObserver(Observer):
             "max_evaluations": getattr(ctx.config, "max_evaluations", None),
             "seed": getattr(ctx.config, "seed", None),
             "selection_pressure": self.selection_pressure,
-            "external_archive": (
-                {"capacity": self.external_archive.capacity}
-                if self.external_archive is not None and self.external_archive.capacity is None
-                else (
-                    {
-                        "capacity": self.external_archive.capacity,
-                        "pruning": self.external_archive.pruning,
-                    }
-                    if self.external_archive is not None
-                    else None
-                )
-            ),
+            "external_archive": external_archive_meta,
             "hv_threshold": self.hv_stop_config.get("threshold_fraction") if self.hv_stop_config else None,
             "hv_reference_point": self.hv_stop_config.get("reference_point") if self.hv_stop_config else None,
             "hv_reference_front": self.hv_stop_config.get("reference_front_path") if self.hv_stop_config else None,

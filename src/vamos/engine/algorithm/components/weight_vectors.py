@@ -175,7 +175,7 @@ def _simplex_lattice(n_obj: int, divisions: int, limit: int | None) -> np.ndarra
         raise ValueError("Failed to generate weight vectors.")
     arr /= divisions
     # Numerical guard to keep rows summing to exactly 1
-    arr = np.clip(arr, 0.0, 1.0)
+    arr = np.asarray(np.clip(arr, 0.0, 1.0), dtype=float)
     row_sums = arr.sum(axis=1, keepdims=True)
     arr /= row_sums
-    return arr
+    return np.asarray(arr, dtype=float)

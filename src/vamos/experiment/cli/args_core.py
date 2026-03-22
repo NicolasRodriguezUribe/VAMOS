@@ -7,6 +7,7 @@ from vamos.engine.algorithm.catalog import (
     ENABLED_ALGORITHMS,
     OPTIONAL_ALGORITHMS,
 )
+from vamos.engine.algorithm.registry import get_algorithms_registry
 from vamos.experiment.runtime.catalog import DEFAULT_PROBLEM, EXPERIMENT_BACKENDS, EXTERNAL_ALGORITHM_NAMES
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import available_problem_names
@@ -24,16 +25,22 @@ def add_core_arguments(
 ) -> None:
     """Register core experiment arguments on the parser."""
     experiment_defaults = spec_defaults.experiment_defaults
+    algorithm_choices = tuple(
+        dict.fromkeys(
+            (
+                *sorted(get_algorithms_registry().keys()),
+                *ENABLED_ALGORITHMS,
+                *OPTIONAL_ALGORITHMS,
+                *EXTERNAL_ALGORITHM_NAMES,
+                "both",
+            )
+        )
+    )
 
     add_spec_argument(
         parser,
         "--algorithm",
-        choices=(
-            *ENABLED_ALGORITHMS,
-            *OPTIONAL_ALGORITHMS,
-            *EXTERNAL_ALGORITHM_NAMES,
-            "both",
-        ),
+        choices=algorithm_choices,
         default=spec_default(experiment_defaults, "algorithm", DEFAULT_ALGORITHM),
         help=(
             "Algorithm to run (use 'both' to execute the default internal algorithms sequentially; "
@@ -46,8 +53,8 @@ def add_core_arguments(
         choices=tuple(EXPERIMENT_BACKENDS),
         default=spec_default(experiment_defaults, "engine", None),
         help=(
-            "Kernel backend to use. Default auto-prefers numba for NSGA-II/MOEA-D when available; "
-            "otherwise falls back to numpy. JAX strict ranking falls back to NumPy for exact fronts."
+            "Kernel backend to use. Default is deterministic numpy. Use 'auto' to "
+            "heuristically prefer optional accelerated backends."
         ),
     )
     add_spec_argument(
@@ -75,13 +82,6 @@ def add_core_arguments(
         "--dask-address",
         default=experiment_defaults.get("dask_address"),
         help="Address of Dask scheduler (e.g. 'tcp://localhost:8786'). Only used with --eval-strategy dask.",
-    )
-    add_spec_argument(
-        parser,
-        "--autodiff-constraints",
-        action="store_true",
-        default=bool(experiment_defaults.get("autodiff_constraints", False)),
-        help="Attempt to build JAX-based constraint evaluators when a ConstraintModel is available (requires autodiff extra).",
     )
     add_spec_argument(
         parser,

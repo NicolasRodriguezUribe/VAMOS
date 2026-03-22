@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import comb
-from typing import Any
+from typing import Any, overload
 
 from vamos.engine.archive import ExternalArchiveConfig
 
@@ -15,7 +15,9 @@ from .base import (
     _normalize_tournament_selection_kwargs,
     _require_fields,
     _SerializableConfig,
+    _validate_operators,
 )
+from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
 
 
 @dataclass(frozen=True)
@@ -28,7 +30,7 @@ class NSGAIIIConfig(_SerializableConfig):
     enforce_ref_dirs: bool = True
     pop_size_auto: bool = False
     constraint_mode: ConstraintModeStr = "feasibility"
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     track_genealogy: bool = False
@@ -86,13 +88,31 @@ class _NSGAIIIConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
+    @overload
+    def crossover(self, method: CrossoverName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
+
+    @overload
+    def crossover(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
+
     def crossover(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
 
+    @overload
+    def mutation(self, method: MutationName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
+
+    @overload
+    def mutation(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
+
     def mutation(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
+
+    @overload
+    def selection(self, method: SelectionName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
+
+    @overload
+    def selection(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
 
     def selection(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
@@ -115,13 +135,25 @@ class _NSGAIIIConfigBuilder:
         self._cfg["pop_size_auto"] = bool(enabled)
         return self
 
-    def constraint_mode(self, value: str) -> _NSGAIIIConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr) -> _NSGAIIIConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
+
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
 
     def repair(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
 
     def initializer(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
@@ -135,7 +167,7 @@ class _NSGAIIIConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _NSGAIIIConfigBuilder:
+    def result_mode(self, value: ResultMode) -> _NSGAIIIConfigBuilder:
         self._cfg["result_mode"] = str(value)
         return self
 
@@ -156,6 +188,7 @@ class _NSGAIIIConfigBuilder:
             ("pop_size", "crossover", "mutation", "selection"),
             "NSGA-III",
         )
+        _validate_operators(self._cfg)
         ref_dirs = self._cfg.get("reference_directions", {})
         return NSGAIIIConfig(
             pop_size=self._cfg["pop_size"],

@@ -1,6 +1,6 @@
-# Experiment blocks: stopping + bounded archive
+# Experiment blocks: stopping + external archive
 
-This project supports method-level early stopping and bounded archiving. These are not feature toggles:
+This project supports method-level early stopping and external archive tracking. These are not feature toggles:
 they define explicit contracts (artifacts + metadata) and are evaluated experimentally.
 
 ## stopping.hv_convergence
@@ -36,24 +36,24 @@ Notes:
 - For >2 objectives, HV may be unavailable unless a backend provides it; trace rows log reason codes.
 - Use `ref_point: "auto"` to let the runner derive a reference point from current data.
 
-## archive.bounded
+## archive.external
 
-Enable bounded archive maintenance with explicit pruning policies.
+Enable external archive maintenance with explicit pruning policies.
 
 Example:
 
 ```yaml
 archive:
-  bounded:
+  external:
     enabled: true
-    archive_type: size_cap     # size_cap|epsilon_grid|hvc_prune|hybrid
-    size_cap: 200
-    nondominated_only: true
-    prune_policy: crowding     # default; crowding|hv|mc_hv|knn|maxmin|ref_dirs
-    epsilon: 0.01              # grid resolution for epsilon_grid/hybrid
+    capacity: 200
+    truncate_size: 200
+    pruning: crowding          # crowding|hv|mc_hv|knn|maxmin|ref_dirs
     hv_ref_point: null         # optional; required for hv-based policies
-    hv_samples: 20000          # for mc_hv
     rng_seed: 0
+    objective_tolerance: 1.0e-10
+    deduplicate_in: objective  # objective|decision|both
+    decision_tolerance: 1.0e-32
 ```
 
 Artifacts:
@@ -63,9 +63,9 @@ Metadata:
 - `metadata.json` additions under `archive`
 
 Notes:
-- In the tuning spaces, bounded external archives use `size_cap` with the population size as their capacity.
+- In the tuning spaces, external archives use the population size as their default capacity.
 - When an algorithm is configured with an external archive, top-level results come from that archive by default unless `result_mode="population"` is requested.
-- `prune_policy: hv` uses exact HV contributions in 2D and, when `moocore` is installed, exact higher-dimensional contributions as well. `mc_hv` always uses the Monte Carlo proxy.
+- `pruning: hv` uses exact HV contributions in 2D and, when `moocore` is installed, exact higher-dimensional contributions as well. `mc_hv` always uses the Monte Carlo proxy.
 
 ## Reproducibility
 

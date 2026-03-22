@@ -149,7 +149,7 @@ Tests:
 
 CI/tooling:
 - GitHub Actions run full tests, lint, format, mypy, and docs builds; also run minimal install smoke tests.
-- Pre-commit config includes ruff/black/mypy and basic hygiene hooks.
+- Pre-commit config includes ruff format/lint, mypy, and basic hygiene hooks.
 
 Typing:
 - mypy config is strict for selected modules; other areas are typed but not enforced.

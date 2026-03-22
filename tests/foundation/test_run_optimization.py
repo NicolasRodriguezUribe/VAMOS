@@ -115,7 +115,7 @@ class TestUnifiedBackendParameter:
             problem,
             algorithm="nsgaii",
             algorithm_config=cfg,
-            termination=("max_evaluations", 500),
+            max_evaluations=500,
             seed=42,
             engine="numpy",
         )
@@ -130,6 +130,25 @@ class TestUnifiedBackendParameter:
         result = optimize(problem, algorithm="nsgaii", max_evaluations=500, pop_size=20, engine="numpy")
 
         assert result.F is not None
+
+    @pytest.mark.smoke
+    def test_optimize_default_engine_is_deterministic(self):
+        """engine=None should use the documented default engine."""
+        problem = ZDT1(n_var=10)
+        result = optimize(problem, algorithm="nsgaii", max_evaluations=100, pop_size=20, engine=None)
+
+        assert result.meta["engine"] == "numpy"
+        assert result.meta["default_sources"]["engine"] == "default"
+
+    def test_engine_auto_retains_heuristic_selection(self, monkeypatch: pytest.MonkeyPatch):
+        """engine='auto' should keep the backend heuristic separate from the default path."""
+        from vamos.experiment.runtime import catalog
+
+        monkeypatch.setattr(catalog, "_has_numba", lambda: True)
+        engine, source = catalog.resolve_engine_details("auto", algorithm="nsgaii")
+
+        assert engine == "numba"
+        assert source == "auto"
 
     @pytest.mark.smoke
     def test_config_default_rejects_engine_parameter(self):

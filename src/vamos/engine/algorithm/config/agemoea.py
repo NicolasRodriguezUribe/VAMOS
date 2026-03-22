@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, overload
 
 from vamos.engine.archive import ExternalArchiveConfig
 
-from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig
+from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
+from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName
 
 
 class _AGEMOEAConfigBuilder:
@@ -22,17 +23,41 @@ class _AGEMOEAConfigBuilder:
         self._cfg["pop_size"] = value
         return self
 
+    @overload
+    def crossover(self, method: CrossoverName, **kwargs: Any) -> _AGEMOEAConfigBuilder: ...
+
+    @overload
+    def crossover(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder: ...
+
     def crossover(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["crossover"] = (method, kwargs)
         return self
+
+    @overload
+    def mutation(self, method: MutationName, **kwargs: Any) -> _AGEMOEAConfigBuilder: ...
+
+    @overload
+    def mutation(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder: ...
 
     def mutation(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["mutation"] = (method, kwargs)
         return self
 
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> _AGEMOEAConfigBuilder: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder: ...
+
     def repair(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["repair"] = (method, kwargs)
         return self
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> _AGEMOEAConfigBuilder: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder: ...
 
     def initializer(self, method: str, **kwargs: Any) -> _AGEMOEAConfigBuilder:
         self._cfg["initializer"] = {"type": method, **kwargs}
@@ -42,7 +67,7 @@ class _AGEMOEAConfigBuilder:
         self._cfg["mutation_prob_factor"] = float(value)
         return self
 
-    def constraint_mode(self, value: str) -> _AGEMOEAConfigBuilder:
+    def constraint_mode(self, value: ConstraintModeStr) -> _AGEMOEAConfigBuilder:
         self._cfg["constraint_mode"] = value
         return self
 
@@ -50,7 +75,7 @@ class _AGEMOEAConfigBuilder:
         self._cfg["track_genealogy"] = bool(enabled)
         return self
 
-    def result_mode(self, value: str) -> _AGEMOEAConfigBuilder:
+    def result_mode(self, value: ResultMode) -> _AGEMOEAConfigBuilder:
         mode = str(value).strip().lower()
         if mode not in {"non_dominated", "population"}:
             raise ValueError("result_mode must be 'non_dominated' or 'population'.")
@@ -74,6 +99,7 @@ class _AGEMOEAConfigBuilder:
             ("pop_size", "crossover", "mutation"),
             "AGE-MOEA",
         )
+        _validate_operators(self._cfg)
         return AGEMOEAConfig(
             pop_size=self._cfg["pop_size"],
             crossover=self._cfg["crossover"],
@@ -93,7 +119,7 @@ class AGEMOEAConfig(_SerializableConfig):
     pop_size: int
     crossover: tuple[str, dict[str, Any]]
     mutation: tuple[str, dict[str, Any]]
-    repair: tuple[str, dict[str, Any]] | None = None
+    repair: RepairConfigValue = "auto"
     initializer: dict[str, Any] | None = None
     mutation_prob_factor: float | None = None
     constraint_mode: ConstraintModeStr = "feasibility"

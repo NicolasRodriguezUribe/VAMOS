@@ -27,7 +27,7 @@ class MyProblem:
     def __init__(self) -> None:
         self.n_var = 2
         self.n_obj = 2
-        self.n_constr = 0
+        self.n_constraints = 0
         self.xl = np.array([0.0, 0.0])
         self.xu = np.array([1.0, 1.0])
         self.encoding = "real"
@@ -43,7 +43,7 @@ problem = MyProblem()
 
 ## 2. Handling Constraints
 
-Box constraints are handled via `xl` and `xu`. For other constraints, fill `out["G"]`. VAMOS expects g(x) <= 0 for feasible solutions. Set `n_constr` to the number of constraints if you want the count explicitly tracked.
+Box constraints are handled via `xl` and `xu`. For other constraints, fill `out["G"]`. VAMOS expects g(x) <= 0 for feasible solutions. Set `n_constraints` to the number of constraints if you want the count explicitly tracked.
 
 ```python
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
@@ -137,6 +137,8 @@ print(result.explain_defaults())
 The output includes:
 
 - `resolved_config`: resolved problem/algorithm/engine/budget/pop size
+- `resolved_config.engine_source`: whether the backend came from an explicit choice, the deterministic default, or `auto`
+- `resolved_config.kernel_backend`: the kernel actually used for the run
 - `default_sources`: which values were inferred (`auto`) vs set explicitly
 
 ## 8. Operator Facade Access
@@ -201,16 +203,23 @@ result = optimize("zdt1", algorithm="nsgaii", max_evaluations=6000, eval_strateg
 
 ## 12. Hypervolume-Based Early Stopping
 
-Stop once the hypervolume reaches a target fraction of the reference front.
+Use the lower-level experiment runner when you need non-default termination logic.
 
 ```python
-from vamos import optimize
+from vamos.experiment.runner import run_experiment
+from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
 
 hv_cfg = build_hv_stop_config(hv_threshold=0.9, hv_reference_front=None, problem_key="zdt1")
 hv_cfg["max_evaluations"] = 12000
 
-result = optimize("zdt1", algorithm="nsgaii", termination=("hv", hv_cfg), seed=3)
+metrics = run_experiment(
+    problem="zdt1",
+    algorithm="nsgaii",
+    engine="numpy",
+    config=ExperimentConfig(max_evaluations=12000, seed=3),
+    termination=("hv", hv_cfg),
+)
 ```
 
 ## 13. Save Results for Offline Analysis
@@ -237,19 +246,7 @@ choice = result.best("knee")
 print(choice["F"])
 ```
 
-## 15. JAX Engine (Strict Ranking Default)
-
-Use JAX for acceleration. Strict ranking is on by default and falls back to NumPy for exact Pareto fronts.
-
-```python
-from vamos import optimize
-
-result = optimize("zdt1", algorithm="nsgaii", engine="jax", max_evaluations=5000)
-```
-
-Set `VAMOS_JAX_STRICT_RANKING=0` for approximate ranking if you want maximum speed (may not match the exact Pareto front).
-
-## 16. Reproduce a Run from resolved_config.json
+## 15. Reproduce a Run from resolved_config.json
 
 If you ran via the CLI, each run stores a `resolved_config.json`. You can replay it:
 
@@ -273,7 +270,7 @@ result = optimize(
 )
 ```
 
-## 17. Validate a Config File (CLI)
+## 16. Validate a Config File (CLI)
 
 Check a YAML/JSON experiment spec before running:
 
@@ -281,7 +278,7 @@ Check a YAML/JSON experiment spec before running:
 vamos --config configs/experiment.yaml --validate-config
 ```
 
-## 18. Convert Results to a DataFrame (pandas)
+## 17. Convert Results to a DataFrame (pandas)
 
 Export results for analysis in pandas (requires the `analysis` extra).
 
@@ -294,7 +291,7 @@ df = result_to_dataframe(result)
 df.to_csv("results/zdt1_nsgaii_front.csv", index=False)
 ```
 
-## 19. Combine Fronts from Multiple Runs
+## 18. Combine Fronts from Multiple Runs
 
 Merge fronts from multiple runs and keep the non-dominated set.
 
