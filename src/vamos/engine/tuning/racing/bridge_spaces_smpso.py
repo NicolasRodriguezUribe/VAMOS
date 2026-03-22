@@ -43,7 +43,6 @@ def _smpso_mixed_part() -> SpacePart:
         Real("c2", 0.5, 2.5, role="operator_rate"),
         Real("vmax_fraction", 0.1, 1.0, role="operator_rate"),
         Categorical("mutation", ["mixed"], role="operator"),
-        Real("mutation_prob", 0.01, 0.5, role="operator_rate"),
         Categorical("perm_mutation", ["swap", "insert", "scramble", "inversion", "displacement", "two_opt"], role="operator"),
         Real("perm_mutation_prob", 0.01, 0.5, role="operator_rate"),
         Categorical("real_mutation", ["gaussian", "uniform_reset", "polynomial"], role="operator"),

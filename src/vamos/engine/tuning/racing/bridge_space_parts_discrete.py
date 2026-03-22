@@ -135,9 +135,7 @@ def mixed_operator_part(
 ) -> SpacePart:
     params: list[ParamType] = [
         Categorical("crossover", list(crossover_choices), role="operator"),
-        Real("crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1], role="operator_rate"),
         Categorical("mutation", list(mutation_choices), role="operator"),
-        Real(mutation_prob_param, mutation_prob_bounds[0], mutation_prob_bounds[1], role="operator_rate"),
         Categorical("perm_crossover", ["ox", "pmx", "edge", "cycle", "position", "aex"], role="operator"),
         Real("perm_crossover_prob", crossover_prob_bounds[0], crossover_prob_bounds[1], role="operator_rate"),
         Categorical("perm_mutation", ["swap", "insert", "scramble", "inversion", "displacement", "two_opt"], role="operator"),
