@@ -1,0 +1,38 @@
+{
+  "checks": {
+    "adaptive_concentration_above_minimum": {
+      "mean_dominant_family_share": 0.8721436403508772,
+      "passed": true,
+      "threshold": 0.55
+    },
+    "adaptive_hierarchical_beats_best_fixed": {
+      "cases": 8,
+      "passed": true,
+      "threshold": 3,
+      "wins": 7
+    },
+    "adaptive_hierarchical_beats_both_flat_adaptive": {
+      "cases": 8,
+      "passed": true,
+      "threshold": 3,
+      "wins": 6
+    },
+    "dynamic_heterogeneity_present": {
+      "best_fixed_winner_count": 1.0,
+      "passed": false,
+      "phase_family_shift_mean": 0.08286241944803271,
+      "threshold_phase_family_shift": 0.1
+    },
+    "runtime_overhead_below_threshold": {
+      "median_runtime_ratio": 3.4104905640730836,
+      "passed": false,
+      "threshold": 1.25
+    },
+    "warm_start_transfer_non_harmful": {
+      "available": true,
+      "mean_hv_delta_warm_vs_cold": -0.11636030897308983,
+      "passed": false
+    }
+  },
+  "overall_decision": "caution"
+}

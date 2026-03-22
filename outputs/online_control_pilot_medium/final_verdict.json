@@ -1,0 +1,169 @@
+{
+  "actual_scope": {
+    "deviations": [],
+    "hosts": [
+      "nsgaii",
+      "moead"
+    ],
+    "max_evaluations": 800,
+    "n_var": 12,
+    "policies": [
+      "fixed_sbx",
+      "fixed_de",
+      "adaptive_flat_operator",
+      "adaptive_flat_parameter",
+      "adaptive_hierarchical_joint"
+    ],
+    "population_size": 40,
+    "problems": [
+      "zdt1",
+      "zdt2",
+      "zdt3",
+      "dtlz2"
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "transfer_source_max_evaluations": 400,
+    "transfer_target_max_evaluations": 400
+  },
+  "analysis_go_no_go": {
+    "checks": {
+      "adaptive_concentration_above_minimum": {
+        "mean_dominant_family_share": 0.8721436403508772,
+        "passed": true,
+        "threshold": 0.55
+      },
+      "adaptive_hierarchical_beats_best_fixed": {
+        "cases": 8,
+        "passed": true,
+        "threshold": 3,
+        "wins": 7
+      },
+      "adaptive_hierarchical_beats_both_flat_adaptive": {
+        "cases": 8,
+        "passed": true,
+        "threshold": 3,
+        "wins": 6
+      },
+      "dynamic_heterogeneity_present": {
+        "best_fixed_winner_count": 1.0,
+        "passed": false,
+        "phase_family_shift_mean": 0.08286241944803271,
+        "threshold_phase_family_shift": 0.1
+      },
+      "runtime_overhead_below_threshold": {
+        "median_runtime_ratio": 3.4104905640730836,
+        "passed": false,
+        "threshold": 1.25
+      },
+      "warm_start_transfer_non_harmful": {
+        "available": true,
+        "mean_hv_delta_warm_vs_cold": -0.11636030897308983,
+        "passed": false
+      }
+    },
+    "overall_decision": "caution"
+  },
+  "analysis_report": {
+    "best_fixed": {
+      "adaptive_hierarchical_joint_cases": 8,
+      "adaptive_hierarchical_joint_mean_hv_gap": 0.23873619918377492,
+      "adaptive_hierarchical_joint_wins": 7
+    },
+    "concentration": {
+      "mean_dominant_family_share": 0.8721436403508772,
+      "mean_dominant_intent_share": 0.6089035087719298
+    },
+    "counts": {
+      "concentration_rows": 40,
+      "heterogeneity_rows": 78,
+      "phase_rows": 72,
+      "policy_comparison_rows": 48,
+      "problem_host_rows": 40,
+      "transfer_rows": 80
+    },
+    "heterogeneity": {
+      "phase_family_shift_mean": 0.08286241944803271,
+      "phase_intent_shift_mean": 0.13194810171537508,
+      "phase_reward_range_mean": 0.07393219687164516
+    },
+    "hierarchy_vs_flat": {
+      "losses": 3,
+      "mean_hv_gap": 0.1602518824703878,
+      "ties": 0,
+      "wins": 13
+    },
+    "transfer": {
+      "available": true,
+      "mean_hv_delta_warm_vs_cold": -0.11636030897308983
+    }
+  },
+  "best_fixed_cases_won": 7,
+  "hierarchical_vs_flat_operator_wins": 6,
+  "hierarchical_vs_flat_parameter_wins": 7,
+  "median_dominant_family_share": 0.82,
+  "median_dominant_prototype_share": 0.3688157894736842,
+  "median_hv_gap_vs_best_fixed": 0.24175750547047192,
+  "median_regime_concentration": 0.9688606301939058,
+  "median_runtime_ratio_vs_best_fixed": 2.5049151898627096,
+  "total_best_fixed_cases": 8,
+  "transfer_effect": {
+    "by_direction": {
+      "moead_to_nsgaii": {
+        "losses": 29,
+        "mean_hv_delta": -0.21505120757600057,
+        "ties": 0,
+        "wins": 11
+      },
+      "nsgaii_to_moead": {
+        "losses": 19,
+        "mean_hv_delta": -0.01766941037017905,
+        "ties": 0,
+        "wins": 21
+      }
+    },
+    "by_problem": {
+      "dtlz2": {
+        "losses": 9,
+        "mean_hv_delta": 0.013324476492641258,
+        "ties": 0,
+        "wins": 11
+      },
+      "zdt1": {
+        "losses": 13,
+        "mean_hv_delta": -0.02855072100091415,
+        "ties": 0,
+        "wins": 7
+      },
+      "zdt2": {
+        "losses": 12,
+        "mean_hv_delta": -0.16500391232316727,
+        "ties": 0,
+        "wins": 8
+      },
+      "zdt3": {
+        "losses": 14,
+        "mean_hv_delta": -0.2852110790609191,
+        "ties": 0,
+        "wins": 6
+      }
+    },
+    "label": "harmful_overall_mixed_by_problem",
+    "losses": 48,
+    "mean_hv_delta_warm_vs_cold": -0.11636030897308981,
+    "median_hv_delta_warm_vs_cold": -0.13263974889059482,
+    "ties": 0,
+    "wins": 32
+  },
+  "verdict": "WEAK_GO"
+}

@@ -1,0 +1,29 @@
+{
+  "adaptive_losses": 5,
+  "adaptive_ties": 0,
+  "adaptive_wins": 19,
+  "baseline_by_host": {
+    "moead": "fixed_de",
+    "nsgaii": "fixed_sbx"
+  },
+  "best_by_host": {
+    "moead": {
+      "mean_hv": 13.006861836586959,
+      "problem": "dtlz2",
+      "runtime_ratio_vs_baseline": 3.938856998174286,
+      "variant": "adaptive_flat_operator"
+    },
+    "nsgaii": {
+      "mean_hv": 13.531026542846714,
+      "problem": "dtlz2",
+      "runtime_ratio_vs_baseline": 1.0,
+      "variant": "fixed_sbx"
+    }
+  },
+  "decision": "no_go",
+  "efficient_adaptive_wins": 0,
+  "notes": [
+    "Decision is GO when at least one adaptive semantic variant beats the host baseline without >25% mean runtime inflation.",
+    "HV is used for baseline comparison; IGD+ is attached when MooCore is available and a reference front exists."
+  ]
+}

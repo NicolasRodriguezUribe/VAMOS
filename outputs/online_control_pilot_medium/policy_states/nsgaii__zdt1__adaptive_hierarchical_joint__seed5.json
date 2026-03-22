@@ -1,0 +1,58 @@
+{
+  "family_tracker": {
+    "counts": {
+      "de_like": 13,
+      "sbx_like": 6
+    },
+    "exploration_weight": 0.3,
+    "reward_sums": {
+      "de_like": 2.617269346575505,
+      "sbx_like": 1.3249196777385706
+    }
+  },
+  "policy": "adaptive_hierarchical_joint",
+  "prototype_names": [
+    "exploratory",
+    "balanced",
+    "local_refine",
+    "mutation_heavy",
+    "feasibility_biased"
+  ],
+  "prototype_set": "default",
+  "prototype_trackers": {
+    "de_like": {
+      "counts": {
+        "balanced": 2,
+        "exploratory": 5,
+        "feasibility_biased": 2,
+        "local_refine": 2,
+        "mutation_heavy": 2
+      },
+      "exploration_weight": 0.3,
+      "reward_sums": {
+        "balanced": 0.42950782072728555,
+        "exploratory": 0.9133032514420025,
+        "feasibility_biased": 0.41323529411764703,
+        "local_refine": 0.43676470588235294,
+        "mutation_heavy": 0.4244582744062172
+      }
+    },
+    "sbx_like": {
+      "counts": {
+        "balanced": 1,
+        "exploratory": 2,
+        "feasibility_biased": 1,
+        "local_refine": 1,
+        "mutation_heavy": 1
+      },
+      "exploration_weight": 0.3,
+      "reward_sums": {
+        "balanced": 0.2161764705882353,
+        "exploratory": 0.42344464733161935,
+        "feasibility_biased": 0.26216133994382573,
+        "local_refine": 0.22721102655444766,
+        "mutation_heavy": 0.19592619332044253
+      }
+    }
+  }
+}

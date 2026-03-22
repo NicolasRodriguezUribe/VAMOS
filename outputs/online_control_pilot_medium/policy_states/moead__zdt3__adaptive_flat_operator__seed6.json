@@ -1,0 +1,15 @@
+{
+  "family_tracker": {
+    "counts": {
+      "de_like": 648,
+      "sbx_like": 112
+    },
+    "exploration_weight": 0.3,
+    "reward_sums": {
+      "de_like": 165.82785040892642,
+      "sbx_like": 35.71696950628127
+    }
+  },
+  "policy": "adaptive_flat_operator",
+  "prototype_set": "default"
+}

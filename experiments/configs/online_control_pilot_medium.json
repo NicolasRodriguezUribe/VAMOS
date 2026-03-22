@@ -1,0 +1,36 @@
+{
+  "engine": "numpy",
+  "hosts": [
+    "nsgaii",
+    "moead"
+  ],
+  "problems": [
+    "zdt1",
+    "zdt2",
+    "zdt3",
+    "dtlz2"
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "n_var": 12,
+  "population_size": 40,
+  "max_evaluations": 800,
+  "credit_model": "simple_improvement",
+  "variants": [
+    "fixed_sbx",
+    "fixed_de",
+    "adaptive_flat_operator",
+    "adaptive_flat_parameter",
+    "adaptive_hierarchical_joint"
+  ]
+}

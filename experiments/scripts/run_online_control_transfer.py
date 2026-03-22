@@ -17,6 +17,7 @@ from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.problem.resolver import resolve_reference_front_path
 from vamos.foundation.quality_indicators.hypervolume import hypervolume
 from vamos.foundation.quality_indicators.moocore_indicators import get_indicator, has_moocore
+from vamos.resources import weight_path
 
 DEFAULT_CONFIG = Path(__file__).resolve().parents[1] / "configs" / "online_control_transfer.json"
 
@@ -76,9 +77,16 @@ def _build_nsgaii_config(*, pop_size: int, n_var: int, credit_model: str, policy
     )
 
 
-def _build_moead_config(*, pop_size: int, n_var: int, credit_model: str, policy_state: dict[str, Any] | None = None) -> MOEADConfig:
+def _build_moead_config(
+    *,
+    pop_size: int,
+    n_var: int,
+    n_obj: int,
+    credit_model: str,
+    policy_state: dict[str, Any] | None = None,
+) -> MOEADConfig:
     mut_prob = 1.0 / float(n_var)
-    return (
+    builder = (
         MOEADConfig.builder()
         .pop_size(pop_size)
         .batch_size(1)
@@ -90,15 +98,31 @@ def _build_moead_config(*, pop_size: int, n_var: int, credit_model: str, policy_
         .aggregation("pbi", theta=5.0)
         .result_mode("non_dominated")
         .online_control(_build_online_control_payload(credit_model, policy_state))
-        .build()
     )
+    if n_obj > 2:
+        builder.weight_vectors(path=str(weight_path("W3D_91.dat").parent))
+    return builder.build()
 
 
-def _build_algorithm_config(host: str, *, pop_size: int, n_var: int, credit_model: str, policy_state: dict[str, Any] | None = None) -> Any:
+def _build_algorithm_config(
+    host: str,
+    *,
+    pop_size: int,
+    n_var: int,
+    n_obj: int,
+    credit_model: str,
+    policy_state: dict[str, Any] | None = None,
+) -> Any:
     if host == "nsgaii":
         return _build_nsgaii_config(pop_size=pop_size, n_var=n_var, credit_model=credit_model, policy_state=policy_state)
     if host == "moead":
-        return _build_moead_config(pop_size=pop_size, n_var=n_var, credit_model=credit_model, policy_state=policy_state)
+        return _build_moead_config(
+            pop_size=pop_size,
+            n_var=n_var,
+            n_obj=n_obj,
+            credit_model=credit_model,
+            policy_state=policy_state,
+        )
     raise ValueError(f"Unsupported host '{host}'.")
 
 
@@ -124,7 +148,14 @@ def _run(
 ) -> dict[str, Any]:
     selection = make_problem_selection(problem_key, n_var=n_var)
     problem = selection.instantiate()
-    cfg = _build_algorithm_config(host, pop_size=pop_size, n_var=n_var, credit_model=credit_model, policy_state=policy_state)
+    cfg = _build_algorithm_config(
+        host,
+        pop_size=pop_size,
+        n_var=n_var,
+        n_obj=selection.n_obj,
+        credit_model=credit_model,
+        policy_state=policy_state,
+    )
     t0 = time.perf_counter()
     result = optimize(
         problem,
