@@ -34,7 +34,7 @@ from .prototypes import (
     build_intent_prototype,
     normalize_prototype_set,
 )
-from .routers import HeuristicRegimeRouter
+from .routers import HeuristicRegimeRouter, StaticRegimeRouter
 from .storage import InMemoryTraceStore, TraceRow
 
 __all__ = [
@@ -63,6 +63,7 @@ __all__ = [
     "RegimeRouter",
     "SearchState",
     "SimpleImprovementCreditModel",
+    "StaticRegimeRouter",
     "TraceRow",
     "available_intent_prototypes",
     "build_online_control_controller",

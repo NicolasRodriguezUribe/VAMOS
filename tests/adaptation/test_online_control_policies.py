@@ -139,3 +139,18 @@ def test_adaptive_hierarchical_joint_policy_tracks_family_and_prototype() -> Non
 
     assert next_action.operator_family is OperatorFamily.DE_LIKE
     assert next_action.parametric_intent.prototype == "exploratory"
+
+
+def test_adaptive_hierarchical_joint_policy_can_fix_family_without_disabling_prototypes() -> None:
+    policy = AdaptiveHierarchicalJointPolicy(fixed_family=OperatorFamily.SBX_LIKE)
+    state = _state(budget_progress=0.2, diversity=0.12, extent=0.12, stagnation=0.2)
+    refine_state = _state(budget_progress=0.85, diversity=0.4, stagnation=0.1)
+
+    action = policy.select_action(state, Regime.EXPAND)
+    assert action.operator_family is OperatorFamily.SBX_LIKE
+    assert action.parametric_intent.prototype == "exploratory"
+
+    next_action = policy.select_action(refine_state, Regime.REFINE)
+
+    assert next_action.operator_family is OperatorFamily.SBX_LIKE
+    assert next_action.parametric_intent.prototype == "local_refine"

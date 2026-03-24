@@ -45,4 +45,22 @@ class HeuristicRegimeRouter(RegimeRouter):
         del search_state, action, outcome, credit
 
 
-__all__ = ["HeuristicRegimeRouter"]
+@dataclass
+class StaticRegimeRouter(RegimeRouter):
+    fixed_regime: Regime = Regime.EXPAND
+
+    def route(self, search_state: SearchState) -> Regime:
+        del search_state
+        return self.fixed_regime
+
+    def update(
+        self,
+        search_state: SearchState,
+        action: HierarchicalAction,
+        outcome: Outcome,
+        credit: Credit,
+    ) -> None:
+        del search_state, action, outcome, credit
+
+
+__all__ = ["HeuristicRegimeRouter", "StaticRegimeRouter"]

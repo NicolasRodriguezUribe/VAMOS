@@ -32,6 +32,10 @@ if TYPE_CHECKING:
     from .state import NSGAIIState
 
 
+def _accumulate_runtime_profile(st: NSGAIIState, key: str, elapsed_ms: float) -> None:
+    st.online_control_runtime_profile[key] = st.online_control_runtime_profile.get(key, 0.0) + float(elapsed_ms)
+
+
 def combine_ids(st: NSGAIIState) -> np.ndarray | None:
     if not st.track_genealogy:
         return None
@@ -153,7 +157,9 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
         st.pending_search_state = search_state
         st.online_control_controller.start_step(search_state)
         st.pending_online_action = st.online_control_controller.select_action()
+        decode_t0 = time.perf_counter()
         st.variation = st.online_control_adapter.decode_action(st.pending_online_action, st)
+        _accumulate_runtime_profile(st, "decode_time_ms", (time.perf_counter() - decode_t0) * 1000.0)
         st.pending_online_overhead_ms = (time.perf_counter() - online_t0) * 1000.0
 
     parents_per_group = st.variation.parents_per_group
@@ -203,8 +209,10 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     parent_idx = mating_pairs.reshape(-1)
     if st.immigration_manager is not None:
         st.immigration_manager.record_parent_indices(st.generation, parent_idx)
+    variation_t0 = time.perf_counter()
     X_parents = st.variation.gather_parents(st.X, parent_idx)
     X_off = st.variation.produce_offspring(X_parents, st.rng)
+    _accumulate_runtime_profile(st, "variation_time_ms", (time.perf_counter() - variation_t0) * 1000.0)
 
     if X_off.shape[0] > st.offspring_size:
         X_off = X_off[: st.offspring_size]
@@ -234,6 +242,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
     combined_G = np.vstack([st.G, G_off]) if st.G is not None and G_off is not None else None
     combined_ids = combine_ids(st)
     used_incremental = False
+    survival_t0 = time.perf_counter()
 
     early_reject = False
     if st.incremental_mode and st.fronts is not None and st.G is None and G_off is None and F_off is not None:
@@ -327,6 +336,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
             combined_G,
         )
         update_archives(st, algo.kernel, X=archive_X, F=archive_F, G=archive_G)
+    _accumulate_runtime_profile(st, "survival_time_ms", (time.perf_counter() - survival_t0) * 1000.0)
 
     hv_reached = st.hv_tracker.enabled and st.hv_tracker.reached(st.hv_points_fn())
     if st.online_control_controller is not None and st.online_control_adapter is not None:

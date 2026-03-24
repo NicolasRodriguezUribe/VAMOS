@@ -1,0 +1,29 @@
+{
+  "adaptive_losses": 20,
+  "adaptive_ties": 0,
+  "adaptive_wins": 28,
+  "baseline_by_host": {
+    "moead": "fixed_de",
+    "nsgaii": "fixed_sbx"
+  },
+  "best_by_host": {
+    "moead": {
+      "mean_hv": 33.308577911748486,
+      "problem": "zcat19",
+      "runtime_ratio_vs_baseline": 3.8755146780272147,
+      "variant": "adaptive_flat_parameter"
+    },
+    "nsgaii": {
+      "mean_hv": 41.93551213897506,
+      "problem": "zcat19",
+      "runtime_ratio_vs_baseline": 1.1750250161484184,
+      "variant": "adaptive_hierarchical_joint"
+    }
+  },
+  "decision": "go",
+  "efficient_adaptive_wins": 1,
+  "notes": [
+    "Decision is GO when at least one adaptive semantic variant beats the host baseline without >25% mean runtime inflation.",
+    "HV is used for baseline comparison; IGD+ is attached when MooCore is available and a reference front exists."
+  ]
+}

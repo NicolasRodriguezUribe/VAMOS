@@ -14,6 +14,7 @@ def _cfg(
     *,
     enabled: bool,
     policy: str = "hierarchical_joint",
+    router: str = "heuristic",
     fixed_family: str | None = None,
     credit_model: str = "simple_improvement",
 ) -> NSGAIIConfig:
@@ -30,6 +31,7 @@ def _cfg(
         payload: dict[str, object] = {
             "enabled": True,
             "trace_level": "basic",
+            "router": router,
             "policy": policy,
             "credit_model": credit_model,
         }
@@ -109,26 +111,30 @@ def test_nsgaii_decode_action_translates_intent_into_real_parameters() -> None:
 
 
 @pytest.mark.parametrize(
-    ("policy", "fixed_family", "expected_first_family"),
+    ("policy", "router", "fixed_family", "expected_first_family", "expected_first_regime"),
     [
-        ("flat_operator", None, "de_like"),
-        ("flat_parameter", "sbx_like", "sbx_like"),
-        ("hierarchical_joint", None, "de_like"),
-        ("adaptive_flat_operator", None, "de_like"),
-        ("adaptive_flat_parameter", "sbx_like", "sbx_like"),
-        ("adaptive_hierarchical_joint", None, "de_like"),
+        ("flat_operator", "heuristic", None, "de_like", "expand"),
+        ("flat_parameter", "heuristic", "sbx_like", "sbx_like", "expand"),
+        ("hierarchical_joint", "heuristic", None, "de_like", "expand"),
+        ("adaptive_flat_operator", "heuristic", None, "de_like", "expand"),
+        ("adaptive_flat_parameter", "heuristic", "sbx_like", "sbx_like", "expand"),
+        ("adaptive_hierarchical_joint", "heuristic", None, "de_like", "expand"),
+        ("adaptive_hierarchical_joint", "static_refine", None, "sbx_like", "refine"),
+        ("adaptive_hierarchical_joint", "heuristic", "sbx_like", "sbx_like", "expand"),
     ],
 )
 def test_nsgaii_online_control_records_semantic_trace(
     policy: str,
+    router: str,
     fixed_family: str | None,
     expected_first_family: str,
+    expected_first_regime: str,
 ) -> None:
     problem = ZDT1Problem(n_var=4)
     result = optimize(
         problem,
         algorithm="nsgaii",
-        algorithm_config=_cfg(enabled=True, policy=policy, fixed_family=fixed_family),
+        algorithm_config=_cfg(enabled=True, policy=policy, router=router, fixed_family=fixed_family),
         termination=("max_evaluations", 18),
         seed=1,
         engine="numpy",
@@ -145,7 +151,7 @@ def test_nsgaii_online_control_records_semantic_trace(
     intent = first["parametric_intent"]
 
     assert first["search_state"]["host"] == "nsgaii"
-    assert first["regime"] == "expand"
+    assert first["regime"] == expected_first_regime
     assert first["operator_family"] == expected_first_family
     assert first["intent_prototype"] is not None
     assert "decoded_variation" in first["outcome"]["metadata"]
@@ -155,6 +161,8 @@ def test_nsgaii_online_control_records_semantic_trace(
     assert run_summary["steps"] == 2
     assert "family_shares" in run_summary
     assert "family_switches" in run_summary
+    assert run_summary["runtime_profile"]["decode_time_ms"] >= 0.0
+    assert run_summary["policy_select_time_ms"] >= 0.0
     if policy == "flat_operator":
         assert intent["exploration_strength"] == 0.5
         assert intent["locality"] == 0.5

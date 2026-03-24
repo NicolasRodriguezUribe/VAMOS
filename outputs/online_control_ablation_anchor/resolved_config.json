@@ -1,0 +1,33 @@
+{
+  "credit_model": "simple_improvement",
+  "engine": "numpy",
+  "hosts": [
+    "nsgaii",
+    "moead"
+  ],
+  "max_evaluations": 800,
+  "n_var": 12,
+  "population_size": 40,
+  "problems": [
+    "zdt1",
+    "zdt3",
+    "dtlz2"
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "variants": [
+    "fixed_sbx",
+    "fixed_de",
+    "adaptive_flat_operator",
+    "adaptive_flat_parameter",
+    "adaptive_hierarchical_joint",
+    "adaptive_hierarchical_joint_no_regime",
+    "adaptive_hierarchical_joint_fixed_family_sbx",
+    "adaptive_hierarchical_joint_fixed_family_de"
+  ]
+}

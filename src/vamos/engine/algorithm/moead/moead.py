@@ -42,6 +42,10 @@ if TYPE_CHECKING:
 from vamos.engine.hooks.live_viz import LiveVisualization
 
 
+def _accumulate_runtime_profile(st: MOEADState, key: str, elapsed_ms: float) -> None:
+    st.online_control_runtime_profile[key] = st.online_control_runtime_profile.get(key, 0.0) + float(elapsed_ms)
+
+
 class MOEAD:
     """Multi-Objective Evolutionary Algorithm based on Decomposition."""
 
@@ -64,6 +68,7 @@ class MOEAD:
         checkpoint: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Run MOEA/D until the termination criterion is met."""
+        run_t0 = time.perf_counter()
         live_cb, eval_strategy, max_eval, hv_tracker = self._initialize_run(
             problem,
             termination,
@@ -83,7 +88,9 @@ class MOEAD:
         while st.n_eval < max_eval and not hv_reached and not stop_requested:
             st.generation = generation
             X_off = self.ask()
+            eval_t0 = time.perf_counter()
             eval_result = eval_strategy.evaluate(X_off, problem)
+            _accumulate_runtime_profile(st, "evaluation_time_ms", (time.perf_counter() - eval_t0) * 1000.0)
             hv_reached = self.tell(eval_result, problem)
 
             if hv_tracker.enabled and hv_tracker.reached(st.hv_points()):
@@ -95,6 +102,16 @@ class MOEAD:
             stop_requested = notify_generation(live_cb, self.kernel, generation, st.F, stats={"evals": st.n_eval})
 
         result = build_moead_result(st, hv_reached, kernel=self.kernel)
+        _accumulate_runtime_profile(st, "total_runtime_ms", (time.perf_counter() - run_t0) * 1000.0)
+        if "online_control" in result and isinstance(result["online_control"], dict):
+            runtime_profile = {key: float(value) for key, value in st.online_control_runtime_profile.items()}
+            result["online_control"]["runtime_profile"] = runtime_profile
+            run_summary = result["online_control"].get("run_summary")
+            if isinstance(run_summary, dict):
+                updated_run_summary = dict(run_summary)
+                updated_run_summary["runtime_profile"] = runtime_profile
+                updated_run_summary.update(runtime_profile)
+                result["online_control"]["run_summary"] = updated_run_summary
         result["checkpoint"] = {
             "version": 1,
             "algorithm": "moead",
@@ -229,7 +246,9 @@ class MOEAD:
             st.pending_search_state = search_state
             st.online_control_controller.start_step(search_state)
             st.pending_online_action = st.online_control_controller.select_action()
+            decode_t0 = time.perf_counter()
             decoded = st.online_control_adapter.decode_action(st.pending_online_action, st)
+            _accumulate_runtime_profile(st, "decode_time_ms", (time.perf_counter() - decode_t0) * 1000.0)
             st.crossover_fn = decoded.crossover_fn
             st.mutation_fn = decoded.mutation_fn
             st.current_online_descriptor = decoded.descriptor
@@ -250,6 +269,7 @@ class MOEAD:
         parent_pairs = self._sample_parent_pairs(st, active, use_neighbors)
 
         n_var = st.X.shape[1]
+        variation_t0 = time.perf_counter()
         if st.current_cross_is_de:
             parents = np.empty((batch_size, 3, n_var), dtype=st.X.dtype)
             parents[:, 0, :] = st.X[parent_pairs[:, 0]]
@@ -265,6 +285,7 @@ class MOEAD:
             children = offspring[:, 0, :].copy()
 
         children = st.mutation_fn(children, st.rng)
+        _accumulate_runtime_profile(st, "variation_time_ms", (time.perf_counter() - variation_t0) * 1000.0)
 
         st.pending_offspring = children
         st.pending_active_indices = active
@@ -304,6 +325,7 @@ class MOEAD:
         st.pending_use_neighbors = None
 
         pop_size = st.pop_size
+        survival_t0 = time.perf_counter()
 
         st.ideal = np.minimum(st.ideal, F_child.min(axis=0))
 
@@ -356,7 +378,10 @@ class MOEAD:
                 host_state=st,
                 metadata={"replaced": replaced, "batch_size": batch_size, "overhead_ms": st.pending_online_overhead_ms},
             )
+            _accumulate_runtime_profile(st, "survival_time_ms", (time.perf_counter() - survival_t0) * 1000.0)
             st.online_control_controller.finalize_step(outcome)
+        else:
+            _accumulate_runtime_profile(st, "survival_time_ms", (time.perf_counter() - survival_t0) * 1000.0)
         st.pending_search_state = None
         st.pending_online_action = None
         st.pending_online_descriptor = None

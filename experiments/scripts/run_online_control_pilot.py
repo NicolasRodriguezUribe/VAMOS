@@ -90,6 +90,30 @@ def _build_online_control_payload(variant: str, credit_model: str) -> dict[str, 
         return {"enabled": True, "policy": "hierarchical_joint", "credit_model": credit_model, "trace_level": "basic"}
     if variant == "adaptive_hierarchical_joint":
         return {"enabled": True, "policy": "adaptive_hierarchical_joint", "credit_model": credit_model, "trace_level": "basic"}
+    if variant == "adaptive_hierarchical_joint_no_regime":
+        return {
+            "enabled": True,
+            "router": "static_expand",
+            "policy": "adaptive_hierarchical_joint",
+            "credit_model": credit_model,
+            "trace_level": "basic",
+        }
+    if variant == "adaptive_hierarchical_joint_fixed_family_sbx":
+        return {
+            "enabled": True,
+            "policy": "adaptive_hierarchical_joint",
+            "credit_model": credit_model,
+            "trace_level": "basic",
+            "fixed_family": "sbx_like",
+        }
+    if variant == "adaptive_hierarchical_joint_fixed_family_de":
+        return {
+            "enabled": True,
+            "policy": "adaptive_hierarchical_joint",
+            "credit_model": credit_model,
+            "trace_level": "basic",
+            "fixed_family": "de_like",
+        }
     raise ValueError(f"Unsupported pilot variant '{variant}'.")
 
 
@@ -167,6 +191,26 @@ def _baseline_family_shares(variant: str) -> dict[str, float]:
     return {}
 
 
+def _flatten_runtime_profile(row: dict[str, Any], runtime_profile: dict[str, Any] | None) -> None:
+    profile = runtime_profile or {}
+    expected = (
+        "controller_time_ms",
+        "start_step_time_ms",
+        "router_time_ms",
+        "policy_select_time_ms",
+        "policy_update_time_ms",
+        "trace_time_ms",
+        "decode_time_ms",
+        "variation_time_ms",
+        "evaluation_time_ms",
+        "survival_time_ms",
+        "total_runtime_ms",
+    )
+    for key in expected:
+        value = profile.get(key)
+        row[f"profile_{key}"] = float(value) if isinstance(value, (int, float)) else None
+
+
 def _mean(values: list[float]) -> float:
     if not values:
         return 0.0
@@ -218,6 +262,8 @@ def _run_variant(
     run_summary = online.get("run_summary", {}) if isinstance(online, dict) else {}
     trace_rows = online.get("trace_rows", []) if isinstance(online, dict) else []
     policy_state = online.get("policy_state") if isinstance(online, dict) else None
+    runtime_profile = run_summary.get("runtime_profile") if isinstance(run_summary.get("runtime_profile"), dict) else {}
+    controller_profile = online.get("controller_profile") if isinstance(online, dict) and isinstance(online.get("controller_profile"), dict) else {}
     run_id = f"{host}__{problem_key}__{variant}__seed{seed}"
     row: dict[str, Any] = {
         "run_id": run_id,
@@ -250,6 +296,10 @@ def _run_variant(
         "_trace_rows": trace_rows,
         "_policy_state": policy_state if isinstance(policy_state, dict) else None,
     }
+    combined_runtime_profile = dict(controller_profile) if isinstance(controller_profile, dict) else {}
+    if isinstance(runtime_profile, dict):
+        combined_runtime_profile.update(runtime_profile)
+    _flatten_runtime_profile(row, combined_runtime_profile)
     family_shares = run_summary.get("family_shares") if isinstance(run_summary.get("family_shares"), dict) else _baseline_family_shares(variant)
     _flatten_share_columns(row, "family_share", FAMILY_LABELS, family_shares)
     _flatten_share_columns(
@@ -318,6 +368,21 @@ def _build_summary(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "mean_intent_switches": _mean([float(row["intent_switches"]) for row in rows]),
             "mean_regime_switches": _mean([float(row["regime_switches"]) for row in rows]),
         }
+        for profile_key in (
+            "profile_controller_time_ms",
+            "profile_start_step_time_ms",
+            "profile_router_time_ms",
+            "profile_policy_select_time_ms",
+            "profile_policy_update_time_ms",
+            "profile_trace_time_ms",
+            "profile_decode_time_ms",
+            "profile_variation_time_ms",
+            "profile_evaluation_time_ms",
+            "profile_survival_time_ms",
+            "profile_total_runtime_ms",
+        ):
+            values = [float(row[profile_key]) for row in rows if row.get(profile_key) is not None]
+            summary[f"mean_{profile_key}"] = _mean(values)
         for prefix, labels in (
             ("family_share", FAMILY_LABELS),
             ("regime_share", REGIME_LABELS),

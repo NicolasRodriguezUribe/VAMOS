@@ -1,0 +1,154 @@
+{
+  "actual_scope": {
+    "anchor": {
+      "credit_model": "simple_improvement",
+      "engine": "numpy",
+      "hosts": [
+        "nsgaii",
+        "moead"
+      ],
+      "max_evaluations": 800,
+      "n_var": 12,
+      "population_size": 40,
+      "problems": [
+        "zdt1",
+        "zdt3",
+        "dtlz2"
+      ],
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "variants": [
+        "fixed_sbx",
+        "fixed_de",
+        "adaptive_flat_operator",
+        "adaptive_flat_parameter",
+        "adaptive_hierarchical_joint",
+        "adaptive_hierarchical_joint_no_regime",
+        "adaptive_hierarchical_joint_fixed_family_sbx",
+        "adaptive_hierarchical_joint_fixed_family_de"
+      ]
+    },
+    "zcat": {
+      "credit_model": "simple_improvement",
+      "engine": "numpy",
+      "hosts": [
+        "nsgaii",
+        "moead"
+      ],
+      "max_evaluations": 800,
+      "n_var": 30,
+      "population_size": 40,
+      "problems": [
+        "zcat1",
+        "zcat6",
+        "zcat14",
+        "zcat19"
+      ],
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "variants": [
+        "fixed_sbx",
+        "fixed_de",
+        "adaptive_flat_operator",
+        "adaptive_flat_parameter",
+        "adaptive_hierarchical_joint",
+        "adaptive_hierarchical_joint_no_regime",
+        "adaptive_hierarchical_joint_fixed_family_sbx",
+        "adaptive_hierarchical_joint_fixed_family_de"
+      ]
+    }
+  },
+  "benchmark_sensitivity": [
+    {
+      "anchor_value": 0.15673241545867356,
+      "difference_zcat_minus_anchor": 0.17348302801551396,
+      "metric": "hierarchical_mean_hv_gap_vs_best_fixed",
+      "zcat_value": 0.3302154434741875
+    },
+    {
+      "anchor_value": 0.8333333333333334,
+      "difference_zcat_minus_anchor": -0.20833333333333337,
+      "metric": "hierarchical_win_rate_vs_best_fixed",
+      "zcat_value": 0.625
+    },
+    {
+      "anchor_value": -0.00844340399814462,
+      "difference_zcat_minus_anchor": 0.9026947875833519,
+      "metric": "prototype_only_sbx_mean_hv_gap_vs_best_fixed",
+      "zcat_value": 0.8942513835852073
+    },
+    {
+      "anchor_value": 0.16517581945681817,
+      "difference_zcat_minus_anchor": -0.7292117595678379,
+      "metric": "family_increment_mean_hv_gap",
+      "zcat_value": -0.5640359401110198
+    },
+    {
+      "anchor_value": -0.013789194898094085,
+      "difference_zcat_minus_anchor": 0.09148025684332099,
+      "metric": "regime_increment_mean_hv_gap",
+      "zcat_value": 0.0776910619452269
+    },
+    {
+      "anchor_value": 0.11560766821606144,
+      "difference_zcat_minus_anchor": 0.0009273366971025293,
+      "metric": "hierarchical_phase_family_shift_mean",
+      "zcat_value": 0.11653500491316397
+    },
+    {
+      "anchor_value": 0.28814933810296667,
+      "difference_zcat_minus_anchor": -0.0699136332019476,
+      "metric": "hierarchical_phase_intent_shift_mean",
+      "zcat_value": 0.21823570490101907
+    },
+    {
+      "anchor_value": 1.0,
+      "difference_zcat_minus_anchor": 0.0,
+      "metric": "best_fixed_winner_variability",
+      "zcat_value": 1.0
+    },
+    {
+      "anchor_value": 3.0,
+      "difference_zcat_minus_anchor": 0.0,
+      "metric": "adaptive_winner_variability",
+      "zcat_value": 3.0
+    },
+    {
+      "anchor_value": 0.8080263157894736,
+      "difference_zcat_minus_anchor": -0.04723684210526302,
+      "metric": "hierarchical_dominant_family_share",
+      "zcat_value": 0.7607894736842106
+    },
+    {
+      "anchor_value": 0.38942982456140357,
+      "difference_zcat_minus_anchor": -0.03429824561403516,
+      "metric": "hierarchical_dominant_intent_share",
+      "zcat_value": 0.3551315789473684
+    }
+  ],
+  "headline": {
+    "anchor_hierarchical_vs_best_fixed_mean_hv_gap": 0.15673241545867356,
+    "hierarchical_vs_fixed_family_sbx_mean_hv_gap": -0.25151661458194635,
+    "hierarchical_vs_no_regime_mean_hv_gap": 0.03848523758380362,
+    "median_control_share_of_total_runtime": 0.07891820617237821,
+    "median_dominant_family_share": 0.8109210526315789,
+    "median_dominant_intent_share": 0.35539473684210526,
+    "zcat_hierarchical_vs_best_fixed_mean_hv_gap": 0.3302154434741875
+  },
+  "heterogeneity": {
+    "mean_hierarchical_phase_family_shift_anchor": 0.11560766821606144,
+    "mean_hierarchical_phase_family_shift_zcat": 0.11653500491316397,
+    "mean_hierarchical_phase_intent_shift_anchor": 0.28814933810296667,
+    "mean_hierarchical_phase_intent_shift_zcat": 0.21823570490101907
+  }
+}

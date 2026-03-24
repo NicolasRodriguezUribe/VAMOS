@@ -125,6 +125,7 @@ class NSGAIIState:
     pending_online_action: HierarchicalAction | None = None
     pending_search_state: SearchState | None = None
     pending_online_overhead_ms: float | None = None
+    online_control_runtime_profile: dict[str, float] = field(default_factory=dict)
 
     # HV points function (computed lazily)
     _hv_points_fn: Callable[[], np.ndarray] | None = field(default=None, repr=False)
@@ -199,7 +200,16 @@ def build_result(
         arch_X, arch_F = archive_contents
         result["archive"] = {"X": arch_X, "F": arch_F}
     if state.online_control_controller is not None:
-        result["online_control"] = state.online_control_controller.result_payload()
+        payload = state.online_control_controller.result_payload()
+        runtime_profile = {key: float(value) for key, value in state.online_control_runtime_profile.items()}
+        payload["runtime_profile"] = runtime_profile
+        run_summary = payload.get("run_summary")
+        if isinstance(run_summary, dict):
+            updated_run_summary = dict(run_summary)
+            updated_run_summary["runtime_profile"] = runtime_profile
+            updated_run_summary.update(runtime_profile)
+            payload["run_summary"] = updated_run_summary
+        result["online_control"] = payload
 
     return result
 

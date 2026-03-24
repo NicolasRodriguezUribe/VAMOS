@@ -389,6 +389,7 @@ class AdaptiveFlatParameterPolicy(HierarchicalPolicy):
 
 @dataclass
 class AdaptiveHierarchicalJointPolicy(HierarchicalPolicy):
+    fixed_family: OperatorFamily | None = None
     prototype_set: str = DEFAULT_PROTOTYPE_SET
     prototype_names: tuple[str, ...] | None = None
     family_tracker: _SemanticScoreTracker = field(default_factory=_SemanticScoreTracker)
@@ -408,8 +409,13 @@ class AdaptiveHierarchicalJointPolicy(HierarchicalPolicy):
 
     def select_action(self, search_state: SearchState, regime: Regime) -> HierarchicalAction:
         families = _available_families(search_state)
-        family_biases = {family.value: _heuristic_family_bias(search_state, regime, family) for family in families}
-        family = OperatorFamily(self.family_tracker.select([family.value for family in families], biases=family_biases))
+        family_summary: dict[str, float] | None = None
+        if self.fixed_family is not None:
+            family = _resolve_family(self.fixed_family, search_state)
+        else:
+            family_biases = {family.value: _heuristic_family_bias(search_state, regime, family) for family in families}
+            family = OperatorFamily(self.family_tracker.select([family.value for family in families], biases=family_biases))
+            family_summary = self.family_tracker.summary(family.value)
         tracker = self._prototype_tracker(family)
         prototype_biases = {
             prototype: _heuristic_prototype_bias(search_state, regime, family, prototype)
@@ -421,33 +427,39 @@ class AdaptiveHierarchicalJointPolicy(HierarchicalPolicy):
             family=family,
             prototype=prototype,
             policy_name="adaptive_hierarchical_joint",
+            fixed_family=family if self.fixed_family is not None else None,
             selection_mode="adaptive_ucb",
-            family_summary=self.family_tracker.summary(family.value),
+            family_summary=family_summary,
             intent_summary=tracker.summary(prototype),
             prototype_set=self.prototype_set,
         )
 
     def update(self, search_state: SearchState, action: HierarchicalAction, outcome: Outcome, credit: Credit) -> None:
         del search_state, outcome
-        self.family_tracker.update(action.operator_family.value, credit.bounded_reward)
+        if self.fixed_family is None:
+            self.family_tracker.update(action.operator_family.value, credit.bounded_reward)
         prototype = action.parametric_intent.prototype or "balanced"
         self._prototype_tracker(action.operator_family).update(prototype, credit.bounded_reward)
 
     def export_state(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "policy": "adaptive_hierarchical_joint",
             "prototype_set": self.prototype_set,
             "prototype_names": list(self.prototype_names or ()),
-            "family_tracker": self.family_tracker.export_state(),
             "prototype_trackers": {
                 key: tracker.export_state()
                 for key, tracker in sorted(self.prototype_trackers.items())
             },
         }
+        if self.fixed_family is not None:
+            payload["fixed_family"] = self.fixed_family.value
+        else:
+            payload["family_tracker"] = self.family_tracker.export_state()
+        return payload
 
     def load_state(self, state: Mapping[str, object]) -> None:
         family_state = state.get("family_tracker")
-        if isinstance(family_state, Mapping):
+        if self.fixed_family is None and isinstance(family_state, Mapping):
             self.family_tracker.load_state(family_state)
         prototype_states = state.get("prototype_trackers")
         if isinstance(prototype_states, Mapping):

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from .contracts import Credit, CreditModel, HierarchicalAction, HierarchicalPolicy, OperatorFamily, Outcome, RegimeRouter, SearchState
+from .contracts import Credit, CreditModel, HierarchicalAction, HierarchicalPolicy, OperatorFamily, Outcome, Regime, RegimeRouter, SearchState
 from .credit import CostAwareCreditModel, NoOpCreditModel, SimpleImprovementCreditModel
 from .policies import (
     AdaptiveFlatOperatorPolicy,
@@ -15,7 +16,7 @@ from .policies import (
     HierarchicalJointPolicy,
 )
 from .prototypes import normalize_prototype_set
-from .routers import HeuristicRegimeRouter
+from .routers import HeuristicRegimeRouter, StaticRegimeRouter
 from .storage import InMemoryTraceStore, TraceRow
 
 ONLINE_CONTROL_ALLOWED_KEYS = {
@@ -29,7 +30,7 @@ ONLINE_CONTROL_ALLOWED_KEYS = {
     "policy_state",
 }
 _TRACE_LEVELS = {"basic", "off"}
-_ROUTERS = {"heuristic"}
+_ROUTERS = {"heuristic", "static_expand", "static_refine", "static_repair"}
 _POLICIES = {
     "flat_operator",
     "flat_parameter",
@@ -107,6 +108,12 @@ def normalize_online_control_config(config: Mapping[str, Any] | None) -> dict[st
 def _build_router(name: str) -> RegimeRouter:
     if name == "heuristic":
         return HeuristicRegimeRouter()
+    if name == "static_expand":
+        return StaticRegimeRouter(fixed_regime=Regime.EXPAND)
+    if name == "static_refine":
+        return StaticRegimeRouter(fixed_regime=Regime.REFINE)
+    if name == "static_repair":
+        return StaticRegimeRouter(fixed_regime=Regime.REPAIR)
     raise ValueError(f"Unsupported online_control router '{name}'.")
 
 
@@ -131,7 +138,8 @@ def _build_policy(
         family = OperatorFamily(fixed_family or OperatorFamily.SBX_LIKE.value)
         policy = AdaptiveFlatParameterPolicy(fixed_family=family, prototype_set=prototype_set)
     elif name == "adaptive_hierarchical_joint":
-        policy = AdaptiveHierarchicalJointPolicy(prototype_set=prototype_set)
+        family = OperatorFamily(fixed_family) if fixed_family is not None else None
+        policy = AdaptiveHierarchicalJointPolicy(fixed_family=family, prototype_set=prototype_set)
     else:
         raise ValueError(f"Unsupported online_control policy '{name}'.")
     if policy_state is not None:
@@ -174,17 +182,39 @@ class OnlineControlController:
         self.trace_level = trace_level
         self.trace_store = trace_store or InMemoryTraceStore(enabled=trace_level != "off")
         self._pending: _PendingStep | None = None
+        self._profile_totals: dict[str, float] = {
+            "start_step_time_ms": 0.0,
+            "router_time_ms": 0.0,
+            "policy_select_time_ms": 0.0,
+            "policy_update_time_ms": 0.0,
+            "trace_time_ms": 0.0,
+            "controller_time_ms": 0.0,
+        }
+
+    def _record_profile(self, key: str, elapsed_ms: float) -> None:
+        self._profile_totals[key] = self._profile_totals.get(key, 0.0) + float(elapsed_ms)
 
     def start_step(self, search_state: SearchState) -> None:
+        t0 = time.perf_counter()
         if self._pending is not None:
             raise RuntimeError("online_control step already started; finalize the previous step first.")
         self._pending = _PendingStep(search_state=search_state)
+        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+        self._record_profile("start_step_time_ms", elapsed_ms)
+        self._record_profile("controller_time_ms", elapsed_ms)
 
     def select_action(self) -> HierarchicalAction:
         if self._pending is None:
             raise RuntimeError("online_control step not started.")
+        router_t0 = time.perf_counter()
         regime = self.router.route(self._pending.search_state)
+        router_ms = (time.perf_counter() - router_t0) * 1000.0
+        self._record_profile("router_time_ms", router_ms)
+        policy_t0 = time.perf_counter()
         action = self.policy.select_action(self._pending.search_state, regime)
+        policy_ms = (time.perf_counter() - policy_t0) * 1000.0
+        self._record_profile("policy_select_time_ms", policy_ms)
+        self._record_profile("controller_time_ms", router_ms + policy_ms)
         self._pending.action = action
         return action
 
@@ -194,9 +224,13 @@ class OnlineControlController:
 
         search_state = self._pending.search_state
         action = self._pending.action
+        update_t0 = time.perf_counter()
         credit = self.credit_model.compute(search_state, action, outcome)
         self.policy.update(search_state, action, outcome, credit)
         self.router.update(search_state, action, outcome, credit)
+        update_ms = (time.perf_counter() - update_t0) * 1000.0
+        self._record_profile("policy_update_time_ms", update_ms)
+        trace_t0 = time.perf_counter()
         self.trace_store.append(
             TraceRow(
                 step_index=search_state.step_index,
@@ -206,6 +240,9 @@ class OnlineControlController:
                 credit=credit,
             )
         )
+        trace_ms = (time.perf_counter() - trace_t0) * 1000.0
+        self._record_profile("trace_time_ms", trace_ms)
+        self._record_profile("controller_time_ms", update_ms + trace_ms)
         self._pending = None
         return credit
 
@@ -222,7 +259,13 @@ class OnlineControlController:
         return self.trace_store.summary_rows()
 
     def run_summary(self) -> dict[str, object]:
-        return self.trace_store.run_summary()
+        summary = dict(self.trace_store.run_summary())
+        summary["runtime_profile"] = self.profiling_summary()
+        summary.update(self.profiling_summary())
+        return summary
+
+    def profiling_summary(self) -> dict[str, float]:
+        return {key: float(value) for key, value in self._profile_totals.items()}
 
     def result_payload(self) -> dict[str, object]:
         return {
@@ -232,6 +275,7 @@ class OnlineControlController:
             "summary": self.summary_rows(),
             "run_summary": self.run_summary(),
             "policy_state": self.policy_state(),
+            "controller_profile": self.profiling_summary(),
         }
 
     def policy_state(self) -> dict[str, object] | None:

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -185,6 +186,7 @@ def run_nsgaii(
     """Run the NSGA-II algorithm."""
     import signal
 
+    run_t0 = time.perf_counter()
     live_cb, eval_strategy, max_eval, n_eval, hv_tracker = initialize_run(
         algo,
         problem,
@@ -228,7 +230,11 @@ def run_nsgaii(
             st.step = step
             st.replacements = replacements
             X_off = algo.ask()
+            eval_t0 = time.perf_counter()
             eval_off = eval_strategy.evaluate(X_off, problem)
+            st.online_control_runtime_profile["evaluation_time_ms"] = st.online_control_runtime_profile.get("evaluation_time_ms", 0.0) + (
+                (time.perf_counter() - eval_t0) * 1000.0
+            )
             hv_reached = algo.tell(eval_off)
             n_eval = st.n_eval
             replacements += X_off.shape[0]
@@ -278,6 +284,16 @@ def run_nsgaii(
             signal.signal(signal.SIGINT, original_handler)
 
     result = build_result(st, n_eval, hv_reached, kernel=algo.kernel)
+    st.online_control_runtime_profile["total_runtime_ms"] = (time.perf_counter() - run_t0) * 1000.0
+    if "online_control" in result and isinstance(result["online_control"], dict):
+        runtime_profile = {key: float(value) for key, value in st.online_control_runtime_profile.items()}
+        result["online_control"]["runtime_profile"] = runtime_profile
+        run_summary = result["online_control"].get("run_summary")
+        if isinstance(run_summary, dict):
+            updated_run_summary = dict(run_summary)
+            updated_run_summary["runtime_profile"] = runtime_profile
+            updated_run_summary.update(runtime_profile)
+            result["online_control"]["run_summary"] = updated_run_summary
     result["interrupted"] = interrupted
     result["checkpoint"] = {
         "version": 1,

@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from vamos.engine.adaptation.online_control import OnlineControlController, OperatorFamily, Outcome, Regime, SearchState
+from vamos.engine.adaptation.online_control import (
+    OnlineControlController,
+    OperatorFamily,
+    Outcome,
+    Regime,
+    SearchState,
+    build_online_control_controller,
+)
 
 
 def _search_state(step_index: int = 0) -> SearchState:
@@ -59,3 +66,20 @@ def test_controller_lifecycle_records_semantic_trace_rows() -> None:
     assert payload["trace_rows"][0]["overhead_ms"] == 0.7
     assert payload["summary"]
     assert payload["run_summary"]["steps"] == 1
+
+
+def test_build_online_control_controller_supports_static_router_bypass() -> None:
+    controller = build_online_control_controller(
+        {
+            "enabled": True,
+            "router": "static_refine",
+            "policy": "adaptive_hierarchical_joint",
+            "credit_model": "simple_improvement",
+        }
+    )
+
+    assert controller is not None
+    controller.start_step(_search_state(step_index=1))
+    action = controller.select_action()
+
+    assert action.regime is Regime.REFINE
