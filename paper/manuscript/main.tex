@@ -290,8 +290,7 @@ VAMOS implements the eight MOEAs shown in Table~\ref{tab:algorithms}: Non-domina
 \centering
 \caption[Overview of the eight MOEAs implemented in VAMOS]{Overview of the eight MOEAs implemented in \VAMOS{} and their configurable parameter spaces.}
 \label{tab:algorithms}
-%\resizebox{\textwidth}{!}{%
-%\renewcommand{\arraystretch}{1.2}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lllrrlr}
 \toprule
 \textbf{Algorithm} & \textbf{Ref.} & \textbf{Paradigm} & \textbf{\#Cx} & \textbf{\#Mx} & \textbf{Specific Parameters} & \textbf{\#Params} \\
@@ -307,6 +306,7 @@ IBEA & \cite{ZK04} & Indicator & 21 & 22 & Indicator type, scaling factor $\kapp
 %SMPSO & \cite{NDC09} & Particle swarm & R, M & --- & 3 & Inertia $\omega$, $c_1$, $c_2$, $v_{\max}$ fraction & 8 \\
 \bottomrule
 \end{tabular}%
+}
 %}
 \end{table*}
 
@@ -462,32 +462,31 @@ We now compare the runtime of NSGA-II variants (steady-state and external unboun
 SMS-EMOA uses the hypervolume contribution as density estimator to select the worst individual to remove from the population in the replacement step, which is a time-consuming procedure given that the computation of the hypervolume contribution grows exponentially with the number of objectives. MOEA/D uses a decomposition strategy that, a priori, should not introduce any noticeable overhead.
 \begin{table}[htbp]
 \centering
-%\small
-%\setlength{\tabcolsep}{3pt}
 \caption{Median runtime (seconds) by problem family for NSGA-II variants, SMS-EMOA, and MOEA/D.}
 \label{tab:frameworks_perf_variants}
-\resizebox{\columnwidth}{!}{\begin{tabular}{llcccc}
+\begin{tabular}{llcccc}
 \toprule
 \textbf{Algorithm} & \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} \\
 \midrule
 NSGA-II & VAMOS & \textbf{150.21} & \textbf{244.80} & \textbf{799.29} & \textbf{715.29} \\
-(steady-state) & \textit{pymoo} & 5747.47 & 7259.88 & 6382.73 & 4569.01 \\
- & \textit{jMetalPy} & 1930.43 & 2506.83 & 2756.07 & 1947.76 \\
+(steady-state) & pymoo & 5747.47 & 7259.88 & 6382.73 & 4569.01 \\
+ & jMetalPy & 1930.43 & 2506.83 & 2756.07 & 1947.76 \\
 \midrule
 NSGA-II & VAMOS & \textbf{10.43} & \textbf{87.56} & \textbf{23.33} & \textbf{106.30} \\
-(ext. archive) & \textit{pymoo} & 1422.71 & 7208.12 & 1515.89 & 1511.36 \\
- & \textit{jMetalPy} & 744.93 & 3993.47 & 1736.74 & 602.88 \\
+(ext. archive) & pymoo & 1422.71 & 7208.12 & 1515.89 & 1511.36 \\
+ & jMetalPy & 744.93 & 3993.47 & 1736.74 & 602.88 \\
 \midrule
 SMS-EMOA & VAMOS & \textbf{124.94} & \textbf{187.16} & \textbf{734.42} & \textbf{521.22} \\
- & \textit{pymoo} & 1658.10 & 2439.60 & 3410.49 & 2967.14 \\
- & \textit{jMetalPy} & 377.01 & 529.49 & 1161.51 & 2670.22 \\
+ & pymoo & 1658.10 & 2439.60 & 3410.49 & 2967.14 \\
+ & jMetalPy & 377.01 & 529.49 & 1161.51 & 2670.22 \\
 \midrule
 MOEA/D & VAMOS & \textbf{76.19} & \textbf{118.98} & \textbf{647.96} & \textbf{340.78} \\
- & \textit{pymoo} & 1325.29 & 1735.46 & 4143.63 & 1023.63 \\
- & \textit{jMetalPy} & 303.00 & 430.14 & 4267.52 & 354.29 \\
+ & pymoo & 1325.29 & 1735.46 & 4143.63 & 1023.63 \\
+ & jMetalPy & 303.00 & 430.14 & 4267.52 & 354.29 \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
+
 
 As shown in the above table, \VAMOS{} is the fastest framework for all four algorithm variants across all problem families. The speedup is most pronounced for the steady-state variant, where \VAMOS{} is 6.4--38.3$\times$ faster than \textit{pymoo} and 2.7--12.9$\times$ faster than \textit{jMetalPy}. These large margins are expected: steady-state algorithms execute $N$ iterations per generation, amplifying the per-iteration overhead of object-oriented frameworks. For the external-archive variant, \VAMOS{} is 14.2--136.4$\times$ faster than \textit{pymoo} and 5.7--74.4$\times$ faster than \textit{jMetalPy}. For MOEA/D, \VAMOS{} is 3.0--17.4$\times$ faster than \textit{pymoo} and 1.0--6.6$\times$ faster than \textit{jMetalPy}, with the narrowest gap on ZCAT. For SMS-EMOA, \VAMOS{} is 4.6--13.3$\times$ faster than \textit{pymoo} and 1.6--5.1$\times$ faster than \textit{jMetalPy}, with the smallest margin on WFG.
 %\paragraph{Steady-state NSGA-II.}

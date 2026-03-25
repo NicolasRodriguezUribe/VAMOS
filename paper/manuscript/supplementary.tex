@@ -194,7 +194,6 @@ SMS-EMOA & VAMOS & \textbf{124.94} & \textbf{187.16} & \textbf{734.42} & \textbf
 MOEA/D & VAMOS & \textbf{76.19} & \textbf{118.98} & \textbf{647.96} & \textbf{340.78} & \textbf{295.98} \\
  & \textit{pymoo}  & 1325.29 & 1735.46 & 4143.63 & 1023.63 & 2057.00 \\
  & \textit{jMetalPy} & 303.00 & 430.14 & 4267.52 & 354.29 & 1338.74 \\
- & Platypus & nan & nan & nan & 412.92 & 412.92 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -259,14 +258,6 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_robustness_summary_moead} 
 \endgroup
 
 %==============================================================================
-\section{Algorithm Configuration Spaces}
-\label{app:param_space}
-%==============================================================================
-
-The full parameter space for NSGA-II with real-valued encoding is presented in the main paper.
-
-
-%==============================================================================
 \section{Accessibility Proxy Protocol}
 \label{app:accessibility_protocol}
 %==============================================================================
@@ -283,63 +274,7 @@ Metrics count only non-empty, non-comment lines and explicit \texttt{import}/\te
 \label{app:code}
 %==============================================================================
 
-Code~\ref{lst:optuna_tune} shows how to autotune the NSGA-II tuning space with the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function defines the search space, which is converted to a \texttt{ParamSpace} before calling \texttt{ModelBasedTuner}.
-
-\begin{lstlisting}[float=ht!,caption={Autotuning NSGA-II with Optuna on ZDT1, DTLZ2, and WFG4.},label={lst:optuna_tune}]
-import numpy as np
-from vamos import optimize, make_problem_selection
-from vamos.engine.tuning import (
-    ModelBasedTuner, TuningTask, Instance, EvalContext,
-    build_nsgaii_config_space, config_from_assignment,
-)
-from vamos.foundation.quality_indicators import HVIndicator
-
-# Evaluation function: returns hypervolume
-def eval_fn(config, ctx: EvalContext):
-    cfg = config_from_assignment("nsgaii", config)
-    selection = make_problem_selection(
-        ctx.instance.name,
-        n_var=ctx.instance.n_var,
-        n_obj=ctx.instance.kwargs.get("n_obj"),
-    )
-    res = optimize(
-        selection.instantiate(),
-        algorithm="nsgaii",
-        algorithm_config=cfg,
-        max_evaluations=ctx.budget,
-        seed=ctx.seed,
-    )
-    hv = HVIndicator(reference_point=np.asarray(
-        ctx.instance.kwargs["ref_point"]
-    ))
-    return float(hv.compute(res.F).value)
-
-# Define tuning task with one problem per family
-task = TuningTask(
-    name="tune_nsgaii",
-    param_space=build_nsgaii_config_space().to_param_space(),
-    instances=[
-        Instance(name="zdt1", n_var=30,
-                 kwargs={"ref_point": [1.1, 1.1]}),
-        Instance(name="dtlz2", n_var=12,
-                 kwargs={"n_obj": 3,
-                         "ref_point": [1.1, 1.1, 1.1]}),
-        Instance(name="wfg4", n_var=24,
-                 kwargs={"n_obj": 2,
-                         "ref_point": [3.0, 5.0]}),
-    ],
-    seeds=[1, 2, 3], aggregator=np.mean,
-    budget_per_run=10000, maximize=True,
-)
-
-# Run Optuna-based tuning (TPE + multi-fidelity)
-tuner = ModelBasedTuner(
-    task=task, max_trials=50, backend="optuna",
-    seed=42, n_jobs=4,
-    budget_levels=[2000, 5000, 10000],
-)
-best_config, history = tuner.run(eval_fn)
-\end{lstlisting}
+Representative code examples and tuning scripts will be made available upon acceptance.
 
 
 %==============================================================================
