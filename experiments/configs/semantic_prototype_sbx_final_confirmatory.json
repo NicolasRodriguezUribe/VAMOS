@@ -1,0 +1,66 @@
+{
+  "engine": "numpy",
+  "hosts": [
+    "nsgaii",
+    "moead"
+  ],
+  "problems": [
+    {
+      "key": "zcat1",
+      "suite": "zcat",
+      "n_var": 30
+    },
+    {
+      "key": "zcat6",
+      "suite": "zcat",
+      "n_var": 30
+    },
+    {
+      "key": "zcat14",
+      "suite": "zcat",
+      "n_var": 30
+    },
+    {
+      "key": "zcat19",
+      "suite": "zcat",
+      "n_var": 30
+    },
+    {
+      "key": "zdt1",
+      "suite": "anchor",
+      "n_var": 12
+    },
+    {
+      "key": "zdt3",
+      "suite": "anchor",
+      "n_var": 12
+    },
+    {
+      "key": "dtlz2",
+      "suite": "anchor",
+      "n_var": 12
+    }
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "population_size": 40,
+  "max_evaluations": 800,
+  "n_var": 30,
+  "credit_model": "simple_improvement",
+  "variants": [
+    "fixed_sbx",
+    "semantic_prototype_sbx",
+    "adaptive_hierarchical_joint",
+    "adaptive_hierarchical_joint_no_regime"
+  ]
+}

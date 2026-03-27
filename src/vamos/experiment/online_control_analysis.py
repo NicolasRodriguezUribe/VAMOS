@@ -231,6 +231,7 @@ def build_concentration_summary(problem_host_rows: list[dict[str, Any]]) -> list
         intent_shares = [float(row.get(f"mean_intent_share_{label}") or 0.0) for label in INTENT_LABELS]
         rows.append(
             {
+                "suite": row.get("suite"),
                 "host": row["host"],
                 "problem": row["problem"],
                 "variant": row["variant"],
@@ -307,6 +308,7 @@ def build_phase_summary(trace_rows: list[dict[str, Any]]) -> list[dict[str, Any]
             counts_intent[str(row.get("intent_prototype"))] += 1.0
         total = float(len(rows))
         payload: dict[str, Any] = {
+            "suite": rows[0].get("suite"),
             "host": host,
             "problem": problem,
             "variant": variant,

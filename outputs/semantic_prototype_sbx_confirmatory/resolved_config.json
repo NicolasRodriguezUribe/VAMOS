@@ -1,0 +1,66 @@
+{
+  "credit_model": "simple_improvement",
+  "engine": "numpy",
+  "hosts": [
+    "nsgaii",
+    "moead"
+  ],
+  "max_evaluations": 800,
+  "n_var": 30,
+  "population_size": 40,
+  "problems": [
+    {
+      "key": "zcat1",
+      "n_var": 30,
+      "suite": "zcat"
+    },
+    {
+      "key": "zcat6",
+      "n_var": 30,
+      "suite": "zcat"
+    },
+    {
+      "key": "zcat14",
+      "n_var": 30,
+      "suite": "zcat"
+    },
+    {
+      "key": "zcat19",
+      "n_var": 30,
+      "suite": "zcat"
+    },
+    {
+      "key": "zdt1",
+      "n_var": 12,
+      "suite": "anchor"
+    },
+    {
+      "key": "zdt3",
+      "n_var": 12,
+      "suite": "anchor"
+    },
+    {
+      "key": "dtlz2",
+      "n_var": 12,
+      "suite": "anchor"
+    }
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "variants": [
+    "fixed_sbx",
+    "semantic_prototype_sbx",
+    "adaptive_hierarchical_joint",
+    "adaptive_hierarchical_joint_no_regime"
+  ]
+}

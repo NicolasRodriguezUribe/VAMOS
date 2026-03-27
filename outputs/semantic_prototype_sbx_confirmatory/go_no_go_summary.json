@@ -1,0 +1,29 @@
+{
+  "adaptive_losses": 15,
+  "adaptive_ties": 0,
+  "adaptive_wins": 6,
+  "baseline_by_host": {
+    "moead": "fixed_de",
+    "nsgaii": "fixed_sbx"
+  },
+  "best_by_host": {
+    "moead": {
+      "mean_hv": 25.2012025139622,
+      "problem": "zcat6",
+      "runtime_ratio_vs_baseline": null,
+      "variant": "semantic_prototype_sbx"
+    },
+    "nsgaii": {
+      "mean_hv": 32.287952211938325,
+      "problem": "zcat6",
+      "runtime_ratio_vs_baseline": 1.4462821537732378,
+      "variant": "semantic_prototype_sbx"
+    }
+  },
+  "decision": "no_go",
+  "efficient_adaptive_wins": 0,
+  "notes": [
+    "Decision is GO when at least one adaptive semantic variant beats the host baseline without >25% mean runtime inflation.",
+    "HV is used for baseline comparison; IGD+ is attached when MooCore is available and a reference front exists."
+  ]
+}

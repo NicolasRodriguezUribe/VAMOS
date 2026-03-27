@@ -58,7 +58,7 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 def _variant_group(variant: str) -> str:
     if variant.startswith("fixed_"):
         return "fixed"
-    if variant.startswith("adaptive_"):
+    if variant.startswith("adaptive_") or variant == "semantic_prototype_sbx":
         return "adaptive"
     return "semantic_static"
 
@@ -66,6 +66,14 @@ def _variant_group(variant: str) -> str:
 def _build_online_control_payload(variant: str, credit_model: str) -> dict[str, Any] | None:
     if variant == "fixed_sbx" or variant == "fixed_de":
         return None
+    if variant == "semantic_prototype_sbx":
+        return {
+            "enabled": True,
+            "policy": "adaptive_flat_parameter",
+            "credit_model": credit_model,
+            "trace_level": "basic",
+            "fixed_family": "sbx_like",
+        }
     if variant == "flat_operator":
         return {"enabled": True, "policy": "flat_operator", "credit_model": credit_model, "trace_level": "basic"}
     if variant == "adaptive_flat_operator":
@@ -115,6 +123,27 @@ def _build_online_control_payload(variant: str, credit_model: str) -> dict[str, 
             "fixed_family": "de_like",
         }
     raise ValueError(f"Unsupported pilot variant '{variant}'.")
+
+
+def _normalize_problem_specs(raw_problems: list[Any], default_n_var: int) -> list[dict[str, Any]]:
+    problem_specs: list[dict[str, Any]] = []
+    for item in raw_problems:
+        if isinstance(item, str):
+            problem_specs.append({"key": str(item), "n_var": default_n_var})
+            continue
+        if isinstance(item, dict):
+            key = str(item.get("key", "")).strip()
+            if not key:
+                raise ValueError("Problem spec mappings must include a non-empty 'key'.")
+            spec = {"key": key, "n_var": int(item.get("n_var", default_n_var))}
+            if item.get("n_obj") is not None:
+                spec["n_obj"] = int(item["n_obj"])
+            if item.get("suite") is not None:
+                spec["suite"] = str(item["suite"]).strip().lower()
+            problem_specs.append(spec)
+            continue
+        raise TypeError("Problem entries must be either strings or mappings.")
+    return problem_specs
 
 
 def _build_nsgaii_config(variant: str, *, pop_size: int, n_var: int, credit_model: str) -> NSGAIIConfig:
@@ -229,13 +258,15 @@ def _run_variant(
     variant: str,
     problem_key: str,
     n_var: int,
+    n_obj: int | None,
+    suite: str | None,
     pop_size: int,
     max_evaluations: int,
     seed: int,
     engine: str,
     credit_model: str,
 ) -> dict[str, Any]:
-    selection = make_problem_selection(problem_key, n_var=n_var)
+    selection = make_problem_selection(problem_key, n_var=n_var, n_obj=n_obj)
     problem = selection.instantiate()
     cfg = _build_algorithm_config(
         host,
@@ -271,6 +302,9 @@ def _run_variant(
         "variant": variant,
         "variant_group": _variant_group(variant),
         "problem": problem_key,
+        "suite": suite,
+        "problem_n_var": selection.n_var,
+        "problem_n_obj": selection.n_obj,
         "seed": seed,
         "engine": engine,
         "population_size": pop_size,
@@ -318,13 +352,12 @@ def _run_variant(
 
 
 def _attach_quality_metrics(run_rows: list[dict[str, Any]]) -> None:
-    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    grouped: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     for row in run_rows:
-        grouped[str(row["problem"])].append(row)
+        grouped[(str(row["problem"]), int(row.get("problem_n_obj") or 0))].append(row)
 
     igd_indicator_cache: dict[str, Any] = {}
-    for problem_key, rows in grouped.items():
-        n_obj = rows[0]["_front"].shape[1] if rows else 2
+    for (problem_key, n_obj), rows in grouped.items():
         reference_front = _load_reference_front(problem_key, int(n_obj))
         fronts = [np.asarray(row["_front"], dtype=float) for row in rows if np.asarray(row["_front"]).size > 0]
         if reference_front is not None:
@@ -343,14 +376,15 @@ def _attach_quality_metrics(run_rows: list[dict[str, Any]]) -> None:
 
 
 def _build_summary(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    grouped: dict[tuple[str | None, str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in run_rows:
-        grouped[(str(row["host"]), str(row["problem"]), str(row["variant"]))].append(row)
+        grouped[(str(row.get("suite")) if row.get("suite") is not None else None, str(row["host"]), str(row["problem"]), str(row["variant"]))].append(row)
 
     summary_rows: list[dict[str, Any]] = []
-    baseline_lookup: dict[tuple[str, str], dict[str, Any]] = {}
-    for (host, problem, variant), rows in grouped.items():
+    baseline_lookup: dict[tuple[str | None, str, str], dict[str, Any]] = {}
+    for (suite, host, problem, variant), rows in grouped.items():
         summary = {
+            "suite": suite,
             "host": host,
             "problem": problem,
             "variant": variant,
@@ -393,11 +427,12 @@ def _build_summary(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 summary[f"mean_{key}"] = _mean([float(row[key]) for row in rows])
         summary_rows.append(summary)
         if variant == BASELINE_BY_HOST.get(host):
-            baseline_lookup[(host, problem)] = summary
+            baseline_lookup[(suite, host, problem)] = summary
 
     hv_tolerance = 1e-6
     for row in summary_rows:
-        baseline = baseline_lookup.get((str(row["host"]), str(row["problem"])))
+        suite = str(row.get("suite")) if row.get("suite") is not None else None
+        baseline = baseline_lookup.get((suite, str(row["host"]), str(row["problem"])))
         if baseline is None:
             row["comparison_to_baseline"] = "no_baseline"
             row["hv_delta_vs_baseline"] = None
@@ -419,12 +454,12 @@ def _build_summary(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         row["hv_delta_vs_baseline"] = hv_delta
         baseline_time = max(1e-9, float(baseline["mean_time_ms"]))
         row["runtime_ratio_vs_baseline"] = float(row["mean_time_ms"]) / baseline_time
-    summary_rows.sort(key=lambda item: (item["host"], item["problem"], item["variant"]))
+    summary_rows.sort(key=lambda item: (str(item.get("suite") or ""), item["host"], item["problem"], item["variant"]))
     return summary_rows
 
 
 def _build_go_no_go(summary_rows: list[dict[str, Any]]) -> dict[str, Any]:
-    adaptive_rows = [row for row in summary_rows if str(row["variant"]).startswith("adaptive_")]
+    adaptive_rows = [row for row in summary_rows if str(row.get("variant_group")) == "adaptive"]
     wins = sum(1 for row in adaptive_rows if row.get("comparison_to_baseline") == "win")
     losses = sum(1 for row in adaptive_rows if row.get("comparison_to_baseline") == "loss")
     ties = sum(1 for row in adaptive_rows if row.get("comparison_to_baseline") == "tie")
@@ -473,21 +508,25 @@ def main() -> None:
     output_dir = args.output
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    n_var = int(config.get("n_var", 10))
     hosts = [str(host) for host in config.get("hosts", ["nsgaii", "moead"])]
-    problems = [str(problem) for problem in config.get("problems", ["zdt1", "zdt2"])]
+    problem_specs = _normalize_problem_specs(list(config.get("problems", ["zdt1", "zdt2"])), n_var)
     seeds = [int(seed) for seed in config.get("seeds", [0, 1])]
     variants = [str(variant) for variant in config.get("variants", [])]
     engine = str(config.get("engine", "numpy"))
     pop_size = int(config.get("population_size", 32))
     max_evaluations = int(config.get("max_evaluations", 320))
-    n_var = int(config.get("n_var", 10))
     credit_model = str(config.get("credit_model", "simple_improvement"))
 
     run_rows: list[dict[str, Any]] = []
     trace_rows: list[dict[str, Any]] = []
     policy_state_dir = output_dir / "policy_states"
     for host in hosts:
-        for problem_key in problems:
+        for problem_spec in problem_specs:
+            problem_key = str(problem_spec["key"])
+            problem_n_var = int(problem_spec["n_var"])
+            problem_n_obj = int(problem_spec["n_obj"]) if problem_spec.get("n_obj") is not None else None
+            suite = str(problem_spec["suite"]) if problem_spec.get("suite") is not None else None
             for seed in seeds:
                 for variant in variants:
                     print(f"[pilot] host={host} problem={problem_key} seed={seed} variant={variant}")
@@ -495,7 +534,9 @@ def main() -> None:
                         host=host,
                         variant=variant,
                         problem_key=problem_key,
-                        n_var=n_var,
+                        n_var=problem_n_var,
+                        n_obj=problem_n_obj,
+                        suite=suite,
                         pop_size=pop_size,
                         max_evaluations=max_evaluations,
                         seed=seed,
@@ -517,6 +558,7 @@ def main() -> None:
                                 "run_id": run["run_id"],
                                 "host": run["host"],
                                 "problem": run["problem"],
+                                "suite": run.get("suite"),
                                 "variant": run["variant"],
                                 "variant_group": run["variant_group"],
                                 "seed": run["seed"],

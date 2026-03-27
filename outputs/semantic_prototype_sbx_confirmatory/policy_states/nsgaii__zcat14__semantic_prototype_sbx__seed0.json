@@ -1,0 +1,29 @@
+{
+  "fixed_family": "sbx_like",
+  "policy": "adaptive_flat_parameter",
+  "prototype_names": [
+    "exploratory",
+    "balanced",
+    "local_refine",
+    "mutation_heavy",
+    "feasibility_biased"
+  ],
+  "prototype_set": "default",
+  "prototype_tracker": {
+    "counts": {
+      "balanced": 3,
+      "exploratory": 7,
+      "feasibility_biased": 3,
+      "local_refine": 3,
+      "mutation_heavy": 3
+    },
+    "exploration_weight": 0.3,
+    "reward_sums": {
+      "balanced": 0.6767662845169623,
+      "exploratory": 1.7227189291119378,
+      "feasibility_biased": 0.7268332914539908,
+      "local_refine": 0.72200348378738,
+      "mutation_heavy": 0.6664996912235953
+    }
+  }
+}

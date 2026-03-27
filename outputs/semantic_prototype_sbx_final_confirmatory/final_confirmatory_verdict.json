@@ -1,0 +1,113 @@
+{
+  "actual_scope": {
+    "credit_model": "simple_improvement",
+    "engine": "numpy",
+    "hosts": [
+      "nsgaii",
+      "moead"
+    ],
+    "max_evaluations": 800,
+    "n_var": 30,
+    "population_size": 40,
+    "problems": [
+      {
+        "key": "zcat1",
+        "n_var": 30,
+        "suite": "zcat"
+      },
+      {
+        "key": "zcat6",
+        "n_var": 30,
+        "suite": "zcat"
+      },
+      {
+        "key": "zcat14",
+        "n_var": 30,
+        "suite": "zcat"
+      },
+      {
+        "key": "zcat19",
+        "n_var": 30,
+        "suite": "zcat"
+      },
+      {
+        "key": "zdt1",
+        "n_var": 12,
+        "suite": "anchor"
+      },
+      {
+        "key": "zdt3",
+        "n_var": 12,
+        "suite": "anchor"
+      },
+      {
+        "key": "dtlz2",
+        "n_var": 12,
+        "suite": "anchor"
+      }
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "variants": [
+      "fixed_sbx",
+      "semantic_prototype_sbx",
+      "adaptive_hierarchical_joint",
+      "adaptive_hierarchical_joint_no_regime"
+    ]
+  },
+  "decision_rationale": {
+    "beats_hierarchy": true,
+    "overall_positive": true,
+    "overhead_fixable": true,
+    "runtime_moderate": false,
+    "strong_zcat_signal": true,
+    "zcat_stronger_than_anchor": true
+  },
+  "overhead": {
+    "control_total_median_share": 0.09613868596541278,
+    "decode_time_median_share": 0.06358642397270194,
+    "host_pipeline_total_median_share": 0.5166495052239617,
+    "overhead_looks_engineering_fixable": true,
+    "trace_time_median_share": 0.0019903932974067173
+  },
+  "prototype_dynamics": {
+    "mean_phase_intent_shift_tvd": 0.11473089583619211,
+    "median_dominant_intent_share": 0.42223684210526313,
+    "median_intent_switches": 84.0
+  },
+  "semantic_prototype_sbx_vs_fixed_sbx": {
+    "cases": 14,
+    "losses": 5,
+    "mean_hv_gap": 0.3654924914671341,
+    "mean_runtime_ratio": 2.744167156624846,
+    "median_hv_gap": 0.016945404755724813,
+    "median_runtime_ratio": 1.8329664166376385,
+    "ties": 0,
+    "wins": 9
+  },
+  "semantic_prototype_sbx_vs_hierarchical": {
+    "cases": 14,
+    "losses": 6,
+    "mean_hv_gap": 0.22384924091517508,
+    "median_hv_gap": 0.062031717571275014,
+    "ties": 0,
+    "wins": 8
+  },
+  "verdict": "WEAK_GO_TEVC_IF_STRONGLY_REFRAMED",
+  "zcat_vs_anchor": {
+    "anchor_mean_hv_gap_vs_fixed_sbx": 0.005775308842546845,
+    "anchor_wins": 4,
+    "zcat_mean_hv_gap_vs_fixed_sbx": 0.6352803784355745,
+    "zcat_wins": 5
+  }
+}
