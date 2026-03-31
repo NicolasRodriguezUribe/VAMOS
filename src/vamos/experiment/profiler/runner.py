@@ -91,15 +91,23 @@ def run_profile(
     """
     Profile optimization across multiple backends.
 
-    Args:
-        problem: Problem name (e.g., "zdt1")
-        engines: List of engines to compare
-        budget: Evaluation budget per run
-        seed: Random seed for reproducibility
-        compute_hv: Whether to compute hypervolume
+    Parameters
+    ----------
+    problem : str
+        Problem name.
+    engines : Sequence[str], default ``("numpy",)``
+        Engines to compare.
+    budget : int, default ``2000``
+        Evaluation budget per run.
+    seed : int, default ``42``
+        Random seed for reproducibility.
+    compute_hv : bool, default ``True``
+        Whether to compute hypervolume.
 
-    Returns:
-        ProfileReport with timing and quality metrics
+    Returns
+    -------
+    ProfileReport
+        Timing and quality report for the requested engines.
     """
     report = ProfileReport(problem=problem, budget=budget)
 

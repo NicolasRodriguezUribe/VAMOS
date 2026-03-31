@@ -17,6 +17,15 @@ def build_parser(
     parser.add_argument("--algorithm", type=str, default="nsgaii", choices=sorted(builders), help="Algorithm family to tune.")
     parser.add_argument("--backend", type=str, default="optuna", choices=tuple(all_backends), help="Tuning backend.")
     parser.add_argument(
+        "--smoke",
+        action="store_true",
+        help=(
+            "Apply tiny smoke-test defaults for quick CLI verification. "
+            "Keeps the requested algorithm/backend, clamps budgets and workers, "
+            "and disables validation/test/finisher stages."
+        ),
+    )
+    parser.add_argument(
         "--backend-fallback",
         type=str,
         default="error",

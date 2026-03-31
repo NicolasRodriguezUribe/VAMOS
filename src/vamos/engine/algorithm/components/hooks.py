@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from vamos.engine.algorithm.components.matching import match_ids_by_tolerance
+
 
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
@@ -247,13 +249,7 @@ def match_ids(
     np.ndarray
         IDs for the new population.
     """
-    new_ids = np.zeros(new_X.shape[0], dtype=int)
-    for i, row in enumerate(new_X):
-        for j, comb_row in enumerate(combined_X):
-            if np.allclose(row, comb_row, rtol=1e-12, atol=1e-12):
-                new_ids[i] = combined_ids[j]
-                break
-    return new_ids
+    return match_ids_by_tolerance(new_X, combined_X, combined_ids)
 
 
 __all__ = [

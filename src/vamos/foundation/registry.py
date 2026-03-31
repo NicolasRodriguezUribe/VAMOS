@@ -4,7 +4,7 @@ Generic registry pattern for managing named components (algorithms, operators, e
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from typing import Generic, TypeVar, overload
 
 T = TypeVar("T")
@@ -13,7 +13,7 @@ U = TypeVar("U")
 
 class Registry(Generic[T]):
     """
-    A simple thread-safe registry for managing named items.
+    A simple registry for managing named items.
 
     Allows registering items by name and retrieving them.
     Supports usage as a decorator.
@@ -29,13 +29,19 @@ class Registry(Generic[T]):
 
         Can be used as a function call or a decorator.
 
-        Args:
-            key: The unique name for the item.
-            item: The item to register. If None, returns a decorator.
-            override: If True, overwrite existing key. If False, raising ValueError on duplicate.
+        Parameters
+        ----------
+        key : str
+            Unique name for the item.
+        item : T | None, optional
+            Item to register. When omitted, returns a decorator.
+        override : bool, default ``False``
+            Whether to overwrite an existing key.
 
-        Returns:
-            The registered item (if passed) or a decorator (if item is None).
+        Returns
+        -------
+        Callable[[T], T] | T
+            The registered item, or a decorator when ``item`` is omitted.
         """
 
         def _do_register(obj: T) -> T:
@@ -58,12 +64,18 @@ class Registry(Generic[T]):
         """
         Retrieve an item by key.
 
-        Args:
-            key: Identify of item to retrieve.
-            default: Value to return if key missing. If not provided, raises KeyError.
+        Parameters
+        ----------
+        key : str
+            Identifier of the item to retrieve.
+        default : object, optional
+            Value returned when the key is missing. If omitted, a ``KeyError``
+            is raised instead.
 
-        Returns:
-            The item.
+        Returns
+        -------
+        object
+            The registered item or ``default``.
         """
         if key not in self._items:
             if default is not ...:
@@ -81,7 +93,7 @@ class Registry(Generic[T]):
     def __getitem__(self, key: str) -> T:
         return self.get(key)
 
-    def __iter__(self) -> Iterable[str]:
+    def __iter__(self) -> Iterator[str]:
         return iter(self._items)
 
     def __len__(self) -> int:

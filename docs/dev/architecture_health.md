@@ -9,7 +9,8 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 
 ## Health Gates (run locally)
 - `python tools/health.py` (uses the mypy error budget gate)
-- `python tools/health.py --mypy-full` (runs raw mypy; stricter than CI)
+- `python tools/health.py --continue-on-failure` (run the full gate list without fast-fail)
+- `python -m mypy --config-file pyproject.toml src/vamos` (raw mypy invocation)
 - `pytest -q tests/architecture/test_layer_boundaries.py`
 - `pytest -q tests/test_monolith_guard.py`
 - `pytest -q tests/test_public_api_guard.py`
@@ -65,6 +66,10 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - Function size <= 250 LOC; class size <= 400 LOC.
 - Allowlists are forbidden. Split instead.
 - Split pattern: create a package with focused modules and keep orchestration thin.
+
+## Current Guard Limits
+- `tests/test_monolith_guard.py` currently classifies only `src/vamos/experiment/cli/` and `src/vamos/ux/studio/` as CLI/UI. If additional UI surfaces such as `src/vamos/ux/panel/` grow, update the categorizer instead of assuming the guard already covers them.
+- `tests/architecture/test_experiment_import_cycles.py` currently scans `vamos.experiment` only. It is an important guard, but it is not proof that the whole package is cycle-free.
 
 ## Logging/Printing Policy
 - No `print()` in library code (allowed only in CLI/UI).

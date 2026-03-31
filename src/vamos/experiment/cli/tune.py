@@ -64,6 +64,12 @@ from ._tune_utils import (
     split_instances as _split_instances,
 )
 
+_SMOKE_BUDGET = 30
+_SMOKE_TUNE_BUDGET = 4
+_SMOKE_N_SEEDS = 2
+_SMOKE_POP_SIZE = 16
+_SMOKE_N_JOBS = 1
+
 
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
@@ -90,6 +96,41 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         all_backends=ALL_BACKENDS,
         parse_csv_ints=_parse_csv_ints,
     )
+
+
+def _clamp_positive(value: int, ceiling: int) -> int:
+    return max(1, min(int(value), int(ceiling)))
+
+
+def _apply_smoke_mode(args: argparse.Namespace) -> dict[str, Any]:
+    args.budget = _clamp_positive(int(args.budget), _SMOKE_BUDGET)
+    args.tune_budget = _clamp_positive(int(args.tune_budget), _SMOKE_TUNE_BUDGET)
+    args.n_seeds = _clamp_positive(int(args.n_seeds), _SMOKE_N_SEEDS)
+    args.n_jobs = _SMOKE_N_JOBS
+    args.pop_size = _clamp_positive(int(args.pop_size), _SMOKE_POP_SIZE)
+    args.initial_configs = _clamp_positive(int(args.initial_configs), int(args.tune_budget))
+    args.validation_topk = _clamp_positive(int(args.validation_topk), int(args.tune_budget))
+    args.finisher_topk = _clamp_positive(int(args.finisher_topk), int(args.tune_budget))
+    args.run_validation = False
+    args.run_test = False
+    args.run_statistical_finisher = False
+    args.multi_fidelity = False
+    args.show_progress_bar = False
+    if str(args.backend) in MODEL_BACKENDS and str(args.backend_fallback) == "error":
+        args.backend_fallback = "random"
+    return {
+        "budget": int(args.budget),
+        "tune_budget": int(args.tune_budget),
+        "n_seeds": int(args.n_seeds),
+        "n_jobs": int(args.n_jobs),
+        "pop_size": int(args.pop_size),
+        "initial_configs": int(args.initial_configs),
+        "run_validation": bool(args.run_validation),
+        "run_test": bool(args.run_test),
+        "run_statistical_finisher": bool(args.run_statistical_finisher),
+        "multi_fidelity": bool(args.multi_fidelity),
+        "backend_fallback": str(args.backend_fallback),
+    }
 
 
 def _resolve_output_dir(base: Path, run_name: str, *, problem: str, algorithm: str, backend: str, seed: int) -> Path:
@@ -165,6 +206,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     logger = _logger()
+    smoke_profile: dict[str, Any] | None = None
+    if bool(args.smoke):
+        smoke_profile = _apply_smoke_mode(args)
+        logger.info("Smoke mode active: %s", smoke_profile)
+
     requested_backend = str(args.backend)
     effective_backend = requested_backend
     availability = available_model_based_backends()
@@ -300,28 +346,36 @@ def main(argv: Sequence[str] | None = None) -> int:
             summary_updates=finisher_summary_updates,
             artifact_updates=finisher_artifacts,
         )
+    summary_updates: dict[str, Any] = {
+        "backend_requested": requested_backend,
+        "backend_effective": effective_backend,
+        "split": {
+            "instance_counts": {
+                "train": len(train_instances),
+                "validation": len(validation_instances),
+                "test": len(test_instances),
+            },
+            "seed_counts": {
+                "train": len(train_seeds),
+                "validation": len(validation_seeds),
+                "test": len(test_seeds),
+            },
+            "split_seed": int(args.split_seed),
+            "split_strategy": str(args.split_strategy),
+            "train_frac": float(args.train_frac),
+            "validation_frac": float(args.validation_frac),
+        },
+    }
+    if smoke_profile is not None:
+        summary_updates.update(
+            {
+                "smoke_mode": True,
+                "smoke_profile": smoke_profile,
+            }
+        )
     _append_summary(
         out_dir,
-        summary_updates={
-            "backend_requested": requested_backend,
-            "backend_effective": effective_backend,
-            "split": {
-                "instance_counts": {
-                    "train": len(train_instances),
-                    "validation": len(validation_instances),
-                    "test": len(test_instances),
-                },
-                "seed_counts": {
-                    "train": len(train_seeds),
-                    "validation": len(validation_seeds),
-                    "test": len(test_seeds),
-                },
-                "split_seed": int(args.split_seed),
-                "split_strategy": str(args.split_strategy),
-                "train_frac": float(args.train_frac),
-                "validation_frac": float(args.validation_frac),
-            },
-        },
+        summary_updates=summary_updates,
         artifact_updates={
             "split_instances": split_csv_path.name,
             "split_seeds": split_seed_path.name,

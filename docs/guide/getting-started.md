@@ -59,14 +59,14 @@ result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10_000, pop_size=1
 print(result_summary_text(result))
 ```
 
-`engine=None` is deterministic and resolves to `numpy`. Use `engine="auto"` only when you explicitly want heuristic backend selection.
+`engine=None` is deterministic and resolves to `numpy`. `engine="auto"` enables heuristic backend selection in both the Python API and the CLI.
 
 **2. Your own problem (no class needed):**
 
 ```python
 from vamos import make_problem, optimize
 
-# Write a simple function -- VAMOS handles vectorization and the protocol
+# Write a simple function -- VAMOS adapts scalar callables to the protocol
 problem = make_problem(
     lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
     n_var=2, n_obj=2,
@@ -75,6 +75,8 @@ problem = make_problem(
 )
 result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
 ```
+
+With `vectorized=False`, VAMOS evaluates that callable one row at a time. Use `vectorized=True` only when your function already handles `(N, n_var)` batches.
 
 Or scaffold a file interactively: `vamos create-problem`.
 
@@ -112,7 +114,15 @@ Use the lightest interface that still makes the run reproducible.
 | Scaffold a problem file | CLI wizard | `vamos create-problem` |
 | Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit budget | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, max_evaluations=5000)` |
 | Plugin algorithms | `GenericAlgorithmConfig` | `optimize(problem, algorithm="my_algo", algorithm_config=GenericAlgorithmConfig({...}))` |
-| Small study in one call | `seed=[...]` | `optimize("zdt1", seed=[0, 1, 2])` |
+| Small study in one call | `seed=[...]` | `optimize("zdt1", seed=[0, 1, 2]) -> StudyResult` |
+
+Multi-seed runs return `StudyResult`, a sequence-compatible container with `.runs`, `.metric_values(...)`, `.mean(...)`, `.std(...)`, and `.best_run(...)`.
+
+```python
+study = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2])
+print(study.mean("evaluations"))
+print(study.best_run("evaluations").meta["seed"])
+```
 
 Benchmarks and studies
 ----------------------
@@ -120,3 +130,4 @@ Benchmarks and studies
 - Compare backends: `vamos --experiment backends --problem zdt1`
 - Run a predefined suite: `vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/`
 - Batch problem x algorithm sweeps: `vamos --problem-set families --algorithm both`
+- For paper-grade reruns, install the pinned environment in `paper/requirements-publication.txt`.

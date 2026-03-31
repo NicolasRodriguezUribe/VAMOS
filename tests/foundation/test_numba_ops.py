@@ -8,7 +8,7 @@ from vamos.foundation.kernel.numba_ops import polynomial_mutation_numba, sbx_cro
 def test_polynomial_mutation_numba_runs_in_place():
     """Verify mutation runs in place and keeps finite values."""
     N, D = 100, 5
-    X = np.random.rand(N, D)
+    X = np.random.default_rng(0).random((N, D))
     lower = np.zeros(D)
     upper = np.ones(D)
 
@@ -23,7 +23,7 @@ def test_polynomial_mutation_numba_runs_in_place():
 def test_polynomial_mutation_numba_no_change_zero_prob():
     """Verify prob=0.0 causes no changes."""
     N, D = 100, 5
-    X_orig = np.random.rand(N, D)
+    X_orig = np.random.default_rng(1).random((N, D))
     X = X_orig.copy()
     lower = np.zeros(D)
     upper = np.ones(D)
@@ -37,7 +37,7 @@ def test_polynomial_mutation_numba_no_change_zero_prob():
 def test_sbx_crossover_numba_shape_and_finiteness():
     """Verify crossover returns a finite array of the expected shape."""
     N, D = 100, 5
-    parents = np.random.rand(N, D)
+    parents = np.random.default_rng(2).random((N, D))
     lower = np.zeros(D)
     upper = np.ones(D)
 
@@ -53,7 +53,7 @@ def test_sbx_crossover_numba_shape_and_finiteness():
 def test_sbx_crossover_numba_change():
     """Verify prob=1.0 causes changes."""
     N, D = 100, 5
-    parents = np.random.rand(N, D)
+    parents = np.random.default_rng(3).random((N, D))
     lower = np.zeros(D)
     upper = np.ones(D)
 
@@ -82,7 +82,7 @@ def test_numba_backend_integration():
 
     kernel = NumbaKernel()
     N, D = 10, 2
-    X = np.random.rand(N, D)
+    X = np.random.default_rng(4).random((N, D))
     params = {"prob": 0.5, "eta": 20.0}
 
     # Mutation
@@ -90,7 +90,7 @@ def test_numba_backend_integration():
     assert np.all(np.isfinite(X))
 
     # Crossover
-    parents = np.random.rand(20, D)  # 10 pairs
+    parents = np.random.default_rng(5).random((20, D))  # 10 pairs
     offspring = kernel.sbx_crossover(parents, params, None, 0.0, 1.0)
     assert offspring.shape == parents.shape
     assert np.all(np.isfinite(offspring))

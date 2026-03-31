@@ -3,20 +3,29 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, overload
+from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 
 from .base import (
     ConstraintModeStr,
     ResultMode,
-    _build_external_archive_config,
-    _normalize_tournament_selection_kwargs,
+    _ConfigBuilderState,
+    _ConstraintModeBuilder,
+    _CrossoverBuilder,
+    _InitializerBuilder,
+    _MutationBuilder,
+    _MutationProbFactorBuilder,
+    _PopSizeBuilder,
+    _RepairBuilder,
+    _ResultArchiveBuilder,
+    _SelectionBuilder,
+    _TrackGenealogyBuilder,
     _require_fields,
     _SerializableConfig,
     _validate_operators,
 )
-from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -58,7 +67,19 @@ class SMSEMOAConfig(_SerializableConfig):
         return _SMSEMOAConfigBuilder()
 
 
-class _SMSEMOAConfigBuilder:
+class _SMSEMOAConfigBuilder(
+    _ConfigBuilderState,
+    _PopSizeBuilder,
+    _CrossoverBuilder,
+    _MutationBuilder,
+    _SelectionBuilder,
+    _RepairBuilder,
+    _InitializerBuilder,
+    _MutationProbFactorBuilder,
+    _ConstraintModeBuilder,
+    _TrackGenealogyBuilder,
+    _ResultArchiveBuilder,
+):
     """
     Declarative configuration holder for SMS-EMOA settings.
 
@@ -66,43 +87,6 @@ class _SMSEMOAConfigBuilder:
         cfg = SMSEMOAConfig.default()
         cfg = SMSEMOAConfig.builder().pop_size(100).crossover("sbx", prob=1.0).build()
     """
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
-    def pop_size(self, value: int) -> _SMSEMOAConfigBuilder:
-        self._cfg["pop_size"] = value
-        return self
-
-    @overload
-    def crossover(self, method: CrossoverName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    @overload
-    def crossover(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    def crossover(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
-        self._cfg["crossover"] = (method, kwargs)
-        return self
-
-    @overload
-    def mutation(self, method: MutationName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    @overload
-    def mutation(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    def mutation(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
-        self._cfg["mutation"] = (method, kwargs)
-        return self
-
-    @overload
-    def selection(self, method: SelectionName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    @overload
-    def selection(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    def selection(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
-        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
-        return self
 
     def eliminate_duplicates(self, enabled: bool = True) -> _SMSEMOAConfigBuilder:
         self._cfg["eliminate_duplicates"] = bool(enabled)
@@ -120,56 +104,6 @@ class _SMSEMOAConfigBuilder:
             "offset": offset,
             "adaptive": adaptive,
         }
-        return self
-
-    def constraint_mode(self, value: ConstraintModeStr) -> _SMSEMOAConfigBuilder:
-        self._cfg["constraint_mode"] = value
-        return self
-
-    @overload
-    def repair(self, method: RepairName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    @overload
-    def repair(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    def repair(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
-        self._cfg["repair"] = (method, kwargs)
-        return self
-
-    @overload
-    def initializer(self, method: InitializerName, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    @overload
-    def initializer(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder: ...
-
-    def initializer(self, method: str, **kwargs: Any) -> _SMSEMOAConfigBuilder:
-        self._cfg["initializer"] = {"type": method, **kwargs}
-        return self
-
-    def mutation_prob_factor(self, value: float) -> _SMSEMOAConfigBuilder:
-        self._cfg["mutation_prob_factor"] = float(value)
-        return self
-
-    def track_genealogy(self, enabled: bool = True) -> _SMSEMOAConfigBuilder:
-        self._cfg["track_genealogy"] = bool(enabled)
-        return self
-
-    def result_mode(self, value: ResultMode) -> _SMSEMOAConfigBuilder:
-        mode = str(value).strip().lower()
-        if mode not in {"non_dominated", "population"}:
-            raise ValueError("result_mode must be 'non_dominated' or 'population'.")
-        self._cfg["result_mode"] = mode
-        return self
-
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _SMSEMOAConfigBuilder:
-        """Configure an external archive.
-
-        Args:
-            capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
-        """
-        self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
-        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def build(self) -> SMSEMOAConfig:

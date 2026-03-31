@@ -69,10 +69,16 @@ def plot_result_front(
     """
     Plot the Pareto front (2D or 3D) for a result object.
 
-    Args:
-        show: Whether to display the plot immediately.
-        title: Optional plot title. Defaults to "Pareto Front".
-        **kwargs: Additional arguments passed to scatter plot.
+    Parameters
+    ----------
+    result : ResultLike
+        Optimization result to visualize.
+    show : bool, default ``True``
+        Whether to display the plot immediately.
+    title : str | None, optional
+        Plot title. Defaults to ``"Pareto Front"``.
+    **kwargs : Any
+        Additional keyword arguments forwarded to Matplotlib scatter calls.
     """
     try:
         import matplotlib

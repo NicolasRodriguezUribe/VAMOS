@@ -30,20 +30,27 @@ def save_checkpoint(
     """
     Save algorithm state to a checkpoint file.
 
-    Args:
-        path: File path for checkpoint (will add .ckpt extension if missing).
-        X: Population decision variables.
-        F: Population objective values.
-        generation: Current generation number.
-        n_eval: Total evaluations so far.
-        rng_state: RNG state from `rng.bit_generator.state`.
-        G: Constraint values (optional).
-        archive_X: Archive decision variables (optional).
-        archive_F: Archive objective values (optional).
-        extra: Additional algorithm-specific state (optional).
+    Parameters
+    ----------
+    path : str | Path
+        Target file path. ``.ckpt`` is appended when no suffix is present.
+    X, F : np.ndarray
+        Population decision and objective arrays.
+    generation : int
+        Current generation number.
+    n_eval : int
+        Total number of evaluations performed so far.
+    rng_state : dict[str, Any]
+        State from ``rng.bit_generator.state``.
+    G, archive_X, archive_F : np.ndarray | None, optional
+        Optional constraint and archive arrays.
+    extra : dict[str, Any] | None, optional
+        Algorithm-specific checkpoint payload.
 
-    Returns:
-        Path to saved checkpoint file.
+    Returns
+    -------
+    Path
+        Written checkpoint path.
     """
     path = Path(path)
     if not path.suffix:
@@ -74,20 +81,15 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
     """
     Load algorithm state from a checkpoint file.
 
-    Args:
-        path: Path to checkpoint file.
+    Parameters
+    ----------
+    path : str | Path
+        Checkpoint file path.
 
-    Returns:
-        Dictionary containing checkpoint data with keys:
-        - X, F, G: Population arrays
-        - generation, n_eval: Progress counters
-        - rng_state: RNG state dict
-        - archive_X, archive_F: Archive arrays (may be None)
-        - extra: Additional state dict
-
-    Raises:
-        FileNotFoundError: If checkpoint file doesn't exist.
-        ValueError: If checkpoint version is unsupported.
+    Returns
+    -------
+    dict[str, Any]
+        Loaded checkpoint payload.
     """
     path = Path(path)
     if not path.exists():
@@ -107,9 +109,12 @@ def restore_rng(rng: Generator, state: dict[str, Any]) -> None:
     """
     Restore RNG state from checkpoint.
 
-    Args:
-        rng: NumPy random generator to restore.
-        state: State dict from checkpoint['rng_state'].
+    Parameters
+    ----------
+    rng : Generator
+        NumPy random generator to restore.
+    state : dict[str, Any]
+        State dictionary from ``checkpoint["rng_state"]``.
     """
     rng.bit_generator.state = state
 

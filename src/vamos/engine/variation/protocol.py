@@ -15,12 +15,18 @@ class VariationOperator(Protocol):
         """
         Apply the operator to population X.
 
-        Args:
-            X: Input population/offspring array.
-            rng: Random number generator.
-            **kwargs: Additional context (e.g. current generation).
+        Parameters
+        ----------
+        X : np.ndarray
+            Input population or offspring array.
+        rng : np.random.Generator
+            Random number generator.
+        **kwargs : Any
+            Additional execution context.
 
-        Returns:
+        Returns
+        -------
+        np.ndarray
             Modified population array.
         """
         ...

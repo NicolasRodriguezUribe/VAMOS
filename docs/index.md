@@ -13,8 +13,10 @@ Quick start:
 python -m venv .venv
 source .venv/bin/activate  # or .\.venv\Scripts\Activate.ps1 on Windows
 pip install -e ".[compute,research,analysis,dev]"
-vamos --problem zdt1 --max-evaluations 2000
+python -c "from vamos import optimize; result = optimize('zdt1', algorithm='nsgaii', max_evaluations=200, pop_size=40, seed=42); print(result.F.shape)"
 ```
+
+Prefer this Python API path for the quickest first script, but the run-oriented CLI is also smoke-tested for the standard NSGA-II/ZDT1 path as of March 31, 2026.
 
 Optional model-based tuning backends (`optuna`, `bohb_optuna`, `smac3`, `bohb`):
 

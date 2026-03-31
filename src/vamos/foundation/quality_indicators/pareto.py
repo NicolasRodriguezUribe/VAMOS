@@ -17,12 +17,17 @@ def pareto_filter(F: np.ndarray | None, *, return_indices: bool = False) -> np.n
     """
     Return the non-dominated subset of points (first Pareto front).
 
-    Args:
-        F: Objective values array (n_solutions, n_objectives) or None.
-        return_indices: When True, also return indices of the front in F.
+    Parameters
+    ----------
+    F : np.ndarray | None
+        Objective array of shape ``(n_solutions, n_objectives)``.
+    return_indices : bool, default ``False``
+        Whether to also return indices of the Pareto front in ``F``.
 
-    Returns:
-        Front array, or (front, indices) when return_indices is True.
+    Returns
+    -------
+    np.ndarray | tuple[np.ndarray, np.ndarray] | None
+        Front array, or ``(front, indices)`` when ``return_indices`` is true.
     """
     if F is None:
         if return_indices:

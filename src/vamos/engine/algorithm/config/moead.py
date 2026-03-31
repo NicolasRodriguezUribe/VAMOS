@@ -8,8 +8,24 @@ from typing import Any, overload
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.resources import weight_path
 
-from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
-from .types import AggregationName, CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName
+from .base import (
+    ConstraintModeStr,
+    ResultMode,
+    _ConfigBuilderState,
+    _ConstraintModeBuilder,
+    _CrossoverBuilder,
+    _InitializerBuilder,
+    _MutationBuilder,
+    _MutationProbFactorBuilder,
+    _PopSizeBuilder,
+    _RepairBuilder,
+    _ResultArchiveBuilder,
+    _TrackGenealogyBuilder,
+    _require_fields,
+    _SerializableConfig,
+    _validate_operators,
+)
+from .types import AggregationName, RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -63,7 +79,18 @@ class MOEADConfig(_SerializableConfig):
         return _MOEADConfigBuilder()
 
 
-class _MOEADConfigBuilder:
+class _MOEADConfigBuilder(
+    _ConfigBuilderState,
+    _PopSizeBuilder,
+    _CrossoverBuilder,
+    _MutationBuilder,
+    _RepairBuilder,
+    _InitializerBuilder,
+    _MutationProbFactorBuilder,
+    _ConstraintModeBuilder,
+    _TrackGenealogyBuilder,
+    _ResultArchiveBuilder,
+):
     """
     Declarative configuration holder for MOEA/D settings.
 
@@ -74,13 +101,6 @@ class _MOEADConfigBuilder:
         # Quick default configuration
         cfg = MOEADConfig.default()
     """
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
-    def pop_size(self, value: int) -> _MOEADConfigBuilder:
-        self._cfg["pop_size"] = value
-        return self
 
     def batch_size(self, value: int) -> _MOEADConfigBuilder:
         self._cfg["batch_size"] = value
@@ -99,26 +119,6 @@ class _MOEADConfigBuilder:
         return self
 
     @overload
-    def crossover(self, method: CrossoverName, **kwargs: Any) -> _MOEADConfigBuilder: ...
-
-    @overload
-    def crossover(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
-
-    def crossover(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
-        self._cfg["crossover"] = (method, kwargs)
-        return self
-
-    @overload
-    def mutation(self, method: MutationName, **kwargs: Any) -> _MOEADConfigBuilder: ...
-
-    @overload
-    def mutation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
-
-    def mutation(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
-        self._cfg["mutation"] = (method, kwargs)
-        return self
-
-    @overload
     def aggregation(self, method: AggregationName, **kwargs: Any) -> _MOEADConfigBuilder: ...
 
     @overload
@@ -132,58 +132,8 @@ class _MOEADConfigBuilder:
         self._cfg["weight_vectors"] = {"path": path, "divisions": divisions}
         return self
 
-    def constraint_mode(self, value: ConstraintModeStr) -> _MOEADConfigBuilder:
-        self._cfg["constraint_mode"] = value
-        return self
-
-    @overload
-    def repair(self, method: RepairName, **kwargs: Any) -> _MOEADConfigBuilder: ...
-
-    @overload
-    def repair(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
-
-    def repair(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
-        self._cfg["repair"] = (method, kwargs)
-        return self
-
-    @overload
-    def initializer(self, method: InitializerName, **kwargs: Any) -> _MOEADConfigBuilder: ...
-
-    @overload
-    def initializer(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder: ...
-
-    def initializer(self, method: str, **kwargs: Any) -> _MOEADConfigBuilder:
-        self._cfg["initializer"] = {"type": method, **kwargs}
-        return self
-
-    def mutation_prob_factor(self, value: float) -> _MOEADConfigBuilder:
-        self._cfg["mutation_prob_factor"] = float(value)
-        return self
-
     def use_numba_variation(self, enabled: bool = True) -> _MOEADConfigBuilder:
         self._cfg["use_numba_variation"] = bool(enabled)
-        return self
-
-    def track_genealogy(self, enabled: bool = True) -> _MOEADConfigBuilder:
-        self._cfg["track_genealogy"] = bool(enabled)
-        return self
-
-    def result_mode(self, value: ResultMode) -> _MOEADConfigBuilder:
-        mode = str(value).strip().lower()
-        if mode not in {"non_dominated", "population"}:
-            raise ValueError("result_mode must be 'non_dominated' or 'population'.")
-        self._cfg["result_mode"] = mode
-        return self
-
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _MOEADConfigBuilder:
-        """Configure an external archive.
-
-        Args:
-            capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
-        """
-        self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
-        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def build(self) -> MOEADConfig:

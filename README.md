@@ -6,7 +6,20 @@
 
 VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels with NumPy as the exact reference path and optional Numba acceleration for core kernels.
 
-## 🚀 Key Features
+## Current Audit Status
+
+As of March 31, 2026, both the Python API and the published onboarding CLI surface are covered by smoke tests for the standard NSGA-II/ZDT1 path.
+
+- `vamos --problem ...`, `vamos quickstart`, `vamos create-problem`, `vamos tune --backend random --smoke`, `vamos profile`, the common `vamos zoo` commands, and CLI `--engine auto` are verified for the standard smoke path.
+- Published README, CLI-guide, and tuning-guide commands now have command-level smoke coverage, including `vamos bench ... --smoke` and `vamos tune --backend random --smoke`.
+- `make_problem(..., vectorized=False)` adapts scalar objectives by evaluating one row at a time. Use `vectorized=True` for actual batched NumPy evaluation.
+- `optimize(..., seed=[...])` returns a sequence-compatible `StudyResult` with `runs`, `metric_values(...)`, `mean(...)`, `std(...)`, and `best_run(...)` helpers.
+- For publication benchmarking, pin exact versions of the `research` extra dependencies in a lockfile or environment spec.
+- A maintained paper-grade environment snapshot now lives at `paper/requirements-publication.txt`.
+
+See `docs/topics/engineering_audit.md` for the maintained audit summary and rationale.
+
+## Key Features
 
 - **Unified API**: A clear, fluent interface `vamos.optimize()` for all workflows.
 - **Battle-Tested Algorithms**: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA.
@@ -20,7 +33,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 
 Canonical customization guide: `docs/topics/extending.md`.
 
-## 📦 Quick Install
+## Quick Install
 
 ```bash
 pip install vamos-optimization
@@ -60,6 +73,13 @@ pip install "vamos-optimization[tuning]"
 pip install "smac>=2.0"
 ```
 
+For publication benchmarking, prefer the pinned paper environment:
+
+```bash
+pip install -e .
+pip install -r paper/requirements-publication.txt
+```
+
 ## Backend Capability Matrix
 
 | Backend | Status | Role |
@@ -70,7 +90,7 @@ pip install "smac>=2.0"
 
 Operator shorthand accepts either numeric probabilities or the string literal `"1/n"` for per-variable mutation rates.
 
-## ⚡ Quickstart
+## Quickstart
 
 Solve the ZDT1 benchmark problem with NSGA-II in just a few lines:
 
@@ -100,7 +120,7 @@ vamos quickstart
 
 This wizard writes a reusable config and stores results under `results/quickstart/`.
 
-Use `vamos quickstart --template list` to see domain templates.
+Use `vamos quickstart --template list` to inspect domain templates.
 
 New to Python? Start with the Minimal Python Track: `docs/guide/minimal-python.md`.
 
@@ -108,6 +128,14 @@ After a run, summarize results with:
 
 ```bash
 vamos summarize --results results/quickstart
+```
+
+For a small study in one call:
+
+```python
+study = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2])
+print(study.mean("evaluations"))
+print(study.best_run("evaluations").meta["seed"])
 ```
 
 All functionality lives under one command. Run `vamos help` to list everything:
@@ -124,7 +152,7 @@ All functionality lives under one command. Run `vamos help` to list everything:
 | `vamos profile` | Performance profiling |
 | `vamos zoo` | Problem zoo presets |
 
-## 🎯 Tuning Quick Start
+## Tuning Quick Start
 
 You can use the implemented tuning backends directly from `vamos tune`:
 `racing`, `random`, `optuna`, `bohb_optuna`, `smac3`, `bohb`.
@@ -135,7 +163,15 @@ Check backend availability in your current environment:
 vamos tune --list-backends
 ```
 
+Quick verification with the built-in backend and tiny budgets:
+
+```bash
+vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend random --smoke --output-dir report/tuning_smoke
+```
+
 Note: `racing` and `random` require no extra dependencies. The model-based backends (`optuna`, `bohb_optuna`, `smac3`, `bohb`) require the optional `tuning` extra: `pip install "vamos-optimization[tuning]"`. The `smac3` backend uses the `smac` package.
+
+For paper-grade comparisons against external frameworks, do not rely on the open-ended `research` extra alone. Record a pinned environment or lockfile alongside reported results.
 
 Recommended robust command (fallback + suite-stratified split):
 
@@ -159,7 +195,7 @@ New to hands-on learning? Open the **interactive tutorial notebook**:
 jupyter notebook notebooks/0_basic/05_interactive_tutorial.ipynb
 ```
 
-## 🧩 Define Your Own Problem
+## Define Your Own Problem
 
 Use `make_problem()` to turn any Python function into a VAMOS-compatible problem
 -- no classes, no protocols, no NumPy vectorization required:
@@ -179,9 +215,11 @@ result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
 ```
 
 Your function receives a single solution `x` (array of length `n_var`) and returns
-a list of `n_obj` objective values. VAMOS auto-vectorizes it for performance.
+a list of `n_obj` objective values. When `vectorized=False`, VAMOS adapts that
+scalar callable by evaluating one row at a time.
 
-For extra speed, pass `vectorized=True` and write a function that handles batches directly.
+For actual batch performance, pass `vectorized=True` and write a function that
+handles `(N, n_var)` batches directly.
 
 Prefer a file template? The CLI wizard scaffolds a ready-to-run `.py` file:
 
@@ -255,7 +293,7 @@ python tools/benchmark_compare_pymoo.py --output reports/performance/pymoo_compa
 - Algorithm-specific notes (reference directions, operator defaults): `docs/reference/algorithms.md`.
 - Release packaging smoke checklist: `docs/release_smoke.md`.
 
-## 📚 Examples & Notebooks
+## Examples & Notebooks
 
 VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
 
@@ -279,30 +317,53 @@ VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
   - `notebooks/2_advanced/33_optuna_tuning_advanced.ipynb` -- Multi-fidelity and persistent Optuna workflows
   - `notebooks/2_advanced/34_extension_workflows.ipynb` -- Custom problem and custom algorithm extension patterns
 
-## 🛠️ Tooling Ecosystem
+## Tooling Ecosystem
 
 All tools are available as `vamos <subcommand>`. Run `vamos help` for the full list.
 
 - **`vamos profile`**: Analyze the performance overhead of your experiments.
   ```bash
-  vamos profile nsgaii zdt1 --budget 5000
+  vamos profile --problem zdt1 --engines numpy,numba --budget 2000 --output report/profile.csv
   ```
 - **`vamos bench`**: Generate full reports comparing multiple algorithms, plus jMetalPy-compatible lab outputs (`summary/lab/QualityIndicatorSummary.csv`, Wilcoxon tables, boxplots). Boxplots require `matplotlib`.
   ```bash
   vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/
   ```
+  ```bash
+  vamos bench ZDT_small --algorithms nsgaii --output report/ --smoke
+  ```
 - **`vamos tune`**: You can use the implemented tuners directly from CLI (`racing`, `random`, `optuna`, `bohb_optuna`, `smac3`, `bohb`). `--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.
   ```bash
   vamos tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5
   ```
-- Recommended robust invocation (backend fallback + suite-stratified split):
-  ```bash
+  - Quick verification path:
+    ```bash
+    vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend random --smoke --output-dir report/tuning_smoke
+    ```
+  - Recommended robust invocation (backend fallback + suite-stratified split):
+    ```bash
   vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1
   ```
 - Full tuning reference (canonical docs): `docs/topics/tuning.md`.
 - **`vamos check`**: Verify your installation and backend availability.
 
-## 🤝 Contributing
+## Citation
+
+If you use VAMOS in published work, cite it directly:
+
+```bibtex
+@software{vamos_2026,
+  title = {VAMOS: Vectorized Architecture for Multiobjective Optimization Studies},
+  author = {Rodriguez Uribe, Nicolas and Herr{\'a}n, Alberto and Nebro, Antonio J. and Del Ser, Javier and Colmenar, J. Manuel},
+  year = {2026},
+  version = {0.1.0},
+  url = {https://github.com/NicolasRodriguezUribe/VAMOS}
+}
+```
+
+The maintained citation metadata lives in `CITATION.cff`.
+
+## Contributing
 
 We welcome contributions! Please see `CONTRIBUTING.md` for guidelines.
 

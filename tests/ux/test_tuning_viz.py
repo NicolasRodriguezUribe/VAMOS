@@ -34,7 +34,7 @@ def test_plot_helpers_do_not_crash():
     df = tuning_result_to_dataframe(res, param_names=["p1", "p2"])
     plot_tuning_scatter(df, "p1", "p2", color_by="obj_0")
     plot_objective_tradeoff(df, "obj_0", "obj_1")
-    F = np.random.rand(10, 3)
+    F = np.random.default_rng(0).random((10, 3))
     plot_reduced_front(F, target_dim=2)
 
 

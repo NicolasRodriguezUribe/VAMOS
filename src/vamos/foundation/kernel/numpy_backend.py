@@ -7,27 +7,33 @@ Assumes F is float64 of shape (N, M), X is float64 of shape (N, n_var).
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Literal, overload
+from typing import Literal, cast, overload
 
 import numpy as np
 
 from .backend import KernelBackend
 from .operator_primitives import polynomial_mutation_population, sbx_crossover_pairs
 
+_DOMINANCE_TENSOR_BUDGET = 2_000_000
+_TOURNAMENT_KEY_BUDGET = 2_000_000
 
-def _fast_non_dominated_sort(F: np.ndarray) -> tuple[list[list[int]], np.ndarray]:
-    """
-    Classic O(N^2) fast non-dominated sort.
-    Args:
-        F: objective matrix (N, M), float64.
-    Returns:
-      - fronts: list of lists with indices per front (0, 1, ...)
-      - rank: array with the front rank for each solution
-    """
+
+def _dominance_rows(F_rows: np.ndarray, F_all: np.ndarray) -> np.ndarray:
+    """Compute the dominance relation for ``F_rows`` against ``F_all``."""
+    less_equal = F_rows[:, None, :] <= F_all[None, :, :]
+    strictly_less = F_rows[:, None, :] < F_all[None, :, :]
+    return cast(
+        np.ndarray,
+        np.logical_and(
+            np.all(less_equal, axis=2),
+            np.any(strictly_less, axis=2),
+        ),
+    )
+
+
+def _fast_non_dominated_sort_dense(F: np.ndarray) -> tuple[list[list[int]], np.ndarray]:
+    """Dense vectorized fast non-dominated sort for moderate population sizes."""
     N = F.shape[0]
-    if N == 0:
-        return [], np.empty(0, dtype=int)
-
     less_equal = F[:, None, :] <= F[None, :, :]
     strictly_less = F[:, None, :] < F[None, :, :]
     dom_matrix = np.logical_and(
@@ -52,6 +58,68 @@ def _fast_non_dominated_sort(F: np.ndarray) -> tuple[list[list[int]], np.ndarray
         current = np.flatnonzero(dominated_count == 0)
 
     return fronts, rank
+
+
+def _fast_non_dominated_sort_blocked(F: np.ndarray) -> tuple[list[list[int]], np.ndarray]:
+    """Memory-safe fast non-dominated sort using blocked dominance sweeps."""
+    N, M = F.shape
+    rank = np.empty(N, dtype=int)
+    fronts: list[list[int]] = []
+    block_rows = max(1, _DOMINANCE_TENSOR_BUDGET // max(1, N * M))
+
+    dominated_count = np.zeros(N, dtype=np.int64)
+    for start in range(0, N, block_rows):
+        stop = min(N, start + block_rows)
+        dom_block = _dominance_rows(F[start:stop], F)
+        local_rows = np.arange(start, stop, dtype=int) - start
+        dom_block[local_rows, np.arange(start, stop, dtype=int)] = False
+        dominated_count += dom_block.sum(axis=0, dtype=np.int64)
+
+    current = np.flatnonzero(dominated_count == 0)
+    level = 0
+    while current.size > 0:
+        fronts.append(current.tolist())
+        rank[current] = level
+        dominated_count[current] = -1
+
+        dom_contrib = np.zeros(N, dtype=np.int64)
+        current_start = 0
+        while current_start < current.size:
+            current_stop = min(current.size, current_start + block_rows)
+            current_block = current[current_start:current_stop]
+            dom_block = _dominance_rows(F[current_block], F)
+            dom_block[:, current_block] = False
+            dom_contrib += dom_block.sum(axis=0, dtype=np.int64)
+            current_start = current_stop
+
+        dominated_count -= dom_contrib
+        dominated_count[current] = -1
+        level += 1
+        current = np.flatnonzero(dominated_count == 0)
+
+    return fronts, rank
+
+
+def _fast_non_dominated_sort(F: np.ndarray) -> tuple[list[list[int]], np.ndarray]:
+    """Classic O(N^2) fast non-dominated sort.
+
+    Parameters
+    ----------
+    F
+        Objective matrix with shape ``(N, M)``.
+
+    Returns
+    -------
+    tuple[list[list[int]], np.ndarray]
+        Front membership lists and the per-solution front-rank array.
+    """
+    N = F.shape[0]
+    if N == 0:
+        return [], np.empty(0, dtype=int)
+
+    if F.shape[0] * F.shape[0] * F.shape[1] <= _DOMINANCE_TENSOR_BUDGET:
+        return _fast_non_dominated_sort_dense(F)
+    return _fast_non_dominated_sort_blocked(F)
 
 
 def _compute_crowding(F: np.ndarray, fronts: list[list[int]]) -> np.ndarray:
@@ -132,17 +200,20 @@ def _sample_tournament_candidates(
     n_parents: int,
     pressure: int,
 ) -> np.ndarray:
-    if pressure >= n_candidates:
+    take = n_candidates if pressure >= n_candidates else pressure
+    kth = n_candidates - 1 if take == n_candidates else take - 1
+    if n_parents * n_candidates <= _TOURNAMENT_KEY_BUDGET:
         keys = rng.random((n_parents, n_candidates))
-        return np.argpartition(keys, kth=n_candidates - 1, axis=1).astype(np.int64, copy=False)
+        selected = np.argpartition(keys, kth=kth, axis=1)
+        return selected[:, :take].astype(np.int64, copy=False)
 
-    if n_parents * n_candidates <= 2_000_000:
-        keys = rng.random((n_parents, n_candidates))
-        return np.argpartition(keys, kth=pressure - 1, axis=1)[:, :pressure].astype(np.int64, copy=False)
-
-    candidates = np.empty((n_parents, pressure), dtype=np.int64)
-    for i in range(n_parents):
-        candidates[i] = rng.choice(n_candidates, size=pressure, replace=False)
+    rows_per_chunk = max(1, _TOURNAMENT_KEY_BUDGET // max(1, n_candidates))
+    candidates = np.empty((n_parents, take), dtype=np.int64)
+    for start in range(0, n_parents, rows_per_chunk):
+        stop = min(n_parents, start + rows_per_chunk)
+        keys = rng.random((stop - start, n_candidates))
+        selected = np.argpartition(keys, kth=kth, axis=1)
+        candidates[start:stop] = selected[:, :take]
     return candidates
 
 

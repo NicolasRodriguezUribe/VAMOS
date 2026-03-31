@@ -56,10 +56,11 @@ class TestCompileObjectiveFunction:
 
     def test_all_templates_compile(self) -> None:
         """Every built-in template must compile without error."""
+        rng = np.random.default_rng(0)
         for name, template in example_objectives().items():
             fn = compile_objective_function(template["code"])
             n_var = int(template["n_var"])
-            x = np.random.rand(n_var)
+            x = rng.random(n_var)
             result = fn(x)
             assert isinstance(result, list), f"Template '{name}' must return a list"
             assert len(result) == int(template["n_obj"]), f"Template '{name}' objective count mismatch"

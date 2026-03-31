@@ -22,6 +22,8 @@ def test_plugin_registration_and_usage():
     3. Run optimization using the registered name
     """
 
+    rng = np.random.default_rng(0)
+
     # 1. Define Mock Algorithm Builder
     def mock_algo_builder(cfg, kernel):
         class MockAlgo:
@@ -29,7 +31,7 @@ def test_plugin_registration_and_usage():
                 # Return trivial result
                 return {
                     "X": np.zeros((5, problem.n_var)),
-                    "F": np.random.rand(5, problem.n_obj),
+                    "F": rng.random((5, problem.n_obj)),
                 }
 
         return MockAlgo()

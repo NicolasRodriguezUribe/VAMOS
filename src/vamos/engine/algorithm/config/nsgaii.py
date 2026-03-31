@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, overload
+from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import normalize_encoding
@@ -12,74 +12,40 @@ from .base import (
     ConstraintModeStr,
     LiveCallbackMode,
     ResultMode,
-    _build_external_archive_config,
-    _normalize_tournament_selection_kwargs,
+    _ConfigBuilderState,
+    _ConstraintModeBuilder,
+    _CrossoverBuilder,
+    _InitializerBuilder,
+    _MutationBuilder,
+    _MutationProbFactorBuilder,
+    _PopSizeBuilder,
+    _RepairBuilder,
+    _ResultArchiveBuilder,
+    _SelectionBuilder,
+    _TrackGenealogyBuilder,
     _require_fields,
     _SerializableConfig,
     _validate_operators,
 )
-from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
+from .types import RepairConfigValue
 
 
-class _NSGAIIConfigBuilder:
+class _NSGAIIConfigBuilder(
+    _ConfigBuilderState,
+    _PopSizeBuilder,
+    _CrossoverBuilder,
+    _MutationBuilder,
+    _SelectionBuilder,
+    _RepairBuilder,
+    _InitializerBuilder,
+    _MutationProbFactorBuilder,
+    _ResultArchiveBuilder,
+    _ConstraintModeBuilder,
+    _TrackGenealogyBuilder,
+):
     """
     Fluent builder for NSGA-II configs.
     """
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
-    def pop_size(self, value: int) -> _NSGAIIConfigBuilder:
-        self._cfg["pop_size"] = value
-        return self
-
-    @overload
-    def crossover(
-        self,
-        method: CrossoverName,
-        **kwargs: Any,
-    ) -> _NSGAIIConfigBuilder: ...
-
-    @overload
-    def crossover(
-        self,
-        method: str,
-        **kwargs: Any,
-    ) -> _NSGAIIConfigBuilder: ...
-
-    def crossover(
-        self,
-        method: str,
-        **kwargs: Any,
-    ) -> _NSGAIIConfigBuilder:
-        if not isinstance(method, str):
-            raise TypeError("crossover() expects a method name followed by keyword arguments, e.g. crossover('sbx', prob=1.0, eta=20.0).")
-        self._cfg["crossover"] = (method, kwargs)
-        return self
-
-    @overload
-    def mutation(
-        self,
-        method: MutationName,
-        **kwargs: Any,
-    ) -> _NSGAIIConfigBuilder: ...
-
-    @overload
-    def mutation(
-        self,
-        method: str,
-        **kwargs: Any,
-    ) -> _NSGAIIConfigBuilder: ...
-
-    def mutation(
-        self,
-        method: str,
-        **kwargs: Any,
-    ) -> _NSGAIIConfigBuilder:
-        if not isinstance(method, str):
-            raise TypeError("mutation() expects a method name followed by keyword arguments, e.g. mutation('pm', prob='1/n', eta=20.0).")
-        self._cfg["mutation"] = (method, kwargs)
-        return self
 
     def offspring_size(self, value: int) -> _NSGAIIConfigBuilder:
         if value <= 0:
@@ -96,72 +62,6 @@ class _NSGAIIConfigBuilder:
         if value <= 0:
             raise ValueError("replacement size must be positive.")
         self._cfg["replacement_size"] = value
-        return self
-
-    @overload
-    def repair(self, method: RepairName, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
-
-    @overload
-    def repair(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
-
-    def repair(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
-        self._cfg["repair"] = (method, kwargs)
-        return self
-
-    @overload
-    def selection(self, method: SelectionName, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
-
-    @overload
-    def selection(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
-
-    def selection(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
-        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
-        return self
-
-    @overload
-    def initializer(self, method: InitializerName, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
-
-    @overload
-    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder: ...
-
-    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIConfigBuilder:
-        self._cfg["initializer"] = {"type": method, **kwargs}
-        return self
-
-    def mutation_prob_factor(self, value: float) -> _NSGAIIConfigBuilder:
-        self._cfg["mutation_prob_factor"] = float(value)
-        return self
-
-    def result_mode(self, value: ResultMode) -> _NSGAIIConfigBuilder:
-        """Set result payload mode: ``non_dominated`` or ``population``."""
-        mode = str(value).strip().lower()
-        if mode not in {"non_dominated", "population"}:
-            raise ValueError("result_mode must be 'non_dominated' or 'population'.")
-        self._cfg["result_mode"] = mode
-        return self
-
-    def external_archive(
-        self,
-        capacity: int | None = None,
-        **kwargs: Any,
-    ) -> _NSGAIIConfigBuilder:
-        """Configure an external archive.
-
-        Args:
-            capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
-        """
-        self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
-        self._cfg.setdefault("result_mode", "non_dominated")
-        return self
-
-    def constraint_mode(self, value: ConstraintModeStr) -> _NSGAIIConfigBuilder:
-        """Set constraint handling mode: 'feasibility' or 'none'/'penalty'."""
-        self._cfg["constraint_mode"] = value
-        return self
-
-    def track_genealogy(self, enabled: bool = True) -> _NSGAIIConfigBuilder:
-        self._cfg["track_genealogy"] = bool(enabled)
         return self
 
     def immigration(self, config: dict[str, Any] | None) -> _NSGAIIConfigBuilder:
@@ -253,12 +153,19 @@ class NSGAIIConfig(_SerializableConfig):
         """
         Create a default NSGA-II configuration with sensible defaults.
 
-        Args:
-            pop_size: Population size (default: 100)
-            n_var: Number of variables (used for mutation prob = 1/n_var)
-            encoding: Problem encoding. If omitted, defaults to "real".
-        Returns:
-            Frozen NSGAIIConfig ready to use
+        Parameters
+        ----------
+        pop_size
+            Population size.
+        n_var
+            Number of variables used for the default mutation probability.
+        encoding
+            Problem encoding. If omitted, defaults to ``"real"``.
+
+        Returns
+        -------
+        NSGAIIConfig
+            Frozen configuration ready to use.
         """
         normalized = normalize_encoding(encoding, default="real")
         mut_prob = 1.0 / n_var if n_var else 0.1

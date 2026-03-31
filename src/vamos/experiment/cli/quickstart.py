@@ -11,7 +11,7 @@ from vamos.engine.algorithm.catalog import ENABLED_ALGORITHMS
 from vamos.engine.config.spec import EXPERIMENT_SPEC_VERSION
 from vamos.experiment.presentation import run_experiments_from_args
 from vamos.experiment.runner_utils import problem_output_dir, run_output_dir
-from vamos.experiment.runtime.catalog import EXPERIMENT_BACKENDS
+from vamos.experiment.runtime.catalog import EXPERIMENT_BACKENDS, resolve_engine
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.problem.registry import available_problem_names, make_problem_selection
@@ -162,7 +162,7 @@ def _pick_algorithm(algorithm: str | None, *, default: str, interactive: bool) -
 
 
 def _pick_engine(engine: str | None, *, default: str, interactive: bool) -> str:
-    choices = set(EXPERIMENT_BACKENDS)
+    choices = {*EXPERIMENT_BACKENDS, "auto"}
     if engine:
         return engine.lower()
     if not interactive:
@@ -390,7 +390,8 @@ def run_quickstart(argv: Sequence[str] | None = None) -> None:
         raise SystemExit(1) from exc
 
     selection = make_problem_selection(problem)
-    output_dir = run_output_dir(selection, algorithm, engine, seed, config)
+    resolved_engine = resolve_engine(engine, algorithm=algorithm)
+    output_dir = run_output_dir(selection, algorithm, resolved_engine, seed, config)
     problem_dir = problem_output_dir(selection, config)
     plot_path = _latest_plot_path(problem_dir) if plot else None
     _summary(

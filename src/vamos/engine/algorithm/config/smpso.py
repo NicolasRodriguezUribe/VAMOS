@@ -3,12 +3,27 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, overload
+from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 
-from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
-from .types import InitializerName, MutationName, RepairConfigValue, RepairName
+from .base import (
+    ConstraintModeStr,
+    ResultMode,
+    _ConfigBuilderState,
+    _build_external_archive_config,
+    _ConstraintModeBuilder,
+    _InitializerBuilder,
+    _MutationBuilder,
+    _PopSizeBuilder,
+    _RepairBuilder,
+    _ResultArchiveBuilder,
+    _TrackGenealogyBuilder,
+    _require_fields,
+    _SerializableConfig,
+    _validate_operators,
+)
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -42,28 +57,20 @@ class SMPSOConfig(_SerializableConfig):
         return _SMPSOConfigBuilder()
 
 
-class _SMPSOConfigBuilder:
+class _SMPSOConfigBuilder(
+    _ConfigBuilderState,
+    _PopSizeBuilder,
+    _MutationBuilder,
+    _RepairBuilder,
+    _InitializerBuilder,
+    _ConstraintModeBuilder,
+    _TrackGenealogyBuilder,
+    _ResultArchiveBuilder,
+):
     """Declarative configuration holder for SMPSO settings."""
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
-    def pop_size(self, value: int) -> _SMPSOConfigBuilder:
-        self._cfg["pop_size"] = value
-        return self
 
     def archive_size(self, value: int) -> _SMPSOConfigBuilder:
         self._cfg["archive_size"] = value
-        return self
-
-    @overload
-    def mutation(self, method: MutationName, **kwargs: Any) -> _SMPSOConfigBuilder: ...
-
-    @overload
-    def mutation(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder: ...
-
-    def mutation(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
-        self._cfg["mutation"] = (method, kwargs)
         return self
 
     def inertia(self, value: float) -> _SMPSOConfigBuilder:
@@ -82,46 +89,19 @@ class _SMPSOConfigBuilder:
         self._cfg["vmax_fraction"] = value
         return self
 
-    @overload
-    def repair(self, method: RepairName, **kwargs: Any) -> _SMPSOConfigBuilder: ...
-
-    @overload
-    def repair(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder: ...
-
-    def repair(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
-        self._cfg["repair"] = (method, kwargs)
-        return self
-
-    @overload
-    def initializer(self, method: InitializerName, **kwargs: Any) -> _SMPSOConfigBuilder: ...
-
-    @overload
-    def initializer(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder: ...
-
-    def initializer(self, method: str, **kwargs: Any) -> _SMPSOConfigBuilder:
-        self._cfg["initializer"] = {"type": method, **kwargs}
-        return self
-
-    def constraint_mode(self, value: ConstraintModeStr) -> _SMPSOConfigBuilder:
-        self._cfg["constraint_mode"] = value
-        return self
-
-    def track_genealogy(self, enabled: bool = True) -> _SMPSOConfigBuilder:
-        self._cfg["track_genealogy"] = bool(enabled)
-        return self
-
-    def result_mode(self, value: ResultMode) -> _SMPSOConfigBuilder:
-        self._cfg["result_mode"] = str(value)
-        return self
-
     def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _SMPSOConfigBuilder:
         """Configure an external archive for result storage.
 
-        Note: This is separate from ``archive_size`` which is the internal SMPSO archive.
+        Note
+        ----
+        This is separate from ``archive_size``, which controls the internal SMPSO archive.
 
-        Args:
-            capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
+        Parameters
+        ----------
+        capacity
+            Maximum number of solutions. ``None`` means unbounded.
+        **kwargs
+            Forwarded to :class:`ExternalArchiveConfig`.
         """
         self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
         self._cfg.setdefault("result_mode", "non_dominated")

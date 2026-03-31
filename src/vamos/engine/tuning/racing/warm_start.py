@@ -66,25 +66,36 @@ class WarmStartEvaluator:
     """
     Function that runs the algorithm.
 
-    Args:
-        config: Algorithm configuration dict
-        ctx: Evaluation context with budget, instance, seed, etc.
-        checkpoint: Previous checkpoint (None for first fidelity level)
+    Parameters
+    ----------
+    config : dict[str, Any]
+        Algorithm configuration dictionary.
+    ctx : EvalContext
+        Evaluation context with budget, instance, seed, and fidelity details.
+    checkpoint : Any | None
+        Previous checkpoint for warm starts.
 
-    Returns:
-        Tuple of (result, new_checkpoint)
+    Returns
+    -------
+    tuple[Any, Any]
+        ``(result, new_checkpoint)``.
     """
 
     score_fn: Callable[[Any, EvalContext], float]
     """
     Function that computes a score from the result.
 
-    Args:
-        result: The result returned by run_fn
-        ctx: Evaluation context
+    Parameters
+    ----------
+    result : Any
+        Result returned by ``run_fn``.
+    ctx : EvalContext
+        Evaluation context.
 
-    Returns:
-        Scalar score (higher is better for maximize=True)
+    Returns
+    -------
+    float
+        Scalar score.
     """
 
     # Optional: track global bounds for normalization

@@ -52,11 +52,15 @@ def available_crossover_methods(encoding: str = "real") -> tuple[str, ...]:
     """
     Return the available crossover method identifiers for a given encoding.
 
-    Args:
-        encoding: Variable encoding type ("real", "binary", "permutation", "integer", "mixed").
+    Parameters
+    ----------
+    encoding : str, default ``"real"``
+        Variable encoding type.
 
-    Returns:
-        Tuple of supported crossover method strings.
+    Returns
+    -------
+    tuple[str, ...]
+        Supported crossover method identifiers for the encoding.
     """
     try:
         normalized = normalize_encoding(encoding)
@@ -79,11 +83,15 @@ def available_mutation_methods(encoding: str = "real") -> tuple[str, ...]:
     """
     Return the available mutation method identifiers for a given encoding.
 
-    Args:
-        encoding: Variable encoding type ("real", "binary", "permutation", "integer", "mixed").
+    Parameters
+    ----------
+    encoding : str, default ``"real"``
+        Variable encoding type.
 
-    Returns:
-        Tuple of supported mutation method strings.
+    Returns
+    -------
+    tuple[str, ...]
+        Supported mutation method identifiers for the encoding.
     """
     try:
         normalized = normalize_encoding(encoding)

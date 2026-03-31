@@ -1,5 +1,7 @@
 # CLI and config files
 
+> Status as of March 31, 2026: the standard single-run CLI path (`vamos --problem ...`), `vamos quickstart`, `vamos create-problem`, CLI `--engine auto`, basic config-driven flows (`vamos --config ...`, `--validate-config`), `vamos bench --smoke`, `vamos tune --backend random --smoke`, `vamos profile`, and the common `vamos zoo` commands are covered by smoke tests. The published README, CLI-guide, and tuning-guide commands now also have command-level smoke coverage. Heavier tuning and broader benchmark matrices still depend on your installed extras and local environment.
+
 Quickstart wizard
 -----------------
 
@@ -71,12 +73,6 @@ Single run (default output under `results/`):
 
 ```bash
 vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --seed 7
-```
-
-Steady-state NSGA-II (incremental replacement):
-
-```bash
-vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --nsgaii-replacement-size 2
 ```
 
 Python equivalent (preferred for scripting):
@@ -151,15 +147,13 @@ Key flags
 ---------
 
 - `--algorithm`: nsgaii, moead, smsemoa, nsgaiii, spea2, ibea, smpso, both, or external baselines (pymoo_nsga2, jmetalpy_nsga2, pygmo_nsga2)
-- `--engine`: numpy | numba | moocore | auto. The deterministic default is `numpy`; use `auto` only when you explicitly want heuristic backend selection.
+- `--engine`: numpy | numba | moocore | auto. The deterministic default is `numpy`; use `auto` when you want heuristic backend selection.
 - `--problem`: any registry key (see Problems page)
 - `--problem-set`: predefined sets (e.g., `families`)
 - `--validate-config`: validate `--config` and exit
 - `--output-root`: directory for run artifacts (default: `results/`)
 - `--no-preflight`: skip optional dependency warnings
 - `--population-size`, `--offspring-population-size`
-- NSGA-II incremental replacement:
-  - `--nsgaii-replacement-size` to set replacements per step
 - `--max-evaluations`
 - `--hv-threshold` and `--hv-reference-front`
 - `--selection-pressure`, `--external-archive-size`
@@ -217,6 +211,7 @@ All tools are accessed via `vamos <subcommand>`. Run `vamos help` for the full l
 
 - Self-check: `vamos check`
 - Benchmarking: `vamos bench --list` and `vamos bench ZDT_small --algorithms nsgaii moead --output report/`
+- Fast benchmark verification: `vamos bench ZDT_small --algorithms nsgaii --output report/ --smoke`
 - Tuning: `vamos tune --instances zdt1,zdt2,zdt3 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1`
 - Ablation plans: `vamos ablation --config configs/ablation.yaml`
 - Profiling: `vamos profile --problem zdt1 --engines numpy,numba --budget 2000 --output report/profile.csv`
@@ -244,6 +239,12 @@ vamos tune \
   --budget 5000 \
   --tune-budget 200 \
   --n-jobs -1
+```
+
+Quick verification path (built-in backend, tiny budgets):
+
+```bash
+vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend random --smoke --output-dir results/tuning_smoke
 ```
 
 Ablation config example

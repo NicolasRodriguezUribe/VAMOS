@@ -24,8 +24,9 @@ result = optimize(problem, algorithm="nsgaii", max_evaluations=5000)
 ```
 
 `make_problem()` creates a `FunctionalProblem` that implements `ProblemProtocol`
-internally. Scalar functions are auto-vectorized. Use `vectorized=True` for
-batch functions. Constraints are supported via the `constraints` parameter.
+internally. With `vectorized=False`, scalar functions are adapted by evaluating
+one row at a time. Use `vectorized=True` only for true batch functions.
+Constraints are supported via the `constraints` parameter.
 
 CLI scaffolding: `vamos create-problem` generates a ready-to-run `.py` file.
 

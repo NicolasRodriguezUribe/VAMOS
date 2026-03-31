@@ -52,7 +52,7 @@ class TestDomainTemplates:
 
         tpl = example_objectives()["Scheduling: makespan vs tardiness"]
         fn = compile_objective_function(tpl["code"])
-        x = np.random.rand(int(tpl["n_var"]))
+        x = np.random.default_rng(0).random(int(tpl["n_var"]))
         result = fn(x)
         assert len(result) == int(tpl["n_obj"])
 

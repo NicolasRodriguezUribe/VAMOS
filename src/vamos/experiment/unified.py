@@ -15,9 +15,10 @@ from typing import overload
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, AlgorithmName, EngineName
 from vamos.experiment.auto import _compute_max_evaluations, _compute_pop_size, _resolve_problem, _select_algorithm
-from vamos.experiment.optimization_result import OptimizationResult
+from vamos.experiment.optimization_result import OptimizationResult, StudyResult
 from vamos.experiment.optimize import _build_algorithm_config, _OptimizeConfig, _run_config
 from vamos.experiment.runtime.catalog import resolve_engine_details
+from vamos.experiment.types import CheckpointPayload, LiveVisualization
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.exceptions import ConfigurationError
@@ -72,8 +73,8 @@ def optimize(
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
-    live_viz: object | None = None,
-    checkpoint: object | None = None,
+    live_viz: LiveVisualization | None = None,
+    checkpoint: CheckpointPayload | None = None,
 ) -> OptimizationResult: ...
 
 
@@ -92,9 +93,9 @@ def optimize(
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
-    live_viz: object | None = None,
-    checkpoint: object | None = None,
-) -> list[OptimizationResult]: ...
+    live_viz: LiveVisualization | None = None,
+    checkpoint: CheckpointPayload | None = None,
+) -> StudyResult: ...
 
 
 def optimize(
@@ -111,9 +112,9 @@ def optimize(
     problem_kwargs: Mapping[str, object] | None = None,
     algorithm_config: AlgorithmConfigProtocol | None = None,
     eval_strategy: EvaluationBackend | str | None = None,
-    live_viz: object | None = None,
-    checkpoint: object | None = None,
-) -> OptimizationResult | list[OptimizationResult]:
+    live_viz: LiveVisualization | None = None,
+    checkpoint: CheckpointPayload | None = None,
+) -> OptimizationResult | StudyResult:
     """
     Unified entry point for VAMOS optimization.
 
@@ -123,30 +124,48 @@ def optimize(
     - Handles multi-run studies with seed=[0,1,2,...]
     - Prefer optimize(...) for all runs (explicit options are available).
 
-    Args:
-        problem: Problem name (e.g., "zdt1") or problem instance.
-        algorithm: Algorithm name or "auto" for automatic selection.
-        max_evaluations: Maximum function evaluations. Auto-determined if None.
-        pop_size: Population size. Auto-determined if None.
-        engine: Backend engine ("numpy", "numba", "moocore").
-        seed: Random seed or list of seeds for multi-run mode.
-        verbose: Print progress information.
-        n_var: Override problem dimension when using a string problem key.
-        n_obj: Override objective count when using a string problem key.
-        problem_kwargs: Extra kwargs forwarded to problem instantiation for string problems.
-        algorithm_config: Optional algorithm config object.
-        eval_strategy: Evaluation backend name or instance (e.g., "serial", "dask").
-        live_viz: Optional live visualization callback.
-        checkpoint: Optional checkpoint payload to warm-start compatible algorithms.
+    Parameters
+    ----------
+    problem : str | ProblemProtocol
+        Problem name (for registered problems) or a problem instance.
+    algorithm : AlgorithmName | str, default "auto"
+        Algorithm name or ``"auto"`` for automatic selection.
+    max_evaluations : int | None, optional
+        Maximum function evaluations. Auto-determined when omitted.
+    pop_size : int | None, optional
+        Population size. Auto-determined when omitted.
+    engine : EngineName | str | None, optional
+        Backend engine (for example ``"numpy"``, ``"numba"``, ``"moocore"``,
+        or ``"auto"``).
+    seed : int | list[int] | tuple[int, ...], default ``42``
+        Random seed for one run, or a sequence of seeds for multi-run studies.
+    verbose : bool, default ``False``
+        Enable VAMOS logging for the run.
+    n_var, n_obj : int | None, optional
+        Override problem dimensions when using a registered string problem key.
+    problem_kwargs : Mapping[str, object] | None, optional
+        Extra keyword arguments forwarded to problem instantiation.
+    algorithm_config : AlgorithmConfigProtocol | None, optional
+        Explicit algorithm config object.
+    eval_strategy : EvaluationBackend | str | None, optional
+        Evaluation backend name or backend instance.
+    live_viz : LiveVisualization | None, optional
+        Live visualization callback.
+    checkpoint : CheckpointPayload | None, optional
+        Warm-start checkpoint for compatible algorithms. Multi-seed runs do not
+        accept checkpoints.
 
-    Returns:
-        OptimizationResult for single seed, or list[OptimizationResult] for multiple seeds.
+    Returns
+    -------
+    OptimizationResult | StudyResult
+        A single-run result for scalar ``seed`` input, or a sequence-compatible
+        ``StudyResult`` when ``seed`` is a list/tuple.
 
-    Raises:
-        ValueError: If the problem name is unknown or if *checkpoint* is
-            provided for multi-seed runs.
-        ConfigurationError: If the algorithm/engine combination is invalid.
-        OptimizationError: If the optimization run fails internally.
+    Raises
+    ------
+    ConfigurationError
+        If inputs are invalid or the algorithm/engine combination is not
+        supported.
 
     Examples:
         # AutoML mode - zero config
@@ -156,30 +175,33 @@ def optimize(
         >>> result = vamos.optimize("zdt1", algorithm="moead", max_evaluations=5000)
 
         # Multi-seed study
-        >>> results = vamos.optimize("zdt1", seed=[0, 1, 2, 3, 4])
+        >>> study = vamos.optimize("zdt1", seed=[0, 1, 2, 3, 4])
+        >>> study.mean("evaluations")
     """
     if isinstance(seed, (list, tuple)):
         if checkpoint is not None:
             raise ConfigurationError("checkpoint is only supported for single-seed runs.")
-        return [
-            _run_single(
-                problem,
-                algorithm,
-                max_evaluations,
-                pop_size,
-                engine,
-                single_seed,
-                verbose,
-                n_var,
-                n_obj,
-                problem_kwargs,
-                algorithm_config,
-                eval_strategy,
-                live_viz,
-                checkpoint,
-            )
-            for single_seed in seed
-        ]
+        return StudyResult(
+            [
+                _run_single(
+                    problem,
+                    algorithm,
+                    max_evaluations,
+                    pop_size,
+                    engine,
+                    single_seed,
+                    verbose,
+                    n_var,
+                    n_obj,
+                    problem_kwargs,
+                    algorithm_config,
+                    eval_strategy,
+                    live_viz,
+                    checkpoint,
+                )
+                for single_seed in seed
+            ]
+        )
 
     # Single run
     return _run_single(
@@ -213,8 +235,8 @@ def _run_single(
     problem_kwargs: Mapping[str, object] | None,
     algorithm_config: AlgorithmConfigProtocol | None,
     eval_strategy: EvaluationBackend | str | None,
-    live_viz: object | None,
-    checkpoint: object | None,
+    live_viz: LiveVisualization | None,
+    checkpoint: CheckpointPayload | None,
 ) -> OptimizationResult:
     """Execute a single optimization run."""
     if problem_kwargs is not None and not isinstance(problem_kwargs, Mapping):
@@ -255,7 +277,7 @@ def _run_single(
         raise ConfigurationError("algorithm_config requires an explicit algorithm name (not algorithm='auto').")
 
     # Auto-select algorithm if needed
-    _auto_defaults: dict[str, object] = {}
+    _auto_defaults: dict[str, str | int] = {}
     if algorithm == "auto":
         algorithm = _select_algorithm(n_obj, encoding)
         _auto_defaults["algorithm"] = algorithm

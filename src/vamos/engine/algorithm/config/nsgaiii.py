@@ -4,20 +4,29 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import comb
-from typing import Any, overload
+from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 
 from .base import (
     ConstraintModeStr,
     ResultMode,
-    _build_external_archive_config,
-    _normalize_tournament_selection_kwargs,
+    _ConfigBuilderState,
+    _ConstraintModeBuilder,
+    _CrossoverBuilder,
+    _InitializerBuilder,
+    _MutationBuilder,
+    _MutationProbFactorBuilder,
+    _PopSizeBuilder,
+    _RepairBuilder,
+    _ResultArchiveBuilder,
+    _SelectionBuilder,
+    _TrackGenealogyBuilder,
     _require_fields,
     _SerializableConfig,
     _validate_operators,
 )
-from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName, SelectionName
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -47,10 +56,14 @@ class NSGAIIIConfig(_SerializableConfig):
         """
         Create a default NSGA-III configuration.
 
-        Args:
-            pop_size: Population size (default: matches reference directions)
-            n_var: Number of variables (for mutation prob)
-            n_obj: Number of objectives (for reference directions)
+        Parameters
+        ----------
+        pop_size
+            Population size. Defaults to the generated reference-direction count.
+        n_var
+            Number of variables used for the default mutation probability.
+        n_obj
+            Number of objectives used to choose the default reference directions.
         """
         mut_prob = 1.0 / n_var if n_var else 0.1
         divisions = 12 if n_obj == 3 else 6
@@ -72,7 +85,19 @@ class NSGAIIIConfig(_SerializableConfig):
         return _NSGAIIIConfigBuilder()
 
 
-class _NSGAIIIConfigBuilder:
+class _NSGAIIIConfigBuilder(
+    _ConfigBuilderState,
+    _PopSizeBuilder,
+    _CrossoverBuilder,
+    _MutationBuilder,
+    _SelectionBuilder,
+    _RepairBuilder,
+    _InitializerBuilder,
+    _MutationProbFactorBuilder,
+    _ResultArchiveBuilder,
+    _ConstraintModeBuilder,
+    _TrackGenealogyBuilder,
+):
     """
     Declarative configuration holder for NSGA-III settings.
 
@@ -81,42 +106,6 @@ class _NSGAIIIConfigBuilder:
         cfg = NSGAIIIConfig.builder().pop_size(92).crossover("sbx", prob=1.0).build()
     """
 
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
-    def pop_size(self, value: int) -> _NSGAIIIConfigBuilder:
-        self._cfg["pop_size"] = value
-        return self
-
-    @overload
-    def crossover(self, method: CrossoverName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    @overload
-    def crossover(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    def crossover(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
-        self._cfg["crossover"] = (method, kwargs)
-        return self
-
-    @overload
-    def mutation(self, method: MutationName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    @overload
-    def mutation(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    def mutation(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
-        self._cfg["mutation"] = (method, kwargs)
-        return self
-
-    @overload
-    def selection(self, method: SelectionName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    @overload
-    def selection(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    def selection(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
-        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
-        return self
 
     def reference_directions(
         self,
@@ -133,53 +122,6 @@ class _NSGAIIIConfigBuilder:
 
     def pop_size_auto(self, enabled: bool = True) -> _NSGAIIIConfigBuilder:
         self._cfg["pop_size_auto"] = bool(enabled)
-        return self
-
-    def constraint_mode(self, value: ConstraintModeStr) -> _NSGAIIIConfigBuilder:
-        self._cfg["constraint_mode"] = value
-        return self
-
-    @overload
-    def repair(self, method: RepairName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    @overload
-    def repair(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    def repair(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
-        self._cfg["repair"] = (method, kwargs)
-        return self
-
-    @overload
-    def initializer(self, method: InitializerName, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    @overload
-    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder: ...
-
-    def initializer(self, method: str, **kwargs: Any) -> _NSGAIIIConfigBuilder:
-        self._cfg["initializer"] = {"type": method, **kwargs}
-        return self
-
-    def mutation_prob_factor(self, value: float) -> _NSGAIIIConfigBuilder:
-        self._cfg["mutation_prob_factor"] = float(value)
-        return self
-
-    def track_genealogy(self, enabled: bool = True) -> _NSGAIIIConfigBuilder:
-        self._cfg["track_genealogy"] = bool(enabled)
-        return self
-
-    def result_mode(self, value: ResultMode) -> _NSGAIIIConfigBuilder:
-        self._cfg["result_mode"] = str(value)
-        return self
-
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _NSGAIIIConfigBuilder:
-        """Configure an external archive.
-
-        Args:
-            capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
-        """
-        self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
-        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def build(self) -> NSGAIIIConfig:

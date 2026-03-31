@@ -2,7 +2,7 @@ import numpy as np
 
 from vamos.engine.algorithm.config import SPEA2Config
 from vamos.engine.algorithm.spea2 import SPEA2
-from vamos.engine.algorithm.spea2.helpers import truncate_by_kth_distance
+from vamos.engine.algorithm.spea2.helpers import dominance_matrix, spea2_fitness, truncate_by_kth_distance
 from vamos.foundation.kernel.numba_backend import NumbaKernel
 from vamos.foundation.problem.zdt1 import ZDT1Problem
 
@@ -49,3 +49,54 @@ def test_spea2_numba_same_seed_reproducible():
 
     assert np.array_equal(result_a["F"], result_b["F"])
     assert np.array_equal(result_a["X"], result_b["X"])
+
+
+def _spea2_fitness_reference(F: np.ndarray, dom: np.ndarray, k: int | None = None) -> tuple[np.ndarray, np.ndarray]:
+    n = F.shape[0]
+    if n == 0:
+        return np.empty(0), np.empty((0, 0))
+    if k is None:
+        k = max(1, int(np.sqrt(n)))
+    k = min(k, n - 1) if n > 1 else 1
+
+    strength = dom.sum(axis=1)
+    raw_fitness = np.zeros(n, dtype=float)
+    for i in range(n):
+        dominators = np.where(dom[:, i])[0]
+        raw_fitness[i] = strength[dominators].sum()
+
+    dist = np.zeros((n, n), dtype=float)
+    for i in range(n):
+        for j in range(i + 1, n):
+            delta = np.linalg.norm(F[i] - F[j])
+            dist[i, j] = delta
+            dist[j, i] = delta
+
+    if n == 1:
+        density = np.array([0.0], dtype=float)
+    else:
+        density = np.zeros(n, dtype=float)
+        for i in range(n):
+            sorted_dists = np.sort(dist[i])
+            sigma_k = sorted_dists[k] if k < n else sorted_dists[-1]
+            density[i] = 1.0 / (sigma_k + 2.0)
+    return raw_fitness + density, dist
+
+
+def test_spea2_fitness_matches_reference_loop_implementation() -> None:
+    F = np.array(
+        [
+            [0.1, 0.9, 0.5],
+            [0.4, 0.6, 0.4],
+            [0.7, 0.3, 0.6],
+            [0.2, 0.8, 0.7],
+        ],
+        dtype=float,
+    )
+    dom, _, _ = dominance_matrix(F, None, "none")
+
+    expected_fitness, expected_dist = _spea2_fitness_reference(F, dom, k=2)
+    actual_fitness, actual_dist = spea2_fitness(F, dom, k=2)
+
+    np.testing.assert_allclose(actual_fitness, expected_fitness)
+    np.testing.assert_allclose(actual_dist, expected_dist)

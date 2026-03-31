@@ -3,12 +3,28 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, overload
+from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
 
-from .base import ConstraintModeStr, ResultMode, _build_external_archive_config, _require_fields, _SerializableConfig, _validate_operators
-from .types import CrossoverName, InitializerName, MutationName, RepairConfigValue, RepairName
+from .base import (
+    ConstraintModeStr,
+    ResultMode,
+    _ConfigBuilderState,
+    _ConstraintModeBuilder,
+    _CrossoverBuilder,
+    _InitializerBuilder,
+    _MutationBuilder,
+    _MutationProbFactorBuilder,
+    _PopSizeBuilder,
+    _RepairBuilder,
+    _ResultArchiveBuilder,
+    _TrackGenealogyBuilder,
+    _require_fields,
+    _SerializableConfig,
+    _validate_operators,
+)
+from .types import RepairConfigValue
 
 
 @dataclass(frozen=True)
@@ -51,7 +67,18 @@ class RVEAConfig(_SerializableConfig):
         return _RVEAConfigBuilder()
 
 
-class _RVEAConfigBuilder:
+class _RVEAConfigBuilder(
+    _ConfigBuilderState,
+    _PopSizeBuilder,
+    _CrossoverBuilder,
+    _MutationBuilder,
+    _RepairBuilder,
+    _InitializerBuilder,
+    _MutationProbFactorBuilder,
+    _ConstraintModeBuilder,
+    _TrackGenealogyBuilder,
+    _ResultArchiveBuilder,
+):
     """
     Declarative configuration holder for RVEA settings.
 
@@ -59,13 +86,6 @@ class _RVEAConfigBuilder:
         cfg = RVEAConfig.default()
         cfg = RVEAConfig.builder().pop_size(100).n_partitions(12).build()
     """
-
-    def __init__(self) -> None:
-        self._cfg: dict[str, Any] = {}
-
-    def pop_size(self, value: int) -> _RVEAConfigBuilder:
-        self._cfg["pop_size"] = value
-        return self
 
     def n_partitions(self, value: int) -> _RVEAConfigBuilder:
         self._cfg["n_partitions"] = value
@@ -77,76 +97,6 @@ class _RVEAConfigBuilder:
 
     def adapt_freq(self, value: float | None) -> _RVEAConfigBuilder:
         self._cfg["adapt_freq"] = None if value is None else float(value)
-        return self
-
-    @overload
-    def crossover(self, method: CrossoverName, **kwargs: Any) -> _RVEAConfigBuilder: ...
-
-    @overload
-    def crossover(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder: ...
-
-    def crossover(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder:
-        self._cfg["crossover"] = (method, kwargs)
-        return self
-
-    @overload
-    def mutation(self, method: MutationName, **kwargs: Any) -> _RVEAConfigBuilder: ...
-
-    @overload
-    def mutation(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder: ...
-
-    def mutation(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder:
-        self._cfg["mutation"] = (method, kwargs)
-        return self
-
-    @overload
-    def repair(self, method: RepairName, **kwargs: Any) -> _RVEAConfigBuilder: ...
-
-    @overload
-    def repair(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder: ...
-
-    def repair(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder:
-        self._cfg["repair"] = (method, kwargs)
-        return self
-
-    @overload
-    def initializer(self, method: InitializerName, **kwargs: Any) -> _RVEAConfigBuilder: ...
-
-    @overload
-    def initializer(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder: ...
-
-    def initializer(self, method: str, **kwargs: Any) -> _RVEAConfigBuilder:
-        self._cfg["initializer"] = {"type": method, **kwargs}
-        return self
-
-    def mutation_prob_factor(self, value: float) -> _RVEAConfigBuilder:
-        self._cfg["mutation_prob_factor"] = float(value)
-        return self
-
-    def constraint_mode(self, value: ConstraintModeStr) -> _RVEAConfigBuilder:
-        self._cfg["constraint_mode"] = value
-        return self
-
-    def track_genealogy(self, enabled: bool = True) -> _RVEAConfigBuilder:
-        self._cfg["track_genealogy"] = bool(enabled)
-        return self
-
-    def result_mode(self, value: ResultMode) -> _RVEAConfigBuilder:
-        mode = str(value).strip().lower()
-        if mode not in {"non_dominated", "population"}:
-            raise ValueError("result_mode must be 'non_dominated' or 'population'.")
-        self._cfg["result_mode"] = mode
-        return self
-
-    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> _RVEAConfigBuilder:
-        """Configure an external archive.
-
-        Args:
-            capacity: Maximum number of solutions. ``None`` means unbounded.
-            **kwargs: Forwarded to :class:`ExternalArchiveConfig`.
-        """
-        self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
-        self._cfg.setdefault("result_mode", "non_dominated")
         return self
 
     def build(self) -> RVEAConfig:

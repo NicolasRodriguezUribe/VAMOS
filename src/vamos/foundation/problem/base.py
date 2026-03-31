@@ -90,14 +90,16 @@ class Problem:
 
         Override this method in your subclass.
 
-        Args:
-            X: Decision matrix of shape ``(N, n_var)`` where each row is a
-                candidate solution.
+        Parameters
+        ----------
+        X : np.ndarray
+            Decision matrix of shape ``(N, n_var)``.
 
-        Returns:
-            Array of shape ``(N, n_obj)`` with objective values to
-                **minimize**.  A single-objective problem may return a 1-D array
-                of length ``N``.
+        Returns
+        -------
+        np.ndarray
+            Objective array of shape ``(N, n_obj)`` to minimize. A
+            single-objective problem may return a 1-D array of length ``N``.
         """
         raise NotImplementedError(f"{type(self).__name__} must implement objectives(self, X).")
 
@@ -106,14 +108,16 @@ class Problem:
 
         Override this method when your problem has inequality constraints.
 
-        Args:
-            X: Decision matrix of shape ``(N, n_var)``.
+        Parameters
+        ----------
+        X : np.ndarray
+            Decision matrix of shape ``(N, n_var)``.
 
-        Returns:
-            Array of shape ``(N, n_constraints)`` where **negative values
-            indicate feasibility** (g(x) ≤ 0 is satisfied).  Positive values
-            indicate constraint violation.  Return ``None`` if there are no
-            constraints (the default).
+        Returns
+        -------
+        np.ndarray | None
+            Constraint array of shape ``(N, n_constraints)`` where negative
+            values indicate feasibility, or ``None`` for unconstrained problems.
         """
         return None
 

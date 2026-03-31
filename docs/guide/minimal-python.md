@@ -3,6 +3,8 @@
 If you can run a command and copy-paste, this track is for you.
 Goal: run an experiment and get results in minutes, without learning all the jargon up front.
 
+> Status as of March 31, 2026: the quickstart wizard and the base single-run CLI are smoke-tested for the standard NSGA-II/ZDT1 path. If you want the absolute shortest path to a first script, the Python API in `docs/guide/getting-started.md` is still the lightest option.
+
 ## 1. Install
 
 Create a virtual environment and install VAMOS:

@@ -57,6 +57,7 @@ from vamos.engine.tuning import (
 )
 from vamos.engine.tuning.racing.eval_types import EvalFn
 from vamos.engine.tuning.racing.warm_start import WarmStartEvaluator
+from vamos.experiment.types import CheckpointPayload
 from vamos.experiment.unified import optimize
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
@@ -142,8 +143,8 @@ def make_evaluator(
     def _run_algorithm(
         config_dict: Mapping[str, object],
         ctx: EvalContext,
-        checkpoint: object | None,
-    ) -> tuple[object, object | None]:
+        checkpoint: CheckpointPayload | None,
+    ) -> tuple[object, CheckpointPayload | None]:
         try:
             start_config: dict[str, Any] = dict(config_dict)
             if algorithm_name == "rvea":
@@ -172,7 +173,8 @@ def make_evaluator(
             payload = getattr(result, "data", None)
             if isinstance(payload, dict):
                 payload["_elapsed_s"] = elapsed_s
-            return result, result.data.get("checkpoint")
+            checkpoint_payload = result.data.get("checkpoint")
+            return result, cast(CheckpointPayload | None, checkpoint_payload)
         except Exception:
             logger().warning("[tune] evaluation failed; assigning score=0.", exc_info=True)
 

@@ -19,11 +19,12 @@ class ConstraintInfo:
 def compute_constraint_info(G: np.ndarray | None, eps: float = 0.0) -> ConstraintInfo:
     """Compute aggregate constraint violation and feasibility mask.
 
-    Args:
-        G: (n_points, n_constraints) constraint values, <=0 means satisfied.
-            When ``None`` (unconstrained), a trivially-feasible result is
-            returned with zero-column G and zero violation.
-        eps: tolerance. Constraints <= eps are treated as satisfied.
+    Parameters
+    ----------
+    G : np.ndarray | None
+        Constraint values where ``<= 0`` means satisfied.
+    eps : float, default ``0.0``
+        Feasibility tolerance. Constraints ``<= eps`` are treated as satisfied.
     """
     if G is None:
         empty_G = np.zeros((0, 0), dtype=float)
