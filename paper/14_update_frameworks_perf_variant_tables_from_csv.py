@@ -54,15 +54,19 @@ def _make_merged_table(sections: list[tuple[str, pd.DataFrame]], *, label: str, 
 
     for idx, (section_name, family_df) in enumerate(sections):
         lines.append(r"\midrule")
-        sorted_fws = _sorted_frameworks(family_df.index.tolist())
+        # Exclude frameworks with missing family aggregates from the merged
+        # supplementary table to avoid mixing complete cross-family results
+        # with partial additions (e.g., ZCAT-only appendices).
+        display_df = family_df.loc[family_df[families].notna().all(axis=1)]
+        sorted_fws = _sorted_frameworks(display_df.index.tolist())
 
         for i, fw in enumerate(sorted_fws):
             algo_cell = section_name if i == 0 else ""
-            row = family_df.loc[fw]
+            row = display_df.loc[fw]
             row_str = []
             for col in families + ["Average"]:
                 val = float(row[col])
-                col_min = float(family_df[col].min())
+                col_min = float(display_df[col].min())
                 if abs(val - col_min) < 1e-9:
                     row_str.append(f"\\textbf{{{val:.2f}}}")
                 else:

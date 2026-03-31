@@ -29,44 +29,55 @@
 % Code listing style
 \lstset{
   language=Python,
-  basicstyle=\ttfamily\footnotesize,
-  keywordstyle=\color{blue},
-  commentstyle=\color{gray},
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{green!50!black},
+  commentstyle=\itshape\color{teal},
   stringstyle=\color{red!70!black},
+  identifierstyle=\color{black},
   showstringspaces=false,
-  frame=single,
+  frame=lines,
+  rulecolor=\color{gray!20},
   breaklines=true,
   numbers=left,
-  numberstyle=\tiny\color{gray}
+  numbersep=5pt,
+  numberstyle=\tiny\color{black},
+  captionpos=b,
+  xleftmargin=.5em,
+  framexleftmargin=.5em,
+  aboveskip=.5em,
+  belowskip=.5em
 }
+
+\renewcommand{\lstlistingname}{Code}% Listing -> Code
 
 \newcommand{\VAMOS}{VAMOS}
 \newcommand{\HV}{\mathrm{HV}}
 \newcommand{\Intdomain}[1]{[#1]_{\mathbb{Z}}}
 \newcommand{\Realdomain}[1]{[#1]_{\mathbb{R}}}
 
-\title{Supplementary Material: A High-Performance Vectorized Framework for Multiobjective Evolutionary Optimization in Python}
+\title{VAMOS: A Framework for Fast, Configurable and Accessible Multiobjective Optimization in Python\\\vspace{3mm}\Large{(Supplementary Material)}}
 
 % --------------------------------------------------------------------------
 %  Author block.
 % --------------------------------------------------------------------------
-\author{Nicol\'{a}s~R.~Uribe,
-        Alberto~Herr\'{a}n,
-        Antonio~J.~Nebro,
-        Javier~Del~Ser,
-        and~J.~Manuel~Colmenar%
-\thanks{N. R. Uribe, A. Herr\'{a}n, and J. M. Colmenar are with the
-  Department of Computer Sciences, Universidad Rey Juan Carlos, M\'{o}stoles,
-  28933 Madrid, Spain (e-mail: nicolas.rodriguez@urjc.es; alberto.herran@urjc.es;
-  josemanuel.colmenar@urjc.es).}%
-\thanks{A. J. Nebro is with the Department of Lenguajes y Ciencias de la
-  Computaci\'{o}n, ITIS Software, University of M\'{a}laga, 29071
-  M\'{a}laga, Spain (e-mail: ajnebro@uma.es).}%
-\thanks{J. Del Ser is with TECNALIA, Basque Research \& Technology
-  Alliance (BRTA), Derio, 48160, Spain, and also with the University
-  of the Basque Country (UPV/EHU), Leioa, 48940, Spain (e-mail: javier.delser@tecnalia.com).}%
-\thanks{Corresponding author: Alberto Herr\'{a}n (alberto.herran@urjc.es).}%
-}
+%\author{Nicol\'{a}s~R.~Uribe,
+%        Alberto~Herr\'{a}n,
+%        Antonio~J.~Nebro,
+%        Javier~Del~Ser,
+%        and~J.~Manuel~Colmenar%
+%\thanks{N. R. Uribe, A. Herr\'{a}n, and J. M. Colmenar are with the
+%  Department of Computer Sciences, Universidad Rey Juan Carlos, M\'{o}stoles,
+%  28933 Madrid, Spain (e-mail: nicolas.rodriguez@urjc.es; alberto.herran@urjc.es;
+%  josemanuel.colmenar@urjc.es).}%
+%\thanks{A. J. Nebro is with the Department of Lenguajes y Ciencias de la
+%  Computaci\'{o}n, ITIS Software, University of M\'{a}laga, 29071
+%  M\'{a}laga, Spain (e-mail: ajnebro@uma.es).}%
+%\thanks{J. Del Ser is with TECNALIA, Basque Research \& Technology
+%  Alliance (BRTA), Derio, 48160, Spain, and also with the University
+%  of the Basque Country (UPV/EHU), Leioa, 48940, Spain (e-mail: javier.delser@tecnalia.com).}%
+%\thanks{Corresponding author: Nicol\'{a}s~Rodr\'{i}guez (nicolas.rodriguez@urjc.es).}%
+%}
+\author{Anonymous submission}
 
 \markboth{IEEE Transactions on Evolutionary Computation}%
 {A Vectorized Framework for Multiobjective Evolutionary Optimization}
@@ -74,7 +85,7 @@
 \begin{document}
 \maketitle
 
-This supplementary PDF accompanies the main manuscript and contains the extended convergence, solution-quality, runtime, statistical, configurability, and accessibility results referenced there.
+This Supplementary Material accompanies the main manuscript and contains the extended convergence, solution-quality, runtime, statistical, configurability, and accessibility results referenced there.
 
 %==============================================================================
 \section{Convergence Analysis}
@@ -83,24 +94,24 @@ This supplementary PDF accompanies the main manuscript and contains the extended
 
 \begin{figure*}[!t]
   \centering
-  \includegraphics[width=0.9\textwidth]{figures/convergence.png}
-  \caption{Convergence of normalized hypervolume over 50{,}000 evaluations for \VAMOS{} (Numba), pymoo, and jMetalPy on DTLZ2 (3 objectives, 12 variables), WFG4 (2 objectives, 24 variables), and ZDT1 (2 objectives, 30 variables). Solid/dashed lines show median HV across 30 seeds; shaded regions indicate the interquartile range. All three frameworks follow nearly identical convergence trajectories, confirming that the semantic alignment protocol produces equivalent algorithmic behavior.}
+  \includegraphics[width=\textwidth]{figures/convergence.png}
+  \caption{Convergence of normalized hypervolume over 50{,}000 evaluations for \VAMOS{} (Numba), \textit{pymoo} , and \textit{jMetalPy} on DTLZ2 (3 objectives, 12 variables), WFG4 (2 objectives, 24 variables), and ZDT1 (2 objectives, 30 variables). Solid/dashed lines show median hypervolume values across 30 seeds; shaded regions indicate the interquartile range. All three frameworks follow nearly identical convergence trajectories, confirming that the semantic alignment protocol produces equivalent algorithmic behavior.}
   \label{fig:convergence}
 \end{figure*}
 
-To verify that runtime speedups do not come at the expense of convergence rate, we track normalized hypervolume at 1{,}000-evaluation intervals over the full 50{,}000-evaluation budget. Fig.~\ref{fig:convergence} compares \VAMOS{}, pymoo, and jMetalPy on three representative problems: DTLZ2 (3 objectives, 12 variables), WFG4 (2 objectives, 24 variables), and ZDT1 (2 objectives, 30 variables). The convergence curves are nearly indistinguishable across all three frameworks, with overlapping interquartile ranges across all 30 seeds. All frameworks reach the same final quality at the same evaluation counts, confirming that the performance gains observed in runtime measurements are not accompanied by degraded convergence behavior.
+To verify that runtime speedups do not come at the expense of convergence rate, we track normalized hypervolume at 1{,}000-evaluation intervals over the full 50{,}000-evaluation budget. Fig.~\ref{fig:convergence} compares \VAMOS{}, \textit{pymoo} , and \textit{jMetalPy} on three representative problems: DTLZ2 (3 objectives, 12 variables), WFG4 (2 objectives, 24 variables), and ZDT1 (2 objectives, 30 variables). The convergence curves are nearly indistinguishable across all three frameworks, with overlapping interquartile ranges across all 30 seeds. All frameworks reach the same final quality at the same evaluation counts, confirming that the performance gains observed in runtime measurements are not accompanied by degraded convergence behavior.
 
 
 %==============================================================================
 \section{Solution Quality Analysis}
 \label{app:quality}
 %==============================================================================
-The runtime advantages reported above are only meaningful if \VAMOS{} produces solutions of comparable quality. To verify this, we compare normalized hypervolume (HV) across frameworks using the protocol described in Section~V-E of the main paper: for each problem we compute the median HV across 30 seeds, and then summarize these per-problem medians by family using the median and interquartile range (IQR). Table~\ref{tab:frameworks_hv} presents the results for generational NSGA-II.
+The runtime advantages reported above are only meaningful if \VAMOS{} produces solutions of comparable quality. To verify this, we compare normalized hypervolume (HV) across frameworks using the protocol described in Section~V-E of the main paper: for each problem we compute the median HV across 30 seeds, and then summarize these per-problem medians by family using the median and interquartile range (IQR). Table~\ref{tab:frameworks_hv} presents the results for the generational Non-dominated Sorting Genetic Algorithm II (NSGA-II).
 
 \begin{table*}[htbp]
 \centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
+%\scriptsize
+%\setlength{\tabcolsep}{3pt}
 \caption{Normalized hypervolume summary (median (IQR)) by problem family across frameworks}
 \label{tab:frameworks_hv}
 \begin{tabular}{@{}lccccc@{}}
@@ -108,22 +119,22 @@ The runtime advantages reported above are only meaningful if \VAMOS{} produces s
 \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} & \textbf{Overall} \\
 \midrule
 VAMOS & \textbf{0.991 (0.013)} & 0.836 (0.121) & \textbf{0.934 (0.138)} & --- & \textbf{0.934 (0.157)} \\
-pymoo & \textbf{0.991 (0.010)} & 0.829 (0.148) & 0.846 (0.220) & --- & 0.921 (0.156) \\
-jMetalPy & \textbf{0.991 (0.014)} & 0.835 (0.110) & 0.845 (0.223) & --- & 0.924 (0.159) \\
-DEAP & \textbf{0.991 (0.013)} & \textbf{0.839 (0.138)} & 0.839 (0.224) & --- & 0.924 (0.156) \\
-Platypus & \textbf{0.991 (0.010)} & 0.824 (0.177) & 0.919 (0.137) & --- & 0.919 (0.160) \\
+\textit{pymoo} & \textbf{0.991 (0.010)} & 0.829 (0.148) & 0.846 (0.220) & --- & 0.921 (0.156) \\
+\textit{jMetalPy} & \textbf{0.991 (0.014)} & 0.835 (0.110) & 0.845 (0.223) & --- & 0.924 (0.159) \\
+\textit{DEAP} & \textbf{0.991 (0.013)} & \textbf{0.839 (0.138)} & 0.839 (0.224) & --- & 0.924 (0.156) \\
+\textit{Platypus} & \textbf{0.991 (0.010)} & 0.824 (0.177) & 0.919 (0.137) & --- & 0.919 (0.160) \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-Across ZDT, all frameworks attain nearly identical normalized HV, confirming that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks. WFG exhibits the largest dispersion; notably, \VAMOS{} achieves the highest median on WFG (0.934 vs.\ 0.846 for pymoo), which may reflect subtle differences in WFG parameterization or boundary handling across implementations. Together with the runtime results, these summaries confirm that \VAMOS{} achieves comparable or superior solution quality while delivering faster runtimes under the fixed-reference-front protocol.
+Across ZDT, all frameworks attain nearly identical normalized HV, confirming that benchmark definitions and operator semantics are effectively aligned. For DTLZ, medians are tightly clustered across frameworks. WFG exhibits the largest dispersion; notably, \VAMOS{} achieves the highest median on WFG (0.934 vs.\ 0.846 for \textit{pymoo} ), which may reflect subtle differences in WFG parameterization or boundary handling across implementations. Together with the runtime results, these summaries confirm that \VAMOS{} achieves comparable or superior solution quality while delivering faster runtimes under the fixed-reference-front protocol.
 
-Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, the overall normalized HV is effectively identical across frameworks (all three reach 0.989 overall), although \VAMOS{} attains a clearly higher median on WFG (0.939 vs.\ 0.849 for pymoo and 0.848 for jMetalPy). For the archive variant, the three frameworks remain closely matched across all families: ZDT and ZCAT are virtually identical, DTLZ differs by at most 0.003, and the WFG medians lie in the narrow 0.846--0.852 range.
+Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II steady-state and external-archive variants. For the steady-state variant, the overall normalized HV is effectively identical across frameworks (all three reach 0.989 overall), although \VAMOS{} attains a clearly higher median on WFG (0.939 vs.\ 0.849 for \textit{pymoo}  and 0.848 for jMetalPy). For the archive variant, the three frameworks remain closely matched across all families: ZDT and ZCAT are virtually identical, DTLZ differs by at most 0.003, and the WFG medians lie in the narrow 0.846--0.852 range.
 
 \begin{table*}[htbp]
 \centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
+%\scriptsize
+%\setlength{\tabcolsep}{3pt}
 \caption{Normalized hypervolume summary (median (IQR)) by problem family for NSGA-II variants}
 \label{tab:frameworks_hv_variants}
 \begin{tabular}{@{}llccccc@{}}
@@ -131,12 +142,12 @@ Table~\ref{tab:frameworks_hv_variants} extends this analysis to the NSGA-II stea
 \textbf{Algorithm} & \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} & \textbf{Overall} \\
 \midrule
 NSGA-II (SS) & VAMOS & 0.993 (0.009) & 0.846 (0.091) & 0.939 (0.138) & 0.994 (0.004) & 0.989 (0.055) \\
- & pymoo & 0.993 (0.008) & 0.847 (0.160) & 0.849 (0.218) & 0.994 (0.004) & 0.989 (0.073) \\
- & jMetalPy & 0.993 (0.009) & 0.849 (0.101) & 0.848 (0.153) & 0.994 (0.004) & 0.989 (0.073) \\
+ & \textit{pymoo}  & 0.993 (0.008) & 0.847 (0.160) & 0.849 (0.218) & 0.994 (0.004) & 0.989 (0.073) \\
+ & \textit{jMetalPy} & 0.993 (0.009) & 0.849 (0.101) & 0.848 (0.153) & 0.994 (0.004) & 0.989 (0.073) \\
 \midrule
 NSGA-II (Archive) & VAMOS & 0.993 (0.010) & 0.855 (0.106) & 0.846 (0.219) & 0.993 (0.005) & 0.987 (0.079) \\
- & pymoo & 0.993 (0.009) & 0.853 (0.139) & 0.852 (0.223) & 0.993 (0.005) & 0.988 (0.080) \\
- & jMetalPy & 0.993 (0.010) & 0.856 (0.104) & 0.846 (0.149) & 0.993 (0.005) & 0.987 (0.073) \\
+ & \textit{pymoo}  & 0.993 (0.009) & 0.853 (0.139) & 0.852 (0.223) & 0.993 (0.005) & 0.988 (0.080) \\
+ & \textit{jMetalPy} & 0.993 (0.010) & 0.856 (0.104) & 0.846 (0.149) & 0.993 (0.005) & 0.987 (0.073) \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -148,15 +159,15 @@ NSGA-II (Archive) & VAMOS & 0.993 (0.010) & 0.855 (0.106) & 0.846 (0.219) & 0.99
 \label{app:stats_main}
 %==============================================================================
 
-The descriptive summaries in the previous section suggest quality equivalence, but median and IQR alone cannot determine whether observed differences are statistically significant. We therefore apply Wilcoxon signed-rank tests (paired by seed) comparing \VAMOS{} against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). As a measure of practical significance, we report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{VD00} alongside each test ($\hat{A}_{12}>0.5$ favors \VAMOS{}; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also compute paired-bootstrap 90\% confidence intervals for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
+The descriptive summaries in the previous section suggest quality equivalence, but median and IQR alone cannot determine whether observed differences are statistically significant. We therefore apply Wilcoxon signed-rank tests (paired by seed) comparing \VAMOS{} against each competitor on every problem, with Holm step-down correction for familywise error control ($\alpha=0.05$). As a measure of practical significance, we report the Vargha--Delaney $\hat{A}_{12}$ effect size~\cite{VD00} alongside each test ($\hat{A}_{12}>0.5$ favors \VAMOS{}; thresholds: negligible${}<0.56$, small${}<0.64$, medium${}<0.71$, large${\ge}0.71$). We also compute paired-bootstrap 90\% confidence intervals (CIs) for the relative normalized-HV difference $\Delta = (\HV_{\text{VAMOS}} - \HV_{\text{fw}})/\HV_{\text{fw}}$, and declare \emph{equivalence} when the entire CI falls within $\pm 1\%$.
 
-Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 41 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.4\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: \VAMOS{} is equivalent to pymoo on 37/41 problems and non-inferior on 38/41, with a median $\Delta$HV of $-0.01\%$. Similar patterns hold for jMetalPy and the other frameworks. Table~\ref{tab:hv_robustness_summary_nsgaii} details robustness, and Fig.~\ref{fig:forest_ci_nsgaii} visualizes per-problem CIs as a forest plot. Detailed NSGA-II statistical tables are provided in Section~\ref{app:stats_nsgaii}, and corresponding analyses for SMS-EMOA and MOEA/D are provided in Section~\ref{app:stats}.
+Table~\ref{tab:stats_hypervolume_nsgaii} presents the per-problem Wilcoxon results for the NSGA-II baseline. Of 41 problems, only one (ZDT6) shows a statistically significant difference in normalized HV after Holm correction, and the magnitude is small ($\Delta \approx 0.4\%$). Table~\ref{tab:hv_equivalence_summary_nsgaii} summarizes the equivalence analysis: \VAMOS{} is equivalent to \textit{pymoo}  on 37/41 problems and non-inferior on 38/41, with a median $\Delta$HV of $-0.01\%$. Similar patterns hold for \textit{jMetalPy} and the other frameworks. Table~\ref{tab:hv_robustness_summary_nsgaii} details robustness, and Fig.~\ref{fig:forest_ci_nsgaii} visualizes per-problem CIs as a forest plot. Detailed NSGA-II statistical tables are provided in Section~\ref{app:stats_nsgaii}, and corresponding analyses for SMS-EMOA and MOEA/D are provided in Section~\ref{app:stats}.
 
 %==============================================================================
 \section{Additional runtime comparisons}
 \label{app:variants}
 %==============================================================================
-This section reports supplementary runtime comparisons for NSGA-II variants (steady-state and external archive), SMS-EMOA, and MOEA/D under the same protocol as the Experimental Results section of the main paper.
+This section reports supplementary runtime comparisons for NSGA-II variants (steady-state and external archive), the S-metric Selection Evolutionary Multiobjective Optimization Algorithm (SMS-EMOA), and the Multiobjective Evolutionary Algorithm Based on Decomposition (MOEA/D) under the same protocol as the Experimental Results section of the main paper.
 
 \begin{table*}[htbp]
 \centering
@@ -169,33 +180,32 @@ This section reports supplementary runtime comparisons for NSGA-II variants (ste
 \textbf{Algorithm} & \textbf{Framework} & \textbf{ZDT} & \textbf{DTLZ} & \textbf{WFG} & \textbf{ZCAT} & \textbf{Average} \\
 \midrule
 NSGA-II (SS) & VAMOS & \textbf{150.21} & \textbf{244.80} & \textbf{799.29} & \textbf{715.29} & \textbf{477.40} \\
- & pymoo & 5747.47 & 7259.88 & 6382.73 & 4569.01 & 5989.77 \\
- & jMetalPy & 1930.43 & 2506.83 & 2756.07 & 1947.76 & 2285.27 \\
+ & \textit{pymoo}  & 5747.47 & 7259.88 & 6382.73 & 4569.01 & 5989.77 \\
+ & \textit{jMetalPy} & 1930.43 & 2506.83 & 2756.07 & 1947.76 & 2285.27 \\
 \midrule
 NSGA-II (Arch.) & VAMOS & \textbf{10.43} & \textbf{87.56} & \textbf{23.33} & \textbf{106.30} & \textbf{56.91} \\
- & pymoo & 1422.71 & 7208.12 & 1515.89 & 1511.36 & 2914.52 \\
- & jMetalPy & 744.93 & 3993.47 & 1736.74 & 602.88 & 1769.51 \\
+ & \textit{pymoo}  & 1422.71 & 7208.12 & 1515.89 & 1511.36 & 2914.52 \\
+ & \textit{jMetalPy} & 744.93 & 3993.47 & 1736.74 & 602.88 & 1769.51 \\
 \midrule
 SMS-EMOA & VAMOS & \textbf{124.94} & \textbf{187.16} & \textbf{734.42} & \textbf{521.22} & \textbf{391.94} \\
- & pymoo & 1658.10 & 2439.60 & 3410.49 & 2967.14 & 2618.83 \\
- & jMetalPy & 377.01 & 529.49 & 1161.51 & 2670.22 & 1184.56 \\
+ & \textit{pymoo}  & 1658.10 & 2439.60 & 3410.49 & 2967.14 & 2618.83 \\
+ & \textit{jMetalPy} & 377.01 & 529.49 & 1161.51 & 2670.22 & 1184.56 \\
 \midrule
 MOEA/D & VAMOS & \textbf{76.19} & \textbf{118.98} & \textbf{647.96} & \textbf{340.78} & \textbf{295.98} \\
- & pymoo & 1325.29 & 1735.46 & 4143.63 & 1023.63 & 2057.00 \\
- & jMetalPy & 303.00 & 430.14 & 4267.52 & 354.29 & 1338.74 \\
- & Platypus & nan & nan & nan & 412.92 & 412.92 \\
+ & \textit{pymoo}  & 1325.29 & 1735.46 & 4143.63 & 1023.63 & 2057.00 \\
+ & \textit{jMetalPy} & 303.00 & 430.14 & 4267.52 & 354.29 & 1338.74 \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 \subsection{Memory footprint}
 
-Peak resident-set-size (RSS) was measured during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} achieves a median peak RSS of 0.28\,MB, compared to 0.84\,MB for pymoo ($3\times$ higher) and 0.50\,MB for jMetalPy ($1.8\times$ higher). These measurements are consistent with the array-native representation reducing per-individual object overhead.
+Peak resident-set-size (RSS) was measured during NSGA-II runs on three representative problems (ZDT1, DTLZ2, WFG4) using 50{,}000 evaluations and 5 seeds per framework. \VAMOS{} achieves a median peak RSS of 0.28 megabytes (MB), compared to 0.84\,MB for \textit{pymoo}  ($3\times$ higher) and 0.50\,MB for \textit{jMetalPy} ($1.8\times$ higher). These measurements are consistent with the array-native representation reducing per-individual object overhead.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{figures/memory_comparison.png}
-\caption{Peak memory footprint (MB) during NSGA-II optimization on three representative problems (50{,}000 evaluations, median of 5 seeds). \VAMOS{} consistently uses less memory than both pymoo and jMetalPy across the measured problems.}
+\caption{Peak memory footprint (MB) during NSGA-II optimization on three representative problems (50{,}000 evaluations, median of 5 seeds). \VAMOS{} consistently uses less memory than both \textit{pymoo} and \textit{jMetalPy} across the measured problems.}
 \label{fig:memory_comparison}
 \end{figure}
 
@@ -213,7 +223,7 @@ This section reports per-problem Wilcoxon signed-rank tests, bootstrap equivalen
 
 The repository includes dense reference Pareto fronts for all benchmark problems used for normalized hypervolume computation. These fronts are generated analytically when closed forms are available (ZDT and most DTLZ problems) and by dense sampling followed by non-dominated filtering for cases where the Pareto front is disconnected or defined implicitly (DTLZ7 and WFG). For WFG2 we use a higher sampling density to stabilize HV normalization.
 
-Fig.~\ref{fig:runtime_heatmap} presents per-problem median runtimes as a dual-panel heatmap. The left panel compares VAMOS backends (Numba, MooCore, NumPy); the right panel compares VAMOS against pymoo and jMetalPy. Color intensity indicates runtime on a logarithmic scale, with annotated values in each cell and bold values marking the fastest per problem.
+Fig.~\ref{fig:runtime_heatmap} presents per-problem median runtimes as a dual-panel heatmap. The left panel compares VAMOS backends (Numba, MooCore, NumPy); the right panel compares VAMOS against \textit{pymoo}  and jMetalPy. Color intensity indicates runtime on a logarithmic scale, with annotated values in each cell and bold values marking the fastest per problem.
 
 \begin{figure*}[htbp]
   \centering
@@ -248,19 +258,11 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_robustness_summary_moead} 
 \endgroup
 
 %==============================================================================
-\section{Algorithm Configuration Spaces}
-\label{app:param_space}
-%==============================================================================
-
-The full parameter space for NSGA-II with real-valued encoding is presented in the main paper.
-
-
-%==============================================================================
 \section{Accessibility Proxy Protocol}
 \label{app:accessibility_protocol}
 %==============================================================================
 
-To complement the accessibility discussion in the main paper, we evaluate three onboarding tasks: (i)~run NSGA-II on a built-in benchmark, (ii)~define and optimize a small custom two-objective problem, and (iii)~move from defaults to explicit operator-level configuration. For each framework, we selected a canonical snippet from the shortest documented path available in March~2026. For \VAMOS{}, the snippets align with the public API examples used in the manuscript; for pymoo and jMetalPy, the canonical sources are the public documentation pages listed in Table~\ref{tab:accessibility_proxy_details}.
+To complement the accessibility discussion in the main paper, we evaluate three onboarding tasks: (i)~run NSGA-II on a built-in benchmark, (ii)~define and optimize a small custom two-objective problem, and (iii)~move from defaults to explicit operator-level configuration. For each framework, we selected a canonical snippet from the shortest documented path available in March~2026. For \VAMOS{}, the snippets align with the public API examples used in the manuscript; for \textit{pymoo}  and jMetalPy, the canonical sources are the public documentation pages listed in Table~\ref{tab:accessibility_proxy_details}.
 
 Metrics count only non-empty, non-comment lines and explicit \texttt{import}/\texttt{from} statements. Plotting, result serialization, and explanatory comments are excluded because they do not affect the onboarding burden of the optimization call itself. The underlying artifact file used to generate the accessibility-proxy table in the main paper and Table~\ref{tab:accessibility_proxy_details} below is \texttt{paper/accessibility\_proxy\_snippets.json}.
 
@@ -272,66 +274,7 @@ Metrics count only non-empty, non-comment lines and explicit \texttt{import}/\te
 \label{app:code}
 %==============================================================================
 
-
-
-
-Listing~\ref{lst:optuna_tune} shows how to autotune the NSGA-II tuning space with the Optuna backend. The \texttt{build\_nsgaii\_config\_space} function defines the search space, which is converted to a \texttt{ParamSpace} before calling \texttt{ModelBasedTuner}.
-
-\begin{lstlisting}[float=*,caption={Autotuning NSGA-II with Optuna on ZDT1, DTLZ2, and WFG4.},label={lst:optuna_tune}]
-import numpy as np
-from vamos import optimize, make_problem_selection
-from vamos.engine.tuning import (
-    ModelBasedTuner, TuningTask, Instance, EvalContext,
-    build_nsgaii_config_space, config_from_assignment,
-)
-from vamos.foundation.quality_indicators import HVIndicator
-
-# Evaluation function: returns hypervolume
-def eval_fn(config, ctx: EvalContext):
-    cfg = config_from_assignment("nsgaii", config)
-    selection = make_problem_selection(
-        ctx.instance.name,
-        n_var=ctx.instance.n_var,
-        n_obj=ctx.instance.kwargs.get("n_obj"),
-    )
-    res = optimize(
-        selection.instantiate(),
-        algorithm="nsgaii",
-        algorithm_config=cfg,
-        max_evaluations=ctx.budget,
-        seed=ctx.seed,
-    )
-    hv = HVIndicator(reference_point=np.asarray(
-        ctx.instance.kwargs["ref_point"]
-    ))
-    return float(hv.compute(res.F).value)
-
-# Define tuning task with one problem per family
-task = TuningTask(
-    name="tune_nsgaii",
-    param_space=build_nsgaii_config_space().to_param_space(),
-    instances=[
-        Instance(name="zdt1", n_var=30,
-                 kwargs={"ref_point": [1.1, 1.1]}),
-        Instance(name="dtlz2", n_var=12,
-                 kwargs={"n_obj": 3,
-                         "ref_point": [1.1, 1.1, 1.1]}),
-        Instance(name="wfg4", n_var=24,
-                 kwargs={"n_obj": 2,
-                         "ref_point": [3.0, 5.0]}),
-    ],
-    seeds=[1, 2, 3], aggregator=np.mean,
-    budget_per_run=10000, maximize=True,
-)
-
-# Run Optuna-based tuning (TPE + multi-fidelity)
-tuner = ModelBasedTuner(
-    task=task, max_trials=50, backend="optuna",
-    seed=42, n_jobs=4,
-    budget_levels=[2000, 5000, 10000],
-)
-best_config, history = tuner.run(eval_fn)
-\end{lstlisting}
+Representative code examples and tuning scripts will be made available upon acceptance.
 
 
 %==============================================================================
@@ -339,11 +282,11 @@ best_config, history = tuner.run(eval_fn)
 \label{app:parameter_spaces}
 %==============================================================================
 
-Tables~\ref{tab:parameter_space_pymoo} and~\ref{tab:parameter_space_jmetalpy} detail the configurable parameter spaces for NSGA-II in pymoo and jMetalPy, respectively.
+Tables~\ref{tab:parameter_space_pymoo} and~\ref{tab:parameter_space_jmetalpy} detail the configurable parameter spaces for NSGA-II in \textit{pymoo} and \textit{jMetalPy}, respectively.
 
 \begin{table*}[htbp]
 \centering
-\caption{Parameter space for NSGA-II in pymoo (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 20 (11 always active, 9~conditional).}
+\caption{Parameter space for NSGA-II in \textit{pymoo}  (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 20 (11 always active, 9~conditional). Acronyms in the table denote Latin hypercube sampling (LHS), parent-centric crossover (PCX), and differential evolution crossover (DEX).}
 \label{tab:parameter_space_pymoo}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
@@ -369,9 +312,9 @@ Tables~\ref{tab:parameter_space_pymoo} and~\ref{tab:parameter_space_jmetalpy} de
 
 \begin{table*}[htbp]
 \centering
-\caption{Parameter space for NSGA-II in jMetalPy (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 29 (10 always active, 19~conditional).}
+\caption{Parameter space for NSGA-II in \textit{jMetalPy} (real-valued encoding). Parameters in italics are conditional, active only when their corresponding operator is selected. Values in \textbf{bold} indicate defaults. The total number of configurable parameters is 29 (10 always active, 19~conditional). Acronyms in the table denote unimodal normal distribution crossover (UNDX) and differential evolution (DE).}
 \label{tab:parameter_space_jmetalpy}
-\resizebox{\textwidth}{!}{%
+%\resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
@@ -399,7 +342,7 @@ Tables~\ref{tab:parameter_space_pymoo} and~\ref{tab:parameter_space_jmetalpy} de
  & Power Law & $\delta$; default $1.0$ \\ \midrule
 \multirow{1}{*}{Repair} & \{\textbf{Clamp}, Random Uniform, Reflective, Bound Swap\} & -- \\ \bottomrule
 \end{tabular}%
-}
+%}
 \end{table*}
 
 %==============================================================================

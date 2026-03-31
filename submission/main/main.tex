@@ -255,7 +255,7 @@ The design of VAMOS is motivated by three practical gaps in existing Python MOEA
 The core architecture of VAMOS is organized into the four layers shown in Figure~\ref{fig:architecture}: (i) the \textit{Foundation Layer}, which provides compute kernels, problem definitions, quality indicators, encodings, constraints, and evaluation backends; (ii) the \textit{Engine Layer}, implementing MOEAs on top of shared components, variation operators, external archives, and a tuning subsystem; (iii) the \textit{Experiment Layer}, which exposes the unified \texttt{optimize()} entry point, command-line interface (CLI) tools, benchmarking utilities, and results analysis; and (iv) the \textit{User Experience (UX) Layer}, providing VAMOS Studio (an interactive dashboard), a visual problem builder, a Results Explorer, and an on-boarding wizard.
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.4\textwidth]{figures/architecture_v2.png}
+\includegraphics[width=0.4\textwidth]{architecture_v2.png}
 \caption{VAMOS four-layer architecture.}
 \label{fig:architecture}
 \vspace{-3mm}
@@ -276,7 +276,7 @@ Fig.~\ref{fig:representation} provides an intuitive view of how these frameworks
 
 \begin{figure*}[!t]
   \centering
-  \includegraphics[width=0.95\textwidth]{figures/Representation.png}
+  \includegraphics[width=0.95\textwidth]{Representation.png}
   \caption{Comparing population representation across Python MOEA frameworks.}
   \label{fig:representation}
 \end{figure*}
@@ -352,7 +352,7 @@ Fig.~\ref{fig:protocol} summarizes the benchmark protocol and semantic-alignment
 
 \begin{figure*}[htbp]
   \centering
-  \includegraphics[width=0.9\textwidth]{figures/protocol.png}
+  \includegraphics[width=0.9\textwidth]{PROTOCOL.png}
   \caption{Benchmark protocol and semantic alignment: map equivalent NSGA-II settings across frameworks, run independent seeds under a fixed evaluation budget, and compute normalized hypervolume using fixed reference fronts.}
   \label{fig:protocol}
 \end{figure*}
@@ -452,7 +452,7 @@ VAMOS & \textbf{4.89} & \textbf{8.14} & \textbf{14.33} & \textbf{87.43} \\
 
 %\begin{figure*}[htbp]
 %  \centering
-%  \includegraphics[width=0.9\textwidth]{figures/time_comparison.png}
+%  \includegraphics[width=0.9\textwidth]{time_comparison.png}
 %  \caption{Runtime of each framework relative to \VAMOS{} (Numba) for generational NSGA-II, grouped by problem family ($\log_2$ scale). Bars above the dashed parity line ($2^0=1$) indicate that the competitor is slower. Error bars show variability across per-problem medians within each family. All runs use 50{,}000 evaluations and 30 seeds.}
 %  \label{fig:runtime_comparison}
 %\end{figure*}
@@ -511,16 +511,16 @@ As shown in Table~\ref{tab:frameworks_perf_variants}, \VAMOS{} is the fastest fr
 %
 %\begin{figure}[htbp]
 %  \centering
-%  \includegraphics[width=\columnwidth]{figures/zcat_scalability.png}
+%  \includegraphics[width=\columnwidth]{zcat_scalability.png}
 %  \label{fig:zcat_scalability}
 %\end{figure}
 
 % \begin{figure*}[htbp]
 %   \centering
-%   \includegraphics[width=0.24\textwidth]{figures/front_zdt4_standard.png}\hfill
-%   \includegraphics[width=0.24\textwidth]{figures/front_zdt4_steady_state.png}\hfill
-%   \includegraphics[width=0.24\textwidth]{figures/front_dtlz2_standard.png}\hfill
-%   \includegraphics[width=0.24\textwidth]{figures/front_dtlz2_archive.png}
+%   \includegraphics[width=0.24\textwidth]{front_zdt4_standard.png}\hfill
+%   \includegraphics[width=0.24\textwidth]{front_zdt4_steady_state.png}\hfill
+%   \includegraphics[width=0.24\textwidth]{front_dtlz2_standard.png}\hfill
+%   \includegraphics[width=0.24\textwidth]{front_dtlz2_archive.png}
 %   \caption{Final non-dominated sets produced by NSGA-II variants on ZDT4 (left pair, 2-objective) and DTLZ2 (right pair, 3-objective), overlaid with the reference Pareto front. From left to right: (a)~standard generational NSGA-II on ZDT4, (b)~steady-state NSGA-II on ZDT4, (c)~standard NSGA-II on DTLZ2, and (d)~NSGA-II with unbounded external archive on DTLZ2. The steady-state and archive variants produce a more uniformly distributed approximation of the Pareto front compared to the generational baseline.}
 %   \label{fig:pareto_fronts_variants}
 % \end{figure*}
@@ -530,7 +530,7 @@ Peak resident-set-size (RSS) measurements for NSGA-II on representative problems
 
 %\begin{figure}[htbp]
 %\centering
-%\includegraphics[width=\columnwidth]{figures/memory_comparison.png}
+%\includegraphics[width=\columnwidth]{memory_comparison.png}
 %\caption{Peak memory footprint (MB) during NSGA-II optimization on three representative problems (50{,}000 evaluations, median of 5 seeds). \VAMOS{} consistently uses less memory than both pymoo and jMetalPy across all problem families.}
 %\label{fig:memory_comparison}
 %\end{figure}
@@ -680,14 +680,14 @@ A central design objective of \VAMOS{} is to lower the entry barrier to multi-ob
 
 % \begin{figure*}[!t]
 % \centering
-% \includegraphics[width=0.98\textwidth]{figures/ACCESSIBILITY.png}
+% \includegraphics[width=0.98\textwidth]{ACCESSIBILITY.png}
 % \caption{Accessibility through progressive disclosure in \VAMOS{}. The workflow spans a two-line quick start, callable-based custom problem definition without subclassing, fine-grained configuration through the builder API, and guided tooling through the command-line interface and VAMOS Studio.}
 % \label{fig:accessibility}
 % \end{figure*}
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.98\textwidth]{figures/workflow_v3.png}
+\includegraphics[width=0.98\textwidth]{workflow_v3.png}
 \caption{Accessibility through progressive disclosure in \VAMOS{}. The workflow spans a two-line quick start, callable-based custom problem definition without subclassing, fine-grained configuration through the builder API, and guided tooling through the command-line interface and VAMOS Studio.}
 \label{fig:accessibility}
 \end{figure*}
