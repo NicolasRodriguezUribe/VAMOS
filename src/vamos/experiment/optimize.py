@@ -3,11 +3,12 @@ from __future__ import annotations
 import logging
 import numbers
 from dataclasses import dataclass, fields, replace
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from vamos.engine.algorithm.config.base import ResultMode
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, EngineName
 from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
+from vamos.experiment.types import CheckpointPayload, LiveVisualization, TerminationSpec
 from vamos.exceptions import ConfigurationError, InvalidAlgorithmError
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.eval.backends import resolve_eval_strategy
@@ -31,12 +32,12 @@ class _OptimizeConfig:
     problem: ProblemProtocol
     algorithm: str
     algorithm_config: AlgorithmConfigProtocol
-    termination: tuple[str, Any]
+    termination: TerminationSpec
     seed: int
     engine: EngineName = "numpy"
     eval_strategy: EvaluationBackend | str | None = None  # name or backend instance
-    live_viz: Any = None
-    checkpoint: Any = None
+    live_viz: LiveVisualization | None = None
+    checkpoint: CheckpointPayload | None = None
 
 
 def _normalize_cfg(cfg: AlgorithmConfigProtocol) -> dict[str, object]:
@@ -91,18 +92,17 @@ def _run_config(
     """
     Run a single optimization for the provided problem/config pair.
 
-    Args:
-        config: Internal config with problem, algorithm, and settings
-        engine: Override backend engine ('numpy', 'numba', 'moocore').
-                If provided, overrides config.engine.
+    Parameters
+    ----------
+    config : _OptimizeConfig
+        Internal config with problem, algorithm, and settings.
+    engine : EngineName | None, optional
+        Override backend engine. If provided, overrides ``config.engine``.
 
-    Returns:
-        OptimizationResult with Pareto front data and selection helpers.
-        Use `vamos.ux.api` for summaries, plotting, and export helpers.
-
-    Examples:
-        # Standard usage (internal)
-        result = _run_config(config)
+    Returns
+    -------
+    OptimizationResult
+        Pareto-result container with selection helpers and metadata.
     """
     if not isinstance(config, _OptimizeConfig):
         raise ConfigurationError("_run_config() expects an internal optimize config instance.")
@@ -133,23 +133,30 @@ def _run_config(
     algo_ctor = resolve_algorithm(algorithm_name)
     algorithm = algo_ctor(cfg_dict, kernel)
 
-    run_fn = algorithm.run
-    kwargs = {
-        "problem": cfg.problem,
-        "termination": cfg.termination,
-        "seed": cfg.seed,
-        "eval_strategy": backend,
-        "live_viz": cfg.live_viz,
-    }
+    run_fn = cast(Callable[..., dict[str, Any]], algorithm.run)
     if cfg.checkpoint is not None:
         import inspect
 
         sig = inspect.signature(run_fn)
         if "checkpoint" in sig.parameters or any(param.kind == inspect.Parameter.VAR_KEYWORD for param in sig.parameters.values()):
-            kwargs["checkpoint"] = cfg.checkpoint
+            result = run_fn(
+                problem=cfg.problem,
+                termination=cfg.termination,
+                seed=cfg.seed,
+                eval_strategy=backend,
+                live_viz=cfg.live_viz,
+                checkpoint=cfg.checkpoint,
+            )
         else:
             raise ConfigurationError(f"Algorithm '{algorithm_name}' does not support checkpoints.")
-    result = run_fn(**kwargs)
+    else:
+        result = run_fn(
+            problem=cfg.problem,
+            termination=cfg.termination,
+            seed=cfg.seed,
+            eval_strategy=backend,
+            live_viz=cfg.live_viz,
+        )
     from .optimization_result import OptimizationResult
 
     return OptimizationResult(

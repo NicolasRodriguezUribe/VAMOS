@@ -16,11 +16,11 @@ def generate_lockfile_data() -> dict[str, Any]:
     """
     Generate a dictionary containing environment information associated with a run.
 
-    Returns:
-        Dictionary with keys:
-        - python: Python version info
-        - platform: OS/System info
-        - packages: Dictionary of installed packages and their versions
+    Returns
+    -------
+    dict[str, Any]
+        Environment metadata with Python, platform, and installed-package
+        information.
     """
     # Python and OS info
     env_info = {
@@ -60,10 +60,14 @@ def write_lockfile(path: str | Path) -> Path:
     """
     Generate and write environment lockfile to the specified path.
 
-    Args:
-        path: Output path for the lockfile.
+    Parameters
+    ----------
+    path : str | Path
+        Output path for the lockfile.
 
-    Returns:
+    Returns
+    -------
+    Path
         Path to the written file.
     """
     path = Path(path)

@@ -9,6 +9,7 @@ from typing import Any, Literal, overload
 
 import numpy as np
 
+from vamos.engine.algorithm.components.matching import match_ids_by_tolerance
 from vamos.engine.hooks.genealogy import (
     GenealogyTracker,
 )
@@ -198,12 +199,7 @@ def match_ids(new_X: np.ndarray, combined_X: np.ndarray, combined_ids: np.ndarra
     drift introduced by genetic operators.  Falls back to -1 when no match is
     found.
     """
-    new_ids = np.full(new_X.shape[0], -1, dtype=int)
-    for i, row in enumerate(new_X):
-        matches = np.where(np.all(np.abs(combined_X - row) <= 1e-12, axis=1))[0]
-        if matches.size:
-            new_ids[i] = combined_ids[matches[0]]
-    return new_ids
+    return match_ids_by_tolerance(new_X, combined_X, combined_ids)
 
 
 def operator_success_stats(tracker: GenealogyTracker, final_ids: list[int]) -> list[dict[str, object]]:

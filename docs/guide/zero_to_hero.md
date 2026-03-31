@@ -263,6 +263,8 @@ class MyVectorizedProblem:
 
 When you need reproducible runs with clean artifacts, the CLI writes a standard layout under `results/`.
 
+Status note: as of March 31, 2026, the standard run-oriented CLI path is smoke-tested again for NSGA-II/ZDT1. The commands below reflect the intended artifact layout and are reasonable onboarding examples for the common path.
+
 Run a short sweep (three seeds) into a dedicated folder:
 
 ```bash

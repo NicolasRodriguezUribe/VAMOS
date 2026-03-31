@@ -72,7 +72,7 @@ class FunctionalProblem(Problem):
         if self._vectorized:
             F_result = np.asarray(self._fn(X), dtype=float)
         else:
-            # Auto-vectorize: apply function row-by-row
+            # Elementwise adaptation: evaluate one solution at a time.
             results = [self._fn(X[i]) for i in range(X.shape[0])]
             F_result = np.asarray(results, dtype=float)
 
@@ -139,7 +139,7 @@ def make_problem(
 
     This is the friendliest way to define a custom optimization problem.
     Your function receives decision variables and returns objective values
-    -- VAMOS handles vectorization, bounds, and the internal protocol.
+    -- VAMOS handles bounds, protocol adaptation, and optional batched execution.
 
     Parameters
     ----------
@@ -168,9 +168,9 @@ def make_problem(
         same bound to every variable.  Mutually exclusive with *bounds*.
 
     vectorized : bool, default False
-        If ``False`` VAMOS auto-vectorizes your scalar function (simpler
-        to write).  Set ``True`` when your function already handles
-        batches for better performance.
+        If ``False`` VAMOS evaluates your scalar function one row at a time
+        for compatibility. Set ``True`` only when your function already
+        handles batches directly for real vectorized performance.
 
     encoding : str
         Variable encoding: ``"real"``, ``"binary"``, ``"integer"``,

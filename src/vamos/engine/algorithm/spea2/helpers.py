@@ -98,34 +98,16 @@ def spea2_fitness(F: np.ndarray, dom: np.ndarray, k: int | None = None) -> tuple
 
     if k is None:
         k = max(1, int(np.sqrt(n)))
-    k = min(k, n - 1) if n > 1 else 1
+    k = min(max(1, int(k)), n - 1) if n > 1 else 1
 
-    # Strength: number of solutions each solution dominates
-    strength = dom.sum(axis=1)
+    raw_fitness = strength_raw_fitness(dom)
+    dist = np.linalg.norm(F[:, None, :] - F[None, :, :], axis=2)
 
-    # Raw fitness: sum of strengths of all dominators
-    raw_fitness = np.zeros(n)
-    for i in range(n):
-        dominators = np.where(dom[:, i])[0]
-        raw_fitness[i] = strength[dominators].sum()
-
-    # Distance matrix in objective space
-    dist = np.zeros((n, n))
-    for i in range(n):
-        for j in range(i + 1, n):
-            d = np.linalg.norm(F[i] - F[j])
-            dist[i, j] = d
-            dist[j, i] = d
-
-    # Density: based on k-th nearest neighbor distance
     if n == 1:
-        density = np.array([0.0])
+        density = np.array([0.0], dtype=float)
     else:
-        density = np.zeros(n)
-        for i in range(n):
-            sorted_dists = np.sort(dist[i])
-            sigma_k = sorted_dists[k] if k < n else sorted_dists[-1]
-            density[i] = 1.0 / (sigma_k + 2.0)
+        sigma_k = np.partition(dist, kth=k, axis=1)[:, k]
+        density = 1.0 / (sigma_k + 2.0)
 
     return raw_fitness + density, dist
 

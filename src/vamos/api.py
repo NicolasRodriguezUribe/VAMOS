@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 
 from vamos.experiment.diagnostics.self_check import run_self_check
-from vamos.experiment.optimization_result import OptimizationResult
+from vamos.experiment.optimization_result import OptimizationResult, StudyResult
 
 # Unified API - the primary entry point
 from vamos.experiment.unified import optimize
@@ -49,6 +49,7 @@ __all__ = [
     "Problem",
     "make_problem",
     "OptimizationResult",
+    "StudyResult",
     "available_problem_names",
     "make_problem_selection",
     "run_self_check",

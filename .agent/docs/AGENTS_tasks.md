@@ -4,6 +4,8 @@ Task playbook for AI coding agents working on **VAMOS**
 
 This document complements `AGENTS.md`. It defines concrete, common tasks and what an AI agent should do (and avoid) for each one. This playbook assumes you have already read `README.md` and `AGENTS.md`. It focuses on concrete, well-scoped tasks that can be safely delegated to humans or AI coding agents.
 
+Current repo status (March 31, 2026): the standard run-oriented CLI (`vamos --problem ...`), `vamos quickstart`, `vamos create-problem`, `vamos tune --backend random --smoke`, `vamos profile`, the common `vamos zoo` commands, and CLI `--engine auto` are smoke-tested again for the NSGA-II/ZDT1 path. Config-driven runs, `vamos bench ... --smoke`, and the published README/CLI-guide/tuning-guide commands also have command-level smoke coverage. Prefer the Python API for user-facing code examples unless the example is specifically about the CLI surface.
+
 ## User-Friendliness First
 
 VAMOS is designed to be **user-friendly**. When writing code, examples, or documentation:
@@ -35,12 +37,12 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 
 | Task ID | What it does                                 | Useful commands / entry points                      |
 |--------:|---------------------------------------------|-----------------------------------------------------|
-| T1      | Baseline run on ZDT1                        | `python -m vamos.experiment.cli.main --problem zdt1 ...`       |
-| T2      | Add/modify external archive                 | `python -m vamos.experiment.cli.main --hv-threshold ...`       |
-| T3      | Extend AutoNSGA-II / config space           | `python -m vamos.experiment.cli.main --config path.yaml`       |
-| T4      | New real-coded operator                     | `python -m vamos.experiment.cli.main` on continuous problems   |
-| T5      | New benchmark problem                       | `python -m vamos.experiment.cli.main --problem <id> ...`       |
-| T6      | Create study / experiment pipeline          | StudyRunner/central runner / `python -m vamos.experiment.cli.main --config`   |
+| T1      | Baseline run on ZDT1                        | `optimize("zdt1", algorithm="nsgaii", ...)` or a pytest smoke test |
+| T2      | Add/modify external archive                 | Archive tests plus a tiny `optimize(...)` smoke run |
+| T3      | Extend AutoNSGA-II / config space           | Tuning APIs and config builders; add CLI coverage if you touch flags |
+| T4      | New real-coded operator                     | Continuous-problem smoke run through `optimize(...)` |
+| T5      | New benchmark problem                       | `optimize("<id>", algorithm="nsgaii", ...)` after registry wiring |
+| T6      | Create study / experiment pipeline          | StudyRunner/central runner / config-driven entry points |
 | T7      | Improve logging/metadata + analysis helpers | Outputs under standard results layout; UX loaders    |
 | T8      | Add to benchmarking CLI                     | `vamos bench --suite ... --output ...`              |
 | T9      | Extend diagnostics / self-check             | `vamos check`                                       |
@@ -53,11 +55,11 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 
 **Goal**: Verify installation and core algorithms end-to-end using a tiny NSGA-II run on ZDT1.
 
-**Context**: `README.md` quickstart; `src/vamos/foundation/problem/` for ZDT problems; `src/vamos/engine/algorithm/` for NSGA-II; CLI under `vamos.experiment.cli.main`.
+**Context**: `README.md` quickstart; `src/vamos/foundation/problem/` for ZDT problems; `src/vamos/engine/algorithm/` for NSGA-II; programmatic entry point via `vamos.optimize(...)`.
 
 **Steps**
-- Use the CLI: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000` (or lower for CI).
-- Optionally switch engine/backends: `--engine moocore` after installing `[compute]`.
+- Use the public Python API or a pytest smoke test: `optimize("zdt1", algorithm="nsgaii", max_evaluations=200, pop_size=40, seed=42)`.
+- Keep or extend the subprocess smoke coverage for `vamos --problem ...` when touching CLI parsing or orchestration.
 - If adding a smoke test, keep budgets tiny (few generations/population) and assert non-empty finite fronts.
 
 **Avoid**: New dependencies or hardcoded paths.
@@ -120,7 +122,7 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 
 **Steps**
 - Define dimension, bounds, objectives, constraints; implement `evaluate` / `evaluate_population`.
-- Register the problem with a canonical ID so `python -m vamos.experiment.cli.main --problem <id>` works.
+- Register the problem with a canonical ID so `optimize("<id>", algorithm="nsgaii", ...)` works immediately. If you also touch CLI integration, add or extend CLI coverage explicitly.
 - Add tests for shapes/finite outputs and any reference points.
 - Add a small example snippet or script showing NSGA-II on the new problem with a tiny budget (user-facing imports via `vamos.problems` / `vamos.algorithms` / `vamos.api`).
 
@@ -137,7 +139,7 @@ Tests mirror the layers: `tests/foundation`, `tests/engine`, `tests/experiment`,
 **Steps**
 - Define study configuration (problems, algorithms, budgets, seeds, output directory).
 - Loop over seeds/problems/algorithms using the central runner/study runner; write outputs under the standard layout in `results/` (or configured output_root).
-- Expose a CLI flag/subcommand (e.g., via `vamos.experiment.cli.main`) to launch the study.
+- Expose a CLI flag/subcommand only after adding or extending CLI coverage for that path. The study API itself should remain usable independently of the CLI surface.
 - Add a small smoke test that checks outputs (front files/metadata) are created.
 
 **Avoid**: Hardcoded absolute paths or embedding heavy analytics in the core loop.

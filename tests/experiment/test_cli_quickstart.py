@@ -1,4 +1,9 @@
+from __future__ import annotations
+
 import json
+import os
+import subprocess
+import sys
 
 import pytest
 
@@ -40,3 +45,40 @@ def test_quickstart_write_spec(tmp_path) -> None:
     assert defaults["problem"] == "zdt1"
     assert defaults["algorithm"] == "nsgaii"
     assert defaults["engine"] == "numpy"
+
+
+@pytest.mark.cli
+def test_quickstart_subprocess_smoke(tmp_path) -> None:
+    output_root = tmp_path / "results"
+    config_path = tmp_path / "quickstart.json"
+    env = os.environ.copy()
+    env.update({"MPLBACKEND": "Agg", "PYTHONHASHSEED": "0"})
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vamos.experiment.cli.main",
+            "quickstart",
+            "--template",
+            "demo",
+            "--yes",
+            "--no-plot",
+            "--budget",
+            "12",
+            "--pop-size",
+            "6",
+            "--output-root",
+            str(output_root),
+            "--config-path",
+            str(config_path),
+            "--no-preflight",
+        ],
+        capture_output=True,
+        timeout=120,
+        env=env,
+    )
+    assert proc.returncode == 0, proc.stderr.decode()
+    assert config_path.exists()
+    run_dir = output_root / "ZDT1" / "nsgaii" / "numpy" / "seed_42"
+    assert (run_dir / "FUN.csv").exists()
+    assert b"Quickstart complete." in proc.stdout

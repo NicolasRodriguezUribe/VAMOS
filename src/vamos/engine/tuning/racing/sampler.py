@@ -23,11 +23,15 @@ class Sampler(Protocol):
         """
         Sample a new configuration.
 
-        Args:
-            rng: NumPy random generator to use.
+        Parameters
+        ----------
+        rng : np.random.Generator
+            Random number generator to use.
 
-        Returns:
-            A configuration dictionary mapping parameter names to values.
+        Returns
+        -------
+        dict[str, Any]
+            Configuration dictionary mapping parameter names to values.
         """
         ...
 

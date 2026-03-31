@@ -1,6 +1,7 @@
+import numpy as np
 import pytest
 
-from vamos import OptimizationResult, make_problem, optimize
+from vamos import OptimizationResult, StudyResult, make_problem, optimize
 from vamos.engine.algorithm.config import MOEADConfig, NSGAIIConfig
 from vamos.foundation.exceptions import ConfigurationError, InvalidAlgorithmError
 from vamos.foundation.problem.binary import BinaryKnapsackProblem
@@ -196,3 +197,41 @@ def test_optimize_moead_non_real_problem_uses_encoding_defaults(problem, pop_siz
     assert result.F is not None
     assert result.X is not None
     assert result.X.shape[1] == problem.n_var
+
+
+def test_optimize_multi_seed_returns_study_result() -> None:
+    problem = ZDT1Problem(n_var=6)
+
+    result = optimize(
+        problem,
+        algorithm="nsgaii",
+        max_evaluations=12,
+        pop_size=6,
+        seed=[1, 2, 3],
+        engine="numpy",
+    )
+
+    assert isinstance(result, StudyResult)
+    assert len(result) == 3
+    assert all(isinstance(run, OptimizationResult) for run in result)
+    assert np.all(result.metric_values("evaluations") == 12)
+    assert result.mean("evaluations") == pytest.approx(12.0)
+    assert result.std("evaluations") == pytest.approx(0.0)
+    assert result.best_run("evaluations").meta["seed"] == 1
+
+
+def test_optimize_multi_seed_study_result_is_sliceable() -> None:
+    problem = ZDT1Problem(n_var=6)
+    result = optimize(
+        problem,
+        algorithm="nsgaii",
+        max_evaluations=12,
+        pop_size=6,
+        seed=[1, 2, 3],
+        engine="numpy",
+    )
+
+    sliced = result[:2]
+
+    assert isinstance(sliced, StudyResult)
+    assert len(sliced) == 2

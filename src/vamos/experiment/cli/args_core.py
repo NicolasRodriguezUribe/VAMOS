@@ -16,6 +16,8 @@ from .defaults import spec_default
 from .spec_args import add_spec_argument
 from .types import SpecDefaults
 
+_CLI_ENGINE_CHOICES = (*EXPERIMENT_BACKENDS, "auto")
+
 
 def add_core_arguments(
     parser: argparse.ArgumentParser,
@@ -50,7 +52,7 @@ def add_core_arguments(
     add_spec_argument(
         parser,
         "--engine",
-        choices=tuple(EXPERIMENT_BACKENDS),
+        choices=_CLI_ENGINE_CHOICES,
         default=spec_default(experiment_defaults, "engine", None),
         help=(
             "Kernel backend to use. Default is deterministic numpy. Use 'auto' to "

@@ -6,6 +6,7 @@ Assumptions:
 - `.agent/docs/AGENTS.md` and `.agent/docs/AGENTS_tasks.md` are in the repo.
 - The agent can read project files before writing code.
 - **User-friendliness is paramount**: Always prefer the clean public API `from vamos import ...` for user-facing code. Layered imports (`vamos.foundation.*`, `vamos.engine.*`, `vamos.experiment.*`, `vamos.ux.*`) are for contributor/internal work only.
+- Current repo reality matters more than stale docs: as of March 31, 2026, the standard run-oriented CLI (`vamos --problem ...`), `vamos quickstart`, `vamos create-problem`, `vamos tune --backend random --smoke`, `vamos profile`, the common `vamos zoo` commands, config-driven runs, `vamos bench ... --smoke`, and CLI `--engine auto` are smoke-tested for the NSGA-II/ZDT1 path, while `make_problem(..., vectorized=False)` is still elementwise adaptation rather than true vectorization.
 
 ### User-Friendly Import Pattern
 
@@ -41,10 +42,10 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 **Prompt 1 - Minimal ZDT1 baseline + smoke test**
 
 > You are in the VAMOS repo. You have read `.agent/docs/AGENTS.md` and `.agent/docs/AGENTS_tasks.md`.  
-> Goal: create a minimal ZDT1 baseline using NSGA-II via `python -m vamos.experiment.cli.main` plus a pytest smoke test.  
+> Goal: create a minimal ZDT1 baseline using the public Python API plus a pytest smoke test.  
 > Tasks:  
 > - Locate ZDT1 under `src/vamos/foundation/problem/` and NSGA-II under `src/vamos/engine/algorithm/`.  
-> - Add a tiny example (script or notebook-style module) under `examples/` or `notebooks/` that runs `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations <small>` (and optionally `--engine moocore`). Keep budgets CI-friendly.  
+> - Add a tiny example (script or notebook-style module) under `examples/` or `notebooks/` that runs `optimize("zdt1", algorithm="nsgaii", max_evaluations=<small>, ...)`. Keep budgets CI-friendly.  
 > - Add a smoke test (e.g., `tests/study/test_zdt1_baseline.py`) asserting the final front is non-empty and finite.  
 > - **For user-facing snippets, use the public API**: `from vamos import optimize; from vamos.algorithms import NSGAIIConfig; from vamos.problems import ZDT1`.  
 > Follow all dependency/style rules; show diffs/new files and how to run the example/test.
@@ -104,7 +105,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 > Goal: add a new problem `<ProblemName>` that fits the Problem API and registry.  
 > Tasks:  
 > - Implement the problem under `src/vamos/foundation/problem/benchmark/` or `real_world/` with dimension, bounds, objectives, constraints, and `evaluate` / `evaluate_population`.  
-> - Register it so `python -m vamos.experiment.cli.main --problem <id>` works.  
+> - Register it so `optimize("<id>", algorithm="nsgaii", ...)` works. Add CLI coverage only if your task also repairs or extends the run-oriented CLI path.  
 > - Add tests for shapes/finite outputs (and reference points if applicable).  
 > - Add an example snippet or tiny script showing NSGA-II on the new problem with a small budget.  
 > - If editing the paper benchmarking notebook (`notebooks/2_advanced/30_paper_benchmarking.ipynb`), keep the SAES-style critical distance plot toggle (`CD_STYLE`) intact.  
@@ -119,7 +120,7 @@ from vamos.foundation.problem.registry import PROBLEM_SPECS
 > You are in the VAMOS repo. Follow `.agent/docs/AGENTS.md` / `.agent/docs/AGENTS_tasks.md`.  
 > Goal: define a study (problem x algorithm x seeds) with CLI wiring.  
 > Tasks:  
-> - Use `src/vamos/experiment/study/`, the central orchestration in `src/vamos/experiment/runner.py`, and CLI entry points to set up a study runnable via `python -m vamos.experiment.cli.main --config path.yaml` or a new flag.  
+> - Use `src/vamos/experiment/study/`, the central orchestration in `src/vamos/experiment/runner.py`, and CLI entry points to set up a study runnable via the study API and, if needed, a repaired `vamos --config path.yaml` surface.  
 > - Implement looping over seeds/problems/algorithms; write outputs to the standard layout under `results/` (`<PROBLEM>/<algorithm>/<engine>/seed_<seed>/`).  
 > - Add a smoke test with tiny budgets that asserts expected output files exist.  
 > - Document example CLI usage.  

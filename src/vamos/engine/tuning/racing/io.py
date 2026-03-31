@@ -116,14 +116,18 @@ def save_checkpoint(
     *,
     metadata: dict[str, Any] | None = None,
 ) -> None:
-    """
-    Save a tuning checkpoint with elite configurations for warm restart.
+    """Save a tuning checkpoint with elite configurations for warm restart.
 
-    Args:
-        best_configs: List of best configuration dicts found so far.
-        elite_archive: List of elite entry dicts (config + score).
-        path: Path to save the checkpoint JSON.
-        metadata: Optional additional metadata (e.g., stage_index, num_experiments).
+    Parameters
+    ----------
+    best_configs
+        Best configuration dictionaries found so far.
+    elite_archive
+        Elite archive entries containing configuration and score data.
+    path
+        Destination path for the checkpoint JSON file.
+    metadata
+        Optional extra metadata such as stage index or experiment counts.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,16 +141,17 @@ def save_checkpoint(
 
 
 def load_checkpoint(path: str | Path) -> dict[str, Any]:
-    """
-    Load a tuning checkpoint for warm restart.
+    """Load a tuning checkpoint for warm restart.
 
-    Returns:
-        Dictionary with keys:
-            - best_configs: List of configuration dicts.
-            - elite_archive: List of elite entry dicts.
-            - metadata: Any additional metadata.
+    Parameters
+    ----------
+    path
+        Path to a checkpoint file produced by :func:`save_checkpoint`.
 
-    The 'best_configs' can be passed to RacingTuner(initial_configs=...).
+    Returns
+    -------
+    dict[str, Any]
+        Mapping with ``best_configs``, ``elite_archive``, and ``metadata`` keys.
     """
     path = Path(path)
     with path.open("r", encoding="utf-8") as fh:

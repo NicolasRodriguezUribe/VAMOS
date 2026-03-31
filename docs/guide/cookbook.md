@@ -163,9 +163,10 @@ Pass a list of seeds to run a small study in one call.
 from vamos import optimize
 from vamos.ux.api import result_summary_text
 
-results = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2, 3])
-for idx, res in enumerate(results):
+study = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2, 3])
+for idx, res in enumerate(study.runs):
     print(idx, result_summary_text(res))
+print(study.mean("evaluations"))
 ```
 
 ## 10. Algorithm Config Objects (Reproducible Runs)
@@ -301,8 +302,8 @@ import numpy as np
 from vamos import optimize
 from vamos.foundation.quality_indicators.pareto import pareto_filter
 
-results = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2])
-combined = np.vstack([res.F for res in results if res.F is not None])
+study = optimize("zdt1", algorithm="nsgaii", max_evaluations=4000, seed=[0, 1, 2])
+combined = np.vstack([res.F for res in study.runs if res.F is not None])
 front = pareto_filter(combined, return_indices=False)
 ```
 

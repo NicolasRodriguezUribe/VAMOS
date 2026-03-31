@@ -110,9 +110,12 @@ class DaskEvalBackend(EvaluationBackend):
         """
         Initialize Dask backend.
 
-        Args:
-            client: Existing dask.distributed.Client
-            address: Address of scheduler to connect to (if client is None)
+        Parameters
+        ----------
+        client : Any, optional
+            Existing ``dask.distributed.Client`` instance.
+        address : str | None, optional
+            Scheduler address used when ``client`` is not provided.
         """
         self.client = client
         self.address = address

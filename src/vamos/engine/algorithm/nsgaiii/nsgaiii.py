@@ -45,7 +45,7 @@ __all__ = ["NSGAIII"]
 class NSGAIII:
     """Non-dominated Sorting Genetic Algorithm III for many-objective optimization."""
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None) -> None:
         self.cfg = config
         self.kernel = kernel or default_kernel()
         self._st: NSGAIIIState | None = None

@@ -27,7 +27,7 @@ def test_angle_reduction_prefers_diverse_directions():
 
 
 def test_mandatory_keep_is_respected():
-    F = np.random.rand(10, 4)
+    F = np.random.default_rng(0).random((10, 4))
     mandatory = [1, 3]
     _F_red, selected = reduce_objectives(
         F,

@@ -13,8 +13,11 @@ See: experiments/ARTIFACT_CONTRACT.md
 
 ## Build + regenerate paper tables
 
-Install dependencies (includes benchmark frameworks used in the paper):
-- `pip install -e .[all]`
+Install dependencies with the pinned paper environment:
+- `pip install -e .`
+- `pip install -r paper/requirements-publication.txt`
+
+The pinned file captures the exact package versions used for the maintained publication stack. Use the looser extras only for exploratory local work.
 
 Regenerate LaTeX tables from the committed CSVs:
 - Runtime + solution-quality summary tables: `python paper/04_update_paper_tables_from_csv.py`
@@ -45,6 +48,9 @@ Controls:
 - `VAMOS_N_EVALS` (default `50000`), `VAMOS_N_SEEDS` (default `30`), `VAMOS_N_JOBS`
 - `VAMOS_PAPER_FRAMEWORKS` (comma-separated: `vamos-numpy,vamos-numba,vamos-moocore,pymoo,jmetalpy,deap,platypus`)
 - `VAMOS_PAPER_ALGORITHM` (`nsgaii`, `smsemoa`, `moead`, or `all`) and `VAMOS_PAPER_UPDATE_MAIN_TEX` (`0`/`1`, defaults to `1` for NSGA-II)
+
+Reproducibility note:
+- Keep the benchmark CSVs, the exact command line, and `paper/requirements-publication.txt` together with any reported paper results.
 
 ## Active supplementary / figure refresh scripts
 

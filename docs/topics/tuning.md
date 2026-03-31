@@ -98,6 +98,19 @@ This command supports unified backends:
 - `smac3`
 - `bohb`
 
+Quick verification path with the built-in backend:
+
+```bash
+vamos tune \
+  --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 \
+  --algorithm nsgaii \
+  --backend random \
+  --smoke \
+  --output-dir results/tuning_smoke
+```
+
+`--smoke` clamps budgets and workers for a cheap real execution path and disables validation, test, and statistical finisher stages. Keep the longer commands below for actual tuning studies.
+
 Example with robust split and backend fallback:
 
 ```bash

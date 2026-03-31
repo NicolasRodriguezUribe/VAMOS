@@ -184,7 +184,7 @@ class RVEA:
     >>> result = algo.result()
     """
 
-    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None):
+    def __init__(self, config: dict[str, Any], kernel: KernelBackend | None = None) -> None:
         self.cfg = config
         self.kernel = kernel or default_kernel()
         self._st: RVEAState | None = None

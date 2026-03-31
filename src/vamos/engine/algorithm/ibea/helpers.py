@@ -11,12 +11,11 @@ This module contains the core IBEA selection functions:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
 from vamos.foundation.constraints.utils import compute_violation, is_feasible
-from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
 if TYPE_CHECKING:
     pass
@@ -55,18 +54,15 @@ def hypervolume_indicator(F: np.ndarray) -> np.ndarray:
     """
     n = F.shape[0]
     if n == 0:
-        return np.empty((0, 0))
+        return np.empty((0, 0), dtype=float)
     ref = np.max(F, axis=0) + 1.0
-    indicator = np.zeros((n, n), dtype=float)
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                continue
-            pair = np.vstack([F[i], F[j]])
-            hv_pair = hypervolume(pair, ref)
-            hv_j = hypervolume(F[j : j + 1], ref)
-            indicator[i, j] = hv_j - hv_pair
-    return indicator
+    singleton_box = np.maximum(ref - F, 0.0)
+    singleton_hv = np.prod(singleton_box, axis=1)
+    pair_intersection = np.maximum(ref - np.maximum(F[:, None, :], F[None, :, :]), 0.0)
+    intersection_hv = np.prod(pair_intersection, axis=2)
+    indicator = intersection_hv - singleton_hv[:, None]
+    np.fill_diagonal(indicator, 0.0)
+    return cast(np.ndarray, indicator)
 
 
 def compute_indicator_matrix(F: np.ndarray, indicator: str) -> np.ndarray:

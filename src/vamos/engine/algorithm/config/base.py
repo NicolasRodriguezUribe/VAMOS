@@ -8,10 +8,11 @@ import json
 import sys
 import warnings
 from dataclasses import asdict
-from typing import Any, Literal, TypeAlias, cast
+from typing import Any, Literal, TypeAlias, cast, overload
 
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import EncodingLike
+from vamos.engine.algorithm.config.types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -179,6 +180,144 @@ def _validate_operators(cfg: dict[str, Any]) -> None:
         _validate_operator_name(str(init["type"]), "initializer")
 
 
+class _ConfigBuilderState:
+    """Shared mutable state for fluent algorithm config builders."""
+
+    def __init__(self) -> None:
+        self._cfg: dict[str, Any] = {}
+
+
+class _PopSizeBuilder:
+    _cfg: dict[str, Any]
+
+    def pop_size(self, value: int) -> Self:
+        self._cfg["pop_size"] = value
+        return self
+
+
+class _CrossoverBuilder:
+    _cfg: dict[str, Any]
+
+    @overload
+    def crossover(self, method: CrossoverName, **kwargs: Any) -> Self: ...
+
+    @overload
+    def crossover(self, method: str, **kwargs: Any) -> Self: ...
+
+    def crossover(self, method: str, **kwargs: Any) -> Self:
+        if not isinstance(method, str):
+            raise TypeError("crossover() expects a method name followed by keyword arguments, e.g. crossover('sbx', prob=1.0, eta=20.0).")
+        self._cfg["crossover"] = (method, kwargs)
+        return self
+
+
+class _MutationBuilder:
+    _cfg: dict[str, Any]
+
+    @overload
+    def mutation(self, method: MutationName, **kwargs: Any) -> Self: ...
+
+    @overload
+    def mutation(self, method: str, **kwargs: Any) -> Self: ...
+
+    def mutation(self, method: str, **kwargs: Any) -> Self:
+        if not isinstance(method, str):
+            raise TypeError("mutation() expects a method name followed by keyword arguments, e.g. mutation('pm', prob='1/n', eta=20.0).")
+        self._cfg["mutation"] = (method, kwargs)
+        return self
+
+
+class _SelectionBuilder:
+    _cfg: dict[str, Any]
+
+    @overload
+    def selection(self, method: SelectionName, **kwargs: Any) -> Self: ...
+
+    @overload
+    def selection(self, method: str, **kwargs: Any) -> Self: ...
+
+    def selection(self, method: str, **kwargs: Any) -> Self:
+        self._cfg["selection"] = (method, _normalize_tournament_selection_kwargs(method, kwargs))
+        return self
+
+
+class _RepairBuilder:
+    _cfg: dict[str, Any]
+
+    @overload
+    def repair(self, method: RepairName, **kwargs: Any) -> Self: ...
+
+    @overload
+    def repair(self, method: str, **kwargs: Any) -> Self: ...
+
+    def repair(self, method: str, **kwargs: Any) -> Self:
+        self._cfg["repair"] = (method, kwargs)
+        return self
+
+
+class _InitializerBuilder:
+    _cfg: dict[str, Any]
+
+    @overload
+    def initializer(self, method: InitializerName, **kwargs: Any) -> Self: ...
+
+    @overload
+    def initializer(self, method: str, **kwargs: Any) -> Self: ...
+
+    def initializer(self, method: str, **kwargs: Any) -> Self:
+        self._cfg["initializer"] = {"type": method, **kwargs}
+        return self
+
+
+class _MutationProbFactorBuilder:
+    _cfg: dict[str, Any]
+
+    def mutation_prob_factor(self, value: float) -> Self:
+        self._cfg["mutation_prob_factor"] = float(value)
+        return self
+
+
+class _ConstraintModeBuilder:
+    _cfg: dict[str, Any]
+
+    def constraint_mode(self, value: ConstraintModeStr) -> Self:
+        self._cfg["constraint_mode"] = value
+        return self
+
+
+class _TrackGenealogyBuilder:
+    _cfg: dict[str, Any]
+
+    def track_genealogy(self, enabled: bool = True) -> Self:
+        self._cfg["track_genealogy"] = bool(enabled)
+        return self
+
+
+class _ResultArchiveBuilder:
+    _cfg: dict[str, Any]
+
+    def result_mode(self, value: ResultMode) -> Self:
+        mode = str(value).strip().lower()
+        if mode not in {"non_dominated", "population"}:
+            raise ValueError("result_mode must be 'non_dominated' or 'population'.")
+        self._cfg["result_mode"] = mode
+        return self
+
+    def external_archive(self, capacity: int | None = None, **kwargs: Any) -> Self:
+        """Configure an external archive.
+
+        Parameters
+        ----------
+        capacity
+            Maximum number of solutions. ``None`` means unbounded.
+        **kwargs
+            Forwarded to :class:`ExternalArchiveConfig`.
+        """
+        self._cfg["external_archive"] = _build_external_archive_config(capacity, kwargs)
+        self._cfg.setdefault("result_mode", "non_dominated")
+        return self
+
+
 class _SerializableConfig:
     """Mixin to serialize dataclass configs."""
 
@@ -295,9 +434,10 @@ class _SerializableConfig:
     def available_operators(category: OperatorCategory | None = None) -> dict[str, list[str]]:
         """Return known operator names, optionally filtered by *category*.
 
-        Args:
-            category: One of ``"crossover"``, ``"mutation"``, ``"selection"``,
-                ``"repair"``, ``"initializer"``.  ``None`` returns all categories.
+        Parameters
+        ----------
+        category : OperatorCategory | None, optional
+            Requested operator category. ``None`` returns all categories.
         """
         if category is not None:
             key = category.strip().lower()

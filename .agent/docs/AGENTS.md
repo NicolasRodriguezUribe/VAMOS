@@ -12,7 +12,7 @@
 
 Guidance for AI coding agents (Codex, GPT, Copilot, etc.) working on the **VAMOS** codebase (Vectorized Architecture for Multiobjective Optimization Studies).
 
-This file explains how to set up the environment, how the project is structured, and what conventions to follow when changing code. `../../README.md` is the source of truth for capabilities and commands; this document translates that into expectations for contributors and AI agents.
+This file explains how to set up the environment, how the project is structured, and what conventions to follow when changing code. Treat `../../README.md` and the docs as user-facing guidance, not as proof that a command or capability still works. When touching onboarding, CLI behavior, or benchmark claims, re-verify them against the code and tests.
 
 ---
 
@@ -50,7 +50,7 @@ VAMOS prioritizes ease of use:
     )
     ```
 
-2.  **Friendly Custom Problems**: Use `make_problem()` for custom problems -- no class boilerplate, no NumPy vectorization knowledge required. VAMOS auto-vectorizes scalar functions internally.
+2.  **Friendly Custom Problems**: Use `make_problem()` for custom problems -- no class boilerplate, no NumPy vectorization knowledge required. With `vectorized=False`, VAMOS adapts scalar functions by evaluating one row at a time; for real batched performance, require `vectorized=True`.
     ```python
     from vamos import make_problem, optimize
 
@@ -68,6 +68,15 @@ VAMOS prioritizes ease of use:
 4.  **Publication Ready**: Use `result_to_latex(result)` for generating tables directly from code.
 5.  **No Internal Imports**: Avoid deep internal modules (`vamos.engine.algorithm...`, `vamos.foundation...`). Use the public facades: `vamos`, `vamos.algorithms`, `vamos.problems`, and `vamos.ux.api`.
 
+### Current Notes
+
+As of March 31, 2026:
+
+- Do not describe `make_problem(..., vectorized=False)` as auto-vectorization. It is an elementwise adapter.
+- For benchmarking or publication guidance, do not treat the open-ended `research` extra as a reproducible environment. Use pinned versions.
+- Base CLI runs (`vamos --problem ...`), `vamos quickstart`, `vamos create-problem`, `vamos tune --backend random --smoke`, `vamos profile`, the common `vamos zoo` commands, and CLI `--engine auto` now have smoke coverage for the standard NSGA-II/ZDT1 path.
+- Config-driven runs, `vamos bench ... --smoke`, and the published README/CLI-guide/tuning-guide commands also have command-level smoke coverage.
+
 ---
 
 ## 2. Environment and install
@@ -82,9 +91,12 @@ VAMOS prioritizes ease of use:
   ```
 
 - **Useful commands**:
-  - Quick run: `python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000`
+  - Verified first run: `python -c "from vamos import optimize; result = optimize('zdt1', algorithm='nsgaii', max_evaluations=200, pop_size=40, seed=42); print(result.F.shape)"`
+  - Smoke-covered CLI run: `python -m vamos.experiment.cli.main --problem zdt1 --algorithm nsgaii --max-evaluations 200 --population-size 40 --engine auto --no-preflight`
+  - CLI surface discovery: `vamos help` and `vamos quickstart --template list`
   - Self-check: `vamos check`
-  - Profile: `vamos profile nsgaii zdt1`
+  - Profile: `vamos profile --problem zdt1 --engines numpy --budget 2000 --output report/profile.csv`
+  - Tune smoke: `vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend random --smoke --output-dir report/tuning_smoke`
   - Tune: `vamos tune --problem zdt1 --algorithm nsgaii --budget 5000 --tune-budget 200 --n-seeds 5`
     (`--tune-budget` counts configuration evaluations; `--budget` is per-run evaluations.)
   - Tests: `pytest`

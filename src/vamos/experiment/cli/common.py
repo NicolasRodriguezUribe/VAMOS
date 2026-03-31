@@ -3,6 +3,19 @@ from __future__ import annotations
 import argparse
 
 
+def _compact_mapping(raw: dict[str, object | None]) -> dict[str, object] | None:
+    compact = {key: value for key, value in raw.items() if value is not None}
+    return compact or None
+
+
+def _operator_override(**kwargs: object) -> dict[str, object] | None:
+    return _compact_mapping({key: value for key, value in kwargs.items()})
+
+
+def _variation_override(**kwargs: object) -> dict[str, object] | None:
+    return _compact_mapping({key: value for key, value in kwargs.items()})
+
+
 def _parse_probability_arg(
     parser: argparse.ArgumentParser,
     flag: str,
@@ -93,49 +106,53 @@ def _normalize_operator_args(parser: argparse.ArgumentParser, args: argparse.Nam
     )
 
 
-def collect_nsgaii_variation_args(args: argparse.Namespace) -> dict[str, object]:
-    variation: dict[str, object] = {
-        "crossover": {
-            "method": getattr(args, "nsgaii_crossover", None),
-            "prob": getattr(args, "nsgaii_crossover_prob", None),
-            "eta": getattr(args, "nsgaii_crossover_eta", None),
-            "alpha": getattr(args, "nsgaii_crossover_alpha", None),
-        },
-        "mutation": {
-            "method": getattr(args, "nsgaii_mutation", None),
-            "prob": getattr(args, "nsgaii_mutation_prob", None),
-            "eta": getattr(args, "nsgaii_mutation_eta", None),
-            "perturbation": getattr(args, "nsgaii_mutation_perturbation", None),
-        },
-    }
+def collect_nsgaii_variation_args(args: argparse.Namespace) -> dict[str, object] | None:
+    variation = _variation_override(
+        crossover=_operator_override(
+            method=getattr(args, "nsgaii_crossover", None),
+            prob=getattr(args, "nsgaii_crossover_prob", None),
+            eta=getattr(args, "nsgaii_crossover_eta", None),
+            alpha=getattr(args, "nsgaii_crossover_alpha", None),
+        ),
+        mutation=_operator_override(
+            method=getattr(args, "nsgaii_mutation", None),
+            prob=getattr(args, "nsgaii_mutation_prob", None),
+            eta=getattr(args, "nsgaii_mutation_eta", None),
+            perturbation=getattr(args, "nsgaii_mutation_perturbation", None),
+        ),
+    )
     repair = getattr(args, "nsgaii_repair", None)
     if repair is not None:
+        if variation is None:
+            variation = {}
         variation["repair"] = repair
     return variation
 
 
-def _collect_generic_variation(args: argparse.Namespace, prefix: str) -> dict[str, object]:
-    return {
-        "crossover": {
-            "method": getattr(args, f"{prefix}_crossover", None),
-            "prob": getattr(args, f"{prefix}_crossover_prob", None),
-            "eta": getattr(args, f"{prefix}_crossover_eta", None),
-        },
-        "mutation": {
-            "method": getattr(args, f"{prefix}_mutation", None),
-            "prob": getattr(args, f"{prefix}_mutation_prob", None),
-            "eta": getattr(args, f"{prefix}_mutation_eta", None),
-            "perturbation": getattr(args, f"{prefix}_mutation_perturbation", None),
-            "step": getattr(args, f"{prefix}_mutation_step", None),
-        },
-    }
+def _collect_generic_variation(args: argparse.Namespace, prefix: str) -> dict[str, object] | None:
+    return _variation_override(
+        crossover=_operator_override(
+            method=getattr(args, f"{prefix}_crossover", None),
+            prob=getattr(args, f"{prefix}_crossover_prob", None),
+            eta=getattr(args, f"{prefix}_crossover_eta", None),
+        ),
+        mutation=_operator_override(
+            method=getattr(args, f"{prefix}_mutation", None),
+            prob=getattr(args, f"{prefix}_mutation_prob", None),
+            eta=getattr(args, f"{prefix}_mutation_eta", None),
+            perturbation=getattr(args, f"{prefix}_mutation_perturbation", None),
+            step=getattr(args, f"{prefix}_mutation_step", None),
+        ),
+    )
 
 
-def _collect_moead_variation(args: argparse.Namespace) -> dict[str, object]:
+def _collect_moead_variation(args: argparse.Namespace) -> dict[str, object] | None:
     """Collect MOEA/D variation args including the aggregation special case."""
     base = _collect_generic_variation(args, "moead")
     aggregation = getattr(args, "moead_aggregation", None)
     if aggregation is not None:
+        if base is None:
+            base = {}
         base["aggregation"] = aggregation
     return base
 

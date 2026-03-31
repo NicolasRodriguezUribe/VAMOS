@@ -1,308 +1,146 @@
-# VAMOS Software Engineering Best Practices Audit
+# VAMOS Engineering Audit
 
-## Executive summary
-- Operators are split into `src/vamos/engine/operators/impl` (implementations) and `src/vamos/engine/operators/policies` (algorithm wiring), and an architecture boundary test now guards layer inversions; foundation->engine and engine->ux edges are removed.
-- Import graph is cleaner; experiment import cycles are now guarded, while coupling remains concentrated in experiment->engine/ux and a small foundation->operators dependency for kernels.
-- Experiment orchestration modules (runner/quick/CLI) remain large and mix execution, IO, and presentation, creating monolith risk.
-- Algorithm classes are large but mostly cohesive; variation pipeline and config classes remain heavy and will be hard to evolve without stronger interfaces.
-- Public API remains broad; optimize/runner now live under experiment while foundation core API is primitives-only.
-- Logging is still inconsistent: many `print` statements exist in experiment runtime modules instead of structured logging.
-- Config specs are flexible; validation is now centralized in `src/vamos/engine/config/spec.py`, but schema/versioning is still minimal.
-- Highest leverage next steps: formalize the config schema; runner/CLI split and result presentation separation are done.
+Last updated: 2026-03-31
 
-## Repository architecture map
-Key directories (concise):
-```
-src/vamos/
-  __init__.py, api.py              # Public API facade and reexports
-  foundation/                      # Core types, kernels, problems, metrics, constraints, eval
-  operators/                       # Operator packages (impl + policies)
-  engine/                          # Algorithms, configs, tuning, hyperheuristics
-  experiment/                      # CLI, diagnostics, benchmarks, study runner, quick API
-  ux/                              # Analysis, visualization, studio app
-  hooks/, adaptation/, archive/    # Extensions and runtime hooks
-  io/, monitoring/                 # Auxiliary IO/monitoring (thin in current tree)
+This page records the current publication-readiness audit for VAMOS. It is intentionally blunt: the goal is to keep the public docs aligned with what the codebase actually does today.
 
-tests/                             # Unit and integration tests
-examples/, notebooks/, experiments/# Research scripts and demos
-docs/                              # MkDocs site + dev guides
-```
-Entry point (from `pyproject.toml`):
-- `vamos` -> `src/vamos/experiment/cli/main.py` (all tools via `vamos <subcommand>`)
+## Follow-up Status
 
-Subcommand routing (in `_dispatch_subcommand`):
-- `vamos check` -> `src/vamos/experiment/diagnostics/self_check.py`
-- `vamos bench` -> `src/vamos/experiment/benchmark/cli.py`
-- `vamos studio` -> `src/vamos/ux/studio/app.py`
-- `vamos zoo` -> `src/vamos/experiment/zoo/cli.py`
-- `vamos tune` -> `src/vamos/experiment/cli/tune.py`
-- `vamos profile` -> `src/vamos/experiment/profiler/cli.py`
+The highest-friction CLI issues identified in this audit were fixed in a follow-up patch on 2026-03-31:
 
-Primary public APIs:
-- `src/vamos/__init__.py` reexports high-level functions and the problem registry; algorithm configs live in `src/vamos/algorithms`, analysis/visualization helpers in `src/vamos/ux/api.py`.
-- `src/vamos/api.py` is the main programmatic entrypoint; `src/vamos/foundation/core/api.py` exposes primitives only, while `src/vamos/engine/api.py` and `src/vamos/ux/api.py` provide focused facades.
+- standard `vamos --problem ...` execution now has subprocess smoke coverage
+- `vamos quickstart --yes ...` execution now has subprocess smoke coverage
+- `vamos create-problem --yes ...` execution now has subprocess smoke coverage
+- CLI `--engine auto` is now accepted and covered by smoke tests
+- config-driven `vamos --config ...` execution and `--validate-config` now have subprocess smoke coverage
+- `vamos bench ... --smoke` now provides a cheap, real orchestration path for benchmark CLI smoke coverage
+- `vamos tune ... --backend random --smoke` now provides a cheap, real orchestration path for tuning CLI smoke coverage
+- `vamos profile` and the common `vamos zoo` commands now have real execution smoke coverage
+- CLI guide command examples now have dedicated command-level smoke coverage in the docs test suite
+- README command examples now have dedicated command-level smoke coverage for the published onboarding path
+- The canonical tuning guide now has command-level smoke coverage for the maintained tune smoke path
+- SPEA2 raw-fitness and density computation now run through a vectorized path rather than nested Python loops
+- IBEA hypervolume indicators now use an exact vectorized matrix formulation instead of repeated pairwise hypervolume calls
+- the NumPy kernel now uses chunked tournament sampling and a memory-safe blocked non-dominated sort path for large arrays
+- genealogy tolerance matching now uses a shared blocked matcher instead of row-by-row survivor scans
+- `optimize(..., seed=[...])` now returns `StudyResult` with built-in aggregation helpers
+- algorithm config builders now share internal mixins instead of repeating the same fluent method bodies across every algorithm
+- source docstrings are now normalized away from Google-style `Args:` sections, and tests now guard against reintroducing `np.random.rand(` in the test suite
+- the repo now ships a pinned paper environment snapshot at `paper/requirements-publication.txt`
 
-Core layers and responsibilities (observed):
-- foundation: problems/registries, kernels/backends, metrics, constraints, eval backends, core types.
-- operators: operator implementations (impl) and algorithm wiring (policies).
-- engine: algorithm implementations, algorithm configs, tuning, hyperheuristics.
-- experiment: runner/optimize execution, CLI/config parsing, benchmark/study orchestration, diagnostics, quick wrappers.
-- ux: analysis, stats, visualization, streamlit Studio UI.
+The remaining sections preserve the audit rationale, especially around vectorization semantics, reproducibility expectations, and test-surface gaps outside the common path.
 
-## Monolith findings
-Top 20 largest Python files under `src/vamos/` by non-blank LOC (static scan):
+## Executive Summary
 
-| File | LOC | Responsibilities | Monolith risk |
-| --- | ---: | --- | --- |
-| `src/vamos/engine/algorithm/components/base.py` | 574 | Base state, termination, population setup, archives, HV tracking, hooks for live viz + genealogy, results | High: many algorithm concerns + instrumentation coupling |
-| `src/vamos/foundation/problem/registry/specs.py` | 541 | Problem registry data and factories for all benchmark families | Medium: huge registry; consider splitting by family |
-| `src/vamos/experiment/runner.py` | 536 | Orchestrates runs, builds algorithms, HV, hooks, plotting, persistence | High: execution + IO + plotting + config overrides |
-| `src/vamos/foundation/core/external/base.py` | 510 | External baseline adapters (pymoo/jmetalpy/pygmo), wrappers, printing | High: integration + CLI output + optional deps |
-| `src/vamos/experiment/cli/parser.py` | 491 | CLI parsing, config loading, validation, defaults for algorithms | High: parsing + config semantics + validation |
-| `src/vamos/engine/operators/impl/permutation.py` | 428 | All permutation operators and optional numba paths | Medium: large single-purpose operator library |
-| `src/vamos/engine/operators/impl/real/crossover.py` | 379 | Many real-valued crossover operators | Medium: large operator module |
-| `src/vamos/experiment/optimize.py` | 370 | Optimize API, result helpers, plotting, saving | Medium: core + presentation/IO |
-| `src/vamos/foundation/kernel/moocore_backend.py` | 332 | MooCore kernel + HV + archives + tournament selection | Medium: kernel + metrics/selection coupling |
-| `src/vamos/engine/operators/impl/real/mutation.py` | 327 | Many real-valued mutation operators | Medium: large operator module |
-| `src/vamos/engine/algorithm/nsgaiii/nsgaiii.py` | 324 | NSGA-III algorithm loop and helpers | Medium: large but cohesive |
-| `src/vamos/engine/algorithm/smsemoa/smsemoa.py` | 322 | SMS-EMOA algorithm loop and helpers | Medium: large but cohesive |
-| `src/vamos/engine/algorithm/smpso/smpso.py` | 311 | SMPSO algorithm loop and helpers | Medium: large but cohesive |
-| `src/vamos/experiment/studio/app.py` | 310 | Streamlit UI, data loading, MCDM, focused runs, plots | High: UI + analysis + execution mixed |
-| `src/vamos/engine/algorithm/nsgaii/nsgaii.py` | 307 | NSGA-II algorithm loop | Medium: large but cohesive |
-| `src/vamos/engine/algorithm/ibea/ibea.py` | 298 | IBEA algorithm loop and helpers | Medium: large but cohesive |
-| `src/vamos/engine/algorithm/nsgaiii/helpers.py` | 291 | NSGA-III helper routines | Low/Medium: helper module scale |
-| `src/vamos/engine/algorithm/nsgaii/state.py` | 291 | NSGA-II state, result building, genealogy/archives | Medium: algorithm + instrumentation coupling |
-| `src/vamos/engine/algorithm/spea2/spea2.py` | 284 | SPEA2 algorithm loop and helpers | Medium: large but cohesive |
+VAMOS has a credible technical core and is in materially better shape than it was at the time of the original audit. The programmatic `optimize(...)` API now has a stronger multi-run surface through `StudyResult`, the standard CLI onboarding path is smoke-tested, and the published README/CLI/tuning command surface has real command-level coverage instead of relying on help text or trust. The main technical blockers around SPEA2, IBEA, large-tournament fallback behavior, and large-population non-dominated sorting were also reduced with exact vectorized or blocked implementations. The remaining publication risks are narrower: some performance-sensitive utilities outside the main kernels still deserve more benchmarking, the heaviest optional tuning and benchmark matrices still have thinner verification than a publication-grade framework should target, and packaging metadata is not yet at a final 1.0-style release gate. Against pymoo, VAMOS is now materially closer on user-facing polish and evaluation-surface clarity, but it still trails on ecosystem maturity and benchmark ergonomics.
 
-Update note: result presentation moved to `src/vamos/ux/results.py`, and the Studio UI moved to `src/vamos/ux/studio/app.py`; the size rankings above predate that refactor.
+Current grades:
 
-God-class candidates (top by LOC/method count):
-- `src/vamos/engine/algorithm/nsgaiii/nsgaiii.py` `NSGAIII` (~352 LOC, 10 methods)
-- `src/vamos/engine/algorithm/smsemoa/smsemoa.py` `SMSEMOA` (~347 LOC, 10 methods)
-- `src/vamos/engine/algorithm/smpso/smpso.py` `SMPSO` (~332 LOC, 8 methods)
-- `src/vamos/engine/algorithm/ibea/ibea.py` `IBEA` (~313 LOC, 11 methods)
-- `src/vamos/engine/algorithm/nsgaii/nsgaii.py` `NSGAII` (~303 LOC, 9 methods)
-- `src/vamos/engine/algorithm/spea2/spea2.py` `SPEA2` (~302 LOC, 8 methods)
-- `src/vamos/engine/tuning/racing/core.py` `RacingTuner` (~264 LOC, 8 methods)
-- `src/vamos/engine/algorithm/components/variation/pipeline.py` `VariationPipeline` (~251 LOC, 7 methods)
-- `src/vamos/engine/algorithm/config/nsgaii.py` `NSGAIIConfig` (~250 LOC, 21 methods)
-- `src/vamos/experiment/context.py` `Experiment` (~248 LOC, 10 methods)
+- Architecture and design: B
+- API design and user-friendliness: B-
+- Code quality and maintainability: B
+- Testing and reliability: B+
+- Performance and vectorization: B-
+- Packaging and distribution: B
+- Documentation and onboarding: B+
+- Comparative best practices vs pymoo: B
 
-God-function candidates (top by LOC):
-- `src/vamos/experiment/cli/parser.py` `parse_args` (~450 LOC)
-- `src/vamos/experiment/studio/app.py` `main` (~236 LOC)
-- `src/vamos/experiment/runner.py` `run_single` (~175 LOC)
-- `src/vamos/experiment/runner.py` `execute_problem_suite` (~148 LOC)
-- `src/vamos/engine/algorithm/ibea/initialization.py` `initialize_ibea_run` (~137 LOC)
+## Critical Issues
 
-Cross-cutting tangling hotspots:
-- `src/vamos/experiment/runner.py`: execution + config override + plotting + persistence + CLI hints.
-- `src/vamos/experiment/cli/parser.py`: parsing + default merging + validation + algorithm-specific operator config.
-- `src/vamos/experiment/quick.py`: API + config building + plotting + saving.
-- `src/vamos/experiment/studio/app.py`: UI + data loading + optimization runs + analysis/plots.
-- `src/vamos/experiment/optimize.py`: core optimize + result presentation/IO.
+### 1. Run-oriented CLI onboarding was broken at audit time
 
-Utility modules that are growing:
-- `src/vamos/engine/algorithm/components/utils.py`
-- `src/vamos/engine/algorithm/components/variation/helpers.py`
-- `src/vamos/engine/operators/impl/real/utils.py`
-- `src/vamos/foundation/constraints/utils.py`
-- `src/vamos/experiment/runner_utils.py`
-- `src/vamos/foundation/core/io_utils.py`
+Verified behavior:
 
-## Dependency and import-graph findings
-Static import graph summary:
-- Internal modules scanned: 276
-- Internal import edges: 563
-- Module-level cycles detected: 0 (guarded by `tests/architecture/test_experiment_import_cycles.py`)
+- `vamos --problem zdt1 --algorithm nsgaii ...` fails with `Invalid operator spec for 'crossover'`.
+- `vamos quickstart --yes --no-plot ...` fails with the same underlying error.
 
-Cross-layer edges by count (top-level package segment):
-- engine -> foundation: 71
-- experiment -> foundation: 41
-- engine -> operators: 33
-- engine -> hooks: 12
-- experiment -> engine: 9
-- experiment -> ux: 4
-- foundation -> operators: 2
-- ux -> engine: 1
-- ux -> foundation: 1
+Root cause:
 
-Examples of risky couplings:
-- `src/vamos/experiment/runner.py` imports `vamos.engine.algorithm.factory` and `vamos.engine.config.*` (experiment -> engine).
-- `src/vamos/experiment/runner.py` imports `vamos.ux.visualization.plotting` and `LiveParetoPlot` (experiment -> ux).
-- `run_study` now lives in `src/vamos/experiment/study/api.py`, so experiment orchestration no longer imports the study runner directly.
-- `src/vamos/foundation/kernel/numpy_backend.py` imports `vamos.engine.operators.impl.real.*` (foundation -> engine; cross-layer dependency, still a tight coupling).
-- `src/vamos/experiment/studio/app.py` imports `vamos.engine.algorithm.config.NSGAIIConfig` (experiment -> engine).
+- `src/vamos/experiment/cli/common.py` emits variation override dictionaries even when the operator `method` is `None`.
+- `src/vamos/engine/algorithm/_builder_common.py` forwards those dictionaries into variation resolution.
+- `src/vamos/engine/config/variation.py` correctly rejects them as invalid operator specs.
 
-No static cycles remain in `experiment` modules; foundation->engine/ux and engine->ux edges are cleared, improving backend modularity and UX replaceability.
+Status:
 
-## Engineering hygiene findings
-Packaging:
-- `pyproject.toml` defines core dependencies and a comprehensive set of extras; entry points are clearly declared.
-- `src/vamos/py.typed` is present, enabling type-checking for consumers.
-- Package data for reference fronts and weights is declared in `pyproject.toml`.
+- Fixed in follow-up. Base CLI runs and quickstart execution now have smoke coverage for the common path.
 
-Tests:
-- 82 test files under `tests/`, with markers for optional features.
-- Integration tests include minimal-import checks and packaging-data checks.
-- Architecture boundary test (`tests/architecture/test_layer_boundaries.py`) enforces zero foundation->engine/ux and engine->ux imports.
+### 2. CLI help and runtime disagreed on `--engine auto`
 
-CI/tooling:
-- GitHub Actions run full tests, lint, format, mypy, and docs builds; also run minimal install smoke tests.
-- Pre-commit config includes ruff format/lint, mypy, and basic hygiene hooks.
+Verified behavior:
 
-Typing:
-- mypy config is strict for selected modules; other areas are typed but not enforced.
-- Some public APIs accept `Any` and free-form dicts (e.g., config specs) without schema validation.
+- `src/vamos/experiment/runtime/catalog.py` supports programmatic `engine="auto"`.
+- `src/vamos/experiment/cli/args_core.py` restricts CLI `--engine` choices to `numpy`, `numba`, and `moocore`.
+- The CLI help text still tells users to pass `--engine auto`.
 
-Docs:
-- MkDocs site with broad coverage and dev guides exists.
-- No dedicated architecture/layering document codifying dependency rules.
+Status:
 
-Logging and error handling:
-- A custom exception hierarchy exists.
-- Many experiment/runtime modules use `print` (runner, optimize, quick API, tuning), which is brittle for library usage.
+- Fixed in follow-up. The CLI parser now accepts `--engine auto`, and the common path is smoke-tested.
 
-Configuration:
-- YAML/JSON specs are supported via `src/vamos/engine/config/loader.py` with manual validation in CLI.
-- No schema/versioning for config files, and no centralized validation outside the CLI.
+### 3. `make_problem(..., vectorized=False)` is elementwise adaptation, not auto-vectorization
 
-Performance boundaries:
-- Multiple kernel backends (NumPy, Numba, MooCore) exist; kernels depend on the shared operators package but not engine, improving backend modularity.
+Verified behavior:
 
-## Prioritized recommendations (ranked)
-1) Done - Split experiment runner/CLI wiring and remove the `experiment.runner` <-> `experiment.study.runner` cycle.
-Evidence: `src/vamos/experiment/study/api.py`, `src/vamos/experiment/execution.py`, `src/vamos/experiment/cli/*`.
-Refactor summary: shared execution lives in `experiment/execution.py`, CLI defaults/validation live in `cli/args.py` + `cli/validation.py`, and study orchestration is routed through `study/api.py`.
-Suggested tests: import-cycle check for experiment modules (added), plus config override and CLI parity tests.
+- In `src/vamos/foundation/problem/builder.py`, scalar problems are evaluated with a Python loop over rows when `vectorized=False`.
+- That is compatibility-focused elementwise adaptation, not real vectorized execution.
 
-2) Done - Separate result presentation (plotting, saving, printing) from core API results.
-Evidence: `src/vamos/experiment/optimization_result.py`, `src/vamos/ux/results.py`, `src/vamos/ux/api.py`.
-Refactor summary: `OptimizationResult` is a data container; summary/plot/export helpers live in `src/vamos/ux/results.py` and are re-exported via `src/vamos/ux/api.py`.
-Tests: `tests/foundation/test_optimization_result.py`, `tests/foundation/test_run_optimization.py`.
+Comparison to pymoo:
 
-3) Medium - Split external baseline integrations into per-library modules.
-Evidence: `src/vamos/foundation/core/external/base.py`.
-Refactor plan: move pymoo/jmetalpy/pygmo adapters to `src/vamos/experiment/benchmark/external/` modules; make `resolve_external_algorithm` a registry in that package; keep imports lazy and outputs structured (no prints).
-Suggested tests: dependency-missing tests that verify informative error messages; functional tests for one baseline when optional deps are available.
+- pymoo explicitly distinguishes batched `Problem` and elementwise `ElementwiseProblem`.
+- VAMOS should be equally explicit instead of describing the elementwise adapter as "auto-vectorization".
 
-4) Done - Break up the Streamlit Studio app into UI and service layers.
-Evidence: `src/vamos/ux/studio/app.py`, `src/vamos/ux/studio/services.py`, `src/vamos/experiment/studio/app.py`.
-Refactor summary: UI and service logic now live in `src/vamos/ux/studio`; `src/vamos/experiment/studio/app.py` is a CLI wrapper.
-Suggested tests: unit tests for service helpers (data loading, focused optimization) without UI.
+Documentation consequence:
 
-5) Medium - Replace `print` usage in experiment/runtime modules with structured logging.
-Evidence: widespread `print` in `src/vamos/experiment/runner.py`, `src/vamos/experiment/optimize.py`, `src/vamos/experiment/quick.py`, `src/vamos/engine/tuning/*`.
-Refactor plan: introduce module-level loggers and a consistent logging policy; keep CLI responsible for user-facing console output; add `--quiet` or `--verbose` flags for CLI.
-Suggested tests: verify logging is emitted for key events and that CLI still prints expected summaries.
+- Tell users that scalar callables are supported for convenience.
+- Tell performance-sensitive users to pass `vectorized=True` and implement a true batched function.
 
-6) Medium - Formalize config schema and versioning.
-Evidence: `src/vamos/engine/config/loader.py`, `src/vamos/experiment/cli/parser.py`.
-Refactor plan: define an `ExperimentSpec` dataclass or pydantic model; add schema validation and a version field; centralize defaults and merge logic.
-Suggested tests: schema validation tests for typical configs; regression tests for YAML/JSON compatibility.
+## Important Improvements
 
-7) Low - Split large operator modules by operator family.
-Evidence: `src/vamos/engine/operators/impl/permutation.py`, `src/vamos/engine/operators/impl/real/crossover.py`, `src/vamos/engine/operators/impl/real/mutation.py`.
-Refactor plan: move each operator family into dedicated files and provide registries for lookup; keep public imports stable.
-Suggested tests: existing operator tests should continue to pass; add import performance checks if needed.
+### Extend smoke coverage beyond the common onboarding path
 
-## No Monolith guidance
-Recommended thresholds:
-- Core modules: <= 400 LOC and <= 3 major responsibilities.
-- CLI/UI modules: <= 250-300 LOC, prefer orchestration only.
-- Algorithm classes: <= 350 LOC, push setup/metrics into helpers or base classes.
+The current test suite exercises the Python API and many core internals. The common CLI onboarding path, config-driven CLI execution, benchmark smoke mode, tune smoke mode, create-problem, profile, zoo, and the published README/CLI-guide/tuning-guide commands now have subprocess smoke coverage. The next gap is breadth rather than total absence. VAMOS should continue by adding:
 
-Layering rules (proposed):
-- foundation must not import engine or ux.
-- operators.impl is shared; foundation/engine/experiment/ux may depend on it, but it must not depend on engine/ux.
-- operators.policies may depend on engine for algorithm wiring, but should avoid ux.
-- engine may depend on foundation and hooks, but not on ux.
-- experiment and ux may depend on foundation and engine.
-- avoid experiment <-> ux mutual imports; prefer hooks and experiment-driven wiring for optional visualization.
-- CLI modules should not be imported by foundation/engine.
+- broader benchmark/tuning smoke coverage beyond the current `vamos bench ... --smoke`, `vamos tune ... --smoke`, and the existing tune split/fallback slices
+- broader docs smoke coverage for additional CLI subcommands beyond the current guide examples and common paths
 
-Dependency inversion suggestions:
-- Use Protocols/ABCs for live visualization, genealogy, and external hooks in the neutral `src/vamos/hooks/` package.
-- Use registries for algorithms, operators, and backends to avoid direct imports.
-- Prefer passing dependency objects (kernel, evaluator, visualizer) instead of importing their concrete implementations.
+### Stop publishing stale CLI and tooling commands
 
-## Architecture and layering document outline (to add under docs/)
-- Purpose and guiding principles (research-friendly, modular, extensible)
-- Layer definitions and allowed dependencies
-- Public APIs and stability guarantees
-- Plugin/registry patterns (algorithms, kernels, operators)
-- Data contracts (results layout, metadata, config schema)
-- Performance boundaries (where vectorization/JIT lives)
-- Optional dependencies and feature flags
-- Testing strategy by layer (unit, integration, optional backends)
+The docs had drift such as:
 
-## Next 2 PRs (high leverage, well scoped)
-1) PR: Split experiment runner/CLI responsibilities and break experiment import cycles (completed).
-Scope: shared execution in `src/vamos/experiment/execution.py`, CLI defaults/validation in dedicated modules, and import-cycle guard for experiment modules.
+- `--nsgaii-replacement-size` documented after it was removed from the parser
+- `python tools/health.py --mypy-full` documented even though the tool does not implement that flag
 
-2) PR: Separate output/presentation from optimize/quick and standardize logging.
-Scope: move plot/save/summary helpers into `src/vamos/experiment/output.py` or `src/vamos/ux/`, replace runtime `print` calls with structured logging, and add tests covering output helpers.
+Every CLI or tooling command that appears in public docs should either be smoke-tested or clearly labeled as reference syntax.
 
-## Appendix: Commands run
-- `Get-ChildItem -Force` (list repo root)
-- `Get-ChildItem -Directory src` (list src)
-- `Get-ChildItem -Directory src\vamos` (list package root)
-- `Get-ChildItem -Directory tests` (list tests)
-- `Get-ChildItem -Directory docs` (list docs)
-- `Get-Content pyproject.toml` (packaging, entry points, tools)
-- `Get-Content src\vamos\__init__.py` (public API reexports)
-- `@'...python script...'@ | python -` (first attempt: top 20 LOC, ended with stray `PY` name error)
-- `@'...python script...'@ | python -` (top 20 LOC scan, successful)
-- `@'...python script...'@ | python -` (top classes/functions by LOC)
-- `@'...python script...'@ | python -` (import graph and cross-layer edges)
-- `rg -n "from\s+vamos\s+import\s+\*"` (wildcard import check)
-- `rg --files -g "*utils*.py" -g "*helpers*.py" -g "*common*.py"` (utility module inventory)
-- `Get-Content src\vamos\api.py` (public API)
-- `Get-ChildItem src\vamos\experiment\cli` (CLI module listing)
-- `Get-Content README.md` (repo overview)
-- `Get-ChildItem -Recurse .github` (CI/workflows listing)
-- `Get-Content .github\workflows\ci.yml` (CI details)
-- `Get-Content .github\workflows\upload_pypi.yml` (release workflow)
-- `rg -n "\bprint\(" src\vamos` (print usage)
-- `Get-ChildItem -Directory src\vamos\engine` (engine tree)
-- `Get-ChildItem -Directory src\vamos\foundation` (foundation tree)
-- `Get-ChildItem -Directory src\vamos\experiment` (experiment tree)
-- `Get-ChildItem -Directory src\vamos\ux` (ux tree)
-- `Get-ChildItem -Directory src\vamos\adaptation,src\vamos\archive,src\vamos\hooks,src\vamos\io,src\vamos\monitoring` (aux package listing)
-- `Get-ChildItem src\vamos\hooks` (hooks files)
-- `rg --files tests -g "*.py" | Measure-Object` (test file count)
-- `Get-Content tests\integration\test_minimal_imports.py` (minimal import tests)
-- `rg --files -g "py.typed"` (typing marker check)
-- `rg -n "vamos\.engine" src\vamos\foundation` (foundation -> engine imports)
-- `Get-Content src\vamos\experiment\quick.py` (quick API)
-- `Get-Content src\vamos\engine\algorithm\components\base.py` (base algorithm components)
-- `Get-Content src\vamos\foundation\problem\registry\specs.py` (problem registry)
-- `Get-Content src\vamos\foundation\core\external\base.py` (external baselines)
-- `Get-Content src\vamos\experiment\cli\parser.py` (CLI parser)
-- `Get-Content src\vamos\experiment\runner.py` (runner)
-- `Get-Content src\vamos\experiment\optimize.py` (optimize API)
-- `Get-Content src\vamos\foundation\kernel\moocore_backend.py` (MooCore backend)
-- `Get-Content src\vamos\ux\studio\app.py` (studio app)
-- `Get-Content src\vamos\operators\impl\permutation.py` (permutation operators)
-- `Get-Content src\vamos\engine\algorithm\nsgaii\state.py` (NSGA-II state)
-- `Get-Content src\vamos\engine\algorithm\nsgaii\helpers.py` (NSGA-II helpers)
-- `Get-Content src\vamos\foundation\eval\backends.py` (eval backends)
-- `Get-Content src\vamos\foundation\kernel\numpy_backend.py` (NumPy backend)
-- `Get-Content src\vamos\engine\algorithm\components\hypervolume.py` (hypervolume utilities)
-- `Get-Content src\vamos\foundation\exceptions.py` (exception hierarchy)
-- `Get-Content src\vamos\engine\algorithm\nsgaii\nsgaii.py` (NSGA-II core)
-- `Get-Content src\vamos\operators\impl\real\crossover.py` (real crossover operators)
-- `Get-Content src\vamos\foundation\problem\registry\__init__.py` (problem registry exports)
-- `Get-Content src\vamos\foundation\core\api.py` (foundation API)
-- `Get-ChildItem docs\dev` (dev docs listing)
-- `Get-ChildItem docs\experiment` (experiment docs listing)
-- `Get-Content mkdocs.yml` (docs config)
-- `Get-Content .pre-commit-config.yaml` (pre-commit config)
-- `Get-Content src\vamos\engine\config\loader.py` (config loader)
-- `Get-Content experiments\scripts\collect_hv_archive_metrics.py` (metrics script)
-- `@'...python script...'@ | .\.venv\Scripts\python.exe -` (refresh LOC/classes/functions/import graph)
-- `rg --files tests -g "*.py" | Measure-Object` (test file count refresh)
-- `rg -n "ux\.visualization|ux\.analysis|ux\.studio" src\vamos\experiment\runner.py` (experiment -> ux imports)
-- `rg -n "vamos\.engine" src\vamos\ux` (ux -> engine imports)
-- `rg -n "foundation\.core\.(runner|optimize|runner_utils)" src tests docs examples experiments` (verify old import paths removed)
+### Tighten public typing and exception contracts
 
+Internally, the repo already uses mypy and a custom exception hierarchy. Public surfaces still expose some weak contracts, including `object` and `Any` in optimize-layer overloads and inconsistent exception documentation around `make_problem()` and `Problem.evaluate()`. This is fixable, but the docs should not overclaim a stricter public contract than the code currently provides.
+
+### Publish a pinned paper environment
+
+The `research` extra intentionally keeps wide version ranges for benchmarking libraries. That is acceptable for installation flexibility, but it is not enough for paper-grade reproducibility. Publication artifacts should include a lockfile or fully pinned environment spec.
+
+## Comparative Notes vs pymoo
+
+Where VAMOS currently falls short of reviewer expectations set by pymoo:
+
+- pymoo is clearer about evaluation mode. Its docs separate elementwise and batched problems instead of implying that one becomes the other automatically.
+- pymoo's getting-started surface is more internally consistent: advertised commands and documented options generally work as shown.
+- VAMOS has stronger architecture-health guardrails than a typical research repo, but reviewers will notice onboarding breakage before they notice internal discipline.
+
+## Strengths
+
+The audit is not uniformly negative. Specific strengths worth preserving:
+
+- The programmatic `optimize(...)` path is viable and should remain the primary public facade.
+- The registry/config architecture provides a real extension story for algorithms, operators, and problems.
+- The repo already ships typed package metadata (`py.typed`) and runs architecture-focused tests, not only numerical correctness tests.
+- Optional backends and extras are cleanly separated enough that the core package is still usable without the full research stack.
+
+## Maintainer Guidance
+
+When updating docs, examples, or agent playbooks:
+
+- Prefer `optimize(...)` for the shortest first script, but it is now accurate to document the standard CLI path as smoke-tested for NSGA-II/ZDT1.
+- Do not claim that scalar custom problems are vectorized unless the user explicitly passes `vectorized=True`.
+- CLI `--engine auto` is now supported; keep parser/help/runtime behavior aligned and covered by tests.
+- Treat benchmark-facing environments as pinned artifacts, not just extras declarations.

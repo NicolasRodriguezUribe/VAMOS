@@ -2,6 +2,7 @@
   "vamos": [
     "OptimizationResult",
     "Problem",
+    "StudyResult",
     "__version__",
     "available_problem_names",
     "configure_logging",
@@ -32,6 +33,7 @@
   "vamos.api": [
     "OptimizationResult",
     "Problem",
+    "StudyResult",
     "available_problem_names",
     "configure_logging",
     "make_problem",

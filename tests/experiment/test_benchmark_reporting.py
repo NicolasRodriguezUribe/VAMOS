@@ -23,6 +23,7 @@ def test_suite_registry_contains_defaults():
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_report_pipeline_on_fake_csv(tmp_path: Path):
     pd = pytest.importorskip("pandas")
+    rng = np.random.default_rng(0)
     suite = get_benchmark_suite("ZDT_small")
     summary_dir = tmp_path / "summary"
     summary_dir.mkdir(parents=True, exist_ok=True)
@@ -39,8 +40,8 @@ def test_report_pipeline_on_fake_csv(tmp_path: Path):
                         "seed": seed,
                         "n_var": 30,
                         "n_obj": 2,
-                        "hv": 0.8 + 0.01 * np.random.rand(),
-                        "indicator_igd_plus": 0.2 + 0.01 * np.random.rand(),
+                        "hv": 0.8 + 0.01 * rng.random(),
+                        "indicator_igd_plus": 0.2 + 0.01 * rng.random(),
                     }
                 )
     df = pd.DataFrame(rows)
