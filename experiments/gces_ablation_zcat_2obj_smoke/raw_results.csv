@@ -1,0 +1,5 @@
+problem,algorithm,algorithm_label,seed,engine,pop_size,max_evaluations,n_var,n_obj,runtime_seconds,n_solutions,hypervolume,igd_plus
+zcat1,nsgaii,nsgaii,0,numpy,20,200,30,2,0.014183899998897687,11,0.0,1.5728758057444823
+zcat1,gces_nocomp,gces-noComp,0,numpy,20,200,30,2,0.016516100004082546,9,0.0,1.8651163165432494
+zcat1,gces_nogeo,gces-noGeo,0,numpy,20,200,30,2,0.020107599993934855,9,0.0,1.8651163165432494
+zcat1,gces,gces,0,numpy,20,200,30,2,0.016772400005720556,9,0.0,1.8651163165432494

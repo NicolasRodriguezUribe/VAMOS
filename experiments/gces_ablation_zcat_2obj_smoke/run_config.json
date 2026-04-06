@@ -1,0 +1,29 @@
+{
+  "problems": [
+    "zcat1"
+  ],
+  "algorithms": [
+    "nsgaii",
+    "gces_nocomp",
+    "gces_nogeo",
+    "gces"
+  ],
+  "algorithm_labels": {
+    "nsgaii": "nsgaii",
+    "gces_nocomp": "gces-noComp",
+    "gces_nogeo": "gces-noGeo",
+    "gces": "gces"
+  },
+  "seeds": [
+    0
+  ],
+  "engine": "numpy",
+  "pop_size": 20,
+  "max_evaluations": 200,
+  "n_var": 30,
+  "n_obj": 2,
+  "alpha": 0.05,
+  "tie_tol": 1e-12,
+  "output_dir": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\gces_ablation_zcat_2obj_smoke",
+  "campaign": "gces_ablation_zcat_2obj_full"
+}

@@ -129,6 +129,16 @@ def _rvea_default(
 
 _DEFAULT_BUILDERS: dict[str, DefaultConfigBuilder] = {
     "nsgaii": _nsgaii_default,
+    "gces": _nsgaii_default,
+    "gces_nocomp": _nsgaii_default,
+    "gces_nogeo": _nsgaii_default,
+    "nsga2_farthest": _nsgaii_default,
+    "nsga2_gapfill": _nsgaii_default,
+    "nsga2_curvgap": _nsgaii_default,
+    "nsga2_hvfarthest": _nsgaii_default,
+    "nsga2_refcover_farthest": _nsgaii_default,
+    "nsga2_hvref_farthest": _nsgaii_default,
+    "nsga2_sector_farthest": _nsgaii_default,
     "moead": _moead_default,
     "smsemoa": _smsemoa_default,
     "nsgaiii": _nsgaiii_default,

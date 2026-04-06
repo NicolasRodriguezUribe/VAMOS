@@ -1,0 +1,3 @@
+problem,algorithm,seed,engine,pop_size,max_evaluations,runtime_seconds,n_solutions,hypervolume,igd_plus
+zcat1,nsgaii,0,numba,100,1000,0.6414270000241231,16,0.08796687494152178,0.6135441313933372
+zcat1,gces,0,numba,100,1000,0.05960089998552576,16,0.16110373709584402,0.5641272602945853

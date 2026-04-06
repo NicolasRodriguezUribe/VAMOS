@@ -1,0 +1,30 @@
+{
+  "problems": [
+    "zcat1",
+    "zcat15",
+    "zcat16",
+    "zcat19"
+  ],
+  "algorithms": [
+    "nsgaii",
+    "gces"
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "engine": "numpy",
+  "pop_size": 80,
+  "max_evaluations": 8000,
+  "n_var": 30,
+  "n_obj": 2,
+  "output_dir": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\gces_e1"
+}

@@ -1,0 +1,109 @@
+{
+  "difficulty_cells": [
+    {
+      "config_id": "lvl1_plain",
+      "config_label": "L1",
+      "phase": "A",
+      "level": 1,
+      "bias": false,
+      "imbalance": false
+    },
+    {
+      "config_id": "lvl3_plain",
+      "config_label": "L3",
+      "phase": "A",
+      "level": 3,
+      "bias": false,
+      "imbalance": false
+    },
+    {
+      "config_id": "lvl6_plain",
+      "config_label": "L6",
+      "phase": "A",
+      "level": 6,
+      "bias": false,
+      "imbalance": false
+    },
+    {
+      "config_id": "lvl6_bias",
+      "config_label": "L6+B",
+      "phase": "B",
+      "level": 6,
+      "bias": true,
+      "imbalance": false
+    },
+    {
+      "config_id": "lvl6_imbalance",
+      "config_label": "L6+I",
+      "phase": "B",
+      "level": 6,
+      "bias": false,
+      "imbalance": true
+    },
+    {
+      "config_id": "lvl6_bias_imbalance",
+      "config_label": "L6+B+I",
+      "phase": "B",
+      "level": 6,
+      "bias": true,
+      "imbalance": true
+    }
+  ],
+  "problems": [
+    "zcat1"
+  ],
+  "algorithms": [
+    "nsgaii",
+    "nsga2_farthest",
+    "nsga2_hvref_farthest",
+    "nsga2_hvfarthest",
+    "gces_nogeo",
+    "gces"
+  ],
+  "algorithm_labels": {
+    "nsgaii": "nsgaii",
+    "nsga2_farthest": "nsga2-farthest",
+    "nsga2_hvref_farthest": "nsga2-hvref-farthest",
+    "nsga2_hvfarthest": "nsga2-hvfarthest",
+    "gces_nogeo": "gces-noGeo",
+    "gces": "gces"
+  },
+  "comparisons": [
+    [
+      "nsga2_farthest",
+      "nsgaii"
+    ],
+    [
+      "nsga2_hvref_farthest",
+      "nsgaii"
+    ],
+    [
+      "nsga2_hvfarthest",
+      "nsgaii"
+    ],
+    [
+      "gces_nogeo",
+      "nsgaii"
+    ],
+    [
+      "gces",
+      "nsgaii"
+    ]
+  ],
+  "seeds": [
+    0
+  ],
+  "engine": "numpy",
+  "pop_size": 20,
+  "max_evaluations": 200,
+  "n_var": 30,
+  "n_obj": 3,
+  "workers": 18,
+  "alpha": 0.05,
+  "tie_tol": 1e-12,
+  "output_dir": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\farthest_gces_difficulty_ab_zcat_3obj_smoke",
+  "campaign": "farthest_gces_difficulty_ab_zcat_3obj_full",
+  "expected_total_runs": 36,
+  "report_title": "Farthest + GCES 3-objective ZCAT difficulty robustness campaign",
+  "report_note": "This report extends the canonical 3-objective farthest/GCES survival-only campaign with official ZCAT difficulty controls. All algorithms keep the same NSGA-II host, mating, variation, and non-dominated sorting semantics. Only split-front environmental selection differs across algorithms."
+}

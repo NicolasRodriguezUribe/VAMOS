@@ -1,0 +1,116 @@
+{
+  "problems": [
+    "zcat1"
+  ],
+  "algorithms": [
+    "nsgaii",
+    "nsga2_farthest",
+    "nsga2_hvfarthest",
+    "nsga2_hvref_farthest",
+    "nsga2_sector_farthest",
+    "gces_nogeo",
+    "gces"
+  ],
+  "algorithm_labels": {
+    "nsgaii": "nsgaii",
+    "nsga2_farthest": "nsga2-farthest",
+    "nsga2_hvfarthest": "nsga2-hvfarthest",
+    "nsga2_hvref_farthest": "nsga2-hvref-farthest",
+    "nsga2_sector_farthest": "nsga2-sector-farthest",
+    "gces_nogeo": "gces-noGeo",
+    "gces": "gces"
+  },
+  "comparisons": [
+    [
+      "nsga2_farthest",
+      "nsgaii"
+    ],
+    [
+      "gces_nogeo",
+      "nsgaii"
+    ],
+    [
+      "gces",
+      "nsgaii"
+    ],
+    [
+      "nsga2_farthest",
+      "gces_nogeo"
+    ],
+    [
+      "nsga2_farthest",
+      "gces"
+    ],
+    [
+      "nsga2_hvfarthest",
+      "nsgaii"
+    ],
+    [
+      "nsga2_hvfarthest",
+      "nsga2_farthest"
+    ],
+    [
+      "nsga2_hvfarthest",
+      "gces_nogeo"
+    ],
+    [
+      "nsga2_hvfarthest",
+      "gces"
+    ],
+    [
+      "nsga2_hvref_farthest",
+      "nsgaii"
+    ],
+    [
+      "nsga2_hvref_farthest",
+      "nsga2_farthest"
+    ],
+    [
+      "nsga2_hvref_farthest",
+      "gces_nogeo"
+    ],
+    [
+      "nsga2_hvref_farthest",
+      "gces"
+    ],
+    [
+      "nsga2_hvref_farthest",
+      "nsga2_hvfarthest"
+    ],
+    [
+      "nsga2_sector_farthest",
+      "nsgaii"
+    ],
+    [
+      "nsga2_sector_farthest",
+      "nsga2_farthest"
+    ],
+    [
+      "nsga2_sector_farthest",
+      "gces_nogeo"
+    ],
+    [
+      "nsga2_sector_farthest",
+      "gces"
+    ],
+    [
+      "nsga2_sector_farthest",
+      "nsga2_hvref_farthest"
+    ]
+  ],
+  "seeds": [
+    0
+  ],
+  "engine": "numpy",
+  "pop_size": 20,
+  "max_evaluations": 200,
+  "n_var": 30,
+  "n_obj": 3,
+  "workers": 4,
+  "alpha": 0.05,
+  "tie_tol": 1e-12,
+  "output_dir": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\farthest_family_zcat_3obj_smoke",
+  "campaign": "farthest_family_zcat_3obj_full",
+  "report_title": "Farthest-family 3-objective ZCAT survival-only campaign",
+  "report_note": "This report describes a survival-only campaign. All algorithms in this campaign reuse the NSGA-II host, mating, variation, and non-dominated sorting. Only split-front environmental selection differs across the farthest-derived selectors, nsga2_sector_farthest, and the GCES-family variants."
+}

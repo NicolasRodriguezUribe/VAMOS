@@ -17,6 +17,18 @@ from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 from vamos.foundation.registry import Registry
 
+from .gces import (
+    GCES,
+    GCESNoComp,
+    GCESNoGeo,
+    NSGA2CurvGap,
+    NSGA2Farthest,
+    NSGA2GapFill,
+    NSGA2HVFarthest,
+    NSGA2HVRefFarthest,
+    NSGA2RefCoverFarthest,
+    NSGA2SectorFarthest,
+)
 from .ibea import IBEA
 from .moead import MOEAD
 from .nsgaii import NSGAII
@@ -61,6 +73,46 @@ def _build_nsgaii(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = No
     return NSGAII(dict(cfg), kernel=kernel)
 
 
+def _build_gces(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return GCES(dict(cfg), kernel=kernel)
+
+
+def _build_gces_nocomp(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return GCESNoComp(dict(cfg), kernel=kernel)
+
+
+def _build_gces_nogeo(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return GCESNoGeo(dict(cfg), kernel=kernel)
+
+
+def _build_nsga2_farthest(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return NSGA2Farthest(dict(cfg), kernel=kernel)
+
+
+def _build_nsga2_gapfill(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return NSGA2GapFill(dict(cfg), kernel=kernel)
+
+
+def _build_nsga2_curvgap(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return NSGA2CurvGap(dict(cfg), kernel=kernel)
+
+
+def _build_nsga2_hvfarthest(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return NSGA2HVFarthest(dict(cfg), kernel=kernel)
+
+
+def _build_nsga2_refcover_farthest(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return NSGA2RefCoverFarthest(dict(cfg), kernel=kernel)
+
+
+def _build_nsga2_hvref_farthest(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return NSGA2HVRefFarthest(dict(cfg), kernel=kernel)
+
+
+def _build_nsga2_sector_farthest(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
+    return NSGA2SectorFarthest(dict(cfg), kernel=kernel)
+
+
 def _build_nsgaiii(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None) -> AlgorithmLike:
     return NSGAIII(dict(cfg), kernel=kernel)
 
@@ -103,6 +155,16 @@ def _build_rvea(cfg: AlgorithmConfigMapping, kernel: KernelBackend | None = None
 
 def _register_algorithms(registry: Registry[AlgorithmBuilder]) -> None:
     registry.register("nsgaii", _build_nsgaii)
+    registry.register("gces", _build_gces)
+    registry.register("gces_nocomp", _build_gces_nocomp)
+    registry.register("gces_nogeo", _build_gces_nogeo)
+    registry.register("nsga2_farthest", _build_nsga2_farthest)
+    registry.register("nsga2_gapfill", _build_nsga2_gapfill)
+    registry.register("nsga2_curvgap", _build_nsga2_curvgap)
+    registry.register("nsga2_hvfarthest", _build_nsga2_hvfarthest)
+    registry.register("nsga2_refcover_farthest", _build_nsga2_refcover_farthest)
+    registry.register("nsga2_hvref_farthest", _build_nsga2_hvref_farthest)
+    registry.register("nsga2_sector_farthest", _build_nsga2_sector_farthest)
     registry.register("nsgaiii", _build_nsgaiii)
     registry.register("moead", _build_moead)
     registry.register("smsemoa", _build_smsemoa)

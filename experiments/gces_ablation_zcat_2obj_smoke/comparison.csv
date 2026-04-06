@@ -1,0 +1,11 @@
+problem,metric,higher_is_better,lhs_algorithm,lhs_label,rhs_algorithm,rhs_label,n_common_seeds,lhs_mean,lhs_median,rhs_mean,rhs_median,delta_mean,delta_median,lhs_seed_wins,seed_ties,rhs_seed_wins,lhs_both_metric_seed_wins,both_metric_seed_ties_or_mixed,rhs_both_metric_seed_wins,wilcoxon_p_value_raw,wilcoxon_p_value_holm,wilcoxon_significant_alpha
+zcat1,hypervolume,True,gces,gces,nsgaii,nsgaii,1,0.0,0.0,0.0,0.0,0.0,0.0,0,1,0,0,1,0,1.0,1.0,False
+zcat1,igd_plus,False,gces,gces,nsgaii,nsgaii,1,1.8651163165432494,1.8651163165432494,1.5728758057444823,1.5728758057444823,0.2922405107987671,0.2922405107987671,0,0,1,0,1,0,1.0,1.0,False
+zcat1,hypervolume,True,gces_nocomp,gces-noComp,nsgaii,nsgaii,1,0.0,0.0,0.0,0.0,0.0,0.0,0,1,0,0,1,0,1.0,1.0,False
+zcat1,igd_plus,False,gces_nocomp,gces-noComp,nsgaii,nsgaii,1,1.8651163165432494,1.8651163165432494,1.5728758057444823,1.5728758057444823,0.2922405107987671,0.2922405107987671,0,0,1,0,1,0,1.0,1.0,False
+zcat1,hypervolume,True,gces_nogeo,gces-noGeo,nsgaii,nsgaii,1,0.0,0.0,0.0,0.0,0.0,0.0,0,1,0,0,1,0,1.0,1.0,False
+zcat1,igd_plus,False,gces_nogeo,gces-noGeo,nsgaii,nsgaii,1,1.8651163165432494,1.8651163165432494,1.5728758057444823,1.5728758057444823,0.2922405107987671,0.2922405107987671,0,0,1,0,1,0,1.0,1.0,False
+zcat1,hypervolume,True,gces,gces,gces_nocomp,gces-noComp,1,0.0,0.0,0.0,0.0,0.0,0.0,0,1,0,0,1,0,1.0,1.0,False
+zcat1,igd_plus,False,gces,gces,gces_nocomp,gces-noComp,1,1.8651163165432494,1.8651163165432494,1.8651163165432494,1.8651163165432494,0.0,0.0,0,1,0,0,1,0,1.0,1.0,False
+zcat1,hypervolume,True,gces,gces,gces_nogeo,gces-noGeo,1,0.0,0.0,0.0,0.0,0.0,0.0,0,1,0,0,1,0,1.0,1.0,False
+zcat1,igd_plus,False,gces,gces,gces_nogeo,gces-noGeo,1,1.8651163165432494,1.8651163165432494,1.8651163165432494,1.8651163165432494,0.0,0.0,0,1,0,0,1,0,1.0,1.0,False

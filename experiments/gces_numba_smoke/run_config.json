@@ -1,0 +1,21 @@
+{
+  "problems": [
+    "zcat1"
+  ],
+  "algorithms": [
+    "nsgaii",
+    "gces"
+  ],
+  "seeds": [
+    0
+  ],
+  "engine": "numba",
+  "pop_size": 100,
+  "max_evaluations": 1000,
+  "n_var": 30,
+  "n_obj": 2,
+  "wilcoxon": false,
+  "alpha": 0.05,
+  "tie_tol": 1e-12,
+  "output_dir": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\gces_numba_smoke"
+}

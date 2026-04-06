@@ -1,0 +1,9 @@
+problem,algorithm,algorithm_label,seed,engine,pop_size,max_evaluations,n_var,n_obj,runtime_seconds,n_solutions,hypervolume,igd_plus
+zcat1,nsgaii,nsgaii,0,numpy,20,200,30,2,0.02567030000500381,11,0.0,1.5728758057444823
+zcat1,nsga2_farthest,nsga2-farthest,0,numpy,20,200,30,2,0.02309600000444334,11,0.0,1.5326250730343165
+zcat1,nsga2_hvfarthest,nsga2-hvfarthest,0,numpy,20,200,30,2,0.04616800000076182,10,0.0,1.4100856194369393
+zcat1,nsga2_refcover_farthest,nsga2-refcover-farthest,0,numpy,20,200,30,2,0.03411749999213498,10,0.0,1.8065894644836524
+zcat1,nsga2_hvref_farthest,nsga2-hvref-farthest,0,numpy,20,200,30,2,0.04512149999209214,10,0.0,1.4100856194369393
+zcat1,gces_nocomp,gces-noComp,0,numpy,20,200,30,2,0.026930099993478507,9,0.0,1.8651163165432494
+zcat1,gces_nogeo,gces-noGeo,0,numpy,20,200,30,2,0.032249900003080256,9,0.0,1.8651163165432494
+zcat1,gces,gces,0,numpy,20,200,30,2,0.028715399996144697,9,0.0,1.8651163165432494

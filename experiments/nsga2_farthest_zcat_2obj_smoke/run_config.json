@@ -1,0 +1,51 @@
+{
+  "problems": [
+    "zcat1"
+  ],
+  "algorithms": [
+    "nsgaii",
+    "nsga2_farthest",
+    "gces_nocomp",
+    "gces_nogeo",
+    "gces"
+  ],
+  "algorithm_labels": {
+    "nsgaii": "nsgaii",
+    "nsga2_farthest": "nsga2-farthest",
+    "gces_nocomp": "gces-noComp",
+    "gces_nogeo": "gces-noGeo",
+    "gces": "gces"
+  },
+  "comparisons": [
+    [
+      "nsga2_farthest",
+      "nsgaii"
+    ],
+    [
+      "nsga2_farthest",
+      "gces"
+    ],
+    [
+      "nsga2_farthest",
+      "gces_nocomp"
+    ],
+    [
+      "nsga2_farthest",
+      "gces_nogeo"
+    ]
+  ],
+  "seeds": [
+    0
+  ],
+  "engine": "numpy",
+  "pop_size": 20,
+  "max_evaluations": 200,
+  "n_var": 30,
+  "n_obj": 2,
+  "alpha": 0.05,
+  "tie_tol": 1e-12,
+  "output_dir": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\nsga2_farthest_zcat_2obj_smoke",
+  "campaign": "nsga2_farthest_zcat_2obj_full",
+  "report_title": "NSGA-II farthest 2-objective ZCAT survival-only campaign",
+  "report_note": "This report describes a survival-only campaign. All algorithms in this campaign reuse the NSGA-II host, mating, variation, and non-dominated sorting. Only split-front environmental selection differs across nsga2_farthest and the GCES-family variants."
+}

@@ -1,0 +1,20 @@
+{
+  "problems": [
+    "zcat1",
+    "zcat15"
+  ],
+  "algorithms": [
+    "nsgaii",
+    "gces"
+  ],
+  "seeds": [
+    0,
+    1
+  ],
+  "engine": "numpy",
+  "pop_size": 80,
+  "max_evaluations": 2000,
+  "n_var": 30,
+  "n_obj": 2,
+  "output_dir": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\gces_e1_smoke"
+}

@@ -24,6 +24,18 @@ from vamos.foundation.kernel.backend import KernelBackend
 from vamos.foundation.problem.types import ProblemProtocol
 
 if TYPE_CHECKING:
+    from vamos.engine.algorithm.gces import (
+        GCES,
+        GCESNoComp,
+        GCESNoGeo,
+        NSGA2CurvGap,
+        NSGA2Farthest,
+        NSGA2GapFill,
+        NSGA2HVFarthest,
+        NSGA2HVRefFarthest,
+        NSGA2RefCoverFarthest,
+        NSGA2SectorFarthest,
+    )
     from vamos.engine.algorithm.ibea import IBEA
     from vamos.engine.algorithm.nsgaii import NSGAII
     from vamos.engine.algorithm.smsemoa import SMSEMOA
@@ -43,8 +55,9 @@ def _apply_external_archive(builder: Any, external_archive: ExternalArchiveConfi
         builder.external_archive(**asdict(external_archive))
 
 
-def build_nsgaii_algorithm(
+def _build_nsga2_family_algorithm(
     *,
+    algorithm_name: str,
     kernel: KernelBackend,
     problem: ProblemProtocol,
     pop_size: int,
@@ -53,7 +66,7 @@ def build_nsgaii_algorithm(
     external_archive: ExternalArchiveConfig | None,
     nsgaii_variation: dict[str, Any] | None,
     track_genealogy: bool,
-) -> tuple[NSGAII, AlgorithmConfigProtocol]:
+) -> tuple[Any, AlgorithmConfigProtocol]:
     encoding = resolve_problem_encoding(problem)
     var_cfg = resolve_variation_config(encoding=encoding, overrides=nsgaii_variation)
 
@@ -77,7 +90,304 @@ def build_nsgaii_algorithm(
     _apply_external_archive(builder, external_archive)
     if track_genealogy:
         builder.track_genealogy(True)
-    return cast("tuple[NSGAII, AlgorithmConfigProtocol]", finalize_algorithm(algorithm_name="nsgaii", builder=builder, kernel=kernel))
+    return finalize_algorithm(algorithm_name=algorithm_name, builder=builder, kernel=kernel)
+
+
+def build_nsgaii_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[NSGAII, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[NSGAII, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="nsgaii",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_gces_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[GCES, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[GCES, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="gces",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_gces_nocomp_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[GCESNoComp, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[GCESNoComp, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="gces_nocomp",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_gces_nogeo_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[GCESNoGeo, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[GCESNoGeo, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="gces_nogeo",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_nsga2_farthest_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[NSGA2Farthest, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[NSGA2Farthest, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="nsga2_farthest",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_nsga2_gapfill_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[NSGA2GapFill, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[NSGA2GapFill, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="nsga2_gapfill",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_nsga2_curvgap_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[NSGA2CurvGap, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[NSGA2CurvGap, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="nsga2_curvgap",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_nsga2_hvfarthest_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[NSGA2HVFarthest, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[NSGA2HVFarthest, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="nsga2_hvfarthest",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_nsga2_refcover_farthest_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[NSGA2RefCoverFarthest, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[NSGA2RefCoverFarthest, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="nsga2_refcover_farthest",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_nsga2_hvref_farthest_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[NSGA2HVRefFarthest, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[NSGA2HVRefFarthest, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="nsga2_hvref_farthest",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
+
+
+def build_nsga2_sector_farthest_algorithm(
+    *,
+    kernel: KernelBackend,
+    problem: ProblemProtocol,
+    pop_size: int,
+    offspring_size: int,
+    selection_pressure: int,
+    external_archive: ExternalArchiveConfig | None,
+    nsgaii_variation: dict[str, Any] | None,
+    track_genealogy: bool,
+) -> tuple[NSGA2SectorFarthest, AlgorithmConfigProtocol]:
+    return cast(
+        "tuple[NSGA2SectorFarthest, AlgorithmConfigProtocol]",
+        _build_nsga2_family_algorithm(
+            algorithm_name="nsga2_sector_farthest",
+            kernel=kernel,
+            problem=problem,
+            pop_size=pop_size,
+            offspring_size=offspring_size,
+            selection_pressure=selection_pressure,
+            external_archive=external_archive,
+            nsgaii_variation=nsgaii_variation,
+            track_genealogy=track_genealogy,
+        ),
+    )
 
 
 def build_smsemoa_algorithm(
@@ -208,7 +518,17 @@ def build_ibea_algorithm(
 
 
 __all__ = [
+    "build_gces_algorithm",
+    "build_gces_nocomp_algorithm",
+    "build_gces_nogeo_algorithm",
     "build_ibea_algorithm",
+    "build_nsga2_curvgap_algorithm",
+    "build_nsga2_farthest_algorithm",
+    "build_nsga2_gapfill_algorithm",
+    "build_nsga2_hvfarthest_algorithm",
+    "build_nsga2_refcover_farthest_algorithm",
+    "build_nsga2_hvref_farthest_algorithm",
+    "build_nsga2_sector_farthest_algorithm",
     "build_nsgaii_algorithm",
     "build_smsemoa_algorithm",
     "build_spea2_algorithm",
