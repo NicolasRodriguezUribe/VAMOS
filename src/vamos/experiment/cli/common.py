@@ -9,11 +9,11 @@ def _compact_mapping(raw: dict[str, object | None]) -> dict[str, object] | None:
 
 
 def _operator_override(**kwargs: object) -> dict[str, object] | None:
-    return _compact_mapping({key: value for key, value in kwargs.items()})
+    return _compact_mapping(dict(kwargs))
 
 
 def _variation_override(**kwargs: object) -> dict[str, object] | None:
-    return _compact_mapping({key: value for key, value in kwargs.items()})
+    return _compact_mapping(dict(kwargs))
 
 
 def _parse_probability_arg(

@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import logging
 import numbers
+from collections.abc import Callable
 from dataclasses import dataclass, fields, replace
-from typing import TYPE_CHECKING, Any, Callable, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from vamos.engine.algorithm.config.base import ResultMode
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, EngineName
 from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
-from vamos.experiment.types import CheckpointPayload, LiveVisualization, TerminationSpec
 from vamos.exceptions import ConfigurationError, InvalidAlgorithmError
+from vamos.experiment.types import CheckpointPayload, LiveVisualization, TerminationSpec
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.eval.backends import resolve_eval_strategy
 from vamos.foundation.kernel.registry import resolve_kernel

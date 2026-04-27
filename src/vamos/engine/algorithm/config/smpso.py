@@ -10,17 +10,17 @@ from vamos.engine.archive import ExternalArchiveConfig
 from .base import (
     ConstraintModeStr,
     ResultMode,
-    _ConfigBuilderState,
     _build_external_archive_config,
+    _ConfigBuilderState,
     _ConstraintModeBuilder,
     _InitializerBuilder,
     _MutationBuilder,
     _PopSizeBuilder,
     _RepairBuilder,
-    _ResultArchiveBuilder,
-    _TrackGenealogyBuilder,
     _require_fields,
+    _ResultArchiveBuilder,
     _SerializableConfig,
+    _TrackGenealogyBuilder,
     _validate_operators,
 )
 from .types import RepairConfigValue
