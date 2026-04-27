@@ -18,11 +18,11 @@ from .base import (
     _MutationProbFactorBuilder,
     _PopSizeBuilder,
     _RepairBuilder,
+    _require_fields,
     _ResultArchiveBuilder,
     _SelectionBuilder,
-    _TrackGenealogyBuilder,
-    _require_fields,
     _SerializableConfig,
+    _TrackGenealogyBuilder,
     _validate_operators,
 )
 from .types import RepairConfigValue

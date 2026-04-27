@@ -110,6 +110,7 @@ dev = [
   "mypy>=1.9",
   "ruff>=0.6",
   "build>=1.2",
+  "setuptools>=64",
   "wheel>=0.40",
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
@@ -156,6 +157,7 @@ all = [
   "mypy>=1.9",
   "ruff>=0.6",
   "build>=1.2",
+  "setuptools>=64",
   "wheel>=0.40",
   "pyyaml>=6.0",
 ]
@@ -285,6 +287,7 @@ ignore = [
     "B007",  # Loop control variable not used - intentional destructuring
     "B905",  # zip() without strict= - existing codebase pattern
     "C408",  # Unnecessary dict() call - dict() reads better in plotly marker kwargs
+    "UP038",  # Tuple form keeps isinstance checks readable for mixed runtime types
 ]
 
 [tool.ruff.lint.per-file-ignores]

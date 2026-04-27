@@ -10,9 +10,9 @@ import warnings
 from dataclasses import asdict
 from typing import Any, Literal, TypeAlias, cast, overload
 
+from vamos.engine.algorithm.config.types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 from vamos.engine.archive import ExternalArchiveConfig
 from vamos.foundation.encoding import EncodingLike
-from vamos.engine.algorithm.config.types import CrossoverName, InitializerName, MutationName, RepairName, SelectionName
 
 if sys.version_info >= (3, 11):
     from typing import Self

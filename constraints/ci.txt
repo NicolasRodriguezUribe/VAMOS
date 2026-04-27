@@ -7,6 +7,7 @@ pytest-cov==6.0.0
 mypy==1.15.0
 ruff==0.11.2
 build==1.2.2.post1
+setuptools==80.9.0
 wheel==0.45.1
 mkdocs==1.6.1
 mkdocs-material==9.6.9
@@ -16,7 +17,7 @@ pyyaml==6.0.2
 numba==0.61.0
 dask==2025.2.0
 distributed==2025.2.0
-moocore==0.2.6
+moocore==0.2.0
 pandas==2.2.3
 matplotlib==3.10.1
 seaborn==0.13.2
