@@ -28,6 +28,7 @@
     "available_algorithms",
     "available_crossover_methods",
     "available_mutation_methods",
+    "discover_algorithm_plugins",
     "resolve_algorithm"
   ],
   "vamos.api": [

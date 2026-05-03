@@ -57,6 +57,19 @@ result = optimize(
 )
 ```
 
+## Fallback Behavior
+
+`DaskEvalBackend` raises an evaluation error if it is not connected to a scheduler.
+Serial fallback is opt-in so benchmark runs do not silently report serial timings
+as distributed timings:
+
+```python
+backend = DaskEvalBackend(fallback_to_serial=True)
+```
+
+Use this only for local development or smoke tests where completing the run is
+more important than proving distributed execution.
+
 ## Kubernetes Deployment
 
 ```yaml

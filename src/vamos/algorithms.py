@@ -48,6 +48,13 @@ def available_algorithms() -> tuple[str, ...]:
     return tuple(sorted(get_algorithms_registry().keys()))
 
 
+def discover_algorithm_plugins(*, force: bool = False) -> tuple[str, ...]:
+    """Load algorithm builders exposed via the ``vamos.algorithms`` entry point group."""
+    from vamos.engine.algorithm.registry import discover_algorithm_plugins as _discover_algorithm_plugins
+
+    return _discover_algorithm_plugins(force=force)
+
+
 def available_crossover_methods(encoding: str = "real") -> tuple[str, ...]:
     """
     Return the available crossover method identifiers for a given encoding.
@@ -131,6 +138,7 @@ __all__ = [
     "ProbabilityExpression",
     "ProbabilityValue",
     "available_algorithms",
+    "discover_algorithm_plugins",
     "available_crossover_methods",
     "available_mutation_methods",
     "resolve_algorithm",

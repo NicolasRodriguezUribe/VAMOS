@@ -63,7 +63,7 @@ class VAMOSError(Exception):
 # =============================================================================
 
 
-class ConfigurationError(VAMOSError):
+class ConfigurationError(VAMOSError, ValueError):
     """Raised when configuration is invalid or incomplete."""
 
     pass
@@ -260,10 +260,7 @@ class ResultSelectionError(InvalidResultsError, ValueError):
     """Raised when selecting or ranking solutions from a result fails."""
 
     def __init__(self, message: str) -> None:
-        suggestion = (
-            "Check the ranking method, source, weights, and whether the result "
-            "contains non-empty objective data."
-        )
+        suggestion = "Check the ranking method, source, weights, and whether the result contains non-empty objective data."
         VAMOSError.__init__(self, message, suggestion)
 
 

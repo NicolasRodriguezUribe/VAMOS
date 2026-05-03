@@ -8,8 +8,10 @@ and return an initialized algorithm instance.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable, Mapping
-from typing import Any, Protocol
+from importlib import metadata
+from typing import Any, Protocol, cast
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigMapping
 from vamos.foundation.exceptions import InvalidAlgorithmError, _suggest_names
@@ -40,8 +42,10 @@ class AlgorithmLike(Protocol):
 AlgorithmBuilder = Callable[[AlgorithmConfigMapping, KernelBackend | None], AlgorithmLike]
 
 _ALGORITHMS: Registry[AlgorithmBuilder] | None = None
+_ALGORITHM_PLUGINS_LOADED = False
 _ALGO_DOCS = "docs/reference/algorithms.md"
 _TROUBLESHOOTING_DOCS = "docs/guide/troubleshooting.md"
+_ENTRY_POINT_GROUP = "vamos.algorithms"
 
 
 def _format_unknown_algorithm(name: str, options: list[str]) -> str:
@@ -113,13 +117,60 @@ def _register_algorithms(registry: Registry[AlgorithmBuilder]) -> None:
     registry.register("rvea", _build_rvea)
 
 
+def _entry_points_for_group(group: str) -> list[metadata.EntryPoint]:
+    entry_points = metadata.entry_points()
+    if hasattr(entry_points, "select"):
+        return list(entry_points.select(group=group))
+    return list(entry_points.get(group, ()))
+
+
+def _load_algorithm_plugins(registry: Registry[AlgorithmBuilder], *, force: bool = False) -> tuple[str, ...]:
+    global _ALGORITHM_PLUGINS_LOADED
+    if _ALGORITHM_PLUGINS_LOADED and not force:
+        return ()
+
+    loaded: list[str] = []
+    for entry_point in _entry_points_for_group(_ENTRY_POINT_GROUP):
+        name = entry_point.name.strip().lower()
+        if not name:
+            warnings.warn("Ignoring VAMOS algorithm entry point with an empty name.", RuntimeWarning, stacklevel=2)
+            continue
+        if name in registry:
+            continue
+        try:
+            builder = entry_point.load()
+        except Exception as exc:
+            warnings.warn(f"Failed to load VAMOS algorithm plugin '{entry_point.name}': {exc}", RuntimeWarning, stacklevel=2)
+            continue
+        if not callable(builder):
+            warnings.warn(f"Ignoring VAMOS algorithm plugin '{entry_point.name}' because it is not callable.", RuntimeWarning, stacklevel=2)
+            continue
+        registry.register(name, cast(AlgorithmBuilder, builder))
+        loaded.append(name)
+
+    _ALGORITHM_PLUGINS_LOADED = True
+    return tuple(loaded)
+
+
 def get_algorithms_registry() -> Registry[AlgorithmBuilder]:
     global _ALGORITHMS
     if _ALGORITHMS is None:
         registry: Registry[AlgorithmBuilder] = Registry("Algorithms")
         _register_algorithms(registry)
         _ALGORITHMS = registry
+    _load_algorithm_plugins(_ALGORITHMS)
     return _ALGORITHMS
+
+
+def discover_algorithm_plugins(*, force: bool = False) -> tuple[str, ...]:
+    """Load algorithm builders exposed through the ``vamos.algorithms`` entry point group."""
+    global _ALGORITHMS
+    if _ALGORITHMS is None:
+        registry: Registry[AlgorithmBuilder] = Registry("Algorithms")
+        _register_algorithms(registry)
+        _ALGORITHMS = registry
+    registry = _ALGORITHMS
+    return _load_algorithm_plugins(registry, force=force)
 
 
 def resolve_algorithm(name: str) -> AlgorithmBuilder:
@@ -138,4 +189,4 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-__all__ = ["get_algorithms_registry", "resolve_algorithm", "AlgorithmBuilder", "AlgorithmLike"]
+__all__ = ["get_algorithms_registry", "discover_algorithm_plugins", "resolve_algorithm", "AlgorithmBuilder", "AlgorithmLike"]

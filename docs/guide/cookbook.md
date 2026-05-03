@@ -237,13 +237,13 @@ save_result(result, "results/zdt1_nsgaii")
 
 ## 14. Select a Single Solution from the Front
 
-Pick a knee point or a simple min objective.
+Pick a balanced normalized-sum solution or a simple min objective.
 
 ```python
 from vamos import optimize
 
 result = optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)
-choice = result.best("knee")
+choice = result.best("balanced_sum")
 print(choice["F"])
 ```
 

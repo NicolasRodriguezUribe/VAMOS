@@ -10,10 +10,12 @@ from difflib import get_close_matches
 from typing import TypedDict, cast
 
 from vamos.engine.algorithm.config import (
+    AGEMOEAConfig,
     IBEAConfig,
     MOEADConfig,
     NSGAIIConfig,
     NSGAIIIConfig,
+    RVEAConfig,
     SMPSOConfig,
     SMSEMOAConfig,
     SPEA2Config,
@@ -44,6 +46,8 @@ _ALGORITHM_BLOCKS: dict[str, type] = {
     "spea2": SPEA2Config,
     "ibea": IBEAConfig,
     "smpso": SMPSOConfig,
+    "agemoea": AGEMOEAConfig,
+    "rvea": RVEAConfig,
 }
 
 _OPERATOR_SPEC_KEYS = ("crossover", "mutation", "selection", "repair", "aggregation")
@@ -53,6 +57,18 @@ _HOOK_ARCHIVE_KEYS = {
     "truncate_size",
     "pruning",
     "hv_ref_point",
+    "rng_seed",
+    "objective_tolerance",
+    "deduplicate_in",
+    "decision_tolerance",
+}
+_BOUNDED_ARCHIVE_KEYS = {
+    "enabled",
+    "size_cap",
+    "truncate_size",
+    "prune_policy",
+    "hv_ref_point",
+    "hv_samples",
     "rng_seed",
     "objective_tolerance",
     "deduplicate_in",
@@ -202,16 +218,21 @@ def _validate_archive_block(block: object, *, path: str) -> None:
     if block is None:
         return
     block_dict = _as_str_dict(block, path=f"'{path}'")
-    unknown = _unknown_keys(block_dict, {"external"})
+    unknown = _unknown_keys(block_dict, {"external", "bounded"})
     if unknown:
         raise ValueError(f"Unknown keys in '{path}': {', '.join(unknown)}")
     external = block_dict.get("external")
-    if external is None:
-        return
-    external_dict = _as_str_dict(external, path=f"'{path}.external'")
-    unknown_external = _unknown_keys(external_dict, _HOOK_ARCHIVE_KEYS)
-    if unknown_external:
-        raise ValueError(f"Unknown keys in '{path}.external': {', '.join(unknown_external)}")
+    if external is not None:
+        external_dict = _as_str_dict(external, path=f"'{path}.external'")
+        unknown_external = _unknown_keys(external_dict, _HOOK_ARCHIVE_KEYS)
+        if unknown_external:
+            raise ValueError(f"Unknown keys in '{path}.external': {', '.join(unknown_external)}")
+    bounded = block_dict.get("bounded")
+    if bounded is not None:
+        bounded_dict = _as_str_dict(bounded, path=f"'{path}.bounded'")
+        unknown_bounded = _unknown_keys(bounded_dict, _BOUNDED_ARCHIVE_KEYS)
+        if unknown_bounded:
+            raise ValueError(f"Unknown keys in '{path}.bounded': {', '.join(unknown_bounded)}")
 
 
 def _dataclass_field_names(cls: object) -> list[str]:

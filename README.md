@@ -6,19 +6,6 @@
 
 VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels with NumPy as the exact reference path and optional Numba acceleration for core kernels.
 
-## Current Audit Status
-
-As of March 31, 2026, both the Python API and the published onboarding CLI surface are covered by smoke tests for the standard NSGA-II/ZDT1 path.
-
-- `vamos --problem ...`, `vamos quickstart`, `vamos create-problem`, `vamos tune --backend random --smoke`, `vamos profile`, the common `vamos zoo` commands, and CLI `--engine auto` are verified for the standard smoke path.
-- Published README, CLI-guide, and tuning-guide commands now have command-level smoke coverage, including `vamos bench ... --smoke` and `vamos tune --backend random --smoke`.
-- `make_problem(..., vectorized=False)` adapts scalar objectives by evaluating one row at a time. Use `vectorized=True` for actual batched NumPy evaluation.
-- `optimize(..., seed=[...])` returns a sequence-compatible `StudyResult` with `runs`, `metric_values(...)`, `mean(...)`, `std(...)`, and `best_run(...)` helpers.
-- For publication benchmarking, pin exact versions of the `research` extra dependencies in a lockfile or environment spec.
-- A maintained paper-grade environment snapshot now lives at `paper/requirements-publication.txt`.
-
-See `docs/topics/engineering_audit.md` for the maintained audit summary and rationale.
-
 ## Key Features
 
 - **Unified API**: A clear, fluent interface `vamos.optimize()` for all workflows.

@@ -29,7 +29,10 @@ For configuration builders:
     from vamos.engine.algorithm.config import NSGAIIConfig, MOEADConfig
 """
 
-from vamos.engine.algorithm.agemoea import AGEMOEA
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from vamos.engine.algorithm.components.protocol import (
     AlgorithmProtocol,
     ConstraintMode,
@@ -37,14 +40,29 @@ from vamos.engine.algorithm.components.protocol import (
     SelectionMethod,
     SurvivalMethod,
 )
-from vamos.engine.algorithm.ibea import IBEA
-from vamos.engine.algorithm.moead import MOEAD
-from vamos.engine.algorithm.nsgaii import NSGAII
-from vamos.engine.algorithm.nsgaiii import NSGAIII
-from vamos.engine.algorithm.rvea import RVEA
-from vamos.engine.algorithm.smpso import SMPSO
-from vamos.engine.algorithm.smsemoa import SMSEMOA
-from vamos.engine.algorithm.spea2 import SPEA2
+
+if TYPE_CHECKING:
+    from vamos.engine.algorithm.agemoea import AGEMOEA
+    from vamos.engine.algorithm.ibea import IBEA
+    from vamos.engine.algorithm.moead import MOEAD
+    from vamos.engine.algorithm.nsgaii import NSGAII
+    from vamos.engine.algorithm.nsgaiii import NSGAIII
+    from vamos.engine.algorithm.rvea import RVEA
+    from vamos.engine.algorithm.smpso import SMPSO
+    from vamos.engine.algorithm.smsemoa import SMSEMOA
+    from vamos.engine.algorithm.spea2 import SPEA2
+
+_ALGORITHM_EXPORTS = {
+    "NSGAII": ("vamos.engine.algorithm.nsgaii", "NSGAII"),
+    "NSGAIII": ("vamos.engine.algorithm.nsgaiii", "NSGAIII"),
+    "MOEAD": ("vamos.engine.algorithm.moead", "MOEAD"),
+    "SPEA2": ("vamos.engine.algorithm.spea2", "SPEA2"),
+    "SMSEMOA": ("vamos.engine.algorithm.smsemoa", "SMSEMOA"),
+    "IBEA": ("vamos.engine.algorithm.ibea", "IBEA"),
+    "SMPSO": ("vamos.engine.algorithm.smpso", "SMPSO"),
+    "AGEMOEA": ("vamos.engine.algorithm.agemoea", "AGEMOEA"),
+    "RVEA": ("vamos.engine.algorithm.rvea", "RVEA"),
+}
 
 __all__ = [
     # Algorithms
@@ -64,3 +82,19 @@ __all__ = [
     "SurvivalMethod",
     "ConstraintMode",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    target = _ALGORITHM_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attr_name = target
+    import importlib
+
+    value = getattr(importlib.import_module(module_name), attr_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(__all__) | set(globals()))

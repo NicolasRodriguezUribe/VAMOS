@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import warnings
 from math import comb
 
 import pytest
 
 from vamos.algorithms import IBEAConfig, MOEADConfig, NSGAIIConfig, NSGAIIIConfig, SMSEMOAConfig, SPEA2Config
+from vamos.engine.operators.impl.registry import get_operator_registry
 
 
 class TestNSGAIIConfigShortcuts:
@@ -76,6 +78,22 @@ class TestNSGAIIConfigShortcuts:
     def test_available_operators_lists_pm_alias(self):
         operators = NSGAIIConfig.available_operators("mutation")
         assert "pm" in operators["mutation"]
+
+    def test_available_operators_are_derived_from_runtime_registries(self):
+        operators = NSGAIIConfig.available_operators("crossover")
+        assert "sbx" in operators["crossover"]
+
+    def test_builder_accepts_custom_registered_operator_without_warning(self):
+        registry = get_operator_registry()
+        registry.register("_pytest_custom_operator", object, override=True)
+
+        with warnings.catch_warnings(record=True) as captured:
+            warnings.simplefilter("always")
+            cfg = NSGAIIConfig.builder().crossover("_pytest_custom_operator").mutation("_pytest_custom_operator").build()
+
+        assert cfg.crossover[0] == "_pytest_custom_operator"
+        assert cfg.mutation[0] == "_pytest_custom_operator"
+        assert [str(item.message) for item in captured] == []
 
     def test_builder_validates_operator_names_eagerly(self):
         with pytest.raises(ValueError, match="Unknown mutation"):

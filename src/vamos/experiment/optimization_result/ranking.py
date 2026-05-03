@@ -11,9 +11,10 @@ from numpy.typing import NDArray
 from vamos.foundation.exceptions import NoSolutionsError, ResultSelectionError
 from vamos.foundation.quality_indicators.pareto import pareto_filter
 
-BestMethod: TypeAlias = Literal["knee", "min_f1", "min_f2", "balanced"]
+BestMethod: TypeAlias = Literal["balanced_sum", "knee", "min_f1", "min_f2", "balanced"]
 RankingSource: TypeAlias = Literal["result", "archive", "population"]
 RankingMethod: TypeAlias = Literal[
+    "balanced_sum",
     "knee",
     "min_f1",
     "min_f2",
@@ -28,7 +29,7 @@ RankingMethod: TypeAlias = Literal[
     "hv_greedy",
 ]
 
-_BEST_METHODS = {"knee", "min_f1", "min_f2", "balanced"}
+_BEST_METHODS = {"balanced_sum", "knee", "min_f1", "min_f2", "balanced"}
 _RANKING_METHODS = _BEST_METHODS | {
     "weighted_sum",
     "crowding",
@@ -45,7 +46,7 @@ _RANKING_SOURCES = {"result", "archive", "population"}
 def normalize_best_method(method: BestMethod | str) -> BestMethod:
     key = str(method).strip().lower()
     if key not in _BEST_METHODS:
-        raise ResultSelectionError(f"Unknown method '{method}'. Use: knee, min_f1, min_f2, balanced.")
+        raise ResultSelectionError(f"Unknown method '{method}'. Use: balanced_sum, knee, min_f1, min_f2, balanced.")
     return key  # type: ignore[return-value]
 
 
@@ -53,7 +54,7 @@ def normalize_ranking_method(method: RankingMethod | str) -> RankingMethod:
     key = str(method).strip().lower()
     if key not in _RANKING_METHODS:
         raise ResultSelectionError(
-            "Unknown method. Use: knee, min_f1, min_f2, balanced, weighted_sum, "
+            "Unknown method. Use: balanced_sum, knee, min_f1, min_f2, balanced, weighted_sum, "
             "crowding, farthest, knn, reference_directions, kmeans, angle, hv_greedy"
         )
     return key  # type: ignore[return-value]
@@ -173,7 +174,7 @@ def _ranking_scores(
     weights: NDArray[np.float64] | None = None,
 ) -> NDArray[np.float64]:
     key = normalize_ranking_method(method)
-    if key == "knee":
+    if key in {"balanced_sum", "knee"}:
         return np.asarray(_normalize_front(F).sum(axis=1), dtype=float)
     if key == "min_f1":
         return np.asarray(F[:, 0], dtype=float)

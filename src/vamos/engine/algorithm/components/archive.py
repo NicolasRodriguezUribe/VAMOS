@@ -4,9 +4,22 @@ from typing import Any
 
 import numpy as np
 
+import vamos.engine.algorithm.components.subset_selection as _subset_selection
 from vamos.engine.algorithm.components.archive_core import DeduplicateIn, _BaseArchive
-from vamos.engine.algorithm.components.subset_selection import _hv_contributions, _single_front_crowding
 from vamos.engine.archive.pruning_selectors import select_maxmin_subset, select_ref_dirs_subset
+
+_single_front_crowding = _subset_selection._single_front_crowding
+_moocore = _subset_selection._moocore
+
+
+def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
+    """Delegate HV contribution computation while preserving this module's test hook."""
+    original = _subset_selection._moocore
+    _subset_selection._moocore = _moocore
+    try:
+        return _subset_selection._hv_contributions(F, ref)
+    finally:
+        _subset_selection._moocore = original
 
 
 class CrowdingDistanceArchive(_BaseArchive):

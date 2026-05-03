@@ -124,6 +124,18 @@ class TestOptimizationResultBest:
         assert "index" in best
         assert 0 <= best["index"] < 3
 
+    def test_best_balanced_sum_is_default_name_for_normalized_sum(self):
+        """best('balanced_sum') should match the default normalized-sum selector."""
+        from vamos.experiment.optimization_result import OptimizationResult
+
+        F = np.array([[0.1, 0.9], [0.5, 0.5], [0.9, 0.1]])
+        result = OptimizationResult({"F": F})
+
+        named = result.best("balanced_sum")
+        default = result.best()
+
+        assert named["index"] == default["index"]
+
     def test_best_knee_uses_pareto_front_scaling(self):
         """best('knee') should pick from the Pareto front with front-based normalization."""
         from vamos.experiment.optimization_result import OptimizationResult
