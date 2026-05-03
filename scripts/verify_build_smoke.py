@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -29,9 +30,16 @@ def _venv_python(venv_dir: Path) -> Path:
     return venv_dir / "bin" / "python"
 
 
+def _clean_build_outputs(repo_root: Path) -> None:
+    for path in [repo_root / "build", repo_root / "dist", *(repo_root / "src").glob("*.egg-info")]:
+        if path.exists():
+            shutil.rmtree(path)
+
+
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     print(f"[INFO] Repository root: {repo_root}")
+    _clean_build_outputs(repo_root)
 
     build_cmd = [sys.executable, "-m", "build"]
     build_rc = _run_step("Build wheel/sdist", build_cmd, cwd=repo_root)

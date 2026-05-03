@@ -12,6 +12,7 @@ except ImportError:  # pragma: no cover - optional dependency
     _moocore = None
 
 from vamos.engine.archive.pruning_selectors import select_maxmin_subset, select_ref_dirs_subset
+from vamos.foundation.kernel.numpy_backend import _compute_crowding, _fast_non_dominated_sort
 
 ArchiveType = Literal["size_cap", "epsilon_grid", "hvc_prune", "hybrid"]
 CanonicalPrunePolicy = Literal["crowding", "hv", "mc_hv", "knn", "maxmin", "ref_dirs"]
@@ -124,36 +125,23 @@ class ArchiveUpdate:
 def pareto_nondominated_mask(F: np.ndarray) -> np.ndarray:
     """
     Minimization assumed.
-    Returns boolean mask for nondominated points. O(n^2) broadcast.
+    Returns boolean mask for nondominated points.
     """
     n = F.shape[0]
     if n == 0:
         return np.zeros((0,), dtype=bool)
-    # dominates(a,b) if all(a<=b) and any(a<b)
-    le = F[:, None, :] <= F[None, :, :]
-    lt = F[:, None, :] < F[None, :, :]
-    dom = np.all(le, axis=2) & np.any(lt, axis=2)
-    dominated = np.any(dom, axis=0)
-    return np.asarray(~dominated, dtype=bool)
+    _, rank = _fast_non_dominated_sort(np.asarray(F, dtype=float))
+    return np.asarray(rank == 0, dtype=bool)
 
 
 def crowding_distance(F: np.ndarray) -> np.ndarray:
     """
     Standard NSGA-style crowding distance, higher is better.
     """
-    n, m = F.shape
+    n = F.shape[0]
     if n == 0:
         return np.array([], dtype=float)
-    D = np.zeros(n, dtype=float)
-    # For each objective
-    for j in range(m):
-        idx = np.argsort(F[:, j])
-        D[idx[0]] = D[idx[-1]] = float("inf")
-        fmin, fmax = F[idx[0], j], F[idx[-1], j]
-        denom = (fmax - fmin) if fmax > fmin else 1.0
-        for k in range(1, n - 1):
-            D[idx[k]] += (F[idx[k + 1], j] - F[idx[k - 1], j]) / denom
-    return D
+    return _compute_crowding(np.asarray(F, dtype=float), [list(range(n))])
 
 
 def hv_contrib_2d(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
@@ -167,33 +155,12 @@ def hv_contrib_2d(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
     # Sort by f1 ascending
     idx = np.argsort(F[:, 0])
     P = F[idx]
-    contrib = np.zeros(n, dtype=float)
 
-    # Total HV in 2D for ND set
-    # hv = sum_i (x_{i+1}-x_i) * (ref_y - y_i) with x_0 = P0.x, x_{n}=ref_x, but careful:
-    # In minimization, rectangles extend to ref. Using standard: integrate along x:
-    # width = (next_x - curr_x), height = (ref_y - curr_y) with next_x = P[i+1].x, last next_x = ref_x
     xs = P[:, 0]
     ys = P[:, 1]
     next_x = np.concatenate([xs[1:], np.array([ref[0]])])
-    widths = np.maximum(0.0, next_x - xs)
-    heights = np.maximum(0.0, ref[1] - ys)
-    total_hv = np.sum(widths * heights)
-
-    # Contribution of point i: HV(P) - HV(P \ {i})
-    # Compute by removing each point: O(n^2) but n is capped (archive pruning context).
-    for t in range(n):
-        Q = np.delete(P, t, axis=0)
-        if Q.shape[0] == 0:
-            hv_q = 0.0
-        else:
-            xs2 = Q[:, 0]
-            ys2 = Q[:, 1]
-            next_x2 = np.concatenate([xs2[1:], np.array([ref[0]])])
-            widths2 = np.maximum(0.0, next_x2 - xs2)
-            heights2 = np.maximum(0.0, ref[1] - ys2)
-            hv_q = float(np.sum(widths2 * heights2))
-        contrib[t] = total_hv - hv_q
+    prev_y = np.concatenate([np.array([ref[1]]), ys[:-1]])
+    contrib = np.maximum(0.0, next_x - xs) * np.maximum(0.0, prev_y - ys)
 
     # Undo sort
     out = np.zeros(n, dtype=float)

@@ -14,6 +14,7 @@ from vamos.engine.algorithm.components.archive import (
 )
 from vamos.engine.algorithm.components.subset_selection import select_top_k_crowding
 from vamos.engine.algorithm.spea2.helpers import truncate_by_distance
+from vamos.engine.archive.bounded_archive import crowding_distance, hv_contrib_2d, pareto_nondominated_mask
 
 
 def _tradeoff_front(n: int) -> np.ndarray:
@@ -260,6 +261,29 @@ def test_select_top_k_crowding_rejects_non_positive_k():
     F = _tradeoff_front(5)
     with pytest.raises(ValueError, match="k must be a positive"):
         select_top_k_crowding(F, 0)
+
+
+def test_bounded_archive_nondominated_mask_keeps_duplicate_tradeoff_points():
+    F = np.array([[0.0, 1.0], [0.0, 1.0], [0.5, 1.5], [1.0, 0.0]])
+    mask = pareto_nondominated_mask(F)
+
+    np.testing.assert_array_equal(mask, np.array([True, True, False, True]))
+
+
+def test_bounded_archive_crowding_distance_matches_kernel_contract():
+    F = np.array([[0.0, 10.0], [5.0, 5.0], [10.0, 0.0], [4.0, 5.5]])
+    distance = crowding_distance(F)
+
+    assert np.isinf(distance[0])
+    assert np.isinf(distance[2])
+    assert distance.shape == (4,)
+
+
+def test_hv_contrib_2d_matches_removal_definition():
+    F = np.array([[0.0, 2.0], [1.0, 1.0], [2.0, 0.0]])
+    ref = np.array([3.0, 3.0])
+
+    np.testing.assert_allclose(hv_contrib_2d(F, ref), np.ones(3))
 
 
 def test_nsgaii_constrained_with_external_archive():

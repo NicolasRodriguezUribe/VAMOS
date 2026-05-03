@@ -84,6 +84,30 @@ def build_archive_cfg(d: Mapping[str, object] | None) -> ExternalArchiveConfig:
     )
 
 
+def build_bounded_archive_cfg(d: Mapping[str, object] | None) -> ExternalArchiveConfig:
+    """Build an external archive config from the compact ``archive.bounded`` form."""
+    data = dict(d or {})
+    if "archive_type" in data:
+        raise TypeError("archive.bounded.archive_type is not supported. Use size_cap and prune_policy.")
+
+    translated: dict[str, object] = {}
+    if "size_cap" in data:
+        translated["capacity"] = data["size_cap"]
+    for source, target in (
+        ("truncate_size", "truncate_size"),
+        ("prune_policy", "pruning"),
+        ("hv_ref_point", "hv_ref_point"),
+        ("hv_samples", "hv_samples"),
+        ("rng_seed", "rng_seed"),
+        ("objective_tolerance", "objective_tolerance"),
+        ("deduplicate_in", "deduplicate_in"),
+        ("decision_tolerance", "decision_tolerance"),
+    ):
+        if source in data:
+            translated[target] = data[source]
+    return build_archive_cfg(translated)
+
+
 def _extract_block(spec: Mapping[str, object], key: str, problem_key: str | None) -> dict[str, object]:
     block: dict[str, object] = {}
     value = spec.get(key)
@@ -128,9 +152,15 @@ def parse_stopping_archive(spec: Mapping[str, object] | None, problem_key: str |
     stop_cfg = build_hv_stop_cfg({k: v for k, v in hv_block.items() if k not in ("enabled", "ref_point")})
 
     arch_raw = archive.get("external") if isinstance(archive, Mapping) else None
+    bounded_raw = archive.get("bounded") if isinstance(archive, Mapping) else None
     arch_block = arch_raw if isinstance(arch_raw, Mapping) else {}
-    arch_enabled = bool(arch_block.get("enabled", False))
-    arch_cfg = build_archive_cfg({k: v for k, v in arch_block.items() if k != "enabled"})
+    bounded_block = bounded_raw if isinstance(bounded_raw, Mapping) else {}
+    if arch_block:
+        arch_enabled = bool(arch_block.get("enabled", False))
+        arch_cfg = build_archive_cfg({k: v for k, v in arch_block.items() if k != "enabled"})
+    else:
+        arch_enabled = bool(bounded_block.get("enabled", False))
+        arch_cfg = build_bounded_archive_cfg({k: v for k, v in bounded_block.items() if k != "enabled"})
 
     return {
         "stopping_enabled": stop_enabled,
@@ -141,4 +171,4 @@ def parse_stopping_archive(spec: Mapping[str, object] | None, problem_key: str |
     }
 
 
-__all__ = ["StoppingArchiveConfig", "parse_stopping_archive"]
+__all__ = ["StoppingArchiveConfig", "build_bounded_archive_cfg", "parse_stopping_archive"]

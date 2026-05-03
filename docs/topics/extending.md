@@ -44,6 +44,18 @@ def build_my_algorithm(cfg: dict[str, Any], kernel: KernelBackend | None = None)
 get_algorithms_registry().register("my_algorithm", build_my_algorithm)
 ```
 
+Installed packages can expose algorithms without import-time side effects by
+declaring a `vamos.algorithms` entry point whose name is the algorithm key and
+whose value is the builder callable:
+
+```toml
+[project.entry-points."vamos.algorithms"]
+my_algorithm = "my_package.vamos_plugin:build_my_algorithm"
+```
+
+VAMOS discovers these entry points lazily through `available_algorithms()`,
+`resolve_algorithm(...)`, or explicitly with `discover_algorithm_plugins()`.
+
 Rules:
 
 - Keep `optimize(...)` as the public entrypoint; do not add a second facade.

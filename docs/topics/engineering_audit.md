@@ -1,10 +1,26 @@
 # VAMOS Engineering Audit
 
-Last updated: 2026-03-31
+Last updated: 2026-05-02
 
 This page records the current publication-readiness audit for VAMOS. It is intentionally blunt: the goal is to keep the public docs aligned with what the codebase actually does today.
 
 ## Follow-up Status
+
+Additional follow-up on 2026-05-02 addressed the highest-risk engineering
+findings outside release metadata:
+
+- archive config validation now accepts the maintained bounded-archive schema
+- population evaluation rejects missing, wrong-shaped, or non-finite objective/constraint outputs
+- build smoke checks clean stale build artifacts and verify wheel modules against `src/vamos`
+- algorithm package exports are lazy, and import-cycle checks now cover algorithm modules
+- AGE-MOEA and RVEA config schemas are included in experiment-spec validation
+- algorithm plugins can be discovered through the `vamos.algorithms` entry point group
+- operator validation derives known names from runtime registries instead of a stale hardcoded list
+- bounded archive nondominated/crowding paths reuse vectorized kernel helpers, and 2D HV contribution pruning is linear in archive size
+- Dask evaluation fallback is explicit via `fallback_to_serial=True`
+- CI mypy coverage now includes registry, config-spec, evaluation, and optimization-result layers
+
+Release metadata/classifier status is tracked separately from this page.
 
 The highest-friction CLI issues identified in this audit were fixed in a follow-up patch on 2026-03-31:
 

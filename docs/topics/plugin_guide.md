@@ -6,7 +6,7 @@ This page exists only as a redirect for contributors who search for “plugin gu
 
 ## Canonical paths
 
-- Custom algorithms: register through `get_algorithms_registry().register(...)`.
+- Custom algorithms: register through `get_algorithms_registry().register(...)` for in-process extensions, or expose a `vamos.algorithms` entry point from an installed package.
 - Custom operators: register through `get_operator_registry().register(...)` in `src/vamos/engine/operators/impl/registry.py`.
 - Custom problems: implement `ProblemProtocol` or use `make_problem(...)`, then register the family/spec if the problem should be discoverable by name.
 

@@ -6,6 +6,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = REPO_ROOT / "src" / "vamos"
 EXPERIMENT_ROOT = SRC_ROOT / "experiment"
+ALGORITHM_ROOT = SRC_ROOT / "engine" / "algorithm"
 
 
 def _module_name(path: Path) -> str:
@@ -106,8 +107,8 @@ def _find_cycle(graph: dict[str, set[str]]) -> list[str] | None:
     return None
 
 
-def test_no_experiment_import_cycles() -> None:
-    files = sorted(EXPERIMENT_ROOT.rglob("*.py"))
+def _assert_no_import_cycles(root: Path, label: str) -> None:
+    files = sorted(root.rglob("*.py"))
     modules = {_module_name(path) for path in files}
     graph: dict[str, set[str]] = {module: set() for module in modules}
 
@@ -124,16 +125,24 @@ def test_no_experiment_import_cycles() -> None:
                 target = _resolve_relative(module, stmt.module, stmt.level)
                 if target is None:
                     continue
-                if target in modules:
+                if target in modules and target != module:
                     graph[module].add(target)
                 for alias in stmt.names:
                     if alias.name == "*":
                         continue
                     expanded = f"{target}.{alias.name}"
-                    if expanded in modules:
+                    if expanded in modules and expanded != module:
                         graph[module].add(expanded)
 
     cycle = _find_cycle(graph)
     if cycle:
         pretty = " -> ".join(cycle)
-        raise AssertionError(f"Experiment import cycle detected: {pretty}")
+        raise AssertionError(f"{label} import cycle detected: {pretty}")
+
+
+def test_no_experiment_import_cycles() -> None:
+    _assert_no_import_cycles(EXPERIMENT_ROOT, "Experiment")
+
+
+def test_no_algorithm_import_cycles() -> None:
+    _assert_no_import_cycles(ALGORITHM_ROOT, "Algorithm")

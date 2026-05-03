@@ -46,7 +46,15 @@ jobs:
       - name: Lint (ruff)
         run: ruff check src/vamos tests
       - name: Type check (mypy)
-        run: mypy --config-file pyproject.toml src/vamos/engine/algorithm/config src/vamos/experiment/cli/common.py
+        run: |
+          mypy --config-file pyproject.toml \
+            src/vamos/engine/algorithm/config \
+            src/vamos/engine/algorithm/registry.py \
+            src/vamos/engine/config/spec.py \
+            src/vamos/foundation/eval \
+            src/vamos/experiment/cli/common.py \
+            src/vamos/experiment/optimization_result \
+            src/vamos/experiment/unified.py
       - name: Architecture health checks
         run: |
           python -m pip install -c constraints/ci.txt -e ".[dev]"

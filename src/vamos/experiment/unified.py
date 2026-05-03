@@ -18,7 +18,7 @@ from vamos.experiment.auto import _compute_max_evaluations, _compute_pop_size, _
 from vamos.experiment.optimization_result import OptimizationResult, StudyResult
 from vamos.experiment.optimize import _build_algorithm_config, _OptimizeConfig, _run_config
 from vamos.experiment.runtime.catalog import resolve_engine_details
-from vamos.experiment.types import CheckpointPayload, LiveVisualization
+from vamos.experiment.types import CheckpointPayload, LiveVisualization, TerminationSpec
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval import EvaluationBackend
 from vamos.foundation.exceptions import ConfigurationError
@@ -64,6 +64,7 @@ def optimize(
     *,
     algorithm: AlgorithmName | str = "auto",
     max_evaluations: int | None = None,
+    termination: TerminationSpec | None = None,
     pop_size: int | None = None,
     engine: EngineName | str | None = None,
     seed: int = 42,
@@ -84,6 +85,7 @@ def optimize(
     *,
     algorithm: AlgorithmName | str = "auto",
     max_evaluations: int | None = None,
+    termination: TerminationSpec | None = None,
     pop_size: int | None = None,
     engine: EngineName | str | None = None,
     seed: list[int] | tuple[int, ...],
@@ -103,6 +105,7 @@ def optimize(
     *,
     algorithm: AlgorithmName | str = "auto",
     max_evaluations: int | None = None,
+    termination: TerminationSpec | None = None,
     pop_size: int | None = None,
     engine: EngineName | str | None = None,
     seed: int | list[int] | tuple[int, ...] = DEFAULT_SEED,
@@ -132,6 +135,9 @@ def optimize(
         Algorithm name or ``"auto"`` for automatic selection.
     max_evaluations : int | None, optional
         Maximum function evaluations. Auto-determined when omitted.
+    termination : TerminationSpec | None, optional
+        Explicit termination pair for advanced runs that also pass
+        ``algorithm_config``. For example ``("max_evaluations", 10000)``.
     pop_size : int | None, optional
         Population size. Auto-determined when omitted.
     engine : EngineName | str | None, optional
@@ -187,6 +193,7 @@ def optimize(
                     problem,
                     algorithm,
                     max_evaluations,
+                    termination,
                     pop_size,
                     engine,
                     single_seed,
@@ -208,6 +215,7 @@ def optimize(
         problem,
         algorithm,
         max_evaluations,
+        termination,
         pop_size,
         engine,
         seed,
@@ -226,6 +234,7 @@ def _run_single(
     problem: str | ProblemProtocol,
     algorithm: str,
     max_evaluations: int | None,
+    termination: TerminationSpec | None,
     pop_size: int | None,
     engine: str | None,
     seed: int,
@@ -249,6 +258,11 @@ def _run_single(
         pop_size = _coerce_int("pop_size", pop_size, min_value=1)
     if max_evaluations is not None:
         max_evaluations = _coerce_int("max_evaluations", max_evaluations, min_value=1)
+    if termination is not None:
+        if algorithm_config is None:
+            raise TypeError("optimize() got an unexpected keyword argument 'termination'")
+        if not isinstance(termination, tuple) or len(termination) != 2:
+            raise ConfigurationError("termination must be a pair such as ('max_evaluations', 10000).")
     if isinstance(seed, bool) or not isinstance(seed, numbers.Integral):
         raise ConfigurationError("seed must be an integer.")
     if isinstance(eval_strategy, str):
@@ -287,9 +301,11 @@ def _run_single(
     if not pop_size:
         _auto_defaults["pop_size"] = effective_pop_size
     effective_max_evaluations = max_evaluations if max_evaluations is not None else _compute_max_evaluations(n_var, n_obj)
+    if termination is not None and termination[0] == "max_evaluations":
+        effective_max_evaluations = _coerce_int("termination max_evaluations", termination[1], min_value=1)
     if max_evaluations is None:
         _auto_defaults["max_evaluations"] = effective_max_evaluations
-    effective_termination = ("max_evaluations", effective_max_evaluations)
+    effective_termination = termination if termination is not None else ("max_evaluations", effective_max_evaluations)
     effective_engine, engine_source = resolve_engine_details(engine, algorithm=algorithm)
     if engine_source == "auto":
         _auto_defaults["engine"] = effective_engine
@@ -376,7 +392,7 @@ def _run_single(
         "encoding": encoding,
     }
     pop_size_source = "config" if algorithm_config is not None else ("explicit" if pop_size is not None else "auto")
-    max_evaluations_source = "explicit" if max_evaluations is not None else "auto"
+    max_evaluations_source = "explicit" if max_evaluations is not None or termination is not None else "auto"
     result.meta["resolved_config"] = resolved_config
     result.meta["engine_source"] = engine_source
     result.meta["kernel_backend"] = result.meta.get("kernel_backend", effective_engine)

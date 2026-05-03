@@ -9,7 +9,7 @@ from typing import Any, cast
 import numpy as np
 
 from vamos.foundation.eval.population import evaluate_population_with_constraints
-from vamos.foundation.exceptions import ConfigurationError
+from vamos.foundation.exceptions import ConfigurationError, EvaluationError
 
 from . import EvaluationBackend, EvaluationResult
 
@@ -102,11 +102,12 @@ class DaskEvalBackend(EvaluationBackend):
     Distributed evaluation using Dask.
 
     Notes:
-        - Requires `dask.distributed`.
-        - Falls back to serial if dask is not installed or client is invalid.
+        - Requires `dask.distributed` when connecting by address.
+        - Raises on missing/unavailable Dask by default. Pass
+          ``fallback_to_serial=True`` to opt in to serial fallback.
     """
 
-    def __init__(self, client: Any = None, address: str | None = None) -> None:
+    def __init__(self, client: Any = None, address: str | None = None, *, fallback_to_serial: bool = False) -> None:
         """
         Initialize Dask backend.
 
@@ -116,27 +117,40 @@ class DaskEvalBackend(EvaluationBackend):
             Existing ``dask.distributed.Client`` instance.
         address : str | None, optional
             Scheduler address used when ``client`` is not provided.
+        fallback_to_serial : bool, default False
+            If True, evaluation falls back to ``SerialEvalBackend`` when Dask
+            is unavailable or a scheduler call fails.
         """
         self.client = client
         self.address = address
+        self.fallback_to_serial = bool(fallback_to_serial)
         self._connected = False
         self._logged_fallback = False
         self._owns_client = False
 
+        if self.client is not None:
+            self._connected = True
+            return
+
+        if not self.address:
+            _logger().debug("DaskEvalBackend initialized without a client/address.")
+            return
+
         try:
             from dask.distributed import Client
+        except ImportError as exc:
+            message = "'dask.distributed' is required for DaskEvalBackend(address=...)."
+            if self.fallback_to_serial:
+                _logger().warning("%s Falling back to SerialEvalBackend.", message)
+                return
+            raise ConfigurationError(
+                message,
+                suggestion='Install with: pip install "vamos-optimization[compute]" or pass fallback_to_serial=True.',
+            ) from exc
 
-            if self.client is None:
-                if self.address:
-                    self.client = cast(Any, Client)(self.address)
-                    self._owns_client = True
-                else:
-                    _logger().debug(
-                        "DaskEvalBackend initialized without a client/address; it will fall back to serial until a client or address is provided."
-                    )
-            self._connected = True
-        except ImportError:
-            _logger().debug("DaskEvalBackend unavailable (missing dask.distributed); falling back to serial.")
+        self.client = cast(Any, Client)(self.address)
+        self._owns_client = True
+        self._connected = True
 
     def close(self) -> None:
         """Close the Dask client if this backend created it."""
@@ -151,30 +165,32 @@ class DaskEvalBackend(EvaluationBackend):
 
     def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
         if not self._connected or (self.client is None and self.address is None):
-            if not self._logged_fallback:
-                _logger().warning("DaskEvalBackend not connected; falling back to SerialEvalBackend.")
-                self._logged_fallback = True
-            return SerialEvalBackend().evaluate(X, problem)
+            return self._fallback_or_raise(X, problem, "DaskEvalBackend is not connected to a Dask scheduler.")
 
         try:
             # Re-check client connection
             if self.client is None and self.address:
-                from dask.distributed import Client
+                try:
+                    from dask.distributed import Client
+                except ImportError as exc:
+                    return self._fallback_or_raise(X, problem, "'dask.distributed' is required to connect by address.", exc)
 
                 self.client = cast(Any, Client)(self.address)
                 self._owns_client = True
+                self._connected = True
 
             if self.client is None:
-                # Fallback
-                return SerialEvalBackend().evaluate(X, problem)
+                return self._fallback_or_raise(X, problem, "DaskEvalBackend has no client after connection setup.")
 
             n = X.shape[0]
 
             # Determine worker count with fallback if scheduler is unreachable
             try:
                 n_workers = len(self.client.scheduler_info()["workers"])
-            except Exception:
-                n_workers = 1
+            except Exception as exc:
+                return self._fallback_or_raise(X, problem, "DaskEvalBackend could not query scheduler workers.", exc)
+            if n_workers <= 0:
+                return self._fallback_or_raise(X, problem, "DaskEvalBackend scheduler reports zero workers.")
             chunk_size = max(1, math.ceil(n / n_workers))
             slices = [(i, min(i + chunk_size, n)) for i in range(0, n, chunk_size)]
 
@@ -214,20 +230,38 @@ class DaskEvalBackend(EvaluationBackend):
 
             return EvaluationResult(F=F, G=G)
 
-        except Exception:
-            _logger().warning("DaskEvalBackend evaluation failed; falling back to SerialEvalBackend.", exc_info=True)
+        except Exception as exc:
+            return self._fallback_or_raise(X, problem, "DaskEvalBackend evaluation failed.", exc)
+
+    def _fallback_or_raise(
+        self,
+        X: np.ndarray,
+        problem: Any,
+        message: str,
+        exc: Exception | None = None,
+    ) -> EvaluationResult:
+        if self.fallback_to_serial:
+            if not self._logged_fallback:
+                _logger().warning("%s Falling back to SerialEvalBackend.", message, exc_info=exc is not None)
+                self._logged_fallback = True
             return SerialEvalBackend().evaluate(X, problem)
+        raise EvaluationError(f"{message} Pass fallback_to_serial=True to allow serial fallback.") from exc
 
 
 def resolve_eval_strategy(
-    name: str, *, n_workers: int | None = None, chunk_size: int | None = None, dask_address: str | None = None
+    name: str,
+    *,
+    n_workers: int | None = None,
+    chunk_size: int | None = None,
+    dask_address: str | None = None,
+    dask_fallback_to_serial: bool = False,
 ) -> EvaluationBackend:
     _KNOWN = ("serial", "multiprocessing", "dask")
     key = (name or "serial").lower()
     if key == "multiprocessing":
         return MultiprocessingEvalBackend(n_workers=n_workers, chunk_size=chunk_size)
     if key == "dask":
-        return DaskEvalBackend(address=dask_address)
+        return DaskEvalBackend(address=dask_address, fallback_to_serial=dask_fallback_to_serial)
     if key != "serial":
         raise ConfigurationError(
             f"Unknown eval_strategy {name!r}.",

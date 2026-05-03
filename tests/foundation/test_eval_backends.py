@@ -1,6 +1,9 @@
 import numpy as np
+import pytest
 
-from vamos.foundation.eval.backends import MultiprocessingEvalBackend, SerialEvalBackend
+from vamos.foundation.eval.backends import DaskEvalBackend, MultiprocessingEvalBackend, SerialEvalBackend
+from vamos.foundation.eval.population import evaluate_population_with_constraints
+from vamos.foundation.exceptions import EvaluationError
 
 
 class DummyProblem:
@@ -36,3 +39,49 @@ def test_multiprocessing_eval_strategy_matches_serial():
 
     np.testing.assert_allclose(mp.F, serial.F)
     assert mp.G is None
+
+
+class MissingWriteProblem(DummyProblem):
+    def evaluate(self, X, out):
+        return None
+
+
+class WrongShapeProblem(DummyProblem):
+    def evaluate(self, X, out):
+        out["F"] = np.zeros((X.shape[0], 2))
+
+
+class NonFiniteProblem(DummyProblem):
+    def evaluate(self, X, out):
+        out["F"][:, 0] = np.nan
+
+
+def test_population_evaluation_rejects_missing_objective_write():
+    with pytest.raises(EvaluationError, match="non-finite"):
+        evaluate_population_with_constraints(MissingWriteProblem(), np.zeros((2, 2)))
+
+
+def test_population_evaluation_rejects_wrong_objective_shape():
+    with pytest.raises(EvaluationError, match="shape"):
+        evaluate_population_with_constraints(WrongShapeProblem(), np.zeros((2, 2)))
+
+
+def test_population_evaluation_rejects_non_finite_objectives():
+    with pytest.raises(EvaluationError, match="non-finite"):
+        evaluate_population_with_constraints(NonFiniteProblem(), np.zeros((2, 2)))
+
+
+def test_dask_backend_requires_explicit_fallback_when_not_connected():
+    backend = DaskEvalBackend(client=None)
+
+    with pytest.raises(EvaluationError, match="fallback_to_serial=True"):
+        backend.evaluate(np.zeros((2, 2)), DummyProblem())
+
+
+def test_dask_backend_serial_fallback_is_opt_in():
+    backend = DaskEvalBackend(client=None, fallback_to_serial=True)
+
+    result = backend.evaluate(np.array([[1.0, 2.0], [0.5, -0.5]]), DummyProblem())
+
+    np.testing.assert_allclose(result.F, np.array([[5.0], [0.5]]))
+    assert result.G is None

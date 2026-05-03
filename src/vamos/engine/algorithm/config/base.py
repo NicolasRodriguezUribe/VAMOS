@@ -26,98 +26,14 @@ LiveCallbackMode = Literal["nd_only", "all"]
 IndicatorType = Literal["eps", "hypervolume"]
 OperatorCategory: TypeAlias = Literal["crossover", "mutation", "selection", "repair", "initializer"]
 
-# ── Known operator names (runtime registry + aliases) ────────────────
-# Plain set literals (no frozenset() calls) to avoid import-time side effects.
-_KNOWN_OPERATORS: dict[str, set[str]] = {
-    "crossover": {
-        "sbx",
-        "blx_alpha",
-        "blx_alpha_beta",
-        "arithmetic",
-        "whole_arithmetic",
-        "laplace",
-        "fuzzy",
-        "de",
-        "pcx",
-        "undx",
-        "simplex",
-        "one_point",
-        "two_point",
-        "binary_uniform",
-        "hux",
-        "spx",
-        "pmx",
-        "cx",
-        "cycle",
-        "position_based",
-        "erx",
-        "aex",
-        "ox",
-        "order",
-        "int_uniform",
-        "int_arithmetic",
-        "int_sbx",
-        "mixed",
-        # aliases from helpers
-        "oxd",
-        "position",
-        "pos",
-        "edge",
-        "edge_recombination",
-        "single_point",
-        "1point",
-        "blend",
-        "uniform",
-    },
-    "mutation": {
-        "pm",
-        "polynomial",
-        "non_uniform",
-        "gaussian",
-        "uniform_reset",
-        "cauchy",
-        "uniform",
-        "linked_polynomial",
-        "levy_flight",
-        "power_law",
-        "bitflip",
-        "segment_inversion",
-        "swap",
-        "insert",
-        "scramble",
-        "inversion",
-        "displacement",
-        "two_opt",
-        "reset",
-        "int_pm",
-        "creep",
-        "boundary",
-        "int_gaussian",
-        "mixed_mutation",
-        "mixed",
-        # aliases from helpers
-        "random_reset",
-        "bit_flip",
-    },
+# ── Known operator names (runtime registry + small static categories) ──
+_STATIC_OPERATOR_NAMES: dict[str, set[str]] = {
     "selection": {
         "tournament",
         "random",
         "boltzmann",
         "ranking",
         "sus",
-    },
-    "repair": {
-        "clip",
-        "clamp",
-        "reflect",
-        "random",
-        "resample",
-        "round",
-        "wrap",
-        "wrapping",
-        "midpoint",
-        "midpoint_base",
-        "gradient",
     },
     "initializer": {
         "random",
@@ -131,6 +47,7 @@ _KNOWN_OPERATORS: dict[str, set[str]] = {
         "custom",
     },
 }
+_OPERATOR_CATEGORIES = ("crossover", "mutation", "selection", "repair", "initializer")
 
 _EXTERNAL_ARCHIVE_ALLOWED_KWARGS = {
     "pruning",
@@ -152,7 +69,7 @@ def _validate_operator_name(name: str, category: str) -> None:
     - Raises ``ValueError`` when a close match exists (likely a typo).
     - Issues a ``UserWarning`` for completely unknown names (possibly custom).
     """
-    known = _KNOWN_OPERATORS.get(category)
+    known = _known_operator_names(category)
     if known is None:
         return
     lower = name.strip().lower()
@@ -167,6 +84,29 @@ def _validate_operator_name(name: str, category: str) -> None:
         UserWarning,
         stacklevel=4,
     )
+
+
+def _registry_operator_names(category: str) -> set[str]:
+    from vamos.engine.operators.impl.registry import get_operator_registry
+
+    if category in {"crossover", "mutation"}:
+        from vamos.engine.variation import helpers as variation_helpers
+
+        suffix = "CROSSOVER" if category == "crossover" else "MUTATION"
+        names = {str(key) for key in get_operator_registry().keys()}
+        for prefix in ("REAL", "BINARY", "PERM", "INT", "MIXED"):
+            names.update(str(key) for key in getattr(variation_helpers, f"{prefix}_{suffix}").keys())
+        return names
+    if category == "repair":
+        return {str(key) for key in get_operator_registry().keys()}
+    return set()
+
+
+def _known_operator_names(category: str) -> set[str] | None:
+    key = category.strip().lower()
+    if key not in _OPERATOR_CATEGORIES:
+        return None
+    return set(_STATIC_OPERATOR_NAMES.get(key, set())) | _registry_operator_names(key)
 
 
 def _validate_operators(cfg: dict[str, Any]) -> None:
@@ -441,12 +381,12 @@ class _SerializableConfig:
         """
         if category is not None:
             key = category.strip().lower()
-            known = _KNOWN_OPERATORS.get(key)
+            known = _known_operator_names(key)
             if known is None:
-                available = ", ".join(sorted(_KNOWN_OPERATORS))
+                available = ", ".join(sorted(_OPERATOR_CATEGORIES))
                 raise ValueError(f"Unknown category '{category}'. Available: {available}")
             return {key: sorted(known)}
-        return {k: sorted(v) for k, v in _KNOWN_OPERATORS.items()}
+        return {key: sorted(_known_operator_names(key) or set()) for key in _OPERATOR_CATEGORIES}
 
     @staticmethod
     def default_operators(encoding: EncodingLike = "real") -> dict[str, tuple[str, dict[str, Any]]]:
