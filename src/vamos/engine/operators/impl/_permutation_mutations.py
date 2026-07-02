@@ -44,10 +44,7 @@ def insert_mutation(X: PermPop, prob: float, rng: RNG) -> None:
 
 
 def scramble_mutation(X: PermPop, prob: float, rng: RNG, max_segment_length: int = 0) -> None:
-    if max_segment_length > 0:
-        _apply_row_mutation(X, prob, rng, lambda row, local_rng: _scramble_row_mutation(row, local_rng, max_segment_length=max_segment_length))
-        return
-    _apply_row_mutation(X, prob, rng, _scramble_row_mutation)
+    _apply_row_mutation(X, prob, rng, lambda row, local_rng: _scramble_row_mutation(row, local_rng, max_segment_length=max_segment_length))
 
 
 def inversion_mutation(X: PermPop, prob: float, rng: RNG) -> None:
@@ -85,7 +82,7 @@ def _insert_row_mutation(row: PermVec, rng: RNG) -> None:
         row[j] = gene
 
 
-def _scramble_row_mutation(row: PermVec, rng: RNG, max_segment_length: int = 20) -> None:
+def _scramble_row_mutation(row: PermVec, rng: RNG, max_segment_length: int = 0) -> None:
     n = row.size
     if n < 2:
         return
@@ -104,7 +101,7 @@ def _scramble_row_mutation(row: PermVec, rng: RNG, max_segment_length: int = 20)
 
 def _inversion_row_mutation(row: PermVec, rng: RNG) -> None:
     lo, hi = two_cut_points(row.size, rng)
-    row[lo:hi] = row[lo:hi][::-1]
+    row[lo : hi + 1] = row[lo : hi + 1][::-1]
 
 
 def _displacement_row_mutation(row: PermVec, rng: RNG) -> None:

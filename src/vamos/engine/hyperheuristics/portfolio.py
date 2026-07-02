@@ -33,6 +33,8 @@ class AlgorithmPortfolio:
         self,
         entries: list[PortfolioEntry],
         indicator: str = "hv",
+        reference_point: np.ndarray | None = None,
+        reference_front: np.ndarray | None = None,
         mode: IndicatorMode = "maximize",
         selector_method: OperatorSelectorMethod = "epsilon_greedy",
         selector_kwargs: Mapping[str, object] | None = None,
@@ -41,7 +43,7 @@ class AlgorithmPortfolio:
             raise ValueError("Portfolio requires at least one algorithm entry.")
         self.entries = entries
         self.selector = make_operator_selector(selector_method, len(entries), **(selector_kwargs or {}))
-        self.indicator_eval = IndicatorEvaluator(indicator, reference_point=None, mode=mode)
+        self.indicator_eval = IndicatorEvaluator(indicator, reference_point=reference_point, reference_front=reference_front, mode=mode)
 
     def combined_front(self) -> np.ndarray:
         fronts = [front for e in self.entries if (front := e.algo.current_front()) is not None]
@@ -67,5 +69,5 @@ class AlgorithmPortfolio:
         before = self.indicator_eval.compute(self.combined_front()) if self.combined_front().size else 0.0
         entry.algo.step(step_evaluations)
         after = self.indicator_eval.compute(self.combined_front()) if self.combined_front().size else before
-        reward = compute_reward(before, after, self.indicator_eval.mode)
+        reward = compute_reward(before, after, "maximize")
         self.selector.update(idx, reward)

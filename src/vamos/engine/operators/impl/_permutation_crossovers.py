@@ -36,8 +36,8 @@ def edge_recombination_crossover(X_parents: PermPop, prob: float, rng: RNG) -> P
 def order_crossover(X_parents: PermPop, prob: float, rng: RNG) -> PermPop:
     X_parents = validate_permutation_population(X_parents, label="X_parents")
     Np, D = X_parents.shape
-    if Np == 0:
-        return np.empty_like(X_parents)
+    if Np == 0 or D < 2:
+        return X_parents.copy()
     n_original = Np
     if Np % 2 != 0:
         X_parents = np.vstack([X_parents, X_parents[-1:]])

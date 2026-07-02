@@ -19,18 +19,19 @@ def load_or_generate_weight_vectors(
 
     mode="jmetalpy" enforces jMetalPy-style behavior:
     - n_obj == 2: uniform weights of size pop_size
-    - n_obj > 2: require weight_vectors.path and load W{n_obj}D_{pop_size}.dat
+    - n_obj > 2: load W{n_obj}D_{pop_size}.dat when available, otherwise
+      generate an exact Das-Dennis lattice and reject incompatible sizes.
     """
     if mode == "jmetalpy":
-        return _load_or_generate_jmetalpy_weights(pop_size, n_obj, path)
+        return _load_or_generate_jmetalpy_weights(pop_size, n_obj, path, divisions)
     if path and os.path.exists(path):
         weights = _load_weights(path, delimiter=",")
         _assert_valid_weights(weights, n_obj)
-        if weights.shape[0] < pop_size:
+        if weights.shape[0] != pop_size:
             raise ValueError(
-                f"Weight file '{path}' contains {weights.shape[0]} vectors but pop_size={pop_size} requires at least that many."
+                f"Weight file '{path}' contains {weights.shape[0]} vectors but pop_size={pop_size} requires exactly that many."
             )
-        return weights[:pop_size]
+        return weights
 
     weights = _generate_weights(pop_size, n_obj, divisions)
 
@@ -50,18 +51,27 @@ def _load_weights(path: str, delimiter: str | None = ",") -> np.ndarray:
     return arr
 
 
-def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: str | None) -> np.ndarray:
+def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: str | None, divisions: int | None) -> np.ndarray:
     if n_obj < 2:
         return np.ones((pop_size, 1), dtype=float)
     if n_obj == 2:
+        if divisions is not None and _count_lattice_points(n_obj, int(divisions)) != pop_size:
+            raise ValueError(
+                f"MOEA/D weight vectors for divisions={divisions} require pop_size={_count_lattice_points(n_obj, int(divisions))}, got {pop_size}."
+            )
         vals = np.linspace(0.0, 1.0, pop_size, dtype=float)
         return np.column_stack([vals, 1.0 - vals])
 
     weight_path = _resolve_jmetalpy_weight_path(path, n_obj, pop_size)
-    if weight_path is None:
-        raise ValueError(f"jMetalPy mode requires weight_vectors.path for n_obj > 2 (expected W{n_obj}D_{pop_size}.dat).")
-    if not os.path.exists(weight_path):
-        weights = _generate_weights(pop_size, n_obj, divisions=None)
+    if weight_path is not None and os.path.exists(weight_path):
+        weights = _load_weights(weight_path, delimiter=None)
+        _assert_valid_weights(weights, n_obj)
+        if weights.shape[0] != pop_size:
+            raise ValueError(f"Expected {pop_size} weight vectors in '{weight_path}', got {weights.shape[0]}.")
+        return weights
+
+    weights = _generate_weights(pop_size, n_obj, divisions=divisions, strict=True)
+    if weight_path is not None:
         saved = False
 
         # Try to write, but fall back gracefully if path is read-only
@@ -91,11 +101,6 @@ def _load_or_generate_jmetalpy_weights(pop_size: int, n_obj: int, path: str | No
                 stacklevel=2,
             )
         return weights
-
-    weights = _load_weights(weight_path, delimiter=None)
-    _assert_valid_weights(weights, n_obj)
-    if weights.shape[0] != pop_size:
-        raise ValueError(f"Expected {pop_size} weight vectors in '{weight_path}', got {weights.shape[0]}.")
     return weights
 
 
@@ -121,14 +126,19 @@ def _assert_valid_weights(weights: np.ndarray, n_obj: int) -> None:
         raise ValueError("Each weight vector must sum to 1.")
 
 
-def _generate_weights(pop_size: int, n_obj: int, divisions: int | None) -> np.ndarray:
+def _generate_weights(pop_size: int, n_obj: int, divisions: int | None, *, strict: bool = False) -> np.ndarray:
     if n_obj < 2:
         # Degenerate single-objective: return uniform weights.
         return np.ones((pop_size, 1), dtype=float)
     if divisions is None:
-        divisions = _choose_min_divisions(pop_size, n_obj)
+        divisions = _choose_exact_divisions(pop_size, n_obj) if strict else _choose_min_divisions(pop_size, n_obj)
     else:
         max_vectors = _count_lattice_points(n_obj, divisions)
+        if strict and max_vectors != pop_size:
+            raise ValueError(
+                f"Das-Dennis simplex lattice for n_obj={n_obj}, divisions={divisions} has {max_vectors} vectors, "
+                f"but pop_size={pop_size}. Choose pop_size={max_vectors} or compatible divisions."
+            )
         if max_vectors < pop_size:
             # Automatically increase divisions until we have enough directions.
             fallback = _choose_min_divisions(pop_size, n_obj)
@@ -143,6 +153,20 @@ def _choose_min_divisions(pop_size: int, n_obj: int) -> int:
     while _count_lattice_points(n_obj, divisions) < pop_size:
         divisions += 1
     return divisions
+
+
+def _choose_exact_divisions(pop_size: int, n_obj: int) -> int:
+    divisions = 1
+    while True:
+        count = _count_lattice_points(n_obj, divisions)
+        if count == pop_size:
+            return divisions
+        if count > pop_size:
+            raise ValueError(
+                f"No Das-Dennis simplex lattice has exactly pop_size={pop_size} vectors for n_obj={n_obj}. "
+                "Choose a compatible pop_size or provide an explicit weight vector file."
+            )
+        divisions += 1
 
 
 def _count_lattice_points(n_obj: int, divisions: int) -> int:

@@ -36,7 +36,10 @@ artifacts/tables/
 # --- OS/IDE ---
 .DS_Store
 Thumbs.db
-.vscode/
+.vscode/*
+!.vscode/
+!.vscode/tasks.json
+!.vscode/launch.json
 .idea/
 
 # --- Docs / build outputs ---

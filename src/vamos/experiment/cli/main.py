@@ -54,6 +54,13 @@ def _raise_on_nonzero(result: int | None) -> None:
         raise SystemExit(exit_code)
 
 
+def _consume_traceback_flag(argv: list[str]) -> tuple[list[str], bool]:
+    show_traceback = "--traceback" in argv
+    if not show_traceback:
+        return argv, False
+    return [arg for arg in argv if arg != "--traceback"], True
+
+
 def _dispatch_subcommand(argv: list[str]) -> bool:
     if not argv:
         return False
@@ -201,20 +208,30 @@ def run_from_config_path(config_path: str) -> int:
 
 
 def main() -> None:
+    from vamos.foundation.exceptions import VAMOSError
+
     _ensure_project_root_on_path()
     _configure_cli_logging()
-    argv = sys.argv[1:]
-    if _dispatch_subcommand(list(argv)):
-        return
+    argv, show_traceback = _consume_traceback_flag(sys.argv[1:])
+    try:
+        if _dispatch_subcommand(list(argv)):
+            return
 
-    config_only = _config_only_path(argv)
-    if config_only is not None:
-        exit_code = run_from_config_path(config_only)
-        if exit_code != 0:
-            raise SystemExit(exit_code)
-        return
+        config_only = _config_only_path(argv)
+        if config_only is not None:
+            exit_code = run_from_config_path(config_only)
+            if exit_code != 0:
+                raise SystemExit(exit_code)
+            return
 
-    _run_standard_cli(argv=argv)
+        _run_standard_cli(argv=argv)
+    except VAMOSError as exc:
+        if show_traceback:
+            raise
+        print(f"Error: {exc.message}", file=sys.stderr)
+        if exc.suggestion:
+            print(f"Suggestion: {exc.suggestion}", file=sys.stderr)
+        raise SystemExit(2) from None
 
 
 if __name__ == "__main__":

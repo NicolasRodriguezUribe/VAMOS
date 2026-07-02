@@ -74,7 +74,7 @@ def parse_ref_point(raw: str | None, n_obj: int) -> list[float]:
             _logger().warning("Reference point length (%s) does not match n_obj=%s. Falling back to default.", len(parsed), n_obj)
         except ValueError:
             _logger().warning("Failed to parse --ref-point. Falling back to default.")
-    return [1.1] * n_obj
+    return [10.0] * n_obj
 
 
 def build_aggregator(mode: str) -> Callable[[list[float]], float]:

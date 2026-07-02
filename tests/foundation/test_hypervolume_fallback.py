@@ -47,3 +47,20 @@ def test_hypervolume_rejects_non_dominating_reference_point_by_default():
     assert hv.hypervolume(points, ref, allow_ref_expand=True) >= 0.0
     contributions = hv.hypervolume_contributions(points, ref, allow_ref_expand=True)
     assert contributions.shape == (points.shape[0],)
+
+
+def test_hypervolume_rejects_non_finite_points_and_reference():
+    ref = np.array([1.0, 1.0], dtype=float)
+
+    with pytest.raises(ValueError, match="finite"):
+        hv.hypervolume(np.array([[np.nan, 0.2]], dtype=float), ref)
+    with pytest.raises(ValueError, match="finite"):
+        hv.hypervolume_contributions(np.array([[0.2, 0.2]], dtype=float), np.array([np.inf, 1.0]))
+
+
+def test_hypervolume_supports_three_objective_fronts():
+    points = np.array([[1.0, 1.0, 1.0]], dtype=float)
+    ref = np.array([2.0, 2.0, 2.0], dtype=float)
+
+    assert hv.hypervolume(points, ref) == pytest.approx(1.0)
+    assert hv.hypervolume_contributions(points, ref) == pytest.approx(np.array([1.0]))

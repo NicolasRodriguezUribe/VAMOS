@@ -324,7 +324,7 @@ def _run_single(
     algo_cfg: AlgorithmConfigProtocol
     if algorithm_config is None:
         config_pop_size = effective_pop_size
-        if pop_size is None and algorithm.lower() in {"nsgaiii", "rvea"}:
+        if pop_size is None and algorithm.lower() in {"moead", "nsgaiii", "rvea"}:
             config_pop_size = None
         algo_cfg = _build_algorithm_config(
             algorithm,

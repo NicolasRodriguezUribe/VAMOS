@@ -22,13 +22,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -c constraints/ci.txt -e ".[dev,compute,research]"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            pip install -c constraints/ci.txt -e ".[dev,compute,research]"
+          else
+            pip install -c constraints/ci.txt -e ".[dev,compute]"
+          fi
 
       - name: Benchmark smoke
         run: |
           python tools/benchmark_kernels.py --smoke --output reports/performance/kernel_smoke.json
 
       - name: Cross-framework smoke
+        if: github.event_name == 'schedule'
         run: |
           python tools/benchmark_compare_pymoo.py \
             --smoke \
