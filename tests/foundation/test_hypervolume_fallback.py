@@ -33,3 +33,17 @@ def test_hypervolume_contributions_2d_matches_bruteforce():
         dtype=float,
     )
     assert hv._hypervolume_contributions_2d(points, ref) == pytest.approx(expected)
+
+
+def test_hypervolume_rejects_non_dominating_reference_point_by_default():
+    points = np.array([[0.2, 1.2], [0.5, 0.5]], dtype=float)
+    ref = np.array([1.0, 1.0], dtype=float)
+
+    with pytest.raises(ValueError, match="reference_point must dominate"):
+        hv.hypervolume(points, ref)
+    with pytest.raises(ValueError, match="reference_point must dominate"):
+        hv.hypervolume_contributions(points, ref)
+
+    assert hv.hypervolume(points, ref, allow_ref_expand=True) >= 0.0
+    contributions = hv.hypervolume_contributions(points, ref, allow_ref_expand=True)
+    assert contributions.shape == (points.shape[0],)

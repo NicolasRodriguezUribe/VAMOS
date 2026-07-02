@@ -17,6 +17,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.hooks import get_live_viz, live_should_stop
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
+from vamos.engine.algorithm.components.termination import capped_offspring_size, validate_initial_budget
 from vamos.engine.algorithm.components.variation.helpers import (
     ensure_supported_operator_names,
     ensure_supported_repair_name,
@@ -116,6 +117,14 @@ def _apd_survival(
     first_in_niche[0] = True
     first_in_niche[1:] = sorted_niches[1:] != sorted_niches[:-1]
     survivors = order[first_in_niche]
+    target = min(int(n_survive), F.shape[0])
+    if survivors.size < target:
+        selected = np.zeros(F.shape[0], dtype=bool)
+        selected[survivors] = True
+        fill = order[~selected[order]][: target - survivors.size]
+        survivors = np.concatenate([survivors, fill])
+    elif survivors.size > target:
+        survivors = survivors[:target]
 
     nadir = F[survivors].max(axis=0) if survivors.size else None
     return survivors, ideal, nadir
@@ -269,6 +278,7 @@ class RVEA:
             raise ValueError(
                 f"RVEA requires pop_size == #ref_dirs for partitions={n_partitions} (pop_size={pop_size}, ref_dirs={ref_dirs.shape[0]})."
             )
+        validate_initial_budget(max_evals, pop_size, "RVEA")
         V = _calc_V(ref_dirs)
         gamma = _calc_gamma(V)
 
@@ -354,8 +364,12 @@ class RVEA:
 
         st = self._st
         assert st.variation is not None
-        parents_idx = st.rng.integers(0, len(st.X), size=st.pop_size)
+        request_size = capped_offspring_size(st.n_eval, st.max_evals, st.pop_size, "RVEA")
+        parent_count = int(np.ceil(request_size / st.variation.children_per_group) * st.variation.parents_per_group)
+        parents_idx = st.rng.integers(0, len(st.X), size=parent_count)
         X_off = st.variation.produce_offspring(st.X[parents_idx], st.rng)
+        if X_off.shape[0] > request_size:
+            X_off = X_off[:request_size]
         st.pending_offspring = X_off
         return np.array(X_off, copy=True)
 
@@ -447,7 +461,7 @@ class RVEA:
         Returns
         -------
         dict
-            Result dictionary with ``X``, ``F``, ``n_eval``, ``n_gen``,
+            Result dictionary with ``X``, ``F``, ``evaluations``, ``generation``,
             ``population``, and optionally ``archive``.
         """
         if self._st is None:

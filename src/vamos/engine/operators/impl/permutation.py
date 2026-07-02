@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._permutation_common import RNG, PermPop, random_permutation_population
+from ._permutation_common import RNG, PermPop, random_permutation_population, validate_permutation_population
 from ._permutation_crossovers import (
     alternating_edges_crossover,
     cycle_crossover,
@@ -34,6 +34,7 @@ from .permutation_adapters import (
 
 __all__ = [
     "random_permutation_population",
+    "validate_permutation_population",
     "swap_mutation",
     "pmx_crossover",
     "cycle_crossover",

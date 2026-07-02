@@ -66,6 +66,8 @@ def build_mutation_operator(
     normalized = normalize_encoding(encoding)
     mut_method, mut_params = config.get("mutation", ("polynomial", {}))
     mut_method = str(mut_method).lower()
+    if mut_method == "pm":
+        mut_method = "polynomial"
 
     if normalized == "mixed":
         if mut_method not in {"mixed", "gaussian"}:

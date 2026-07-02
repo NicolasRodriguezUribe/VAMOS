@@ -15,6 +15,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.hooks import get_live_viz, live_should_stop
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
+from vamos.engine.algorithm.components.termination import capped_offspring_size, validate_initial_budget
 from vamos.engine.algorithm.components.variation.helpers import (
     ensure_supported_operator_names,
     ensure_supported_repair_name,
@@ -182,6 +183,7 @@ class AGEMOEA:
             max_evals = int(term_val) * pop_size
         else:
             raise ValueError("Unsupported termination criterion for AGE-MOEA.")
+        validate_initial_budget(max_evals, pop_size, "AGE-MOEA")
 
         encoding = normalize_encoding(getattr(problem, "encoding", "real"))
         xl, xu = resolve_bounds(problem, encoding)
@@ -258,7 +260,9 @@ class AGEMOEA:
             self._refresh_selection_metrics(st)
         assert st.selection_ranks is not None
         assert st.selection_crowding is not None
-        n_parents = 2 * (st.pop_size // 2)
+        assert st.variation is not None
+        request_size = capped_offspring_size(st.n_eval, st.max_evals, st.pop_size, "AGE-MOEA")
+        n_parents = int(np.ceil(request_size / st.variation.children_per_group) * st.variation.parents_per_group)
         parents_idx = self.kernel.tournament_selection(
             ranks=st.selection_ranks,
             crowding=st.selection_crowding,
@@ -267,8 +271,9 @@ class AGEMOEA:
             n_parents=n_parents,
         )
 
-        assert st.variation is not None
         X_off = st.variation.produce_offspring(st.X[parents_idx], st.rng)
+        if X_off.shape[0] > request_size:
+            X_off = X_off[:request_size]
         st.pending_offspring = X_off
         return np.array(X_off, copy=True)
 
@@ -338,7 +343,7 @@ class AGEMOEA:
         Returns
         -------
         dict
-            Result dictionary with ``X``, ``F``, ``n_eval``, ``n_gen``,
+            Result dictionary with ``X``, ``F``, ``evaluations``, ``generation``,
             ``population``, and optionally ``archive``.
         """
         if self._st is None:

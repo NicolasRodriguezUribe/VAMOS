@@ -20,7 +20,7 @@ from vamos.engine.algorithm.components.hooks import (
     live_should_stop,
     track_offspring_genealogy,
 )
-from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.termination import HVTracker, remaining_evaluations
 from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.foundation.kernel import default_kernel
 
@@ -304,6 +304,7 @@ class SMSEMOA:
         if self._st.pending_offspring is not None:
             raise RuntimeError("Previous offspring not yet consumed by tell().")
 
+        remaining_evaluations(self._st.n_eval, self._max_eval, "SMS-EMOA")
         offspring = self._generate_offspring(self._st)
         self._st.pending_offspring = offspring
         return offspring.copy()

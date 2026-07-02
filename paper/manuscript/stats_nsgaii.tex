@@ -120,6 +120,7 @@ zdt6 & 0.0031 & \textbf{0.0024} & $<$0.0001 & 1.00 & \checkmark \\
 \centering
 \caption{Normalized hypervolume equivalence summary (paired bootstrap 90\% CI; equivalence margin $\pm 1\%$ relative)}
 \label{tab:hv_equivalence_summary_nsgaii}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 \textbf{Framework} & \textbf{Eq.\ problems} & \textbf{Non-inf.\ problems} & \textbf{Median $\Delta$HV (\%)} \\
@@ -129,7 +130,8 @@ zdt6 & 0.0031 & \textbf{0.0024} & $<$0.0001 & 1.00 & \checkmark \\
 \textit{DEAP} & 33/41 & 37/41 & -0.01 \\
 \textit{Platypus} & 33/41 & 38/41 & +0.05 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{table}[htbp]

@@ -60,12 +60,7 @@ def main():
     from pathlib import Path
     from vamos.foundation.core.io_utils import write_population
 
-    # Determine base directory: default to project root, but prefer the
-    # directory from which the program is executed (`Path.cwd()`). The
-    # project root is two levels above this example file.
-    project_root = Path(__file__).resolve().parents[2]
-    base_dir = Path.cwd() if Path.cwd() != project_root else project_root
-    out_dir = base_dir
+    out_dir = Path.cwd() / "results" / "examples" / "quickstart"
 
     try:
         write_population(out_dir, F, X=getattr(result, "X", None), G=getattr(result, "G", None))

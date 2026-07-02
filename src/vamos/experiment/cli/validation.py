@@ -56,6 +56,8 @@ def finalize_args(
         args.external_archive = None
     if args.max_evaluations <= 0:
         parser.error("--max-evaluations must be a positive integer.")
+    if args.max_evaluations < args.population_size:
+        parser.error("--max-evaluations must be greater than or equal to --population-size.")
     if args.n_workers is not None and args.n_workers <= 0:
         parser.error("--n-workers must be positive if provided.")
     if args.live_viz_interval is not None and args.live_viz_interval <= 0:

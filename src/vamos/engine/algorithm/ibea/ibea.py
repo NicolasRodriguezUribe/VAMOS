@@ -25,7 +25,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from vamos.engine.algorithm.components.lifecycle import evaluate_batch
-from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.termination import HVTracker, capped_offspring_size
 from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.engine.algorithm.nsgaii.helpers import build_mating_pool
 from vamos.foundation.kernel import default_kernel
@@ -191,15 +191,16 @@ class IBEA:
         crowd = np.zeros_like(st.fitness, dtype=float)
         parents_per_group = variation.parents_per_group
         children_per_group = variation.children_per_group
-        parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
+        request_size = capped_offspring_size(st.n_eval, self._max_eval, st.offspring_size, "IBEA")
+        parent_count = int(np.ceil(request_size / children_per_group) * parents_per_group)
 
         sel_method, _ = self.cfg["selection"]
         mating_pairs = build_mating_pool(self.kernel, ranks, crowd, st.pressure, st.rng, parent_count, parents_per_group, sel_method)
         parent_idx = mating_pairs.reshape(-1)
         X_parents = variation.gather_parents(st.X, parent_idx)
         X_off = variation.produce_offspring(X_parents, st.rng)
-        if X_off.shape[0] > st.offspring_size:
-            X_off = X_off[: st.offspring_size]
+        if X_off.shape[0] > request_size:
+            X_off = X_off[:request_size]
 
         # Track genealogy
         track_offspring_genealogy(st, parent_idx, X_off.shape[0], variation_operator_label(self.cfg, "sbx+pm"), "ibea")

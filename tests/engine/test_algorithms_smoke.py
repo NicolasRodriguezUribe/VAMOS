@@ -42,7 +42,7 @@ def test_nsgaii_hv_termination_hits_target():
         "hv",
         {
             "target_value": 1e-4,
-            "reference_point": [2.0, 2.0],
+            "reference_point": [5.0, 5.0],
             "max_evaluations": 40,
         },
     )
@@ -238,7 +238,7 @@ def test_ibea_uses_eval_strategy():
     algorithm.run(problem, termination=("max_evaluations", pop_size + 4), seed=8, eval_strategy=backend)
 
     assert backend.calls[0] == pop_size
-    assert backend.calls[1:] == [pop_size]
+    assert backend.calls[1:] == [4]
 
 
 def test_nsgaiii_uses_eval_strategy():

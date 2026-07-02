@@ -13,6 +13,7 @@ from ._permutation_common import (
     ensure_valid_segment,
     trim_offspring,
     two_cut_points,
+    validate_permutation_population,
 )
 
 
@@ -33,6 +34,7 @@ def edge_recombination_crossover(X_parents: PermPop, prob: float, rng: RNG) -> P
 
 
 def order_crossover(X_parents: PermPop, prob: float, rng: RNG) -> PermPop:
+    X_parents = validate_permutation_population(X_parents, label="X_parents")
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty_like(X_parents)
@@ -93,6 +95,7 @@ def _pairwise_crossover(
     rng: RNG,
     builder: CrossoverBuilder,
 ) -> PermPop:
+    X_parents = validate_permutation_population(X_parents, label="X_parents")
     Np, D = X_parents.shape
     if Np == 0:
         return np.empty_like(X_parents)

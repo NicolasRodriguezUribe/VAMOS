@@ -49,6 +49,7 @@ class AlgorithmState:
     # Generation tracking
     generation: int = 0
     n_eval: int = 0
+    max_evals: int = 0
 
     # Archive (optional)
     archive_size: int | None = None

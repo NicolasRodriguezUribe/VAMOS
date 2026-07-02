@@ -6,7 +6,14 @@ from __future__ import annotations
 
 import numpy as np
 
-from vamos.foundation.encoding import EncodingLike
+from vamos.foundation.encoding import EncodingLike, normalize_encoding
+
+
+def _coerce_decision_matrix(X: np.ndarray, encoding: EncodingLike) -> np.ndarray:
+    normalized = normalize_encoding(encoding)
+    if normalized in {"binary", "integer", "permutation"}:
+        return np.asarray(X)
+    return np.asarray(X, dtype=float)
 
 
 class Problem:
@@ -128,7 +135,7 @@ class Problem:
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         """Framework evaluation entry point.  Override :meth:`objectives`
         (and optionally :meth:`constraints`) instead of this method."""
-        X = np.asarray(X, dtype=float)
+        X = _coerce_decision_matrix(X, self.encoding)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}), got {X.shape}.")
 

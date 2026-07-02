@@ -20,7 +20,7 @@ from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.population import (
     initialize_population as initialize_decision_population,
 )
-from vamos.engine.algorithm.components.termination import parse_termination
+from vamos.engine.algorithm.components.termination import parse_termination, validate_initial_budget
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.operators.policies.smsemoa import build_variation_operators
@@ -88,6 +88,7 @@ def initialize_smsemoa_run(
 
     rng = np.random.default_rng(seed)
     pop_size = config["pop_size"]
+    validate_initial_budget(max_eval, int(pop_size), "SMS-EMOA")
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
@@ -154,6 +155,7 @@ def initialize_smsemoa_run(
         offspring_size=1,  # SMS-EMOA typically generates 1 offspring per iteration
         constraint_mode=constraint_mode,
         n_eval=n_eval,
+        max_evals=max_eval,
         # SMSEMOA-specific
         ref_point=ref_point,
         ref_offset=ref_offset,

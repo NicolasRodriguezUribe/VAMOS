@@ -95,7 +95,6 @@ def build_ibea_result(
         "F": result_F,
         "G": result_G,
         "evaluations": state.n_eval,
-        "n_eval": state.n_eval,
         "generation": state.generation,
         "hv_converged": hv_reached,
         "population": {"X": state.X.copy(), "F": state.F.copy()},

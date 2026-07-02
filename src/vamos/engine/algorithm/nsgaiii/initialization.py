@@ -11,7 +11,6 @@ This module handles algorithm setup including:
 from __future__ import annotations
 
 import os
-import warnings
 from math import comb
 from typing import TYPE_CHECKING, Any
 
@@ -21,7 +20,7 @@ from vamos.engine.algorithm.components.hooks import get_live_viz, setup_genealog
 from vamos.engine.algorithm.components.lifecycle import evaluate_batch, get_eval_strategy
 from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.population import initialize_population as initialize_decision_population
-from vamos.engine.algorithm.components.termination import parse_termination
+from vamos.engine.algorithm.components.termination import parse_termination, validate_initial_budget
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
@@ -86,8 +85,6 @@ def initialize_nsgaiii_run(
 
     rng = np.random.default_rng(seed)
     pop_size = config["pop_size"]
-    pop_size_auto = bool(config.get("pop_size_auto", False))
-    enforce_ref_dirs = bool(config.get("enforce_ref_dirs", False)) and not pop_size_auto
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     xl, xu = resolve_bounds_array(problem, encoding)
     n_var = problem.n_var
@@ -116,14 +113,9 @@ def initialize_nsgaiii_run(
         pressure = 2
 
     def _handle_refdir_mismatch(expected: int, actual: int, detail: str) -> int:
-        if enforce_ref_dirs:
-            raise ValueError(detail)
-        warnings.warn(
-            f"{detail} Auto-adjusting pop_size from {actual} to {expected}.",
-            RuntimeWarning,
-            stacklevel=2,
+        raise ValueError(
+            f"{detail} Configure pop_size={expected} or choose reference directions with exactly {actual} points."
         )
-        return expected
 
     # Load reference directions (prefer #ref_dirs == pop_size; warn if mismatched)
     dir_cfg = config.get("reference_directions", {}) or {}
@@ -164,6 +156,7 @@ def initialize_nsgaiii_run(
             )
 
     ref_dirs = np.asarray(ref_dirs, dtype=float)
+    validate_initial_budget(max_eval, pop_size, "NSGA-III")
     ref_dirs_norm = ref_dirs / np.linalg.norm(ref_dirs, axis=1, keepdims=True)
     ref_dirs_norm[np.isnan(ref_dirs_norm)] = 0.0
 
@@ -201,6 +194,7 @@ def initialize_nsgaiii_run(
         offspring_size=pop_size,
         constraint_mode=constraint_mode,
         n_eval=n_eval,
+        max_evals=max_eval,
         # NSGA-III specific
         ref_dirs=ref_dirs,
         ref_dirs_norm=ref_dirs_norm,

@@ -20,7 +20,7 @@ from vamos.engine.algorithm.components.metrics import setup_hv_tracker
 from vamos.engine.algorithm.components.population import (
     initialize_population as initialize_decision_population,
 )
-from vamos.engine.algorithm.components.termination import parse_termination
+from vamos.engine.algorithm.components.termination import parse_termination, validate_initial_budget
 from vamos.engine.algorithm.components.utils import resolve_bounds_array
 from vamos.engine.algorithm.components.weight_vectors import load_or_generate_weight_vectors
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
@@ -67,6 +67,7 @@ def initialize_moead_run(
     pop_size = int(cfg["pop_size"])
     if pop_size < 2:
         raise ValueError("MOEA/D requires pop_size >= 2.")
+    validate_initial_budget(max_eval, pop_size, "MOEA/D")
 
     constraint_mode = cfg.get("constraint_mode", "feasibility")
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
@@ -243,6 +244,7 @@ def initialize_moead_run(
         offspring_size=batch_size,
         constraint_mode=constraint_mode,
         n_eval=n_eval,
+        max_evals=max_eval,
         weights=weights,
         weights_safe=weights_safe,
         weights_unit=weights_unit,

@@ -25,6 +25,7 @@ from vamos.engine.algorithm.components.hooks import (
     notify_generation,
     track_offspring_genealogy,
 )
+from vamos.engine.algorithm.components.termination import capped_offspring_size
 from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.engine.archive.factory import update_archive
 from vamos.foundation.constraints.utils import compute_violation
@@ -227,7 +228,8 @@ class MOEAD:
             raise RuntimeError("MOEA/D variation operators are not initialized.")
 
         pop_size = st.pop_size
-        batch_size = int(st.batch_size)
+        max_eval = st.max_evals or self._max_eval
+        batch_size = capped_offspring_size(st.n_eval, max_eval, int(st.batch_size), "MOEA/D")
         if batch_size <= 0:
             raise ValueError("MOEA/D batch_size must be positive.")
         if batch_size > pop_size:

@@ -77,6 +77,13 @@ pip install -r paper/requirements-publication.txt
 
 Operator shorthand accepts either numeric probabilities or the string literal `"1/n"` for per-variable mutation rates.
 
+## API Contracts
+
+- `max_evaluations` is a strict evaluation budget. It must be at least the resolved population size, and the final generation is truncated when needed so budget-terminated runs report exactly `result.data["evaluations"] == max_evaluations`.
+- Public algorithm results expose `evaluations` as the evaluation-count metric. Internal checkpoints may still store `n_eval`.
+- Hypervolume utilities require the reference point to dominate all points by default. Pass `allow_ref_expand=True` only when automatic reference-point expansion is intended.
+- NSGA-III and RVEA require `pop_size` to match their reference-direction count; incompatible configurations fail early with an actionable error.
+
 ## Quickstart
 
 Solve the ZDT1 benchmark problem with NSGA-II in just a few lines:
@@ -343,7 +350,7 @@ If you use VAMOS in published work, cite it directly:
   title = {VAMOS: Vectorized Architecture for Multiobjective Optimization Studies},
   author = {Rodriguez Uribe, Nicolas and Herr{\'a}n, Alberto and Nebro, Antonio J. and Del Ser, Javier and Colmenar, J. Manuel},
   year = {2026},
-  version = {0.1.0},
+  version = {1.1.0},
   url = {https://github.com/NicolasRodriguezUribe/VAMOS}
 }
 ```

@@ -704,6 +704,7 @@ def generate_latex_hv_equivalence_table(df_eq: pd.DataFrame, *, label: str = "ta
         r"\centering",
         r"\caption{Normalized hypervolume equivalence summary (paired bootstrap 90\% CI; equivalence margin $\pm 1\%$ relative)}",
         rf"\label{{{label}}}",
+        r"\resizebox{\columnwidth}{!}{%",
         r"\begin{tabular}{lccc}",
         r"\toprule",
         r"\textbf{Framework} & \textbf{Eq.\ problems} & \textbf{Non-inf.\ problems} & \textbf{Median $\Delta$HV (\%)} \\",
@@ -721,7 +722,7 @@ def generate_latex_hv_equivalence_table(df_eq: pd.DataFrame, *, label: str = "ta
         delta_str = "--" if not np.isfinite(delta) else f"{float(delta):+.2f}"
         lines.append(f"{fw} & {eq_str} & {ni_str} & {delta_str} \\\\")
 
-    lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
+    lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table}"])
     return "\n".join(lines)
 
 

@@ -223,14 +223,14 @@ def run_nsgaii(
     hv_reached = hv_tracker.enabled and hv_tracker.reached(st.hv_points_fn())
 
     try:
-        while n_eval < max_eval and not hv_reached and not stop_requested and not interrupted:
+        while st.n_eval < max_eval and not hv_reached and not stop_requested and not interrupted:
             st.generation = generation
             st.step = step
             st.replacements = replacements
             X_off = algo.ask()
             eval_off = eval_strategy.evaluate(X_off, problem)
             hv_reached = algo.tell(eval_off)
-            n_eval += X_off.shape[0]
+            n_eval = st.n_eval
             replacements += X_off.shape[0]
 
             step += 1
@@ -277,7 +277,7 @@ def run_nsgaii(
         if main_thread_signals and original_handler is not None:
             signal.signal(signal.SIGINT, original_handler)
 
-    result = build_result(st, n_eval, hv_reached, kernel=algo.kernel)
+    result = build_result(st, st.n_eval, hv_reached, kernel=algo.kernel)
     result["interrupted"] = interrupted
     result["checkpoint"] = {
         "version": 1,
@@ -286,7 +286,7 @@ def run_nsgaii(
         "F": st.F,
         "G": st.G,
         "generation": st.generation,
-        "n_eval": n_eval,
+        "n_eval": st.n_eval,
         "rng_state": cast(dict[str, Any], st.rng.bit_generator.state),
         "archive_X": st.archive_X,
         "archive_F": st.archive_F,

@@ -121,10 +121,11 @@ def _agemoea_default(
 def _rvea_default(
     pop_size: int | None,
     n_var: int | None,
-    _n_obj: int | None,
+    n_obj: int | None,
     encoding: str | None,
 ) -> AlgorithmConfigProtocol:
-    return _call_default(RVEAConfig.default, pop_size=100 if pop_size is None else pop_size, n_var=n_var)
+    n_obj_value = 3 if n_obj is None else n_obj
+    return _call_default(RVEAConfig.default, pop_size=pop_size, n_var=n_var, n_obj=n_obj_value)
 
 
 _DEFAULT_BUILDERS: dict[str, DefaultConfigBuilder] = {

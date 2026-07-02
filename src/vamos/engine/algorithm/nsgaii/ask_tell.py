@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from vamos.engine.algorithm.components.termination import capped_offspring_size
+
 
 def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
@@ -143,9 +145,10 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
             st.ranks = ranks
             st.crowding = crowding
             st.fronts = fronts_from_ranks(ranks)
+    request_size = capped_offspring_size(st.n_eval, st.max_evals, st.offspring_size, "NSGA-II")
     parents_per_group = st.variation.parents_per_group
     children_per_group = st.variation.children_per_group
-    parent_count = int(np.ceil(st.offspring_size / children_per_group) * parents_per_group)
+    parent_count = int(np.ceil(request_size / children_per_group) * parents_per_group)
 
     candidate_indices: np.ndarray | None = None
     filter_fn = st.parent_selection_filter
@@ -193,8 +196,8 @@ def ask_nsgaii(algo: NSGAII) -> np.ndarray:
     X_parents = st.variation.gather_parents(st.X, parent_idx)
     X_off = st.variation.produce_offspring(X_parents, st.rng)
 
-    if X_off.shape[0] > st.offspring_size:
-        X_off = X_off[: st.offspring_size]
+    if X_off.shape[0] > request_size:
+        X_off = X_off[:request_size]
     st.pending_offspring = X_off
 
     track_offspring_genealogy(st, parent_idx, X_off.shape[0])
@@ -287,6 +290,7 @@ def tell_nsgaii(algo: NSGAII, eval_result: Any) -> bool:
         st.ids = match_ids(new_X, combined_X, combined_ids)
 
     st.X, st.F, st.G = new_X, new_F, new_G
+    st.n_eval += X_off.shape[0]
     st.pending_offspring_ids = None
 
     if st.incremental_enabled and not used_incremental:

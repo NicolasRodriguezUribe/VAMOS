@@ -25,7 +25,7 @@ from vamos.engine.algorithm.components.hooks import (
     notify_generation,
     track_offspring_genealogy,
 )
-from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.termination import HVTracker, capped_offspring_size
 from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.engine.archive.factory import update_archive
 from vamos.foundation.kernel import default_kernel
@@ -272,7 +272,7 @@ class SPEA2:
             raise RuntimeError("SPEA2 variation operators are not initialized.")
         if st.xl is None or st.xu is None:
             raise RuntimeError("SPEA2 bounds are not initialized.")
-        n_pairs = st.offspring_size
+        n_pairs = capped_offspring_size(st.n_eval, self._max_eval, st.offspring_size, "SPEA2")
 
         # Fitness-based binary tournament selection (SPEA2)
         if st.selection_raw_fitness is None or st.selection_density is None or st.selection_raw_fitness.shape[0] != st.env_F.shape[0]:

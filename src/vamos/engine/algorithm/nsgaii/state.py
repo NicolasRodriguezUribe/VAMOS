@@ -82,6 +82,8 @@ class NSGAIIState:
 
     # Generation tracking
     generation: int = 0
+    n_eval: int = 0
+    max_evals: int = 0
     step: int = 0
     replacements: int = 0
 
