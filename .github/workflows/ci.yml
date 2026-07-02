@@ -76,6 +76,15 @@ jobs:
             tests/architecture/test_ruff_format_gate.py \
             tests/architecture/test_build_smoke.py \
             tests/architecture/test_py_typed_present.py
+      - name: Confirmed regression checks
+        run: |
+          python -m pytest -q \
+            tests/engine/test_permutation_edge_cases.py \
+            tests/engine/test_moead_weight_vectors.py \
+            tests/foundation/test_hypervolume_fallback.py \
+            tests/engine/test_hyperheuristic_indicators.py \
+            tests/engine/test_tuning_hypervolume_nd.py \
+            tests/architecture/test_docs_and_workflows.py
       - name: Run tests
         run: pytest -m "not slow" --cov=src/vamos --cov-report=term-missing
       - name: Build docs

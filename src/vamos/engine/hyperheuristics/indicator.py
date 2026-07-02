@@ -24,25 +24,37 @@ class IndicatorEvaluator:
     Supports 'hv' and a subset of MooCore indicators when available.
     """
 
-    def __init__(self, name: str, reference_point: np.ndarray | None = None, mode: IndicatorMode = "maximize"):
+    def __init__(
+        self,
+        name: str,
+        reference_point: np.ndarray | None = None,
+        reference_front: np.ndarray | None = None,
+        mode: IndicatorMode = "maximize",
+    ):
         self.name = name.lower()
+        if mode not in {"maximize", "minimize"}:
+            raise ValueError("mode must be one of: maximize, minimize")
         self.mode = mode
-        self.reference_point = reference_point
+        self.reference_point = None if reference_point is None else np.asarray(reference_point, dtype=float)
+        self.reference_front = None if reference_front is None else np.asarray(reference_front, dtype=float)
         self._indicator = None
         if self.name.startswith("igd") or self.name.startswith("epsilon"):
+            if self.reference_front is None:
+                raise ValueError(f"Indicator '{self.name}' requires reference_front.")
             if get_indicator is None:
                 raise ImportError("MooCore indicators are not available; install moocore to enable IGD/epsilon.")
-            self._indicator = get_indicator(self.name)
+            self._indicator = get_indicator(self.name, reference_front=self.reference_front)
+
+    def _apply_mode(self, value: float) -> float:
+        return float(value if self.mode == "maximize" else -value)
 
     def compute(self, F: np.ndarray) -> float:
         if self.name in {"hv", "hypervolume"}:
             if self.reference_point is None:
-                ref = np.max(F, axis=0) + 0.1
-            else:
-                ref = self.reference_point
-            return float(hypervolume(F, ref))
+                raise ValueError("Hypervolume indicator requires reference_point.")
+            return self._apply_mode(float(hypervolume(F, self.reference_point)))
         if self._indicator is not None:
-            return float(self._indicator.compute(F).value)
+            return self._apply_mode(float(self._indicator.compute(F).value))
         raise ValueError(f"Unsupported indicator '{self.name}'.")
 
 

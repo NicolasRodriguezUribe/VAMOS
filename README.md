@@ -82,7 +82,7 @@ Operator shorthand accepts either numeric probabilities or the string literal `"
 - `max_evaluations` is a strict evaluation budget. It must be at least the resolved population size, and the final generation is truncated when needed so budget-terminated runs report exactly `result.data["evaluations"] == max_evaluations`.
 - Public algorithm results expose `evaluations` as the evaluation-count metric. Internal checkpoints may still store `n_eval`.
 - Hypervolume utilities require the reference point to dominate all points by default. Pass `allow_ref_expand=True` only when automatic reference-point expansion is intended.
-- NSGA-III and RVEA require `pop_size` to match their reference-direction count; incompatible configurations fail early with an actionable error.
+- NSGA-III, RVEA, and MOEA/D require `pop_size` to match their configured reference directions or weight lattice; incompatible configurations fail early with an actionable error.
 
 ## Quickstart
 
@@ -306,7 +306,7 @@ VAMOS comes with a comprehensive suite of Jupyter notebooks organized by tier:
   - `notebooks/2_advanced/21_programmatic_tuning.ipynb` -- Canonical Optuna tuning workflow
   - `notebooks/2_advanced/23_backends_and_performance.ipynb` -- Backend tradeoffs and benchmarking
   - `notebooks/2_advanced/30_paper_benchmarking.ipynb` -- Publication-ready benchmarks
-  - `notebooks/2_advanced/31_adaptive_operator_selection.ipynb` -- AOS analysis
+  - `notebooks/2_advanced/27_operator_efficacy.ipynb` -- Operator efficacy analysis
   - `notebooks/2_advanced/32_ablation_planning.ipynb` -- Ablation studies
   - `notebooks/2_advanced/33_optuna_tuning_advanced.ipynb` -- Multi-fidelity and persistent Optuna workflows
   - `notebooks/2_advanced/34_extension_workflows.ipynb` -- Custom problem and custom algorithm extension patterns

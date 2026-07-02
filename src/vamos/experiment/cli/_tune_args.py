@@ -44,7 +44,7 @@ def build_parser(
     parser.add_argument("--test-seeds", type=str, default="", help="Test seed list or ranges (e.g., 2001:2011).")
     parser.add_argument("--pop-size", type=int, default=100, help="Fallback fixed population size.")
     parser.add_argument("--n-jobs", type=int, default=-1, help="Parallel workers (-1 means CPU cores - 1).")
-    parser.add_argument("--ref-point", type=str, default=None, help="HV reference point: comma list, e.g. 1.1,1.1.")
+    parser.add_argument("--ref-point", type=str, default=None, help="HV reference point: comma list, e.g. 10,10,10.")
     parser.add_argument(
         "--aggregate-mode",
         type=str,

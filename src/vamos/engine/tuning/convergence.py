@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 
-from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
 
 @dataclass
@@ -160,12 +160,14 @@ class TuningCallback:
 
         F_arr = np.asarray(F, dtype=float)
 
-        # Compute HV
+        # Compute HV when the supplied reference point is valid for this front.
+        hv_available = False
         try:
-            hv = float(compute_hypervolume(F_arr, self._ref_point))
-        except Exception:
-            hv = 0.0
-        self._hv_values.append(hv)
+            hv = float(hypervolume(F_arr, np.asarray(self._ref_point, dtype=float)))
+            self._hv_values.append(hv)
+            hv_available = True
+        except ValueError:
+            hv_available = False
 
         # Compute diversity (spread) if requested
         if self._compute_diversity and F_arr.shape[0] >= 2:
@@ -173,7 +175,7 @@ class TuningCallback:
             self._diversity_values.append(spread)
 
         # Adaptive early stopping based on stagnation
-        if self._early_stop_stagnation > 0 and len(self._hv_values) >= 2:
+        if hv_available and self._early_stop_stagnation > 0 and len(self._hv_values) >= 2:
             if self._hv_values[-1] - self._hv_values[-2] < 1e-6:
                 self._stagnant_streak += 1
             else:

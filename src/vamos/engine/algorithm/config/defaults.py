@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
+from math import comb
 
 from vamos.foundation.encoding import normalize_encoding
 
@@ -52,14 +53,21 @@ def _moead_default(
         return _call_default(MOEADConfig.default, pop_size=pop_size, n_var=n_var, n_obj=n_obj_value)
 
     cx, mt = _default_operators_for_encoding(normalized, _mutation_prob(n_var))
+    if n_obj_value == 2:
+        divisions = max(1, int(pop_size) - 1) if pop_size is not None else 99
+    else:
+        divisions = 12 if n_obj_value == 3 else 6
+    default_pop_size = comb(divisions + n_obj_value - 1, n_obj_value - 1)
+
     builder = MOEADConfig.builder()
-    builder.pop_size(100 if pop_size is None else pop_size)
+    builder.pop_size(default_pop_size if pop_size is None else pop_size)
     builder.neighbor_size(20)
     builder.delta(0.9)
     builder.replace_limit(2)
     builder.crossover(cx[0], **cx[1])
     builder.mutation(mt[0], **mt[1])
     builder.aggregation("pbi", theta=5.0)
+    builder.weight_vectors(divisions=divisions)
     return builder.build()
 
 

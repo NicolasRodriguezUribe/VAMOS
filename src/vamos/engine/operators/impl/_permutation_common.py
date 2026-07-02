@@ -80,14 +80,13 @@ def validate_permutation_population(X: np.ndarray, *, label: str = "permutation 
     for row_idx, row in enumerate(perm):
         if not np.array_equal(np.sort(row), expected):
             raise ValueError(
-                f"{label} row {row_idx} must be a permutation of 0..{n_var - 1}; "
-                "duplicate genes or external labels are not supported."
+                f"{label} row {row_idx} must be a permutation of 0..{n_var - 1}; duplicate genes or external labels are not supported."
             )
     return perm.astype(np.int32, copy=False)
 
 
 def ensure_distinct_indices(idx: IndexArray, upper: int, rng: RNG) -> None:
-    if idx.size == 0:
+    if idx.size == 0 or upper < 2:
         return
     same = idx[:, 0] == idx[:, 1]
     while np.any(same):

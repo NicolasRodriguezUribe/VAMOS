@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import comb
 from typing import Any, overload
 
 from vamos.engine.archive import ExternalArchiveConfig
-from vamos.resources import weight_path
 
 from .base import (
     ConstraintModeStr,
@@ -56,10 +56,12 @@ class MOEADConfig(_SerializableConfig):
         n_obj: int = 3,
     ) -> MOEADConfig:
         """Create a default MOEA/D configuration with sensible defaults."""
+        divisions = 99 if n_obj == 2 else (12 if n_obj == 3 else 6)
+        if pop_size is not None and n_obj == 2:
+            divisions = max(1, int(pop_size) - 1)
         if pop_size is None:
-            pop_size = 91 if n_obj == 3 else 100
+            pop_size = divisions + 1 if n_obj == 2 else comb(divisions + n_obj - 1, n_obj - 1)
         mut_prob = 1.0 / n_var if n_var else 0.1
-        weights_dir = weight_path("W3D_91.dat").parent
         return (
             cls.builder()
             .pop_size(pop_size)
@@ -70,7 +72,7 @@ class MOEADConfig(_SerializableConfig):
             .crossover("de", cr=1.0, f=0.5)
             .mutation("pm", prob=mut_prob, eta=20.0)
             .aggregation("pbi", theta=5.0)
-            .weight_vectors(path=str(weights_dir))
+            .weight_vectors(divisions=divisions)
             .build()
         )
 

@@ -30,6 +30,7 @@ class WarmStartEvaluator:
     from vamos.engine.tuning.racing import WarmStartEvaluator, EvalContext
     from vamos import optimize
     from vamos.algorithms import NSGAIIConfig
+    from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
     def run_algorithm(config: dict, ctx: EvalContext, checkpoint: Any = None):
         # Build algorithm config
@@ -54,7 +55,7 @@ class WarmStartEvaluator:
     # Create evaluator
     evaluator = WarmStartEvaluator(
         run_fn=run_algorithm,
-        score_fn=lambda result, ctx: compute_hypervolume(result.F, ref_point),
+        score_fn=lambda result, ctx: hypervolume(result.F, ref_point),
     )
 
     # Use in tuner

@@ -60,7 +60,7 @@ from vamos.engine.tuning.racing.warm_start import WarmStartEvaluator
 from vamos.experiment.types import CheckpointPayload
 from vamos.experiment.unified import optimize
 from vamos.foundation.problem.registry import make_problem_selection
-from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
+from vamos.foundation.quality_indicators.hypervolume import hypervolume
 
 from ._tune_utils import build_aggregator, parse_csv_strings, parse_ref_point, parse_seed_spec
 
@@ -128,7 +128,7 @@ def make_evaluator(
 
     def _score(result: Any, _ctx: EvalContext) -> float:
         F = getattr(result, "F", None)
-        base_hv = float(compute_hypervolume(F, ref_point)) if F is not None and len(F) > 0 else float(failure_score)
+        base_hv = float(hypervolume(F, np.asarray(ref_point, dtype=float))) if F is not None and len(F) > 0 else float(failure_score)
         elapsed_s = 0.0
         payload = getattr(result, "data", None)
         if isinstance(payload, dict):

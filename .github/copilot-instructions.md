@@ -132,7 +132,7 @@ space = ParamSpace(params={
 ```powershell
 # Setup
 python -m venv .venv; .\.venv\Scripts\Activate.ps1
-pip install -e ".[backends,benchmarks,dev]"
+pip install -e ".[dev,compute,analysis,examples]"
 
 # Verify installation
 python -m vamos.experiment.diagnostics.self_check
@@ -144,7 +144,7 @@ pytest -m "not slow"
 python -m vamos.experiment.cli.main --problem zdt1 --max-evaluations 2000
 
 # Format/lint before commit
-black src tests; ruff check src tests
+ruff check src/vamos tests; python -m pytest -q tests/architecture/test_ruff_format_gate.py
 ```
 
 ## File Organization

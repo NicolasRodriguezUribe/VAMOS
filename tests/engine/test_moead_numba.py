@@ -197,7 +197,7 @@ def test_moead_ask_parent_pairs_are_distinct_and_match_sampling_pool(delta: floa
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("polynomial", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
-        .weight_vectors(divisions=20)
+        .weight_vectors(divisions=19)
         .build()
     )
     algo = MOEAD(cfg.to_dict(), kernel=NumPyKernel())
@@ -238,7 +238,7 @@ def test_moead_numba_reproducible_with_seed_on_batch_path():
         .crossover("sbx", prob=0.9, eta=20.0)
         .mutation("polynomial", prob="1/n", eta=20.0)
         .aggregation("pbi", theta=5.0)
-        .weight_vectors(divisions=20)
+        .weight_vectors(divisions=19)
         .build()
     )
 

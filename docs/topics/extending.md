@@ -97,5 +97,5 @@ Rules:
 
 - Update the nearest user-facing docs page and keep the example path executable.
 - Add pytest coverage near the corresponding module; include determinism and parity checks where relevant.
-- Run `ruff check src tests`, `ruff format src tests`, `mypy src/vamos`, and `pytest` before opening a PR.
+- Run `ruff check src/vamos tests`, `python -m pytest -q tests/architecture/test_ruff_format_gate.py`, the configured mypy block, and `pytest` before opening a PR.
 

@@ -7,6 +7,7 @@ Intended for quick sanity checks; not a benchmark.
 
 from __future__ import annotations
 
+import argparse
 import logging
 from dataclasses import dataclass
 
@@ -98,16 +99,19 @@ def run_self_check(verbose: bool = False) -> list[CheckResult]:
 
 def main(argv: list[str] | None = None) -> int:
     """Entry-point for `python -m vamos.experiment.diagnostics.self_check`."""
-    _ = argv
+    parser = argparse.ArgumentParser(description="Run VAMOS installation and backend smoke checks.")
+    parser.add_argument("--quiet", action="store_true", help="Only use the exit code; suppress informational output.")
+    args = parser.parse_args(argv)
     _configure_cli_logging()
-    checks = run_self_check(verbose=True)
+    checks = run_self_check(verbose=not args.quiet)
     failed = [c for c in checks if c.status == "failed"]
     skipped = [c for c in checks if c.status == "skipped"]
     if failed:
         return 1
-    if skipped:
+    if skipped and not args.quiet:
         _logger().info("[self-check] Skipped: %s", ", ".join(c.name for c in skipped))
-    _logger().info("[self-check] Completed.")
+    if not args.quiet:
+        _logger().info("[self-check] Completed.")
     return 0
 
 

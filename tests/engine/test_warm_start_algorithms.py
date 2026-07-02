@@ -30,7 +30,7 @@ def _moead_cfg(pop_size: int) -> MOEADConfig:
         .crossover("de", cr=1.0, f=0.5)
         .mutation("polynomial", prob="1/n", eta=20.0)
         .aggregation("tchebycheff")
-        .weight_vectors(divisions=6)
+        .weight_vectors(divisions=pop_size - 1)
         .build()
     )
 

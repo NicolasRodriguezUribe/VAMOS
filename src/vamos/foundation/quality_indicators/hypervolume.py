@@ -117,6 +117,9 @@ def hypervolume(points: np.ndarray, reference_point: np.ndarray, *, allow_ref_ex
     if points.ndim != 2:
         raise ValueError("points must be a 2D array.")
     if points.shape[0] == 0:
+        ref = np.asarray(reference_point, dtype=float)
+        if ref.ndim != 1 or not np.isfinite(ref).all():
+            raise ValueError("reference_point must be a finite 1D array.")
         return 0.0
 
     ref = _validate_reference_point(points, reference_point, allow_ref_expand=allow_ref_expand)
@@ -136,7 +139,12 @@ def hypervolume_contributions(
     allow_ref_expand: bool = False,
 ) -> np.ndarray:
     points = np.asarray(points, dtype=float)
-    if points.ndim != 2 or points.shape[0] == 0:
+    if points.ndim != 2:
+        raise ValueError("points must be a 2D array.")
+    if points.shape[0] == 0:
+        ref = np.asarray(reference_point, dtype=float)
+        if ref.ndim != 1 or not np.isfinite(ref).all():
+            raise ValueError("reference_point must be a finite 1D array.")
         return np.zeros(points.shape[0], dtype=float)
 
     ref = _validate_reference_point(points, reference_point, allow_ref_expand=allow_ref_expand)
@@ -187,6 +195,10 @@ def _validate_reference_point(
     allow_ref_expand: bool = False,
 ) -> np.ndarray:
     ref = np.asarray(reference_point, dtype=float)
+    if not np.isfinite(points).all():
+        raise ValueError("points must contain finite numbers.")
+    if not np.isfinite(ref).all():
+        raise ValueError("reference_point must contain finite numbers.")
     if ref.ndim != 1:
         raise ValueError("reference_point must be a 1D array.")
     if ref.shape[0] != points.shape[1]:
