@@ -55,8 +55,8 @@ def build_agemoea_result(
     result: dict[str, Any] = {
         "X": result_X,
         "F": result_F,
-        "n_eval": state.n_eval,
-        "n_gen": state.generation,
+        "evaluations": state.n_eval,
+        "generation": state.generation,
         "population": {"X": state.X.copy(), "F": state.F.copy()},
     }
     if archive_contents is not None:

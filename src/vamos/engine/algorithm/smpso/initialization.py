@@ -21,7 +21,7 @@ from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
-from vamos.engine.algorithm.components.termination import parse_termination
+from vamos.engine.algorithm.components.termination import parse_termination, validate_initial_budget
 from vamos.engine.operators.policies.smpso import (
     build_mutation_operator,
     build_repair_operator,
@@ -81,6 +81,7 @@ def initialize_smpso_run(
     rng = np.random.default_rng(seed)
 
     pop_size = int(config.get("pop_size", 100))
+    validate_initial_budget(max_eval, pop_size, "SMPSO")
     archive_size = int(config.get("archive_size", pop_size))
     inertia = float(config.get("inertia", 0.1))
     c1 = float(config.get("c1", 1.5))
@@ -166,6 +167,7 @@ def initialize_smpso_run(
         offspring_size=pop_size,
         constraint_mode=constraint_mode,
         n_eval=pop_size,
+        max_evals=max_eval,
         generation=0,
         # Archive (leaders)
         archive_size=archive_size,

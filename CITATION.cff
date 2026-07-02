@@ -17,6 +17,6 @@ authors:
   given-names: "J. Manuel"
   affiliation: "Universidad Rey Juan Carlos, Spain"
 title: "VAMOS: Vectorized Architecture for Multiobjective Optimization Studies"
-version: 0.1.0
+version: 1.1.0
 date-released: 2026-02-04
 url: "https://github.com/NicolasRodriguezUribe/VAMOS"

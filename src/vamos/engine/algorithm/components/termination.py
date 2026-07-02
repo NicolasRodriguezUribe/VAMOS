@@ -17,8 +17,12 @@ class HVTracker:
         assert hv_config is not None
         self.target = float(hv_config["target_value"])
         self.ref_point = np.asarray(hv_config["reference_point"], dtype=float)
-        if kernel is not None and kernel.supports_quality_indicator("hypervolume"):
-            self.evaluator: Callable[[np.ndarray, np.ndarray], float] = kernel.hypervolume
+        self.allow_ref_expand = bool(hv_config.get("allow_ref_expand", False))
+        self.evaluator: Callable[[np.ndarray, np.ndarray], float]
+        if self.allow_ref_expand:
+            self.evaluator = lambda points, ref: hypervolume(points, ref, allow_ref_expand=True)
+        elif kernel is not None and kernel.supports_quality_indicator("hypervolume"):
+            self.evaluator = kernel.hypervolume
         else:
             self.evaluator = hypervolume
 
@@ -69,7 +73,33 @@ def parse_termination(
     else:
         raise ValueError(f"Unsupported termination criterion '{term_type}' for {algorithm_name}.")
 
+    if max_eval <= 0:
+        raise ValueError(f"{algorithm_name} requires max_evaluations to be positive.")
     return max_eval, hv_config
 
 
-__all__ = ["HVTracker", "parse_termination"]
+def validate_initial_budget(max_evaluations: int, pop_size: int, algorithm_name: str) -> None:
+    """Ensure the budget can cover the initial population."""
+    if max_evaluations < pop_size:
+        raise ValueError(
+            f"{algorithm_name} requires max_evaluations >= pop_size because the initial population "
+            f"consumes pop_size evaluations (max_evaluations={max_evaluations}, pop_size={pop_size})."
+        )
+
+
+def remaining_evaluations(n_eval: int, max_evaluations: int, algorithm_name: str) -> int:
+    """Return remaining evaluation budget or fail if ask() is called after termination."""
+    remaining = int(max_evaluations) - int(n_eval)
+    if remaining <= 0:
+        raise RuntimeError(
+            f"{algorithm_name} has no remaining evaluation budget; call result() instead of ask()."
+        )
+    return remaining
+
+
+def capped_offspring_size(n_eval: int, max_evaluations: int, requested: int, algorithm_name: str) -> int:
+    """Cap an offspring/batch request to the remaining evaluation budget."""
+    return min(int(requested), remaining_evaluations(n_eval, max_evaluations, algorithm_name))
+
+
+__all__ = ["HVTracker", "parse_termination", "validate_initial_budget", "remaining_evaluations", "capped_offspring_size"]

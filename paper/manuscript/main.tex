@@ -1,24 +1,7 @@
-% VAMOS Paper: IEEE Transactions on Evolutionary Computation (IEEE TEVC)
+% VAMOS Paper: Advances in Engineering Software (Elsevier)
 % =============================================================================
-% IEEE Editorial Style Manual (updated 29 July 2024) quick checks:
-%   - Title capitalization: capitalize nouns/pronouns/adjectives/verbs/adverbs;
-%     lowercase articles, coordinating conjunctions, and short prepositions
-%     (unless first/last).
-%   - Abstract: one paragraph; 150--250 words; no numbered equations, numbered
-%     reference citations, or footnotes.
-%   - Index Terms: alphabetical order; capitalize first word; define acronyms
-%     at first use.
-%   - Figures/Tables in text: cite as ``Fig.'' and ``Table''; first citations
-%     in numerical order.
-%   - Table captions: no period at the end of the caption text.
-%   - Acronyms: define at first use in the abstract and body; use American
-%     spelling.
-%   - References: one source per reference number; avoid ``in Smith [1]''
-%     constructions unless the name is essential.
-% ======================================================================
-\documentclass[journal]{IEEEtran}
+\documentclass[final,5p,times,twocolumn]{elsarticle}
 
-\usepackage{cite}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{arydshln}
@@ -31,10 +14,8 @@
 \usepackage{xcolor}
 \usepackage{pifont}
 \usepackage{enumitem}
-\usepackage{stfloats}
 \usepackage{xurl}
 \usepackage{makecell}
-\usepackage{arydshln}
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\pmark}{\ding{109}}
 \newcommand{\xmark}{\ding{55}}
@@ -73,63 +54,64 @@
 \newcommand{\Intdomain}[1]{[#1]_{\mathbb{Z}}}
 \newcommand{\Realdomain}[1]{[#1]_{\mathbb{R}}}
 
-% Original title (includes the framework name VAMOS):
-% \title{VAMOS: A Vectorized Architecture for Multiobjective Optimization Studies: A High-Performance Python Framework}
-%\title{Vectorized Architecture for Multiobjective Optimization Studies}
-%\title{A High-Performance Vectorized Framework for Multiobjective Evolutionary Optimization in Python}
-%\title{VAMOS: A Fast Vectorized Python Framework for Multiobjective Evolutionary Optimization}
-\title{VAMOS: A Framework for Fast, Configurable and Accessible Multiobjective Optimization in Python}
-% --------------------------------------------------------------------------
-%  Author block.
-% --------------------------------------------------------------------------
-%\author{Nicol\'{a}s~R.~Uribe,
-%        Alberto~Herr\'{a}n,
-%        Antonio~J.~Nebro,
-%        Javier~{Del~Ser}, %~\IEEEmembership{Senior Member, IEEE},
-%        and~J.~Manuel~Colmenar%
-%\thanks{N. R. Uribe, A. Herr\'{a}n, and J. M. Colmenar are with the
-%  Department of Computer Sciences, Universidad Rey Juan Carlos, M\'{o}stoles,
-%  28933 Madrid, Spain (e-mail: nicolas.rodriguez@urjc.es; alberto.herran@urjc.es;
-%  josemanuel.colmenar@urjc.es).}%
-%\thanks{A. J. Nebro is with the Department of Lenguajes y Ciencias de la
-%  Computaci\'{o}n, ITIS Software, University of M\'{a}laga, 29071
-%  M\'{a}laga, Spain (e-mail: ajnebro@uma.es).}%
-%\thanks{J. Del Ser is with TECNALIA, Basque Research \& Technology
-%  Alliance (BRTA), Derio, 48160, Spain, and with the University
-%  of the Basque Country (UPV/EHU), Leioa, 48940, Spain (e-mail: javier.delser@tecnalia.com).}%
-%\thanks{Corresponding author: Nicol\'{a}s~Rodr\'{i}guez (nicolas.rodriguez@urjc.es).}%
-%}
-\author{Anonymous submission}
-
-\markboth{IEEE Transactions on Evolutionary Computation}%
-{A Vectorized Framework for Multiobjective Evolutionary Optimization}
+\journal{Advances in Engineering Software}
+\biboptions{sort&compress}
 
 \begin{document}
-\maketitle
 
-% --------------------------------------------------------------------------
-%  ABSTRACT — IEEE Editorial Style Manual:
-%    - one paragraph, 150--250 words;
-%    - no numbered equations, numbered reference citations, or footnotes.
-% --------------------------------------------------------------------------
+\begin{frontmatter}
+
+\title{VAMOS: A Framework for Fast, Configurable and Accessible Multiobjective Optimization in Python\tnoteref{mytitlenote}}
+
+\tnotetext[mytitlenote]{This work has been partially supported by the Spanish Ministerio de Ciencia e Innovaci\'on (MCIN/AEI/10.13039/501100011033) under grant refs. PID2024-156045NB-I00, TSI-100930-2023-3 PID2021-125709OA-C22, and PID2024-155363OB-C41 and by ERDF A way of making Europe; and Comunidad Aut\'onoma de Madrid with grant ref. TEC-2024/COM-404 and by grant DGP\_PIDI\_2024\_01174, Junta de Andaluc\'ia, and Basque Government through the consolidated research group MATHMODE (IT1866-26).}
+
+\cortext[cor]{Corresponding author: Nicol\'{a}s R. Uribe (nicolas.rodriguez@urjc.es)}
+
+\author[URJC,cor]{Nicol\'{a}s R. Uribe}
+\ead{nicolas.rodriguez@urjc.es}
+
+\author[URJC]{Alberto Herr\'{a}n}
+\ead{alberto.herran@urjc.es}
+
+\author[LCC,ITIS]{Antonio J. Nebro}
+\ead{ajnebro@uma.es}
+
+\author[tec,upv]{Javier {Del Ser}}
+\ead{javier.delser@tecnalia.com}
+
+\author[URJC,cor]{J. Manuel Colmenar}
+\ead{josemanuel.colmenar@urjc.es}
+
+\address[URJC]{Dept. Computer Sciences, Universidad Rey Juan Carlos\\
+C/. Tulip\'{a}n, s/n, M\'{o}stoles, 28933 (Madrid), Spain}
+
+\address[LCC]{Dept. de Lenguajes y Ciencias de la Computaci\'{o}n, ITIS Software, University of M\'{a}laga,\\ ETSI Inform\'{a}tica, Campus de Teatinos, 29071 (M\'{a}laga), Spain}
+
+\address[ITIS]{ITIS Software, Ada Byron Research Building, C/. Arquitecto Francisco Pe\~{n}alosa, 18, University of M\'{a}laga, 29071 (M\'{a}laga), Spain}
+
+\address[tec]{TECNALIA, 48160 Derio, Spain}
+
+\address[upv]{University of the Basque Country (UPV/EHU), 48013 Bilbao, Spain}
+
 \begin{abstract}
 Python is widely used for empirical research in multi-objective optimization due to its accessibility and strong scientific ecosystem. However, most Python frameworks store populations as per-solution objects and keep critical computations in the interpreter, which prevents vectorization and significantly limits performance. This design gap makes Python-based metaheuristics much slower than their counterparts in compiled languages. In this paper we introduce VAMOS (Vectorized Architecture for Multiobjective Optimization Suite), a vectorized Python framework for multi-objective evolutionary algorithms (MOEAs). VAMOS maintains all population data in dense numerical arrays and dispatches hot-path operations to interchangeable numerical backends, decoupling algorithm logic from the underlying compute substrate. The framework implements eight MOEAs spanning dominance-based, decomposition-based, and indicator-based paradigms, and exposes rich component-level configurability, including interchangeable operators, external archives, and fine-grained parameter settings. VAMOS also integrates an automated algorithm-configuration module and provides a browser-based graphical interface to simplify use by non-experts. The results show that VAMOS achieves statistically equivalent levels of solution quality than those elicited by MOEAs implemented in state-of-the-art libraries, while reducing wall-clock time by large margins across all tested algorithms. These gains confirm that vectorized population models and backend-agnostic kernels at the core of VAMOS can deliver high performance in Python without compromising algorithmic behavior.
 \end{abstract}
 
-% Index Terms: alphabetical order; capitalize first word.
-\begin{IEEEkeywords}
-Evolutionary algorithms, multiobjective optimization, software framework, vectorization
-\end{IEEEkeywords}
+\begin{keyword}
+Evolutionary algorithms \sep Multiobjective optimization \sep Software framework \sep Vectorization
+\end{keyword}
 
-\IEEEpeerreviewmaketitle
+\end{frontmatter}
 
 %==============================================================================
 \section{Introduction} \label{sec:intro}
 %==============================================================================
 
-\IEEEPARstart{M}{ulti-objective} optimization problems (MOPs) arise whenever trade-offs exist between conflicting objectives, requiring the computation of an accurate approximation of the Pareto-optimal set rather than a single optimum~\cite{deb01}. Such problems are common in engineering design, machine learning, scheduling, and resource allocation, among other domains. In this field, multi-objective evolutionary algorithms (MOEAs) remain a dominant solving approach due to their robustness, population-based behavior, and ability to return a set of non-dominated solutions in a single run~\cite{CLV07}.
+Multi-objective optimization problems (MOPs) arise whenever trade-offs exist between conflicting objectives, requiring the computation of an accurate approximation of the Pareto-optimal set rather than a single optimum~\cite{deb01}. SSuch problems are common in engineering applications and in other diverse domains such as bionformatics, economics, logistics, etc. In this field, multi-objective evolutionary algorithms (MOEAs) remain a dominant solving approach due to their robustness, population-based behavior, and ability to return a set of non-dominated solutions in a single run~\cite{CLV07}.
 
-The widespread adoption of MOEAs has been fueled in large part by the availability of software frameworks that lower the implementation barrier and facilitate reproducible experimentation. Early efforts such as \textit{PISA}~\cite{BLT+03} established the concept of modular, platform-independent interfaces for multi-objective search. The \textit{jMetal} framework~\cite{DN11} later consolidated a comprehensive Java-based framework that became a reference for algorithm development and research studies. More recently, \textit{PlatEMO}~\cite{TCZ+17} has provided a MATLAB platform with a large catalog of algorithms and test problems. In parallel, the Python ecosystem has seen the emergence of libraries implementing and evaluating MOEAs for MOPs, such as \textit{pymoo}~\cite{BD20}, \textit{jMetalPy}~\cite{BNG+19}, \textit{Platypus}~\cite{hadka15}, and \textit{DEAP}~\cite{FDG+12}, which leverage Python's accessibility and rich scientific stack. 
+In real-world scenarios, solving MOPs can be a challenge: in the case of combinatorial problems, the objective functions can exhibit polynomial or NP-hard complexity, making even a high-quality approximation of the Pareto-optimal front a fundamentally difficult task~\cite{CLV07,deb01}. This challenge is further compounded in engineering contexts, where the constituent functions are frequently non-linear and may require costly numerical evaluations, such as finite-element analyses, computational fluid dynamics simulations, or complex circuit assessments~\cite{ZGM23}. As a result, the computational efficiency of MOEA implementations is not merely a convenience but a prerequisite: reducing wall-clock time per generation directly determines how large a search budget is tractable in practice, motivating the development of high-performance software frameworks.
+
+The widespread adoption of MOEAs has been fueled in large part by the availability of software frameworks that lower the implementation barrier and facilitate reproducible experimentation. Early efforts such as \textit{PISA}~\cite{BLT+03} established the concept of modular, platform-independent interfaces for multi-objective search. The \textit{jMetal} framework~\cite{DN11} later consolidated a comprehensive Java-based framework that became a reference for algorithm development and research studies. More recently, \textit{PlatEMO}~\cite{TCZ+17} has provided a MATLAB platform with a large catalog of algorithms and test problems. Although these frameworks have made significant contributions to the field, their reliance on the Java Virtual Machine or on proprietary MATLAB licenses limits their adoption in the current research landscape, where Python has become the dominant language for artificial intelligence, data science, and scientific computing~\cite{HMV+20}. In parallel, the Python ecosystem has seen the emergence of libraries implementing and evaluating MOEAs for MOPs, such as \textit{pymoo}~\cite{BD20}, \textit{jMetalPy}~\cite{BNG+19}, \textit{Platypus}~\cite{hadka15}, and \textit{DEAP}~\cite{FDG+12}, which leverage Python's accessibility and rich scientific stack. Accordingly, this work focuses exclusively on the Python ecosystem; the assessment of frameworks written in other languages falls outside the scope of this paper. 
 
 As Python has become a widely adopted platform for MOEA research and experimentation, three practical limitations hinder its broader adoption. First, the interpreted nature of Python, combined with libraries that keep hot-path computations inside the interpreter~\cite{BNG+19,FDG+12,hadka15}, makes the inner loops of pure-Python implementations inherently slower than those of frameworks written in compiled languages such as C++ or Java. Second, existing MOEA frameworks, with the exception of \textit{jMetal}, often provide limited configurability at the component level and, for instance, they do not allow attaching external archives easily, useful to allow the Non-dominated Sorting Genetic Algorithm II (NSGA-II) to handle problems with more than two objectives~\cite{IPS20}. Third, most existing frameworks present a high entry barrier for non-expert users while simultaneously lacking the necessary flexibility for advanced researchers to achieve fine-grained algorithmic configuration. 
 
@@ -185,6 +167,7 @@ The paper is organized as follows. Section~\ref{sec:related} reviews existing Py
 
 
 
+% \textcolor{red}{This section reviews the most relevant Python libraries for multi-objective optimization. Frameworks built on other languages, such as \textit{jMetal} (Java) or \textit{PlatEMO} (MATLAB), are outside the scope of this comparison, as our focus is on the Python ecosystem where VAMOS is positioned.}
 In this section, we review the most relevant Python libraries for MOEAs, namely \textit{pymoo}, \textit{jMetalPy}, \textit{DEAP}, \textit{Platypus}, and \textit{PyGMO}. Table~\ref{tab:framework-comparison} summarizes the main differences between the compared frameworks in terms of architectural features, algorithmic capabilities, configurability, and user-facing tooling. Among the compared frameworks, \VAMOS{} is the only one combining a dense array population model, pluggable computation backends, and a graphical user interface. \textit{PyGMO} is included for capability context, but in the performance section we treat it separately as a compiled C++ baseline, rather than as a directly comparable pure-Python framework.
 \begin{table}[!ht]
 \centering
@@ -583,7 +566,7 @@ Table~\ref{tab:parameter_space_summary} compares this breadth across frameworks 
 \centering
 \caption{Parameter space of NSGA-II with real-valued encoding (35 configurable parameters). Parameters in italics are conditional, and values in \textbf{bold} denote defaults. The steady-state setting corresponds to producing one offspring per iteration. Acronyms in the table denote Latin hypercube sampling (LHS), opposition-based learning (OBL), stochastic universal sampling (SUS), parent-centric crossover (PCX), and unimodal normal distribution crossover (UNDX).}
 \label{tab:parameter_space}
-%\resizebox{\textwidth}{!}{%
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Value / Strategy} & \textbf{Conditional Parameters} \\ \midrule
@@ -620,7 +603,7 @@ Table~\ref{tab:parameter_space_summary} compares this breadth across frameworks 
  & Power Law & \textit{Index} $\in \Realdomain{0.5, 5.0}$ \\ \midrule
 \multirow{1}{*}{Repair} & \{\textbf{clip}, reflect, random, round, wrap, midpoint\} & After crossover and mutation operations. \\ \bottomrule
 \end{tabular}%
-%}
+}
 \end{table*}
 
 \begin{table}[htbp]
@@ -777,14 +760,10 @@ Looking ahead, several directions emerge for future work. Extending the current 
 
 Code available upon acceptance.
 
-%\section*{Acknowledgments}
-%
-%J. Del Ser acknowledges funding support from the Basque Government through the Consolidated Research Group MATHMODE (IT1866-26).
-
 %==============================================================================
 % Bibliography
 %==============================================================================
-\bibliographystyle{IEEEtran}
+\bibliographystyle{elsarticle-num}
 \bibliography{references}
 
 \end{document}

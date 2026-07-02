@@ -24,7 +24,7 @@ import numpy as np
 
 from vamos.foundation.encoding import EncodingLike, normalize_encoding
 from vamos.foundation.exceptions import BoundsError, ConfigurationError, ProblemDimensionError
-from vamos.foundation.problem.base import Problem
+from vamos.foundation.problem.base import Problem, _coerce_decision_matrix
 
 
 class FunctionalProblem(Problem):
@@ -65,7 +65,7 @@ class FunctionalProblem(Problem):
 
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
         """Evaluate the objective (and optional constraint) functions."""
-        X = np.asarray(X, dtype=float)
+        X = _coerce_decision_matrix(X, self.encoding)
         if X.ndim != 2 or X.shape[1] != self.n_var:
             raise ValueError(f"Expected decision matrix of shape (N, {self.n_var}), got {X.shape}.")
 

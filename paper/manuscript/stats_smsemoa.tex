@@ -120,6 +120,7 @@ zcat20 & 0.0024 & \textbf{0.0024} & 1.000 & 0.55 &  \xmark \\
 \centering
 \caption{Normalized hypervolume equivalence summary (paired bootstrap 90\% CI; equivalence margin $\pm 1\%$ relative)}
 \label{tab:hv_equivalence_summary_smsemoa}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 \textbf{Framework} & \textbf{Eq.\ problems} & \textbf{Non-inf.\ problems} & \textbf{Median $\Delta$HV (\%)} \\
@@ -127,7 +128,8 @@ zcat20 & 0.0024 & \textbf{0.0024} & 1.000 & 0.55 &  \xmark \\
 \textit{pymoo} & 39/41 & 39/41 & -0.00 \\
 \textit{jMetalPy} & 36/41 & 38/41 & +0.00 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{table}[htbp]

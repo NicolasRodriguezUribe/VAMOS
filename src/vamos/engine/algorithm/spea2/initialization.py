@@ -20,7 +20,7 @@ from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
-from vamos.engine.algorithm.components.termination import parse_termination
+from vamos.engine.algorithm.components.termination import parse_termination, validate_initial_budget
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.operators.policies.spea2 import build_variation_operators
 from vamos.foundation.encoding import normalize_encoding
@@ -78,6 +78,7 @@ def initialize_spea2_run(
     rng = np.random.default_rng(seed)
 
     pop_size = int(cfg.get("pop_size", 100))
+    validate_initial_budget(max_eval, pop_size, "SPEA2")
     env_archive_size = int(cfg.get("archive_size", pop_size))
     offspring_size = pop_size
     k_neighbors = cfg.get("k_neighbors")
@@ -147,6 +148,7 @@ def initialize_spea2_run(
         constraint_mode=constraint_mode,
         generation=0,
         n_eval=n_eval,
+        max_evals=max_eval,
         # External archive (from base class)
         archive_size=ext_cfg.capacity if ext_cfg else None,
         archive_X=archive_X,

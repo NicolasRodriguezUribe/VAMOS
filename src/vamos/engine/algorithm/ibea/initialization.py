@@ -19,7 +19,7 @@ from vamos.engine.algorithm.components.population import (
     initialize_population,
     resolve_bounds,
 )
-from vamos.engine.algorithm.components.termination import parse_termination
+from vamos.engine.algorithm.components.termination import parse_termination, validate_initial_budget
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.operators.policies.ibea import build_variation_pipeline
 from vamos.foundation.encoding import normalize_encoding
@@ -78,6 +78,7 @@ def initialize_ibea_run(
 
     rng = np.random.default_rng(seed)
     pop_size = int(cfg["pop_size"])
+    validate_initial_budget(max_eval, pop_size, "IBEA")
     offspring_size = pop_size
     encoding = normalize_encoding(getattr(problem, "encoding", "real"))
     n_var = problem.n_var
@@ -139,6 +140,7 @@ def initialize_ibea_run(
         offspring_size=offspring_size,
         constraint_mode=constraint_mode,
         n_eval=n_eval,
+        max_evals=max_eval,
         # IBEA specific
         indicator=indicator,
         kappa=kappa,

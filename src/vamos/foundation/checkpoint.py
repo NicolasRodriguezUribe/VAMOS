@@ -77,7 +77,7 @@ def save_checkpoint(
     return path
 
 
-def load_checkpoint(path: str | Path) -> dict[str, Any]:
+def load_checkpoint(path: str | Path, *, trusted: bool = False) -> dict[str, Any]:
     """
     Load algorithm state from a checkpoint file.
 
@@ -85,6 +85,9 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
     ----------
     path : str | Path
         Checkpoint file path.
+    trusted : bool, default False
+        Must be ``True`` to deserialize pickle checkpoint data. Only load
+        checkpoint files created by trusted code.
 
     Returns
     -------
@@ -94,6 +97,8 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
+    if not trusted:
+        raise ValueError("Checkpoint loading uses pickle; pass trusted=True only for trusted checkpoint files.")
 
     with open(path, "rb") as f:
         checkpoint = cast(dict[str, Any], pickle.load(f))

@@ -4,10 +4,19 @@ from collections.abc import Callable
 
 import numpy as np
 
-from ._permutation_common import RNG, PermPop, PermVec, ensure_distinct_indices, get_swap_rows_jit, two_cut_points
+from ._permutation_common import (
+    RNG,
+    PermPop,
+    PermVec,
+    ensure_distinct_indices,
+    get_swap_rows_jit,
+    two_cut_points,
+    validate_permutation_population,
+)
 
 
 def swap_mutation(X: PermPop, prob: float, rng: RNG) -> None:
+    validate_permutation_population(X, label="X")
     N, D = X.shape
     if N == 0 or D < 2:
         return
@@ -54,6 +63,7 @@ def two_opt_mutation(X: PermPop, prob: float, rng: RNG) -> None:
 
 
 def _apply_row_mutation(X: PermPop, prob: float, rng: RNG, mut_fn: Callable[[PermVec, RNG], None]) -> None:
+    validate_permutation_population(X, label="X")
     N, D = X.shape
     if N == 0 or D < 2:
         return

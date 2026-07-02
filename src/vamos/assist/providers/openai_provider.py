@@ -13,7 +13,7 @@ from .protocol import ProviderResponse
 
 _OPENAI_SETUP_HINT = (
     "OpenAI provider setup required: install dependencies with "
-    "`pip install vamos[openai]` (or `pip install openai`), set OPENAI_API_KEY, "
+    "`pip install vamos-optimization[openai]` (or `pip install openai`), set OPENAI_API_KEY, "
     "and run `vamos assist doctor` for diagnostics."
 )
 _DEFAULT_MODEL = "gpt-5.2"

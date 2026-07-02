@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 
 from vamos.engine.algorithm.components.population import resolve_bounds
-from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.termination import HVTracker, validate_initial_budget
 from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
@@ -63,6 +63,7 @@ def initialize_run(
     rng = np.random.default_rng(seed)
 
     pop_size = int(algo.cfg["pop_size"])
+    validate_initial_budget(max_eval, pop_size, "NSGA-II")
     offspring_size = int(algo.cfg.get("offspring_size") or pop_size)
     if offspring_size <= 0:
         raise ValueError("offspring size must be positive.")
@@ -255,6 +256,8 @@ def initialize_run(
         crowding=crowding,
         incremental_enabled=incremental_enabled,
         generation=generation,
+        n_eval=n_eval,
+        max_evals=max_eval,
         step=step,
         replacements=replacements,
         immigration_manager=immigration_manager,

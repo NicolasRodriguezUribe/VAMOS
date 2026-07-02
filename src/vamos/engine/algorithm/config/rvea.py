@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import comb
 from typing import Any
 
 from vamos.engine.archive import ExternalArchiveConfig
@@ -46,15 +47,19 @@ class RVEAConfig(_SerializableConfig):
     @classmethod
     def default(
         cls,
-        pop_size: int = 100,
+        pop_size: int | None = None,
         n_var: int | None = None,
+        n_obj: int = 3,
     ) -> RVEAConfig:
         """Create a default RVEA configuration."""
         mut_prob = 1.0 / n_var if n_var else 0.1
+        n_partitions = 12 if n_obj == 3 else 6
+        if pop_size is None:
+            pop_size = comb(n_partitions + n_obj - 1, n_obj - 1)
         return (
             cls.builder()
             .pop_size(pop_size)
-            .n_partitions(12)
+            .n_partitions(n_partitions)
             .alpha(2.0)
             .adapt_freq(0.1)
             .crossover("sbx", prob=1.0, eta=30.0)

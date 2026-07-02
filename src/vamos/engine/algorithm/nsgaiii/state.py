@@ -101,7 +101,7 @@ def build_nsgaiii_result(
         "F": result_F,
         "G": result_G,
         "reference_directions": state.ref_dirs.copy(),
-        "n_eval": state.n_eval,
+        "evaluations": state.n_eval,
         "generation": state.generation,
         "hv_converged": hv_reached,
         "population": {"X": state.X.copy(), "F": state.F.copy()},

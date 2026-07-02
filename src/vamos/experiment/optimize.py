@@ -75,6 +75,28 @@ def _validate_algorithm_config(cfg: dict[str, object]) -> None:
         _validate_positive_int_field(cfg, key)
 
 
+def _termination_budget(termination: TerminationSpec) -> int | None:
+    term_type, term_value = termination
+    if term_type == "max_evaluations":
+        return _parse_positive_int(term_value, label="max_evaluations")
+    if term_type == "hv" and isinstance(term_value, dict) and "max_evaluations" in term_value:
+        return _parse_positive_int(term_value["max_evaluations"], label="max_evaluations")
+    return None
+
+
+def _validate_budget_covers_population(cfg: dict[str, object], termination: TerminationSpec) -> None:
+    pop_raw = cfg.get("pop_size")
+    budget = _termination_budget(termination)
+    if pop_raw is None or budget is None:
+        return
+    pop_size = _parse_positive_int(pop_raw, label="algorithm_config.pop_size")
+    if budget < pop_size:
+        raise ConfigurationError(
+            "max_evaluations must be >= pop_size because the initial population consumes pop_size evaluations "
+            f"(max_evaluations={budget}, pop_size={pop_size})."
+        )
+
+
 def _with_result_mode(cfg_data: Any, result_mode: ResultMode) -> Any:
     try:
         allowed = {field.name for field in fields(cfg_data)}
@@ -111,6 +133,7 @@ def _run_config(
 
     cfg_dict = _normalize_cfg(cfg.algorithm_config)
     _validate_algorithm_config(cfg_dict)
+    _validate_budget_covers_population(cfg_dict, cfg.termination)
     if "engine" in cfg_dict:
         raise ConfigurationError("engine must be configured via optimize(engine=...) rather than algorithm_config.")
     algorithm_raw = cfg.algorithm or ""

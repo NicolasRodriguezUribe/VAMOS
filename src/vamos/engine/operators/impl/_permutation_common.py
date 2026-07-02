@@ -59,6 +59,33 @@ def random_permutation_population(pop_size: int, n_var: int, rng: RNG) -> PermPo
     return np.argsort(keys, axis=1).astype(np.int32, copy=False)
 
 
+def validate_permutation_population(X: np.ndarray, *, label: str = "permutation population") -> PermPop:
+    """Validate and coerce a population whose rows must be permutations of 0..n-1."""
+    arr = np.asarray(X)
+    if arr.ndim != 2:
+        raise ValueError(f"{label} must be a 2D array.")
+    n_var = arr.shape[1]
+    if n_var <= 0:
+        raise ValueError(f"{label} must have at least one variable.")
+
+    if np.issubdtype(arr.dtype, np.integer):
+        perm = arr.astype(np.int64, copy=False)
+    else:
+        arr_float = np.asarray(arr, dtype=float)
+        if not np.isfinite(arr_float).all() or not np.all(arr_float == np.floor(arr_float)):
+            raise ValueError(f"{label} for permutation encoding must contain integer-valued genes.")
+        perm = arr_float.astype(np.int64)
+
+    expected = np.arange(n_var, dtype=np.int64)
+    for row_idx, row in enumerate(perm):
+        if not np.array_equal(np.sort(row), expected):
+            raise ValueError(
+                f"{label} row {row_idx} must be a permutation of 0..{n_var - 1}; "
+                "duplicate genes or external labels are not supported."
+            )
+    return perm.astype(np.int32, copy=False)
+
+
 def ensure_distinct_indices(idx: IndexArray, upper: int, rng: RNG) -> None:
     if idx.size == 0:
         return
@@ -105,6 +132,7 @@ __all__ = [
     "ensure_valid_segment",
     "get_swap_rows_jit",
     "random_permutation_population",
+    "validate_permutation_population",
     "trim_offspring",
     "two_cut_points",
 ]

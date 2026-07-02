@@ -84,7 +84,8 @@ class TestAGEMOEAAskTell:
         result = algo.result()
         assert "X" in result and "F" in result
         assert result["F"].shape[1] == problem.n_obj
-        assert result["n_eval"] >= pop_size * 3
+        assert result["evaluations"] == pop_size * 3
+        assert "n_eval" not in result
         assert "population" in result
 
     def test_ask_tell_matches_run(self) -> None:
@@ -105,7 +106,7 @@ class TestAGEMOEAAskTell:
 
         np.testing.assert_array_equal(result_run["F"], result_at["F"])
         np.testing.assert_array_equal(result_run["X"], result_at["X"])
-        assert result_run["n_eval"] == result_at["n_eval"]
+        assert result_run["evaluations"] == result_at["evaluations"]
 
     def test_ask_before_initialize_raises(self) -> None:
         algo = AGEMOEA(_agemoea_cfg(), NumPyKernel())
@@ -197,7 +198,8 @@ class TestRVEAAskTell:
         result = algo.result()
         assert "X" in result and "F" in result
         assert result["F"].shape[1] == problem.n_obj
-        assert result["n_eval"] >= pop_size * 3
+        assert result["evaluations"] == pop_size * 3
+        assert "n_eval" not in result
         assert "population" in result
 
     def test_ask_tell_matches_run(self) -> None:
@@ -218,7 +220,7 @@ class TestRVEAAskTell:
 
         np.testing.assert_array_equal(result_run["F"], result_at["F"])
         np.testing.assert_array_equal(result_run["X"], result_at["X"])
-        assert result_run["n_eval"] == result_at["n_eval"]
+        assert result_run["evaluations"] == result_at["evaluations"]
 
     def test_ask_before_initialize_raises(self) -> None:
         algo = RVEA(_rvea_cfg(), NumPyKernel())

@@ -22,7 +22,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from vamos.engine.algorithm.components.lifecycle import evaluate_batch
-from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.termination import HVTracker, capped_offspring_size
 from vamos.engine.algorithm.components.utils import variation_operator_label
 from vamos.foundation.kernel import default_kernel
 
@@ -155,7 +155,8 @@ class NSGAIII:
     def _generate_offspring(self, st: NSGAIIIState) -> np.ndarray:
         """Generate offspring using tournament selection and variation."""
         n_var = st.X.shape[1]
-        n_parents = 2 * (st.pop_size // 2)
+        request_size = capped_offspring_size(st.n_eval, self._max_eval, st.pop_size, "NSGA-III")
+        n_parents = 2 * int(np.ceil(request_size / 2))
 
         if st.selection_ranks is None or st.selection_crowding is None or st.selection_ranks.shape[0] != st.F.shape[0]:
             self._refresh_selection_metrics(st)
@@ -175,6 +176,8 @@ class NSGAIII:
         offspring_pairs = st.crossover_fn(X_parents)
         X_off = offspring_pairs.reshape(-1, n_var)
         X_off = st.mutation_fn(X_off)
+        if X_off.shape[0] > request_size:
+            X_off = X_off[:request_size]
 
         if st.genealogy_tracker is not None:
             parent_pairs = parents_idx.flatten()

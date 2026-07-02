@@ -112,7 +112,7 @@ def _load_optional_backends() -> None:
     _LIBHV_CLASS = hv_cls
 
 
-def hypervolume(points: np.ndarray, reference_point: np.ndarray, *, allow_ref_expand: bool = True) -> float:
+def hypervolume(points: np.ndarray, reference_point: np.ndarray, *, allow_ref_expand: bool = False) -> float:
     points = np.asarray(points, dtype=float)
     if points.ndim != 2:
         raise ValueError("points must be a 2D array.")
@@ -133,7 +133,7 @@ def hypervolume_contributions(
     points: np.ndarray,
     reference_point: np.ndarray,
     *,
-    allow_ref_expand: bool = True,
+    allow_ref_expand: bool = False,
 ) -> np.ndarray:
     points = np.asarray(points, dtype=float)
     if points.ndim != 2 or points.shape[0] == 0:
@@ -184,7 +184,7 @@ def _validate_reference_point(
     points: np.ndarray,
     reference_point: np.ndarray,
     *,
-    allow_ref_expand: bool = True,
+    allow_ref_expand: bool = False,
 ) -> np.ndarray:
     ref = np.asarray(reference_point, dtype=float)
     if ref.ndim != 1:

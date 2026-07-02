@@ -46,7 +46,7 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("mock", "openai"),
         help=(
             "Provider name for --mode auto: mock|openai. "
-            'OpenAI setup: pip install vamos[openai] (or pip install openai); setx OPENAI_API_KEY "..."; '
+            'OpenAI setup: pip install vamos-optimization[openai] (or pip install openai); setx OPENAI_API_KEY "..."; '
             'python -m vamos.experiment.cli.main assist plan "..." --mode auto --provider openai --json'
         ),
     )
@@ -96,7 +96,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default="mock",
         help=(
             "Provider name for --mode auto: mock|openai. "
-            'OpenAI setup: pip install vamos[openai] (or pip install openai); setx OPENAI_API_KEY "...".'
+            'OpenAI setup: pip install vamos-optimization[openai] (or pip install openai); setx OPENAI_API_KEY "...".'
         ),
     )
     go_parser.add_argument("--template", help="Quickstart template key (optional in interactive terminals).")

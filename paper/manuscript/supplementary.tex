@@ -1,10 +1,9 @@
-% VAMOS Paper: IEEE Transactions on Evolutionary Computation (IEEE TEVC)
+% VAMOS Paper: Advances in Engineering Software (Elsevier)
 % =============================================================================
 % Supplementary Material
 % =============================================================================
-\documentclass[journal]{IEEEtran}
+\documentclass[final,5p,times,twocolumn]{elsarticle}
 
-\usepackage{cite}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath}
@@ -16,7 +15,6 @@
 \usepackage{xcolor}
 \usepackage{pifont}
 \usepackage{enumitem}
-\usepackage{stfloats}
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\pmark}{\ding{109}}
 \newcommand{\xmark}{\ding{55}}
@@ -55,35 +53,33 @@
 \newcommand{\Intdomain}[1]{[#1]_{\mathbb{Z}}}
 \newcommand{\Realdomain}[1]{[#1]_{\mathbb{R}}}
 
-\title{VAMOS: A Framework for Fast, Configurable and Accessible Multiobjective Optimization in Python\\\vspace{3mm}\Large{(Supplementary Material)}}
-
-% --------------------------------------------------------------------------
-%  Author block.
-% --------------------------------------------------------------------------
-%\author{Nicol\'{a}s~R.~Uribe,
-%        Alberto~Herr\'{a}n,
-%        Antonio~J.~Nebro,
-%        Javier~Del~Ser,
-%        and~J.~Manuel~Colmenar%
-%\thanks{N. R. Uribe, A. Herr\'{a}n, and J. M. Colmenar are with the
-%  Department of Computer Sciences, Universidad Rey Juan Carlos, M\'{o}stoles,
-%  28933 Madrid, Spain (e-mail: nicolas.rodriguez@urjc.es; alberto.herran@urjc.es;
-%  josemanuel.colmenar@urjc.es).}%
-%\thanks{A. J. Nebro is with the Department of Lenguajes y Ciencias de la
-%  Computaci\'{o}n, ITIS Software, University of M\'{a}laga, 29071
-%  M\'{a}laga, Spain (e-mail: ajnebro@uma.es).}%
-%\thanks{J. Del Ser is with TECNALIA, Basque Research \& Technology
-%  Alliance (BRTA), Derio, 48160, Spain, and also with the University
-%  of the Basque Country (UPV/EHU), Leioa, 48940, Spain (e-mail: javier.delser@tecnalia.com).}%
-%\thanks{Corresponding author: Nicol\'{a}s~Rodr\'{i}guez (nicolas.rodriguez@urjc.es).}%
-%}
-\author{Anonymous submission}
-
-\markboth{IEEE Transactions on Evolutionary Computation}%
-{A Vectorized Framework for Multiobjective Evolutionary Optimization}
+\journal{Advances in Engineering Software}
+\biboptions{sort&compress}
 
 \begin{document}
-\maketitle
+
+\begin{frontmatter}
+
+\title{VAMOS: A Framework for Fast, Configurable and Accessible Multiobjective Optimization in Python\\Supplementary Material}
+
+\author[urjc]{Nicol\'{a}s R. Uribe\corref{cor1}}
+\ead{nicolas.rodriguez@urjc.es}
+\author[urjc]{Alberto Herr\'{a}n}
+\ead{alberto.herran@urjc.es}
+\author[uma]{Antonio J. Nebro}
+\ead{ajnebro@uma.es}
+\author[tecnalia,upv]{Javier Del Ser}
+\ead{javier.delser@tecnalia.com}
+\author[urjc]{J. Manuel Colmenar}
+\ead{josemanuel.colmenar@urjc.es}
+
+\cortext[cor1]{Corresponding author}
+\address[urjc]{Department of Computer Sciences, Universidad Rey Juan Carlos, M\'{o}stoles, 28933 Madrid, Spain}
+\address[uma]{Department of Lenguajes y Ciencias de la Computaci\'{o}n, ITIS Software, University of M\'{a}laga, 29071 M\'{a}laga, Spain}
+\address[tecnalia]{TECNALIA, Basque Research \& Technology Alliance (BRTA), Derio, 48160, Spain}
+\address[upv]{University of the Basque Country (UPV/EHU), Leioa, 48940, Spain}
+
+\end{frontmatter}
 
 This Supplementary Material accompanies the main manuscript and contains the extended convergence, solution-quality, runtime, statistical, configurability, and accessibility results referenced there.
 
@@ -106,7 +102,7 @@ To verify that runtime speedups do not come at the expense of convergence rate, 
 \section{Solution Quality Analysis}
 \label{app:quality}
 %==============================================================================
-The runtime advantages reported above are only meaningful if \VAMOS{} produces solutions of comparable quality. To verify this, we compare normalized hypervolume (HV) across frameworks using the protocol described in Section~V-E of the main paper: for each problem we compute the median HV across 30 seeds, and then summarize these per-problem medians by family using the median and interquartile range (IQR). Table~\ref{tab:frameworks_hv} presents the results for the generational Non-dominated Sorting Genetic Algorithm II (NSGA-II).
+The runtime advantages reported above are only meaningful if \VAMOS{} produces solutions of comparable quality. To verify this, we compare normalized hypervolume (HV) across frameworks using the protocol described in the Experimental Results section of the main paper: for each problem we compute the median HV across 30 seeds, and then summarize these per-problem medians by family using the median and interquartile range (IQR). Table~\ref{tab:frameworks_hv} presents the results for the generational Non-dominated Sorting Genetic Algorithm II (NSGA-II).
 
 \begin{table*}[htbp]
 \centering
@@ -348,7 +344,7 @@ Tables~\ref{tab:parameter_space_pymoo} and~\ref{tab:parameter_space_jmetalpy} de
 %==============================================================================
 % Bibliography
 %==============================================================================
-\bibliographystyle{IEEEtran}
+\bibliographystyle{elsarticle-num}
 \bibliography{references}
 
 \end{document}

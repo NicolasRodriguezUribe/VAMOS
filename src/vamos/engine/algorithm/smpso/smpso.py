@@ -22,7 +22,7 @@ from vamos.engine.algorithm.components.hooks import (
     track_offspring_genealogy,
 )
 from vamos.engine.algorithm.components.subset_selection import _single_front_crowding
-from vamos.engine.algorithm.components.termination import HVTracker
+from vamos.engine.algorithm.components.termination import HVTracker, capped_offspring_size
 from vamos.foundation.kernel import default_kernel
 
 from .helpers import (
@@ -268,6 +268,7 @@ class SMPSO:
         st = self._st
         if st.pending_offspring is not None:
             raise RuntimeError("Previous offspring not yet consumed by tell().")
+        request_size = capped_offspring_size(st.n_eval, self._max_eval, st.pop_size, "SMPSO")
 
         # Select leaders from archive using crowding-based binary tournament
         arch_X = st.archive_X
@@ -325,16 +326,17 @@ class SMPSO:
         np.clip(X_new, st.xl, st.xu, out=X_new)
 
         st.velocity = velocity
-        st.pending_offspring = X_new
+        pending_idx = np.arange(request_size, dtype=int)
+        st.pending_particle_indices = pending_idx
+        st.pending_offspring = X_new[pending_idx].copy()
 
         # Track genealogy: for PSO, each particle is child of itself + leader
         if st.genealogy_tracker is not None:
-            pop_size = st.X.shape[0]
-            self_idx = np.arange(pop_size)
-            parent_pairs = np.column_stack([self_idx, leader_idx]).flatten()
-            track_offspring_genealogy(st, parent_pairs, pop_size, "pso_update", "smpso")
+            self_idx = pending_idx
+            parent_pairs = np.column_stack([self_idx, leader_idx[pending_idx]]).flatten()
+            track_offspring_genealogy(st, parent_pairs, request_size, "pso_update", "smpso")
 
-        return cast(np.ndarray, X_new)
+        return cast(np.ndarray, st.pending_offspring.copy())
 
     def tell(
         self,
@@ -366,7 +368,11 @@ class SMPSO:
 
         X_new = st.pending_offspring
         assert X_new is not None
+        particle_idx = st.pending_particle_indices
+        if particle_idx is None:
+            particle_idx = np.arange(X_new.shape[0], dtype=int)
         st.pending_offspring = None
+        st.pending_particle_indices = None
 
         F, G = extract_eval_arrays(eval_result)
         if st.constraint_mode == "none":
@@ -376,23 +382,38 @@ class SMPSO:
         st.generation += 1
 
         # Update personal bests
+        pbest_X = st.pbest_X[particle_idx].copy()
+        pbest_F = st.pbest_F[particle_idx].copy()
+        pbest_G = st.pbest_G[particle_idx].copy() if st.pbest_G is not None else None
         update_personal_bests(
             X_new,
             F,
             G,
-            st.pbest_X,
-            st.pbest_F,
-            st.pbest_G,
+            pbest_X,
+            pbest_F,
+            pbest_G,
             st.constraint_mode,
         )
+        st.pbest_X[particle_idx] = pbest_X
+        st.pbest_F[particle_idx] = pbest_F
+        if st.pbest_G is not None and pbest_G is not None:
+            st.pbest_G[particle_idx] = pbest_G
 
-        st.X = X_new
-        st.F = F
-        st.G = G
+        st.X[particle_idx] = X_new
+        st.F[particle_idx] = F
+        if G is not None:
+            if st.G is None:
+                st.G = np.zeros((st.X.shape[0], G.shape[1]), dtype=float)
+            st.G[particle_idx] = G
+        elif st.constraint_mode == "none":
+            st.G = None
 
         # Update genealogy ids
         if st.pending_offspring_ids is not None:
-            st.ids = st.pending_offspring_ids
+            if st.ids is not None:
+                st.ids[particle_idx] = st.pending_offspring_ids
+            else:
+                st.ids = st.pending_offspring_ids
             st.pending_offspring_ids = None
 
         # Update leader archive

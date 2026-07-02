@@ -7,7 +7,7 @@ import numpy as np
 from vamos.engine.operators.impl.binary import random_binary_population
 from vamos.engine.operators.impl.integer import random_integer_population
 from vamos.engine.operators.impl.mixed import mixed_initialize
-from vamos.engine.operators.impl.permutation import random_permutation_population
+from vamos.engine.operators.impl.permutation import random_permutation_population, validate_permutation_population
 from vamos.engine.operators.impl.real import (
     HaltonInitializer,
     LatinHypercubeInitializer,
@@ -46,14 +46,38 @@ def initialize_population(
     normalized = normalize_encoding(encoding)
     if pop_size <= 0:
         raise ValueError("pop_size must be positive.")
+
+    def _validate_custom_population(raw: Any, *, label: str) -> np.ndarray:
+        arr = np.asarray(raw)
+        if arr.ndim != 2 or arr.shape != (pop_size, n_var):
+            raise ValueError(f"{label} must return an array of shape ({pop_size}, {n_var}), got {arr.shape}.")
+        if normalized == "permutation":
+            return validate_permutation_population(arr, label=label)
+        if normalized == "binary":
+            arr_float = np.asarray(arr, dtype=float)
+            if not np.isfinite(arr_float).all() or not np.all((arr_float == 0) | (arr_float == 1)):
+                raise ValueError(f"{label} for binary encoding must contain only 0/1 values.")
+            return arr_float.astype(np.int8, copy=False)
+        if normalized == "integer":
+            arr_float = np.asarray(arr, dtype=float)
+            if not np.isfinite(arr_float).all() or not np.all(arr_float == np.floor(arr_float)):
+                raise ValueError(f"{label} for integer encoding must contain integer-valued genes.")
+            arr_int = arr_float.astype(int, copy=False)
+            if np.any(arr_int < xl.astype(int)) or np.any(arr_int > xu.astype(int)):
+                raise ValueError(f"{label} for integer encoding must respect variable bounds.")
+            return arr_int
+        if normalized == "mixed":
+            return arr.copy()
+        return np.asarray(arr, dtype=float)
+
     if initializer is not None and callable(initializer):
-        return np.asarray(initializer(), dtype=float)
+        return _validate_custom_population(initializer(), label="custom initializer")
     if initializer is not None and isinstance(initializer, dict):
         init_type = initializer.get("type", "random").lower()
         if init_type == "custom":
             custom_fn = initializer.get("fn")
             if callable(custom_fn):
-                return np.asarray(custom_fn(), dtype=float)
+                return _validate_custom_population(custom_fn(), label="custom initializer")
             raise ValueError("Custom initializer requires a callable 'fn'.")
         if init_type == "lhs":
             return LatinHypercubeInitializer(pop_size, xl, xu, rng=rng)()
