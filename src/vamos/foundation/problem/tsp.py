@@ -33,6 +33,35 @@ def _circle_coordinates(n_cities: int) -> np.ndarray:
     return np.stack([np.cos(angles), np.sin(angles)], axis=1)
 
 
+def _validate_routes(routes: np.ndarray, n_cities: int) -> None:
+    expected = np.arange(n_cities, dtype=int)
+    if np.any(routes < 0) or np.any(routes >= n_cities):
+        raise ValueError(f"TSP routes must contain city labels in [0, {n_cities - 1}].")
+    for row in routes:
+        if not np.array_equal(np.sort(row), expected):
+            raise ValueError("TSP routes must be valid permutations of each city exactly once.")
+
+
+def _coerce_routes(X: np.ndarray, n_cities: int) -> np.ndarray:
+    try:
+        raw_routes = np.asarray(X)
+    except ValueError as exc:
+        raise ValueError(f"Expected routes of shape (N, {n_cities}).") from exc
+    if raw_routes.ndim != 2 or raw_routes.shape[1] != n_cities:
+        raise ValueError(f"Expected routes of shape (N, {n_cities}).")
+    try:
+        numeric_routes = raw_routes.astype(float, copy=False)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("TSP routes must contain integer city labels.") from exc
+    if not np.all(np.isfinite(numeric_routes)) or not np.all(numeric_routes == np.floor(numeric_routes)):
+        raise ValueError("TSP routes must contain integer city labels.")
+    if np.any(numeric_routes < 0) or np.any(numeric_routes >= n_cities):
+        raise ValueError(f"TSP routes must contain city labels in [0, {n_cities - 1}].")
+    routes = numeric_routes.astype(int)
+    _validate_routes(routes, n_cities)
+    return routes
+
+
 class TSPProblem(Problem):
     """
     Toy multi-objective travelling salesman problem.
@@ -65,12 +94,9 @@ class TSPProblem(Problem):
         self.labels = [f"City {i}" for i in range(self.n_var)]
 
     def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
-        routes = np.asarray(X, dtype=int)
-        if routes.ndim != 2 or routes.shape[1] != self.n_var:
-            raise ValueError(f"Expected routes of shape (N, {self.n_var}).")
+        routes = _coerce_routes(X, self.n_var)
         coords = self.coordinates
-        idx = np.mod(routes, self.n_var)
-        paths = coords[idx]
+        paths = coords[routes]
         closed_paths = np.concatenate([paths, paths[:, :1, :]], axis=1)
         deltas = np.diff(closed_paths, axis=1)
         edges = np.linalg.norm(deltas, axis=2)

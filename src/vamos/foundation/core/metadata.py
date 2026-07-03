@@ -5,8 +5,11 @@ Helpers for building run metadata and operator summaries.
 from __future__ import annotations
 
 import logging
+import platform
 import subprocess
+import sys
 from datetime import datetime, timezone
+from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +31,25 @@ def git_revision(project_root: Path) -> str | None:
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return None
     return rev.decode().strip() or None
+
+
+def _optional_package_version(distribution_name: str) -> str | None:
+    try:
+        return importlib_metadata.version(distribution_name)
+    except importlib_metadata.PackageNotFoundError:
+        return None
+
+
+def collect_environment_metadata() -> dict[str, str | None]:
+    return {
+        "python": sys.version,
+        "python_implementation": platform.python_implementation(),
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "numpy": _optional_package_version("numpy"),
+        "numba": _optional_package_version("numba"),
+        "moocore": _optional_package_version("moocore"),
+    }
 
 
 def serialize_operator_tuple(op_tuple: object) -> dict[str, Any] | None:
@@ -113,6 +135,7 @@ def build_run_metadata(
         "max_evaluations": config.max_evaluations,
         "vamos_version": get_version(),
         "git_revision": git_revision(project_root),
+        "environment": collect_environment_metadata(),
         "problem": problem_info,
         "config": config_payload,
         "metrics": metric_payload,
@@ -123,6 +146,7 @@ def build_run_metadata(
 
 
 __all__ = [
+    "collect_environment_metadata",
     "git_revision",
     "serialize_operator_tuple",
     "collect_operator_metadata",

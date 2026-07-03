@@ -21,7 +21,6 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
 PAPER_DIR = ROOT_DIR / "paper"
 MANUSCRIPT_DIR = PAPER_DIR / "manuscript"
@@ -77,11 +76,7 @@ def count_loc(code: str) -> int:
 
 
 def count_imports(code: str) -> int:
-    return sum(
-        1
-        for line in _nonempty_code_lines(code)
-        if re.match(r"^\s*(import|from)\s+\S+", line)
-    )
+    return sum(1 for line in _nonempty_code_lines(code) if re.match(r"^\s*(import|from)\s+\S+", line))
 
 
 def load_metrics(dataset_path: Path) -> tuple[dict[str, str], list[str], list[SnippetMetrics]]:
@@ -196,7 +191,8 @@ def make_main_table(metrics: list[SnippetMetrics], task_labels: dict[str, str], 
 
 def _render_source(url: str, label: str) -> str:
     if url.startswith("local://"):
-        return rf"\texttt{{{url.removeprefix('local://').replace('_', r'\_')}}}"
+        escaped = url.removeprefix("local://").replace("_", r"\_")
+        return rf"\texttt{{{escaped}}}"
     return rf"{label} (\url{{{url}}})"
 
 

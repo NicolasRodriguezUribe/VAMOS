@@ -10,6 +10,8 @@ class ZDT2Problem(Problem):
     """
 
     def __init__(self, n_var: int) -> None:
+        if int(n_var) < 2:
+            raise ValueError("ZDT2 requires at least two decision variables.")
         self.n_var = int(n_var)
         self.n_obj = 2
         self.xl = 0.0

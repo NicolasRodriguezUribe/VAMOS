@@ -6,7 +6,9 @@ from vamos.foundation.problem.base import Problem
 
 class ZDT1Problem(Problem):
     def __init__(self, n_var: int) -> None:
-        self.n_var = n_var
+        if int(n_var) < 2:
+            raise ValueError("ZDT1 requires at least two decision variables.")
+        self.n_var = int(n_var)
         self.n_obj = 2
         # Bounds (identical for all decision variables in this problem)
         self.xl = 0.0
