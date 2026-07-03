@@ -1,25 +1,43 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 import numpy as np
 
-import vamos.engine.algorithm.components.subset_selection as _subset_selection
 from vamos.engine.algorithm.components.archive_core import DeduplicateIn, _BaseArchive
 from vamos.engine.archive.pruning_selectors import select_maxmin_subset, select_ref_dirs_subset
+from vamos.foundation.kernel.numpy_backend import _compute_crowding
 
-_single_front_crowding = _subset_selection._single_front_crowding
-_moocore = _subset_selection._moocore
+try:  # pragma: no cover - optional dependency
+    import moocore as _moocore
+except ImportError:  # pragma: no cover - optional dependency
+    _moocore = None
+
+_HV_FALLBACK_WARNED = False
+
+
+def _single_front_crowding(F: np.ndarray) -> np.ndarray:
+    if F.shape[0] == 0:
+        return np.empty(0, dtype=float)
+    return _compute_crowding(F, [list(range(F.shape[0]))])
 
 
 def _hv_contributions(F: np.ndarray, ref: np.ndarray) -> np.ndarray:
-    """Delegate HV contribution computation while preserving this module's test hook."""
-    original = _subset_selection._moocore
-    _subset_selection._moocore = _moocore
-    try:
-        return _subset_selection._hv_contributions(F, ref)
-    finally:
-        _subset_selection._moocore = original
+    """Compute HV contributions while preserving this module's MooCore test hook."""
+    global _HV_FALLBACK_WARNED
+    if F.shape[0] == 0:
+        return np.empty(0, dtype=float)
+    if _moocore is not None:
+        return np.asarray(_moocore.hv_contributions(F, ref=ref), dtype=float)
+    if not _HV_FALLBACK_WARNED:
+        warnings.warn(
+            "Hypervolume contributions requested but 'moocore' is not installed; falling back to crowding distance.",
+            UserWarning,
+            stacklevel=2,
+        )
+        _HV_FALLBACK_WARNED = True
+    return _single_front_crowding(F)
 
 
 class CrowdingDistanceArchive(_BaseArchive):

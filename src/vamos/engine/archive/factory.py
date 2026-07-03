@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import numpy as np
 
@@ -18,13 +18,15 @@ if TYPE_CHECKING:
     from vamos.engine.algorithm.components.state import AlgorithmState
     from vamos.foundation.kernel.backend import KernelBackend
 
-    ArchiveManager = (
+    ArchiveManager: TypeAlias = (
         CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive
     )
-    ResultArchiveManager = CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive
+    ResultArchiveManager: TypeAlias = (
+        CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive
+    )
 else:
-    ArchiveManager = Any
-    ResultArchiveManager = Any
+    ArchiveManager: TypeAlias = Any
+    ResultArchiveManager: TypeAlias = Any
 
 
 def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | None:

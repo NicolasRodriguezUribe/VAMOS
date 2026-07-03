@@ -228,7 +228,7 @@ class MOEAD:
             raise RuntimeError("MOEA/D variation operators are not initialized.")
 
         pop_size = st.pop_size
-        max_eval = st.max_evals or self._max_eval
+        max_eval = st.max_evals
         batch_size = capped_offspring_size(st.n_eval, max_eval, int(st.batch_size), "MOEA/D")
         if batch_size <= 0:
             raise ValueError("MOEA/D batch_size must be positive.")

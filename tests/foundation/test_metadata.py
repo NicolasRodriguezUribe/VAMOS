@@ -83,3 +83,14 @@ def test_build_run_metadata_populates_core_fields(tmp_path: Path):
     assert metadata["metrics"]["evaluations"] == 200
     assert metadata["operators"]["crossover"]["name"] == "sbx"
     assert metadata["backend_info"]["device"] == "cpu"
+    assert set(metadata["environment"]) >= {
+        "python",
+        "python_implementation",
+        "platform",
+        "machine",
+        "numpy",
+        "numba",
+        "moocore",
+    }
+    assert metadata["environment"]["python"]
+    assert metadata["environment"]["platform"]
