@@ -13,6 +13,7 @@ from __future__ import annotations
 import importlib
 
 from vamos.api import (
+    EnvironmentalSelectionResult,
     OptimizationResult,
     Problem,
     StudyResult,
@@ -22,6 +23,7 @@ from vamos.api import (
     make_problem_selection,
     optimize,
     run_self_check,
+    select_survivors,
 )
 from vamos.foundation.version import get_version as _get_version
 
@@ -29,6 +31,8 @@ __all__ = [
     "__version__",
     # Optimization
     "optimize",
+    "select_survivors",
+    "EnvironmentalSelectionResult",
     "Problem",
     "make_problem",
     "OptimizationResult",

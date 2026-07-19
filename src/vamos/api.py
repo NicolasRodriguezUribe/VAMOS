@@ -26,6 +26,7 @@ from vamos.foundation.problem.registry import (
     available_problem_names,
     make_problem_selection,
 )
+from vamos.selection import EnvironmentalSelectionResult, select_survivors
 
 
 def configure_logging(*, level: int = logging.INFO) -> None:
@@ -46,6 +47,8 @@ def configure_logging(*, level: int = logging.INFO) -> None:
 __all__ = [
     # Primary API
     "optimize",
+    "select_survivors",
+    "EnvironmentalSelectionResult",
     "Problem",
     "make_problem",
     "OptimizationResult",

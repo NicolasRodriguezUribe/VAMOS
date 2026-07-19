@@ -1,5 +1,6 @@
 {
   "vamos": [
+    "EnvironmentalSelectionResult",
     "OptimizationResult",
     "Problem",
     "StudyResult",
@@ -10,7 +11,8 @@
     "make_problem_selection",
     "optimize",
     "problems",
-    "run_self_check"
+    "run_self_check",
+    "select_survivors"
   ],
   "vamos.algorithms": [
     "AGEMOEAConfig",
@@ -32,6 +34,7 @@
     "resolve_algorithm"
   ],
   "vamos.api": [
+    "EnvironmentalSelectionResult",
     "OptimizationResult",
     "Problem",
     "StudyResult",
@@ -40,7 +43,8 @@
     "make_problem",
     "make_problem_selection",
     "optimize",
-    "run_self_check"
+    "run_self_check",
+    "select_survivors"
   ],
   "vamos.ux.api": [
     "FriedmanResult",
