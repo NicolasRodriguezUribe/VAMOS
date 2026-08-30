@@ -73,7 +73,7 @@ def test_cli_guide_config_run_and_summarize_command_smoke(tmp_path: Path) -> Non
 
     run_proc = _run_vamos("--config", str(config_path), "--no-preflight")
     assert run_proc.returncode == 0, f"{source_path}: {run_proc.stderr or run_proc.stdout}"
-    assert any(output_root.rglob("FUN.csv")), source_path
+    assert any(output_root.rglob("manifest.json")), source_path
 
     summarize_proc = _run_vamos("summarize", "--results", str(output_root), "--latest")
     assert summarize_proc.returncode == 0, f"{source_path}: {summarize_proc.stderr or summarize_proc.stdout}"
@@ -130,7 +130,7 @@ def test_cli_guide_zoo_commands_smoke(tmp_path: Path) -> None:
         str(output_root),
     )
     assert run_proc.returncode == 0, f"{source_path}: {run_proc.stderr or run_proc.stdout}"
-    assert any(output_root.rglob("FUN.csv")), source_path
+    assert any(output_root.rglob("manifest.json")), source_path
 
 
 @pytest.mark.smoke

@@ -35,8 +35,8 @@ def test_cli_ablation_runs_and_writes_variants(monkeypatch, tmp_path):
 
     baseline_dir = output_root / "baseline" / "ZDT1" / "moead" / "numpy" / "seed_1"
     tuned_dir = output_root / "tuned" / "ZDT1" / "moead" / "numpy" / "seed_1"
-    assert (baseline_dir / "FUN.csv").exists()
-    assert (tuned_dir / "FUN.csv").exists()
+    assert (baseline_dir / "manifest.json").exists()
+    assert (tuned_dir / "manifest.json").exists()
 
     summary_path = output_root / "summary" / "ablation_metrics.csv"
     assert summary_path.exists()

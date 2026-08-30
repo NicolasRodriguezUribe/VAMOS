@@ -266,7 +266,7 @@ def _summary(
     print(f"Template: {template.label}")
     print(f"Results folder: {output_dir}")
     print(f"Config saved: {config_path}")
-    print(f"Objectives: {Path(output_dir) / 'FUN.csv'}")
+    print(f"Run manifest: {Path(output_dir) / 'manifest.json'}")
     if plot_path:
         print(f"Plot: {plot_path}")
     else:

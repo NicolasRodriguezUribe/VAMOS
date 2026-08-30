@@ -130,14 +130,13 @@ Walkthrough: run and inspect outputs
 vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --seed 7
 ```
 
-2) Inspect artifacts under `results/` (default):
+2) Inspect the canonical artifact under `results/` (default):
 
-- `FUN.csv`: objective values (Pareto front)
-- `X.csv`: decision variables (if exported)
-- `metadata.json`: run configuration and timings
-- `resolved_config.json`: resolved settings and inferred defaults
+- `manifest.json`: requested/resolved configuration, actual seed, outcome, provenance, and hashes
+- `result.npz`: objective, decision, constraint, population, and archive arrays
+- `environment.json`: bounded runtime environment details
 
-3) Save plots in the same folder:
+3) Save plots as presentation output outside the canonical run leaf:
 
 ```bash
 vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --seed 7 --plot

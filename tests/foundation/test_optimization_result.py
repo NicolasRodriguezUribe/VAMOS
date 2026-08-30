@@ -87,14 +87,14 @@ class TestOptimizationResultDefaults:
 
         F = np.array([[0.1, 0.9], [0.5, 0.5]])
         meta = {
-            "resolved_config": {"problem": "zdt1", "algorithm": "nsgaii"},
+            "run_artifact_resolved_spec": {"problem": {"component_id": "vamos.problem:zdt1@1"}},
             "default_sources": {"algorithm": "explicit", "max_evaluations": "auto"},
         }
         result = OptimizationResult({"F": F}, meta=meta)
 
         explained = result.explain_defaults()
 
-        assert explained["resolved_config"]["problem"] == "zdt1"
+        assert explained["resolved_spec"]["problem"]["component_id"] == "vamos.problem:zdt1@1"
         assert explained["default_sources"]["max_evaluations"] == "auto"
 
     def test_explain_defaults_handles_missing_meta(self):
@@ -280,19 +280,14 @@ class TestOptimizationResultSave:
 
     def test_save_creates_files(self, tmp_path):
         """save() should create expected files."""
-        from vamos.experiment.optimization_result import OptimizationResult
-        from vamos.ux.api import save_result
+        import vamos
 
-        F = np.array([[0.1, 0.9], [0.5, 0.5]])
-        X = np.array([[1, 2], [3, 4]])
-        result = OptimizationResult({"F": F, "X": X})
+        result = vamos.optimize("zdt1", pop_size=4, max_evaluations=4, seed=3)
 
         out_dir = tmp_path / "test_results"
-        save_result(result, str(out_dir))
+        vamos.save_result(result, out_dir)
 
-        assert (out_dir / "FUN.csv").exists()
-        assert (out_dir / "X.csv").exists()
-        assert (out_dir / "metadata.json").exists()
+        assert {path.name for path in out_dir.iterdir()} == {"manifest.json", "result.npz", "environment.json"}
 
 
 class TestOptimizationResultTopK:

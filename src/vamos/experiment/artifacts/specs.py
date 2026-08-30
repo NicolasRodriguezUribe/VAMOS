@@ -61,8 +61,8 @@ class RunSpecInputs:
     resolved_pop_size: object
     engine_requested: str | None
     engine: str
-    engine_source: str
     eval_strategy: object
+    seed_requested: int | None
     seed: int
     default_sources: Mapping[str, str]
 
@@ -89,7 +89,7 @@ def _requested_spec(inputs: RunSpecInputs) -> dict[str, Any]:
     requested: dict[str, Any] = {
         "version": "1",
         "problems": {inputs.problem_label: problem_config},
-        "defaults": {"seed": inputs.seed},
+        "defaults": {"seed": inputs.seed_requested},
     }
     defaults = requested["defaults"]
     if not isinstance(defaults, dict):

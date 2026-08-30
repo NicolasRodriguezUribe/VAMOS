@@ -29,13 +29,18 @@ from vamos.experiment.optimization_result import OptimizationResult
 
 
 def _result() -> OptimizationResult:
+    source = json.loads(Path("docs/dev/run_artifact_examples/custom-manual/manifest.json").read_text(encoding="utf-8"))
     return OptimizationResult(
         {
             "F": np.array([[0.1, 0.9], [0.9, 0.1]], dtype=np.float64),
             "X": np.array([[1, 2], [3, 4]], dtype=np.int32),
             "evaluations": 2,
         },
-        meta={"seed": 1},
+        meta={
+            "seed": 1,
+            "run_artifact_requested_spec": source["requested_spec"],
+            "run_artifact_resolved_spec": source["resolved_spec"],
+        },
     )
 
 
@@ -51,7 +56,7 @@ def _descriptor(path: Path) -> ArtifactDescriptor:
     )
 
 
-def test_missing_and_modified_result_are_actionable_ra022_ra023(tmp_path: Path) -> None:
+def test_missing_and_modified_result_are_actionable_ra017(tmp_path: Path) -> None:
     missing_run = vamos.save_result(_result(), tmp_path / "missing").root
     (missing_run / "result.npz").unlink()
 
@@ -81,7 +86,7 @@ def test_missing_and_modified_result_are_actionable_ra022_ra023(tmp_path: Path) 
     assert length_info.value.actual_bytes == length_info.value.expected_bytes + 1
 
 
-def test_manifest_semantic_edit_malformed_and_duplicate_keys_ra024(tmp_path: Path) -> None:
+def test_manifest_semantic_edit_malformed_and_duplicate_keys_ra017(tmp_path: Path) -> None:
     semantic = vamos.save_result(_result(), tmp_path / "semantic").root / "manifest.json"
     semantic.write_text(semantic.read_text(encoding="utf-8").replace('"n_solutions": 2', '"n_solutions": 3'), encoding="utf-8")
     with pytest.raises(ArtifactIntegrityError) as semantic_info:
@@ -105,7 +110,7 @@ def test_manifest_semantic_edit_malformed_and_duplicate_keys_ra024(tmp_path: Pat
     assert vamos.load_run(formatting.parent).status == "succeeded"
 
 
-def test_future_major_rejected_before_artifact_access_ra019(tmp_path: Path) -> None:
+def test_future_major_rejected_before_artifact_access_ra023(tmp_path: Path) -> None:
     sentinel = tmp_path / "sentinel"
     sentinel.write_text("untouched", encoding="utf-8")
     run = tmp_path / "future"
@@ -127,7 +132,7 @@ def test_future_major_rejected_before_artifact_access_ra019(tmp_path: Path) -> N
 
 
 @pytest.mark.parametrize("unsafe", ["../outside.npz", "/outside.npz", "C:/outside.npz", "server/share.npz%2fescape", "a\\b.npz"])
-def test_unsafe_manifest_paths_are_rejected_ra025(unsafe: str, tmp_path: Path) -> None:
+def test_unsafe_manifest_paths_are_rejected_ra018(unsafe: str, tmp_path: Path) -> None:
     run = vamos.save_result(_result(), tmp_path / "run").root
     manifest_path = run / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -138,7 +143,7 @@ def test_unsafe_manifest_paths_are_rejected_ra025(unsafe: str, tmp_path: Path) -
         vamos.load_run(run)
 
 
-def test_symlink_escape_is_rejected_when_available_ra025(tmp_path: Path) -> None:
+def test_symlink_escape_is_rejected_when_available_ra018(tmp_path: Path) -> None:
     run = vamos.save_result(_result(), tmp_path / "run").root
     outside = tmp_path / "outside"
     outside.mkdir()
@@ -152,6 +157,7 @@ def test_symlink_escape_is_rejected_when_available_ra025(tmp_path: Path) -> None
     manifest_path = run / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     next(item for item in manifest["artifacts"] if item["role"] == "result_bundle")["path"] = "escape/result.npz"
+    manifest["integrity"]["manifest_sha256"] = manifest_self_hash(manifest)
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
     with pytest.raises(UnsafeArtifactPathError):
@@ -186,8 +192,8 @@ def test_all_existing_directory_states_collide(kind: str, tmp_path: Path) -> Non
     assert {item.name: item.read_bytes() for item in destination.iterdir()} == before
 
 
-@pytest.mark.parametrize("phase", ["bundle", "post_bundle", "terminal_manifest", "publish"])
-def test_injected_write_failure_publishes_nothing_and_cleans_staging_ra026(
+@pytest.mark.parametrize("phase", ["bundle", "terminal_manifest", "publish"])
+def test_injected_write_failure_publishes_nothing_and_cleans_staging_ra021(
     phase: str,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -199,7 +205,6 @@ def test_injected_write_failure_publishes_nothing_and_cleans_staging_ra026(
 
     target = {
         "bundle": "write_result_bundle",
-        "post_bundle": "_write_compatibility_views",
         "terminal_manifest": "build_terminal_manifest",
         "publish": "os.rename",
     }[phase]
@@ -238,9 +243,10 @@ def test_writer_snapshots_before_storage(tmp_path: Path, monkeypatch: pytest.Mon
 
 
 def test_unsupported_dtype_is_rejected_without_pickle(tmp_path: Path) -> None:
+    meta = _result().meta
     result = OptimizationResult(
         {"F": np.ones((1, 2)), "X": np.array([[{"unsafe": True}]], dtype=object)},
-        meta={"seed": 1},
+        meta=meta,
     )
     with pytest.raises(UnsupportedArrayDTypeError):
         vamos.save_result(result, tmp_path / "object")
@@ -252,14 +258,14 @@ def test_unsupported_dtype_is_rejected_without_pickle(tmp_path: Path) -> None:
     [np.dtype("U2"), np.dtype("S2"), np.dtype("complex128"), np.dtype("datetime64[D]")],
 )
 def test_other_non_allowlisted_dtypes_are_rejected(dtype: np.dtype[object], tmp_path: Path) -> None:
-    result = OptimizationResult({"F": np.ones((1, 2)), "X": np.zeros((1, 2), dtype=dtype)}, meta={"seed": 1})
+    result = OptimizationResult({"F": np.ones((1, 2)), "X": np.zeros((1, 2), dtype=dtype)}, meta=_result().meta)
     with pytest.raises(UnsupportedArrayDTypeError):
         vamos.save_result(result, tmp_path / "unsupported")
 
 
 @pytest.mark.parametrize("array", [np.array(1.0), np.ones(2), np.ones((1, 2, 3))])
 def test_zero_dimensional_and_malformed_f_shapes_are_rejected(array: np.ndarray, tmp_path: Path) -> None:
-    result = OptimizationResult({"F": array}, meta={"seed": 1})
+    result = OptimizationResult({"F": array}, meta=_result().meta)
     with pytest.raises(MalformedResultBundleError):
         vamos.save_result(result, tmp_path / "bad-shape")
 
@@ -332,9 +338,9 @@ def test_malformed_and_duplicate_zip_members_are_rejected(tmp_path: Path) -> Non
         )
 
 
-def test_verify_all_covers_compatibility_views(tmp_path: Path) -> None:
+def test_verify_all_covers_environment(tmp_path: Path) -> None:
     run = vamos.save_result(_result(), tmp_path / "run").root
-    (run / "FUN.csv").write_text("modified", encoding="utf-8")
+    (run / "environment.json").write_text("modified", encoding="utf-8")
 
     assert vamos.load_run(run, verify="required").status == "succeeded"
     with pytest.raises(ArtifactIntegrityError):
@@ -392,13 +398,12 @@ def test_unknown_load_required_role_is_rejected_without_opening(tmp_path: Path) 
     assert not (run / "missing-future.bin").exists()
 
 
-def test_legacy_layout_is_actionably_rejected_without_mutation(tmp_path: Path) -> None:
-    run = tmp_path / "legacy"
+def test_noncanonical_layout_is_actionably_rejected_without_mutation(tmp_path: Path) -> None:
+    run = tmp_path / "unsupported"
     run.mkdir()
-    np.savetxt(run / "FUN.csv", np.ones((1, 2)), delimiter=",")
-    (run / "metadata.json").write_text('{"n_solutions": 1}', encoding="utf-8")
+    (run / "unknown.bin").write_bytes(b"not a run")
     before = {item.name: item.read_bytes() for item in run.iterdir()}
 
-    with pytest.raises(UnsupportedArtifactLayoutError, match="Legacy loading and migration are deliberately deferred"):
+    with pytest.raises(UnsupportedArtifactLayoutError, match="pre-release format; regenerate"):
         vamos.load_run(run)
     assert {item.name: item.read_bytes() for item in run.iterdir()} == before

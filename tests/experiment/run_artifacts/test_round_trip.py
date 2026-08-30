@@ -14,7 +14,18 @@ from vamos.experiment.artifacts.jsonio import manifest_self_hash, sha256_file
 from vamos.experiment.optimization_result import OptimizationResult
 
 
-def test_minimal_builtin_nsgaii_round_trip_ra001_ra034(tmp_path: Path) -> None:
+def _manual_meta(seed: int) -> dict[str, object]:
+    source = json.loads(Path("docs/dev/run_artifact_examples/custom-manual/manifest.json").read_text(encoding="utf-8"))
+    resolved = source["resolved_spec"]
+    resolved["seed"] = seed
+    return {
+        "seed": seed,
+        "run_artifact_requested_spec": source["requested_spec"],
+        "run_artifact_resolved_spec": resolved,
+    }
+
+
+def test_minimal_builtin_nsgaii_round_trip_ra001_ra003(tmp_path: Path) -> None:
     result = vamos.optimize("zdt1", algorithm="nsgaii", pop_size=8, max_evaluations=16, engine="numpy", seed=7)
 
     stored = vamos.save_result(result, tmp_path / "run", labels={"purpose": "test"})
@@ -35,11 +46,8 @@ def test_minimal_builtin_nsgaii_round_trip_ra001_ra034(tmp_path: Path) -> None:
         assert artifact.stat().st_size == descriptor.bytes
         assert sha256_file(artifact) == descriptor.sha256
     assert {item.name for item in (tmp_path / "run").iterdir()} == {
-        "FUN.csv",
-        "X.csv",
         "environment.json",
         "manifest.json",
-        "metadata.json",
         "result.npz",
     }
 
@@ -117,7 +125,7 @@ def test_result_arrays_preserve_empty_shape_dtype_and_values_ra004(
             "X": np.empty((0, 3), dtype=x_dtype),
             "evaluations": 0,
         },
-        meta={"seed": 3},
+        meta=_manual_meta(3),
     )
 
     loaded = vamos.load_result(vamos.save_result(result, tmp_path / "run").root)
@@ -126,7 +134,7 @@ def test_result_arrays_preserve_empty_shape_dtype_and_values_ra004(
     assert loaded.X is not None and loaded.X.shape == (0, 3) and loaded.X.dtype.str == x_dtype.str
 
 
-def test_constraints_outcome_and_counters_round_trip_ra005_ra006(tmp_path: Path) -> None:
+def test_constraints_outcome_and_counters_round_trip_ra004_ra005(tmp_path: Path) -> None:
     f_array = np.array([[1.0, 2.0], [2.0, 1.0]], dtype=np.float32)
     x_array = np.array([[1, 2], [3, 4]], dtype=np.int16)
     g_array = np.array([[-1.0, 0.0], [0.25, -0.5]], dtype=np.float64)
@@ -142,7 +150,7 @@ def test_constraints_outcome_and_counters_round_trip_ra005_ra006(tmp_path: Path)
             "interrupted": False,
             "hv_reached": True,
         },
-        meta={"seed": 5},
+        meta=_manual_meta(5),
     )
 
     stored = vamos.save_result(result, tmp_path / "constraints")
@@ -177,7 +185,7 @@ def test_auxiliary_population_archive_and_reference_arrays_round_trip(tmp_path: 
             },
             "reference_directions": np.eye(2, dtype=np.float64),
         },
-        meta={"seed": 6},
+        meta=_manual_meta(6),
     )
 
     loaded = vamos.load_result(vamos.save_result(result, tmp_path / "auxiliary").root)
@@ -194,7 +202,7 @@ def test_boolean_and_nonfinite_arrays_are_lossless_binary_data(tmp_path: Path) -
             "F": np.array([[np.nan, np.inf], [-np.inf, 0.0]], dtype=np.float64),
             "X": np.array([[True, False], [False, True]], dtype=np.bool_),
         },
-        meta={"seed": 1},
+        meta=_manual_meta(1),
     )
 
     loaded = vamos.load_result(vamos.save_result(result, tmp_path / "nonfinite").root)
@@ -204,7 +212,7 @@ def test_boolean_and_nonfinite_arrays_are_lossless_binary_data(tmp_path: Path) -
     assert np.array_equal(loaded.F, result.F, equal_nan=True)
 
 
-def test_requested_omissions_and_resolved_defaults_survive_ra007(tmp_path: Path) -> None:
+def test_requested_omissions_and_resolved_defaults_survive_ra002(tmp_path: Path) -> None:
     result = vamos.optimize("zdt1", pop_size=8, max_evaluations=8, seed=4)
     manifest = vamos.save_result(result, tmp_path / "defaults").manifest
     requested_defaults = manifest["requested_spec"]["defaults"]
@@ -217,7 +225,7 @@ def test_requested_omissions_and_resolved_defaults_survive_ra007(tmp_path: Path)
     assert "/engine" in applied
 
 
-def test_approved_moead_and_failed_examples_load_ra027() -> None:
+def test_approved_moead_and_failed_examples_load_ra022_ra024() -> None:
     examples = Path("docs/dev/run_artifact_examples")
     moead = vamos.load_run(examples / "moead-success")
     failed = vamos.load_run(examples / "failed-run")
@@ -247,12 +255,30 @@ def test_machine_readable_contract_examples_verify(name: str, status: str) -> No
     if status == "succeeded":
         assert run.result.F is not None
 
-    report = json.loads((examples / "compatibility-report.json").read_text(encoding="utf-8"))
-    assert report["document_type"] == "vamos.compatibility-report"
-    assert report["schema_version"] == "1.0.0"
+
+def test_seed_none_is_resolved_before_execution_and_persisted_ra007(tmp_path: Path) -> None:
+    result = vamos.optimize("zdt1", pop_size=4, max_evaluations=4, seed=None)
+    requested = result.meta["run_artifact_requested_spec"]
+    resolved = result.meta["run_artifact_resolved_spec"]
+
+    assert requested["defaults"]["seed"] is None
+    assert isinstance(resolved["seed"], int)
+    assert result.meta["seed"] == resolved["seed"]
+    stored = vamos.save_result(result, tmp_path / "generated-seed")
+    assert stored.manifest.requested_spec["defaults"]["seed"] is None
+    assert stored.manifest.resolved_spec["seed"] == resolved["seed"]
 
 
-def test_run_directory_is_relocatable_and_contains_no_source_path_ra021(tmp_path: Path) -> None:
+def test_seed_zero_remains_valid_and_is_not_replaced_ra006(tmp_path: Path) -> None:
+    result = vamos.optimize("zdt1", pop_size=4, max_evaluations=4, seed=0)
+    stored = vamos.save_result(result, tmp_path / "seed-zero")
+
+    assert result.meta["seed"] == 0
+    assert stored.manifest.requested_spec["defaults"]["seed"] == 0
+    assert stored.manifest.resolved_spec["seed"] == 0
+
+
+def test_run_directory_is_relocatable_and_contains_no_source_path_ra016(tmp_path: Path) -> None:
     result = vamos.optimize("zdt1", algorithm="nsgaii", pop_size=6, max_evaluations=6, seed=9)
     original = tmp_path / "source" / "run"
     destination = tmp_path / "unrelated" / "moved"

@@ -75,11 +75,11 @@ class TestOptimizeConvenience:
     @pytest.mark.smoke
     def test_result_has_helper_methods(self):
         """Result should expose selection helpers and UX helpers should be importable."""
+        from vamos import save_result
         from vamos.ux.api import (
             plot_result_front,
             result_summary_text,
             result_to_dataframe,
-            save_result,
         )
 
         problem = ZDT1(n_var=10)

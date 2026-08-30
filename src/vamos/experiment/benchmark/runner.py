@@ -103,7 +103,7 @@ def run_benchmark_suite(
     tasks, overrides, raw_root = _prepare_tasks(suite, algos, metric_list, base_output_dir, global_config_overrides)
     # hv computed separately; ask for additional indicators only
     indicator_metrics = [m for m in metric_list if m.lower() not in {"hv", "hypervolume"}]
-    persister = CSVPersister(mirror_roots=())
+    persister = CSVPersister()
     runner = study_runner_cls(verbose=True, indicators=indicator_metrics, persister=persister)
     summary_dir = _ensure_dir(base_output_dir / "summary")
     results = runner.run(

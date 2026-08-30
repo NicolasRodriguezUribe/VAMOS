@@ -85,8 +85,7 @@ def test_main_runner_subprocess_smoke(tmp_path):
     assert proc.returncode == 0, proc.stderr.decode()
 
     run_dir = output_root / "ZDT1" / "nsgaii" / "numpy" / "seed_7"
-    assert (run_dir / "FUN.csv").exists()
-    assert (run_dir / "metadata.json").exists()
+    assert {path.name for path in run_dir.iterdir()} == {"manifest.json", "result.npz", "environment.json"}
 
 
 @pytest.mark.cli
@@ -117,7 +116,7 @@ def test_main_runner_accepts_engine_auto(tmp_path):
 
     resolved_engine = resolve_engine("auto", algorithm="nsgaii")
     run_dir = output_root / "ZDT1" / "nsgaii" / resolved_engine / "seed_9"
-    assert (run_dir / "FUN.csv").exists()
+    assert (run_dir / "manifest.json").exists()
 
 
 @pytest.mark.cli
@@ -154,8 +153,7 @@ def test_config_only_subprocess_smoke(tmp_path):
 
     resolved_engine = resolve_engine("auto", algorithm="nsgaii")
     run_dir = output_root / "ZDT1" / "nsgaii" / resolved_engine / "seed_13"
-    assert (run_dir / "FUN.csv").exists()
-    assert (run_dir / "resolved_config.json").exists()
+    assert {path.name for path in run_dir.iterdir()} == {"manifest.json", "result.npz", "environment.json"}
 
 
 @pytest.mark.cli
@@ -299,8 +297,7 @@ def test_zoo_run_smoke(tmp_path):
     assert proc.returncode == 0, proc.stderr.decode()
     resolved_engine = resolve_engine("auto", algorithm="nsgaii")
     run_dir = output_root / "ZDT1" / "nsgaii" / resolved_engine / "seed_4"
-    assert (run_dir / "FUN.csv").exists()
-    assert (run_dir / "metadata.json").exists()
+    assert {path.name for path in run_dir.iterdir()} == {"manifest.json", "result.npz", "environment.json"}
 
 
 @pytest.mark.cli

@@ -80,5 +80,5 @@ def test_quickstart_subprocess_smoke(tmp_path) -> None:
     assert proc.returncode == 0, proc.stderr.decode()
     assert config_path.exists()
     run_dir = output_root / "ZDT1" / "nsgaii" / "numpy" / "seed_42"
-    assert (run_dir / "FUN.csv").exists()
+    assert {path.name for path in run_dir.iterdir()} == {"manifest.json", "result.npz", "environment.json"}
     assert b"Quickstart complete." in proc.stdout

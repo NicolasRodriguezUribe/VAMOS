@@ -35,7 +35,7 @@ def test_optimize_moead_default_pop_size_is_lattice_compatible() -> None:
 
     result = optimize(problem, algorithm="moead", max_evaluations=91, seed=1, engine="numpy")
 
-    assert result.meta["resolved_config"]["pop_size"] == 91
+    assert result.meta["run_artifact_resolved_spec"]["population"]["initial_size"] == 91
     assert result.data["evaluations"] == 91
 
 

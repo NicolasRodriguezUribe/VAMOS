@@ -1,7 +1,6 @@
 import sys
 
-import numpy as np
-
+import vamos
 from vamos.ux.visualization import plotting
 
 
@@ -41,9 +40,8 @@ def test_cli_runs_and_writes_artifacts(monkeypatch, tmp_path):
     main()
 
     run_dir = output_root / "ZDT1" / "nsgaii" / "numpy" / "seed_1"
-    fun_path = run_dir / "FUN.csv"
-    metadata_path = run_dir / "metadata.json"
-    assert fun_path.exists(), "FUN.csv was not produced by the CLI run"
-    assert metadata_path.exists(), "metadata.json was not produced by the CLI run"
-    fun = np.loadtxt(fun_path, delimiter=",")
-    assert fun.shape[0] > 0
+    assert {path.name for path in run_dir.iterdir()} == {"manifest.json", "result.npz", "environment.json"}
+    stored = vamos.load_run(run_dir, verify="all")
+    assert stored.result.F is not None and stored.result.F.shape[0] > 0
+    assert stored.manifest.resolved_spec["seed"] == 1
+    assert stored.manifest["provenance"]["entry_point"]["kind"] == "cli"

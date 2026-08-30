@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -154,13 +154,6 @@ def run_ablation(argv: Sequence[str] | None = None) -> None:
             _logger().info("[Ablation] Task: %s", task.as_dict())
         return
 
-    mirror_output_roots = raw.get("mirror_output_roots")
-    mirror = None
-    if mirror_output_roots is not None:
-        if not isinstance(mirror_output_roots, Iterable) or isinstance(mirror_output_roots, (str, bytes, Mapping)):
-            raise TypeError("mirror_output_roots must be a list of paths.")
-        mirror = tuple(str(p) for p in mirror_output_roots)
-
     variations_by_variant = _filter_variations_by_algorithm(variations_by_variant, algorithm=algorithm)
 
     results, variant_names = run_ablation_plan(
@@ -169,7 +162,6 @@ def run_ablation(argv: Sequence[str] | None = None) -> None:
         base_config=base_config,
         variations_by_variant=variations_by_variant or None,
         engine=str(engine) if engine is not None else None,
-        mirror_output_roots=mirror,
     )
 
     summary_path = raw.get("summary_path")

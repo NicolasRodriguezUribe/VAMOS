@@ -14,6 +14,7 @@ import importlib
 
 from vamos.api import (
     EnvironmentalSelectionResult,
+    IncompleteRunMetadataError,
     LoadLimits,
     OptimizationResult,
     Problem,
@@ -53,6 +54,7 @@ __all__ = [
     "StoredRun",
     "RunManifest",
     "LoadLimits",
+    "IncompleteRunMetadataError",
     "problems",
 ]
 

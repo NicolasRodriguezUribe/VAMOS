@@ -60,7 +60,7 @@ def main() -> None:
         )
         variant_names.append(task.variant.name)
 
-    results = run_study(study_tasks, mirror_output_roots=("results",))
+    results = run_study(study_tasks)
 
     hv_by_variant: dict[str, list[float]] = defaultdict(list)
     for name, result in zip(variant_names, results):

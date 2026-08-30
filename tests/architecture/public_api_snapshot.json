@@ -1,6 +1,7 @@
 {
   "vamos": [
     "EnvironmentalSelectionResult",
+    "IncompleteRunMetadataError",
     "LoadLimits",
     "OptimizationResult",
     "Problem",
@@ -41,6 +42,7 @@
   ],
   "vamos.api": [
     "EnvironmentalSelectionResult",
+    "IncompleteRunMetadataError",
     "LoadLimits",
     "OptimizationResult",
     "Problem",
@@ -81,7 +83,6 @@
     "result_summary_text",
     "result_to_dataframe",
     "result_to_latex",
-    "save_result",
     "tchebycheff_scores",
     "weighted_sum_scores"
   ]

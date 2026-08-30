@@ -50,10 +50,11 @@ results/quickstart/<PROBLEM>/.../seed_<N>/
 ```
 
 Key files:
-- `FUN.csv`: objective values (your solutions)
-- `metadata.json`: run details
-- `resolved_config.json`: the final settings that were used
-- `pareto_front_*.png`: plot (if enabled)
+
+- `manifest.json`: requested/resolved settings, actual seed, provenance, outcome, and hashes
+- `result.npz`: objective, decision, constraint, population, and archive arrays
+- `environment.json`: bounded runtime environment details
+- `pareto_front_*.png`: plot output outside the canonical run directory (if enabled)
 
 ## 4. Re-run or change settings
 

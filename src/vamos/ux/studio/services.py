@@ -95,7 +95,7 @@ def load_studio_data(study_dir: Path) -> tuple[list[RunRecord], list[FrontRecord
 
 def _contains_result_files(path: Path) -> bool:
     try:
-        next(path.rglob("FUN.csv"))
+        next(path.rglob("manifest.json"))
     except StopIteration:
         return False
     return True

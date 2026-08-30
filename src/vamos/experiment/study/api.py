@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from vamos.engine.tuning.ablation import AblationPlan
 from vamos.experiment._execution_support import VariationConfigs
 from vamos.experiment.services.orchestrator import run_single
 
-from .persistence import CSVPersister
 from .runner import StudyResult, StudyRunner, StudyTask
 
 
@@ -37,10 +36,8 @@ def run_study(
     tasks: Iterable[StudyTask],
     *,
     config_overrides: dict[str, Any] | None = None,
-    mirror_output_roots: Sequence[str] | None = ("results",),
 ) -> list[StudyResult]:
-    persister = CSVPersister(mirror_roots=mirror_output_roots) if mirror_output_roots else None
-    runner = StudyRunner(persister=persister)
+    runner = StudyRunner()
     overrides: dict[str, Any] = config_overrides or {}
     if overrides:
         tasks = _apply_overrides(tasks, overrides)
@@ -91,7 +88,6 @@ def run_ablation_plan(
     variations_by_variant: Mapping[str, VariationConfigs] | None = None,
     engine: str | None = None,
     config_overrides: dict[str, Any] | None = None,
-    mirror_output_roots: Sequence[str] | None = ("results",),
 ) -> tuple[list[StudyResult], list[str]]:
     tasks, variant_names = build_study_tasks_from_ablation_plan(
         plan,
@@ -100,7 +96,7 @@ def run_ablation_plan(
         variations_by_variant=variations_by_variant,
         engine=engine,
     )
-    results = run_study(tasks, config_overrides=config_overrides, mirror_output_roots=mirror_output_roots)
+    results = run_study(tasks, config_overrides=config_overrides)
     return results, variant_names
 
 

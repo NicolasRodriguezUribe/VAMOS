@@ -1,8 +1,7 @@
 import json
 import sys
 
-import numpy as np
-
+import vamos
 from vamos.ux.visualization import plotting
 
 
@@ -37,27 +36,13 @@ def test_cli_with_config_file_creates_artifacts(monkeypatch, tmp_path):
     main()
 
     run_dir = output_root / "ZDT1" / "nsgaii" / "numpy" / "seed_5"
-    fun_path = run_dir / "FUN.csv"
-    meta_path = run_dir / "metadata.json"
-    resolved_path = run_dir / "resolved_config.json"
-
-    assert fun_path.exists(), "FUN.csv not created"
-    assert meta_path.exists(), "metadata.json not created"
-    assert resolved_path.exists(), "resolved_config.json not created"
-
-    fun = np.loadtxt(fun_path, delimiter=",")
-    assert fun.shape[0] > 0
-
-    meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    resolved = json.loads(resolved_path.read_text(encoding="utf-8"))
-    assert meta["algorithm"] == "nsgaii"
-    assert meta["backend"] == "numpy"
-    assert meta["seed"] == 5
-    assert meta["problem"]["key"] == "zdt1"
-    assert resolved["algorithm"] == "nsgaii"
-    assert resolved["engine"] == "numpy"
-    assert resolved["problem"] == "zdt1"
-    assert resolved["seed"] == 5
+    assert {path.name for path in run_dir.iterdir()} == {"manifest.json", "result.npz", "environment.json"}
+    stored = vamos.load_run(run_dir, verify="all")
+    assert stored.result.F is not None and stored.result.F.shape[0] > 0
+    assert stored.manifest.resolved_spec["algorithm"]["component_id"] == "vamos.algorithm:nsgaii@1"
+    assert stored.manifest.resolved_spec["backend"]["kernel"]["component_id"] == "vamos.kernel:numpy@1"
+    assert stored.manifest.resolved_spec["problem"]["component_id"] == "vamos.problem:zdt1@1"
+    assert stored.manifest.resolved_spec["seed"] == 5
 
 
 def test_cli_runs_spea2_from_config(monkeypatch, tmp_path):
@@ -88,8 +73,39 @@ def test_cli_runs_spea2_from_config(monkeypatch, tmp_path):
     main()
 
     run_dir = output_root / "ZDT1" / "spea2" / "numpy" / "seed_2"
-    fun_path = run_dir / "FUN.csv"
-    archive_path = run_dir / "ARCHIVE_FUN.csv"
+    stored = vamos.load_run(run_dir, verify="all")
+    assert stored.result.F is not None
+    assert stored.result.data["archive"]["F"] is not None
 
-    assert fun_path.exists()
-    assert archive_path.exists()
+
+def test_cli_config_null_seed_is_resolved_before_execution(monkeypatch, tmp_path):
+    output_root = tmp_path / "results"
+    config_file = tmp_path / "null-seed.json"
+    config_file.write_text(
+        json.dumps(
+            {
+                "version": "1",
+                "defaults": {
+                    "problem": "zdt1",
+                    "algorithm": "nsgaii",
+                    "engine": "numpy",
+                    "population_size": 4,
+                    "max_evaluations": 4,
+                    "output_root": str(output_root),
+                    "seed": None,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys, "argv", ["prog", "--config", str(config_file)])
+
+    from vamos.experiment.cli.main import main
+
+    main()
+
+    manifests = list(output_root.rglob("manifest.json"))
+    assert len(manifests) == 1
+    stored = vamos.load_run(manifests[0].parent)
+    assert stored.manifest.requested_spec["defaults"]["seed"] is None
+    assert isinstance(stored.manifest.resolved_spec["seed"], int)

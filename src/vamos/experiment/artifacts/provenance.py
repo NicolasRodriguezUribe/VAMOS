@@ -64,6 +64,7 @@ def capture_provenance(
     *,
     backend: str,
     timestamps: Mapping[str, Any],
+    entry_point: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return ``(provenance, environment)`` without storing personal paths."""
     environment = capture_environment(backend=backend)
@@ -82,13 +83,17 @@ def capture_provenance(
             "distribution": distribution,
         },
         "source": source,
-        "entry_point": {
-            "kind": "python_api",
-            "python": {
-                "callable": "vamos.optimize",
-                "arguments_source": "requested_spec",
+        "entry_point": normalize_json(
+            entry_point
+            or {
+                "kind": "python_api",
+                "python": {
+                    "callable": "vamos.optimize",
+                    "arguments_source": "requested_spec",
+                },
             },
-        },
+            field="$.provenance.entry_point",
+        ),
         "environment_ref": "environment",
         "timestamps": normalize_json(timestamps, field="$.provenance.timestamps"),
     }

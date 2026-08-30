@@ -136,9 +136,7 @@ print(result.explain_defaults())
 
 The output includes:
 
-- `resolved_config`: resolved problem/algorithm/engine/budget/pop size
-- `resolved_config.engine_source`: whether the backend came from an explicit choice, the deterministic default, or `auto`
-- `resolved_config.kernel_backend`: the kernel actually used for the run
+- `resolved_spec`: canonical problem, algorithm, operators, backend, termination, seed, and population details
 - `default_sources`: which values were inferred (`auto`) vs set explicitly
 
 ## 8. Operator Facade Access
@@ -238,8 +236,8 @@ run = load_run(stored.root)
 print(loaded.F.shape, run.manifest.run_id)
 ```
 
-The historical `from vamos.ux.api import save_result` import remains an alias.
-See [Save and load Python run artifacts](run-artifacts.md) for integrity,
+`save_result` is available from the top-level `vamos` facade only. See
+[Save and load Python run artifacts](run-artifacts.md) for integrity,
 resource-limit, and non-destructive-write behavior.
 
 ## 14. Select a Single Solution from the Front

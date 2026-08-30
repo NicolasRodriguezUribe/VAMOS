@@ -1,14 +1,13 @@
 from pathlib import Path
 
-import numpy as np
-
+import vamos
 from vamos.ux.studio.services import build_demo_study_data, discover_study_directories
 
 
 def test_discover_study_directories_finds_results_roots(tmp_path: Path) -> None:
     run_dir = tmp_path / "results" / "quickstart" / "zdt1" / "nsgaii" / "seed_0"
-    run_dir.mkdir(parents=True)
-    np.savetxt(run_dir / "FUN.csv", np.array([[0.1, 0.2]]), delimiter=",")
+    result = vamos.optimize("zdt1", pop_size=4, max_evaluations=4, seed=0)
+    vamos.save_result(result, run_dir)
 
     study_dirs = discover_study_directories(tmp_path)
 

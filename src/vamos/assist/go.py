@@ -78,15 +78,15 @@ def go(
         )
         run_info = {
             "run_dir": str(run_summary.get("run_dir", "")),
-            "resolved_config_path": str(run_summary.get("resolved_config_path", "")),
+            "execution_config_path": str(run_summary.get("execution_config_path", "")),
             "run_report_path": str(run_summary.get("run_report_path", "")),
             "exit_code": _coerce_exit_code(run_summary.get("exit_code", 1)),
             "status": str(run_summary.get("status", "error")),
         }
         summary["run"] = run_info
-        resolved_cfg = run_info["resolved_config_path"]
-        if resolved_cfg:
-            summary["recommended_commands"].append(f"vamos --config {resolved_cfg}")
+        execution_cfg = run_info["execution_config_path"]
+        if execution_cfg:
+            summary["recommended_commands"].append(f"vamos --config {execution_cfg}")
 
     return summary
 
