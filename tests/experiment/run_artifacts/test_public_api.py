@@ -9,7 +9,15 @@ import pytest
 
 import vamos
 import vamos.ux.api as ux_api
-from vamos.experiment.artifacts import IncompleteRunMetadataError, LoadLimits, RunManifest, StoredRun
+from vamos.experiment.artifacts import (
+    CompatibilityReport,
+    IncompleteRunMetadataError,
+    LoadLimits,
+    ReplayReport,
+    RunManifest,
+    StoredRun,
+    VerificationReport,
+)
 from vamos.experiment.optimization_result import OptimizationResult
 
 
@@ -27,6 +35,9 @@ def test_public_exports_and_signatures_are_canonical() -> None:
     assert vamos.RunManifest is RunManifest
     assert vamos.StoredRun is StoredRun
     assert vamos.IncompleteRunMetadataError is IncompleteRunMetadataError
+    assert vamos.CompatibilityReport is CompatibilityReport
+    assert vamos.VerificationReport is VerificationReport
+    assert vamos.ReplayReport is ReplayReport
     assert list(inspect.signature(vamos.save_result).parameters) == [
         "result",
         "path",
@@ -37,6 +48,8 @@ def test_public_exports_and_signatures_are_canonical() -> None:
     ]
     assert list(inspect.signature(vamos.load_run).parameters) == ["path", "verify", "limits"]
     assert list(inspect.signature(vamos.load_result).parameters) == ["path", "verify", "limits"]
+    assert list(inspect.signature(vamos.verify_run).parameters) == ["path", "require_level", "limits"]
+    assert list(inspect.signature(vamos.reproduce).parameters) == ["path", "output", "limits"]
 
 
 def test_manual_result_requires_complete_execution_context(tmp_path: Path) -> None:

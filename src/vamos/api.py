@@ -27,13 +27,18 @@ from vamos.foundation.problem.registry import (
     make_problem_selection,
 )
 from vamos.run_artifacts import (
+    CompatibilityReport,
     IncompleteRunMetadataError,
     LoadLimits,
+    ReplayReport,
     RunManifest,
     StoredRun,
+    VerificationReport,
     load_result,
     load_run,
+    reproduce,
     save_result,
+    verify_run,
 )
 from vamos.selection import EnvironmentalSelectionResult, select_survivors
 
@@ -73,4 +78,9 @@ __all__ = [
     "RunManifest",
     "LoadLimits",
     "IncompleteRunMetadataError",
+    "CompatibilityReport",
+    "ReplayReport",
+    "VerificationReport",
+    "verify_run",
+    "reproduce",
 ]

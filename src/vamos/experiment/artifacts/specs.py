@@ -17,9 +17,13 @@ _OPERATOR_ALIASES = {
     "bitflip": "bitflip",
     "clip": "clip",
     "de": "differential_evolution",
+    "differential_evolution": "differential_evolution",
     "mixed": "mixed",
+    "neighborhood": "neighborhood",
+    "order": "order",
     "ox": "order",
     "pm": "polynomial",
+    "polynomial": "polynomial",
     "random": "random",
     "sbx": "sbx",
     "swap": "swap",
@@ -282,7 +286,7 @@ def _optional_int(value: object) -> int | None:
 
 
 def _is_deterministic(engine: str, evaluation: object) -> bool:
-    return engine in {"numpy", "numba"} and (evaluation is None or evaluation == "serial")
+    return engine in {"numpy", "numba", "moocore"} and (evaluation is None or evaluation == "serial")
 
 
 def _slug(value: str) -> str:

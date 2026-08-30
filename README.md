@@ -124,6 +124,14 @@ After a run, summarize results with:
 vamos summarize --results results/quickstart
 ```
 
+Inspect, fully verify, or exactly replay a canonical built-in run:
+
+```bash
+vamos results inspect RUN_DIR
+vamos results verify RUN_DIR --require-level exact
+vamos reproduce RUN_DIR
+```
+
 For a small study in one call:
 
 ```python
@@ -139,6 +147,8 @@ All functionality lives under one command. Run `vamos help` to list everything:
 | `vamos quickstart` | Guided wizard that writes a config |
 | `vamos create-problem` | Scaffold a custom problem file |
 | `vamos summarize` | Table/JSON summary of recent runs |
+| `vamos results` | Inspect or verify one canonical run |
+| `vamos reproduce` | Execute an exact same-environment built-in replay |
 | `vamos check` | Verify installation and backends |
 | `vamos bench` | Benchmark suite across algorithms |
 | `vamos studio` | Launch interactive dashboard |

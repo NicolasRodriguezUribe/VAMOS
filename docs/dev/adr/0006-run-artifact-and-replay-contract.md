@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and implemented
+Accepted and implemented, including exact built-in replay
 
 ## Context
 
@@ -45,14 +45,20 @@ Adopt the normative contract in
 9. The only public saver is top-level `vamos.save_result`. A manually created
    result requires explicit complete requested and resolved specs; otherwise a
    typed `IncompleteRunMetadataError` is raised.
-10. Loading is inert data access. It never executes optimization or resolves
-    code. Replayability is recorded evidence; replay execution remains future
-    work.
+10. Loading, inspection, and verification are inert data access. They never
+    execute optimization, resolve plugins, import manifest-provided code, use
+    shell/network, or mutate artifacts.
 11. Earlier pre-release output layouts are unsupported. There are no readers,
     detectors, adapters, migrations, aliases, warnings, or dual-format writers.
     The actionable response is to regenerate with the current VAMOS version.
 12. A future StudyManifest may reference run/task identities but will not
     duplicate run specifications or arrays.
+13. Exact replay is a separate explicit operation for verified built-in
+    components in the same material environment and backend. It reconstructs
+    solely from the persisted resolved spec and refuses rather than downgrade.
+14. An executed replay creates a new canonical run with source/root lineage,
+    plan/source hashes, and bitwise F/X plus auxiliary-array comparison.
+15. There is no `reproduce --verify-only`; verification is `results verify`.
 
 ## Consequences
 
@@ -72,7 +78,8 @@ Costs and risks:
   context;
 - an existing destination must be deliberately changed rather than overwritten;
 - SHA-256 provides integrity detection but not authentication;
-- exact replay remains uncommon when source or environment identity is weak.
+- exact replay refuses when source or environment identity is weak;
+- custom/plugin/cross-backend replay remains intentionally unsupported.
 
 ## Alternatives considered
 
@@ -109,7 +116,7 @@ belong to a future explicit reproduction design.
 
 ## Future boundary
 
-`reproduce`, `--verify-only`, custom/plugin reconstruction, a compatibility
-comparison operation, a durable StudyManifest, and study resume/retry are not
-part of this implementation. They must build on this schema without adding
+Custom/plugin reconstruction, cross-backend or best-effort execution, automatic
+environment installation, a durable StudyManifest, and study resume/retry are
+not part of this implementation. They must build on this schema without adding
 alternate run persistence paths.

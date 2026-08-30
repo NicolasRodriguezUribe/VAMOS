@@ -41,9 +41,9 @@ The primary user-facing entry points.  Most users only need these.
 
 ## Run artifacts
 
-The top-level `vamos.save_result`, `vamos.load_run`, and `vamos.load_result`
-functions delegate to this facade. Loading is data-only and never re-executes
-optimization.
+The top-level persistence, verification, and exact built-in replay functions
+delegate to this facade. Loading and verification are data-only; replay is the
+separate explicit executable operation.
 
 ::: vamos.run_artifacts
     options:
@@ -53,9 +53,14 @@ optimization.
         - save_result
         - load_run
         - load_result
+        - verify_run
+        - reproduce
         - StoredRun
         - RunManifest
         - LoadLimits
+        - CompatibilityReport
+        - VerificationReport
+        - ReplayReport
 
 ## Algorithm Configuration
 

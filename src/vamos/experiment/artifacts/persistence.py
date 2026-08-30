@@ -21,7 +21,7 @@ from .manifest import DOCUMENT_TYPE, SCHEMA_VERSION
 from .models import LoadLimits, StoredRun, VerifyMode
 from .provenance import capture_provenance, replayability_from_provenance
 from .reader import read_run
-from .storage import store_succeeded_run
+from .storage import store_failed_run, store_succeeded_run
 
 
 class ResultLike(Protocol):
@@ -41,14 +41,15 @@ def save_result(
     """Persist a result as one immutable, relocatable v1 run directory."""
     active_limits = limits if limits is not None else LoadLimits()
     arrays = snapshot_result_arrays(result, limits=active_limits)
+    meta = _result_meta_mapping(result)
     recorded_requested, resolved, caller_supplied = _result_specs(
         result,
         requested_spec=requested_spec,
         resolved_spec=resolved_spec,
     )
-    timestamps, runtime_ms = _timestamps(_result_meta_mapping(result))
+    timestamps, runtime_ms = _timestamps(meta)
     backend = _kernel_name(resolved)
-    entry_point = _result_meta_mapping(result).get("run_artifact_entry_point")
+    entry_point = meta.get("run_artifact_entry_point")
     provenance, environment = capture_provenance(
         backend=backend,
         timestamps=timestamps,
@@ -85,8 +86,14 @@ def save_result(
                 }
             ],
         }
+    replayability_override = meta.get("run_artifact_replayability")
+    if isinstance(replayability_override, Mapping):
+        normalized_replayability = normalize_json(replayability_override, field="$.replayability")
+        if isinstance(normalized_replayability, dict):
+            replayability = normalized_replayability
     task_id = "sha256:" + sha256_bytes(canonical_json_bytes(resolved))
-    run_id = str(uuid.uuid4())
+    selected_run_id = meta.get("run_artifact_run_id")
+    run_id = selected_run_id if isinstance(selected_run_id, str) else str(uuid.uuid4())
     manifest: dict[str, Any] = {
         "document_type": DOCUMENT_TYPE,
         "schema_version": SCHEMA_VERSION,
@@ -103,6 +110,9 @@ def save_result(
     }
     if labels is not None:
         manifest["labels"] = dict(labels)
+    lineage = meta.get("run_artifact_lineage")
+    if isinstance(lineage, Mapping):
+        manifest["lineage"] = dict(lineage)
     store_succeeded_run(
         Path(path),
         arrays=arrays,
@@ -111,6 +121,55 @@ def save_result(
         limits=active_limits,
     )
     return read_run(Path(path), verify="required", limits=active_limits)
+
+
+def save_failed_replay(
+    path: str | Path,
+    *,
+    run_id: str,
+    requested_spec: Mapping[str, Any],
+    resolved_spec: Mapping[str, Any],
+    lineage: Mapping[str, Any],
+    failure: Mapping[str, Any],
+    outcome: Mapping[str, Any],
+    timestamps: Mapping[str, str],
+    limits: LoadLimits | None = None,
+) -> StoredRun:
+    """Persist a failed replay attempt after optimization has begun."""
+    active_limits = limits if limits is not None else LoadLimits()
+    resolved = normalize_json(resolved_spec, field="$.resolved_spec")
+    requested = normalize_json(requested_spec, field="$.requested_spec")
+    if not isinstance(resolved, dict) or not isinstance(requested, dict):
+        raise AssertionError("failed replay specifications are not objects")
+    backend = _kernel_name(resolved)
+    provenance, environment = capture_provenance(
+        backend=backend,
+        timestamps=timestamps,
+        entry_point={"kind": "replay", "python": {"callable": "vamos.reproduce", "arguments_source": "resolved_spec"}},
+    )
+    manifest: dict[str, Any] = {
+        "document_type": DOCUMENT_TYPE,
+        "schema_version": SCHEMA_VERSION,
+        "run_id": run_id,
+        "task_id": "sha256:" + sha256_bytes(canonical_json_bytes(resolved)),
+        "status": "failed",
+        "timestamps": dict(timestamps),
+        "requested_spec": requested,
+        "resolved_spec": resolved,
+        "provenance": provenance,
+        "replayability": {
+            "declared_level": "unavailable",
+            "deterministic": _declared_deterministic(resolved),
+            "exact_requirements": [],
+            "reasons": [{"code": "replay_execution_failed", "message": "The replay attempt did not produce a result."}],
+        },
+        "outcome": dict(outcome),
+        "failure": dict(failure),
+        "lineage": dict(lineage),
+        "artifacts": [],
+    }
+    store_failed_run(Path(path), environment=environment, manifest_base=manifest, limits=active_limits)
+    return read_run(Path(path), verify="all", limits=active_limits)
 
 
 def load_run(
@@ -306,4 +365,4 @@ def _result_data_mapping(result: ResultLike) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
 
 
-__all__ = ["ResultLike", "load_result", "load_run", "save_result"]
+__all__ = ["ResultLike", "load_result", "load_run", "save_failed_replay", "save_result"]

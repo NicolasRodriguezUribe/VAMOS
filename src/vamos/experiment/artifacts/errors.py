@@ -22,6 +22,7 @@ class RunArtifactError(Exception):
         field: str | None = None,
         artifact_role: str | None = None,
         path: str | Path | None = None,
+        optimization_executed: bool = False,
     ) -> None:
         self.operation = operation
         self.reason = reason
@@ -31,6 +32,7 @@ class RunArtifactError(Exception):
         self.field = field
         self.artifact_role = artifact_role
         self.path = str(path) if path is not None else None
+        self.optimization_executed = optimization_executed
         location = field or artifact_role or "run artifact"
         if self.path is not None:
             location = f"{location} at {self.path}"
@@ -49,6 +51,7 @@ class RunArtifactError(Exception):
             "field": self.field,
             "artifact_role": self.artifact_role,
             "path": self.path,
+            "optimization_executed": self.optimization_executed,
         }
 
 
@@ -211,20 +214,76 @@ class IncompleteRunMetadataError(RunArtifactError):
     category = "incomplete_run_metadata"
 
 
+class VerificationRequirementError(RunArtifactError):
+    """A requested verification/replayability level was not met."""
+
+    category = "verification_requirement"
+
+
+class EnvironmentIncompatibilityError(VerificationRequirementError):
+    """The current environment cannot satisfy the requested replay level."""
+
+    category = "environment_incompatibility"
+
+
+class ReplayUnavailableError(RunArtifactError):
+    """The source run is not eligible for executable replay."""
+
+    category = "replay_unavailable"
+
+
+class ComponentNotReconstructableError(ReplayUnavailableError):
+    """A persisted component cannot be reconstructed from built-ins."""
+
+    category = "component_not_reconstructable"
+
+
+class ResolvedSpecMismatchError(ReplayUnavailableError):
+    """Reconstruction does not reproduce the persisted resolved spec."""
+
+    category = "resolved_spec_mismatch"
+
+
+class UnsupportedReplayProviderError(ReplayUnavailableError):
+    """A persisted provider is outside the built-in replay trust boundary."""
+
+    category = "unsupported_replay_provider"
+
+
+class ReplayExecutionError(RunArtifactError):
+    """Optimization began but did not produce a replay result."""
+
+    category = "replay_execution"
+
+
+class ReplayResultMismatchError(ReplayExecutionError):
+    """Replay completed but exact array comparison failed."""
+
+    category = "replay_result_mismatch"
+
+
 __all__ = [
     "ArtifactIntegrityError",
     "ArtifactMissingError",
     "ArtifactResourceLimitError",
+    "ComponentNotReconstructableError",
     "DuplicateJSONKeyError",
+    "EnvironmentIncompatibilityError",
     "IncompleteRunMetadataError",
     "IncompleteRunError",
     "MalformedResultBundleError",
     "ManifestValidationError",
     "MissingManifestFieldError",
     "OutputCollisionError",
+    "ReplayExecutionError",
+    "ReplayResultMismatchError",
+    "ReplayUnavailableError",
+    "ResolvedSpecMismatchError",
     "RunArtifactError",
     "UnsafeArtifactPathError",
     "UnsupportedArrayDTypeError",
     "UnsupportedArtifactLayoutError",
+    "UnsupportedReplayProviderError",
     "UnsupportedSchemaError",
+    "VerificationRequirementError",
 ]

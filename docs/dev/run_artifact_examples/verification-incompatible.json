@@ -1,0 +1,37 @@
+{
+  "artifact_integrity": "valid",
+  "component_reconstructability": "reconstructable",
+  "document_type": "vamos.verification-report",
+  "effective_replayability": "compatible",
+  "environment_compatibility": {
+    "findings": [
+      {
+        "action": "Use Python 3.12.",
+        "blocks_exact": true,
+        "classification": "compatible",
+        "current": "3.11",
+        "explanation": "Stored and current Python major/minor version differ.",
+        "field": "$.environment.python.version",
+        "stored": "3.12"
+      }
+    ],
+    "level": "compatible"
+  },
+  "numerical_bundle_safety": "valid",
+  "optimization_executed": false,
+  "path_safety": "valid",
+  "reasons": [
+    {
+      "action": "Use the recorded material environment.",
+      "code": "environment_not_exact",
+      "field": "$.environment.python.version",
+      "message": "The current environment is not an exact match."
+    }
+  ],
+  "root": "runs/nsgaii-success",
+  "run_id": "11111111-1111-4111-8111-111111111111",
+  "schema": "1.0.0",
+  "status": "succeeded",
+  "task_id": "sha256:eddc343b9786d94b24df3b6032a3664d13140edf6dc80a69deba486c2c023dc2",
+  "version": "1"
+}
