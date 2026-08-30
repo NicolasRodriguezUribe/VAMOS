@@ -61,6 +61,8 @@ nav:
     - Engineering Audit: topics/engineering_audit.md
     - Scaling with Dask: scaling/dask.md
   - Developer Guides:
+    - Run Artifact Contract: dev/run_artifact_contract.md
+    - Run Artifact Acceptance Tests: dev/run_artifact_acceptance_tests.md
     - Add a Problem: dev/add_problem.md
     - Add an Algorithm: dev/add_algorithm.md
     - Add a Backend: dev/add_backend.md
@@ -73,3 +75,4 @@ nav:
       - 0003 Optional Dependencies Policy: dev/adr/0003-optional-deps-policy.md
       - 0004 No Shims, No Allowlists: dev/adr/0004-no-shims-no-allowlists.md
       - 0005 Health Gates and Retention: dev/adr/0005-health-gates-and-retention.md
+      - 0006 Run Artifact and Replay Contract: dev/adr/0006-run-artifact-and-replay-contract.md
