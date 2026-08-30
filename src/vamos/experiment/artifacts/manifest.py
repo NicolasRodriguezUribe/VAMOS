@@ -18,6 +18,7 @@ from .errors import (
     UnsupportedSchemaError,
 )
 from .jsonio import canonical_json_bytes, load_json_file, manifest_self_hash, sha256_bytes
+from .lineage import validate_replay_lineage
 from .models import ArtifactDescriptor, LoadLimits, ResolvedRunSpec, RunManifest, deep_freeze
 from .paths import validate_relative_artifact_path
 
@@ -165,6 +166,7 @@ def validate_run_manifest(
         labels = value["labels"]
         if not isinstance(labels, Mapping) or any(not isinstance(key, str) or not isinstance(item, str) for key, item in labels.items()):
             _invalid(operation, path, "$.labels", "object of string keys and values", labels)
+    validate_replay_lineage(value.get("lineage"), run_id=run_id, status=status, operation=operation, path=path)
     frozen = deep_freeze(value)
     if not isinstance(frozen, Mapping):
         raise AssertionError("deep_freeze returned a non-mapping for a manifest")

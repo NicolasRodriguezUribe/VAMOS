@@ -9,7 +9,8 @@ Schema version: `1.0.0`
 This document defines the only supported VAMOS run-artifact format. It governs
 the top-level Python persistence API, CLI run output, analysis discovery, and
 Studio loading. A run artifact represents one execution attempt. It is not a
-study database, a replay command, or a general export format.
+study database or a general export format. Replay is an explicit service that
+consumes one verified run and publishes another through the same writer.
 
 VAMOS is pre-release. Outputs from earlier prototypes are unsupported and must
 be regenerated with the current version. The package contains no old-layout
@@ -81,6 +82,8 @@ save_result(result, path, *, requested_spec=None, resolved_spec=None,
             labels=None, limits=None) -> StoredRun
 load_run(path, *, verify="required", limits=None) -> StoredRun
 load_result(path, *, verify="required", limits=None) -> OptimizationResult
+verify_run(path, *, require_level=None, limits=None) -> VerificationReport
+reproduce(path, *, output=None, limits=None) -> ReplayReport
 ```
 
 There is no persistence export from `vamos.ux.api`.
@@ -187,11 +190,28 @@ claim requires the same resolved spec, implementation, backend, materially
 equivalent environment, and a deterministic path. Loading does not test replay
 equivalence.
 
+Exact verification compares only material evidence: VAMOS version and
+implementation fingerprint, source kind, Python implementation and major/minor
+version, operating system and architecture, NumPy/SciPy, selected backend and
+backend package, captured capabilities, BLAS, and allowlisted thread controls.
+The complete installed-package inventory is not material. Missing material
+evidence blocks exact replay. A dirty checkout qualifies only with a matching
+reproducible content fingerprint. Current evidence capture uses no Git command,
+shell, network, installation, or mutation.
+
 ## 9. Loading, verification, and errors
 
 Loading is data-only. It performs no optimization, dynamic import, plugin
 resolution, custom-code execution, pickle load, shell command, network request,
 or filesystem access outside the run directory.
+
+`verify_run` is also data-only. It verifies every referenced artifact's bytes,
+parses known environment/numerical artifacts through bounded safe readers, and
+reports artifact integrity, path/NPZ safety, environment compatibility,
+component reconstructability, and effective replayability independently.
+`vamos results inspect` performs manifest-only inspection without materializing
+arrays; `vamos results verify` performs full verification. `--require-level
+exact` fails when the effective level is lower than exact.
 
 Verification modes are:
 
@@ -241,13 +261,57 @@ resume/retry orchestration, and study artifact ownership are separate work.
 This v1 consolidation does not implement:
 
 - readers, detectors, adapters, aliases, or migration for earlier outputs;
-- `reproduce`, replay execution, or `--verify-only`;
-- automatic custom-code or plugin reconstruction;
+- replay of plugins, custom Python, closures, notebook-local code, or arbitrary
+  import paths;
+- cross-backend or best-effort replay, backend overrides, dependency
+  installation, or environment repair;
 - a durable StudyManifest or study resume/retry system;
 - authentication/signatures (SHA-256 is integrity evidence, not trust);
 - a general CSV export API or performance optimization initiative.
 
-## 13. Examples and acceptance
+## 13. Exact built-in replay
+
+`vamos reproduce RUN_DIR` and `vamos.reproduce(path)` first use the same full
+verification service. Execution is permitted only for an effective `exact` run
+whose problem, algorithm, operators, evaluation backend, termination, and
+kernel use stable schema-1 built-in IDs. No plugin entry point is discovered
+and no manifest-provided module name is imported.
+
+The replay plan is reconstructed solely from `resolved_spec`: typed algorithm
+configuration, operators, problem dimensions/encoding, population and
+reference-direction settings, archive/stopping configuration, termination
+budget, backend, and concrete seed. VAMOS regenerates a resolved spec from that
+explicit plan and requires canonical semantic equality before optimization.
+Current defaults never fill or replace persisted resolved values.
+
+The stored result is the comparison target, not an initial state. Exact
+comparison requires `F` and `X` with identical NumPy dtype descriptor, shape,
+logical order, and contiguous C-order logical bytes. Every other deterministic
+array role present in either run is compared separately. Reports include
+per-array hashes, first differing logical index when safe, maximum absolute
+difference when meaningful, and mismatch classification. Timestamps, duration,
+run IDs, paths, and timing metrics are excluded.
+
+Every executed replay publishes a new schema `1.0.0` run with a new `run_id`,
+the same content-derived `task_id`, immediate/root lineage, bounded depth,
+source-manifest hash, replay-plan hash, compatibility level, and comparison
+evidence. The default destination is `<source-parent>/replays/<new-run-id>`.
+Existing destinations collide and the source is never modified. Replay of a
+replay retains the root run ID without copying prior manifests.
+
+If execution begins and fails, the atomic writer publishes an inspectable
+failed attempt containing `manifest.json` and `environment.json`, sanitized
+failure evidence, and replay lineage. Verification/plan refusal publishes
+nothing. A completed numerical mismatch is stored with mismatch evidence and is
+reported as failure, never exact success.
+
+CLI exit codes are: 0 success, 2 usage, 3 integrity/path/malformed artifact, 4
+unsupported or invalid schema, 5 compatibility requirement, 6 unavailable or
+untrusted component/replay, 7 execution or exact-comparison failure, and 8
+output collision. JSON mode emits one machine-readable document. There is no
+`reproduce --verify-only`; verification is a separate `results verify` command.
+
+## 14. Examples and acceptance
 
 Sanitized machine-readable fixtures live in
 [`run_artifact_examples/`](run_artifact_examples/README.md). The normative

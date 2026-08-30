@@ -37,6 +37,8 @@ _SUBCOMMANDS: dict[str, str] = {
     "create-problem": "Scaffold a custom problem file",
     "summarize": "Table/JSON summary of results",
     "open-results": "Open the latest results folder",
+    "results": "Inspect and verify canonical run artifacts",
+    "reproduce": "Execute an exact built-in replay",
     "ablation": "Ablation study runner",
     "assist": "AI-assisted experiment planning",
     # Consolidated from standalone vamos-* commands
@@ -100,6 +102,16 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
         from vamos.experiment.cli.results_cli import run_open_results
 
         run_open_results(argv[1:])
+        return True
+    if command == "results":
+        from vamos.experiment.cli.run_artifact_cli import run_results
+
+        run_results(argv[1:])
+        return True
+    if command == "reproduce":
+        from vamos.experiment.cli.run_artifact_cli import run_reproduce
+
+        run_reproduce(argv[1:])
         return True
     if command in {"create-problem", "create_problem"}:
         from vamos.experiment.cli.create_problem import run_create_problem

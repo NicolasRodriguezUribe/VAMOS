@@ -13,14 +13,17 @@ from __future__ import annotations
 import importlib
 
 from vamos.api import (
+    CompatibilityReport,
     EnvironmentalSelectionResult,
     IncompleteRunMetadataError,
     LoadLimits,
     OptimizationResult,
     Problem,
+    ReplayReport,
     RunManifest,
     StoredRun,
     StudyResult,
+    VerificationReport,
     available_problem_names,
     configure_logging,
     load_result,
@@ -28,9 +31,11 @@ from vamos.api import (
     make_problem,
     make_problem_selection,
     optimize,
+    reproduce,
     run_self_check,
     save_result,
     select_survivors,
+    verify_run,
 )
 from vamos.foundation.version import get_version as _get_version
 
@@ -55,6 +60,11 @@ __all__ = [
     "RunManifest",
     "LoadLimits",
     "IncompleteRunMetadataError",
+    "CompatibilityReport",
+    "ReplayReport",
+    "VerificationReport",
+    "verify_run",
+    "reproduce",
     "problems",
 ]
 

@@ -28,6 +28,40 @@ def store_succeeded_run(
     limits: LoadLimits,
 ) -> RunManifest:
     """Write a complete run in a sibling staging directory and publish once."""
+    return _store_terminal_run(
+        destination,
+        arrays=arrays,
+        environment=environment,
+        manifest_base=manifest_base,
+        limits=limits,
+    )
+
+
+def store_failed_run(
+    destination: Path,
+    *,
+    environment: Mapping[str, Any],
+    manifest_base: Mapping[str, Any],
+    limits: LoadLimits,
+) -> RunManifest:
+    """Write an inspectable failed attempt through the canonical publisher."""
+    return _store_terminal_run(
+        destination,
+        arrays=None,
+        environment=environment,
+        manifest_base=manifest_base,
+        limits=limits,
+    )
+
+
+def _store_terminal_run(
+    destination: Path,
+    *,
+    arrays: Mapping[str, np.ndarray] | None,
+    environment: Mapping[str, Any],
+    manifest_base: Mapping[str, Any],
+    limits: LoadLimits,
+) -> RunManifest:
     destination = destination.absolute()
     parent = destination.parent
     parent.mkdir(parents=True, exist_ok=True)
@@ -52,12 +86,6 @@ def store_succeeded_run(
         owns_staging = True
         _write_running_manifest(staging, manifest_base)
 
-        result_path = staging / "result.npz"
-        result_temp = staging / ".result.npz.tmp"
-        write_result_bundle(result_temp, arrays, limits=limits)
-        os.replace(result_temp, result_path)
-        _check_stored_size(result_path, limit=limits.max_artifact_bytes, limit_name="max_artifact_bytes", role="result_bundle")
-
         environment_path = staging / "environment.json"
         _write_bytes_atomic(environment_path, stored_json_bytes(environment))
         _check_stored_size(
@@ -73,24 +101,9 @@ def store_succeeded_run(
             required_for=["inspect", "verify", "replay"],
             canonical=True,
         )
-        result_descriptor = {
-            **_descriptor(
-                "result_bundle",
-                result_path,
-                "application/vnd.vamos.result-bundle+npz",
-                required_for=["load", "inspect", "verify", "replay", "analysis"],
-                canonical=True,
-            ),
-            "array_contract": array_contract(arrays),
-        }
-        load_result_bundle(
-            result_path,
-            descriptor=_artifact_descriptor(result_descriptor),
-            limits=limits,
-            required_f=True,
-            operation="save result",
-        )
-        descriptors = [environment_descriptor, result_descriptor]
+        descriptors = [environment_descriptor]
+        if arrays is not None:
+            descriptors.append(_store_result(staging, arrays, limits))
         terminal_value = dict(manifest_base)
         terminal_value["artifacts"] = descriptors
         terminal = build_terminal_manifest(terminal_value, limits=limits)
@@ -111,6 +124,32 @@ def store_succeeded_run(
                 lock.unlink(missing_ok=True)
             except OSError:
                 logging.getLogger(__name__).warning("Could not remove owned save lock %s", lock, exc_info=True)
+
+
+def _store_result(staging: Path, arrays: Mapping[str, np.ndarray], limits: LoadLimits) -> dict[str, Any]:
+    result_path = staging / "result.npz"
+    result_temp = staging / ".result.npz.tmp"
+    write_result_bundle(result_temp, arrays, limits=limits)
+    os.replace(result_temp, result_path)
+    _check_stored_size(result_path, limit=limits.max_artifact_bytes, limit_name="max_artifact_bytes", role="result_bundle")
+    result_descriptor = {
+        **_descriptor(
+            "result_bundle",
+            result_path,
+            "application/vnd.vamos.result-bundle+npz",
+            required_for=["load", "inspect", "verify", "replay", "analysis"],
+            canonical=True,
+        ),
+        "array_contract": array_contract(arrays),
+    }
+    load_result_bundle(
+        result_path,
+        descriptor=_artifact_descriptor(result_descriptor),
+        limits=limits,
+        required_f=True,
+        operation="save result",
+    )
+    return result_descriptor
 
 
 def _write_running_manifest(staging: Path, manifest_base: Mapping[str, Any]) -> None:
@@ -221,4 +260,4 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
-__all__ = ["store_succeeded_run"]
+__all__ = ["store_failed_run", "store_succeeded_run"]

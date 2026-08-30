@@ -117,6 +117,22 @@ def _register_algorithms(registry: Registry[AlgorithmBuilder]) -> None:
     registry.register("rvea", _build_rvea)
 
 
+def get_builtin_algorithm_names() -> tuple[str, ...]:
+    """Return stable built-in IDs without discovering entry points."""
+    return ("agemoea", "ibea", "moead", "nsgaii", "nsgaiii", "rvea", "smpso", "smsemoa", "spea2")
+
+
+def resolve_builtin_algorithm(name: str) -> AlgorithmBuilder:
+    """Resolve only a statically registered built-in algorithm."""
+    registry: Registry[AlgorithmBuilder] = Registry("Built-in algorithms")
+    _register_algorithms(registry)
+    key = name.lower()
+    try:
+        return registry[key]
+    except KeyError as exc:
+        raise InvalidAlgorithmError(name, available=list(get_builtin_algorithm_names())) from exc
+
+
 def _entry_points_for_group(group: str) -> list[metadata.EntryPoint]:
     entry_points = metadata.entry_points()
     if hasattr(entry_points, "select"):
@@ -189,4 +205,12 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-__all__ = ["get_algorithms_registry", "discover_algorithm_plugins", "resolve_algorithm", "AlgorithmBuilder", "AlgorithmLike"]
+__all__ = [
+    "AlgorithmBuilder",
+    "AlgorithmLike",
+    "discover_algorithm_plugins",
+    "get_algorithms_registry",
+    "get_builtin_algorithm_names",
+    "resolve_algorithm",
+    "resolve_builtin_algorithm",
+]

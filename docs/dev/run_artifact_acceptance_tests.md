@@ -29,6 +29,13 @@ contiguous and describe observable behavior, not implementation details.
 | RA-022 | Status behavior | Succeeded runs require result/environment; failed runs remain inspectable and reject numerical-result access; terminal timestamps/integrity are required. |
 | RA-023 | Unsupported format behavior | Missing/wrong manifest identity or version is uniformly rejected with a pre-release regeneration action and no filename classification. |
 | RA-024 | Distribution and documentation | Clean wheel install exposes the same API and round trip; examples verify; docs build; prohibited active references and duplicate writers are absent. |
+| RA-025 | Manifest-only inspection | Human/JSON inspection covers success, failure, and replay lineage without materializing arrays or executing/resolving code. |
+| RA-026 | Full inert verification | All descriptors, hashes/lengths, paths, environment JSON, and NPZ structure are verified with independent structured dimensions and no execution. |
+| RA-027 | Material environment policy | VAMOS/source fingerprint, Python, OS/architecture, NumPy/SciPy, backend/package/capabilities, BLAS, and thread evidence determine compatibility; missing evidence blocks exact. |
+| RA-028 | Exact built-in reconstruction | All nine built-in algorithms reconstruct typed resolved configuration, operators, problem, termination, backend, and persisted seed with semantic equality before execution. |
+| RA-029 | Bitwise comparison | F/X and deterministic auxiliary roles compare dtype, shape, logical order, and raw logical bytes; useful hashes/index/difference evidence accompanies mismatch. |
+| RA-030 | Replay lineage and failures | Replay publishes a new immutable schema-1 attempt with source/root lineage and comparison; begun failures remain inspectable; refusal publishes nothing. |
+| RA-031 | Replay API, CLI, and trust boundary | Top-level verify/reproduce and `results inspect/verify`/`reproduce` share services, stable JSON/exit codes, reject custom/plugins, and work from a clean wheel. |
 
 ## Test ownership
 
@@ -38,10 +45,13 @@ contiguous and describe observable behavior, not implementation details.
 - Study tests own RA-014.
 - packaging, API snapshot, documentation, architecture, and repository absence
   checks own RA-024.
+- `tests/experiment/run_artifacts/test_verification_replay.py` and
+  `test_replay_matrix.py` own RA-025–RA-030.
+- CLI, public API, security, and clean-wheel tests jointly own RA-031.
 
 Linux CI should execute the symlink variants in RA-018. Platforms without
 symlink privileges may skip only those capability-dependent cases; all lexical
 confinement cases remain mandatory everywhere.
 
-Replay execution, `reproduce`, `--verify-only`, custom-code reconstruction,
-earlier-format migration, and a durable StudyManifest are outside this matrix.
+Custom/plugin/cross-backend/best-effort replay, earlier-format migration, and a
+durable StudyManifest remain outside this matrix.

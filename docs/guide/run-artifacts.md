@@ -83,7 +83,8 @@ does not invent a seed or execution configuration from arrays.
 
 Loading is data-only. It does not rerun optimization, resolve plugins, import
 recorded custom components, use pickle, invoke a shell, or access the network.
-Replay/reproduction is future work and is intentionally separate from loading.
+Inspection and verification have the same inert trust boundary. Replay is an
+explicit separate operation.
 
 Verification modes are:
 
@@ -95,6 +96,74 @@ Verification modes are:
 `load_run` returns an immutable manifest and lazy `.result`/`.environment`
 access. `load_result` is the convenient numerical path. A failed run remains
 inspectable through `load_run`, while `.result` raises `IncompleteRunError`.
+
+## Inspect and verify
+
+Inspect metadata without loading full arrays:
+
+```bash
+vamos results inspect runs/zdt1-seed-7
+vamos results inspect runs/zdt1-seed-7 --json
+```
+
+The summary includes identity, problem/algorithm/backend, requested and
+resolved seed, population/budget/outcome, array shapes/dtypes, replayability,
+and lineage. It explicitly reports that full artifact verification was not
+performed.
+
+Full verification checks integrity, schema/path/NPZ safety, material
+environment compatibility, built-in reconstructability, and effective
+replayability as separate dimensions:
+
+```bash
+vamos results verify runs/zdt1-seed-7
+vamos results verify runs/zdt1-seed-7 --require-level exact
+```
+
+The Python equivalent is:
+
+```python
+from vamos import verify_run
+
+verification = verify_run("runs/zdt1-seed-7", require_level="exact")
+print(verification.environment.level)
+```
+
+Exact compatibility requires matching VAMOS implementation content, Python
+major/minor, material NumPy/SciPy/backend evidence, OS/architecture, BLAS, and
+allowlisted thread controls. Missing material evidence does not qualify as
+exact. Verification never installs or contacts anything.
+
+## Exact built-in replay
+
+```bash
+vamos reproduce runs/zdt1-seed-7
+vamos reproduce runs/zdt1-seed-7 --output runs/replays/zdt1-seed-7
+```
+
+Or from Python:
+
+```python
+from vamos import reproduce
+
+replay = reproduce(
+    "runs/zdt1-seed-7",
+    output="runs/replays/zdt1-seed-7",
+)
+print(replay.exact, replay.output_root)
+```
+
+Replay never modifies the source. It creates a new canonical run, uses the
+persisted resolved configuration and concrete seed, and never substitutes
+current defaults. `F`, `X`, and deterministic auxiliary arrays are compared by
+dtype, shape, logical order, and exact bytes. The new manifest stores bounded
+source/root lineage and per-array comparison evidence.
+
+This slice executes only same-environment, same-backend registered built-ins.
+It does not replay legacy runs, custom Python, plugins, different backends, or
+best-effort environments, and it never installs dependencies. A pre-execution
+refusal creates nothing; a failure after execution begins creates an inspectable
+failed canonical attempt.
 
 ## Numerical safety and limits
 

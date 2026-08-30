@@ -100,6 +100,32 @@ def capture_provenance(
     return provenance, environment
 
 
+def capture_runtime_evidence(*, backend: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Capture comparison evidence without invoking Git, shell, or network."""
+    distribution_sha, distribution_reason = _distribution_hash()
+    source_root = _find_git_root(Path(__file__).resolve())
+    implementation: dict[str, Any] = {
+        "vamos_version": get_version(),
+        "distribution": {
+            "name": "vamos-optimization",
+            "version": get_version(),
+            "sha256": distribution_sha,
+        },
+    }
+    if distribution_reason is not None:
+        implementation["distribution"]["hash_unavailable_reason"] = distribution_reason
+    evidence = {
+        "implementation": implementation,
+        "source": {
+            "kind": _installed_source_kind(),
+            "git_sha": _read_git_head(source_root),
+            "dirty": None,
+            "package_sha256": distribution_sha,
+        },
+    }
+    return evidence, capture_environment(backend=backend)
+
+
 def replayability_from_provenance(
     provenance: Mapping[str, Any],
     *,
@@ -112,17 +138,18 @@ def replayability_from_provenance(
     dirty: object = "unknown"
     if isinstance(source, Mapping):
         dirty = source.get("dirty", "unknown")
-    if dirty is True:
-        level = "compatible"
-        reasons.append({"code": "dirty_source_not_captured", "message": "Dirty source is recorded without executable source content."})
-    elif dirty == "unknown":
-        level = "compatible"
-        reasons.append({"code": "source_identity_unknown", "message": "The installed source identity could not be verified."})
     distribution_hash: object = None
     if isinstance(implementation, Mapping):
         distribution = implementation.get("distribution")
         if isinstance(distribution, Mapping):
             distribution_hash = distribution.get("sha256")
+    diff_hash = source.get("diff_sha256") if isinstance(source, Mapping) else None
+    if dirty is True and not diff_hash and not distribution_hash:
+        level = "compatible"
+        reasons.append({"code": "dirty_source_not_captured", "message": "Dirty source has no reproducible content fingerprint."})
+    elif dirty == "unknown":
+        level = "compatible"
+        reasons.append({"code": "source_identity_unknown", "message": "The installed source identity could not be verified."})
     git_sha = source.get("git_sha") if isinstance(source, Mapping) else None
     if not git_sha and not distribution_hash:
         level = "compatible"
@@ -154,8 +181,9 @@ def _source_metadata() -> dict[str, Any]:
     root = _find_git_root(Path(__file__).resolve())
     if root is None:
         return {
+            "kind": "wheel",
             "git_sha": None,
-            "dirty": "unknown",
+            "dirty": False,
             "diff_sha256": None,
             "tree_hash": None,
             "reason": "git_checkout_unavailable",
@@ -164,6 +192,7 @@ def _source_metadata() -> dict[str, Any]:
     status = _git_output(root, ("status", "--porcelain=v1", "-z"), text=False)
     if revision is None or status is None:
         return {
+            "kind": "checkout",
             "git_sha": revision,
             "dirty": "unknown",
             "diff_sha256": None,
@@ -185,6 +214,7 @@ def _source_metadata() -> dict[str, Any]:
     tree_bytes = tree_inventory if isinstance(tree_inventory, bytes) else b""
     tree_hash = hashlib.sha256(tree_bytes).hexdigest() if tree_bytes else None
     return {
+        "kind": "checkout",
         "git_sha": revision,
         "dirty": dirty,
         "diff_sha256": diff_hash,
@@ -235,10 +265,10 @@ def _distribution_hash() -> tuple[str | None, str | None]:
             direct_data = {}
         directory_info = direct_data.get("dir_info") if isinstance(direct_data, dict) else None
         if isinstance(directory_info, dict) and directory_info.get("editable") is True:
-            return None, "editable_install_uses_git_source_identity"
+            return _source_package_hash()
     files = distribution.files
     if not files:
-        return None, "distribution_file_inventory_unavailable"
+        return _source_package_hash()
     digest = hashlib.sha256()
     matched = 0
     for relative in sorted(files, key=str):
@@ -257,7 +287,110 @@ def _distribution_hash() -> tuple[str | None, str | None]:
         digest.update(payload)
         matched += 1
     if matched == 0:
-        return None, "distribution_package_files_unavailable"
+        return _source_package_hash()
+    return digest.hexdigest(), None
+
+
+def _installed_source_kind() -> str:
+    if _find_git_root(Path(__file__).resolve()) is not None:
+        return "checkout"
+    try:
+        distribution = importlib_metadata.distribution("vamos-optimization")
+    except importlib_metadata.PackageNotFoundError:
+        return "unavailable"
+    direct_url = distribution.read_text("direct_url.json")
+    if not direct_url:
+        return "wheel"
+    try:
+        value = json.loads(direct_url)
+    except json.JSONDecodeError:
+        return "unavailable"
+    directory_info = value.get("dir_info") if isinstance(value, dict) else None
+    return "checkout" if isinstance(directory_info, dict) and directory_info.get("editable") is True else "wheel"
+
+
+def _read_git_head(root: Path | None) -> str | None:
+    """Read the current checkout revision directly from Git metadata."""
+    if root is None:
+        return None
+    directories = _git_directories(root)
+    if directories is None:
+        return None
+    git_dir, common_dir = directories
+    head = _read_text(git_dir / "HEAD", encoding="ascii")
+    if head is None:
+        return None
+    if not head.startswith("ref:"):
+        return head if _is_git_digest(head) else None
+    reference = head.split(":", 1)[1].strip()
+    return _read_loose_reference(git_dir, common_dir, reference) or _read_packed_reference(common_dir, reference)
+
+
+def _git_directories(root: Path) -> tuple[Path, Path] | None:
+    marker = root / ".git"
+    git_dir = marker
+    if marker.is_file():
+        text = _read_text(marker)
+        if text is None:
+            return None
+        if not text.startswith("gitdir:"):
+            return None
+        candidate = Path(text.split(":", 1)[1].strip())
+        git_dir = candidate if candidate.is_absolute() else (root / candidate).resolve()
+    common_dir = git_dir
+    common_value = _read_text(git_dir / "commondir")
+    if common_value is not None:
+        candidate = Path(common_value)
+        common_dir = candidate if candidate.is_absolute() else (git_dir / candidate).resolve()
+    return git_dir, common_dir
+
+
+def _read_text(path: Path, *, encoding: str = "utf-8") -> str | None:
+    try:
+        return path.read_text(encoding=encoding).strip()
+    except OSError:
+        return None
+
+
+def _read_loose_reference(git_dir: Path, common_dir: Path, reference: str) -> str | None:
+    for candidate in (git_dir / reference, common_dir / reference):
+        value = _read_text(candidate, encoding="ascii")
+        if value is not None and _is_git_digest(value):
+            return value
+    return None
+
+
+def _read_packed_reference(common_dir: Path, reference: str) -> str | None:
+    packed = _read_text(common_dir / "packed-refs", encoding="ascii")
+    if packed is None:
+        return None
+    for line in packed.splitlines():
+        if line.startswith(("#", "^")):
+            continue
+        parts = line.split(" ", 1)
+        if len(parts) == 2 and parts[1] == reference and _is_git_digest(parts[0]):
+            return parts[0]
+    return None
+
+
+def _is_git_digest(value: str) -> bool:
+    return len(value) in {40, 64} and all(character in "0123456789abcdef" for character in value)
+
+
+def _source_package_hash() -> tuple[str | None, str | None]:
+    package_root = Path(__file__).resolve().parents[2]
+    files = sorted(package_root.rglob("*.py"), key=lambda item: item.relative_to(package_root).as_posix())
+    if not files:
+        return None, "source_package_inventory_unavailable"
+    digest = hashlib.sha256()
+    try:
+        for path in files:
+            relative = path.relative_to(package_root).as_posix()
+            digest.update(relative.encode("utf-8"))
+            digest.update(b"\x00")
+            digest.update(path.read_bytes())
+    except OSError:
+        return None, "source_package_file_unreadable"
     return digest.hexdigest(), None
 
 
@@ -287,4 +420,4 @@ def _blas_metadata() -> dict[str, Any]:
     return {"vendor": vendor, "integer_width": integer_width}
 
 
-__all__ = ["capture_environment", "capture_provenance", "replayability_from_provenance"]
+__all__ = ["capture_environment", "capture_provenance", "capture_runtime_evidence", "replayability_from_provenance"]

@@ -8,7 +8,12 @@ from typing import TYPE_CHECKING, Any, cast
 
 from vamos.engine.algorithm.config.base import ResultMode
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, EngineName
-from vamos.engine.algorithm.registry import get_algorithms_registry, resolve_algorithm
+from vamos.engine.algorithm.registry import (
+    get_algorithms_registry,
+    get_builtin_algorithm_names,
+    resolve_algorithm,
+    resolve_builtin_algorithm,
+)
 from vamos.exceptions import ConfigurationError, InvalidAlgorithmError
 from vamos.experiment.types import CheckpointPayload, LiveVisualization, TerminationSpec
 from vamos.foundation.eval import EvaluationBackend
@@ -111,6 +116,7 @@ def _run_config(
     config: _OptimizeConfig,
     *,
     engine: EngineName | None = None,
+    built_in_only: bool = False,
 ) -> OptimizationResult:
     """
     Run a single optimization for the provided problem/config pair.
@@ -138,11 +144,10 @@ def _run_config(
         raise ConfigurationError("engine must be configured via optimize(engine=...) rather than algorithm_config.")
     algorithm_raw = cfg.algorithm or ""
     algorithm_name = algorithm_raw.lower()
-    available = sorted(get_algorithms_registry().keys())
+    available = list(get_builtin_algorithm_names()) if built_in_only else sorted(get_algorithms_registry().keys())
     if not algorithm_name:
         raise ConfigurationError(f"algorithm must be specified. Available: {', '.join(available)}.")
-    registry = get_algorithms_registry()
-    if algorithm_name not in registry:
+    if algorithm_name not in available:
         raise InvalidAlgorithmError(algorithm_raw, available=available)
 
     effective_engine = engine or cfg.engine
@@ -154,7 +159,7 @@ def _run_config(
         backend_name = str(cfg_dict.get("eval_strategy", "serial"))
         backend = resolve_eval_strategy(backend_name)
 
-    algo_ctor = resolve_algorithm(algorithm_name)
+    algo_ctor = resolve_builtin_algorithm(algorithm_name) if built_in_only else resolve_algorithm(algorithm_name)
     algorithm = algo_ctor(cfg_dict, kernel)
 
     run_fn = cast(Callable[..., dict[str, Any]], algorithm.run)

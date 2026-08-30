@@ -1,13 +1,16 @@
 {
   "vamos": [
+    "CompatibilityReport",
     "EnvironmentalSelectionResult",
     "IncompleteRunMetadataError",
     "LoadLimits",
     "OptimizationResult",
     "Problem",
+    "ReplayReport",
     "RunManifest",
     "StoredRun",
     "StudyResult",
+    "VerificationReport",
     "__version__",
     "available_problem_names",
     "configure_logging",
@@ -17,9 +20,11 @@
     "make_problem_selection",
     "optimize",
     "problems",
+    "reproduce",
     "run_self_check",
     "save_result",
-    "select_survivors"
+    "select_survivors",
+    "verify_run"
   ],
   "vamos.algorithms": [
     "AGEMOEAConfig",
@@ -41,14 +46,17 @@
     "resolve_algorithm"
   ],
   "vamos.api": [
+    "CompatibilityReport",
     "EnvironmentalSelectionResult",
     "IncompleteRunMetadataError",
     "LoadLimits",
     "OptimizationResult",
     "Problem",
+    "ReplayReport",
     "RunManifest",
     "StoredRun",
     "StudyResult",
+    "VerificationReport",
     "available_problem_names",
     "configure_logging",
     "load_result",
@@ -56,9 +64,11 @@
     "make_problem",
     "make_problem_selection",
     "optimize",
+    "reproduce",
     "run_self_check",
     "save_result",
-    "select_survivors"
+    "select_survivors",
+    "verify_run"
   ],
   "vamos.ux.api": [
     "FriedmanResult",

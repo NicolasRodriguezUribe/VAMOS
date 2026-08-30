@@ -61,6 +61,30 @@ Open the latest run folder:
 vamos open-results --open
 ```
 
+Inspect one canonical run without materializing arrays:
+
+```bash
+vamos results inspect results/ZDT1/nsgaii/numpy/seed_7
+vamos results inspect results/ZDT1/nsgaii/numpy/seed_7 --json
+```
+
+Fully verify integrity and exact replay compatibility without optimization:
+
+```bash
+vamos results verify results/ZDT1/nsgaii/numpy/seed_7
+vamos results verify results/ZDT1/nsgaii/numpy/seed_7 --require-level exact
+```
+
+Execute a verified same-environment built-in replay as a new canonical run:
+
+```bash
+vamos reproduce results/ZDT1/nsgaii/numpy/seed_7
+vamos reproduce results/ZDT1/nsgaii/numpy/seed_7 --output results/replays/zdt1-seed-7
+```
+
+Add `--json` to any of these commands for one machine-readable stdout
+document. Replay never overwrites or modifies its source.
+
 Main runner
 -----------
 

@@ -26,6 +26,8 @@ All VAMOS functionality is available via `vamos <subcommand>`. Run `vamos help` 
 | `vamos create-problem` | Scaffold a custom problem file | `create_problem.py` |
 | `vamos summarize` | Table/JSON summary of results | `results_cli.py` |
 | `vamos open-results` | Print or open the latest run folder | `results_cli.py` |
+| `vamos results inspect/verify` | Inspect or fully verify one canonical run | `run_artifact_cli.py` |
+| `vamos reproduce` | Exact same-environment built-in replay | `run_artifact_cli.py` |
 | `vamos ablation` | Run ablation studies | `ablation.py` |
 | `vamos assist` | AI-assisted experiment planning | `../../assist/cli.py` |
 | `vamos check` | Verify installation and backends | `../diagnostics/self_check.py` |
