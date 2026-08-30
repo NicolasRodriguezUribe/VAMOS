@@ -1,160 +1,74 @@
-# Adding a new problem
+# Adding a problem
 
-VAMOS offers three ways to define custom problems, from simplest to most
-integrated. Pick the approach that fits your use case.
+Use `vamos.make_problem(...)` for user-local objectives. Add a built-in only when the problem belongs in VAMOS's named benchmark or real-world catalog.
 
----
+## User-local problem
 
-## Quick way: `make_problem()` (recommended for personal / ad-hoc problems)
-
-No class, no protocol, no NumPy vectorization required. Write a plain function
-that evaluates a **single** solution and VAMOS handles the rest:
+`make_problem` adapts a scalar callable by default. Set `vectorized=True` only when the callable accepts an `(n_points, n_var)` array and returns an `(n_points, n_obj)` array.
 
 ```python
-from vamos import make_problem, optimize
+import vamos
 
-# Your function receives x (1-D array of n_var) and returns n_obj values
-def my_objectives(x):
-    f1 = x[0]
-    f2 = (1 + x[1]) * (1 - x[0] ** 0.5)
-    return [f1, f2]
 
-problem = make_problem(
-    my_objectives,
+def objectives(x):
+    return [x[0], (1.0 + x[1]) * (1.0 - x[0] ** 0.5)]
+
+
+problem = vamos.make_problem(
+    objectives,
     n_var=2,
     n_obj=2,
-    bounds=[(0, 1), (0, 1)],   # per-variable (lower, upper)
+    bounds=[(0.0, 1.0), (0.0, 1.0)],
     encoding="real",
 )
-
-result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
+result = vamos.optimize(problem, algorithm="nsgaii", max_evaluations=200, seed=42)
 ```
 
-**Options:**
+The CLI scaffold is discoverable with `vamos create-problem --help`.
 
-| Parameter | Description |
-|-----------|-------------|
-| `bounds` | List of `(lower, upper)` tuples, one per variable |
-| `xl`, `xu` | Alternative: scalar or array bounds (mutually exclusive with `bounds`) |
-| `vectorized` | Set `True` if your function already handles 2-D batches `(N, n_var) -> (N, n_obj)` |
-| `encoding` | `"real"` (default), `"binary"`, `"integer"`, `"permutation"`, or `"mixed"` |
-| `name` | Human-readable label (defaults to the function name) |
-| `constraints` | Optional constraint function; return values where `g(x) <= 0` is feasible |
-| `n_constraints` | Number of constraint values (required when `constraints` is provided) |
+## Built-in problem workflow
 
-### Scaffold a file with the CLI wizard
+1. Read `ProblemProtocol` in `src/vamos/foundation/problem/types.py` and a neighboring implementation with the same encoding.
+2. Implement `n_var`, `n_obj`, `n_constraints`, `xl`, `xu`, `encoding`, and `evaluate(X, out)`. Evaluation is batched, writes `out["F"]`, and writes `out["G"]` for constraints with `g <= 0` feasible.
+3. Add a `ProblemSpec` to the appropriate `src/vamos/foundation/problem/registry/families/*.py` module. The family exposes `get_specs()`; `registry/specs.py` assembles those maps and is not the per-problem registration file.
+4. Add packaged reference data under `src/vamos/resources/` only when the problem has an authoritative dataset/front, and verify package-data coverage.
+5. Export the class from `vamos.problems` only when direct construction is part of the intentional public API. Named access through `vamos.optimize("key", ...)` does not require a class export.
+6. Document dimensions, objective direction, constraints, encoding, and source. Never silently choose dimensions that the `ProblemSpec` marks fixed.
+
+Use the canonical encoding names `real`, `integer`, `binary`, `permutation`, and `mixed`. For mixed problems, provide the current mixed specification expected by `MixedProblemProtocol` consumers.
+
+## Required tests
+
+- Direct evaluation: bounds, batch shape, finite values, and constraint shape/sign.
+- Registry: key discovery, dimension resolution, factory instantiation, and duplicate-free assembly.
+- Algorithm smoke: one supported algorithm/encoding at a tiny exact budget.
+- Reference data/package test when adding resources.
+
+Run:
 
 ```bash
-vamos create-problem
+python -m pytest -q tests/foundation/test_problem_registry.py tests/foundation/test_problem_zoo.py tests/foundation/test_problem_evaluation_edge_cases.py
+python -m pytest -q tests/engine/test_algorithm_problem_matrix.py
 ```
 
-This interactive wizard prompts for name, variables, objectives, and bounds,
-then generates a ready-to-run `.py` file with `make_problem()` already wired
-up. Just fill in the TODO markers and run `python my_problem.py`.
+Add the focused new-problem test to these commands during development, then run the repository validation tier required by `/AGENTS.md`.
 
-Non-interactive mode for scripting:
-
-```bash
-vamos create-problem --name "portfolio optimizer" --n-var 5 --n-obj 3 --yes
+```agent-docs
+path: src/vamos/foundation/problem/types.py
+path: src/vamos/foundation/problem/registry/common.py
+path: src/vamos/foundation/problem/registry/families
+path: src/vamos/foundation/problem/registry/specs.py
+path: src/vamos/resources
+path: src/vamos/problems.py
+path: tests/foundation/test_problem_registry.py
+path: tests/foundation/test_problem_zoo.py
+path: tests/foundation/test_problem_evaluation_edge_cases.py
+path: tests/engine/test_algorithm_problem_matrix.py
+symbol: vamos:make_problem
+symbol: vamos:optimize
+symbol: vamos.foundation.problem.types:ProblemProtocol
+symbol: vamos.foundation.problem.registry.common:ProblemSpec
+cli: vamos create-problem --help
+command: python -m pytest -q tests/foundation/test_problem_registry.py tests/foundation/test_problem_zoo.py tests/foundation/test_problem_evaluation_edge_cases.py
+command: python -m pytest -q tests/engine/test_algorithm_problem_matrix.py
 ```
-
-Use `--style class` to generate a class-based template instead.
-
-### Visual builder in VAMOS Studio
-
-For a fully visual experience, launch VAMOS Studio and open the
-**Problem Builder** tab:
-
-```bash
-vamos studio
-```
-
-The Problem Builder lets you:
-
-- Pick from starter templates (ZDT1-like, Schaffer, Fonseca-Fleming, etc.)
-- Edit objective code in a text area with live syntax checking
-- Configure algorithm, budget, population size, and bounds
-- Click **Run preview** to see the Pareto front rendered instantly
-- Export a standalone `.py` script when you are happy with the result
-
----
-
-## Class-based: implement `ProblemProtocol` directly
-
-For problems that need more control (custom initialization, caching, etc.),
-implement the protocol directly:
-
-```python
-from __future__ import annotations
-from dataclasses import dataclass
-import numpy as np
-
-@dataclass
-class MyProblem:
-    n_var: int = 2
-    n_obj: int = 2
-    xl: float | np.ndarray = 0.0
-    xu: float | np.ndarray = 1.0
-    encoding: str = "continuous"
-
-    def evaluate(self, X: np.ndarray, out: dict[str, np.ndarray]) -> None:
-        # X shape: (N, n_var) -- a batch of N solutions
-        f1 = X[:, 0]
-        f2 = 1.0 - np.sqrt(f1)
-        out["F"] = np.stack([f1, f2], axis=1)
-```
-
-Pass the instance directly to `optimize()`:
-
-```python
-result = optimize(MyProblem(), algorithm="nsgaii", max_evaluations=5000)
-```
-
----
-
-## Registry approach: add a reusable benchmark problem
-
-For problems that should be available by name (e.g. `optimize("my_problem")`)
-and shared across the project. For the canonical registry workflow, see
-`src/vamos/foundation/problem/registry/AGENTS.md`.
-
-### Steps
-
-1) Implement the problem class under `src/vamos/foundation/problem/your_family.py`
-   (see class-based approach above).
-
-2) Register it in the appropriate family module under
-`src/vamos/foundation/problem/registry/families/`:
-
-```python
-from ..common import ProblemSpec
-from ...my_family import MyProblem
-
-SPECS["my_problem"] = ProblemSpec(
-    key="my_problem",
-    label="My Problem",
-    default_n_var=2,
-    default_n_obj=2,
-    allow_n_obj_override=False,
-    description="Short description of the landscape.",
-    factory=lambda n_var, _n_obj: MyProblem(n_var=n_var),
-    encoding="continuous",
-)
-```
-
-3) Add a minimal smoke test (fast!) under `tests/`:
-
-```python
-def test_my_problem_smoke():
-    from vamos.foundation.problem.registry import make_problem_selection
-    selection = make_problem_selection("my_problem", n_var=2)
-    problem = selection.instantiate()
-    import numpy as np
-    X = np.random.rand(4, problem.n_var)
-    out = {}
-    problem.evaluate(X, out)
-    assert "F" in out and out["F"].shape == (4, problem.n_obj)
-```
-
-4) If the problem needs reference data (fronts, weight files), add them under
-   `src/vamos/resources/` and update packaging rules.

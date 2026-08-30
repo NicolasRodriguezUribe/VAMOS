@@ -12,10 +12,9 @@ Studio loading. A run artifact represents one execution attempt. It is not a
 study database or a general export format. Replay is an explicit service that
 consumes one verified run and publishes another through the same writer.
 
-VAMOS is pre-release. Outputs from earlier prototypes are unsupported and must
-be regenerated with the current version. The package contains no old-layout
-reader, detector, migration command, dual writer, field alias, or deprecation
-path.
+VAMOS is pre-release. The package supports one schema and one reader/writer
+path. Any input outside schema `1.0.0` must be regenerated with the current
+version.
 
 > Pre-release run directories created before the canonical schema 1.0.0
 > implementation are unsupported and should be regenerated.
@@ -260,7 +259,7 @@ resume/retry orchestration, and study artifact ownership are separate work.
 
 This v1 consolidation does not implement:
 
-- readers, detectors, adapters, aliases, or migration for earlier outputs;
+- any alternate reader, writer, detector, adapter, or field spelling;
 - replay of plugins, custom Python, closures, notebook-local code, or arbitrary
   import paths;
 - cross-backend or best-effort replay, backend overrides, dependency
@@ -308,8 +307,8 @@ reported as failure, never exact success.
 CLI exit codes are: 0 success, 2 usage, 3 integrity/path/malformed artifact, 4
 unsupported or invalid schema, 5 compatibility requirement, 6 unavailable or
 untrusted component/replay, 7 execution or exact-comparison failure, and 8
-output collision. JSON mode emits one machine-readable document. There is no
-`reproduce --verify-only`; verification is a separate `results verify` command.
+output collision. JSON mode emits one machine-readable document. Verification
+is the separate `results verify` command; reproduction always executes.
 
 ## 14. Examples and acceptance
 

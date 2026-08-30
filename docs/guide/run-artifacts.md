@@ -160,8 +160,8 @@ dtype, shape, logical order, and exact bytes. The new manifest stores bounded
 source/root lineage and per-array comparison evidence.
 
 This slice executes only same-environment, same-backend registered built-ins.
-It does not replay legacy runs, custom Python, plugins, different backends, or
-best-effort environments, and it never installs dependencies. A pre-execution
+Custom Python, plugins, cross-backend execution, and best-effort environments
+are outside the exact-replay contract, and it never installs dependencies. A pre-execution
 refusal creates nothing; a failure after execution begins creates an inspectable
 failed canonical attempt.
 
@@ -180,7 +180,6 @@ different `vamos.LoadLimits`; limits are never raised automatically.
 
 VAMOS is pre-release and supports only `vamos.run-manifest` `1.0.0`. A directory
 without that manifest is rejected with guidance to regenerate the run using the
-current version. There are no fallback readers, format detectors, or migration
-aliases.
+current version. Schema `1.0.0` is the sole supported reader/writer path.
 
 SHA-256 detects accidental modification; it is not a digital signature.

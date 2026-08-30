@@ -45,6 +45,9 @@ jobs:
           python -m pip install -c constraints/ci.txt -e ".[${{ matrix.extras }}]"
       - name: Lint (ruff)
         run: ruff check src/vamos tests
+      # Validation tier reference: /AGENTS.md. Keep this command identical to tools/health.py.
+      - name: Agent documentation
+        run: python tools/check_agent_docs.py
       - name: Type check (mypy)
         run: |
           mypy --config-file pyproject.toml \
@@ -72,7 +75,6 @@ jobs:
             tests/test_logging_policy.py \
             tests/test_no_prints_in_library.py \
             tests/test_no_deprecation_shims.py \
-            tests/test_agents_health_link.py \
             tests/architecture/test_report_retention_policy.py \
             tests/architecture/test_ruff_gate.py \
             tests/architecture/test_ruff_format_gate.py \

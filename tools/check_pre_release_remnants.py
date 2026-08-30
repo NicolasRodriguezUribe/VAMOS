@@ -31,6 +31,7 @@ _SCAN_ROOTS = ("src", "experiments", "website", "tests")
 _CHECKER_FIXTURES = {
     "tests/architecture/test_no_legacy_typing_hints.py",
     "tests/test_no_deprecation_shims.py",
+    "tests/test_check_agent_docs.py",
     "tests/test_check_pre_release_remnants.py",
 }
 _FORBIDDEN_PATHS = (
@@ -70,6 +71,39 @@ _CLI_SIGNATURES = (
     re.compile(r"['\"]self-check['\"]"),
     re.compile(r"['\"]self_check['\"]"),
 )
+
+# Agent-facing files reuse these semantic signatures instead of maintaining a
+# second list of discarded pre-release paths, fields, artifacts, and commands.
+_GUIDANCE_SIGNATURES = (
+    ("vamos.engine.algorithm.components.variation", re.compile(r"vamos\.engine\.algorithm\.components\.variation")),
+    ("build_bounded_archive_cfg", re.compile(r"\bbuild_bounded_archive_cfg\b")),
+    ("archive.bounded", re.compile(r"\barchive\.bounded\b")),
+    ("bounded_archive.py", re.compile(r"(?:^|[/\\])bounded_archive\.py\b")),
+    ("website/_compat", re.compile(r"\bwebsite[/\\]_compat\b")),
+    (
+        "discarded archive field",
+        re.compile(r"\b(?:archive_type|size_cap|prune_policy|nondominated_only|hv_samples)\b"),
+    ),
+    (
+        "discarded CLI alias",
+        re.compile(
+            r"(?:--help-commands|--quickstart|\bvamos\s+(?:summary|open_results|create_problem|self-check|self_check|benchmark)\b)",
+            re.IGNORECASE,
+        ),
+    ),
+    ("FUN.csv", re.compile(r"(?<![A-Za-z0-9_])FUN\.csv", re.IGNORECASE)),
+    ("X.csv", re.compile(r"(?<![A-Za-z0-9_])X\.csv", re.IGNORECASE)),
+    ("G.csv", re.compile(r"(?<![A-Za-z0-9_])G\.csv", re.IGNORECASE)),
+    ("metadata.json", re.compile(r"metadata\.json", re.IGNORECASE)),
+    ("resolved_config.json", re.compile(r"resolved_config\.json", re.IGNORECASE)),
+    ("time.txt", re.compile(r"time\.txt", re.IGNORECASE)),
+    ("vamos.lock", re.compile(r"vamos\.lock", re.IGNORECASE)),
+)
+
+
+def guidance_remnant_tokens(text: str) -> tuple[str, ...]:
+    """Return discarded pre-release tokens found in active agent guidance."""
+    return tuple(sorted({label for label, pattern in _GUIDANCE_SIGNATURES if pattern.search(text)}))
 
 
 def scan(root: Path) -> list[Finding]:

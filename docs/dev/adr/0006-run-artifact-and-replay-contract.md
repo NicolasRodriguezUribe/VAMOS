@@ -13,8 +13,8 @@ be loaded symmetrically, did not preserve requested versus effective choices,
 and encouraged consumers to infer facts from filenames or directory names.
 
 Because no stable public release contract exists, preserving those prototypes
-would create the migration burden it attempts to avoid. The project needs one
-safe artifact boundary before release.
+would create competing contracts. The project needs one safe artifact boundary
+before release.
 
 ## Decision
 
@@ -48,9 +48,8 @@ Adopt the normative contract in
 10. Loading, inspection, and verification are inert data access. They never
     execute optimization, resolve plugins, import manifest-provided code, use
     shell/network, or mutate artifacts.
-11. Earlier pre-release output layouts are unsupported. There are no readers,
-    detectors, adapters, migrations, aliases, warnings, or dual-format writers.
-    The actionable response is to regenerate with the current VAMOS version.
+11. VAMOS supports only the canonical `1.0.0` layout and its single reader and
+    writer. Any other input must be regenerated with the current VAMOS version.
 12. A future StudyManifest may reference run/task identities but will not
     duplicate run specifications or arrays.
 13. Exact replay is a separate explicit operation for verified built-in
@@ -58,7 +57,7 @@ Adopt the normative contract in
     solely from the persisted resolved spec and refuses rather than downgrade.
 14. An executed replay creates a new canonical run with source/root lineage,
     plan/source hashes, and bitwise F/X plus auxiliary-array comparison.
-15. There is no `reproduce --verify-only`; verification is `results verify`.
+15. Verification is `results verify`; reproduction always executes.
 
 ## Consequences
 
