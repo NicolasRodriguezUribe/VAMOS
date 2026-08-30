@@ -62,18 +62,6 @@ _HOOK_ARCHIVE_KEYS = {
     "deduplicate_in",
     "decision_tolerance",
 }
-_BOUNDED_ARCHIVE_KEYS = {
-    "enabled",
-    "size_cap",
-    "truncate_size",
-    "prune_policy",
-    "hv_ref_point",
-    "hv_samples",
-    "rng_seed",
-    "objective_tolerance",
-    "deduplicate_in",
-    "decision_tolerance",
-}
 
 
 def allowed_override_keys(extra_keys: Iterable[str] | None = None) -> set[str]:
@@ -218,7 +206,7 @@ def _validate_archive_block(block: object, *, path: str) -> None:
     if block is None:
         return
     block_dict = _as_str_dict(block, path=f"'{path}'")
-    unknown = _unknown_keys(block_dict, {"external", "bounded"})
+    unknown = _unknown_keys(block_dict, {"external"})
     if unknown:
         raise ValueError(f"Unknown keys in '{path}': {', '.join(unknown)}")
     external = block_dict.get("external")
@@ -227,12 +215,6 @@ def _validate_archive_block(block: object, *, path: str) -> None:
         unknown_external = _unknown_keys(external_dict, _HOOK_ARCHIVE_KEYS)
         if unknown_external:
             raise ValueError(f"Unknown keys in '{path}.external': {', '.join(unknown_external)}")
-    bounded = block_dict.get("bounded")
-    if bounded is not None:
-        bounded_dict = _as_str_dict(bounded, path=f"'{path}.bounded'")
-        unknown_bounded = _unknown_keys(bounded_dict, _BOUNDED_ARCHIVE_KEYS)
-        if unknown_bounded:
-            raise ValueError(f"Unknown keys in '{path}.bounded': {', '.join(unknown_bounded)}")
 
 
 def _dataclass_field_names(cls: object) -> list[str]:

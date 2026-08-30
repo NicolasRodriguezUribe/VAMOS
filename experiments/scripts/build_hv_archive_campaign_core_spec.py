@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 REPO = Path.cwd()
 
 
@@ -60,7 +59,7 @@ def main() -> int:
                 "name": "baseline",
                 "patch": {
                     "stopping": {"hv_convergence": {"enabled": False}},
-                    "archive": {"bounded": {"enabled": False}},
+                    "archive": {"external": {"enabled": False}},
                 },
             },
             {
@@ -68,11 +67,10 @@ def main() -> int:
                 "patch": {
                     "stopping": {"hv_convergence": {"enabled": False}},
                     "archive": {
-                        "bounded": {
+                        "external": {
                             "enabled": True,
-                            "size_cap": 400,
-                            "nondominated_only": True,
-                            "prune_policy": "crowding",
+                            "capacity": 400,
+                            "pruning": "crowding",
                         }
                     },
                 },
@@ -94,7 +92,7 @@ def main() -> int:
                             "ref_point": "auto",
                         }
                     },
-                    "archive": {"bounded": {"enabled": False}},
+                    "archive": {"external": {"enabled": False}},
                 },
             },
             {
@@ -115,11 +113,10 @@ def main() -> int:
                         }
                     },
                     "archive": {
-                        "bounded": {
+                        "external": {
                             "enabled": True,
-                            "size_cap": 400,
-                            "nondominated_only": True,
-                            "prune_policy": "crowding",
+                            "capacity": 400,
+                            "pruning": "crowding",
                         }
                     },
                 },

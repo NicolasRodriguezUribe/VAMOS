@@ -68,7 +68,7 @@ def write_latex_table(path: Path, rows: list[dict[str, Any]]) -> None:
                     rr = grouped[key]
                     hv = [to_float(x.get("hv_final")) for x in rr]
                     igd = [to_float(x.get("igd_plus")) for x in rr]
-                    t = [to_float(x.get("runtime_s")) for x in rr]
+                    t = [to_float(x.get("runtime_seconds")) for x in rr]
                     hv_m, hv_i = median_iqr(hv)
                     ig_m, ig_i = median_iqr(igd)
                     t_m, t_i = median_iqr(t)
@@ -88,10 +88,10 @@ def write_latex_table(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def plot_tradeoff(path: Path, rows: list[dict[str, Any]]) -> None:
     try:
-        import matplotlib
+        import matplotlib  # type: ignore[import-not-found]
 
         matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt  # type: ignore[import-not-found]
     except Exception as exc:
         raise RuntimeError("matplotlib is required for plotting.") from exc
 
@@ -107,10 +107,10 @@ def plot_tradeoff(path: Path, rows: list[dict[str, Any]]) -> None:
             continue
         key = key_base(r)
         hv = to_float(r.get("hv_final"))
-        rt = to_float(r.get("runtime_s"))
+        rt = to_float(r.get("runtime_seconds"))
         if key in baseline:
             hv0 = to_float(baseline[key].get("hv_final"))
-            rt0 = to_float(baseline[key].get("runtime_s"))
+            rt0 = to_float(baseline[key].get("runtime_seconds"))
             xs.append(rt - rt0)
             ys.append(hv - hv0)
         else:
@@ -130,11 +130,11 @@ def plot_tradeoff(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def write_section(path: Path, table_tex: str, fig_path: str) -> None:
     txt = rf"""
-\section{{HV-based stopping and bounded archive}}
+\section{{HV-based stopping and external archive}}
 
-We evaluate method variants that enable (i) a bounded archive with explicit pruning contracts and (ii) HV-based
-convergence stopping driven by a sampled HV trace. Each run emits \texttt{{hv\_trace.csv}} and
-\texttt{{archive\_stats.csv}} and records stopping/archive decisions in \texttt{{metadata.json}}.
+We evaluate method variants that enable (i) a capacity-limited external archive with explicit pruning contracts and
+(ii) HV-based convergence stopping. Canonical manifests record stopping and archive outcome metrics; the analysis
+pipeline derives the table used by this report.
 
 \paragraph{{Summary.}} Table~\ref{{tab:hv-archive-summary}} reports HV, IGD$^+$, and runtime for each variant.
 Figure~\ref{{fig:hv-archive-tradeoff}} visualizes the runtime--quality trade-off relative to the baseline.

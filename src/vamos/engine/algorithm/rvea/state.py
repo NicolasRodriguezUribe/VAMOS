@@ -14,7 +14,7 @@ from vamos.engine.algorithm.components.results import get_external_archive_conte
 from vamos.engine.algorithm.components.state import AlgorithmState
 
 if TYPE_CHECKING:
-    from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
+    from vamos.engine.variation.pipeline import VariationPipeline
 
 
 @dataclass

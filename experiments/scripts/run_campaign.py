@@ -6,24 +6,33 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-from collections.abc import Iterable
+from typing import Any, cast
+
+from canonical_runs import canonical_run_key, discover_run_paths, result_runs
+
+JsonMap = dict[str, Any]
 
 
-def load_yaml(path: Path) -> dict:
-    import yaml  # type: ignore
+def load_yaml(path: Path) -> JsonMap:
+    import yaml  # type: ignore[import-untyped]
 
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+    loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        raise ValueError(f"Expected a YAML mapping in {path}.")
+    return cast(JsonMap, loaded)
 
 
-def dump_yaml(obj: dict, path: Path) -> None:
-    import yaml  # type: ignore
+def dump_yaml(obj: object, path: Path) -> None:
+    import yaml
 
     path.write_text(yaml.safe_dump(obj, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
 
-def read_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+def read_json(path: Path) -> JsonMap:
+    loaded = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        raise ValueError(f"Expected a JSON object in {path}.")
+    return cast(JsonMap, loaded)
 
 
 def ensure_dir(p: Path) -> None:
@@ -34,25 +43,21 @@ def deep_copy(x: Any) -> Any:
     return json.loads(json.dumps(x))
 
 
-def flatten_seed_rule(rule: dict) -> list[int]:
+def flatten_seed_rule(rule: JsonMap) -> list[int]:
     start = int(rule.get("start", 1))
     count = int(rule.get("count", 1))
     step = int(rule.get("step", 1))
     return [start + i * step for i in range(count)]
 
 
-def problem_domain(problem_catalog: dict, problem_key: str) -> str:
+def problem_domain(problem_catalog: JsonMap, problem_key: str) -> str:
     for p in problem_catalog.get("problems", []):
         if p.get("problem_key") == problem_key:
             return str(p.get("domain", "unknown"))
     return "unknown"
 
 
-def keep_keys(d: dict, allowed: set[str]) -> dict:
-    return {k: v for k, v in d.items() if k in allowed}
-
-
-def set_aos_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
+def set_aos_enabled(cfg: JsonMap, problem: str, algo: str, enabled: bool) -> None:
     try:
         aos = cfg.setdefault("problems", {}).setdefault(problem, {}).setdefault(algo, {}).setdefault("adaptive_operator_selection", {})
         aos["enabled"] = bool(enabled)
@@ -60,15 +65,8 @@ def set_aos_enabled(cfg: dict, problem: str, algo: str, enabled: bool) -> None:
         pass
 
 
-def base_template() -> dict:
+def base_template() -> JsonMap:
     return {"defaults": {}, "problems": {}}
-
-
-def compute_seed_dir(output_root: Path, suite: str, algo: str, engine: str, seed: int, problem_key: str) -> Path:
-    # Mirror observed structure: results/<campaign>/<PROBLEM_KEY_UPPER>/<algo>/<engine>/seed_<k>/
-    # The CLI uses the problem key (upper-cased) as the top-level directory.
-    top = str(problem_key).upper()
-    return output_root / top / algo / engine / f"seed_{seed}"
 
 
 def infer_suite_from_problem(problem_key: str) -> str:
@@ -95,7 +93,6 @@ class RunSpec:
     output_root: Path
     cfg_path: Path
     log_path: Path
-    seed_dir: Path
 
 
 def build_config(
@@ -110,9 +107,9 @@ def build_config(
     output_root: Path,
     aos_enabled: bool,
     algo_keys: set[str],
-    operator_block: dict,
+    operator_block: JsonMap,
     track_genealogy: bool | None,
-) -> dict:
+) -> JsonMap:
     cfg = base_template()
     cfg["defaults"] = {
         "algorithm": algo,
@@ -125,13 +122,13 @@ def build_config(
         "seed": int(seed),
     }
 
-    # Optional track_genealogy only if supported in metadata.config keys
+    # Optional track_genealogy only if supported by the resolved algorithm config.
     if track_genealogy is not None and "track_genealogy" in algo_keys:
         cfg["defaults"]["track_genealogy"] = bool(track_genealogy)
 
     # Apply operator_block keys ONLY if algo supports them (based on discovered keys)
-    # Discovered keys live under meta["config"] (not defaults), but they correspond to algorithm config surface.
-    # In your canonical configs, these are set under defaults.<algo> (which the CLI resolves into config).
+    # Discovered keys come from the canonical manifest's resolved algorithm config.
+    # Campaign inputs set them under defaults.<algo>, which the CLI resolves before execution.
     op_payload = {}
     for k in ["crossover", "mutation", "selection", "repair"]:
         if k in algo_keys and operator_block.get(k) is not None:
@@ -150,7 +147,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--spec", type=str, required=True, help="Path to campaign spec YAML")
     ap.add_argument("--dry-run", action="store_true", help="Only generate configs and counts; do not run CLI")
-    ap.add_argument("--resume", action="store_true", help="Skip runs that already have metadata.json in expected output dir")
+    ap.add_argument("--resume", action="store_true", help="Skip tasks already represented by a canonical manifest")
     ap.add_argument("--limit", type=int, default=0, help="Limit number of runs executed (0 = no limit)")
     ap.add_argument("--print-configs", type=int, default=3, help="Print first N generated config paths")
     args = ap.parse_args()
@@ -161,6 +158,7 @@ def main() -> int:
 
     campaign = spec["campaign"]
     output_root = (repo / spec["output_root"]).resolve()
+    existing_runs = {canonical_run_key(run): run.root for run in result_runs(output_root)}
 
     # Inputs
     inputs = spec.get("inputs", {})
@@ -205,8 +203,8 @@ def main() -> int:
                 operator_block = operator_blocks.get(block_name, {})
 
                 for seed in seeds:
-                    seed_dir = compute_seed_dir(output_root, suite, algo, engine, seed, problem)
-                    if args.resume and (seed_dir / "metadata.json").exists():
+                    task_key = (algo, problem, engine, int(seed))
+                    if args.resume and task_key in existing_runs:
                         continue
 
                     cfg = build_config(
@@ -242,12 +240,11 @@ def main() -> int:
                             output_root=output_root,
                             cfg_path=cfg_path,
                             log_path=log_path,
-                            seed_dir=seed_dir,
                         )
                     )
 
     # Breakdown
-    by = {}
+    by: dict[str, dict[str, int]] = {}
     for r in runs:
         by.setdefault(r.algo, {}).setdefault(r.engine, 0)
         by[r.algo][r.engine] += 1
@@ -284,8 +281,18 @@ def main() -> int:
             print(f"\n=== RUN {executed + 1}/{min(len(runs), args.limit) if args.limit else len(runs)} ===")
             print("cmd:", " ".join(cmd))
 
+            paths_before = set(discover_run_paths(output_root))
             with r.log_path.open("w", encoding="utf-8") as f:
                 p = subprocess.run(cmd, cwd=repo, stdout=f, stderr=subprocess.STDOUT)
+
+            run_path: Path | None = None
+            if p.returncode == 0:
+                expected_key = (r.algo, r.problem, r.engine, int(r.seed))
+                new_runs = [run for run in result_runs(output_root) if run.root not in paths_before]
+                matching = [run.root for run in new_runs if canonical_run_key(run) == expected_key]
+                if len(matching) != 1:
+                    raise RuntimeError(f"Expected one new canonical run for {expected_key}, found {len(matching)}.")
+                run_path = matching[0]
 
             rec = {
                 "algo": r.algo,
@@ -298,7 +305,7 @@ def main() -> int:
                 "maxeval": r.maxeval,
                 "config": str(r.cfg_path.relative_to(repo)),
                 "log": str(r.log_path.relative_to(repo)),
-                "seed_dir": str(r.seed_dir.relative_to(repo)),
+                "run_path": str(run_path.relative_to(repo)) if run_path is not None else None,
                 "returncode": p.returncode,
             }
             idx.write(json.dumps(rec, ensure_ascii=False) + "\n")

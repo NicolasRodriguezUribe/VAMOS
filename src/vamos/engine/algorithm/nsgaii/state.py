@@ -25,9 +25,9 @@ from vamos.engine.algorithm.components.archive import (
 )
 from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
 from vamos.engine.algorithm.components.termination import HVTracker
-from vamos.engine.algorithm.components.variation import VariationPipeline
 from vamos.engine.hooks.genealogy import GenealogyTracker
 from vamos.engine.operators.impl.real import VariationWorkspace
+from vamos.engine.variation import VariationPipeline
 
 
 def _logger() -> logging.Logger:

@@ -9,6 +9,6 @@ def test_build_archive_cfg_accepts_simplified_fields():
     assert cfg.pruning == "knn"
 
 
-def test_build_archive_cfg_rejects_legacy_fields():
-    with pytest.raises(TypeError):
-        build_archive_cfg({"size_cap": 120, "prune_policy": "crowding"})
+def test_build_archive_cfg_rejects_unknown_fields():
+    with pytest.raises(TypeError, match="Unknown archive.external fields"):
+        build_archive_cfg({"unexpected_option": True})

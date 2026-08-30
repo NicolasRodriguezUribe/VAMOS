@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
+from canonical_runs import component_name, result_runs
 
 REPO = Path.cwd()
 
@@ -17,20 +20,23 @@ OUT_ALGO_KEYS = REPO / "experiments" / "catalog" / "algo_config_keys.json"
 OUT_SPEC = REPO / "experiments" / "configs" / "engine_study_full_continuous.yml"
 
 
-def read_json(p: Path) -> dict:
-    return json.loads(p.read_text(encoding="utf-8"))
+def read_json(p: Path) -> dict[str, Any]:
+    loaded = json.loads(p.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        raise ValueError(f"Expected a JSON object in {p}.")
+    return cast(dict[str, Any], loaded)
 
 
-def load_yaml_deps():
+def load_yaml_deps() -> Any:
     try:
-        import yaml  # type: ignore
+        import yaml  # type: ignore[import-untyped]
 
         return yaml
     except Exception as e:
         raise SystemExit("Missing dependency: PyYAML. Install with: pip install pyyaml") from e
 
 
-def dump_yaml(obj: dict, path: Path) -> None:
+def dump_yaml(obj: object, path: Path) -> None:
     yaml = load_yaml_deps()
     path.write_text(yaml.safe_dump(obj, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
@@ -66,25 +72,24 @@ def infer_domain(problem_key: str, family: str) -> str:
 
 
 def extract_algo_config_keys(results_root: Path) -> dict[str, list[str]]:
-    # Parse metadata.json from results/algo_schema_discovery/**/seed_*/metadata.json
     out: dict[str, list[str]] = {}
     if not results_root.exists():
         return out
-    for sd in sorted([p for p in results_root.rglob("seed_*") if p.is_dir() and (p / "metadata.json").exists()]):
-        meta = read_json(sd / "metadata.json")
-        algo = str(meta.get("algorithm") or sd.parent.parent.name)
-        cfg = meta.get("config", {})
-        keys = list(cfg.keys()) if isinstance(cfg, dict) else []
-        out[algo] = sorted(set(keys))
+    for run in result_runs(results_root):
+        algorithm = run.manifest.resolved_spec.get("algorithm")
+        algorithm_map = algorithm if isinstance(algorithm, Mapping) else {}
+        config = algorithm_map.get("config")
+        config_map = config if isinstance(config, Mapping) else {}
+        out[component_name(algorithm_map)] = sorted(str(key) for key in config_map)
     return out
 
 
-def choose_real_operator_block() -> dict:
+def choose_real_operator_block() -> dict[str, Any]:
     # We choose a conservative, known-good block (from your canonical examples)
     return {
         "crossover": {"method": "sbx", "prob": 0.9, "eta": 20},
         "mutation": {"method": "polynomial", "prob": "1/n", "eta": 20},
-        "selection": {"method": "tournament", "pressure": 2},
+        "selection": {"method": "tournament", "size": 2},
         "repair": None,
     }
 
@@ -98,10 +103,10 @@ def main() -> int:
 
     # Load problem keys from sanitized JSON (authoritative list)
     prob_specs = read_json(PROB_JSON)
-    problem_keys = sorted(list(prob_specs.keys()))
+    problem_keys = sorted(str(key) for key in prob_specs)
 
     # Build enriched problem catalog
-    problems: list[dict] = []
+    problems: list[dict[str, str]] = []
     fam_counts: dict[str, int] = {}
     dom_counts: dict[str, int] = {}
     for pk in problem_keys:
@@ -136,10 +141,10 @@ def main() -> int:
     blocks = {
         "real": choose_real_operator_block(),
         # placeholders: to be validated via operator probing in phase 2
-        "bin": {"crossover": None, "mutation": None, "selection": {"method": "tournament", "pressure": 2}, "repair": None},
-        "int": {"crossover": None, "mutation": None, "selection": {"method": "tournament", "pressure": 2}, "repair": None},
-        "perm": {"crossover": None, "mutation": None, "selection": {"method": "tournament", "pressure": 2}, "repair": None},
-        "mixed": {"crossover": None, "mutation": None, "selection": {"method": "tournament", "pressure": 2}, "repair": None},
+        "bin": {"crossover": None, "mutation": None, "selection": {"method": "tournament", "size": 2}, "repair": None},
+        "int": {"crossover": None, "mutation": None, "selection": {"method": "tournament", "size": 2}, "repair": None},
+        "perm": {"crossover": None, "mutation": None, "selection": {"method": "tournament", "size": 2}, "repair": None},
+        "mixed": {"crossover": None, "mutation": None, "selection": {"method": "tournament", "size": 2}, "repair": None},
     }
     dump_yaml(blocks, OUT_OP_BLOCKS)
     print("Wrote:", OUT_OP_BLOCKS.relative_to(REPO))

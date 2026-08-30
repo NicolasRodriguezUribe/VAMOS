@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 __all__ = [
     "fast_non_dominated_sort",
     "identify_extremes",
-    "compute_intercepts",
     "get_extreme_points",
     "get_nadir_point",
     "associate",
@@ -121,25 +120,6 @@ def identify_extremes(shifted: np.ndarray) -> np.ndarray:
         asf = (shifted * weights).max(axis=1)
         extremes[i] = int(np.argmin(asf))
     return extremes
-
-
-def compute_intercepts(shifted: np.ndarray, extreme_idx: np.ndarray) -> np.ndarray:
-    """Compute intercepts from extreme points (legacy helper)."""
-    n_obj = shifted.shape[1]
-    if extreme_idx.size == 0:
-        return np.ones(n_obj, dtype=float)
-    extreme_pts = shifted[extreme_idx]
-    intercepts = np.zeros(n_obj, dtype=float)
-    try:
-        b = np.ones(n_obj)
-        plane = np.linalg.solve(extreme_pts, b)
-        intercepts = 1.0 / plane
-    except Exception:
-        intercepts = shifted.max(axis=0)
-    if np.any(~np.isfinite(intercepts)) or np.any(intercepts <= 1e-12):
-        intercepts = shifted.max(axis=0)
-    intercepts = np.where(intercepts > 0, intercepts, 1.0)
-    return intercepts
 
 
 def get_extreme_points(

@@ -106,16 +106,15 @@ def initialize_nsgaiii_run(
     # Tournament size
     sel_method, sel_params = config["selection"]
     if sel_method == "tournament":
-        if "pressure" in sel_params and sel_params.get("pressure") is not None:
-            raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+        unexpected = sorted(set(sel_params) - {"size"})
+        if unexpected:
+            raise ValueError(f"Unsupported tournament selection options: {', '.join(unexpected)}")
         pressure = int(sel_params.get("size", 2))
     else:
         pressure = 2
 
     def _handle_refdir_mismatch(expected: int, actual: int, detail: str) -> int:
-        raise ValueError(
-            f"{detail} Configure pop_size={expected} or choose reference directions with exactly {actual} points."
-        )
+        raise ValueError(f"{detail} Configure pop_size={expected} or choose reference directions with exactly {actual} points.")
 
     # Load reference directions (prefer #ref_dirs == pop_size; warn if mismatched)
     dir_cfg = config.get("reference_directions", {}) or {}

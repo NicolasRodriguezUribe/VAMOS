@@ -5,7 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -31,6 +30,8 @@ def main() -> int:
 
     python = sys.executable
     commands: list[tuple[str, list[str]]] = [
+        ("Pre-release remnant audit", [python, "tools/check_pre_release_remnants.py"]),
+        ("Pre-release remnant checker tests", [python, "-m", "pytest", "-q", "tests/test_check_pre_release_remnants.py"]),
         ("Layer boundaries", [python, "-m", "pytest", "-q", "tests/architecture/test_layer_boundaries.py"]),
         ("Monolith guard", [python, "-m", "pytest", "-q", "tests/test_monolith_guard.py"]),
         ("Public API guard", [python, "-m", "pytest", "-q", "tests/test_public_api_guard.py"]),
