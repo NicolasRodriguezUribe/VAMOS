@@ -1,189 +1,79 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from canonical_runs import result_runs, run_row
+from numpy.typing import NDArray
 
 
-def pareto_nondominated_mask(F: np.ndarray) -> np.ndarray:
-    n = F.shape[0]
-    if n == 0:
+def pareto_nondominated_mask(values: NDArray[Any]) -> NDArray[np.bool_]:
+    if values.shape[0] == 0:
         return np.zeros((0,), dtype=bool)
-    le = F[:, None, :] <= F[None, :, :]
-    lt = F[:, None, :] < F[None, :, :]
-    dom = np.all(le, axis=2) & np.any(lt, axis=2)
-    dominated = np.any(dom, axis=0)
-    return ~dominated
+    le = values[:, None, :] <= values[None, :, :]
+    lt = values[:, None, :] < values[None, :, :]
+    dominated = np.any(np.all(le, axis=2) & np.any(lt, axis=2), axis=0)
+    return np.asarray(~dominated, dtype=np.bool_)
 
 
-def hv_2d_exact(F: np.ndarray, ref: np.ndarray) -> float:
-    if F.size == 0:
+def hv_2d_exact(values: np.ndarray, reference: np.ndarray) -> float:
+    if values.size == 0:
         return 0.0
-    idx = np.argsort(F[:, 0])
-    P = F[idx]
-    xs = P[:, 0]
-    ys = P[:, 1]
-    next_x = np.concatenate([xs[1:], np.array([ref[0]])])
-    widths = np.maximum(0.0, next_x - xs)
-    heights = np.maximum(0.0, ref[1] - ys)
+    ordered = values[np.argsort(values[:, 0])]
+    next_x = np.concatenate([ordered[1:, 0], np.array([reference[0]])])
+    widths = np.maximum(0.0, next_x - ordered[:, 0])
+    heights = np.maximum(0.0, reference[1] - ordered[:, 1])
     return float(np.sum(widths * heights))
 
 
-def hv_mc(F: np.ndarray, ref: np.ndarray, lo: np.ndarray, samples: int, rng: np.random.Generator) -> float:
-    """
-    Monte Carlo HV estimate over box [lo, ref] for minimization:
-    a sample point u is dominated by set if exists s in F with u >= s in all dims.
-    HV = P(dominated) * volume(box).
-    """
-    if F.size == 0:
+def hv_mc(
+    values: np.ndarray,
+    reference: np.ndarray,
+    lower: np.ndarray,
+    samples: int,
+    rng: np.random.Generator,
+) -> float:
+    if values.size == 0:
         return 0.0
-    m = F.shape[1]
-    ref = np.asarray(ref, dtype=float)
-    lo = np.asarray(lo, dtype=float)
-    span = np.maximum(ref - lo, 1e-12)
-    U = rng.random((samples, m))
-    pts = lo + U * span
-
-    dom_any = np.zeros((samples,), dtype=bool)
-    chunk = 512
-    for i in range(0, F.shape[0], chunk):
-        S = F[i : i + chunk]
-        dom = np.any(np.all(pts[:, None, :] >= S[None, :, :], axis=2), axis=1)
-        dom_any |= dom
-        if np.all(dom_any):
+    span = np.maximum(reference - lower, 1e-12)
+    points = lower + rng.random((samples, values.shape[1])) * span
+    dominated = np.zeros((samples,), dtype=bool)
+    for start in range(0, values.shape[0], 512):
+        candidates = values[start : start + 512]
+        dominated |= np.any(np.all(points[:, None, :] >= candidates[None, :, :], axis=2), axis=1)
+        if np.all(dominated):
             break
-    frac = float(np.mean(dom_any))
-    vol = float(np.prod(span))
-    return frac * vol
+    return float(np.mean(dominated)) * float(np.prod(span))
 
 
-def igd_plus(F: np.ndarray, R: np.ndarray) -> float:
-    """
-    IGD+ (minimization): for each reference point r in R,
-    distance to solution set S is min_s sqrt(sum_i max(0, s_i - r_i)^2).
-    """
-    if R.size == 0:
+def igd_plus(values: np.ndarray, reference_set: np.ndarray) -> float:
+    if reference_set.size == 0:
         return float("nan")
-    if F.size == 0:
+    if values.size == 0:
         return float("inf")
-    out = []
-    for r in R:
-        dif = np.maximum(0.0, F - r[None, :])
-        d = np.sqrt(np.sum(dif * dif, axis=1))
-        out.append(float(np.min(d)))
-    return float(np.mean(out))
-
-
-def read_csv_matrix(path: Path) -> np.ndarray:
-    return np.loadtxt(str(path), delimiter=",")
-
-
-def safe_float(x: Any) -> float | None:
-    try:
-        if x is None:
-            return None
-        return float(x)
-    except Exception:
-        return None
-
-
-def infer_suite_from_problem(problem_key: str) -> str:
-    import re
-
-    key = str(problem_key).lower()
-    match = re.match(r"^([a-z]+)", key)
-    prefix = match.group(1) if match else "unknown"
-    return prefix.upper()
-
-
-def _normalize_problem(meta_problem: Any) -> str:
-    if isinstance(meta_problem, dict):
-        return str(meta_problem.get("key") or meta_problem.get("label") or "unknown")
-    return str(meta_problem or "unknown")
+    distances = []
+    for reference in reference_set:
+        difference = np.maximum(0.0, values - reference[None, :])
+        distances.append(float(np.min(np.sqrt(np.sum(difference * difference, axis=1)))))
+    return float(np.mean(distances))
 
 
 def scan_runs(results_root: Path) -> list[dict[str, Any]]:
-    runs = []
-    for md_path in results_root.rglob("metadata.json"):
-        try:
-            meta = json.loads(md_path.read_text(encoding="utf-8"))
-        except Exception:
+    rows: list[dict[str, Any]] = []
+    for run in result_runs(results_root):
+        if run.result.F is None:
             continue
-
-        seed_dir = md_path.parent
-        fun = seed_dir / "FUN.csv"
-        time_txt = seed_dir / "time.txt"
-        hv_trace = seed_dir / "hv_trace.csv"
-        ar_stats = seed_dir / "archive_stats.csv"
-        if not fun.exists():
-            continue
-
-        rel = seed_dir.relative_to(results_root)
-        parts = rel.parts
-        variant = parts[0] if len(parts) >= 1 else "unknown"
-
-        algo = meta.get("algorithm", meta.get("config", {}).get("algorithm", "unknown"))
-        engine = meta.get("backend", meta.get("config", {}).get("engine", "unknown"))
-        problem = _normalize_problem(meta.get("problem", meta.get("config", {}).get("problem", "unknown")))
-        suite = infer_suite_from_problem(problem)
-
-        seed = meta.get("seed", None)
-        max_evals = meta.get("max_evaluations", meta.get("config", {}).get("max_evaluations", None))
-        pop = meta.get("population_size", meta.get("config", {}).get("population_size", None))
-
-        stopping = meta.get("stopping", {}) if isinstance(meta.get("stopping", {}), dict) else {}
-        stop_enabled = bool(stopping.get("enabled", False))
-        stop_triggered = bool(stopping.get("triggered", False))
-        evals_stop = stopping.get("evals_stop", None)
-
-        archive = meta.get("archive", {}) if isinstance(meta.get("archive", {}), dict) else {}
-        arch_enabled = bool(archive.get("enabled", False))
-        arch_final = archive.get("final_size", None)
-
-        runtime_s = None
-        if time_txt.exists():
-            try:
-                runtime_ms = float(time_txt.read_text(encoding="utf-8").strip())
-                runtime_s = runtime_ms / 1000.0
-            except Exception:
-                runtime_s = None
-        if runtime_s is None:
-            metrics = meta.get("metrics", {}) if isinstance(meta.get("metrics", {}), dict) else {}
-            runtime_s = safe_float(metrics.get("runtime_seconds"))
-
-        runs.append(
-            {
-                "seed_dir": str(seed_dir),
-                "variant": variant,
-                "suite": suite,
-                "algorithm": str(algo),
-                "engine": str(engine),
-                "problem": str(problem),
-                "seed": seed,
-                "max_evaluations": max_evals,
-                "population_size": pop,
-                "FUN": str(fun),
-                "runtime_s": runtime_s,
-                "hv_trace": str(hv_trace) if hv_trace.exists() else None,
-                "archive_stats": str(ar_stats) if ar_stats.exists() else None,
-                "stop_enabled": stop_enabled,
-                "stop_triggered": stop_triggered,
-                "evals_stop": evals_stop,
-                "arch_enabled": arch_enabled,
-                "arch_final_size": arch_final,
-            }
-        )
-    return runs
+        row = run_row(run, campaign=results_root.name)
+        row["_objectives"] = np.asarray(run.result.F)
+        rows.append(row)
+    return rows
 
 
 def load_ref_points(path: str | None) -> dict[str, np.ndarray]:
-    """
-    Load frozen reference points mapping: { "<problem_key>": [r1, r2, ...] }.
-    Returns empty dict if path is None.
-    """
     if not path:
         return {}
     ref_path = Path(path).resolve()
@@ -191,158 +81,102 @@ def load_ref_points(path: str | None) -> dict[str, np.ndarray]:
         raise FileNotFoundError(f"--ref-points file not found: {ref_path}")
     data = json.loads(ref_path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
-        raise ValueError("--ref-points must be a JSON object mapping problem -> ref vector.")
-    out: dict[str, np.ndarray] = {}
+        raise ValueError("--ref-points must be a JSON object mapping problem to a reference vector.")
+    output: dict[str, np.ndarray] = {}
     for key, value in data.items():
-        try:
-            out[str(key)] = np.asarray(value, dtype=float)
-        except Exception as exc:
-            raise ValueError(f"Invalid ref point for problem '{key}': {value}") from exc
-        if out[str(key)].ndim != 1:
-            raise ValueError(f"Ref point for problem '{key}' must be 1D list/array. Got shape {out[str(key)].shape}")
-    return out
+        point = np.asarray(value, dtype=float)
+        if point.ndim != 1:
+            raise ValueError(f"Reference point for problem '{key}' must be one-dimensional; got {point.shape}.")
+        output[str(key)] = point
+    return output
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--results-root", required=True)
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--sample-out", required=True)
-    ap.add_argument("--mc-samples", type=int, default=20000)
-    ap.add_argument("--rng-seed", type=int, default=0)
-    ap.add_argument(
-        "--ref-points",
-        default=None,
-        help="Optional JSON mapping problem_key -> reference point vector. If provided, HV uses these frozen ref points.",
-    )
-    ap.add_argument("--max-runs", type=int, default=0)
-    args = ap.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--results-root", required=True)
+    parser.add_argument("--out", required=True)
+    parser.add_argument("--sample-out", required=True)
+    parser.add_argument("--mc-samples", type=int, default=20000)
+    parser.add_argument("--rng-seed", type=int, default=0)
+    parser.add_argument("--ref-points", default=None, help="Optional JSON mapping problem IDs to frozen reference vectors")
+    parser.add_argument("--max-runs", type=int, default=0)
+    args = parser.parse_args()
 
     results_root = Path(args.results_root).resolve()
-    out_path = Path(args.out).resolve()
-    sample_path = Path(args.sample_out).resolve()
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    sample_path.parent.mkdir(parents=True, exist_ok=True)
+    output = Path(args.out).resolve()
+    sample_output = Path(args.sample_out).resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    sample_output.parent.mkdir(parents=True, exist_ok=True)
 
     runs = scan_runs(results_root)
-    if args.max_runs and len(runs) > args.max_runs:
+    if args.max_runs:
         runs = runs[: args.max_runs]
-
-    frozen_ref = load_ref_points(args.ref_points)
-
-    print("results_root:", results_root)
-    print("runs_found:", len(runs))
     if not runs:
+        print("No canonical runs found under:", results_root)
         return 2
 
+    frozen_ref = load_ref_points(args.ref_points)
     by_problem: dict[str, list[np.ndarray]] = {}
-    for r in runs:
-        F = read_csv_matrix(Path(r["FUN"]))
-        if F.ndim == 1:
-            F = F.reshape(1, -1)
-        by_problem.setdefault(r["problem"], []).append(F)
+    for row in runs:
+        by_problem.setdefault(str(row["problem"]), []).append(row["_objectives"])
 
     problem_stats: dict[str, dict[str, Any]] = {}
-    refset_ultimate: dict[str, np.ndarray] = {}
-    hv_ref: dict[str, np.ndarray] = {}
-    hv_lo: dict[str, np.ndarray] = {}
-
-    for prob, Fs in by_problem.items():
-        allF = np.vstack(Fs)
-        m = allF.shape[1]
-        lo = np.min(allF, axis=0)
-        mx = np.max(allF, axis=0)
-        margin = 0.05 * np.maximum(mx - lo, 1e-12)
-        if prob in frozen_ref:
-            ref = frozen_ref[prob].astype(float, copy=False)
-            if ref.shape[0] != m:
-                raise ValueError(
-                    f"Frozen ref point dimension mismatch for problem '{prob}': expected {m}, got {ref.shape[0]} (ref={ref.tolist()})"
-                )
-            ref_source = "frozen"
-        else:
-            ref = mx + margin + 1e-9
-            ref_source = "observed_max_margin"
-        hv_ref[prob] = ref
-        hv_lo[prob] = lo
-
-        nd_mask = pareto_nondominated_mask(allF)
-        R = allF[nd_mask]
-        R = np.unique(R, axis=0)
-        refset_ultimate[prob] = R
-
-        problem_stats[prob] = {
-            "n_obj": int(m),
-            "ref": ref.tolist(),
-            "ref_source": ref_source,
-            "lo": lo.tolist(),
-            "refset_size": int(R.shape[0]),
+    reference_sets: dict[str, np.ndarray] = {}
+    hv_references: dict[str, np.ndarray] = {}
+    hv_lowers: dict[str, np.ndarray] = {}
+    for problem, fronts in by_problem.items():
+        combined = np.vstack(fronts)
+        lower = np.min(combined, axis=0)
+        maximum = np.max(combined, axis=0)
+        reference = frozen_ref.get(problem, maximum + 0.05 * np.maximum(maximum - lower, 1e-12) + 1e-9)
+        if reference.shape[0] != combined.shape[1]:
+            raise ValueError(f"Reference point dimension mismatch for '{problem}'.")
+        reference_set = np.unique(combined[pareto_nondominated_mask(combined)], axis=0)
+        hv_lowers[problem] = lower
+        hv_references[problem] = reference
+        reference_sets[problem] = reference_set
+        problem_stats[problem] = {
+            "n_obj": int(combined.shape[1]),
+            "ref": reference.tolist(),
+            "ref_source": "frozen" if problem in frozen_ref else "observed_max_margin",
+            "lo": lower.tolist(),
+            "refset_size": int(reference_set.shape[0]),
         }
 
-    if frozen_ref:
-        missing = sorted(set(frozen_ref.keys()) - set(problem_stats.keys()))
-        if missing:
-            print(
-                "WARNING: ref-points provided for problems not present in scanned runs:",
-                missing[:10],
-                "(+more)" if len(missing) > 10 else "",
-            )
-
-    rng = np.random.default_rng(int(args.rng_seed))
-
-    rows: list[dict[str, Any]] = []
-    for r in runs:
-        prob = r["problem"]
-        F = read_csv_matrix(Path(r["FUN"]))
-        if F.ndim == 1:
-            F = F.reshape(1, -1)
-        nd = F[pareto_nondominated_mask(F)]
-        ref = hv_ref[prob]
-        lo = hv_lo[prob]
-        m = nd.shape[1]
-
-        if m == 2:
-            hv_val = hv_2d_exact(nd, ref=ref)
+    rng = np.random.default_rng(args.rng_seed)
+    output_rows: list[dict[str, Any]] = []
+    for source in runs:
+        row = {key: value for key, value in source.items() if not key.startswith("_")}
+        problem = str(row["problem"])
+        values = source["_objectives"]
+        nondominated = values[pareto_nondominated_mask(values)]
+        reference = hv_references[problem]
+        if nondominated.shape[1] == 2:
+            hypervolume = hv_2d_exact(nondominated, reference)
         else:
-            hv_val = hv_mc(nd, ref=ref, lo=lo, samples=int(args.mc_samples), rng=rng)
-
-        igd = igd_plus(nd, refset_ultimate[prob])
-
-        row = dict(r)
+            hypervolume = hv_mc(nondominated, reference, hv_lowers[problem], args.mc_samples, rng)
         row.update(
             {
-                "n_obj": int(m),
-                "nd_size": int(nd.shape[0]),
-                "hv_ref": json.dumps(ref.tolist()),
-                "hv_final": float(hv_val),
-                "igd_plus": float(igd),
-                "refset_size": int(refset_ultimate[prob].shape[0]),
+                "nd_size": int(nondominated.shape[0]),
+                "hv_ref": json.dumps(reference.tolist()),
+                "hv_final": hypervolume,
+                "igd_plus": igd_plus(nondominated, reference_sets[problem]),
+                "refset_size": int(reference_sets[problem].shape[0]),
             }
         )
-        rows.append(row)
+        output_rows.append(row)
 
-    import csv
-
-    cols = sorted({k for row in rows for k in row.keys()})
-    with out_path.open("w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=cols)
-        w.writeheader()
-        for row in rows:
-            w.writerow(row)
-
-    sample = rows[: min(60, len(rows))]
-    with sample_path.open("w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=cols)
-        w.writeheader()
-        for row in sample:
-            w.writerow(row)
-
-    stats_path = out_path.with_suffix(".problem_stats.json")
+    columns = sorted({key for row in output_rows for key in row})
+    for path, rows in ((output, output_rows), (sample_output, output_rows[:60])):
+        with path.open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=columns)
+            writer.writeheader()
+            writer.writerows(rows)
+    stats_path = output.with_suffix(".problem_stats.json")
     stats_path.write_text(json.dumps(problem_stats, indent=2, ensure_ascii=False), encoding="utf-8")
-
-    print("Wrote:", out_path)
-    print("Wrote sample:", sample_path)
-    print("Wrote problem_stats:", stats_path)
+    print("Wrote:", output)
+    print("Wrote derived sample:", sample_output)
+    print("Wrote problem statistics:", stats_path)
     return 0
 
 

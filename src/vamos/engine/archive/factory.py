@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 
 import numpy as np
 
-from .bounded_archive import ExternalArchiveConfig
+from .config import ExternalArchiveConfig
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.archive import (

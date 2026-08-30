@@ -51,10 +51,7 @@ _OPERATOR_CATEGORIES = ("crossover", "mutation", "selection", "repair", "initial
 
 _EXTERNAL_ARCHIVE_ALLOWED_KWARGS = {
     "pruning",
-    "nondominated_only",
-    "epsilon",
     "hv_ref_point",
-    "hv_samples",
     "rng_seed",
     "objective_tolerance",
     "truncate_size",
@@ -447,6 +444,7 @@ def _normalize_tournament_selection_kwargs(method: str, kwargs: dict[str, Any]) 
     if str(method).strip().lower() != "tournament":
         return kwargs
 
-    if "pressure" in kwargs and kwargs.get("pressure") is not None:
-        raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+    unexpected = sorted(set(kwargs) - {"size"})
+    if unexpected:
+        raise ValueError(f"Unsupported tournament selection options: {', '.join(unexpected)}")
     return dict(kwargs)

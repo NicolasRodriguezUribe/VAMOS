@@ -12,11 +12,11 @@ import numpy as np
 
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker, validate_initial_budget
-from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.engine.operators.policies.nsgaii import build_operator_pool
+from vamos.engine.variation import prepare_mutation_params
 from vamos.foundation.checkpoint import restore_rng
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend

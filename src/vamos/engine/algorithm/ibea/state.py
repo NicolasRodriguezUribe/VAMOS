@@ -12,7 +12,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
 from vamos.engine.algorithm.components.state import AlgorithmState
-from vamos.engine.algorithm.components.variation import VariationPipeline
+from vamos.engine.variation import VariationPipeline
 
 
 @dataclass

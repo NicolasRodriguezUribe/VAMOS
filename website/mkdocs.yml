@@ -6,7 +6,6 @@ repo_name: vamos-optimization/vamos
 
 theme:
   name: material
-  custom_dir: docs/overrides
   font:
     text: DM Sans
     code: JetBrains Mono
@@ -49,13 +48,17 @@ extra:
 
 plugins:
   - search
-  - static-i18n:
-      default_language: en
+  - i18n:
+      docs_structure: folder
+      fallback_to_default: true
+      reconfigure_material: false
+      reconfigure_search: true
       languages:
-        en:
+        - locale: en
           name: English
           build: true
-        zh:
+          default: true
+        - locale: zh
           name: 中文
           build: true
           nav_translations:

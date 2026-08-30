@@ -69,16 +69,6 @@ def test_optimize_unknown_algorithm_errors():
         optimize(problem, algorithm="unknown_algo", max_evaluations=4, pop_size=6)
 
 
-def test_optimize_rejects_legacy_signature():
-    problem = ZDT1Problem(n_var=4)
-    with pytest.raises(ConfigurationError, match="algorithm_config"):
-        optimize(problem, algorithm="nsgaii", max_evaluations=4, algorithm_config={})  # type: ignore[arg-type]
-    with pytest.raises(TypeError, match="unexpected keyword argument 'termination'"):
-        optimize(problem, algorithm="nsgaii", termination=("max_evaluations", 6))  # type: ignore[call-arg]
-    with pytest.raises(TypeError):
-        optimize(problem, _nsgaii_cfg(), ("max_evaluations", 6), 3)  # type: ignore[arg-type]
-
-
 def test_optimize_resolves_pop_size_consistently() -> None:
     problem = ZDT1Problem(n_var=6)
     pop_size = 10

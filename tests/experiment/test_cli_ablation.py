@@ -126,26 +126,3 @@ def test_cli_ablation_rejects_unknown_variation_keys(monkeypatch, tmp_path):
 
     with pytest.raises(ValueError):
         main()
-
-
-def test_cli_ablation_rejects_legacy_variation_keys(monkeypatch, tmp_path):
-    config = {
-        "algorithm": "moead",
-        "engine": "numpy",
-        "default_max_evals": 10,
-        "problems": ["zdt1"],
-        "seeds": [1],
-        "variants": [
-            {"name": "baseline", "moead_variation": {"aggregation": {"method": "pbi", "theta": 5.0}}},
-        ],
-    }
-    config_path = tmp_path / "ablation_legacy_variation.json"
-    config_path.write_text(json.dumps(config), encoding="utf-8")
-
-    argv = ["prog", "ablation", "--config", str(config_path)]
-    monkeypatch.setattr(sys, "argv", argv)
-
-    from vamos.experiment.cli.main import main
-
-    with pytest.raises(ValueError, match="unsupported keys"):
-        main()

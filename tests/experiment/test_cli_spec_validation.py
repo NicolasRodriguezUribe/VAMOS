@@ -59,31 +59,27 @@ def test_validate_experiment_spec_rejects_non_mapping_defaults() -> None:
         validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
 
 
-def test_validate_experiment_spec_accepts_simplified_archive_bounded_block() -> None:
+def test_validate_experiment_spec_accepts_external_archive_block() -> None:
     spec = {
         "version": "1",
         "archive": {
-            "bounded": {
+            "external": {
                 "enabled": True,
-                "size_cap": 50,
-                "prune_policy": "crowding",
+                "capacity": 50,
+                "pruning": "crowding",
             }
         },
     }
     validated = validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())
-    assert validated["archive"]["bounded"]["size_cap"] == 50
+    assert validated["archive"]["external"]["capacity"] == 50
 
 
-def test_validate_experiment_spec_rejects_legacy_archive_bounded_keys() -> None:
+def test_validate_experiment_spec_rejects_unknown_archive_block() -> None:
     spec = {
         "version": "1",
         "archive": {
-            "bounded": {
-                "enabled": True,
-                "size_cap": 50,
-                "archive_type": "size_cap",
-            }
+            "unexpected": {},
         },
     }
-    with pytest.raises(ValueError, match="archive_type"):
+    with pytest.raises(ValueError, match="Unknown keys in 'archive'"):
         validate_experiment_spec(spec, allowed_overrides=_allowed_override_keys())

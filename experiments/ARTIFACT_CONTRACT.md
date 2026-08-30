@@ -1,95 +1,41 @@
-# Experiment artifact contract (VAMOS)
+# Experiment artifact contract
 
-This repository treats experiment outputs as a *contract* so that:
-- runs are reproducible and auditable
-- analysis/reporting can be regenerated from stored artifacts
-- paper tables/figures can be built deterministically
+Experiment and paper tooling has one source-of-truth input: a canonical VAMOS
+run directory containing `manifest.json`, `result.npz`, and `environment.json`.
+The manifest declares `document_type = "vamos.run-manifest"` and
+`schema_version = "1.0.0"`.
 
-## Run directory layout (observed in smoke run)
+Collectors discover runs through `manifest.json`, load identity and execution
+context with `vamos.load_run`, and load numerical arrays with
+`vamos.load_result`. They must not infer algorithm, problem, backend, seed, or
+configuration from directory names.
 
-Each run is stored under:
+## Artifact classes
 
-results/<campaign>/<suite>/<algorithm>/<engine>/seed_<seed>/
+- `SOURCE_INPUT`: problem data, frozen reference points, campaign
+  specifications, and other irreplaceable scientific inputs. Preserve these.
+- `CANONICAL_RUN`: the immutable run directory written by VAMOS. Never rewrite
+  it during analysis.
+- `DERIVED_REGENERABLE_OUTPUT`: tidy CSV tables, statistics, plots, LaTeX, and
+  samples generated from canonical runs. These are analysis products, not run
+  persistence.
+- `PUBLICATION_ARCHIVE`: retained evidence for a published result. It may be
+  read by publication-specific tooling but is never accepted as a current run.
 
-Expected files (minimum):
-- metadata.json            (structured metadata: algorithm/problem/backend/config/metrics/etc.)
-- resolved_config.json     (fully resolved config used for the run)
-- FUN.csv                  (final objective values; one row per solution, columns = objectives)
-- X.csv                    (final decision variables; one row per solution)
-- time.txt                 (runtime info; plain text)
+## Derived tidy tables
 
-## Tidy outputs (analysis inputs)
+`experiments/scripts/canonical_runs.py` is the shared adapter used by active
+collectors. A derived row includes the canonical run/task identities, resolved
+algorithm/problem/backend/seed, population and termination settings, outcome
+timing, result dimensions, and flattened outcome metrics. Objective summaries
+are calculated from arrays returned by `load_result`.
 
-Collectors must write tidy tables to:
-- artifacts/tidy/
+Derived tables may be written under `artifacts/tidy/` or
+`experiments/sample_outputs/`. Their filenames and columns are analysis
+interfaces only and must never be treated as a loadable VAMOS run format.
 
-Minimum tidy table for engine studies:
-- artifacts/tidy/engine_smoke.csv  (one row per run)
+## Validation
 
-### engine_smoke.csv (minimum columns)
-
-Identity / provenance:
-- run_path
-- campaign, suite, algorithm, engine
-- seed
-- git_revision (if present)
-- timestamp (if present)
-- vamos_version (if present)
-
-Problem / budget:
-- problem
-- n_obj, n_var (if present)
-- population_size
-- max_evaluations
-
-Runtime:
-- runtime_seconds (parsed from time.txt when possible; else blank)
-
-Final population summary:
-- front_size (rows in FUN.csv)
-- fun_ncols (objective columns)
-- x_ncols (variable columns)
-- obj<i>_min / obj<i>_max for i=0..m-1 (derived from FUN.csv)
-
-Metadata passthrough:
-- backend_info.* (flattened if present)
-- metrics.* (flattened if present)
-
-## Paper consumption
-
-Figures and tables generated from tidy data must be written to:
-- artifacts/plots/
-- artifacts/tables/
-
-A later sync step may copy/link those into:
-- paper/manuscript/figures/
-- paper/manuscript/tables/
-
-## Stopping + Archive artifacts (HV-based)
-
-When enabled, runs MUST emit:
-See `docs/experiment/stopping_and_archive.md` for config details.
-
-### hv_trace.csv
-Path: results/<campaign>/<suite>/<algo>/<engine>/seed_<seed>/hv_trace.csv
-
-Columns (minimum):
-- evals
-- hv
-- hv_delta
-- stop_flag
-- reason
-
-### archive_stats.csv
-Path: results/<campaign>/<suite>/<algo>/<engine>/seed_<seed>/archive_stats.csv
-
-Columns (minimum):
-- evals
-- archive_size
-- inserted
-- pruned
-- prune_reason
-
-### metadata.json additions (minimum)
-- stopping: {enabled, monitor_type, params, triggered, evals_stop, reason}
-- archive:  {enabled, archive_type, params, final_size, total_inserted, total_pruned}
+Use a tiny canonical fixture to test collector discovery, manifest field
+extraction, array loading, and table generation. Publication-scale campaigns
+are outside routine validation.

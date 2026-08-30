@@ -109,8 +109,9 @@ def initialize_smsemoa_run(
     # Tournament size
     sel_method, sel_params = config["selection"]
     if sel_method == "tournament":
-        if "pressure" in sel_params and sel_params.get("pressure") is not None:
-            raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+        unexpected = sorted(set(sel_params) - {"size"})
+        if unexpected:
+            raise ValueError(f"Unsupported tournament selection options: {', '.join(unexpected)}")
         pressure = int(sel_params.get("size", 2))
     else:
         pressure = 2

@@ -1,8 +1,4 @@
-"""Tests for the consolidated CLI subcommand dispatch.
-
-Verifies that all legacy vamos-* standalone commands are reachable
-via `vamos <subcommand>` (e.g. `vamos check`, `vamos bench`).
-"""
+"""Tests for the canonical CLI subcommand dispatch."""
 
 from __future__ import annotations
 
@@ -41,12 +37,6 @@ def test_help_subcommand_lists_all():
     # Each consolidated command should appear in help output
     for name in ("quickstart", "create-problem", "summarize", "check", "bench", "studio", "zoo", "tune", "profile"):
         assert name in stdout, f"'{name}' not found in help output"
-
-
-def test_help_commands_alias():
-    proc = _run_vamos("--help-commands")
-    assert proc.returncode == 0
-    assert "check" in proc.stdout.decode()
 
 
 # ---- consolidated commands: import smoke ----
