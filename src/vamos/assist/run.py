@@ -100,18 +100,18 @@ def _override_smoke_budget(config: dict[str, Any], smoke_evals: int) -> str:
     )
 
 
-def make_resolved_config(base_config: dict[str, Any], run_dir: Path, smoke: bool, smoke_evals: int) -> dict[str, Any]:
-    resolved = deepcopy(base_config)
-    defaults = resolved.get("defaults")
+def make_execution_config(base_config: dict[str, Any], run_dir: Path, smoke: bool, smoke_evals: int) -> dict[str, Any]:
+    execution = deepcopy(base_config)
+    defaults = execution.get("defaults")
     if defaults is None:
         defaults = {}
-        resolved["defaults"] = defaults
+        execution["defaults"] = defaults
     defaults_map = _require_mapping(defaults, path="defaults")
     defaults_map["output_root"] = str(run_dir / "results")
 
     if smoke:
-        _override_smoke_budget(resolved, smoke_evals)
-    return resolved
+        _override_smoke_budget(execution, smoke_evals)
+    return execution
 
 
 def _run_with_subprocess(config_path: Path) -> int:
@@ -159,19 +159,19 @@ def run_plan(
     warnings: list[str] = []
     warnings.append("Archive output path is controlled via defaults.output_root in this schema.")
 
-    resolved_config = make_resolved_config(base_config, run_dir=run_dir, smoke=smoke, smoke_evals=smoke_evals)
-    _validate_spec(resolved_config)
+    execution_config = make_execution_config(base_config, run_dir=run_dir, smoke=smoke, smoke_evals=smoke_evals)
+    _validate_spec(execution_config)
 
-    resolved_config_path = run_dir / "resolved_config.json"
-    resolved_config_path.write_text(json.dumps(resolved_config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    execution_config_path = run_dir / "execution_config.json"
+    execution_config_path.write_text(json.dumps(execution_config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    command = [sys.executable, "-m", "vamos.experiment.cli.main", "--config", str(resolved_config_path)]
+    command = [sys.executable, "-m", "vamos.experiment.cli.main", "--config", str(execution_config_path)]
     started_at = _iso_now()
     status = "ok"
     error_message: str | None = None
     execution_mode = "in_process"
     try:
-        exit_code = run_with_config_path(resolved_config_path)
+        exit_code = run_with_config_path(execution_config_path)
         execution_mode = _LAST_EXECUTION_MODE
     except Exception as exc:  # pragma: no cover - defensive
         exit_code = 1
@@ -188,7 +188,7 @@ def run_plan(
         "exit_code": int(exit_code),
         "plan_dir": str(resolved_plan_dir),
         "base_config_path": str(base_config_path),
-        "resolved_config_path": str(resolved_config_path),
+        "execution_config_path": str(execution_config_path),
         "run_dir": str(run_dir),
         "started_at": started_at,
         "ended_at": ended_at,
@@ -208,7 +208,7 @@ def run_plan(
 
 
 __all__ = [
-    "make_resolved_config",
+    "make_execution_config",
     "prepare_run_dir",
     "run_plan",
     "run_with_config_path",

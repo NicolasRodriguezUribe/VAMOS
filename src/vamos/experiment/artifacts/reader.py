@@ -29,9 +29,6 @@ _KNOWN_ARTIFACT_ROLES = (
     "result_bundle",
     "metrics",
     "events",
-    "objectives_csv",
-    "decisions_csv",
-    "metadata_view",
 )
 
 
@@ -111,7 +108,7 @@ def verify_artifact(
             expected_sha256=descriptor.sha256,
             expected_bytes=descriptor.bytes,
             state="missing",
-            action="Restore the exact referenced file from the original run; canonical CSV views are not a fallback.",
+            action="Restore the exact referenced file from the original run.",
         )
     try:
         observed_bytes = artifact_path.stat().st_size
@@ -198,7 +195,7 @@ def _read_result(root: Path, manifest: RunManifest, *, verify: VerifyMode, limit
             reason=f"run status {manifest.status!r} has no declared usable result",
             expected="a succeeded or usable partial run with canonical result_bundle",
             actual={"status": manifest.status, "usable_result": usable},
-            action="Inspect load_run(path).manifest for failure evidence; do not infer a result from compatibility CSV files.",
+            action="Inspect load_run(path).manifest for failure evidence; failed runs do not contain a numerical result.",
         )
     if verify == "manifest":
         result_path = confined_artifact_path(root, descriptor.path, role=descriptor.role, operation="load result", must_exist=True)
@@ -310,7 +307,6 @@ def _result_meta(manifest: RunManifest) -> dict[str, Any]:
         "run_artifact_requested_spec": dict(manifest.requested_spec),
         "run_artifact_resolved_spec": resolved.as_dict(),
         "run_artifact_timestamps": run_artifact_timestamps,
-        "resolved_config": resolved.as_dict(),
         "default_sources": default_sources,
     }
 
@@ -380,20 +376,13 @@ def _resolve_run_root(path: str | Path) -> Path:
 
 
 def _raise_unsupported_layout(root: Path) -> None:
-    legacy = (root / "FUN.csv").is_file() or (root / "metadata.json").is_file()
-    reason = "is a recognized legacy count/CSV layout" if legacy else "does not contain manifest.json"
-    action = (
-        "Legacy loading and migration are deliberately deferred; retain the directory unchanged or use the VAMOS version that created it."
-        if legacy
-        else "Select a canonical v1 run directory containing manifest.json."
-    )
     raise UnsupportedArtifactLayoutError(
         operation="load run",
         path=root,
-        reason=reason,
+        reason="does not contain the canonical manifest.json",
         expected="v1 run directory with document_type vamos.run-manifest",
-        actual="legacy layout" if legacy else "unknown directory layout",
-        action=action,
+        actual="unsupported directory layout",
+        action="This is a pre-release format; regenerate the run with the current VAMOS version.",
     )
 
 

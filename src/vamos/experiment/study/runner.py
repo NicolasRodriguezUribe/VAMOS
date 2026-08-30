@@ -95,10 +95,6 @@ class StudyRunner:
             result = StudyResult(task=task, selection=selection, metrics=metrics)
             results.append(result)
 
-            # Delegate artifact mirroring to persister if available
-            if self.persister:
-                self.persister.mirror_artifacts(result)
-
         self._attach_hypervolume(results)
         self._attach_indicators(results)
 

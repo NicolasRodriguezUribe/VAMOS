@@ -66,7 +66,7 @@ results/{study_name}/
 ├── zdt1/
 │   ├── nsgaii_seed1/
 │   │   ├── front.csv
-│   │   └── metadata.json
+│   │   └── manifest.json
 │   ├── nsgaii_seed2/
 │   └── ...
 ├── zdt2/

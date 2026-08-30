@@ -71,4 +71,4 @@ result = optimize(
 Results written to `results/{problem}/{algorithm}_seed{N}/`:
 - `front.csv` — Pareto front objectives
 - `variables.csv` — Decision variables (optional)
-- `metadata.json` — Run configuration and timing
+- `manifest.json` — Canonical run configuration, timing, provenance, outcome, and artifact index

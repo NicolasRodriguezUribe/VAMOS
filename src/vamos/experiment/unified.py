@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import numbers
+import secrets
 import time
 from collections.abc import Mapping
 from datetime import datetime, timezone
@@ -70,7 +71,7 @@ def optimize(
     termination: TerminationSpec | None = None,
     pop_size: int | None = None,
     engine: EngineName | str | None = None,
-    seed: int = 42,
+    seed: int | None = 42,
     verbose: bool = False,
     n_var: int | None = None,
     n_obj: int | None = None,
@@ -111,7 +112,7 @@ def optimize(
     termination: TerminationSpec | None = None,
     pop_size: int | None = None,
     engine: EngineName | str | None = None,
-    seed: int | list[int] | tuple[int, ...] = DEFAULT_SEED,
+    seed: int | None | list[int] | tuple[int, ...] = DEFAULT_SEED,
     verbose: bool = False,
     n_var: int | None = None,
     n_obj: int | None = None,
@@ -146,8 +147,9 @@ def optimize(
     engine : EngineName | str | None, optional
         Backend engine (for example ``"numpy"``, ``"numba"``, ``"moocore"``,
         or ``"auto"``).
-    seed : int | list[int] | tuple[int, ...], default ``42``
-        Random seed for one run, or a sequence of seeds for multi-run studies.
+    seed : int | None | list[int] | tuple[int, ...], default ``42``
+        Random seed for one run, ``None`` to generate and record a seed before
+        execution, or a sequence of explicit seeds for multi-run studies.
     verbose : bool, default ``False``
         Enable VAMOS logging for the run.
     n_var, n_obj : int | None, optional
@@ -190,6 +192,8 @@ def optimize(
     if isinstance(seed, (list, tuple)):
         if checkpoint is not None:
             raise ConfigurationError("checkpoint is only supported for single-seed runs.")
+        if any(isinstance(value, bool) or not isinstance(value, numbers.Integral) for value in seed):
+            raise ConfigurationError("seed sequences must contain only integers.")
         return StudyResult(
             [
                 _run_single(
@@ -199,7 +203,7 @@ def optimize(
                     termination,
                     pop_size,
                     engine,
-                    single_seed,
+                    int(single_seed),
                     verbose,
                     n_var,
                     n_obj,
@@ -240,7 +244,7 @@ def _run_single(
     termination: TerminationSpec | None,
     pop_size: int | None,
     engine: str | None,
-    seed: int,
+    seed: int | None,
     verbose: bool,
     n_var: int | None,
     n_obj: int | None,
@@ -266,8 +270,12 @@ def _run_single(
             raise TypeError("optimize() got an unexpected keyword argument 'termination'")
         if not isinstance(termination, tuple) or len(termination) != 2:
             raise ConfigurationError("termination must be a pair such as ('max_evaluations', 10000).")
+    requested_seed = seed
+    if seed is None:
+        seed = secrets.randbits(64)
     if isinstance(seed, bool) or not isinstance(seed, numbers.Integral):
         raise ConfigurationError("seed must be an integer.")
+    seed = int(seed)
     if isinstance(eval_strategy, str):
         eval_key = eval_strategy.lower()
         if eval_key not in _ALLOWED_EVAL_STRATEGIES:
@@ -395,22 +403,8 @@ def _run_single(
     runtime_ms = (time.perf_counter() - started_monotonic) * 1000.0
     completed_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     problem_label = _resolve_problem_label(problem, problem_instance)
-    resolved_config = {
-        "problem": problem_label,
-        "algorithm": algorithm,
-        "engine": effective_engine,
-        "engine_source": engine_source,
-        "kernel_backend": result.meta.get("kernel_backend", effective_engine),
-        "pop_size": resolved_pop_size,
-        "max_evaluations": effective_max_evaluations,
-        "seed": seed,
-        "n_var": n_var,
-        "n_obj": n_obj,
-        "encoding": encoding,
-    }
     pop_size_source = "config" if algorithm_config is not None else ("explicit" if pop_size is not None else "auto")
     max_evaluations_source = "explicit" if max_evaluations is not None or termination is not None else "auto"
-    result.meta["resolved_config"] = resolved_config
     result.meta["engine_source"] = engine_source
     result.meta["kernel_backend"] = result.meta.get("kernel_backend", effective_engine)
     result.meta["default_sources"] = {
@@ -440,8 +434,8 @@ def _run_single(
             resolved_pop_size=resolved_pop_size,
             engine_requested=requested_engine,
             engine=effective_engine,
-            engine_source=engine_source,
             eval_strategy=eval_strategy,
+            seed_requested=requested_seed,
             seed=seed,
             default_sources=result.meta["default_sources"],
         )

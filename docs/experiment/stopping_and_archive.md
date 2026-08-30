@@ -25,11 +25,9 @@ stopping:
     ref_point: [2.0, 2.0] # must match n_obj (or use "auto")
 ```
 
-Artifacts:
-- `hv_trace.csv` (see `experiments/ARTIFACT_CONTRACT.md`)
+Canonical record:
 
-Metadata:
-- `metadata.json` additions under `stopping`
+- `manifest.json` outcome metrics under `hooks.stopping`, including the bounded trace
 
 Notes:
 - For 2 objectives, HV is computed exactly.
@@ -56,11 +54,9 @@ archive:
     decision_tolerance: 1.0e-32
 ```
 
-Artifacts:
-- `archive_stats.csv` (see `experiments/ARTIFACT_CONTRACT.md`)
+Canonical record:
 
-Metadata:
-- `metadata.json` additions under `archive`
+- `manifest.json` outcome metrics under `hooks.archive`, including the bounded trace
 
 Notes:
 - In the tuning spaces, external archives use the population size as their default capacity.
@@ -70,5 +66,5 @@ Notes:
 ## Reproducibility
 
 Runs should be launched with fixed seeds and fixed budgets. Early stopping changes executed evaluations,
-but the run still reports the original max budget in config. Use `stopping.evals_stop` and `hv_trace.csv`
-for analysis.
+but the run still reports the original max budget in the resolved spec. Use the
+stopping payload and trace in manifest outcome metrics for analysis.

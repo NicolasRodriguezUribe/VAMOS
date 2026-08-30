@@ -1,26 +1,19 @@
 import json
 from pathlib import Path
 
+import vamos
 from vamos.experiment.cli import results_cli
 
 
 def _write_run(base: Path, *, problem: str, algorithm: str, engine: str, seed: int, timestamp: str) -> Path:
     run_dir = base / problem.upper() / algorithm / engine / f"seed_{seed}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    metadata = {
-        "timestamp": timestamp,
-        "algorithm": algorithm,
-        "backend": engine,
-        "seed": seed,
-        "problem": {"key": problem, "label": problem.upper()},
-        "metrics": {
-            "time_ms": 1.23,
-            "evaluations": 10,
-            "evals_per_sec": 8.1,
-            "termination": "max_evaluations",
-        },
+    result = vamos.optimize(problem, algorithm=algorithm, engine=engine, seed=seed, pop_size=4, max_evaluations=4)
+    result.meta["run_artifact_timestamps"] = {
+        "started_at": timestamp,
+        "completed_at": timestamp,
+        "runtime_ms": 1.23,
     }
-    (run_dir / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+    vamos.save_result(result, run_dir)
     return run_dir
 
 

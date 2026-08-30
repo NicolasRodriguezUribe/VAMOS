@@ -15,8 +15,9 @@ from numpy.typing import NDArray
 from vamos.experiment.optimization_result import OptimizationResult
 
 from .bundle import snapshot_result_arrays
+from .errors import IncompleteRunMetadataError
 from .jsonio import canonical_json_bytes, normalize_json, sha256_bytes
-from .manifest import DOCUMENT_TYPE, RESOLVED_SPEC_VERSION, SCHEMA_VERSION
+from .manifest import DOCUMENT_TYPE, SCHEMA_VERSION
 from .models import LoadLimits, StoredRun, VerifyMode
 from .provenance import capture_provenance, replayability_from_provenance
 from .reader import read_run
@@ -33,25 +34,30 @@ def save_result(
     path: str | Path,
     *,
     requested_spec: Mapping[str, Any] | None = None,
+    resolved_spec: Mapping[str, Any] | None = None,
     labels: Mapping[str, str] | None = None,
     limits: LoadLimits | None = None,
 ) -> StoredRun:
     """Persist a result as one immutable, relocatable v1 run directory."""
     active_limits = limits if limits is not None else LoadLimits()
     arrays = snapshot_result_arrays(result, limits=active_limits)
-    recorded_requested, resolved, historical = _result_specs(result, arrays)
-    if requested_spec is not None:
-        normalized_requested = normalize_json(requested_spec, field="$.requested_spec")
-        if not isinstance(normalized_requested, dict):
-            raise AssertionError("normalize_json returned a non-object requested_spec")
-        recorded_requested = normalized_requested
+    recorded_requested, resolved, caller_supplied = _result_specs(
+        result,
+        requested_spec=requested_spec,
+        resolved_spec=resolved_spec,
+    )
     timestamps, runtime_ms = _timestamps(_result_meta_mapping(result))
     backend = _kernel_name(resolved)
-    provenance, environment = capture_provenance(backend=backend, timestamps=timestamps)
+    entry_point = _result_meta_mapping(result).get("run_artifact_entry_point")
+    provenance, environment = capture_provenance(
+        backend=backend,
+        timestamps=timestamps,
+        entry_point=entry_point if isinstance(entry_point, Mapping) else None,
+    )
     deterministic = _declared_deterministic(resolved)
     replayability = replayability_from_provenance(provenance, deterministic=deterministic)
     unavailable_reason = _find_unavailable_reason(resolved)
-    if unavailable_reason is not None and not historical:
+    if unavailable_reason is not None:
         replayability = {
             "declared_level": "manual",
             "deterministic": deterministic,
@@ -63,26 +69,19 @@ def save_result(
                 }
             ],
         }
-    if historical:
-        provenance["source"] = {
-            "git_sha": None,
-            "dirty": "unknown",
-            "diff_sha256": None,
-            "tree_hash": None,
-            "reason": "original_execution_provenance_unavailable",
-        }
+    if caller_supplied:
         provenance["entry_point"] = {
             "kind": "python_api",
-            "python": {"callable": "vamos.save_result", "arguments_source": "historical_resultlike"},
+            "python": {"callable": "vamos.save_result", "arguments_source": "caller_supplied_run_context"},
         }
         replayability = {
-            "declared_level": "unavailable",
-            "deterministic": False,
+            "declared_level": "manual",
+            "deterministic": deterministic,
             "exact_requirements": [],
             "reasons": [
                 {
-                    "code": "original_execution_spec_unavailable",
-                    "message": "The historical ResultLike did not carry a resolved execution specification.",
+                    "code": "caller_supplied_execution_context",
+                    "message": "The execution specification was supplied by the save_result caller.",
                 }
             ],
         }
@@ -135,90 +134,42 @@ def load_result(
     return load_run(path, verify=verify, limits=limits).result
 
 
-def _result_specs(result: ResultLike, arrays: Mapping[str, np.ndarray]) -> tuple[dict[str, Any], dict[str, Any], bool]:
+def _result_specs(
+    result: ResultLike,
+    *,
+    requested_spec: Mapping[str, Any] | None,
+    resolved_spec: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], dict[str, Any], bool]:
     meta = _result_meta_mapping(result)
-    requested = meta.get("run_artifact_requested_spec")
-    resolved = meta.get("run_artifact_resolved_spec")
+    captured_requested = meta.get("run_artifact_requested_spec")
+    captured_resolved = meta.get("run_artifact_resolved_spec")
+    supplied = requested_spec is not None or resolved_spec is not None
+    if supplied and (requested_spec is None or resolved_spec is None):
+        raise _incomplete_metadata(requested_spec, resolved_spec)
+    requested = requested_spec if supplied else captured_requested
+    resolved = resolved_spec if supplied else captured_resolved
     if isinstance(requested, Mapping) and isinstance(resolved, Mapping):
         normalized_requested = normalize_json(requested, field="$.requested_spec")
         normalized_resolved = normalize_json(resolved, field="$.resolved_spec")
         if not isinstance(normalized_requested, dict) or not isinstance(normalized_resolved, dict):
             raise AssertionError("normalized run specifications are not objects")
-        return normalized_requested, normalized_resolved, False
-    return _historical_specs(result, arrays)
+        return normalized_requested, normalized_resolved, supplied
+    raise _incomplete_metadata(captured_requested, captured_resolved)
 
 
-def _historical_specs(
-    result: ResultLike,
-    arrays: Mapping[str, np.ndarray],
-) -> tuple[dict[str, Any], dict[str, Any], bool]:
-    f_array = arrays["F"]
-    x_array = arrays.get("X")
-    seed_value = _result_meta_mapping(result).get("seed")
-    seed = int(seed_value) if isinstance(seed_value, int) and not isinstance(seed_value, bool) else 0
-    unknown_resolution = {
-        "contract_version": 1,
-        "available": False,
-        "reason": "historical_resultlike_metadata_unavailable",
-    }
-
-    def component(kind: str, name: str, config: Mapping[str, Any]) -> dict[str, Any]:
-        return {
-            "kind": kind,
-            "component_id": f"vamos.unavailable:{name}@1",
-            "provider": {"type": "unavailable", "distribution": None},
-            "config": dict(config),
-            "resolution": dict(unknown_resolution),
-        }
-
-    requested = {
-        "version": "1",
-        "source": {
-            "kind": "historical_resultlike",
-            "configuration": "unavailable",
-            "reason": "save_result caller supplied arrays without a captured execution spec",
-        },
-    }
-    resolved = {
-        "spec_version": RESOLVED_SPEC_VERSION,
-        "problem": component(
-            "problem",
-            "problem",
-            {
-                "n_obj": int(f_array.shape[1]),
-                "n_var": int(x_array.shape[1]) if x_array is not None else None,
-                "constraint_convention": "g_lte_0",
-            },
+def _incomplete_metadata(requested: object, resolved: object) -> IncompleteRunMetadataError:
+    missing = [field for field, value in (("requested_spec", requested), ("resolved_spec", resolved)) if not isinstance(value, Mapping)]
+    return IncompleteRunMetadataError(
+        operation="save result",
+        field="$.run_context",
+        reason="is incomplete",
+        expected="both requested_spec and resolved_spec from the actual execution",
+        actual={"missing": missing},
+        action=(
+            "Save an OptimizationResult returned by vamos.optimize(), or pass both requested_spec= and "
+            "resolved_spec= with the complete execution context."
         ),
-        "algorithm": component("algorithm", "algorithm", {}),
-        "operators": {},
-        "backend": {
-            "kernel": component("kernel_backend", "kernel", {}),
-            "evaluation": component("evaluation_backend", "evaluation", {}),
-        },
-        "termination": component("termination", "termination", {}),
-        "seed": seed,
-        "population": {
-            "initial_size": None,
-            "offspring_size": None,
-            "archive_size": None,
-        },
-        "defaults_applied": [
-            {
-                "field": "/seed",
-                "source": "unavailable",
-                "reason": "structural sentinel only; the original seed is unknown"
-                if seed_value is None
-                else "recorded from result metadata",
-            }
-        ],
-        "determinism": {
-            "declared": False,
-            "rng": "unavailable",
-            "seed_evidence": "unavailable" if seed_value is None else "result_metadata",
-        },
-    }
-    return requested, resolved, True
+    )
 
 
 def _timestamps(meta: Mapping[str, Any]) -> tuple[dict[str, str], float]:
@@ -259,7 +210,10 @@ def _outcome(
     termination = resolved.get("termination")
     termination_id = termination.get("component_id") if isinstance(termination, Mapping) else None
     termination_reason = "interrupted" if data.get("interrupted") is True else _component_suffix(termination_id)
-    metrics: dict[str, Any] = {}
+    recorded_metrics = data.get("metrics")
+    metrics: dict[str, Any] = (
+        dict(normalize_json(recorded_metrics, field="$.outcome.metrics")) if isinstance(recorded_metrics, Mapping) else {}
+    )
     for key in ("hv_reached", "best_hv", "hypervolume"):
         scalar = _scalar(data.get(key))
         if scalar is not None:

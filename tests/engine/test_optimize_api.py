@@ -104,10 +104,12 @@ def test_optimize_resolves_pop_size_consistently() -> None:
 
     direct_defaults = result_direct.explain_defaults()
     cfg_defaults = result_cfg.explain_defaults()
-    assert "resolved_config" in direct_defaults
-    assert "resolved_config" in cfg_defaults
-    assert direct_defaults["resolved_config"]["pop_size"] == cfg_defaults["resolved_config"]["pop_size"] == pop_size
-    assert direct_defaults["resolved_config"]["max_evaluations"] == cfg_defaults["resolved_config"]["max_evaluations"] == max_evaluations
+    assert "resolved_spec" in direct_defaults
+    assert "resolved_spec" in cfg_defaults
+    assert direct_defaults["resolved_spec"]["population"]["initial_size"] == pop_size
+    assert cfg_defaults["resolved_spec"]["population"]["initial_size"] == pop_size
+    assert direct_defaults["resolved_spec"]["termination"]["config"]["max_evaluations"] == max_evaluations
+    assert cfg_defaults["resolved_spec"]["termination"]["config"]["max_evaluations"] == max_evaluations
 
 
 def test_optimize_accepts_max_evaluations() -> None:
@@ -121,7 +123,7 @@ def test_optimize_accepts_max_evaluations() -> None:
         engine="numpy",
     )
     defaults = result.explain_defaults()
-    assert defaults["resolved_config"]["max_evaluations"] == 12
+    assert defaults["resolved_spec"]["termination"]["config"]["max_evaluations"] == 12
 
 
 def test_optimize_records_backend_resolution_metadata() -> None:
@@ -135,9 +137,7 @@ def test_optimize_records_backend_resolution_metadata() -> None:
     )
 
     defaults = result.explain_defaults()
-    assert defaults["resolved_config"]["engine"] == "numpy"
-    assert defaults["resolved_config"]["engine_source"] == "default"
-    assert defaults["resolved_config"]["kernel_backend"] == "numpy"
+    assert defaults["resolved_spec"]["backend"]["kernel"]["resolution"]["name"] == "numpy"
     assert result.meta["engine_source"] == "default"
     assert result.meta["kernel_backend"] == "numpy"
 

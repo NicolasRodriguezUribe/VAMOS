@@ -88,7 +88,7 @@ def test_runner_rejects_genealogy_for_non_nsgaii():
         runner.run_single("numpy", "ibea", selection, config, track_genealogy=True)
 
 
-def test_runner_plugin_algorithm_uses_registry_path():
+def test_runner_plugin_algorithm_uses_registry_path(tmp_path):
     algo_key = "_runner_mock_algo"
 
     def mock_algo_builder(cfg, kernel):
@@ -117,7 +117,13 @@ def test_runner_plugin_algorithm_uses_registry_path():
             return {"pop_size": self.pop_size}
 
     selection = make_problem_selection("zdt1", n_var=4)
-    config = ExperimentConfig(population_size=5, offspring_population_size=5, max_evaluations=10, seed=1)
+    config = ExperimentConfig(
+        output_root=str(tmp_path),
+        population_size=5,
+        offspring_population_size=5,
+        max_evaluations=10,
+        seed=1,
+    )
 
     result = runner.run_single("numpy", algo_key, selection, config, algorithm_config=DummyConfig())
 
@@ -138,18 +144,12 @@ def test_cli_accepts_registered_plugin_algorithm(monkeypatch):
     assert args.algorithm == algo_key
 
 
-def test_study_runner_mirrors_outputs(monkeypatch, tmp_path):
+def test_study_runner_keeps_single_run_output_reference(tmp_path):
     base_root = tmp_path / "results"
-    mirror_root = tmp_path / "mirror"
     base_root.mkdir()
-    mirror_root.mkdir()
-    monkeypatch.setenv("VAMOS_OUTPUT_ROOT", str(base_root))
 
     def fake_run_single(engine_name, algorithm_name, selection, config, **kwargs):
         out_dir = base_root / selection.spec.key.upper() / algorithm_name / engine_name / f"seed_{config.seed}"
-        out_dir.mkdir(parents=True, exist_ok=True)
-        for name in ("FUN.csv", "time.txt", "metadata.json"):
-            (out_dir / name).write_text("dummy", encoding="utf-8")
         return {
             "engine": engine_name,
             "algorithm": algorithm_name,
@@ -169,9 +169,9 @@ def test_study_runner_mirrors_outputs(monkeypatch, tmp_path):
             seed=1,
         )
     ]
-    runner_obj = StudyRunner(verbose=False, persister=CSVPersister(mirror_roots=[mirror_root]))
+    runner_obj = StudyRunner(verbose=False, persister=CSVPersister())
     results = runner_obj.run(tasks, run_single_fn=fake_run_single)
 
     assert results, "No study results returned"
-    mirrored_fun = mirror_root / "ZDT1" / "nsgaii" / "numpy" / "seed_1" / "FUN.csv"
-    assert mirrored_fun.exists(), "FUN.csv was not mirrored to the target root"
+    assert results[0].metrics["output_dir"].endswith("seed_1")
+    assert list(base_root.iterdir()) == []

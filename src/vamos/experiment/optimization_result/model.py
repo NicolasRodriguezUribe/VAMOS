@@ -162,10 +162,10 @@ class OptimizationResult:
 
     def explain_defaults(self) -> dict[str, object]:
         explained: dict[str, object] = {}
-        resolved = self.meta.get("resolved_config")
+        resolved = self.meta.get("run_artifact_resolved_spec")
         sources = self.meta.get("default_sources")
         if resolved is not None:
-            explained["resolved_config"] = resolved
+            explained["resolved_spec"] = resolved
         if sources is not None:
             explained["default_sources"] = sources
         return explained

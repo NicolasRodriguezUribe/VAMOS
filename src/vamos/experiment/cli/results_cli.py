@@ -5,10 +5,11 @@ import json
 import os
 import subprocess
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 
+from vamos.run_artifacts import load_run
 from vamos.ux.analysis.results import discover_runs
 
 
@@ -37,21 +38,19 @@ def _load_records(base_dir: str, *, problem: str | None, algorithm: str | None, 
             continue
         if engine and run.engine != engine:
             continue
-        try:
-            metadata = json.loads(run.metadata_path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        metrics = metadata.get("metrics", {}) or {}
+        manifest = load_run(run.path, verify="manifest").manifest
+        outcome = manifest.get("outcome", {})
+        metrics = outcome.get("metrics", {}) if isinstance(outcome, Mapping) else {}
         record = {
-            "timestamp": metadata.get("timestamp"),
-            "problem": metadata.get("problem", {}).get("key", run.problem),
-            "algorithm": metadata.get("algorithm", run.algorithm),
-            "engine": metadata.get("backend", run.engine),
-            "seed": metadata.get("seed", run.seed),
-            "evaluations": metrics.get("evaluations"),
-            "time_ms": metrics.get("time_ms"),
+            "timestamp": run.completed_at,
+            "problem": run.problem,
+            "algorithm": run.algorithm,
+            "engine": run.engine,
+            "seed": run.seed,
+            "evaluations": outcome.get("evaluations") if isinstance(outcome, Mapping) else None,
+            "time_ms": outcome.get("runtime_ms") if isinstance(outcome, Mapping) else None,
             "evals_per_sec": metrics.get("evals_per_sec"),
-            "termination": metrics.get("termination"),
+            "termination": outcome.get("termination_reason") if isinstance(outcome, Mapping) else None,
             "path": str(run.path),
         }
         record["_timestamp"] = _parse_timestamp(record["timestamp"])

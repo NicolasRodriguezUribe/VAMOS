@@ -122,7 +122,7 @@ As of March 31, 2026:
 - `experiment`: orchestration and entry points — CLI, StudyRunner, benchmark suites, diagnostics, and zoo presets.
 - `ux`: user-facing analysis/visualization (including MCDM/stats) and Studio surfaces.
 - The `vamos` package root re-exports a curated public API (see `vamos.api`, `vamos.algorithms`, `vamos.problems`, and `vamos.ux.api`); use these for user-facing examples.
-- Standard results layout under `results/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `FUN.csv`, optional `X.csv`/`G.csv`/archive files, `metadata.json`, and `resolved_config.json`. All experiment runners (CLI/benchmark/zoo) must write to this schema; UX helpers (`vamos.ux.analysis.results`) read it.
+- Standard results layout under `results/<PROBLEM>/<algorithm>/<engine>/seed_<seed>/` with `manifest.json`, `result.npz`, and `environment.json`. All experiment runners converge on the canonical v1 writer; UX helpers read only through the canonical loader.
 ---
 
 ## 4. Repository layout (aligns with README)

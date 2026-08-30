@@ -205,11 +205,18 @@ class IncompleteRunError(RunArtifactError):
     category = "incomplete_run"
 
 
+class IncompleteRunMetadataError(RunArtifactError):
+    """A result cannot be saved without complete execution metadata."""
+
+    category = "incomplete_run_metadata"
+
+
 __all__ = [
     "ArtifactIntegrityError",
     "ArtifactMissingError",
     "ArtifactResourceLimitError",
     "DuplicateJSONKeyError",
+    "IncompleteRunMetadataError",
     "IncompleteRunError",
     "MalformedResultBundleError",
     "ManifestValidationError",

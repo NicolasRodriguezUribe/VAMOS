@@ -1,8 +1,6 @@
-# Save and load Python run artifacts
+# Save and load run artifacts
 
-VAMOS can persist one Python optimization result as a relocatable v1 run
-directory. The manifest and numerical bundle are authoritative; CSV files are
-compatibility views for existing analysis workflows.
+VAMOS writes one relocatable canonical v1 directory for each run.
 
 ```python
 import vamos
@@ -16,110 +14,104 @@ result = vamos.optimize(
 )
 
 stored = vamos.save_result(result, "runs/zdt1-seed-7")
-loaded = vamos.load_result("runs/zdt1-seed-7")
-run = vamos.load_run("runs/zdt1-seed-7")
+loaded = vamos.load_result(stored.root)
+run = vamos.load_run(stored.root)
 
 print(stored.manifest.run_id)
 print(loaded.F.shape)
 print(run.status, run.environment["python"])
 ```
 
-`save_result` returns an immutable `StoredRun`. Existing callers that import
-`save_result` from `vamos.ux.api` and ignore its return value remain valid; that
-name is a permanent alias of the canonical saver.
-
 ## Directory contents
-
-A successful save publishes the directory only after every final artifact is
-complete:
 
 ```text
 runs/zdt1-seed-7/
-├── manifest.json       # schema, specs, provenance, outcome, hashes
-├── result.npz          # authoritative numerical arrays
-├── environment.json    # bounded, privacy-conscious environment snapshot
-├── FUN.csv             # non-authoritative compatibility view
-├── X.csv               # non-authoritative compatibility view
-└── metadata.json       # non-authoritative compatibility view
+├── manifest.json
+├── result.npz
+└── environment.json
 ```
 
-`result.npz` preserves numerical values, shapes, dtype widths, and byte order.
-It can contain `F`, `X`, `G`, `CV`, final population/archive arrays, and material
-reference directions. V1 permits only fixed-width boolean, signed integer,
-unsigned integer, and floating dtypes. Object, string, structured, complex,
-datetime, and pickle-backed arrays are rejected.
+The manifest contains requested intent, resolved execution state, the actual
+seed, provenance, outcome, artifact hashes, and a semantic self-hash. The NPZ
+contains numerical result/population/archive arrays. The environment document
+contains a bounded privacy-conscious runtime snapshot.
 
-Every referenced file has an exact byte length and SHA-256 digest. The manifest
-also has a canonical semantic self-hash. All stored paths are normalized
-relative POSIX paths, so the complete directory can be moved and loaded from a
-new location.
+The directory may be moved as a unit. All references are relative and confined
+to it. The destination passed to `save_result` must not exist; VAMOS never
+overwrites or merges a run.
+
+## Requested and generated seeds
+
+An explicit seed, including zero, is used unchanged:
+
+```python
+result = vamos.optimize("zdt1", seed=0)
+print(result.meta["seed"])  # 0
+```
+
+Pass `None` to ask VAMOS to generate a seed. Generation happens before any
+stochastic execution object is constructed:
+
+```python
+result = vamos.optimize("zdt1", seed=None)
+actual_seed = result.meta["seed"]
+stored = vamos.save_result(result, "runs/generated-seed")
+
+print(stored.manifest.requested_spec["defaults"]["seed"])  # None
+print(stored.manifest.resolved_spec["seed"])                # actual integer
+```
+
+## Manual results
+
+`OptimizationResult` instances created by `vamos.optimize` already carry their
+complete run context. A manually constructed result must provide both the
+requested and resolved specs:
+
+```python
+stored = vamos.save_result(
+    manual_result,
+    "runs/manual",
+    requested_spec=requested_spec,
+    resolved_spec=resolved_spec,
+)
+```
+
+Without both mappings, saving raises `vamos.IncompleteRunMetadataError`. VAMOS
+does not invent a seed or execution configuration from arrays.
 
 ## Loading and verification
 
-Loading is a data-only operation. It performs no optimization, component/plugin
-resolution, custom imports, shell commands, or network access. Replay and
-reproduction are deliberately outside this v1 core and are not available from
-these functions.
+Loading is data-only. It does not rerun optimization, resolve plugins, import
+recorded custom components, use pickle, invoke a shell, or access the network.
+Replay/reproduction is future work and is intentionally separate from loading.
 
-Both load functions accept a verification mode:
+Verification modes are:
 
-- `verify="manifest"` validates the JSON schema and manifest self-hash. An
-  accessed numerical/environment artifact is still parsed using safe bounded
-  readers.
-- `verify="required"` (default) also verifies byte length and SHA-256 for
-  artifacts required by the requested load operation.
-- `verify="all"` verifies every known referenced artifact, including CSV
-  compatibility views. Unknown extension roles remain inert.
+- `verify="manifest"`: validate manifest syntax, semantics, task ID, and
+  self-hash;
+- `verify="required"` (default): also verify artifacts required for loading;
+- `verify="all"`: verify every known referenced artifact.
 
-`load_run` exposes the immutable manifest immediately and loads `.result` and
-`.environment` lazily. `load_result` is the convenience path and attaches the
-same manifest as `result.manifest`. A failed run can be inspected with
-`load_run`; asking it for `.result` raises an actionable `IncompleteRunError`.
+`load_run` returns an immutable manifest and lazy `.result`/`.environment`
+access. `load_result` is the convenient numerical path. A failed run remains
+inspectable through `load_run`, while `.result` raises `IncompleteRunError`.
 
-Legacy count-only CSV directories are recognized and actionably rejected by
-this reader. Legacy loading and migration are separate, deferred work; normal
-loading never fabricates missing provenance or rewrites an old directory.
+## Numerical safety and limits
 
-Current limitations are intentional: there is no legacy loader/migrator, no
-CLI or Python reproduction command, and no custom-code/plugin replay. Stored
-custom-component descriptions remain inert data during loading.
+NPZ loading always uses `allow_pickle=False`. V1 accepts fixed-width boolean,
+integer, unsigned integer, and floating arrays. It rejects executable/object,
+string, structured, complex, and datetime dtypes.
 
-## Defensive limits
+Readers validate bounded JSON, artifact count/size, ZIP member layout, NPY
+headers, shapes, dtype, total elements/uncompressed bytes, and compression
+ratio before materializing arrays. A trusted caller can explicitly provide a
+different `vamos.LoadLimits`; limits are never raised automatically.
 
-Normal readers use finite defaults:
+## Unsupported directories
 
-| Limit | Default |
-|---|---:|
-| Manifest JSON | 8 MiB |
-| Environment JSON | 16 MiB |
-| One artifact / one array | 512 MiB |
-| Artifact descriptors / ZIP members / arrays | 128 / 128 / 64 |
-| Total uncompressed array bytes | 1 GiB |
-| Total array elements | 100 million |
-| NPY header / JSON depth | 64 KiB / 64 |
-| Compression ratio | 1000:1 |
+VAMOS is pre-release and supports only `vamos.run-manifest` `1.0.0`. A directory
+without that manifest is rejected with guidance to regenerate the run using the
+current version. There are no fallback readers, format detectors, or migration
+aliases.
 
-A trusted caller may explicitly supply a different `vamos.LoadLimits` instance:
-
-```python
-limits = vamos.LoadLimits(max_artifact_bytes=768 * 1024 * 1024)
-loaded = vamos.load_result("runs/large", limits=limits)
-```
-
-Limits are never increased automatically after a rejection. NPZ files are
-inspected for member count, overlap, header consistency, dtype, declared size,
-and compression ratio before NumPy allocates their arrays, and are always
-materialized with `allow_pickle=False`.
-
-## Non-destructive writes
-
-The destination path must not exist. Empty, valid, unrelated, and partially
-written directories are all collisions and are never overwritten or merged.
-The writer snapshots supported arrays before I/O, writes into a uniquely owned
-sibling staging directory, fsyncs artifacts, commits the terminal manifest
-last, and renames the complete directory into place. A write failure removes
-only its owned staging directory and never exposes a succeeded destination.
-
-SHA-256 detects accidental corruption; it is not a digital signature. Restore
-missing or modified canonical files from the original run rather than falling
-back to CSV or editing hashes.
+SHA-256 detects accidental modification; it is not a digital signature.

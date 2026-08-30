@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from argparse import Namespace
 from collections.abc import Callable
 from copy import deepcopy
@@ -59,13 +60,14 @@ def run_from_args(
                 n_var=_override_value(override, "n_var", cast(int | None, selection.n_var)),
                 n_obj=_override_value(override, "n_obj", cast(int | None, selection.n_obj)),
             )
+        requested_seed = _override_value(override, "seed", config.seed)
         effective_config = ExperimentConfig(
             title=_override_value(override, "title", config.title),
             output_root=_override_value(override, "output_root", config.output_root),
             population_size=_override_value(override, "population_size", config.population_size),
             offspring_population_size=_override_value(override, "offspring_population_size", config.offspring_population_size),
             max_evaluations=_override_value(override, "max_evaluations", config.max_evaluations),
-            seed=_override_value(override, "seed", config.seed),
+            seed=secrets.randbits(64) if requested_seed is None else requested_seed,
             eval_strategy=_override_value(override, "eval_strategy", getattr(config, "eval_strategy", "serial")),
             n_workers=_override_value(override, "n_workers", getattr(config, "n_workers", None)),
             live_viz=_override_value(override, "live_viz", getattr(config, "live_viz", False)),

@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from argparse import Namespace
 from collections.abc import Callable, Iterable
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -41,16 +40,11 @@ from vamos.experiment.runtime.catalog import (
 from vamos.foundation.core.execution import execute_algorithm
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import compute_hv_reference
-from vamos.foundation.core.io_utils import ensure_dir
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.exceptions import ConfigurationError
 from vamos.foundation.observer import Observer, RunContext
 from vamos.foundation.problem.registry import ProblemSelection
 from vamos.foundation.quality_indicators.hypervolume import hypervolume
-
-
-def _project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
 
 
 def _logger() -> logging.Logger:
@@ -98,8 +92,6 @@ def run_single(
     )
 
     output_dir = run_output_dir(selection, algorithm_name, engine_name, config.seed, config)
-    ensure_dir(output_dir)
-
     termination_spec = resolve_termination(
         termination,
         config,
@@ -122,13 +114,14 @@ def run_single(
     _variations = variations or VariationConfigs()
     storage = StorageObserver(
         output_dir=output_dir,
-        project_root=_project_root(),
         config_source=config_source,
+        config_spec=config_spec,
         problem_override=problem_override,
         hv_stop_config=hv_stop_config,
         selection_pressure=selection_pressure,
         external_archive=external_archive,
         variations=_variations.as_storage_dict(),
+        termination=termination_spec,
     )
     observers.append(storage)
 
@@ -139,7 +132,6 @@ def run_single(
             hook_cfg = parse_stopping_archive(config_spec, problem_key=selection.spec.key)
             if hook_cfg["stopping_enabled"] or hook_cfg["archive_enabled"]:
                 hook_mgr = HookManager(
-                    out_dir=Path(output_dir),
                     cfg=HookManagerConfig(
                         stopping_enabled=hook_cfg["stopping_enabled"],
                         stop_cfg=hook_cfg["stop_cfg"],

@@ -1,6 +1,6 @@
 # Run artifact contract examples
 
-These sanitized fixtures illustrate the frozen v1 document shapes. They are
+These sanitized fixtures illustrate the canonical v1 document shapes. They are
 documentation artifacts, not outputs from a real person or machine. IDs,
 timestamps, versions, labels, and environment values are fixed examples.
 
@@ -10,9 +10,7 @@ Contents:
 - `moead-success/`: successful MOEA/D run with explicit reference directions;
 - `failed-run/`: failure before numerical arrays exist;
 - `custom-manual/`: stored result from a notebook-local custom problem that is
-  safe to load but cannot be replayed automatically;
-- `compatibility-report.json`: comparison that downgrades an exact declaration
-  to compatible in a different environment.
+  safe to load and records caller-supplied complete execution context.
 
 The three result-bearing directories contain small `result.npz` files using
 only numerical arrays and no object dtype or pickle. Manifest artifact byte

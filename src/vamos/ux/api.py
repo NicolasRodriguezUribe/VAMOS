@@ -4,7 +4,6 @@ UX/analysis utilities; not required for core optimization runtime.
 
 from __future__ import annotations
 
-from vamos.run_artifacts import save_result
 from vamos.ux.analysis.core_objective_reduction import (
     ObjectiveReducer,
     ObjectiveReductionConfig,
@@ -70,5 +69,4 @@ __all__ = [
     "explore_result_front",
     "result_to_dataframe",
     "result_to_latex",
-    "save_result",
 ]

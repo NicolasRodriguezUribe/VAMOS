@@ -59,5 +59,5 @@ def test_go_template_mode_with_smoke_uses_stubbed_runner(monkeypatch: MonkeyPatc
 
     run_dir = Path(str(run_info["run_dir"]))
     assert run_dir.is_dir()
-    assert (run_dir / "resolved_config.json").is_file()
+    assert (run_dir / "execution_config.json").is_file()
     assert (run_dir / "run_report.json").is_file()

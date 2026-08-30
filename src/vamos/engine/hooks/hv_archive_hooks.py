@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import csv
+import logging as _logging
+import warnings as _warnings
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -13,23 +13,13 @@ from vamos.engine.hooks.hv_convergence import HVConvergenceConfig, HVConvergence
 from vamos.foundation.observer import RunContext
 from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 
-
-def _ensure_dir(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
+_TRACE_LIMIT = 10_000
 
 
-def _append_csv_row(path: Path, fieldnames: list[str], row: dict[str, Any]) -> None:
-    _ensure_dir(path.parent)
-    exists = path.exists()
-    with path.open("a", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
-        if not exists:
-            writer.writeheader()
-        writer.writerow(row)
-
-
-import logging as _logging
-import warnings as _warnings
+def _append_trace(trace: list[dict[str, Any]], row: dict[str, Any]) -> None:
+    if len(trace) >= _TRACE_LIMIT:
+        del trace[0]
+    trace.append(row)
 
 
 def _hv_logger() -> _logging.Logger:
@@ -118,16 +108,14 @@ class HookManager:
       - external archive updates
       - HV trace computation
       - HV convergence stopping
-      - incremental artifact writing
+      - bounded in-memory trace capture for the canonical run manifest
     The runner calls `on_generation(...)` with eval counts in stats.
     """
 
-    def __init__(self, out_dir: Path, cfg: HookManagerConfig):
-        self.out_dir = out_dir
+    def __init__(self, cfg: HookManagerConfig):
         self.cfg = cfg
-
-        self.hv_trace_path = out_dir / "hv_trace.csv"
-        self.archive_stats_path = out_dir / "archive_stats.csv"
+        self._hv_trace: list[dict[str, Any]] = []
+        self._archive_stats: list[dict[str, Any]] = []
 
         self.monitor = HVConvergenceMonitor(cfg.stop_cfg) if cfg.stopping_enabled else None
         self.archive: ResultArchiveManager | None = None
@@ -203,10 +191,9 @@ class HookManager:
             self._archive_total_inserted += inserted
             self._archive_total_pruned += pruned
             self._archive_F = archive_F
-            _append_csv_row(
-                self.archive_stats_path,
-                fieldnames=["evals", "archive_size", "inserted", "pruned", "prune_reason"],
-                row={
+            _append_trace(
+                self._archive_stats,
+                {
                     "evals": int(evals),
                     "archive_size": after,
                     "inserted": inserted,
@@ -245,14 +232,13 @@ class HookManager:
         if stop_reason:
             reason = stop_reason
 
-        _append_csv_row(
-            self.hv_trace_path,
-            fieldnames=["evals", "hv", "hv_delta", "stop_flag", "reason"],
-            row={
+        _append_trace(
+            self._hv_trace,
+            {
                 "evals": int(evals),
-                "hv": "" if hv is None else float(hv),
-                "hv_delta": "" if hv_delta is None else float(hv_delta),
-                "stop_flag": int(1 if stop_flag else 0),
+                "hv": None if hv is None else float(hv),
+                "hv_delta": None if hv_delta is None else float(hv_delta),
+                "stop_flag": bool(stop_flag),
                 "reason": reason,
             },
         )
@@ -279,6 +265,7 @@ class HookManager:
                 "triggered": bool(dec.stop) if dec else False,
                 "evals_stop": int(dec.evals) if (dec and dec.stop) else None,
                 "reason": str(dec.reason) if dec else None,
+                "trace": list(self._hv_trace),
             }
 
         if self.archive is None:
@@ -291,6 +278,7 @@ class HookManager:
                 "final_size": final_size,
                 "total_inserted": int(self._archive_total_inserted),
                 "total_pruned": int(self._archive_total_pruned),
+                "trace": list(self._archive_stats),
             }
 
         return payload

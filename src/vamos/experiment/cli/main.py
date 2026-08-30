@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import secrets
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -152,7 +153,7 @@ def _build_runtime_config(*, args: argparse.Namespace, default_config: Experimen
         population_size=args.population_size,
         offspring_population_size=args.offspring_population_size,
         max_evaluations=args.max_evaluations,
-        seed=args.seed,
+        seed=secrets.randbits(64) if args.seed is None else args.seed,
         eval_strategy=args.eval_strategy,
         n_workers=args.n_workers,
         live_viz=args.live_viz,

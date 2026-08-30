@@ -262,7 +262,7 @@ def _run_run(args: argparse.Namespace) -> None:
         return
     status = str(summary.get("status", "error"))
     run_dir = summary.get("run_dir")
-    resolved_cfg = summary.get("resolved_config_path")
+    execution_cfg = summary.get("execution_config_path")
     report_path = summary.get("run_report_path")
     exit_code_value = summary.get("exit_code", 1)
     if isinstance(exit_code_value, bool):
@@ -276,10 +276,10 @@ def _run_run(args: argparse.Namespace) -> None:
         exit_code = 1
     sys.stdout.write(f"Assist run status: {status} (exit code {exit_code})\n")
     sys.stdout.write(f"Run dir: {run_dir}\n")
-    sys.stdout.write(f"Resolved config: {resolved_cfg}\n")
+    sys.stdout.write(f"Execution config: {execution_cfg}\n")
     sys.stdout.write(f"Report: {report_path}\n")
     if status == "ok":
-        sys.stdout.write(f"Next: vamos --config {_quote_arg(str(resolved_cfg))}\n")
+        sys.stdout.write(f"Next: vamos --config {_quote_arg(str(execution_cfg))}\n")
 
 
 def _run_explain(args: argparse.Namespace) -> None:
