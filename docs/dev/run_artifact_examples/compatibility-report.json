@@ -1,0 +1,71 @@
+{
+  "actions": [
+    {
+      "command": "vamos reproduce RUN_DIR --accept-level compatible --output NEW_RUN_DIR",
+      "description": "Run with an explicit compatible-level acceptance; the result will not be labeled exact."
+    },
+    {
+      "command": "vamos reproduce RUN_DIR --verify-only --require-level exact",
+      "description": "Re-check after recreating the recorded Python, NumPy, BLAS, and thread environment."
+    }
+  ],
+  "component_resolution": [
+    {
+      "component_id": "vamos.algorithm:nsgaii@1",
+      "status": "matched"
+    },
+    {
+      "component_id": "vamos.kernel:numpy@1",
+      "status": "matched"
+    },
+    {
+      "component_id": "vamos.problem:zdt1@1",
+      "status": "matched"
+    }
+  ],
+  "declared_level": "exact",
+  "differences": [
+    {
+      "current": "3.12.9",
+      "dimension": "python.version",
+      "original": "3.12.8",
+      "reason": "A Python patch-version difference prevents the v1 bitwise guarantee.",
+      "severity": "exact_downgrade"
+    },
+    {
+      "current": "2.3.0",
+      "dimension": "packages.numpy",
+      "original": "2.2.0",
+      "reason": "The material numerical dependency version differs.",
+      "severity": "exact_downgrade"
+    },
+    {
+      "current": "MKL",
+      "dimension": "blas.vendor",
+      "original": "OpenBLAS",
+      "reason": "Floating-point reduction order may differ across BLAS implementations.",
+      "severity": "exact_downgrade"
+    },
+    {
+      "current": "4",
+      "dimension": "threads.OMP_NUM_THREADS",
+      "original": "1",
+      "reason": "The recorded thread configuration is not reproduced.",
+      "severity": "exact_downgrade"
+    }
+  ],
+  "document_type": "vamos.compatibility-report",
+  "effective_level": "compatible",
+  "executable": true,
+  "generated_at": "2026-01-02T00:00:00Z",
+  "integrity": {
+    "artifacts_checked": 2,
+    "mode": "all",
+    "status": "valid"
+  },
+  "reasons": [
+    "The artifact is intact and all components resolve, but the material environment differs."
+  ],
+  "schema_version": "1.0.0",
+  "source_run_id": "11111111-1111-4111-8111-111111111111"
+}
