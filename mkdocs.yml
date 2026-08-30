@@ -46,6 +46,7 @@ nav:
     - CLI & Config: guide/cli.md
     - VAMOS Studio: guide/studio.md
     - Cookbook: guide/cookbook.md
+    - Save & Load Runs: guide/run-artifacts.md
     - Troubleshooting: guide/troubleshooting.md
   - Reference:
     - API Reference: reference/api_reference.md

@@ -4,6 +4,7 @@ UX/analysis utilities; not required for core optimization runtime.
 
 from __future__ import annotations
 
+from vamos.run_artifacts import save_result
 from vamos.ux.analysis.core_objective_reduction import (
     ObjectiveReducer,
     ObjectiveReductionConfig,
@@ -31,7 +32,6 @@ from vamos.ux.results import (
     result_summary_text,
     result_to_dataframe,
     result_to_latex,
-    save_result,
 )
 from vamos.ux.visualization import (
     plot_hv_convergence,

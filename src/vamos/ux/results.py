@@ -148,35 +148,6 @@ def result_to_dataframe(result: ResultLike) -> Any:
     return pd.DataFrame(data)
 
 
-def save_result(result: ResultLike, path: str) -> None:
-    """
-    Save results to a directory (CSV files for F, X, and metadata).
-    """
-    import json
-    from pathlib import Path
-
-    out_dir = Path(path)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    F = result.F
-    X = result.X
-    if F is not None:
-        np.savetxt(out_dir / "FUN.csv", F, delimiter=",")
-    if X is not None:
-        np.savetxt(out_dir / "X.csv", X, delimiter=",")
-
-    n_solutions = int(F.shape[0]) if F is not None and len(F) > 0 else 0
-    n_objectives = int(F.shape[1]) if F is not None and len(F) > 0 else 0
-    metadata = {
-        "n_solutions": n_solutions,
-        "n_objectives": n_objectives,
-    }
-    with (out_dir / "metadata.json").open("w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=2)
-
-    _logger().info("Results saved to %s", out_dir)
-
-
 def explore_result_front(result: ResultLike, title: str = "Pareto Front Explorer") -> Any:
     """
     Launch an interactive Plotly dashboard for exploring the Pareto front.
@@ -308,5 +279,4 @@ __all__ = [
     "explore_result_front",
     "result_to_dataframe",
     "result_to_latex",
-    "save_result",
 ]

@@ -26,6 +26,7 @@ from vamos.foundation.problem.registry import (
     available_problem_names,
     make_problem_selection,
 )
+from vamos.run_artifacts import LoadLimits, RunManifest, StoredRun, load_result, load_run, save_result
 from vamos.selection import EnvironmentalSelectionResult, select_survivors
 
 
@@ -57,4 +58,10 @@ __all__ = [
     "make_problem_selection",
     "run_self_check",
     "configure_logging",
+    "save_result",
+    "load_run",
+    "load_result",
+    "StoredRun",
+    "RunManifest",
+    "LoadLimits",
 ]

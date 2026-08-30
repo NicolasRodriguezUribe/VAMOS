@@ -39,6 +39,24 @@ The primary user-facing entry points.  Most users only need these.
       show_root_heading: true
       show_source: true
 
+## Run artifacts
+
+The top-level `vamos.save_result`, `vamos.load_run`, and `vamos.load_result`
+functions delegate to this facade. Loading is data-only and never re-executes
+optimization.
+
+::: vamos.run_artifacts
+    options:
+      show_root_heading: true
+      show_source: true
+      members:
+        - save_result
+        - load_run
+        - load_result
+        - StoredRun
+        - RunManifest
+        - LoadLimits
+
 ## Algorithm Configuration
 
 ::: vamos.engine.algorithm.config.nsgaii

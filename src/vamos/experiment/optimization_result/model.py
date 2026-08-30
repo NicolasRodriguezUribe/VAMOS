@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Literal, TypedDict, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast, overload
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,6 +12,9 @@ from vamos.foundation.quality_indicators.pareto import pareto_filter
 from .ranking import BestMethod, RankingMethod, RankingSource, normalize_best_method
 from .ranking import top_k as rank_top_k
 from .ranking import top_k_report as build_top_k_report
+
+if TYPE_CHECKING:
+    from vamos.experiment.artifacts.models import RunManifest
 
 
 class BestResult(TypedDict):
@@ -42,11 +45,18 @@ class OptimizationResult:
     data: dict[str, Any]
     meta: dict[str, Any]
 
-    def __init__(self, payload: Mapping[str, Any], *, meta: Mapping[str, Any] | None = None):
+    def __init__(
+        self,
+        payload: Mapping[str, Any],
+        *,
+        meta: Mapping[str, Any] | None = None,
+        manifest: RunManifest | None = None,
+    ):
         self.F = payload.get("F")
         self.X = payload.get("X")
         self.data = dict(payload)
         self.meta = dict(meta or {})
+        self._manifest = manifest
 
     def __len__(self) -> int:
         return len(self.F) if self.F is not None else 0
@@ -59,6 +69,11 @@ class OptimizationResult:
     @property
     def n_objectives(self) -> int:
         return self.F.shape[1] if self.F is not None and len(self.F) > 0 else 0
+
+    @property
+    def manifest(self) -> RunManifest | None:
+        """Immutable source manifest when this result was loaded from a run."""
+        return self._manifest
 
     @overload
     def front(self, *, return_indices: Literal[False] = False) -> np.ndarray | None: ...
