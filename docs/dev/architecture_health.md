@@ -8,8 +8,9 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - Mandatory ADRs: layering/facades, import-time purity, optional deps, no shims, health gates/retention.
 
 ## Health Gates (run locally)
-- `python tools/health.py` (uses the mypy error budget gate)
+- `python tools/health.py` (local fast-fail suite, including the raw configured mypy invocation)
 - `python tools/health.py --continue-on-failure` (run the full gate list without fast-fail)
+- `python tools/check_agent_docs.py` (the same command and arguments used by CI)
 - `python -m mypy --config-file pyproject.toml src/vamos` (raw mypy invocation)
 - `pytest -q tests/architecture/test_layer_boundaries.py`
 - `pytest -q tests/test_monolith_guard.py`
@@ -76,7 +77,10 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - No `logging.basicConfig()` in library modules.
 - CLI logging config happens at invocation only via local handlers.
 
-## Adding Problems/Operators (no cross references)
-- Problem registry: add specs in `foundation/problem/registry/families/*.py`.
-- Operators: implementations live in `vamos.engine.operators.impl`, algorithm wiring in `vamos.engine.operators.policies`.
-- Update docs/tests when adding new modules or APIs.
+## Extension guides
+- Problems: `docs/dev/add_problem.md`.
+- Operators: `docs/dev/add_operator.md`.
+- Algorithms: `docs/dev/add_algorithm.md`.
+- Backends: `docs/dev/add_backend.md`.
+- Metrics: `docs/dev/add_metric.md`.
+- Testing: `docs/dev/testing.md`.

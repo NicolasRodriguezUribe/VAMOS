@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tools.check_pre_release_remnants import scan
+from tools.check_pre_release_remnants import guidance_remnant_tokens, scan
 
 
 def _write(root: Path, relative: str, text: str) -> None:
@@ -52,6 +52,26 @@ def test_checker_fixture_vocabulary_is_narrowly_ignored(tmp_path: Path) -> None:
     _write(tmp_path, "tests/test_check_pre_release_remnants.py", 'DISCARDED = "legacy"\n')
 
     assert scan(tmp_path) == []
+
+
+def test_shared_guidance_rules_classify_removed_paths_fields_and_cli_aliases() -> None:
+    text = "\n".join(
+        (
+            "Import vamos.engine.algorithm.components.variation.",
+            "Call build_bounded_archive_cfg with archive_type and size_cap.",
+            "Run vamos benchmark --help and --quickstart.",
+            "Read FUN.csv and metadata.json.",
+        )
+    )
+
+    assert set(guidance_remnant_tokens(text)) == {
+        "FUN.csv",
+        "build_bounded_archive_cfg",
+        "discarded archive field",
+        "discarded CLI alias",
+        "metadata.json",
+        "vamos.engine.algorithm.components.variation",
+    }
 
 
 def test_repository_has_no_active_remnants() -> None:

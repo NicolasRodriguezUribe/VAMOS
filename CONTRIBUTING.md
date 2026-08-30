@@ -2,6 +2,8 @@
 
 Thank you for considering a contribution! This project is organized to make adding new components straightforward.
 
+Repository-wide contributor and agent rules, including validation tiers and Git discipline, live in `AGENTS.md`. Nested `AGENTS.md` files add only local subtree rules.
+
 ## Adding a new problem
 - Put the implementation under `src/vamos/foundation/problem/` (one file per problem family).
 - Register it by adding a spec to the correct family module under `src/vamos/foundation/problem/registry/families/`.
@@ -16,6 +18,10 @@ Thank you for considering a contribution! This project is organized to make addi
 - Add a minimal smoke test (tiny population/evaluation budget) to catch wiring issues.
 - See `docs/dev/add_algorithm.md` for a template and checklist.
 
+## Adding an operator or metric
+- Follow `docs/dev/add_operator.md` for variation/repair components.
+- Follow `docs/dev/add_metric.md` for quality indicators and metric ownership.
+
 ## Adding a new kernel backend
 - Implement the `KernelBackend` interface in `src/vamos/foundation/kernel/` (see `kernel/backend.py` for required methods).
 - Register it in `src/vamos/foundation/kernel/registry.py` with a unique engine name.
@@ -24,14 +30,16 @@ Thank you for considering a contribution! This project is organized to make addi
 
 ## Architecture health (mandatory)
 - Read the ADRs before any architectural change: `docs/dev/adr/index.md`.
-- Run the local health command (same gates as CI): `python tools/health.py`.
+- Run the local fast-fail health command: `python tools/health.py`.
+- CI has a different platform/version and coverage scope. Both health and CI run `python tools/check_agent_docs.py` with identical arguments.
 - If you change public APIs, update the snapshot: `python tools/update_public_api_snapshot.py`.
 
 ## Continuous Integration
-- CI runs the architecture health gates, `ruff check`, `ruff format --check`, full `mypy src/vamos`, build smoke, and the test suite.
-- Before opening a PR, run the same locally:
+- CI runs its configured matrix of lint, targeted mypy, architecture, test, docs, notebook, and build jobs.
+- Before opening a PR, run the applicable full tier from `AGENTS.md`:
   - `python tools/health.py`
-  - `pytest -q`
+  - `python -m pytest -q`
+  - `mkdocs build --strict`
 
 ## Coding style and typing
 - The project uses a `src/` layout and prefers type hints on public-facing functions/classes.
@@ -52,5 +60,5 @@ Thank you for considering a contribution! This project is organized to make addi
 3. If you touched tuning, StudyRunner, or benchmarking:
    - Run the smallest relevant `vamos bench` suite.
 4. If you added docs or notebooks:
-   - Build docs locally (`mkdocs serve`) or open the notebook and run all cells.
-5. For guidance on assistant-specific workflows, see `.agent/docs/AGENTS.md`, `.agent/docs/AGENTS_tasks.md`, and `README.md`.
+   - Build docs with `mkdocs build --strict` and run the affected notebook smoke.
+5. For AI-assisted work, start at root `AGENTS.md`; use at most one scoped local instruction and one routed developer guide.

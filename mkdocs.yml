@@ -64,9 +64,15 @@ nav:
   - Developer Guides:
     - Run Artifact Contract: dev/run_artifact_contract.md
     - Run Artifact Acceptance Tests: dev/run_artifact_acceptance_tests.md
+    - Run Artifacts and Replay: dev/run_artifacts_and_replay.md
     - Add a Problem: dev/add_problem.md
+    - Add an Operator: dev/add_operator.md
     - Add an Algorithm: dev/add_algorithm.md
     - Add a Backend: dev/add_backend.md
+    - Add a Metric: dev/add_metric.md
+    - Change the CLI: dev/cli.md
+    - Change Studies: dev/studies.md
+    - Testing and Validation: dev/testing.md
     - Architecture Health: dev/architecture_health.md
     - Release Smoke Verification: release_smoke.md
     - Architecture Decisions:

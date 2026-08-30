@@ -32,6 +32,8 @@ def main() -> int:
     commands: list[tuple[str, list[str]]] = [
         ("Pre-release remnant audit", [python, "tools/check_pre_release_remnants.py"]),
         ("Pre-release remnant checker tests", [python, "-m", "pytest", "-q", "tests/test_check_pre_release_remnants.py"]),
+        # CI runs this checker with the same script and no arguments. See /AGENTS.md.
+        ("Agent documentation", [python, "tools/check_agent_docs.py"]),
         ("Layer boundaries", [python, "-m", "pytest", "-q", "tests/architecture/test_layer_boundaries.py"]),
         ("Monolith guard", [python, "-m", "pytest", "-q", "tests/test_monolith_guard.py"]),
         ("Public API guard", [python, "-m", "pytest", "-q", "tests/test_public_api_guard.py"]),
@@ -43,7 +45,6 @@ def main() -> int:
         ("Logging policy", [python, "-m", "pytest", "-q", "tests/test_logging_policy.py"]),
         ("No prints in library", [python, "-m", "pytest", "-q", "tests/test_no_prints_in_library.py"]),
         ("No deprecation shims", [python, "-m", "pytest", "-q", "tests/test_no_deprecation_shims.py"]),
-        ("AGENTS health link", [python, "-m", "pytest", "-q", "tests/test_agents_health_link.py"]),
         ("Report retention policy", [python, "-m", "pytest", "-q", "tests/architecture/test_report_retention_policy.py"]),
         ("Ruff lint gate", [python, "-m", "pytest", "-q", "tests/architecture/test_ruff_gate.py"]),
         ("Ruff format gate", [python, "-m", "pytest", "-q", "tests/architecture/test_ruff_format_gate.py"]),

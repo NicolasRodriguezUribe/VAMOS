@@ -53,5 +53,5 @@ Linux CI should execute the symlink variants in RA-018. Platforms without
 symlink privileges may skip only those capability-dependent cases; all lexical
 confinement cases remain mandatory everywhere.
 
-Custom/plugin/cross-backend/best-effort replay, earlier-format migration, and a
+Custom/plugin/cross-backend/best-effort replay, noncanonical inputs, and a
 durable StudyManifest remain outside this matrix.

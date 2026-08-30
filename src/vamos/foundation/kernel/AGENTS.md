@@ -1,77 +1,35 @@
-# Kernel Module
+# Scope
 
-## Architecture Health (must-read)
-- Follow `docs/dev/architecture_health.md` before adding new modules, APIs, or dependencies.
-- PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
-- ADRs in `docs/dev/adr/` are mandatory reading before architectural changes.
+Applies only to `src/vamos/foundation/kernel/**`.
 
+Inherits all repository-wide rules from `/AGENTS.md`. This file contains local deltas only.
 
-This directory contains backend kernels for compute-intensive operations.
+## Responsibility and invariants
 
-## Architecture
+- `KernelBackend` defines the current required primitives: `nsga2_ranking`, `tournament_selection`, `sbx_crossover`, `polynomial_mutation`, and `nsga2_survival`.
+- Archive and quality-indicator hooks are optional and must advertise capability before callers use them.
+- `NumPyKernel` is the reference semantics. Numba and MooCore implementations are accelerators and require parity with it.
+- Optional backend imports remain lazy in `registry.py`; importing core VAMOS must not import optional packages.
+- Backends implement numerical hot paths only. Keep orchestration, configuration policy, studies, and CLI logic outside this subtree.
 
-Kernels abstract away performance-critical operations so algorithms remain backend-agnostic:
+## Extension touchpoints
 
-```python
-# Algorithm code uses kernel methods
-ranks, crowding = self.kernel.nsga2_ranking(F)
-hv = self.kernel.hypervolume(F, ref_point)
+Follow [Adding a backend](/docs/dev/add_backend.md). Extend the abstract interface only when every supported backend and its parity coverage change together.
+
+## Targeted validation
+
+Run `python -m pytest -q tests/foundation/test_backends_smoke.py tests/foundation/test_numba_backend_parity.py tests/foundation/test_kernel_failures.py tests/engine/test_kernel_selection_dispatch.py` with the relevant optional extra installed.
+
+```agent-docs
+path: src/vamos/foundation/kernel/backend.py
+path: src/vamos/foundation/kernel/numpy_backend.py
+path: src/vamos/foundation/kernel/registry.py
+path: tests/foundation/test_backends_smoke.py
+path: tests/foundation/test_numba_backend_parity.py
+path: tests/foundation/test_kernel_failures.py
+path: tests/engine/test_kernel_selection_dispatch.py
+path: docs/dev/add_backend.md
+symbol: vamos.foundation.kernel.backend:KernelBackend
+symbol: vamos.foundation.kernel.registry:resolve_kernel
+command: python -m pytest -q tests/foundation/test_backends_smoke.py tests/foundation/test_numba_backend_parity.py tests/foundation/test_kernel_failures.py tests/engine/test_kernel_selection_dispatch.py
 ```
-
-## Available Backends
-
-| Backend | Module | Requirements | Best For |
-|---------|--------|--------------|----------|
-| NumPy | `numpy_backend.py` | numpy (core) | Default, portable |
-| Numba | `numba_backend.py` | numba | Large populations |
-| MooCore | `moocore_backend.py` | moocore | Accurate HV |
-
-## KernelBackend Protocol
-
-All backends implement:
-```python
-class KernelBackend(Protocol):
-    def fast_non_dominated_sort(self, F: np.ndarray) -> tuple[np.ndarray, list]:
-        """Return (ranks, fronts) for objective matrix F."""
-        ...
-    
-    def crowding_distance(self, F: np.ndarray) -> np.ndarray:
-        """Compute crowding distances for a single front."""
-        ...
-    
-    def nsga2_ranking(self, F: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Combined non-dominated sort + crowding."""
-        ...
-    
-    def hypervolume(self, F: np.ndarray, ref: np.ndarray) -> float:
-        """Compute hypervolume indicator."""
-        ...
-```
-
-## Backend Selection
-
-```python
-from vamos.foundation.kernel.registry import resolve_kernel
-
-kernel = resolve_kernel("numpy")  # or "numba", "moocore"
-```
-
-Via CLI: `--engine numpy` or `--engine moocore`
-
-## Adding a New Backend
-
-1. Create `new_backend.py` implementing `KernelBackend` protocol
-2. Register in `registry.py`: `KERNELS["new"] = NewKernel`
-3. Add optional dependency to `pyproject.toml` extras
-4. Gate import with try/except for graceful fallback
-5. Add smoke test in `tests/test_backends_smoke.py`
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `numpy_backend.py` | Reference NumPy implementation |
-| `numba_backend.py` | JIT-compiled fast paths |
-| `moocore_backend.py` | R moocore bindings |
-| `registry.py` | Backend name → class mapping |
-| `backend.py` | KernelBackend Protocol definition |

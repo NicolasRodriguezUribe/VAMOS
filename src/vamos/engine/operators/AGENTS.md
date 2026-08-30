@@ -1,63 +1,35 @@
-# Operators Module
+# Scope
 
-## Architecture Health (must-read)
-- Follow `docs/dev/architecture_health.md` before adding new modules, APIs, or dependencies.
-- PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
-- ADRs in `docs/dev/adr/` are mandatory reading before architectural changes.
+Applies only to `src/vamos/engine/operators/**`.
 
+Inherits all repository-wide rules from `/AGENTS.md`. This file contains local deltas only.
 
-This directory contains operator implementations and algorithm-specific wiring.
+## Responsibility and invariants
 
-## Structure
+- `impl/` owns reusable vectorized crossover, mutation, repair, and initialization implementations.
+- `impl/registry.py` maps stable operator names to classes or factories. `policies/` owns encoding- and algorithm-aware construction decisions.
+- `src/vamos/engine/variation/` owns the shared pipeline/protocol that composes these operators for algorithms.
+- Operators receive an explicit `numpy.random.Generator`; never read global random state.
+- Preserve population shapes, dtypes, bounds, and the semantics of real, integer, binary, permutation, and mixed encodings.
+- Keep algorithm-specific branching out of generic implementations. Reuse workspace inputs where an existing protocol supplies them.
 
-| Path | Encoding | Operators |
-|------|----------|-----------|
-| `impl/real/` | Continuous | SBX, BLX-alpha, polynomial mutation, uniform |
-| `impl/binary.py` | Binary | Bitflip, one-point, two-point, uniform crossover |
-| `impl/permutation.py` | Permutation | PMX, OX, swap, insert, inversion |
-| `impl/integer.py` | Integer | Random reset, creep mutation |
-| `impl/mixed.py` | Mixed | Composite operators |
-| `impl/repair.py` | All | Bounds repair strategies |
-| `policies/` | Wiring | Algorithm-specific operator selection/defaults |
+## Extension touchpoints
 
-## Operator Contract
+Add the implementation under the matching `impl/` encoding package, export it from that package, register it in `impl/registry.py`, and update the relevant policy only when selection by algorithm/config requires it. Follow [Adding an operator](/docs/dev/add_operator.md).
 
-All operators must be **vectorized** and follow this signature:
-```python
-def __call__(
-    self,
-    X: np.ndarray,              # (N, n_var) population
-    bounds: tuple[np.ndarray, np.ndarray],  # (xl, xu)
-    rng: np.random.Generator,   # seeded RNG
-    workspace: VariationWorkspace | None = None,
-) -> np.ndarray:                # (N, n_var) offspring
+## Targeted validation
+
+Run `python -m pytest -q tests/engine/operators tests/engine/test_discrete_and_mixed_operators.py tests/engine/test_operator_combo_validation.py` and the smallest algorithm smoke that consumes the operator.
+
+```agent-docs
+path: src/vamos/engine/operators/impl/registry.py
+path: src/vamos/engine/operators/policies
+path: src/vamos/engine/variation
+path: tests/engine/operators
+path: tests/engine/test_discrete_and_mixed_operators.py
+path: tests/engine/test_operator_combo_validation.py
+path: docs/dev/add_operator.md
+symbol: vamos.engine.operators.impl.registry:get_operator_registry
+symbol: vamos.engine.variation:VariationPipeline
+command: python -m pytest -q tests/engine/operators tests/engine/test_discrete_and_mixed_operators.py tests/engine/test_operator_combo_validation.py
 ```
-
-## VariationWorkspace Pattern
-
-For memory efficiency, operators reuse pre-allocated arrays:
-```python
-from vamos.engine.operators.impl.real import VariationWorkspace
-
-ws = VariationWorkspace(pop_size=100, n_var=30)
-offspring = crossover(X, bounds, rng, workspace=ws)
-```
-
-## Adding a New Operator
-
-1. Implement in appropriate file (or new file under `impl/real/`)
-2. Follow vectorized pattern — no Python loops over individuals
-3. Use `rng` parameter, never global random state
-4. Add to `__init__.py` exports
-5. Register in `vamos.engine.operators.impl.registry` operator lookup
-6. Add unit tests in `tests/operators/`
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `impl/real/crossover.py` | SBX/BLX/UNDX/SPX crossovers |
-| `impl/real/mutation.py` | PM/gaussian/cauchy mutations |
-| `impl/real/initialize.py` | LHS/Scatter initializers |
-| `impl/real/__init__.py` | VariationWorkspace, operator exports |
-| `impl/repair.py` | Bounds handling: clip, random, bounce |
