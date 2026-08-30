@@ -10,10 +10,13 @@ from __future__ import annotations
 
 import logging
 import numbers
+import time
 from collections.abc import Mapping
+from datetime import datetime, timezone
 from typing import overload
 
 from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol, AlgorithmName, EngineName
+from vamos.experiment.artifacts.specs import RunSpecInputs, build_run_specs
 from vamos.experiment.auto import _compute_max_evaluations, _compute_pop_size, _resolve_problem, _select_algorithm
 from vamos.experiment.optimization_result import OptimizationResult, StudyResult
 from vamos.experiment.optimize import _build_algorithm_config, _OptimizeConfig, _run_config
@@ -271,6 +274,13 @@ def _run_single(
             choices = ", ".join(sorted(_ALLOWED_EVAL_STRATEGIES))
             raise ConfigurationError(f"eval_strategy must be one of: {choices}.")
 
+    requested_n_var = n_var
+    requested_n_obj = n_obj
+    requested_pop_size = pop_size
+    requested_max_evaluations = max_evaluations
+    requested_algorithm = algorithm
+    requested_engine = engine
+
     if verbose:
         configure_vamos_logging()
 
@@ -379,7 +389,11 @@ def _run_single(
         live_viz=live_viz,
         checkpoint=checkpoint,
     )
+    started_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    started_monotonic = time.perf_counter()
     result = _run_config(config)
+    runtime_ms = (time.perf_counter() - started_monotonic) * 1000.0
+    completed_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     problem_label = _resolve_problem_label(problem, problem_instance)
     resolved_config = {
         "problem": problem_label,
@@ -405,6 +419,39 @@ def _run_single(
         "max_evaluations": max_evaluations_source,
         "engine": engine_source,
         "algorithm_config": "auto" if algorithm_config is None else "explicit",
+    }
+    requested_spec, resolved_spec = build_run_specs(
+        RunSpecInputs(
+            problem_built_in=problem_instance.__class__.__module__.startswith("vamos."),
+            problem_label=problem_label,
+            problem_kwargs=problem_kwargs,
+            n_var_requested=requested_n_var,
+            n_obj_requested=requested_n_obj,
+            n_var=n_var,
+            n_obj=n_obj,
+            encoding=encoding,
+            algorithm_requested=requested_algorithm,
+            algorithm=algorithm,
+            algorithm_config=algo_cfg_dict,
+            algorithm_config_explicit=algorithm_config is not None,
+            max_evaluations_requested=requested_max_evaluations,
+            termination=effective_termination,
+            pop_size_requested=requested_pop_size,
+            resolved_pop_size=resolved_pop_size,
+            engine_requested=requested_engine,
+            engine=effective_engine,
+            engine_source=engine_source,
+            eval_strategy=eval_strategy,
+            seed=seed,
+            default_sources=result.meta["default_sources"],
+        )
+    )
+    result.meta["run_artifact_requested_spec"] = requested_spec
+    result.meta["run_artifact_resolved_spec"] = resolved_spec
+    result.meta["run_artifact_timestamps"] = {
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "runtime_ms": runtime_ms,
     }
     return result
 

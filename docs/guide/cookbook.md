@@ -223,17 +223,24 @@ metrics = run_experiment(
 )
 ```
 
-## 13. Save Results for Offline Analysis
+## 13. Save and Load a Run Artifact
 
-Persist results to a folder for later inspection.
+Persist a complete v1 run and load its canonical numerical result later.
 
 ```python
-from vamos import optimize
-from vamos.ux.api import save_result
+from vamos import load_result, load_run, optimize, save_result
 
 result = optimize("zdt1", algorithm="nsgaii", max_evaluations=5000)
-save_result(result, "results/zdt1_nsgaii")
+stored = save_result(result, "results/zdt1_nsgaii")
+
+loaded = load_result(stored.root)
+run = load_run(stored.root)
+print(loaded.F.shape, run.manifest.run_id)
 ```
+
+The historical `from vamos.ux.api import save_result` import remains an alias.
+See [Save and load Python run artifacts](run-artifacts.md) for integrity,
+resource-limit, and non-destructive-write behavior.
 
 ## 14. Select a Single Solution from the Front
 
@@ -247,28 +254,17 @@ choice = result.best("balanced_sum")
 print(choice["F"])
 ```
 
-## 15. Reproduce a Run from resolved_config.json
+## 15. Load a Stored Run Without Re-executing It
 
-If you ran via the CLI, each run stores a `resolved_config.json`. You can replay it:
+Loading stored data is intentionally distinct from reproduction. The v1 core
+implemented here does not expose replay or reproduction; use `load_result` for
+arrays and `load_run` for the immutable manifest and environment.
 
 ```python
-import json
-from pathlib import Path
+from vamos import load_run
 
-from vamos import optimize
-
-resolved = json.loads(Path("results/zdt1/nsgaii/numpy/seed_7/resolved_config.json").read_text())
-
-result = optimize(
-    resolved["problem"],
-    algorithm=resolved["algorithm"],
-    engine=resolved["engine"],
-    pop_size=resolved["pop_size"],
-    max_evaluations=resolved["max_evaluations"],
-    seed=resolved["seed"],
-    n_var=resolved.get("n_var"),
-    n_obj=resolved.get("n_obj"),
-)
+run = load_run("results/zdt1_nsgaii", verify="all")
+print(run.status, run.result.F.shape)
 ```
 
 ## 16. Validate a Config File (CLI)

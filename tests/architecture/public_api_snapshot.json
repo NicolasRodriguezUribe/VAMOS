@@ -1,17 +1,23 @@
 {
   "vamos": [
     "EnvironmentalSelectionResult",
+    "LoadLimits",
     "OptimizationResult",
     "Problem",
+    "RunManifest",
+    "StoredRun",
     "StudyResult",
     "__version__",
     "available_problem_names",
     "configure_logging",
+    "load_result",
+    "load_run",
     "make_problem",
     "make_problem_selection",
     "optimize",
     "problems",
     "run_self_check",
+    "save_result",
     "select_survivors"
   ],
   "vamos.algorithms": [
@@ -35,15 +41,21 @@
   ],
   "vamos.api": [
     "EnvironmentalSelectionResult",
+    "LoadLimits",
     "OptimizationResult",
     "Problem",
+    "RunManifest",
+    "StoredRun",
     "StudyResult",
     "available_problem_names",
     "configure_logging",
+    "load_result",
+    "load_run",
     "make_problem",
     "make_problem_selection",
     "optimize",
     "run_self_check",
+    "save_result",
     "select_survivors"
   ],
   "vamos.ux.api": [

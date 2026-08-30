@@ -1,0 +1,2 @@
+docs/dev/run_artifact_examples/**/*.json text eol=lf
+docs/dev/run_artifact_examples/**/*.npz -text

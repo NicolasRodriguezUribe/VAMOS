@@ -14,15 +14,21 @@ import importlib
 
 from vamos.api import (
     EnvironmentalSelectionResult,
+    LoadLimits,
     OptimizationResult,
     Problem,
+    RunManifest,
+    StoredRun,
     StudyResult,
     available_problem_names,
     configure_logging,
+    load_result,
+    load_run,
     make_problem,
     make_problem_selection,
     optimize,
     run_self_check,
+    save_result,
     select_survivors,
 )
 from vamos.foundation.version import get_version as _get_version
@@ -41,6 +47,12 @@ __all__ = [
     "available_problem_names",
     "make_problem_selection",
     "run_self_check",
+    "save_result",
+    "load_run",
+    "load_result",
+    "StoredRun",
+    "RunManifest",
+    "LoadLimits",
     "problems",
 ]
 
