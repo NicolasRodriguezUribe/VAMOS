@@ -18,15 +18,15 @@ if TYPE_CHECKING:
 
 
 class BestResult(TypedDict):
-    X: NDArray[Any] | None
-    F: NDArray[Any]
+    X: NDArray[np.generic] | None
+    F: NDArray[np.float64]
     index: int
     front_index: int
 
 
 class TopKResult(TypedDict):
-    X: NDArray[Any] | None
-    F: NDArray[Any]
+    X: NDArray[np.generic] | None
+    F: NDArray[np.float64]
     indices: NDArray[np.int_]
     scores: NDArray[np.float64]
     source: RankingSource
@@ -40,8 +40,8 @@ class OptimizationResult:
     Use `vamos.ux.api` for summaries, plotting, and export helpers.
     """
 
-    F: NDArray[Any] | None
-    X: NDArray[Any] | None
+    F: NDArray[np.float64] | None
+    X: NDArray[np.generic] | None
     data: dict[str, Any]
     meta: dict[str, Any]
 
@@ -76,12 +76,16 @@ class OptimizationResult:
         return self._manifest
 
     @overload
-    def front(self, *, return_indices: Literal[False] = False) -> np.ndarray | None: ...
+    def front(self, *, return_indices: Literal[False] = False) -> NDArray[np.float64] | None: ...
 
     @overload
-    def front(self, *, return_indices: Literal[True]) -> tuple[np.ndarray, np.ndarray]: ...
+    def front(self, *, return_indices: Literal[True]) -> tuple[NDArray[np.float64], NDArray[np.int_]]: ...
 
-    def front(self, *, return_indices: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
+    def front(
+        self,
+        *,
+        return_indices: bool = False,
+    ) -> NDArray[np.float64] | tuple[NDArray[np.float64], NDArray[np.int_]] | None:
         if return_indices:
             return pareto_filter(self.F, return_indices=True)
         return pareto_filter(self.F, return_indices=False)

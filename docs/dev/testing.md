@@ -37,13 +37,25 @@ python -m pytest -q
 mkdocs build --strict
 ```
 
-Release validation adds:
+Release validation adds a global zero-error typecheck before packaging:
 
 ```bash
+python tools/typecheck.py --scope release
 python -m build
 ```
 
-Then follow [Release Smoke Verification](../release_smoke.md) for the affected distribution path. `tools/health.py` is a local fast-fail suite; CI uses a separate platform/version matrix and coverage command. Their complete scopes differ. The agent-documentation check itself is intentionally identical in both.
+Then follow [Release Smoke Verification](../release_smoke.md) for the affected distribution path. `tools/health.py` is a local fast-fail suite; CI uses a separate platform/version matrix and coverage command. Their complete scopes differ. The agent-documentation check itself is intentionally identical in both. The strict and full typecheck commands are also identical between health and the dedicated CI typing job.
+
+## Canonical typing
+
+Install and verify the environment described in [Typing policy](typing.md), then run:
+
+```bash
+python tools/typecheck.py --scope strict
+python tools/typecheck.py --scope full
+```
+
+Strict requires zero diagnostics over the protected path inventory. Full development typing passes only when the normalized diagnostic multiset exactly matches `typing/mypy-baseline.json` and changed production files contain no debt. A reduction makes the baseline stale and must be recorded in the same change. Release uses `--scope release`, ignores no debt, and requires global zero.
 
 `tools/check_pre_release_remnants.py` owns the repository-wide semantic scan and shared discarded-token rules. `tools/check_agent_docs.py` imports those shared rules for instruction files and adds scope, adapter, link, declaration, duplicate-body, and agent-policy validation. Health and CI execute both checkers once; neither checker recursively invokes the other.
 
@@ -54,7 +66,8 @@ Run Ruff, format, typing, compilation, and whitespace checks in proportion to th
 ```bash
 python -m ruff check <changed-python-and-test-paths>
 python -m ruff format --check <changed-python-and-test-paths>
-python -m mypy --config-file pyproject.toml <affected-typed-paths>
+python tools/typecheck.py --scope strict
+python tools/typecheck.py --scope full
 python -m compileall <changed-python-and-test-paths>
 git diff --check
 ```
@@ -71,10 +84,16 @@ path: tests/test_check_agent_docs.py
 path: tests/architecture/test_docs_and_workflows.py
 path: tests/docs
 path: docs/release_smoke.md
+path: docs/dev/typing.md
 path: pyproject.toml
+path: tools/typecheck.py
+path: typing/mypy-baseline.json
 command: python tools/check_agent_docs.py
 command: python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs
 command: python tools/health.py
+command: python tools/typecheck.py --scope strict
+command: python tools/typecheck.py --scope full
+command: python tools/typecheck.py --scope release
 command: python -m pytest -q
 command: mkdocs build --strict
 command: python -m build

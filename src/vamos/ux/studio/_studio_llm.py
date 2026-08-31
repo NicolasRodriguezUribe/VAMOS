@@ -44,7 +44,9 @@ def _llm_generate_gemini(description: str, *, api_key: str = "") -> dict[str, An
     if not key:
         raise RuntimeError("No Gemini API key provided. Paste it in the API Key field or set GEMINI_API_KEY.")
     try:
-        from google import genai  # type: ignore[import-untyped]
+        # google-genai is intentionally absent from the canonical typing environment;
+        # this runtime import remains guarded by the actionable error below.
+        from google import genai  # type: ignore[import-not-found]
     except ImportError as exc:
         raise RuntimeError("google-genai package not installed. Run: pip install google-genai") from exc
 

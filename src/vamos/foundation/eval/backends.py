@@ -7,6 +7,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Any, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 from vamos.foundation.eval.population import evaluate_population_with_constraints
 from vamos.foundation.exceptions import ConfigurationError, EvaluationError
@@ -18,7 +19,10 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def _eval_chunk(problem: Any, X_chunk: np.ndarray) -> tuple[np.ndarray, np.ndarray | None]:
+def _eval_chunk(
+    problem: Any,
+    X_chunk: NDArray[np.generic],
+) -> tuple[NDArray[np.float64], NDArray[np.float64] | None]:
     """Worker helper to evaluate a chunk; kept at module level for pickling."""
     F, G = evaluate_population_with_constraints(problem, X_chunk)
     return F, G
@@ -27,7 +31,7 @@ def _eval_chunk(problem: Any, X_chunk: np.ndarray) -> tuple[np.ndarray, np.ndarr
 class SerialEvalBackend(EvaluationBackend):
     """Synchronous in-process evaluation (current default)."""
 
-    def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
+    def evaluate(self, X: NDArray[np.generic], problem: Any) -> EvaluationResult:
         F, G = evaluate_population_with_constraints(problem, X)
         return EvaluationResult(F=F, G=G)
 
@@ -46,7 +50,7 @@ class MultiprocessingEvalBackend(EvaluationBackend):
         self.chunk_size = chunk_size
         self.timeout = timeout
 
-    def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
+    def evaluate(self, X: NDArray[np.generic], problem: Any) -> EvaluationResult:
         if self.n_workers <= 1 or X.shape[0] <= 1:
             return SerialEvalBackend().evaluate(X, problem)
 
@@ -57,8 +61,8 @@ class MultiprocessingEvalBackend(EvaluationBackend):
             chunk_size = max(1, math.ceil(n / self.n_workers))
         slices = [(i, min(i + chunk_size, n)) for i in range(0, n, chunk_size)]
 
-        F_parts: list[tuple[int, np.ndarray]] = []
-        G_parts: list[tuple[int, np.ndarray | None]] = []
+        F_parts: list[tuple[int, NDArray[np.float64]]] = []
+        G_parts: list[tuple[int, NDArray[np.float64] | None]] = []
 
         with ProcessPoolExecutor(max_workers=self.n_workers) as ex:
             future_map = {ex.submit(_eval_chunk, problem, X[start:end]): (start, end) for start, end in slices}
@@ -76,7 +80,7 @@ class MultiprocessingEvalBackend(EvaluationBackend):
             )
         F = np.empty((n, F_parts[0][1].shape[1]), dtype=float)
         G_sample = G_parts[0][1]
-        G_out: np.ndarray | None = None
+        G_out: NDArray[np.float64] | None = None
         if G_sample is not None:
             G_out = np.empty((n, G_sample.shape[1]), dtype=float)
         for start, f_part in sorted(F_parts, key=lambda p: p[0]):
@@ -163,7 +167,7 @@ class DaskEvalBackend(EvaluationBackend):
                 self.client = None
                 self._connected = False
 
-    def evaluate(self, X: np.ndarray, problem: Any) -> EvaluationResult:
+    def evaluate(self, X: NDArray[np.generic], problem: Any) -> EvaluationResult:
         if not self._connected or (self.client is None and self.address is None):
             return self._fallback_or_raise(X, problem, "DaskEvalBackend is not connected to a Dask scheduler.")
 
@@ -235,7 +239,7 @@ class DaskEvalBackend(EvaluationBackend):
 
     def _fallback_or_raise(
         self,
-        X: np.ndarray,
+        X: NDArray[np.generic],
         problem: Any,
         message: str,
         exc: Exception | None = None,

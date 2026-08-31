@@ -134,10 +134,7 @@ def resolve_builtin_algorithm(name: str) -> AlgorithmBuilder:
 
 
 def _entry_points_for_group(group: str) -> list[metadata.EntryPoint]:
-    entry_points = metadata.entry_points()
-    if hasattr(entry_points, "select"):
-        return list(entry_points.select(group=group))
-    return list(entry_points.get(group, ()))
+    return list(metadata.entry_points(group=group))
 
 
 def _load_algorithm_plugins(registry: Registry[AlgorithmBuilder], *, force: bool = False) -> tuple[str, ...]:
