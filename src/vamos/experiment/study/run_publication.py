@@ -6,7 +6,7 @@ import os
 from collections.abc import Callable, Mapping
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, NoReturn, Protocol
+from typing import Any, Protocol
 
 from vamos.experiment.artifacts.jsonio import canonical_json_bytes
 from vamos.experiment.artifacts.models import StoredRun, deep_freeze, deep_thaw
@@ -14,7 +14,7 @@ from vamos.experiment.artifacts.persistence import load_run, save_failed_executi
 from vamos.experiment.artifacts.verification import verify_run
 
 from .commits import append_event, checkpoint_attempt, checkpoint_manifest, checkpoint_task, now_utc, run_reference
-from .errors import StudyExecutionError, StudyRunPublicationError, StudyRunVerificationError
+from .errors import StudyRunPublicationError, StudyRunVerificationError
 from .models import AttemptRecord, PlanTask, StudyEvent, StudyManifest, TaskRecord
 
 
@@ -102,7 +102,7 @@ def publish_success(
     return verified
 
 
-def commit_execution_failure(
+def commit_task_failure(
     state: ExecutionState,
     index: int,
     task: TaskRecord,
@@ -113,8 +113,8 @@ def commit_execution_failure(
     *,
     started_at: str,
     objective_began: bool,
-) -> NoReturn:
-    """Persist a failed run and terminal study state, then raise typed evidence."""
+) -> None:
+    """Persist one verified failed run and its terminal task evidence."""
     completed_at = now_utc()
     failure = _attempt_failure(exc, objective_began)
     run_root = state.root / "runs" / run_id
@@ -188,39 +188,14 @@ def commit_execution_failure(
     )
     task = checkpoint_task(state.root, task)
     state.tasks[index] = task
-    state.event = append_event(
-        state.root,
-        state.event,
-        event_type="study_failed",
-        entity_kind="study",
-        entity_id=state.study_id,
-        transition_from="running",
-        transition_to="failed",
-        execution_id=state.execution_id,
-        reason=failure,
-    )
     state.manifest = checkpoint_manifest(
         state.root,
         state.manifest,
-        state="failed",
+        state="running",
         execution_id=state.execution_id,
         tasks=tuple(state.tasks),
         event=state.event,
     )
-    raise StudyExecutionError(
-        operation="execute study task",
-        reason="TASK_EXECUTION_FAILED",
-        study_id=state.study_id,
-        task_id=task.task_id,
-        attempt_id=attempt.attempt_id,
-        current_state="failed",
-        expected_state="succeeded",
-        objective_evaluation_began=objective_began,
-        canonical_run_published=True,
-        expected="successful task execution",
-        actual=failure,
-        action="Inspect the durable failed run and attempt; no later task executed and retry is not implemented.",
-    ) from exc
 
 
 def _validate_published_run(stored: StoredRun, bundle_status: str, task: PlanTask, run_id: str) -> None:
@@ -272,4 +247,4 @@ def _failed_outcome(task: PlanTask, objective_began: bool) -> dict[str, Any]:
     }
 
 
-__all__ = ["ExecutionState", "attach_run_metadata", "commit_execution_failure", "publish_success"]
+__all__ = ["ExecutionState", "attach_run_metadata", "commit_task_failure", "publish_success"]

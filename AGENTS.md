@@ -54,7 +54,7 @@ replay = vamos.reproduce(path)
 
 VAMOS supports one run schema: `vamos.run-manifest` version `1.0.0`. A successful run contains `manifest.json`, `result.npz`, and `environment.json`. Writers and readers live under `src/vamos/experiment/artifacts/`; `src/vamos/run_artifacts.py` and the top-level facade expose the public surface.
 
-The durable study schema is `vamos.study-manifest` version `1.0.0`, governed by `docs/dev/study_manifest_contract.md`, ADR 0008, and the complete SA-001 through SA-074 acceptance inventory. Atomic create/data-only load and the bounded sequential `Study.run()` slice are implemented; later policy, cancellation, resume/retry, CLI, migration, and coordination work must follow the contract roadmap. RunManifest remains the sole owner of resolved per-run truth and arrays.
+The durable study schema is `vamos.study-manifest` version `1.0.0`, governed by `docs/dev/study_manifest_contract.md`, ADR 0008, and the complete SA-001 through SA-074 acceptance inventory. Atomic create/data-only load, bounded sequential `Study.run()`, persisted failure policy, and single-process graceful cancellation are implemented; later resume/retry, CLI, migration, and coordination work must follow the contract roadmap. RunManifest remains the sole owner of resolved per-run truth and arrays.
 
 Shared algorithm variation pipelines live only in `src/vamos/engine/variation/`; concrete operator implementations and their registry live under `src/vamos/engine/operators/`. The external archive model is `ExternalArchiveConfig` in `src/vamos/engine/archive/config.py`, and experiment-spec parsing accepts the single `archive.external` block through `build_archive_cfg`.
 

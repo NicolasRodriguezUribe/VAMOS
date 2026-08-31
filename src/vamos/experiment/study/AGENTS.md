@@ -7,14 +7,14 @@ Inherits all repository-wide rules from `/AGENTS.md`. This file contains local d
 ## Responsibility and invariants
 
 - `models.py`, `planning.py`, `creation.py`, and `loading.py` own the canonical durable model, immutable plan, atomic creation, and data-only loaded view.
-- `execution.py` owns the no-argument, newly-created-only sequential `Study.run()` path. It executes ascending `task_id`; `plan_index` is presentation metadata.
+- `execution.py` owns the no-argument, newly-created-only sequential `Study.run()` path. It executes ascending `task_id`; `plan_index` is presentation metadata. `failure_policy.py` owns persisted fail-fast/continue study outcomes, while `cancellation.py` owns durable single-process cancellation.
 - `journal.py` validates and replays immutable events; `checkpoint_projection.py` validates lagging checkpoints and builds the effective immutable view without writes.
-- `commits.py`, `run_publication.py`, and `writing.py` own event/checkpoint commits, verified RunManifest linkage, fixed failure safety, and atomic file primitives.
+- `commits.py`, `run_publication.py`, and `writing.py` own event/checkpoint commits, verified RunManifest linkage, task-failure publication, and atomic file primitives.
 - `runner.py`, `types.py`, and `api.py` remain only for unmigrated in-memory benchmark/ablation callers. The durable runner never delegates to them and they are not another persisted authority.
 - A study summary may reference or aggregate run results but must not create a second copy of canonical per-run arrays or specifications.
 - RunManifest remains the sole authority for resolved per-run truth, environment, provenance, arrays, replayability, and outcome. Study attempts retain only bounded root-relative manifest references.
 - `CSVPersister` exports a derived table only. It is not canonical state and has no compatibility route into StudyManifest.
-- Resume, retry, selectable failure policy, cancellation, locks, leases, parallel workers, study CLI, migration, and summaries remain unimplemented; follow the ordered contract roadmap.
+- Resume, retry, locks, leases, parallel workers, study CLI, migration, and summaries remain unimplemented; follow the ordered contract roadmap. Failure policy is fixed in the published spec, and running cancellation is cooperative only within the process that owns the sequential runner.
 - Preserve task order, explicit seeds, indicator failure reporting, and optional-dependency behavior.
 
 ## Change route

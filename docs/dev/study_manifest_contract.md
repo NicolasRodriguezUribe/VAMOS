@@ -1,6 +1,6 @@
 # VAMOS durable study and StudyManifest v1 contract
 
-Status: approved pre-release contract; create/load and sequential durable runner implemented
+Status: approved pre-release contract; create/load, sequential execution, failure policy, and cancellation implemented
 
 Primary document identity: `vamos.study-manifest`
 
@@ -18,9 +18,9 @@ state, failure policy, retry, resume, crash recovery, local concurrency,
 canonical run references, inspection, and derived summaries. The contract is
 implementation-independent. The immutable models, deterministic planner,
 atomic creator, data-only loader, journal derivation, and single-process
-sequential `Study.run()` slice are implemented. Configurable failure policy,
-cancellation, CLI commands, locks, leases, reconciliation writes, resume,
-retry, parallelism, and summaries remain deferred.
+sequential `Study.run()` slice with persisted failure policy and graceful
+cancellation are implemented. CLI commands, locks, leases, reconciliation
+writes, resume, retry, parallelism, and summaries remain deferred.
 
 VAMOS is pre-release. Version `1.0.0` is the only study schema. There is no
 reader, detector, migration, alias, fallback layout, or deprecation period for
@@ -46,10 +46,10 @@ that format and never redefines it.
 ### Non-goals
 
 This contract does not itself supply implementation. The current bounded slice
-does not implement retry, resume, CLI, configurable failure policy, parallel
-workers, distributed coordination, Studio integration, new algorithms, or
-typing-debt reduction. It does not support plan mutation, successful-task force
-retry, custom-code loading, legacy study formats, or migration.
+does not implement retry, resume, CLI, parallel workers, distributed
+coordination, Studio integration, new algorithms, or typing-debt reduction. It
+does not support plan mutation, successful-task force retry, custom-code
+loading, legacy study formats, or migration.
 
 ## 2. Evidence from the current implementation
 
@@ -118,17 +118,20 @@ freshly loaded immutable `Study`. It executes in ascending `task_id` order;
 with full verification before `attempt_succeeded` enters the journal.
 
 This slice deliberately has no coordination path, lock, lease, heartbeat,
-worker identity, cross-process ownership guarantee, resume, retry, cancellation,
-parallelism, CLI, or summary. Obvious same-process reentry is rejected. An empty
-study follows the direct `created` to `completed` transition and creates no
-attempt or run.
+worker identity, cross-process ownership guarantee, resume, retry, parallelism,
+CLI, or summary. Cancellation is durable but limited to an idle transition or a
+cooperative request in the active runner's process. Obvious same-process
+reentry is rejected. An empty study follows the direct `created` to `completed`
+transition and creates no attempt or run.
 
-Until the policy Goal, reconstruction or objective failure after attempt start
-uses one mechanical safety rule independent of the persisted policy field: it
-publishes a verified failed run when possible, commits failed attempt/task and
-`failed` study state, stops before later tasks, and raises a typed execution
-error. Publication or verification interruption publishes no outcome event and
-cannot link an unverified run. This is not `fail_fast` or `continue` behavior.
+Reconstruction or objective failure after attempt start publishes a verified
+failed run when possible and commits the failed attempt/task. The persisted
+policy then either pauses fail-fast execution with later work still `pending`,
+or continues and eventually records `completed_with_failures`. Publication or
+verification interruption is infrastructure failure: it publishes no outcome
+event, cannot link an unverified run, stops either policy, and raises a typed
+error. Graceful cancellation finalizes active work without a fabricated run,
+cancels unclaimed tasks, and records `study_cancelled`.
 
 ## 4. Users and decision impact
 
@@ -658,10 +661,12 @@ loaded = load_study("studies/comparison-01")  # data-only
 
 `create_study` resolves and atomically publishes but executes nothing.
 `load_study` is data-only. `run()` is valid only on a pristine `created` handle,
-accepts no arguments, and returns a new loaded `Study`. The target contract adds
-`inspect`, `resume`, `retry`, `cancel`, and `summarize` in later Goals; none is a
-current compatibility stub. Internal journal types are not public, and no
-lock/lease type exists in the implemented slice.
+accepts no arguments, follows the persisted policy, and returns a new loaded
+`Study`. `Study.cancel()` durably cancels an idle created/paused study and is a
+cooperative request when this process owns the active sequential runner. The
+target contract adds `inspect`, `resume`, `retry`, and `summarize` in later
+Goals; none is a current compatibility stub. Internal journal types are not
+public, and no lock/lease type exists in the implemented slice.
 
 The existing top-level in-memory `StudyResult` returned by multi-seed
 `optimize` remains a distinct result collection. The current internal
@@ -752,7 +757,7 @@ change.
 |---|---|---|---|---|---|
 | 1. Models and atomic planned-study round trip | V1 models, canonical JSON, validation, data-only loader, atomic creation, spec/plan/pending task records. | No task execution, resume, retry, CLI, or concurrency. | SA-001..020 and the create/load portion of SA-069. | New public names and frozen schema. | Revert the single pre-release implementation commit; no persisted compatibility retained. |
 | 2. Sequential durable runner (implemented) | `Study.run()` reserves one task at a time, reconstructs persisted science, publishes verified canonical runs, and commits attempts/events/checkpoints. | No configurable policy, cancellation, retry, resume, coordination, or workers. | SA-021..026 and SA-061..065 under the bounded-slice clarifications. | Adds the durable path without delegating to the old caller path; caller replacement remains deferred. | Revert before public release and regenerate test studies. |
-| 3. Failure policy and cancellation | `fail_fast`, `continue`, task-vs-infrastructure errors, graceful cancellation. | No retry/resume or parallelism. | SA-027..032, SA-064, and SA-068. | Changes ablation/benchmark failure behavior intentionally. | Revert policy Goal with its callers; no dual policy. |
+| 3. Failure policy and cancellation (implemented) | `fail_fast`, `continue`, task-vs-infrastructure errors, graceful cancellation. | No retry/resume or parallelism. | SA-027..030, task-selection portions of SA-031..032, SA-064..065, and SA-068; stale-process reconciliation remains Goal 4. | Changes durable runner failure behavior intentionally; caller migration remains deferred. | Revert policy Goal; no dual policy. |
 | 4. Reconciliation, resume, and explicit retry | Reconciliation writes, stale-attempt recovery, pending resume, bounded failed/interrupted retry; reuse the implemented data-only journal replay. | No local parallel scheduling. | SA-033..055 beyond the already implemented data-only derivation. | Prevents old rerun behavior and enforces plan identity. | Revert as one slice; preserved canonical studies remain inspectable only by the current schema revision in development. |
 | 5. Inspect/summary API and CLI plus caller cleanup | Complete top-level/CLI UX, regenerated reports, ablation/benchmark/Studio/analysis migration, delete superseded study paths. | No parallel or distributed workers. | SA-067 and SA-069..074. | Removes pre-release APIs and directory heuristics. | Revert whole caller migration; do not add aliases. |
 | 6. Local locking and parallel workers | Study lock, task leases, heartbeats, fencing, path confinement, Windows/POSIX local filesystem tests. | No network filesystem or cross-host execution. | SA-056..060 and SA-066. | Platform filesystem semantics. | Disable/revert the parallel executor; retain sequential service on the same schema. |
@@ -762,9 +767,10 @@ Dependencies are strictly ordered: Goal 1 precedes all others; Goal 2 precedes
 policies; Goal 3 precedes resume; Goals 2–4 precede public caller cleanup; Goal
 5 precedes parallel UX; distributed work follows proven local fencing.
 
-The first two vertical slices are implemented: atomic planned-study creation and
-data-only loading, followed by the bounded sequential durable runner described
-in section 3.1. Later roadmap rows do not become available by implication.
+The first three vertical slices are implemented: atomic planned-study creation
+and data-only loading, the bounded sequential durable runner, and persisted
+failure policy with single-process graceful cancellation. Later roadmap rows do
+not become available by implication.
 
 ## 25. Frozen first-slice decisions
 
@@ -785,7 +791,9 @@ run per selected task, full verification before success, a freshly loaded
 return handle, event-authoritative data-only loading, and direct empty-study
 completion. The slice writes no coordination or derived files.
 
-The mechanically fixed stop on task failure is only a safety boundary. Policy
-selection, task-versus-infrastructure policy outcomes, cancellation, resume,
-retry, checkpoint reconciliation writes, and concurrency remain owned by their
-later roadmap Goals.
+Goal 3 makes the frozen `on_error` field authoritative: fail-fast pauses after a
+durable task failure, continue retains failures and reaches
+`completed_with_failures`, and infrastructure failure stops both policies.
+Graceful cancellation is durable and single-process; no cross-process claim is
+made. Resume, retry, checkpoint reconciliation writes, and concurrency remain
+owned by later roadmap Goals.
