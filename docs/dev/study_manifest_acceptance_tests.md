@@ -1,6 +1,6 @@
 # StudyManifest v1 acceptance specification
 
-Status: normative pre-implementation specification
+Status: normative specification; SA-001 through SA-020 and SA-069 create/load are executable
 
 Contract: [Durable study and StudyManifest v1](study_manifest_contract.md)
 
@@ -12,6 +12,11 @@ canonical files that must exist or remain unchanged. “Python” names the resu
 or typed error. “CLI JSON” is the stable `vamos.study-command-result/1` outcome;
 human text must carry the same state, reason, and next action. Exit codes apply
 to the CLI form. No scenario may be implemented as skipped or xfail.
+
+The first production slice implements SA-001 through SA-020 and the Python
+create/load portion of SA-069 in `tests/experiment/study_manifest/`. Rows that
+require execution, CLI, recovery, retry, coordination, or summaries remain
+roadmap requirements rather than available behavior.
 
 The proposed module paths describe the intended ownership, not code that exists
 in this contract-only Goal. For direct library-only validation, “CLI JSON” and

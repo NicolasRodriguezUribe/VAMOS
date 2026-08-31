@@ -1,8 +1,17 @@
 # StudyManifest v1 machine-readable examples
 
-These ten sanitized JSON fixtures make representative contract states and
-failures reviewable before production implementation. They are validated by
+These ten sanitized JSON fixtures make representative complete-lifecycle
+contract states and failures reviewable ahead of their owning roadmap slices. They are validated by
 `tests/docs/test_study_manifest_contract.py`.
+
+The implemented create/load slice also has a compact production recipe set in
+[`study_manifest_core_examples.json`](../study_manifest_core_examples.json).
+`tests/docs/test_study_manifest_core_examples.py` runs every recipe through the
+public creator/loader, so the emitted examples use the exact production
+canonical bytes, identities, hashes, relative paths, and initial layout. The
+recipes include empty, one-task, multi-task, relocated, duplicate-key,
+future-schema, and task-ID-mismatch cases without committing large generated
+trees or environment-specific resolved backend versions.
 
 Each file is a documentation envelope with identity
 `vamos.study-contract-example` version `1.0.0`. The envelope is not a supported
