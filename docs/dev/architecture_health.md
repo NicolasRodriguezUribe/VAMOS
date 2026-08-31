@@ -8,10 +8,12 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - Mandatory ADRs: layering/facades, import-time purity, optional deps, no shims, health gates/retention.
 
 ## Health Gates (run locally)
-- `python tools/health.py` (local fast-fail suite, including the raw configured mypy invocation)
+- `python tools/health.py` (local fast-fail suite, including strict and full development typing)
 - `python tools/health.py --continue-on-failure` (run the full gate list without fast-fail)
 - `python tools/check_agent_docs.py` (the same command and arguments used by CI)
-- `python -m mypy --config-file pyproject.toml src/vamos` (raw mypy invocation)
+- `python tools/typecheck.py --scope strict` (zero diagnostics in the protected scope)
+- `python tools/typecheck.py --scope full` (exact structured no-regression baseline and clean changed modules)
+- `python tools/typecheck.py --scope release` (global zero; required by release workflows)
 - `pytest -q tests/architecture/test_layer_boundaries.py`
 - `pytest -q tests/test_monolith_guard.py`
 - `pytest -q tests/test_public_api_guard.py`
@@ -27,6 +29,10 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - `pytest -q tests/test_optional_deps_policy.py`
 - `pytest -q tests/test_logging_policy.py`
 - `pytest -q`
+
+## Typing policy
+
+The canonical environment, path inventory, diagnostic fingerprint schema, baseline update procedure, and debt-reduction order live in [Typing policy](typing.md). Health and CI invoke strict and full with identical command arguments. Full development success means the structured ratchet matched exactly; it does not mean full-source typing is clean. Release remains blocked until `--scope release` reports zero.
 
 ## Layering Policy (current reality)
 - foundation may depend on foundation/resources only.

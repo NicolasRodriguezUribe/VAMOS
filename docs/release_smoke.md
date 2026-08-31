@@ -2,6 +2,14 @@
 
 Use this checklist to verify source distribution and wheel packaging before a release.
 
+Release validation starts with the canonical global zero-error gate:
+
+```bash
+python tools/typecheck.py --scope release
+```
+
+Do not build or publish a release while that command is nonzero. The development full-source ratchet is not a substitute for release typing.
+
 ## Build smoke (wheel/sdist)
 
 ```bash

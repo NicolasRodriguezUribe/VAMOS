@@ -5,6 +5,7 @@ joblib==1.4.2
 pytest==8.3.5
 pytest-cov==6.0.0
 mypy==1.15.0
+typing-extensions==4.16.0
 ruff==0.11.2
 build==1.2.2.post1
 setuptools==80.9.0

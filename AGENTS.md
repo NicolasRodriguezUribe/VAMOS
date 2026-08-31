@@ -68,6 +68,12 @@ python -m pip install -U pip
 python -m pip install -e ".[dev,docs]"
 ```
 
+Canonical typing uses Python 3.12, compiled mypy 1.15.0, typing-extensions 4.16.0, no stub distributions, and the constrained extras documented in [Typing policy](docs/dev/typing.md). Install that environment exactly before running typing or health:
+
+```bash
+python -m pip install -c constraints/ci.txt -e ".[dev]"
+```
+
 Activate with `.venv\Scripts\Activate.ps1` in PowerShell or `source .venv/bin/activate` on Linux/macOS. An already selected environment with the required extras is equally valid.
 
 Before a subprocess-based check, anchor imports to this checkout and verify them:
@@ -88,16 +94,18 @@ The printed path must be under the intended worktree. A final wheel smoke must u
 
 Use the narrowest tier that proves the change while iterating, then run every higher applicable tier before completion.
 
-- Targeted: `python -m pytest -q <nearest-test-files>` and `python tools/check_agent_docs.py` for agent/docs changes.
+- Targeted: `python -m pytest -q <nearest-test-files>`, `python tools/typecheck.py --scope strict` for typed production changes, and `python tools/check_agent_docs.py` for agent/docs changes.
 - Quick: `python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs`.
 - Full: `python tools/health.py`, `python -m pytest -q`, and `mkdocs build --strict`.
-- Release: full tier plus `python -m build` and the applicable checks in [Release Smoke Verification](docs/release_smoke.md).
+- Release: full tier plus `python tools/typecheck.py --scope release`, `python -m build`, and the applicable checks in [Release Smoke Verification](docs/release_smoke.md).
 
 `tools/health.py` is the canonical local fast-fail architecture/tooling suite. CI has a distinct matrix and coverage scope. Both run exactly `python tools/check_agent_docs.py` for agent-documentation integrity; do not describe their complete suites as identical.
 
+`tools/typecheck.py` is the sole typing entry point. Health and the dedicated CI typing job each run `--scope strict` and `--scope full` with identical arguments. Strict permits zero diagnostics. Full development typing enforces the structured baseline in `typing/mypy-baseline.json`, including exact fingerprints and multiplicities; every changed production file must be clean. Release always runs `--scope release` and requires global zero. Ratchet success is not a claim that full-source mypy is clean.
+
 `tools/check_pre_release_remnants.py` owns the repository semantic no-remnant scan and the shared discarded-token definitions. `tools/check_agent_docs.py` reuses those definitions for active guidance, then adds instruction-specific scope, adapter, link, declaration, duplication, and policy checks; it does not rerun the repository scan. Health and CI invoke each checker once.
 
-For a bounded code change, also run Ruff on changed Python, `ruff format --check` on changed Python, targeted mypy where configured, `python -m compileall` on changed Python/tests, and `git diff --check`. Report every skipped or unavailable gate honestly.
+For a bounded code change, also run Ruff on changed Python, `ruff format --check` on changed Python, the canonical strict/full typechecks, `python -m compileall` on changed Python/tests, and `git diff --check`. Report every skipped or unavailable gate honestly.
 
 ## Change discipline
 
@@ -174,7 +182,11 @@ path: docs/dev/cli.md
 path: docs/dev/run_artifacts_and_replay.md
 path: docs/dev/studies.md
 path: docs/dev/testing.md
+path: docs/dev/typing.md
 path: docs/release_smoke.md
+path: docs/dev/adr/0007-canonical-typing-gates.md
+path: tools/typecheck.py
+path: typing/mypy-baseline.json
 path: src/vamos/experiment/artifacts
 path: src/vamos/run_artifacts.py
 path: src/vamos/engine/variation
@@ -203,6 +215,9 @@ cli: vamos create-problem --help
 command: python tools/check_agent_docs.py
 command: python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs
 command: python tools/health.py
+command: python tools/typecheck.py --scope strict
+command: python tools/typecheck.py --scope full
+command: python tools/typecheck.py --scope release
 command: python -m pytest -q
 command: mkdocs build --strict
 command: python -m build

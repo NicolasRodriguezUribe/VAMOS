@@ -32,6 +32,7 @@ Repository-wide contributor and agent rules, including validation tiers and Git 
 - Read the ADRs before any architectural change: `docs/dev/adr/index.md`.
 - Run the local fast-fail health command: `python tools/health.py`.
 - CI has a different platform/version and coverage scope. Both health and CI run `python tools/check_agent_docs.py` with identical arguments.
+- Typing has one entry point: `python tools/typecheck.py --scope strict|full|release`. Health and CI run strict and full; release validation requires zero globally.
 - If you change public APIs, update the snapshot: `python tools/update_public_api_snapshot.py`.
 
 ## Continuous Integration
@@ -44,7 +45,8 @@ Repository-wide contributor and agent rules, including validation tiers and Git 
 ## Coding style and typing
 - The project uses a `src/` layout and prefers type hints on public-facing functions/classes.
 - Performance-critical loops (kernels, variation) should remain lightweight; avoid refactors that change behavior without explicit benchmarks.
-- New orchestration/config/registry code should be mypy-friendly; see `pyproject.toml` for incremental typing settings.
+- Every changed production module must be clean under the canonical typecheck. New diagnostics and increased baseline multiplicity are forbidden.
+- Read `docs/dev/typing.md` for the pinned environment, strict/full/release semantics, and baseline-reduction procedure.
 
 ## Tuning package layout
 - All tuning utilities (parameter spaces, samplers, racing loop, random search) live under `src/vamos/engine/tuning/racing/`.

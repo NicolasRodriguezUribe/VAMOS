@@ -167,7 +167,7 @@ all = [
 vamos = "vamos.experiment.cli.main:main"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 plugins = []
 warn_unused_ignores = true
 warn_redundant_casts = true
@@ -227,7 +227,15 @@ module = [
   "pandas.*",
   "dask",
   "dask.*",
+  "matplotlib",
+  "matplotlib.*",
   "numba",
+  "optuna",
+  "optuna.*",
+  "ConfigSpace",
+  "ConfigSpace.*",
+  "smac",
+  "smac.*",
   "plotly",
   "plotly.*",
   "pymoo.*",
