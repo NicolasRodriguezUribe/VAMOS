@@ -41,6 +41,7 @@ from vamos.run_artifacts import (
     verify_run,
 )
 from vamos.selection import EnvironmentalSelectionResult, select_survivors
+from vamos.study_artifacts import StudySpec, create_study, load_study
 
 
 def configure_logging(*, level: int = logging.INFO) -> None:
@@ -83,4 +84,7 @@ __all__ = [
     "VerificationReport",
     "verify_run",
     "reproduce",
+    "StudySpec",
+    "create_study",
+    "load_study",
 ]

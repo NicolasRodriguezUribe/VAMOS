@@ -17,7 +17,8 @@ from .errors import (
     MissingManifestFieldError,
     UnsupportedSchemaError,
 )
-from .jsonio import canonical_json_bytes, load_json_file, manifest_self_hash, sha256_bytes
+from .identity import resolved_spec_task_id
+from .jsonio import load_json_file, manifest_self_hash
 from .lineage import validate_replay_lineage
 from .models import ArtifactDescriptor, LoadLimits, ResolvedRunSpec, RunManifest, deep_freeze
 from .paths import validate_relative_artifact_path
@@ -95,8 +96,8 @@ def validate_run_manifest(
         _invalid(operation, path, "$.timestamps.completed_at", "absent for status=running", completed_at)
     _required_mapping(value, "requested_spec", operation=operation, path=path)
     resolved_raw = _required_mapping(value, "resolved_spec", operation=operation, path=path)
-    _validate_resolved_spec(resolved_raw, operation=operation, path=path)
-    expected_task = "sha256:" + sha256_bytes(canonical_json_bytes(resolved_raw))
+    validate_resolved_run_spec(resolved_raw, operation=operation, path=path)
+    expected_task = resolved_spec_task_id(resolved_raw)
     task_id = _required_string(value, "task_id", operation=operation, path=path)
     if not hmac.compare_digest(task_id, expected_task):
         _invalid(operation, path, "$.task_id", expected_task, task_id, reason="does not match canonical resolved_spec")
@@ -184,7 +185,7 @@ def build_terminal_manifest(value: Mapping[str, Any], *, limits: LoadLimits) -> 
     return validate_run_manifest(payload, limits=limits, operation="save result", path="manifest.json")
 
 
-def _validate_resolved_spec(value: Mapping[str, Any], *, operation: str, path: Path | str) -> None:
+def validate_resolved_run_spec(value: Mapping[str, Any], *, operation: str, path: Path | str) -> None:
     if value.get("spec_version") != RESOLVED_SPEC_VERSION:
         _invalid(operation, path, "$.resolved_spec.spec_version", RESOLVED_SPEC_VERSION, value.get("spec_version"))
     for field in (
@@ -390,5 +391,6 @@ __all__ = [
     "SCHEMA_VERSION",
     "build_terminal_manifest",
     "parse_run_manifest",
+    "validate_resolved_run_spec",
     "validate_run_manifest",
 ]

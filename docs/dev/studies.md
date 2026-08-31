@@ -1,66 +1,101 @@
-# Changing studies
+# Creating and loading durable studies
 
-The current study layer executes an in-memory sequence of `StudyTask` objects and returns `StudyResult` summaries. It does not yet provide durable study state, resume/retry, or a StudyManifest. The future behavior is frozen by the [durable study and StudyManifest v1 contract](study_manifest_contract.md), its [SA-001 through SA-074 acceptance specification](study_manifest_acceptance_tests.md), and [ADR 0008](adr/0008-durable-study-manifest-contract.md); those documents specify planned behavior, not an available production API.
-
-## Current API
+The public StudyManifest v1 slice separates planning from execution. Creation
+resolves every task and publishes a relocatable directory atomically; loading
+verifies that directory using data-only readers.
 
 ```python
-from vamos.experiment.study import StudyTask
-from vamos.experiment.study.api import run_study
+from vamos import StudySpec, create_study, load_study
 
+spec = StudySpec(
+    problems=["zdt1", "zdt2"],
+    algorithms=["nsgaii"],
+    seeds=[0, 1],
+    max_evaluations=10_000,
+)
 
-tasks = [
-    StudyTask(
-        problem="zdt1",
-        algorithm="nsgaii",
-        engine="numpy",
-        seed=seed,
-        config_overrides={"population_size": 20, "max_evaluations": 100},
-    )
-    for seed in (1, 2, 3)
-]
-results = run_study(tasks)
+study = create_study(spec, output="studies/example")
+loaded = load_study("studies/example")
 ```
 
-`StudyRunner()` is constructed with verbosity, indicator, persister, evaluator, and termination options. Its `run(tasks, run_single_fn=...)` method requires the execution callable; `run_study(...)` is the supported convenience route that supplies the current single-run service.
+`create_study` does not optimize, create attempts, or publish runs. It freezes
+current problem, algorithm, operator, backend, population, termination, budget,
+and seed resolution into the immutable `plan.json`. Every task starts
+`pending`. `load_study` checks closed schemas, canonical bytes, semantic and
+file hashes, byte lengths, identities, counts, event head, resource limits, and
+root-confined references without importing a component named by stored data.
 
-`StudyResult.to_row()` is a derived summary. `CSVPersister.save_results(...)` may export those rows, but it does not own or duplicate canonical per-run arrays/specifications.
+The returned handle exposes immutable `study_id`, `plan_id`, `status`, `spec`,
+`plan`, `tasks`, and `root` values. Equality includes the root path; after a
+whole-directory move, compare persisted IDs and task IDs. Nested JSON values
+are defensive immutable copies.
 
-## Change procedure
+## Initial layout
 
-1. Keep task definition in `types.py`, batch execution in `runner.py`, supported orchestration in `api.py`, and derived export in `persistence.py`.
-2. Preserve input task order, explicit seeds, config override copying, encoding/problem resolution, and optional indicator behavior.
-3. Route each persisted run through the canonical run-artifact writer. A study-level record may reference run/task identities; it must not mirror their specifications or arrays.
-4. Distinguish execution failure policy from indicator/export failure. Never report a partially executed study as complete without explicit status.
-5. Update the ablation API and CLI together when their use of study tasks changes.
-6. Implement durable state, restart policy, retries, and resumability only through the frozen StudyManifest contract and its ordered roadmap, never as an incidental CSV extension.
+A nonempty plan creates exactly:
+
+```text
+<study>/
+├── study-manifest.json
+├── study-spec.json
+├── plan.json
+├── events/
+│   └── 00000000000000000001.json
+└── tasks/
+    └── <task-digest>/
+        └── task.json
+```
+
+An empty plan omits `tasks/`. This slice creates no `attempts/`, `runs/`,
+`coordination/`, or `derived/` path.
+
+## Identities
+
+- `study_id` is a random UUIDv4 for one persisted study instance.
+- `plan_id` identifies the sorted scientific task set. Labels, metadata,
+  output path, and display order do not affect it.
+- `task_id` is the canonical RunManifest identity of the complete resolved run
+  specification. A scientific change, including seed or budget, changes it.
+- `attempt_id` will identify one future execution claim; creation emits none.
+- `run_id` belongs to one future canonical RunManifest; creation emits none.
+
+The plan is immutable. Change scientific configuration by creating a new study
+at a new absent destination. Reopen an existing study with `load_study`; every
+existing creation destination is a collision.
+
+## Current limitations
+
+This slice has no durable runner, `run`, `resume`, `retry`, cancellation, study
+CLI, locks, leases, workers, or summaries. Those operations remain sequenced by
+the [StudyManifest contract](study_manifest_contract.md) and its
+[acceptance inventory](study_manifest_acceptance_tests.md).
+
+The older internal `StudyRunner`/`StudyTask` path remains temporarily for
+existing benchmark and ablation callers. It is in-memory execution and derived
+CSV reporting only; it is not another durable layout or reader.
 
 ## Required validation
 
 ```bash
+python -m pytest -q tests/experiment/study_manifest
 python -m pytest -q tests/experiment/test_ablation_study_api.py tests/experiment/test_cli_ablation.py
-python -m pytest -q tests/foundation/test_moocore_indicators.py tests/engine/test_hyperheuristic_indicators.py
+python -m pytest -q tests/experiment/run_artifacts
 ```
 
-Add focused runner/persistence tests for the changed behavior and run the full tier from `/AGENTS.md`.
-
 ```agent-docs
-path: src/vamos/experiment/study/types.py
-path: src/vamos/experiment/study/runner.py
-path: src/vamos/experiment/study/api.py
-path: src/vamos/experiment/study/persistence.py
-path: tests/experiment/test_ablation_study_api.py
-path: tests/experiment/test_cli_ablation.py
-path: tests/foundation/test_moocore_indicators.py
-path: tests/engine/test_hyperheuristic_indicators.py
+path: src/vamos/study_artifacts.py
+path: src/vamos/experiment/study/models.py
+path: src/vamos/experiment/study/planning.py
+path: src/vamos/experiment/study/creation.py
+path: src/vamos/experiment/study/loading.py
+path: tests/experiment/study_manifest
 path: docs/dev/study_manifest_contract.md
 path: docs/dev/study_manifest_acceptance_tests.md
 path: docs/dev/study_manifest_examples/README.md
 path: docs/dev/adr/0008-durable-study-manifest-contract.md
-symbol: vamos.experiment.study:StudyTask
-symbol: vamos.experiment.study:StudyRunner
-symbol: vamos.experiment.study.api:run_study
-symbol: vamos.experiment.study.persistence:CSVPersister
+symbol: vamos.study_artifacts:StudySpec
+symbol: vamos.study_artifacts:create_study
+symbol: vamos.study_artifacts:load_study
+command: python -m pytest -q tests/experiment/study_manifest
 command: python -m pytest -q tests/experiment/test_ablation_study_api.py tests/experiment/test_cli_ablation.py
-command: python -m pytest -q tests/foundation/test_moocore_indicators.py tests/engine/test_hyperheuristic_indicators.py
 ```

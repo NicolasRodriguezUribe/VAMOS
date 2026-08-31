@@ -1,6 +1,6 @@
 # VAMOS durable study and StudyManifest v1 contract
 
-Status: approved pre-release contract; production implementation is intentionally deferred
+Status: approved pre-release contract; create/load core implemented, execution roadmap deferred
 
 Primary document identity: `vamos.study-manifest`
 
@@ -16,8 +16,9 @@ This document freezes the only durable-study contract that VAMOS will implement.
 It covers study intent, immutable planning, task and attempt identity, durable
 state, failure policy, retry, resume, crash recovery, local concurrency,
 canonical run references, inspection, and derived summaries. The contract is
-implementation-independent: none of the production models, services, CLI
-commands, locks, or writers described here exist yet.
+implementation-independent. The immutable models, deterministic planner,
+atomic creator, and data-only loader are implemented. Execution services, CLI
+commands, locks, leases, recovery, retries, and summaries remain deferred.
 
 VAMOS is pre-release. Version `1.0.0` is the only study schema. There is no
 reader, detector, migration, alias, fallback layout, or deprecation period for
@@ -145,6 +146,14 @@ Its defaults are `on_error="fail_fast"`, no automatic retry, and
 `max_attempts_per_task=3`. Labels and presentation metadata are not scientific
 identity. The spec is immutable after study publication.
 
+The implemented V1 JSON encoding is closed. `matrix` contains exactly
+`problems`, `algorithms`, and explicit integer `seeds`. `run_defaults` contains
+exactly `max_evaluations`, `pop_size`, `engine`, `eval_strategy`, `n_var`,
+`n_obj`, `problem_kwargs`, and per-algorithm `algorithm_configs`. `policy`
+contains exactly `on_error` and `max_attempts_per_task`; `labels` and
+`metadata` are bounded JSON objects. Optional run defaults are stored as
+`null`, not omitted, so one writer form exists.
+
 ### 5.2 ResolvedStudyPlan
 
 Resolution occurs once, before output publication. Every plan task contains the
@@ -211,6 +220,11 @@ the plan ID.
 The published plan is immutable. V1 has no append, delete, patch, extension, or
 plan-version operation. Any scientifically relevant change creates a new study
 and plan identity.
+
+The V1 task projection is exactly `{ "task_id": <canonical task ID> }`.
+Because that ID already hashes the complete resolved run specification, the
+projection neither duplicates scientific fields nor admits a second identity
+definition.
 
 ### 7.3 Task identity
 
@@ -529,6 +543,12 @@ operations. They do not optimize, resolve registries/plugins, import custom
 code, deserialize pickle, execute shell commands, contact a network, or access
 outside the root. Execution resolves only providers permitted by the canonical
 run path and never imports a manifest-provided module name.
+
+The implemented reader defaults are: manifest/spec 8 MiB each, plan 64 MiB,
+task 1 MiB, attempt/event 2 MiB each, 100,000 tasks, 300,000 referenced
+documents, 512 MiB total JSON read, JSON depth 64, and 64 KiB per string.
+Trusted callers may pass an explicit `StudyLoadLimits`; loading never raises a
+limit automatically after rejection.
 
 Failures store a stable category/code, bounded sanitized message, retryability,
 and safe action. They exclude uncontrolled tracebacks, environment dumps,

@@ -1,0 +1,48 @@
+{
+  "document_type": "vamos.study-core-example-set",
+  "schema_version": "1.0.0",
+  "cases": [
+    {
+      "name": "empty-created",
+      "operation": "create_load",
+      "spec": {"problems": [], "algorithms": [], "seeds": []},
+      "expected": {"state": "created", "tasks": 0, "relocate": false}
+    },
+    {
+      "name": "one-task-planned",
+      "operation": "create_load",
+      "spec": {"problems": ["zdt1"], "algorithms": ["nsgaii"], "seeds": [0], "max_evaluations": 24, "pop_size": 8},
+      "expected": {"state": "created", "tasks": 1, "relocate": false}
+    },
+    {
+      "name": "multi-task-planned",
+      "operation": "create_load",
+      "spec": {"problems": ["zdt1", "zdt2"], "algorithms": ["nsgaii"], "seeds": [0, 1], "max_evaluations": 24, "pop_size": 8},
+      "expected": {"state": "created", "tasks": 4, "relocate": false}
+    },
+    {
+      "name": "relocated",
+      "operation": "create_load",
+      "spec": {"problems": ["zdt1"], "algorithms": ["nsgaii"], "seeds": [7], "max_evaluations": 24, "pop_size": 8},
+      "expected": {"state": "created", "tasks": 1, "relocate": true}
+    },
+    {
+      "name": "duplicate-key-document",
+      "operation": "corrupt_root",
+      "mutation": "duplicate_json_key",
+      "expected_error": "DUPLICATE_JSON_KEY"
+    },
+    {
+      "name": "future-schema-document",
+      "operation": "corrupt_root",
+      "mutation": "future_schema",
+      "expected_error": "UNSUPPORTED_SCHEMA"
+    },
+    {
+      "name": "task-id-mismatch",
+      "operation": "corrupt_task",
+      "mutation": "task_id_mismatch",
+      "expected_error": "TASK_ID_MISMATCH"
+    }
+  ]
+}
