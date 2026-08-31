@@ -278,6 +278,16 @@ def test_contract_freezes_one_schema_and_first_slice() -> None:
     assert "Succeeded tasks are never rerun" in text
 
 
+def test_planning_and_recovery_share_one_persisted_plan_boundary() -> None:
+    contract = CONTRACT.read_text(encoding="utf-8")
+    guide = " ".join((DOCS / "studies.md").read_text(encoding="utf-8").split())
+    assert "`plan_study` and `create_study` use the same canonical resolver" in contract
+    assert "`Study.resume(retry_failed=False)` explicitly reconciles first" in contract
+    assert "No operation after creation consults current defaults to change the plan." in contract
+    assert "planning neither creates nor reserves the path" in guide
+    assert "persisted built-in configuration is reconstructed" in guide
+
+
 def test_adr_and_navigation_publish_the_contract() -> None:
     adr_index = (DOCS / "adr" / "index.md").read_text(encoding="utf-8")
     nav = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
