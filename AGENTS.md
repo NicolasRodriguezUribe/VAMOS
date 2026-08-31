@@ -54,7 +54,7 @@ replay = vamos.reproduce(path)
 
 VAMOS supports one run schema: `vamos.run-manifest` version `1.0.0`. A successful run contains `manifest.json`, `result.npz`, and `environment.json`. Writers and readers live under `src/vamos/experiment/artifacts/`; `src/vamos/run_artifacts.py` and the top-level facade expose the public surface.
 
-The durable study schema is `vamos.study-manifest` version `1.0.0`, governed by `docs/dev/study_manifest_contract.md`, ADR 0008, and the complete SA-001 through SA-074 acceptance inventory. Atomic create/data-only load, bounded sequential `Study.run()`, persisted failure policy, single-process graceful cancellation, explicit reconciliation, resume, and bounded retry are implemented; later CLI, migration, and coordination work must follow the contract roadmap. RunManifest remains the sole owner of resolved per-run truth and arrays.
+The durable study schema is `vamos.study-manifest` version `1.0.0`, governed by `docs/dev/study_manifest_contract.md`, ADR 0008, the complete SA-001 through SA-074 acceptance inventory, and the separate PL-001 through PL-021 planning inventory. Atomic create/data-only load, bounded sequential `Study.run()`, persisted failure policy, single-process graceful cancellation, explicit reconciliation, resume, bounded retry, and read-only Python/CLI planning preflight are implemented; later state-mutating CLI, migration, and coordination work must follow the contract roadmap. RunManifest remains the sole owner of resolved per-run truth and arrays.
 
 Shared algorithm variation pipelines live only in `src/vamos/engine/variation/`; concrete operator implementations and their registry live under `src/vamos/engine/operators/`. The external archive model is `ExternalArchiveConfig` in `src/vamos/engine/archive/config.py`, and experiment-spec parsing accepts the single `archive.external` block through `build_archive_cfg`.
 
@@ -128,7 +128,7 @@ For a bounded code change, also run Ruff on changed Python, `ruff format --check
 - Quality indicators/metrics: [Adding a metric](docs/dev/add_metric.md)
 - CLI: [Changing the CLI](docs/dev/cli.md)
 - Run artifacts and exact replay: [Run artifacts and replay](docs/dev/run_artifacts_and_replay.md)
-- Studies: [Changing studies](docs/dev/studies.md), [StudyManifest v1 contract](docs/dev/study_manifest_contract.md), and [acceptance specification](docs/dev/study_manifest_acceptance_tests.md)
+- Studies: [Changing studies](docs/dev/studies.md), [StudyManifest v1 contract](docs/dev/study_manifest_contract.md), [persisted-state acceptance](docs/dev/study_manifest_acceptance_tests.md), and [planning acceptance](docs/dev/study_plan_acceptance_tests.md)
 - Testing: [Testing and validation](docs/dev/testing.md)
 
 Follow at most one scoped `AGENTS.md` plus the linked canonical guide. Search the implementation when a task falls outside these routes; do not infer a new extension point from an old example.
@@ -185,6 +185,7 @@ path: docs/dev/run_artifacts_and_replay.md
 path: docs/dev/studies.md
 path: docs/dev/study_manifest_contract.md
 path: docs/dev/study_manifest_acceptance_tests.md
+path: docs/dev/study_plan_acceptance_tests.md
 path: docs/dev/study_manifest_examples/README.md
 path: docs/dev/adr/0008-durable-study-manifest-contract.md
 path: docs/dev/testing.md
@@ -208,6 +209,7 @@ symbol: vamos:load_run
 symbol: vamos:load_result
 symbol: vamos:verify_run
 symbol: vamos:reproduce
+symbol: vamos:plan_study
 symbol: vamos:VerificationReport
 symbol: vamos:ReplayReport
 symbol: vamos.engine.variation:VariationPipeline
@@ -218,6 +220,7 @@ cli: vamos results inspect --help
 cli: vamos results verify --help
 cli: vamos reproduce --help
 cli: vamos create-problem --help
+cli: vamos study plan --help
 command: python tools/check_agent_docs.py
 command: python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs
 command: python tools/health.py

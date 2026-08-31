@@ -14,8 +14,8 @@ PUBLIC_FACADES = (
     "src/vamos/algorithms.py",
     "src/vamos/ux/api.py",
 )
-# The canonical StudyManifest slice adds exactly three curated factories/types.
-MAX_ALL_SIZE = 28
+# Durable StudyManifest creation/loading plus planning expose five curated names.
+MAX_ALL_SIZE = 30
 
 
 def _repo_root() -> Path:

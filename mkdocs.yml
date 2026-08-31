@@ -74,6 +74,7 @@ nav:
     - Change Studies: dev/studies.md
     - StudyManifest v1 Contract: dev/study_manifest_contract.md
     - StudyManifest Acceptance: dev/study_manifest_acceptance_tests.md
+    - Study Planning Acceptance: dev/study_plan_acceptance_tests.md
     - Testing and Validation: dev/testing.md
     - Typing Policy: dev/typing.md
     - Architecture Health: dev/architecture_health.md

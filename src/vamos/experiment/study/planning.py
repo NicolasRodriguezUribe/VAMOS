@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from importlib.util import find_spec
 from itertools import product
+from math import comb
 from typing import Any
 
 from vamos.experiment.artifacts.models import deep_freeze, deep_thaw
@@ -58,6 +60,13 @@ def _resolve_candidate(spec: StudySpec, candidate: _Candidate) -> PlanTask:
         budget = spec.max_evaluations or _compute_max_evaluations(n_var, n_obj)
         engine, engine_source = resolve_engine_details(spec.engine, algorithm=algorithm)
         config = _resolved_algorithm_config(spec, candidate.algorithm, algorithm, population_size, n_var, n_obj, encoding)
+        resolved_population_size = _validate_execution_shape(
+            algorithm=algorithm,
+            config=config,
+            budget=budget,
+            n_obj=n_obj,
+            candidate=candidate,
+        )
         requested, resolved = build_run_specs(
             RunSpecInputs(
                 problem_built_in=problem.__class__.__module__.startswith("vamos."),
@@ -75,7 +84,7 @@ def _resolve_candidate(spec: StudySpec, candidate: _Candidate) -> PlanTask:
                 max_evaluations_requested=spec.max_evaluations,
                 termination=("max_evaluations", budget),
                 pop_size_requested=spec.pop_size,
-                resolved_pop_size=config.get("pop_size", population_size),
+                resolved_pop_size=resolved_population_size,
                 engine_requested=spec.engine,
                 engine=engine,
                 eval_strategy=spec.eval_strategy,
@@ -90,6 +99,7 @@ def _resolve_candidate(spec: StudySpec, candidate: _Candidate) -> PlanTask:
                 },
             )
         )
+        _validate_resolved_components(resolved, candidate=candidate)
     except StudyError:
         raise
     except Exception as exc:
@@ -168,6 +178,160 @@ def _algorithm_overrides(spec: StudySpec, requested: str, resolved: str) -> dict
     if not isinstance(thawed, dict):
         raise AssertionError("algorithm override is not an object")
     return thawed
+
+
+def _validate_execution_shape(
+    *,
+    algorithm: str,
+    config: Mapping[str, Any],
+    budget: int,
+    n_obj: int,
+    candidate: _Candidate,
+) -> int:
+    population = config.get("pop_size")
+    if isinstance(population, bool) or not isinstance(population, int) or population < 1:
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="INVALID_POPULATION_SIZE",
+            field=f"$.matrix[{candidate.index}].pop_size",
+            expected="positive resolved initial population size",
+            actual=population,
+            action="Correct the population configuration; no study directory was published.",
+        )
+    if budget < population:
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="INVALID_EVALUATION_BUDGET",
+            field=f"$.matrix[{candidate.index}].max_evaluations",
+            expected=f"integer >= resolved initial population size ({population})",
+            actual=budget,
+            action="Increase max_evaluations or reduce the population; no study directory was published.",
+        )
+    if algorithm.lower() == "nsgaiii":
+        _validate_nsgaiii_reference_directions(config, population=population, n_obj=n_obj, candidate=candidate)
+    if algorithm.lower() == "rvea":
+        _validate_rvea_reference_directions(config, population=population, n_obj=n_obj, candidate=candidate)
+    return population
+
+
+def _validate_nsgaiii_reference_directions(config: Mapping[str, Any], *, population: int, n_obj: int, candidate: _Candidate) -> None:
+    raw = config.get("reference_directions")
+    if not isinstance(raw, Mapping):
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="INVALID_REFERENCE_DIRECTIONS",
+            field=f"$.matrix[{candidate.index}].algorithm_config.reference_directions",
+            expected="object with path=null and positive integer divisions",
+            actual=type(raw).__name__,
+            action="Use generated built-in reference directions; planning never reads an external source path.",
+        )
+    path = raw.get("path")
+    divisions = raw.get("divisions")
+    if path is not None:
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="UNSAFE_REFERENCE_DIRECTIONS",
+            field=f"$.matrix[{candidate.index}].algorithm_config.reference_directions.path",
+            expected="null (built-in generated reference directions)",
+            actual="external path",
+            action="Remove the reference-direction path; planning never follows external scientific inputs.",
+        )
+    if isinstance(divisions, bool) or not isinstance(divisions, int) or divisions < 1:
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="INVALID_REFERENCE_DIRECTIONS",
+            field=f"$.matrix[{candidate.index}].algorithm_config.reference_directions.divisions",
+            expected="positive integer",
+            actual=divisions,
+            action="Choose a positive reference-direction division count.",
+        )
+    expected = comb(divisions + n_obj - 1, n_obj - 1)
+    if population != expected:
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="REFERENCE_DIRECTION_POPULATION_MISMATCH",
+            field=f"$.matrix[{candidate.index}].pop_size",
+            expected=f"{expected} for n_obj={n_obj} and divisions={divisions}",
+            actual=population,
+            action="Use the reference-direction count as pop_size or choose compatible divisions.",
+        )
+
+
+def _validate_rvea_reference_directions(config: Mapping[str, Any], *, population: int, n_obj: int, candidate: _Candidate) -> None:
+    partitions = config.get("n_partitions")
+    if isinstance(partitions, bool) or not isinstance(partitions, int) or partitions < 1:
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="INVALID_REFERENCE_DIRECTIONS",
+            field=f"$.matrix[{candidate.index}].algorithm_config.n_partitions",
+            expected="positive integer",
+            actual=partitions,
+            action="Choose a positive RVEA reference-vector partition count.",
+        )
+    expected = comb(partitions + n_obj - 1, n_obj - 1)
+    if population != expected:
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="REFERENCE_DIRECTION_POPULATION_MISMATCH",
+            field=f"$.matrix[{candidate.index}].pop_size",
+            expected=f"{expected} for n_obj={n_obj} and n_partitions={partitions}",
+            actual=population,
+            action="Use the reference-vector count as pop_size or choose compatible n_partitions.",
+        )
+
+
+def _validate_resolved_components(resolved: Mapping[str, Any], *, candidate: _Candidate) -> None:
+    component_fields: list[tuple[str, object]] = [
+        ("problem", resolved.get("problem")),
+        ("algorithm", resolved.get("algorithm")),
+        ("termination", resolved.get("termination")),
+    ]
+    operators = resolved.get("operators")
+    if isinstance(operators, Mapping):
+        component_fields.extend((f"operators.{name}", value) for name, value in operators.items())
+    backends = resolved.get("backend")
+    if isinstance(backends, Mapping):
+        component_fields.extend((f"backend.{name}", value) for name, value in backends.items())
+    for field, raw in component_fields:
+        if not isinstance(raw, Mapping):
+            raise AssertionError(f"canonical run resolver omitted {field}")
+        provider = raw.get("provider")
+        if not isinstance(provider, Mapping) or provider.get("type") != "built_in":
+            raise UnresolvedStudyTaskError(
+                operation="resolve study plan",
+                reason="UNAVAILABLE_COMPONENT",
+                field=f"$.matrix[{candidate.index}].{field}",
+                expected="supported built-in component",
+                actual=raw.get("component_id"),
+                action="Choose a supported built-in component; planning never discovers or imports plugins.",
+            )
+    if isinstance(backends, Mapping):
+        _validate_resolved_backends(backends, candidate=candidate)
+
+
+def _validate_resolved_backends(backends: Mapping[str, object], *, candidate: _Candidate) -> None:
+    kernel = backends.get("kernel")
+    if isinstance(kernel, Mapping):
+        resolution = kernel.get("resolution")
+        if not isinstance(resolution, Mapping) or resolution.get("version") is None:
+            raise UnresolvedStudyTaskError(
+                operation="resolve study plan",
+                reason="BACKEND_UNAVAILABLE",
+                field=f"$.matrix[{candidate.index}].backend.kernel",
+                expected="installed supported kernel backend",
+                actual=kernel.get("component_id"),
+                action="Install the requested backend dependency or choose an available built-in backend.",
+            )
+    evaluation = backends.get("evaluation")
+    if isinstance(evaluation, Mapping) and evaluation.get("component_id") == "vamos.evaluation:dask@1" and find_spec("dask") is None:
+        raise UnresolvedStudyTaskError(
+            operation="resolve study plan",
+            reason="BACKEND_UNAVAILABLE",
+            field=f"$.matrix[{candidate.index}].backend.evaluation",
+            expected="installed dask evaluation backend",
+            actual="dask is not installed",
+            action="Install the compute extra or choose serial/multiprocessing evaluation.",
+        )
 
 
 def _reject_duplicates(tasks: tuple[PlanTask, ...]) -> None:

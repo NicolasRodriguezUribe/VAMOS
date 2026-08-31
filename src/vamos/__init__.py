@@ -22,6 +22,7 @@ from vamos.api import (
     ReplayReport,
     RunManifest,
     StoredRun,
+    StudyPlanReport,
     StudyResult,
     StudySpec,
     VerificationReport,
@@ -34,6 +35,7 @@ from vamos.api import (
     make_problem,
     make_problem_selection,
     optimize,
+    plan_study,
     reproduce,
     run_self_check,
     save_result,
@@ -69,8 +71,10 @@ __all__ = [
     "verify_run",
     "reproduce",
     "StudySpec",
+    "StudyPlanReport",
     "create_study",
     "load_study",
+    "plan_study",
     "problems",
 ]
 
