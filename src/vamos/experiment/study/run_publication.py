@@ -183,7 +183,11 @@ def commit_task_failure(
         attempts=(*task.attempts[:-1], attempt_ref),
         current_attempt_id=None,
         selected_success_attempt_id=None,
-        retryability=replace(task.retryability, retryable=False, category="execution"),
+        retryability=replace(
+            task.retryability,
+            retryable=bool(failure["retryable"]) and task.retryability.attempts_remaining > 0,
+            category=str(failure["category"]),
+        ),
         reason=deep_freeze(failure),
     )
     task = checkpoint_task(state.root, task)
@@ -218,11 +222,15 @@ def _attempt_failure(exc: Exception, objective_began: bool) -> dict[str, Any]:
     del exc
     phase = "objective evaluation" if objective_began else "resolved-spec reconstruction"
     return {
-        "category": "execution",
+        "category": "execution" if objective_began else "configuration",
         "code": "OBJECTIVE_EXECUTION_FAILED" if objective_began else "RESOLVED_SPEC_RECONSTRUCTION_FAILED",
         "message": f"Built-in task {phase} failed; inspect the chained exception in the current process.",
-        "retryable": False,
-        "safe_action": "Inspect the durable failure and create a new study after correcting the cause.",
+        "retryable": objective_began,
+        "safe_action": (
+            "Correct the transient execution cause, then explicitly retry this task."
+            if objective_began
+            else "Create a new study after correcting the deterministic resolved configuration."
+        ),
     }
 
 

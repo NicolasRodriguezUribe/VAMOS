@@ -28,6 +28,7 @@ from .record_decoding import decode_event
 from .record_loading import ReadDocument, validate_run_reference
 
 _EVENT_FILE_PATTERN = r"(\d{20})\.json"
+_UUID4_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
 _ATTEMPT_TERMINALS = {"succeeded", "failed", "interrupted", "cancelled"}
 _TASK_TERMINALS = {"succeeded", "failed", "interrupted", "cancelled", "skipped"}
 
@@ -209,7 +210,19 @@ def _validate_study_execution_id(state: _ReplayState, event: StudyEvent) -> None
 
 
 def _validate_study_payload(state: _ReplayState, event: StudyEvent) -> None:
-    if event.event_type in {"execution_started", "study_completed"} and (event.reason is not None or event.payload):
+    if event.event_type == "execution_started":
+        parent_id = event.payload.get("parent_execution_id")
+        valid_initial = state.study_state == "created" and not event.payload
+        valid_recovery = (
+            state.study_state in {"paused", "completed_with_failures"}
+            and set(event.payload) == {"parent_execution_id"}
+            and isinstance(parent_id, str)
+            and re.fullmatch(_UUID4_PATTERN, parent_id) is not None
+            and parent_id == state.execution_id
+        )
+        if event.reason is not None or (not valid_initial and not valid_recovery):
+            _integrity("INVALID_EVENT_PAYLOAD", "study_event", "exact prior execution identity on recovery", event)
+    if event.event_type == "study_completed" and (event.reason is not None or event.payload):
         _integrity("INVALID_EVENT_PAYLOAD", "study_event", "no reason or payload", event)
     if event.event_type == "study_completed":
         if state.study_state == "created" and state.task_states:
@@ -220,16 +233,22 @@ def _validate_study_payload(state: _ReplayState, event: StudyEvent) -> None:
         failed_ids = sorted(task_id for task_id, value in state.task_states.items() if value == "failed")
         triggering_task = event.payload.get("failed_task_id")
         expected_attempt = _failed_attempt_id(state, triggering_task) if isinstance(triggering_task, str) else None
-        valid_payload = (
+        failure_payload = (
             set(event.payload) == {"failed_task_id", "failed_attempt_id"}
             and triggering_task in failed_ids
             and event.payload.get("failed_attempt_id") == expected_attempt
         )
-        if not valid_payload or not isinstance(event.reason, Mapping):
+        pending = sorted(task_id for task_id, value in state.task_states.items() if value == "pending")
+        interrupted = sorted(task_id for task_id, value in state.task_states.items() if value == "interrupted")
+        recovery_payload = dict(event.payload) == {
+            "pending_task_ids": tuple(pending),
+            "interrupted_task_ids": tuple(interrupted),
+        }
+        if (not failure_payload and not recovery_payload) or not isinstance(event.reason, Mapping):
             _integrity(
                 "INVALID_EVENT_PAYLOAD",
                 "study_event",
-                "one triggering failed task/attempt retained among all prior failures",
+                "one triggering failure or the exact unfinished recovery set",
                 event,
             )
     if event.event_type == "study_completed_with_failures":
@@ -268,14 +287,24 @@ def _apply_task_event(state: _ReplayState, event: StudyEvent) -> None:
     if event.event_type not in allowed or transition not in allowed[event.event_type] or event.transition_from != current:
         _integrity("INVALID_STATE_TRANSITION", "study_event", allowed.get(event.event_type), transition)
     if event.event_type == "task_claimed":
-        if event.reason is not None or event.payload:
-            _integrity("INVALID_EVENT_PAYLOAD", "study_event", "claim without reason or payload", event)
+        attempt_id = event.payload.get("attempt_id")
+        run_id = event.payload.get("run_id")
+        valid_payload = (
+            set(event.payload) == {"attempt_id", "run_id"}
+            and isinstance(attempt_id, str)
+            and re.fullmatch(_UUID4_PATTERN, attempt_id) is not None
+            and isinstance(run_id, str)
+            and re.fullmatch(_UUID4_PATTERN, run_id) is not None
+        )
+        if event.reason is not None or not valid_payload or attempt_id == run_id:
+            _integrity("INVALID_EVENT_PAYLOAD", "study_event", "distinct reserved attempt_id and run_id", event)
         candidates = (
             attempt
             for attempt_id, attempt in state.attempts.items()
             if state.attempt_states[attempt_id] == "created"
             and attempt.task_id == event.entity_id
             and attempt.execution_id == event.execution_id
+            and attempt.attempt_id == event.payload.get("attempt_id")
         )
         if next(candidates, None) is None:
             _integrity("INVALID_STATE_TRANSITION", "study_event", "durable created attempt for claim", event.entity_id)

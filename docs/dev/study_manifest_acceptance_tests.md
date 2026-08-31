@@ -1,6 +1,6 @@
 # StudyManifest v1 acceptance specification
 
-Status: normative specification; SA-001..030, task-selection boundaries of SA-031..032, SA-061..065, SA-068, and Python create/load/run/cancel are executable in bounded slices
+Status: normative specification; SA-001..047, SA-049..055, SA-061..065, SA-068, and Python create/load/run/cancel/resume/retry are executable under the bounded-slice clarifications below; SA-048 remains an explicit future environment-override case
 
 Contract: [Durable study and StudyManifest v1](study_manifest_contract.md)
 
@@ -19,9 +19,17 @@ through SA-026 and SA-061 through SA-065. The third implements persisted
 fail-fast/continue, task-versus-infrastructure outcomes, graceful cancellation,
 forced-death nonpublication, and no-skip task selection from SA-027 through
 SA-032 plus SA-068 in `tests/experiment/study_manifest/`. Stale-attempt
-reconciliation from SA-031 remains in the recovery Goal. CLI, resume, retry,
-coordination, parallelism, summaries, and caller migration remain roadmap
-requirements rather than available behavior.
+reconciliation from SA-031 and the recovery cases SA-033..047 and SA-049..055
+are implemented by explicit single-process operations. SA-048's
+environment-change acceptance option, CLI, coordination, parallelism,
+summaries, and caller migration remain roadmap requirements rather than
+available behavior.
+
+For this bounded recovery slice, SA-031 and SA-036 mean immediate explicit
+single-owner reconciliation after a prior process has ended; there is no lease
+or lease-expiry protocol. SA-038 covers only detectable same-process ownership
+and byte-stable refusal. Persistent locks, live cross-process ownership, leases,
+heartbeats, and fencing remain Goal 6 work.
 
 Module paths describe intended ownership; implemented rows use their current
 production owner. For direct library-only validation, deferred “CLI JSON” and

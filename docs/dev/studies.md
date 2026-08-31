@@ -2,7 +2,8 @@
 
 StudyManifest v1 separates planning from execution. Creation resolves every
 task and atomically publishes a relocatable directory. `Study.run()` executes a
-newly created study sequentially. Loading verifies and derives the effective
+newly created study sequentially. `Study.resume()` and `Study.retry()` perform
+explicit single-process recovery. Loading verifies and derives the effective
 state without executing components or repairing checkpoints.
 
 ```python
@@ -19,6 +20,10 @@ spec = StudySpec(
 created = create_study(spec, output="studies/example")
 completed = created.run()
 loaded = load_study("studies/example")  # data-only
+
+# Later, after a paused/interrupted execution:
+resumed = loaded.resume()  # pending and eligible interrupted tasks
+retried = resumed.retry(failed_only=True)  # explicit failed-task consent
 ```
 
 `create_study` performs no optimization. It freezes the problem, dimensions,
@@ -115,8 +120,35 @@ the terminal cancelled state.
 
 `KeyboardInterrupt` during reconstruction or objective evaluation follows the
 same durable cancellation protocol. A forced process death performs no later
-write and leaves running work for the future reconciliation Goal. This slice
-does not claim that another process can safely cancel a running study.
+write and leaves running work for the next explicit reconciliation operation.
+This slice does not claim that another process can safely cancel a running
+study.
+
+## Reconciliation, resume, and retry
+
+Every resume or retry begins with a fresh verified load and an explicit
+reconciliation write phase. A valid journal head refreshes lagging attempt,
+task, and root checkpoints. One prior running attempt is recovered only from
+its claim event's reserved run UUID: the exact expected RunManifest must verify
+and match the immutable task/resolved specification. A missing expected output
+interrupts the attempt; a corrupt or mismatched expected output is refused.
+Unrelated run directories remain unreferenced and never imply success.
+
+`Study.resume()` runs pending tasks and interrupted tasks that remain below the
+persisted attempt bound. It never reruns success and does not include failed
+tasks unless `retry_failed=True` is explicit. `Study.retry(failed_only=True)`
+selects retryable failed tasks; `failed_only=False` also selects interrupted
+tasks. Each retry keeps the task ID and immutable earlier attempts, while using
+a fresh attempt, execution, and run UUID. Objective-execution failures are
+retryable; deterministic reconstruction/configuration and integrity failures
+are not. The persisted default limit is three attempts.
+
+Both methods return a freshly loaded immutable `Study`; the calling handle
+remains a snapshot. When no eligible task exists, resume returns a fresh handle
+without adding an event or changing a byte. Before any new claim, persisted
+built-in configuration is reconstructed and prior canonical run evidence, when
+present, must match the current material environment exactly. There is no
+environment-change override in this slice.
 
 ## Identities and immutable view
 
@@ -133,9 +165,9 @@ identities and root-relative references.
 
 ## Deliberate limits
 
-There is no resume, retry, study CLI, parallelism, cross-process ownership
-guarantee, lock, lease, heartbeat, worker, migration, summary, or CSV behavior
-in this slice. Calling `run()` on `running`, `paused`, `completed`,
+There is no study CLI, parallelism, cross-process ownership guarantee, lock,
+lease, heartbeat, worker, migration, summary, or CSV behavior in this slice.
+Calling `run()` on `running`, `paused`, `completed`,
 `completed_with_failures`, `failed`, or `cancelled` state is an actionable typed
 error. Obvious same-process reentry is also rejected.
 

@@ -160,12 +160,37 @@ class StudyCheckpointError(StudyIntegrityError):
     category = "study_checkpoint"
 
 
+class ReferencedRunMissingError(StudyIntegrityError):
+    category = "referenced_run_missing"
+
+
+class ReferencedRunCorruptError(StudyIntegrityError):
+    category = "referenced_run_corrupt"
+
+
+class RetryNotAllowedError(StudyError):
+    category = "study_retry_not_allowed"
+
+
+class RetryLimitError(RetryNotAllowedError):
+    category = "study_retry_limit"
+
+
+class ResumeEnvironmentIncompatibilityError(StudyInfrastructureError):
+    category = "resume_environment_incompatibility"
+
+
 __all__ = [
     "DuplicateStudyTaskError",
     "InvalidStudySpecError",
     "MalformedStudyError",
     "MissingStudyDocumentError",
     "PlanMismatchError",
+    "ReferencedRunCorruptError",
+    "ReferencedRunMissingError",
+    "ResumeEnvironmentIncompatibilityError",
+    "RetryLimitError",
+    "RetryNotAllowedError",
     "StudyError",
     "StudyEventAppendError",
     "StudyExecutionError",

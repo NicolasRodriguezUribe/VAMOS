@@ -335,11 +335,15 @@ def test_hundred_task_mocked_smoke_selects_by_constant_time_index_without_per_ta
     def checkpoint(_root: Path, manifest: Any, **_kwargs: Any) -> Any:
         return manifest
 
+    def complete(state: Any, _phase: Any, _reload: Any) -> vamos.Study:
+        return load(state.root)
+
     monkeypatch.setattr(execution, "load_study", load)
     monkeypatch.setattr(execution, "_start_execution", start)
-    monkeypatch.setattr(execution, "_run_pending_task", run_task)
+    monkeypatch.setattr(execution, "_run_task_attempt", run_task)
     monkeypatch.setattr(execution, "append_event", append)
     monkeypatch.setattr(execution, "checkpoint_manifest", checkpoint)
+    monkeypatch.setattr(execution, "complete_running", complete)
 
     created.run()
     assert load_calls == 2

@@ -48,22 +48,26 @@ study reader or dual runner remains.
 
 ### Implemented bounded slices
 
-Atomic create/data-only load, the sequential durable runner, and persisted
-failure/cancellation policy are implemented.
+Atomic create/data-only load, the sequential durable runner, persisted
+failure/cancellation policy, and explicit reconciliation/resume/retry are
+implemented.
 `Study.run()` accepts a pristine `created` study, executes ascending `task_id`,
 reconstructs the frozen built-in resolved spec, durably starts one attempt, and
 publishes a fully verified canonical RunManifest before success. Valid newer
 journal events are authoritative during data-only load; loading derives an
 effective view and does not repair checkpoints.
 
-The sequential slice still has no CLI, resume, retry, locks, leases, workers,
-or cross-process guarantee. Its published `on_error` policy is authoritative:
+The sequential slice still has no CLI, locks, leases, workers, or cross-process
+guarantee. Its published `on_error` policy is authoritative:
 a verified task failure pauses fail-fast execution or is retained while
 continue execution advances to `completed_with_failures`. Infrastructure
 failure stops either policy and never becomes a task outcome. `Study.cancel()`
 handles idle cancellation and same-process cooperative requests;
-`KeyboardInterrupt` follows the same durable cancellation protocol. The later
-Goals remain required to realize recovery and coordination parts of this ADR.
+`KeyboardInterrupt` follows the same durable cancellation protocol. Explicit
+reconciliation settles an interrupted single-owner attempt before resume or
+retry claims fresh work. Retry remains explicit and bounded, successful tasks
+never rerun, and the future environment-override and coordination Goals remain
+required to realize those parts of this ADR.
 
 ## Consequences
 
