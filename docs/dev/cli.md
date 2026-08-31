@@ -24,10 +24,10 @@ Do not add an execution mode to inspection or verification. Do not infer success
 ## Required validation
 
 ```bash
-python -m vamos.experiment.cli.main --help
-python -m vamos.experiment.cli.main results inspect --help
-python -m vamos.experiment.cli.main results verify --help
-python -m vamos.experiment.cli.main reproduce --help
+vamos --help
+vamos results inspect --help
+vamos results verify --help
+vamos reproduce --help
 python -m pytest -q tests/experiment/test_cli_consolidation.py tests/experiment/test_cli_config_validation.py tests/experiment/test_cli_run_artifacts.py
 python -m pytest -q tests/docs/test_cli_docs_smoke.py
 ```
@@ -62,10 +62,10 @@ cli: vamos studio --help
 cli: vamos zoo --help
 cli: vamos tune --help
 cli: vamos profile --help
-command: python -m vamos.experiment.cli.main --help
-command: python -m vamos.experiment.cli.main results inspect --help
-command: python -m vamos.experiment.cli.main results verify --help
-command: python -m vamos.experiment.cli.main reproduce --help
+cli: vamos --help
+cli: vamos results inspect --help
+cli: vamos results verify --help
+cli: vamos reproduce --help
 command: python -m pytest -q tests/experiment/test_cli_consolidation.py tests/experiment/test_cli_config_validation.py tests/experiment/test_cli_run_artifacts.py
 command: python -m pytest -q tests/docs/test_cli_docs_smoke.py
 ```

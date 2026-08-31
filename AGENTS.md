@@ -54,6 +54,8 @@ replay = vamos.reproduce(path)
 
 VAMOS supports one run schema: `vamos.run-manifest` version `1.0.0`. A successful run contains `manifest.json`, `result.npz`, and `environment.json`. Writers and readers live under `src/vamos/experiment/artifacts/`; `src/vamos/run_artifacts.py` and the top-level facade expose the public surface.
 
+The approved future durable study schema is `vamos.study-manifest` version `1.0.0`, governed by `docs/dev/study_manifest_contract.md`, ADR 0008, and the complete SA-001 through SA-074 acceptance inventory. Production study persistence is intentionally not implemented yet. Implementation must follow the contract roadmap and keep RunManifest as the sole owner of resolved per-run truth and arrays.
+
 Shared algorithm variation pipelines live only in `src/vamos/engine/variation/`; concrete operator implementations and their registry live under `src/vamos/engine/operators/`. The external archive model is `ExternalArchiveConfig` in `src/vamos/engine/archive/config.py`, and experiment-spec parsing accepts the single `archive.external` block through `build_archive_cfg`.
 
 Research collectors discover `manifest.json` and call the public `load_run`/`load_result` APIs through `experiments/scripts/canonical_runs.py`; they do not infer run data from filenames. The public website uses `website/mkdocs.yml` with `i18n.docs_structure: folder`, Material reconfiguration disabled, and search reconfiguration enabled.
@@ -126,7 +128,7 @@ For a bounded code change, also run Ruff on changed Python, `ruff format --check
 - Quality indicators/metrics: [Adding a metric](docs/dev/add_metric.md)
 - CLI: [Changing the CLI](docs/dev/cli.md)
 - Run artifacts and exact replay: [Run artifacts and replay](docs/dev/run_artifacts_and_replay.md)
-- Studies: [Changing studies](docs/dev/studies.md)
+- Studies: [Changing studies](docs/dev/studies.md), [StudyManifest v1 contract](docs/dev/study_manifest_contract.md), and [acceptance specification](docs/dev/study_manifest_acceptance_tests.md)
 - Testing: [Testing and validation](docs/dev/testing.md)
 
 Follow at most one scoped `AGENTS.md` plus the linked canonical guide. Search the implementation when a task falls outside these routes; do not infer a new extension point from an old example.
@@ -181,6 +183,10 @@ path: docs/dev/add_metric.md
 path: docs/dev/cli.md
 path: docs/dev/run_artifacts_and_replay.md
 path: docs/dev/studies.md
+path: docs/dev/study_manifest_contract.md
+path: docs/dev/study_manifest_acceptance_tests.md
+path: docs/dev/study_manifest_examples/README.md
+path: docs/dev/adr/0008-durable-study-manifest-contract.md
 path: docs/dev/testing.md
 path: docs/dev/typing.md
 path: docs/release_smoke.md
