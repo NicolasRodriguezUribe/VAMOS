@@ -1,0 +1,391 @@
+"""Authoritative event-journal validation and data-only state derivation."""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import Any, NoReturn, cast
+
+from vamos.experiment.artifacts.jsonio import sha256_bytes
+from vamos.experiment.artifacts.models import deep_freeze
+
+from .checkpoint_projection import EffectiveStudyState, project_effective_study, validate_pristine_created_state
+from .errors import StudyCheckpointError, StudyIntegrityError
+from .limits import StudyLoadLimits
+from .models import (
+    AttemptRecord,
+    AttemptState,
+    StudyEvent,
+    StudyManifest,
+    StudyState,
+    TaskRecord,
+    TaskState,
+)
+from .paths import confined_study_path
+from .record_decoding import decode_event
+from .record_loading import ReadDocument, validate_run_reference
+
+_EVENT_FILE_PATTERN = r"(\d{20})\.json"
+_ATTEMPT_TERMINALS = {"succeeded", "failed", "interrupted", "cancelled"}
+_TASK_TERMINALS = {"succeeded", "failed", "interrupted", "cancelled", "skipped"}
+
+
+@dataclass(slots=True)
+class _ReplayState:
+    study_state: StudyState
+    execution_id: str | None
+    updated_at: str
+    task_states: dict[str, TaskState]
+    attempt_states: dict[str, AttemptState]
+    attempts: dict[str, AttemptRecord]
+
+
+def load_event_journal(
+    root: Path,
+    manifest: StudyManifest,
+    limits: StudyLoadLimits,
+    read: ReadDocument,
+) -> tuple[StudyEvent, ...]:
+    """Load the complete journal, including valid events newer than checkpoints."""
+    directory = confined_study_path(root, "events", role="events", must_exist=True)
+    try:
+        names = {entry.name for entry in directory.iterdir()}
+    except OSError as exc:
+        _integrity("UNREADABLE_DOCUMENT_DIRECTORY", "events", "readable event directory", type(exc).__name__, cause=exc)
+    parsed: dict[int, str] = {}
+    for name in names:
+        match = re.fullmatch(_EVENT_FILE_PATTERN, name)
+        if match is None:
+            _integrity("EVENT_HASH_CHAIN_BROKEN", "events", "only 20-digit event JSON files", name)
+        sequence = int(match.group(1))
+        if sequence < 1 or sequence in parsed:
+            _integrity("EVENT_HASH_CHAIN_BROKEN", "events", "unique positive event sequence", sequence)
+        parsed[sequence] = name
+    expected = set(range(1, len(parsed) + 1))
+    if set(parsed) != expected:
+        _integrity("EVENT_HASH_CHAIN_BROKEN", "events", sorted(expected), sorted(parsed))
+    if manifest.checkpoint_sequence > len(parsed):
+        raise StudyCheckpointError(
+            operation="load study",
+            reason="CHECKPOINT_AHEAD_OF_JOURNAL",
+            document_role="study_manifest",
+            field="$.checkpoint.sequence",
+            expected=f"at most journal head {len(parsed)}",
+            actual=manifest.checkpoint_sequence,
+            action="Restore the missing immutable events; checkpoints never lead the journal.",
+        )
+    events: list[StudyEvent] = []
+    event_ids: set[str] = set()
+    previous: str | None = None
+    for sequence in range(1, len(parsed) + 1):
+        relative = f"events/{sequence:020d}.json"
+        raw, payload = read(relative, "study_event", limits.max_event_bytes)
+        event = decode_event(raw, file_sha256=sha256_bytes(payload))
+        if event.sequence != sequence or event.previous_event_sha256 != previous:
+            _integrity(
+                "EVENT_HASH_CHAIN_BROKEN",
+                relative,
+                {"sequence": sequence, "previous_event_sha256": previous},
+                {"sequence": event.sequence, "previous_event_sha256": event.previous_event_sha256},
+            )
+        if event.event_id in event_ids:
+            _integrity("EVENT_HASH_CHAIN_BROKEN", relative, "globally unique event_id", event.event_id)
+        events.append(event)
+        event_ids.add(event.event_id)
+        previous = event.file_sha256
+    checkpoint = events[manifest.checkpoint_sequence - 1]
+    if checkpoint.file_sha256 != manifest.checkpoint_event_sha256:
+        raise StudyCheckpointError(
+            operation="load study",
+            reason="CHECKPOINT_JOURNAL_INCONSISTENCY",
+            document_role="study_manifest",
+            field="$.checkpoint.event_sha256",
+            expected=checkpoint.file_sha256,
+            actual=manifest.checkpoint_event_sha256,
+            action="Restore the root checkpoint matching its referenced journal event.",
+        )
+    return tuple(events)
+
+
+def derive_effective_study(
+    root: Path,
+    manifest: StudyManifest,
+    tasks: tuple[TaskRecord, ...],
+    attempts: tuple[AttemptRecord, ...],
+    events: tuple[StudyEvent, ...],
+) -> EffectiveStudyState:
+    """Return an immutable effective view while leaving lagging files untouched."""
+    if not events:
+        _integrity("EVENT_HASH_CHAIN_BROKEN", "events", "initial study_created event", "empty journal")
+    state = _initial_state(manifest, tasks, attempts, events[0])
+    if len(events) == 1:
+        validate_pristine_created_state(manifest, tasks, attempts)
+    checkpoint_state: _ReplayState | None = None
+    for event in events[1:]:
+        _apply_event(root, state, event, manifest.study_id)
+        if event.sequence == manifest.checkpoint_sequence:
+            checkpoint_state = _copy_state(state)
+    if manifest.checkpoint_sequence == 1:
+        checkpoint_state = _copy_state(state)
+    assert checkpoint_state is not None
+    return project_effective_study(root, manifest, tasks, attempts, events, state, checkpoint_state)
+
+
+def _initial_state(
+    manifest: StudyManifest,
+    tasks: tuple[TaskRecord, ...],
+    attempts: tuple[AttemptRecord, ...],
+    event: StudyEvent,
+) -> _ReplayState:
+    valid = (
+        event.sequence == 1
+        and event.event_type == "study_created"
+        and event.entity_kind == "study"
+        and event.entity_id == manifest.study_id
+        and event.transition_from is None
+        and event.transition_to == "created"
+        and event.execution_id is None
+        and event.timestamp == manifest.created_at
+        and event.reason is None
+        and not event.payload
+    )
+    if not valid:
+        _integrity("INCONSISTENT_INITIAL_STATE", "events/00000000000000000001.json", "canonical study_created", event)
+    return _ReplayState(
+        study_state="created",
+        execution_id=None,
+        updated_at=event.timestamp,
+        task_states={task.task_id: "pending" for task in tasks},
+        attempt_states={attempt.attempt_id: "created" for attempt in attempts},
+        attempts={attempt.attempt_id: attempt for attempt in attempts},
+    )
+
+
+def _apply_event(root: Path, state: _ReplayState, event: StudyEvent, study_id: str) -> None:
+    if event.event_type == "study_created":
+        _integrity("INVALID_STATE_TRANSITION", "study_event", "study_created only at sequence 1", event.sequence)
+    if event.entity_kind == "study":
+        _apply_study_event(state, event, study_id)
+    elif event.entity_kind == "task":
+        _apply_task_event(state, event)
+    elif event.entity_kind == "attempt":
+        _apply_attempt_event(root, state, event)
+    else:
+        _integrity("INVALID_EVENT_ENTITY", "study_event", "study, task, or attempt", event.entity_kind)
+    state.updated_at = event.timestamp
+
+
+def _apply_study_event(state: _ReplayState, event: StudyEvent, study_id: str) -> None:
+    if event.entity_id != study_id:
+        _integrity("STUDY_ID_MISMATCH", "study_event", study_id, event.entity_id)
+    _validate_study_transition(state, event)
+    _validate_study_execution_id(state, event)
+    _validate_study_payload(state, event)
+    state.study_state = cast(StudyState, event.transition_to)
+    state.execution_id = event.execution_id
+
+
+def _validate_study_transition(state: _ReplayState, event: StudyEvent) -> None:
+    targets: dict[str, set[tuple[str, str]]] = {
+        "execution_started": {("created", "running"), ("paused", "running"), ("completed_with_failures", "running")},
+        "study_completed": {("created", "completed"), ("running", "completed")},
+        "study_completed_with_failures": {("running", "completed_with_failures")},
+        "study_paused": {("running", "paused")},
+        "study_failed": {("running", "failed")},
+        "study_cancelled": {("created", "cancelled"), ("running", "cancelled"), ("paused", "cancelled")},
+    }
+    transition = (state.study_state, event.transition_to)
+    if event.event_type not in targets or transition not in targets[event.event_type] or event.transition_from != state.study_state:
+        _integrity("INVALID_STATE_TRANSITION", "study_event", targets.get(event.event_type), transition)
+
+
+def _validate_study_execution_id(state: _ReplayState, event: StudyEvent) -> None:
+    if event.execution_id is None:
+        _integrity("EXECUTION_ID_MISMATCH", "study_event", "UUIDv4 execution_id", None)
+    if event.event_type != "execution_started" and state.execution_id is not None and event.execution_id != state.execution_id:
+        _integrity("EXECUTION_ID_MISMATCH", "study_event", state.execution_id, event.execution_id)
+
+
+def _validate_study_payload(state: _ReplayState, event: StudyEvent) -> None:
+    if event.event_type in {"execution_started", "study_completed"} and (event.reason is not None or event.payload):
+        _integrity("INVALID_EVENT_PAYLOAD", "study_event", "no reason or payload", event)
+    if event.event_type == "study_completed":
+        if state.study_state == "created" and state.task_states:
+            _integrity("INVALID_STATE_TRANSITION", "study_event", "empty created study", len(state.task_states))
+        if state.study_state == "running" and any(value != "succeeded" for value in state.task_states.values()):
+            _integrity("INVALID_STATE_TRANSITION", "study_event", "every task succeeded", dict(state.task_states))
+    if event.event_type == "study_failed" and "failed" not in state.task_states.values():
+        _integrity("INVALID_STATE_TRANSITION", "study_event", "at least one failed task", dict(state.task_states))
+    if event.event_type == "study_failed" and not isinstance(event.reason, Mapping):
+        _integrity("INVALID_EVENT_PAYLOAD", "study_event", "sanitized failure reason", event.reason)
+
+
+def _apply_task_event(state: _ReplayState, event: StudyEvent) -> None:
+    current = state.task_states.get(event.entity_id)
+    if current is None:
+        _integrity("TASK_ID_MISMATCH", "study_event", sorted(state.task_states), event.entity_id)
+    _validate_execution_id(state, event)
+    allowed = {
+        "task_claimed": {("pending", "running"), ("failed", "running"), ("interrupted", "running")},
+        "task_skipped": {("pending", "skipped")},
+    }
+    transition = (current, event.transition_to)
+    if event.event_type not in allowed or transition not in allowed[event.event_type] or event.transition_from != current:
+        _integrity("INVALID_STATE_TRANSITION", "study_event", allowed.get(event.event_type), transition)
+    if event.event_type == "task_claimed":
+        if event.reason is not None or event.payload:
+            _integrity("INVALID_EVENT_PAYLOAD", "study_event", "claim without reason or payload", event)
+        candidates = (
+            attempt
+            for attempt_id, attempt in state.attempts.items()
+            if state.attempt_states[attempt_id] == "created"
+            and attempt.task_id == event.entity_id
+            and attempt.execution_id == event.execution_id
+        )
+        if next(candidates, None) is None:
+            _integrity("INVALID_STATE_TRANSITION", "study_event", "durable created attempt for claim", event.entity_id)
+    state.task_states[event.entity_id] = cast(TaskState, event.transition_to)
+
+
+def _apply_attempt_event(root: Path, state: _ReplayState, event: StudyEvent) -> None:
+    attempt, current = _attempt_context(state, event)
+    target = _attempt_transition_target(current, event)
+    if event.event_type == "attempt_started" and (event.reason is not None or event.payload):
+        _integrity("INVALID_EVENT_PAYLOAD", "study_event", "attempt start without reason or payload", event)
+    if target in _ATTEMPT_TERMINALS:
+        attempt = _apply_terminal_attempt(root, state, event, attempt, target)
+    else:
+        attempt = _apply_running_attempt(state, event, attempt)
+    state.attempts[event.entity_id] = attempt
+    state.attempt_states[event.entity_id] = target
+
+
+def _attempt_context(state: _ReplayState, event: StudyEvent) -> tuple[AttemptRecord, AttemptState]:
+    attempt = state.attempts.get(event.entity_id)
+    current = state.attempt_states.get(event.entity_id)
+    if attempt is None or current is None:
+        _integrity("ATTEMPT_ID_MISMATCH", "study_event", "persisted attempt", event.entity_id)
+    _validate_execution_id(state, event)
+    if event.execution_id != attempt.execution_id:
+        _integrity("EXECUTION_ID_MISMATCH", "study_event", attempt.execution_id, event.execution_id)
+    return attempt, current
+
+
+def _attempt_transition_target(current: AttemptState, event: StudyEvent) -> AttemptState:
+    targets = {
+        "attempt_started": "running",
+        "attempt_succeeded": "succeeded",
+        "attempt_failed": "failed",
+        "attempt_interrupted": "interrupted",
+        "attempt_cancelled": "cancelled",
+    }
+    target = targets.get(event.event_type)
+    expected_from = "created" if event.event_type == "attempt_started" else "running"
+    if target is None or current != expected_from or event.transition_from != current or event.transition_to != target:
+        _integrity(
+            "INVALID_ATTEMPT_TRANSITION",
+            "study_event",
+            {"from": expected_from, "to": target},
+            {"from": event.transition_from, "to": event.transition_to},
+        )
+    return cast(AttemptState, target)
+
+
+def _apply_terminal_attempt(
+    root: Path,
+    state: _ReplayState,
+    event: StudyEvent,
+    attempt: AttemptRecord,
+    target: AttemptState,
+) -> AttemptRecord:
+    task_id = attempt.task_id
+    payload = _terminal_payload(root, event, task_id, target)
+    timestamps = dict(attempt.timestamps)
+    timestamps["started_at"] = timestamps.get("started_at") or event.timestamp
+    timestamps["completed_at"] = event.timestamp
+    terminal = replace(
+        attempt,
+        status=target,
+        timestamps=deep_freeze(timestamps),
+        failure=payload.get("failure"),
+        run_reference=payload.get("run_reference"),
+    )
+    task_current = state.task_states.get(task_id)
+    if task_current != "running":
+        _integrity("INVALID_STATE_TRANSITION", "study_event", "running task", task_current)
+    state.task_states[task_id] = cast(TaskState, target)
+    return terminal
+
+
+def _apply_running_attempt(state: _ReplayState, event: StudyEvent, attempt: AttemptRecord) -> AttemptRecord:
+    task_id = attempt.task_id
+    if state.task_states.get(task_id) != "running":
+        _integrity("INVALID_STATE_TRANSITION", "study_event", "running task before attempt start", state.task_states.get(task_id))
+    timestamps = dict(attempt.timestamps)
+    timestamps["started_at"] = event.timestamp
+    return replace(attempt, status="running", timestamps=deep_freeze(timestamps))
+
+
+def _terminal_payload(root: Path, event: StudyEvent, task_id: str, status: str) -> Mapping[str, Any]:
+    payload = event.payload
+    if status in {"interrupted", "cancelled"}:
+        if payload:
+            _integrity("INVALID_TERMINAL_EVENT", "study_event", {}, dict(payload))
+        return cast(Mapping[str, Any], deep_freeze({"failure": None, "run_reference": None}))
+    expected_fields = {"task_id", "run_reference"} | ({"failure"} if status == "failed" else set())
+    if set(payload) != expected_fields or payload.get("task_id") != task_id:
+        _integrity("INVALID_TERMINAL_EVENT", "study_event", sorted(expected_fields), dict(payload))
+    reference = payload.get("run_reference")
+    if not isinstance(reference, Mapping):
+        _integrity("INVALID_TERMINAL_EVENT", "study_event", "run_reference object", reference)
+    validate_run_reference(root, reference, expected_task_id=task_id, expected_status=status)
+    failure = payload.get("failure")
+    if status == "failed" and not isinstance(failure, Mapping):
+        _integrity("INVALID_TERMINAL_EVENT", "study_event", "sanitized failure object", failure)
+    if status == "succeeded" and event.reason is not None:
+        _integrity("INVALID_TERMINAL_EVENT", "study_event", "no success reason", event.reason)
+    if status == "failed" and event.reason != failure:
+        _integrity("INVALID_TERMINAL_EVENT", "study_event", "failure reason equal to payload failure", event.reason)
+    return cast(Mapping[str, Any], deep_freeze(payload))
+
+
+def _validate_execution_id(state: _ReplayState, event: StudyEvent) -> None:
+    if state.execution_id is None or event.execution_id != state.execution_id:
+        _integrity("EXECUTION_ID_MISMATCH", "study_event", state.execution_id, event.execution_id)
+
+
+def _copy_state(state: _ReplayState) -> _ReplayState:
+    return _ReplayState(
+        study_state=state.study_state,
+        execution_id=state.execution_id,
+        updated_at=state.updated_at,
+        task_states=dict(state.task_states),
+        attempt_states=dict(state.attempt_states),
+        attempts=dict(state.attempts),
+    )
+
+
+def _integrity(
+    reason: str,
+    role: str,
+    expected: object,
+    actual: object,
+    *,
+    cause: Exception | None = None,
+) -> NoReturn:
+    error = StudyIntegrityError(
+        operation="load study",
+        reason=reason,
+        document_role=role,
+        expected=expected,
+        actual=actual,
+        action="Restore the contiguous authoritative journal and matching checkpoints.",
+    )
+    if cause is None:
+        raise error
+    raise error from cause
+
+
+__all__ = ["EffectiveStudyState", "derive_effective_study", "load_event_journal"]

@@ -23,6 +23,13 @@ class StudyError(Exception):
         field: str | None = None,
         path: str | Path | None = None,
         entity_id: str | None = None,
+        study_id: str | None = None,
+        task_id: str | None = None,
+        attempt_id: str | None = None,
+        current_state: str | None = None,
+        expected_state: str | None = None,
+        objective_evaluation_began: bool = False,
+        canonical_run_published: bool = False,
         published: bool = False,
     ) -> None:
         self.operation = operation
@@ -34,8 +41,15 @@ class StudyError(Exception):
         self.field = field
         self.path = str(path) if path is not None else None
         self.entity_id = entity_id
+        self.study_id = study_id
+        self.task_id = task_id
+        self.attempt_id = attempt_id
+        self.current_state = current_state
+        self.expected_state = expected_state
+        self.objective_evaluation_began = objective_evaluation_began
+        self.canonical_run_published = canonical_run_published
         self.published = published
-        self.execution_occurred = False
+        self.execution_occurred = objective_evaluation_began
         location = field or document_role or entity_id or "study"
         if self.path is not None:
             location = f"{location} at {self.path}"
@@ -54,6 +68,13 @@ class StudyError(Exception):
             "field": self.field,
             "path": self.path,
             "entity_id": self.entity_id,
+            "study_id": self.study_id,
+            "task_id": self.task_id,
+            "attempt_id": self.attempt_id,
+            "current_state": self.current_state,
+            "expected_state": self.expected_state,
+            "objective_evaluation_began": self.objective_evaluation_began,
+            "canonical_run_published": self.canonical_run_published,
             "published": self.published,
             "execution_occurred": self.execution_occurred,
         }
@@ -107,6 +128,38 @@ class StudyInfrastructureError(StudyError):
     category = "study_infrastructure"
 
 
+class UnsupportedStudyExecutionStateError(StudyError):
+    category = "study_execution_state"
+
+
+class InvalidStudyTransitionError(StudyError):
+    category = "study_transition"
+
+
+class StudyExecutionError(StudyError):
+    category = "study_execution"
+
+
+class StudyRunPublicationError(StudyInfrastructureError):
+    category = "study_run_publication"
+
+
+class StudyRunVerificationError(StudyInfrastructureError):
+    category = "study_run_verification"
+
+
+class StudyFinalizationError(StudyInfrastructureError):
+    category = "study_finalization"
+
+
+class StudyEventAppendError(StudyInfrastructureError):
+    category = "study_event_append"
+
+
+class StudyCheckpointError(StudyIntegrityError):
+    category = "study_checkpoint"
+
+
 __all__ = [
     "DuplicateStudyTaskError",
     "InvalidStudySpecError",
@@ -114,11 +167,19 @@ __all__ = [
     "MissingStudyDocumentError",
     "PlanMismatchError",
     "StudyError",
+    "StudyEventAppendError",
+    "StudyExecutionError",
+    "StudyFinalizationError",
     "StudyInfrastructureError",
     "StudyIntegrityError",
+    "StudyCheckpointError",
+    "InvalidStudyTransitionError",
     "StudyOutputCollisionError",
+    "StudyRunPublicationError",
+    "StudyRunVerificationError",
     "StudyResourceLimitError",
     "UnresolvedStudyTaskError",
     "UnsafeStudyPathError",
     "UnsupportedStudySchemaError",
+    "UnsupportedStudyExecutionStateError",
 ]

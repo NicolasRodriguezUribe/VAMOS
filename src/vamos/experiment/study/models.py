@@ -1,4 +1,4 @@
-"""Immutable models for the first StudyManifest v1 vertical slice."""
+"""Immutable models for planned and sequentially executed StudyManifest v1 roots."""
 
 from __future__ import annotations
 
@@ -293,6 +293,7 @@ class Study:
     spec: StudySpec
     plan: ResolvedStudyPlan
     tasks: tuple[TaskRecord, ...]
+    attempts: tuple[AttemptRecord, ...] = field(repr=False)
     events: tuple[StudyEvent, ...] = field(repr=False)
 
     @property
@@ -306,6 +307,12 @@ class Study:
     @property
     def status(self) -> StudyState:
         return self.manifest.state
+
+    def run(self) -> Study:
+        """Execute this newly created durable study sequentially."""
+        from .execution import run_study
+
+        return run_study(self)
 
 
 __all__ = [

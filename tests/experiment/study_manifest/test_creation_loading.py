@@ -234,7 +234,7 @@ def test_sa_069_top_level_factories_return_public_study_handles(tmp_path: Path) 
     assert isinstance(loaded, Study)
     assert created.study_id == loaded.study_id
     assert created.plan_id == loaded.plan_id
-    assert not hasattr(created, "run")
+    assert hasattr(created, "run")
     assert not hasattr(created, "resume")
     assert not hasattr(created, "retry")
 

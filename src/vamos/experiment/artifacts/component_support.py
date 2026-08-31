@@ -31,7 +31,13 @@ BUILT_IN_TERMINATIONS = ("max_evaluations", "hv")
 
 def component_reconstructability(manifest: RunManifest) -> tuple[ComponentStatus, tuple[VerificationReason, ...]]:
     """Assess identifiers/providers without resolving or instantiating components."""
-    resolved = manifest.resolved_spec
+    return resolved_component_reconstructability(manifest.resolved_spec)
+
+
+def resolved_component_reconstructability(
+    resolved: Mapping[str, Any],
+) -> tuple[ComponentStatus, tuple[VerificationReason, ...]]:
+    """Assess a persisted resolved spec without requiring a RunManifest."""
     checks = (
         _check_descriptor(resolved.get("problem"), "problem", "vamos.problem", frozenset(get_problem_specs())),
         _check_descriptor(resolved.get("algorithm"), "algorithm", "vamos.algorithm", BUILT_IN_ALGORITHMS),
@@ -153,4 +159,5 @@ __all__ = [
     "BUILT_IN_OPERATORS",
     "BUILT_IN_TERMINATIONS",
     "component_reconstructability",
+    "resolved_component_reconstructability",
 ]

@@ -136,6 +136,62 @@ def save_failed_replay(
     limits: LoadLimits | None = None,
 ) -> StoredRun:
     """Persist a failed replay attempt after optimization has begun."""
+    return _save_failed_execution(
+        path,
+        run_id=run_id,
+        requested_spec=requested_spec,
+        resolved_spec=resolved_spec,
+        failure=failure,
+        outcome=outcome,
+        timestamps=timestamps,
+        entry_point={"kind": "replay", "python": {"callable": "vamos.reproduce", "arguments_source": "resolved_spec"}},
+        replayability_reason="replay_execution_failed",
+        lineage=lineage,
+        limits=limits,
+    )
+
+
+def save_failed_execution(
+    path: str | Path,
+    *,
+    run_id: str,
+    requested_spec: Mapping[str, Any],
+    resolved_spec: Mapping[str, Any],
+    failure: Mapping[str, Any],
+    outcome: Mapping[str, Any],
+    timestamps: Mapping[str, str],
+    limits: LoadLimits | None = None,
+) -> StoredRun:
+    """Persist one failed normal built-in execution through the canonical writer."""
+    return _save_failed_execution(
+        path,
+        run_id=run_id,
+        requested_spec=requested_spec,
+        resolved_spec=resolved_spec,
+        failure=failure,
+        outcome=outcome,
+        timestamps=timestamps,
+        entry_point={"kind": "python_api", "python": {"callable": "Study.run", "arguments_source": "resolved_spec"}},
+        replayability_reason="study_execution_failed",
+        lineage=None,
+        limits=limits,
+    )
+
+
+def _save_failed_execution(
+    path: str | Path,
+    *,
+    run_id: str,
+    requested_spec: Mapping[str, Any],
+    resolved_spec: Mapping[str, Any],
+    failure: Mapping[str, Any],
+    outcome: Mapping[str, Any],
+    timestamps: Mapping[str, str],
+    entry_point: Mapping[str, Any],
+    replayability_reason: str,
+    lineage: Mapping[str, Any] | None,
+    limits: LoadLimits | None,
+) -> StoredRun:
     active_limits = limits if limits is not None else LoadLimits()
     resolved = normalize_json(resolved_spec, field="$.resolved_spec")
     requested = normalize_json(requested_spec, field="$.requested_spec")
@@ -145,7 +201,7 @@ def save_failed_replay(
     provenance, environment = capture_provenance(
         backend=backend,
         timestamps=timestamps,
-        entry_point={"kind": "replay", "python": {"callable": "vamos.reproduce", "arguments_source": "resolved_spec"}},
+        entry_point=entry_point,
     )
     manifest: dict[str, Any] = {
         "document_type": DOCUMENT_TYPE,
@@ -161,13 +217,14 @@ def save_failed_replay(
             "declared_level": "unavailable",
             "deterministic": _declared_deterministic(resolved),
             "exact_requirements": [],
-            "reasons": [{"code": "replay_execution_failed", "message": "The replay attempt did not produce a result."}],
+            "reasons": [{"code": replayability_reason, "message": "The execution did not produce a usable result."}],
         },
         "outcome": dict(outcome),
         "failure": dict(failure),
-        "lineage": dict(lineage),
         "artifacts": [],
     }
+    if lineage is not None:
+        manifest["lineage"] = dict(lineage)
     store_failed_run(Path(path), environment=environment, manifest_base=manifest, limits=active_limits)
     return read_run(Path(path), verify="all", limits=active_limits)
 
@@ -250,7 +307,7 @@ def _timestamps(meta: Mapping[str, Any]) -> tuple[dict[str, str], float]:
 
 def _outcome(
     result: ResultLike,
-    arrays: Mapping[str, np.ndarray],
+    arrays: Mapping[str, np.ndarray[Any, Any]],
     *,
     resolved: Mapping[str, Any],
     runtime_ms: float,
@@ -365,4 +422,4 @@ def _result_data_mapping(result: ResultLike) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
 
 
-__all__ = ["ResultLike", "load_result", "load_run", "save_failed_replay", "save_result"]
+__all__ = ["ResultLike", "load_result", "load_run", "save_failed_execution", "save_failed_replay", "save_result"]

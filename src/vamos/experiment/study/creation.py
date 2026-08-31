@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import os
 import shutil
 import uuid
@@ -28,6 +27,7 @@ from .loading import load_study
 from .models import DocumentReference, ResolvedStudyPlan, Study, StudySpec
 from .planning import resolve_spec
 from .serialization import stored_document_bytes
+from .writing import fsync_directory, write_bytes_atomic
 
 _PhaseHook = Callable[[str], None]
 
@@ -88,7 +88,7 @@ def publish_study(
         owns_staging = True
         hook("staging_created")
         _populate_staging(staging, spec=spec, plan=plan, hook=hook)
-        _fsync_directory(staging)
+        fsync_directory(staging)
         hook("documents_written")
         load_study(staging, limits=configured)
         hook("staging_verified")
@@ -96,7 +96,7 @@ def publish_study(
         hook("before_publish")
         os.rename(staging, destination)
         published = True
-        _fsync_directory(destination.parent)
+        fsync_directory(destination.parent)
         hook("published")
         return load_study(destination, limits=configured)
     except StudyError:
@@ -127,14 +127,14 @@ def _populate_staging(staging: Path, *, spec: StudySpec, plan: ResolvedStudyPlan
 
     spec_doc = study_spec_document(spec, study_id)
     spec_bytes = stored_document_bytes(spec_doc)
-    _write_bytes_atomic(staging / "study-spec.json", spec_bytes)
+    write_bytes_atomic(staging / "study-spec.json", spec_bytes)
     hook("spec_written")
 
     plan_doc = plan_document(plan)
     if semantic_hash(plan_doc) != plan.document_sha256:
         raise AssertionError("resolved plan semantic hash changed during document construction")
     plan_bytes = stored_document_bytes(plan_doc)
-    _write_bytes_atomic(staging / "plan.json", plan_bytes)
+    write_bytes_atomic(staging / "plan.json", plan_bytes)
     hook("plan_written")
 
     for task in plan.tasks:
@@ -144,12 +144,12 @@ def _populate_staging(staging: Path, *, spec: StudySpec, plan: ResolvedStudyPlan
             task=task,
             max_attempts_per_task=spec.max_attempts_per_task,
         )
-        _write_bytes_atomic(staging / "tasks" / digest / "task.json", stored_document_bytes(task_doc))
+        write_bytes_atomic(staging / "tasks" / digest / "task.json", stored_document_bytes(task_doc))
     hook("tasks_written")
 
     event_doc = initial_event_document(study_id=study_id, event_id=event_id, timestamp=timestamp)
     event_bytes = stored_document_bytes(event_doc)
-    _write_bytes_atomic(staging / "events" / "00000000000000000001.json", event_bytes)
+    write_bytes_atomic(staging / "events" / "00000000000000000001.json", event_bytes)
     hook("event_written")
 
     manifest_doc = manifest_document(
@@ -163,7 +163,7 @@ def _populate_staging(staging: Path, *, spec: StudySpec, plan: ResolvedStudyPlan
         plan_reference=_reference("plan.json", "resolved_plan", plan_doc, plan_bytes),
         event_sha256=sha256_bytes(event_bytes),
     )
-    _write_bytes_atomic(staging / "study-manifest.json", stored_document_bytes(manifest_doc))
+    write_bytes_atomic(staging / "study-manifest.json", stored_document_bytes(manifest_doc))
     hook("manifest_written")
 
 
@@ -181,25 +181,6 @@ def _reference(
         sha256=sha256_bytes(payload),
         bytes=len(payload),
     )
-
-
-def _write_bytes_atomic(path: Path, payload: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    # Keep the owned name short enough for deep task paths on Windows. The
-    # enclosing staging root is already unique to this writer.
-    temporary = path.with_name(f".tmp-{uuid.uuid4().hex[:8]}")
-    try:
-        with temporary.open("xb") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        _fsync_directory(path.parent)
-    finally:
-        try:
-            temporary.unlink(missing_ok=True)
-        except OSError:
-            logging.getLogger(__name__).warning("Could not remove owned temporary file %s", temporary, exc_info=True)
 
 
 def _reject_existing(path: Path) -> None:
@@ -226,16 +207,6 @@ def _remove_owned_staging(staging: Path, *, parent: Path, token: str) -> None:
     if resolved_parent != resolved_staging_parent or not staging.name.endswith(expected_suffix):
         return
     shutil.rmtree(staging)
-
-
-def _fsync_directory(path: Path) -> None:
-    if os.name == "nt":
-        return
-    descriptor = os.open(path, os.O_RDONLY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
 
 
 def _publication_phase(_phase: str) -> None:
