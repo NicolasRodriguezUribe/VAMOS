@@ -1,6 +1,6 @@
 # VAMOS durable study and StudyManifest v1 contract
 
-Status: approved pre-release contract; create/load, sequential execution, failure policy, cancellation, reconciliation, resume, and retry implemented
+Status: approved pre-release contract; create/load, sequential execution, failure policy, cancellation, reconciliation, resume, retry, and read-only planning preflight implemented
 
 Primary document identity: `vamos.study-manifest`
 
@@ -17,11 +17,12 @@ It covers study intent, immutable planning, task and attempt identity, durable
 state, failure policy, retry, resume, crash recovery, local concurrency,
 canonical run references, inspection, and derived summaries. The contract is
 implementation-independent. The immutable models, deterministic planner,
-atomic creator, data-only loader, journal derivation, and single-process
+read-only `plan_study` report and `vamos study plan` command, atomic creator,
+data-only loader, journal derivation, and single-process
 sequential `Study.run()` slice with persisted failure policy and graceful
 cancellation, explicit reconciliation writes, resume, and bounded retry are
-implemented. CLI commands, locks, leases, parallelism, and summaries remain
-deferred.
+implemented. Stateful CLI commands, locks, leases, parallelism, and summaries
+remain deferred.
 
 VAMOS is pre-release. Version `1.0.0` is the only study schema. There is no
 reader, detector, migration, alias, fallback layout, or deprecation period for
@@ -46,11 +47,12 @@ that format and never redefines it.
 
 ### Non-goals
 
-This contract does not itself supply implementation. The current bounded slice
-does not implement CLI, parallel workers, distributed
+This contract does not itself supply implementation. The current bounded slices
+do not implement state-mutating study CLI, parallel workers, distributed
 coordination, Studio integration, new algorithms, or typing-debt reduction. It
-does not support plan mutation, successful-task force retry, custom-code
-loading, legacy study formats, or migration.
+Read-only planning is available through Python and CLI. The implementation does
+not support plan mutation, successful-task force retry, custom-code loading,
+legacy study formats, or migration.
 
 ## 2. Evidence from the current implementation
 
@@ -119,7 +121,7 @@ freshly loaded immutable `Study`. It executes in ascending `task_id` order;
 with full verification before `attempt_succeeded` enters the journal.
 
 This slice deliberately has no coordination path, lock, lease, heartbeat,
-worker identity, cross-process ownership guarantee, parallelism, CLI, or
+worker identity, cross-process ownership guarantee, parallelism, state-mutating CLI, or
 summary. Cancellation is durable but limited to an idle transition or a
 cooperative request in the active runner's process. Obvious same-process
 reentry is rejected. An empty study follows the direct `created` to `completed`
@@ -648,7 +650,7 @@ Three alternatives were considered:
 The currently supported public surface is:
 
 ```python
-from vamos import StudySpec, create_study, load_study
+from vamos import StudySpec, create_study, load_study, plan_study
 
 spec = StudySpec(
     problems=["zdt1", "zdt2"],
@@ -656,11 +658,15 @@ spec = StudySpec(
     seeds=[0, 1],
     max_evaluations=10_000,
 )
+report = plan_study(spec, output="studies/comparison-01")  # read-only
 created = create_study(spec, output="studies/comparison-01")
 completed = created.run()
 loaded = load_study("studies/comparison-01")  # data-only
 ```
 
+`plan_study` and `create_study` use the same canonical resolver and therefore
+produce identical plan IDs, task IDs, resolved inputs, and ordering.
+`plan_study` publishes nothing and any output availability result is advisory.
 `create_study` resolves and atomically publishes but executes nothing.
 `load_study` is data-only. `run()` is valid only on a pristine `created` handle,
 accepts no arguments, follows the persisted policy, and returns a new loaded
@@ -681,8 +687,20 @@ The existing top-level in-memory `StudyResult` returned by multi-seed
 
 ## 20. Public CLI and output
 
-This is the target CLI contract and is not implemented by the current
-sequential slice. Creation and execution remain deliberately separate:
+Read-only planning is implemented independently of the persisted-state command
+roadmap:
+
+```text
+vamos study plan CONFIG [--output STUDY_DIR] [--json]
+```
+
+It accepts the documented JSON `StudySpec` field set, resolves the same plan as
+`create_study`, and emits one `vamos.study-plan-result` version `1.0.0`
+document in JSON mode. It never creates, reserves, or modifies the proposed
+output and never evaluates an objective.
+
+The remaining target CLI contract is not implemented by the current sequential
+slice. Creation and execution remain deliberately separate:
 
 ```text
 vamos study create CONFIG --output STUDY_DIR
@@ -700,7 +718,7 @@ current task/attempt, failures, final completeness, result locations, and safe
 next command. Output collision is checked before resolution publication and no
 `--force`, overwrite, or layout-detection option exists.
 
-Every command supports `--json`. JSON mode emits one UTF-8 document on stdout
+Every future persisted-state command supports `--json`. JSON mode emits one UTF-8 document on stdout
 with identity `vamos.study-command-result/1`, operation, IDs, state/counts,
 changed flag, errors, and next action. Progress goes to stderr only when
 explicitly requested; noninteractive JSON has no prompts or ANSI text.
@@ -765,7 +783,7 @@ change.
 | 2. Sequential durable runner (implemented) | `Study.run()` reserves one task at a time, reconstructs persisted science, publishes verified canonical runs, and commits attempts/events/checkpoints. | No configurable policy, cancellation, retry, resume, coordination, or workers. | SA-021..026 and SA-061..065 under the bounded-slice clarifications. | Adds the durable path without delegating to the old caller path; caller replacement remains deferred. | Revert before public release and regenerate test studies. |
 | 3. Failure policy and cancellation (implemented) | `fail_fast`, `continue`, task-vs-infrastructure errors, graceful cancellation. | No retry/resume or parallelism. | SA-027..030, task-selection portions of SA-031..032, SA-064..065, and SA-068; stale-process reconciliation remains Goal 4. | Changes durable runner failure behavior intentionally; caller migration remains deferred. | Revert policy Goal; no dual policy. |
 | 4. Reconciliation, resume, and explicit retry (implemented) | Reconciliation writes, interrupted-attempt recovery, pending resume, bounded failed/interrupted retry; reuse the implemented data-only journal replay. | No local parallel scheduling or environment override. | SA-033..047 and SA-049..055 beyond the already implemented data-only derivation; SA-048 remains its explicitly future override. | Prevents old rerun behavior and enforces plan identity. | Revert as one slice; preserved canonical studies remain inspectable only by the current schema revision in development. |
-| 5. Inspect/summary API and CLI plus caller cleanup | Complete top-level/CLI UX, regenerated reports, ablation/benchmark/Studio/analysis migration, delete superseded study paths. | No parallel or distributed workers. | SA-067 and SA-069..074. | Removes pre-release APIs and directory heuristics. | Revert whole caller migration; do not add aliases. |
+| 5. Inspect/summary API and stateful CLI plus caller cleanup | Complete persisted-state UX, regenerated reports, ablation/benchmark/Studio/analysis migration, and delete superseded study paths. Read-only plan preflight is already implemented independently. | No parallel or distributed workers. | SA-067 and SA-069..074. | Removes pre-release APIs and directory heuristics. | Revert whole caller migration; do not add aliases. |
 | 6. Local locking and parallel workers | Study lock, task leases, heartbeats, fencing, path confinement, Windows/POSIX local filesystem tests. | No network filesystem or cross-host execution. | SA-056..060 and SA-066. | Platform filesystem semantics. | Disable/revert the parallel executor; retain sequential service on the same schema. |
 | 7. Distributed coordination | External compare-and-set/lease backend conforming to the same tokens/events. | No schema fork or fallback filesystem claims. | New distributed acceptance IDs in that Goal. | Backend partitions/clock behavior. | Remove the provider; local contract remains canonical. |
 
@@ -813,3 +831,5 @@ For the Goal 4 bounded meanings of SA-031 and SA-036, an explicit operation
 reconciles the ended prior single-process owner immediately; no lease expiry is
 modeled. SA-038 is limited to detectable same-process reentry refusal. Durable
 locks and live cross-process ownership remain Goal 6 work.
+Read-only planning uses the same resolver as creation and is governed by the separate
+[PL-001 through PL-021 specification](study_plan_acceptance_tests.md).

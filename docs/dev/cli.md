@@ -2,7 +2,7 @@
 
 The `vamos` console entry point dispatches through `src/vamos/experiment/cli/main.py`. Base optimization parsing is split across `args.py`, `args_*.py`, `parser.py`, validation, and orchestration; focused subcommands own their parser in a focused module or subsystem.
 
-The current canonical subcommands are `quickstart`, `create-problem`, `summarize`, `open-results`, `results`, `reproduce`, `ablation`, `assist`, `check`, `bench`, `studio`, `zoo`, `tune`, and `profile`. `vamos help` lists them; the standard optimization path uses top-level options without a subcommand.
+The current canonical subcommands are `quickstart`, `create-problem`, `summarize`, `open-results`, `results`, `reproduce`, `study`, `ablation`, `assist`, `check`, `bench`, `studio`, `zoo`, `tune`, and `profile`. `vamos help` lists them; the standard optimization path uses top-level options without a subcommand.
 
 ## Workflow
 
@@ -18,6 +18,7 @@ The canonical run commands have separate responsibilities:
 - `vamos results inspect <run_dir>` reads a concise manifest summary.
 - `vamos results verify <run_dir>` performs inert integrity/environment/component verification.
 - `vamos reproduce <run_dir>` verifies, executes a supported built-in exact replay, compares arrays bitwise, and writes a new canonical run.
+- `vamos study plan <study.json> [--output PATH] [--json]` resolves a durable study without creating or executing it.
 
 Do not add an execution mode to inspection or verification. Do not infer success from a zero-byte or partial output directory.
 
@@ -28,6 +29,7 @@ vamos --help
 vamos results inspect --help
 vamos results verify --help
 vamos reproduce --help
+vamos study plan --help
 python -m pytest -q tests/experiment/test_cli_consolidation.py tests/experiment/test_cli_config_validation.py tests/experiment/test_cli_run_artifacts.py
 python -m pytest -q tests/docs/test_cli_docs_smoke.py
 ```

@@ -134,6 +134,36 @@ def test_cli_guide_zoo_commands_smoke(tmp_path: Path) -> None:
 
 
 @pytest.mark.smoke
+def test_cli_guide_study_plan_is_read_only_json(tmp_path: Path) -> None:
+    source_path = "docs/guide/cli.md"
+    config_path = tmp_path / "study.json"
+    output = tmp_path / "studies" / "comparison-01"
+    config_path.write_text(
+        json.dumps(
+            {
+                "problems": ["zdt1", "zdt2"],
+                "algorithms": ["nsgaii"],
+                "seeds": [0, 1],
+                "max_evaluations": 24,
+                "pop_size": 8,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    proc = _run_vamos("study", "plan", str(config_path), "--output", str(output), "--json")
+
+    assert proc.returncode == 0, f"{source_path}: {proc.stderr or proc.stdout}"
+    payload = json.loads(proc.stdout)
+    assert payload["document_type"] == "vamos.study-plan-result", source_path
+    assert payload["task_count"] == 4, source_path
+    assert payload["output"]["status"] == "available", source_path
+    assert payload["execution_occurred"] is False, source_path
+    assert payload["filesystem_write_occurred"] is False, source_path
+    assert not output.parent.exists(), source_path
+
+
+@pytest.mark.smoke
 def test_cli_guide_tune_smoke_command_smoke(tmp_path: Path) -> None:
     source_path = "docs/guide/cli.md"
     output_root = tmp_path / "tuning"

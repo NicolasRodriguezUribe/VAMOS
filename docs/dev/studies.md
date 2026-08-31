@@ -1,13 +1,15 @@
 # Creating, running, and loading durable studies
 
-StudyManifest v1 separates planning from execution. Creation resolves every
-task and atomically publishes a relocatable directory. `Study.run()` executes a
-newly created study sequentially. `Study.resume()` and `Study.retry()` perform
-explicit single-process recovery. Loading verifies and derives the effective
-state without executing components or repairing checkpoints.
+StudyManifest v1 separates planning from creation and execution. Planning
+resolves and explains the exact immutable plan without publishing anything.
+Creation resolves the same plan and atomically publishes a relocatable
+directory. `Study.run()` executes a newly created study sequentially.
+`Study.resume()` and `Study.retry()` perform explicit single-process recovery.
+Loading verifies and derives the effective state without executing components
+or repairing checkpoints.
 
 ```python
-from vamos import StudySpec, create_study, load_study
+from vamos import StudySpec, create_study, load_study, plan_study
 
 spec = StudySpec(
     problems=["zdt1", "zdt2"],
@@ -17,6 +19,7 @@ spec = StudySpec(
     on_error="fail_fast",  # or "continue"; persisted before execution
 )
 
+report = plan_study(spec, output="studies/example")  # read-only
 created = create_study(spec, output="studies/example")
 completed = created.run()
 loaded = load_study("studies/example")  # data-only
@@ -25,6 +28,33 @@ loaded = load_study("studies/example")  # data-only
 resumed = loaded.resume()  # pending and eligible interrupted tasks
 retried = resumed.retry(failed_only=True)  # explicit failed-task consent
 ```
+
+`report.plan_id` and `report.task_ids` are exactly the identities later stored
+by `create_study` for the same `StudySpec`. The report includes the exact total
+evaluation budget, resolved built-in components, concrete seeds, populations,
+termination categories, failure policy, duplicate result, output status,
+warnings, and next action. Output availability is advisory: planning neither
+creates nor reserves the path, so another process may occupy it afterward.
+
+The equivalent CLI accepts one JSON object whose keys match the `StudySpec`
+constructor:
+
+```json
+{
+  "problems": ["zdt1", "zdt2"],
+  "algorithms": ["nsgaii"],
+  "seeds": [0, 1],
+  "max_evaluations": 10000
+}
+```
+
+```bash
+vamos study plan study.json --output studies/example --json
+```
+
+JSON mode emits one `vamos.study-plan-result` version `1.0.0` document. It
+does not create a study or run a task. After a ready report, create the exact
+plan with `vamos.create_study(spec, output="studies/example")` in Python.
 
 `create_study` performs no optimization. It freezes the problem, dimensions,
 algorithm, typed configuration, operators, backend, evaluation strategy,
@@ -165,7 +195,7 @@ identities and root-relative references.
 
 ## Deliberate limits
 
-There is no study CLI, parallelism, cross-process ownership guarantee, lock,
+There is no state-mutating study CLI, parallelism, cross-process ownership guarantee, lock,
 lease, heartbeat, worker, migration, summary, or CSV behavior in this slice.
 Calling `run()` on `running`, `paused`, `completed`,
 `completed_with_failures`, `failed`, or `cancelled` state is an actionable typed
@@ -198,11 +228,14 @@ path: src/vamos/experiment/artifacts/resolved_reconstruction.py
 path: tests/experiment/study_manifest
 path: docs/dev/study_manifest_contract.md
 path: docs/dev/study_manifest_acceptance_tests.md
+path: docs/dev/study_plan_acceptance_tests.md
 path: docs/dev/study_manifest_examples/README.md
 path: docs/dev/adr/0008-durable-study-manifest-contract.md
 symbol: vamos.study_artifacts:StudySpec
 symbol: vamos.study_artifacts:create_study
 symbol: vamos.study_artifacts:load_study
+symbol: vamos.study_artifacts:plan_study
+cli: vamos study plan --help
 symbol: vamos.experiment.study.models:Study.run
 command: python -m pytest -q tests/experiment/study_manifest
 command: python -m pytest -q tests/experiment/test_ablation_study_api.py tests/experiment/test_cli_ablation.py

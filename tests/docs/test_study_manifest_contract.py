@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs" / "dev"
 EXAMPLES = DOCS / "study_manifest_examples"
 ACCEPTANCE = DOCS / "study_manifest_acceptance_tests.md"
+PLAN_ACCEPTANCE = DOCS / "study_plan_acceptance_tests.md"
 CONTRACT = DOCS / "study_manifest_contract.md"
 
 EXPECTED_EXAMPLES = {
@@ -249,6 +250,7 @@ def test_acceptance_inventory_is_complete_and_fully_populated() -> None:
     [
         CONTRACT,
         ACCEPTANCE,
+        PLAN_ACCEPTANCE,
         DOCS / "studies.md",
         DOCS / "adr" / "0008-durable-study-manifest-contract.md",
         EXAMPLES / "README.md",
@@ -282,4 +284,5 @@ def test_adr_and_navigation_publish_the_contract() -> None:
     assert adr_index.count("0008-durable-study-manifest-contract.md") == 1
     assert nav.count("dev/study_manifest_contract.md") == 1
     assert nav.count("dev/study_manifest_acceptance_tests.md") == 1
+    assert nav.count("dev/study_plan_acceptance_tests.md") == 1
     assert nav.count("dev/adr/0008-durable-study-manifest-contract.md") == 1

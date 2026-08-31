@@ -49,15 +49,15 @@ study reader or dual runner remains.
 ### Implemented bounded slices
 
 Atomic create/data-only load, the sequential durable runner, persisted
-failure/cancellation policy, and explicit reconciliation/resume/retry are
-implemented.
+failure/cancellation policy, explicit reconciliation/resume/retry, and
+read-only planning preflight are implemented.
 `Study.run()` accepts a pristine `created` study, executes ascending `task_id`,
 reconstructs the frozen built-in resolved spec, durably starts one attempt, and
 publishes a fully verified canonical RunManifest before success. Valid newer
 journal events are authoritative during data-only load; loading derives an
 effective view and does not repair checkpoints.
 
-The sequential slice still has no CLI, locks, leases, workers, or cross-process
+The sequential slice still has no state-mutating CLI, locks, leases, workers, or cross-process
 guarantee. Its published `on_error` policy is authoritative:
 a verified task failure pauses fail-fast execution or is retained while
 continue execution advances to `completed_with_failures`. Infrastructure

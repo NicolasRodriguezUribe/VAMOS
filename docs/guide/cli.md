@@ -1,6 +1,9 @@
 # CLI and config files
 
-> Status as of March 31, 2026: the standard single-run CLI path (`vamos --problem ...`), `vamos quickstart`, `vamos create-problem`, CLI `--engine auto`, basic config-driven flows (`vamos --config ...`, `--validate-config`), `vamos bench --smoke`, `vamos tune --backend random --smoke`, `vamos profile`, and the common `vamos zoo` commands are covered by smoke tests. The published README, CLI-guide, and tuning-guide commands now also have command-level smoke coverage. Heavier tuning and broader benchmark matrices still depend on your installed extras and local environment.
+> The standard single-run CLI path, canonical run commands, and read-only
+> durable-study planning are covered by command-level smoke tests. Heavier
+> tuning and broader benchmark matrices still depend on installed extras and
+> the local environment.
 
 Quickstart wizard
 -----------------
@@ -84,6 +87,34 @@ vamos reproduce results/ZDT1/nsgaii/numpy/seed_7 --output results/replays/zdt1-s
 
 Add `--json` to any of these commands for one machine-readable stdout
 document. Replay never overwrites or modifies its source.
+
+Study planning
+--------------
+
+Resolve a durable study before creating a directory or executing an objective:
+
+```json
+{
+  "problems": ["zdt1", "zdt2"],
+  "algorithms": ["nsgaii"],
+  "seeds": [0, 1],
+  "max_evaluations": 10000,
+  "pop_size": 80
+}
+```
+
+```bash
+vamos study plan study.json
+vamos study plan study.json --output studies/comparison-01
+vamos study plan study.json --json
+```
+
+Planning is read-only: it creates no study, runs no task, and does not reserve
+the proposed output. Its `plan_id` and task IDs match later Python
+`vamos.create_study(...)` creation from the same `StudySpec`. JSON mode emits
+exactly one `vamos.study-plan-result` version `1.0.0` document. When output is
+available the next step is to construct the same `StudySpec` and call
+`vamos.create_study(spec, output="studies/comparison-01")`.
 
 Main runner
 -----------

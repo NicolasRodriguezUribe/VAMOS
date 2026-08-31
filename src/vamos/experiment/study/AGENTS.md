@@ -6,7 +6,7 @@ Inherits all repository-wide rules from `/AGENTS.md`. This file contains local d
 
 ## Responsibility and invariants
 
-- `models.py`, `planning.py`, `creation.py`, and `loading.py` own the canonical durable model, immutable plan, atomic creation, and data-only loaded view.
+- `models.py`, `planning.py`, `preflight.py`, `creation.py`, and `loading.py` own the canonical durable model, immutable plan, read-only planning report, atomic creation, and data-only loaded view.
 - `execution.py` owns the no-argument, newly-created-only sequential `Study.run()` path. It executes ascending `task_id`; `plan_index` is presentation metadata. `failure_policy.py` owns persisted fail-fast/continue study outcomes, while `cancellation.py` owns durable single-process cancellation.
 - `journal.py` validates and replays immutable events; `checkpoint_projection.py` validates lagging checkpoints and builds the effective immutable view without writes.
 - `commits.py`, `run_publication.py`, and `writing.py` own event/checkpoint commits, verified RunManifest linkage, task-failure publication, and atomic file primitives. `reconciliation.py` owns evidence-driven recovery writes; `recovery.py` owns resume/retry selection and operation orchestration.
@@ -15,7 +15,7 @@ Inherits all repository-wide rules from `/AGENTS.md`. This file contains local d
 - RunManifest remains the sole authority for resolved per-run truth, environment, provenance, arrays, replayability, and outcome. Study attempts retain only bounded root-relative manifest references.
 - `CSVPersister` exports a derived table only. It is not canonical state and has no compatibility route into StudyManifest.
 - Resume and explicit bounded retry are single-process operations that reconcile before claims and preserve every terminal attempt. Failure policy is fixed in the published spec, and running cancellation is cooperative only within the process that owns the sequential runner.
-- Do not implement locks, leases, parallel workers, study CLI, format migration, or summaries before their ordered contract Goals.
+- Do not implement locks, leases, parallel workers, state-mutating study CLI, format migration, or summaries before their ordered contract Goals. Only `vamos study plan` is available and remains read-only.
 - Preserve task order, explicit seeds, indicator failure reporting, and optional-dependency behavior.
 
 ## Change route
@@ -33,6 +33,7 @@ path: src/vamos/experiment/study/types.py
 path: src/vamos/experiment/study/persistence.py
 path: src/vamos/experiment/study/models.py
 path: src/vamos/experiment/study/planning.py
+path: src/vamos/experiment/study/preflight.py
 path: src/vamos/experiment/study/creation.py
 path: src/vamos/experiment/study/loading.py
 path: src/vamos/experiment/study/execution.py
@@ -48,6 +49,7 @@ path: tests/experiment/test_cli_ablation.py
 path: docs/dev/studies.md
 path: docs/dev/study_manifest_contract.md
 path: docs/dev/study_manifest_acceptance_tests.md
+path: docs/dev/study_plan_acceptance_tests.md
 path: docs/dev/study_manifest_examples/README.md
 path: docs/dev/adr/0008-durable-study-manifest-contract.md
 symbol: vamos.experiment.study.runner:StudyRunner
@@ -57,5 +59,7 @@ symbol: vamos.experiment.study.models:Study.resume
 symbol: vamos.experiment.study.models:Study.retry
 symbol: vamos.study_artifacts:create_study
 symbol: vamos.study_artifacts:load_study
+symbol: vamos.study_artifacts:plan_study
+cli: vamos study plan --help
 command: python -m pytest -q tests/experiment/study_manifest tests/experiment/run_artifacts/test_verification_replay.py tests/experiment/test_ablation_study_api.py tests/experiment/test_cli_ablation.py
 ```
