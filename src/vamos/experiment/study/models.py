@@ -314,6 +314,12 @@ class Study:
 
         return run_study(self)
 
+    def cancel(self) -> Study:
+        """Cancel this study or request cancellation from its local runner."""
+        from .execution import cancel_study
+
+        return cancel_study(self)
+
 
 __all__ = [
     "AttemptRecord",

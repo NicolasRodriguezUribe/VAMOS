@@ -13,6 +13,7 @@ spec = StudySpec(
     algorithms=["nsgaii"],
     seeds=[0, 1],
     max_evaluations=10_000,
+    on_error="fail_fast",  # or "continue"; persisted before execution
 )
 
 created = create_study(spec, output="studies/example")
@@ -84,17 +85,38 @@ view but leaves every byte unchanged. A checkpoint ahead of the journal, a gap,
 a duplicate/forked event, an invalid transition, or an inconsistent run
 reference is an integrity error.
 
-This slice has one fixed safety behavior for reconstruction or objective
-failure after an attempt starts: publish and verify a canonical failed run when
-possible, commit the failed attempt/task and `failed` study state, stop before
-later tasks, and raise `StudyExecutionError`. Persisted failure text is bounded
-and sanitized; the original exception remains only as the in-process cause.
-Publication or verification interruption never fabricates success and leaves
-any complete orphan run unreferenced.
+The published `StudySpec.on_error` is the only execution policy. `run()` accepts
+no policy override. Reconstruction and objective exceptions are task failures:
+the runner first publishes and verifies a canonical failed run, then commits
+the failed attempt and task. Under `fail_fast`, the study becomes `paused` and
+later tasks remain `pending`. Under `continue`, later independent tasks run and
+the final state is `completed_with_failures`. Both outcomes return a freshly
+loaded immutable `Study`; failure details remain bounded and sanitized in the
+attempt, task, and event records.
 
-The fixed stop is not a selectable `fail_fast` policy. Although the existing
-schema retains its previously frozen policy fields, this runner does not branch
-on them and implements neither `fail_fast` nor `continue` semantics.
+Journal, checkpoint, scheduler, publication, verification, integrity, and
+atomic-storage failures are infrastructure failures. They stop both policies
+immediately and raise a typed `StudyInfrastructureError`. When journal and
+checkpoint authority remain trustworthy and writable, the root becomes
+`failed` without inventing a task result. An inability to publish or verify a
+terminal run leaves the attempt/task/study explicitly `running`, with any
+complete run unreferenced, for later reconciliation.
+
+## Cancellation
+
+`Study.cancel()` durably cancels a `created` or `paused` study. Every unclaimed
+task becomes `cancelled`, the study becomes `cancelled`, and the returned handle
+is freshly loaded. If this process currently owns `Study.run()`, `cancel()`
+records an in-memory cooperative request; the runner observes it at the next
+safe boundary, cancels an active attempt without fabricating a RunManifest,
+cancels all unclaimed tasks, and commits `study_cancelled`. The immediate return
+from that request is the current running snapshot; the `run()` return carries
+the terminal cancelled state.
+
+`KeyboardInterrupt` during reconstruction or objective evaluation follows the
+same durable cancellation protocol. A forced process death performs no later
+write and leaves running work for the future reconciliation Goal. This slice
+does not claim that another process can safely cancel a running study.
 
 ## Identities and immutable view
 
@@ -111,11 +133,11 @@ identities and root-relative references.
 
 ## Deliberate limits
 
-There is no resume, retry, cancellation, study CLI, configurable failure policy,
-parallelism, cross-process ownership guarantee, lock, lease, heartbeat, worker,
-migration, summary, or CSV behavior in this slice. Calling `run()` on `running`,
-`paused`, `completed`, `completed_with_failures`, `failed`, or `cancelled` state
-is an actionable typed error. Obvious same-process reentry is also rejected.
+There is no resume, retry, study CLI, parallelism, cross-process ownership
+guarantee, lock, lease, heartbeat, worker, migration, summary, or CSV behavior
+in this slice. Calling `run()` on `running`, `paused`, `completed`,
+`completed_with_failures`, `failed`, or `cancelled` state is an actionable typed
+error. Obvious same-process reentry is also rejected.
 
 The older internal `StudyRunner`/`StudyTask` path remains temporarily for
 existing benchmark and ablation callers. It is not a durable layout or reader,
@@ -136,6 +158,8 @@ path: src/vamos/experiment/study/planning.py
 path: src/vamos/experiment/study/creation.py
 path: src/vamos/experiment/study/loading.py
 path: src/vamos/experiment/study/execution.py
+path: src/vamos/experiment/study/failure_policy.py
+path: src/vamos/experiment/study/cancellation.py
 path: src/vamos/experiment/study/journal.py
 path: src/vamos/experiment/study/checkpoint_projection.py
 path: src/vamos/experiment/artifacts/resolved_reconstruction.py

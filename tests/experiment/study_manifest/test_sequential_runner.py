@@ -10,7 +10,7 @@ import pytest
 import vamos
 from vamos.experiment.artifacts.jsonio import canonical_json_bytes
 from vamos.experiment.optimization_result import OptimizationResult
-from vamos.experiment.study.errors import StudyExecutionError, UnsupportedStudyExecutionStateError
+from vamos.experiment.study.errors import UnsupportedStudyExecutionStateError
 from vamos.experiment.study.identity import compute_task_id
 
 
@@ -252,12 +252,12 @@ def test_objective_failure_is_durable_sanitized_and_stops_later_tasks(tmp_path: 
         raise RuntimeError(f"secret-token at {root}\\private\ntrace")
 
     monkeypatch.setattr(execution, "_execute_optimization", fail)
-    with pytest.raises(StudyExecutionError) as caught:
-        created.run()
+    returned = created.run()
 
     failed = vamos.load_study(root)
     assert calls == 1
-    assert failed.status == "failed"
+    assert returned.status == "paused"
+    assert failed.status == "paused"
     assert failed.manifest.counts.failed == 1
     assert failed.manifest.counts.pending == 1
     assert [task.state for task in failed.tasks].count("failed") == 1
@@ -270,9 +270,7 @@ def test_objective_failure_is_durable_sanitized_and_stops_later_tasks(tmp_path: 
     assert "secret-token" not in serialized
     assert str(root) not in serialized
     assert "traceback" not in serialized.lower()
-    assert caught.value.objective_evaluation_began is True
-    assert caught.value.canonical_run_published is True
-    assert caught.value.__cause__ is not None
+    assert failed.events[-1].event_type == "study_paused"
     reference = attempt.run_reference
     assert reference is not None
     stored = vamos.load_run(root / "runs" / str(reference["run_id"]), verify="all")

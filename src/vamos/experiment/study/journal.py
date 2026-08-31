@@ -216,10 +216,43 @@ def _validate_study_payload(state: _ReplayState, event: StudyEvent) -> None:
             _integrity("INVALID_STATE_TRANSITION", "study_event", "empty created study", len(state.task_states))
         if state.study_state == "running" and any(value != "succeeded" for value in state.task_states.values()):
             _integrity("INVALID_STATE_TRANSITION", "study_event", "every task succeeded", dict(state.task_states))
-    if event.event_type == "study_failed" and "failed" not in state.task_states.values():
-        _integrity("INVALID_STATE_TRANSITION", "study_event", "at least one failed task", dict(state.task_states))
-    if event.event_type == "study_failed" and not isinstance(event.reason, Mapping):
+    if event.event_type == "study_paused":
+        failed_ids = sorted(task_id for task_id, value in state.task_states.items() if value == "failed")
+        triggering_task = event.payload.get("failed_task_id")
+        expected_attempt = _failed_attempt_id(state, triggering_task) if isinstance(triggering_task, str) else None
+        valid_payload = (
+            set(event.payload) == {"failed_task_id", "failed_attempt_id"}
+            and triggering_task in failed_ids
+            and event.payload.get("failed_attempt_id") == expected_attempt
+        )
+        if not valid_payload or not isinstance(event.reason, Mapping):
+            _integrity(
+                "INVALID_EVENT_PAYLOAD",
+                "study_event",
+                "one triggering failed task/attempt retained among all prior failures",
+                event,
+            )
+    if event.event_type == "study_completed_with_failures":
+        failed_ids = sorted(task_id for task_id, value in state.task_states.items() if value == "failed")
+        incomplete = {"pending", "running"}.intersection(state.task_states.values())
+        expected_payload = {"failed_task_ids": tuple(failed_ids)}
+        if incomplete or not failed_ids or dict(event.payload) != expected_payload or not isinstance(event.reason, Mapping):
+            _integrity("INVALID_EVENT_PAYLOAD", "study_event", expected_payload, event)
+    if event.event_type == "study_failed" and (not isinstance(event.reason, Mapping) or event.payload):
         _integrity("INVALID_EVENT_PAYLOAD", "study_event", "sanitized failure reason", event.reason)
+    if event.event_type == "study_cancelled":
+        pending_ids = sorted(task_id for task_id, value in state.task_states.items() if value == "pending")
+        payload_ids = event.payload.get("cancelled_task_ids")
+        if (
+            set(event.payload) != {"cancelled_task_ids"}
+            or not isinstance(payload_ids, tuple)
+            or tuple(payload_ids) != tuple(pending_ids)
+            or not isinstance(event.reason, Mapping)
+            or "running" in state.task_states.values()
+        ):
+            _integrity("INVALID_EVENT_PAYLOAD", "study_event", {"cancelled_task_ids": pending_ids}, event)
+        for task_id in pending_ids:
+            state.task_states[task_id] = "cancelled"
 
 
 def _apply_task_event(state: _ReplayState, event: StudyEvent) -> None:
@@ -283,6 +316,8 @@ def _attempt_transition_target(current: AttemptState, event: StudyEvent) -> Atte
     }
     target = targets.get(event.event_type)
     expected_from = "created" if event.event_type == "attempt_started" else "running"
+    if event.event_type == "attempt_cancelled" and current == "created":
+        expected_from = "created"
     if target is None or current != expected_from or event.transition_from != current or event.transition_to != target:
         _integrity(
             "INVALID_ATTEMPT_TRANSITION",
@@ -313,8 +348,8 @@ def _apply_terminal_attempt(
         run_reference=payload.get("run_reference"),
     )
     task_current = state.task_states.get(task_id)
-    if task_current != "running":
-        _integrity("INVALID_STATE_TRANSITION", "study_event", "running task", task_current)
+    if task_current != "running" and not (target == "cancelled" and task_current == "pending"):
+        _integrity("INVALID_STATE_TRANSITION", "study_event", "running task or pending cancellation", task_current)
     state.task_states[task_id] = cast(TaskState, target)
     return terminal
 
@@ -331,8 +366,8 @@ def _apply_running_attempt(state: _ReplayState, event: StudyEvent, attempt: Atte
 def _terminal_payload(root: Path, event: StudyEvent, task_id: str, status: str) -> Mapping[str, Any]:
     payload = event.payload
     if status in {"interrupted", "cancelled"}:
-        if payload:
-            _integrity("INVALID_TERMINAL_EVENT", "study_event", {}, dict(payload))
+        if payload or (status == "cancelled" and not isinstance(event.reason, Mapping)):
+            _integrity("INVALID_TERMINAL_EVENT", "study_event", "bounded reason and empty payload", event)
         return cast(Mapping[str, Any], deep_freeze({"failure": None, "run_reference": None}))
     expected_fields = {"task_id", "run_reference"} | ({"failure"} if status == "failed" else set())
     if set(payload) != expected_fields or payload.get("task_id") != task_id:
@@ -354,6 +389,15 @@ def _terminal_payload(root: Path, event: StudyEvent, task_id: str, status: str) 
 def _validate_execution_id(state: _ReplayState, event: StudyEvent) -> None:
     if state.execution_id is None or event.execution_id != state.execution_id:
         _integrity("EXECUTION_ID_MISMATCH", "study_event", state.execution_id, event.execution_id)
+
+
+def _failed_attempt_id(state: _ReplayState, task_id: str) -> str | None:
+    matches = [
+        attempt.attempt_id
+        for attempt_id, attempt in state.attempts.items()
+        if attempt.task_id == task_id and state.attempt_states[attempt_id] == "failed"
+    ]
+    return matches[-1] if matches else None
 
 
 def _copy_state(state: _ReplayState) -> _ReplayState:

@@ -13,7 +13,6 @@ from vamos.experiment.optimization_result import OptimizationResult
 from vamos.experiment.study.errors import (
     StudyCheckpointError,
     StudyError,
-    StudyExecutionError,
     StudyInfrastructureError,
     StudyIntegrityError,
     StudyRunPublicationError,
@@ -130,7 +129,9 @@ def test_all_twelve_crash_boundaries_remain_explicit_and_never_fabricate_success
     assert len(success_events) == sum(attempt.status == "succeeded" for attempt in interrupted.attempts)
 
 
-def test_valid_newer_success_event_overrides_stale_checkpoints_without_writing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_valid_success_and_infrastructure_events_override_stale_entity_checkpoints_without_loading_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     import vamos.experiment.study.execution as execution
 
     root = tmp_path / "study"
@@ -153,12 +154,13 @@ def test_valid_newer_success_event_overrides_stale_checkpoints_without_writing(t
     manifest_checkpoint = _raw(root / "study-manifest.json")
     assert task_checkpoint["state"] == "running"
     assert attempt_checkpoint["status"] == "running"
-    assert manifest_checkpoint["checkpoint"]["sequence"] < len(list((root / "events").iterdir()))
+    assert manifest_checkpoint["state"] == "failed"
+    assert manifest_checkpoint["checkpoint"]["sequence"] == len(list((root / "events").iterdir()))
 
     before = _snapshot(root)
     effective = vamos.load_study(root)
     assert _snapshot(root) == before
-    assert effective.status == "running"
+    assert effective.status == "failed"
     assert effective.tasks[0].state == "succeeded"
     assert effective.attempts[0].status == "succeeded"
     assert effective.attempts[0].run_reference is not None
@@ -180,12 +182,11 @@ def test_sa_064_reconstruction_failure_records_failed_run_without_objective(tmp_
         raise ValueError("untrusted reconstruction details C:\\private")
 
     monkeypatch.setattr(execution, "reconstruct_resolved_run", fail)
-    with pytest.raises(StudyExecutionError) as caught:
-        created.run()
+    returned = created.run()
 
     failed = vamos.load_study(root)
-    assert caught.value.objective_evaluation_began is False
-    assert failed.status == "failed"
+    assert returned.status == "paused"
+    assert failed.status == "paused"
     assert failed.attempts[0].status == "failed"
     assert failed.attempts[0].failure is not None
     assert "private" not in repr(dict(failed.attempts[0].failure))

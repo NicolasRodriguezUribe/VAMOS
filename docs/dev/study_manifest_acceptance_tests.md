@@ -1,6 +1,6 @@
 # StudyManifest v1 acceptance specification
 
-Status: normative specification; SA-001..026, SA-061..065, and Python create/load/run are executable in bounded slices
+Status: normative specification; SA-001..030, task-selection boundaries of SA-031..032, SA-061..065, SA-068, and Python create/load/run/cancel are executable in bounded slices
 
 Contract: [Durable study and StudyManifest v1](study_manifest_contract.md)
 
@@ -15,10 +15,13 @@ to the CLI form. No scenario may be implemented as skipped or xfail.
 
 The first production slice implements SA-001 through SA-020 and Python
 create/load. The second implements the bounded sequential meanings of SA-021
-through SA-026 and SA-061 through SA-065 in
-`tests/experiment/study_manifest/`. CLI, selectable policy, cancellation,
-reconciliation writes, resume, retry, coordination, parallelism, summaries, and
-caller migration remain roadmap requirements rather than available behavior.
+through SA-026 and SA-061 through SA-065. The third implements persisted
+fail-fast/continue, task-versus-infrastructure outcomes, graceful cancellation,
+forced-death nonpublication, and no-skip task selection from SA-027 through
+SA-032 plus SA-068 in `tests/experiment/study_manifest/`. Stale-attempt
+reconciliation from SA-031 remains in the recovery Goal. CLI, resume, retry,
+coordination, parallelism, summaries, and caller migration remain roadmap
+requirements rather than available behavior.
 
 Module paths describe intended ownership; implemented rows use their current
 production owner. For direct library-only validation, deferred “CLI JSON” and
@@ -49,7 +52,7 @@ production owner. For direct library-only validation, deferred “CLI JSON” an
 | SA-019 | `study.creation.create_study` | Absent destination and nonempty resolved plan | Valid spec | Create without run | Manifest, spec, plan, event 1, one task file per digest | Study `created`; every task `pending`; no attempts | `Study` and `StudyReport(changed=true)` | `state=created`, next action `run` | 0 | Creation performs zero optimization | Create-and-run coupling |
 | SA-020 | `study.loading.load_study` | Valid planned study exists | Root path | Data-only load | Tree byte-identical | State `created` and tasks `pending` | Persisted `Study` handle | `changed=false` | 0 | Loading has no execution or mutation | Reads with side effects |
 
-## Sequential execution; selectable failure policy remains deferred
+## Sequential execution and persisted failure policy
 
 | ID | Proposed module/function | Precondition | Input | Operation | Expected canonical files | Expected states | Python result | CLI JSON | Exit | Invariant | Defect prevented |
 |---|---|---|---|---|---|---|---|---|---:|---|---|
@@ -111,7 +114,7 @@ production owner. For direct library-only validation, deferred “CLI JSON” an
 | SA-061 | `study.run_reference.validate` | Plan task and canonical run exist | RunManifest with task identity | Attach run | Attempt holds bounded descriptor only | Outcome transition allowed only on exact task match | Valid `RunReference` | Matching run/task IDs | 0 | Study task ID exactly equals RunManifest task ID | Wrong run linked to task |
 | SA-062 | `study.run_reference.from_manifest` | Verified canonical manifest exists | Root-relative manifest path | Build descriptor | Attempt stores path, bytes, file SHA-256, semantic manifest hash, role and operation | State unchanged until outcome event | Immutable descriptor | Descriptor fields in detailed output | 0 | Both byte and semantic integrity are recorded | Hash ambiguity |
 | SA-063 | `study.models.AttemptRecord.validate` | Attempt references a run | Record containing copied spec, arrays, environment, provenance, or replay evidence | Decode | Files unchanged | State not trusted | `MalformedStudyError` | `reason=UNKNOWN_FIELD` or ownership violation | 3 | RunManifest/run files solely own per-run truth | Divergent duplicate artifacts |
-| SA-064 | `study.run_publication.commit_execution_failure` | Reconstruction or objective fails after durable start | Sanitized in-process failure | Commit fixed safety stop | Verified failed run first when publishable, failure event second, terminal attempt/task/root checkpoints | Attempt/task/study `failed`; later tasks remain pending | Raises `StudyExecutionError` after durable evidence | Deferred | Future state-derived | Fixed stop is not selectable `fail_fast`/`continue` policy | Exception-only state |
+| SA-064 | `study.run_publication.commit_task_failure` | Reconstruction or objective fails after durable start | Sanitized in-process failure | Commit policy-owned task failure | Verified failed run first when publishable, failure event second, terminal attempt/task/root checkpoints, then policy terminal event where applicable | Attempt/task `failed`; study `paused` for fail-fast or remains `running` for continue; later tasks follow persisted policy | Fresh partial `Study` after policy finalization | Deferred | Future 6 | Persisted policy applies only after durable task evidence | Exception-only state or competing fixed stop |
 | SA-065 | `study.run_publication.publish_success` | Execution cannot publish or verify a terminal success | Interrupted publication or verification | Stop without reconciliation | No terminal outcome event or run reference; any complete orphan run remains unreferenced | Attempt/task/study remain explicitly running; no success/failure is fabricated | `StudyRunPublicationError` or `StudyRunVerificationError` | Deferred | Future 7/8 | Absence of verified linked output cannot become an outcome; reconciliation is deferred | False success or false failure artifact |
 | SA-066 | `study.paths.confined_path` | Malicious root includes external symlink or unsafe reference | Load, inspect, summarize, or resume | Resolve safely | Outside target never read or written; tree unchanged | State not trusted | `UnsafeStudyPathError` | `reason=UNSAFE_PATH` | 3 | Every operational path is confined without following symlinks | Arbitrary filesystem access |
 | SA-067 | `study.loading.load_study` | Documents contain plugin-like strings and unavailable components | Load or inspect only | Parse and verify data | Tree byte-identical; no imports, shell, network, registry resolution, pickle, or optimization | Persisted state reported when structurally valid | Data-only `Study` or report | `changed=false` | 0 | Reading data never executes it | Manifest code execution |
