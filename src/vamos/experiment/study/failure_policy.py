@@ -62,6 +62,9 @@ def complete_running(
     reload_study: Callable[[Path], Study],
 ) -> Study:
     """Finalize a fully traversed study according to its retained outcomes."""
+    unfinished = [task for task in state.tasks if task.state in {"pending", "interrupted"}]
+    if unfinished:
+        return pause_with_runnable_work(state)
     failed_task_ids = [task.task_id for task in state.tasks if task.state == "failed"]
     completed_state: StudyState = "completed_with_failures" if failed_task_ids else "completed"
     event_type = "study_completed_with_failures" if failed_task_ids else "study_completed"
@@ -103,6 +106,40 @@ def complete_running(
     except Exception as exc:
         raise finalization_error(state.study_id, "running", True, True, state.root, exc) from exc
     return reload_study(state.root)
+
+
+def pause_with_runnable_work(state: FailureExecutionState) -> Study:
+    """Pause an execution that deliberately leaves canonical work unclaimed."""
+    pending = [task.task_id for task in state.tasks if task.state == "pending"]
+    interrupted = [task.task_id for task in state.tasks if task.state == "interrupted"]
+    reason = {
+        "category": "recovery",
+        "code": "RUNNABLE_WORK_REMAINS",
+        "message": "The explicit operation ended with unfinished tasks still available.",
+        "retryable": True,
+        "safe_action": "Resume pending/interrupted work or explicitly retry failed work.",
+    }
+    state.event = append_event(
+        state.root,
+        state.event,
+        event_type="study_paused",
+        entity_kind="study",
+        entity_id=state.study_id,
+        transition_from="running",
+        transition_to="paused",
+        execution_id=state.execution_id,
+        reason=reason,
+        payload={"pending_task_ids": pending, "interrupted_task_ids": interrupted},
+    )
+    state.manifest = checkpoint_manifest(
+        state.root,
+        state.manifest,
+        state="paused",
+        execution_id=state.execution_id,
+        tasks=tuple(state.tasks),
+        event=state.event,
+    )
+    return load_study(state.root)
 
 
 def record_infrastructure_failure(root: Path, error: StudyInfrastructureError) -> StudyInfrastructureError:
@@ -199,4 +236,10 @@ def _task_failure_fallback() -> Mapping[str, Any]:
     )
 
 
-__all__ = ["FailureExecutionState", "complete_running", "pause_after_task_failure", "record_infrastructure_failure"]
+__all__ = [
+    "FailureExecutionState",
+    "complete_running",
+    "pause_after_task_failure",
+    "pause_with_runnable_work",
+    "record_infrastructure_failure",
+]

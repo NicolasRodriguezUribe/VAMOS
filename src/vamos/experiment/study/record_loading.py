@@ -9,11 +9,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NoReturn, Protocol
 
+from vamos.experiment.artifacts.errors import RunArtifactError
 from vamos.experiment.artifacts.jsonio import sha256_bytes
 from vamos.experiment.artifacts.models import LoadLimits, StoredRun
 from vamos.experiment.artifacts.persistence import load_run
 
-from .errors import MalformedStudyError, StudyIntegrityError
+from .errors import (
+    MalformedStudyError,
+    ReferencedRunCorruptError,
+    ReferencedRunMissingError,
+    StudyIntegrityError,
+    UnsafeStudyPathError,
+)
 from .limits import StudyLoadLimits
 from .models import AttemptRecord, AttemptReference, PlanTask, StudyManifest, TaskRecord
 from .paths import confined_study_path
@@ -89,7 +96,21 @@ def validate_run_reference(
     }
     if actual_contract != expected_contract:
         _unexpected("run_reference", expected_contract, actual_contract, reason="RUN_REFERENCE_MISMATCH")
-    manifest_path = confined_study_path(root, expected_path, role="run_manifest", must_exist=True)
+    if not os.path.lexists(root / expected_path):
+        raise ReferencedRunMissingError(
+            operation="load study",
+            reason="REFERENCED_RUN_MISSING",
+            document_role="run_manifest",
+            path=expected_path,
+            entity_id=run_id,
+            expected="complete referenced canonical RunManifest",
+            actual="missing manifest",
+            action="Restore the exact referenced run; resume never replaces lost successful evidence.",
+        )
+    try:
+        manifest_path = confined_study_path(root, expected_path, role="run_manifest", must_exist=True)
+    except UnsafeStudyPathError as exc:
+        raise _run_corrupt(expected_path, run_id, exc) from exc
     try:
         payload = manifest_path.read_bytes()
     except OSError as exc:
@@ -102,7 +123,10 @@ def validate_run_reference(
             actual=type(exc).__name__,
             action="Restore the referenced canonical run directory.",
         ) from exc
-    stored = load_run(manifest_path.parent, verify="all", limits=LoadLimits())
+    try:
+        stored = load_run(manifest_path.parent, verify="all", limits=LoadLimits())
+    except RunArtifactError as exc:
+        raise _run_corrupt(expected_path, run_id, exc) from exc
     semantic = stored.manifest.get("integrity")
     semantic_hash = semantic.get("manifest_sha256") if isinstance(semantic, Mapping) else None
     observed = {
@@ -114,12 +138,52 @@ def validate_run_reference(
     }
     expected = {name: reference.get(name) for name in observed}
     if observed != expected:
-        _unexpected("run_reference", expected, observed, reason="RUN_MANIFEST_HASH_MISMATCH")
+        raise ReferencedRunCorruptError(
+            operation="load study",
+            reason="RUN_MANIFEST_HASH_MISMATCH",
+            document_role="run_reference",
+            path=expected_path,
+            entity_id=run_id,
+            expected=expected,
+            actual=observed,
+            action="Restore the exact referenced canonical run; resume never substitutes evidence.",
+        )
     if stored.manifest.task_id != expected_task_id:
-        _unexpected("run_reference", expected_task_id, stored.manifest.task_id, reason="RUN_TASK_ID_MISMATCH")
+        raise ReferencedRunCorruptError(
+            operation="load study",
+            reason="RUN_TASK_ID_MISMATCH",
+            document_role="run_reference",
+            path=expected_path,
+            entity_id=run_id,
+            expected=expected_task_id,
+            actual=stored.manifest.task_id,
+            action="Restore the run belonging to this exact immutable task.",
+        )
     if expected_status is not None and stored.status != expected_status:
-        _unexpected("run_reference", expected_status, stored.status, reason="RUN_STATUS_MISMATCH")
+        raise ReferencedRunCorruptError(
+            operation="load study",
+            reason="RUN_STATUS_MISMATCH",
+            document_role="run_reference",
+            path=expected_path,
+            entity_id=run_id,
+            expected=expected_status,
+            actual=stored.status,
+            action="Restore the terminal run matching the recorded attempt outcome.",
+        )
     return stored
+
+
+def _run_corrupt(path: str, run_id: str, exc: Exception) -> ReferencedRunCorruptError:
+    return ReferencedRunCorruptError(
+        operation="load study",
+        reason="REFERENCED_RUN_CORRUPT",
+        document_role="run_manifest",
+        path=path,
+        entity_id=run_id,
+        expected="fully verified referenced canonical RunManifest",
+        actual=type(exc).__name__,
+        action="Restore the exact referenced run; corrupt evidence is never converted to pending work.",
+    )
 
 
 def _load_attempts(
@@ -152,6 +216,7 @@ def _load_attempts(
             expected_status = attempt.status if attempt.status in {"succeeded", "failed"} else None
             validate_run_reference(root, attempt.run_reference, expected_task_id=task.task_id, expected_status=expected_status)
         result.append(_LoadedAttempt(attempt, relative, payload))
+    result.sort(key=lambda item: item.record.attempt_number)
     numbers = [item.record.attempt_number for item in result]
     if numbers != list(range(1, len(result) + 1)) or len({item.record.attempt_id for item in result}) != len(result):
         _unexpected("study_attempt", list(range(1, len(result) + 1)), numbers, reason="ATTEMPT_SEQUENCE_MISMATCH")

@@ -320,6 +320,18 @@ class Study:
 
         return cancel_study(self)
 
+    def resume(self, *, retry_failed: bool = False) -> Study:
+        """Reconcile this study and execute its eligible unfinished tasks."""
+        from .recovery import resume_study
+
+        return resume_study(self, retry_failed=retry_failed)
+
+    def retry(self, *, failed_only: bool = True) -> Study:
+        """Explicitly retry eligible terminal attempts without changing the plan."""
+        from .recovery import retry_study
+
+        return retry_study(self, failed_only=failed_only)
+
 
 __all__ = [
     "AttemptRecord",

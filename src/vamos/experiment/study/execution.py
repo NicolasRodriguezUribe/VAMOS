@@ -80,7 +80,7 @@ def run_study(snapshot: Study) -> Study:
             if _consume_cancellation(root):
                 return cancel_loaded(load_study(root), code="USER_CANCELLATION")
             index = state.task_indexes[plan_task.task_id]
-            if _run_pending_task(state, index, plan_task):
+            if _run_task_attempt(state, index, plan_task):
                 return load_study(root)
             if _consume_cancellation(root):
                 return cancel_loaded(load_study(root), code="USER_CANCELLATION")
@@ -201,7 +201,7 @@ def _complete_empty(study: Study) -> Study:
     return load_study(study.root)
 
 
-def _start_execution(study: Study) -> _ExecutionState:
+def _start_execution(study: Study, *, parent_execution_id: str | None = None) -> _ExecutionState:
     execution_id = new_uuid4()
     event = append_event(
         study.root,
@@ -209,9 +209,10 @@ def _start_execution(study: Study) -> _ExecutionState:
         event_type="execution_started",
         entity_kind="study",
         entity_id=study.study_id,
-        transition_from="created",
+        transition_from=study.status,
         transition_to="running",
         execution_id=execution_id,
+        payload={"parent_execution_id": parent_execution_id} if parent_execution_id is not None else None,
     )
     manifest = checkpoint_manifest(
         study.root,
@@ -226,14 +227,14 @@ def _start_execution(study: Study) -> _ExecutionState:
     return _ExecutionState(study.root, study.study_id, execution_id, manifest, tasks, indexes, event)
 
 
-def _run_pending_task(state: _ExecutionState, index: int, plan_task: PlanTask) -> bool:
+def _run_task_attempt(state: _ExecutionState, index: int, plan_task: PlanTask) -> bool:
     task = state.tasks[index]
     state.active_task_id = task.task_id
     state.active_attempt_id = None
     state.active_run_id = None
     state.objective_evaluation_began = False
-    if task.state != "pending":
-        raise state_error_for_task(state, task, "NO_VALID_PENDING_TASK")
+    if task.state not in {"pending", "failed", "interrupted"}:
+        raise state_error_for_task(state, task, "NO_VALID_RUNNABLE_TASK")
     _execution_phase("before_attempt_record_creation")
     attempt_id = new_uuid4()
     run_id = _distinct_run_id(attempt_id)
@@ -244,7 +245,7 @@ def _run_pending_task(state: _ExecutionState, index: int, plan_task: PlanTask) -
         study_id=state.study_id,
         task_id=task.task_id,
         attempt_id=attempt_id,
-        attempt_number=1,
+        attempt_number=len(task.attempts) + 1,
         execution_id=state.execution_id,
         status="created",
         timestamps=deep_freeze({"created_at": created_at, "started_at": None, "completed_at": None}),
@@ -261,9 +262,10 @@ def _run_pending_task(state: _ExecutionState, index: int, plan_task: PlanTask) -
         event_type="task_claimed",
         entity_kind="task",
         entity_id=task.task_id,
-        transition_from="pending",
+        transition_from=task.state,
         transition_to="running",
         execution_id=state.execution_id,
+        payload={"attempt_id": attempt_id, "run_id": run_id},
     )
     state.event = append_event(
         state.root,

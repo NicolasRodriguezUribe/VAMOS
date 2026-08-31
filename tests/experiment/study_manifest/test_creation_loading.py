@@ -235,8 +235,8 @@ def test_sa_069_top_level_factories_return_public_study_handles(tmp_path: Path) 
     assert created.study_id == loaded.study_id
     assert created.plan_id == loaded.plan_id
     assert hasattr(created, "run")
-    assert not hasattr(created, "resume")
-    assert not hasattr(created, "retry")
+    assert hasattr(created, "resume")
+    assert hasattr(created, "retry")
 
 
 def test_same_plan_creates_distinct_study_ids(tmp_path: Path) -> None:

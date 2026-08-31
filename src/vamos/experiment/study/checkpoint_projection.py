@@ -164,6 +164,7 @@ def _effective_task(
     effective_state = state.task_states[task.task_id]
     selected = next((item.attempt_id for item in task_attempts if item.status == "succeeded"), None)
     current = next((item.attempt_id for item in task_attempts if item.status in {"created", "running"}), None)
+    retryable, category = _effective_retryability(task, task_attempts, effective_state)
     return replace(
         task,
         state=effective_state,
@@ -173,11 +174,27 @@ def _effective_task(
         claim_epoch=max(task.claim_epoch, len(task_attempts)),
         retryability=replace(
             task.retryability,
-            retryable=False,
-            category=None,
+            retryable=retryable,
+            category=category,
             attempts_remaining=max(0, task.retryability.attempts_remaining - max(0, len(task_attempts) - len(task.attempts))),
         ),
     )
+
+
+def _effective_retryability(
+    task: TaskRecord,
+    attempts: tuple[AttemptRecord, ...],
+    state: TaskState,
+) -> tuple[bool, str | None]:
+    remaining = max(0, task.retryability.attempts_remaining - max(0, len(attempts) - len(task.attempts)))
+    if state == "interrupted":
+        return remaining > 0, "interruption"
+    if state != "failed" or not attempts:
+        return False, None
+    failure = attempts[-1].failure
+    permitted = bool(failure.get("retryable")) if isinstance(failure, Mapping) else False
+    category = failure.get("category") if isinstance(failure, Mapping) else None
+    return permitted and remaining > 0, category if isinstance(category, str) else None
 
 
 def _attempt_reference(attempt: AttemptRecord) -> AttemptReference:

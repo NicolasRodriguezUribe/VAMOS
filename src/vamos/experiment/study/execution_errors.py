@@ -34,15 +34,15 @@ def state_error(study: Study, reason: str, state: str) -> UnsupportedStudyExecut
 
 def state_error_for_task(state: ExecutionContext, task: TaskRecord, reason: str) -> UnsupportedStudyExecutionStateError:
     return UnsupportedStudyExecutionStateError(
-        operation="select pending study task",
+        operation="select runnable study task",
         reason=reason,
         study_id=state.study_id,
         task_id=task.task_id,
         current_state=task.state,
-        expected_state="pending",
-        expected="next canonical task pending",
+        expected_state="pending, failed, or interrupted",
+        expected="canonical task eligible for this explicit operation",
         actual=task.state,
-        action="Stop execution; resume and retry are not implemented.",
+        action="Reload the study and select only contract-eligible unfinished work.",
     )
 
 
