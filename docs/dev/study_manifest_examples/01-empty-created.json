@@ -1,0 +1,149 @@
+{
+  "canonical_files": [
+    {
+      "bytes": 476,
+      "document": {
+        "document_type": "vamos.study-event",
+        "entity": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "study"
+        },
+        "event_id": "55555555-5555-4555-8555-000000000001",
+        "event_type": "study_created",
+        "execution_id": null,
+        "integrity": {
+          "document_sha256": "6e629b679bc4d60bfcfcd61bbf707e4cc54ba29389c545bce68d68759ef17bec"
+        },
+        "payload": {},
+        "previous_event_sha256": null,
+        "reason": null,
+        "schema_version": "1.0.0",
+        "sequence": 1,
+        "timestamp": "2026-08-31T12:00:00Z",
+        "transition": {
+          "from": null,
+          "to": "created"
+        }
+      },
+      "path": "events/00000000000000000001.json",
+      "sha256": "d223e0092379e7bc84a42db119e938b3e503446250a12d6eae1b4053fe7ea665"
+    },
+    {
+      "bytes": 279,
+      "document": {
+        "document_type": "vamos.resolved-study-plan",
+        "integrity": {
+          "document_sha256": "ee4f67b331aa8f86466515289d468a9828f168a3aef3ba8f3eeb5f8f6c5c9fc5"
+        },
+        "plan_id": "sha256:8992f430ad4d33af650c07547f87e46439e3824f8068c788e29308bcc8fce9bd",
+        "schema_version": "1.0.0",
+        "task_count": 0,
+        "tasks": []
+      },
+      "path": "plan.json",
+      "sha256": "f216b5534ad4eb3a2c1fd7db437b920532b5834c4746cf83d7023ef883cb3915"
+    },
+    {
+      "bytes": 1225,
+      "document": {
+        "checkpoint": {
+          "event_sha256": "d223e0092379e7bc84a42db119e938b3e503446250a12d6eae1b4053fe7ea665",
+          "sequence": 1
+        },
+        "counts": {
+          "cancelled": 0,
+          "failed": 0,
+          "interrupted": 0,
+          "pending": 0,
+          "running": 0,
+          "skipped": 0,
+          "succeeded": 0,
+          "tasks": 0
+        },
+        "created_at": "2026-08-31T12:00:00Z",
+        "document_type": "vamos.study-manifest",
+        "execution_id": null,
+        "integrity": {
+          "document_sha256": "15b707e518fd6ec46008da80dd433f97f4058086977e6184fe2b8aa27f82e87d"
+        },
+        "plan": {
+          "bytes": 279,
+          "path": "plan.json",
+          "required_for": [
+            "inspect",
+            "run",
+            "resume"
+          ],
+          "role": "resolved_plan",
+          "semantic_sha256": "ee4f67b331aa8f86466515289d468a9828f168a3aef3ba8f3eeb5f8f6c5c9fc5",
+          "sha256": "f216b5534ad4eb3a2c1fd7db437b920532b5834c4746cf83d7023ef883cb3915"
+        },
+        "plan_id": "sha256:8992f430ad4d33af650c07547f87e46439e3824f8068c788e29308bcc8fce9bd",
+        "policy": {
+          "max_attempts_per_task": 3,
+          "on_error": "fail_fast"
+        },
+        "schema_version": "1.0.0",
+        "spec": {
+          "bytes": 384,
+          "path": "study-spec.json",
+          "required_for": [
+            "inspect",
+            "run",
+            "resume"
+          ],
+          "role": "study_spec",
+          "semantic_sha256": "deb2165c15eec702655af65fca0a4da7d98c2562d3d3ae4d89d8fd5833ac6fdf",
+          "sha256": "a285e129253c34e8d6ec99416a1770f226ad67b1f9193b47780ebf2d647ce727"
+        },
+        "state": "created",
+        "study_id": "11111111-1111-4111-8111-111111111111",
+        "updated_at": "2026-08-31T12:00:00Z"
+      },
+      "path": "study-manifest.json",
+      "sha256": "76945748c47261a8db6c16d09e0cbff4e4eb820b8e42111949f2b6767268d7fe"
+    },
+    {
+      "bytes": 384,
+      "document": {
+        "document_type": "vamos.study-spec",
+        "integrity": {
+          "document_sha256": "deb2165c15eec702655af65fca0a4da7d98c2562d3d3ae4d89d8fd5833ac6fdf"
+        },
+        "labels": {
+          "purpose": "contract-example"
+        },
+        "matrix": {
+          "algorithms": [
+            "nsgaii"
+          ],
+          "problems": [],
+          "seeds": []
+        },
+        "metadata": {},
+        "policy": {
+          "max_attempts_per_task": 3,
+          "on_error": "fail_fast"
+        },
+        "schema_version": "1.0.0",
+        "study_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "path": "study-spec.json",
+      "sha256": "a285e129253c34e8d6ec99416a1770f226ad67b1f9193b47780ebf2d647ce727"
+    }
+  ],
+  "expected": {
+    "error": null,
+    "study_state": "created",
+    "valid": true
+  },
+  "fixture_type": "vamos.study-contract-example",
+  "fixture_version": "1.0.0",
+  "name": "empty-created",
+  "notes": [
+    "The envelope and compact RunManifest placeholders are documentation-only, not persistence schemas."
+  ],
+  "operation": null,
+  "operational_files": [],
+  "relocation": null
+}

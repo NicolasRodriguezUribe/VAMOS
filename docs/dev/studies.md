@@ -1,6 +1,6 @@
 # Changing studies
 
-The current study layer executes an in-memory sequence of `StudyTask` objects and returns `StudyResult` summaries. It does not yet provide durable study state, resume/retry, or a StudyManifest.
+The current study layer executes an in-memory sequence of `StudyTask` objects and returns `StudyResult` summaries. It does not yet provide durable study state, resume/retry, or a StudyManifest. The future behavior is frozen by the [durable study and StudyManifest v1 contract](study_manifest_contract.md), its [SA-001 through SA-074 acceptance specification](study_manifest_acceptance_tests.md), and [ADR 0008](adr/0008-durable-study-manifest-contract.md); those documents specify planned behavior, not an available production API.
 
 ## Current API
 
@@ -33,7 +33,7 @@ results = run_study(tasks)
 3. Route each persisted run through the canonical run-artifact writer. A study-level record may reference run/task identities; it must not mirror their specifications or arrays.
 4. Distinguish execution failure policy from indicator/export failure. Never report a partially executed study as complete without explicit status.
 5. Update the ablation API and CLI together when their use of study tasks changes.
-6. Treat durable state, restart policy, retries, and resumability as a separate schema/behavior design, not an incidental CSV extension.
+6. Implement durable state, restart policy, retries, and resumability only through the frozen StudyManifest contract and its ordered roadmap, never as an incidental CSV extension.
 
 ## Required validation
 
@@ -53,6 +53,10 @@ path: tests/experiment/test_ablation_study_api.py
 path: tests/experiment/test_cli_ablation.py
 path: tests/foundation/test_moocore_indicators.py
 path: tests/engine/test_hyperheuristic_indicators.py
+path: docs/dev/study_manifest_contract.md
+path: docs/dev/study_manifest_acceptance_tests.md
+path: docs/dev/study_manifest_examples/README.md
+path: docs/dev/adr/0008-durable-study-manifest-contract.md
 symbol: vamos.experiment.study:StudyTask
 symbol: vamos.experiment.study:StudyRunner
 symbol: vamos.experiment.study.api:run_study

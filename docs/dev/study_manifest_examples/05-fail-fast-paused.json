@@ -1,0 +1,496 @@
+{
+  "canonical_files": [
+    {
+      "bytes": 476,
+      "document": {
+        "document_type": "vamos.study-event",
+        "entity": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "study"
+        },
+        "event_id": "55555555-5555-4555-8555-000000000001",
+        "event_type": "study_created",
+        "execution_id": null,
+        "integrity": {
+          "document_sha256": "6e629b679bc4d60bfcfcd61bbf707e4cc54ba29389c545bce68d68759ef17bec"
+        },
+        "payload": {},
+        "previous_event_sha256": null,
+        "reason": null,
+        "schema_version": "1.0.0",
+        "sequence": 1,
+        "timestamp": "2026-08-31T12:00:00Z",
+        "transition": {
+          "from": null,
+          "to": "created"
+        }
+      },
+      "path": "events/00000000000000000001.json",
+      "sha256": "d223e0092379e7bc84a42db119e938b3e503446250a12d6eae1b4053fe7ea665"
+    },
+    {
+      "bytes": 581,
+      "document": {
+        "document_type": "vamos.study-event",
+        "entity": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "study"
+        },
+        "event_id": "55555555-5555-4555-8555-000000000002",
+        "event_type": "execution_started",
+        "execution_id": "22222222-2222-4222-8222-222222222222",
+        "integrity": {
+          "document_sha256": "fca7565d93ee69ecc0602de28ca37918352fa014ed0a5ebc27e9dd4e6001840d"
+        },
+        "payload": {},
+        "previous_event_sha256": "d223e0092379e7bc84a42db119e938b3e503446250a12d6eae1b4053fe7ea665",
+        "reason": null,
+        "schema_version": "1.0.0",
+        "sequence": 2,
+        "timestamp": "2026-08-31T12:00:00Z",
+        "transition": {
+          "from": "created",
+          "to": "running"
+        }
+      },
+      "path": "events/00000000000000000002.json",
+      "sha256": "b9c0c3cab59dc793dacba3d6ba497ebd6aa33a80c05417004d94ac5b9090506f"
+    },
+    {
+      "bytes": 610,
+      "document": {
+        "document_type": "vamos.study-event",
+        "entity": {
+          "id": "sha256:5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf",
+          "kind": "task"
+        },
+        "event_id": "55555555-5555-4555-8555-000000000003",
+        "event_type": "task_claimed",
+        "execution_id": "22222222-2222-4222-8222-222222222222",
+        "integrity": {
+          "document_sha256": "b1ba0246940bc630b46be4613b27184c372aad81de4e65ad4f52c72a2eb09225"
+        },
+        "payload": {},
+        "previous_event_sha256": "b9c0c3cab59dc793dacba3d6ba497ebd6aa33a80c05417004d94ac5b9090506f",
+        "reason": null,
+        "schema_version": "1.0.0",
+        "sequence": 3,
+        "timestamp": "2026-08-31T12:00:00Z",
+        "transition": {
+          "from": "pending",
+          "to": "running"
+        }
+      },
+      "path": "events/00000000000000000003.json",
+      "sha256": "c824a93e6d24384fe8c29a08d4dcbc6c9e22a68d0379d851db6719132bfaaff1"
+    },
+    {
+      "bytes": 581,
+      "document": {
+        "document_type": "vamos.study-event",
+        "entity": {
+          "id": "33333333-3333-4333-8333-333333333331",
+          "kind": "attempt"
+        },
+        "event_id": "55555555-5555-4555-8555-000000000004",
+        "event_type": "attempt_started",
+        "execution_id": "22222222-2222-4222-8222-222222222222",
+        "integrity": {
+          "document_sha256": "abd6f0ba92a9c14a74d76d4021003b12702c24cc4829aac1ea84d400ddefd30e"
+        },
+        "payload": {},
+        "previous_event_sha256": "c824a93e6d24384fe8c29a08d4dcbc6c9e22a68d0379d851db6719132bfaaff1",
+        "reason": null,
+        "schema_version": "1.0.0",
+        "sequence": 4,
+        "timestamp": "2026-08-31T12:00:00Z",
+        "transition": {
+          "from": "created",
+          "to": "running"
+        }
+      },
+      "path": "events/00000000000000000004.json",
+      "sha256": "6d63e6403107dc803c37102cd63f05bc7d3f02d27a32350e69ffd3804fa50d48"
+    },
+    {
+      "bytes": 579,
+      "document": {
+        "document_type": "vamos.study-event",
+        "entity": {
+          "id": "33333333-3333-4333-8333-333333333331",
+          "kind": "attempt"
+        },
+        "event_id": "55555555-5555-4555-8555-000000000005",
+        "event_type": "attempt_failed",
+        "execution_id": "22222222-2222-4222-8222-222222222222",
+        "integrity": {
+          "document_sha256": "f8775a8f244ab5f5c46d61b38fa0fc0b15cfa370b3df6f0331ce4697ba434201"
+        },
+        "payload": {},
+        "previous_event_sha256": "6d63e6403107dc803c37102cd63f05bc7d3f02d27a32350e69ffd3804fa50d48",
+        "reason": null,
+        "schema_version": "1.0.0",
+        "sequence": 5,
+        "timestamp": "2026-08-31T12:00:00Z",
+        "transition": {
+          "from": "running",
+          "to": "failed"
+        }
+      },
+      "path": "events/00000000000000000005.json",
+      "sha256": "681049435ff2fa5f08a3054aad168b628de2c713dc0aa4acf167f78deadbf23c"
+    },
+    {
+      "bytes": 575,
+      "document": {
+        "document_type": "vamos.study-event",
+        "entity": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "study"
+        },
+        "event_id": "55555555-5555-4555-8555-000000000006",
+        "event_type": "study_paused",
+        "execution_id": "22222222-2222-4222-8222-222222222222",
+        "integrity": {
+          "document_sha256": "2b346d23c68abcfc90dd7d51c091921f1aa7cb5b903ed1b41cf6441c89b19edb"
+        },
+        "payload": {},
+        "previous_event_sha256": "681049435ff2fa5f08a3054aad168b628de2c713dc0aa4acf167f78deadbf23c",
+        "reason": null,
+        "schema_version": "1.0.0",
+        "sequence": 6,
+        "timestamp": "2026-08-31T12:00:00Z",
+        "transition": {
+          "from": "running",
+          "to": "paused"
+        }
+      },
+      "path": "events/00000000000000000006.json",
+      "sha256": "17ac5e279b3f754ea17f737c41f5a7d13671c8102e4cded933fe9e0ace85da2c"
+    },
+    {
+      "bytes": 1624,
+      "document": {
+        "document_type": "vamos.resolved-study-plan",
+        "integrity": {
+          "document_sha256": "fda2d5ed001d2c953f7f347a10dd7a8521a52cbff683f261576f733f1d21afa5"
+        },
+        "plan_id": "sha256:240e7b89cb7266ede2c86e711af4e96d825d61f1fa5a3a0e00f7b0e86a271e26",
+        "schema_version": "1.0.0",
+        "task_count": 2,
+        "tasks": [
+          {
+            "plan_index": 1,
+            "requested_run": {
+              "algorithm": "nsgaii",
+              "problem": "zdt1",
+              "seed": 8
+            },
+            "resolved_run_spec": {
+              "algorithm": {
+                "component_id": "vamos.algorithm:nsgaii@1",
+                "config": {
+                  "pop_size": 8
+                }
+              },
+              "backend": {
+                "evaluation": "vamos.evaluation:serial@1",
+                "kernel": "vamos.kernel:numpy@1"
+              },
+              "problem": {
+                "component_id": "vamos.problem:zdt1@1",
+                "config": {
+                  "n_obj": 2,
+                  "n_var": 3
+                }
+              },
+              "seed": 8,
+              "spec_version": "vamos.resolved-run-spec/1",
+              "termination": {
+                "component_id": "vamos.termination:max_evaluations@1",
+                "config": {
+                  "max_evaluations": 24
+                }
+              }
+            },
+            "task_id": "sha256:0c8eb84d879ed8b02246a533ea3f9a898e6aa0805fed0a495a041756d54a4748",
+            "task_spec_sha256": "0c8eb84d879ed8b02246a533ea3f9a898e6aa0805fed0a495a041756d54a4748"
+          },
+          {
+            "plan_index": 0,
+            "requested_run": {
+              "algorithm": "nsgaii",
+              "problem": "zdt1",
+              "seed": 7
+            },
+            "resolved_run_spec": {
+              "algorithm": {
+                "component_id": "vamos.algorithm:nsgaii@1",
+                "config": {
+                  "pop_size": 8
+                }
+              },
+              "backend": {
+                "evaluation": "vamos.evaluation:serial@1",
+                "kernel": "vamos.kernel:numpy@1"
+              },
+              "problem": {
+                "component_id": "vamos.problem:zdt1@1",
+                "config": {
+                  "n_obj": 2,
+                  "n_var": 3
+                }
+              },
+              "seed": 7,
+              "spec_version": "vamos.resolved-run-spec/1",
+              "termination": {
+                "component_id": "vamos.termination:max_evaluations@1",
+                "config": {
+                  "max_evaluations": 24
+                }
+              }
+            },
+            "task_id": "sha256:5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf",
+            "task_spec_sha256": "5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf"
+          }
+        ]
+      },
+      "path": "plan.json",
+      "sha256": "e684ed714a0aa0dd9912fa80d0350336528072bb26179d73d6d65a23bb8b6b4e"
+    },
+    {
+      "bytes": 455,
+      "document": {
+        "document_type": "vamos.run-manifest",
+        "fixture_compaction": "RunManifest-owned specs and artifacts are intentionally omitted; their validation belongs to the run-artifact contract.",
+        "integrity": {
+          "manifest_sha256": "34684d3bd3d76574516bd435f524e6eee6133214d6c31953e1e97816c6d24ee0"
+        },
+        "run_id": "44444444-4444-4444-8444-444444444441",
+        "schema_version": "1.0.0",
+        "status": "failed",
+        "task_id": "sha256:5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf"
+      },
+      "path": "runs/44444444-4444-4444-8444-444444444441/manifest.json",
+      "sha256": "878ee838e892ef0fd1e4d91baffb262fb4dd29e8aa10928edd30ac914b83a805"
+    },
+    {
+      "bytes": 1259,
+      "document": {
+        "checkpoint": {
+          "event_sha256": "17ac5e279b3f754ea17f737c41f5a7d13671c8102e4cded933fe9e0ace85da2c",
+          "sequence": 6
+        },
+        "counts": {
+          "cancelled": 0,
+          "failed": 1,
+          "interrupted": 0,
+          "pending": 1,
+          "running": 0,
+          "skipped": 0,
+          "succeeded": 0,
+          "tasks": 2
+        },
+        "created_at": "2026-08-31T12:00:00Z",
+        "document_type": "vamos.study-manifest",
+        "execution_id": "22222222-2222-4222-8222-222222222222",
+        "integrity": {
+          "document_sha256": "c8149a78eab81e9d0ccbdd089a3ffa58480de37a1e0c3972d63ba7b11dc29438"
+        },
+        "plan": {
+          "bytes": 1624,
+          "path": "plan.json",
+          "required_for": [
+            "inspect",
+            "run",
+            "resume"
+          ],
+          "role": "resolved_plan",
+          "semantic_sha256": "fda2d5ed001d2c953f7f347a10dd7a8521a52cbff683f261576f733f1d21afa5",
+          "sha256": "e684ed714a0aa0dd9912fa80d0350336528072bb26179d73d6d65a23bb8b6b4e"
+        },
+        "plan_id": "sha256:240e7b89cb7266ede2c86e711af4e96d825d61f1fa5a3a0e00f7b0e86a271e26",
+        "policy": {
+          "max_attempts_per_task": 3,
+          "on_error": "fail_fast"
+        },
+        "schema_version": "1.0.0",
+        "spec": {
+          "bytes": 393,
+          "path": "study-spec.json",
+          "required_for": [
+            "inspect",
+            "run",
+            "resume"
+          ],
+          "role": "study_spec",
+          "semantic_sha256": "e8897bda01a57364d3bd442c6e85d40dd1b29ec0798aff37d732d1fdd99d8b9a",
+          "sha256": "7ba34fd78fd1e86636c15356e1a6c29d5e2932713d176066ccb0f666be3859de"
+        },
+        "state": "paused",
+        "study_id": "11111111-1111-4111-8111-111111111111",
+        "updated_at": "2026-08-31T12:00:00Z"
+      },
+      "path": "study-manifest.json",
+      "sha256": "d593910f20fde5b7fa261cfbbb4a244e2bec17145336030763a36d807bfe18ec"
+    },
+    {
+      "bytes": 393,
+      "document": {
+        "document_type": "vamos.study-spec",
+        "integrity": {
+          "document_sha256": "e8897bda01a57364d3bd442c6e85d40dd1b29ec0798aff37d732d1fdd99d8b9a"
+        },
+        "labels": {
+          "purpose": "contract-example"
+        },
+        "matrix": {
+          "algorithms": [
+            "nsgaii"
+          ],
+          "problems": [
+            "zdt1"
+          ],
+          "seeds": [
+            7,
+            8
+          ]
+        },
+        "metadata": {},
+        "policy": {
+          "max_attempts_per_task": 3,
+          "on_error": "fail_fast"
+        },
+        "schema_version": "1.0.0",
+        "study_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "path": "study-spec.json",
+      "sha256": "7ba34fd78fd1e86636c15356e1a6c29d5e2932713d176066ccb0f666be3859de"
+    },
+    {
+      "bytes": 506,
+      "document": {
+        "attempts": [],
+        "claim_epoch": 0,
+        "current_attempt_id": null,
+        "document_type": "vamos.study-task",
+        "integrity": {
+          "document_sha256": "f5db853bb852dcdff58ed87fd7f0e9581ab117102b719a213e3708e9d024efac"
+        },
+        "plan_index": 1,
+        "reason": null,
+        "retryability": {
+          "attempts_remaining": 3,
+          "category": null,
+          "retryable": false
+        },
+        "schema_version": "1.0.0",
+        "selected_success_attempt_id": null,
+        "state": "pending",
+        "study_id": "11111111-1111-4111-8111-111111111111",
+        "task_id": "sha256:0c8eb84d879ed8b02246a533ea3f9a898e6aa0805fed0a495a041756d54a4748"
+      },
+      "path": "tasks/0c8eb84d879ed8b02246a533ea3f9a898e6aa0805fed0a495a041756d54a4748/task.json",
+      "sha256": "bd79c079af2b20d1bc67e45f60691c84ce899bae7dfbbc772d207e50706e896c"
+    },
+    {
+      "bytes": 1244,
+      "document": {
+        "attempt_id": "33333333-3333-4333-8333-333333333331",
+        "attempt_number": 1,
+        "document_type": "vamos.study-attempt",
+        "execution_id": "22222222-2222-4222-8222-222222222222",
+        "failure": {
+          "category": "execution",
+          "code": "BACKEND_UNAVAILABLE",
+          "message": "Backend unavailable in sanitized contract example.",
+          "retryable": true,
+          "safe_action": "Correct the backend and retry explicitly."
+        },
+        "integrity": {
+          "document_sha256": "ac61737c5603846188e68603e7c2d175c6772b732b7be7508807fce35a43490e"
+        },
+        "lease_evidence": null,
+        "run_reference": {
+          "bytes": 455,
+          "path": "runs/44444444-4444-4444-8444-444444444441/manifest.json",
+          "required_for": [
+            "inspect",
+            "verify",
+            "resume"
+          ],
+          "role": "run_manifest",
+          "run_id": "44444444-4444-4444-8444-444444444441",
+          "semantic_sha256": "34684d3bd3d76574516bd435f524e6eee6133214d6c31953e1e97816c6d24ee0",
+          "sha256": "878ee838e892ef0fd1e4d91baffb262fb4dd29e8aa10928edd30ac914b83a805",
+          "task_id": "sha256:5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf"
+        },
+        "schema_version": "1.0.0",
+        "status": "failed",
+        "study_id": "11111111-1111-4111-8111-111111111111",
+        "task_id": "sha256:5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf",
+        "timestamps": {
+          "completed_at": "2026-08-31T12:00:00Z",
+          "created_at": "2026-08-31T12:00:00Z",
+          "started_at": "2026-08-31T12:00:00Z"
+        }
+      },
+      "path": "tasks/5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf/attempts/33333333-3333-4333-8333-333333333331.json",
+      "sha256": "d82dfdc286aa120620c88c3be78e88313eb7ecc1f4aa465d429aafb0c03fd8ff"
+    },
+    {
+      "bytes": 934,
+      "document": {
+        "attempts": [
+          {
+            "attempt_id": "33333333-3333-4333-8333-333333333331",
+            "attempt_number": 1,
+            "bytes": 1244,
+            "path": "tasks/5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf/attempts/33333333-3333-4333-8333-333333333331.json",
+            "required_for": [
+              "inspect",
+              "resume"
+            ],
+            "role": "attempt",
+            "semantic_sha256": "ac61737c5603846188e68603e7c2d175c6772b732b7be7508807fce35a43490e",
+            "sha256": "d82dfdc286aa120620c88c3be78e88313eb7ecc1f4aa465d429aafb0c03fd8ff"
+          }
+        ],
+        "claim_epoch": 1,
+        "current_attempt_id": null,
+        "document_type": "vamos.study-task",
+        "integrity": {
+          "document_sha256": "31b844db20d45cabad3dde745900f10e567406337fc5612d5d5d1ec00cce7044"
+        },
+        "plan_index": 0,
+        "reason": null,
+        "retryability": {
+          "attempts_remaining": 2,
+          "category": null,
+          "retryable": true
+        },
+        "schema_version": "1.0.0",
+        "selected_success_attempt_id": null,
+        "state": "failed",
+        "study_id": "11111111-1111-4111-8111-111111111111",
+        "task_id": "sha256:5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf"
+      },
+      "path": "tasks/5833698650ca110e3d2cd184e00be47980be653b9dc50ca8e6d094a1b13ceebf/task.json",
+      "sha256": "706df8c7be10b217eb4931124e9fc27041b07ff20e1b5fc01cd69071ca56c47a"
+    }
+  ],
+  "expected": {
+    "error": null,
+    "study_state": "paused",
+    "valid": true
+  },
+  "fixture_type": "vamos.study-contract-example",
+  "fixture_version": "1.0.0",
+  "name": "fail-fast-paused",
+  "notes": [
+    "The envelope and compact RunManifest placeholders are documentation-only, not persistence schemas."
+  ],
+  "operation": null,
+  "operational_files": [],
+  "relocation": null
+}
