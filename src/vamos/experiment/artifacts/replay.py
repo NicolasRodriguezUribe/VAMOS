@@ -9,14 +9,13 @@ from pathlib import Path
 from typing import Any
 
 from vamos.experiment.optimize import _OptimizeConfig, _run_config
-from vamos.foundation.problem.registry import make_problem_selection
 
 from .bundle import snapshot_result_arrays
 from .comparison import compare_array_collections, comparisons_are_exact
-from .errors import ComponentNotReconstructableError, EnvironmentIncompatibilityError, ReplayExecutionError, ReplayResultMismatchError
+from .errors import EnvironmentIncompatibilityError, ReplayExecutionError, ReplayResultMismatchError
 from .models import LoadLimits, deep_thaw
 from .persistence import load_run, save_failed_replay, save_result
-from .reconstruction import ReplayPlan, build_replay_plan
+from .reconstruction import ReconstructedRun, ReplayPlan, build_replay_plan, instantiate_reconstructed_problem
 from .reports import ArrayComparison, ReplayReport
 from .verification import verify_run
 
@@ -56,7 +55,7 @@ def reproduce(
                 termination=plan.termination,
                 seed=plan.seed,
                 engine=plan.engine,
-                eval_strategy=None,
+                eval_strategy=plan.eval_strategy,
             ),
             built_in_only=True,
         )
@@ -109,30 +108,20 @@ def reproduce(
 
 
 def _instantiate_problem(plan: ReplayPlan) -> Any:
-    try:
-        selection = make_problem_selection(plan.problem, n_var=plan.n_var, n_obj=plan.n_obj)
-        problem = selection.instantiate()
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ComponentNotReconstructableError(
-            operation="reproduce run",
-            field="$.resolved_spec.problem",
-            path=plan.source_root,
-            reason="cannot instantiate the registered built-in problem",
-            expected=plan.problem,
-            actual=f"{type(exc).__name__}: {exc}",
-            action="Use the exact VAMOS implementation that produced the source run.",
-        ) from exc
-    if getattr(problem, "n_var", None) != plan.n_var or getattr(problem, "n_obj", None) != plan.n_obj:
-        raise ComponentNotReconstructableError(
-            operation="reproduce run",
-            field="$.resolved_spec.problem.config",
-            path=plan.source_root,
-            reason="instantiates with dimensions different from the persisted plan",
-            expected={"n_var": plan.n_var, "n_obj": plan.n_obj},
-            actual={"n_var": getattr(problem, "n_var", None), "n_obj": getattr(problem, "n_obj", None)},
-            action="Use the exact VAMOS implementation that produced the source run.",
-        )
-    return problem
+    reconstructed = ReconstructedRun(
+        resolved_spec=plan.resolved_spec,
+        problem=plan.problem,
+        n_var=plan.n_var,
+        n_obj=plan.n_obj,
+        encoding=plan.encoding,
+        algorithm=plan.algorithm,
+        algorithm_config=plan.algorithm_config,
+        termination=plan.termination,
+        engine=plan.engine,
+        eval_strategy=plan.eval_strategy,
+        seed=plan.seed,
+    )
+    return instantiate_reconstructed_problem(reconstructed, root=plan.source_root)
 
 
 def _attach_replay_metadata(

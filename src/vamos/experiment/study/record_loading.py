@@ -1,0 +1,265 @@
+"""Bounded loading and validation of task, attempt, and run references."""
+
+from __future__ import annotations
+
+import os
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, NoReturn, Protocol
+
+from vamos.experiment.artifacts.jsonio import sha256_bytes
+from vamos.experiment.artifacts.models import LoadLimits, StoredRun
+from vamos.experiment.artifacts.persistence import load_run
+
+from .errors import MalformedStudyError, StudyIntegrityError
+from .limits import StudyLoadLimits
+from .models import AttemptRecord, AttemptReference, PlanTask, StudyManifest, TaskRecord
+from .paths import confined_study_path
+from .record_decoding import decode_attempt, decode_task
+
+_ATTEMPT_FILE_PATTERN = r"([0-9a-f-]{36})\.json"
+_RUN_ID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+
+
+class ReadDocument(Protocol):
+    def __call__(self, relative: str, role: str, max_bytes: int) -> tuple[dict[str, Any], bytes]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class _LoadedAttempt:
+    record: AttemptRecord
+    path: str
+    payload: bytes
+
+
+def load_records(
+    root: Path,
+    manifest: StudyManifest,
+    plan_tasks: tuple[PlanTask, ...],
+    limits: StudyLoadLimits,
+    read: ReadDocument,
+) -> tuple[tuple[TaskRecord, ...], tuple[AttemptRecord, ...]]:
+    """Load every planned checkpoint and bounded attempt document."""
+    if not plan_tasks:
+        _assert_no_task_entries(root)
+        return (), ()
+    tasks: list[TaskRecord] = []
+    attempts: list[AttemptRecord] = []
+    expected_dirs: set[str] = set()
+    for plan_task in plan_tasks:
+        digest = plan_task.task_id.removeprefix("sha256:")
+        expected_dirs.add(digest)
+        relative = f"tasks/{digest}/task.json"
+        raw, _ = read(relative, "study_task", limits.max_task_bytes)
+        task = decode_task(raw)
+        _validate_task_identity(task, manifest, plan_task, relative)
+        loaded = _load_attempts(root, task, limits, read)
+        _validate_attempt_references(task, loaded)
+        tasks.append(task)
+        attempts.extend(item.record for item in loaded)
+    _assert_task_entries(root, expected_dirs)
+    return tuple(tasks), tuple(attempts)
+
+
+def validate_run_reference(
+    root: Path,
+    reference: Mapping[str, Any],
+    *,
+    expected_task_id: str,
+    expected_status: str | None = None,
+) -> StoredRun:
+    """Validate an approved bounded reference and its complete canonical run."""
+    run_id = reference.get("run_id")
+    if not isinstance(run_id, str) or re.fullmatch(_RUN_ID_PATTERN, run_id) is None:
+        _unexpected("run_reference", "lowercase UUIDv4 run_id", run_id, reason="RUN_REFERENCE_MISMATCH")
+    expected_path = f"runs/{run_id}/manifest.json"
+    expected_contract = {
+        "path": expected_path,
+        "role": "run_manifest",
+        "required_for": ("inspect", "verify", "resume"),
+        "task_id": expected_task_id,
+    }
+    actual_contract = {
+        "path": reference.get("path"),
+        "role": reference.get("role"),
+        "required_for": tuple(reference.get("required_for", ())),
+        "task_id": reference.get("task_id"),
+    }
+    if actual_contract != expected_contract:
+        _unexpected("run_reference", expected_contract, actual_contract, reason="RUN_REFERENCE_MISMATCH")
+    manifest_path = confined_study_path(root, expected_path, role="run_manifest", must_exist=True)
+    try:
+        payload = manifest_path.read_bytes()
+    except OSError as exc:
+        raise MalformedStudyError(
+            operation="load study",
+            reason="UNREADABLE_DOCUMENT",
+            document_role="run_manifest",
+            path=expected_path,
+            expected="readable canonical RunManifest",
+            actual=type(exc).__name__,
+            action="Restore the referenced canonical run directory.",
+        ) from exc
+    stored = load_run(manifest_path.parent, verify="all", limits=LoadLimits())
+    semantic = stored.manifest.get("integrity")
+    semantic_hash = semantic.get("manifest_sha256") if isinstance(semantic, Mapping) else None
+    observed = {
+        "bytes": len(payload),
+        "sha256": sha256_bytes(payload),
+        "semantic_sha256": semantic_hash,
+        "run_id": stored.manifest.run_id,
+        "task_id": stored.manifest.task_id,
+    }
+    expected = {name: reference.get(name) for name in observed}
+    if observed != expected:
+        _unexpected("run_reference", expected, observed, reason="RUN_MANIFEST_HASH_MISMATCH")
+    if stored.manifest.task_id != expected_task_id:
+        _unexpected("run_reference", expected_task_id, stored.manifest.task_id, reason="RUN_TASK_ID_MISMATCH")
+    if expected_status is not None and stored.status != expected_status:
+        _unexpected("run_reference", expected_status, stored.status, reason="RUN_STATUS_MISMATCH")
+    return stored
+
+
+def _load_attempts(
+    root: Path,
+    task: TaskRecord,
+    limits: StudyLoadLimits,
+    read: ReadDocument,
+) -> tuple[_LoadedAttempt, ...]:
+    digest = task.task_id.removeprefix("sha256:")
+    directory = f"tasks/{digest}/attempts"
+    if not os.path.lexists(root / Path(directory)):
+        return ()
+    names = _entry_names(root, directory, "study_attempt")
+    result: list[_LoadedAttempt] = []
+    for name in sorted(names):
+        match = re.fullmatch(_ATTEMPT_FILE_PATTERN, name)
+        if match is None:
+            _unexpected(directory, "lowercase UUID.json attempt files", name)
+        relative = f"{directory}/{name}"
+        raw, payload = read(relative, "study_attempt", limits.max_attempt_bytes)
+        attempt = decode_attempt(raw)
+        if attempt.attempt_id != match.group(1) or (attempt.study_id, attempt.task_id) != (task.study_id, task.task_id):
+            _unexpected(
+                "study_attempt",
+                {"study_id": task.study_id, "task_id": task.task_id, "attempt_id": match.group(1)},
+                {"study_id": attempt.study_id, "task_id": attempt.task_id, "attempt_id": attempt.attempt_id},
+                reason="ATTEMPT_ID_MISMATCH",
+            )
+        if attempt.run_reference is not None:
+            expected_status = attempt.status if attempt.status in {"succeeded", "failed"} else None
+            validate_run_reference(root, attempt.run_reference, expected_task_id=task.task_id, expected_status=expected_status)
+        result.append(_LoadedAttempt(attempt, relative, payload))
+    numbers = [item.record.attempt_number for item in result]
+    if numbers != list(range(1, len(result) + 1)) or len({item.record.attempt_id for item in result}) != len(result):
+        _unexpected("study_attempt", list(range(1, len(result) + 1)), numbers, reason="ATTEMPT_SEQUENCE_MISMATCH")
+    return tuple(result)
+
+
+def _validate_task_identity(task: TaskRecord, manifest: StudyManifest, plan_task: PlanTask, relative: str) -> None:
+    expected = (manifest.study_id, plan_task.task_id, plan_task.plan_index)
+    actual = (task.study_id, task.task_id, task.plan_index)
+    if actual != expected:
+        raise StudyIntegrityError(
+            operation="load study",
+            reason="TASK_ID_MISMATCH",
+            document_role="study_task",
+            path=relative,
+            expected=expected,
+            actual=actual,
+            action="Restore the task checkpoint matching the immutable plan.",
+        )
+
+
+def _validate_attempt_references(task: TaskRecord, attempts: tuple[_LoadedAttempt, ...]) -> None:
+    by_id = {item.record.attempt_id: item for item in attempts}
+    for index, reference in enumerate(task.attempts):
+        loaded = by_id.get(reference.attempt_id)
+        if loaded is None:
+            _unexpected("study_task", "referenced attempt file", reference.attempt_id, reason="MISSING_ATTEMPT")
+        assert loaded is not None
+        expected = _attempt_reference(loaded)
+        identity_matches = (
+            reference.attempt_id,
+            reference.attempt_number,
+            reference.path,
+            reference.role,
+            reference.required_for,
+        ) == (
+            expected.attempt_id,
+            expected.attempt_number,
+            expected.path,
+            expected.role,
+            expected.required_for,
+        )
+        lagging_terminal_write = task.state == "running" and loaded.record.status in {"succeeded", "failed"}
+        if not identity_matches or reference.attempt_number != index + 1 or (reference != expected and not lagging_terminal_write):
+            _unexpected("study_task", expected, reference, reason="ATTEMPT_REFERENCE_MISMATCH")
+    referenced = {item.attempt_id for item in task.attempts}
+    unreferenced = [item.record for item in attempts if item.record.attempt_id not in referenced]
+    if any(attempt.status not in {"created", "running", "succeeded", "failed"} for attempt in unreferenced):
+        _unexpected("study_task", "checkpoint-lag-compatible attempts", unreferenced, reason="ATTEMPT_REFERENCE_MISMATCH")
+
+
+def _attempt_reference(loaded: _LoadedAttempt) -> AttemptReference:
+    attempt = loaded.record
+    return AttemptReference(
+        attempt_id=attempt.attempt_id,
+        attempt_number=attempt.attempt_number,
+        path=loaded.path,
+        role="attempt",
+        required_for=("inspect", "resume"),
+        semantic_sha256=attempt.document_sha256,
+        sha256=sha256_bytes(loaded.payload),
+        bytes=len(loaded.payload),
+    )
+
+
+def _assert_no_task_entries(root: Path) -> None:
+    if (root / "tasks").exists() and _entry_names(root, "tasks", "tasks"):
+        _unexpected("tasks", "no task entries for an empty plan", "non-empty tasks directory")
+
+
+def _assert_task_entries(root: Path, expected: set[str]) -> None:
+    observed = _entry_names(root, "tasks", "tasks")
+    if observed != expected:
+        _unexpected("tasks", sorted(expected), sorted(observed))
+    for digest in expected:
+        entries = _entry_names(root, f"tasks/{digest}", "study_task")
+        allowed = {"task.json"} if "attempts" not in entries else {"task.json", "attempts"}
+        if entries != allowed:
+            _unexpected(f"tasks/{digest}", sorted(allowed), sorted(entries))
+
+
+def _entry_names(root: Path, relative: str, role: str) -> set[str]:
+    directory = confined_study_path(root, relative, role=role, must_exist=True)
+    try:
+        if not directory.is_dir():
+            raise OSError("not a directory")
+        return {entry.name for entry in directory.iterdir()}
+    except OSError as exc:
+        raise MalformedStudyError(
+            operation="load study",
+            reason="UNREADABLE_DOCUMENT_DIRECTORY",
+            document_role=role,
+            path=relative,
+            expected="readable contained directory",
+            actual=type(exc).__name__,
+            action="Restore the canonical directory and its permissions.",
+        ) from exc
+
+
+def _unexpected(role: str, expected: object, actual: object, *, reason: str = "UNEXPECTED_LAYOUT") -> NoReturn:
+    raise StudyIntegrityError(
+        operation="load study",
+        reason=reason,
+        document_role=role,
+        expected=expected,
+        actual=actual,
+        action="Restore the complete canonical study tree; do not infer state from unrelated files.",
+    )
+
+
+__all__ = ["ReadDocument", "load_records", "validate_run_reference"]

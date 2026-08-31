@@ -74,7 +74,10 @@ def test_sa_015_and_sa_066_external_link_escape_is_rejected_without_skip(tmp_pat
             vamos.load_study(root)
         assert caught.value.reason == "UNSAFE_PATH"
     finally:
-        os.rmdir(link)
+        if link.is_symlink():
+            link.unlink()
+        else:
+            os.rmdir(link)
 
 
 def test_existing_junction_or_symlink_destination_is_a_collision(tmp_path: Path) -> None:

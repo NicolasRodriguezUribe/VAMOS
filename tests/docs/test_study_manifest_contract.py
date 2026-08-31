@@ -34,6 +34,7 @@ STUDY_STATES = {"created", "running", "paused", "completed", "completed_with_fai
 STUDY_TRANSITIONS = {
     (None, "created"),
     ("created", "running"),
+    ("created", "completed"),
     ("created", "cancelled"),
     ("running", "paused"),
     ("running", "completed"),

@@ -46,6 +46,22 @@ persisted `Study` handle, plus the `vamos study` command group. The current
 orchestration are replaced after all callers migrate; no legacy persisted
 study reader or dual runner remains.
 
+### Implemented bounded slices
+
+Atomic create/data-only load and the sequential durable runner are implemented.
+`Study.run()` accepts a pristine `created` study, executes ascending `task_id`,
+reconstructs the frozen built-in resolved spec, durably starts one attempt, and
+publishes a fully verified canonical RunManifest before success. Valid newer
+journal events are authoritative during data-only load; loading derives an
+effective view and does not repair checkpoints.
+
+The sequential slice intentionally precedes the policy and coordination parts
+of this decision. It has no CLI, selectable `fail_fast`/`continue`,
+cancellation, resume, retry, locks, leases, workers, or cross-process guarantee.
+Its fixed post-start task-failure behavior records a failed run/attempt/task and
+failed study, stops, and raises a typed error; that safety rule is not policy.
+The later Goals remain required to realize the rest of this ADR.
+
 ## Consequences
 
 - Study state can be audited, relocated, reconciled, and resumed without

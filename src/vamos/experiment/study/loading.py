@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hmac
-from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,10 +18,11 @@ from .errors import (
     StudyIntegrityError,
     StudyResourceLimitError,
 )
+from .journal import derive_effective_study, load_event_journal
 from .limits import StudyLoadLimits
-from .models import DocumentReference, Study, StudyCounts, StudyEvent, StudyManifest, StudySpec, TaskRecord
+from .models import DocumentReference, Study, StudyManifest, StudySpec
 from .paths import confined_study_path
-from .record_decoding import decode_event, decode_task
+from .record_loading import load_records
 from .serialization import load_json, stored_document_bytes
 
 
@@ -81,10 +81,22 @@ def load_study(path: str | Path, *, limits: StudyLoadLimits | None = None) -> St
             action="Split the trusted campaign into smaller studies.",
         )
 
-    tasks = _load_tasks(root, manifest, plan.tasks, configured, budget)
-    events = _load_events(root, manifest, configured, budget)
-    _cross_validate(manifest, spec, plan.plan_id, tasks, events)
-    return Study(root=root, manifest=manifest, spec=spec, plan=plan, tasks=tasks, events=events)
+    def read(relative: str, role: str, max_bytes: int) -> tuple[dict[str, Any], bytes]:
+        return _read(root, relative, role, max_bytes, budget)
+
+    tasks, attempts = load_records(root, manifest, plan.tasks, configured, read)
+    events = load_event_journal(root, manifest, configured, read)
+    _cross_validate(manifest, spec, plan.plan_id)
+    effective = derive_effective_study(root, manifest, tasks, attempts, events)
+    return Study(
+        root=root,
+        manifest=effective.manifest,
+        spec=spec,
+        plan=plan,
+        tasks=effective.tasks,
+        attempts=effective.attempts,
+        events=events,
+    )
 
 
 def _root(path: str | Path) -> Path:
@@ -212,116 +224,13 @@ def _verify_reference(
         )
 
 
-def _load_tasks(
-    root: Path,
-    manifest: StudyManifest,
-    plan_tasks: tuple[Any, ...],
-    limits: StudyLoadLimits,
-    budget: _ReadBudget,
-) -> tuple[TaskRecord, ...]:
-    if not plan_tasks:
-        _assert_no_task_entries(root)
-        return ()
-    result: list[TaskRecord] = []
-    expected_dirs: set[str] = set()
-    for plan_task in plan_tasks:
-        digest = plan_task.task_id.removeprefix("sha256:")
-        expected_dirs.add(digest)
-        relative = f"tasks/{digest}/task.json"
-        raw, _ = _read(root, relative, "study_task", limits.max_task_bytes, budget)
-        task = decode_task(raw)
-        if (task.study_id, task.task_id, task.plan_index) != (
-            manifest.study_id,
-            plan_task.task_id,
-            plan_task.plan_index,
-        ):
-            raise StudyIntegrityError(
-                operation="load study",
-                reason="TASK_ID_MISMATCH",
-                document_role="study_task",
-                path=relative,
-                expected=(manifest.study_id, plan_task.task_id, plan_task.plan_index),
-                actual=(task.study_id, task.task_id, task.plan_index),
-                action="Restore the task checkpoint matching the immutable plan.",
-            )
-        result.append(task)
-    _assert_task_entries(root, expected_dirs, initial=manifest.state == "created")
-    return tuple(result)
-
-
-def _assert_no_task_entries(root: Path) -> None:
-    tasks_root = root / "tasks"
-    if tasks_root.exists():
-        if _entry_names(root, "tasks", "tasks"):
-            _unexpected("tasks", "no task entries for an empty plan", "non-empty tasks directory")
-
-
-def _assert_task_entries(root: Path, expected: set[str], *, initial: bool) -> None:
-    observed = _entry_names(root, "tasks", "tasks")
-    if observed != expected:
-        _unexpected("tasks", sorted(expected), sorted(observed))
-    if initial:
-        for digest in expected:
-            entries = _entry_names(root, f"tasks/{digest}", "study_task")
-            if entries != {"task.json"}:
-                _unexpected(f"tasks/{digest}", ["task.json"], sorted(entries))
-
-
-def _load_events(
-    root: Path,
-    manifest: StudyManifest,
-    limits: StudyLoadLimits,
-    budget: _ReadBudget,
-) -> tuple[StudyEvent, ...]:
-    if manifest.checkpoint_sequence > limits.max_documents:
-        _ReadBudget._raise("max_documents", limits.max_documents, manifest.checkpoint_sequence, "study_event", "events")
-    result: list[StudyEvent] = []
-    previous_hash: str | None = None
-    for sequence in range(1, manifest.checkpoint_sequence + 1):
-        relative = f"events/{sequence:020d}.json"
-        raw, payload = _read(root, relative, "study_event", limits.max_event_bytes, budget)
-        event = decode_event(raw, file_sha256=sha256_bytes(payload))
-        if event.sequence != sequence or event.previous_event_sha256 != previous_hash:
-            raise StudyIntegrityError(
-                operation="load study",
-                reason="EVENT_HASH_CHAIN_BROKEN",
-                document_role="study_event",
-                path=relative,
-                expected={"sequence": sequence, "previous_event_sha256": previous_hash},
-                actual={"sequence": event.sequence, "previous_event_sha256": event.previous_event_sha256},
-                action="Restore the complete contiguous immutable event journal.",
-            )
-        result.append(event)
-        previous_hash = event.file_sha256
-    expected_names = {f"{sequence:020d}.json" for sequence in range(1, manifest.checkpoint_sequence + 1)}
-    observed_names = _entry_names(root, "events", "events")
-    if observed_names != expected_names:
-        _unexpected("events", sorted(expected_names), sorted(observed_names))
-    if previous_hash != manifest.checkpoint_event_sha256:
-        raise StudyIntegrityError(
-            operation="load study",
-            reason="EVENT_HEAD_MISMATCH",
-            document_role="study_manifest",
-            field="$.checkpoint.event_sha256",
-            expected=previous_hash,
-            actual=manifest.checkpoint_event_sha256,
-            action="Restore the root checkpoint matching the immutable event head.",
-        )
-    return tuple(result)
-
-
 def _cross_validate(
     manifest: StudyManifest,
     spec: StudySpec,
     plan_id: str,
-    tasks: tuple[TaskRecord, ...],
-    events: tuple[StudyEvent, ...],
 ) -> None:
     _validate_manifest_identity(manifest, spec, plan_id)
-    _validate_manifest_counts(manifest, tasks)
     _validate_manifest_policy(manifest, spec)
-    if manifest.state == "created":
-        _validate_initial_state(manifest, tasks, events)
 
 
 def _validate_manifest_identity(manifest: StudyManifest, spec: StudySpec, plan_id: str) -> None:
@@ -335,22 +244,6 @@ def _validate_manifest_identity(manifest: StudyManifest, spec: StudySpec, plan_i
         )
 
 
-def _validate_manifest_counts(manifest: StudyManifest, tasks: tuple[TaskRecord, ...]) -> None:
-    derived = Counter(task.state for task in tasks)
-    expected_counts = StudyCounts(
-        tasks=len(tasks),
-        pending=derived["pending"],
-        running=derived["running"],
-        succeeded=derived["succeeded"],
-        failed=derived["failed"],
-        interrupted=derived["interrupted"],
-        cancelled=derived["cancelled"],
-        skipped=derived["skipped"],
-    )
-    if manifest.counts != expected_counts:
-        _unexpected("study_manifest", expected_counts, manifest.counts, reason="COUNT_MISMATCH")
-
-
 def _validate_manifest_policy(manifest: StudyManifest, spec: StudySpec) -> None:
     if (manifest.on_error, manifest.max_attempts_per_task) != (
         spec.on_error,
@@ -362,49 +255,6 @@ def _validate_manifest_policy(manifest: StudyManifest, spec: StudySpec) -> None:
             (manifest.on_error, manifest.max_attempts_per_task),
             reason="POLICY_MISMATCH",
         )
-
-
-def _validate_initial_state(
-    manifest: StudyManifest,
-    tasks: tuple[TaskRecord, ...],
-    events: tuple[StudyEvent, ...],
-) -> None:
-    valid_initial = (
-        manifest.execution_id is None
-        and all(_is_initial_task(task, manifest.max_attempts_per_task) for task in tasks)
-        and len(events) == 1
-        and _is_initial_event(events[0], manifest)
-    )
-    if not valid_initial:
-        _unexpected("study_manifest", "canonical created state", "inconsistent initial checkpoints", reason="INCONSISTENT_INITIAL_STATE")
-
-
-def _is_initial_task(task: TaskRecord, max_attempts: int) -> bool:
-    return (
-        task.state == "pending"
-        and not task.attempts
-        and task.claim_epoch == 0
-        and task.current_attempt_id is None
-        and task.selected_success_attempt_id is None
-        and task.retryability.attempts_remaining == max_attempts
-        and not task.retryability.retryable
-        and task.retryability.category is None
-        and task.reason is None
-    )
-
-
-def _is_initial_event(event: StudyEvent, manifest: StudyManifest) -> bool:
-    return (
-        event.event_type == "study_created"
-        and event.entity_kind == "study"
-        and event.entity_id == manifest.study_id
-        and event.transition_from is None
-        and event.transition_to == "created"
-        and event.execution_id is None
-        and event.timestamp == manifest.created_at == manifest.updated_at
-        and event.reason is None
-        and not event.payload
-    )
 
 
 def _validate_reference_contract(manifest: StudyManifest) -> None:
@@ -440,24 +290,6 @@ def _validate_strings(value: object, limits: StudyLoadLimits, role: str) -> None
             stack.extend(item.values())
         elif isinstance(item, list):
             stack.extend(item)
-
-
-def _entry_names(root: Path, relative: str, role: str) -> set[str]:
-    directory = confined_study_path(root, relative, role=role, must_exist=True)
-    try:
-        if not directory.is_dir():
-            raise OSError("not a directory")
-        return {entry.name for entry in directory.iterdir()}
-    except OSError as exc:
-        raise MalformedStudyError(
-            operation="load study",
-            reason="UNREADABLE_DOCUMENT_DIRECTORY",
-            document_role=role,
-            path=relative,
-            expected="readable contained directory",
-            actual=type(exc).__name__,
-            action="Restore the canonical directory and its permissions.",
-        ) from exc
 
 
 def _unexpected(role: str, expected: object, actual: object, *, reason: str = "UNEXPECTED_LAYOUT") -> None:
