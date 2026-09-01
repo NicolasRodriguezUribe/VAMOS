@@ -7,13 +7,16 @@ import operator
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 
 from vamos.experiment.artifacts.errors import RunArtifactError
 from vamos.experiment.artifacts.jsonio import canonical_json_bytes, normalize_json
 from vamos.experiment.artifacts.models import deep_freeze, deep_thaw
 
 from .errors import InvalidStudySpecError
+
+if TYPE_CHECKING:
+    from .report_models import StudyReport, StudySummary
 
 SCHEMA_VERSION = "1.0.0"
 OnErrorPolicy = Literal["fail_fast", "continue"]
@@ -295,6 +298,9 @@ class Study:
     tasks: tuple[TaskRecord, ...]
     attempts: tuple[AttemptRecord, ...] = field(repr=False)
     events: tuple[StudyEvent, ...] = field(repr=False)
+    stored_checkpoint_sequence: int = field(repr=False)
+    stored_checkpoint_event_sha256: str = field(repr=False)
+    reconciliation_required: bool = field(repr=False)
 
     @property
     def study_id(self) -> str:
@@ -331,6 +337,18 @@ class Study:
         from .recovery import retry_study
 
         return retry_study(self, failed_only=failed_only)
+
+    def inspect(self) -> StudyReport:
+        """Reload and project current durable state without modifying it."""
+        from .projection import project_study
+
+        return project_study(self).report
+
+    def summarize(self) -> StudySummary:
+        """Return a deterministic in-memory summary without writing files."""
+        from .projection import project_study
+
+        return project_study(self).summary
 
 
 __all__ = [

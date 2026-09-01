@@ -6,16 +6,16 @@ Inherits all repository-wide rules from `/AGENTS.md`. This file contains local d
 
 ## Responsibility and invariants
 
-- `models.py`, `planning.py`, `preflight.py`, `creation.py`, and `loading.py` own the canonical durable model, immutable plan, read-only planning report, atomic creation, and data-only loaded view.
+- `models.py`, `planning.py`, `preflight.py`, `creation.py`, and `loading.py` own the canonical durable model, immutable plan, read-only planning report, atomic creation, and data-only loaded view. `projection.py` is the only current-state interpretation service for immutable `StudyReport` and `StudySummary` values in `report_models.py`.
 - `execution.py` owns the no-argument, newly-created-only sequential `Study.run()` path. It executes ascending `task_id`; `plan_index` is presentation metadata. `failure_policy.py` owns persisted fail-fast/continue study outcomes, while `cancellation.py` owns durable single-process cancellation.
 - `journal.py` validates and replays immutable events; `checkpoint_projection.py` validates lagging checkpoints and builds the effective immutable view without writes.
 - `commits.py`, `run_publication.py`, and `writing.py` own event/checkpoint commits, verified RunManifest linkage, task-failure publication, and atomic file primitives. `reconciliation.py` owns evidence-driven recovery writes; `recovery.py` owns resume/retry selection and operation orchestration.
 - `runner.py`, `types.py`, and `api.py` remain only for unmigrated in-memory benchmark/ablation callers. The durable runner never delegates to them and they are not another persisted authority.
-- A study summary may reference or aggregate run results but must not create a second copy of canonical per-run arrays or specifications.
+- A study summary may reference or aggregate verified RunManifest metadata but must not load or create a second copy of canonical per-run arrays or specifications. `Study.summarize()` is in-memory only; later output renderers must consume this same projection.
 - RunManifest remains the sole authority for resolved per-run truth, environment, provenance, arrays, replayability, and outcome. Study attempts retain only bounded root-relative manifest references.
 - `CSVPersister` exports a derived table only. It is not canonical state and has no compatibility route into StudyManifest.
 - Resume and explicit bounded retry are single-process operations that reconcile before claims and preserve every terminal attempt. Failure policy is fixed in the published spec, and running cancellation is cooperative only within the process that owns the sequential runner.
-- Do not implement locks, leases, parallel workers, state-mutating study CLI, format migration, or summaries before their ordered contract Goals. Only `vamos study plan` is available and remains read-only.
+- Do not implement locks, leases, parallel workers, state-mutating study CLI, or format migration before their ordered contract Goals. `Study.inspect()` and `Study.summarize()` are data-only and write-free; only `vamos study plan` is currently available in the CLI.
 - Preserve task order, explicit seeds, indicator failure reporting, and optional-dependency behavior.
 
 ## Change route
@@ -36,8 +36,11 @@ path: src/vamos/experiment/study/planning.py
 path: src/vamos/experiment/study/preflight.py
 path: src/vamos/experiment/study/creation.py
 path: src/vamos/experiment/study/loading.py
+path: src/vamos/experiment/study/projection.py
+path: src/vamos/experiment/study/report_models.py
 path: src/vamos/experiment/study/execution.py
 path: src/vamos/experiment/study/journal.py
+path: src/vamos/experiment/study/journal_loading.py
 path: src/vamos/experiment/study/checkpoint_projection.py
 path: src/vamos/experiment/study/run_publication.py
 path: src/vamos/experiment/study/reconciliation.py
@@ -57,6 +60,8 @@ symbol: vamos.experiment.study.api:run_study
 symbol: vamos.experiment.study.models:Study.run
 symbol: vamos.experiment.study.models:Study.resume
 symbol: vamos.experiment.study.models:Study.retry
+symbol: vamos.experiment.study.models:Study.inspect
+symbol: vamos.experiment.study.models:Study.summarize
 symbol: vamos.study_artifacts:create_study
 symbol: vamos.study_artifacts:load_study
 symbol: vamos.study_artifacts:plan_study

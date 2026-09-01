@@ -7,17 +7,19 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, NoReturn, Protocol
+from typing import Any, Literal, NoReturn, Protocol
 
 from vamos.experiment.artifacts.errors import RunArtifactError
 from vamos.experiment.artifacts.jsonio import sha256_bytes
 from vamos.experiment.artifacts.models import LoadLimits, StoredRun
 from vamos.experiment.artifacts.persistence import load_run
+from vamos.experiment.artifacts.reader import verify_artifact
 
 from .errors import (
     MalformedStudyError,
     ReferencedRunCorruptError,
     ReferencedRunMissingError,
+    StudyError,
     StudyIntegrityError,
     UnsafeStudyPathError,
 )
@@ -28,10 +30,24 @@ from .record_decoding import decode_attempt, decode_task
 
 _ATTEMPT_FILE_PATTERN = r"([0-9a-f-]{36})\.json"
 _RUN_ID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+_KNOWN_RUN_ARTIFACT_ROLES = ("environment", "result_bundle", "metrics", "events")
 
 
 class ReadDocument(Protocol):
     def __call__(self, relative: str, role: str, max_bytes: int) -> tuple[dict[str, Any], bytes]: ...
+
+
+RunVerification = Literal["all", "metadata"]
+
+
+class ObserveRunReference(Protocol):
+    def __call__(
+        self,
+        attempt_id: str,
+        reference: Mapping[str, Any],
+        stored: StoredRun | None,
+        error: StudyError | None,
+    ) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +63,10 @@ def load_records(
     plan_tasks: tuple[PlanTask, ...],
     limits: StudyLoadLimits,
     read: ReadDocument,
+    *,
+    run_verification: RunVerification = "all",
+    tolerate_run_errors: bool = False,
+    observe_run_reference: ObserveRunReference | None = None,
 ) -> tuple[tuple[TaskRecord, ...], tuple[AttemptRecord, ...]]:
     """Load every planned checkpoint and bounded attempt document."""
     if not plan_tasks:
@@ -62,7 +82,15 @@ def load_records(
         raw, _ = read(relative, "study_task", limits.max_task_bytes)
         task = decode_task(raw)
         _validate_task_identity(task, manifest, plan_task, relative)
-        loaded = _load_attempts(root, task, limits, read)
+        loaded = _load_attempts(
+            root,
+            task,
+            limits,
+            read,
+            run_verification=run_verification,
+            tolerate_run_errors=tolerate_run_errors,
+            observe_run_reference=observe_run_reference,
+        )
         _validate_attempt_references(task, loaded)
         tasks.append(task)
         attempts.extend(item.record for item in loaded)
@@ -76,6 +104,7 @@ def validate_run_reference(
     *,
     expected_task_id: str,
     expected_status: str | None = None,
+    verification: RunVerification = "all",
 ) -> StoredRun:
     """Validate an approved bounded reference and its complete canonical run."""
     run_id = reference.get("run_id")
@@ -110,7 +139,7 @@ def validate_run_reference(
     try:
         manifest_path = confined_study_path(root, expected_path, role="run_manifest", must_exist=True)
     except UnsafeStudyPathError as exc:
-        raise _run_corrupt(expected_path, run_id, exc) from exc
+        raise _run_corrupt(expected_path, run_id, exc, verification=verification) from exc
     try:
         payload = manifest_path.read_bytes()
     except OSError as exc:
@@ -124,9 +153,24 @@ def validate_run_reference(
             action="Restore the referenced canonical run directory.",
         ) from exc
     try:
-        stored = load_run(manifest_path.parent, verify="all", limits=LoadLimits())
+        run_limits = LoadLimits()
+        stored = load_run(
+            manifest_path.parent,
+            verify="all" if verification == "all" else "manifest",
+            limits=run_limits,
+        )
+        if verification == "metadata":
+            for descriptor in stored.manifest.artifacts:
+                if descriptor.role not in _KNOWN_RUN_ARTIFACT_ROLES:
+                    continue
+                verify_artifact(
+                    stored.root,
+                    descriptor,
+                    limits=run_limits,
+                    operation="inspect study run reference",
+                )
     except RunArtifactError as exc:
-        raise _run_corrupt(expected_path, run_id, exc) from exc
+        raise _run_corrupt(expected_path, run_id, exc, verification=verification) from exc
     semantic = stored.manifest.get("integrity")
     semantic_hash = semantic.get("manifest_sha256") if isinstance(semantic, Mapping) else None
     observed = {
@@ -173,14 +217,21 @@ def validate_run_reference(
     return stored
 
 
-def _run_corrupt(path: str, run_id: str, exc: Exception) -> ReferencedRunCorruptError:
+def _run_corrupt(
+    path: str,
+    run_id: str,
+    exc: Exception,
+    *,
+    verification: RunVerification = "all",
+) -> ReferencedRunCorruptError:
+    expected = "fully verified" if verification == "all" else "metadata-verified"
     return ReferencedRunCorruptError(
         operation="load study",
         reason="REFERENCED_RUN_CORRUPT",
         document_role="run_manifest",
         path=path,
         entity_id=run_id,
-        expected="fully verified referenced canonical RunManifest",
+        expected=f"{expected} referenced canonical RunManifest",
         actual=type(exc).__name__,
         action="Restore the exact referenced run; corrupt evidence is never converted to pending work.",
     )
@@ -191,6 +242,10 @@ def _load_attempts(
     task: TaskRecord,
     limits: StudyLoadLimits,
     read: ReadDocument,
+    *,
+    run_verification: RunVerification,
+    tolerate_run_errors: bool,
+    observe_run_reference: ObserveRunReference | None,
 ) -> tuple[_LoadedAttempt, ...]:
     digest = task.task_id.removeprefix("sha256:")
     directory = f"tasks/{digest}/attempts"
@@ -214,13 +269,75 @@ def _load_attempts(
             )
         if attempt.run_reference is not None:
             expected_status = attempt.status if attempt.status in {"succeeded", "failed"} else None
-            validate_run_reference(root, attempt.run_reference, expected_task_id=task.task_id, expected_status=expected_status)
+            _validate_observed_run(
+                root,
+                attempt,
+                expected_status=expected_status,
+                verification=run_verification,
+                tolerate_errors=tolerate_run_errors,
+                observer=observe_run_reference,
+            )
         result.append(_LoadedAttempt(attempt, relative, payload))
     result.sort(key=lambda item: item.record.attempt_number)
     numbers = [item.record.attempt_number for item in result]
     if numbers != list(range(1, len(result) + 1)) or len({item.record.attempt_id for item in result}) != len(result):
         _unexpected("study_attempt", list(range(1, len(result) + 1)), numbers, reason="ATTEMPT_SEQUENCE_MISMATCH")
     return tuple(result)
+
+
+def validate_observed_run(
+    root: Path,
+    attempt_id: str,
+    reference: Mapping[str, Any],
+    *,
+    expected_task_id: str,
+    expected_status: str | None,
+    verification: RunVerification,
+    tolerate_errors: bool,
+    observer: ObserveRunReference | None,
+) -> StoredRun | None:
+    """Validate one run reference and optionally report a typed issue."""
+    try:
+        stored = validate_run_reference(
+            root,
+            reference,
+            expected_task_id=expected_task_id,
+            expected_status=expected_status,
+            verification=verification,
+        )
+    except StudyError as exc:
+        if observer is not None:
+            observer(attempt_id, reference, None, exc)
+        if not tolerate_errors:
+            raise
+        return None
+    if observer is not None:
+        observer(attempt_id, reference, stored, None)
+    return stored
+
+
+def _validate_observed_run(
+    root: Path,
+    attempt: AttemptRecord,
+    *,
+    expected_status: str | None,
+    verification: RunVerification,
+    tolerate_errors: bool,
+    observer: ObserveRunReference | None,
+) -> None:
+    reference = attempt.run_reference
+    if reference is None:
+        return
+    validate_observed_run(
+        root,
+        attempt.attempt_id,
+        reference,
+        expected_task_id=attempt.task_id,
+        expected_status=expected_status,
+        verification=verification,
+        tolerate_errors=tolerate_errors,
+        observer=observer,
+    )
 
 
 def _validate_task_identity(task: TaskRecord, manifest: StudyManifest, plan_task: PlanTask, relative: str) -> None:
@@ -327,4 +444,11 @@ def _unexpected(role: str, expected: object, actual: object, *, reason: str = "U
     )
 
 
-__all__ = ["ReadDocument", "load_records", "validate_run_reference"]
+__all__ = [
+    "ObserveRunReference",
+    "ReadDocument",
+    "RunVerification",
+    "load_records",
+    "validate_observed_run",
+    "validate_run_reference",
+]

@@ -1,6 +1,6 @@
 # VAMOS durable study and StudyManifest v1 contract
 
-Status: approved pre-release contract; create/load, sequential execution, failure policy, cancellation, reconciliation, resume, retry, and read-only planning preflight implemented
+Status: approved pre-release contract; create/load, sequential execution, failure policy, cancellation, reconciliation, resume, retry, read-only planning preflight, and in-memory inspect/summary projections implemented
 
 Primary document identity: `vamos.study-manifest`
 
@@ -20,9 +20,10 @@ implementation-independent. The immutable models, deterministic planner,
 read-only `plan_study` report and `vamos study plan` command, atomic creator,
 data-only loader, journal derivation, and single-process
 sequential `Study.run()` slice with persisted failure policy and graceful
-cancellation, explicit reconciliation writes, resume, and bounded retry are
-implemented. Stateful CLI commands, locks, leases, parallelism, and summaries
-remain deferred.
+cancellation, explicit reconciliation writes, resume, bounded retry, and the
+shared immutable `Study.inspect()`/`Study.summarize()` projection are
+implemented. Stateful CLI commands, summary-file output, caller migration,
+locks, leases, and parallelism remain deferred.
 
 VAMOS is pre-release. Version `1.0.0` is the only study schema. There is no
 reader, detector, migration, alias, fallback layout, or deprecation period for
@@ -49,7 +50,7 @@ that format and never redefines it.
 
 This contract does not itself supply implementation. The current bounded slices
 do not implement state-mutating study CLI, parallel workers, distributed
-coordination, Studio integration, new algorithms, or typing-debt reduction. It
+coordination, Studio integration, new algorithms, or typing-debt reduction.
 Read-only planning is available through Python and CLI. The implementation does
 not support plan mutation, successful-task force retry, custom-code loading,
 legacy study formats, or migration.
@@ -122,7 +123,7 @@ with full verification before `attempt_succeeded` enters the journal.
 
 This slice deliberately has no coordination path, lock, lease, heartbeat,
 worker identity, cross-process ownership guarantee, parallelism, state-mutating CLI, or
-summary. Cancellation is durable but limited to an idle transition or a
+summary-file output. Cancellation is durable but limited to an idle transition or a
 cooperative request in the active runner's process. Obvious same-process
 reentry is rejected. An empty study follows the direct `created` to `completed`
 transition and creates no attempt or run.
@@ -169,7 +170,7 @@ inferring persistence from callers.
 | `TaskRecord` | One stable task, current validated checkpoint, attempt descriptors, selected success, claim epoch, and reason/retry classification. | Complete run specifications or numerical output. |
 | `AttemptRecord` | One claim/execution attempt, timestamps, execution/lease identity, terminal status, failure classification, and optional run reference. | Arrays, environment content, or another attempt's state. |
 | `StudyEvent` | One immutable, ordered state transition sufficient to replay checkpoints. | Numerical output or arbitrary logs. |
-| `StudyReport` | Future immutable inspection/CLI view of verified canonical state; recovery operations currently return `Study`. | Persistence authority. |
+| `StudyReport` | Implemented immutable inspection view of verified canonical state; recovery operations continue to return `Study`. | Persistence authority or human rendering. |
 | `StudySummary` | Regenerable JSON/CSV/DataFrame/publication view. | Resume decisions or canonical status. |
 | `RunManifest` reference | Relative path, run ID, task ID, semantic manifest hash, file hash, and byte length. | A copied run spec, environment, provenance, replay evidence, or arrays. |
 
@@ -626,17 +627,22 @@ only through a future explicit new task/plan, not by directory discovery.
 
 ## 18. Derived reports and summaries
 
-The future `StudyReport` is a Python value built from verified canonical
-records; it is not introduced by the current recovery slice.
-`StudySummary` writers may create task-status, failure, run-index, metric, tidy
-CSV, DataFrame, or publication-input views under `derived/` or an explicit
-external destination.
+`StudyReport` and `StudySummary` are immutable Python values built by one
+shared projection service from verified canonical records. `Study.inspect()`
+reloads current state and reports structured run-reference issues without
+repairing them. `Study.summarize()` returns exactly one `plan_index`-ordered row
+per task. Both operations verify RunManifest metadata and referenced bytes
+without materializing `F` or `X`, execute no component, and write no file.
+Future writers may serialize the same `StudySummary` under `derived/` or an
+explicit external destination; they may not reinterpret canonical state.
 
 Every summary identifies study ID, plan ID, generation timestamp, source root
 manifest semantic hash, and applied event head. Missing, failed, interrupted,
 cancelled, and skipped tasks remain explicit. Aggregation calls canonical study
 and run readers; it does not infer from directory names. Deleting every derived
-file changes neither inspection nor resume.
+file changes neither inspection nor resume. The in-memory summary uses the
+persisted effective-state update timestamp as its deterministic generation
+timestamp.
 
 ## 19. Public Python API
 
@@ -662,6 +668,8 @@ report = plan_study(spec, output="studies/comparison-01")  # read-only
 created = create_study(spec, output="studies/comparison-01")
 completed = created.run()
 loaded = load_study("studies/comparison-01")  # data-only
+inspection = loaded.inspect()  # immutable StudyReport, zero writes
+summary = loaded.summarize()  # immutable StudySummary, zero writes
 ```
 
 `plan_study` and `create_study` use the same canonical resolver and therefore
@@ -676,8 +684,9 @@ cooperative request when this process owns the active sequential runner.
 eligible interrupted tasks, and includes retryable failures only after explicit
 consent. `Study.retry(failed_only=True)` retries eligible failed tasks; passing
 `failed_only=False` also selects interrupted tasks. Both return a fresh loaded
-`Study`; a no-runnable result writes nothing. `inspect`, `summarize`, and the
-study CLI remain later Goals. Internal journal types are not public, and no
+`Study`; a no-runnable result writes nothing. `inspect()` and `summarize()`
+reload through one metadata-only projection service and never reconcile or
+write. The stateful study CLI remains a later Goal. Internal journal types are not public, and no
 lock/lease type exists in the implemented slice.
 
 The existing top-level in-memory `StudyResult` returned by multi-seed
@@ -783,7 +792,7 @@ change.
 | 2. Sequential durable runner (implemented) | `Study.run()` reserves one task at a time, reconstructs persisted science, publishes verified canonical runs, and commits attempts/events/checkpoints. | No configurable policy, cancellation, retry, resume, coordination, or workers. | SA-021..026 and SA-061..065 under the bounded-slice clarifications. | Adds the durable path without delegating to the old caller path; caller replacement remains deferred. | Revert before public release and regenerate test studies. |
 | 3. Failure policy and cancellation (implemented) | `fail_fast`, `continue`, task-vs-infrastructure errors, graceful cancellation. | No retry/resume or parallelism. | SA-027..030, task-selection portions of SA-031..032, SA-064..065, and SA-068; stale-process reconciliation remains Goal 4. | Changes durable runner failure behavior intentionally; caller migration remains deferred. | Revert policy Goal; no dual policy. |
 | 4. Reconciliation, resume, and explicit retry (implemented) | Reconciliation writes, interrupted-attempt recovery, pending resume, bounded failed/interrupted retry; reuse the implemented data-only journal replay. | No local parallel scheduling or environment override. | SA-033..047 and SA-049..055 beyond the already implemented data-only derivation; SA-048 remains its explicitly future override. | Prevents old rerun behavior and enforces plan identity. | Revert as one slice; preserved canonical studies remain inspectable only by the current schema revision in development. |
-| 5. Inspect/summary API and stateful CLI plus caller cleanup | Complete persisted-state UX, regenerated reports, ablation/benchmark/Studio/analysis migration, and delete superseded study paths. Read-only plan preflight is already implemented independently. | No parallel or distributed workers. | SA-067 and SA-069..074. | Removes pre-release APIs and directory heuristics. | Revert whole caller migration; do not add aliases. |
+| 5. Inspect/summary API (projection implemented), stateful CLI, and caller cleanup | Immutable in-memory report/summary projection is implemented; stateful CLI, regenerated report files, ablation/benchmark/Studio/analysis migration, and superseded-path deletion remain. Read-only plan preflight is already implemented independently. | No parallel or distributed workers. | SA-067 and the summary projection portion of SA-073 are implemented; SA-069..072, remaining SA-073 output, and SA-074 remain in the coordinated Goal. | Removes pre-release APIs and directory heuristics. | Revert the coordinated caller migration; do not add aliases. |
 | 6. Local locking and parallel workers | Study lock, task leases, heartbeats, fencing, path confinement, Windows/POSIX local filesystem tests. | No network filesystem or cross-host execution. | SA-056..060 and SA-066. | Platform filesystem semantics. | Disable/revert the parallel executor; retain sequential service on the same schema. |
 | 7. Distributed coordination | External compare-and-set/lease backend conforming to the same tokens/events. | No schema fork or fallback filesystem claims. | New distributed acceptance IDs in that Goal. | Backend partitions/clock behavior. | Remove the provider; local contract remains canonical. |
 
@@ -791,10 +800,10 @@ Dependencies are strictly ordered: Goal 1 precedes all others; Goal 2 precedes
 policies; Goal 3 precedes resume; Goals 2–4 precede public caller cleanup; Goal
 5 precedes parallel UX; distributed work follows proven local fencing.
 
-The first four vertical slices are implemented: atomic planned-study creation
+The first four vertical slices and the Goal 5 in-memory projection foundation are implemented: atomic planned-study creation
 and data-only loading, the bounded sequential durable runner, persisted failure
 policy with single-process graceful cancellation, and explicit single-owner
-reconciliation/resume/retry. Later roadmap rows do not become available by
+reconciliation/resume/retry, plus immutable inspection and summary views. Later roadmap rows do not become available by
 implication.
 
 ## 25. Frozen first-slice decisions

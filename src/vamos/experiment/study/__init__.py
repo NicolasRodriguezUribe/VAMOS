@@ -3,6 +3,7 @@ from .creation import create_study
 from .loading import load_study
 from .models import Study, StudySpec
 from .preflight import StudyPlanReport, plan_study
+from .report_models import StudyReport, StudySummary
 from .runner import StudyResult, StudyRunner, StudyTask
 
 __all__ = [
@@ -10,8 +11,10 @@ __all__ = [
     "StudyResult",
     "StudyRunner",
     "StudyPlanReport",
+    "StudyReport",
     "StudySpec",
     "StudyTask",
+    "StudySummary",
     "create_study",
     "load_study",
     "plan_study",
