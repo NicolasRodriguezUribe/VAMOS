@@ -27,7 +27,7 @@ class Finding:
 
 
 _TEXT_SUFFIXES = {".cfg", ".json", ".md", ".py", ".toml", ".txt", ".yaml", ".yml"}
-_SCAN_ROOTS = ("src", "experiments", "website", "tests")
+_SCAN_ROOTS = ("src", "docs", "experiments", "website", "tests")
 _CHECKER_FIXTURES = {
     "tests/architecture/test_no_legacy_typing_hints.py",
     "tests/test_no_deprecation_shims.py",
@@ -71,6 +71,7 @@ _CLI_SIGNATURES = (
     re.compile(r"['\"]self-check['\"]"),
     re.compile(r"['\"]self_check['\"]"),
 )
+_DISCARDED_STUDY_ENVELOPE = re.compile(r"vamos\.study-plan-result")
 
 # Agent-facing files reuse these semantic signatures instead of maintaining a
 # second list of discarded pre-release paths, fields, artifacts, and commands.
@@ -98,6 +99,7 @@ _GUIDANCE_SIGNATURES = (
     ("resolved_config.json", re.compile(r"resolved_config\.json", re.IGNORECASE)),
     ("time.txt", re.compile(r"time\.txt", re.IGNORECASE)),
     ("vamos.lock", re.compile(r"vamos\.lock", re.IGNORECASE)),
+    ("vamos.study-plan-result", _DISCARDED_STUDY_ENVELOPE),
 )
 
 
@@ -123,6 +125,8 @@ def scan(root: Path) -> list[Finding]:
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
             for line_number, line in enumerate(text.splitlines(), start=1):
+                if _DISCARDED_STUDY_ENVELOPE.search(line):
+                    findings.append(Finding(relative, line_number, "discarded study command envelope"))
                 active_experiment = _is_active_experiment(relative)
                 if active_experiment:
                     for pattern in _DISCARDED_RUN_FILES:

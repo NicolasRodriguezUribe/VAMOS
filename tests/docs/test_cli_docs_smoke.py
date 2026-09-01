@@ -155,11 +155,13 @@ def test_cli_guide_study_plan_is_read_only_json(tmp_path: Path) -> None:
 
     assert proc.returncode == 0, f"{source_path}: {proc.stderr or proc.stdout}"
     payload = json.loads(proc.stdout)
-    assert payload["document_type"] == "vamos.study-plan-result", source_path
-    assert payload["task_count"] == 4, source_path
-    assert payload["output"]["status"] == "available", source_path
-    assert payload["execution_occurred"] is False, source_path
-    assert payload["filesystem_write_occurred"] is False, source_path
+    assert payload["document_type"] == "vamos.study-command-result", source_path
+    assert payload["operation"] == "plan", source_path
+    assert payload["payload"]["task_count"] == 4, source_path
+    assert payload["payload"]["output"]["status"] == "available", source_path
+    assert payload["changed"] is False, source_path
+    assert payload["payload"]["execution_occurred"] is False, source_path
+    assert payload["payload"]["filesystem_write_occurred"] is False, source_path
     assert not output.parent.exists(), source_path
 
 

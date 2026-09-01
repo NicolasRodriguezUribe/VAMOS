@@ -63,11 +63,19 @@ constructor:
 
 ```bash
 vamos study plan study.json --output studies/example --json
+vamos study create study.json --output studies/example --json
+vamos study run studies/example --json
+vamos study inspect studies/example --json
+vamos study resume studies/example --retry-failed --json
+vamos study retry studies/example --failed --json
+vamos study summarize studies/example --format csv --output reports/example.csv --json
 ```
 
-JSON mode emits one `vamos.study-plan-result` version `1.0.0` document. It
-does not create a study or run a task. After a ready report, create the exact
-plan with `vamos.create_study(spec, output="studies/example")` in Python.
+JSON mode emits one `vamos.study-command-result` version `1.0.0` document for
+every command. Planning does not create a study or run a task. Creation freezes
+the exact same plan and remains separate from execution. Mutating commands
+declare the one-process, one-owner boundary; no cross-process cancel command
+is available.
 
 `create_study` performs no optimization. It freezes the problem, dimensions,
 algorithm, typed configuration, operators, backend, evaluation strategy,
@@ -210,9 +218,10 @@ identities and root-relative references.
 
 ## Deliberate limits
 
-There is no state-mutating study CLI, summary-file writer, parallelism,
-cross-process ownership guarantee, lock, lease, heartbeat, worker, migration,
-or CSV behavior in this slice.
+There is no parallelism, cross-process ownership guarantee, lock, lease,
+heartbeat, worker, migration, or cross-process cancellation in this slice.
+The CLI can write an explicit derived JSON/CSV summary atomically, but summary
+files never become canonical state and existing destinations always collide.
 Calling `run()` on `running`, `paused`, `completed`,
 `completed_with_failures`, `failed`, or `cancelled` state is an actionable typed
 error. Obvious same-process reentry is also rejected.
@@ -255,6 +264,12 @@ symbol: vamos.study_artifacts:create_study
 symbol: vamos.study_artifacts:load_study
 symbol: vamos.study_artifacts:plan_study
 cli: vamos study plan --help
+cli: vamos study create --help
+cli: vamos study run --help
+cli: vamos study inspect --help
+cli: vamos study resume --help
+cli: vamos study retry --help
+cli: vamos study summarize --help
 symbol: vamos.experiment.study.models:Study.run
 symbol: vamos.experiment.study.models:Study.inspect
 symbol: vamos.experiment.study.models:Study.summarize

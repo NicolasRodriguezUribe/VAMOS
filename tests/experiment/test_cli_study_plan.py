@@ -66,12 +66,13 @@ def test_pl_017_python_and_cli_json_are_semantically_equal(tmp_path: Path) -> No
     proc = _run("plan", str(config), "--json")
     assert proc.returncode == 0, proc.stderr
     payload = json.loads(proc.stdout)
-    assert proc.stderr == ""
+    assert proc.stderr.count("Warning:") == 1
+    report = payload["payload"]
     assert payload["plan_id"] == python_report.plan_id
-    assert payload["task_ids"] == list(python_report.task_ids)
-    assert payload["task_count"] == python_report.task_count
-    assert payload["total_evaluation_budget"] == python_report.total_evaluation_budget
-    assert payload["components"]["backends"] == list(python_report.backend_ids)
+    assert report["task_ids"] == list(python_report.task_ids)
+    assert report["task_count"] == python_report.task_count
+    assert report["total_evaluation_budget"] == python_report.total_evaluation_budget
+    assert report["components"]["backends"] == list(python_report.backend_ids)
 
 
 def test_pl_018_json_success_is_one_stable_stdout_document(tmp_path: Path) -> None:
@@ -82,15 +83,18 @@ def test_pl_018_json_success_is_one_stable_stdout_document(tmp_path: Path) -> No
     second = _run("plan", str(config), "--json")
 
     assert first.returncode == second.returncode == 0
-    assert first.stderr == second.stderr == ""
+    assert first.stderr == second.stderr
+    assert first.stderr.count("Warning:") == 1
     assert first.stdout == second.stdout
     assert first.stdout.count("\n") == 1
     payload = json.loads(first.stdout)
-    assert payload["document_type"] == "vamos.study-plan-result"
+    assert payload["document_type"] == "vamos.study-command-result"
     assert payload["schema_version"] == "1.0.0"
     assert payload["status"] == "ready"
-    assert payload["execution_occurred"] is False
-    assert payload["filesystem_write_occurred"] is False
+    assert payload["exit_code"] == 0
+    assert payload["changed"] is False
+    assert payload["payload"]["execution_occurred"] is False
+    assert payload["payload"]["filesystem_write_occurred"] is False
 
 
 def test_pl_018_json_collision_keeps_identities_and_exits_five(tmp_path: Path) -> None:
@@ -103,14 +107,14 @@ def test_pl_018_json_collision_keeps_identities_and_exits_five(tmp_path: Path) -
     proc = _run("plan", str(config), "--output", str(occupied), "--json")
 
     assert proc.returncode == 5
-    assert proc.stderr == ""
+    assert proc.stderr.count("Warning:") == 2
     assert proc.stdout.count("\n") == 1
     payload = json.loads(proc.stdout)
     assert payload["status"] == "blocked"
-    assert payload["valid"] is True
+    assert payload["payload"]["valid"] is True
     assert payload["plan_id"].startswith("sha256:")
-    assert payload["task_ids"]
-    assert payload["output"]["status"] == "empty_directory"
+    assert payload["payload"]["task_ids"]
+    assert payload["payload"]["output"]["status"] == "empty_directory"
     assert payload["errors"][0]["reason"] == "OUTPUT_COLLISION"
     assert list(occupied.iterdir()) == before
 
@@ -132,13 +136,13 @@ def test_pl_018_invalid_plan_is_one_structured_json_error(tmp_path: Path, payloa
     assert proc.stderr == ""
     assert proc.stdout.count("\n") == 1
     envelope = json.loads(proc.stdout)
-    assert envelope["document_type"] == "vamos.study-plan-result"
-    assert envelope["status"] == "invalid"
-    assert envelope["valid"] is False
+    assert envelope["document_type"] == "vamos.study-command-result"
+    assert envelope["status"] == "error"
+    assert envelope["exit_code"] == 2
+    assert envelope["changed"] is False
     assert envelope["plan_id"] is None
     assert envelope["errors"][0]["reason"] == reason
     assert envelope["errors"][0]["execution_occurred"] is False
-    assert envelope["errors"][0]["filesystem_write_occurred"] is False
 
 
 def test_invalid_human_plan_has_no_traceback(tmp_path: Path) -> None:

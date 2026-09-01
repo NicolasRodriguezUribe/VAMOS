@@ -1,6 +1,6 @@
 # VAMOS durable study and StudyManifest v1 contract
 
-Status: approved pre-release contract; create/load, sequential execution, failure policy, cancellation, reconciliation, resume, retry, read-only planning preflight, and in-memory inspect/summary projections implemented
+Status: approved pre-release contract; create/load, sequential execution, failure policy, cancellation, reconciliation, resume, retry, inspection, summary projection/output, and the single-owner lifecycle CLI implemented
 
 Primary document identity: `vamos.study-manifest`
 
@@ -20,10 +20,10 @@ implementation-independent. The immutable models, deterministic planner,
 read-only `plan_study` report and `vamos study plan` command, atomic creator,
 data-only loader, journal derivation, and single-process
 sequential `Study.run()` slice with persisted failure policy and graceful
-cancellation, explicit reconciliation writes, resume, bounded retry, and the
-shared immutable `Study.inspect()`/`Study.summarize()` projection are
-implemented. Stateful CLI commands, summary-file output, caller migration,
-locks, leases, and parallelism remain deferred.
+cancellation, explicit reconciliation writes, resume, bounded retry, the
+shared immutable `Study.inspect()`/`Study.summarize()` projection, and the
+single-owner lifecycle CLI with explicit derived summary output are
+implemented. Caller migration, locks, leases, and parallelism remain deferred.
 
 VAMOS is pre-release. Version `1.0.0` is the only study schema. There is no
 reader, detector, migration, alias, fallback layout, or deprecation period for
@@ -122,8 +122,9 @@ freshly loaded immutable `Study`. It executes in ascending `task_id` order;
 with full verification before `attempt_succeeded` enters the journal.
 
 This slice deliberately has no coordination path, lock, lease, heartbeat,
-worker identity, cross-process ownership guarantee, parallelism, state-mutating CLI, or
-summary-file output. Cancellation is durable but limited to an idle transition or a
+worker identity, cross-process ownership guarantee, or parallelism. The CLI is
+a thin consumer of this service and explicit summary files remain derived.
+Cancellation is durable but limited to an idle transition or a
 cooperative request in the active runner's process. Obvious same-process
 reentry is rejected. An empty study follows the direct `created` to `completed`
 transition and creates no attempt or run.
@@ -686,7 +687,7 @@ consent. `Study.retry(failed_only=True)` retries eligible failed tasks; passing
 `failed_only=False` also selects interrupted tasks. Both return a fresh loaded
 `Study`; a no-runnable result writes nothing. `inspect()` and `summarize()`
 reload through one metadata-only projection service and never reconcile or
-write. The stateful study CLI remains a later Goal. Internal journal types are not public, and no
+write. The stateful single-owner study CLI delegates to these services. Internal journal types are not public, and no
 lock/lease type exists in the implemented slice.
 
 The existing top-level in-memory `StudyResult` returned by multi-seed
@@ -696,41 +697,34 @@ The existing top-level in-memory `StudyResult` returned by multi-seed
 
 ## 20. Public CLI and output
 
-Read-only planning is implemented independently of the persisted-state command
-roadmap:
+The current single-owner lifecycle is exposed through one command group:
 
 ```text
 vamos study plan CONFIG [--output STUDY_DIR] [--json]
+vamos study create CONFIG --output STUDY_DIR [--json]
+vamos study run STUDY_DIR [--json]
+vamos study inspect STUDY_DIR [--json]
+vamos study resume STUDY_DIR [--retry-failed] [--json]
+vamos study retry STUDY_DIR --failed [--json]
+vamos study summarize STUDY_DIR [--format {json,csv}] [--output PATH] [--json]
 ```
 
-It accepts the documented JSON `StudySpec` field set, resolves the same plan as
-`create_study`, and emits one `vamos.study-plan-result` version `1.0.0`
-document in JSON mode. It never creates, reserves, or modifies the proposed
-output and never evaluates an objective.
+Planning accepts the documented JSON `StudySpec` field set, resolves the same
+plan as `create_study`, never reserves output, and never evaluates an objective.
+Creation and execution remain deliberately separate. There is no cross-process
+cancel command; foreground interruption uses the existing graceful in-process
+cancellation path.
 
-The remaining target CLI contract is not implemented by the current sequential
-slice. Creation and execution remain deliberately separate:
+Human mode reports study/plan IDs, sanitized root, policy, task-state counts,
+whether execution or canonical state changed, and safe next commands; summary
+adds a compact every-task table. Output collision is checked before resolution
+publication and no `--force`, overwrite, or layout-detection option exists.
 
-```text
-vamos study create CONFIG --output STUDY_DIR
-vamos study run STUDY_DIR
-vamos study inspect STUDY_DIR
-vamos study resume STUDY_DIR [--retry-interrupted]
-vamos study retry STUDY_DIR --failed
-vamos study cancel STUDY_DIR
-vamos study summarize STUDY_DIR [--output PATH]
-```
-
-`create` prints study/plan IDs, task count, policy, output root, and exact
-`vamos study run ...` guidance. `run`/`resume` human output shows counts,
-current task/attempt, failures, final completeness, result locations, and safe
-next command. Output collision is checked before resolution publication and no
-`--force`, overwrite, or layout-detection option exists.
-
-Every future persisted-state command supports `--json`. JSON mode emits one UTF-8 document on stdout
-with identity `vamos.study-command-result/1`, operation, IDs, state/counts,
-changed flag, errors, and next action. Progress goes to stderr only when
-explicitly requested; noninteractive JSON has no prompts or ANSI text.
+Every command supports `--json`. JSON mode emits one UTF-8 document on stdout
+with `document_type="vamos.study-command-result"`, `schema_version="1.0.0"`,
+operation, exit code, IDs, status, changed flag, payload, warnings, errors, and
+next actions. Warnings use stderr in both rendering modes; noninteractive JSON
+has no prompts, ANSI text, decorative stdout output, or raw traceback.
 
 ## 21. Typed errors and CLI exits
 
@@ -792,7 +786,7 @@ change.
 | 2. Sequential durable runner (implemented) | `Study.run()` reserves one task at a time, reconstructs persisted science, publishes verified canonical runs, and commits attempts/events/checkpoints. | No configurable policy, cancellation, retry, resume, coordination, or workers. | SA-021..026 and SA-061..065 under the bounded-slice clarifications. | Adds the durable path without delegating to the old caller path; caller replacement remains deferred. | Revert before public release and regenerate test studies. |
 | 3. Failure policy and cancellation (implemented) | `fail_fast`, `continue`, task-vs-infrastructure errors, graceful cancellation. | No retry/resume or parallelism. | SA-027..030, task-selection portions of SA-031..032, SA-064..065, and SA-068; stale-process reconciliation remains Goal 4. | Changes durable runner failure behavior intentionally; caller migration remains deferred. | Revert policy Goal; no dual policy. |
 | 4. Reconciliation, resume, and explicit retry (implemented) | Reconciliation writes, interrupted-attempt recovery, pending resume, bounded failed/interrupted retry; reuse the implemented data-only journal replay. | No local parallel scheduling or environment override. | SA-033..047 and SA-049..055 beyond the already implemented data-only derivation; SA-048 remains its explicitly future override. | Prevents old rerun behavior and enforces plan identity. | Revert as one slice; preserved canonical studies remain inspectable only by the current schema revision in development. |
-| 5. Inspect/summary API (projection implemented), stateful CLI, and caller cleanup | Immutable in-memory report/summary projection is implemented; stateful CLI, regenerated report files, ablation/benchmark/Studio/analysis migration, and superseded-path deletion remain. Read-only plan preflight is already implemented independently. | No parallel or distributed workers. | SA-067 and the summary projection portion of SA-073 are implemented; SA-069..072, remaining SA-073 output, and SA-074 remain in the coordinated Goal. | Removes pre-release APIs and directory heuristics. | Revert the coordinated caller migration; do not add aliases. |
+| 5. Inspect/summary API, stateful CLI, and caller cleanup | Immutable report/summary projection, the single-owner CLI, one command envelope, exact exits, and explicit derived summary output are implemented; ablation/benchmark/Studio/analysis migration and superseded-path deletion remain. | No parallel or distributed workers. | SA-067 and applicable SA-069..073 behavior are implemented; SA-074 completes with coordinated caller migration. | Removes pre-release APIs and directory heuristics. | Revert the coordinated caller migration; do not add aliases. |
 | 6. Local locking and parallel workers | Study lock, task leases, heartbeats, fencing, path confinement, Windows/POSIX local filesystem tests. | No network filesystem or cross-host execution. | SA-056..060 and SA-066. | Platform filesystem semantics. | Disable/revert the parallel executor; retain sequential service on the same schema. |
 | 7. Distributed coordination | External compare-and-set/lease backend conforming to the same tokens/events. | No schema fork or fallback filesystem claims. | New distributed acceptance IDs in that Goal. | Backend partitions/clock behavior. | Remove the provider; local contract remains canonical. |
 

@@ -62,11 +62,12 @@ separate explicit executable operation.
         - VerificationReport
         - ReplayReport
 
-## Durable study planning
+## Durable studies
 
-The top-level `StudySpec`, `create_study`, and `load_study` entry points resolve
-and verify a durable plan. Creation performs no optimization, and loading is
-data-only.
+The top-level `StudySpec`, `plan_study`, `create_study`, and `load_study` entry
+points resolve, publish, and verify durable studies. Creation performs no
+optimization, loading is data-only, and report/summary models remain available
+through the focused `vamos.study_artifacts` facade.
 
 ::: vamos.study_artifacts
     options:
@@ -74,10 +75,14 @@ data-only.
       show_source: true
       members:
         - StudySpec
+        - plan_study
+        - StudyPlanReport
         - create_study
         - load_study
         - Study
         - StudyLoadLimits
+        - StudyReport
+        - StudySummary
 
 ## Algorithm Configuration
 

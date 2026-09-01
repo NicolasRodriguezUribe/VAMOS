@@ -15,7 +15,7 @@ Inherits all repository-wide rules from `/AGENTS.md`. This file contains local d
 - RunManifest remains the sole authority for resolved per-run truth, environment, provenance, arrays, replayability, and outcome. Study attempts retain only bounded root-relative manifest references.
 - `CSVPersister` exports a derived table only. It is not canonical state and has no compatibility route into StudyManifest.
 - Resume and explicit bounded retry are single-process operations that reconcile before claims and preserve every terminal attempt. Failure policy is fixed in the published spec, and running cancellation is cooperative only within the process that owns the sequential runner.
-- Do not implement locks, leases, parallel workers, state-mutating study CLI, or format migration before their ordered contract Goals. `Study.inspect()` and `Study.summarize()` are data-only and write-free; only `vamos study plan` is currently available in the CLI.
+- Do not implement locks, leases, parallel workers, cross-process cancellation, or format migration before their ordered contract Goals. `Study.inspect()` and `Study.summarize()` are data-only and write-free; the CLI exposes the complete current single-owner lifecycle and writes summaries only to an explicit derived destination.
 - Preserve task order, explicit seeds, indicator failure reporting, and optional-dependency behavior.
 
 ## Change route
@@ -66,5 +66,11 @@ symbol: vamos.study_artifacts:create_study
 symbol: vamos.study_artifacts:load_study
 symbol: vamos.study_artifacts:plan_study
 cli: vamos study plan --help
+cli: vamos study create --help
+cli: vamos study run --help
+cli: vamos study inspect --help
+cli: vamos study resume --help
+cli: vamos study retry --help
+cli: vamos study summarize --help
 command: python -m pytest -q tests/experiment/study_manifest tests/experiment/run_artifacts/test_verification_replay.py tests/experiment/test_ablation_study_api.py tests/experiment/test_cli_ablation.py
 ```
