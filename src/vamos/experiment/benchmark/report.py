@@ -42,10 +42,7 @@ class BenchmarkReport:
         if self._tidy is not None:
             return self._tidy
         pd = import_pandas()
-        summary_path = self.result.summary_path
-        if summary_path is None or not summary_path.exists():
-            raise FileNotFoundError("Summary CSV not found for benchmark reporting.")
-        raw = pd.read_csv(summary_path)
+        raw = pd.DataFrame.from_records(self.result.summary_rows())
         records: list[dict[str, Any]] = []
         for _, row in raw.iterrows():
             for metric in self.config.metrics:
@@ -207,10 +204,9 @@ class BenchmarkReport:
         if not self.config.emit_lab_outputs:
             return {}
         pd = import_pandas()
-        summary_path = self.result.summary_path
-        if summary_path is None or not summary_path.exists():
+        raw = pd.DataFrame.from_records(self.result.summary_rows())
+        if raw.empty:
             return {}
-        raw = pd.read_csv(summary_path)
         lab_dir = ensure_dir(self.output_dir / "lab")
         summary_df = build_quality_indicator_summary(
             raw,

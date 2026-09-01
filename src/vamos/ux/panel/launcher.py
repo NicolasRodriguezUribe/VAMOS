@@ -29,7 +29,7 @@ def _build_panel_command(study_dir: str, panel_args: Sequence[str]) -> list[str]
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="vamos studio", description="Launch VAMOS Studio (Panel).")
-    parser.add_argument("--study-dir", default="results", help="Path to a StudyRunner output directory.")
+    parser.add_argument("--study-dir", default="results", help="Path to a canonical StudyManifest directory.")
     parser.add_argument("--port", type=int, default=5006, help="Port for the Panel server.")
     parser.add_argument("--no-browser", action="store_true", help="Don't auto-open a browser tab.")
     args, panel_args = parser.parse_known_args(argv)

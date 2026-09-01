@@ -10,7 +10,7 @@ Inherits all repository-wide rules from `/AGENTS.md`. This file contains local d
 - `execution.py` owns the no-argument, newly-created-only sequential `Study.run()` path. It executes ascending `task_id`; `plan_index` is presentation metadata. `failure_policy.py` owns persisted fail-fast/continue study outcomes, while `cancellation.py` owns durable single-process cancellation.
 - `journal.py` validates and replays immutable events; `checkpoint_projection.py` validates lagging checkpoints and builds the effective immutable view without writes.
 - `commits.py`, `run_publication.py`, and `writing.py` own event/checkpoint commits, verified RunManifest linkage, task-failure publication, and atomic file primitives. `reconciliation.py` owns evidence-driven recovery writes; `recovery.py` owns resume/retry selection and operation orchestration.
-- `runner.py`, `types.py`, and `api.py` remain only for unmigrated in-memory benchmark/ablation callers. The durable runner never delegates to them and they are not another persisted authority.
+- `runner.py`, `types.py`, and `api.py` are quarantined only until the coordinated removal commit. Active installed-package callers use canonical durable studies and do not import them.
 - A study summary may reference or aggregate verified RunManifest metadata but must not load or create a second copy of canonical per-run arrays or specifications. `Study.summarize()` is in-memory only; later output renderers must consume this same projection.
 - RunManifest remains the sole authority for resolved per-run truth, environment, provenance, arrays, replayability, and outcome. Study attempts retain only bounded root-relative manifest references.
 - `CSVPersister` exports a derived table only. It is not canonical state and has no compatibility route into StudyManifest.
@@ -31,6 +31,11 @@ path: src/vamos/experiment/study/api.py
 path: src/vamos/experiment/study/runner.py
 path: src/vamos/experiment/study/types.py
 path: src/vamos/experiment/study/persistence.py
+path: src/vamos/experiment/ablation.py
+path: src/vamos/experiment/benchmark/runner.py
+path: src/vamos/experiment/study_analysis.py
+path: src/vamos/ux/studio/data.py
+path: src/vamos/ux/analysis/tuning_viz.py
 path: src/vamos/experiment/study/models.py
 path: src/vamos/experiment/study/planning.py
 path: src/vamos/experiment/study/preflight.py

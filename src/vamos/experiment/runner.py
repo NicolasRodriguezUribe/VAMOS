@@ -7,7 +7,6 @@ from vamos.engine.hooks import LiveVisualization
 from vamos.experiment.execution import execute_problem_suite
 from vamos.experiment.runtime.catalog import resolve_engine
 from vamos.experiment.services.orchestrator import run_single
-from vamos.experiment.study.api import run_study
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.problem.registry import make_problem_selection
 
@@ -52,5 +51,4 @@ __all__ = [
     "run_single",
     "execute_problem_suite",
     "run_experiment",
-    "run_study",
 ]

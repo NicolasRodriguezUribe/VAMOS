@@ -9,7 +9,7 @@ from vamos.ux.analysis.tuning_viz import (
     plot_objective_tradeoff,
     plot_reduced_front,
     plot_tuning_scatter,
-    study_results_to_dataframe,
+    study_summary_to_dataframe,
     summarize_by_algorithm,
     tuning_result_to_dataframe,
 )
@@ -38,26 +38,22 @@ def test_plot_helpers_do_not_crash():
     plot_reduced_front(F, target_dim=2)
 
 
-def test_study_df_and_summary():
-    class _FakeSelection:
-        def __init__(self, key):
-            self.spec = type("spec", (), {"key": key})
+def test_study_df_and_summary(tmp_path):
+    from vamos import StudySpec, create_study
 
-    class _FakeResult:
-        def __init__(self, key):
-            self.selection = _FakeSelection(key)
-            self.metrics = {
-                "algorithm": "nsgaii",
-                "engine": "numpy",
-                "seed": 1,
-                "hv": 0.5,
-                "time_ms": 10.0,
-                "evaluations": 20,
-                "spread": 1.0,
-            }
-
-    study_results = [_FakeResult("zdt1"), _FakeResult("zdt2")]
-    df = study_results_to_dataframe(study_results)
-    assert {"problem", "algorithm", "hv"}.issubset(df.columns)
+    completed = create_study(
+        StudySpec(
+            problems=["zdt1", "zdt2"],
+            algorithms=["nsgaii"],
+            seeds=[1],
+            max_evaluations=4,
+            pop_size=4,
+            engine="numpy",
+        ),
+        output=tmp_path / "study",
+    ).run()
+    df = study_summary_to_dataframe(completed.summarize())
+    assert {"study_id", "task_id", "selected_run_id", "problem", "algorithm"}.issubset(df.columns)
+    assert set(df["problem"]) == {"zdt1", "zdt2"}
     summary = summarize_by_algorithm(df)
-    assert "hv_mean" in summary.columns
+    assert "runtime_ms_mean" in summary.columns

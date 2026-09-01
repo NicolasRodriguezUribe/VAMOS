@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from vamos.run_artifacts import load_result, load_run
+from vamos.study_artifacts import load_study
 
 
 @dataclass
@@ -17,9 +19,9 @@ class RunRecord:
     problem_name: str
     algorithm_name: str
     seed: int
-    fun: np.ndarray
-    var: np.ndarray | None
-    archive_fun: np.ndarray | None = None
+    fun: NDArray[Any]
+    var: NDArray[Any] | None
+    archive_fun: NDArray[Any] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -27,9 +29,9 @@ class RunRecord:
 class FrontRecord:
     problem_name: str
     algorithm_name: str
-    points_F: np.ndarray
-    points_X: np.ndarray | None
-    constraints: np.ndarray | None = None
+    points_F: NDArray[Any]
+    points_X: NDArray[Any] | None
+    constraints: NDArray[Any] | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -57,25 +59,22 @@ def load_run_from_directory(run_dir: Path) -> RunRecord:
     )
 
 
-def _iter_run_dirs(study_dir: Path) -> Iterable[Path]:
-    for manifest_path in study_dir.rglob("manifest.json"):
-        yield manifest_path.parent
-
-
 def load_runs_from_study(study_dir: Path) -> list[RunRecord]:
-    """
-    Load all run directories underneath a study root.
-    """
+    """Load selected successful runs through one canonical StudySummary."""
+    study = load_study(study_dir)
+    summary = study.summarize()
     runs: list[RunRecord] = []
-    for run_dir in _iter_run_dirs(study_dir):
-        try:
-            runs.append(load_run_from_directory(run_dir))
-        except FileNotFoundError:
+    for row in summary.rows:
+        if row.selected_run_id is None or row.run_manifest_path is None:
             continue
+        run_dir = study.root / Path(row.run_manifest_path).parent
+        run = load_run_from_directory(run_dir)
+        run.metadata["study_summary"] = row.as_dict()
+        runs.append(run)
     return runs
 
 
-def _array_or_none(value: object) -> np.ndarray | None:
+def _array_or_none(value: object) -> NDArray[Any] | None:
     return value if isinstance(value, np.ndarray) else None
 
 
@@ -136,7 +135,7 @@ def build_fronts(
     return fronts
 
 
-def normalize_objectives(F: np.ndarray) -> np.ndarray:
+def normalize_objectives(F: NDArray[Any]) -> NDArray[np.float64]:
     F = np.asarray(F, dtype=float)
     mins = F.min(axis=0)
     maxs = F.max(axis=0)
