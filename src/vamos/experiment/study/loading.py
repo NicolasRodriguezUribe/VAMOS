@@ -18,11 +18,12 @@ from .errors import (
     StudyIntegrityError,
     StudyResourceLimitError,
 )
-from .journal import derive_effective_study, load_event_journal
+from .journal import derive_effective_study
+from .journal_loading import load_event_journal
 from .limits import StudyLoadLimits
 from .models import DocumentReference, Study, StudyManifest, StudySpec
 from .paths import confined_study_path
-from .record_loading import load_records
+from .record_loading import ObserveRunReference, RunVerification, load_records
 from .serialization import load_json, stored_document_bytes
 
 
@@ -55,6 +56,33 @@ class _ReadBudget:
 
 def load_study(path: str | Path, *, limits: StudyLoadLimits | None = None) -> Study:
     """Load and fully verify one canonical study without executing code."""
+    return _load_study(path, limits=limits, run_verification="all", tolerate_run_errors=False)
+
+
+def load_study_projection(
+    path: str | Path,
+    *,
+    limits: StudyLoadLimits | None = None,
+    observe_run_reference: ObserveRunReference | None = None,
+) -> Study:
+    """Load a report projection with metadata-only, issue-tolerant run checks."""
+    return _load_study(
+        path,
+        limits=limits,
+        run_verification="metadata",
+        tolerate_run_errors=True,
+        observe_run_reference=observe_run_reference,
+    )
+
+
+def _load_study(
+    path: str | Path,
+    *,
+    limits: StudyLoadLimits | None,
+    run_verification: RunVerification,
+    tolerate_run_errors: bool,
+    observe_run_reference: ObserveRunReference | None = None,
+) -> Study:
     configured = limits or StudyLoadLimits()
     root = _root(path)
     budget = _ReadBudget(configured)
@@ -84,10 +112,31 @@ def load_study(path: str | Path, *, limits: StudyLoadLimits | None = None) -> St
     def read(relative: str, role: str, max_bytes: int) -> tuple[dict[str, Any], bytes]:
         return _read(root, relative, role, max_bytes, budget)
 
-    tasks, attempts = load_records(root, manifest, plan.tasks, configured, read)
+    tasks, attempts = load_records(
+        root,
+        manifest,
+        plan.tasks,
+        configured,
+        read,
+        run_verification=run_verification,
+        tolerate_run_errors=tolerate_run_errors,
+        observe_run_reference=observe_run_reference,
+    )
     events = load_event_journal(root, manifest, configured, read)
     _cross_validate(manifest, spec, plan.plan_id)
-    effective = derive_effective_study(root, manifest, tasks, attempts, events)
+    effective = derive_effective_study(
+        root,
+        manifest,
+        tasks,
+        attempts,
+        events,
+        run_verification=run_verification,
+        tolerate_run_errors=tolerate_run_errors,
+        observe_run_reference=observe_run_reference,
+    )
+    reconciliation_required = (
+        manifest.checkpoint_sequence != events[-1].sequence or tasks != effective.tasks or attempts != effective.attempts
+    )
     return Study(
         root=root,
         manifest=effective.manifest,
@@ -96,6 +145,9 @@ def load_study(path: str | Path, *, limits: StudyLoadLimits | None = None) -> St
         tasks=effective.tasks,
         attempts=effective.attempts,
         events=events,
+        stored_checkpoint_sequence=manifest.checkpoint_sequence,
+        stored_checkpoint_event_sha256=manifest.checkpoint_event_sha256,
+        reconciliation_required=reconciliation_required,
     )
 
 
@@ -303,4 +355,4 @@ def _unexpected(role: str, expected: object, actual: object, *, reason: str = "U
     )
 
 
-__all__ = ["load_study"]
+__all__ = ["load_study", "load_study_projection"]

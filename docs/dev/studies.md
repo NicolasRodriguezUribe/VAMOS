@@ -6,7 +6,9 @@ Creation resolves the same plan and atomically publishes a relocatable
 directory. `Study.run()` executes a newly created study sequentially.
 `Study.resume()` and `Study.retry()` perform explicit single-process recovery.
 Loading verifies and derives the effective state without executing components
-or repairing checkpoints.
+or repairing checkpoints. Inspection and summary projection reload that state,
+verify referenced run metadata and bytes without materializing numerical arrays,
+and never write or reconcile.
 
 ```python
 from vamos import StudySpec, create_study, load_study, plan_study
@@ -23,11 +25,22 @@ report = plan_study(spec, output="studies/example")  # read-only
 created = create_study(spec, output="studies/example")
 completed = created.run()
 loaded = load_study("studies/example")  # data-only
+inspection = loaded.inspect()  # immutable current-state StudyReport
+summary = loaded.summarize()  # immutable, one row per planned task
 
 # Later, after a paused/interrupted execution:
 resumed = loaded.resume()  # pending and eligible interrupted tasks
 retried = resumed.retry(failed_only=True)  # explicit failed-task consent
 ```
+
+`inspection.as_dict()` and `summary.as_dict()` return detached JSON-safe values.
+Inspection exposes counts, attempts, metadata-verified run references, event and
+checkpoint relation, structured reference issues, runnable/retryable work, and
+safe next actions. Summary rows are ordered by `plan_index` and use only the
+persisted plan, task/attempt records, and verified RunManifest metadata. Missing
+values remain `None`. The stable `generated_at` value is the applied study
+state's persisted update timestamp, so projecting identical bytes is
+deterministic.
 
 `report.plan_id` and `report.task_ids` are exactly the identities later stored
 by `create_study` for the same `StudySpec`. The report includes the exact total
@@ -109,7 +122,8 @@ After a successful task, the affected subtree also contains:
 
 An empty plan omits `tasks/`. Running it appends only the completion transition,
 creates no attempt or run, and moves `created` directly to `completed`.
-Execution writes no `coordination/`, `derived/`, CSV, or summary path.
+Execution and in-memory projection write no `coordination/`, `derived/`, CSV,
+or summary path.
 
 ## Journal and failure behavior
 
@@ -189,14 +203,16 @@ environment-change override in this slice.
 - `run_id` identifies its separate canonical RunManifest execution.
 
 The returned handle exposes immutable `study_id`, `plan_id`, `status`, `spec`,
-`plan`, `tasks`, `attempts`, `events`, and `root`. Nested JSON values are
+`plan`, `tasks`, `attempts`, `events`, and `root`, plus write-free `inspect()`
+and `summarize()` methods. Nested JSON values are
 defensive immutable copies. Moving the complete directory preserves persisted
 identities and root-relative references.
 
 ## Deliberate limits
 
-There is no state-mutating study CLI, parallelism, cross-process ownership guarantee, lock,
-lease, heartbeat, worker, migration, summary, or CSV behavior in this slice.
+There is no state-mutating study CLI, summary-file writer, parallelism,
+cross-process ownership guarantee, lock, lease, heartbeat, worker, migration,
+or CSV behavior in this slice.
 Calling `run()` on `running`, `paused`, `completed`,
 `completed_with_failures`, `failed`, or `cancelled` state is an actionable typed
 error. Obvious same-process reentry is also rejected.
@@ -219,10 +235,13 @@ path: src/vamos/experiment/study/models.py
 path: src/vamos/experiment/study/planning.py
 path: src/vamos/experiment/study/creation.py
 path: src/vamos/experiment/study/loading.py
+path: src/vamos/experiment/study/projection.py
+path: src/vamos/experiment/study/report_models.py
 path: src/vamos/experiment/study/execution.py
 path: src/vamos/experiment/study/failure_policy.py
 path: src/vamos/experiment/study/cancellation.py
 path: src/vamos/experiment/study/journal.py
+path: src/vamos/experiment/study/journal_loading.py
 path: src/vamos/experiment/study/checkpoint_projection.py
 path: src/vamos/experiment/artifacts/resolved_reconstruction.py
 path: tests/experiment/study_manifest
@@ -237,6 +256,8 @@ symbol: vamos.study_artifacts:load_study
 symbol: vamos.study_artifacts:plan_study
 cli: vamos study plan --help
 symbol: vamos.experiment.study.models:Study.run
+symbol: vamos.experiment.study.models:Study.inspect
+symbol: vamos.experiment.study.models:Study.summarize
 command: python -m pytest -q tests/experiment/study_manifest
 command: python -m pytest -q tests/experiment/test_ablation_study_api.py tests/experiment/test_cli_ablation.py
 ```

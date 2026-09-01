@@ -114,6 +114,11 @@ def test_data_only_load_does_not_resolve_execute_import_pickle_shell_or_network(
 
     loaded = vamos.load_study(root)
     assert loaded.status == "created"
+    report = loaded.inspect()
+    summary = loaded.summarize()
+    assert report.state == "created"
+    assert report.changed is False
+    assert len(summary.rows) == 1
     assert _snapshot(root) == before
 
 
