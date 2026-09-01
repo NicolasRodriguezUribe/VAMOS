@@ -28,7 +28,7 @@ state. The IDs are contiguous and must not be renumbered.
 | PL-015 | Side-effect audit | Missing parent/output | Tree remains byte-identical | Planning performs zero filesystem writes |
 | PL-016 | Execution audit | Objective raises if evaluated | Valid report and zero evaluations | Planning never optimizes |
 | PL-017 | Python/CLI equivalence | Same JSON fields and `StudySpec` | Equal plan/task identities and summaries | CLI delegates to the public planner |
-| PL-018 | JSON automation | Success, collision, and invalid input with `--json` | One `vamos.study-plan-result` v1 document on stdout | No mixed human stdout or traceback |
+| PL-018 | JSON automation | Success, collision, and invalid input with `--json` | One `vamos.study-command-result` v1 document on stdout | No mixed human stdout or traceback |
 | PL-019 | Installed wheel | Python and console command in a clean environment | Both preflight paths succeed without repository imports | Packaging includes the complete feature |
 | PL-020 | Plan/create equivalence | Same `StudySpec` | Exact plan ID, task IDs, ordering, specs, seeds, operators, backend, population and budget | No second resolver exists |
 | PL-021 | Architecture quality | Public API, typing, architecture and remnant checks | All development ratchets pass | No legacy path, dependency, or typing debt is added |
@@ -38,12 +38,13 @@ state. The IDs are contiguous and must not be renumbered.
 Both successful and invalid command outcomes use:
 
 ```text
-document_type = "vamos.study-plan-result"
+document_type = "vamos.study-command-result"
 schema_version = "1.0.0"
-operation = "study plan"
+operation = "plan"
 ```
 
-The envelope always includes status, validity, execution/write flags, plan and
-task identity fields, component summaries, output status, warnings, structured
-errors, and next actions. Invalid input leaves identity fields empty rather
-than inventing partial state.
+The common envelope always includes operation, status, exit code, study/plan
+identities, changed, payload, warnings, structured errors, and next actions.
+The plan payload retains validity, execution/write flags, task identities,
+component summaries, and advisory output status. Invalid input leaves
+identity fields empty rather than inventing partial state.

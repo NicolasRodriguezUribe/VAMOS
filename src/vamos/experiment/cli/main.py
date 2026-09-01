@@ -39,7 +39,7 @@ _SUBCOMMANDS: dict[str, str] = {
     "open-results": "Open the latest results folder",
     "results": "Inspect and verify canonical run artifacts",
     "reproduce": "Execute an exact built-in replay",
-    "study": "Resolve and explain a durable study plan",
+    "study": "Manage the single-owner durable study lifecycle",
     "ablation": "Ablation study runner",
     "assist": "AI-assisted experiment planning",
     "check": "Verify installation and backends",
@@ -113,9 +113,9 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
         run_reproduce(argv[1:])
         return True
     if command == "study":
-        from vamos.experiment.cli.study import run_study
+        from vamos.experiment.cli.study import study_main
 
-        run_study(argv[1:])
+        study_main(argv[1:])
         return True
     if command == "create-problem":
         from vamos.experiment.cli.create_problem import run_create_problem

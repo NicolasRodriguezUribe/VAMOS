@@ -13,9 +13,6 @@ from .loading import load_study
 from .models import OnErrorPolicy, ResolvedStudyPlan, StudySpec
 from .planning import resolve_spec
 
-PLAN_RESULT_DOCUMENT_TYPE = "vamos.study-plan-result"
-PLAN_RESULT_SCHEMA_VERSION = "1.0.0"
-
 PlanStatus = Literal["ready", "blocked"]
 OutputStatus = Literal[
     "not_checked",
@@ -114,11 +111,8 @@ class StudyPlanReport:
         return self.plan.task_count
 
     def as_dict(self) -> dict[str, object]:
-        """Return the stable planning-result JSON envelope."""
+        """Return a detached semantic payload for Python and CLI consumers."""
         return {
-            "document_type": PLAN_RESULT_DOCUMENT_TYPE,
-            "schema_version": PLAN_RESULT_SCHEMA_VERSION,
-            "operation": "study plan",
             "status": self.status,
             "valid": self.valid,
             "execution_occurred": False,
@@ -335,8 +329,6 @@ def _output_errors(output: StudyPlanOutput) -> tuple[StudyPlanDiagnostic, ...]:
 
 
 __all__ = [
-    "PLAN_RESULT_DOCUMENT_TYPE",
-    "PLAN_RESULT_SCHEMA_VERSION",
     "StudyPlanReport",
     "inspect_study_output",
     "plan_study",

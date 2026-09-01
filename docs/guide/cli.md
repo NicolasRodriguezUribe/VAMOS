@@ -1,7 +1,7 @@
 # CLI and config files
 
-> The standard single-run CLI path, canonical run commands, and read-only
-> durable-study planning are covered by command-level smoke tests. Heavier
+> The standard single-run CLI path, canonical run commands, and the
+> single-owner durable-study lifecycle are covered by command-level smoke tests. Heavier
 > tuning and broader benchmark matrices still depend on installed extras and
 > the local environment.
 
@@ -88,8 +88,8 @@ vamos reproduce results/ZDT1/nsgaii/numpy/seed_7 --output results/replays/zdt1-s
 Add `--json` to any of these commands for one machine-readable stdout
 document. Replay never overwrites or modifies its source.
 
-Study planning
---------------
+Durable studies
+---------------
 
 Resolve a durable study before creating a directory or executing an objective:
 
@@ -107,14 +107,26 @@ Resolve a durable study before creating a directory or executing an objective:
 vamos study plan study.json
 vamos study plan study.json --output studies/comparison-01
 vamos study plan study.json --json
+vamos study create study.json --output studies/comparison-01
+vamos study run studies/comparison-01
+vamos study inspect studies/comparison-01 --json
+vamos study summarize studies/comparison-01
+vamos study summarize studies/comparison-01 --format csv --output reports/tasks.csv
 ```
 
 Planning is read-only: it creates no study, runs no task, and does not reserve
 the proposed output. Its `plan_id` and task IDs match later Python
-`vamos.create_study(...)` creation from the same `StudySpec`. JSON mode emits
-exactly one `vamos.study-plan-result` version `1.0.0` document. When output is
-available the next step is to construct the same `StudySpec` and call
-`vamos.create_study(spec, output="studies/comparison-01")`.
+`vamos.create_study(...)` creation from the same `StudySpec`. Every study
+command emits exactly one `vamos.study-command-result` version `1.0.0`
+document in JSON mode. Creation and execution are separate. `inspect` and an
+in-memory `summarize` are read-only; JSON/CSV summary files are written only
+when `--output` is explicit and never overwrite an existing path.
+
+Use `vamos study resume STUDY_DIR` for eligible pending/interrupted work and
+`vamos study retry STUDY_DIR --failed` for explicit bounded failed-task retry.
+Concurrent mutation is unsupported: one process must remain the only mutation
+owner for a study. There is no cross-process cancel command; foreground Ctrl+C
+uses graceful durable cancellation.
 
 Main runner
 -----------

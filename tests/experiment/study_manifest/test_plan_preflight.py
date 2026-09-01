@@ -224,13 +224,14 @@ def test_pl_acceptance_inventory_is_contiguous_and_populated() -> None:
     assert all(len(row) == 5 and all(row) for row in cells)
 
 
-def test_report_json_envelope_is_detached_and_complete() -> None:
+def test_report_json_payload_is_detached_and_complete() -> None:
     report = vamos.plan_study(_spec(seeds=[0]))
     payload = report.as_dict()
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
-    assert payload["document_type"] == "vamos.study-plan-result"
-    assert payload["schema_version"] == "1.0.0"
+    assert "document_type" not in payload
+    assert "schema_version" not in payload
+    assert payload["status"] == "ready"
     assert payload["errors"] == []
     assert payload["next_actions"]
     assert "runtime_estimate" not in encoded

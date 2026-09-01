@@ -19,6 +19,10 @@ The canonical run commands have separate responsibilities:
 - `vamos results verify <run_dir>` performs inert integrity/environment/component verification.
 - `vamos reproduce <run_dir>` verifies, executes a supported built-in exact replay, compares arrays bitwise, and writes a new canonical run.
 - `vamos study plan <study.json> [--output PATH] [--json]` resolves a durable study without creating or executing it.
+- `vamos study create|run|inspect|resume|retry|summarize` delegates the current single-owner lifecycle to canonical StudyManifest services. Every JSON result uses `vamos.study-command-result` version `1.0.0`.
+
+JSON mode reserves stdout for exactly one finite command-result document;
+warnings and any explicitly requested progress remain on stderr.
 
 Do not add an execution mode to inspection or verification. Do not infer success from a zero-byte or partial output directory.
 
@@ -30,6 +34,12 @@ vamos results inspect --help
 vamos results verify --help
 vamos reproduce --help
 vamos study plan --help
+vamos study create --help
+vamos study run --help
+vamos study inspect --help
+vamos study resume --help
+vamos study retry --help
+vamos study summarize --help
 python -m pytest -q tests/experiment/test_cli_consolidation.py tests/experiment/test_cli_config_validation.py tests/experiment/test_cli_run_artifacts.py
 python -m pytest -q tests/docs/test_cli_docs_smoke.py
 ```
@@ -42,6 +52,11 @@ path: src/vamos/experiment/cli/args.py
 path: src/vamos/experiment/cli/parser.py
 path: src/vamos/experiment/cli/orchestration.py
 path: src/vamos/experiment/cli/run_artifact_cli.py
+path: src/vamos/experiment/cli/study.py
+path: src/vamos/experiment/cli/study_command.py
+path: src/vamos/experiment/cli/study_command_result.py
+path: src/vamos/experiment/cli/study_spec_io.py
+path: src/vamos/experiment/cli/study_summary_output.py
 path: docs/guide/cli.md
 path: tests/experiment/test_cli_consolidation.py
 path: tests/experiment/test_cli_config_validation.py

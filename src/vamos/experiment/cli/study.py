@@ -1,4 +1,4 @@
-"""CLI for read-only durable-study planning."""
+"""Thin parser and renderer for the canonical durable-study CLI."""
 
 from __future__ import annotations
 
@@ -7,196 +7,151 @@ import json
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
-from vamos.experiment.artifacts.errors import ArtifactResourceLimitError, DuplicateJSONKeyError, RunArtifactError
-from vamos.experiment.artifacts.jsonio import load_json_file
-from vamos.experiment.study.errors import InvalidStudySpecError, StudyError
-from vamos.experiment.study.models import OnErrorPolicy, StudySpec
-from vamos.experiment.study.preflight import (
-    PLAN_RESULT_DOCUMENT_TYPE,
-    PLAN_RESULT_SCHEMA_VERSION,
-    StudyPlanReport,
-    plan_study,
-)
-
-_SPEC_FIELDS = {
-    "problems",
-    "algorithms",
-    "seeds",
-    "max_evaluations",
-    "pop_size",
-    "engine",
-    "eval_strategy",
-    "n_var",
-    "n_obj",
-    "problem_kwargs",
-    "algorithm_configs",
-    "on_error",
-    "max_attempts_per_task",
-    "labels",
-    "metadata",
-}
-_REQUIRED_SPEC_FIELDS = {"problems", "algorithms", "seeds"}
+from .study_command import Operation, StudyCommandRequest, StudyCommandResult, execute_study_command
+from .study_summary_output import SummaryFormat
 
 
-def run_study(argv: Sequence[str] | None = None) -> None:
-    """Parse and run the ``vamos study`` command group."""
-    parser = argparse.ArgumentParser(prog="vamos study", description="Read-only planning for durable studies.")
-    commands = parser.add_subparsers(dest="study_command", required=True)
-    plan_parser = commands.add_parser("plan", help="Resolve and explain a StudySpec JSON file without writing or executing.")
-    plan_parser.add_argument("config", help="Path to a StudySpec JSON object.")
-    plan_parser.add_argument("--output", help="Proposed study directory to inspect without reserving or creating it.")
-    plan_parser.add_argument("--json", action="store_true", dest="json_output", help="Emit one stable JSON result document.")
-    args = parser.parse_args(argv)
-    if args.study_command != "plan":
-        raise AssertionError("argparse accepted an unknown study command")
-    _run_plan(config=Path(args.config), output=args.output, json_output=bool(args.json_output))
-
-
-def _run_plan(*, config: Path, output: str | None, json_output: bool) -> None:
-    try:
-        spec = _load_spec(config)
-        report = plan_study(spec, output=output)
-    except StudyError as exc:
-        if json_output:
-            print(json.dumps(_error_envelope(exc, output=output), sort_keys=True, separators=(",", ":")))
-        else:
-            print(f"Error [{exc.category}]: {exc}", file=sys.stderr)
-        raise SystemExit(_error_exit_code(exc)) from None
-    if json_output:
-        print(json.dumps(report.as_dict(), sort_keys=True, separators=(",", ":")))
+def study_main(argv: Sequence[str] | None = None) -> None:
+    """Parse, delegate, and render the ``vamos study`` command group."""
+    request = _request(_parser().parse_args(argv))
+    result = execute_study_command(request)
+    if request.json_output:
+        print(json.dumps(result.as_dict(), sort_keys=True, separators=(",", ":"), allow_nan=False))
+        for warning in result.warnings:
+            print(f"Warning: {warning}", file=sys.stderr)
     else:
-        print(_render_report(report))
-    if report.status == "blocked":
-        raise SystemExit(5)
+        _render_human(result)
+    if result.exit_code:
+        raise SystemExit(result.exit_code)
 
 
-def _load_spec(path: Path) -> StudySpec:
-    try:
-        value = load_json_file(
-            path,
-            operation="plan study",
-            artifact_role="study_plan_input",
-            max_bytes=8 * 1024 * 1024,
-            max_depth=64,
-        )
-    except DuplicateJSONKeyError as exc:
-        raise _input_error(path, "DUPLICATE_JSON_KEY", exc.field, exc.expected, exc.actual) from exc
-    except ArtifactResourceLimitError as exc:
-        raise _input_error(path, "RESOURCE_LIMIT", exc.field, exc.expected, exc.actual) from exc
-    except RunArtifactError as exc:
-        reason = "NON_FINITE_NUMBER" if "non-finite" in exc.reason else "MALFORMED_JSON"
-        raise _input_error(path, reason, exc.field, exc.expected, exc.actual) from exc
-    fields = set(value)
-    missing = sorted(_REQUIRED_SPEC_FIELDS - fields)
-    unknown = sorted(fields - _SPEC_FIELDS)
-    if missing or unknown:
-        raise InvalidStudySpecError(
-            operation="plan study",
-            reason="UNKNOWN_FIELD" if unknown else "MISSING_FIELD",
-            field="$",
-            path=path,
-            expected=f"required {_REQUIRED_SPEC_FIELDS!r}; optional {_SPEC_FIELDS - _REQUIRED_SPEC_FIELDS!r}",
-            actual={"missing": missing, "unknown": unknown},
-            action="Use the single documented StudySpec JSON field set; no study was created.",
-        )
-    return StudySpec(
-        problems=cast(Sequence[str], value["problems"]),
-        algorithms=cast(Sequence[str], value["algorithms"]),
-        seeds=cast(Sequence[int], value["seeds"]),
-        max_evaluations=cast(int | None, value.get("max_evaluations")),
-        pop_size=cast(int | None, value.get("pop_size")),
-        engine=cast(str | None, value.get("engine")),
-        eval_strategy=cast(str, value.get("eval_strategy", "serial")),
-        n_var=cast(int | None, value.get("n_var")),
-        n_obj=cast(int | None, value.get("n_obj")),
-        problem_kwargs=cast(Mapping[str, object] | None, value.get("problem_kwargs")),
-        algorithm_configs=cast(Mapping[str, object] | None, value.get("algorithm_configs")),
-        on_error=cast(OnErrorPolicy, value.get("on_error", "fail_fast")),
-        max_attempts_per_task=cast(int, value.get("max_attempts_per_task", 3)),
-        labels=cast(Mapping[str, object] | None, value.get("labels")),
-        metadata=cast(Mapping[str, object] | None, value.get("metadata")),
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="vamos study", description="Plan, create, run, inspect, resume, retry, and summarize durable studies."
+    )
+    commands = parser.add_subparsers(dest="study_command", required=True)
+
+    plan = commands.add_parser("plan", help="Resolve a StudySpec without writing or executing.")
+    plan.add_argument("config", help="Path to a StudySpec JSON object.")
+    plan.add_argument("--output", help="Proposed study directory to inspect without reserving it.")
+    _json_argument(plan)
+
+    create = commands.add_parser("create", help="Atomically create a canonical study without executing it.")
+    create.add_argument("config", help="Path to a StudySpec JSON object.")
+    create.add_argument("--output", required=True, help="Absent destination for the canonical study.")
+    _json_argument(create)
+
+    for name, help_text in (
+        ("run", "Run a newly created study sequentially."),
+        ("inspect", "Inspect verified canonical state without writing."),
+    ):
+        command = commands.add_parser(name, help=help_text)
+        command.add_argument("study_dir", help="Canonical StudyManifest root.")
+        _json_argument(command)
+
+    resume = commands.add_parser("resume", help="Reconcile and resume eligible unfinished work.")
+    resume.add_argument("study_dir", help="Canonical StudyManifest root.")
+    resume.add_argument("--retry-failed", action="store_true", help="Explicitly include eligible failed tasks.")
+    _json_argument(resume)
+
+    retry = commands.add_parser("retry", help="Explicitly retry eligible failed tasks.")
+    retry.add_argument("study_dir", help="Canonical StudyManifest root.")
+    retry.add_argument("--failed", action="store_true", required=True, help="Select retryable failed tasks only.")
+    _json_argument(retry)
+
+    summarize = commands.add_parser("summarize", help="Project one derived row per canonical task.")
+    summarize.add_argument("study_dir", help="Canonical StudyManifest root.")
+    summarize.add_argument(
+        "--format", choices=("json", "csv"), default="json", dest="summary_format", help="Explicit output format (default: json)."
+    )
+    summarize.add_argument("--output", help="Absent explicit derived-output path; omitted means no write.")
+    _json_argument(summarize)
+    return parser
+
+
+def _json_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--json", action="store_true", dest="json_output", help="Emit one vamos.study-command-result/1 JSON document.")
+
+
+def _request(args: argparse.Namespace) -> StudyCommandRequest:
+    operation = cast(Operation, args.study_command)
+    config = Path(args.config) if hasattr(args, "config") else None
+    study_dir = Path(args.study_dir) if hasattr(args, "study_dir") else None
+    output = Path(args.output) if getattr(args, "output", None) is not None else None
+    return StudyCommandRequest(
+        operation=operation,
+        config=config,
+        study_dir=study_dir,
+        output=output,
+        json_output=bool(args.json_output),
+        retry_failed=bool(getattr(args, "retry_failed", False)),
+        failed_only=bool(getattr(args, "failed", True)),
+        summary_format=cast(SummaryFormat, getattr(args, "summary_format", "json")),
     )
 
 
-def _input_error(path: Path, reason: str, field: str | None, expected: object, actual: object) -> InvalidStudySpecError:
-    return InvalidStudySpecError(
-        operation="plan study",
-        reason=reason,
-        field=field,
-        path=path,
-        expected=expected,
-        actual=actual,
-        action="Correct the StudySpec JSON input; no study was created and no task was executed.",
-    )
+def _render_human(result: StudyCommandResult) -> None:
+    if result.errors:
+        for error in result.errors:
+            print(f"Error [{error.get('category', 'study')}]: {error.get('reason', 'UNKNOWN')}", file=sys.stderr)
+            action = error.get("action")
+            if action:
+                print(f"Next: {action}", file=sys.stderr)
+        return
+    payload = result.payload
+    print(f"Study {result.operation}: {result.status}")
+    print(f"Study ID: {result.study_id or '-'}")
+    print(f"Plan ID: {result.plan_id or '-'}")
+    if "study_root" in payload:
+        print(f"Study root: {payload['study_root']}")
+    print(f"Canonical state changed: {'yes' if result.changed else 'no'}")
+    if "execution_began" in payload:
+        print(f"Execution began: {'yes' if payload['execution_began'] else 'no'}")
+    _render_counts(payload)
+    _render_summary(payload)
+    for action in result.next_actions:
+        print(f"Next: {action}")
+    for warning in result.warnings:
+        print(f"Warning: {warning}", file=sys.stderr)
 
 
-def _error_envelope(exc: StudyError, *, output: str | None) -> dict[str, object]:
-    error = exc.as_dict()
-    error["filesystem_write_occurred"] = False
-    return {
-        "document_type": PLAN_RESULT_DOCUMENT_TYPE,
-        "schema_version": PLAN_RESULT_SCHEMA_VERSION,
-        "operation": "study plan",
-        "status": "invalid",
-        "valid": False,
-        "execution_occurred": False,
-        "filesystem_write_occurred": False,
-        "plan_id": None,
-        "task_ids": [],
-        "task_count": 0,
-        "total_evaluation_budget": 0,
-        "components": {"problems": [], "algorithms": [], "operators": [], "backends": []},
-        "seeds": [],
-        "population_sizes": [],
-        "termination_categories": [],
-        "failure_policy": None,
-        "reconstructable": False,
-        "duplicate_tasks": exc.reason == "DUPLICATE_CANONICAL_TASK",
-        "output": {
-            "requested_path": output,
-            "status": "not_checked",
-            "available": None,
-            "collision": False,
-            "advisory": None,
-        },
-        "warnings": [],
-        "errors": [error],
-        "next_actions": [exc.action],
-    }
+def _render_counts(payload: Mapping[str, Any]) -> None:
+    report = payload.get("report")
+    if not isinstance(report, Mapping):
+        return
+    counts = report.get("counts")
+    if not isinstance(counts, Mapping):
+        return
+    policy = report.get("policy")
+    if isinstance(policy, Mapping):
+        print(f"Policy: on_error={policy.get('on_error', '-')}, max_attempts_per_task={policy.get('max_attempts_per_task', '-')}")
+    ordered = ("tasks", "pending", "running", "succeeded", "failed", "interrupted", "cancelled", "skipped")
+    print("Counts: " + ", ".join(f"{key}={counts.get(key, 0)}" for key in ordered))
 
 
-def _render_report(report: StudyPlanReport) -> str:
-    output = report.output
-    lines = [
-        f"Study plan: {report.status}",
-        f"Plan ID: {report.plan_id}",
-        f"Tasks / total evaluation budget: {report.task_count} / {report.total_evaluation_budget}",
-        f"Problems: {', '.join(report.problem_ids) or '-'}",
-        f"Algorithms: {', '.join(report.algorithm_ids) or '-'}",
-        f"Backends: {', '.join(report.backend_ids) or '-'}",
-        f"Seeds: {', '.join(str(seed) for seed in report.seeds) or '-'}",
-        f"Population sizes: {', '.join(str(size) for size in report.population_sizes) or '-'}",
-        f"Failure policy: {report.failure_policy}",
-        f"Output: {output.status} ({output.requested_path or 'not supplied'})",
-        "Optimization executed: no",
-        "Filesystem writes: no",
-    ]
-    if report.errors:
-        lines.append("Blocking issues:")
-        lines.extend(f"  {item.reason}: {item.action}" for item in report.errors)
-    if report.warnings:
-        lines.append("Warnings:")
-        lines.extend(f"  {warning}" for warning in report.warnings)
-    lines.extend(f"Next: {action}" for action in report.next_actions)
-    return "\n".join(lines)
+def _render_summary(payload: Mapping[str, Any]) -> None:
+    summary = payload.get("summary")
+    if not isinstance(summary, Mapping):
+        return
+    rows = summary.get("rows")
+    if not isinstance(rows, list):
+        return
+    print("Tasks:")
+    print("index  state       problem  algorithm  seed  evaluations")
+    for item in rows:
+        if not isinstance(item, Mapping):
+            continue
+        values = (
+            item.get("plan_index", "-"),
+            item.get("state", "-"),
+            item.get("problem_id", "-") or "-",
+            item.get("algorithm_id", "-") or "-",
+            item.get("seed", "-") if item.get("seed") is not None else "-",
+            item.get("evaluations", "-") if item.get("evaluations") is not None else "-",
+        )
+        print(f"{values[0]!s:>5}  {values[1]!s:<10}  {values[2]!s:<7}  {values[3]!s:<9}  {values[4]!s:>4}  {values[5]}")
 
 
-def _error_exit_code(exc: StudyError) -> int:
-    if isinstance(exc, InvalidStudySpecError):
-        return 2
-    return 2
-
-
-__all__ = ["run_study"]
+__all__ = ["study_main"]

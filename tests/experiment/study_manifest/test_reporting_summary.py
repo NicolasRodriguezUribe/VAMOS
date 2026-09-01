@@ -137,7 +137,13 @@ def test_sa_073_summary_uses_verified_manifest_metadata_without_materializing_ar
     assert report.issues == ()
     assert report.total_attempt_count == 2
     assert len(summary.rows) == 2
-    for row, task, attempt in zip(summary.rows, completed.tasks, completed.attempts, strict=True):
+    tasks_by_id = {item.task_id: item for item in completed.tasks}
+    attempts_by_id = {item.attempt_id: item for item in completed.attempts}
+    for row in summary.rows:
+        task = tasks_by_id[row.task_id]
+        selected_attempt_id = row.selected_attempt_id
+        assert selected_attempt_id is not None
+        attempt = attempts_by_id[selected_attempt_id]
         reference = attempt.run_reference
         assert reference is not None
         assert row.task_id == task.task_id

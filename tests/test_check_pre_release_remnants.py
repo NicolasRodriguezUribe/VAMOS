@@ -42,6 +42,12 @@ def test_discarded_cli_alias_fails(tmp_path: Path) -> None:
     assert {finding.signature for finding in scan(tmp_path)} == {"discarded CLI alias"}
 
 
+def test_discarded_study_command_envelope_fails_in_docs(tmp_path: Path) -> None:
+    _write(tmp_path, "docs/guide/studies.md", 'document_type = "vamos.study-plan-result"\n')
+
+    assert {finding.signature for finding in scan(tmp_path)} == {"discarded study command envelope"}
+
+
 def test_website_shim_path_fails(tmp_path: Path) -> None:
     _write(tmp_path, "website/_compat/plugin.py", "class Plugin:\n    pass\n")
 
@@ -61,6 +67,7 @@ def test_shared_guidance_rules_classify_removed_paths_fields_and_cli_aliases() -
             "Call build_bounded_archive_cfg with archive_type and size_cap.",
             "Run vamos benchmark --help and --quickstart.",
             "Read FUN.csv and metadata.json.",
+            "Do not emit vamos.study-plan-result.",
         )
     )
 
@@ -70,6 +77,7 @@ def test_shared_guidance_rules_classify_removed_paths_fields_and_cli_aliases() -
         "discarded archive field",
         "discarded CLI alias",
         "metadata.json",
+        "vamos.study-plan-result",
         "vamos.engine.algorithm.components.variation",
     }
 

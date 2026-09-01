@@ -1,6 +1,6 @@
 # StudyManifest v1 acceptance specification
 
-Status: normative persisted-state specification; SA-001..047, SA-049..055, SA-061..065, SA-068, and Python create/load/run/cancel/resume/retry are executable under the bounded-slice clarifications below; SA-048 remains an explicit future environment-override case
+Status: normative persisted-state specification; SA-001..047, SA-049..055, SA-061..073, and Python/CLI lifecycle operations are executable under the bounded-slice clarifications below; SA-048 remains an explicit future environment-override case and SA-074 completes with caller migration
 
 Contract: [Durable study and StudyManifest v1](study_manifest_contract.md)
 
@@ -21,9 +21,10 @@ forced-death nonpublication, and no-skip task selection from SA-027 through
 SA-032 plus SA-068 in `tests/experiment/study_manifest/`. Stale-attempt
 reconciliation from SA-031 and the recovery cases SA-033..047 and SA-049..055
 are implemented by explicit single-process operations. SA-048's
-environment-change acceptance option, CLI, coordination, parallelism,
-summaries, and caller migration remain roadmap requirements rather than
-available behavior.
+environment-change acceptance option, coordination, parallelism, and caller
+migration remain roadmap requirements rather than available behavior. The
+single-owner CLI and derived summary output cover the applicable SA-069
+through SA-073 command behavior.
 
 For this bounded recovery slice, SA-031 and SA-036 mean immediate explicit
 single-owner reconciliation after a prior process has ended; there is no lease

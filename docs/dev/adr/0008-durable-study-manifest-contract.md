@@ -57,8 +57,9 @@ publishes a fully verified canonical RunManifest before success. Valid newer
 journal events are authoritative during data-only load; loading derives an
 effective view and does not repair checkpoints.
 
-The sequential slice still has no state-mutating CLI, locks, leases, workers, or cross-process
-guarantee. Its published `on_error` policy is authoritative:
+The single-owner lifecycle CLI now delegates to the sequential services. The
+slice still has no locks, leases, workers, or cross-process guarantee. Its
+published `on_error` policy is authoritative:
 a verified task failure pauses fail-fast execution or is retained while
 continue execution advances to `completed_with_failures`. Infrastructure
 failure stops either policy and never becomes a task outcome. `Study.cancel()`

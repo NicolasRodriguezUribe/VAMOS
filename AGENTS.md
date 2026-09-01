@@ -54,7 +54,7 @@ replay = vamos.reproduce(path)
 
 VAMOS supports one run schema: `vamos.run-manifest` version `1.0.0`. A successful run contains `manifest.json`, `result.npz`, and `environment.json`. Writers and readers live under `src/vamos/experiment/artifacts/`; `src/vamos/run_artifacts.py` and the top-level facade expose the public surface.
 
-The durable study schema is `vamos.study-manifest` version `1.0.0`, governed by `docs/dev/study_manifest_contract.md`, ADR 0008, the complete SA-001 through SA-074 acceptance inventory, and the separate PL-001 through PL-021 planning inventory. Atomic create/data-only load, bounded sequential `Study.run()`, persisted failure policy, single-process graceful cancellation, explicit reconciliation, resume, bounded retry, read-only Python/CLI planning preflight, and immutable data-only `Study.inspect()`/`Study.summarize()` projections are implemented; later state-mutating CLI, caller migration, and coordination work must follow the contract roadmap. RunManifest remains the sole owner of resolved per-run truth and arrays.
+The durable study schema is `vamos.study-manifest` version `1.0.0`, governed by `docs/dev/study_manifest_contract.md`, ADR 0008, the complete SA-001 through SA-074 acceptance inventory, and the separate PL-001 through PL-021 planning inventory. Atomic create/data-only load, bounded sequential `Study.run()`, persisted failure policy, single-process graceful cancellation, explicit reconciliation, resume, bounded retry, immutable data-only `Study.inspect()`/`Study.summarize()` projections, and the complete single-owner study CLI are implemented; caller migration and coordination work must follow the contract roadmap. RunManifest remains the sole owner of resolved per-run truth and arrays.
 
 Shared algorithm variation pipelines live only in `src/vamos/engine/variation/`; concrete operator implementations and their registry live under `src/vamos/engine/operators/`. The external archive model is `ExternalArchiveConfig` in `src/vamos/engine/archive/config.py`, and experiment-spec parsing accepts the single `archive.external` block through `build_archive_cfg`.
 
@@ -221,6 +221,12 @@ cli: vamos results verify --help
 cli: vamos reproduce --help
 cli: vamos create-problem --help
 cli: vamos study plan --help
+cli: vamos study create --help
+cli: vamos study run --help
+cli: vamos study inspect --help
+cli: vamos study resume --help
+cli: vamos study retry --help
+cli: vamos study summarize --help
 command: python tools/check_agent_docs.py
 command: python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs
 command: python tools/health.py
