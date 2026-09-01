@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "policy": "structured-diagnostic-ratchet",
-  "generation_commit": "bcc3a1d4006ca0eeb43daa6422b24c7d5e1d9531",
-  "generation_command": "python tools/typecheck.py --scope full --update-baseline --generation-commit bcc3a1d4006ca0eeb43daa6422b24c7d5e1d9531",
+  "generation_commit": "6649c8d7fa92a948cc2414a4a24404c9bd312023",
+  "generation_command": "python tools/typecheck.py --scope full --update-baseline --generation-commit 6649c8d7fa92a948cc2414a4a24404c9bd312023",
   "environment": {
     "python": "3.12",
     "mypy": "1.15.0",
@@ -18,15 +18,15 @@
   "scope": [
     "src/vamos"
   ],
-  "diagnostic_count": 1591,
-  "files_with_diagnostics": 176,
-  "fingerprint_count": 208,
+  "diagnostic_count": 1576,
+  "files_with_diagnostics": 173,
+  "fingerprint_count": 205,
   "error_code_summary": {
     "arg-type": 6,
     "attr-defined": 1,
     "misc": 5,
     "no-any-return": 8,
-    "type-arg": 1562,
+    "type-arg": 1547,
     "union-attr": 3,
     "unused-ignore": 6
   },
@@ -35,7 +35,7 @@
     "experiment": 53,
     "foundation": 522,
     "package-root": 1,
-    "ux": 89
+    "ux": 74
   },
   "installed_mypy": "1.15.0",
   "diagnostics": [
@@ -1129,48 +1129,6 @@
         },
         {
           "line": 239,
-          "column": null
-        }
-      ]
-    },
-    {
-      "fingerprint": "236FCB82473789A06452BF1402126847309F405F8B32CFD283286DEF26185A79",
-      "path": "src/vamos/ux/studio/data.py",
-      "error_code": "type-arg",
-      "normalized_message": "Missing type parameters for generic type \"ndarray\"",
-      "layer": "ux",
-      "multiplicity": 8,
-      "locations": [
-        {
-          "line": 20,
-          "column": 10
-        },
-        {
-          "line": 21,
-          "column": null
-        },
-        {
-          "line": 22,
-          "column": null
-        },
-        {
-          "line": 30,
-          "column": 15
-        },
-        {
-          "line": 31,
-          "column": null
-        },
-        {
-          "line": 32,
-          "column": null
-        },
-        {
-          "line": 78,
-          "column": null
-        },
-        {
-          "line": 139,
           "column": null
         }
       ]
@@ -5464,20 +5422,6 @@
       ]
     },
     {
-      "fingerprint": "93E20F5DC6357A062194266452D033D77A6CDE8E8C61B1EA56A1D5395DB38803",
-      "path": "src/vamos/ux/analysis/tuning_viz.py",
-      "error_code": "type-arg",
-      "normalized_message": "Missing type parameters for generic type \"ndarray\"",
-      "layer": "ux",
-      "multiplicity": 1,
-      "locations": [
-        {
-          "line": 97,
-          "column": null
-        }
-      ]
-    },
-    {
       "fingerprint": "93E50816C57FE178772A8DE2488E9A96CBCA030FDBCE7B73302188CB2A0BF3E4",
       "path": "src/vamos/engine/algorithm/components/subset_selection.py",
       "error_code": "type-arg",
@@ -6162,40 +6106,6 @@
         {
           "line": 41,
           "column": 14
-        }
-      ]
-    },
-    {
-      "fingerprint": "B3A3C2440B12B08D67F5C6FDDB487F43809595B3CD7F6E9A1433A19D2C2CEEA4",
-      "path": "src/vamos/ux/studio/services.py",
-      "error_code": "type-arg",
-      "normalized_message": "Missing type parameters for generic type \"ndarray\"",
-      "layer": "ux",
-      "multiplicity": 6,
-      "locations": [
-        {
-          "line": 61,
-          "column": null
-        },
-        {
-          "line": 153,
-          "column": null
-        },
-        {
-          "line": 154,
-          "column": null
-        },
-        {
-          "line": 241,
-          "column": null
-        },
-        {
-          "line": 244,
-          "column": null
-        },
-        {
-          "line": 279,
-          "column": null
         }
       ]
     },

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 from vamos.engine.algorithm.catalog import DEFAULT_ALGORITHM
 from vamos.engine.algorithm.config import (
@@ -30,6 +31,7 @@ from vamos.foundation.eval.backends import resolve_eval_strategy
 from vamos.foundation.kernel.registry import resolve_kernel
 from vamos.foundation.problem.registry import make_problem_selection
 from vamos.foundation.problem.types import ProblemProtocol
+from vamos.study_artifacts import load_study
 from vamos.ux.analysis.mcdm import reference_point_scores
 from vamos.ux.studio._studio_llm import llm_generate_problem_code
 from vamos.ux.studio.data import build_fronts, load_runs_from_study
@@ -58,7 +60,7 @@ def _logger() -> logging.Logger:
 
 class DynamicsCallback:
     def __init__(self) -> None:
-        self.history: list[np.ndarray] = []
+        self.history: list[NDArray[Any]] = []
 
     def on_start(self, ctx: Any) -> None:
         pass
@@ -93,16 +95,8 @@ def load_studio_data(study_dir: Path) -> tuple[list[RunRecord], list[FrontRecord
     return runs, fronts
 
 
-def _contains_result_files(path: Path) -> bool:
-    try:
-        next(path.rglob("manifest.json"))
-    except StopIteration:
-        return False
-    return True
-
-
 def discover_study_directories(base_dir: Path, *, limit: int = 8) -> list[Path]:
-    """Return a short list of likely study/result directories for the UI picker."""
+    """Return verified canonical study roots for the UI picker."""
     base_dir = base_dir.resolve()
     candidates: list[Path] = []
 
@@ -110,17 +104,16 @@ def discover_study_directories(base_dir: Path, *, limit: int = 8) -> list[Path]:
         path = path.resolve()
         if path in candidates or not path.exists() or not path.is_dir():
             return
-        if not _contains_result_files(path):
+        try:
+            load_study(path)
+        except Exception:
             return
         candidates.append(path)
 
-    preferred_roots = [base_dir / "results", base_dir / "results" / "quickstart", base_dir / "paper" / "results"]
-    for root in preferred_roots:
-        add_candidate(root)
-        if root.exists():
-            for child in sorted(root.iterdir()):
-                if child.is_dir():
-                    add_candidate(child)
+    if (base_dir / "study-manifest.json").is_file():
+        add_candidate(base_dir)
+    for manifest_path in base_dir.rglob("study-manifest.json"):
+        add_candidate(manifest_path.parent)
 
     candidates.sort(key=lambda path: path.stat().st_mtime, reverse=True)
     return candidates[:limit]
@@ -150,8 +143,8 @@ def build_demo_study_data() -> tuple[list[RunRecord], list[FrontRecord]]:
 
 def build_decision_views(
     fronts: list[FrontRecord],
-    weights: np.ndarray,
-    reference_point: np.ndarray | None,
+    weights: NDArray[Any],
+    reference_point: NDArray[Any] | None,
     method: str,
 ) -> list[DecisionView]:
     return [
@@ -238,10 +231,10 @@ def _run_algorithm(
 
 def run_focused_optimization(
     problem: str,
-    reference_point: np.ndarray,
+    reference_point: NDArray[Any],
     algo: str,
     budget: int,
-) -> tuple[np.ndarray, np.ndarray | None]:
+) -> tuple[NDArray[Any], NDArray[Any] | None]:
     selection = make_problem_selection(problem)
     instance = selection.instantiate()
     algo_name = algo or "nsgaii"
@@ -276,7 +269,7 @@ def run_with_history(
     problem_name: str,
     config: dict[str, Any],
     budget: int,
-) -> tuple[dict[str, Any], list[np.ndarray]]:
+) -> tuple[dict[str, Any], list[NDArray[Any]]]:
     selection = make_problem_selection(problem_name)
     problem = selection.instantiate()
     algo_name = str(config.get("algorithm", DEFAULT_ALGORITHM))

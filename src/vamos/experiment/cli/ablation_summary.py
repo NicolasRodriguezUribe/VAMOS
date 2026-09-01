@@ -5,21 +5,16 @@ Summary output helpers for ablation runs.
 from __future__ import annotations
 
 import csv
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+
+from vamos.experiment.ablation import AblationResult
 
 
 def write_summary_csv(
-    results: Sequence[Any],
-    variant_names: Sequence[str],
+    result: AblationResult,
     path: Path,
 ) -> None:
-    rows: list[dict[str, Any]] = []
-    for result, variant in zip(results, variant_names):
-        row = result.to_row()
-        row["variant"] = variant
-        rows.append(row)
+    rows = list(result.summary_rows())
 
     if not rows:
         return

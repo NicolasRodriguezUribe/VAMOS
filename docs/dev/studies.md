@@ -226,9 +226,21 @@ Calling `run()` on `running`, `paused`, `completed`,
 `completed_with_failures`, `failed`, or `cancelled` state is an actionable typed
 error. Obvious same-process reentry is also rejected.
 
-The older internal `StudyRunner`/`StudyTask` path remains temporarily for
-existing benchmark and ablation callers. It is not a durable layout or reader,
-and `Study.run()` never delegates to it.
+Installed ablation and benchmark callers partition heterogeneous campaign input
+into explicit homogeneous `StudySpec` values, then use the canonical
+plan/create/run/inspect/summarize lifecycle. Their specialized tables are
+rendered from `StudySummary` rows and retain study, plan, task, attempt, run,
+path, and manifest-hash traceability. Studio follows those summary references;
+it does not infer study state by recursively discovering run manifests.
+
+The superseded internal runtime is quarantined only until the coordinated
+removal commit. No active installed-package caller imports it, and the durable
+runner never delegates to it.
+
+Model-tuning and racing services optimize parameter candidates and fidelities;
+Assist plans and `run_experiment` execute a single run. Those workflows are not
+fixed problem/algorithm/seed StudyManifest matrices, import none of the
+quarantined runtime, and remain on their respective canonical service paths.
 
 ## Required validation
 
