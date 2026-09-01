@@ -2,6 +2,13 @@
 
 Manuscript + supplementary material.
 
+This tree is a `PUBLICATION_ARCHIVE`: its pinned scripts, CSV inputs, figures,
+and PDFs preserve the provenance of reported numerical results. They are not a
+current VAMOS StudyManifest workflow and must not be used as a study reader or
+resume authority. New campaigns use the canonical study lifecycle documented
+in `docs/dev/studies.md`; archived numerical results are not rewritten merely
+to adopt a newer orchestration surface.
+
 The main manuscript is `paper/manuscript/main.tex`.
 
 Raw analysis artifacts are generated into:
@@ -27,7 +34,7 @@ Regenerate LaTeX tables from the committed CSVs:
 
 Use `--empty` on the table-update scripts to write placeholder tables when the corresponding CSV is not available yet.
 
-## Re-run the paper benchmark (expensive)
+## Archived paper benchmark reproduction (expensive)
 
 Generates `experiments/benchmark_paper.csv`:
 - `python paper/01_run_paper_benchmark.py`
@@ -52,7 +59,7 @@ Controls:
 Reproducibility note:
 - Keep the benchmark CSVs, the exact command line, and `paper/requirements-publication.txt` together with any reported paper results.
 
-## Active supplementary / figure refresh scripts
+## Archived supplementary / figure refresh scripts
 
 These scripts still feed figures or appendix artifacts used by the current manuscript build:
 

@@ -151,41 +151,42 @@ Artifacts in output directory include:
 
 ## Ablation Planning
 
-Use the ablation planning helpers to define variants (same algorithm, different configuration toggles)
-and build a reproducible task matrix.
+Treat each scientifically distinct algorithm configuration as its own canonical
+study. Planning is read-only, creation publishes the immutable task set, and
+execution produces verified RunManifest references.
 
 ```python
-from vamos.engine.tuning import AblationVariant, build_ablation_plan
+from pathlib import Path
+from vamos import StudySpec, create_study, plan_study
 
-variants = [
-    AblationVariant(name="baseline"),
-    AblationVariant(name="tuned", config_overrides={"population_size": 80}),
-]
-
-plan = build_ablation_plan(
-    problems=["zdt1", "dtlz2"],
-    variants=variants,
-    seeds=[1, 2, 3],
-    default_max_evals=20000,
-    engine="numpy",
-)
+output_root = Path("results/ablation_demo")
+summaries = {}
+for variant, population_size in {"baseline": 50, "tuned": 80}.items():
+    spec = StudySpec(
+        problems=["zdt1", "dtlz2"],
+        algorithms=["nsgaii"],
+        seeds=[1, 2, 3],
+        max_evaluations=20_000,
+        pop_size=population_size,
+        algorithm_configs={"nsgaii": {"pop_size": population_size}},
+        labels={"workflow": "ablation", "variant": variant},
+    )
+    planned = plan_study(spec)
+    completed = create_study(spec, output=output_root / variant).run()
+    assert completed.plan_id == planned.plan_id
+    summaries[variant] = completed.summarize()
 ```
 
-To convert the plan into runnable study tasks (or run directly), use the study helpers:
+Build any caller-specific table from `StudySummary.rows`. Retain at least
+`study_id`, `plan_id`, `task_id`, `selected_run_id`, `run_manifest_path`, and
+`run_manifest_sha256`; the table is derived and never a resume authority.
 
-```python
-from vamos.experiment.study.api import run_ablation_plan
-
-results, variant_names = run_ablation_plan(
-    plan,
-    algorithm="nsgaii",
-    base_config={"population_size": 50},
-)
-```
-
-To execute an ablation plan with the experiment layer, see:
+For an executable version, see:
 - `examples/tuning/ablation_runner.py`
 - `notebooks/2_advanced/32_ablation_planning.ipynb`
+
+For a JSON configuration whose keys map directly to `StudySpec`, see
+`examples/configs/study_nsgaii.json`.
 
 Interpreting contributions: compare median final metrics (e.g., HV at full budget)
 and compute deltas vs the baseline variant.

@@ -5,7 +5,7 @@ If you are new to Python, start with `docs/guide/minimal-python.md`.
 
 We will cover:
 1.  **Flash Hero:** Installing and running your first optimization in 30 seconds.
-2.  **The "Wow" Moment:** Running a parallel benchmark (NSGA-II vs MOEA/D vs SMS-EMOA) and generating LaTeX tables.
+2.  **The "Wow" Moment:** Running a durable benchmark (NSGA-II vs MOEA/D vs SMS-EMOA) and generating LaTeX tables.
 3.  **Advanced Science:** Tuning an algorithm with `RacingTuner` and defining a custom vectorized problem to unlock massive speedups.
 4.  **From CLI to Analysis:** Running reproducible CLI studies and loading results for analysis.
 
@@ -60,13 +60,13 @@ python hello_vamos.py
 
 ## 2. The "Wow" Moment: Competitive Benchmarking
 
-Let's do real science. You want to compare **NSGA-II**, **MOEA/D**, and **SMS-EMOA** on a problem, run multiple seeds in parallel to save time, and verify statistical significance.
+Let's do real science. You want to compare **NSGA-II**, **MOEA/D**, and **SMS-EMOA** on a problem, preserve multiple seeds durably, and verify statistical significance.
 
 Create `benchmark.py`:
 
 ```python
 import pandas as pd
-from vamos import optimize
+from vamos import StudySpec, create_study, load_result
 from vamos.foundation.quality_indicators import compute_normalized_hv
 from vamos.ux.api import friedman_test
 
@@ -77,31 +77,41 @@ n_seeds = 5  # In a real paper, use 30+
 
 print(f"Running benchmark on {problem_name} with {algorithms}...")
 
-# 2. Run in PARALLEL
-# VAMOS supports parallel evaluation of seeds/algorithms if you wrap this loop.
-# For simplicity here, we run sequentially but show how fast it is.
-# Pro-tip: Use StudyRunner or the `vamos bench` CLI for full sweeps.
+# 2. Create and execute one durable sequential study.
+spec = StudySpec(
+    problems=[problem_name],
+    algorithms=algorithms,
+    seeds=list(range(n_seeds)),
+    max_evaluations=5000,
+    on_error="continue",
+)
+completed = create_study(spec, output="studies/zdt1-comparison").run()
+inspection = completed.inspect()
+summary = completed.summarize()
+print(inspection.state, inspection.counts)
 
-results = {}
-for algo in algorithms:
-    print(f"  -> Running {algo}...", end="")
-    # Collect normalized hypervolume (HV) for each seed
-    hvs = []
-    for seed in range(n_seeds):
-        res = optimize(problem_name, algorithm=algo, max_evaluations=5000, seed=seed)
-        # compute_normalized_hv uses ZDT reference fronts.
-        # For other problems, call compute_hypervolume with an explicit reference point.
-        hv_score = compute_normalized_hv(res.F, problem_name)
-        hvs.append(hv_score)
-    results[algo] = hvs
-    print(" Done.")
+# 3. Derive the scientific table by following StudySummary run references.
+records = []
+for row in summary.rows:
+    run = load_result((completed.root / row.run_manifest_path).parent)
+    records.append(
+        {
+            "algorithm": row.algorithm_id,
+            "seed": row.seed,
+            "hypervolume": compute_normalized_hv(run.F, problem_name),
+            "study_id": row.study_id,
+            "plan_id": row.plan_id,
+            "task_id": row.task_id,
+            "run_id": row.selected_run_id,
+        }
+    )
 
-# 3. Create a DataFrame
-df = pd.DataFrame(results)
+# 4. Create a DataFrame. IDs keep every derived value attributable.
+df = pd.DataFrame(records).pivot(index="seed", columns="algorithm", values="hypervolume")
 print("\nNormalized Hypervolume Scores:")
 print(df)
 
-# 4. Statistical Analysis (Friedman Test)
+# 5. Statistical Analysis (Friedman Test)
 # We treat each seed as a separate 'problem instance' or aggregated block for the test
 # Usually you test across multiple problems. Here we test across seeds (just for mechanics demo).
 friedman = friedman_test(df.values, higher_is_better=True)
@@ -110,7 +120,7 @@ mean_ranks = friedman.ranks.mean(axis=0)
 print(f"\nFriedman Test p-value: {friedman.p_value:.4e}")
 print("Mean ranks:", dict(zip(df.columns, mean_ranks)))
 
-# 5. Export to LaTeX
+# 6. Export to LaTeX
 # This is what goes into your Overleaf paper!
 latex_table = df.describe().to_latex(float_format="%.4f")
 print("\n--- LaTeX Table for your Paper ---\n")
@@ -118,7 +128,8 @@ print(latex_table)
 ```
 
 **Why this matters:**
-*   **Consistency:** The same API (`optimize`) switches algorithms seamlessly.
+*   **Consistency:** One immutable `StudySpec` freezes the complete comparison.
+*   **Traceability:** Every derived row retains study, plan, task, and run IDs.
 *   **Analysis tools:** Dedicated stats module (`vamos.ux.analysis`) automates the math.
 *   **Publication Ready:** Pandas integration means you go from Python to LaTeX in seconds.
 

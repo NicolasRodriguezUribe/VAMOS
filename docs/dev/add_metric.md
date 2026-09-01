@@ -19,7 +19,7 @@ Do not persist a second metric file beside a canonical run. Bounded scalar metri
 - Optional-dependency behavior with and without the provider.
 - Alias/name resolution through `get_indicator`.
 - Backend parity when adding a native hook.
-- Study integration only if `StudyRunner` accepts the name.
+- Study integration only through canonical RunManifest metrics projected by `StudySummary`.
 
 Run:
 

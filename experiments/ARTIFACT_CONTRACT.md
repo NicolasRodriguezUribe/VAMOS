@@ -1,34 +1,52 @@
 # Experiment artifact contract
 
-Experiment and paper tooling has one source-of-truth input: a canonical VAMOS
-run directory containing `manifest.json`, `result.npz`, and `environment.json`.
-The manifest declares `document_type = "vamos.run-manifest"` and
-`schema_version = "1.0.0"`.
+Experiment and paper tooling has two canonical inputs with distinct ownership:
 
-Collectors discover runs through `manifest.json`, load identity and execution
-context with `vamos.load_run`, and load numerical arrays with
-`vamos.load_result`. They must not infer algorithm, problem, backend, seed, or
-configuration from directory names.
+- a StudyManifest directory owns a campaign's plan, attempts, state, recovery,
+  and task-to-run references;
+- a RunManifest directory owns one execution's resolved configuration,
+  numerical arrays, environment, and outcome.
+
+Both use only schema version `1.0.0`. A CSV, generated config, directory name,
+or launcher index is never campaign state.
+
+Current campaign collectors call `vamos.load_study(...).summarize()` first.
+When numerical analysis is explicitly required, they follow the summary's
+verified run reference and call `vamos.load_result`. Ordinary single-run and
+publication-archive tools may discover `manifest.json` through
+`experiments/scripts/canonical_runs.py`; that helper is not a study reader.
+No collector infers algorithm, problem, backend, seed, or configuration from
+directory names.
 
 ## Artifact classes
 
-- `SOURCE_INPUT`: problem data, frozen reference points, campaign
-  specifications, and other irreplaceable scientific inputs. Preserve these.
-- `CANONICAL_RUN`: the immutable run directory written by VAMOS. Never rewrite
-  it during analysis.
+- `ACTIVE_CURRENT_WORKFLOW`: `examples/tuning/ablation_runner.py`, the maintained
+  ablation notebooks, and campaign collectors use `StudySpec`, `plan_study`,
+  `create_study`, `Study.run/resume/retry/inspect/summarize`, and StudySummary.
 - `DERIVED_REGENERABLE_OUTPUT`: tidy CSV tables, statistics, plots, LaTeX, and
-  samples generated from canonical runs. These are analysis products, not run
-  persistence.
-- `PUBLICATION_ARCHIVE`: retained evidence for a published result. It may be
-  read by publication-specific tooling but is never accepted as a current run.
+  samples under `artifacts/` or `experiments/sample_outputs/`.
+- `SCIENTIFIC_SOURCE_INPUT`: campaign YAML, problem catalogs, frozen reference
+  points, and operator/config inventories under `experiments/configs/` and
+  `experiments/catalog/`; these are preserved inputs, not a supported study
+  serialization.
+- `PUBLICATION_ARCHIVE`: committed benchmark/MIC CSVs, backups, manuscripts,
+  figures, PDFs, and publication-specific scripts under `paper/`; these remain
+  attributable archives and are not accepted as current study formats.
+- `OBSOLETE_PRE_RELEASE_WORKFLOW`: the removed custom campaign launchers that
+  generated per-task CLI configs, inferred completion by scanning directories,
+  and treated `runs_index.jsonl` as resume state.
+- `SEMANTICALLY_UNRELATED`: single-run tutorials, tuning-database examples,
+  registry/catalog builders, and cross-framework source experiments that do
+  not claim to be VAMOS durable studies.
 
 ## Derived tidy tables
 
-`experiments/scripts/canonical_runs.py` is the shared adapter used by active
-collectors. A derived row includes the canonical run/task identities, resolved
-algorithm/problem/backend/seed, population and termination settings, outcome
-timing, result dimensions, and flattened outcome metrics. Objective summaries
-are calculated from arrays returned by `load_result`.
+`experiments/scripts/collect_campaign_runs.py` is the current durable-campaign
+collector. It produces one row per StudySummary task and retains study ID, plan
+ID, task ID, attempt ID, run ID, relative RunManifest path, and manifest hash.
+`experiments/scripts/canonical_runs.py` remains the shared ordinary-run adapter.
+Objective summaries are calculated only after following canonical run evidence
+and loading arrays through `load_result`.
 
 Derived tables may be written under `artifacts/tidy/` or
 `experiments/sample_outputs/`. Their filenames and columns are analysis
@@ -36,6 +54,6 @@ interfaces only and must never be treated as a loadable VAMOS run format.
 
 ## Validation
 
-Use a tiny canonical fixture to test collector discovery, manifest field
-extraction, array loading, and table generation. Publication-scale campaigns
-are outside routine validation.
+Use a tiny canonical study to test StudySummary derivation and table generation,
+plus a tiny canonical run to test ordinary-run discovery and array loading.
+Publication-scale campaigns are outside routine validation.
