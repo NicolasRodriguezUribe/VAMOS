@@ -22,18 +22,21 @@ from vamos import optimize
 
 result = optimize("zdt1", algorithm="ibea", max_evaluations=10000, seed=42)
 
-print(result.F.shape)  # (100, 2)
+print(result.F.shape)  # (n_solutions, 2)
 ```
 
-With the hypervolume indicator:
+With an explicit public configuration:
 
 ```python
+from vamos.algorithms import IBEAConfig
+
+config = IBEAConfig.default(pop_size=100, n_var=30)
 result = optimize(
     "zdt2",
     algorithm="ibea",
     max_evaluations=20000,
     seed=42,
-    algorithm_kwargs={"indicator": "hv", "kappa": 0.05},
+    algorithm_config=config,
 )
 ```
 
@@ -44,7 +47,7 @@ result = optimize(
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `pop_size` | 100 | Population size. |
-| `indicator` | `"eps"` | Quality indicator: `"eps"` (additive epsilon, fast) or `"hv"` (hypervolume, slower but more accurate). |
+| `indicator` | `"eps"` | Quality indicator identifier in the typed configuration. |
 | `kappa` | 0.05 | Fitness scaling factor. Smaller values apply stronger selection pressure. |
 | `crossover_prob` | 1.0 | SBX crossover probability. |
 | `crossover_eta` | 20 | SBX distribution index. |

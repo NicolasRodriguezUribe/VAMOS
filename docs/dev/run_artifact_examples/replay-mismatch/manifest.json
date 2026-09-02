@@ -11,7 +11,7 @@
         "replay"
       ],
       "role": "environment",
-      "sha256": "6bd1d1d17b77414dfb24e9454b4dab6254963ef6724d69dace460832bd267aad"
+      "sha256": "1da72084923610117e69ae2f8e8555a68d2be7d4ad4c3881145695ff0fd81091"
     },
     {
       "array_contract": {
@@ -60,7 +60,7 @@
   ],
   "document_type": "vamos.run-manifest",
   "integrity": {
-    "manifest_sha256": "9181ac79415028d7bd247ee7008182af2baee48030362d7046c2db097392b248"
+    "manifest_sha256": "6a9b889427037100fc867ab15d876cff09b857e6a211231227fe71e4ba8dc265"
   },
   "lineage": {
     "comparison": {
@@ -150,7 +150,7 @@
     "execution_kind": "replay",
     "replay_plan_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "root_run_id": "11111111-1111-4111-8111-111111111111",
-    "source_manifest_sha256": "5e294e4c6ea82df51bec8d2d21274671fb58edd34a96cea013045999ba32adc0",
+    "source_manifest_sha256": "b8cf57ab9ab181a6128d30c34ea87eb707e2e38d87d46253fd3c89ba621e6d0e",
     "source_run_id": "11111111-1111-4111-8111-111111111111"
   },
   "name": "Completed replay mismatch example",
@@ -177,9 +177,9 @@
       "distribution": {
         "name": "vamos-optimization",
         "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "version": "1.5.0"
+        "version": "1.0.0"
       },
-      "vamos_version": "1.5.0"
+      "vamos_version": "1.0.0"
     },
     "source": {
       "diff_sha256": null,

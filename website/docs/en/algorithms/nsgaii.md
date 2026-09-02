@@ -22,8 +22,8 @@ from vamos import optimize
 
 result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10000, seed=42)
 
-print(result.F.shape)  # (100, 2)
-print(result.X.shape)  # (100, 30)
+print(result.F.shape)  # (n_solutions, 2)
+print(result.X.shape)  # (n_solutions, 30)
 ```
 
 Custom problem:
@@ -34,6 +34,7 @@ from vamos import make_problem, optimize
 problem = make_problem(
     lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
     n_var=2, n_obj=2, bounds=[(0, 1), (0, 1)],
+    encoding="real",
 )
 result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
 ```
@@ -50,12 +51,15 @@ result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
 | `mutation_eta` | 20 | Polynomial mutation distribution index. |
 | `offspring_size` | `pop_size` | Number of offspring per generation. |
 
-Pass via `algorithm_kwargs`:
+Use a public typed configuration for explicit settings:
 
 ```python
+from vamos.algorithms import NSGAIIConfig
+
+config = NSGAIIConfig.default(pop_size=200, n_var=30)
 result = optimize(
     "zdt1", algorithm="nsgaii", max_evaluations=10000, seed=42,
-    algorithm_kwargs={"pop_size": 200, "crossover_eta": 30},
+    algorithm_config=config,
 )
 ```
 

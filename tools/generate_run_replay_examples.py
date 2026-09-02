@@ -18,15 +18,46 @@ EXAMPLES = ROOT / "docs" / "dev" / "run_artifact_examples"
 SOURCE = EXAMPLES / "nsgaii-success"
 SOURCE_RUN_ID = "11111111-1111-4111-8111-111111111111"
 TIMESTAMPS = {"started_at": "2026-01-01T00:04:00Z", "completed_at": "2026-01-01T00:04:01Z"}
+RELEASE_VERSION = "1.0.0"
+BASE_EXAMPLES = ("nsgaii-success", "moead-success", "custom-manual", "failed-run")
 
 
 def main() -> None:
+    _normalize_base_examples()
     source_manifest = _json(SOURCE / "manifest.json")
     source_arrays = _arrays(SOURCE / "result.npz")
     _verification_examples(source_manifest)
     _successful_replay(source_manifest, source_arrays)
     _mismatch_replay(source_manifest, source_arrays)
     _failed_replay(source_manifest)
+
+
+def _normalize_base_examples() -> None:
+    """Keep checked-in contract examples aligned with the release version."""
+    for name in BASE_EXAMPLES:
+        destination = EXAMPLES / name
+        environment_path = destination / "environment.json"
+        environment = _json(environment_path)
+        environment["packages"]["vamos-optimization"] = RELEASE_VERSION
+        _write_json(environment_path, environment)
+
+        manifest_path = destination / "manifest.json"
+        manifest = _json(manifest_path)
+        implementation = manifest["provenance"]["implementation"]
+        implementation["distribution"]["version"] = RELEASE_VERSION
+        implementation["vamos_version"] = RELEASE_VERSION
+
+        environment_artifact = next(artifact for artifact in manifest["artifacts"] if artifact["role"] == "environment")
+        normalized_descriptor = _descriptor("environment", environment_path)
+        environment_artifact.update(
+            {
+                "sha256": normalized_descriptor["sha256"],
+                "bytes": normalized_descriptor["bytes"],
+            }
+        )
+        manifest.pop("integrity", None)
+        terminal = build_terminal_manifest(manifest, limits=LoadLimits())
+        _write_json(manifest_path, terminal.as_dict())
 
 
 def _verification_examples(source: dict[str, Any]) -> None:

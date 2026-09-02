@@ -6,6 +6,12 @@
 
 VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels with NumPy as the exact reference path and optional Numba acceleration for core kernels.
 
+VAMOS 1.0.0 is the first official public release and compatibility baseline.
+Earlier version strings and Git tags were internal pre-public development
+markers, not prior public releases. See the
+[stability policy](docs/project/stability-and-versioning.md) and
+[known limitations](docs/project/known-limitations.md).
+
 ## Key Features
 
 - **Unified API**: A clear, fluent interface `vamos.optimize()` for all workflows.
@@ -102,8 +108,6 @@ result = optimize(
 
 front = result.front()
 print(f"Non-dominated solutions: {len(front) if front is not None else 0}")
-# from vamos.ux.api import plot_result_front
-# plot_result_front(result)  # Quick Pareto front plot
 ```
 
 Prefer a guided CLI? Run:
@@ -331,7 +335,7 @@ All tools are available as `vamos <subcommand>`. Run `vamos help` for the full l
   ```
 - **`vamos bench`**: Generate full reports comparing multiple algorithms, plus jMetalPy-compatible lab outputs (`summary/lab/QualityIndicatorSummary.csv`, Wilcoxon tables, boxplots). Boxplots require `matplotlib`.
   ```bash
-  vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/
+  vamos bench ZDT_small --algorithms nsgaii moead --output report/
   ```
   ```bash
   vamos bench ZDT_small --algorithms nsgaii --output report/ --smoke
@@ -345,9 +349,10 @@ All tools are available as `vamos <subcommand>`. Run `vamos help` for the full l
     vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend random --smoke --output-dir report/tuning_smoke
     ```
   - Recommended robust invocation (backend fallback + suite-stratified split):
+
     ```bash
-  vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1
-  ```
+    vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1
+    ```
 - Full tuning reference (canonical docs): `docs/topics/tuning.md`.
 - **`vamos check`**: Verify your installation and backend availability.
 
@@ -360,7 +365,7 @@ If you use VAMOS in published work, cite it directly:
   title = {VAMOS: Vectorized Architecture for Multiobjective Optimization Studies},
   author = {Rodriguez Uribe, Nicolas and Herr{\'a}n, Alberto and Nebro, Antonio J. and Del Ser, Javier and Colmenar, J. Manuel},
   year = {2026},
-  version = {1.1.0},
+  version = {1.0.0},
   url = {https://github.com/NicolasRodriguezUribe/VAMOS}
 }
 ```

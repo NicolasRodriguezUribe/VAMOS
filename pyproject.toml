@@ -1,15 +1,23 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "vamos-optimization"
-version = "1.5.0"
+dynamic = ["version"]
 description = "Vectorized Architecture for Multiobjective Optimization Studies"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-  { name = "VAMOS contributors" }
+  { name = "Nicolás R. Uribe" },
+  { name = "Alberto Herrán" },
+  { name = "Antonio J. Nebro" },
+  { name = "Javier Del Ser" },
+  { name = "J. Manuel Colmenar" },
+]
+maintainers = [
+  { name = "Nicolás R. Uribe" },
 ]
 keywords = [
   "multiobjective",
@@ -95,6 +103,7 @@ examples = [
 docs = [
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
+  "mkdocs-static-i18n>=1.2",
   "mkdocstrings[python]>=0.24",
   "jinja2>=3.1",
 ]
@@ -111,10 +120,11 @@ dev = [
   "mypy>=1.9",
   "ruff>=0.6",
   "build>=1.2",
-  "setuptools>=64",
+  "setuptools>=77",
   "wheel>=0.40",
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
+  "mkdocs-static-i18n>=1.2",
   "mkdocstrings[python]>=0.24",
   "nbformat>=5.9",
   "nbconvert>=7.10",
@@ -149,6 +159,7 @@ all = [
   "bokeh>=3.3",
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
+  "mkdocs-static-i18n>=1.2",
   "mkdocstrings[python]>=0.24",
   "jinja2>=3.1",
   "openai>=1.0.0",
@@ -158,7 +169,7 @@ all = [
   "mypy>=1.9",
   "ruff>=0.6",
   "build>=1.2",
-  "setuptools>=64",
+  "setuptools>=77",
   "wheel>=0.40",
   "pyyaml>=6.0",
 ]
@@ -277,6 +288,9 @@ markers = [
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+[tool.setuptools.dynamic]
+version = { attr = "vamos.foundation.version.__version__" }
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
@@ -305,9 +319,6 @@ ignore = [
 [tool.semantic_release]
 version_variable = [
     "src/vamos/foundation/version.py:__version__",
-]
-version_toml = [
-    "pyproject.toml:project.version",
 ]
 branch = "main"
 upload_to_pypi = true

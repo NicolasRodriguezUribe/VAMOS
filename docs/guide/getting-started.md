@@ -6,7 +6,7 @@ Install
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .\.venv\Scripts\Activate.ps1
-pip install "vamos-optimization[compute,research,analysis,dev]"
+pip install vamos-optimization
 ```
 
 Useful extras:
@@ -53,10 +53,9 @@ For a quick comparison, see `notebooks/0_basic/00_api_comparison.ipynb`.
 
 ```python
 from vamos import optimize
-from vamos.ux.api import result_summary_text
 
 result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10_000, pop_size=100, seed=42, verbose=True)
-print(result_summary_text(result))
+print(result.F.shape, result.data["evaluations"])
 ```
 
 `engine=None` is deterministic and resolves to `numpy`. `engine="auto"` enables heuristic backend selection in both the Python API and the CLI.
@@ -100,7 +99,9 @@ result = optimize(
 )
 ```
 
-Prefer the unified `optimize(...)` API; use algorithm config objects for reproducible, fully specified runs. For plugin algorithms, wrap free-form mappings in `GenericAlgorithmConfig`.
+Prefer the unified `optimize(...)` API; use public algorithm config objects for
+reproducible, fully specified built-in runs. Plugin configuration remains
+experimental in VAMOS 1.0.0.
 
 API decision guide
 ------------------
@@ -113,7 +114,6 @@ Use the lightest interface that still makes the run reproducible.
 | Your own problem | `make_problem(fn, ...)` | `make_problem(my_fn, n_var=2, n_obj=2, bounds=[(0,1),(0,1)], encoding="real")` |
 | Scaffold a problem file | CLI wizard | `vamos create-problem` |
 | Reproducible configs | `algorithm_config` (via `.default()` or `.builder()`) + explicit budget | `optimize(problem, algorithm="nsgaii", algorithm_config=cfg, max_evaluations=5000)` |
-| Plugin algorithms | `GenericAlgorithmConfig` | `optimize(problem, algorithm="my_algo", algorithm_config=GenericAlgorithmConfig({...}))` |
 | Small study in one call | `seed=[...]` | `optimize("zdt1", seed=[0, 1, 2]) -> StudyResult` |
 
 Multi-seed runs return `StudyResult`, a sequence-compatible container with `.runs`, `.metric_values(...)`, `.mean(...)`, `.std(...)`, and `.best_run(...)`.
@@ -127,7 +127,6 @@ print(study.best_run("evaluations").meta["seed"])
 Benchmarks and studies
 ----------------------
 
-- Compare backends: `vamos --experiment backends --problem zdt1`
-- Run a predefined suite: `vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/`
-- Batch problem x algorithm sweeps: `vamos --problem-set families --algorithm both`
+- Run a predefined suite: `vamos bench ZDT_small --algorithms nsgaii moead --output report/`
+- Run a durable matrix: see `docs/guide/studies.md` and `vamos study --help`.
 - For paper-grade reruns, install the pinned environment in `paper/requirements-publication.txt`.

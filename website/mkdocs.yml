@@ -1,8 +1,8 @@
 site_name: VAMOS
 site_description: Fast. Clean. Multi-objective. A Python framework for multi-objective evolutionary optimization.
-site_url: https://vamos-optimization.org
-repo_url: https://github.com/vamos-optimization/vamos
-repo_name: vamos-optimization/vamos
+site_url: https://nicolasrodriguezuribe.github.io/VAMOS/
+repo_url: https://github.com/NicolasRodriguezUribe/VAMOS
+repo_name: NicolasRodriguezUribe/VAMOS
 
 theme:
   name: material
@@ -42,7 +42,7 @@ extra_css:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/vamos-optimization
+      link: https://github.com/NicolasRodriguezUribe/VAMOS
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/vamos-optimization
 

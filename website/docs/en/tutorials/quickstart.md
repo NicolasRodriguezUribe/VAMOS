@@ -1,154 +1,93 @@
-# Quickstart Tutorial
+# Quickstart tutorial
 
-A complete walk-through of common VAMOS workflows from install to result analysis.
+This tutorial uses the stable VAMOS 1.0.0 Python facades.
 
----
-
-## Prerequisites
-
-- Python 3.10+
-- `pip install vamos-optimization`
-- Basic NumPy familiarity
-
----
-
-## What is a Pareto front?
-
-Single-objective optimization finds one best value. Multi-objective optimization has two or more conflicting objectives — improving one typically worsens another. The result is a *Pareto front*: the set of solutions where no objective can be improved without degrading another. VAMOS returns the entire front. You choose the trade-off.
-
----
-
-## Step 1 — Run a benchmark
-
-ZDT1 is a standard 2-objective test function with 30 variables:
-
-```python
-from vamos import optimize
-
-result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10000, seed=42)
-
-print(f"Solutions found: {result.F.shape[0]}")
-print(f"Objective range f1: [{result.F[:, 0].min():.4f}, {result.F[:, 0].max():.4f}]")
-print(f"Objective range f2: [{result.F[:, 1].min():.4f}, {result.F[:, 1].max():.4f}]")
-```
-
----
-
-## Step 2 — Inspect the result
-
-`result.F` and `result.X` are NumPy arrays:
+## 1. Run and inspect a benchmark
 
 ```python
 import numpy as np
 
-# Sort by objective 1
-order = np.argsort(result.F[:, 0])
-sorted_F = result.F[order]
-sorted_X = result.X[order]
+from vamos import optimize
 
-# Extreme points
-print("Minimum f1:", sorted_F[0])    # lowest f1, highest f2
-print("Minimum f2:", sorted_F[-1])   # highest f1, lowest f2
+result = optimize(
+    "zdt1",
+    algorithm="nsgaii",
+    max_evaluations=400,
+    pop_size=40,
+    seed=42,
+)
+
+order = np.argsort(result.F[:, 0])
+sorted_f = result.F[order]
+print(sorted_f.shape)
+print(sorted_f[0])
 ```
 
----
-
-## Step 3 — Define a custom problem
-
-Wrap any Python function with `make_problem()`:
+## 2. Define a scalar custom problem
 
 ```python
 from vamos import make_problem, optimize
 
 problem = make_problem(
     lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
-    n_var=2, n_obj=2, bounds=[(0, 1), (0, 1)],
+    n_var=2,
+    n_obj=2,
+    bounds=[(0, 1), (0, 1)],
+    encoding="real",
 )
 
-result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
-print(result.F)
-```
-
-The function takes a 1-D array and returns a list of floats. VAMOS auto-vectorizes it over the population internally.
-
----
-
-## Step 4 — Try a different algorithm
-
-Change `algorithm=` to switch:
-
-```python
-for algo in ["nsgaii", "spea2", "smpso", "ibea"]:
-    r = optimize("zdt1", algorithm=algo, max_evaluations=10000, seed=42)
-    print(f"{algo:10s}: {r.F.shape[0]} solutions, f1_min={r.F[:, 0].min():.4f}")
-```
-
----
-
-## Step 5 — Control algorithm parameters
-
-Pass keyword arguments to configure the algorithm:
-
-```python
-result = optimize(
-    "zdt1",
+custom_result = optimize(
+    problem,
     algorithm="nsgaii",
-    max_evaluations=10000,
+    max_evaluations=400,
+    pop_size=40,
     seed=42,
-    algorithm_kwargs={
-        "pop_size": 200,
-        "crossover_eta": 30,
-        "mutation_eta": 25,
-    },
 )
 ```
 
----
+The default adapter evaluates the scalar callable one solution at a time. It
+does not claim vectorized batch performance.
 
-## Step 6 — Many objectives with NSGA-III
+## 3. Compare algorithms with fixed inputs
 
-Switch to a many-objective algorithm for 4+ objectives:
+```python
+from vamos import optimize
+
+for algorithm in ("nsgaii", "spea2", "smpso", "ibea"):
+    candidate = optimize(
+        "zdt1",
+        algorithm=algorithm,
+        max_evaluations=400,
+        pop_size=40,
+        seed=42,
+    )
+    print(algorithm, candidate.F.shape)
+```
+
+A shared seed and budget improve comparability but do not by themselves prove
+that different algorithms are scientifically equivalent. Record all resolved
+configuration and use multiple independent seeds for research claims.
+
+## 4. Many objectives
 
 ```python
 result = optimize(
     "dtlz2",
     algorithm="nsgaiii",
-    max_evaluations=50000,
+    n_obj=5,
+    max_evaluations=420,
     seed=42,
-    algorithm_kwargs={"n_partitions": 8},
 )
 
-print(result.F.shape)   # (45, 3) — depends on reference point count
+print(result.F.shape[1])  # 5 objectives
 ```
 
----
+Reference-direction algorithms may derive a population size from objective
+count. VAMOS rejects incompatible explicit sizes instead of silently changing
+them.
 
 ## Next steps
 
-<div class="grid cards" markdown>
-
--   :material-tools: **Custom Problem**
-
-    ---
-
-    Constraints, integer variables, multi-dimensional bounds.
-
-    [:octicons-arrow-right-24: Custom Problem Tutorial](custom-problem.md)
-
--   :material-tune: **Hyperparameter Tuning**
-
-    ---
-
-    Automatically find better algorithm configurations using Optuna.
-
-    [:octicons-arrow-right-24: Tuning Tutorial](tuning.md)
-
--   :material-api: **API Reference**
-
-    ---
-
-    Full signatures for `optimize()`, `make_problem()`, and the result object.
-
-    [:octicons-arrow-right-24: API Reference](../api/index.md)
-
-</div>
+- [Custom problems](custom-problem.md)
+- [Experimental tuning](tuning.md)
+- [API reference](../api/index.md)

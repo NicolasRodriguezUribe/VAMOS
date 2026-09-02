@@ -22,18 +22,21 @@ from vamos import optimize
 
 result = optimize("zdt1", algorithm="spea2", max_evaluations=10000, seed=42)
 
-print(result.F.shape)  # (100, 2) — returns the archive contents
+print(result.F.shape)  # (n_solutions, 2)
 ```
 
-With explicit parameters:
+With an explicit public configuration:
 
 ```python
+from vamos.algorithms import SPEA2Config
+
+config = SPEA2Config.default(pop_size=100, n_var=30)
 result = optimize(
     "zdt3",
     algorithm="spea2",
     max_evaluations=20000,
     seed=42,
-    algorithm_kwargs={"pop_size": 100, "archive_size": 100},
+    algorithm_config=config,
 )
 ```
 
@@ -48,7 +51,7 @@ result = optimize(
 | `crossover_prob` | 1.0 | SBX crossover probability. |
 | `crossover_eta` | 20 | SBX distribution index. |
 | `mutation_eta` | 20 | Polynomial mutation distribution index. |
-| `k` | auto | k-NN density estimate parameter. Default: `sqrt(pop_size + archive_size)`. |
+| `k_neighbors` | auto | Optional k-NN density setting; `None` uses the implementation default. |
 
 ---
 
