@@ -302,6 +302,7 @@ class ReleaseChecker:
                 raise AssertionError("Clean wheel environment was not created.")
             environment = os.environ.copy()
             environment.pop("PYTHONPATH", None)
+            environment["PATH"] = os.pathsep.join((str(self.runtime_python.parent), environment.get("PATH", "")))
             completed = subprocess.run(
                 [str(self.runtime_python), str(ROOT / "tools" / "release_smoke.py"), "--version", self.version, "--mode", "full"],
                 cwd=Path(temporary.name),
