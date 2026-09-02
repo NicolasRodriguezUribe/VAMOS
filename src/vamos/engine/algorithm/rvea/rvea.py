@@ -18,17 +18,17 @@ import numpy as np
 from vamos.engine.algorithm.components.hooks import get_live_viz, live_should_stop
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
 from vamos.engine.algorithm.components.termination import capped_offspring_size, validate_initial_budget
-from vamos.engine.algorithm.components.variation.helpers import (
-    ensure_supported_operator_names,
-    ensure_supported_repair_name,
-)
-from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.config.variation import (
     ensure_operator_tuple,
     resolve_default_variation_config,
 )
 from vamos.engine.hooks.live_viz import LiveVisualization
+from vamos.engine.variation.helpers import (
+    ensure_supported_operator_names,
+    ensure_supported_repair_name,
+)
+from vamos.engine.variation.pipeline import VariationPipeline
 from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
@@ -44,11 +44,11 @@ def _logger() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def _generate_reference_vectors(n_obj: int, n_partitions: int = 12) -> np.ndarray:
+def _generate_reference_vectors(n_obj: int, n_partitions: int = 12) -> np.ndarray[Any, Any]:
     """Generate uniformly distributed reference vectors using Das-Dennis."""
     from itertools import combinations
 
-    def _das_dennis(n_partitions: int, n_obj: int) -> np.ndarray:
+    def _das_dennis(n_partitions: int, n_obj: int) -> np.ndarray[Any, Any]:
         if n_obj == 1:
             return np.array([[1.0]])
         compositions: list[list[int]] = []
@@ -67,13 +67,13 @@ def _generate_reference_vectors(n_obj: int, n_partitions: int = 12) -> np.ndarra
     return ref_dirs
 
 
-def _calc_V(ref_dirs: np.ndarray) -> np.ndarray:
+def _calc_V(ref_dirs: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
     norms = np.linalg.norm(ref_dirs, axis=1, keepdims=True)
     norms[norms == 0.0] = 1.0
     return np.asarray(ref_dirs / norms, dtype=float)
 
 
-def _calc_gamma(V: np.ndarray) -> np.ndarray:
+def _calc_gamma(V: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
     cosine = V @ V.T
     gamma = np.arccos((-np.sort(-1.0 * cosine, axis=1))[:, 1])
     gamma = np.maximum(gamma, 1e-64)
@@ -81,15 +81,15 @@ def _calc_gamma(V: np.ndarray) -> np.ndarray:
 
 
 def _apd_survival(
-    F: np.ndarray,
-    V: np.ndarray,
-    gamma: np.ndarray,
-    ideal: np.ndarray,
+    F: np.ndarray[Any, Any],
+    V: np.ndarray[Any, Any],
+    gamma: np.ndarray[Any, Any],
+    ideal: np.ndarray[Any, Any],
     n_survive: int,
     n_gen: int,
     n_max_gen: int,
     alpha: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any], np.ndarray[Any, Any] | None]:
     if F.size == 0:
         return np.empty(0, dtype=int), ideal, None
 
@@ -344,7 +344,7 @@ class RVEA:
             )
         )
 
-    def ask(self) -> np.ndarray:
+    def ask(self) -> np.ndarray[Any, Any]:
         """Generate offspring for external evaluation.
 
         Returns

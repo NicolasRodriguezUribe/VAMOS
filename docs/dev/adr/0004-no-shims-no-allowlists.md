@@ -8,7 +8,7 @@ Compatibility shims and allowlists mask architectural issues and delay fixes.
 They also complicate the codebase and erode enforcement of guardrails.
 
 ## Decision
-- Do not add compatibility shims or deprecation wrappers.
+- Do not add alternate API wrappers for superseded paths.
 - Do not introduce allowlists for architecture gates.
 - Fix violations at the source and update call sites.
 

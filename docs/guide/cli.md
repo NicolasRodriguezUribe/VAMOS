@@ -1,6 +1,9 @@
 # CLI and config files
 
-> Status as of March 31, 2026: the standard single-run CLI path (`vamos --problem ...`), `vamos quickstart`, `vamos create-problem`, CLI `--engine auto`, basic config-driven flows (`vamos --config ...`, `--validate-config`), `vamos bench --smoke`, `vamos tune --backend random --smoke`, `vamos profile`, and the common `vamos zoo` commands are covered by smoke tests. The published README, CLI-guide, and tuning-guide commands now also have command-level smoke coverage. Heavier tuning and broader benchmark matrices still depend on your installed extras and local environment.
+> The standard single-run CLI path, canonical run commands, and the
+> single-owner durable-study lifecycle are covered by command-level smoke tests. Heavier
+> tuning and broader benchmark matrices still depend on installed extras and
+> the local environment.
 
 Quickstart wizard
 -----------------
@@ -60,6 +63,70 @@ Open the latest run folder:
 ```bash
 vamos open-results --open
 ```
+
+Inspect one canonical run without materializing arrays:
+
+```bash
+vamos results inspect results/ZDT1/nsgaii/numpy/seed_7
+vamos results inspect results/ZDT1/nsgaii/numpy/seed_7 --json
+```
+
+Fully verify integrity and exact replay compatibility without optimization:
+
+```bash
+vamos results verify results/ZDT1/nsgaii/numpy/seed_7
+vamos results verify results/ZDT1/nsgaii/numpy/seed_7 --require-level exact
+```
+
+Execute a verified same-environment built-in replay as a new canonical run:
+
+```bash
+vamos reproduce results/ZDT1/nsgaii/numpy/seed_7
+vamos reproduce results/ZDT1/nsgaii/numpy/seed_7 --output results/replays/zdt1-seed-7
+```
+
+Add `--json` to any of these commands for one machine-readable stdout
+document. Replay never overwrites or modifies its source.
+
+Durable studies
+---------------
+
+Resolve a durable study before creating a directory or executing an objective:
+
+```json
+{
+  "problems": ["zdt1", "zdt2"],
+  "algorithms": ["nsgaii"],
+  "seeds": [0, 1],
+  "max_evaluations": 10000,
+  "pop_size": 80
+}
+```
+
+```bash
+vamos study plan study.json
+vamos study plan study.json --output studies/comparison-01
+vamos study plan study.json --json
+vamos study create study.json --output studies/comparison-01
+vamos study run studies/comparison-01
+vamos study inspect studies/comparison-01 --json
+vamos study summarize studies/comparison-01
+vamos study summarize studies/comparison-01 --format csv --output reports/tasks.csv
+```
+
+Planning is read-only: it creates no study, runs no task, and does not reserve
+the proposed output. Its `plan_id` and task IDs match later Python
+`vamos.create_study(...)` creation from the same `StudySpec`. Every study
+command emits exactly one `vamos.study-command-result` version `1.0.0`
+document in JSON mode. Creation and execution are separate. `inspect` and an
+in-memory `summarize` are read-only; JSON/CSV summary files are written only
+when `--output` is explicit and never overwrite an existing path.
+
+Use `vamos study resume STUDY_DIR` for eligible pending/interrupted work and
+`vamos study retry STUDY_DIR --failed` for explicit bounded failed-task retry.
+Concurrent mutation is unsupported: one process must remain the only mutation
+owner for a study. There is no cross-process cancel command; foreground Ctrl+C
+uses graceful durable cancellation.
 
 Main runner
 -----------
@@ -130,14 +197,13 @@ Walkthrough: run and inspect outputs
 vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --seed 7
 ```
 
-2) Inspect artifacts under `results/` (default):
+2) Inspect the canonical artifact under `results/` (default):
 
-- `FUN.csv`: objective values (Pareto front)
-- `X.csv`: decision variables (if exported)
-- `metadata.json`: run configuration and timings
-- `resolved_config.json`: resolved settings and inferred defaults
+- `manifest.json`: requested/resolved configuration, actual seed, outcome, provenance, and hashes
+- `result.npz`: objective, decision, constraint, population, and archive arrays
+- `environment.json`: bounded runtime environment details
 
-3) Save plots in the same folder:
+3) Save plots as presentation output outside the canonical run leaf:
 
 ```bash
 vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --population-size 80 --seed 7 --plot

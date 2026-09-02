@@ -1,61 +1,43 @@
-# Algorithm package (engine layer)
+# Scope
 
-## Architecture Health (must-read)
-- Follow `docs/dev/architecture_health.md` before adding new modules, APIs, or dependencies.
-- PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
-- ADRs in `docs/dev/adr/` are mandatory reading before architectural changes.
+Applies only to `src/vamos/engine/algorithm/**`.
 
+Inherits all repository-wide rules from `/AGENTS.md`. This file contains local deltas only.
 
-This directory contains VAMOS's algorithm implementations plus shared algorithm
-building blocks used across multiple algorithms.
+## Responsibility and invariants
 
-## Structure
+- Each built-in algorithm owns its search lifecycle under its package; shared construction helpers stay in `_builder_*.py` and `builders.py`.
+- Typed algorithm configuration lives under `config/` and must serialize into the resolved experiment specification without hidden state.
+- `registry.py` owns built-in names and builder resolution. A builder accepts `(config_mapping, kernel)` and returns an object satisfying `AlgorithmLike`.
+- Shared crossover/mutation orchestration lives in `src/vamos/engine/variation/`; algorithm packages import that canonical pipeline directly.
+- External archive configuration is `ExternalArchiveConfig` in `src/vamos/engine/archive/config.py`. Experiment specs use only `archive.external`, parsed by `build_archive_cfg` in `src/vamos/engine/hooks/config_parse.py`.
+- Run loops must honor exact evaluation budgets, explicit RNG ownership, encoding support, observer/hooks, and warm-start contracts.
+- Reference-direction algorithms must validate population/reference-direction cardinality. Algorithms use `KernelBackend` methods rather than backend-specific imports.
 
-- `components/`: reusable components
-  - `archive.py`: external archives and bounded-archive pruning policies (`crowding`, `hv`, `mc_hv`, `knn`, `maxmin`, `ref_dirs`)
-  - `population.py`: population initialization and evaluation helpers
-  - `selection.py`: parent selection strategies
-  - `termination.py`: termination criteria / trackers (e.g. `HVTracker`)
-  - `hypervolume.py`: hypervolume utilities (with backend fallbacks)
-  - `weight_vectors.py`: weight vectors (NSGA-III / MOEA-D)
-  - `variation/`: variation pipelines (crossover + mutation wiring)
-- Algorithm subfolders: `nsgaii/`, `moead/`, `spea2/`, `ibea/`, `smsemoa/`, `smpso/`, `nsgaiii/`, `agemoea/`, `rvea/`
-  - Each contains: `__init__.py`, `{algorithm}.py`, `initialization.py`, `helpers.py`, `state.py`
-  - Operator wiring lives in `src/vamos/engine/operators/policies/`
-- Config subfolder: `config/`
-  - `base.py`, `nsgaii.py`, `moead.py`, `spea2.py`, `ibea.py`, `smsemoa.py`, `smpso.py`, `nsgaiii.py`, `agemoea.py`, `rvea.py`
-  - **Unified Archive API**: All configs must support `.external_archive(capacity, **kwargs)` using `ExternalArchiveConfig`.
-  - Archive-enabled configs default to archive-backed top-level results unless `result_mode("population")` is set explicitly.
-- Registry/factory: `registry.py`, `factory.py`, `builders.py`
+## Extension touchpoints
 
-## Conventions
+Follow [Adding an algorithm](/docs/dev/add_algorithm.md). Update configuration, builder/registry, public facade, CLI/spec plumbing, tests, and docs only where the new algorithm actually requires them.
 
-- Prefer an ask/tell-style loop and keep all hot paths vectorized (NumPy/Numba).
-- Populations are arrays, not per-individual objects:
-  - `X`: `(pop_size, n_var)` decision variables
-  - `F`: `(pop_size, n_obj)` objective values
-  - `G`: `(pop_size, n_constraints)` constraint violations (optional)
+## Targeted validation
 
-## Adding a new algorithm
+Run `python -m pytest -q tests/engine/test_algorithm_registry.py tests/engine/test_algorithms_smoke.py tests/engine/test_algorithm_encodings.py tests/engine/test_algorithm_problem_matrix.py` plus focused algorithm tests.
 
-1. Implement `my_algo.py` (or a subpackage if it grows).
-2. Add config dataclass + builder in `config.py`.
-3. Register in `registry.py` with a stable lowercase algorithm id.
-4. Add tests under `tests/engine/` (mark fast ones with `@pytest.mark.smoke`).
-
-## Notes
-
-- Do not add compatibility shims at this level; reuse `components/*` instead.
-- Delegate expensive operations to kernels (`problem.evaluate`, `kernel.*`) or to
-  shared utilities in `components/`.
-
-## Tuning Integration
-
-Algorithms are tunable via `vamos.engine.tuning.racing`:
-- Use `build_{algo}_config_space()` from `bridge.py` to get parameter space
-- Use `config_from_assignment(algo_name, params)` to convert tuned params to config
-- For tuned bounded external archives, the capacity is the population size; there is no `archive_size_factor` in the public tuning space.
-- Multi-fidelity tuning passes varying `budget` via `EvalContext`
-- Warm-start support: algorithms can checkpoint population state for continuation
-
-
+```agent-docs
+path: src/vamos/engine/algorithm/config
+path: src/vamos/engine/algorithm/registry.py
+path: src/vamos/engine/algorithm/builders.py
+path: src/vamos/engine/variation
+path: src/vamos/engine/archive/config.py
+path: src/vamos/engine/hooks/config_parse.py
+path: tests/engine/test_algorithm_registry.py
+path: tests/engine/test_algorithms_smoke.py
+path: tests/engine/test_algorithm_encodings.py
+path: tests/engine/test_algorithm_problem_matrix.py
+path: docs/dev/add_algorithm.md
+symbol: vamos.engine.algorithm.registry:AlgorithmLike
+symbol: vamos.engine.algorithm.registry:resolve_algorithm
+symbol: vamos.engine.variation:VariationPipeline
+symbol: vamos.engine.archive.config:ExternalArchiveConfig
+symbol: vamos.engine.hooks.config_parse:build_archive_cfg
+command: python -m pytest -q tests/engine/test_algorithm_registry.py tests/engine/test_algorithms_smoke.py tests/engine/test_algorithm_encodings.py tests/engine/test_algorithm_problem_matrix.py
+```

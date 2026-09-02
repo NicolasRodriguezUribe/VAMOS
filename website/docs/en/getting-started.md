@@ -1,171 +1,106 @@
-# Getting Started
+# Getting started
 
-Install VAMOS, run your first optimization, and understand the result — in under five minutes.
-
----
+VAMOS 1.0.0 supports Python 3.10, 3.11, and 3.12 on Linux, and Python 3.12 on
+Windows and macOS, as exercised by the release CI matrix.
 
 ## Install
 
-Install the core package from PyPI:
-
 ```bash
-pip install vamos-optimization
+python -m venv .venv
+python -m pip install vamos-optimization
+python -c "import vamos; print(vamos.__version__)"
+vamos check
 ```
 
-Optional extras:
+The version command must print `1.0.0`.
+
+Optional extras are capability groups:
 
 ```bash
-pip install "vamos-optimization[numba]"      # Numba JIT-compiled operators
-pip install "vamos-optimization[pandas]"     # DataFrame export
-pip install "vamos-optimization[matplotlib]" # Pareto front plotting
-pip install "vamos-optimization[studio]"     # VAMOS Studio (Streamlit dashboard)
-pip install "vamos-optimization[optuna]"     # Hyperparameter tuning
-pip install "vamos-optimization[all]"        # All of the above
+python -m pip install "vamos-optimization[compute]"  # Numba, MooCore, Dask
+python -m pip install "vamos-optimization[analysis]" # plotting and notebooks
+python -m pip install "vamos-optimization[tuning]"   # model-based tuning
+python -m pip install "vamos-optimization[studio]"   # experimental Panel Studio
 ```
 
-**Requirements:** Python 3.10+ · NumPy ≥ 1.23 · SciPy ≥ 1.10 · joblib ≥ 1.2
-
----
-
-## Your first optimization
-
-The entry point is `optimize()`. Pass a problem name and get a result back:
+## First optimization
 
 ```python
 from vamos import optimize
 
-result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10000, seed=42)
+result = optimize(
+    "zdt1",
+    algorithm="nsgaii",
+    max_evaluations=400,
+    pop_size=40,
+    seed=42,
+)
+
+print(result.F.shape)              # (n_solutions, 2)
+print(result.X.shape)              # (n_solutions, 30)
+print(result.data["evaluations"]) # 400
 ```
 
-`"zdt1"` is a built-in benchmark. `max_evaluations=10000` is the evaluation budget. `seed=42` makes the run reproducible.
+`F` and `X` are NumPy arrays. An explicit seed owns the stochastic path.
+Same-environment determinism does not promise bitwise equality across backends
+or platforms.
 
----
-
-## Reading the result
-
-`result` holds the non-dominated solutions found:
-
-```python
-print(result.F)          # objective values,   shape (n_solutions, 2)
-print(result.X)          # decision variables, shape (n_solutions, 30)
-print(result.F.shape)    # (100, 2) for ZDT1 with pop_size=100
-```
-
-`result.F` and `result.X` are plain NumPy arrays. All standard NumPy operations apply:
-
-```python
-import numpy as np
-
-best_f1 = result.F[np.argmin(result.F[:, 0])]   # solution with lowest f1
-spread   = result.F[:, 0].max() - result.F[:, 0].min()
-```
-
----
-
-## Defining a custom problem
-
-Use `make_problem()` to wrap any Python function:
+## Custom problem
 
 ```python
 from vamos import make_problem, optimize
 
 problem = make_problem(
     lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
-    n_var=2, n_obj=2, bounds=[(0, 1), (0, 1)],
+    n_var=2,
+    n_obj=2,
+    bounds=[(0, 1), (0, 1)],
+    encoding="real",
 )
 
-result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
-print(result.F)
-```
-
-The function takes a 1-D array `x` and returns a list of objective values. VAMOS handles vectorization internally — no NumPy broadcasting needed.
-
----
-
-## Algorithm selection
-
-| Keyword | Algorithm | Best for |
-|---------|-----------|----------|
-| `"nsgaii"` | NSGA-II | 2–3 objectives, general-purpose |
-| `"nsgaiii"` | NSGA-III | 4+ objectives |
-| `"moead"` | MOEA/D | Decomposition, scalable subproblems |
-| `"smsemoa"` | SMS-EMOA | High hypervolume quality |
-| `"spea2"` | SPEA2 | Archive-based diversity |
-| `"ibea"` | IBEA | Indicator-based selection |
-| `"smpso"` | SMPSO | Particle swarm, smooth fronts |
-| `"agemoea"` | AGE-MOEA | Adaptive geometry, unknown front shape |
-| `"rvea"` | RVEA | Reference vector, many-objective |
-
-Change algorithm with one keyword:
-
-```python
-result = optimize("dtlz2", algorithm="nsgaiii", max_evaluations=30000, seed=0)
-```
-
----
-
-## Algorithm-specific parameters
-
-Pass extra parameters via `algorithm_kwargs`:
-
-```python
-result = optimize(
-    "zdt1",
-    algorithm="nsgaii",
-    max_evaluations=10000,
-    seed=42,
-    algorithm_kwargs={"pop_size": 200, "crossover_eta": 30},
-)
-```
-
-See each [algorithm's page](algorithms/index.md) for the full parameter list.
-
----
-
-## Parallel evaluation
-
-For expensive objective functions, distribute evaluation across CPU cores using joblib:
-
-```python
 result = optimize(
     problem,
     algorithm="nsgaii",
-    max_evaluations=10000,
-    eval_strategy="multiprocessing",
+    max_evaluations=400,
+    pop_size=40,
     seed=42,
 )
 ```
 
-`eval_strategy="serial"` (default) runs on one core. `"multiprocessing"` uses joblib to parallelize the evaluation of individuals within each generation.
+The default scalar adapter evaluates one solution at a time. Pass
+`vectorized=True` to `make_problem` only when the callable accepts an
+`(N, n_var)` batch and returns an `(N, n_obj)` array.
 
----
+## Explicit configuration
+
+```python
+from vamos import optimize
+from vamos.algorithms import NSGAIIConfig
+from vamos.problems import ZDT1
+
+problem = ZDT1(n_var=30)
+config = NSGAIIConfig.default(pop_size=40, n_var=problem.n_var)
+
+result = optimize(
+    problem,
+    algorithm="nsgaii",
+    algorithm_config=config,
+    max_evaluations=400,
+    seed=42,
+)
+```
+
+Use top-level `pop_size` for ordinary runs and a public configuration object
+when the algorithm configuration must be fully specified and preserved.
+
+## Parallel evaluation
+
+For an expensive custom objective, `eval_strategy="multiprocessing"` can
+evaluate solutions through the optional compute stack. This is an evaluation
+backend; it does not make durable study mutation multi-owner or distributed.
 
 ## Next steps
 
-<div class="grid cards" markdown>
-
--   :material-school: **Tutorials**
-
-    ---
-
-    Step-by-step guides for constraints, integer variables, and hyperparameter tuning.
-
-    [:octicons-arrow-right-24: Tutorials](tutorials/quickstart.md)
-
--   :material-book-open-variant: **Algorithm Reference**
-
-    ---
-
-    Parameters, characteristics, and citations for all nine algorithms.
-
-    [:octicons-arrow-right-24: Algorithms](algorithms/index.md)
-
--   :material-api: **API Reference**
-
-    ---
-
-    Full signatures for `optimize()`, `make_problem()`, and the result object.
-
-    [:octicons-arrow-right-24: API](api/index.md)
-
-</div>
+- [Quickstart tutorial](tutorials/quickstart.md)
+- [Algorithms](algorithms/index.md)
+- [API reference](api/index.md)

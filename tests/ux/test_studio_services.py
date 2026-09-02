@@ -1,19 +1,47 @@
 from pathlib import Path
 
-import numpy as np
+import vamos
+from vamos.ux.studio.services import build_demo_study_data, discover_study_directories, load_studio_data
 
-from vamos.ux.studio.services import build_demo_study_data, discover_study_directories
 
-
-def test_discover_study_directories_finds_results_roots(tmp_path: Path) -> None:
-    run_dir = tmp_path / "results" / "quickstart" / "zdt1" / "nsgaii" / "seed_0"
-    run_dir.mkdir(parents=True)
-    np.savetxt(run_dir / "FUN.csv", np.array([[0.1, 0.2]]), delimiter=",")
+def test_discover_study_directories_finds_canonical_roots(tmp_path: Path) -> None:
+    study_dir = tmp_path / "results" / "canonical"
+    vamos.create_study(
+        vamos.StudySpec(
+            problems=["zdt1"],
+            algorithms=["nsgaii"],
+            seeds=[0],
+            pop_size=4,
+            max_evaluations=4,
+            engine="numpy",
+        ),
+        output=study_dir,
+    )
 
     study_dirs = discover_study_directories(tmp_path)
 
-    assert tmp_path / "results" in study_dirs
-    assert tmp_path / "results" / "quickstart" in study_dirs
+    assert study_dirs == [study_dir]
+
+
+def test_load_studio_data_uses_summary_run_traceability(tmp_path: Path) -> None:
+    study = vamos.create_study(
+        vamos.StudySpec(
+            problems=["zdt1"],
+            algorithms=["nsgaii"],
+            seeds=[0],
+            pop_size=4,
+            max_evaluations=4,
+            engine="numpy",
+        ),
+        output=tmp_path / "study",
+    ).run()
+
+    runs, fronts = load_studio_data(study.root)
+
+    assert len(runs) == len(fronts) == 1
+    trace = runs[0].metadata["study_summary"]
+    assert trace["study_id"] == study.study_id
+    assert trace["selected_run_id"] == runs[0].experiment_id
 
 
 def test_build_demo_study_data_marks_demo_fronts() -> None:

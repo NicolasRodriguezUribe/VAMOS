@@ -14,9 +14,8 @@ Description:
     and removes them.
 """
 
-import os
-import shutil
 import argparse
+import os
 from pathlib import Path
 
 # Files to verify they are NOT deleted (Safety Check)

@@ -1,213 +1,175 @@
 from __future__ import annotations
 
-import json
-import logging
+import time
+from collections.abc import Mapping
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from vamos.engine.algorithm.config.types import AlgorithmConfigProtocol
 from vamos.engine.archive import ExternalArchiveConfig
-from vamos.foundation.core.io_utils import ensure_dir, write_metadata, write_population, write_timing
-from vamos.foundation.core.metadata import build_run_metadata
+from vamos.engine.config.spec import ExperimentSpec
+from vamos.experiment.artifacts import save_result
+from vamos.experiment.artifacts.specs import RunSpecInputs, build_run_specs
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.observer import Observer, RunContext
 
 
-def _logger() -> logging.Logger:
-    return logging.getLogger(__name__)
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _project_root() -> Path:
-    # Adjust as needed (assuming src/vamos/experiment/observers/storage.py)
-    # Root is typically 4 levels up from this file
-    return Path(__file__).resolve().parents[4]
+@dataclass(slots=True)
+class _PersistableResult:
+    F: np.ndarray[Any, Any] | None
+    X: np.ndarray[Any, Any] | None
+    data: dict[str, Any]
+    meta: dict[str, Any]
 
 
 class StorageObserver(Observer):
-    """
-    Observer responsible for persisting run artifacts to disk.
-    Migrated from vamos.experiment.runner_output.persist_run_outputs.
-    """
+    """Publish each completed CLI run through the canonical v1 writer."""
 
     def __init__(
         self,
         output_dir: str,
-        # Capture all the misc kwargs that were passed to persist_run_outputs
-        # Ideally, many of these should be in RunContext or final_stats
-        project_root: Path | None = None,
+        *,
         config_source: str | None = None,
-        problem_override: dict[str, Any] | None = None,
-        hv_stop_config: dict[str, Any] | None = None,
+        config_spec: ExperimentSpec | None = None,
+        problem_override: Mapping[str, Any] | None = None,
+        hv_stop_config: Mapping[str, Any] | None = None,
         selection_pressure: int = 2,
         external_archive: ExternalArchiveConfig | None = None,
-        variations: dict[str, Any] | None = None,
+        variations: Mapping[str, Any] | None = None,
+        termination: tuple[str, Any],
     ) -> None:
         self.output_dir = Path(output_dir)
-        self.project_root = project_root or _project_root()
         self.config_source = config_source
+        self.config_spec = config_spec
         self.problem_override = problem_override
         self.hv_stop_config = hv_stop_config
         self.selection_pressure = selection_pressure
         self.external_archive = external_archive
-        self.variations = variations or {}
+        self.variations = dict(variations or {})
+        self.termination = termination
+        self._ctx: RunContext | None = None
+        self._started_at: str | None = None
+        self._started_monotonic: float | None = None
+
+    def on_start(self, ctx: RunContext) -> None:
+        self._ctx = ctx
+        self._started_at = _utc_now()
+        self._started_monotonic = time.perf_counter()
 
     def on_generation(
         self,
         generation: int,
-        F: np.ndarray | None = None,
-        X: np.ndarray | None = None,
+        F: np.ndarray[Any, Any] | None = None,
+        X: np.ndarray[Any, Any] | None = None,
         stats: dict[str, Any] | None = None,
     ) -> None:
-        pass
+        return None
 
     def on_end(
         self,
-        final_F: np.ndarray | None = None,
+        final_F: np.ndarray[Any, Any] | None = None,
         final_stats: dict[str, Any] | None = None,
     ) -> None:
-        if final_stats is None:
+        if final_stats is None or self._ctx is None or final_F is None:
             return
-
-        # Extract payload from statistics (assuming orchestrator puts things there)
-        # In the new design, 'final_stats' should ideally contain what 'metrics' + 'payload' used to have.
-
-        # NOTE: logic requires `payload` dict which contains 'archive', 'genealogy', etc.
-        # We assume the caller (orchestrator) merges payload into final_stats or we access it differently.
-        # For now, let's assume `final_stats` IS the rich metrics dictionary.
-
-        payload = final_stats.get("payload", {})
-        # If payload is missing, we might only have metrics.
-        # For full persistence, we need X, G, Archive, etc.
-
-        # Reconstruct F/X if passed directly
-        F_to_save = final_F if final_F is not None else payload.get("F")
-        X_to_save = payload.get("X")
-        G_to_save = payload.get("G")
-        archive = payload.get("archive")
-
-        artifacts = write_population(
-            self.output_dir,
-            F_to_save,
-            archive,
-            X=X_to_save,
-            G=G_to_save,
+        payload = dict(final_stats.get("payload", {}))
+        payload["F"] = final_F
+        metrics = self._metrics(final_stats)
+        genealogy = payload.get("genealogy")
+        if isinstance(genealogy, Mapping):
+            metrics["genealogy"] = dict(genealogy)
+        payload["metrics"] = metrics
+        requested_spec, resolved_spec = self._run_specs(final_stats)
+        completed_at = _utc_now()
+        runtime_ms = float(final_stats.get("time_ms", 0.0))
+        if self._started_monotonic is not None and runtime_ms <= 0:
+            runtime_ms = (time.perf_counter() - self._started_monotonic) * 1000.0
+        x_value = payload.get("X")
+        result = _PersistableResult(
+            F=final_F,
+            X=x_value if isinstance(x_value, np.ndarray) else None,
+            data=payload,
+            meta={
+                "run_artifact_requested_spec": requested_spec,
+                "run_artifact_resolved_spec": resolved_spec,
+                "run_artifact_timestamps": {
+                    "started_at": self._started_at or completed_at,
+                    "completed_at": completed_at,
+                    "runtime_ms": runtime_ms,
+                },
+                "run_artifact_entry_point": {
+                    "kind": "cli",
+                    "arguments_source": "requested_spec",
+                },
+                "seed": self._ctx.config.seed,
+            },
         )
+        save_result(result, self.output_dir)
 
-        if payload.get("genealogy"):
-            genealogy_path = self.output_dir / "genealogy.json"
-            genealogy_path.write_text(json.dumps(payload["genealogy"], indent=2), encoding="utf-8")
-            artifacts["genealogy"] = genealogy_path.name
-
-        total_time_ms = final_stats.get("time_ms", 0.0)
-        write_timing(self.output_dir, total_time_ms)
-
-        # Context needed for metadata
-        # We need access to ctx from on_start? Or pass it here?
-        # Observer protocol on_end doesn't take ctx.
-        # We should store ctx in on_start.
-        if not hasattr(self, "_ctx"):
-            _logger().warning("StorageObserver.on_end called without on_start (missing context). Metadata might be incomplete.")
-            return
-
+    def _run_specs(self, final_stats: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        if self._ctx is None:
+            raise RuntimeError("StorageObserver requires on_start before on_end.")
         ctx = self._ctx
-
-        # Build metadata
-        metadata = build_run_metadata(
-            ctx.selection,
-            ctx.algorithm_name,
-            ctx.engine_name,
-            final_stats.get("config"),  # cfg_data
-            final_stats,  # metrics
-            kernel_backend=final_stats.get("_kernel_backend"),
-            seed=getattr(ctx.config, "seed", None),
-            config=ctx.config,
-            project_root=self.project_root,
-        )
-
-        metadata["config_source"] = self.config_source
-        if self.problem_override:
-            metadata["problem_override"] = self.problem_override
-        if self.hv_stop_config:
-            metadata["hv_stop_config"] = self.hv_stop_config
-
-        # Hook payload integration?
-        # If HookManager was used, it should have injected its data into payload or metrics.
-        # In the new design, HookManager is an Observer too!
-        # It should expose its data differently.
-        # For now, if payload has hook data, use it.
-
-        if payload.get("genealogy"):
-            metadata["genealogy"] = payload["genealogy"]
-        hook_metadata = final_stats.get("hook_metadata")
-        if isinstance(hook_metadata, dict):
-            if "stopping" in hook_metadata:
-                metadata["stopping"] = hook_metadata["stopping"]
-            if "archive" in hook_metadata:
-                metadata["archive"] = hook_metadata["archive"]
-
-        # Artifact entries
-        artifact_entries = {
-            "fun": artifacts.get("fun"),
-            "x": artifacts.get("x"),
-            "g": artifacts.get("g"),
-            "archive_fun": artifacts.get("archive_fun"),
-            "archive_x": artifacts.get("archive_x"),
-            "archive_g": artifacts.get("archive_g"),
-            "genealogy": artifacts.get("genealogy"),
-            "time_ms": "time.txt",
-        }
-        hv_trace = self.output_dir / "hv_trace.csv"
-        if hv_trace.exists():
-            artifact_entries["hv_trace"] = hv_trace.name
-        archive_stats = self.output_dir / "archive_stats.csv"
-        if archive_stats.exists():
-            artifact_entries["archive_stats"] = archive_stats.name
-        metadata["artifacts"] = {k: v for k, v in artifact_entries.items() if v is not None}
-
-        # Resolved Config
-        problem_key = getattr(getattr(ctx.selection, "spec", None), "key", "unknown")
+        cfg_value = final_stats.get("config")
+        algorithm_config = dict(cfg_value.to_dict()) if isinstance(cfg_value, AlgorithmConfigProtocol) else {}
         encoding = normalize_encoding(getattr(ctx.problem, "encoding", "real"))
-        external_archive_meta: dict[str, object] | None = None
-        if self.external_archive is not None:
-            external_archive_meta = {"capacity": self.external_archive.capacity}
-            if self.external_archive.capacity is not None:
-                external_archive_meta["pruning"] = self.external_archive.pruning
-
-        resolved_cfg = {
-            "algorithm": ctx.algorithm_name,
-            "engine": ctx.engine_name,
-            "problem": problem_key,
-            "n_var": getattr(ctx.selection, "n_var", getattr(ctx.problem, "n_var", None)),
-            "n_obj": getattr(ctx.selection, "n_obj", getattr(ctx.problem, "n_obj", None)),
-            "encoding": encoding,
-            "population_size": getattr(ctx.config, "population_size", None),
-            "offspring_population_size": getattr(ctx.config, "offspring_size", lambda: None)(),
-            "max_evaluations": getattr(ctx.config, "max_evaluations", None),
-            "seed": getattr(ctx.config, "seed", None),
-            "selection_pressure": self.selection_pressure,
-            "external_archive": external_archive_meta,
-            "hv_threshold": self.hv_stop_config.get("threshold_fraction") if self.hv_stop_config else None,
-            "hv_reference_point": self.hv_stop_config.get("reference_point") if self.hv_stop_config else None,
-            "hv_reference_front": self.hv_stop_config.get("reference_front_path") if self.hv_stop_config else None,
-            # Variations map
-            **self.variations,
-            "config_source": self.config_source,
-            "problem_override": self.problem_override,
+        population_size = getattr(ctx.config, "population_size", None)
+        defaults = {
+            "algorithm": "explicit",
+            "population_size": "explicit",
+            "max_evaluations": "explicit",
+            "engine": "explicit",
+            "algorithm_config": "explicit",
         }
+        generated_requested, resolved = build_run_specs(
+            RunSpecInputs(
+                problem_built_in=ctx.problem.__class__.__module__.startswith("vamos."),
+                problem_label=ctx.selection.spec.key,
+                problem_kwargs=self.problem_override,
+                n_var_requested=None,
+                n_obj_requested=None,
+                n_var=ctx.selection.n_var,
+                n_obj=ctx.selection.n_obj,
+                encoding=encoding,
+                algorithm_requested=ctx.algorithm_name,
+                algorithm=ctx.algorithm_name,
+                algorithm_config=algorithm_config,
+                algorithm_config_explicit=True,
+                max_evaluations_requested=ctx.config.max_evaluations,
+                termination=self.termination,
+                pop_size_requested=population_size,
+                resolved_pop_size=population_size,
+                engine_requested=ctx.engine_name,
+                engine=ctx.engine_name,
+                eval_strategy=ctx.config.eval_strategy,
+                seed_requested=ctx.config.seed,
+                seed=ctx.config.seed,
+                default_sources=defaults,
+            )
+        )
+        requested = dict(self.config_spec) if self.config_spec is not None else generated_requested
+        return requested, resolved
 
-        write_metadata(self.output_dir, metadata, resolved_cfg)
+    def _metrics(self, final_stats: Mapping[str, Any]) -> dict[str, Any]:
+        metrics: dict[str, Any] = {
+            "termination": final_stats.get("termination"),
+            "evals_per_sec": final_stats.get("evals_per_sec"),
+            "spread": final_stats.get("spread"),
+            "backend_device": final_stats.get("backend_device"),
+            "backend_capabilities": final_stats.get("backend_capabilities", []),
+        }
+        hook_metadata = final_stats.get("hook_metadata")
+        if isinstance(hook_metadata, Mapping):
+            metrics["hooks"] = dict(hook_metadata)
+        return metrics
 
-        # Generate lockfile (Phase 4.3)
-        try:
-            from vamos.foundation.lockfile import write_lockfile
 
-            write_lockfile(self.output_dir / "vamos.lock")
-        except Exception as exc:
-            _logger().warning("Failed to emit lockfile: %s", exc)
-
-        _logger().info("Results stored in: %s", self.output_dir)
-
-    def on_start(self, ctx: RunContext) -> None:
-        self._ctx = ctx
-        ensure_dir(self.output_dir)
+__all__ = ["StorageObserver"]

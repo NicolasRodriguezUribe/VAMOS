@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from vamos.foundation.exceptions import EvaluationError
 
@@ -12,7 +13,7 @@ def _validate_output_matrix(
     value: object,
     *,
     expected_shape: tuple[int, int],
-) -> np.ndarray:
+) -> NDArray[np.float64]:
     arr = np.asarray(value, dtype=float)
     if arr.shape != expected_shape:
         raise EvaluationError(f"Problem evaluation wrote {name} with shape {arr.shape}; expected {expected_shape}.")
@@ -22,7 +23,10 @@ def _validate_output_matrix(
     return arr
 
 
-def evaluate_population_with_constraints(problem: Any, X: np.ndarray) -> tuple[np.ndarray, np.ndarray | None]:
+def evaluate_population_with_constraints(
+    problem: Any,
+    X: NDArray[np.generic],
+) -> tuple[NDArray[np.float64], NDArray[np.float64] | None]:
     """
     Evaluate population and optionally return constraints G if provided by the problem.
     """

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from vamos.experiment.benchmark.report import BenchmarkReport, BenchmarkReportConfig
-from vamos.experiment.benchmark.runner import BenchmarkResult, run_benchmark_suite
+from vamos.experiment.benchmark.runner import load_benchmark_result, run_benchmark_suite
 from vamos.experiment.benchmark.suites import BenchmarkSuite, get_benchmark_suite
 
 _SMOKE_POP_SIZE = 8
@@ -115,14 +115,11 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.only_report:
-        result = BenchmarkResult(
+        result = load_benchmark_result(
             suite=suite,
-            algorithms=list(algorithms),
-            metrics=list(metrics),
+            algorithms=algorithms,
+            metrics=metrics,
             base_output_dir=base_output_dir,
-            summary_path=base_output_dir / "summary" / "metrics.csv",
-            runs=[],
-            raw_results=None,
         )
     else:
         result = run_benchmark_suite(

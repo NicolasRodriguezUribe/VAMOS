@@ -1,5 +1,0 @@
-{
-  "max_errors": 72,
-  "command": ".\\.venv\\Scripts\\mypy.exe --config-file pyproject.toml src/vamos",
-  "notes": "Budget updated after Streamlit->Panel GUI migration. +13 errors from structural changes (config_parse, defaults, constrained_many gained strict checking after studio rendering files were removed)."
-}

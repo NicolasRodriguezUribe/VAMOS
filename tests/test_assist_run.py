@@ -7,7 +7,7 @@ from pytest import MonkeyPatch
 
 from vamos.assist.apply import apply_plan
 from vamos.assist.plan import create_plan
-from vamos.assist.run import make_resolved_config, run_plan, run_with_config_path, select_config_path
+from vamos.assist.run import make_execution_config, run_plan, run_with_config_path, select_config_path
 from vamos.engine.config.spec import validate_experiment_spec
 from vamos.experiment.cli.args import build_parser, build_pre_parser
 from vamos.experiment.cli.loaders import load_spec_defaults
@@ -44,12 +44,12 @@ def test_select_config_path_prefers_project_config(tmp_path: Path) -> None:
     assert selected == plan_dir / "project" / "config.json"
 
 
-def test_make_resolved_config_smoke_is_valid_and_sets_output_root(tmp_path: Path) -> None:
+def test_make_execution_config_smoke_is_valid_and_sets_output_root(tmp_path: Path) -> None:
     plan_dir, project_dir = _materialized_plan(tmp_path)
     base_config = json.loads((project_dir / "config.json").read_text(encoding="utf-8"))
 
     run_dir = plan_dir / "runs" / "run_smoke"
-    resolved = make_resolved_config(base_config, run_dir=run_dir, smoke=True, smoke_evals=123)
+    resolved = make_execution_config(base_config, run_dir=run_dir, smoke=True, smoke_evals=123)
 
     validate_experiment_spec(resolved, allowed_overrides=_allowed_overrides())
     defaults = resolved["defaults"]
@@ -74,9 +74,9 @@ def test_run_plan_writes_report_with_stubbed_execution(monkeypatch: MonkeyPatch,
 
     assert summary["status"] == "ok"
     run_dir = Path(str(summary["run_dir"]))
-    resolved_path = run_dir / "resolved_config.json"
+    execution_path = run_dir / "execution_config.json"
     report_path = run_dir / "run_report.json"
-    assert resolved_path.is_file()
+    assert execution_path.is_file()
     assert report_path.is_file()
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -85,7 +85,7 @@ def test_run_plan_writes_report_with_stubbed_execution(monkeypatch: MonkeyPatch,
         "exit_code",
         "plan_dir",
         "base_config_path",
-        "resolved_config_path",
+        "execution_config_path",
         "run_dir",
         "started_at",
         "ended_at",
@@ -98,7 +98,7 @@ def test_run_plan_writes_report_with_stubbed_execution(monkeypatch: MonkeyPatch,
 
 
 def test_run_with_config_path_prefers_in_process(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    config_path = tmp_path / "resolved_config.json"
+    config_path = tmp_path / "execution_config.json"
     config_path.write_text("{}", encoding="utf-8")
 
     calls = {"in_process": 0, "subprocess": 0}
@@ -122,7 +122,7 @@ def test_run_with_config_path_prefers_in_process(monkeypatch: MonkeyPatch, tmp_p
 
 
 def test_run_with_config_path_falls_back_to_subprocess(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    config_path = tmp_path / "resolved_config.json"
+    config_path = tmp_path / "execution_config.json"
     config_path.write_text("{}", encoding="utf-8")
 
     calls = {"in_process": 0, "subprocess": 0}

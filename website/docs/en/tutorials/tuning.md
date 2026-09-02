@@ -1,201 +1,85 @@
-# Hyperparameter Tuning Tutorial
+# Experimental hyperparameter tuning
 
-Use Optuna to automatically find better algorithm configurations for your problem.
+Tuning and statistical-analysis APIs remain experimental in VAMOS 1.0.0. The
+stable optimization entry point accepts public typed algorithm configurations,
+which can also be used from an external tuner.
 
----
-
-## Why tune?
-
-Default parameters work across many problems but are not optimal for any specific one. Tuning `pop_size`, `crossover_eta`, and `mutation_eta` for your problem can significantly improve result quality within the same evaluation budget.
-
----
-
-## Install Optuna
+## Install
 
 ```bash
-pip install "vamos-optimization[optuna]"
-# or: pip install optuna
+python -m pip install "vamos-optimization[tuning]"
 ```
 
----
-
-## Basic tuning loop
-
-Define an Optuna objective that calls `optimize()` and returns a quality metric:
+## Small Optuna loop
 
 ```python
-import optuna
 import numpy as np
+import optuna
+
 from vamos import make_problem, optimize
+from vamos.algorithms import NSGAIIConfig
 
 problem = make_problem(
     lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
-    n_var=2, n_obj=2, bounds=[(0, 1), (0, 1)],
+    n_var=2,
+    n_obj=2,
+    bounds=[(0, 1), (0, 1)],
+    encoding="real",
 )
 
-def optuna_objective(trial):
-    pop_size      = trial.suggest_int("pop_size", 50, 300, step=10)
-    crossover_eta = trial.suggest_float("crossover_eta", 5.0, 40.0)
-    mutation_eta  = trial.suggest_float("mutation_eta", 5.0, 40.0)
+reference = np.column_stack(
+    [np.linspace(0, 1, 100), 1 - np.sqrt(np.linspace(0, 1, 100))]
+)
 
+
+def objective(trial: optuna.Trial) -> float:
+    pop_size = trial.suggest_int("pop_size", 20, 60, step=20)
+    crossover_eta = trial.suggest_float("crossover_eta", 10.0, 30.0)
+    mutation_eta = trial.suggest_float("mutation_eta", 10.0, 30.0)
+
+    config = (
+        NSGAIIConfig.builder()
+        .pop_size(pop_size)
+        .selection("tournament")
+        .crossover("sbx", prob=1.0, eta=crossover_eta)
+        .mutation("pm", prob=0.5, eta=mutation_eta)
+        .build()
+    )
     result = optimize(
         problem,
         algorithm="nsgaii",
-        max_evaluations=5000,
+        algorithm_config=config,
+        max_evaluations=400,
         seed=42,
-        algorithm_kwargs={
-            "pop_size": pop_size,
-            "crossover_eta": crossover_eta,
-            "mutation_eta": mutation_eta,
-        },
     )
+    distances = np.min(
+        np.linalg.norm(result.F[:, None] - reference[None, :], axis=2),
+        axis=0,
+    )
+    return float(distances.mean())
 
-    # Minimize IGD proxy: average min-distance to a reference set
-    ref = np.column_stack([np.linspace(0, 1, 100), 1 - np.sqrt(np.linspace(0, 1, 100))])
-    dists = np.min(np.linalg.norm(result.F[:, None] - ref[None, :], axis=2), axis=0)
-    return float(dists.mean())
-
-study = optuna.create_study(direction="minimize")
-study.optimize(optuna_objective, n_trials=50, show_progress_bar=True)
-
-print("Best parameters:", study.best_params)
-print("Best IGD proxy:", study.best_value)
-```
-
----
-
-## Using the best parameters
-
-Apply the tuned configuration to a full run:
-
-```python
-best = study.best_params
-
-result = optimize(
-    problem,
-    algorithm="nsgaii",
-    max_evaluations=10000,
-    seed=0,
-    algorithm_kwargs=best,
-)
-
-print(result.F.shape)
-```
-
----
-
-## Tuning multiple seeds for robustness
-
-Average over several seeds to avoid overfitting to a single random outcome:
-
-```python
-def robust_objective(trial):
-    pop_size      = trial.suggest_int("pop_size", 50, 300, step=10)
-    crossover_eta = trial.suggest_float("crossover_eta", 5.0, 40.0)
-    mutation_eta  = trial.suggest_float("mutation_eta", 5.0, 40.0)
-
-    scores = []
-    for seed in [0, 1, 2, 3, 4]:
-        result = optimize(
-            problem,
-            algorithm="nsgaii",
-            max_evaluations=5000,
-            seed=seed,
-            algorithm_kwargs={
-                "pop_size": pop_size,
-                "crossover_eta": crossover_eta,
-                "mutation_eta": mutation_eta,
-            },
-        )
-        scores.append(result.F[:, 0].min() + result.F[:, 1].min())  # simple proxy
-
-    return float(np.mean(scores))
 
 study = optuna.create_study(direction="minimize")
-study.optimize(robust_objective, n_trials=30)
+study.optimize(objective, n_trials=5)
 print(study.best_params)
 ```
 
----
+Five trials keep the example light; scientific tuning needs an independently
+designed train/validation protocol, multiple seeds, explicit indicator
+semantics, and enough budget for the problem.
 
-## Choosing a sampler
+## Apply reviewed parameters
 
-Optuna's default sampler (TPE) works well. For a quick baseline, use random search:
+Construct the same public typed configuration with the selected values, then
+run independent validation seeds. Do not treat the tuning trials themselves as
+an unbiased performance estimate.
 
-```python
-study = optuna.create_study(
-    direction="minimize",
-    sampler=optuna.samplers.RandomSampler(seed=0),
-)
-study.optimize(optuna_objective, n_trials=100)
+VAMOS also exposes experimental `vamos tune` backends. Their availability can
+be checked with:
+
+```bash
+vamos tune --list-backends
 ```
 
-For expensive problems where each trial is costly, CMA-ES often finds good configurations faster:
-
-```python
-study = optuna.create_study(
-    direction="minimize",
-    sampler=optuna.samplers.CmaEsSampler(seed=0),
-)
-study.optimize(optuna_objective, n_trials=50)
-```
-
----
-
-## Tuning a different algorithm
-
-The same pattern applies to any VAMOS algorithm. Example for MOEA/D:
-
-```python
-def moead_objective(trial):
-    n_neighbors          = trial.suggest_int("n_neighbors", 5, 40)
-    prob_neighbor_mating = trial.suggest_float("prob_neighbor_mating", 0.5, 1.0)
-
-    result = optimize(
-        "zdt1",
-        algorithm="moead",
-        max_evaluations=10000,
-        seed=42,
-        algorithm_kwargs={
-            "n_neighbors": n_neighbors,
-            "prob_neighbor_mating": prob_neighbor_mating,
-        },
-    )
-
-    ref = np.column_stack([np.linspace(0, 1, 100), 1 - np.sqrt(np.linspace(0, 1, 100))])
-    dists = np.min(np.linalg.norm(result.F[:, None] - ref[None, :], axis=2), axis=0)
-    return float(dists.mean())
-```
-
----
-
-## Recommended workflow
-
-1. **Baseline**: run with defaults, record quality metric.
-2. **Quick search**: TPE sampler, 50 trials, single seed — identify promising parameter regions.
-3. **Robust search**: average over 5 seeds, 100 trials — reduce noise.
-4. **Validate**: re-run best config on 10+ independent seeds, compare to baseline.
-
----
-
-## Next steps
-
-<div class="grid cards" markdown>
-
--   :material-book-open-variant: **Algorithm Reference**
-
-    ---
-
-    Understand each algorithm's parameter space before tuning.
-
-    [:octicons-arrow-right-24: Algorithms](../algorithms/index.md)
-
--   :material-api: **API Reference**
-
-    ---
-
-    Full `optimize()` and `make_problem()` signatures.
-
-    [:octicons-arrow-right-24: API Reference](../api/index.md)
-
-</div>
+Those experimental commands and their output are outside the stable 1.x CLI
+contract.

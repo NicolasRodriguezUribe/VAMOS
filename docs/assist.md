@@ -30,12 +30,12 @@ Expected JSON output (example):
   "project_dir": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\project",
   "recommended_commands": [
     "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\project\\config.json",
-    "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\resolved_config.json"
+    "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\execution_config.json"
   ],
   "run": {
     "execution_mode": "in_process",
     "exit_code": 0,
-    "resolved_config_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\resolved_config.json",
+    "execution_config_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\execution_config.json",
     "run_dir": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke",
     "run_report_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\run_report.json",
     "status": "ok"
@@ -107,12 +107,12 @@ Expected JSON output (example):
   "project_dir": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\project",
   "recommended_commands": [
     "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\project\\config.json",
-    "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\resolved_config.json"
+    "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\execution_config.json"
   ],
   "run": {
     "execution_mode": "in_process",
     "exit_code": 0,
-    "resolved_config_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\resolved_config.json",
+    "execution_config_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\execution_config.json",
     "run_dir": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke",
     "run_report_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\run_report.json",
     "status": "ok"
@@ -188,12 +188,12 @@ Expected JSON output (example):
   "project_dir": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\project",
   "recommended_commands": [
     "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\project\\config.json",
-    "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\resolved_config.json"
+    "vamos --config results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\execution_config.json"
   ],
   "run": {
     "execution_mode": "in_process",
     "exit_code": 0,
-    "resolved_config_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\resolved_config.json",
+    "execution_config_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\execution_config.json",
     "run_dir": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke",
     "run_report_path": "results\\assist_plans\\plan_YYYYMMDD_HHMMSS_xxxxxx\\runs\\run_YYYYMMDD_HHMMSS_xxxxxx_smoke\\run_report.json",
     "status": "ok"
@@ -242,7 +242,7 @@ Project directory (`assist apply` / `assist go`):
 
 Run directory (`assist run` / `assist go --smoke`):
 
-- `runs/run_*/resolved_config.json`
+- `runs/run_*/execution_config.json`
 - `runs/run_*/run_report.json`
 - results under the run output root (`defaults.output_root`, typically inside the run directory)
 

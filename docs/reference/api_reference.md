@@ -2,6 +2,10 @@
 
 This reference is automatically generated from the docstrings in the source code.
 
+Only the symbols listed in [Stability and versioning](../project/stability-and-versioning.md)
+and frozen under `tests/compatibility/v1_0_0/` are stable for the 1.x series.
+Other importable or documented modules are experimental or internal as labelled.
+
 ## Unified API
 
 The primary user-facing entry points.  Most users only need these.
@@ -38,6 +42,51 @@ The primary user-facing entry points.  Most users only need these.
     options:
       show_root_heading: true
       show_source: true
+
+## Run artifacts
+
+The top-level persistence, verification, and exact built-in replay functions
+delegate to this facade. Loading and verification are data-only; replay is the
+separate explicit executable operation.
+
+::: vamos.run_artifacts
+    options:
+      show_root_heading: true
+      show_source: true
+      members:
+        - save_result
+        - load_run
+        - load_result
+        - verify_run
+        - reproduce
+        - StoredRun
+        - RunManifest
+        - LoadLimits
+        - CompatibilityReport
+        - VerificationReport
+        - ReplayReport
+
+## Durable studies
+
+The top-level `StudySpec`, `plan_study`, `create_study`, and `load_study` entry
+points resolve, publish, and verify durable studies. Creation performs no
+optimization, loading is data-only, and report/summary models remain available
+through the focused `vamos.study_artifacts` facade.
+
+::: vamos.study_artifacts
+    options:
+      show_root_heading: true
+      show_source: true
+      members:
+        - StudySpec
+        - plan_study
+        - StudyPlanReport
+        - create_study
+        - load_study
+        - Study
+        - StudyLoadLimits
+        - StudyReport
+        - StudySummary
 
 ## Algorithm Configuration
 
@@ -114,7 +163,7 @@ The primary user-facing entry points.  Most users only need these.
         - available_problem_names
         - make_problem_selection
 
-## Tuning
+## Tuning (experimental)
 
 Parameters and Tuners for Hyperparameter Optimization.
 

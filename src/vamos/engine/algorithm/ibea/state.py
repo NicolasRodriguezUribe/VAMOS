@@ -12,7 +12,7 @@ import numpy as np
 
 from vamos.engine.algorithm.components.results import get_external_archive_contents, wants_population_result
 from vamos.engine.algorithm.components.state import AlgorithmState
-from vamos.engine.algorithm.components.variation import VariationPipeline
+from vamos.engine.variation import VariationPipeline
 
 
 @dataclass
@@ -38,7 +38,7 @@ class IBEAState(AlgorithmState):
 
     indicator: str = "epsilon"
     kappa: float = 1.0
-    fitness: np.ndarray = field(default_factory=lambda: np.array([]))
+    fitness: np.ndarray[Any, Any] = field(default_factory=lambda: np.array([]))
     pressure: int = 2
     variation: VariationPipeline | None = None
 

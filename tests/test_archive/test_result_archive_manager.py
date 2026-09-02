@@ -33,21 +33,9 @@ def test_result_archive_size_cap_and_nondominated_filter():
     assert archive_F.shape[0] <= 5
 
 
-def test_external_archive_rejects_legacy_prune_policy_aliases():
-    with pytest.raises(ValueError, match="Unsupported prune_policy 'hv_contrib'"):
-        ExternalArchiveConfig(capacity=10, pruning="hv_contrib")
-    with pytest.raises(ValueError, match="Unsupported prune_policy 'mc_hv_contrib'"):
-        ExternalArchiveConfig(capacity=10, pruning="mc_hv_contrib")
-
-
-def test_spea2_prune_policy_name_is_rejected_in_favor_of_knn():
-    with pytest.raises(ValueError, match="Unsupported prune_policy 'spea2'"):
-        ExternalArchiveConfig(capacity=10, pruning="spea2")
-
-
-def test_random_prune_policy_name_is_rejected():
-    with pytest.raises(ValueError, match="Unsupported prune_policy 'random'"):
-        ExternalArchiveConfig(capacity=10, pruning="random")
+def test_external_archive_rejects_unknown_pruning_policy():
+    with pytest.raises(ValueError, match="Unsupported pruning 'invalid-policy'"):
+        ExternalArchiveConfig(capacity=10, pruning="invalid-policy")  # type: ignore[arg-type]
 
 
 def test_knn_prune_policy_name_is_accepted():

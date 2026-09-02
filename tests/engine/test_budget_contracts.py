@@ -123,13 +123,7 @@ def _nsgaiii() -> tuple[Any, int]:
 
 
 def _agemoea() -> tuple[Any, int]:
-    cfg = (
-        AGEMOEAConfig.builder()
-        .pop_size(POP_SIZE)
-        .crossover("sbx", prob=0.9, eta=20.0)
-        .mutation("polynomial", prob=0.1, eta=20.0)
-        .build()
-    )
+    cfg = AGEMOEAConfig.builder().pop_size(POP_SIZE).crossover("sbx", prob=0.9, eta=20.0).mutation("polynomial", prob=0.1, eta=20.0).build()
     return AGEMOEA(cfg.to_dict(), kernel=NumPyKernel()), POP_SIZE
 
 
@@ -248,9 +242,9 @@ def test_nsgaiii_and_rvea_defaults_choose_compatible_reference_counts() -> None:
     )
 
     assert nsgaiii.data["evaluations"] == 92
-    assert nsgaiii.meta["resolved_config"]["pop_size"] == 91
+    assert nsgaiii.meta["run_artifact_resolved_spec"]["population"]["initial_size"] == 91
     assert rvea.data["evaluations"] == 92
-    assert rvea.meta["resolved_config"]["pop_size"] == 91
+    assert rvea.meta["run_artifact_resolved_spec"]["population"]["initial_size"] == 91
 
 
 def test_nsgaiii_and_rvea_reject_incompatible_explicit_pop_size() -> None:

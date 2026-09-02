@@ -1,0 +1,29 @@
+{
+  "blas": {
+    "integer_width": 64,
+    "vendor": "OpenBLAS"
+  },
+  "document_type": "vamos.environment",
+  "locale": "C.UTF-8",
+  "packages": {
+    "numpy": "2.2.0",
+    "scipy": "1.15.0",
+    "vamos-optimization": "1.0.0"
+  },
+  "platform": {
+    "architecture": "x86_64",
+    "operating_system": "Linux",
+    "release": "example"
+  },
+  "python": {
+    "implementation": "CPython",
+    "version": "3.12.8"
+  },
+  "schema_version": "1.0.0",
+  "threads": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "timezone": "UTC"
+}

@@ -1,8 +1,8 @@
-import json
 from pathlib import Path
 
 import pytest
 
+import vamos
 from vamos.experiment.runner import run_experiment
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
@@ -20,10 +20,8 @@ def test_run_experiment_creates_standard_layout(tmp_path):
 
     run_dir = Path(metrics["output_dir"])
     assert run_dir.exists()
-    assert (run_dir / "FUN.csv").is_file()
-    assert (run_dir / "metadata.json").is_file()
-
-    metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
-    assert metadata["problem"]["key"] == "zdt1"
-    assert metadata["algorithm"] == "nsgaii"
-    assert metadata["backend"] == "numpy"
+    assert {path.name for path in run_dir.iterdir()} == {"manifest.json", "result.npz", "environment.json"}
+    manifest = vamos.load_run(run_dir, verify="all").manifest
+    assert manifest.resolved_spec["problem"]["component_id"] == "vamos.problem:zdt1@1"
+    assert manifest.resolved_spec["algorithm"]["component_id"] == "vamos.algorithm:nsgaii@1"
+    assert manifest.resolved_spec["backend"]["kernel"]["component_id"] == "vamos.kernel:numpy@1"

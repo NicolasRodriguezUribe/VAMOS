@@ -8,9 +8,14 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - Mandatory ADRs: layering/facades, import-time purity, optional deps, no shims, health gates/retention.
 
 ## Health Gates (run locally)
-- `python tools/health.py` (uses the mypy error budget gate)
+- `python tools/health.py` (local fast-fail suite, including strict and full development typing)
 - `python tools/health.py --continue-on-failure` (run the full gate list without fast-fail)
-- `python -m mypy --config-file pyproject.toml src/vamos` (raw mypy invocation)
+- `python tools/check_agent_docs.py` (the same command and arguments used by CI)
+- `python tools/typecheck.py --scope strict` (zero diagnostics in the protected scope)
+- `python tools/typecheck.py --scope full` (exact structured no-regression baseline and clean changed modules)
+- `python tools/typecheck.py --scope stable` (zero diagnostics across the stable public facades)
+- `python tools/typecheck.py --scope release` (strict/stable zero plus the full ratchet and health)
+- `python tools/typecheck.py --scope full-zero` (informational global-zero objective for VAMOS 1.0.0)
 - `pytest -q tests/architecture/test_layer_boundaries.py`
 - `pytest -q tests/test_monolith_guard.py`
 - `pytest -q tests/test_public_api_guard.py`
@@ -27,6 +32,10 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - `pytest -q tests/test_logging_policy.py`
 - `pytest -q`
 
+## Typing policy
+
+The canonical environment, path inventory, diagnostic fingerprint schema, baseline update procedure, and debt-reduction order live in [Typing policy](typing.md). Health and CI invoke strict and full with identical command arguments. Full development success means the structured ratchet matched exactly; it does not mean full-source typing is clean. The VAMOS 1.0 release gate requires strict and stable zero, the exact full-source ratchet, and health. Full-source zero remains separately visible through `--scope full-zero`.
+
 ## Layering Policy (current reality)
 - foundation may depend on foundation/resources only.
 - engine may depend on engine/foundation/resources.
@@ -39,7 +48,7 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 ## Optional Dependencies Policy
 - foundation/** and engine/**: no top-level imports of optional/heavy deps.
 - experiment/external/**: integration boundary for optional deps; imports must be lazy or guarded.
-- ux/studio/**: streamlit allowed only here.
+- ux/panel/** and ux/studio/**: Panel is optional and confined to UI modules.
 - Dynamic import loopholes (`importlib.import_module`, `__import__`) are disallowed at top-level.
 - Dependency list is enforced by `tests/architecture/test_dependency_policy.py`.
 
@@ -76,7 +85,10 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - No `logging.basicConfig()` in library modules.
 - CLI logging config happens at invocation only via local handlers.
 
-## Adding Problems/Operators (no cross references)
-- Problem registry: add specs in `foundation/problem/registry/families/*.py`.
-- Operators: implementations live in `vamos.engine.operators.impl`, algorithm wiring in `vamos.engine.operators.policies`.
-- Update docs/tests when adding new modules or APIs.
+## Extension guides
+- Problems: `docs/dev/add_problem.md`.
+- Operators: `docs/dev/add_operator.md`.
+- Algorithms: `docs/dev/add_algorithm.md`.
+- Backends: `docs/dev/add_backend.md`.
+- Metrics: `docs/dev/add_metric.md`.
+- Testing: `docs/dev/testing.md`.

@@ -8,7 +8,9 @@ import numpy as np
 import panel as pn
 import param
 
+from vamos.ux.panel.pages.problem_builder_ai import build_ai_generation_tab, build_trusted_code_controls
 from vamos.ux.studio.problem_builder_backend import (
+    TRUSTED_LOCAL_CODE_WARNING,
     compile_constraint_function,
     compile_objective_function,
     example_objectives,
@@ -34,6 +36,10 @@ class ProblemBuilderState(param.Parameterized):
     n_obj = param.Integer(default=2, bounds=(2, 10), doc="Number of objectives.")
     bounds_text = param.String(default="0.0, 1.0", doc="Bounds: one line per var, or single line for all.")
     constraint_code = param.String(default="", doc="Optional constraint code.")
+    trusted_local_code = param.Boolean(
+        default=False,
+        doc="Explicit acknowledgement that the currently displayed Python code is trusted.",
+    )
 
     # ---- Algorithm Setup ----
     algorithm = param.Selector(
@@ -102,6 +108,10 @@ class ProblemBuilderState(param.Parameterized):
         self.n_obj = int(t.get("n_obj", 2))
         self.bounds_text = "0.0, 1.0"
 
+    @param.depends("objective_code", "constraint_code", watch=True)
+    def _invalidate_code_trust(self) -> None:
+        self.trusted_local_code = False
+
     def _parse_bounds(self) -> list[tuple[float, float]] | None:
         result = parse_bounds_text(self.bounds_text, self.n_var)
         if isinstance(result, str):
@@ -156,9 +166,13 @@ class ProblemBuilderState(param.Parameterized):
 
     def run_preview(self, event: Any = None) -> None:
         """Compile code, run a short optimization, update preview_plot."""
+        if not self.trusted_local_code:
+            self.status_text = f"Execution disabled. {TRUSTED_LOCAL_CODE_WARNING}"
+            self.preview_plot = None
+            return
         self.status_text = "Compiling..."
         try:
-            fn = compile_objective_function(self.objective_code)
+            fn = compile_objective_function(self.objective_code, trusted_local_code=True)
         except Exception as exc:
             self.status_text = f"Compilation error: {exc}"
             self.preview_plot = None
@@ -172,7 +186,7 @@ class ProblemBuilderState(param.Parameterized):
         n_constraints = 0
         if self.constraint_code.strip():
             try:
-                constraints = compile_constraint_function(self.constraint_code)
+                constraints = compile_constraint_function(self.constraint_code, trusted_local_code=True)
                 n_constraints = 1
             except Exception as exc:
                 self.status_text = f"Constraint error: {exc}"
@@ -193,6 +207,7 @@ class ProblemBuilderState(param.Parameterized):
                 n_constraints=n_constraints,
                 objective_code=self.objective_code,
                 constraint_code=self.constraint_code,
+                trusted_local_code=True,
             )
             F = result.get("F")
             if F is not None:
@@ -299,7 +314,8 @@ class ProblemBuilderState(param.Parameterized):
             self.n_var = int(result["n_var"])
             self.n_obj = int(result["n_obj"])
             self.bounds_text = str(result["bounds"])
-            self.ai_status = "Code generated successfully. Check the Problem Definition tab."
+            self.trusted_local_code = False
+            self.ai_status = "Code generated but not executed. Review it in Problem Definition, then opt in explicitly."
         except Exception as exc:
             self.ai_status = f"Error: {exc}"
 
@@ -335,6 +351,7 @@ def render_problem_builder() -> pn.Column:
         height=100,
         name="Constraint code (optional)",
     )
+    trusted_code_warning, trusted_code_confirmation = build_trusted_code_controls(state)
 
     # ---- Algorithm config ----
     algo_general = pn.Column(
@@ -398,43 +415,7 @@ def render_problem_builder() -> pn.Column:
         sizing_mode="stretch_width",
     )
 
-    # ==== Tab 1: AI Assistant ====
-    ai_provider_select = pn.widgets.Select.from_param(state.param.ai_provider, name="LLM Provider")
-    ai_api_key_input = pn.widgets.PasswordInput.from_param(
-        state.param.ai_api_key,
-        name="API Key",
-        placeholder="Paste your API key here (or set via environment variable)",
-    )
-    ai_description_input = pn.widgets.TextAreaInput.from_param(
-        state.param.ai_description,
-        name="Describe your optimization problem",
-        placeholder="E.g.: Minimize cost and deflection of a cantilever beam. "
-        "Width between 0.5 and 5 cm, height between 1 and 10 cm. "
-        "Stress must not exceed 100 MPa.",
-        height=150,
-    )
-    ai_generate_btn = pn.widgets.Button(name="Generate Code", button_type="primary")
-    ai_generate_btn.on_click(state.ai_generate)
-    ai_status_pane = pn.pane.Alert(
-        pn.bind(lambda t: t or "Describe your problem and click Generate Code.", state.param.ai_status),
-        alert_type="info",
-    )
-
-    tab_ai = pn.Column(
-        "### AI-Powered Problem Generation",
-        pn.pane.Markdown(
-            "Describe your multi-objective optimization problem in natural language. "
-            "The AI will generate the objective function code, constraints, variables, "
-            "and bounds in VAMOS format. You can review and edit the generated code in "
-            "the **Problem Definition** tab.",
-        ),
-        pn.layout.Divider(),
-        pn.Row(ai_provider_select, ai_api_key_input, sizing_mode="stretch_width"),
-        ai_description_input,
-        ai_generate_btn,
-        ai_status_pane,
-        sizing_mode="stretch_width",
-    )
+    tab_ai = build_ai_generation_tab(state)
 
     # ==== Tab 2: Problem Definition ====
     tab_problem = pn.Column(
@@ -449,6 +430,9 @@ def render_problem_builder() -> pn.Column:
         pn.layout.Divider(),
         "### Constraints (optional)",
         constraint_editor,
+        pn.layout.Divider(),
+        trusted_code_warning,
+        trusted_code_confirmation,
         sizing_mode="stretch_width",
     )
 

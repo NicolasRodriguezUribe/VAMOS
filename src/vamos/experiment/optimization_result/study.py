@@ -7,6 +7,7 @@ from collections.abc import Iterator, Sequence
 from typing import Any, overload
 
 import numpy as np
+from numpy.typing import NDArray
 
 from vamos.foundation.exceptions import NoSolutionsError, ResultSelectionError
 
@@ -77,7 +78,7 @@ class StudyResult(Sequence[OptimizationResult]):
     def __repr__(self) -> str:
         return f"StudyResult({len(self._runs)} runs)"
 
-    def metric_values(self, name: str) -> np.ndarray:
+    def metric_values(self, name: str) -> NDArray[np.float64]:
         """Return a float array with the named metric extracted from each run."""
         if not self._runs:
             return np.empty(0, dtype=float)

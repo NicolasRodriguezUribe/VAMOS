@@ -8,10 +8,6 @@ from vamos.ux.studio.export import export_solutions_to_csv, export_solutions_to_
 
 
 def test_build_fronts_and_decision_view(tmp_path: Path):
-    # Create fake run directories
-    run_dir = tmp_path / "prob" / "algo" / "seed_0"
-    run_dir.mkdir(parents=True)
-    np.savetxt(run_dir / "FUN.csv", np.array([[0.1, 0.2], [0.2, 0.1]]), delimiter=",")
     runs = [RunRecord(None, "exp", "prob", "algo", 0, np.array([[0.1, 0.2]]), None)]
     runs.extend([RunRecord(None, "exp2", "prob", "algo", 1, np.array([[0.2, 0.1]]), None)])
     fronts = build_fronts(runs)

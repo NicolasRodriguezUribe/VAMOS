@@ -124,10 +124,8 @@ result = optimize(
     pop_size=40,
     seed=42,
 )
-resolved = result.explain_defaults()["resolved_config"]
-assert resolved["engine"] == "numpy"
-assert resolved["engine_source"] == "default"
-assert resolved["kernel_backend"] == "numpy"
+resolved = result.explain_defaults()["resolved_spec"]
+assert resolved["backend"]["kernel"]["resolution"]["name"] == "numpy"
 """,
     ),
 ]

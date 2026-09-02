@@ -14,7 +14,9 @@ PUBLIC_FACADES = (
     "src/vamos/algorithms.py",
     "src/vamos/ux/api.py",
 )
-MAX_ALL_SIZE = 25
+# The 1.0 contract exposes nine curated StudyManifest names. Keep the cap at the
+# exact top-level facade size so future additions still require explicit review.
+MAX_ALL_SIZE = 34
 
 
 def _repo_root() -> Path:

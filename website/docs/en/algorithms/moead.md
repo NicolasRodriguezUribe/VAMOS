@@ -22,22 +22,21 @@ from vamos import optimize
 
 result = optimize("zdt1", algorithm="moead", max_evaluations=20000, seed=42)
 
-print(result.F.shape)  # (100, 2)
+print(result.F.shape)  # (n_solutions, 2)
 ```
 
-With explicit parameters:
+With an explicit public configuration:
 
 ```python
+from vamos.algorithms import MOEADConfig
+
+config = MOEADConfig.default(pop_size=100, n_var=30, n_obj=2)
 result = optimize(
     "zdt2",
     algorithm="moead",
     max_evaluations=30000,
     seed=42,
-    algorithm_kwargs={
-        "n_neighbors": 15,
-        "decomposition": "tchebi",
-        "prob_neighbor_mating": 0.9,
-    },
+    algorithm_config=config,
 )
 ```
 
@@ -48,9 +47,9 @@ result = optimize(
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `pop_size` | 100 | Number of subproblems. Must equal the number of weight vectors. |
-| `n_neighbors` | 20 | Neighborhood size per weight vector. Larger = more global mixing. |
-| `decomposition` | `"tchebi"` | Scalarization function: `"tchebi"` (Tchebycheff) or `"weighted_sum"`. |
-| `prob_neighbor_mating` | 0.9 | Probability of selecting parents from the neighborhood rather than the whole population. |
+| `neighbor_size` | 20 | Neighborhood size per weight vector. |
+| `aggregation` | `pbi(theta=5.0)` | Scalar aggregation configuration. |
+| `delta` | 0.9 | Probability of sampling parents from the neighborhood. |
 | `crossover_prob` | 1.0 | SBX crossover probability. |
 | `crossover_eta` | 20 | SBX distribution index. |
 | `mutation_eta` | 20 | Polynomial mutation distribution index. |

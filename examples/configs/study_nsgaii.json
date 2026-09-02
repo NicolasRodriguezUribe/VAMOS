@@ -1,0 +1,14 @@
+{
+  "problems": ["zdt1", "zdt2"],
+  "algorithms": ["nsgaii"],
+  "seeds": [1, 2, 3],
+  "max_evaluations": 2000,
+  "pop_size": 50,
+  "engine": "numpy",
+  "on_error": "continue",
+  "max_attempts_per_task": 3,
+  "labels": {
+    "workflow": "benchmark",
+    "name": "nsgaii-zdt"
+  }
+}

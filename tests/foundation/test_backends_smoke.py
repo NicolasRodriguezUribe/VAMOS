@@ -8,20 +8,32 @@ pytestmark = pytest.mark.backends
 
 
 @pytest.mark.numba
-def test_numba_backend_smoke(monkeypatch):
+def test_numba_backend_smoke(tmp_path):
     pytest.importorskip("numba")
     selection = make_problem_selection("zdt1", n_var=6)
-    cfg = ExperimentConfig(population_size=6, offspring_population_size=6, max_evaluations=20, seed=2)
+    cfg = ExperimentConfig(
+        population_size=6,
+        offspring_population_size=6,
+        max_evaluations=20,
+        seed=2,
+        output_root=str(tmp_path / "results"),
+    )
     result = run_single("numba", "nsgaii", selection, cfg)
     assert result["F"].shape[0] > 0
     assert result["engine"] == "numba"
 
 
 @pytest.mark.moocore
-def test_moocore_backend_smoke(monkeypatch):
+def test_moocore_backend_smoke(tmp_path):
     pytest.importorskip("moocore")
     selection = make_problem_selection("zdt1", n_var=6)
-    cfg = ExperimentConfig(population_size=6, offspring_population_size=6, max_evaluations=20, seed=3)
+    cfg = ExperimentConfig(
+        population_size=6,
+        offspring_population_size=6,
+        max_evaluations=20,
+        seed=3,
+        output_root=str(tmp_path / "results"),
+    )
     result = run_single("moocore", "nsgaii", selection, cfg)
     assert result["F"].shape[0] > 0
     assert result["engine"] == "moocore"

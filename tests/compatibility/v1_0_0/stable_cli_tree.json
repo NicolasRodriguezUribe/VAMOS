@@ -1,0 +1,90 @@
+{
+  "commands": {
+    "vamos": {
+      "arguments": [
+        "--algorithm",
+        "--config",
+        "--engine",
+        "--max-evaluations",
+        "--offspring-population-size",
+        "--output-root",
+        "--population-size",
+        "--problem",
+        "--seed",
+        "--validate-config"
+      ]
+    },
+    "vamos reproduce": {
+      "arguments": [
+        "--json",
+        "--output",
+        "run_dir"
+      ]
+    },
+    "vamos results inspect": {
+      "arguments": [
+        "--json",
+        "run_dir"
+      ]
+    },
+    "vamos results verify": {
+      "arguments": [
+        "--json",
+        "--require-level",
+        "run_dir"
+      ]
+    },
+    "vamos study create": {
+      "arguments": [
+        "--json",
+        "--output",
+        "config"
+      ]
+    },
+    "vamos study inspect": {
+      "arguments": [
+        "--json",
+        "study_dir"
+      ]
+    },
+    "vamos study plan": {
+      "arguments": [
+        "--json",
+        "--output",
+        "config"
+      ]
+    },
+    "vamos study resume": {
+      "arguments": [
+        "--json",
+        "--retry-failed",
+        "study_dir"
+      ]
+    },
+    "vamos study retry": {
+      "arguments": [
+        "--failed",
+        "--json",
+        "study_dir"
+      ]
+    },
+    "vamos study run": {
+      "arguments": [
+        "--json",
+        "study_dir"
+      ]
+    },
+    "vamos study summarize": {
+      "arguments": [
+        "--format",
+        "--json",
+        "--output",
+        "study_dir"
+      ]
+    }
+  },
+  "diagnostics_stream": "stderr",
+  "document_type": "vamos.stable-cli-tree",
+  "json_stdout_documents": 1,
+  "schema_version": "1.0.0"
+}

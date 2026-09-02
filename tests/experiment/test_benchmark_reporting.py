@@ -1,12 +1,11 @@
-import json
 from pathlib import Path
 
 import numpy as np
 import pytest
 
 from vamos.experiment.benchmark.report import BenchmarkReport, BenchmarkReportConfig
-from vamos.experiment.benchmark.runner import BenchmarkResult
-from vamos.experiment.benchmark.suites import get_benchmark_suite, list_benchmark_suites
+from vamos.experiment.benchmark.runner import load_benchmark_result, run_benchmark_suite
+from vamos.experiment.benchmark.suites import BenchmarkExperiment, BenchmarkSuite, get_benchmark_suite, list_benchmark_suites
 
 
 def test_suite_registry_contains_defaults():
@@ -45,22 +44,15 @@ def test_report_pipeline_on_fake_csv(tmp_path: Path):
                     }
                 )
     df = pd.DataFrame(rows)
-    summary_path = summary_dir / "metrics.csv"
-    df.to_csv(summary_path, index=False)
 
-    # Minimal metadata
-    meta = {"suite": suite.name, "algorithms": ["a1", "a2"], "metrics": ["hv", "igd_plus"]}
-    (summary_dir / "suite.json").write_text(json.dumps(meta), encoding="utf-8")
+    class _SummaryResult:
+        def __init__(self):
+            self.suite = suite
 
-    result = BenchmarkResult(
-        suite=suite,
-        algorithms=["a1", "a2"],
-        metrics=["hv", "igd_plus"],
-        base_output_dir=tmp_path,
-        summary_path=summary_path,
-        runs=[],
-        raw_results=None,
-    )
+        def summary_rows(self):
+            return tuple(df.to_dict(orient="records"))
+
+    result = _SummaryResult()
     report = BenchmarkReport(
         result=result,
         config=BenchmarkReportConfig(metrics=["hv", "igd_plus"], alpha=0.1),
@@ -82,3 +74,45 @@ def test_report_pipeline_on_fake_csv(tmp_path: Path):
 
     # Plots are optional; ensure the function does not raise.
     report.generate_plots()
+
+
+def test_run_benchmark_suite_returns_traceable_canonical_studies(tmp_path: Path):
+    suite = BenchmarkSuite(
+        name="tiny",
+        experiments=[BenchmarkExperiment("zdt1", {"n_var": 3, "n_obj": 2}, evaluation_budget=8, seeds=[3])],
+        default_algorithms=["nsgaii"],
+        default_metrics=[],
+    )
+
+    result = run_benchmark_suite(
+        suite,
+        algorithms=None,
+        metrics=None,
+        base_output_dir=tmp_path / "benchmark",
+        global_config_overrides={"population_size": 4, "engine": "numpy"},
+    )
+
+    assert len(result.studies) == 1
+    execution = result.studies[0]
+    assert result.study_roots == (execution.study.root,)
+    assert execution.study.status == "completed"
+    assert execution.report.study_id == execution.summary.study_id == result.study_ids[0]
+    rows = result.summary_rows()
+    assert len(rows) == 1
+    assert rows[0]["task_id"] == execution.summary.rows[0].task_id
+    assert rows[0]["selected_run_id"] is not None
+    assert rows[0]["run_manifest_sha256"] is not None
+    assert isinstance(rows[0]["hv"], float)
+    assert rows[0]["hv_reference"]
+    assert result.summary_path is not None and result.summary_path.exists()
+
+    before = {path.relative_to(result.base_output_dir): path.read_bytes() for path in result.base_output_dir.rglob("*") if path.is_file()}
+    loaded = load_benchmark_result(
+        suite,
+        algorithms=result.algorithms,
+        metrics=result.metrics,
+        base_output_dir=result.base_output_dir,
+    )
+    after = {path.relative_to(result.base_output_dir): path.read_bytes() for path in result.base_output_dir.rglob("*") if path.is_file()}
+    assert loaded.study_ids == result.study_ids
+    assert before == after

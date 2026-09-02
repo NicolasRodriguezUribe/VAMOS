@@ -172,8 +172,6 @@ def test_nsgaii_config_space_supports_full_selection_catalog(selection: str):
 def test_nsgaii_archive_unbounded_disables_archive_params():
     space = build_nsgaii_config_space()
     param_space = space.to_param_space()
-    assert "archive_type" not in param_space.params
-    assert "archive_epsilon" not in param_space.params
     assert "selection_size" in param_space.params
     cfg_disabled = {"use_external_archive": False}
     assert not param_space.is_active("selection_size", cfg_disabled)
@@ -471,7 +469,7 @@ def test_external_archive_config_uses_ref_dirs_policy_name():
     assert cfg.external_archive.pruning == "ref_dirs"
 
 
-def test_external_archive_config_rejects_legacy_hv_policy_aliases():
+def test_external_archive_config_rejects_unknown_pruning_policy():
     assignment = {
         "pop_size": 32,
         "offspring_size": 32,
@@ -485,49 +483,9 @@ def test_external_archive_config_rejects_legacy_hv_policy_aliases():
         "mutation_eta": 20.0,
         "use_external_archive": True,
         "archive_unbounded": False,
-        "archive_prune_policy": "hv_contrib",
+        "archive_prune_policy": "invalid-policy",
     }
-    with pytest.raises(ValueError, match="Unsupported prune_policy 'hv_contrib'"):
-        config_from_assignment("nsgaii", assignment)
-
-
-def test_external_archive_config_rejects_spea2_prune_policy_name():
-    assignment = {
-        "pop_size": 32,
-        "offspring_size": 32,
-        "selection": "tournament",
-        "selection_size": 2,
-        "crossover": "sbx",
-        "crossover_prob": 0.9,
-        "crossover_eta": 15.0,
-        "mutation": "pm",
-        "mutation_prob": "1/n",
-        "mutation_eta": 20.0,
-        "use_external_archive": True,
-        "archive_unbounded": False,
-        "archive_prune_policy": "spea2",
-    }
-    with pytest.raises(ValueError, match="Unsupported prune_policy 'spea2'"):
-        config_from_assignment("nsgaii", assignment)
-
-
-def test_external_archive_config_rejects_random_prune_policy_name():
-    assignment = {
-        "pop_size": 32,
-        "offspring_size": 32,
-        "selection": "tournament",
-        "selection_size": 2,
-        "crossover": "sbx",
-        "crossover_prob": 0.9,
-        "crossover_eta": 15.0,
-        "mutation": "pm",
-        "mutation_prob": "1/n",
-        "mutation_eta": 20.0,
-        "use_external_archive": True,
-        "archive_unbounded": False,
-        "archive_prune_policy": "random",
-    }
-    with pytest.raises(ValueError, match="Unsupported prune_policy 'random'"):
+    with pytest.raises(ValueError, match="Unsupported pruning 'invalid-policy'"):
         config_from_assignment("nsgaii", assignment)
 
 

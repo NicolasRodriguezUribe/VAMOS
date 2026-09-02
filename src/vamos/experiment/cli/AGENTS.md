@@ -1,104 +1,65 @@
-# CLI Module
+# Scope
 
-## Architecture Health (must-read)
-- Follow `docs/dev/architecture_health.md` before adding new modules, APIs, or dependencies.
-- PRs must pass the health gates (layer/monolith/public-api/import/optional-deps/logging/no-print/no-shims).
-- ADRs in `docs/dev/adr/` are mandatory reading before architectural changes.
+Applies only to `src/vamos/experiment/cli/**`.
 
+Inherits all repository-wide rules from `/AGENTS.md`. This file contains local deltas only.
 
-This directory contains the command-line interface for VAMOS.
+## Responsibility and invariants
 
-## Entry Point
+- `main.py` owns top-level dispatch; focused command modules own their parsers and execution.
+- Base optimization arguments are assembled through `args.py` and `args_*.py`; keep CLI and machine-readable spec defaults aligned through the existing spec-argument machinery.
+- Parse and validate before executing. Help paths must remain side-effect free and usable without optional runtime services.
+- CLI artifact commands delegate to the canonical artifact API: `results inspect`, `results verify`, and exact `reproduce` stay distinct. The `study` group delegates its complete current lifecycle to canonical StudyManifest services.
+- Preserve useful error messages and nonzero exit codes. Do not silently replace an unavailable algorithm, backend, problem, or file.
 
-```bash
-python -m vamos.experiment.cli.main [OPTIONS]
-# or after install:
-vamos [OPTIONS]
+The current top-level subcommands are `quickstart`, `create-problem`, `summarize`, `open-results`, `results`, `reproduce`, `study`, `ablation`, `assist`, `check`, `bench`, `studio`, `zoo`, `tune`, and `profile`. The standard optimization path uses top-level options without a subcommand. The current study subcommands are `plan`, `create`, `run`, `inspect`, `resume`, `retry`, and `summarize`; there is no cross-process cancel command.
+
+## Change route
+
+Follow [Changing the CLI](/docs/dev/cli.md). Add dispatch, parser/help, implementation, subprocess tests, and user docs as one bounded change.
+
+## Targeted validation
+
+Run `python -m pytest -q tests/experiment/test_cli_consolidation.py tests/experiment/test_cli_config_validation.py tests/experiment/test_cli_run_artifacts.py` plus the test for the affected command.
+
+```agent-docs
+path: src/vamos/experiment/cli/main.py
+path: src/vamos/experiment/cli/args.py
+path: src/vamos/experiment/cli/run_artifact_cli.py
+path: src/vamos/experiment/cli/study.py
+path: src/vamos/experiment/cli/study_command.py
+path: src/vamos/experiment/cli/study_command_result.py
+path: src/vamos/experiment/cli/study_spec_io.py
+path: src/vamos/experiment/cli/study_summary_output.py
+path: tests/experiment/test_cli_consolidation.py
+path: tests/experiment/test_cli_config_validation.py
+path: tests/experiment/test_cli_run_artifacts.py
+path: docs/dev/cli.md
+symbol: vamos.experiment.cli.study:study_main
+symbol: vamos.experiment.cli.study_command:execute_study_command
+symbol: vamos.experiment.cli.study_command_result:map_exit_code
+cli: vamos --help
+cli: vamos results inspect --help
+cli: vamos results verify --help
+cli: vamos reproduce --help
+cli: vamos study plan --help
+cli: vamos study create --help
+cli: vamos study run --help
+cli: vamos study inspect --help
+cli: vamos study resume --help
+cli: vamos study retry --help
+cli: vamos study summarize --help
+cli: vamos quickstart --help
+cli: vamos create-problem --help
+cli: vamos summarize --help
+cli: vamos open-results --help
+cli: vamos ablation --help
+cli: vamos assist --help
+cli: vamos check --help
+cli: vamos bench --help
+cli: vamos studio --help
+cli: vamos zoo --help
+cli: vamos tune --help
+cli: vamos profile --help
+command: python -m pytest -q tests/experiment/test_cli_consolidation.py tests/experiment/test_cli_config_validation.py tests/experiment/test_cli_run_artifacts.py
 ```
-
-## Subcommands
-
-All VAMOS functionality is available via `vamos <subcommand>`. Run `vamos help` to list them.
-
-| Command | Description | File |
-|---------|-------------|------|
-| `vamos quickstart` | Guided wizard for a single run | `quickstart.py` |
-| `vamos create-problem` | Scaffold a custom problem file | `create_problem.py` |
-| `vamos summarize` | Table/JSON summary of results | `results_cli.py` |
-| `vamos open-results` | Print or open the latest run folder | `results_cli.py` |
-| `vamos ablation` | Run ablation studies | `ablation.py` |
-| `vamos assist` | AI-assisted experiment planning | `../../assist/cli.py` |
-| `vamos check` | Verify installation and backends | `../diagnostics/self_check.py` |
-| `vamos bench` | Benchmark suite across algorithms | `../benchmark/cli.py` |
-| `vamos studio` | Launch interactive dashboard | `../../ux/studio/app.py` |
-| `vamos zoo` | Problem zoo presets | `../zoo/cli.py` |
-| `vamos tune` | Hyperparameter tuning | `tune.py` |
-| `vamos profile` | Performance profiling | `../profiler/cli.py` |
-
-> All tools are accessed via `vamos <subcommand>`. Legacy `vamos-*` entry points have been removed.
-
-## Key Options (standard run)
-
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--problem` | Problem name (zdt1, dtlz2, etc.) | zdt1 |
-| `--algorithm` | Algorithm (nsgaii, moead, spea2, etc.) | nsgaii |
-| `--engine` | Backend (numpy, numba, moocore) | numpy |
-| `--max-evaluations` | Termination budget | 25000 |
-| `--population-size` | Population size | 100 |
-| `--n-var` | Number of variables | problem default |
-| `--n-obj` | Number of objectives | problem default |
-| `--config` | YAML config file path | None |
-| `--seed` | Random seed | 42 |
-| `--output-root` | Results directory | results/ |
-
-## `create-problem` subcommand
-
-Generates a ready-to-run `.py` file with a custom problem template.
-
-```bash
-# Interactive wizard
-vamos create-problem
-
-# Non-interactive with explicit args
-vamos create-problem --name "my problem" --n-var 5 --n-obj 3 --yes
-
-# Class-based template instead of functional
-vamos create-problem --style class --output my_problem.py
-```
-
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--name` | Problem name | my_problem |
-| `--n-var` | Number of decision variables | 2 |
-| `--n-obj` | Number of objectives | 2 |
-| `--output`, `-o` | Output file path | `<name>.py` |
-| `--style` | `functional` (uses `make_problem`) or `class` | functional |
-| `--budget` | Max evaluations in generated script | 5000 |
-| `--yes` | Accept defaults without prompting | false |
-
-## Config File Override
-
-CLI flags override YAML config values:
-```bash
-python -m vamos.experiment.cli.main --config study.yaml --max-evaluations 5000
-```
-
-## Architecture
-
-| File | Purpose |
-|------|---------|
-| `main.py` | Entry point, subcommand dispatch |
-| `create_problem.py` | `create-problem` wizard and template generation |
-| `quickstart.py` | `quickstart` wizard |
-| `results_cli.py` | `summarize` and `open-results` commands |
-| `ablation.py` | `ablation` command |
-| `parser.py` | Argument parsing for standard runs |
-| `validation.py` | CLI argument validation |
-
-## Adding CLI Options
-
-1. Add argument to `argparse` in `main.py`
-2. Wire to `run_single()` or `ExperimentConfig`
-3. Document in `docs/guide/cli.md`
-4. Add integration test in `tests/test_cli_*.py`

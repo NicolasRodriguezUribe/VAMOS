@@ -1,95 +1,59 @@
-# Experiment artifact contract (VAMOS)
+# Experiment artifact contract
 
-This repository treats experiment outputs as a *contract* so that:
-- runs are reproducible and auditable
-- analysis/reporting can be regenerated from stored artifacts
-- paper tables/figures can be built deterministically
+Experiment and paper tooling has two canonical inputs with distinct ownership:
 
-## Run directory layout (observed in smoke run)
+- a StudyManifest directory owns a campaign's plan, attempts, state, recovery,
+  and task-to-run references;
+- a RunManifest directory owns one execution's resolved configuration,
+  numerical arrays, environment, and outcome.
 
-Each run is stored under:
+Both use only schema version `1.0.0`. A CSV, generated config, directory name,
+or launcher index is never campaign state.
 
-results/<campaign>/<suite>/<algorithm>/<engine>/seed_<seed>/
+Current campaign collectors call `vamos.load_study(...).summarize()` first.
+When numerical analysis is explicitly required, they follow the summary's
+verified run reference and call `vamos.load_result`. Ordinary single-run and
+publication-archive tools may discover `manifest.json` through
+`experiments/scripts/canonical_runs.py`; that helper is not a study reader.
+No collector infers algorithm, problem, backend, seed, or configuration from
+directory names.
 
-Expected files (minimum):
-- metadata.json            (structured metadata: algorithm/problem/backend/config/metrics/etc.)
-- resolved_config.json     (fully resolved config used for the run)
-- FUN.csv                  (final objective values; one row per solution, columns = objectives)
-- X.csv                    (final decision variables; one row per solution)
-- time.txt                 (runtime info; plain text)
+## Artifact classes
 
-## Tidy outputs (analysis inputs)
+- `ACTIVE_CURRENT_WORKFLOW`: `examples/tuning/ablation_runner.py`, the maintained
+  ablation notebooks, and campaign collectors use `StudySpec`, `plan_study`,
+  `create_study`, `Study.run/resume/retry/inspect/summarize`, and StudySummary.
+- `DERIVED_REGENERABLE_OUTPUT`: tidy CSV tables, statistics, plots, LaTeX, and
+  samples under `artifacts/` or `experiments/sample_outputs/`.
+- `SCIENTIFIC_SOURCE_INPUT`: campaign YAML, problem catalogs, frozen reference
+  points, and operator/config inventories under `experiments/configs/` and
+  `experiments/catalog/`; these are preserved inputs, not a supported study
+  serialization.
+- `PUBLICATION_ARCHIVE`: committed benchmark/MIC CSVs, backups, manuscripts,
+  figures, PDFs, and publication-specific scripts under `paper/`; these remain
+  attributable archives and are not accepted as current study formats.
+- `OBSOLETE_PRE_RELEASE_WORKFLOW`: the removed custom campaign launchers that
+  generated per-task CLI configs, inferred completion by scanning directories,
+  and treated `runs_index.jsonl` as resume state.
+- `SEMANTICALLY_UNRELATED`: single-run tutorials, tuning-database examples,
+  registry/catalog builders, and cross-framework source experiments that do
+  not claim to be VAMOS durable studies.
 
-Collectors must write tidy tables to:
-- artifacts/tidy/
+## Derived tidy tables
 
-Minimum tidy table for engine studies:
-- artifacts/tidy/engine_smoke.csv  (one row per run)
+`experiments/scripts/collect_campaign_runs.py` is the current durable-campaign
+collector. It produces one row per StudySummary task and retains study ID, plan
+ID, task ID, attempt ID, run ID, relative RunManifest path, and manifest hash.
+`experiments/scripts/canonical_runs.py` remains the shared ordinary-run adapter.
+Objective summaries are calculated only after following canonical run evidence
+and loading arrays through `load_result`.
 
-### engine_smoke.csv (minimum columns)
+Derived tables may be written under `artifacts/tidy/` or
+`experiments/sample_outputs/`. Their filenames and columns are analysis
+interfaces only and must never be treated as a loadable VAMOS run format.
 
-Identity / provenance:
-- run_path
-- campaign, suite, algorithm, engine
-- seed
-- git_revision (if present)
-- timestamp (if present)
-- vamos_version (if present)
+## Validation
 
-Problem / budget:
-- problem
-- n_obj, n_var (if present)
-- population_size
-- max_evaluations
-
-Runtime:
-- runtime_seconds (parsed from time.txt when possible; else blank)
-
-Final population summary:
-- front_size (rows in FUN.csv)
-- fun_ncols (objective columns)
-- x_ncols (variable columns)
-- obj<i>_min / obj<i>_max for i=0..m-1 (derived from FUN.csv)
-
-Metadata passthrough:
-- backend_info.* (flattened if present)
-- metrics.* (flattened if present)
-
-## Paper consumption
-
-Figures and tables generated from tidy data must be written to:
-- artifacts/plots/
-- artifacts/tables/
-
-A later sync step may copy/link those into:
-- paper/manuscript/figures/
-- paper/manuscript/tables/
-
-## Stopping + Archive artifacts (HV-based)
-
-When enabled, runs MUST emit:
-See `docs/experiment/stopping_and_archive.md` for config details.
-
-### hv_trace.csv
-Path: results/<campaign>/<suite>/<algo>/<engine>/seed_<seed>/hv_trace.csv
-
-Columns (minimum):
-- evals
-- hv
-- hv_delta
-- stop_flag
-- reason
-
-### archive_stats.csv
-Path: results/<campaign>/<suite>/<algo>/<engine>/seed_<seed>/archive_stats.csv
-
-Columns (minimum):
-- evals
-- archive_size
-- inserted
-- pruned
-- prune_reason
-
-### metadata.json additions (minimum)
-- stopping: {enabled, monitor_type, params, triggered, evals_stop, reason}
-- archive:  {enabled, archive_type, params, final_size, total_inserted, total_pruned}
+Use a tiny canonical study to test StudySummary derivation and table generation,
+plus a tiny canonical run to test ordinary-run discovery and array loading.
+Publication-scale campaigns are outside routine validation.

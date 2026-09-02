@@ -2,4 +2,4 @@
 Adaptation utilities for VAMOS.
 """
 
-__all__ = []
+__all__: list[str] = []

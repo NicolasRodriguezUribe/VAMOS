@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import argparse
 import logging
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
 from vamos.engine.config.loader import load_experiment_spec
 from vamos.engine.tuning.ablation import AblationVariant, build_ablation_plan
 from vamos.experiment._execution_support import VariationConfigs
-from vamos.experiment.study.api import run_ablation_plan
+from vamos.experiment.ablation import run_ablation_plan, write_ablation_csv
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
 from .ablation_parse import as_mapping, as_sequence, normalize_variants, parse_budget_overrides
 from .ablation_schema import validate_ablation_spec
-from .ablation_summary import write_summary_csv
 
 
 def _logger() -> logging.Logger:
@@ -154,22 +153,15 @@ def run_ablation(argv: Sequence[str] | None = None) -> None:
             _logger().info("[Ablation] Task: %s", task.as_dict())
         return
 
-    mirror_output_roots = raw.get("mirror_output_roots")
-    mirror = None
-    if mirror_output_roots is not None:
-        if not isinstance(mirror_output_roots, Iterable) or isinstance(mirror_output_roots, (str, bytes, Mapping)):
-            raise TypeError("mirror_output_roots must be a list of paths.")
-        mirror = tuple(str(p) for p in mirror_output_roots)
-
     variations_by_variant = _filter_variations_by_algorithm(variations_by_variant, algorithm=algorithm)
 
-    results, variant_names = run_ablation_plan(
+    result = run_ablation_plan(
         plan,
         algorithm=algorithm,
+        output=Path(str(base_output_root or ExperimentConfig().output_root)),
         base_config=base_config,
         variations_by_variant=variations_by_variant or None,
         engine=str(engine) if engine is not None else None,
-        mirror_output_roots=mirror,
     )
 
     summary_path = raw.get("summary_path")
@@ -184,7 +176,7 @@ def run_ablation(argv: Sequence[str] | None = None) -> None:
         summary_path_obj = summary_root / "summary" / "ablation_metrics.csv"
 
     if summary_path_obj is not None:
-        write_summary_csv(results, variant_names, summary_path_obj)
+        write_ablation_csv(result, summary_path_obj)
         _logger().info("[Ablation] Summary CSV: %s", summary_path_obj)
 
     _logger().info("[Ablation] Completed %s tasks.", plan.n_tasks)

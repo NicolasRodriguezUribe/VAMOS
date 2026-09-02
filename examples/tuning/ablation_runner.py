@@ -1,7 +1,8 @@
-"""
-Experiment-layer ablation runner example.
+"""Run a small ablation as canonical, durable studies.
 
-Build an ablation plan, convert tasks to StudyTask, and execute with run_study.
+Each variant is one immutable StudySpec because changing an algorithm
+configuration changes scientific task identity. The combined table is a
+derived in-memory view of StudySummary rows and retains study/task/run IDs.
 
 Usage:
     python examples/tuning/ablation_runner.py
@@ -9,78 +10,51 @@ Usage:
 
 from __future__ import annotations
 
-from collections import defaultdict
+from pathlib import Path
 
-import numpy as np
+from vamos import StudySpec, create_study, plan_study
 
-from vamos.engine.tuning import AblationVariant, build_ablation_plan
-from vamos.experiment.study import StudyTask
-from vamos.experiment.study.api import run_study
+
+def run_ablation(
+    output_root: Path,
+    *,
+    seeds: tuple[int, ...] = (1, 2, 3),
+    max_evaluations: int = 2_000,
+    populations: tuple[tuple[str, int], ...] = (("baseline", 50), ("tuned", 80)),
+) -> list[dict[str, object]]:
+    """Execute each variant and return a traceable derived task table."""
+    rows: list[dict[str, object]] = []
+    for variant, population_size in populations:
+        spec = StudySpec(
+            problems=["zdt1"],
+            algorithms=["nsgaii"],
+            seeds=seeds,
+            max_evaluations=max_evaluations,
+            pop_size=population_size,
+            algorithm_configs={"nsgaii": {"pop_size": population_size}},
+            labels={"workflow": "ablation", "variant": variant},
+        )
+        planned = plan_study(spec)
+        completed = create_study(spec, output=output_root / variant).run()
+        if completed.plan_id != planned.plan_id:
+            raise RuntimeError("Canonical planning and creation produced different plan identities.")
+        for row in completed.summarize().rows:
+            derived = row.as_dict()
+            derived["variant"] = variant
+            rows.append(derived)
+    return rows
 
 
 def main() -> None:
-    variants = [
-        AblationVariant(name="baseline", label="Baseline"),
-        AblationVariant(name="tuned", label="Tuned", config_overrides={"population_size": 80}),
-    ]
-
-    plan = build_ablation_plan(
-        problems=["zdt1"],
-        variants=variants,
-        seeds=[1, 2, 3],
-        default_max_evals=2000,
-        engine="numpy",
-    )
-
-    base_config = {"population_size": 50}
-    algorithm = "nsgaii"
-    tuned_variation = {
-        "crossover": ("sbx", {"prob": 1.0, "eta": 30.0}),
-        "mutation": ("polynomial", {"prob": "1/n", "eta": 10.0}),
-    }
-    variant_variations = {
-        "baseline": None,
-        "tuned": tuned_variation,
-    }
-
-    study_tasks: list[StudyTask] = []
-    variant_names: list[str] = []
-    for task in plan.tasks:
-        overrides = task.variant.apply(base_config)
-        overrides["max_evaluations"] = task.max_evals
-        study_tasks.append(
-            StudyTask(
-                algorithm=algorithm,
-                engine=task.engine or "numpy",
-                problem=task.problem,
-                seed=task.seed,
-                config_overrides=overrides,
-                nsgaii_variation=variant_variations.get(task.variant.name),
-            )
+    rows = run_ablation(Path("results/ablation_demo"))
+    for row in rows:
+        print(
+            row["variant"],
+            row["seed"],
+            row["state"],
+            row["task_id"],
+            row["selected_run_id"],
         )
-        variant_names.append(task.variant.name)
-
-    results = run_study(study_tasks, mirror_output_roots=("results",))
-
-    hv_by_variant: dict[str, list[float]] = defaultdict(list)
-    for name, result in zip(variant_names, results):
-        hv = result.metrics.get("hv")
-        if hv is not None:
-            hv_by_variant[name].append(float(hv))
-
-    if not hv_by_variant:
-        print("No hypervolume metrics available to summarize.")
-        return
-
-    medians = {name: float(np.median(vals)) for name, vals in hv_by_variant.items()}
-    baseline = medians.get("baseline")
-    if baseline is None:
-        print("Baseline missing; medians:", medians)
-        return
-
-    deltas = {name: val - baseline for name, val in medians.items()}
-    print("Median HV by variant:", medians)
-    print("Delta vs baseline:", deltas)
 
 
 if __name__ == "__main__":

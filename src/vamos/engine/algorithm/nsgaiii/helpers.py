@@ -9,7 +9,7 @@ This module provides helper functions for NSGA-III including:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 __all__ = [
     "fast_non_dominated_sort",
     "identify_extremes",
-    "compute_intercepts",
     "get_extreme_points",
     "get_nadir_point",
     "associate",
@@ -31,7 +30,7 @@ __all__ = [
 ]
 
 
-def _fronts_from_ranks(ranks: np.ndarray) -> list[np.ndarray]:
+def _fronts_from_ranks(ranks: np.ndarray[Any, Any]) -> list[np.ndarray[Any, Any]]:
     """Rebuild front index arrays from a rank vector in stable index order."""
     if ranks.size == 0:
         return []
@@ -56,7 +55,7 @@ def _fronts_from_ranks(ranks: np.ndarray) -> list[np.ndarray]:
 
 
 def fast_non_dominated_sort(
-    F: np.ndarray,
+    F: np.ndarray[Any, Any],
     kernel: KernelBackend | None = None,
 ) -> list[list[int]]:
     """Fast non-dominated sorting.
@@ -109,7 +108,7 @@ def fast_non_dominated_sort(
     return fronts
 
 
-def identify_extremes(shifted: np.ndarray) -> np.ndarray:
+def identify_extremes(shifted: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
     """Identify extreme points using ASF (Achievement Scalarization Function)."""
     if shifted.size == 0:
         return np.array([], dtype=int)
@@ -123,31 +122,12 @@ def identify_extremes(shifted: np.ndarray) -> np.ndarray:
     return extremes
 
 
-def compute_intercepts(shifted: np.ndarray, extreme_idx: np.ndarray) -> np.ndarray:
-    """Compute intercepts from extreme points (legacy helper)."""
-    n_obj = shifted.shape[1]
-    if extreme_idx.size == 0:
-        return np.ones(n_obj, dtype=float)
-    extreme_pts = shifted[extreme_idx]
-    intercepts = np.zeros(n_obj, dtype=float)
-    try:
-        b = np.ones(n_obj)
-        plane = np.linalg.solve(extreme_pts, b)
-        intercepts = 1.0 / plane
-    except Exception:
-        intercepts = shifted.max(axis=0)
-    if np.any(~np.isfinite(intercepts)) or np.any(intercepts <= 1e-12):
-        intercepts = shifted.max(axis=0)
-    intercepts = np.where(intercepts > 0, intercepts, 1.0)
-    return intercepts
-
-
 def get_extreme_points(
-    F: np.ndarray,
+    F: np.ndarray[Any, Any],
     n_obj: int,
-    ideal_point: np.ndarray,
-    extreme_points: np.ndarray | None = None,
-) -> np.ndarray:
+    ideal_point: np.ndarray[Any, Any],
+    extreme_points: np.ndarray[Any, Any] | None = None,
+) -> np.ndarray[Any, Any]:
     """Identify extreme points using ASF, preserving previous extremes."""
     if F.size == 0:
         return np.empty((0, n_obj), dtype=float)
@@ -166,12 +146,12 @@ def get_extreme_points(
 
 
 def get_nadir_point(
-    extreme_points: np.ndarray,
-    ideal_point: np.ndarray,
-    worst_point: np.ndarray,
-    worst_of_front: np.ndarray,
-    worst_of_population: np.ndarray,
-) -> np.ndarray:
+    extreme_points: np.ndarray[Any, Any],
+    ideal_point: np.ndarray[Any, Any],
+    worst_point: np.ndarray[Any, Any],
+    worst_of_front: np.ndarray[Any, Any],
+    worst_of_population: np.ndarray[Any, Any],
+) -> np.ndarray[Any, Any]:
     """Compute nadir point using extreme points (Deb & Jain 2014)."""
     try:
         M = extreme_points - ideal_point
@@ -187,13 +167,13 @@ def get_nadir_point(
     mask = nadir - ideal_point <= 1e-6
     nadir = nadir.copy()
     nadir[mask] = worst_of_population[mask]
-    return nadir
+    return np.asarray(nadir)
 
 
 def associate(
-    normalized_F: np.ndarray,
-    ref_dirs_norm: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
+    normalized_F: np.ndarray[Any, Any],
+    ref_dirs_norm: np.ndarray[Any, Any],
+) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]:
     """Associate solutions with reference directions.
 
     Parameters
@@ -221,13 +201,13 @@ def associate(
 
 
 def niche_selection(
-    front: np.ndarray,
+    front: np.ndarray[Any, Any],
     n_remaining: int,
-    niche_counts: np.ndarray,
-    associations: np.ndarray,
-    distances: np.ndarray,
+    niche_counts: np.ndarray[Any, Any],
+    associations: np.ndarray[Any, Any],
+    distances: np.ndarray[Any, Any],
     rng: np.random.Generator,
-) -> np.ndarray:
+) -> np.ndarray[Any, Any]:
     """Perform niche-based selection from the critical front (NSGA-III)."""
     selected: list[int] = []
     if front.size == 0 or n_remaining <= 0:
@@ -269,27 +249,27 @@ def niche_selection(
 
 
 def nsgaiii_survival(
-    X: np.ndarray,
-    F: np.ndarray,
-    G: np.ndarray | None,
-    X_off: np.ndarray,
-    F_off: np.ndarray,
-    G_off: np.ndarray | None,
+    X: np.ndarray[Any, Any],
+    F: np.ndarray[Any, Any],
+    G: np.ndarray[Any, Any] | None,
+    X_off: np.ndarray[Any, Any],
+    F_off: np.ndarray[Any, Any],
+    G_off: np.ndarray[Any, Any] | None,
     pop_size: int,
-    ref_dirs_norm: np.ndarray,
+    ref_dirs_norm: np.ndarray[Any, Any],
     rng: np.random.Generator,
-    ideal_point: np.ndarray,
-    extreme_points: np.ndarray | None,
-    worst_point: np.ndarray,
+    ideal_point: np.ndarray[Any, Any],
+    extreme_points: np.ndarray[Any, Any] | None,
+    worst_point: np.ndarray[Any, Any],
     kernel: KernelBackend | None = None,
 ) -> tuple[
-    np.ndarray,
-    np.ndarray,
-    np.ndarray | None,
-    np.ndarray,
-    np.ndarray,
-    np.ndarray | None,
-    np.ndarray,
+    np.ndarray[Any, Any],
+    np.ndarray[Any, Any],
+    np.ndarray[Any, Any] | None,
+    np.ndarray[Any, Any],
+    np.ndarray[Any, Any],
+    np.ndarray[Any, Any] | None,
+    np.ndarray[Any, Any],
 ]:
     """Perform NSGA-III survival selection with niching.
 
@@ -352,7 +332,7 @@ def nsgaiii_survival(
     associations, distances = associate(normalized, ref_dirs_norm)
     niche_counts = np.zeros(ref_dirs_norm.shape[0], dtype=int)
 
-    last_front: np.ndarray | None = None
+    last_front: np.ndarray[Any, Any] | None = None
     for front in fronts:
         if len(survivor_indices) + front.size <= pop_size:
             survivor_indices.extend(front.tolist())
@@ -381,8 +361,8 @@ def nsgaiii_survival(
 
 def evaluate_population_with_constraints(
     problem: ProblemProtocol,
-    X: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray | None]:
+    X: np.ndarray[Any, Any],
+) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any] | None]:
     """Evaluate population and compute constraints if present.
 
     Parameters
@@ -400,7 +380,7 @@ def evaluate_population_with_constraints(
     n_obj = problem.n_obj
     n_con = getattr(problem, "n_con", 0) or 0
 
-    out: dict[str, np.ndarray] = {"F": np.empty((X.shape[0], n_obj), dtype=np.float64)}
+    out: dict[str, np.ndarray[Any, Any]] = {"F": np.empty((X.shape[0], n_obj), dtype=np.float64)}
     if n_con > 0:
         out["G"] = np.empty((X.shape[0], n_con), dtype=np.float64)
 

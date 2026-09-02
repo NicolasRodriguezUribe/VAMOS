@@ -1,0 +1,24 @@
+{
+  "document_type": "vamos.stable-exit-codes",
+  "run": {
+    "integrity_or_resource_or_path": 3,
+    "output_collision": 8,
+    "replay_execution_or_mismatch": 7,
+    "replay_unavailable": 6,
+    "schema_or_layout": 4,
+    "success": 0,
+    "usage": 2,
+    "verification_requirement": 5
+  },
+  "schema_version": "1.0.0",
+  "study": {
+    "cancelled_or_interrupted": 8,
+    "collision_or_ownership": 5,
+    "infrastructure": 7,
+    "malformed_or_integrity": 3,
+    "paused_or_completed_with_failures": 6,
+    "schema_or_state_or_retry": 4,
+    "success": 0,
+    "usage_or_invalid_spec": 2
+  }
+}

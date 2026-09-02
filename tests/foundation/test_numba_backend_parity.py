@@ -161,7 +161,8 @@ def test_numba_backend_mutation_matches_numpy_for_same_seed():
     numpy_kernel.polynomial_mutation(X_np, params, np.random.default_rng(0), 0.0, 1.0)
     numba_kernel.polynomial_mutation(X_nb, params, np.random.default_rng(0), 0.0, 1.0)
 
-    np.testing.assert_allclose(X_nb, X_np, rtol=0.0, atol=0.0)
+    # NumPy and Numba may round the same float64 expression one ULP apart.
+    np.testing.assert_allclose(X_nb, X_np, rtol=0.0, atol=np.finfo(np.float64).eps)
 
 
 @pytest.mark.numba

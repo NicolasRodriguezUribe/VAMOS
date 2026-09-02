@@ -40,9 +40,9 @@ def _extract_defaults(config: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def _diff_defaults(base_config: dict[str, Any], resolved_config: dict[str, Any]) -> dict[str, Any]:
+def _diff_defaults(base_config: dict[str, Any], run_config: dict[str, Any]) -> dict[str, Any]:
     base_defaults = base_config.get("defaults")
-    resolved_defaults = resolved_config.get("defaults")
+    resolved_defaults = run_config.get("defaults")
     if not isinstance(base_defaults, dict) or not isinstance(resolved_defaults, dict):
         return {}
 
@@ -99,11 +99,11 @@ def summarize_plan(plan_dir: Path, run_dir: Path | None = None) -> dict[str, obj
     if run_dir is not None:
         resolved_run_dir = Path(run_dir)
         run_report_path = resolved_run_dir / "run_report.json"
-        resolved_config_path = resolved_run_dir / "resolved_config.json"
+        run_config_path = resolved_run_dir / "execution_config.json"
         run_section: dict[str, object] = {
             "run_dir": str(resolved_run_dir),
             "run_report_path": str(run_report_path),
-            "resolved_config_path": str(resolved_config_path),
+            "execution_config_path": str(run_config_path),
         }
 
         if run_report_path.is_file():
@@ -111,15 +111,15 @@ def summarize_plan(plan_dir: Path, run_dir: Path | None = None) -> dict[str, obj
             for key in ("status", "exit_code", "started_at", "ended_at", "smoke", "smoke_evals", "warnings"):
                 if key in report:
                     run_section[key] = report[key]
-        if resolved_config_path.is_file():
-            resolved_config = _load_json(resolved_config_path)
+        if run_config_path.is_file():
+            run_config = _load_json(run_config_path)
             run_section["resolved_overrides"] = {
-                "defaults": _diff_defaults(execution_config, resolved_config),
+                "defaults": _diff_defaults(execution_config, run_config),
             }
         summary["run"] = run_section
         commands = summary["recommended_next_commands"]
         if isinstance(commands, list):
-            commands.append(f"vamos --config {resolved_config_path}")
+            commands.append(f"vamos --config {run_config_path}")
 
     return summary
 

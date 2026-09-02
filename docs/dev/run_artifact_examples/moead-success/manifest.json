@@ -1,0 +1,318 @@
+{
+  "artifacts": [
+    {
+      "bytes": 576,
+      "canonical": true,
+      "media_type": "application/vnd.vamos.environment+json",
+      "path": "environment.json",
+      "required_for": [
+        "inspect",
+        "verify",
+        "replay"
+      ],
+      "role": "environment",
+      "sha256": "1da72084923610117e69ae2f8e8555a68d2be7d4ad4c3881145695ff0fd81091"
+    },
+    {
+      "array_contract": {
+        "F": {
+          "dtype": "<f8",
+          "shape": [
+            3,
+            3
+          ]
+        },
+        "X": {
+          "dtype": "<f8",
+          "shape": [
+            3,
+            4
+          ]
+        },
+        "reference_directions": {
+          "dtype": "<f8",
+          "shape": [
+            3,
+            3
+          ]
+        }
+      },
+      "bytes": 1002,
+      "canonical": true,
+      "media_type": "application/vnd.vamos.result-bundle+npz",
+      "path": "result.npz",
+      "required_for": [
+        "load",
+        "inspect",
+        "verify",
+        "replay",
+        "analysis"
+      ],
+      "role": "result_bundle",
+      "sha256": "e388190d3611c270d776ca13ba0bf93f75616233acc3151c594c65033c926fa9"
+    }
+  ],
+  "document_type": "vamos.run-manifest",
+  "integrity": {
+    "manifest_sha256": "fa3d00f204b37fd4d225b126a180647ec05fd1ffe9552a1d1cdec4c2f4a4061d"
+  },
+  "labels": {
+    "purpose": "contract-example"
+  },
+  "name": "MOEA/D success example",
+  "outcome": {
+    "evaluations": 9,
+    "generations": 6,
+    "n_objectives": 3,
+    "n_solutions": 3,
+    "result_mode": "population",
+    "runtime_ms": 8.75,
+    "termination_reason": "max_evaluations",
+    "usable_result": true
+  },
+  "provenance": {
+    "entry_point": {
+      "kind": "python_api",
+      "python": {
+        "arguments_source": "requested_spec",
+        "callable": "vamos.optimize"
+      }
+    },
+    "environment_ref": "environment",
+    "implementation": {
+      "distribution": {
+        "name": "vamos-optimization",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "version": "1.0.0"
+      },
+      "vamos_version": "1.0.0"
+    },
+    "source": {
+      "diff_sha256": null,
+      "dirty": false,
+      "git_sha": "d8f950dcd9ca43f9f679194d579ffb9a85e2d5f0",
+      "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "timestamps": {
+      "completed_at": "2026-01-01T00:01:01Z",
+      "started_at": "2026-01-01T00:01:00Z"
+    }
+  },
+  "replayability": {
+    "declared_level": "exact",
+    "deterministic": true,
+    "exact_requirements": [
+      "same_resolved_spec",
+      "same_implementation",
+      "same_backend",
+      "materially_equivalent_environment"
+    ],
+    "reasons": []
+  },
+  "requested_spec": {
+    "defaults": {
+      "algorithm": "moead",
+      "engine": "numpy",
+      "max_evaluations": 9,
+      "population_size": 3,
+      "seed": 13
+    },
+    "problems": {
+      "dtlz2": {
+        "n_obj": 3,
+        "n_var": 4
+      }
+    },
+    "version": "1"
+  },
+  "resolved_spec": {
+    "algorithm": {
+      "component_id": "vamos.algorithm:moead@1",
+      "config": {
+        "aggregation": {
+          "method": "pbi",
+          "theta": 5.0
+        },
+        "batch_size": 1,
+        "delta": 0.9,
+        "neighbor_size": 2,
+        "pop_size": 3,
+        "replace_limit": 2,
+        "result_mode": "population"
+      },
+      "kind": "algorithm",
+      "provider": {
+        "distribution": "vamos-optimization",
+        "type": "built_in"
+      },
+      "resolution": {
+        "contract_version": 1
+      }
+    },
+    "backend": {
+      "evaluation": {
+        "component_id": "vamos.evaluation:serial@1",
+        "config": {
+          "ordered": true,
+          "workers": 1
+        },
+        "kind": "evaluation_backend",
+        "provider": {
+          "distribution": "vamos-optimization",
+          "type": "built_in"
+        },
+        "resolution": {
+          "contract_version": 1
+        }
+      },
+      "kernel": {
+        "component_id": "vamos.kernel:numpy@1",
+        "config": {},
+        "kind": "kernel_backend",
+        "provider": {
+          "distribution": "vamos-optimization",
+          "type": "built_in"
+        },
+        "resolution": {
+          "capabilities": [
+            "crowding",
+            "non_dominated_sort"
+          ],
+          "name": "numpy",
+          "version": "2.2.0"
+        }
+      }
+    },
+    "defaults_applied": [],
+    "determinism": {
+      "declared": true,
+      "rng": "numpy.random.Generator/PCG64"
+    },
+    "operators": {
+      "crossover": {
+        "component_id": "vamos.operator:sbx@1",
+        "config": {
+          "eta": 20.0,
+          "prob": 1.0
+        },
+        "kind": "operator",
+        "provider": {
+          "distribution": "vamos-optimization",
+          "type": "built_in"
+        },
+        "resolution": {
+          "contract_version": 1
+        }
+      },
+      "initializer": {
+        "component_id": "vamos.operator:random@1",
+        "config": {},
+        "kind": "operator",
+        "provider": {
+          "distribution": "vamos-optimization",
+          "type": "built_in"
+        },
+        "resolution": {
+          "contract_version": 1
+        }
+      },
+      "mutation": {
+        "component_id": "vamos.operator:polynomial@1",
+        "config": {
+          "eta": 20.0,
+          "prob": 0.25
+        },
+        "kind": "operator",
+        "provider": {
+          "distribution": "vamos-optimization",
+          "type": "built_in"
+        },
+        "resolution": {
+          "contract_version": 1
+        }
+      },
+      "repair": {
+        "component_id": "vamos.operator:clip@1",
+        "config": {},
+        "kind": "operator",
+        "provider": {
+          "distribution": "vamos-optimization",
+          "type": "built_in"
+        },
+        "resolution": {
+          "contract_version": 1
+        }
+      },
+      "selection": {
+        "component_id": "vamos.operator:neighborhood@1",
+        "config": {
+          "delta": 0.9
+        },
+        "kind": "operator",
+        "provider": {
+          "distribution": "vamos-optimization",
+          "type": "built_in"
+        },
+        "resolution": {
+          "contract_version": 1
+        }
+      }
+    },
+    "population": {
+      "archive_size": null,
+      "initial_size": 3,
+      "offspring_size": 1
+    },
+    "problem": {
+      "component_id": "vamos.problem:dtlz2@1",
+      "config": {
+        "constraint_convention": "g_lte_0",
+        "encoding": "real",
+        "n_obj": 3,
+        "n_var": 4
+      },
+      "kind": "problem",
+      "provider": {
+        "distribution": "vamos-optimization",
+        "type": "built_in"
+      },
+      "resolution": {
+        "contract_version": 1
+      }
+    },
+    "reference_directions": {
+      "count": 3,
+      "generation": {
+        "method": "simplex_lattice",
+        "partitions": 1
+      },
+      "normalization": "unit_sum",
+      "storage": "result.npz#reference_directions"
+    },
+    "seed": 13,
+    "spec_version": "vamos.resolved-run-spec/1",
+    "termination": {
+      "component_id": "vamos.termination:max_evaluations@1",
+      "config": {
+        "hard_max_evaluations": 9,
+        "max_evaluations": 9
+      },
+      "kind": "termination",
+      "provider": {
+        "distribution": "vamos-optimization",
+        "type": "built_in"
+      },
+      "resolution": {
+        "contract_version": 1
+      }
+    }
+  },
+  "run_id": "22222222-2222-4222-8222-222222222222",
+  "schema_version": "1.0.0",
+  "status": "succeeded",
+  "task_id": "sha256:5ce7c7728ff63560fc2939d476a556c299b85bcec4304ae4becc847525a24869",
+  "timestamps": {
+    "completed_at": "2026-01-01T00:01:01Z",
+    "started_at": "2026-01-01T00:01:00Z"
+  }
+}

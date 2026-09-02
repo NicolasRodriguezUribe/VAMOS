@@ -22,18 +22,21 @@ from vamos import optimize
 
 result = optimize("zdt1", algorithm="smsemoa", max_evaluations=10000, seed=42)
 
-print(result.F.shape)  # (100, 2)
+print(result.F.shape)  # (n_solutions, 2)
 ```
 
-With explicit parameters:
+With an explicit public configuration:
 
 ```python
+from vamos.algorithms import SMSEMOAConfig
+
+config = SMSEMOAConfig.default(pop_size=100, n_var=30)
 result = optimize(
     "zdt2",
     algorithm="smsemoa",
     max_evaluations=20000,
     seed=42,
-    algorithm_kwargs={"pop_size": 100, "crossover_eta": 20},
+    algorithm_config=config,
 )
 ```
 
@@ -47,7 +50,7 @@ result = optimize(
 | `crossover_prob` | 1.0 | SBX crossover probability. |
 | `crossover_eta` | 20 | SBX distribution index. |
 | `mutation_eta` | 20 | Polynomial mutation distribution index. |
-| `ref_point` | auto | Hypervolume reference point. Auto-set as `nadir + 1.1 * range` if not provided. |
+| `reference_point` | adaptive | Typed reference-point descriptor used by selection. |
 
 ---
 

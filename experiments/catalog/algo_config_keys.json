@@ -17,7 +17,6 @@
   "moead": [
     "aggregation",
     "archive",
-    "archive_type",
     "constraint_mode",
     "crossover",
     "delta",
@@ -36,7 +35,6 @@
   "nsgaii": [
     "adaptive_operator_selection",
     "archive",
-    "archive_type",
     "constraint_mode",
     "crossover",
     "engine",
@@ -81,7 +79,6 @@
   ],
   "smsemoa": [
     "archive",
-    "archive_type",
     "constraint_mode",
     "crossover",
     "engine",
