@@ -10,13 +10,19 @@ python tools/release_check.py --version 1.0.0
 ```
 
 Run it from a clean release branch with the development, documentation,
-compute, and release tooling installed. Build and release tools are pinned and
-audited separately from runtime dependencies:
+compute, and release tooling installed. Keep a second dependency-minimal
+environment for the canonical typing and health gates; optional compute,
+analysis, and Studio distributions intentionally do not enter that environment.
+Build and release tools are pinned and audited separately from runtime
+dependencies:
 
 ```bash
-python -m pip install -c constraints/ci.txt -e ".[dev,docs,compute,studio]"
+python -m pip install -c constraints/ci.txt -e ".[dev,docs,compute,analysis,examples,studio]"
 python -m pip install -r release/requirements-build.txt
 python -m pip install -r release/requirements-tools.txt
+python -m venv <typing-venv>
+<typing-venv>/bin/python -m pip install -r release/requirements-build.txt
+<typing-venv>/bin/python -m pip install --no-build-isolation -c constraints/ci.txt -e ".[dev]"
 ```
 
 For an auditable candidate, bind the check to the intended identity and write
@@ -28,6 +34,7 @@ python tools/release_check.py \
   --expected-branch release/1.0.0 \
   --expected-commit <full-commit-sha> \
   --tag-state pre-normalization \
+  --typing-python <typing-venv>/bin/python \
   --output-dir <new-empty-evidence-directory>
 ```
 

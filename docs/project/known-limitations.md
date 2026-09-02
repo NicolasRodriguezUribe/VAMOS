@@ -38,7 +38,7 @@ unsupported behavior rather than future compatibility promises.
 
 ## Durable studies
 
-- A study has one mutating owner. Do not run, resume, or retry the same study
+- Study mutation is single-owner. Do not run, resume, or retry the same study
   concurrently from multiple processes.
 - Study execution is sequential in 1.0.0. Distributed workers, multiprocess
   ownership, and cross-process cancellation are unsupported.

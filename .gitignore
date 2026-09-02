@@ -30,6 +30,7 @@ artifacts/tables/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
 *.swp
 *.swo
 

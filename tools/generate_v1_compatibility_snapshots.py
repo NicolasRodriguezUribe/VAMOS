@@ -331,7 +331,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         path = OUTPUT_ROOT / name
         expected = _json_bytes(value)
         if args.check:
-            if not path.is_file() or path.read_bytes() != expected:
+            # Git may materialize the canonical LF JSON with CRLF on Windows.
+            # Text mode normalizes line endings while preserving every other
+            # byte-level formatting decision in the snapshot.
+            if not path.is_file() or path.read_text(encoding="utf-8") != expected.decode("utf-8"):
                 mismatches.append(path.relative_to(REPO_ROOT).as_posix())
         else:
             path.write_bytes(expected)

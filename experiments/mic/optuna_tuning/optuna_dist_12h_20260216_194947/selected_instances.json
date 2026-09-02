@@ -1,5 +1,5 @@
 {
-  "selection_source": "C:\\Users\\nicor\\Desktop\\VAMOS\\experiments\\mic\\instance_selection\\representative_instances_mic_runtime_p30p0_k10.json",
+  "selection_source": "experiments/mic/instance_selection/representative_instances_mic_runtime_p30p0_k10.json",
   "selected_instances": [
     "cec2009_uf1",
     "cec2009_uf10",

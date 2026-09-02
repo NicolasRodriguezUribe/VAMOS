@@ -71,8 +71,14 @@ jobs:
 
       - name: Install source and release tooling
         run: |
-          python -m pip install --disable-pip-version-check -c constraints/ci.txt -e ".[dev,docs,compute,studio]"
+          python -m pip install --disable-pip-version-check -c constraints/ci.txt -e ".[dev,docs,compute,analysis,examples,studio]"
           python -m pip install --disable-pip-version-check -r release/requirements-tools.txt
+
+      - name: Create dependency-minimal canonical typing environment
+        run: |
+          python -m venv "$RUNNER_TEMP/typing-venv"
+          "$RUNNER_TEMP/typing-venv/bin/python" -m pip install --disable-pip-version-check -r release/requirements-build.txt
+          "$RUNNER_TEMP/typing-venv/bin/python" -m pip install --disable-pip-version-check --no-build-isolation -c constraints/ci.txt -e ".[dev]"
 
       - name: Run canonical checker
         env:
@@ -84,6 +90,7 @@ jobs:
           --expected-commit "$VAMOS_RELEASE_COMMIT"
           --tag-state pre-normalization
           --artifacts "$RUNNER_TEMP/candidate-dist"
+          --typing-python "$RUNNER_TEMP/typing-venv/bin/python"
           --output-dir "$RUNNER_TEMP/release-evidence"
 
       - name: Upload complete release evidence
