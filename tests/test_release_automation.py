@@ -74,6 +74,7 @@ def test_release_workflows_are_parseable_pinned_and_cover_claimed_matrix() -> No
     assert 'python -m venv "$RUNNER_TEMP/typing-venv"' in release
     assert '--typing-python "$RUNNER_TEMP/typing-venv/bin/python"' in release
     assert '-e ".[dev,docs,compute,analysis,examples,studio]"' in release
+    assert '"tests/architecture/test_ruff_format_gate.py"' in (ROOT / "tools" / "release_check.py").read_text(encoding="utf-8")
     assert "release_smoke.py" in release
     assert "test_security_models.py" in release
     assert "vamos-${{ env.VAMOS_RELEASE_VERSION }}-frozen" in release

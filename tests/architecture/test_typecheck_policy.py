@@ -256,9 +256,11 @@ def test_health_and_ci_invoke_the_same_typecheck_commands_once() -> None:
     assert "mypy --config-file pyproject.toml" not in ci
 
 
-def test_release_workflows_require_release_policy_scope() -> None:
+def test_release_workflows_require_canonical_release_policy() -> None:
     release = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
     publish = (ROOT / ".github" / "workflows" / "upload_pypi.yml").read_text(encoding="utf-8")
+    checker = (ROOT / "tools" / "release_check.py").read_text(encoding="utf-8")
 
-    assert release.count("python tools/typecheck.py --scope release") == 1
-    assert publish.count("python tools/typecheck.py --scope release") == 1
+    assert release.count("python tools/release_check.py") == 1
+    assert checker.count('[typing_python, "tools/typecheck.py", "--scope", "release"]') == 1
+    assert publish.count('test "$(jq -r .status release-check-report.json)" = "passed"') == 1
