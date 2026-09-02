@@ -128,6 +128,14 @@ def test_ci_constraints_retain_declared_python_310_support() -> None:
     assert 'ipython==9.0.2 ; python_version >= "3.11"' in constraints
 
 
+def test_notebook_execution_dependencies_include_a_pinned_kernel() -> None:
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    constraints = (ROOT / "constraints" / "ci.txt").read_text(encoding="utf-8")
+
+    assert pyproject.count('"ipykernel>=7.3"') == 2
+    assert "ipykernel==7.3.0" in constraints
+
+
 def test_ci_constraints_use_reviewed_security_fixed_tooling() -> None:
     constraints = (ROOT / "constraints" / "ci.txt").read_text(encoding="utf-8")
 
