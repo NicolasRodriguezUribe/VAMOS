@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import math
 from collections.abc import Mapping
+from typing import Any
 
 import numpy as np
 
@@ -14,8 +15,8 @@ MANDATORY_EXACT_ARRAYS = ("F", "X")
 
 
 def compare_array_collections(
-    stored: Mapping[str, np.ndarray],
-    replay: Mapping[str, np.ndarray],
+    stored: Mapping[str, np.ndarray[Any, Any]],
+    replay: Mapping[str, np.ndarray[Any, Any]],
 ) -> tuple[ArrayComparison, ...]:
     """Compare every role in either collection with mandatory F/X evidence."""
     roles = sorted(set(stored) | set(replay) | set(MANDATORY_EXACT_ARRAYS))
@@ -27,7 +28,7 @@ def comparisons_are_exact(comparisons: tuple[ArrayComparison, ...]) -> bool:
     return all(item.exact for item in comparisons) and all(by_role.get(role) is not None for role in MANDATORY_EXACT_ARRAYS)
 
 
-def _compare_array(role: str, stored: np.ndarray | None, replay: np.ndarray | None) -> ArrayComparison:
+def _compare_array(role: str, stored: np.ndarray[Any, Any] | None, replay: np.ndarray[Any, Any] | None) -> ArrayComparison:
     stored_bytes = _logical_bytes(stored)
     replay_bytes = _logical_bytes(replay)
     mismatch = _mismatch(stored, replay, stored_bytes, replay_bytes)
@@ -46,7 +47,9 @@ def _compare_array(role: str, stored: np.ndarray | None, replay: np.ndarray | No
     )
 
 
-def _mismatch(stored: np.ndarray | None, replay: np.ndarray | None, stored_bytes: bytes | None, replay_bytes: bytes | None) -> str | None:
+def _mismatch(
+    stored: np.ndarray[Any, Any] | None, replay: np.ndarray[Any, Any] | None, stored_bytes: bytes | None, replay_bytes: bytes | None
+) -> str | None:
     if stored is None:
         return "missing_stored_array"
     if replay is None:
@@ -60,7 +63,7 @@ def _mismatch(stored: np.ndarray | None, replay: np.ndarray | None, stored_bytes
     return None
 
 
-def _logical_bytes(value: np.ndarray | None) -> bytes | None:
+def _logical_bytes(value: np.ndarray[Any, Any] | None) -> bytes | None:
     if value is None:
         return None
     return np.ascontiguousarray(value).tobytes(order="C")
@@ -71,8 +74,8 @@ def _hash(value: bytes | None) -> str | None:
 
 
 def _first_difference(
-    stored: np.ndarray | None,
-    replay: np.ndarray | None,
+    stored: np.ndarray[Any, Any] | None,
+    replay: np.ndarray[Any, Any] | None,
     stored_bytes: bytes | None,
     replay_bytes: bytes | None,
 ) -> tuple[int, ...] | None:
@@ -89,7 +92,7 @@ def _first_difference(
     return tuple(int(value) for value in np.unravel_index(flat_index, stored.shape))
 
 
-def _maximum_absolute_difference(stored: np.ndarray | None, replay: np.ndarray | None) -> float | None:
+def _maximum_absolute_difference(stored: np.ndarray[Any, Any] | None, replay: np.ndarray[Any, Any] | None) -> float | None:
     if stored is None or replay is None or stored.shape != replay.shape or stored.size == 0:
         return None
     if stored.dtype.kind not in "biuf" or replay.dtype.kind not in "biuf":

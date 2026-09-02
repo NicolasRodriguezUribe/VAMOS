@@ -28,11 +28,11 @@ class RVEAState(AlgorithmState):
     max_evals: int = 0
     max_gen: int = 1
     variation: VariationPipeline | None = None
-    ref_dirs: np.ndarray = field(default_factory=lambda: np.array([]))
-    V: np.ndarray = field(default_factory=lambda: np.array([]))
-    gamma: np.ndarray = field(default_factory=lambda: np.array([]))
-    ideal: np.ndarray = field(default_factory=lambda: np.array([]))
-    nadir: np.ndarray | None = None
+    ref_dirs: np.ndarray[Any, Any] = field(default_factory=lambda: np.array([]))
+    V: np.ndarray[Any, Any] = field(default_factory=lambda: np.array([]))
+    gamma: np.ndarray[Any, Any] = field(default_factory=lambda: np.array([]))
+    ideal: np.ndarray[Any, Any] = field(default_factory=lambda: np.array([]))
+    nadir: np.ndarray[Any, Any] | None = None
     alpha: float = 2.0
     adapt_interval: int | None = None
     n_obj: int = 2

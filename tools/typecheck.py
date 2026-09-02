@@ -128,7 +128,8 @@ class RatchetComparison:
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest().upper()
+    normalized = path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest().upper()
 
 
 def _distribution_versions() -> dict[str, str]:

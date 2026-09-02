@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -31,12 +32,12 @@ class RunInfo:
 @dataclass
 class RunData:
     info: RunInfo
-    F: np.ndarray | None
-    X: np.ndarray | None
-    G: np.ndarray | None
-    archive_F: np.ndarray | None
-    archive_X: np.ndarray | None
-    archive_G: np.ndarray | None
+    F: np.ndarray[Any, Any] | None
+    X: np.ndarray[Any, Any] | None
+    G: np.ndarray[Any, Any] | None
+    archive_F: np.ndarray[Any, Any] | None
+    archive_X: np.ndarray[Any, Any] | None
+    archive_G: np.ndarray[Any, Any] | None
     metadata: dict[str, object]
 
 
@@ -117,7 +118,7 @@ def aggregate_results(runs: Iterable[RunInfo]) -> object:
     return records
 
 
-def _array_or_none(value: object) -> np.ndarray | None:
+def _array_or_none(value: object) -> np.ndarray[Any, Any] | None:
     return value if isinstance(value, np.ndarray) else None
 
 

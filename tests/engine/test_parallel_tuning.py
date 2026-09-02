@@ -2,6 +2,7 @@ import time
 from typing import Any
 
 import pytest
+from joblib import parallel_config
 
 from src.vamos.engine.tuning.racing.core import RacingTuner
 from src.vamos.engine.tuning.racing.param_space import ParamSpace, Real
@@ -43,7 +44,8 @@ def test_parallel_speedup():
     tuner_par = RacingTuner(task, scenario_par, max_initial_configs=8)
 
     start = time.time()
-    tuner_par.run(slow_eval_fn)
+    with parallel_config(backend="threading"):
+        tuner_par.run(slow_eval_fn)
     dur_par = time.time() - start
 
     # Expect parallel to be faster

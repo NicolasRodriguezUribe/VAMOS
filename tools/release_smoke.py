@@ -272,11 +272,13 @@ def _cli_lifecycle(run_root: Path, study_root: Path) -> dict[str, Any]:
 
 
 def _cli(*arguments: str, expected_exit: int = 0) -> subprocess.CompletedProcess[str]:
-    executable = Path(sys.executable).with_name("vamos.exe" if os.name == "nt" else "vamos")
+    executable = shutil.which("vamos")
+    if executable is None:
+        raise AssertionError("The installed 'vamos' console script is not available on PATH.")
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     completed = subprocess.run(
-        [str(executable), *arguments],
+        [executable, *arguments],
         capture_output=True,
         text=True,
         encoding="utf-8",

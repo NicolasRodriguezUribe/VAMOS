@@ -237,7 +237,7 @@ class AGEMOEA:
             )
         )
 
-    def ask(self) -> np.ndarray:
+    def ask(self) -> np.ndarray[Any, Any]:
         """Generate offspring for external evaluation.
 
         Returns

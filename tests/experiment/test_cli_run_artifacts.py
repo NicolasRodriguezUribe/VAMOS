@@ -21,7 +21,7 @@ def _source(tmp_path: Path) -> Path:
 def _environment_mismatch(source: Path) -> None:
     environment_path = source / "environment.json"
     environment = json.loads(environment_path.read_text(encoding="utf-8"))
-    environment["python"]["version"] = "3.11.0"
+    environment["python"]["version"] = "0.0"
     environment_path.write_bytes(stored_json_bytes(environment))
     manifest_path = source / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

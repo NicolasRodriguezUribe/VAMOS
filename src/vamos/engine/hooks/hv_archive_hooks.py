@@ -26,7 +26,7 @@ def _hv_logger() -> _logging.Logger:
     return _logging.getLogger(__name__)
 
 
-def _try_compute_hv(F: np.ndarray, ref: list[float] | None = None) -> float | None:
+def _try_compute_hv(F: np.ndarray[Any, Any], ref: list[float] | None = None) -> float | None:
     """
     Best-effort HV computation:
       - For 2D minimization: exact via compute_hypervolume
@@ -75,8 +75,8 @@ class CompositeLiveVisualization:
     def on_generation(
         self,
         generation: int,
-        F: np.ndarray | None = None,
-        X: np.ndarray | None = None,
+        F: np.ndarray[Any, Any] | None = None,
+        X: np.ndarray[Any, Any] | None = None,
         stats: dict[str, Any] | None = None,
     ) -> None:
         for cb in self._callbacks:
@@ -84,7 +84,7 @@ class CompositeLiveVisualization:
 
     def on_end(
         self,
-        final_F: np.ndarray | None = None,
+        final_F: np.ndarray[Any, Any] | None = None,
         final_stats: dict[str, Any] | None = None,
     ) -> None:
         for cb in self._callbacks:
@@ -119,7 +119,7 @@ class HookManager:
 
         self.monitor = HVConvergenceMonitor(cfg.stop_cfg) if cfg.stopping_enabled else None
         self.archive: ResultArchiveManager | None = None
-        self._archive_F: np.ndarray | None = None
+        self._archive_F: np.ndarray[Any, Any] | None = None
         self._archive_total_inserted = 0
         self._archive_total_pruned = 0
 
@@ -127,7 +127,7 @@ class HookManager:
         self._last_sample_evals: int | None = None
         self._stop_decision: HVDecision | None = None
 
-    def _ensure_archive(self, F: np.ndarray) -> None:
+    def _ensure_archive(self, F: np.ndarray[Any, Any]) -> None:
         if not self.cfg.archive_enabled or self.archive is not None:
             return
         archive = setup_result_archive(self.cfg.archive_cfg, n_var=0, n_obj=F.shape[1], dtype=np.dtype(float))
@@ -141,8 +141,8 @@ class HookManager:
     def on_generation(
         self,
         generation: int,
-        F: np.ndarray | None = None,
-        X: np.ndarray | None = None,
+        F: np.ndarray[Any, Any] | None = None,
+        X: np.ndarray[Any, Any] | None = None,
         stats: dict[str, Any] | None = None,
     ) -> None:
         if F is None:
@@ -156,7 +156,7 @@ class HookManager:
 
     def on_end(
         self,
-        final_F: np.ndarray | None = None,
+        final_F: np.ndarray[Any, Any] | None = None,
         final_stats: dict[str, Any] | None = None,
     ) -> None:
         return None
@@ -174,8 +174,8 @@ class HookManager:
     def on_checkpoint(
         self,
         evals: int,
-        F: np.ndarray,
-        X: np.ndarray | None = None,
+        F: np.ndarray[Any, Any],
+        X: np.ndarray[Any, Any] | None = None,
     ) -> None:
         del X
         # Update archive (optional)

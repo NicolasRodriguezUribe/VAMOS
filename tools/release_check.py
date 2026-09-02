@@ -97,7 +97,7 @@ class ReleaseChecker:
         self.dist = self.output / "dist"
         self.runtime_python: Path | None = None
         self.runtime_lock = self.output / "runtime-lock.txt"
-        self.typing_python = Path(args.typing_python).resolve() if args.typing_python else Path(sys.executable).resolve()
+        self.typing_python = Path(os.path.abspath(args.typing_python)) if args.typing_python else Path(sys.executable).resolve()
         if not self.typing_python.is_file():
             raise FileNotFoundError(f"Canonical typing Python does not exist: {self.typing_python}")
 

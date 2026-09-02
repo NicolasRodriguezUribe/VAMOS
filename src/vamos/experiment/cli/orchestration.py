@@ -102,8 +102,8 @@ def run_from_args(
             )
         else:
             effective_args.external_archive = base_external_archive
-        effective_args.hv_threshold = override.get("hv_threshold", args.hv_threshold)
-        effective_args.hv_reference_front = override.get("hv_reference_front", args.hv_reference_front)
+        effective_args.hv_threshold = _override_value(override, "hv_threshold", cast(float | None, args.hv_threshold))
+        effective_args.hv_reference_front = _override_value(override, "hv_reference_front", cast(str | None, args.hv_reference_front))
         effective_args.n_var = override.get("n_var", args.n_var)
         effective_args.n_obj = override.get("n_obj", args.n_obj)
         effective_args.eval_strategy = override.get("eval_strategy", args.eval_strategy)
@@ -111,7 +111,7 @@ def run_from_args(
         effective_args.live_viz = override.get("live_viz", args.live_viz)
         effective_args.live_viz_interval = override.get("live_viz_interval", args.live_viz_interval)
         effective_args.live_viz_max_points = override.get("live_viz_max_points", args.live_viz_max_points)
-        effective_args.track_genealogy = override.get("track_genealogy", getattr(args, "track_genealogy", False))
+        effective_args.track_genealogy = _override_value(override, "track_genealogy", cast(bool, getattr(args, "track_genealogy", False)))
         effective_args.nsgaii_variation = merge_variation_overrides(base_variation, _override_mapping(override, "nsgaii"))
         effective_args.moead_variation = merge_variation_overrides(
             getattr(args, "moead_variation", None), _override_mapping(override, "moead")

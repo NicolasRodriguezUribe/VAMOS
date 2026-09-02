@@ -24,8 +24,8 @@ def _utc_now() -> str:
 
 @dataclass(slots=True)
 class _PersistableResult:
-    F: np.ndarray | None
-    X: np.ndarray | None
+    F: np.ndarray[Any, Any] | None
+    X: np.ndarray[Any, Any] | None
     data: dict[str, Any]
     meta: dict[str, Any]
 
@@ -67,15 +67,15 @@ class StorageObserver(Observer):
     def on_generation(
         self,
         generation: int,
-        F: np.ndarray | None = None,
-        X: np.ndarray | None = None,
+        F: np.ndarray[Any, Any] | None = None,
+        X: np.ndarray[Any, Any] | None = None,
         stats: dict[str, Any] | None = None,
     ) -> None:
         return None
 
     def on_end(
         self,
-        final_F: np.ndarray | None = None,
+        final_F: np.ndarray[Any, Any] | None = None,
         final_stats: dict[str, Any] | None = None,
     ) -> None:
         if final_stats is None or self._ctx is None or final_F is None:

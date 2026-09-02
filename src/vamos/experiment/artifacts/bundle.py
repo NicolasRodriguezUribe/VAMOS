@@ -36,9 +36,9 @@ class ResultLike(Protocol):
     X: NDArray[Any] | None
 
 
-def snapshot_result_arrays(result: ResultLike, *, limits: LoadLimits) -> dict[str, np.ndarray]:
+def snapshot_result_arrays(result: ResultLike, *, limits: LoadLimits) -> dict[str, np.ndarray[Any, Any]]:
     """Copy every canonical numerical result array before persistence starts."""
-    arrays: dict[str, np.ndarray] = {}
+    arrays: dict[str, np.ndarray[Any, Any]] = {}
     raw_data = getattr(result, "data", {})
     data = raw_data if isinstance(raw_data, Mapping) else {}
     _capture_array(arrays, "F", result.F, limits=limits)
@@ -59,12 +59,12 @@ def snapshot_result_arrays(result: ResultLike, *, limits: LoadLimits) -> dict[st
     return arrays
 
 
-def write_result_bundle(path: Path, arrays: Mapping[str, np.ndarray], *, limits: LoadLimits) -> None:
+def write_result_bundle(path: Path, arrays: Mapping[str, np.ndarray[Any, Any]], *, limits: LoadLimits) -> None:
     """Write a copied array mapping to NPZ and flush it before return."""
     copied = {name: np.array(value, copy=True, order="K", subok=False) for name, value in arrays.items()}
     validate_array_collection(copied, required_f=True, limits=limits, operation="save result")
     with path.open("xb") as handle:
-        np.savez(handle, **copied)  # type: ignore[arg-type]
+        np.savez(handle, **copied)
         handle.flush()
         os.fsync(handle.fileno())
 
@@ -240,7 +240,7 @@ def load_result_bundle(
     limits: LoadLimits,
     required_f: bool,
     operation: str,
-) -> dict[str, np.ndarray]:
+) -> dict[str, np.ndarray[Any, Any]]:
     """Inspect, then materialize a ResultBundle with pickle disabled."""
     contracts = inspect_result_bundle(
         path,
@@ -266,12 +266,12 @@ def load_result_bundle(
     return arrays
 
 
-def array_contract(arrays: Mapping[str, np.ndarray]) -> dict[str, dict[str, Any]]:
+def array_contract(arrays: Mapping[str, np.ndarray[Any, Any]]) -> dict[str, dict[str, Any]]:
     return {name: {"dtype": value.dtype.str, "shape": [int(dim) for dim in value.shape]} for name, value in sorted(arrays.items())}
 
 
 def _capture_array(
-    arrays: dict[str, np.ndarray],
+    arrays: dict[str, np.ndarray[Any, Any]],
     name: str,
     value: Any,
     *,
