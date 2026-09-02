@@ -9,12 +9,11 @@ from typing import Any
 from vamos.engine.config.loader import load_experiment_spec
 from vamos.engine.tuning.ablation import AblationVariant, build_ablation_plan
 from vamos.experiment._execution_support import VariationConfigs
-from vamos.experiment.ablation import run_ablation_plan
+from vamos.experiment.ablation import run_ablation_plan, write_ablation_csv
 from vamos.foundation.core.experiment_config import ExperimentConfig
 
 from .ablation_parse import as_mapping, as_sequence, normalize_variants, parse_budget_overrides
 from .ablation_schema import validate_ablation_spec
-from .ablation_summary import write_summary_csv
 
 
 def _logger() -> logging.Logger:
@@ -177,7 +176,7 @@ def run_ablation(argv: Sequence[str] | None = None) -> None:
         summary_path_obj = summary_root / "summary" / "ablation_metrics.csv"
 
     if summary_path_obj is not None:
-        write_summary_csv(result, summary_path_obj)
+        write_ablation_csv(result, summary_path_obj)
         _logger().info("[Ablation] Summary CSV: %s", summary_path_obj)
 
     _logger().info("[Ablation] Completed %s tasks.", plan.n_tasks)

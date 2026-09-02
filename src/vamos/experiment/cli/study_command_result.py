@@ -70,8 +70,6 @@ def map_exit_code(operation: Operation, outcome: StudyReport | StudyError | str)
     if isinstance(outcome, StudyReport):
         if outcome.issues:
             return 3
-        if operation in {"inspect", "summarize"}:
-            return 0
         return _STATE_EXIT_CODES.get(outcome.state, 0)
     if isinstance(outcome, StudyError):
         reason_exit = _REASON_EXIT_CODES.get(outcome.reason)

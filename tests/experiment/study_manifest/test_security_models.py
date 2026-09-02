@@ -90,7 +90,10 @@ def test_existing_junction_or_symlink_destination_is_a_collision(tmp_path: Path)
             vamos.create_study(_spec(), output=link)
         assert list(target.iterdir()) == []
     finally:
-        os.rmdir(link)
+        if link.is_symlink():
+            link.unlink()
+        else:
+            os.rmdir(link)
 
 
 def test_data_only_load_does_not_resolve_execute_import_pickle_shell_or_network(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

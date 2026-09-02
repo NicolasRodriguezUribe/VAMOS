@@ -8,16 +8,13 @@
 
 ## Context
 
-VAMOS currently executes studies as an in-memory loop. Canonical RunManifest
-directories make each completed run durable, but no study-level authority
-records the immutable task set, attempts, interruption, partial completion,
-resume, retry, or concurrent ownership. CSV summaries are derived exports and
-cannot safely supply that authority.
+VAMOS needs study-level authority above canonical RunManifest directories to
+record the immutable task set, attempts, interruption, partial completion,
+resume, retry, and eventual concurrent ownership. CSV summaries are derived
+exports and cannot safely supply that authority.
 
-Adding persistence incidentally to the existing runner would leave identity,
-failure, recovery, and atomicity decisions to implementation accidents. The
-pre-release project can instead establish one contract before replacing the
-current path.
+The contract fixes identity, failure, recovery, and atomicity centrally rather
+than leaving those decisions to caller-specific loops.
 
 ## Decision
 
@@ -41,10 +38,9 @@ and fencing tokens prevent stale publication. Distributed coordination is a
 later provider boundary, not a second schema.
 
 The public direction is `StudySpec`, `create_study`, `load_study`, and a thin
-persisted `Study` handle, plus the `vamos study` command group. The current
-`StudyTask`, `StudyRunner`, `run_study`, study-local `StudyResult`, and CSV-led
-orchestration are replaced after all callers migrate; no legacy persisted
-study reader or dual runner remains.
+persisted `Study` handle, plus the `vamos study` command group. Package and
+research callers use that surface; caller-specific tables are derived from
+`StudySummary`, and no second persisted reader or execution path exists.
 
 ### Implemented bounded slices
 

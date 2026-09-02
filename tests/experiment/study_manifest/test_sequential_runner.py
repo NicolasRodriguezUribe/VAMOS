@@ -280,10 +280,9 @@ def test_objective_failure_is_durable_sanitized_and_stops_later_tasks(tmp_path: 
     assert _immutable_inputs(root) == immutable
 
 
-def test_execution_does_not_call_public_replay_or_legacy_study_runner(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_execution_does_not_call_public_replay(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import vamos.experiment.artifacts.replay as replay
     import vamos.experiment.study.execution as execution
-    import vamos.experiment.study.runner as legacy
 
     created = vamos.create_study(_spec(), output=tmp_path / "study")
 
@@ -294,7 +293,6 @@ def test_execution_does_not_call_public_replay_or_legacy_study_runner(tmp_path: 
         return _mock_result(reconstructed.n_var, reconstructed.n_obj, reconstructed.seed)
 
     monkeypatch.setattr(replay, "reproduce", forbidden)
-    monkeypatch.setattr(legacy.StudyRunner, "run", forbidden)
     monkeypatch.setattr(execution, "_execute_optimization", execute)
     assert created.run().status == "completed"
 

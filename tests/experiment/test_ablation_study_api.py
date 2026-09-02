@@ -1,8 +1,10 @@
 import json
 
+import pytest
+
 from vamos.engine.tuning.api import AblationVariant, build_ablation_plan
 from vamos.experiment._execution_support import VariationConfigs
-from vamos.experiment.ablation import run_ablation_plan
+from vamos.experiment.ablation import run_ablation_plan, write_ablation_csv
 
 
 def test_run_ablation_plan_uses_canonical_studies_and_summaries(tmp_path):
@@ -50,6 +52,13 @@ def test_run_ablation_plan_uses_canonical_studies_and_summaries(tmp_path):
     assert all(row["study_id"] in result.study_ids for row in derived)
     assert all(isinstance(row["hv"], float) for row in derived)
     assert all(row["hv_reference"] for row in derived)
+
+    output = write_ablation_csv(result, tmp_path / "derived" / "ablation.csv")
+    original_bytes = output.read_bytes()
+    with pytest.raises(FileExistsError, match="already exists"):
+        write_ablation_csv(result, output)
+    assert output.read_bytes() == original_bytes
+    assert not tuple(output.parent.glob(f".{output.name}.*.tmp"))
 
     for execution in result.studies:
         documents = [path for path in execution.study.root.rglob("*.json") if "runs" not in path.parts]
