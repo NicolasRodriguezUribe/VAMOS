@@ -5,12 +5,14 @@ from __future__ import annotations
 from vamos.ux.studio._problem_builder_codegen import generate_script, parse_bounds_text
 from vamos.ux.studio._problem_builder_preview import run_preview_optimization
 from vamos.ux.studio._problem_builder_security import (
+    TRUSTED_LOCAL_CODE_WARNING,
     compile_constraint_function,
     compile_objective_function,
 )
 from vamos.ux.studio.problem_builder_templates import example_objectives
 
 __all__ = [
+    "TRUSTED_LOCAL_CODE_WARNING",
     "compile_constraint_function",
     "compile_objective_function",
     "example_objectives",

@@ -22,7 +22,7 @@ class TestCompileObjectiveFunction:
     """Test the user-code compilation helper."""
 
     def test_simple_function(self) -> None:
-        fn = compile_objective_function("return [x[0], 1 - x[0]]")
+        fn = compile_objective_function("return [x[0], 1 - x[0]]", trusted_local_code=True)
         result = fn(np.array([0.3, 0.5]))
         assert len(result) == 2
         assert abs(result[0] - 0.3) < 1e-9
@@ -30,35 +30,35 @@ class TestCompileObjectiveFunction:
 
     def test_multiline_with_math(self) -> None:
         code = "import math\nf0 = x[0] ** 2\nf1 = math.sqrt(x[0])\nreturn [f0, f1]"
-        fn = compile_objective_function(code)
+        fn = compile_objective_function(code, trusted_local_code=True)
         result = fn(np.array([4.0]))
         assert abs(result[0] - 16.0) < 1e-9
         assert abs(result[1] - 2.0) < 1e-9
 
     def test_numpy_available(self) -> None:
         code = "return [float(np.sum(x)), float(np.prod(x))]"
-        fn = compile_objective_function(code)
+        fn = compile_objective_function(code, trusted_local_code=True)
         result = fn(np.array([2.0, 3.0]))
         assert abs(result[0] - 5.0) < 1e-9
         assert abs(result[1] - 6.0) < 1e-9
 
     def test_syntax_error(self) -> None:
         with pytest.raises(SyntaxError):
-            compile_objective_function("return [x[0] +]")
+            compile_objective_function("return [x[0] +]", trusted_local_code=True)
 
     def test_disallow_unsafe_import(self) -> None:
         with pytest.raises(ValueError, match="not allowed"):
-            compile_objective_function("import os\nreturn [x[0], x[1]]")
+            compile_objective_function("import os\nreturn [x[0], x[1]]", trusted_local_code=True)
 
     def test_disallow_unsafe_builtin(self) -> None:
         with pytest.raises(ValueError, match="not allowed"):
-            compile_objective_function("open('tmp.txt', 'w')\nreturn [x[0], x[1]]")
+            compile_objective_function("open('tmp.txt', 'w')\nreturn [x[0], x[1]]", trusted_local_code=True)
 
     def test_all_templates_compile(self) -> None:
         """Every built-in template must compile without error."""
         rng = np.random.default_rng(0)
         for name, template in example_objectives().items():
-            fn = compile_objective_function(template["code"])
+            fn = compile_objective_function(template["code"], trusted_local_code=True)
             n_var = int(template["n_var"])
             x = rng.random(n_var)
             result = fn(x)
@@ -160,7 +160,7 @@ class TestRunPreviewOptimization:
     """Integration test: compile + optimize end-to-end."""
 
     def test_basic_preview(self) -> None:
-        fn = compile_objective_function("return [x[0], 1 - x[0]]")
+        fn = compile_objective_function("return [x[0], 1 - x[0]]", trusted_local_code=True)
         result = run_preview_optimization(
             fn,
             n_var=2,
@@ -170,6 +170,7 @@ class TestRunPreviewOptimization:
             budget=500,
             pop_size=20,
             seed=42,
+            trusted_local_code=True,
         )
         assert "F" in result
         assert result["F"].shape[1] == 2
@@ -178,7 +179,7 @@ class TestRunPreviewOptimization:
 
     def test_three_objective(self) -> None:
         code = "return [x[0], x[1], 1 - x[0] - x[1]]"
-        fn = compile_objective_function(code)
+        fn = compile_objective_function(code, trusted_local_code=True)
         result = run_preview_optimization(
             fn,
             n_var=3,
@@ -188,11 +189,12 @@ class TestRunPreviewOptimization:
             budget=500,
             pop_size=20,
             seed=0,
+            trusted_local_code=True,
         )
         assert result["F"].shape[1] == 3
 
     def test_preview_timeout_for_non_terminating_code(self) -> None:
-        fn = compile_objective_function("return [x[0], x[1]]")
+        fn = compile_objective_function("return [x[0], x[1]]", trusted_local_code=True)
         with pytest.raises(TimeoutError, match="timed out"):
             run_preview_optimization(
                 fn,
@@ -205,11 +207,12 @@ class TestRunPreviewOptimization:
                 seed=0,
                 objective_code="while True:\n    pass\nreturn [x[0], x[1]]",
                 timeout_seconds=0.5,
+                trusted_local_code=True,
             )
 
-    def test_invalid_sandbox_profile(self) -> None:
-        fn = compile_objective_function("return [x[0], x[1]]")
-        with pytest.raises(ValueError, match="Unknown sandbox profile"):
+    def test_invalid_resource_profile(self) -> None:
+        fn = compile_objective_function("return [x[0], x[1]]", trusted_local_code=True)
+        with pytest.raises(ValueError, match="Unknown resource-limit profile"):
             run_preview_optimization(
                 fn,
                 n_var=2,
@@ -220,5 +223,6 @@ class TestRunPreviewOptimization:
                 pop_size=20,
                 seed=0,
                 objective_code="return [x[0], x[1]]",
-                sandbox_profile="invalid_profile",
+                resource_profile="invalid_profile",
+                trusted_local_code=True,
             )
