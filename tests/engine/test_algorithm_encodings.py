@@ -89,15 +89,13 @@ def test_repair_override_rejected_for_binary_encoding(mock_kernel):
             kernel=mock_kernel,
             problem=problem,
             pop_size=100,
-            moead_variation={"repair": ("clip", {})},
+            moead_variation={"repair": {"method": "clip"}},
         )
 
 
-# Updated tests for new builders
-def test_agemoea_builder_legacy_variation(mock_kernel):
-    """Test build_agemoea_algorithm correctly handles legacy tuple variation."""
+def test_agemoea_builder_accepts_mapping_variation(mock_kernel):
     problem = MockBinaryProblem()
-    variation = {"crossover": ("custom_cx", {"p": 0.5})}
+    variation = {"crossover": {"method": "hux", "prob": 0.5}}
     algo, config = build_agemoea_algorithm(
         kernel=mock_kernel,
         problem=problem,
@@ -107,13 +105,12 @@ def test_agemoea_builder_legacy_variation(mock_kernel):
 
     cfg_dict = config.to_dict()
     assert cfg_dict["pop_size"] == 100
-    assert cfg_dict["crossover"] == ("custom_cx", {"p": 0.5})
+    assert cfg_dict["crossover"] == ("hux", {"prob": 0.5})
 
 
-def test_rvea_builder_legacy_variation(mock_kernel):
-    """Test build_rvea_algorithm correctly handles legacy tuple variation."""
+def test_rvea_builder_accepts_mapping_variation(mock_kernel):
     problem = MockBinaryProblem()
-    variation = {"mutation": ("custom_mut", {"p": 0.1})}
+    variation = {"mutation": {"method": "bitflip", "prob": 0.1}}
     algo, config = build_rvea_algorithm(
         kernel=mock_kernel,
         problem=problem,
@@ -123,7 +120,7 @@ def test_rvea_builder_legacy_variation(mock_kernel):
 
     cfg_dict = config.to_dict()
     assert cfg_dict["pop_size"] == 100
-    assert cfg_dict["mutation"] == ("custom_mut", {"p": 0.1})
+    assert cfg_dict["mutation"] == ("bitflip", {"prob": 0.1})
 
 
 # We can also keep the pipeline tests if we want to ensure run() still works

@@ -106,16 +106,15 @@ def initialize_nsgaiii_run(
     # Tournament size
     sel_method, sel_params = config["selection"]
     if sel_method == "tournament":
-        if "pressure" in sel_params and sel_params.get("pressure") is not None:
-            raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+        unexpected = sorted(set(sel_params) - {"size"})
+        if unexpected:
+            raise ValueError(f"Unsupported tournament selection options: {', '.join(unexpected)}")
         pressure = int(sel_params.get("size", 2))
     else:
         pressure = 2
 
     def _handle_refdir_mismatch(expected: int, actual: int, detail: str) -> int:
-        raise ValueError(
-            f"{detail} Configure pop_size={expected} or choose reference directions with exactly {actual} points."
-        )
+        raise ValueError(f"{detail} Configure pop_size={expected} or choose reference directions with exactly {actual} points.")
 
     # Load reference directions (prefer #ref_dirs == pop_size; warn if mismatched)
     dir_cfg = config.get("reference_directions", {}) or {}
@@ -227,14 +226,14 @@ def initialize_population(
     encoding: EncodingLike,
     pop_size: int,
     n_var: int,
-    xl: np.ndarray,
-    xu: np.ndarray,
+    xl: np.ndarray[Any, Any],
+    xu: np.ndarray[Any, Any],
     rng: np.random.Generator,
     problem: ProblemProtocol,
     eval_strategy: EvaluationBackend,
     constraint_mode: str,
     initializer: dict[str, Any] | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any], np.ndarray[Any, Any] | None]:
     """Initialize population based on encoding.
 
     Parameters

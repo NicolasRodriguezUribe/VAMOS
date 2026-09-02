@@ -76,7 +76,7 @@ def setup_population(
     pop_size: int,
     constraint_mode: str,
     initializer_cfg: dict[str, Any] | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray | None, int]:
+) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any], np.ndarray[Any, Any] | None, int]:
     """Initialize and evaluate the starting population.
 
     Parameters
@@ -112,16 +112,16 @@ def setup_population(
 
 def setup_archive(
     kernel: KernelBackend,
-    X: np.ndarray,
-    F: np.ndarray,
-    G: np.ndarray | None,
+    X: np.ndarray[Any, Any],
+    F: np.ndarray[Any, Any],
+    G: np.ndarray[Any, Any] | None,
     n_var: int,
     n_obj: int,
-    dtype: np.dtype,
+    dtype: np.dtype[Any],
     ext_cfg: ExternalArchiveConfig | None,
 ) -> tuple[
-    np.ndarray | None,
-    np.ndarray | None,
+    np.ndarray[Any, Any] | None,
+    np.ndarray[Any, Any] | None,
     CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive | None,
 ]:
     """Initialize archive if configured.
@@ -244,9 +244,9 @@ def setup_archive(
 
 def setup_genealogy(
     pop_size: int,
-    F: np.ndarray,
+    F: np.ndarray[Any, Any],
     track_genealogy: bool,
-) -> tuple[GenealogyTracker | None, np.ndarray | None]:
+) -> tuple[GenealogyTracker | None, np.ndarray[Any, Any] | None]:
     """Initialize genealogy tracking if enabled.
 
     Parameters
@@ -305,8 +305,10 @@ def setup_selection(
     allowed = ("tournament", "random", "boltzmann", "ranking", "sus")
     if sel_method not in allowed:
         raise ValueError(f"Unsupported selection method '{sel_method}'. Must be one of {allowed}.")
-    if sel_method == "tournament" and "pressure" in sel_params and sel_params.get("pressure") is not None:
-        raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+    if sel_method == "tournament":
+        unexpected = sorted(set(sel_params) - {"size"})
+        if unexpected:
+            raise ValueError(f"Unsupported tournament selection options: {', '.join(unexpected)}")
     tournament_size = (
         int(sel_params.get("size", DEFAULT_TOURNAMENT_PRESSURE)) if sel_method == "tournament" else DEFAULT_TOURNAMENT_PRESSURE
     )
@@ -317,7 +319,7 @@ def setup_result_archive(
     ext_cfg: ExternalArchiveConfig | None,
     n_var: int,
     n_obj: int,
-    dtype: np.dtype,
+    dtype: np.dtype[Any],
 ) -> HypervolumeArchive | CrowdingDistanceArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | None:
     """Create result archive if configured.
 

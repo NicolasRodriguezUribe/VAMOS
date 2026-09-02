@@ -5,31 +5,20 @@ Uses only NumPy/Pandas/Matplotlib.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, Protocol, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 
+from vamos.study_artifacts import StudySummary
 from vamos.ux.analysis.core_objective_reduction import reduce_objectives
 
 
 class TuningResultLike(Protocol):
     def __getitem__(self, index: int) -> object: ...
-
-
-class _SpecLike(Protocol):
-    key: str
-
-
-class _SelectionLike(Protocol):
-    spec: _SpecLike
-
-
-class StudyResultLike(Protocol):
-    selection: _SelectionLike
-    metrics: Mapping[str, object]
 
 
 def tuning_result_to_dataframe(tuning_result: TuningResultLike, param_names: Sequence[str] | None = None) -> pd.DataFrame:
@@ -94,7 +83,7 @@ def plot_objective_tradeoff(df: pd.DataFrame, obj_x: str = "obj_0", obj_y: str =
 
 
 def plot_reduced_front(
-    F: np.ndarray,
+    F: NDArray[Any],
     labels: Sequence[str] | None = None,
     target_dim: int = 2,
     method: str = "angle",
@@ -123,27 +112,27 @@ def plot_reduced_front(
     raise ValueError("Reduced front must have at least 2 objectives.")
 
 
-def study_results_to_dataframe(study_results: Iterable[StudyResultLike]) -> pd.DataFrame:
-    """
-    Convert StudyRunner results to a tidy DataFrame.
-    Expects each entry with .selection.spec.key, .metrics dict fields.
-    """
-    rows = []
-    for res in study_results:
-        metrics = res.metrics
-        rows.append(
-            {
-                "problem": res.selection.spec.key,
-                "algorithm": metrics.get("algorithm"),
-                "engine": metrics.get("engine"),
-                "seed": metrics.get("seed", None),
-                "hv": metrics.get("hv"),
-                "time_ms": metrics.get("time_ms"),
-                "evals": metrics.get("evaluations"),
-                "spread": metrics.get("spread"),
-            }
-        )
-    return pd.DataFrame(rows)
+def study_summary_to_dataframe(summary: StudySummary) -> pd.DataFrame:
+    """Convert one canonical summary to a traceable analysis DataFrame."""
+    rows: list[dict[str, object]] = []
+    for source in summary.rows:
+        record = source.as_dict()
+        metrics = record.pop("metrics")
+        record["problem"] = _component_name(source.problem_id)
+        record["algorithm"] = _component_name(source.algorithm_id)
+        record["engine"] = _component_name(source.backend_id)
+        record["time_ms"] = source.runtime_ms
+        record["evals"] = source.evaluations
+        if isinstance(metrics, Mapping):
+            record.update(metrics)
+        rows.append(record)
+    return pd.DataFrame.from_records(rows)
+
+
+def _component_name(component_id: str | None) -> str | None:
+    if component_id is None or ":" not in component_id:
+        return component_id
+    return component_id.split(":", 1)[1].split("@", 1)[0]
 
 
 def summarize_by_algorithm(df: pd.DataFrame) -> pd.DataFrame:

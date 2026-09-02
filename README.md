@@ -6,6 +6,12 @@
 
 VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels with NumPy as the exact reference path and optional Numba acceleration for core kernels.
 
+VAMOS 1.0.0 is the first official public release and compatibility baseline.
+Earlier version strings and Git tags were internal pre-public development
+markers, not prior public releases. See the
+[stability policy](docs/project/stability-and-versioning.md) and
+[known limitations](docs/project/known-limitations.md).
+
 ## Key Features
 
 - **Unified API**: A clear, fluent interface `vamos.optimize()` for all workflows.
@@ -15,7 +21,7 @@ VAMOS bridges the gap between simple research scripts and large-scale optimizati
 - **Ready-to-use Tuning Backends**: `racing` and `random` work out of the box; install the optional `tuning` extra to enable `optuna`, `bohb_optuna`, `smac3`, and `bohb` via `vamos tune`.
 - **Performance Driven**: Vectorized NumPy kernels with optional Numba JIT acceleration for core kernels.
 - **Interactive Analysis**: Built-in dashboards with `explore_result_front(result)` and publication-ready LaTeX tables.
-- **Visual Problem Builder**: Define custom problems in the browser with live Pareto front preview via VAMOS Studio.
+- **Visual Problem Builder**: Define custom problems in the experimental VAMOS Studio; local Python preview requires an explicit trusted-code opt-in.
 - **Extensible**: Standardized protocols for adding custom problems, operators, and algorithms.
 
 Canonical customization guide: `docs/topics/extending.md`.
@@ -102,8 +108,6 @@ result = optimize(
 
 front = result.front()
 print(f"Non-dominated solutions: {len(front) if front is not None else 0}")
-# from vamos.ux.api import plot_result_front
-# plot_result_front(result)  # Quick Pareto front plot
 ```
 
 Prefer a guided CLI? Run:
@@ -124,6 +128,14 @@ After a run, summarize results with:
 vamos summarize --results results/quickstart
 ```
 
+Inspect, fully verify, or exactly replay a canonical built-in run:
+
+```bash
+vamos results inspect RUN_DIR
+vamos results verify RUN_DIR --require-level exact
+vamos reproduce RUN_DIR
+```
+
 For a small study in one call:
 
 ```python
@@ -139,6 +151,8 @@ All functionality lives under one command. Run `vamos help` to list everything:
 | `vamos quickstart` | Guided wizard that writes a config |
 | `vamos create-problem` | Scaffold a custom problem file |
 | `vamos summarize` | Table/JSON summary of recent runs |
+| `vamos results` | Inspect or verify one canonical run |
+| `vamos reproduce` | Execute an exact same-environment built-in replay |
 | `vamos check` | Verify installation and backends |
 | `vamos bench` | Benchmark suite across algorithms |
 | `vamos studio` | Launch interactive dashboard |
@@ -223,7 +237,7 @@ vamos create-problem
 # Generates a .py file with TODO markers -- fill in your math and run it
 ```
 
-Or use the **visual builder** in VAMOS Studio -- write your objectives
+Or use the experimental **visual builder** in VAMOS Studio -- review your objectives
 in the browser, pick an algorithm, and see the Pareto front update on each run:
 
 ```bash
@@ -321,7 +335,7 @@ All tools are available as `vamos <subcommand>`. Run `vamos help` for the full l
   ```
 - **`vamos bench`**: Generate full reports comparing multiple algorithms, plus jMetalPy-compatible lab outputs (`summary/lab/QualityIndicatorSummary.csv`, Wilcoxon tables, boxplots). Boxplots require `matplotlib`.
   ```bash
-  vamos bench --suite ZDT_small --algorithms nsgaii moead --output report/
+  vamos bench ZDT_small --algorithms nsgaii moead --output report/
   ```
   ```bash
   vamos bench ZDT_small --algorithms nsgaii --output report/ --smoke
@@ -335,9 +349,10 @@ All tools are available as `vamos <subcommand>`. Run `vamos help` for the full l
     vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend random --smoke --output-dir report/tuning_smoke
     ```
   - Recommended robust invocation (backend fallback + suite-stratified split):
+
     ```bash
-  vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1
-  ```
+    vamos tune --instances zdt1,zdt2,zdt3,dtlz1,dtlz2,wfg1 --algorithm nsgaii --backend optuna --backend-fallback random --split-strategy suite_stratified --budget 5000 --tune-budget 200 --n-jobs -1
+    ```
 - Full tuning reference (canonical docs): `docs/topics/tuning.md`.
 - **`vamos check`**: Verify your installation and backend availability.
 
@@ -350,7 +365,7 @@ If you use VAMOS in published work, cite it directly:
   title = {VAMOS: Vectorized Architecture for Multiobjective Optimization Studies},
   author = {Rodriguez Uribe, Nicolas and Herr{\'a}n, Alberto and Nebro, Antonio J. and Del Ser, Javier and Colmenar, J. Manuel},
   year = {2026},
-  version = {1.1.0},
+  version = {1.0.0},
   url = {https://github.com/NicolasRodriguezUribe/VAMOS}
 }
 ```

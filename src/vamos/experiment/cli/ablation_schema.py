@@ -24,7 +24,6 @@ _ALLOWED_TOP_LEVEL_KEYS = {
     "budget_by_variant",
     "budget_overrides",
     "metadata",
-    "mirror_output_roots",
     "summary_dir",
     "summary_path",
 }
@@ -201,14 +200,6 @@ def validate_ablation_spec(spec: Mapping[str, Any]) -> None:
     metadata = spec.get("metadata")
     if metadata is not None and not isinstance(metadata, Mapping):
         raise TypeError("Ablation config 'metadata' must be a mapping when provided.")
-
-    mirror_output_roots = spec.get("mirror_output_roots")
-    if mirror_output_roots is not None:
-        if not isinstance(mirror_output_roots, Iterable) or isinstance(mirror_output_roots, (str, bytes, Mapping)):
-            raise TypeError("mirror_output_roots must be a list of paths.")
-        for item in mirror_output_roots:
-            if not isinstance(item, str):
-                raise TypeError("mirror_output_roots entries must be strings.")
 
     variants = spec.get("variants")
     if not isinstance(variants, Iterable) or isinstance(variants, (str, bytes, Mapping)):

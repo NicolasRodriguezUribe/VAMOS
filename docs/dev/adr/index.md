@@ -9,3 +9,6 @@ These ADRs are mandatory reading before introducing new modules, dependencies, o
 - `0003-optional-deps-policy.md`
 - `0004-no-shims-no-allowlists.md`
 - `0005-health-gates-and-retention.md`
+- `0006-run-artifact-and-replay-contract.md`
+- `0007-canonical-typing-gates.md`
+- `0008-durable-study-manifest-contract.md`

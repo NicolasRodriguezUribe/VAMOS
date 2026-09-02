@@ -21,7 +21,7 @@ def test_discover_and_load_results(tmp_path):
 
     run = runs[0]
     data = load_run_data(run)
-    assert data.metadata["problem"]["key"] == "zdt1"
+    assert data.metadata["resolved_spec"]["problem"]["component_id"] == "vamos.problem:zdt1@1"
     assert data.F is not None and data.F.shape[1] == 2
 
     agg = aggregate_results(runs)

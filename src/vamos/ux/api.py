@@ -31,7 +31,6 @@ from vamos.ux.results import (
     result_summary_text,
     result_to_dataframe,
     result_to_latex,
-    save_result,
 )
 from vamos.ux.visualization import (
     plot_hv_convergence,
@@ -70,5 +69,4 @@ __all__ = [
     "explore_result_front",
     "result_to_dataframe",
     "result_to_latex",
-    "save_result",
 ]

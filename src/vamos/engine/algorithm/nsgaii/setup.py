@@ -12,11 +12,11 @@ import numpy as np
 
 from vamos.engine.algorithm.components.population import resolve_bounds
 from vamos.engine.algorithm.components.termination import HVTracker, validate_initial_budget
-from vamos.engine.algorithm.components.variation import prepare_mutation_params
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.hooks.live_viz import LiveVisualization, NoOpLiveVisualization
 from vamos.engine.operators.impl.real import VariationWorkspace
 from vamos.engine.operators.policies.nsgaii import build_operator_pool
+from vamos.engine.variation import prepare_mutation_params
 from vamos.foundation.checkpoint import restore_rng
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
@@ -72,16 +72,16 @@ def initialize_run(
 
     constraint_mode = algo.cfg.get("constraint_mode", "feasibility")
     initializer_cfg = algo.cfg.get("initializer")
-    X: np.ndarray
-    F: np.ndarray
-    G: np.ndarray | None
+    X: np.ndarray[Any, Any]
+    F: np.ndarray[Any, Any]
+    G: np.ndarray[Any, Any] | None
     n_eval: int
     generation = 0
     step = 0
     replacements = 0
 
-    checkpoint_archive_X: np.ndarray | None = None
-    checkpoint_archive_F: np.ndarray | None = None
+    checkpoint_archive_X: np.ndarray[Any, Any] | None = None
+    checkpoint_archive_F: np.ndarray[Any, Any] | None = None
 
     if checkpoint is not None:
         try:

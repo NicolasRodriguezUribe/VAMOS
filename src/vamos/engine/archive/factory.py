@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 
 import numpy as np
 
-from .bounded_archive import ExternalArchiveConfig
+from .config import ExternalArchiveConfig
 
 if TYPE_CHECKING:
     from vamos.engine.algorithm.components.archive import (
@@ -41,14 +41,14 @@ def resolve_external_archive(cfg: dict[str, Any]) -> ExternalArchiveConfig | Non
 
 def setup_archive(
     kernel: KernelBackend,
-    X: np.ndarray,
-    F: np.ndarray,
+    X: np.ndarray[Any, Any],
+    F: np.ndarray[Any, Any],
     n_var: int,
     n_obj: int,
-    dtype: np.dtype,
+    dtype: np.dtype[Any],
     ext_cfg: ExternalArchiveConfig | None,
-    G: np.ndarray | None = None,
-) -> tuple[np.ndarray | None, np.ndarray | None, ArchiveManager | None]:
+    G: np.ndarray[Any, Any] | None = None,
+) -> tuple[np.ndarray[Any, Any] | None, np.ndarray[Any, Any] | None, ArchiveManager | None]:
     """Initialize the shared external archive manager when configured."""
     del kernel
     if ext_cfg is None:
@@ -154,7 +154,7 @@ def setup_result_archive(
     ext_cfg: ExternalArchiveConfig | None,
     n_var: int,
     n_obj: int,
-    dtype: np.dtype,
+    dtype: np.dtype[Any],
 ) -> ResultArchiveManager | None:
     """Create a bounded result archive when the external archive is bounded."""
     if ext_cfg is None or ext_cfg.capacity is None:
@@ -234,9 +234,9 @@ def setup_result_archive(
 
 def update_archive(
     state: AlgorithmState,
-    X_new: np.ndarray | None = None,
-    F_new: np.ndarray | None = None,
-    G_new: np.ndarray | None = None,
+    X_new: np.ndarray[Any, Any] | None = None,
+    F_new: np.ndarray[Any, Any] | None = None,
+    G_new: np.ndarray[Any, Any] | None = None,
 ) -> None:
     """Update archive contents from the provided arrays or current algorithm state."""
     if state.archive_manager is None:

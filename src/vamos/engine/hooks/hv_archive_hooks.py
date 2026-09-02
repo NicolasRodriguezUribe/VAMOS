@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import csv
+import logging as _logging
+import warnings as _warnings
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -13,30 +13,20 @@ from vamos.engine.hooks.hv_convergence import HVConvergenceConfig, HVConvergence
 from vamos.foundation.observer import RunContext
 from vamos.foundation.quality_indicators.hypervolume import compute_hypervolume
 
-
-def _ensure_dir(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
+_TRACE_LIMIT = 10_000
 
 
-def _append_csv_row(path: Path, fieldnames: list[str], row: dict[str, Any]) -> None:
-    _ensure_dir(path.parent)
-    exists = path.exists()
-    with path.open("a", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
-        if not exists:
-            writer.writeheader()
-        writer.writerow(row)
-
-
-import logging as _logging
-import warnings as _warnings
+def _append_trace(trace: list[dict[str, Any]], row: dict[str, Any]) -> None:
+    if len(trace) >= _TRACE_LIMIT:
+        del trace[0]
+    trace.append(row)
 
 
 def _hv_logger() -> _logging.Logger:
     return _logging.getLogger(__name__)
 
 
-def _try_compute_hv(F: np.ndarray, ref: list[float] | None = None) -> float | None:
+def _try_compute_hv(F: np.ndarray[Any, Any], ref: list[float] | None = None) -> float | None:
     """
     Best-effort HV computation:
       - For 2D minimization: exact via compute_hypervolume
@@ -85,8 +75,8 @@ class CompositeLiveVisualization:
     def on_generation(
         self,
         generation: int,
-        F: np.ndarray | None = None,
-        X: np.ndarray | None = None,
+        F: np.ndarray[Any, Any] | None = None,
+        X: np.ndarray[Any, Any] | None = None,
         stats: dict[str, Any] | None = None,
     ) -> None:
         for cb in self._callbacks:
@@ -94,7 +84,7 @@ class CompositeLiveVisualization:
 
     def on_end(
         self,
-        final_F: np.ndarray | None = None,
+        final_F: np.ndarray[Any, Any] | None = None,
         final_stats: dict[str, Any] | None = None,
     ) -> None:
         for cb in self._callbacks:
@@ -118,20 +108,18 @@ class HookManager:
       - external archive updates
       - HV trace computation
       - HV convergence stopping
-      - incremental artifact writing
+      - bounded in-memory trace capture for the canonical run manifest
     The runner calls `on_generation(...)` with eval counts in stats.
     """
 
-    def __init__(self, out_dir: Path, cfg: HookManagerConfig):
-        self.out_dir = out_dir
+    def __init__(self, cfg: HookManagerConfig):
         self.cfg = cfg
-
-        self.hv_trace_path = out_dir / "hv_trace.csv"
-        self.archive_stats_path = out_dir / "archive_stats.csv"
+        self._hv_trace: list[dict[str, Any]] = []
+        self._archive_stats: list[dict[str, Any]] = []
 
         self.monitor = HVConvergenceMonitor(cfg.stop_cfg) if cfg.stopping_enabled else None
         self.archive: ResultArchiveManager | None = None
-        self._archive_F: np.ndarray | None = None
+        self._archive_F: np.ndarray[Any, Any] | None = None
         self._archive_total_inserted = 0
         self._archive_total_pruned = 0
 
@@ -139,7 +127,7 @@ class HookManager:
         self._last_sample_evals: int | None = None
         self._stop_decision: HVDecision | None = None
 
-    def _ensure_archive(self, F: np.ndarray) -> None:
+    def _ensure_archive(self, F: np.ndarray[Any, Any]) -> None:
         if not self.cfg.archive_enabled or self.archive is not None:
             return
         archive = setup_result_archive(self.cfg.archive_cfg, n_var=0, n_obj=F.shape[1], dtype=np.dtype(float))
@@ -153,8 +141,8 @@ class HookManager:
     def on_generation(
         self,
         generation: int,
-        F: np.ndarray | None = None,
-        X: np.ndarray | None = None,
+        F: np.ndarray[Any, Any] | None = None,
+        X: np.ndarray[Any, Any] | None = None,
         stats: dict[str, Any] | None = None,
     ) -> None:
         if F is None:
@@ -168,7 +156,7 @@ class HookManager:
 
     def on_end(
         self,
-        final_F: np.ndarray | None = None,
+        final_F: np.ndarray[Any, Any] | None = None,
         final_stats: dict[str, Any] | None = None,
     ) -> None:
         return None
@@ -186,8 +174,8 @@ class HookManager:
     def on_checkpoint(
         self,
         evals: int,
-        F: np.ndarray,
-        X: np.ndarray | None = None,
+        F: np.ndarray[Any, Any],
+        X: np.ndarray[Any, Any] | None = None,
     ) -> None:
         del X
         # Update archive (optional)
@@ -203,10 +191,9 @@ class HookManager:
             self._archive_total_inserted += inserted
             self._archive_total_pruned += pruned
             self._archive_F = archive_F
-            _append_csv_row(
-                self.archive_stats_path,
-                fieldnames=["evals", "archive_size", "inserted", "pruned", "prune_reason"],
-                row={
+            _append_trace(
+                self._archive_stats,
+                {
                     "evals": int(evals),
                     "archive_size": after,
                     "inserted": inserted,
@@ -245,14 +232,13 @@ class HookManager:
         if stop_reason:
             reason = stop_reason
 
-        _append_csv_row(
-            self.hv_trace_path,
-            fieldnames=["evals", "hv", "hv_delta", "stop_flag", "reason"],
-            row={
+        _append_trace(
+            self._hv_trace,
+            {
                 "evals": int(evals),
-                "hv": "" if hv is None else float(hv),
-                "hv_delta": "" if hv_delta is None else float(hv_delta),
-                "stop_flag": int(1 if stop_flag else 0),
+                "hv": None if hv is None else float(hv),
+                "hv_delta": None if hv_delta is None else float(hv_delta),
+                "stop_flag": bool(stop_flag),
                 "reason": reason,
             },
         )
@@ -279,6 +265,7 @@ class HookManager:
                 "triggered": bool(dec.stop) if dec else False,
                 "evals_stop": int(dec.evals) if (dec and dec.stop) else None,
                 "reason": str(dec.reason) if dec else None,
+                "trace": list(self._hv_trace),
             }
 
         if self.archive is None:
@@ -291,6 +278,7 @@ class HookManager:
                 "final_size": final_size,
                 "total_inserted": int(self._archive_total_inserted),
                 "total_pruned": int(self._archive_total_pruned),
+                "trace": list(self._archive_stats),
             }
 
         return payload

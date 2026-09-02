@@ -109,8 +109,9 @@ def initialize_smsemoa_run(
     # Tournament size
     sel_method, sel_params = config["selection"]
     if sel_method == "tournament":
-        if "pressure" in sel_params and sel_params.get("pressure") is not None:
-            raise ValueError("Tournament selection uses 'size'; 'pressure' is no longer supported.")
+        unexpected = sorted(set(sel_params) - {"size"})
+        if unexpected:
+            raise ValueError(f"Unsupported tournament selection options: {', '.join(unexpected)}")
         pressure = int(sel_params.get("size", 2))
     else:
         pressure = 2
@@ -188,14 +189,14 @@ def initialize_population(
     encoding: EncodingLike,
     pop_size: int,
     n_var: int,
-    xl: np.ndarray,
-    xu: np.ndarray,
+    xl: np.ndarray[Any, Any],
+    xu: np.ndarray[Any, Any],
     rng: np.random.Generator,
     problem: ProblemProtocol,
     constraint_mode: str,
     eval_strategy: EvaluationBackend,
     initializer: Any | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any], np.ndarray[Any, Any] | None]:
     """Initialize population based on encoding.
 
     Parameters

@@ -1,0 +1,20 @@
+{
+  "artifact_integrity": "valid",
+  "component_reconstructability": "reconstructable",
+  "document_type": "vamos.verification-report",
+  "effective_replayability": "exact",
+  "environment_compatibility": {
+    "findings": [],
+    "level": "exact"
+  },
+  "numerical_bundle_safety": "valid",
+  "optimization_executed": false,
+  "path_safety": "valid",
+  "reasons": [],
+  "root": "runs/nsgaii-success",
+  "run_id": "11111111-1111-4111-8111-111111111111",
+  "schema": "1.0.0",
+  "status": "succeeded",
+  "task_id": "sha256:eddc343b9786d94b24df3b6032a3664d13140edf6dc80a69deba486c2c023dc2",
+  "version": "1"
+}

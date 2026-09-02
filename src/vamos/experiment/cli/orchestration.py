@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from argparse import Namespace
 from collections.abc import Callable
 from copy import deepcopy
@@ -59,13 +60,14 @@ def run_from_args(
                 n_var=_override_value(override, "n_var", cast(int | None, selection.n_var)),
                 n_obj=_override_value(override, "n_obj", cast(int | None, selection.n_obj)),
             )
+        requested_seed = _override_value(override, "seed", config.seed)
         effective_config = ExperimentConfig(
             title=_override_value(override, "title", config.title),
             output_root=_override_value(override, "output_root", config.output_root),
             population_size=_override_value(override, "population_size", config.population_size),
             offspring_population_size=_override_value(override, "offspring_population_size", config.offspring_population_size),
             max_evaluations=_override_value(override, "max_evaluations", config.max_evaluations),
-            seed=_override_value(override, "seed", config.seed),
+            seed=secrets.randbits(64) if requested_seed is None else requested_seed,
             eval_strategy=_override_value(override, "eval_strategy", getattr(config, "eval_strategy", "serial")),
             n_workers=_override_value(override, "n_workers", getattr(config, "n_workers", None)),
             live_viz=_override_value(override, "live_viz", getattr(config, "live_viz", False)),
@@ -100,8 +102,8 @@ def run_from_args(
             )
         else:
             effective_args.external_archive = base_external_archive
-        effective_args.hv_threshold = override.get("hv_threshold", args.hv_threshold)
-        effective_args.hv_reference_front = override.get("hv_reference_front", args.hv_reference_front)
+        effective_args.hv_threshold = _override_value(override, "hv_threshold", cast(float | None, args.hv_threshold))
+        effective_args.hv_reference_front = _override_value(override, "hv_reference_front", cast(str | None, args.hv_reference_front))
         effective_args.n_var = override.get("n_var", args.n_var)
         effective_args.n_obj = override.get("n_obj", args.n_obj)
         effective_args.eval_strategy = override.get("eval_strategy", args.eval_strategy)
@@ -109,7 +111,7 @@ def run_from_args(
         effective_args.live_viz = override.get("live_viz", args.live_viz)
         effective_args.live_viz_interval = override.get("live_viz_interval", args.live_viz_interval)
         effective_args.live_viz_max_points = override.get("live_viz_max_points", args.live_viz_max_points)
-        effective_args.track_genealogy = override.get("track_genealogy", getattr(args, "track_genealogy", False))
+        effective_args.track_genealogy = _override_value(override, "track_genealogy", cast(bool, getattr(args, "track_genealogy", False)))
         effective_args.nsgaii_variation = merge_variation_overrides(base_variation, _override_mapping(override, "nsgaii"))
         effective_args.moead_variation = merge_variation_overrides(
             getattr(args, "moead_variation", None), _override_mapping(override, "moead")

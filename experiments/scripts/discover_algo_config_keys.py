@@ -3,38 +3,21 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
+from canonical_runs import component_name, result_runs
 
 
-def load_yaml(path: Path) -> dict:
-    import yaml  # type: ignore
-
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
-
-
-def dump_yaml(obj: dict, path: Path) -> None:
-    import yaml  # type: ignore
+def dump_yaml(obj: object, path: Path) -> None:
+    import yaml  # type: ignore[import-untyped]
 
     path.write_text(yaml.safe_dump(obj, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
 
 def deep_copy(x: Any) -> Any:
     return json.loads(json.dumps(x))
-
-
-def read_json(p: Path) -> dict:
-    return json.loads(p.read_text(encoding="utf-8"))
-
-
-def find_seed_dirs(root: Path) -> list[Path]:
-    return sorted([p for p in root.rglob("seed_*") if p.is_dir() and (p / "metadata.json").exists()])
-
-
-def infer_algo_engine(sd: Path) -> tuple[str, str]:
-    eng = sd.parent.name
-    algo = sd.parent.parent.name if sd.parent.parent else "unknown"
-    return algo, eng
 
 
 def main() -> int:
@@ -56,12 +39,12 @@ def main() -> int:
     nsgaii_block = {
         "crossover": {"method": "sbx", "prob": 0.9, "eta": 20},
         "mutation": {"method": "polynomial", "prob": "1/n", "eta": 20},
-        "selection": {"method": "tournament", "pressure": 2},
+        "selection": {"method": "tournament", "size": 2},
     }
 
-    runs = []
+    runs: list[dict[str, Any]] = []
     for algo in algos:
-        cfg = {
+        cfg: dict[str, Any] = {
             "defaults": {
                 "algorithm": algo,
                 "engine": engine,
@@ -96,24 +79,28 @@ def main() -> int:
     for r in runs:
         print(r)
 
-    # Inspect metadata.config._keys for successes
-    seed_dirs = find_seed_dirs(out_root)
-    print("\nFound seed dirs:", len(seed_dirs))
-    by_algo: dict[str, dict] = {}
-    for sd in seed_dirs:
-        algo, eng = infer_algo_engine(sd)
-        meta = read_json(sd / "metadata.json")
-        cfg = meta.get("config", {})
-        keys = list(cfg.keys()) if isinstance(cfg, dict) else []
+    canonical_runs = result_runs(out_root)
+    print("\nFound canonical runs with results:", len(canonical_runs))
+    by_algo: dict[str, dict[str, Any]] = {}
+    for run in canonical_runs:
+        resolved = run.manifest.resolved_spec
+        algorithm = resolved.get("algorithm")
+        backend = resolved.get("backend")
+        algorithm_map = algorithm if isinstance(algorithm, Mapping) else {}
+        backend_map = backend if isinstance(backend, Mapping) else {}
+        kernel = backend_map.get("kernel")
+        resolved_config = algorithm_map.get("config")
+        config_map = cast(Mapping[str, Any], resolved_config) if isinstance(resolved_config, Mapping) else {}
+        algo = component_name(algorithm_map)
         by_algo.setdefault(algo, {})
         by_algo[algo] = {
-            "engine": eng,
-            "path": str(sd.relative_to(repo)),
-            "config_keys": keys[:120],
-            "top_meta_keys": list(meta.keys())[:60],
+            "engine": component_name(kernel),
+            "path": str(run.root.relative_to(repo)),
+            "config_keys": sorted(str(key) for key in config_map)[:120],
+            "manifest_keys": list(run.manifest)[:60],
         }
 
-    print("\n=== CONFIG KEYS BY ALGORITHM (from metadata.json) ===")
+    print("\n=== CONFIG KEYS BY ALGORITHM (from canonical manifests) ===")
     print(json.dumps(by_algo, indent=2, ensure_ascii=False)[:12000])
 
     return 0

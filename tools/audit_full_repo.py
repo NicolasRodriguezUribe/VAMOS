@@ -4,11 +4,9 @@ import argparse
 import ast
 import csv
 import json
-import textwrap
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src" / "vamos"
@@ -196,8 +194,7 @@ def main() -> None:
     REPORTS_ROOT.mkdir(exist_ok=True)
     artifacts_root.mkdir(parents=True, exist_ok=True)
 
-    src_files = [p for p in _iter_py_files(SRC_ROOT)]
-    test_files = [p for p in _iter_py_files(TESTS_ROOT)]
+    src_files = list(_iter_py_files(SRC_ROOT))
 
     module_map: dict[str, Path] = {}
     for path in src_files:

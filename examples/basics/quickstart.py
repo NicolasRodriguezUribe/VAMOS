@@ -15,7 +15,10 @@ Requirements:
 """
 
 from __future__ import annotations
-from vamos import optimize
+
+from pathlib import Path
+
+from vamos import optimize, save_result
 
 
 def main():
@@ -29,7 +32,7 @@ def main():
     # 2. Analyze results
     F = result.F  # Pareto front objectives
     print(f"\nFound {len(F)} Pareto-optimal solutions")
-    print(f"Objective ranges:")
+    print("Objective ranges:")
     print(f"  f1: [{F[:, 0].min():.4f}, {F[:, 0].max():.4f}]")
     print(f"  f2: [{F[:, 1].min():.4f}, {F[:, 1].max():.4f}]")
 
@@ -56,26 +59,10 @@ def main():
     except ImportError:
         print("\nInstall matplotlib for visualization: pip install matplotlib")
 
-    # 4. Optional: Save Pareto front to CSV
-    from pathlib import Path
-    from vamos.foundation.core.io_utils import write_population
-
+    # 4. Save the complete canonical run artifact
     out_dir = Path.cwd() / "results" / "examples" / "quickstart"
-
-    try:
-        write_population(out_dir, F, X=getattr(result, "X", None), G=getattr(result, "G", None))
-        print(f"\nSaved Pareto front and decision variables to {out_dir}")
-    except Exception:
-        try:
-            import numpy as _np
-
-            out_dir.mkdir(parents=True, exist_ok=True)
-            _np.savetxt(out_dir / "FUN.csv", F, delimiter=",")
-            if getattr(result, "X", None) is not None:
-                _np.savetxt(out_dir / "X.csv", result.X, delimiter=",")
-            print(f"\nSaved FUN.csv (and X.csv if available) to {out_dir}")
-        except Exception as exc:
-            print(f"\nFailed to save results: {exc}")
+    save_result(result, out_dir)
+    print(f"\nSaved manifest.json, result.npz, and environment.json to {out_dir}")
 
 
 if __name__ == "__main__":

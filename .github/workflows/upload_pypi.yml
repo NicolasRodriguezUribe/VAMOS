@@ -1,49 +1,220 @@
-name: Publish to PyPI
+name: Publish frozen VAMOS release
 
 on:
   push:
     tags:
-      - "v*"
+      - "v1.0.0"
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  VAMOS_RELEASE_VERSION: "1.0.0"
 
 jobs:
-  build-n-publish:
-    name: Build and publish to PyPI
+  recover-frozen-artifacts:
+    name: Recover exact validated bytes
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
-
+    outputs:
+      testpypi_exists: ${{ steps.availability.outputs.testpypi_exists }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - name: Checkout annotated release tag
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Verify tag, version availability, and successful source run
+        id: availability
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git cat-file -t "refs/tags/$GITHUB_REF_NAME")" = "tag"
+          test "$(git rev-list -n 1 "$GITHUB_REF_NAME")" = "$GITHUB_SHA"
+          test "$GITHUB_REF_NAME" = "v$VAMOS_RELEASE_VERSION"
+          PYPI_CODE=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            "https://pypi.org/pypi/vamos-optimization/${VAMOS_RELEASE_VERSION}/json")
+          test "$PYPI_CODE" = "404"
+          TESTPYPI_CODE=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            "https://test.pypi.org/pypi/vamos-optimization/${VAMOS_RELEASE_VERSION}/json")
+          case "$TESTPYPI_CODE" in
+            200) echo "testpypi_exists=true" >> "$GITHUB_OUTPUT" ;;
+            404) echo "testpypi_exists=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "Unexpected TestPyPI response: $TESTPYPI_CODE" >&2; exit 1 ;;
+          esac
+          RUN_ID=$(gh run list --workflow release.yml --commit "$GITHUB_SHA" --status success --limit 50 \
+            --json databaseId,headSha --jq "map(select(.headSha == \"$GITHUB_SHA\")) | .[0].databaseId")
+          test -n "$RUN_ID" && test "$RUN_ID" != "null"
+          gh run download "$RUN_ID" --name "vamos-${VAMOS_RELEASE_VERSION}-frozen" --dir frozen
+          cd frozen
+          sha256sum --check SHA256SUMS
+          test "$(jq -r .source_commit artifact-manifest.json)" = "$GITHUB_SHA"
+          test "$(jq -r .status release-check-report.json)" = "passed"
+
+      - name: Preserve bytes for publishing jobs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vamos-${{ env.VAMOS_RELEASE_VERSION }}-publication-input
+          path: frozen/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-testpypi:
+    name: Publish exact bytes to TestPyPI
+    needs: recover-frozen-artifacts
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vamos-${{ env.VAMOS_RELEASE_VERSION }}-publication-input
+          path: frozen
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        if: needs.recover-frozen-artifacts.outputs.testpypi_exists != 'true'
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: frozen/dist/
+
+  testpypi-smoke:
+    name: Verify TestPyPI bytes and full public smoke
+    needs: publish-testpypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout smoke script and constraints
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
-
-      - name: Install build dependencies
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vamos-${{ env.VAMOS_RELEASE_VERSION }}-publication-input
+          path: frozen
+      - name: Download and compare TestPyPI distributions
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -c constraints/ci.txt build
+          mkdir testpypi-dist
+          python -m pip install --disable-pip-version-check -r release/requirements-build.txt
+          for ATTEMPT in 1 2 3 4 5; do
+            python -m pip download --disable-pip-version-check --no-deps \
+              --only-binary=:all: \
+              --index-url https://test.pypi.org/simple/ \
+              --dest testpypi-dist "vamos-optimization==$VAMOS_RELEASE_VERSION" && break
+            test "$ATTEMPT" = "5" && exit 1
+            sleep 10
+          done
+          python -m pip download --disable-pip-version-check --no-deps \
+            --no-binary=:all: --no-build-isolation \
+            --index-url https://test.pypi.org/simple/ \
+            --dest testpypi-dist "vamos-optimization==$VAMOS_RELEASE_VERSION"
+          for FILE in frozen/dist/*; do
+            NAME=$(basename "$FILE")
+            test -f "testpypi-dist/$NAME"
+            test "$(sha256sum "$FILE" | cut -d' ' -f1)" = "$(sha256sum "testpypi-dist/$NAME" | cut -d' ' -f1)"
+          done
+          python -m pip install --disable-pip-version-check --no-cache-dir -c constraints/ci.txt \
+            numpy scipy joblib typing-extensions numba moocore 'dask[distributed]'
+          python -m pip install --disable-pip-version-check --no-cache-dir --no-deps testpypi-dist/*.whl
+          python -m pip check
+      - name: Run full installed-package smoke
+        env:
+          PYTHONPATH: ""
+        run: python tools/release_smoke.py --version "$VAMOS_RELEASE_VERSION" --mode full
 
-      - name: Build distribution
-        run: python -m build
+  publish-pypi:
+    name: Publish the same bytes to PyPI
+    needs: testpypi-smoke
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vamos-${{ env.VAMOS_RELEASE_VERSION }}-publication-input
+          path: frozen
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          packages-dir: frozen/dist/
 
-      - name: Install wheel and smoke test
+  pypi-smoke:
+    name: Verify production PyPI bytes and public smoke
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout smoke script and constraints
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vamos-${{ env.VAMOS_RELEASE_VERSION }}-publication-input
+          path: frozen
+      - name: Download and compare production distributions
         run: |
-          python -m pip install dist/*.whl
-          python - <<'PY'
-          import vamos
-          import vamos.api
+          mkdir pypi-dist
+          python -m pip install --disable-pip-version-check -r release/requirements-build.txt
+          for ATTEMPT in 1 2 3 4 5; do
+            python -m pip download --disable-pip-version-check --no-deps \
+              --only-binary=:all: \
+              --index-url https://pypi.org/simple/ \
+              --dest pypi-dist "vamos-optimization==$VAMOS_RELEASE_VERSION" && break
+            test "$ATTEMPT" = "5" && exit 1
+            sleep 10
+          done
+          python -m pip download --disable-pip-version-check --no-deps \
+            --no-binary=:all: --no-build-isolation \
+            --index-url https://pypi.org/simple/ \
+            --dest pypi-dist "vamos-optimization==$VAMOS_RELEASE_VERSION"
+          for FILE in frozen/dist/*; do
+            NAME=$(basename "$FILE")
+            test -f "pypi-dist/$NAME"
+            test "$(sha256sum "$FILE" | cut -d' ' -f1)" = "$(sha256sum "pypi-dist/$NAME" | cut -d' ' -f1)"
+          done
+          python -m pip install --disable-pip-version-check --no-cache-dir -c constraints/ci.txt \
+            numpy scipy joblib typing-extensions numba moocore 'dask[distributed]'
+          python -m pip install --disable-pip-version-check --no-cache-dir --no-deps pypi-dist/*.whl
+          python -m pip check
+      - name: Run full production installed-package smoke
+        env:
+          PYTHONPATH: ""
+        run: python tools/release_smoke.py --version "$VAMOS_RELEASE_VERSION" --mode full > production-smoke.json
+      - name: Verify and preserve production smoke evidence
+        run: test "$(jq -r .status production-smoke.json)" = "passed"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vamos-${{ env.VAMOS_RELEASE_VERSION }}-production-smoke
+          path: production-smoke.json
+          if-no-files-found: error
+          retention-days: 90
 
-          print("Wheel smoke OK:", vamos.__version__)
-          PY
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        # Note: This uses Trusted Publishing by default if configured on PyPI.
-        # Alternatively, use user/password secrets:
-        # with:
-        #   user: __token__
-        #   password: ${{ secrets.PYPI_API_TOKEN }}
+  github-release:
+    name: Create official GitHub Release
+    needs: pypi-smoke
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release notes
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vamos-${{ env.VAMOS_RELEASE_VERSION }}-publication-input
+          path: frozen
+      - name: Attach distributions and evidence without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp docs/project/stability-and-versioning.md frozen/stability-and-versioning.md
+          cp docs/project/known-limitations.md frozen/known-limitations.md
+          gh release create "$GITHUB_REF_NAME" \
+            frozen/dist/* frozen/SHA256SUMS frozen/SBOM.cdx.json \
+            frozen/artifact-manifest.json frozen/build-provenance.json \
+            frozen/stability-and-versioning.md frozen/known-limitations.md \
+            --verify-tag --title "VAMOS $VAMOS_RELEASE_VERSION" \
+            --notes-file "docs/project/release-notes-${VAMOS_RELEASE_VERSION}.md"

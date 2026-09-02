@@ -24,23 +24,26 @@ from vamos import optimize
 result = optimize(
     "dtlz2",
     algorithm="rvea",
+    n_obj=8,
     max_evaluations=100000,
     seed=42,
-    algorithm_kwargs={"n_obj": 8},
 )
 
 print(result.F.shape)
 ```
 
-With explicit reference vector configuration:
+With an explicit public configuration:
 
 ```python
+from vamos.algorithms import RVEAConfig
+
+config = RVEAConfig.default(n_var=12, n_obj=3)
 result = optimize(
     "dtlz3",
     algorithm="rvea",
     max_evaluations=80000,
     seed=0,
-    algorithm_kwargs={"n_partitions": 6, "fr": 0.1, "alpha": 2.0},
+    algorithm_config=config,
 )
 ```
 
@@ -53,7 +56,7 @@ result = optimize(
 | `pop_size` | inferred | Inferred from reference vector count. |
 | `n_partitions` | auto | Das–Dennis partition parameter; controls reference vector count. |
 | `alpha` | 2.0 | Angle-penalized distance parameter. Controls convergence vs. diversity balance. |
-| `fr` | 0.1 | Reference vector adaptation frequency as a fraction of `max_evaluations`. |
+| `adapt_freq` | 0.1 | Reference vector adaptation frequency. |
 | `crossover_prob` | 1.0 | SBX crossover probability. |
 | `crossover_eta` | 20 | SBX distribution index. |
 | `mutation_eta` | 20 | Polynomial mutation distribution index. |

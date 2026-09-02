@@ -51,7 +51,7 @@ class TestNSGAIIConfigShortcuts:
         assert cfg.pop_size == 100
         assert cfg.selection[0] == "tournament"
 
-    def test_builder_rejects_legacy_tuple_operator_syntax(self):
+    def test_builder_rejects_tuple_operator_syntax(self):
         with pytest.raises(TypeError, match="keyword arguments"):
             NSGAIIConfig.builder().crossover(("sbx", {"prob": 1.0}))  # type: ignore[arg-type]
 
@@ -70,12 +70,11 @@ class TestNSGAIIConfigShortcuts:
         assert cfg.selection[1]["size"] == 3
         assert "pressure" not in cfg.selection[1]
 
-    def test_tournament_selection_rejects_pressure_alias(self):
-        """Tournament selection should reject the removed pressure alias."""
-        with pytest.raises(ValueError, match="uses 'size'"):
-            NSGAIIConfig.builder().selection("tournament", pressure=2)
+    def test_tournament_selection_rejects_unknown_options(self):
+        with pytest.raises(ValueError, match="Unsupported tournament selection options"):
+            NSGAIIConfig.builder().selection("tournament", unexpected_option=2)
 
-    def test_available_operators_lists_pm_alias(self):
+    def test_available_operators_lists_pm_operator_id(self):
         operators = NSGAIIConfig.available_operators("mutation")
         assert "pm" in operators["mutation"]
 
@@ -119,13 +118,13 @@ class TestMOEADConfigShortcuts:
         assert cfg.aggregation[0] == "pbi"
         assert cfg.repair == "auto"
 
-    def test_default_mutation_alias_is_valid(self):
+    def test_default_mutation_operator_id_is_valid(self):
         cfg = MOEADConfig.default()
         assert cfg.mutation[0] == "pm"
 
 
 class TestIBEAConfigShortcuts:
-    def test_default_mutation_alias_is_valid(self):
+    def test_default_mutation_operator_id_is_valid(self):
         cfg = IBEAConfig.default()
         assert cfg.mutation[0] == "pm"
 

@@ -38,14 +38,22 @@ plugins:
 
 nav:
   - Home: index.md
+  - Project:
+    - VAMOS 1.0.0 Release Notes: project/release-notes-1.0.0.md
+    - Stability and Versioning: project/stability-and-versioning.md
+    - Known Limitations: project/known-limitations.md
+    - Roadmap: roadmap.md
   - Guide:
+    - Installation: guide/installation.md
     - Minimal Python Track: guide/minimal-python.md
     - Quick Start Guide: guide/zero_to_hero.md
     - Getting Started: guide/getting-started.md
+    - Durable Studies: guide/studies.md
     - VAMOS Assist: assist.md
     - CLI & Config: guide/cli.md
     - VAMOS Studio: guide/studio.md
     - Cookbook: guide/cookbook.md
+    - Save & Load Runs: guide/run-artifacts.md
     - Troubleshooting: guide/troubleshooting.md
   - Reference:
     - API Reference: reference/api_reference.md
@@ -61,9 +69,21 @@ nav:
     - Engineering Audit: topics/engineering_audit.md
     - Scaling with Dask: scaling/dask.md
   - Developer Guides:
+    - Run Artifact Contract: dev/run_artifact_contract.md
+    - Run Artifact Acceptance Tests: dev/run_artifact_acceptance_tests.md
+    - Run Artifacts and Replay: dev/run_artifacts_and_replay.md
     - Add a Problem: dev/add_problem.md
+    - Add an Operator: dev/add_operator.md
     - Add an Algorithm: dev/add_algorithm.md
     - Add a Backend: dev/add_backend.md
+    - Add a Metric: dev/add_metric.md
+    - Change the CLI: dev/cli.md
+    - Change Studies: dev/studies.md
+    - StudyManifest v1 Contract: dev/study_manifest_contract.md
+    - StudyManifest Acceptance: dev/study_manifest_acceptance_tests.md
+    - Study Planning Acceptance: dev/study_plan_acceptance_tests.md
+    - Testing and Validation: dev/testing.md
+    - Typing Policy: dev/typing.md
     - Architecture Health: dev/architecture_health.md
     - Release Smoke Verification: release_smoke.md
     - Architecture Decisions:
@@ -73,3 +93,6 @@ nav:
       - 0003 Optional Dependencies Policy: dev/adr/0003-optional-deps-policy.md
       - 0004 No Shims, No Allowlists: dev/adr/0004-no-shims-no-allowlists.md
       - 0005 Health Gates and Retention: dev/adr/0005-health-gates-and-retention.md
+      - 0006 Run Artifact and Replay Contract: dev/adr/0006-run-artifact-and-replay-contract.md
+      - 0007 Canonical Typing Gates: dev/adr/0007-canonical-typing-gates.md
+      - 0008 Durable StudyManifest Contract: dev/adr/0008-durable-study-manifest-contract.md

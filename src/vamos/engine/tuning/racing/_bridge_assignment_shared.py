@@ -94,11 +94,11 @@ def apply_optional_external_archive(builder: Any, assignment: dict[str, Any], po
     if archive_unbounded:
         builder.external_archive(capacity=None)
         return
-    prune_policy = str(assignment.get("archive_prune_policy", "crowding"))
-    if prune_policy not in _TUNING_ARCHIVE_PRUNE_POLICIES:
+    pruning = str(assignment.get("archive_prune_policy", "crowding"))
+    if pruning not in _TUNING_ARCHIVE_PRUNE_POLICIES:
         valid = ", ".join(sorted(_TUNING_ARCHIVE_PRUNE_POLICIES))
-        raise ValueError(f"Unsupported prune_policy '{prune_policy}'. Expected one of: {valid}.")
-    builder.external_archive(capacity=pop_size, pruning=prune_policy)
+        raise ValueError(f"Unsupported pruning '{pruning}'. Expected one of: {valid}.")
+    builder.external_archive(capacity=pop_size, pruning=pruning)
 
 
 def apply_optional_repair(builder: Any, assignment: dict[str, Any]) -> None:

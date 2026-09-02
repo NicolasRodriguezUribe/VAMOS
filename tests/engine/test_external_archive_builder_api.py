@@ -35,7 +35,7 @@ def test_external_archive_builder_accepts_capacity_and_pruning_only(builder_fact
 
 
 @pytest.mark.parametrize("builder_factory", _BUILDERS)
-def test_external_archive_builder_rejects_legacy_kwargs(builder_factory):
+def test_external_archive_builder_rejects_unknown_kwargs(builder_factory):
     builder = builder_factory()
     with pytest.raises(TypeError):
-        builder.external_archive(capacity=50, archive_type="size_cap")  # type: ignore[call-arg]
+        builder.external_archive(capacity=50, unexpected_option=True)  # type: ignore[call-arg]

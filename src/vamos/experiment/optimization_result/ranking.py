@@ -143,7 +143,10 @@ def top_k_report(
     return rows
 
 
-def _extract_source(result: Any, source: RankingSource | str) -> tuple[np.ndarray, np.ndarray | None]:
+def _extract_source(
+    result: Any,
+    source: RankingSource | str,
+) -> tuple[NDArray[np.float64], NDArray[np.generic] | None]:
     src = normalize_ranking_source(source)
     if src == "result":
         F = result.F
@@ -162,13 +165,13 @@ def _extract_source(result: Any, source: RankingSource | str) -> tuple[np.ndarra
     return F_arr, None if X is None else np.asarray(X)
 
 
-def _normalize_front(F: np.ndarray) -> np.ndarray:
+def _normalize_front(F: NDArray[np.float64]) -> NDArray[np.float64]:
     normalized = (F - F.min(axis=0)) / (np.ptp(F, axis=0) + 1e-12)
     return np.asarray(normalized, dtype=float)
 
 
 def _ranking_scores(
-    F: np.ndarray,
+    F: NDArray[np.float64],
     *,
     method: RankingMethod | str,
     weights: NDArray[np.float64] | None = None,
@@ -203,10 +206,10 @@ def _ranking_scores(
 
 
 def _top_k_subset_method(
-    F_src: np.ndarray,
-    X_src: np.ndarray | None,
-    F_rank: np.ndarray,
-    idx_rank: np.ndarray,
+    F_src: NDArray[np.float64],
+    X_src: NDArray[np.generic] | None,
+    F_rank: NDArray[np.float64],
+    idx_rank: NDArray[np.int_],
     *,
     k: int,
     source: str,
@@ -255,13 +258,13 @@ def _top_k_subset_method(
     }
 
 
-def _min_pairwise_distance(points: np.ndarray) -> np.ndarray:
+def _min_pairwise_distance(points: NDArray[np.float64]) -> NDArray[np.float64]:
     dists = np.linalg.norm(points[:, None, :] - points[None, :, :], axis=2)
     np.fill_diagonal(dists, np.inf)
     return np.asarray(np.min(dists, axis=1), dtype=float)
 
 
-def _minimum_angles(points: np.ndarray) -> np.ndarray:
+def _minimum_angles(points: NDArray[np.float64]) -> NDArray[np.float64]:
     ideal = points.min(axis=0)
     vectors = points - ideal
     norms = np.maximum(np.linalg.norm(vectors, axis=1, keepdims=True), 1e-30)

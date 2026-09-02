@@ -16,17 +16,17 @@ import numpy as np
 from vamos.engine.algorithm.components.hooks import get_live_viz, live_should_stop
 from vamos.engine.algorithm.components.population import initialize_population, resolve_bounds
 from vamos.engine.algorithm.components.termination import capped_offspring_size, validate_initial_budget
-from vamos.engine.algorithm.components.variation.helpers import (
-    ensure_supported_operator_names,
-    ensure_supported_repair_name,
-)
-from vamos.engine.algorithm.components.variation.pipeline import VariationPipeline
 from vamos.engine.archive.factory import resolve_external_archive, setup_archive
 from vamos.engine.config.variation import (
     ensure_operator_tuple,
     resolve_default_variation_config,
 )
 from vamos.engine.hooks.live_viz import LiveVisualization
+from vamos.engine.variation.helpers import (
+    ensure_supported_operator_names,
+    ensure_supported_repair_name,
+)
+from vamos.engine.variation.pipeline import VariationPipeline
 from vamos.engine.variation.protocol import RepairConfigValue
 from vamos.foundation.encoding import normalize_encoding
 from vamos.foundation.eval.backends import EvaluationBackend, SerialEvalBackend
@@ -237,7 +237,7 @@ class AGEMOEA:
             )
         )
 
-    def ask(self) -> np.ndarray:
+    def ask(self) -> np.ndarray[Any, Any]:
         """Generate offspring for external evaluation.
 
         Returns

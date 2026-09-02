@@ -6,13 +6,14 @@ from typing import Any
 import numpy as np
 
 from ._problem_builder_security import (
-    apply_process_sandbox,
+    apply_process_limits,
     compile_constraint_function,
     compile_objective_function,
-    normalize_sandbox_profile,
+    normalize_resource_profile,
+    require_trusted_local_code,
 )
 
-DEFAULT_SANDBOX_PROFILE = "basic"
+DEFAULT_RESOURCE_PROFILE = "basic"
 PREVIEW_TIMEOUT_SECONDS = 10.0
 
 
@@ -73,14 +74,14 @@ def _preview_worker(
     seed: int,
     n_constraints: int,
     timeout_seconds: float,
-    sandbox_profile: str,
+    resource_profile: str,
 ) -> None:
     try:
-        apply_process_sandbox(profile=sandbox_profile, timeout_seconds=timeout_seconds)
-        fn = compile_objective_function(objective_code)
+        apply_process_limits(profile=resource_profile, timeout_seconds=timeout_seconds)
+        fn = compile_objective_function(objective_code, trusted_local_code=True)
         constraints = None
         if constraint_code.strip() and n_constraints > 0:
-            constraints = compile_constraint_function(constraint_code)
+            constraints = compile_constraint_function(constraint_code, trusted_local_code=True)
         payload = _run_preview_once(
             fn,
             n_var=n_var,
@@ -113,10 +114,12 @@ def run_preview_optimization(
     objective_code: str | None = None,
     constraint_code: str = "",
     timeout_seconds: float = PREVIEW_TIMEOUT_SECONDS,
-    sandbox_profile: str = DEFAULT_SANDBOX_PROFILE,
+    resource_profile: str = DEFAULT_RESOURCE_PROFILE,
+    trusted_local_code: bool = False,
 ) -> dict[str, Any]:
-    """Run a quick optimization and return ``{"F": ..., "X": ..., "elapsed_ms": ...}``."""
-    sandbox_profile = normalize_sandbox_profile(sandbox_profile)
+    """Run reviewed local Python after an explicit trust acknowledgement."""
+    require_trusted_local_code(trusted_local_code)
+    resource_profile = normalize_resource_profile(resource_profile)
     if objective_code is None or timeout_seconds <= 0:
         return _run_preview_once(
             fn,
@@ -151,7 +154,7 @@ def run_preview_optimization(
             "seed": seed,
             "n_constraints": n_constraints,
             "timeout_seconds": timeout_seconds,
-            "sandbox_profile": sandbox_profile,
+            "resource_profile": resource_profile,
         },
     )
     process.start()

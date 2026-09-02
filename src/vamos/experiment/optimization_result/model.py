@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Literal, TypedDict, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast, overload
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,17 +13,20 @@ from .ranking import BestMethod, RankingMethod, RankingSource, normalize_best_me
 from .ranking import top_k as rank_top_k
 from .ranking import top_k_report as build_top_k_report
 
+if TYPE_CHECKING:
+    from vamos.experiment.artifacts.models import RunManifest
+
 
 class BestResult(TypedDict):
-    X: NDArray[Any] | None
-    F: NDArray[Any]
+    X: NDArray[np.generic] | None
+    F: NDArray[np.float64]
     index: int
     front_index: int
 
 
 class TopKResult(TypedDict):
-    X: NDArray[Any] | None
-    F: NDArray[Any]
+    X: NDArray[np.generic] | None
+    F: NDArray[np.float64]
     indices: NDArray[np.int_]
     scores: NDArray[np.float64]
     source: RankingSource
@@ -37,16 +40,23 @@ class OptimizationResult:
     Use `vamos.ux.api` for summaries, plotting, and export helpers.
     """
 
-    F: NDArray[Any] | None
-    X: NDArray[Any] | None
+    F: NDArray[np.float64] | None
+    X: NDArray[np.generic] | None
     data: dict[str, Any]
     meta: dict[str, Any]
 
-    def __init__(self, payload: Mapping[str, Any], *, meta: Mapping[str, Any] | None = None):
+    def __init__(
+        self,
+        payload: Mapping[str, Any],
+        *,
+        meta: Mapping[str, Any] | None = None,
+        manifest: RunManifest | None = None,
+    ):
         self.F = payload.get("F")
         self.X = payload.get("X")
         self.data = dict(payload)
         self.meta = dict(meta or {})
+        self._manifest = manifest
 
     def __len__(self) -> int:
         return len(self.F) if self.F is not None else 0
@@ -60,13 +70,22 @@ class OptimizationResult:
     def n_objectives(self) -> int:
         return self.F.shape[1] if self.F is not None and len(self.F) > 0 else 0
 
-    @overload
-    def front(self, *, return_indices: Literal[False] = False) -> np.ndarray | None: ...
+    @property
+    def manifest(self) -> RunManifest | None:
+        """Immutable source manifest when this result was loaded from a run."""
+        return self._manifest
 
     @overload
-    def front(self, *, return_indices: Literal[True]) -> tuple[np.ndarray, np.ndarray]: ...
+    def front(self, *, return_indices: Literal[False] = False) -> NDArray[np.float64] | None: ...
 
-    def front(self, *, return_indices: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray] | None:
+    @overload
+    def front(self, *, return_indices: Literal[True]) -> tuple[NDArray[np.float64], NDArray[np.int_]]: ...
+
+    def front(
+        self,
+        *,
+        return_indices: bool = False,
+    ) -> NDArray[np.float64] | tuple[NDArray[np.float64], NDArray[np.int_]] | None:
         if return_indices:
             return pareto_filter(self.F, return_indices=True)
         return pareto_filter(self.F, return_indices=False)
@@ -147,10 +166,10 @@ class OptimizationResult:
 
     def explain_defaults(self) -> dict[str, object]:
         explained: dict[str, object] = {}
-        resolved = self.meta.get("resolved_config")
+        resolved = self.meta.get("run_artifact_resolved_spec")
         sources = self.meta.get("default_sources")
         if resolved is not None:
-            explained["resolved_config"] = resolved
+            explained["resolved_spec"] = resolved
         if sources is not None:
             explained["default_sources"] = sources
         return explained

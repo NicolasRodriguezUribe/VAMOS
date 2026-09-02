@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import secrets
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -36,9 +37,11 @@ _SUBCOMMANDS: dict[str, str] = {
     "create-problem": "Scaffold a custom problem file",
     "summarize": "Table/JSON summary of results",
     "open-results": "Open the latest results folder",
+    "results": "Inspect and verify canonical run artifacts",
+    "reproduce": "Execute an exact built-in replay",
+    "study": "Manage the single-owner durable study lifecycle",
     "ablation": "Ablation study runner",
     "assist": "AI-assisted experiment planning",
-    # Consolidated from standalone vamos-* commands
     "check": "Verify installation and backends",
     "bench": "Benchmark suite across algorithms",
     "studio": "Launch the interactive dashboard",
@@ -67,74 +70,87 @@ def _dispatch_subcommand(argv: list[str]) -> bool:
     command = argv[0]
 
     # ---- help: list all subcommands ----
-    if command in {"help", "--help-commands"}:
+    if command == "help":
         print("Available vamos subcommands:\n")
         for name, desc in _SUBCOMMANDS.items():
             print(f"  vamos {name:20s} {desc}")
         print("\nRun `vamos <command> --help` for details on a specific command.")
         raise SystemExit(0)
 
-    # ---- original subcommands ----
-    if command in {"quickstart", "--quickstart"}:
+    if command == "quickstart":
         from vamos.experiment.cli.quickstart import run_quickstart
 
         run_quickstart(argv[1:])
         return True
-    if command in {"summarize", "summary"}:
+    if command == "summarize":
         from vamos.experiment.cli.results_cli import run_summarize
 
         run_summarize(argv[1:])
         return True
-    if command in {"ablation"}:
+    if command == "ablation":
         from vamos.experiment.cli.ablation import run_ablation
 
         run_ablation(argv[1:])
         return True
-    if command in {"assist"}:
+    if command == "assist":
         from vamos.assist.cli import run_assist
 
         run_assist(argv[1:])
         return True
-    if command in {"open-results", "open_results"}:
+    if command == "open-results":
         from vamos.experiment.cli.results_cli import run_open_results
 
         run_open_results(argv[1:])
         return True
-    if command in {"create-problem", "create_problem"}:
+    if command == "results":
+        from vamos.experiment.cli.run_artifact_cli import run_results
+
+        run_results(argv[1:])
+        return True
+    if command == "reproduce":
+        from vamos.experiment.cli.run_artifact_cli import run_reproduce
+
+        run_reproduce(argv[1:])
+        return True
+    if command == "study":
+        from vamos.experiment.cli.study import study_main
+
+        study_main(argv[1:])
+        return True
+    if command == "create-problem":
         from vamos.experiment.cli.create_problem import run_create_problem
 
         run_create_problem(argv[1:])
         return True
 
-    # ---- consolidated standalone commands ----
-    if command in {"check", "self-check", "self_check"}:
+    if command == "check":
         from vamos.experiment.diagnostics.self_check import main as _self_check_main
 
         _raise_on_nonzero(_self_check_main(argv[1:]))
         return True
-    if command in {"bench", "benchmark"}:
+    if command == "bench":
         from vamos.experiment.benchmark.cli import main as _bench_main
 
         _raise_on_nonzero(_bench_main(argv[1:]))
         return True
-    if command in {"studio"}:
+    if command == "studio":
         from vamos.ux.panel.launcher import main as _studio_main
 
         exit_code = int(_studio_main(argv[1:]))
         if exit_code != 0:
             raise SystemExit(exit_code)
         return True
-    if command in {"zoo"}:
+    if command == "zoo":
         from vamos.experiment.zoo.cli import main as _zoo_main
 
         _raise_on_nonzero(_zoo_main(argv[1:]))
         return True
-    if command in {"tune"}:
+    if command == "tune":
         from vamos.experiment.cli.tune import main as _tune_main
 
         _raise_on_nonzero(_tune_main(argv[1:]))
         return True
-    if command in {"profile"}:
+    if command == "profile":
         from vamos.experiment.profiler.cli import main as _profile_main
 
         _raise_on_nonzero(_profile_main(argv[1:]))
@@ -152,7 +168,7 @@ def _build_runtime_config(*, args: argparse.Namespace, default_config: Experimen
         population_size=args.population_size,
         offspring_population_size=args.offspring_population_size,
         max_evaluations=args.max_evaluations,
-        seed=args.seed,
+        seed=secrets.randbits(64) if args.seed is None else args.seed,
         eval_strategy=args.eval_strategy,
         n_workers=args.n_workers,
         live_viz=args.live_viz,

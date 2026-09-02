@@ -1,0 +1,23 @@
+{
+  "artifact_schemas": {
+    "vamos.environment": "1.0.0",
+    "vamos.resolved-study-plan": "1.0.0",
+    "vamos.run-manifest": "1.0.0",
+    "vamos.study-attempt": "1.0.0",
+    "vamos.study-command-result": "1.0.0",
+    "vamos.study-event": "1.0.0",
+    "vamos.study-manifest": "1.0.0",
+    "vamos.study-report": "1.0.0",
+    "vamos.study-spec": "1.0.0",
+    "vamos.study-summary": "1.0.0",
+    "vamos.study-task": "1.0.0"
+  },
+  "command_envelopes": {
+    "vamos.replay-report": "1",
+    "vamos.run-command-error": "1",
+    "vamos.run-inspection": "1",
+    "vamos.verification-report": "1"
+  },
+  "document_type": "vamos.stable-schema-inventory",
+  "schema_version": "1.0.0"
+}

@@ -9,7 +9,11 @@ import numpy as np
 
 _MAX_USER_CODE_CHARS = 12000
 _ALLOWED_IMPORT_ROOTS = {"math", "numpy"}
-_SANDBOX_PROFILES: dict[str, dict[str, int]] = {
+TRUSTED_LOCAL_CODE_WARNING = (
+    "Trusted local Python code executes with the permissions of your current operating-system user. "
+    "Review the complete code before opting in."
+)
+_RESOURCE_PROFILES: dict[str, dict[str, int]] = {
     "none": {},
     "basic": {
         "memory_mb": 2048,
@@ -81,8 +85,8 @@ def safe_import(name: str, globals: Any = None, locals: Any = None, fromlist: An
     return _py_builtins.__import__(name, globals, locals, fromlist, level)
 
 
-class UserCodeSafetyVisitor(ast.NodeVisitor):
-    """Reject clearly unsafe constructs in user-entered code."""
+class UserCodeValidationVisitor(ast.NodeVisitor):
+    """Reject unsupported constructs without claiming to isolate Python."""
 
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
@@ -114,14 +118,19 @@ def validate_user_code(code: str, *, section: str) -> None:
     if len(code) > _MAX_USER_CODE_CHARS:
         raise ValueError(f"{section} code is too long (>{_MAX_USER_CODE_CHARS} characters).")
     tree = ast.parse(code, mode="exec")
-    UserCodeSafetyVisitor().visit(tree)
+    UserCodeValidationVisitor().visit(tree)
 
 
-def normalize_sandbox_profile(profile: str) -> str:
+def require_trusted_local_code(enabled: bool) -> None:
+    if not enabled:
+        raise PermissionError(f"{TRUSTED_LOCAL_CODE_WARNING} Set trusted_local_code=True only after review.")
+
+
+def normalize_resource_profile(profile: str) -> str:
     normalized = profile.strip().lower()
-    if normalized not in _SANDBOX_PROFILES:
-        options = ", ".join(sorted(_SANDBOX_PROFILES))
-        raise ValueError(f"Unknown sandbox profile '{profile}'. Choose one of: {options}.")
+    if normalized not in _RESOURCE_PROFILES:
+        options = ", ".join(sorted(_RESOURCE_PROFILES))
+        raise ValueError(f"Unknown resource-limit profile '{profile}'. Choose one of: {options}.")
     return normalized
 
 
@@ -135,8 +144,8 @@ def _try_set_rlimit(resource_mod: Any, limit_name: str, soft: int, hard: int) ->
         return
 
 
-def apply_process_sandbox(*, profile: str, timeout_seconds: float) -> None:
-    profile_name = normalize_sandbox_profile(profile)
+def apply_process_limits(*, profile: str, timeout_seconds: float) -> None:
+    profile_name = normalize_resource_profile(profile)
     if profile_name == "none":
         return
     try:
@@ -144,7 +153,7 @@ def apply_process_sandbox(*, profile: str, timeout_seconds: float) -> None:
     except Exception:
         return
 
-    settings = _SANDBOX_PROFILES[profile_name]
+    settings = _RESOURCE_PROFILES[profile_name]
     cpu_soft = max(1, int(float(timeout_seconds)))
     cpu_hard = max(cpu_soft + 1, cpu_soft)
     _try_set_rlimit(resource, "RLIMIT_CPU", cpu_soft, cpu_hard)
@@ -169,9 +178,10 @@ def apply_process_sandbox(*, profile: str, timeout_seconds: float) -> None:
         _try_set_rlimit(resource, "RLIMIT_NPROC", int(max_processes), int(max_processes))
 
 
-def compile_user_function(code: str, *, func_name: str, source_tag: str) -> Any:
+def compile_user_function(code: str, *, func_name: str, source_tag: str, trusted_local_code: bool = False) -> Any:
     import math
 
+    require_trusted_local_code(trusted_local_code)
     validate_user_code(code, section=func_name)
     source = f"def {func_name}(x):\n" + textwrap.indent(code, "    ") + "\n"
     local_ns: dict[str, Any] = {}
@@ -188,17 +198,29 @@ def compile_user_function(code: str, *, func_name: str, source_tag: str) -> Any:
     return fn
 
 
-def compile_constraint_function(code: str) -> Any:
-    return compile_user_function(code, func_name="_user_constraint", source_tag="<constraint-builder>")
+def compile_constraint_function(code: str, *, trusted_local_code: bool = False) -> Any:
+    return compile_user_function(
+        code,
+        func_name="_user_constraint",
+        source_tag="<constraint-builder>",
+        trusted_local_code=trusted_local_code,
+    )
 
 
-def compile_objective_function(code: str) -> Any:
-    return compile_user_function(code, func_name="_user_fn", source_tag="<problem-builder>")
+def compile_objective_function(code: str, *, trusted_local_code: bool = False) -> Any:
+    return compile_user_function(
+        code,
+        func_name="_user_fn",
+        source_tag="<problem-builder>",
+        trusted_local_code=trusted_local_code,
+    )
 
 
 __all__ = [
-    "apply_process_sandbox",
+    "TRUSTED_LOCAL_CODE_WARNING",
+    "apply_process_limits",
     "compile_constraint_function",
     "compile_objective_function",
-    "normalize_sandbox_profile",
+    "normalize_resource_profile",
+    "require_trusted_local_code",
 ]

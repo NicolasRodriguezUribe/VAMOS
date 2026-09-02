@@ -1,298 +1,134 @@
-# Zero to Hero: VAMOS in 15 Minutes
+# Quick start: from optimization to durable study
 
-Welcome to VAMOS! This guide will take you from an empty environment to a publication-ready Multi-Objective Evolutionary Algorithm (MOEA) study in under 15 minutes.
-If you are new to Python, start with `docs/guide/minimal-python.md`.
+This guide uses only the stable VAMOS 1.0.0 facades. Install the core package
+as described in the [installation guide](installation.md).
 
-We will cover:
-1.  **Flash Hero:** Installing and running your first optimization in 30 seconds.
-2.  **The "Wow" Moment:** Running a parallel benchmark (NSGA-II vs MOEA/D vs SMS-EMOA) and generating LaTeX tables.
-3.  **Advanced Science:** Tuning an algorithm with `RacingTuner` and defining a custom vectorized problem to unlock massive speedups.
-4.  **From CLI to Analysis:** Running reproducible CLI studies and loading results for analysis.
-
----
-
-## 1. Flash Hero: 30 Seconds to Pareto
-
-First, install VAMOS (assuming you are in the repository root):
-
-```bash
-pip install -e ".[analysis]"
-```
-
-Notes:
-- Plotting in this guide requires the `analysis` extra (matplotlib/pandas).
-- For accelerated kernels and distributed evaluation: `pip install -e ".[compute]"`.
-- For model-based tuning backends (optuna/smac3/bohb): `pip install -e ".[tuning]"`.
-
-Prefer a guided CLI? Run `vamos quickstart` for prompts and a ready-made config file.
-Use `vamos quickstart --template list` to explore domain-flavored templates.
-After a run, use `vamos summarize` to list recent results.
-
-Now, let's solve the classic **ZDT1** problem (2 objectives, 30 variables) using **NSGA-II**. Create a file `hello_vamos.py`:
+## Run one optimization
 
 ```python
 from vamos import optimize
-import matplotlib.pyplot as plt
 
-# 1. Run NSGA-II on ZDT1
-# The 'optimize' function is your main entry point.
-# It automatically selects a sane configuration for standard problems.
-res = optimize("zdt1", algorithm="nsgaii", max_evaluations=10000, seed=42)
+result = optimize(
+    "zdt1",
+    algorithm="nsgaii",
+    max_evaluations=400,
+    pop_size=40,
+    engine="numpy",
+    seed=42,
+)
 
-# 2. Visualize immediately
-F = res.F  # Objective values (Pareto front approximation)
-plt.scatter(F[:, 0], F[:, 1], c="teal", label="NSGA-II")
-plt.title(f"ZDT1: {len(F)} solutions found")
-plt.xlabel("Objective 1 (Minimize)")
-plt.ylabel("Objective 2 (Minimize)")
-plt.legend()
-plt.show()
+print(result.F.shape)
+print(result.X.shape)
+print(result.data["evaluations"])
 ```
 
-Run it:
-```bash
-python hello_vamos.py
-```
+`F` contains objective values and `X` contains the corresponding decision
+variables. `max_evaluations` is a hard budget. NumPy is the deterministic
+reference backend; reproducibility is a same-environment promise, not a
+cross-platform or cross-backend bitwise promise.
 
-**Boom.** You just performed a multi-objective optimization. VAMOS handles the population initialization, evolutionary loop, and non-dominated sorting for you.
-
----
-
-## 2. The "Wow" Moment: Competitive Benchmarking
-
-Let's do real science. You want to compare **NSGA-II**, **MOEA/D**, and **SMS-EMOA** on a problem, run multiple seeds in parallel to save time, and verify statistical significance.
-
-Create `benchmark.py`:
+## Define a problem
 
 ```python
-import pandas as pd
+from vamos import make_problem, optimize
+
+problem = make_problem(
+    lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
+    n_var=2,
+    n_obj=2,
+    bounds=[(0, 1), (0, 1)],
+    encoding="real",
+)
+
+result = optimize(
+    problem,
+    algorithm="nsgaii",
+    max_evaluations=400,
+    pop_size=40,
+    seed=42,
+)
+```
+
+The default `vectorized=False` adapter calls this scalar function once per
+solution. For a function that accepts an `(N, n_var)` batch and returns an
+`(N, n_obj)` array, pass `vectorized=True` to `make_problem`.
+
+## Use an explicit algorithm configuration
+
+```python
 from vamos import optimize
-from vamos.foundation.quality_indicators import compute_normalized_hv
-from vamos.ux.api import friedman_test
+from vamos.algorithms import NSGAIIConfig
+from vamos.problems import ZDT1
 
-# 1. Define the study
-algorithms = ["nsgaii", "moead", "smsemoa"]
-problem_name = "zdt1"
-n_seeds = 5  # In a real paper, use 30+
+problem = ZDT1(n_var=30)
+configuration = NSGAIIConfig.default(pop_size=40, n_var=problem.n_var)
 
-print(f"Running benchmark on {problem_name} with {algorithms}...")
-
-# 2. Run in PARALLEL
-# VAMOS supports parallel evaluation of seeds/algorithms if you wrap this loop.
-# For simplicity here, we run sequentially but show how fast it is.
-# Pro-tip: Use StudyRunner or the `vamos bench` CLI for full sweeps.
-
-results = {}
-for algo in algorithms:
-    print(f"  -> Running {algo}...", end="")
-    # Collect normalized hypervolume (HV) for each seed
-    hvs = []
-    for seed in range(n_seeds):
-        res = optimize(problem_name, algorithm=algo, max_evaluations=5000, seed=seed)
-        # compute_normalized_hv uses ZDT reference fronts.
-        # For other problems, call compute_hypervolume with an explicit reference point.
-        hv_score = compute_normalized_hv(res.F, problem_name)
-        hvs.append(hv_score)
-    results[algo] = hvs
-    print(" Done.")
-
-# 3. Create a DataFrame
-df = pd.DataFrame(results)
-print("\nNormalized Hypervolume Scores:")
-print(df)
-
-# 4. Statistical Analysis (Friedman Test)
-# We treat each seed as a separate 'problem instance' or aggregated block for the test
-# Usually you test across multiple problems. Here we test across seeds (just for mechanics demo).
-friedman = friedman_test(df.values, higher_is_better=True)
-mean_ranks = friedman.ranks.mean(axis=0)
-
-print(f"\nFriedman Test p-value: {friedman.p_value:.4e}")
-print("Mean ranks:", dict(zip(df.columns, mean_ranks)))
-
-# 5. Export to LaTeX
-# This is what goes into your Overleaf paper!
-latex_table = df.describe().to_latex(float_format="%.4f")
-print("\n--- LaTeX Table for your Paper ---\n")
-print(latex_table)
+result = optimize(
+    problem,
+    algorithm="nsgaii",
+    algorithm_config=configuration,
+    max_evaluations=400,
+    seed=42,
+)
 ```
 
-**Why this matters:**
-*   **Consistency:** The same API (`optimize`) switches algorithms seamlessly.
-*   **Analysis tools:** Dedicated stats module (`vamos.ux.analysis`) automates the math.
-*   **Publication Ready:** Pandas integration means you go from Python to LaTeX in seconds.
+Use a public configuration object when the exact operators and their settings
+need to be preserved. VAMOS rejects a configuration that does not match the
+selected algorithm.
 
----
-
-## 3. Advanced Science: Racing & Vectorization
-
-### A. Multi-Fidelity Auto-Tuning with Racing
-
-Don't guess hyperparameters. Use the `RacingTuner` with **Hyperband-style multi-fidelity** to find the best configuration efficiently. This evaluates many configurations cheaply first, then invests more budget only in promising ones.
+## Save, verify, and replay
 
 ```python
-import numpy as np
-from vamos import optimize, make_problem_selection
-from vamos.engine.tuning.racing import (
-    RacingTuner, Scenario, TuningTask, Instance,
-    WarmStartEvaluator, EvalContext,
-    build_nsgaii_config_space, config_from_assignment
-)
+from vamos import load_result, reproduce, save_result, verify_run
 
-# 1. Define warm-start-aware evaluation function
-def run_algorithm(config_dict, ctx: EvalContext, checkpoint=None):
-    """Run algorithm with optional warm-start from previous fidelity level."""
-    algo_config = config_from_assignment("nsgaii", config_dict)
-    
-    # Calculate how much extra budget we need
-    if checkpoint is not None and ctx.previous_budget:
-        extra_budget = ctx.budget - ctx.previous_budget
-        # Note: Warm-start from checkpoint population is planned but not yet implemented.
-        # Each fidelity level currently restarts with fresh initialization.
-        # The checkpoint is preserved for budget accounting and future warm-start support.
-    else:
-        extra_budget = ctx.budget
-    
-    selection = make_problem_selection(ctx.instance.name, n_var=ctx.instance.n_var)
-    res = optimize(
-        selection.instantiate(),
-        algorithm="nsgaii",
-        algorithm_config=algo_config,
-        max_evaluations=extra_budget,
-        seed=ctx.seed,
-    )
-    
-    # Return result AND checkpoint for next fidelity level
-    new_checkpoint = {"X": res.X, "F": res.F}
-    return res, new_checkpoint
+stored = save_result(result, "runs/zdt1-seed-42")
+verification = verify_run(stored.root, require_level="exact")
+loaded = load_result(stored.root)
+replay = reproduce(stored.root, output="runs/replays/zdt1-seed-42")
 
-# 2. Create evaluator with dynamic normalization (no prior bounds needed!)
-evaluator = WarmStartEvaluator(
-    run_fn=run_algorithm,
-    score_fn=lambda res, ctx: evaluator.compute_normalized_hv(res.F),
-)
-
-# 3. Setup Task
-param_space = build_nsgaii_config_space()
-instances = [Instance(name="zdt1", n_var=30)]
-seeds = [42, 43, 44]
-
-task = TuningTask(
-    name="tune_nsgaii_zdt1",
-    param_space=param_space,
-    instances=instances,
-    seeds=seeds,
-    budget_per_run=10000,
-    maximize=True
-)
-
-# 4. Configure Multi-Fidelity Racing
-scenario = Scenario(
-    max_experiments=300,
-    use_multi_fidelity=True,          # Enable Hyperband-style
-    fidelity_levels=(1000, 3000, 10000),  # Increasing budgets
-    fidelity_warm_start=True,          # Pass checkpoints between fidelity levels (eval_fn opt-in)
-    fidelity_promotion_ratio=0.3,      # Top 30% advance
-    n_jobs=-1,                         # Parallel evaluation
-)
-
-# 5. Run!
-tuner = RacingTuner(task, scenario, max_initial_configs=30)
-best_config, history = tuner.run(evaluator)
-
-print("Best configuration found:")
-print(best_config)
+print(verification.environment.level)
+print(loaded.F.shape)
+print(replay.exact)
 ```
 
-**How it works:**
-```
-Fidelity 1 (budget=1000):  30 configs evaluated cheaply
-                           -> Top 9 promoted
+Loading and verification are data-only. `reproduce` is the separate executable
+operation and creates a new run directory; it never overwrites the source.
+Exact replay is limited to reconstructable built-ins in a materially matching
+environment.
 
-Fidelity 2 (budget=3000):  9 configs re-evaluated at higher budget (+2000 evals)
-                           (optionally warm-started from checkpoints)
-                           -> Top 3 promoted
-
-Fidelity 3 (budget=10000): 3 configs re-evaluated at full budget (+7000 evals)
-                           (optionally warm-started from checkpoints)
-                           -> Best returned
-```
-
-**Benefits over irace:**
-- **3x more initial exploration** with same total budget
-- **Checkpoint hooks** for warm-starting between fidelity levels (when your eval_fn consumes/returns checkpoints)
-- **Dynamic normalization** works without knowing ideal/nadir
-
-### B. Custom Vectorized Problem
-VAMOS is fast because it's **vectorized**. Define problems using NumPy operations, not slow Python loops.
-
-```python
-import numpy as np
-
-class MyVectorizedProblem:
-    # 30 decision variables, 2 objectives
-    n_var = 30
-    n_obj = 2
-    xl = np.zeros(30)
-    xu = np.ones(30)
-    
-    def evaluate(self, x):
-        # x is a BATCH of solutions (PopSize, n_var).
-        # We compute objectives for the WHOLE population in one go!
-        
-        # Objective 1: Just the first variable
-        f1 = x[:, 0]
-        
-        # Objective 2: Some complex function of the rest
-        g = 1 + 9 * np.sum(x[:, 1:], axis=1) / (self.n_var - 1)
-        h = 1 - np.sqrt(f1 / g)
-        f2 = g * h
-        
-        # Return shape: (PopSize, n_obj)
-        return np.column_stack([f1, f2])
-
-# Use it directly!
-# Pass the class or instance to optimize
-# (Note: In full VAMOS, you register this, but direct usage is supported for quick tests)
-# res = optimize(MyVectorizedProblem(), algorithm="nsgaii", ...)
-```
-
----
-
-## 4. From CLI to Analysis: Reproducible Runs
-
-When you need reproducible runs with clean artifacts, the CLI writes a standard layout under `results/`.
-
-Status note: as of March 31, 2026, the standard run-oriented CLI path is smoke-tested again for NSGA-II/ZDT1. The commands below reflect the intended artifact layout and are reasonable onboarding examples for the common path.
-
-Run a short sweep (three seeds) into a dedicated folder:
+The equivalent stable CLI is:
 
 ```bash
-for seed in 1 2 3; do
-  vamos --problem zdt1 --algorithm nsgaii --max-evaluations 5000 --seed $seed --output-root results/cli_demo
-done
+vamos results inspect runs/zdt1-seed-42
+vamos results verify runs/zdt1-seed-42 --require-level exact
+vamos reproduce runs/zdt1-seed-42 --output runs/replays/zdt1-seed-42
 ```
 
-Load and aggregate the results:
+## Run a durable study
 
 ```python
-from vamos.ux.analysis.results import discover_runs, load_run_data, aggregate_results
+from vamos import StudySpec, create_study
 
-runs = discover_runs("results/cli_demo")
-summary = aggregate_results(runs)
-print(summary)
+spec = StudySpec(
+    problems=["zdt1", "zdt2"],
+    algorithms=["nsgaii", "moead"],
+    seeds=[0, 1],
+    max_evaluations=400,
+    pop_size=40,
+    on_error="continue",
+)
 
-# Inspect one run's final population.
-first = load_run_data(runs[0])
-print(first.F.shape)
+completed = create_study(spec, output="studies/comparison").run()
+print(completed.inspect().counts)
+print(len(completed.summarize().rows))
 ```
 
-If pandas is installed, `aggregate_results` returns a DataFrame; otherwise it returns a list of dicts.
+A durable study is single-owner and sequential in VAMOS 1.0.0. See the
+[study guide](studies.md) for planning, inspection, resume, and retry.
 
----
+## Next steps
 
-## Next Steps
-
-*   Check out the [Cookbook](cookbook.md) for deeper recipes.
-*   Browse the [CLI Guide](cli.md) for full command reference.
-*   Explore [VAMOS Studio](studio.md) for interactive dashboards.
+- [Run artifacts and exact replay](run-artifacts.md)
+- [Durable studies](studies.md)
+- [Stability and versioning](../project/stability-and-versioning.md)
+- [Known limitations](../project/known-limitations.md)
