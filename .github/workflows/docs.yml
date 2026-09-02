@@ -36,7 +36,7 @@ jobs:
         run: |
           test "$GITHUB_EVENT_NAME" = "workflow_dispatch" || test "$GITHUB_REF_NAME" = "v$DOC_VERSION"
           mkdocs build --strict --site-dir "public/$DOC_VERSION"
-          mkdocs build --strict --config-file website/mkdocs.yml --site-dir public/website
+          mkdocs build --strict --config-file website/mkdocs.yml --site-dir "$GITHUB_WORKSPACE/public/website"
           cp -a "public/$DOC_VERSION" public/latest
           printf '%s\n' '<!doctype html><meta http-equiv="refresh" content="0; url=latest/"><title>VAMOS documentation</title>' > public/index.html
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
