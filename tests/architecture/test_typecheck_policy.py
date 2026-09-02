@@ -231,6 +231,15 @@ def test_baseline_metadata_detects_config_hash_drift() -> None:
     assert any("config_sha256" in error for error in typecheck.baseline_metadata_errors(baseline))
 
 
+def test_policy_hash_is_independent_of_checkout_line_endings(tmp_path: Path) -> None:
+    lf = tmp_path / "lf.txt"
+    crlf = tmp_path / "crlf.txt"
+    lf.write_bytes(b"first\nsecond\n")
+    crlf.write_bytes(b"first\r\nsecond\r\n")
+
+    assert typecheck._sha256(lf) == typecheck._sha256(crlf)
+
+
 def test_committed_baseline_has_the_canonical_schema() -> None:
     baseline = json.loads(typecheck.BASELINE_PATH.read_text(encoding="utf-8"))
 

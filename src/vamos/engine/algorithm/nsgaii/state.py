@@ -39,9 +39,9 @@ class NSGAIIState:
     """Mutable state container for NSGA-II algorithm."""
 
     # Population
-    X: np.ndarray
-    F: np.ndarray
-    G: np.ndarray | None
+    X: np.ndarray[Any, Any]
+    F: np.ndarray[Any, Any]
+    G: np.ndarray[Any, Any] | None
     rng: np.random.Generator
 
     # Variation
@@ -64,8 +64,8 @@ class NSGAIIState:
 
     # Archive
     archive_size: int | None = None
-    archive_X: np.ndarray | None = None
-    archive_F: np.ndarray | None = None
+    archive_X: np.ndarray[Any, Any] | None = None
+    archive_F: np.ndarray[Any, Any] | None = None
     archive_manager: (
         CrowdingDistanceArchive | HypervolumeArchive | MaxMinArchive | ReferenceDirectionsArchive | SPEA2Archive | UnboundedArchive | None
     ) = None
@@ -78,7 +78,7 @@ class NSGAIIState:
     # Genealogy
     track_genealogy: bool = False
     genealogy_tracker: GenealogyTracker | None = None
-    ids: np.ndarray | None = None
+    ids: np.ndarray[Any, Any] | None = None
 
     # Generation tracking
     generation: int = 0
@@ -89,26 +89,26 @@ class NSGAIIState:
 
     # Cached selection metrics (incremental replacement)
     fronts: list[list[int]] | None = None
-    ranks: np.ndarray | None = None
-    crowding: np.ndarray | None = None
+    ranks: np.ndarray[Any, Any] | None = None
+    crowding: np.ndarray[Any, Any] | None = None
     incremental_enabled: bool = False
 
     # Pending offspring (from ask)
-    pending_offspring: np.ndarray | None = None
-    pending_offspring_ids: np.ndarray | None = None
+    pending_offspring: np.ndarray[Any, Any] | None = None
+    pending_offspring_ids: np.ndarray[Any, Any] | None = None
 
     # Optional extension hooks
     immigration_manager: Any | None = None
     parent_selection_filter: Any | None = None
-    non_breeding_indices: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=int))
+    non_breeding_indices: np.ndarray[Any, Any] = field(default_factory=lambda: np.zeros(0, dtype=int))
     live_callback_mode: str = "nd_only"
     generation_callback: Any | None = None
     generation_callback_copy: bool = True
 
     # HV points function (computed lazily)
-    _hv_points_fn: Callable[[], np.ndarray] | None = field(default=None, repr=False)
+    _hv_points_fn: Callable[[], np.ndarray[Any, Any]] | None = field(default=None, repr=False)
 
-    def hv_points_fn(self) -> np.ndarray:
+    def hv_points_fn(self) -> np.ndarray[Any, Any]:
         """Get points for hypervolume computation (archive if available, else population)."""
         if self.archive_F is not None and self.archive_F.size > 0:
             return self.archive_F
@@ -237,10 +237,10 @@ def finalize_genealogy(
 
 def compute_selection_metrics(
     kernel: Any,
-    F: np.ndarray,
-    G: np.ndarray | None,
+    F: np.ndarray[Any, Any],
+    G: np.ndarray[Any, Any] | None,
     constraint_mode: str,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]:
     """Compute selection metrics (ranks and crowding) with constraint handling.
 
     Parameters
@@ -281,7 +281,7 @@ def compute_selection_metrics(
 
 def track_offspring_genealogy(
     state: NSGAIIState,
-    parent_idx: np.ndarray,
+    parent_idx: np.ndarray[Any, Any],
     n_offspring: int,
 ) -> None:
     """Track genealogy for generated offspring.
@@ -323,9 +323,9 @@ def update_archives(
     state: NSGAIIState,
     kernel: Any,
     *,
-    X: np.ndarray | None = None,
-    F: np.ndarray | None = None,
-    G: np.ndarray | None = None,
+    X: np.ndarray[Any, Any] | None = None,
+    F: np.ndarray[Any, Any] | None = None,
+    G: np.ndarray[Any, Any] | None = None,
 ) -> None:
     """Update external archive state and synchronize cached snapshots.
 

@@ -404,7 +404,7 @@ def _backend_distribution(backend: str) -> dict[str, str | None]:
 
 
 def _blas_metadata() -> dict[str, Any]:
-    config = getattr(np.__config__, "CONFIG", None)
+    config = getattr(getattr(np, "__config__", None), "CONFIG", None)
     vendor = "unknown"
     if isinstance(config, Mapping):
         dependencies = config.get("Build Dependencies")

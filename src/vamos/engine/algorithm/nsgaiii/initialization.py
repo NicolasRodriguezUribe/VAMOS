@@ -226,14 +226,14 @@ def initialize_population(
     encoding: EncodingLike,
     pop_size: int,
     n_var: int,
-    xl: np.ndarray,
-    xu: np.ndarray,
+    xl: np.ndarray[Any, Any],
+    xu: np.ndarray[Any, Any],
     rng: np.random.Generator,
     problem: ProblemProtocol,
     eval_strategy: EvaluationBackend,
     constraint_mode: str,
     initializer: dict[str, Any] | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any], np.ndarray[Any, Any] | None]:
     """Initialize population based on encoding.
 
     Parameters

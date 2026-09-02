@@ -72,16 +72,16 @@ def initialize_run(
 
     constraint_mode = algo.cfg.get("constraint_mode", "feasibility")
     initializer_cfg = algo.cfg.get("initializer")
-    X: np.ndarray
-    F: np.ndarray
-    G: np.ndarray | None
+    X: np.ndarray[Any, Any]
+    F: np.ndarray[Any, Any]
+    G: np.ndarray[Any, Any] | None
     n_eval: int
     generation = 0
     step = 0
     replacements = 0
 
-    checkpoint_archive_X: np.ndarray | None = None
-    checkpoint_archive_F: np.ndarray | None = None
+    checkpoint_archive_X: np.ndarray[Any, Any] | None = None
+    checkpoint_archive_F: np.ndarray[Any, Any] | None = None
 
     if checkpoint is not None:
         try:

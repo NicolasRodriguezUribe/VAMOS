@@ -40,6 +40,10 @@ def test_release_checker_has_human_and_single_json_inventory() -> None:
         "checksums-and-provenance",
     } <= set(payload["checks"])
 
+    checker = (ROOT / "tools" / "release_check.py").read_text(encoding="utf-8")
+    assert "os.path.abspath(args.typing_python)" in checker
+    assert "Path(args.typing_python).resolve()" not in checker
+
 
 def test_release_smoke_uses_only_stable_vamos_facade() -> None:
     source = (ROOT / "tools" / "release_smoke.py").read_text(encoding="utf-8")
@@ -56,6 +60,8 @@ def test_release_smoke_uses_only_stable_vamos_facade() -> None:
     assert '"vamos.run-manifest"' in source
     assert '"vamos.study-manifest"' in source
     assert "failure_exit_codes" in source
+    assert 'shutil.which("vamos")' in source
+    assert "Path(sys.executable).with_name" not in source
 
 
 def test_release_workflows_are_parseable_pinned_and_cover_claimed_matrix() -> None:
@@ -111,6 +117,23 @@ def test_compute_extra_excludes_the_reviewed_distributed_advisory() -> None:
     assert "wheel==0.46.2" in constraints
     assert "setuptools==83.0.0" in build_requirements
     assert "wheel==0.46.2" in build_requirements
+
+
+def test_ci_constraints_retain_declared_python_310_support() -> None:
+    constraints = (ROOT / "constraints" / "ci.txt").read_text(encoding="utf-8")
+
+    assert 'ipython==8.37.0 ; python_version < "3.11"' in constraints
+    assert 'ipython==9.0.2 ; python_version >= "3.11"' in constraints
+
+
+def test_ci_constraints_use_reviewed_security_fixed_tooling() -> None:
+    constraints = (ROOT / "constraints" / "ci.txt").read_text(encoding="utf-8")
+
+    assert "pytest==9.0.3" in constraints
+    assert "nbconvert==7.17.1" in constraints
+    assert "panel==1.9.4" in constraints
+    assert "bokeh==3.8.2" in constraints
+    assert "pymdown-extensions==11.0.1" in constraints
 
 
 def test_version_documents_and_license_policy(tmp_path: Path) -> None:

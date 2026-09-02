@@ -31,7 +31,7 @@ _ALLOWED_DTYPE_KINDS = ("b", "i", "u", "f")
 
 
 def validate_array_collection(
-    arrays: Mapping[str, np.ndarray],
+    arrays: Mapping[str, np.ndarray[Any, Any]],
     *,
     required_f: bool,
     limits: LoadLimits,

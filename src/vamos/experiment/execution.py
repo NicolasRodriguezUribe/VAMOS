@@ -244,7 +244,7 @@ def run_single(
     return metrics  # Return metrics for benchmark aggregation
 
 
-def _print_summary(results: Iterable[Metrics], hv_ref_point: np.ndarray) -> None:
+def _print_summary(results: Iterable[Metrics], hv_ref_point: np.ndarray[Any, Any]) -> None:
     _logger().info("Experiment summary")
     _logger().info("%s", "-" * 80)
     header = f"{'Algo':<12} {'Backend':<10} {'Time (ms)':>12} {'Eval/s':>12} {'HV':>12} {'Spread f1':>12}"

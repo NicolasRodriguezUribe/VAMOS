@@ -96,7 +96,7 @@ def test_verify_run_reports_independent_exact_dimensions(tmp_path: Path) -> None
 
 def test_verify_run_environment_mismatch_and_requirement(tmp_path: Path) -> None:
     source = _save_source(tmp_path / "source")
-    _rewrite_environment(source.root, lambda value: value["python"].update({"version": "3.11.99"}))
+    _rewrite_environment(source.root, lambda value: value["python"].update({"version": "0.0"}))
 
     report = vamos.verify_run(source.root)
 

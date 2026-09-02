@@ -22,7 +22,7 @@ from .models import ArtifactDescriptor, LoadLimits, RunManifest
 def store_succeeded_run(
     destination: Path,
     *,
-    arrays: Mapping[str, np.ndarray],
+    arrays: Mapping[str, np.ndarray[Any, Any]],
     environment: Mapping[str, Any],
     manifest_base: Mapping[str, Any],
     limits: LoadLimits,
@@ -57,7 +57,7 @@ def store_failed_run(
 def _store_terminal_run(
     destination: Path,
     *,
-    arrays: Mapping[str, np.ndarray] | None,
+    arrays: Mapping[str, np.ndarray[Any, Any]] | None,
     environment: Mapping[str, Any],
     manifest_base: Mapping[str, Any],
     limits: LoadLimits,
@@ -126,7 +126,7 @@ def _store_terminal_run(
                 logging.getLogger(__name__).warning("Could not remove owned save lock %s", lock, exc_info=True)
 
 
-def _store_result(staging: Path, arrays: Mapping[str, np.ndarray], limits: LoadLimits) -> dict[str, Any]:
+def _store_result(staging: Path, arrays: Mapping[str, np.ndarray[Any, Any]], limits: LoadLimits) -> dict[str, Any]:
     result_path = staging / "result.npz"
     result_temp = staging / ".result.npz.tmp"
     write_result_bundle(result_temp, arrays, limits=limits)

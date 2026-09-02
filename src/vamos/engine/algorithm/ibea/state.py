@@ -38,7 +38,7 @@ class IBEAState(AlgorithmState):
 
     indicator: str = "epsilon"
     kappa: float = 1.0
-    fitness: np.ndarray = field(default_factory=lambda: np.array([]))
+    fitness: np.ndarray[Any, Any] = field(default_factory=lambda: np.array([]))
     pressure: int = 2
     variation: VariationPipeline | None = None
 
