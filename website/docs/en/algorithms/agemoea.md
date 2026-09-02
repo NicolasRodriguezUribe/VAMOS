@@ -22,7 +22,7 @@ from vamos import optimize
 
 result = optimize("dtlz2", algorithm="agemoea", max_evaluations=30000, seed=42)
 
-print(result.F.shape)  # (100, 3)
+print(result.F.shape)  # (n_solutions, 3)
 ```
 
 5-objective problem — no reference point configuration needed:
@@ -32,8 +32,8 @@ result = optimize(
     "dtlz4",
     algorithm="agemoea",
     max_evaluations=50000,
+    pop_size=200,
     seed=42,
-    algorithm_kwargs={"pop_size": 200},
 )
 ```
 

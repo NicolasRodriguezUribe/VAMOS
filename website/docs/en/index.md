@@ -1,150 +1,61 @@
-# VAMOS
+# VAMOS 1.0.0
 
 <div class="vamos-hero">
-  <h1 class="vamos-hero__tagline">Fast. Clean. <span>Multi-objective.</span></h1>
-  <p class="vamos-hero__subtitle">The multi-objective optimization framework that gets out of your way.</p>
+  <h1 class="vamos-hero__tagline">Reproducible <span>multi-objective optimization.</span></h1>
+  <p class="vamos-hero__subtitle">A typed Python API, vectorized kernels, and durable run and study artifacts.</p>
   <div class="vamos-hero__install">
     <span>$</span>
     <code>pip install vamos-optimization</code>
   </div>
   <div class="vamos-hero__actions">
     <a href="getting-started/" class="vamos-btn vamos-btn--primary">Get Started</a>
-    <a href="https://github.com/vamos-optimization/vamos" class="vamos-btn vamos-btn--outline">GitHub</a>
+    <a href="https://github.com/NicolasRodriguezUribe/VAMOS" class="vamos-btn vamos-btn--outline">GitHub</a>
   </div>
 </div>
 
-## Solve in two lines
+VAMOS 1.0.0 is the first official public release and compatibility baseline.
+Earlier version strings and tags were internal pre-public development markers,
+not prior public releases.
 
-=== "One-liner"
+## Run an optimization
 
-    ```python
-    from vamos import optimize
+```python
+from vamos import optimize
 
-    result = optimize("zdt1", algorithm="nsgaii", max_evaluations=10000, seed=42)
-    print(f"Found {len(result.F)} Pareto-optimal solutions")
-    ```
+result = optimize(
+    "zdt1",
+    algorithm="nsgaii",
+    max_evaluations=400,
+    pop_size=40,
+    engine="numpy",
+    seed=42,
+)
 
-=== "Custom problem"
+print(result.F.shape)
+print(result.data["evaluations"])
+```
 
-    ```python
-    from vamos import make_problem, optimize
+## What the release provides
 
-    problem = make_problem(
-        lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
-        n_var=2, n_obj=2, bounds=[(0, 1), (0, 1)],
-    )
-    result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
-    ```
+- Nine built-in multi-objective algorithms behind one stable `optimize()`
+  entry point.
+- NumPy as the deterministic reference backend, plus optional Numba kernel and
+  MooCore indicator acceleration.
+- Scalar and explicitly vectorized custom-problem adapters.
+- Canonical, bounded run artifacts with data-only loading and verification.
+- Exact same-environment replay for reconstructable registered built-ins.
+- A durable single-owner study lifecycle with planning, execution, inspection,
+  summary, resume, and retry.
+- An experimental local Studio with explicit trusted-code consent.
 
-=== "Results"
-
-    ```python
-    result.F   # objective values — shape (N, n_obj)
-    result.X   # decision variables — shape (N, n_var)
-
-    print(result.F[:, 0].min())   # best f1 value
-    print(result.F[:, 1].max())   # worst f2 value
-    ```
-
----
-
-## Why VAMOS?
-
-Most multi-objective optimization frameworks make you choose between performance and usability. Low-level frameworks (DEAP, Platypus) give you control but require 20+ lines of boilerplate per experiment. Higher-level ones (pymoo) are cleaner but still ask you to subclass, instantiate, and wire components together manually.
-
-VAMOS takes a different approach: population data lives in dense arrays (`X ∈ ℝ^(N×n)`, `F ∈ ℝ^(N×m)`), hot loops dispatch to vectorized NumPy/Numba kernels, and the entire API surface fits in a single `optimize()` call. The result is a framework that runs 4–12× faster than object-centric alternatives and requires a fraction of the setup code — without sacrificing flexibility when you need it.
-
----
-
-## Features
-
-<div class="vamos-cards">
-  <div class="vamos-card">
-    <div class="vamos-card__icon">⚡</div>
-    <div class="vamos-card__title">Vectorized Core</div>
-    <p class="vamos-card__body">Dense array populations dispatched to NumPy, Numba, or MooCore kernels. 4–12× faster than DEAP, jMetalPy, and Platypus. ~1.1–1.2× faster than pymoo.</p>
-  </div>
-  <div class="vamos-card">
-    <div class="vamos-card__icon">🧬</div>
-    <div class="vamos-card__title">9 Algorithms</div>
-    <p class="vamos-card__body">NSGA-II, NSGA-III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA — all fully implemented with Ask/Tell support in 7 of 9.</p>
-  </div>
-  <div class="vamos-card">
-    <div class="vamos-card__icon">✍️</div>
-    <div class="vamos-card__title">Two-line API</div>
-    <p class="vamos-card__body"><code>optimize("zdt1", algorithm="nsgaii")</code> — vs. ~10 lines in pymoo, ~20 in DEAP. <code>make_problem(fn)</code> auto-vectorizes any scalar function.</p>
-  </div>
-  <div class="vamos-card">
-    <div class="vamos-card__icon">🧪</div>
-    <div class="vamos-card__title">Built-in Tuning</div>
-    <p class="vamos-card__body">Multi-fidelity racing with warm-start checkpoints. Pluggable backends: racing, random, Optuna, SMAC3, BOHB. Run via <code>vamos tune</code>.</p>
-  </div>
-  <div class="vamos-card">
-    <div class="vamos-card__icon">🖥️</div>
-    <div class="vamos-card__title">VAMOS Studio</div>
-    <p class="vamos-card__body">Browser-based interactive dashboard. Visual problem builder, live Pareto front preview, and MCDM tools. No Python knowledge required.</p>
-  </div>
-  <div class="vamos-card">
-    <div class="vamos-card__icon">📊</div>
-    <div class="vamos-card__title">Reproducible Benchmarks</div>
-    <p class="vamos-card__body">Semantic-alignment protocol for fair cross-framework comparisons. Paired Wilcoxon tests with Holm correction included out of the box.</p>
-  </div>
-</div>
-
----
-
-## Performance
-
-Runtime comparison on ZDT1, 10,000 evaluations, NSGA-II equivalent, averaged over 30 runs.
-
-<table class="vamos-perf-table">
-  <thead>
-    <tr>
-      <th>Framework</th>
-      <th>Time (s)</th>
-      <th>vs VAMOS</th>
-      <th>API complexity</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>VAMOS</strong></td>
-      <td class="highlight">1.0×</td>
-      <td><span class="vamos-badge vamos-badge--fastest">Baseline</span></td>
-      <td>2 lines</td>
-    </tr>
-    <tr>
-      <td>pymoo</td>
-      <td>1.1–1.2×</td>
-      <td><span class="vamos-badge vamos-badge--good">Close</span></td>
-      <td>~10 lines</td>
-    </tr>
-    <tr>
-      <td>DEAP</td>
-      <td>4–12×</td>
-      <td><span class="vamos-badge vamos-badge--slow">Slower</span></td>
-      <td>~20 lines</td>
-    </tr>
-    <tr>
-      <td>jMetalPy</td>
-      <td>4–12×</td>
-      <td><span class="vamos-badge vamos-badge--slow">Slower</span></td>
-      <td>~15 lines</td>
-    </tr>
-    <tr>
-      <td>Platypus</td>
-      <td>4–12×</td>
-      <td><span class="vamos-badge vamos-badge--slow">Slower</span></td>
-      <td>~12 lines</td>
-    </tr>
-  </tbody>
-</table>
-
----
+Performance and scientific-quality claims depend on the problem, configuration,
+environment, and comparison protocol. VAMOS therefore ships reproducible
+benchmark tooling instead of asserting a universal speedup.
 
 ## Quick links
 
-- [**Getting Started**](getting-started.md) — install and run your first optimization in 5 minutes
-- [**Algorithms**](algorithms/index.md) — choose the right algorithm for your problem
-- [**API Reference**](api/index.md) — full `optimize()`, `make_problem()`, and `OptimizationResult` docs
-- [**Tutorials**](tutorials/quickstart.md) — hands-on notebooks from beginner to advanced
+- [Getting Started](getting-started.md)
+- [Algorithms](algorithms/index.md)
+- [API Reference](api/index.md)
+- [Quickstart Tutorial](tutorials/quickstart.md)
+- [Benchmark methodology](benchmarks.md)

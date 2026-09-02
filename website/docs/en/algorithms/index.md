@@ -1,6 +1,8 @@
 # Algorithms
 
-VAMOS includes nine multi-objective evolutionary algorithms. All share the same `optimize()` interface. Algorithm-specific parameters are passed via `algorithm_kwargs`.
+VAMOS includes nine multi-objective evolutionary algorithms. All share the
+same `optimize()` interface. Use public typed configuration objects from
+`vamos.algorithms` for algorithm-specific settings.
 
 ---
 
@@ -48,14 +50,17 @@ result = optimize("dtlz2", algorithm="nsgaiii", max_evaluations=50000, seed=42)
 result = optimize("zdt3",  algorithm="moead",   max_evaluations=20000, seed=42)
 ```
 
-Pass algorithm-specific parameters via `algorithm_kwargs`:
+For a fully specified configuration:
 
 ```python
+from vamos.algorithms import NSGAIIConfig
+
+config = NSGAIIConfig.default(pop_size=200, n_var=30)
 result = optimize(
     "zdt1",
     algorithm="nsgaii",
     max_evaluations=10000,
     seed=42,
-    algorithm_kwargs={"pop_size": 200, "crossover_eta": 30, "mutation_eta": 25},
+    algorithm_config=config,
 )
 ```

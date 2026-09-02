@@ -11,7 +11,7 @@
         "replay"
       ],
       "role": "environment",
-      "sha256": "6bd1d1d17b77414dfb24e9454b4dab6254963ef6724d69dace460832bd267aad"
+      "sha256": "1da72084923610117e69ae2f8e8555a68d2be7d4ad4c3881145695ff0fd81091"
     },
     {
       "array_contract": {
@@ -60,7 +60,7 @@
   ],
   "document_type": "vamos.run-manifest",
   "integrity": {
-    "manifest_sha256": "ef9454ad49d8b81c43d1286787f541aeeacb7ae1fef967b8ffb3e238b4539b1a"
+    "manifest_sha256": "fada17cd92222c99e95c490315c854f8c0987574ca307a80527aa02c1466171d"
   },
   "lineage": {
     "comparison": {
@@ -147,7 +147,7 @@
     "execution_kind": "replay",
     "replay_plan_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "root_run_id": "11111111-1111-4111-8111-111111111111",
-    "source_manifest_sha256": "5e294e4c6ea82df51bec8d2d21274671fb58edd34a96cea013045999ba32adc0",
+    "source_manifest_sha256": "b8cf57ab9ab181a6128d30c34ea87eb707e2e38d87d46253fd3c89ba621e6d0e",
     "source_run_id": "11111111-1111-4111-8111-111111111111"
   },
   "name": "Successful exact replay example",
@@ -174,9 +174,9 @@
       "distribution": {
         "name": "vamos-optimization",
         "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "version": "1.5.0"
+        "version": "1.0.0"
       },
-      "vamos_version": "1.5.0"
+      "vamos_version": "1.0.0"
     },
     "source": {
       "diff_sha256": null,

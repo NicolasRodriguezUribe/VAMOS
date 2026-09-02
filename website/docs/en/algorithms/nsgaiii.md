@@ -23,7 +23,7 @@ from vamos import optimize
 # 3-objective DTLZ2
 result = optimize("dtlz2", algorithm="nsgaiii", max_evaluations=30000, seed=42)
 
-print(result.F.shape)  # (91, 3) — size depends on reference points
+print(result.F.shape)  # (n_solutions, 3)
 ```
 
 Custom problem with 5 objectives:
@@ -43,7 +43,7 @@ def dtlz2_5obj(x):
          (1 + g) * x[1]]
     return f
 
-problem = make_problem(dtlz2_5obj, n_var=7, n_obj=5, xl=0.0, xu=1.0)
+problem = make_problem(dtlz2_5obj, n_var=7, n_obj=5, xl=0.0, xu=1.0, encoding="real")
 result = optimize(problem, algorithm="nsgaiii", max_evaluations=50000, seed=42)
 ```
 
@@ -54,16 +54,19 @@ result = optimize(problem, algorithm="nsgaiii", max_evaluations=50000, seed=42)
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `pop_size` | inferred | Inferred from `ref_dirs` if not set. |
-| `ref_dirs` | auto | Reference directions. Auto-generated via Das–Dennis decomposition if not provided. Override with `n_partitions` in `algorithm_kwargs`. |
-| `n_partitions` | auto | Number of Das–Dennis partitions per objective. Controls resolution of reference points. |
+| `reference_directions` | generated | Public descriptor for generated or file-backed reference directions. |
+| `pop_size_auto` | `True` | Records that the default population came from the direction count. |
 | `crossover_prob` | 1.0 | SBX crossover probability. |
 | `crossover_eta` | 30 | SBX distribution index. |
 | `mutation_eta` | 20 | Polynomial mutation distribution index. |
 
 ```python
+from vamos.algorithms import NSGAIIIConfig
+
+config = NSGAIIIConfig.default(n_var=12, n_obj=3)
 result = optimize(
     "dtlz2", algorithm="nsgaiii", max_evaluations=50000, seed=0,
-    algorithm_kwargs={"n_partitions": 12},
+    algorithm_config=config,
 )
 ```
 

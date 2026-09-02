@@ -11,7 +11,7 @@
         "replay"
       ],
       "role": "environment",
-      "sha256": "6bd1d1d17b77414dfb24e9454b4dab6254963ef6724d69dace460832bd267aad"
+      "sha256": "1da72084923610117e69ae2f8e8555a68d2be7d4ad4c3881145695ff0fd81091"
     }
   ],
   "document_type": "vamos.run-manifest",
@@ -23,7 +23,7 @@
     "traceback": null
   },
   "integrity": {
-    "manifest_sha256": "652a36be2c34e1b62e04e6314c2e973718f6c25331fa96c506a03681ecda198b"
+    "manifest_sha256": "978d5a833cf18b5477d4a4091834b02c1251339a8b8b784a28a136bd16c1dcfe"
   },
   "lineage": {
     "comparison": {
@@ -35,7 +35,7 @@
     "execution_kind": "replay",
     "replay_plan_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "root_run_id": "11111111-1111-4111-8111-111111111111",
-    "source_manifest_sha256": "5e294e4c6ea82df51bec8d2d21274671fb58edd34a96cea013045999ba32adc0",
+    "source_manifest_sha256": "b8cf57ab9ab181a6128d30c34ea87eb707e2e38d87d46253fd3c89ba621e6d0e",
     "source_run_id": "11111111-1111-4111-8111-111111111111"
   },
   "name": "Failed replay attempt example",
@@ -65,9 +65,9 @@
       "distribution": {
         "name": "vamos-optimization",
         "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "version": "1.5.0"
+        "version": "1.0.0"
       },
-      "vamos_version": "1.5.0"
+      "vamos_version": "1.0.0"
     },
     "source": {
       "diff_sha256": null,

@@ -11,7 +11,7 @@
         "replay"
       ],
       "role": "environment",
-      "sha256": "6bd1d1d17b77414dfb24e9454b4dab6254963ef6724d69dace460832bd267aad"
+      "sha256": "1da72084923610117e69ae2f8e8555a68d2be7d4ad4c3881145695ff0fd81091"
     },
     {
       "array_contract": {
@@ -47,7 +47,7 @@
   ],
   "document_type": "vamos.run-manifest",
   "integrity": {
-    "manifest_sha256": "49ffc5210d2da07bd70284329c5e1edc216098833a941c2c611ded0a58bd842a"
+    "manifest_sha256": "797c91b6642587fe1e77d57eac25ded5899c89eb179409fc31a0d25df9c06320"
   },
   "labels": {
     "purpose": "contract-example"
@@ -76,9 +76,9 @@
       "distribution": {
         "name": "vamos-optimization",
         "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "version": "1.5.0"
+        "version": "1.0.0"
       },
-      "vamos_version": "1.5.0"
+      "vamos_version": "1.0.0"
     },
     "source": {
       "diff_sha256": null,

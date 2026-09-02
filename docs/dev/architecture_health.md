@@ -48,7 +48,7 @@ The canonical environment, path inventory, diagnostic fingerprint schema, baseli
 ## Optional Dependencies Policy
 - foundation/** and engine/**: no top-level imports of optional/heavy deps.
 - experiment/external/**: integration boundary for optional deps; imports must be lazy or guarded.
-- ux/studio/**: streamlit allowed only here.
+- ux/panel/** and ux/studio/**: Panel is optional and confined to UI modules.
 - Dynamic import loopholes (`importlib.import_module`, `__import__`) are disallowed at top-level.
 - Dependency list is enforced by `tests/architecture/test_dependency_policy.py`.
 

@@ -39,11 +39,16 @@ plugins:
 nav:
   - Home: index.md
   - Project:
+    - VAMOS 1.0.0 Release Notes: project/release-notes-1.0.0.md
     - Stability and Versioning: project/stability-and-versioning.md
+    - Known Limitations: project/known-limitations.md
+    - Roadmap: roadmap.md
   - Guide:
+    - Installation: guide/installation.md
     - Minimal Python Track: guide/minimal-python.md
     - Quick Start Guide: guide/zero_to_hero.md
     - Getting Started: guide/getting-started.md
+    - Durable Studies: guide/studies.md
     - VAMOS Assist: assist.md
     - CLI & Config: guide/cli.md
     - VAMOS Studio: guide/studio.md

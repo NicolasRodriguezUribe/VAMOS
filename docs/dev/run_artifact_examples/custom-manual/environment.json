@@ -8,7 +8,7 @@
   "packages": {
     "numpy": "2.2.0",
     "scipy": "1.15.0",
-    "vamos-optimization": "1.5.0"
+    "vamos-optimization": "1.0.0"
   },
   "platform": {
     "architecture": "x86_64",

@@ -22,18 +22,21 @@ from vamos import optimize
 
 result = optimize("zdt1", algorithm="smpso", max_evaluations=10000, seed=42)
 
-print(result.F.shape)  # (100, 2)
+print(result.F.shape)  # (n_solutions, 2)
 ```
 
-With explicit swarm parameters:
+With an explicit public configuration:
 
 ```python
+from vamos.algorithms import SMPSOConfig
+
+config = SMPSOConfig.default(pop_size=100, n_var=30)
 result = optimize(
     "zdt2",
     algorithm="smpso",
     max_evaluations=20000,
     seed=42,
-    algorithm_kwargs={"swarm_size": 100, "leader_size": 100, "w": 0.4},
+    algorithm_config=config,
 )
 ```
 
@@ -43,9 +46,9 @@ result = optimize(
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `swarm_size` | 100 | Number of particles. |
-| `leader_size` | 100 | External archive (leaders) capacity. |
-| `w` | 0.4 | Inertia weight. Controls momentum of velocity update. |
+| `pop_size` | 100 | Number of particles. |
+| `archive_size` | 100 | Internal leader archive capacity. |
+| `inertia` | 0.1 | Inertia weight in the default typed configuration. |
 | `c1` | 1.5 | Cognitive acceleration factor (attraction toward personal best). |
 | `c2` | 1.5 | Social acceleration factor (attraction toward global best leaders). |
 | `mutation_eta` | 20 | Polynomial mutation distribution index for perturbation. |

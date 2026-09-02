@@ -12,7 +12,7 @@ to import or use core optimization logic.
 - Heavy or optional libraries must appear only under `[project.optional-dependencies]`.
 - Optional imports must be lazy or guarded with `try/except ImportError`.
 - `experiment/external` is the integration boundary for benchmark backends.
-- `ux/studio` is the only place `streamlit` is allowed.
+- Panel imports are confined to `ux/panel` and the Studio UI boundary.
 
 ## Consequences
 - Core installs remain lightweight.

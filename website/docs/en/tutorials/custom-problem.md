@@ -14,6 +14,7 @@ from vamos import make_problem, optimize
 problem = make_problem(
     lambda x: [x[0], (1 + x[1]) * (1 - x[0] ** 0.5)],
     n_var=2, n_obj=2, bounds=[(0, 1), (0, 1)],
+    encoding="real",
 )
 
 result = optimize(problem, algorithm="nsgaii", max_evaluations=5000, seed=42)
@@ -40,6 +41,7 @@ problem = make_problem(
     sphere2,
     n_var=2, n_obj=2,
     xl=-2.0, xu=2.0,
+    encoding="real",
 )
 
 result = optimize(problem, algorithm="nsgaii", max_evaluations=10000, seed=0)
@@ -56,6 +58,7 @@ problem = make_problem(
     lambda x: [x[0] + x[1], x[0] ** 2 + (x[1] - 1) ** 2],
     n_var=2, n_obj=2,
     bounds=[(-5.0, 5.0), (0.0, 10.0)],   # variable 0: [-5, 5], variable 1: [0, 10]
+    encoding="real",
 )
 ```
 
@@ -81,6 +84,7 @@ problem = make_problem(
     objectives,
     n_var=2, n_obj=2,
     bounds=[(-3.0, 3.0), (-3.0, 3.0)],
+    encoding="real",
     constraints=constraints,
     n_constraints=1,
 )
@@ -107,6 +111,7 @@ problem = make_problem(
     objectives,
     n_var=2, n_obj=2,
     xl=0.0, xu=3.0,
+    encoding="real",
     constraints=constraints,
     n_constraints=2,
 )
@@ -128,7 +133,7 @@ def zdt1(x):
     f2 = g * (1.0 - np.sqrt(f1 / g))
     return [f1, f2]
 
-problem = make_problem(zdt1, n_var=30, n_obj=2, xl=0.0, xu=1.0)
+problem = make_problem(zdt1, n_var=30, n_obj=2, xl=0.0, xu=1.0, encoding="real")
 result  = optimize(problem, algorithm="nsgaii", max_evaluations=30000, seed=42)
 ```
 
