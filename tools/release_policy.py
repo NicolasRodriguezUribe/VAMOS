@@ -21,14 +21,14 @@ REQUIRED_DOCUMENTS = (
 )
 
 _PERSONAL_PATH_PATTERNS = (
-    re.compile(rb"[A-Za-z]:[\\/]+Users[\\/]+[^\\/\s\x00]+", re.IGNORECASE),
-    re.compile(rb"/Users/[^/\s\x00]+"),
-    re.compile(rb"/home/[^/\s\x00]+"),
+    re.compile(rb"[A-Za-z]:[\\/]+" + rb"Users[\\/]+[^\\/\s\x00]+", re.IGNORECASE),
+    re.compile(rb"/" + rb"Users/[^/\s\x00]+"),
+    re.compile(rb"/" + rb"home/[^/\s\x00]+"),
 )
 _CREDENTIAL_PATTERNS = {
     "private-key": re.compile(rb"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"),
     "github-token": re.compile(rb"gh[pousr]_[A-Za-z0-9]{36,}"),
-    "openai-key": re.compile(rb"sk-[A-Za-z0-9_-]{20,}"),
+    "openai-key": re.compile(rb"\bsk-(?:[A-Za-z0-9]{20,}|(?:proj|svcacct)-[A-Za-z0-9_-]{20,})\b"),
     "pypi-token": re.compile(rb"pypi-[A-Za-z0-9_-]{20,}"),
     "aws-access-key": re.compile(rb"AKIA[0-9A-Z]{16}"),
 }

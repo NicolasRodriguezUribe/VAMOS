@@ -71,6 +71,9 @@ def test_release_workflows_are_parseable_pinned_and_cover_claimed_matrix() -> No
     assert "primary-maximum-compute" in release
     assert "python -m build --no-isolation --outdir candidate-dist" in release
     assert "path: ${{ runner.temp }}/candidate-dist" in release
+    assert 'python -m venv "$RUNNER_TEMP/typing-venv"' in release
+    assert '--typing-python "$RUNNER_TEMP/typing-venv/bin/python"' in release
+    assert '-e ".[dev,docs,compute,analysis,examples,studio]"' in release
     assert "release_smoke.py" in release
     assert "test_security_models.py" in release
     assert "vamos-${{ env.VAMOS_RELEASE_VERSION }}-frozen" in release
@@ -144,7 +147,7 @@ version = {attr = "vamos.foundation.version.__version__"}
 
 def test_path_and_secret_scan_detects_material_without_disclosing_it(tmp_path: Path) -> None:
     clean = tmp_path / "clean.txt"
-    clean.write_text("ordinary release evidence\n", encoding="utf-8")
+    clean.write_text("ordinary release evidence with task-level-failure outcomes\n", encoding="utf-8")
     assert scan_files([clean], root=tmp_path)["credential_hits"] == 0
 
     personal = tmp_path / "personal.txt"
@@ -156,6 +159,16 @@ def test_path_and_secret_scan_detects_material_without_disclosing_it(tmp_path: P
         assert "example" not in str(exc)
     else:
         raise AssertionError("Personal path was not detected.")
+
+    credential = tmp_path / "credential.txt"
+    credential.write_text("sk-" + "a" * 32, encoding="utf-8")
+    try:
+        scan_files([credential], root=tmp_path)
+    except AssertionError as exc:
+        assert "openai-key" in str(exc)
+        assert "a" * 32 not in str(exc)
+    else:
+        raise AssertionError("Credential material was not detected.")
 
 
 def test_distribution_inspection_checks_metadata_content_and_manifests(tmp_path: Path) -> None:

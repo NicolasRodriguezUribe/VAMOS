@@ -97,6 +97,9 @@ class ReleaseChecker:
         self.dist = self.output / "dist"
         self.runtime_python: Path | None = None
         self.runtime_lock = self.output / "runtime-lock.txt"
+        self.typing_python = Path(args.typing_python).resolve() if args.typing_python else Path(sys.executable).resolve()
+        if not self.typing_python.is_file():
+            raise FileNotFoundError(f"Canonical typing Python does not exist: {self.typing_python}")
 
     def _default_output(self) -> Path:
         head = git(ROOT, "rev-parse", "--short=12", "HEAD")
@@ -172,14 +175,15 @@ class ReleaseChecker:
             "stable-api-cli-schema-fixtures",
             [sys.executable, "-m", "pytest", "-q", "tests/compatibility/test_v1_0_0_snapshots.py"],
         )
-        self.command("strict-typing", [sys.executable, "tools/typecheck.py", "--scope", "strict"])
-        self.command("stable-api-typing", [sys.executable, "tools/typecheck.py", "--scope", "stable"])
-        self.command("full-source-ratchet", [sys.executable, "tools/typecheck.py", "--scope", "full"])
-        self.command("health", [sys.executable, "tools/health.py"])
-        self.command("release-typing-policy", [sys.executable, "tools/typecheck.py", "--scope", "release"])
+        typing_python = str(self.typing_python)
+        self.command("strict-typing", [typing_python, "tools/typecheck.py", "--scope", "strict"])
+        self.command("stable-api-typing", [typing_python, "tools/typecheck.py", "--scope", "stable"])
+        self.command("full-source-ratchet", [typing_python, "tools/typecheck.py", "--scope", "full"])
+        self.command("health", [typing_python, "tools/health.py"])
+        self.command("release-typing-policy", [typing_python, "tools/typecheck.py", "--scope", "release"])
         self.command(
             "full-source-zero-informational",
-            [sys.executable, "tools/typecheck.py", "--scope", "full-zero"],
+            [typing_python, "tools/typecheck.py", "--scope", "full-zero"],
             expected=(0, 1),
             critical=False,
             informational=True,
@@ -389,6 +393,10 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--tag-state", choices=("pre-normalization", "normalized", "ignore"), default="pre-normalization")
     parser.add_argument("--output-dir")
     parser.add_argument("--artifacts", help="Directory containing one already-frozen wheel and sdist.")
+    parser.add_argument(
+        "--typing-python",
+        help="Python executable from the canonical dependency-minimal typing environment.",
+    )
     parser.add_argument("--json", action="store_true", help="Emit exactly one JSON result document to stdout.")
     parser.add_argument("--list-checks", action="store_true")
     return parser
