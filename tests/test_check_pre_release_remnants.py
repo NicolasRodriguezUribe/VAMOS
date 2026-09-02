@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
+
+import pytest
 
 from tools.check_pre_release_remnants import guidance_remnant_tokens, scan
 
@@ -46,6 +49,52 @@ def test_discarded_study_command_envelope_fails_in_docs(tmp_path: Path) -> None:
     _write(tmp_path, "docs/guide/studies.md", 'document_type = "vamos.study-plan-result"\n')
 
     assert {finding.signature for finding in scan(tmp_path)} == {"discarded study command envelope"}
+
+
+@pytest.mark.parametrize(
+    ("relative", "source", "signature"),
+    [
+        ("src/vamos/product.py", "StudyRunner()\n", "discarded study runtime symbol"),
+        ("docs/guide/studies.md", "Call run_study.\n", "discarded study runtime symbol"),
+        ("notebooks/studies.ipynb", '"source": ["StudyTask"]\n', "discarded study runtime symbol"),
+        (
+            "examples/study.py",
+            "from vamos.experiment.study.runner import StudyResult\n",
+            "discarded study runtime import",
+        ),
+        ("AGENTS.md", "Use study.migration for callers.\n", "discarded study caller transition API"),
+    ],
+)
+def test_discarded_study_surface_fails_across_active_roots(tmp_path: Path, relative: str, source: str, signature: str) -> None:
+    _write(tmp_path, relative, source)
+
+    assert signature in {finding.signature for finding in scan(tmp_path)}
+
+
+def test_superseded_study_file_fails_even_when_empty(tmp_path: Path) -> None:
+    _write(tmp_path, "src/vamos/experiment/study/runner.py", "")
+
+    assert {finding.signature for finding in scan(tmp_path)} == {"discarded path exists"}
+
+
+def test_top_level_multi_seed_result_remains_semantically_distinct(tmp_path: Path) -> None:
+    _write(tmp_path, "src/vamos/experiment/optimization_result/study.py", "class StudyResult:\n    pass\n")
+
+    assert scan(tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    "module",
+    [
+        "vamos.experiment.study.api",
+        "vamos.experiment.study.persistence",
+        "vamos.experiment.study.runner",
+        "vamos.experiment.study.types",
+    ],
+)
+def test_removed_study_modules_are_not_importable(module: str) -> None:
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module(module)
 
 
 def test_website_shim_path_fails(tmp_path: Path) -> None:

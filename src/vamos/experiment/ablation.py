@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import csv
+import os
+import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +12,7 @@ from typing import Any
 
 from vamos.engine.tuning.ablation import AblationPlan, AblationTask
 from vamos.experiment._execution_support import VariationConfigs
+from vamos.experiment.study.writing import fsync_directory
 from vamos.experiment.study_analysis import SummarySource, derive_summary_rows
 from vamos.study_artifacts import Study, StudyReport, StudySpec, StudySummary, create_study, plan_study
 
@@ -42,6 +46,35 @@ class AblationResult:
         """Return derived rows while retaining canonical task/run evidence."""
         sources = tuple(SummarySource(item.study.root, item.summary, {"variant": item.variant}) for item in self.studies)
         return derive_summary_rows(sources, indicators=("hv",))
+
+
+def write_ablation_csv(result: AblationResult, path: str | Path) -> Path:
+    """Atomically write an explicit, regenerable table derived from summaries."""
+    destination = Path(path)
+    if os.path.lexists(destination):
+        raise FileExistsError(f"Derived ablation output already exists: {destination}")
+    rows = result.summary_rows()
+    if not rows:
+        raise ValueError("Cannot write an ablation table without summary rows.")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f".{destination.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        fieldnames = tuple(dict.fromkeys(key for row in rows for key in row))
+        with temporary.open("x", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(temporary, destination)
+        except FileExistsError as exc:
+            raise FileExistsError(f"Derived ablation output already exists: {destination}") from exc
+        fsync_directory(destination.parent)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    return destination
 
 
 def run_ablation_plan(
@@ -152,4 +185,4 @@ def _optional_int(value: object, *, field: str) -> int | None:
     return value
 
 
-__all__ = ["AblationResult", "AblationStudy", "run_ablation_plan"]
+__all__ = ["AblationResult", "AblationStudy", "run_ablation_plan", "write_ablation_csv"]

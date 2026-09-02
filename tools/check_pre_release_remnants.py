@@ -26,8 +26,9 @@ class Finding:
     classification: Classification = Classification.ACTIONABLE_PRE_RELEASE_REMNANT
 
 
-_TEXT_SUFFIXES = {".cfg", ".json", ".md", ".py", ".toml", ".txt", ".yaml", ".yml"}
-_SCAN_ROOTS = ("src", "docs", "experiments", "website", "tests")
+_TEXT_SUFFIXES = {".cfg", ".ipynb", ".json", ".md", ".py", ".toml", ".txt", ".yaml", ".yml"}
+_SCAN_ROOTS = (".github", "docs", "examples", "experiments", "notebooks", "paper", "src", "submission", "tests", "website")
+_SCAN_FILES = ("AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md", "README.md")
 _CHECKER_FIXTURES = {
     "tests/architecture/test_no_legacy_typing_hints.py",
     "tests/test_no_deprecation_shims.py",
@@ -37,6 +38,11 @@ _CHECKER_FIXTURES = {
 _FORBIDDEN_PATHS = (
     "src/vamos/engine/algorithm/components/variation",
     "src/vamos/engine/archive/bounded_archive.py",
+    "src/vamos/experiment/cli/ablation_summary.py",
+    "src/vamos/experiment/study/api.py",
+    "src/vamos/experiment/study/persistence.py",
+    "src/vamos/experiment/study/runner.py",
+    "src/vamos/experiment/study/types.py",
     "website/_compat",
 )
 _DISCARDED_RUN_FILES = (
@@ -72,6 +78,21 @@ _CLI_SIGNATURES = (
     re.compile(r"['\"]self_check['\"]"),
 )
 _DISCARDED_STUDY_ENVELOPE = re.compile(r"vamos\.study-plan-result")
+_DISCARDED_STUDY_SIGNATURES = (
+    (
+        "discarded study runtime symbol",
+        re.compile(r"\b(?:CSVPersister|StudyPersister|StudyRunner|StudyTask|run_study)\b"),
+    ),
+    (
+        "discarded study runtime import",
+        re.compile(r"vamos\.experiment\.study\.(?:api|persistence|runner|types)\b"),
+    ),
+    (
+        "discarded study-local result",
+        re.compile(r"(?:experiment\.study\.(?:runner|types)\.StudyResult|from\s+vamos\.experiment\.study[^\n]*\bStudyResult\b)"),
+    ),
+    ("discarded study caller transition API", re.compile(r"\bstudy\.migration\b")),
+)
 
 # Agent-facing files reuse these semantic signatures instead of maintaining a
 # second list of discarded pre-release paths, fields, artifacts, and commands.
@@ -100,6 +121,7 @@ _GUIDANCE_SIGNATURES = (
     ("time.txt", re.compile(r"time\.txt", re.IGNORECASE)),
     ("vamos.lock", re.compile(r"vamos\.lock", re.IGNORECASE)),
     ("vamos.study-plan-result", _DISCARDED_STUDY_ENVELOPE),
+    *_DISCARDED_STUDY_SIGNATURES,
 )
 
 
@@ -115,42 +137,50 @@ def scan(root: Path) -> list[Finding]:
         if _forbidden_path_has_source(root / relative):
             findings.append(Finding(relative, 0, "discarded path exists"))
 
+    for path in _iter_text_files(root):
+        relative = path.relative_to(root).as_posix()
+        if relative in _CHECKER_FIXTURES:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            if _DISCARDED_STUDY_ENVELOPE.search(line):
+                findings.append(Finding(relative, line_number, "discarded study command envelope"))
+            for name, pattern in _DISCARDED_STUDY_SIGNATURES:
+                if pattern.search(line):
+                    findings.append(Finding(relative, line_number, name))
+            active_experiment = _is_active_experiment(relative)
+            if active_experiment:
+                for pattern in _DISCARDED_RUN_FILES:
+                    if pattern.search(line):
+                        findings.append(Finding(relative, line_number, f"discarded run file: {pattern.pattern}"))
+            active_source = relative.startswith(("src/", "website/", "tests/")) or active_experiment
+            if active_source:
+                for name, pattern in _ACTIVE_SIGNATURES:
+                    if pattern.search(line):
+                        findings.append(Finding(relative, line_number, name))
+            if relative in _ARCHIVE_CONFIG_PATHS and _DISCARDED_ARCHIVE_FIELD.search(line):
+                findings.append(Finding(relative, line_number, "discarded archive field"))
+            if active_experiment and _DISCARDED_ARCHIVE_KEY.search(line):
+                findings.append(Finding(relative, line_number, "discarded archive field"))
+            if relative == "src/vamos/experiment/cli/main.py":
+                for pattern in _CLI_SIGNATURES:
+                    if pattern.search(line):
+                        findings.append(Finding(relative, line_number, "discarded CLI alias"))
+            legacy_area = (
+                (relative.startswith("src/") and path.suffix.lower() == ".py") or relative.startswith("website/") or active_experiment
+            )
+            if legacy_area and re.search(r"\blegacy\b", line, re.IGNORECASE):
+                findings.append(Finding(relative, line_number, "active legacy marker"))
+    return _deduplicate(findings)
+
+
+def _iter_text_files(root: Path) -> list[Path]:
+    files = [root / relative for relative in _SCAN_FILES if (root / relative).is_file()]
     for top in _SCAN_ROOTS:
         base = root / top
-        if not base.exists():
-            continue
-        for path in sorted(item for item in base.rglob("*") if item.is_file() and item.suffix.lower() in _TEXT_SUFFIXES):
-            relative = path.relative_to(root).as_posix()
-            if relative in _CHECKER_FIXTURES:
-                continue
-            text = path.read_text(encoding="utf-8", errors="replace")
-            for line_number, line in enumerate(text.splitlines(), start=1):
-                if _DISCARDED_STUDY_ENVELOPE.search(line):
-                    findings.append(Finding(relative, line_number, "discarded study command envelope"))
-                active_experiment = _is_active_experiment(relative)
-                if active_experiment:
-                    for pattern in _DISCARDED_RUN_FILES:
-                        if pattern.search(line):
-                            findings.append(Finding(relative, line_number, f"discarded run file: {pattern.pattern}"))
-                active_source = relative.startswith(("src/", "website/", "tests/")) or active_experiment
-                if active_source:
-                    for name, pattern in _ACTIVE_SIGNATURES:
-                        if pattern.search(line):
-                            findings.append(Finding(relative, line_number, name))
-                if relative in _ARCHIVE_CONFIG_PATHS and _DISCARDED_ARCHIVE_FIELD.search(line):
-                    findings.append(Finding(relative, line_number, "discarded archive field"))
-                if active_experiment and _DISCARDED_ARCHIVE_KEY.search(line):
-                    findings.append(Finding(relative, line_number, "discarded archive field"))
-                if relative == "src/vamos/experiment/cli/main.py":
-                    for pattern in _CLI_SIGNATURES:
-                        if pattern.search(line):
-                            findings.append(Finding(relative, line_number, "discarded CLI alias"))
-                legacy_area = (
-                    (relative.startswith("src/") and path.suffix.lower() == ".py") or relative.startswith("website/") or active_experiment
-                )
-                if legacy_area and re.search(r"\blegacy\b", line, re.IGNORECASE):
-                    findings.append(Finding(relative, line_number, "active legacy marker"))
-    return _deduplicate(findings)
+        if base.exists():
+            files.extend(item for item in base.rglob("*") if item.is_file() and item.suffix.lower() in _TEXT_SUFFIXES)
+    return sorted(set(files))
 
 
 def _forbidden_path_has_source(path: Path) -> bool:

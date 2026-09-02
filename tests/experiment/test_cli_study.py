@@ -281,12 +281,15 @@ def test_fail_fast_partial_maps_to_six_and_explicit_retry_uses_new_attempt(tmp_p
     )
     monkeypatch.setattr(execution, "_execute_optimization", lambda _reconstructed, *, root: (_ for _ in ()).throw(RuntimeError("task")))
     failed = execute_study_command(StudyCommandRequest(operation="run", study_dir=root))
+    inspected = execute_study_command(StudyCommandRequest(operation="inspect", study_dir=root))
     first_attempt = vamos.load_study(root).attempts[0].attempt_id
     monkeypatch.setattr(execution, "_execute_optimization", lambda reconstructed, *, root: _result(reconstructed))
     retried = execute_study_command(StudyCommandRequest(operation="retry", study_dir=root, failed_only=True))
 
     assert failed.exit_code == 6
     assert failed.status == "paused"
+    assert inspected.exit_code == 6
+    assert inspected.status == "paused"
     assert retried.exit_code == 0
     assert retried.status == "completed"
     attempts = vamos.load_study(root).attempts

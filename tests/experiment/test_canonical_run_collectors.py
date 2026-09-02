@@ -120,9 +120,6 @@ def test_updated_study_notebooks_compile_and_use_only_current_vocabulary(relativ
     )
 
     compile(source, relative_path, "exec")
-    assert "StudyRunner" not in source
-    assert "StudyTask" not in source
-    assert "run_study" not in source
     if "ablation" in relative_path:
         assert "StudySpec" in source
         assert "plan_study" in source

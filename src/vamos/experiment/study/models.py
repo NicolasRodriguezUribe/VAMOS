@@ -316,9 +316,9 @@ class Study:
 
     def run(self) -> Study:
         """Execute this newly created durable study sequentially."""
-        from .execution import run_study
+        from .execution import execute_study
 
-        return run_study(self)
+        return execute_study(self)
 
     def cancel(self) -> Study:
         """Cancel this study or request cancellation from its local runner."""

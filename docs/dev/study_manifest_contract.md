@@ -22,12 +22,13 @@ data-only loader, journal derivation, and single-process
 sequential `Study.run()` slice with persisted failure policy and graceful
 cancellation, explicit reconciliation writes, resume, bounded retry, the
 shared immutable `Study.inspect()`/`Study.summarize()` projection, and the
-single-owner lifecycle CLI with explicit derived summary output are
-implemented. Caller migration, locks, leases, and parallelism remain deferred.
+single-owner lifecycle CLI with explicit derived summary output, and canonical
+package/research caller integration are implemented. Locks, leases, and
+parallelism remain deferred.
 
 VAMOS is pre-release. Version `1.0.0` is the only study schema. There is no
-reader, detector, migration, alias, fallback layout, or deprecation period for
-earlier study output. Git history is the historical record.
+second reader, detector, fallback layout, alias, or deprecation period. Git
+history is the historical record.
 
 The canonical per-attempt artifact remains
 `vamos.run-manifest` version `1.0.0`, governed by the
@@ -48,54 +49,42 @@ that format and never redefines it.
 
 ### Non-goals
 
-This contract does not itself supply implementation. The current bounded slices
-do not implement state-mutating study CLI, parallel workers, distributed
-coordination, Studio integration, new algorithms, or typing-debt reduction.
-Read-only planning is available through Python and CLI. The implementation does
+The current bounded implementation does not provide parallel workers,
+distributed coordination, new algorithms, or statistical reporting. It does
 not support plan mutation, successful-task force retry, custom-code loading,
-legacy study formats, or migration.
+or a second persisted format.
 
 ## 2. Evidence from the current implementation
 
 The current flow is:
 
 ```text
-StudyTask sequence
-    -> StudyRunner.run in caller order
-    -> resolve problem and ExperimentConfig
-    -> run_single
-    -> StorageObserver publishes one canonical RunManifest directory
-    -> in-memory StudyResult list
-    -> caller may explicitly write CSV
+StudySpec
+    -> plan_study / create_study through one resolver
+    -> Study.run / resume / retry through one execution service
+    -> verified canonical RunManifest per attempt
+    -> Study.inspect / Study.summarize through one projection
+    -> optional explicit derived caller table
 ```
 
-A deterministic three-seed reproduction on the contract base established:
+A deterministic three-seed reproduction establishes:
 
-- tasks and results preserve input order;
+- execution follows canonical task-ID order while summaries use `plan_index`;
 - each successful task writes only `manifest.json`, `result.npz`, and
   `environment.json` beneath its run directory;
-- passing `CSVPersister` to `StudyRunner` produces no file; a CSV appears only
-  after a separate explicit `save_results` call;
-- a failure or `KeyboardInterrupt` in task two propagates immediately, leaves
-  task three unstarted, and writes no study/task/attempt state;
-- the succeeded first run survives, but no durable record says which tasks are
-  pending or why execution stopped;
-- rerunning the same directory executes the optimization again and only then
-  fails with `OutputCollisionError` when the canonical run writer publishes;
-- `StudyRunner.run` has no `on_error`, resume, retry, lock, lease, or stable
-  study-task ID.
+- derived JSON/CSV appears only after an explicit output request and never
+  drives recovery;
+- fail-fast and continue retain every durable attempt and account for later
+  pending or completed tasks;
+- retry creates a new attempt while successful work remains immutable;
+- foreground interruption publishes a durable cancelled state before return.
 
-The present ablation plan expands in problem, variant, then seed order. Its
-display-oriented `problem/variant/seed_N` ID does not include complete resolved
-scientific configuration. Benchmark and ablation callers build `StudyTask`
-objects, while Studio and analysis recursively discover run manifests beneath a
-directory. A durable study cannot be recovered from those directory heuristics
-or derived CSV files.
-
-The implemented durable path is separate: `create_study` publishes the frozen
-plan, `Study.run()` reconstructs that plan and commits one task at a time, and
-`load_study` remains data-only. The old in-memory path remains only for callers
-whose migration is deferred; the durable runner never delegates to it.
+Ablation and benchmark partition heterogeneous campaign inputs into homogeneous
+`StudySpec` values. Studio and study analysis traverse StudyManifest references
+and derive caller views from `StudySummary`; ordinary RunManifest discovery
+remains a separate run-analysis workflow. `create_study` publishes the frozen
+plan, `Study.run()` reconstructs it one task at a time, and `load_study` remains
+data-only.
 
 ## 3. Target lifecycle
 
@@ -690,10 +679,8 @@ reload through one metadata-only projection service and never reconcile or
 write. The stateful single-owner study CLI delegates to these services. Internal journal types are not public, and no
 lock/lease type exists in the implemented slice.
 
-The existing top-level in-memory `StudyResult` returned by multi-seed
-`optimize` remains a distinct result collection. The current internal
-`vamos.experiment.study.types.StudyResult` summary is not the future
-`StudyReport` and will be removed with its superseded runner.
+The top-level multi-seed result collection returned by `optimize` remains
+distinct from persisted `StudyReport` and `StudySummary` projections.
 
 ## 20. Public CLI and output
 
@@ -733,7 +720,7 @@ All typed errors expose operation, entity ID, current state, required state,
 
 | Exit | Meaning | Representative errors/states |
 |---:|---|---|
-| 0 | Valid success or data-only/idempotent terminal report. | Created, completed, inspect, summary, completed resume with no work. |
+| 0 | Valid success or healthy data-only/idempotent report. | Created, completed, inspect/summary without a partial or interrupted state, completed resume with no work. |
 | 2 | Usage or invalid StudySpec/config. | `InvalidStudySpecError`. |
 | 3 | Malformed, unsafe, missing, or corrupt data/path. | `MalformedStudyError`, duplicate key, missing task/run, hash mismatch. |
 | 4 | Unsupported schema, plan mismatch, invalid transition, or invalid no-runnable operation. | `UnsupportedStudySchemaError`, `PlanMismatchError`, `InvalidStudyTransitionError`. |
@@ -758,21 +745,18 @@ identities, relative paths, semantic hashes, byte lengths, transitions, and run
 placeholders frozen here. Invalid fixtures declare one expected error and fail
 only for that reason.
 
-## 23. Current-state gap and replacement plan
+## 23. Canonical caller surface
 
-| Disposition during implementation | Current code/caller |
+| Responsibility | Current code/caller |
 |---|---|
-| Retain | Canonical run-artifact writer/readers, RunManifest identity/task ID, `OptimizationResult`, and top-level in-memory multi-seed `StudyResult`. |
-| Adapt | AblationPlan/benchmark matrix builders become StudySpec/resolution inputs; indicator computation becomes a derived summary service. |
-| Replace | `StudyTask`, `StudyRunner`, `run_study`, `StudyPersister`, and direct `CSVPersister` orchestration with the persisted model and one execution service. |
-| Simplify | Ablation and benchmark CLI/API call the canonical study surface instead of owning loops/output roots/summaries. |
-| Replace | Studio/analysis recursive `manifest.json` discovery under a “study” root with data-only StudyManifest traversal; ordinary run discovery remains separate. |
-| Delete | Internal duplicate `experiment.study.types.StudyResult`, direct ablation summary writer as state-like output, and superseded exports after all callers move. |
+| Per-run authority | Canonical run-artifact writer/readers, RunManifest identity/task ID, and `OptimizationResult`. |
+| Durable orchestration | `StudySpec`, one resolver, one journal, one execution service, and one projection service. |
+| Ablation/benchmark | Matrix inputs become homogeneous studies; indicator computation and tables are derived from summaries. |
+| Studio/analysis | Data-only StudyManifest traversal; ordinary run discovery remains separate. |
+| CLI | One command-result envelope delegates all transitions and projections to the same Python services. |
 
-Implementation updates all callers together: experiment runner exports,
-ablation API/CLI, benchmark runner, Studio data/services/panel, analysis study
-consumers, tests, docs, and agent guidance. It adds no adapter or reader for the
-discarded layout and no CSV-to-study import.
+Experiment, ablation, benchmark, Studio, analysis, research, tests, docs, and
+agent guidance all use this surface; no CSV-to-study import exists.
 
 ## 24. Bounded implementation roadmap
 

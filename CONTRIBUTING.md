@@ -59,7 +59,7 @@ Repository-wide contributor and agent rules, including validation tiers and Git 
 ## Before opening a pull request (human or AI-assisted)
 1. Run the health gates: `python tools/health.py`.
 2. Run the full suite: `pytest -q`.
-3. If you touched tuning, StudyRunner, or benchmarking:
+3. If you touched tuning, durable studies, or benchmarking:
    - Run the smallest relevant `vamos bench` suite.
 4. If you added docs or notebooks:
    - Build docs with `mkdocs build --strict` and run the affected notebook smoke.

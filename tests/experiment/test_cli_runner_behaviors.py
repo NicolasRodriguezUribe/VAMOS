@@ -7,9 +7,6 @@ import pytest
 
 from vamos.engine.algorithm.registry import ALGORITHMS
 from vamos.experiment import cli, runner
-from vamos.experiment.study.persistence import CSVPersister
-from vamos.experiment.study.runner import StudyRunner
-from vamos.experiment.study.types import StudyTask
 from vamos.foundation.core.experiment_config import ExperimentConfig
 from vamos.foundation.core.hv_stop import build_hv_stop_config
 from vamos.foundation.exceptions import ConfigurationError
@@ -142,36 +139,3 @@ def test_cli_accepts_registered_plugin_algorithm(monkeypatch):
     args = cli.parse_args(default_cfg)
 
     assert args.algorithm == algo_key
-
-
-def test_study_runner_keeps_single_run_output_reference(tmp_path):
-    base_root = tmp_path / "results"
-    base_root.mkdir()
-
-    def fake_run_single(engine_name, algorithm_name, selection, config, **kwargs):
-        out_dir = base_root / selection.spec.key.upper() / algorithm_name / engine_name / f"seed_{config.seed}"
-        return {
-            "engine": engine_name,
-            "algorithm": algorithm_name,
-            "time_ms": 1.0,
-            "evaluations": 2,
-            "evals_per_sec": 2.0,
-            "F": np.array([[1.0, 1.0]]),
-            "output_dir": str(out_dir),
-        }
-
-    tasks = [
-        StudyTask(
-            algorithm="nsgaii",
-            engine="numpy",
-            problem="zdt1",
-            n_var=6,
-            seed=1,
-        )
-    ]
-    runner_obj = StudyRunner(verbose=False, persister=CSVPersister())
-    results = runner_obj.run(tasks, run_single_fn=fake_run_single)
-
-    assert results, "No study results returned"
-    assert results[0].metrics["output_dir"].endswith("seed_1")
-    assert list(base_root.iterdir()) == []

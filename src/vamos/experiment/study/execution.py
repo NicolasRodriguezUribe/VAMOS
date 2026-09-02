@@ -63,7 +63,7 @@ class _ExecutionState:
     objective_evaluation_began: bool = False
 
 
-def run_study(snapshot: Study) -> Study:
+def execute_study(snapshot: Study) -> Study:
     """Execute all pending tasks in canonical task-ID order and reload."""
     root = snapshot.root.resolve(strict=True)
     state: _ExecutionState | None = None
@@ -446,4 +446,4 @@ def _consume_cancellation(root: Path) -> bool:
     return True
 
 
-__all__ = ["cancel_study", "run_study"]
+__all__ = ["cancel_study", "execute_study"]
