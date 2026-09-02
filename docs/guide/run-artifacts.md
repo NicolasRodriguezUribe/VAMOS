@@ -178,7 +178,7 @@ different `vamos.LoadLimits`; limits are never raised automatically.
 
 ## Unsupported directories
 
-VAMOS is pre-release and supports only `vamos.run-manifest` `1.0.0`. A directory
+VAMOS 1.x supports the public `vamos.run-manifest` `1.0.0` baseline. A directory
 without that manifest is rejected with guidance to regenerate the run using the
 current version. Schema `1.0.0` is the sole supported reader/writer path.
 

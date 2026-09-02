@@ -12,9 +12,9 @@ configuration, arrays, timing, and environment state. Those outputs could not
 be loaded symmetrically, did not preserve requested versus effective choices,
 and encouraged consumers to infer facts from filenames or directory names.
 
-Because no stable public release contract exists, preserving those prototypes
-would create competing contracts. The project needs one safe artifact boundary
-before release.
+Before VAMOS 1.0.0, no stable public release contract existed. Preserving those
+prototypes would create competing contracts. This canonical boundary becomes
+the first public artifact compatibility commitment with VAMOS 1.0.0.
 
 ## Decision
 
@@ -49,7 +49,8 @@ Adopt the normative contract in
     execute optimization, resolve plugins, import manifest-provided code, use
     shell/network, or mutate artifacts.
 11. VAMOS supports only the canonical `1.0.0` layout and its single reader and
-    writer. Any other input must be regenerated with the current VAMOS version.
+    writer. Internal pre-1.0 inputs must be regenerated. Future VAMOS 1.x
+    releases continue to load and inspect valid public schema `1.0.0` runs.
 12. A future StudyManifest may reference run/task identities but will not
     duplicate run specifications or arrays.
 13. Exact replay is a separate explicit operation for verified built-in
@@ -115,7 +116,7 @@ belong to a future explicit reproduction design.
 
 ## Future boundary
 
-Custom/plugin reconstruction, cross-backend or best-effort execution, automatic
-environment installation, a durable StudyManifest, and study resume/retry are
-not part of this implementation. They must build on this schema without adding
-alternate run persistence paths.
+Custom/plugin reconstruction, cross-backend or best-effort execution, and
+automatic environment installation remain outside this decision. Durable
+StudyManifest, resume, and retry now build on this schema without adding an
+alternate run persistence path.

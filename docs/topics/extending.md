@@ -14,7 +14,9 @@ Changes to [the CLI](../dev/cli.md), [studies](../dev/studies.md), or [run artif
 
 Public examples use `vamos`, `vamos.algorithms`, `vamos.problems`, and `vamos.ux.api`. Registry and implementation imports are internal contributor surfaces. Every extension needs a small deterministic or seeded test, a registry/resolution test where applicable, and documentation of the supported public route.
 
-VAMOS is pre-release: replace an internal contract comprehensively rather than adding a second spelling or path for it.
+Stable VAMOS 1.x contracts follow the public deprecation and schema-transition
+policy. Internal and experimental contracts should still be replaced
+comprehensively rather than gaining duplicate spellings or paths.
 
 ```agent-docs
 path: docs/dev/add_problem.md

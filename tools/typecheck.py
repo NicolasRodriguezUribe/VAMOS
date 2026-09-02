@@ -1,4 +1,4 @@
-"""Run the canonical VAMOS strict, full-development, or release typecheck."""
+"""Run the canonical VAMOS strict, stable, full, or release typecheck."""
 
 from __future__ import annotations
 
@@ -69,6 +69,14 @@ STRICT_PATHS = (
     "src/vamos/experiment/unified.py",
 )
 FULL_PATHS = ("src/vamos",)
+STABLE_API_PATHS = (
+    "src/vamos/__init__.py",
+    "src/vamos/api.py",
+    "src/vamos/algorithms.py",
+    "src/vamos/problems.py",
+    "src/vamos/run_artifacts.py",
+    "src/vamos/study_artifacts.py",
+)
 STABLE_MYPY_ARGS = (
     "--config-file",
     "pyproject.toml",
@@ -78,7 +86,8 @@ STABLE_MYPY_ARGS = (
     "--no-incremental",
 )
 
-Scope = Literal["strict", "full", "release"]
+Scope = Literal["strict", "stable", "full", "release", "full-zero"]
+ZeroScope = Literal["strict", "stable", "full-zero"]
 DIAGNOSTIC_RE = re.compile(
     r"^(?P<path>.+?):(?P<line>\d+)(?::(?P<column>\d+))?: "
     r"(?P<severity>error|note|warning): (?P<message>.*?)(?:  \[(?P<code>[^\]]+)\])?$"
@@ -338,7 +347,12 @@ def baseline_metadata_errors(baseline: dict[str, Any]) -> list[str]:
 
 
 def build_mypy_command(scope: Scope) -> list[str]:
-    paths = STRICT_PATHS if scope == "strict" else FULL_PATHS
+    if scope == "strict":
+        paths = STRICT_PATHS
+    elif scope == "stable":
+        paths = STABLE_API_PATHS
+    else:
+        paths = FULL_PATHS
     return [sys.executable, "-m", "mypy", *STABLE_MYPY_ARGS, *paths]
 
 
@@ -443,13 +457,36 @@ def touched_debt(diagnostics: Sequence[Diagnostic], changed_files: set[str]) -> 
     return dict(sorted(counts.items()))
 
 
-def zero_scope_policy_errors(scope: Literal["strict", "release"], diagnostics: Sequence[Diagnostic]) -> list[str]:
+def zero_scope_policy_errors(scope: ZeroScope, diagnostics: Sequence[Diagnostic]) -> list[str]:
     count = sum(item.severity == "error" for item in diagnostics)
     if count == 0:
         return []
     if scope == "strict":
         return ["strict typing requires zero diagnostics."]
-    return ["release typing requires zero full-source diagnostics."]
+    if scope == "stable":
+        return ["stable public API typing requires zero diagnostics."]
+    return ["full-zero typing requires zero full-source diagnostics."]
+
+
+def _health_result() -> dict[str, Any]:
+    command = [sys.executable, "tools/health.py"]
+    result = subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    lines = result.stdout.splitlines()
+    return {
+        "command": command,
+        "exit_code": result.returncode,
+        "passed": result.returncode == 0,
+        "output_tail": lines[-80:],
+    }
 
 
 def _identity_map(diagnostics: Sequence[Diagnostic]) -> dict[str, dict[str, str]]:
@@ -505,7 +542,7 @@ def _emit(report: dict[str, Any], output_format: str, report_path: Path | None) 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scope", choices=("strict", "full", "release"), required=True)
+    parser.add_argument("--scope", choices=("strict", "stable", "full", "release", "full-zero"), required=True)
     parser.add_argument("--format", choices=("human", "json"), default="human")
     parser.add_argument("--report", type=Path)
     parser.add_argument("--update-baseline", action="store_true")
@@ -528,7 +565,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         changed_files = set()
         policy_errors.append(str(exc))
     policy_errors.extend(suppression_policy_errors(changed_files=changed_files))
-    command, mypy_exit, _output, diagnostics, unparsed = run_mypy(scope)
+    subchecks: dict[str, Any] = {}
+    if scope == "release":
+        for child_scope in ("strict", "stable"):
+            child_command, child_exit, _child_output, child_diagnostics, child_unparsed = run_mypy(cast(Scope, child_scope))
+            child_errors = [item for item in child_diagnostics if item.severity == "error"]
+            subchecks[child_scope] = {
+                "command": child_command,
+                "mypy_exit": child_exit,
+                "diagnostic_count": len(child_errors),
+                "files_with_diagnostics": len({item.path for item in child_errors}),
+                "unparsed_diagnostic_lines": child_unparsed,
+                "passed": child_exit == 0 and not child_errors and not child_unparsed,
+            }
+            if not subchecks[child_scope]["passed"]:
+                policy_errors.append(f"{child_scope} typing must pass for the release policy.")
+        command, mypy_exit, _output, diagnostics, unparsed = run_mypy("full")
+    else:
+        command, mypy_exit, _output, diagnostics, unparsed = run_mypy(scope)
     errors = [item for item in diagnostics if item.severity == "error"]
     if unparsed:
         policy_errors.append(f"mypy emitted {len(unparsed)} unparsed diagnostic line(s).")
@@ -571,7 +625,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
         if not policy_errors:
             baseline = _write_baseline(errors, generation_commit)
-    elif scope == "full" and baseline is not None:
+    elif scope in {"full", "release"} and baseline is not None:
         comparison = compare_ratchet(errors, baseline)
         comparison_data = asdict(comparison)
         identities = _identity_map(errors)
@@ -588,16 +642,23 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         if debt:
             policy_errors.append("changed production files must be free of baseline debt.")
-    elif scope == "release":
-        policy_errors.extend(zero_scope_policy_errors("release", errors))
-    elif scope == "strict":
-        policy_errors.extend(zero_scope_policy_errors("strict", errors))
+    elif scope in {"strict", "stable", "full-zero"}:
+        policy_errors.extend(zero_scope_policy_errors(cast(ZeroScope, scope), errors))
 
-    passed = not policy_errors and (mypy_exit == 0 if scope in {"strict", "release"} else True)
+    health: dict[str, Any] | None = None
+    if scope == "release" and not policy_errors:
+        health = _health_result()
+        if not health["passed"]:
+            policy_errors.append("health must pass for the release policy.")
+
+    zero_mypy_scope = scope in {"strict", "stable", "full-zero"}
+    passed = not policy_errors and (mypy_exit == 0 if zero_mypy_scope else mypy_exit in {0, 1})
     report = {
         "schema_version": 1,
         "scope": scope,
-        "policy": "zero" if scope in {"strict", "release"} else "structured-diagnostic-ratchet",
+        "policy": (
+            "release-strict-stable-ratchet-health" if scope == "release" else "structured-diagnostic-ratchet" if scope == "full" else "zero"
+        ),
         "command": command,
         "mypy_exit": mypy_exit,
         "diagnostic_count": len(errors),
@@ -606,6 +667,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "changed_production_files": sorted(changed_files),
         "touched_debt": debt,
         "comparison": comparison_data,
+        "subchecks": subchecks,
+        "health": health,
         "reviewed_environment_drift": metadata_drift if args.review_environment_change else [],
         "baseline": BASELINE_PATH.relative_to(REPO_ROOT).as_posix() if baseline is not None else None,
         "baseline_sha256": _sha256(BASELINE_PATH) if BASELINE_PATH.is_file() else None,

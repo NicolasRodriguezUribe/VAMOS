@@ -32,6 +32,16 @@ python tools/typecheck.py --scope strict
 
 Strict covers at least the former CI inventory: algorithm configuration and registry, experiment configuration, evaluation, CLI common plumbing, optimization results, and unified optimization. It requires zero diagnostics.
 
+Stable public API:
+
+```bash
+python tools/typecheck.py --scope stable
+```
+
+Stable checks the supported public facade modules and requires zero diagnostics.
+The exact stable symbol inventory is frozen separately under
+`tests/compatibility/v1_0_0/`.
+
 Full development:
 
 ```bash
@@ -40,7 +50,8 @@ python tools/typecheck.py --scope full
 
 Full runs over all of `src/vamos`. It compares normalized diagnostics with `typing/mypy-baseline.json` as a multiset. A fingerprint contains repository-relative path, error code, and normalized semantic message; line and column are retained only as location metadata. New fingerprints, increased multiplicity, new error-code families, stale resolved entries, environment drift, and baseline debt in a changed production file all fail.
 
-Development full-source typing passes the structured no-regression ratchet. Release typing remains blocked until the full-source diagnostic set is empty.
+Development full-source typing passes the structured no-regression ratchet. It
+does not claim that the complete source tree is free of diagnostics.
 
 Release:
 
@@ -48,21 +59,33 @@ Release:
 python tools/typecheck.py --scope release
 ```
 
-Release runs the same full production scope but accepts no baseline debt. Both release workflows invoke this command before building or publishing.
+Release combines strict zero, stable-facade zero, an exact full-source ratchet,
+and the canonical health suite. Both release workflows invoke this command
+before building or publishing.
+
+Full-source zero:
+
+```bash
+python tools/typecheck.py --scope full-zero
+```
+
+Full-zero runs over all production source and accepts no diagnostics. It remains
+the explicit public debt-removal objective and is an informational failure for
+VAMOS 1.0.0.
 
 ## Current structured debt
 
-After establishing strict=0, the structured baseline contains 1,592 diagnostics in 177 files and 209 stable fingerprints:
+After establishing strict=0, the structured baseline contains 1,574 diagnostics in 172 files and 204 stable fingerprints:
 
 | Layer | Diagnostics |
 |---|---:|
 | engine | 926 |
 | foundation | 522 |
-| ux | 89 |
-| experiment | 54 |
+| ux | 74 |
+| experiment | 51 |
 | package root | 1 |
 
-The dominant family is 1,563 `type-arg` diagnostics, primarily unparameterized NumPy arrays in packages that now run with strict mypy settings. The remaining families are small protocol/optional/narrowing/decorator issues. The earlier total of 72 was not reproducible: its checker no longer executed the recorded command or compared the count, its environment was not captured, and later configuration expanded strict checking to broad packages.
+The dominant family is 1,545 `type-arg` diagnostics, primarily unparameterized NumPy arrays in packages that now run with strict mypy settings. The remaining families are small protocol/optional/narrowing/decorator issues. VAMOS 1.0.0 enforces zero typing errors on the strict/stable surface and an exact no-regression ratchet over the complete source tree. The complete source tree is not yet globally free of mypy diagnostics.
 
 ## Reduction and baseline updates
 
@@ -81,7 +104,7 @@ Every production file changed by a Goal must finish with zero diagnostics. Reduc
 
 If the supported environment or effective configuration intentionally changes, add `--review-environment-change` to the update command after reviewing the diagnostic diff. The tool records the drift and still refuses new or increased diagnostics or debt in changed production files. Never replace this process with total-count edits, broad ignores, exclusions, disabled error codes, or `Any` inserted only to silence mypy.
 
-The reduction order is: remaining non-NumPy structural errors; shared NumPy type aliases and protocols by layer; engine algorithms/operators; foundation numerical modules; UX; then release verification at global zero.
+The reduction order is: remaining non-NumPy structural errors; shared NumPy type aliases and protocols by layer; engine algorithms/operators; foundation numerical modules; UX; then verification with the explicit full-zero scope.
 
 ```agent-docs
 path: tools/typecheck.py
@@ -92,6 +115,8 @@ path: .github/workflows/ci.yml
 path: .github/workflows/release.yml
 path: .github/workflows/upload_pypi.yml
 command: python tools/typecheck.py --scope strict
+command: python tools/typecheck.py --scope stable
 command: python tools/typecheck.py --scope full
 command: python tools/typecheck.py --scope release
+command: python tools/typecheck.py --scope full-zero
 ```

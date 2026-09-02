@@ -138,13 +138,25 @@ def test_resolved_diagnostic_requires_baseline_reduction() -> None:
     assert comparison.resolved == {diagnostic.fingerprint: 1}
 
 
-def test_release_rejects_every_nonempty_diagnostic_set() -> None:
-    assert typecheck.zero_scope_policy_errors("release", [_diagnostic()]) == ["release typing requires zero full-source diagnostics."]
-    assert typecheck.zero_scope_policy_errors("release", []) == []
+def test_zero_scopes_reject_diagnostics() -> None:
+    assert typecheck.zero_scope_policy_errors("strict", [_diagnostic()]) == ["strict typing requires zero diagnostics."]
+    assert typecheck.zero_scope_policy_errors("stable", [_diagnostic()]) == ["stable public API typing requires zero diagnostics."]
+    assert typecheck.zero_scope_policy_errors("full-zero", [_diagnostic()]) == ["full-zero typing requires zero full-source diagnostics."]
 
 
 def test_strict_scope_contains_the_complete_former_ci_inventory() -> None:
     assert FORMER_CI_PATHS <= set(typecheck.STRICT_PATHS)
+
+
+def test_stable_scope_covers_every_supported_facade() -> None:
+    assert set(typecheck.STABLE_API_PATHS) == {
+        "src/vamos/__init__.py",
+        "src/vamos/api.py",
+        "src/vamos/algorithms.py",
+        "src/vamos/problems.py",
+        "src/vamos/run_artifacts.py",
+        "src/vamos/study_artifacts.py",
+    }
 
 
 def test_mypy_command_is_nonincremental_and_uses_the_explicit_config() -> None:
@@ -244,7 +256,7 @@ def test_health_and_ci_invoke_the_same_typecheck_commands_once() -> None:
     assert "mypy --config-file pyproject.toml" not in ci
 
 
-def test_release_workflows_require_zero_scope() -> None:
+def test_release_workflows_require_release_policy_scope() -> None:
     release = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
     publish = (ROOT / ".github" / "workflows" / "upload_pypi.yml").read_text(encoding="utf-8")
 

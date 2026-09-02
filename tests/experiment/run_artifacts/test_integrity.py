@@ -404,6 +404,6 @@ def test_noncanonical_layout_is_actionably_rejected_without_mutation(tmp_path: P
     (run / "unknown.bin").write_bytes(b"not a run")
     before = {item.name: item.read_bytes() for item in run.iterdir()}
 
-    with pytest.raises(UnsupportedArtifactLayoutError, match="pre-release format; regenerate"):
+    with pytest.raises(UnsupportedArtifactLayoutError, match="pre-1.0 development format; regenerate"):
         vamos.load_run(run)
     assert {item.name: item.read_bytes() for item in run.iterdir()} == before

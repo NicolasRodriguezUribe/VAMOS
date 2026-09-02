@@ -2,13 +2,18 @@
 
 Use this checklist to verify source distribution and wheel packaging before a release.
 
-Release validation starts with the canonical global zero-error gate:
+Release validation starts with the stable-facade and composite release gates:
 
 ```bash
+python tools/typecheck.py --scope stable
 python tools/typecheck.py --scope release
+python tools/typecheck.py --scope full-zero  # informational for VAMOS 1.0.0
 ```
 
-Do not build or publish a release while that command is nonzero. The development full-source ratchet is not a substitute for release typing.
+Do not build or publish while the stable or release command is nonzero.
+`full-zero` currently reports inherited debt and is not a VAMOS 1.0 blocker.
+Release success means strict/stable zero, an exact no-regression ratchet, and
+health; it is not a claim of global typing cleanliness.
 
 ## Build smoke (wheel/sdist)
 

@@ -18,7 +18,7 @@ def test_contract_relative_links_resolve() -> None:
 
     assert links
     assert all((CONTRACT.parent / link).resolve().exists() for link in links)
-    assert "Pre-release run directories created before the canonical schema 1.0.0" in text
+    assert "Internal development run directories created before the canonical schema" in text
 
 
 def test_acceptance_ids_are_contiguous_and_unique() -> None:

@@ -8,11 +8,11 @@ Read it before editing. A nested `AGENTS.md` may add rules only for its declared
 
 Resolve factual disagreements in this order: the current implementation and tests, accepted ADRs and canonical contracts, CI and packaging configuration, then developer documentation. Fix guidance that disagrees with a higher authority.
 
-## Pre-release policy
+## Compatibility policy
 
-VAMOS has no released backward-compatibility obligation. When a pre-release API or implementation is replaced, update every active caller, test, example, document, and agent instruction, then delete the superseded path. Do not add compatibility aliases, old-format readers, migrations, or deprecation cycles unless a real public release later establishes that obligation.
+Pre-1.0 development artifacts and undocumented APIs are unsupported. Starting with VAMOS 1.0.0, the stable APIs, CLI contracts, configuration fields, and artifact schemas listed in [Stability and versioning](docs/project/stability-and-versioning.md) are compatibility commitments for the 1.x series.
 
-Maintain one current implementation, vocabulary, and contract per feature. Git history is the historical record.
+Do not add readers, migrations, aliases, or deprecation cycles for internal pre-1.0 prototypes. For a stable post-1.0 surface, follow the public deprecation and schema-transition policy instead. Maintain one current implementation, vocabulary, and contract per feature; Git history and the external pre-public tag archive preserve the earlier development record.
 
 ## Repository map and dependency direction
 
@@ -99,11 +99,11 @@ Use the narrowest tier that proves the change while iterating, then run every hi
 - Targeted: `python -m pytest -q <nearest-test-files>`, `python tools/typecheck.py --scope strict` for typed production changes, and `python tools/check_agent_docs.py` for agent/docs changes.
 - Quick: `python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs`.
 - Full: `python tools/health.py`, `python -m pytest -q`, and `mkdocs build --strict`.
-- Release: full tier plus `python tools/typecheck.py --scope release`, `python -m build`, and the applicable checks in [Release Smoke Verification](docs/release_smoke.md).
+- Release: full tier plus `python tools/typecheck.py --scope stable`, `python tools/typecheck.py --scope release`, an informational `python tools/typecheck.py --scope full-zero`, `python -m build`, and the applicable checks in [Release Smoke Verification](docs/release_smoke.md).
 
 `tools/health.py` is the canonical local fast-fail architecture/tooling suite. CI has a distinct matrix and coverage scope. Both run exactly `python tools/check_agent_docs.py` for agent-documentation integrity; do not describe their complete suites as identical.
 
-`tools/typecheck.py` is the sole typing entry point. Health and the dedicated CI typing job each run `--scope strict` and `--scope full` with identical arguments. Strict permits zero diagnostics. Full development typing enforces the structured baseline in `typing/mypy-baseline.json`, including exact fingerprints and multiplicities; every changed production file must be clean. Release always runs `--scope release` and requires global zero. Ratchet success is not a claim that full-source mypy is clean.
+`tools/typecheck.py` is the sole typing entry point. Health and the dedicated CI typing job each run `--scope strict` and `--scope full` with identical arguments. Strict and stable scopes permit zero diagnostics. Full development typing enforces the structured baseline in `typing/mypy-baseline.json`, including exact fingerprints and multiplicities; every changed production file must be clean. Release combines strict zero, stable-facade zero, the exact full-source ratchet, and health. `--scope full-zero` remains the explicit global-zero objective and is informational for VAMOS 1.0.0. Ratchet success is not a claim that full-source mypy is clean.
 
 `tools/check_pre_release_remnants.py` owns the repository semantic no-remnant scan and the shared discarded-token definitions. `tools/check_agent_docs.py` reuses those definitions for active guidance, then adds instruction-specific scope, adapter, link, declaration, duplication, and policy checks; it does not rerun the repository scan. Health and CI invoke each checker once.
 
@@ -173,6 +173,7 @@ Report the base, branch/worktree, files changed, commands with exit status, limi
 
 ```agent-docs
 path: docs/dev/architecture_health.md
+path: docs/project/stability-and-versioning.md
 path: docs/dev/adr/index.md
 path: CODING_GUIDELINES.md
 path: docs/dev/add_problem.md
@@ -231,8 +232,10 @@ command: python tools/check_agent_docs.py
 command: python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs
 command: python tools/health.py
 command: python tools/typecheck.py --scope strict
+command: python tools/typecheck.py --scope stable
 command: python tools/typecheck.py --scope full
 command: python tools/typecheck.py --scope release
+command: python tools/typecheck.py --scope full-zero
 command: python -m pytest -q
 command: mkdocs build --strict
 command: python -m build

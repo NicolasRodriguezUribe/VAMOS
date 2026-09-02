@@ -2,6 +2,10 @@
 
 This reference is automatically generated from the docstrings in the source code.
 
+Only the symbols listed in [Stability and versioning](../project/stability-and-versioning.md)
+and frozen under `tests/compatibility/v1_0_0/` are stable for the 1.x series.
+Other importable or documented modules are experimental or internal as labelled.
+
 ## Unified API
 
 The primary user-facing entry points.  Most users only need these.
@@ -159,7 +163,7 @@ through the focused `vamos.study_artifacts` facade.
         - available_problem_names
         - make_problem_selection
 
-## Tuning
+## Tuning (experimental)
 
 Parameters and Tuners for Hyperparameter Optimization.
 

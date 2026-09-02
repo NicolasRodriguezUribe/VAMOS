@@ -1,6 +1,6 @@
 # ADR 0008: Durable StudyManifest v1 contract
 
-- Status: Accepted for pre-release implementation
+- Status: Accepted and implemented for the VAMOS 1.0 single-owner lifecycle
 - Date: 2026-08-31
 - Decision owners: VAMOS maintainers
 - Contract: [Durable study and StudyManifest v1](../study_manifest_contract.md)
@@ -32,10 +32,10 @@ automatic retry does not exist. Data-only load, inspect, verification, and
 summary paths cannot import plugins, execute code, contact a network, or escape
 the study root.
 
-V1 concurrency is limited to processes on one host and a local filesystem. A
-short study lock, expiring task leases, monotonically increasing claim epochs,
-and fencing tokens prevent stale publication. Distributed coordination is a
-later provider boundary, not a second schema.
+VAMOS 1.0 mutation is single-owner and has no cross-process coordination
+guarantee. Local locks, expiring task leases, claim epochs, fencing tokens, and
+worker pools are deferred extensions. Distributed coordination remains a later
+provider boundary, not a second schema.
 
 The public direction is `StudySpec`, `create_study`, `load_study`, and a thin
 persisted `Study` handle, plus the `vamos study` command group. Package and

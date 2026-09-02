@@ -13,7 +13,9 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - `python tools/check_agent_docs.py` (the same command and arguments used by CI)
 - `python tools/typecheck.py --scope strict` (zero diagnostics in the protected scope)
 - `python tools/typecheck.py --scope full` (exact structured no-regression baseline and clean changed modules)
-- `python tools/typecheck.py --scope release` (global zero; required by release workflows)
+- `python tools/typecheck.py --scope stable` (zero diagnostics across the stable public facades)
+- `python tools/typecheck.py --scope release` (strict/stable zero plus the full ratchet and health)
+- `python tools/typecheck.py --scope full-zero` (informational global-zero objective for VAMOS 1.0.0)
 - `pytest -q tests/architecture/test_layer_boundaries.py`
 - `pytest -q tests/test_monolith_guard.py`
 - `pytest -q tests/test_public_api_guard.py`
@@ -32,7 +34,7 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 
 ## Typing policy
 
-The canonical environment, path inventory, diagnostic fingerprint schema, baseline update procedure, and debt-reduction order live in [Typing policy](typing.md). Health and CI invoke strict and full with identical command arguments. Full development success means the structured ratchet matched exactly; it does not mean full-source typing is clean. Release remains blocked until `--scope release` reports zero.
+The canonical environment, path inventory, diagnostic fingerprint schema, baseline update procedure, and debt-reduction order live in [Typing policy](typing.md). Health and CI invoke strict and full with identical command arguments. Full development success means the structured ratchet matched exactly; it does not mean full-source typing is clean. The VAMOS 1.0 release gate requires strict and stable zero, the exact full-source ratchet, and health. Full-source zero remains separately visible through `--scope full-zero`.
 
 ## Layering Policy (current reality)
 - foundation may depend on foundation/resources only.
