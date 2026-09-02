@@ -57,6 +57,8 @@ def repository_identity(root: Path, version: str, expected_branch: str | None, e
         raise AssertionError(f"Release worktree is not clean:\n{status}")
     head = git(root, "rev-parse", "HEAD")
     branch = os.environ.get("GITHUB_HEAD_REF") or git(root, "branch", "--show-current")
+    if not branch and os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("GITHUB_REF_TYPE") == "branch":
+        branch = os.environ.get("GITHUB_REF_NAME", "")
     required_branch = expected_branch or f"release/{version}"
     if branch != required_branch:
         raise AssertionError(f"Expected branch {required_branch!r}, got {branch!r}.")
