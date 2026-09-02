@@ -99,7 +99,7 @@ Use the narrowest tier that proves the change while iterating, then run every hi
 - Targeted: `python -m pytest -q <nearest-test-files>`, `python tools/typecheck.py --scope strict` for typed production changes, and `python tools/check_agent_docs.py` for agent/docs changes.
 - Quick: `python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs`.
 - Full: `python tools/health.py`, `python -m pytest -q`, and `mkdocs build --strict`.
-- Release: full tier plus `python tools/typecheck.py --scope stable`, `python tools/typecheck.py --scope release`, an informational `python tools/typecheck.py --scope full-zero`, `python -m build`, and the applicable checks in [Release Smoke Verification](docs/release_smoke.md).
+- Release: install the pinned build/release tools, then run the canonical `python tools/release_check.py --version 1.0.0`; it includes the full tier, stable/release typing, informational full-zero typing, frozen distribution inspection, installed-wheel smoke, dependency audits, SBOM, checksums, and provenance described in [Release verification](docs/release_smoke.md).
 
 `tools/health.py` is the canonical local fast-fail architecture/tooling suite. CI has a distinct matrix and coverage scope. Both run exactly `python tools/check_agent_docs.py` for agent-documentation integrity; do not describe their complete suites as identical.
 
@@ -192,8 +192,12 @@ path: docs/dev/adr/0008-durable-study-manifest-contract.md
 path: docs/dev/testing.md
 path: docs/dev/typing.md
 path: docs/release_smoke.md
+path: release/requirements-build.txt
+path: release/requirements-tools.txt
 path: docs/dev/adr/0007-canonical-typing-gates.md
 path: tools/typecheck.py
+path: tools/release_check.py
+path: tools/release_smoke.py
 path: typing/mypy-baseline.json
 path: src/vamos/experiment/artifacts
 path: src/vamos/run_artifacts.py
@@ -239,4 +243,6 @@ command: python tools/typecheck.py --scope full-zero
 command: python -m pytest -q
 command: mkdocs build --strict
 command: python -m build
+command: python tools/release_check.py --version 1.0.0
+command: python tools/release_smoke.py --version 1.0.0 --mode full
 ```
