@@ -14,6 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
+import release_policy  # noqa: E402
 from release_artifacts import inspect_distributions, write_release_manifests  # noqa: E402
 from release_policy import document_evidence, license_evidence, scan_files, version_evidence  # noqa: E402
 
@@ -45,6 +46,59 @@ def test_release_checker_has_human_and_single_json_inventory() -> None:
     assert "Path(args.typing_python).resolve()" not in checker
     assert 'environment["PATH"] = os.pathsep.join(' in checker
     assert "str(self.runtime_python.parent)" in checker
+
+
+def test_repository_identity_uses_branch_ref_for_detached_actions_checkout(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    commit = "a" * 40
+
+    def fake_git(_root: Path, *arguments: str, check: bool = True) -> str:
+        del check
+        responses = {
+            ("status", "--porcelain", "--untracked-files=all"): "",
+            ("rev-parse", "HEAD"): commit,
+            ("branch", "--show-current"): "",
+            ("rev-parse", f"{commit}^{{commit}}"): commit,
+        }
+        return responses[arguments]
+
+    monkeypatch.setattr(release_policy, "git", fake_git)
+    monkeypatch.delenv("GITHUB_HEAD_REF", raising=False)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("GITHUB_REF_TYPE", "branch")
+    monkeypatch.setenv("GITHUB_REF_NAME", "main")
+
+    identity = release_policy.repository_identity(tmp_path, "1.0.0", "main", commit)
+
+    assert identity == {"branch": "main", "commit": commit, "clean": True}
+
+
+def test_repository_identity_does_not_treat_tag_ref_as_branch(monkeypatch, tmp_path: Path) -> None:
+    commit = "a" * 40
+
+    def fake_git(_root: Path, *arguments: str, check: bool = True) -> str:
+        del check
+        responses = {
+            ("status", "--porcelain", "--untracked-files=all"): "",
+            ("rev-parse", "HEAD"): commit,
+            ("branch", "--show-current"): "",
+        }
+        return responses[arguments]
+
+    monkeypatch.setattr(release_policy, "git", fake_git)
+    monkeypatch.delenv("GITHUB_HEAD_REF", raising=False)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("GITHUB_REF_TYPE", "tag")
+    monkeypatch.setenv("GITHUB_REF_NAME", "v1.0.0")
+
+    try:
+        release_policy.repository_identity(tmp_path, "1.0.0", "main", commit)
+    except AssertionError as exc:
+        assert "Expected branch 'main', got ''." in str(exc)
+    else:
+        raise AssertionError("A detached tag checkout was accepted as a branch.")
 
 
 def test_release_smoke_uses_only_stable_vamos_facade() -> None:
