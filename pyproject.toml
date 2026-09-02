@@ -115,6 +115,7 @@ anthropic = [
 ]
 # Development and documentation
 dev = [
+  "tomli>=1.1.0; python_version < '3.11'",
   "pytest>=9.0.3",
   "pytest-cov>=4.1",
   "mypy>=1.9",
@@ -164,6 +165,7 @@ all = [
   "jinja2>=3.1",
   "openai>=1.0.0",
   "anthropic>=0.30.0",
+  "tomli>=1.1.0; python_version < '3.11'",
   "pytest>=9.0.3",
   "pytest-cov>=4.1",
   "mypy>=1.9",
