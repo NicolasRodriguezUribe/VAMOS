@@ -26,7 +26,7 @@ single-owner lifecycle CLI with explicit derived summary output, and canonical
 package/research caller integration are implemented. Locks, leases, and
 parallelism remain deferred.
 
-VAMOS is pre-release. Version `1.0.0` is the only study schema. There is no
+VAMOS 1.0.0 establishes version `1.0.0` as the first public study schema. There is no
 second reader, detector, fallback layout, alias, or deprecation period. Git
 history is the historical record.
 
@@ -766,7 +766,7 @@ change.
 
 | Goal | Scope | Explicit non-goals | SA unlocked | Compatibility risk | Rollback strategy |
 |---|---|---|---|---|---|
-| 1. Models and atomic planned-study round trip | V1 models, canonical JSON, validation, data-only loader, atomic creation, spec/plan/pending task records. | No task execution, resume, retry, CLI, or concurrency. | SA-001..020 and the create/load portion of SA-069. | New public names and frozen schema. | Revert the single pre-release implementation commit; no persisted compatibility retained. |
+| 1. Models and atomic planned-study round trip | V1 models, canonical JSON, validation, data-only loader, atomic creation, spec/plan/pending task records. | No task execution, resume, retry, CLI, or concurrency. | SA-001..020 and the create/load portion of SA-069. | New public names and frozen schema. | Internal development history only; no pre-1.0 persisted compatibility retained. |
 | 2. Sequential durable runner (implemented) | `Study.run()` reserves one task at a time, reconstructs persisted science, publishes verified canonical runs, and commits attempts/events/checkpoints. | No configurable policy, cancellation, retry, resume, coordination, or workers. | SA-021..026 and SA-061..065 under the bounded-slice clarifications. | Adds the durable path without delegating to the old caller path; caller replacement remains deferred. | Revert before public release and regenerate test studies. |
 | 3. Failure policy and cancellation (implemented) | `fail_fast`, `continue`, task-vs-infrastructure errors, graceful cancellation. | No retry/resume or parallelism. | SA-027..030, task-selection portions of SA-031..032, SA-064..065, and SA-068; stale-process reconciliation remains Goal 4. | Changes durable runner failure behavior intentionally; caller migration remains deferred. | Revert policy Goal; no dual policy. |
 | 4. Reconciliation, resume, and explicit retry (implemented) | Reconciliation writes, interrupted-attempt recovery, pending resume, bounded failed/interrupted retry; reuse the implemented data-only journal replay. | No local parallel scheduling or environment override. | SA-033..047 and SA-049..055 beyond the already implemented data-only derivation; SA-048 remains its explicitly future override. | Prevents old rerun behavior and enforces plan identity. | Revert as one slice; preserved canonical studies remain inspectable only by the current schema revision in development. |

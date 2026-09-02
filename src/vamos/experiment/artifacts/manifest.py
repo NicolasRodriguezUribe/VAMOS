@@ -59,7 +59,7 @@ def validate_run_manifest(
             reason="does not identify a VAMOS v1 run manifest",
             expected=DOCUMENT_TYPE,
             actual=document_type,
-            action="This is a pre-release format; regenerate the run with the current VAMOS version.",
+            action="This is a pre-1.0 development format; regenerate the run with the current VAMOS version.",
         )
     schema_version = _required(value, "schema_version", operation=operation, path=path)
     if schema_version != SCHEMA_VERSION:
@@ -70,7 +70,7 @@ def validate_run_manifest(
             reason="is not supported by this reader",
             expected=SCHEMA_VERSION,
             actual=schema_version,
-            action="This is a pre-release format; regenerate the run with the current VAMOS version.",
+            action="This is a pre-1.0 development format; regenerate the run with the current VAMOS version.",
         )
     run_id = _required_string(value, "run_id", operation=operation, path=path)
     _validate_uuid4(run_id, operation=operation, path=path, field="$.run_id")

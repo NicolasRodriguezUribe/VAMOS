@@ -207,7 +207,7 @@ def _deduplicate(findings: list[Finding]) -> list[Finding]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Reject active pre-release compatibility and run-output remnants.")
+    parser = argparse.ArgumentParser(description="Reject unsupported pre-1.0 compatibility and run-output remnants.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args(argv)
     findings = scan(args.root)
@@ -215,9 +215,9 @@ def main(argv: list[str] | None = None) -> int:
         for item in findings:
             location = f"{item.path}:{item.line}" if item.line else item.path
             print(f"{location}: {item.classification.value}: {item.signature}")
-        print(f"Actionable pre-release remnants: {len(findings)}")
+        print(f"Actionable unsupported pre-1.0 remnants: {len(findings)}")
         return 1
-    print("Actionable pre-release remnants: 0")
+    print("Actionable unsupported pre-1.0 remnants: 0")
     return 0
 
 

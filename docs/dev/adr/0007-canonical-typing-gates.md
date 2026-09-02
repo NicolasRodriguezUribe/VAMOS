@@ -16,9 +16,11 @@ VAMOS had three incompatible typing signals: a selected CI scope, an unenforced 
 - Full development typing enforces one structured multiset baseline. Fingerprints exclude source locations but include path, error code, and normalized message; multiplicity cannot increase.
 - Changed production files must contain no baseline debt.
 - Resolved fingerprints are removed from the baseline in the same change.
-- Release typing always checks all production source and requires zero diagnostics.
-- Health and CI run the same strict and full commands. Release workflows run the release command.
+- Stable typing checks every supported public facade and requires zero diagnostics.
+- Release typing combines strict/stable zero, the exact full-source ratchet, and health.
+- Full-zero checks all production source without accepting inherited diagnostics and remains the explicit debt-removal objective.
+- Health and CI run the same strict and full commands. Release workflows run the composite release command.
 
 ## Consequences
 
-Development health can pass while accurately reporting remaining structured debt, but it cannot hide a new diagnostic or stale allowance. Release remains blocked until full-source typing reaches zero. Environment or configuration changes require explicit baseline review.
+Development health can pass while accurately reporting remaining structured debt, but it cannot hide a new diagnostic or stale allowance. VAMOS 1.0 can release only when strict and stable are zero, the full-source ratchet is exact, and health passes. Full-source zero remains visible and unfinished. Environment or configuration changes require explicit baseline review.

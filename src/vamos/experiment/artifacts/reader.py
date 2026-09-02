@@ -382,7 +382,7 @@ def _raise_unsupported_layout(root: Path) -> None:
         reason="does not contain the canonical manifest.json",
         expected="v1 run directory with document_type vamos.run-manifest",
         actual="unsupported directory layout",
-        action="This is a pre-release format; regenerate the run with the current VAMOS version.",
+        action="This is a pre-1.0 development format; regenerate the run with the current VAMOS version.",
     )
 
 

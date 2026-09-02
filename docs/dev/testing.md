@@ -37,10 +37,12 @@ python -m pytest -q
 mkdocs build --strict
 ```
 
-Release validation adds a global zero-error typecheck before packaging:
+Release validation adds stable-facade and composite release typing before packaging:
 
 ```bash
+python tools/typecheck.py --scope stable
 python tools/typecheck.py --scope release
+python tools/typecheck.py --scope full-zero  # expected informational failure for 1.0.0
 python -m build
 ```
 
@@ -55,7 +57,7 @@ python tools/typecheck.py --scope strict
 python tools/typecheck.py --scope full
 ```
 
-Strict requires zero diagnostics over the protected path inventory. Full development typing passes only when the normalized diagnostic multiset exactly matches `typing/mypy-baseline.json` and changed production files contain no debt. A reduction makes the baseline stale and must be recorded in the same change. Release uses `--scope release`, ignores no debt, and requires global zero.
+Strict requires zero diagnostics over the protected path inventory. Stable requires zero diagnostics across every supported public facade. Full development typing passes only when the normalized diagnostic multiset exactly matches `typing/mypy-baseline.json` and changed production files contain no debt. A reduction makes the baseline stale and must be recorded in the same change. Release combines strict/stable zero, the exact full ratchet, and health. `full-zero` checks all production source without the baseline and remains the explicit debt-removal objective.
 
 `tools/check_pre_release_remnants.py` owns the repository-wide semantic scan and shared discarded-token rules. `tools/check_agent_docs.py` imports those shared rules for instruction files and adds scope, adapter, link, declaration, duplicate-body, and agent-policy validation. Health and CI execute both checkers once; neither checker recursively invokes the other.
 
@@ -92,8 +94,10 @@ command: python tools/check_agent_docs.py
 command: python -m pytest -q tests/test_check_agent_docs.py tests/architecture/test_docs_and_workflows.py tests/docs
 command: python tools/health.py
 command: python tools/typecheck.py --scope strict
+command: python tools/typecheck.py --scope stable
 command: python tools/typecheck.py --scope full
 command: python tools/typecheck.py --scope release
+command: python tools/typecheck.py --scope full-zero
 command: python -m pytest -q
 command: mkdocs build --strict
 command: python -m build

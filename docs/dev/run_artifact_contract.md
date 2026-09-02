@@ -12,12 +12,12 @@ Studio loading. A run artifact represents one execution attempt. It is not a
 study database or a general export format. Replay is an explicit service that
 consumes one verified run and publishes another through the same writer.
 
-VAMOS is pre-release. The package supports one schema and one reader/writer
-path. Any input outside schema `1.0.0` must be regenerated with the current
-version.
+VAMOS 1.0.0 establishes the first public run-artifact baseline. The package
+supports one schema and one reader/writer path. Internal development inputs
+outside schema `1.0.0` must be regenerated with the current version.
 
-> Pre-release run directories created before the canonical schema 1.0.0
-> implementation are unsupported and should be regenerated.
+> Internal development run directories created before the canonical schema
+> 1.0.0 implementation are unsupported and should be regenerated.
 
 ## 2. Canonical directory
 
@@ -229,7 +229,7 @@ incomplete-run, and incomplete-metadata cases have distinct typed errors.
 
 A directory without a supported manifest, or a manifest with another document
 identity/version, is rejected uniformly. The action states that this is a
-pre-release format and the run must be regenerated with the current VAMOS
+pre-1.0 development format and the run must be regenerated with the current VAMOS
 version. The reader does not inspect filenames to classify an earlier format.
 
 ## 10. Defensive limits

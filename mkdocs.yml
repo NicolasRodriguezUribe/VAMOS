@@ -38,6 +38,8 @@ plugins:
 
 nav:
   - Home: index.md
+  - Project:
+    - Stability and Versioning: project/stability-and-versioning.md
   - Guide:
     - Minimal Python Track: guide/minimal-python.md
     - Quick Start Guide: guide/zero_to_hero.md

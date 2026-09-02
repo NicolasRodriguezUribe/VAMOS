@@ -30,8 +30,8 @@ def main() -> int:
 
     python = sys.executable
     commands: list[tuple[str, list[str]]] = [
-        ("Pre-release remnant audit", [python, "tools/check_pre_release_remnants.py"]),
-        ("Pre-release remnant checker tests", [python, "-m", "pytest", "-q", "tests/test_check_pre_release_remnants.py"]),
+        ("Unsupported pre-1.0 remnant audit", [python, "tools/check_pre_release_remnants.py"]),
+        ("Unsupported pre-1.0 remnant checker tests", [python, "-m", "pytest", "-q", "tests/test_check_pre_release_remnants.py"]),
         # CI runs this checker with the same script and no arguments. See /AGENTS.md.
         ("Agent documentation", [python, "tools/check_agent_docs.py"]),
         ("Layer boundaries", [python, "-m", "pytest", "-q", "tests/architecture/test_layer_boundaries.py"]),
