@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=83", "wheel>=0.46.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -58,7 +58,7 @@ Documentation = "https://nicolasrodriguezuribe.github.io/VAMOS/"
 compute = [
   "numba>=0.57",
   "moocore>=0.2.0,<1.0",
-  "dask[distributed]>=2023.5.0",
+  "dask[distributed]>=2026.1.0",
 ]
 research = [
   "pymoo>=0.6",
@@ -120,8 +120,8 @@ dev = [
   "mypy>=1.9",
   "ruff>=0.6",
   "build>=1.2",
-  "setuptools>=77",
-  "wheel>=0.40",
+  "setuptools>=83",
+  "wheel>=0.46.2",
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
   "mkdocs-static-i18n>=1.2",
@@ -134,7 +134,7 @@ dev = [
 all = [
   "numba>=0.57",
   "moocore>=0.2.0,<1.0",
-  "dask[distributed]>=2023.5.0",
+  "dask[distributed]>=2026.1.0",
   "pymoo>=0.6",
   "jmetalpy>=1.5",
   "deap>=1.4",
@@ -169,8 +169,8 @@ all = [
   "mypy>=1.9",
   "ruff>=0.6",
   "build>=1.2",
-  "setuptools>=77",
-  "wheel>=0.40",
+  "setuptools>=83",
+  "wheel>=0.46.2",
   "pyyaml>=6.0",
 ]
 
