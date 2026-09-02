@@ -7,7 +7,7 @@ import json
 import time
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -367,7 +367,7 @@ def main(argv: list[str] | None = None) -> int:
                 runs.append(_with_metrics(_run_pymoo(case, algorithm, seed=seed), reference_front))
 
     payload = {
-        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "vamos_engine": str(args.engine),
         "cases": [case.name for case in cases],
         "algorithms": [str(name) for name in args.algorithms],
