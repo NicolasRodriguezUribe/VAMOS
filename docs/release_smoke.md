@@ -88,6 +88,10 @@ findings block the release. Build and release-tool audits are recorded
 separately and surface findings as warnings for owner review; the pinned 1.0.0
 tool sets are expected to audit clean.
 
+Ruff lint is clean across production, tests, and release tools. Ruff formatting
+uses the repository's explicit ratcheted formatting budget, so this release does
+not disguise inherited formatting debt as global formatter compliance.
+
 The pre-normalization tag state is required until the archived internal tags
 are removed. After normalization, use `--tag-state normalized`. Do not publish
 if repository identity, artifact hashes, TestPyPI installation, or any critical

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
+import secrets
 import shutil
-import uuid
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from pathlib import Path
@@ -78,7 +78,9 @@ def publish_study(
     configured = limits or StudyLoadLimits()
     destination = destination.absolute()
     _reject_existing(destination)
-    token = uuid.uuid4().hex
+    # Keep the full 128 bits of entropy while limiting transient path growth on
+    # Windows, where otherwise an ordinary pytest/user temp root can hit MAX_PATH.
+    token = secrets.token_urlsafe(16)
     staging = destination.parent / f".{destination.name}.vamos-study-staging-{token}"
     owns_staging = False
     published = False

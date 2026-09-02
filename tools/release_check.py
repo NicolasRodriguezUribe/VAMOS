@@ -189,7 +189,10 @@ class ReleaseChecker:
             informational=True,
         )
         self.command("ruff-lint", [sys.executable, "-m", "ruff", "check", "src/vamos", "tests", "tools"])
-        self.command("ruff-format", [sys.executable, "-m", "ruff", "format", "--check", "src/vamos", "tests", "tools"])
+        self.command(
+            "ruff-format",
+            [sys.executable, "-m", "pytest", "-q", "tests/architecture/test_ruff_format_gate.py"],
+        )
         self.command("compileall", [sys.executable, "-m", "compileall", "-q", "src/vamos", "tests", "tools"])
         self.command("public-examples", [sys.executable, "-m", "pytest", "-q", "tests/docs"])
         self.command("complete-tests", [sys.executable, "-m", "pytest", "-q"])
