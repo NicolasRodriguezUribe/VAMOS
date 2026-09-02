@@ -27,7 +27,7 @@ class TestDomainTemplates:
         )
 
         tpl = example_objectives()["Engineering: beam design (cost vs deflection)"]
-        fn = compile_objective_function(tpl["code"])
+        fn = compile_objective_function(tpl["code"], trusted_local_code=True)
         x = np.array([5.0, 5.0])
         result = fn(x)
         assert len(result) == int(tpl["n_obj"])
@@ -39,7 +39,7 @@ class TestDomainTemplates:
         )
 
         tpl = example_objectives()["ML: accuracy vs model size"]
-        fn = compile_objective_function(tpl["code"])
+        fn = compile_objective_function(tpl["code"], trusted_local_code=True)
         x = np.array([5.0, 4.0, 0.2])
         result = fn(x)
         assert len(result) == int(tpl["n_obj"])
@@ -51,7 +51,7 @@ class TestDomainTemplates:
         )
 
         tpl = example_objectives()["Scheduling: makespan vs tardiness"]
-        fn = compile_objective_function(tpl["code"])
+        fn = compile_objective_function(tpl["code"], trusted_local_code=True)
         x = np.random.default_rng(0).random(int(tpl["n_var"]))
         result = fn(x)
         assert len(result) == int(tpl["n_obj"])
@@ -78,7 +78,7 @@ class TestConstraintCompilation:
     def test_simple_constraint(self) -> None:
         from vamos.ux.studio.problem_builder_backend import compile_constraint_function
 
-        fn = compile_constraint_function("return [x[0] + x[1] - 1.0]")
+        fn = compile_constraint_function("return [x[0] + x[1] - 1.0]", trusted_local_code=True)
         result = fn(np.array([0.3, 0.5]))
         assert len(result) == 1
         assert abs(result[0] - (-0.2)) < 1e-9
@@ -87,7 +87,7 @@ class TestConstraintCompilation:
         from vamos.ux.studio.problem_builder_backend import compile_constraint_function
 
         with pytest.raises(SyntaxError):
-            compile_constraint_function("return [x[0] +]")
+            compile_constraint_function("return [x[0] +]", trusted_local_code=True)
 
     def test_engineering_constraint_compiles(self) -> None:
         from vamos.ux.studio.problem_builder_backend import (
@@ -98,7 +98,7 @@ class TestConstraintCompilation:
         tpl = example_objectives()["Engineering: beam design (cost vs deflection)"]
         g_code = tpl.get("constraint_code", "")
         assert g_code, "Engineering template should have constraint_code"
-        fn = compile_constraint_function(g_code)
+        fn = compile_constraint_function(g_code, trusted_local_code=True)
         result = fn(np.array([5.0, 5.0]))
         assert isinstance(result, list)
         assert len(result) == int(tpl["n_constraints"])
@@ -114,8 +114,8 @@ class TestRunPreviewWithConstraints:
             run_preview_optimization,
         )
 
-        fn = compile_objective_function("return [x[0], x[1]]")
-        g = compile_constraint_function("return [1.0 - x[0] - x[1]]")
+        fn = compile_objective_function("return [x[0], x[1]]", trusted_local_code=True)
+        g = compile_constraint_function("return [1.0 - x[0] - x[1]]", trusted_local_code=True)
         result = run_preview_optimization(
             fn,
             n_var=2,
@@ -127,6 +127,7 @@ class TestRunPreviewWithConstraints:
             seed=42,
             constraints=g,
             n_constraints=1,
+            trusted_local_code=True,
         )
         assert result["F"].shape[1] == 2
 
