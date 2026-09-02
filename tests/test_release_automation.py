@@ -43,6 +43,8 @@ def test_release_checker_has_human_and_single_json_inventory() -> None:
     checker = (ROOT / "tools" / "release_check.py").read_text(encoding="utf-8")
     assert "os.path.abspath(args.typing_python)" in checker
     assert "Path(args.typing_python).resolve()" not in checker
+    assert 'environment["PATH"] = os.pathsep.join(' in checker
+    assert "str(self.runtime_python.parent)" in checker
 
 
 def test_release_smoke_uses_only_stable_vamos_facade() -> None:
