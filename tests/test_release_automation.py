@@ -46,6 +46,7 @@ def test_release_checker_has_human_and_single_json_inventory() -> None:
     assert "Path(args.typing_python).resolve()" not in checker
     assert 'environment["PATH"] = os.pathsep.join(' in checker
     assert "str(self.runtime_python.parent)" in checker
+    assert "dir=self.output.parent" in checker
 
 
 def test_repository_identity_uses_branch_ref_for_detached_actions_checkout(
@@ -101,6 +102,92 @@ def test_repository_identity_does_not_treat_tag_ref_as_branch(monkeypatch, tmp_p
         raise AssertionError("A detached tag checkout was accepted as a branch.")
 
 
+def test_pre_tag_state_requires_no_public_version_tag(monkeypatch, tmp_path: Path) -> None:
+    commit = "a" * 40
+
+    def fake_git(_root: Path, *arguments: str, check: bool = True) -> str:
+        del check
+        responses = {
+            ("rev-parse", "HEAD"): commit,
+            ("show-ref", "--tags", "-d"): "",
+        }
+        return responses[arguments]
+
+    monkeypatch.setattr(release_policy, "git", fake_git)
+    monkeypatch.setattr(release_policy, "_remote_tags", lambda _root: "")
+
+    evidence = release_policy.tag_evidence(tmp_path, "1.0.0", "pre-tag")
+
+    assert evidence == {"state": "pre-tag", "head": commit, "local": {}, "remote": {}}
+
+
+def test_pre_tag_state_rejects_existing_remote_public_version_tag(monkeypatch, tmp_path: Path) -> None:
+    commit = "a" * 40
+    tag = "b" * 40
+
+    def fake_git(_root: Path, *arguments: str, check: bool = True) -> str:
+        del check
+        responses = {
+            ("rev-parse", "HEAD"): commit,
+            ("show-ref", "--tags", "-d"): "",
+        }
+        return responses[arguments]
+
+    monkeypatch.setattr(release_policy, "git", fake_git)
+    monkeypatch.setattr(release_policy, "_remote_tags", lambda _root: f"{tag} refs/tags/v1.0.0")
+
+    try:
+        release_policy.tag_evidence(tmp_path, "1.0.0", "pre-tag")
+    except AssertionError as exc:
+        assert "Expected no public remote version tags" in str(exc)
+    else:
+        raise AssertionError("An existing remote public version tag was accepted before the release tag gate.")
+
+
+def test_pre_tag_state_allows_archived_local_tag_away_from_candidate(monkeypatch, tmp_path: Path) -> None:
+    commit = "a" * 40
+    tag = "b" * 40
+    old_commit = "c" * 40
+
+    def fake_git(_root: Path, *arguments: str, check: bool = True) -> str:
+        del check
+        responses = {
+            ("rev-parse", "HEAD"): commit,
+            ("show-ref", "--tags", "-d"): (f"{tag} refs/tags/v1.0.0\n{old_commit} refs/tags/v1.0.0^{{}}"),
+        }
+        return responses[arguments]
+
+    monkeypatch.setattr(release_policy, "git", fake_git)
+    monkeypatch.setattr(release_policy, "_remote_tags", lambda _root: "")
+
+    evidence = release_policy.tag_evidence(tmp_path, "1.0.0", "pre-tag")
+
+    assert evidence["local"]["v1.0.0"] == tag
+
+
+def test_pre_tag_state_rejects_local_tag_at_candidate(monkeypatch, tmp_path: Path) -> None:
+    commit = "a" * 40
+    tag = "b" * 40
+
+    def fake_git(_root: Path, *arguments: str, check: bool = True) -> str:
+        del check
+        responses = {
+            ("rev-parse", "HEAD"): commit,
+            ("show-ref", "--tags", "-d"): f"{tag} refs/tags/v1.0.0\n{commit} refs/tags/v1.0.0^{{}}",
+        }
+        return responses[arguments]
+
+    monkeypatch.setattr(release_policy, "git", fake_git)
+    monkeypatch.setattr(release_policy, "_remote_tags", lambda _root: "")
+
+    try:
+        release_policy.tag_evidence(tmp_path, "1.0.0", "pre-tag")
+    except AssertionError as exc:
+        assert "already resolves to release commit" in str(exc)
+    else:
+        raise AssertionError("A local candidate tag was accepted before the release tag gate.")
+
+
 def test_release_smoke_uses_only_stable_vamos_facade() -> None:
     source = (ROOT / "tools" / "release_smoke.py").read_text(encoding="utf-8")
 
@@ -140,6 +227,8 @@ def test_release_workflows_are_parseable_pinned_and_cover_claimed_matrix() -> No
     assert "release_smoke.py" in release
     assert "test_security_models.py" in release
     assert "vamos-${{ env.VAMOS_RELEASE_VERSION }}-frozen" in release
+    assert "release/final-1.0.0" in release
+    assert "--tag-state pre-tag" in release
 
 
 def test_publication_uses_trusted_publishing_and_never_rebuilds() -> None:

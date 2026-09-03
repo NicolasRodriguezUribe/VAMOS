@@ -18,7 +18,7 @@ env:
 
 jobs:
   build-distributions:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'release/1.0.0'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'release/final-1.0.0'
     name: Build frozen distributions
     runs-on: ubuntu-latest
     steps:
@@ -88,7 +88,7 @@ jobs:
           --version "$VAMOS_RELEASE_VERSION"
           --expected-branch "$VAMOS_EXPECTED_BRANCH"
           --expected-commit "$VAMOS_RELEASE_COMMIT"
-          --tag-state pre-normalization
+          --tag-state pre-tag
           --artifacts "$RUNNER_TEMP/candidate-dist"
           --typing-python "$RUNNER_TEMP/typing-venv/bin/python"
           --output-dir "$RUNNER_TEMP/release-evidence"
