@@ -294,7 +294,7 @@ class ReleaseChecker:
         return {"archives": [path.name for path in archives], "violations": 0}
 
     def _runtime_checks(self, wheel: Path) -> None:
-        temporary = tempfile.TemporaryDirectory(prefix="vamos-release-runtime-")
+        temporary = tempfile.TemporaryDirectory(prefix="vamos-release-runtime-", dir=self.output.parent)
         self._runtime_temporary = temporary
 
         def install() -> dict[str, Any]:
@@ -407,7 +407,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", required=True)
     parser.add_argument("--expected-branch")
     parser.add_argument("--expected-commit")
-    parser.add_argument("--tag-state", choices=("pre-normalization", "normalized", "ignore"), default="pre-normalization")
+    parser.add_argument(
+        "--tag-state",
+        choices=("pre-normalization", "pre-tag", "normalized", "ignore"),
+        default="pre-normalization",
+    )
     parser.add_argument("--output-dir")
     parser.add_argument("--artifacts", help="Directory containing one already-frozen wheel and sdist.")
     parser.add_argument(

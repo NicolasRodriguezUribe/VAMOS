@@ -31,9 +31,9 @@ evidence outside the repository:
 ```bash
 python tools/release_check.py \
   --version 1.0.0 \
-  --expected-branch release/1.0.0 \
+  --expected-branch release/final-1.0.0 \
   --expected-commit <full-commit-sha> \
-  --tag-state pre-normalization \
+  --tag-state pre-tag \
   --typing-python <typing-venv>/bin/python \
   --output-dir <new-empty-evidence-directory>
 ```
@@ -92,10 +92,13 @@ Ruff lint is clean across production, tests, and release tools. Ruff formatting
 uses the repository's explicit ratcheted formatting budget, so this release does
 not disguise inherited formatting debt as global formatter compliance.
 
-The pre-normalization tag state is required until the archived internal tags
-are removed. After normalization, use `--tag-state normalized`. Do not publish
-if repository identity, artifact hashes, TestPyPI installation, or any critical
-gate differs from the frozen candidate.
+Use `--tag-state pre-normalization` only while the archived internal tags still
+exist. After history normalization and before the first official tag, use
+`--tag-state pre-tag`; it requires that no public remote version tag exists and
+refuses a local candidate tag while allowing explicitly archived local history.
+After the official tag is created on the release commit, use `--tag-state normalized`.
+Do not publish if repository identity, artifact hashes, TestPyPI installation,
+or any critical gate differs from the frozen candidate.
 
 TestPyPI is published first using trusted publishing. Only after its exact
 wheel installs and passes the full smoke may the same immutable wheel and sdist

@@ -6,7 +6,7 @@ All notable public changes to VAMOS are documented here.
 
 No changes yet.
 
-## [1.0.0] - 2026-09-02
+## [1.0.0] - 2026-09-04
 
 VAMOS 1.0.0 is the first official public release and the first compatibility
 baseline. Earlier version strings and Git tags were internal pre-public

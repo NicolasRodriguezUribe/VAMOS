@@ -175,6 +175,12 @@ def tag_evidence(root: Path, version: str, state: str) -> dict[str, Any]:
             raise AssertionError(f"Archived internal tag state changed; missing local={missing_local}, remote={missing_remote}.")
         if _peeled(local, official) == head or _peeled(remote, official) == head:
             raise AssertionError("The conflicting pre-public v1.0.0 tag already points at the candidate commit.")
+    elif state == "pre-tag":
+        remote_versions = sorted(tag for tag in remote if re.fullmatch(r"v\d+\.\d+\.\d+", tag))
+        if remote_versions:
+            raise AssertionError(f"Expected no public remote version tags; remote={remote_versions}.")
+        if _peeled(local, official) == head:
+            raise AssertionError(f"Local {official} already resolves to release commit {head}.")
     elif state == "normalized":
         local_versions = sorted(tag for tag in local if re.fullmatch(r"v\d+\.\d+\.\d+", tag))
         remote_versions = sorted(tag for tag in remote if re.fullmatch(r"v\d+\.\d+\.\d+", tag))
