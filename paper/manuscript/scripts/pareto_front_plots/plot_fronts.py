@@ -8,9 +8,10 @@ Plots:
   3. DTLZ2 – standard NSGA-II
   4. DTLZ2 – unbounded-archive NSGA-II
 
-Output: PNG files saved to ../../figures/ (project root figures folder).
+Output: PNG files saved to the ignored paper/generated/figures/ directory.
 """
 
+import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -23,7 +24,7 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 – needed for 3-D project
 # ---------------------------------------------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_DIR = SCRIPT_DIR / "data"
-FIG_DIR = SCRIPT_DIR.parent.parent / "figures"
+FIG_DIR = SCRIPT_DIR.parents[2] / "generated" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -133,7 +134,24 @@ def plot_dtlz2(obtained_file: str, title: str, out_name: str) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Plot the frozen Pareto-front CSVs.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace existing generated figures.")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+    output_names = (
+        "front_zdt4_standard.png",
+        "front_zdt4_steady_state.png",
+        "front_dtlz2_standard.png",
+        "front_dtlz2_archive.png",
+    )
+    collisions = [FIG_DIR / name for name in output_names if (FIG_DIR / name).exists()]
+    if collisions and not args.overwrite:
+        names = ", ".join(str(path) for path in collisions)
+        raise FileExistsError(f"Refusing to overwrite existing figure(s): {names}. Pass --overwrite to replace them.")
     print("Generating Pareto front plots …")
 
     # ZDT4

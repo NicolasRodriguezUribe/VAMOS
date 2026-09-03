@@ -24,14 +24,16 @@ from scipy import stats
 # =============================================================================
 
 DATA_DIR = Path(__file__).parent.parent / "experiments"
-OUTPUT_DIR = Path(__file__).parent / "manuscript"
+MANUSCRIPT_DIR = Path(__file__).parent / "manuscript"
+OUTPUT_DIR = Path(__file__).parent / "generated" / "tables"
+GENERATED_DATA_DIR = Path(__file__).parent / "generated" / "data"
 
 _algo_env = os.environ.get("VAMOS_PAPER_ALGORITHM", "nsgaii").strip().lower()
 
 if _algo_env in {"all", "*"}:
     # Convenience mode: run the analysis for all algorithms used in the paper.
     # - NSGA-II updates main.tex by default.
-    # - SMS-EMOA and MOEA/D write their LaTeX tables into manuscript/ without touching main.tex.
+    # - SMS-EMOA and MOEA/D write their LaTeX tables into paper/generated/tables/ without touching main.tex.
     for _algo in ["nsgaii", "smsemoa", "moead"]:
         _env = os.environ.copy()
         _env["VAMOS_PAPER_ALGORITHM"] = _algo
@@ -68,6 +70,15 @@ BASELINE_FRAMEWORK = "VAMOS (numba)"
 BASELINE_DISPLAY = "VAMOS"  # Display name for LaTeX tables
 DEFAULT_UPDATE_MAIN_TEX = "1" if ALGORITHM == "nsgaii" else "0"
 UPDATE_MAIN_TEX = bool(int(os.environ.get("VAMOS_PAPER_UPDATE_MAIN_TEX", DEFAULT_UPDATE_MAIN_TEX)))
+OVERWRITE = bool(int(os.environ.get("VAMOS_PAPER_OVERWRITE", "0")))
+
+_generated_candidates = [GENERATED_DATA_DIR / f"ci_details_{ALGORITHM}.csv"]
+if not UPDATE_MAIN_TEX:
+    _generated_candidates.append(OUTPUT_DIR / f"stats_{ALGORITHM}.tex")
+_collisions = [path for path in _generated_candidates if path.exists()]
+if _collisions and not OVERWRITE:
+    _names = ", ".join(str(path) for path in _collisions)
+    raise FileExistsError(f"Refusing to overwrite existing statistical output(s): {_names}. Set VAMOS_PAPER_OVERWRITE=1 to replace them.")
 
 # =============================================================================
 # LOAD DATA
@@ -437,12 +448,13 @@ if "igd_plus" in df.columns and competitors:
     if not igd_out.empty:
         comparisons_out = pd.concat([comparisons_out, igd_out], ignore_index=True)
 
+GENERATED_DATA_DIR.mkdir(parents=True, exist_ok=True)
 if ALGORITHM == "nsgaii":
-    output_csv = DATA_DIR / "statistical_tests.csv"
+    output_csv = GENERATED_DATA_DIR / "statistical_tests.csv"
 elif ALGORITHM == "smsemoa":
-    output_csv = DATA_DIR / "statistical_tests_smsemoa.csv"
+    output_csv = GENERATED_DATA_DIR / "statistical_tests_smsemoa.csv"
 else:
-    output_csv = DATA_DIR / "statistical_tests_moead.csv"
+    output_csv = GENERATED_DATA_DIR / "statistical_tests_moead.csv"
 comparisons_out.to_csv(output_csv, index=False)
 print(f"\nSaved statistical results to {output_csv}")
 
@@ -452,7 +464,7 @@ print(f"\nSaved statistical results to {output_csv}")
 
 import subprocess
 
-MAIN_TEX = OUTPUT_DIR / "main.tex"
+MAIN_TEX = MANUSCRIPT_DIR / "main.tex"
 
 
 def _find_table_bounds(content: str, label: str) -> tuple[int, int, str, str] | None:
@@ -802,7 +814,7 @@ if "hypervolume" in df.columns:
     eq_details = build_hv_equivalence_details(df)
     # Export CI details to CSV for forest plot generation
     if not eq_details.empty:
-        ci_csv_path = DATA_DIR / f"ci_details_{ALGORITHM}.csv"
+        ci_csv_path = GENERATED_DATA_DIR / f"ci_details_{ALGORITHM}.csv"
         eq_details.to_csv(ci_csv_path, index=False)
         print(f"Saved CI details to {ci_csv_path}")
     eq_summary = build_hv_equivalence_summary(eq_details)
@@ -820,7 +832,7 @@ if "hypervolume" in df.columns:
         latex_ci_export = "\n".join([
             rf"\begin{{figure}}[htbp]",
             rf"  \centering",
-            rf"  \includegraphics[width=\columnwidth]{{figures/forest_ci_{ALGORITHM}.png}}",
+            rf"  \includegraphics[width=\columnwidth]{{../generated/figures/forest_ci_{ALGORITHM}.png}}",
             rf"  \caption{{{ALGORITHM_DISPLAY}. Per-problem paired bootstrap 90\% confidence intervals for the relative normalized hypervolume difference $\Delta = (\HV_{{\VAMOS}} - \HV_{{\text{{fw}}}})/\HV_{{\text{{fw}}}}$, reported in percent. The shaded band marks the $\pm 1\%$ equivalence margin; intervals falling entirely within this band indicate statistical equivalence}}",
             rf"  \label{{fig:forest_ci_{ALGORITHM}}}",
             rf"\end{{figure}}",
@@ -830,6 +842,7 @@ print("\n" + "=" * 60)
 print("UPDATING MAIN.TEX")
 print("=" * 60)
 
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 if not UPDATE_MAIN_TEX:
     export_tex = OUTPUT_DIR / f"stats_{ALGORITHM}.tex"
     parts = [

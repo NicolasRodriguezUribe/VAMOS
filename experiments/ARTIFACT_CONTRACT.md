@@ -24,14 +24,19 @@ directory names.
   ablation notebooks, and campaign collectors use `StudySpec`, `plan_study`,
   `create_study`, `Study.run/resume/retry/inspect/summarize`, and StudySummary.
 - `DERIVED_REGENERABLE_OUTPUT`: tidy CSV tables, statistics, plots, LaTeX, and
-  samples under `artifacts/` or `experiments/sample_outputs/`.
+  ordinary run outputs under ignored `artifacts/` or `paper/generated/` paths.
+  The tiny files under `experiments/sample_outputs/` are explicit reporting
+  fixtures, not general output destinations.
 - `SCIENTIFIC_SOURCE_INPUT`: campaign YAML, problem catalogs, frozen reference
   points, and operator/config inventories under `experiments/configs/` and
   `experiments/catalog/`; these are preserved inputs, not a supported study
   serialization.
-- `PUBLICATION_ARCHIVE`: committed benchmark/MIC CSVs, backups, manuscripts,
-  figures, PDFs, and publication-specific scripts under `paper/`; these remain
-  attributable archives and are not accepted as current study formats.
+- `REFERENCE_BENCHMARK_DATA`: only the minimal paper CSVs declared in
+  `experiments/REFERENCE_RESULTS.md`. They retain a source commit, command,
+  schema, expected use and size budget.
+- `PUBLICATION_SOURCE`: TeX, rebuild scripts and irreplaceable source figures
+  under `paper/`. Compiled PDFs, generated tables/plots, submission archives,
+  backups, raw MIC outputs and tuning databases are external or ignored.
 - `OBSOLETE_PRE_RELEASE_WORKFLOW`: the removed custom campaign launchers that
   generated per-task CLI configs, inferred completion by scanning directories,
   and treated `runs_index.jsonl` as resume state.
@@ -48,9 +53,10 @@ ID, task ID, attempt ID, run ID, relative RunManifest path, and manifest hash.
 Objective summaries are calculated only after following canonical run evidence
 and loading arrays through `load_result`.
 
-Derived tables may be written under `artifacts/tidy/` or
-`experiments/sample_outputs/`. Their filenames and columns are analysis
-interfaces only and must never be treated as a loadable VAMOS run format.
+Derived tables are written below `artifacts/` or `paper/generated/`. Their
+filenames and columns are analysis interfaces only and must never be treated as
+a loadable VAMOS run format. New sample fixtures require an explicit fixture
+contract and test.
 
 ## Validation
 

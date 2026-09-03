@@ -85,6 +85,7 @@ nav:
     - Testing and Validation: dev/testing.md
     - Typing Policy: dev/typing.md
     - Architecture Health: dev/architecture_health.md
+    - Repository Hygiene: dev/repository_hygiene.md
     - Release Smoke Verification: release_smoke.md
     - Architecture Decisions:
       - ADR Index: dev/adr/index.md

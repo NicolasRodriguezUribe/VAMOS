@@ -44,7 +44,7 @@ from vamos.engine.tuning.racing.param_space import PARAM_ROLES
 from vamos.engine.tuning.racing.tuning_task import EvalContext
 from vamos.experiment.cli.tune import make_evaluator
 
-OUTPUT_CSV = Path(__file__).parent / "fanova_validation.csv"
+OUTPUT_CSV = Path("artifacts/experiments/fanova_validation.csv")
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -205,7 +205,7 @@ def _group_importance_by_role(
     return role_importance
 
 
-def run_fanova(n_configs: int = 500, problem: str = "dtlz2", seed: int = 42) -> None:
+def run_fanova(n_configs: int = 500, problem: str = "dtlz2", seed: int = 42, *, output: Path = OUTPUT_CSV) -> None:
     logging.basicConfig(level=logging.WARNING, format="%(message)s")
 
     config_space = build_nsgaii_config_space()
@@ -257,11 +257,11 @@ def run_fanova(n_configs: int = 500, problem: str = "dtlz2", seed: int = 42) -> 
             "problem": problem,
             "n_configs": n_configs,
         })
-    with open(OUTPUT_CSV, "w", newline="") as f:
+    with output.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["parameter", "role", "importance", "problem", "n_configs"])
         writer.writeheader()
         writer.writerows(rows)
-    print(f"\nResults saved to {OUTPUT_CSV}")
+    print(f"\nResults saved to {output}")
 
 
 def main() -> None:
@@ -270,10 +270,16 @@ def main() -> None:
     parser.add_argument("--problem", type=str, default="zdt1", help="Problem name")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--smoke", action="store_true", help="Quick smoke test with 3 configs")
+    parser.add_argument("--output", type=Path, default=OUTPUT_CSV, help="Destination CSV below an ignored artifact directory.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing output CSV.")
     args = parser.parse_args()
 
+    output = args.output.expanduser().resolve()
+    if output.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing analysis output: {output}. Pass --overwrite to replace it.")
+    output.parent.mkdir(parents=True, exist_ok=True)
     n_configs = 3 if args.smoke else args.n_configs
-    run_fanova(n_configs=n_configs, problem=args.problem, seed=args.seed)
+    run_fanova(n_configs=n_configs, problem=args.problem, seed=args.seed, output=output)
 
 
 if __name__ == "__main__":

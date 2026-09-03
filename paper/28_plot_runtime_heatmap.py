@@ -7,11 +7,12 @@ Right panel: Framework comparison (VAMOS, pymoo, jMetalPy)
 Usage: python paper/28_plot_runtime_heatmap.py
 
 Reads:  experiments/benchmark_paper.csv
-Writes: paper/manuscript/figures/runtime_heatmap.png
+Writes: paper/generated/figures/runtime_heatmap.png
 """
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -21,7 +22,7 @@ import pandas as pd
 
 ROOT_DIR = Path(__file__).parent.parent
 DATA_DIR = ROOT_DIR / "experiments"
-FIG_DIR = Path(__file__).parent / "manuscript" / "figures"
+FIG_DIR = Path(__file__).parent / "generated" / "figures"
 
 INPUT_CSV = DATA_DIR / "benchmark_paper.csv"
 OUTPUT_PNG = FIG_DIR / "runtime_heatmap.png"
@@ -53,7 +54,17 @@ def _get_family(problem: str) -> str:
     return "Other"
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate the manuscript runtime heatmap.")
+    parser.add_argument("--output", type=Path, default=OUTPUT_PNG)
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing generated figure.")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+    if args.output.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing figure: {args.output}. Pass --overwrite to replace it.")
     df = pd.read_csv(INPUT_CSV)
 
     # Compute per-problem median runtime
@@ -157,10 +168,10 @@ def main() -> None:
     cbar.set_label("Median runtime (seconds)", fontsize=9)
 
     fig.tight_layout()
-    FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUTPUT_PNG, dpi=300, bbox_inches="tight")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(args.output, dpi=300, bbox_inches="tight")
     plt.close(fig)
-    print(f"Saved {OUTPUT_PNG}")
+    print(f"Saved {args.output}")
 
 
 if __name__ == "__main__":

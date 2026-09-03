@@ -7,11 +7,12 @@ Creates a multi-panel figure showing runtime scaling of VAMOS backends
 Usage: python paper/30_plot_scaling.py
 
 Reads:  experiments/scaling_vectorization.csv
-Writes: paper/manuscript/figures/scaling.png
+Writes: paper/generated/figures/scaling.png
 """
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib
@@ -22,7 +23,7 @@ import pandas as pd
 
 ROOT_DIR = Path(__file__).parent.parent
 INPUT_CSV = ROOT_DIR / "experiments" / "scaling_vectorization.csv"
-OUTPUT_FIG = Path(__file__).parent / "manuscript" / "figures" / "scaling.png"
+OUTPUT_FIG = Path(__file__).parent / "generated" / "figures" / "scaling.png"
 
 ENGINE_STYLES = {
     "numba": {"color": "#1f77b4", "label": "Numba", "ls": "-", "marker": "o"},
@@ -36,7 +37,17 @@ PROBLEM_TITLES = {
 }
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate the manuscript scaling figure.")
+    parser.add_argument("--output", type=Path, default=OUTPUT_FIG)
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing generated figure.")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+    if args.output.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing figure: {args.output}. Pass --overwrite to replace it.")
     if not INPUT_CSV.exists():
         print(f"ERROR: {INPUT_CSV} not found. Run 03_run_scaling_experiment.py first.")
         return
@@ -81,10 +92,10 @@ def main() -> None:
                fontsize=9, frameon=False, bbox_to_anchor=(0.5, 1.02))
 
     plt.tight_layout(rect=[0, 0, 1, 0.93])
-    OUTPUT_FIG.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUTPUT_FIG, dpi=300, bbox_inches="tight")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(args.output, dpi=300, bbox_inches="tight")
     plt.close(fig)
-    print(f"Saved scaling figure to {OUTPUT_FIG}")
+    print(f"Saved scaling figure to {args.output}")
 
 
 if __name__ == "__main__":

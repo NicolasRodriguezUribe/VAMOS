@@ -44,7 +44,9 @@ def test_help_subcommand_lists_all():
 
 def test_check_dispatches():
     """vamos check should call self_check and exit 0."""
-    proc = _run_vamos("check")
+    # The full Windows extras environment records five tiny run environments;
+    # process/package discovery can exceed the generic subprocess timeout.
+    proc = _run_vamos("check", timeout=120)
     assert proc.returncode == 0, proc.stderr.decode()
 
 

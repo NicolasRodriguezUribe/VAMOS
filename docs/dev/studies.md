@@ -68,7 +68,7 @@ vamos study run studies/example --json
 vamos study inspect studies/example --json
 vamos study resume studies/example --retry-failed --json
 vamos study retry studies/example --failed --json
-vamos study summarize studies/example --format csv --output reports/example.csv --json
+vamos study summarize studies/example --format csv --output artifacts/studies/example.csv --json
 ```
 
 JSON mode emits one `vamos.study-command-result` version `1.0.0` document for

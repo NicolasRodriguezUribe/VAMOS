@@ -30,7 +30,7 @@ jobs:
 
       - name: Benchmark smoke
         run: |
-          python tools/benchmark_kernels.py --smoke --output reports/performance/kernel_smoke.json
+          python tools/benchmark_kernels.py --smoke --output artifacts/performance/kernel_smoke.json
 
       - name: Cross-framework smoke
         if: github.event_name == 'schedule'
@@ -41,8 +41,8 @@ jobs:
             --algorithms nsgaii moead \
             --seeds 42 \
             --engine numpy \
-            --output reports/performance/pymoo_comparison_smoke.json \
-            --markdown reports/performance/pymoo_comparison_smoke.md
+            --output artifacts/performance/pymoo_comparison_smoke.json \
+            --markdown artifacts/performance/pymoo_comparison_smoke.md
 
       - name: Compare against baseline (scheduled only)
         if: github.event_name == 'schedule'
@@ -50,7 +50,7 @@ jobs:
           if [ -f tests/performance/baselines/kernel_smoke_ubuntu_py310.json ]; then
             python tools/benchmark_kernels.py \
               --smoke \
-              --output reports/performance/kernel_smoke_compare.json \
+              --output artifacts/performance/kernel_smoke_compare.json \
               --baseline tests/performance/baselines/kernel_smoke_ubuntu_py310.json
           else
             echo "No committed performance baseline found; skipping regression compare."
@@ -64,11 +64,11 @@ jobs:
             --algorithms nsgaii moead \
             --seeds 42 1337 2024 \
             --engine numba \
-            --output reports/performance/pymoo_comparison_nightly.json \
-            --markdown reports/performance/pymoo_comparison_nightly.md
+            --output artifacts/performance/pymoo_comparison_nightly.json \
+            --markdown artifacts/performance/pymoo_comparison_nightly.md
 
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kernel-benchmarks
-          path: reports/performance/*
+          path: artifacts/performance/*

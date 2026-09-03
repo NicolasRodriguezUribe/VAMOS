@@ -4,12 +4,14 @@ import sys
 import pytest
 
 
-def _run_cmd(cmd):
-    return subprocess.run(cmd, shell=True, capture_output=True, timeout=30)
+def _run_cmd(cmd, *, timeout: int = 30):
+    return subprocess.run(cmd, shell=True, capture_output=True, timeout=timeout)
 
 
 def test_self_check_module_smoke():
-    proc = _run_cmd(f"{sys.executable} -m vamos.experiment.diagnostics.self_check")
+    # A full Windows extras environment can spend over 30 seconds collecting
+    # package/environment metadata for the five tiny self-check runs.
+    proc = _run_cmd(f"{sys.executable} -m vamos.experiment.diagnostics.self_check", timeout=120)
     assert proc.returncode == 0, proc.stderr.decode()
 
 

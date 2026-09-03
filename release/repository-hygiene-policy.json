@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "root_files": {
+    ".editorconfig": "cross-editor formatting metadata",
+    ".gitattributes": "Git content-normalization metadata",
+    ".gitignore": "generated-output exclusion policy",
+    ".pre-commit-config.yaml": "developer validation configuration",
+    "AGENTS.md": "canonical agent instructions",
+    "AUTHORS.md": "project authorship metadata",
+    "CHANGELOG.md": "public release history",
+    "CITATION.cff": "machine-readable citation metadata",
+    "CLAUDE.md": "compatible agent entry instructions",
+    "CODING_GUIDELINES.md": "developer contribution policy",
+    "CONTRIBUTING.md": "public contribution guide",
+    "LICENSE": "project license",
+    "MANIFEST.in": "source-distribution manifest",
+    "README.md": "public project entry document",
+    "SECURITY.md": "security policy",
+    "mkdocs.yml": "canonical documentation build configuration",
+    "pyproject.toml": "canonical package and tool configuration"
+  },
+  "root_extension_rules": {
+    "purpose": "A new root file is allowed only when it is canonical project, community, build or agent metadata and is added to root_files in the same reviewed change.",
+    "candidate_metadata_extensions": [
+      ".cff",
+      ".in",
+      ".md",
+      ".toml",
+      ".yaml",
+      ".yml"
+    ],
+    "never_root_output_extensions": [
+      ".csv",
+      ".db",
+      ".docx",
+      ".json",
+      ".log",
+      ".npy",
+      ".npz",
+      ".pdf",
+      ".png",
+      ".sqlite",
+      ".sqlite3",
+      ".tex",
+      ".zip"
+    ]
+  },
+  "top_level_owners": {
+    ".github": "GitHub collaboration, CI and release automation",
+    ".vscode": "shared editor configuration",
+    "constraints": "reproducible dependency constraints",
+    "docs": "maintained public and developer documentation",
+    "examples": "public executable examples",
+    "experiments": "scientific scripts, configs and governed reference inputs/results",
+    "notebooks": "clean reproducible learning notebooks",
+    "paper": "canonical publication source and rebuild scripts",
+    "release": "release-specific frozen requirements and policy data",
+    "scripts": "small documented platform launchers",
+    "src": "installable product source and package resources",
+    "tests": "automated verification and compatibility fixtures",
+    "tools": "repository development, validation and maintenance commands",
+    "typing": "stable typing fixtures and ratchets",
+    "website": "maintained website source"
+  },
+  "forbidden_root_names": [
+    ".tmp_pygmo_err.txt",
+    "FUN.csv",
+    "G.csv",
+    "X.csv",
+    "environment.json",
+    "manifest.json",
+    "metadata.json",
+    "result.npz",
+    "zdt1_table.tex"
+  ],
+  "forbidden_top_level_directories": [
+    "reports",
+    "submission"
+  ],
+  "temporary_name_patterns": [
+    "(^|/)[.]tmp_",
+    "(^|/)_tmp_",
+    "[.]bak$",
+    "[.]backup(?:[._-]|$)",
+    "backup_[0-9]"
+  ],
+  "audit_name_patterns": [
+    "(^|/)(?:final_)?audit(?:_|[-.]|$)",
+    "(^|/)goal[-_ ]?handoff",
+    "(^|/)cleanup[-_ ]?handoff"
+  ],
+  "generated_forbidden_globs": [
+    "paper/build/**",
+    "paper/dist/**",
+    "paper/generated/**",
+    "paper/manuscript/*.pdf",
+    "paper/manuscript/figures/convergence.png",
+    "paper/manuscript/figures/forest_ci_*.png",
+    "paper/manuscript/figures/front_*.png",
+    "paper/manuscript/figures/memory_comparison.png",
+    "paper/manuscript/figures/pareto_fronts.png",
+    "paper/manuscript/figures/runtime_heatmap.png",
+    "paper/manuscript/figures/scaling.png",
+    "paper/manuscript/figures/time_comparison.png",
+    "paper/manuscript/figures/zcat_scalability.png",
+    "paper/manuscript/accessibility_proxies.tex",
+    "paper/manuscript/accessibility_proxy_details.tex",
+    "paper/manuscript/frameworks_*.tex",
+    "paper/manuscript/stats_*.tex",
+    "experiments/backup_csv/**",
+    "experiments/mic/optuna_tuning/**",
+    "experiments/**/*_trace.csv",
+    "experiments/**/*.sqlite3"
+  ],
+  "compiled_publication_globs": [
+    "paper/**/*.pdf",
+    "paper/**/*.zip",
+    "submission/**"
+  ],
+  "package_forbidden_patterns": [
+    "/reports/",
+    "/submission/",
+    "/paper/build/",
+    "/paper/dist/",
+    "/paper/generated/",
+    "final_audit",
+    "goal_handoff",
+    "FUN.csv",
+    "X.csv",
+    "zdt1_table.tex"
+  ],
+  "large_file_bytes": 5000000,
+  "duplicate_content_bytes": 256000,
+  "notebook": {
+    "allowed_kernel_name": "python3",
+    "allowed_display_name": "Python 3 (VAMOS)",
+    "allow_stored_outputs": false,
+    "allow_execution_counts": false
+  },
+  "exception_manifest": "release/repository-hygiene-exceptions.json"
+}

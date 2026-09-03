@@ -13,18 +13,24 @@ tools/micromamba/
 .ipynb_checkpoints/
 
 # --- VAMOS outputs ---
-results/
+/artifacts/
+/results/
 bench/smoke/logs/
 bench/**/logs/
 bench/**/__pycache__/
 
-# --- Artifacts policy ---
-# Keep tidy CSVs versionable (small + essential for paper), ignore derived plots/tables by default
-artifacts/plots/
-artifacts/tables/
-
-# Optional: if you want ALL artifacts ignored, uncomment:
-# artifacts/
+# Root output signatures observed during repository audit
+/.tmp_*
+/_tmp_*
+/FUN.csv
+/X.csv
+/G.csv
+/metadata.json
+/result.npz
+/environment.json
+/manifest.json
+/unbounded_archive*.png
+/zdt1_table.tex
 
 # --- Tool caches ---
 .pytest_cache/
@@ -47,6 +53,11 @@ Thumbs.db
 site/
 build/
 dist/
+/reports/
+/submission/
+/paper/build/
+/paper/dist/
+/paper/generated/
 
 # --- LaTeX auxiliary files ---
 *.fdb_latexmk
@@ -62,33 +73,54 @@ dist/
 # --- Packaging ---
 *.egg-info/
 
-# --- Tidy data: ignore large run outputs, keep small checked-in samples ---
-artifacts/tidy/
-!experiments/sample_outputs/
-
 # --- Generated experiment material (do not version) ---
 experiments/configs/generated/
 experiments/scripts/logs/
 bench/**/configs/
-
-# --- Notebooks (keep local unless explicitly tracked) ---
-# *.ipynb
+/experiments/backup_csv/
+/experiments/mic/optuna_tuning/
+/experiments/mic/mic_*.csv
+/experiments/mic/pilot_*.csv
+/experiments/ablation_aos_*.csv
+/experiments/benchmark_all_backends.csv
+/experiments/benchmark_comprehensive.csv
+/experiments/benchmark_extended.csv
+/experiments/benchmark_test.csv
+/experiments/benchmark_paper*.bak
+/experiments/benchmark_paper.backup_*.csv
+/experiments/benchmark_paper_pygmo_*.csv
+/experiments/ci_details_*.csv
+/experiments/statistical_tests*.csv
+/experiments/tuned_nsgaii.json
+/experiments/tuned_nsgaii_runs.csv
+/experiments/tuned_nsgaii_topk.json
+/experiments/tuner_history.*
+/experiments/fanova_validation.csv
+/experiments/zcat_cross_framework.md
+*.bak
 
 # --- Engine study (local; do not version) ---
 engine_study*
 !experiments/configs/engine_study_full_continuous.yml
-
-# --- Local ablation scratch outputs (do not version) ---
-experiments/ablation_aos_check*.csv
-experiments/ablation_aos_subset*.csv
-experiments/ablation_aos_trial*.csv
-experiments/ablation_smoke*.csv
-
-# --- Notebooks (keep local unless explicitly tracked) ---
-# *.ipynb
 
 # --- Claude Code metadata ---
 .claude/
 
 # --- LaTeX / build scratch files ---
 *_out.txt
+
+# Generated paper products (canonical TeX/scripts remain tracked)
+/paper/manuscript/*.pdf
+/paper/manuscript/accessibility_proxies.tex
+/paper/manuscript/accessibility_proxy_details.tex
+/paper/manuscript/frameworks_*.tex
+/paper/manuscript/stats_*.tex
+/paper/manuscript/figures/convergence.png
+/paper/manuscript/figures/forest_ci_*.png
+/paper/manuscript/figures/front_*.png
+/paper/manuscript/figures/memory_comparison.png
+/paper/manuscript/figures/pareto_fronts.png
+/paper/manuscript/figures/runtime_heatmap.png
+/paper/manuscript/figures/scaling.png
+/paper/manuscript/figures/time_comparison.png
+/paper/manuscript/figures/zcat_scalability.png

@@ -73,8 +73,10 @@ jobs:
       - name: Architecture health checks
         run: |
           python -m pip install -c constraints/ci.txt -e ".[dev]"
+          python tools/check_repository_hygiene.py
           python tools/check_pre_release_remnants.py
           python -m pytest -q \
+            tests/test_check_repository_hygiene.py \
             tests/test_check_pre_release_remnants.py \
             tests/architecture/test_layer_boundaries.py \
             tests/test_monolith_guard.py \
@@ -87,7 +89,6 @@ jobs:
             tests/test_logging_policy.py \
             tests/test_no_prints_in_library.py \
             tests/test_no_deprecation_shims.py \
-            tests/architecture/test_report_retention_policy.py \
             tests/architecture/test_ruff_gate.py \
             tests/architecture/test_ruff_format_gate.py \
             tests/architecture/test_build_smoke.py \

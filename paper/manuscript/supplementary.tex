@@ -90,7 +90,7 @@ This Supplementary Material accompanies the main manuscript and contains the ext
 
 \begin{figure*}[!t]
   \centering
-  \includegraphics[width=\textwidth]{figures/convergence.png}
+  \includegraphics[width=\textwidth]{../generated/figures/convergence.png}
   \caption{Convergence of normalized hypervolume over 50{,}000 evaluations for \VAMOS{} (Numba), \textit{pymoo} , and \textit{jMetalPy} on DTLZ2 (3 objectives, 12 variables), WFG4 (2 objectives, 24 variables), and ZDT1 (2 objectives, 30 variables). Solid/dashed lines show median hypervolume values across 30 seeds; shaded regions indicate the interquartile range. All three frameworks follow nearly identical convergence trajectories, confirming that the semantic alignment protocol produces equivalent algorithmic behavior.}
   \label{fig:convergence}
 \end{figure*}
@@ -148,7 +148,7 @@ NSGA-II (Archive) & VAMOS & 0.993 (0.010) & 0.855 (0.106) & 0.846 (0.219) & 0.99
 \end{tabular}
 \end{table*}
 
-%\input{frameworks_igd_merged.tex}
+%\input{../generated/tables/frameworks_igd_merged.tex}
 
 %==============================================================================
 \section{Statistical Analysis}
@@ -200,7 +200,7 @@ Peak resident-set-size (RSS) was measured during NSGA-II runs on three represent
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\columnwidth]{figures/memory_comparison.png}
+\includegraphics[width=\columnwidth]{../generated/figures/memory_comparison.png}
 \caption{Peak memory footprint (MB) during NSGA-II optimization on three representative problems (50{,}000 evaluations, median of 5 seeds). \VAMOS{} consistently uses less memory than both \textit{pymoo} and \textit{jMetalPy} across the measured problems.}
 \label{fig:memory_comparison}
 \end{figure}
@@ -210,7 +210,7 @@ Peak resident-set-size (RSS) was measured during NSGA-II runs on three represent
 This section reports per-problem Wilcoxon signed-rank tests, bootstrap equivalence analyses, robustness summaries, and bootstrap confidence intervals for the NSGA-II baseline discussed in the Statistical Analysis section of the main paper.
 \begingroup
 \setlength{\tabcolsep}{2pt}
-\input{stats_nsgaii.tex}
+\input{../generated/tables/stats_nsgaii.tex}
 \endgroup
 
 \section{Reference fronts and detailed benchmark results}
@@ -223,7 +223,7 @@ Fig.~\ref{fig:runtime_heatmap} presents per-problem median runtimes as a dual-pa
 
 \begin{figure*}[htbp]
   \centering
-  \includegraphics[width=0.95\textwidth]{figures/runtime_heatmap.png}
+  \includegraphics[width=0.95\textwidth]{../generated/figures/runtime_heatmap.png}
   \caption{Per-problem median runtime (seconds) for VAMOS backends (left) and cross-framework comparison (right). Color scale is logarithmic; bold values indicate the fastest in each row. Problems are grouped by family (ZDT, DTLZ, WFG).}
   \label{fig:runtime_heatmap}
 \end{figure*}
@@ -241,7 +241,7 @@ Tables~\ref{tab:stats_hypervolume_smsemoa}--\ref{tab:hv_robustness_summary_smsem
 
 \begingroup
 \setlength{\tabcolsep}{2pt}
-\input{stats_smsemoa.tex}
+\input{../generated/tables/stats_smsemoa.tex}
 \endgroup
 
 \subsection{MOEA/D}
@@ -250,7 +250,7 @@ Tables~\ref{tab:stats_hypervolume_moead}--\ref{tab:hv_robustness_summary_moead} 
 
 \begingroup
 \setlength{\tabcolsep}{2pt}
-\input{stats_moead.tex}
+\input{../generated/tables/stats_moead.tex}
 \endgroup
 
 %==============================================================================
@@ -262,7 +262,7 @@ To complement the accessibility discussion in the main paper, we evaluate three 
 
 Metrics count only non-empty, non-comment lines and explicit \texttt{import}/\texttt{from} statements. Plotting, result serialization, and explanatory comments are excluded because they do not affect the onboarding burden of the optimization call itself. The underlying artifact file used to generate the accessibility-proxy table in the main paper and Table~\ref{tab:accessibility_proxy_details} below is \texttt{paper/accessibility\_proxy\_snippets.json}.
 
-\input{accessibility_proxy_details.tex}
+\input{../generated/tables/accessibility_proxy_details.tex}
 
 
 %==============================================================================

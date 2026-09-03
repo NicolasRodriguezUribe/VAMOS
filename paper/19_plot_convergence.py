@@ -10,11 +10,12 @@ Reads:
   - experiments/convergence_paper.csv
 
 Writes:
-  - paper/manuscript/figures/convergence.png
+  - paper/generated/figures/convergence.png
 """
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib
@@ -25,7 +26,7 @@ import pandas as pd
 
 ROOT_DIR = Path(__file__).parent.parent
 INPUT_CSV = ROOT_DIR / "experiments" / "convergence_paper.csv"
-OUTPUT_FIG = Path(__file__).parent / "manuscript" / "figures" / "convergence.png"
+OUTPUT_FIG = Path(__file__).parent / "generated" / "figures" / "convergence.png"
 
 # Display settings
 FRAMEWORK_STYLES = {
@@ -94,7 +95,17 @@ def plot_convergence(df: pd.DataFrame, output_path: Path) -> None:
     print(f"Saved convergence figure to {output_path}")
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate the manuscript convergence figure.")
+    parser.add_argument("--output", type=Path, default=OUTPUT_FIG)
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing generated figure.")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+    if args.output.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing figure: {args.output}. Pass --overwrite to replace it.")
     if not INPUT_CSV.exists():
         print(f"ERROR: {INPUT_CSV} not found. Run 18_run_convergence_experiment.py first.")
         return
@@ -105,7 +116,7 @@ def main() -> None:
     print(f"Frameworks: {df['framework'].unique().tolist()}")
     print(f"Seeds: {df['seed'].nunique()}")
 
-    plot_convergence(df, OUTPUT_FIG)
+    plot_convergence(df, args.output)
 
 
 if __name__ == "__main__":

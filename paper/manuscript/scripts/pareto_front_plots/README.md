@@ -19,7 +19,7 @@ All CSV files are headerless and comma-separated.
 
 ## Generated plots
 
-Saved to the project root `figures/` folder (`../../figures/`):
+Saved to the ignored `paper/generated/figures/` directory:
 
 | Output file | Problem | Algorithm variant |
 |-------------|---------|-------------------|
@@ -55,9 +55,7 @@ Saved to the project root `figures/` folder (`../../figures/`):
 ## Usage
 
 ```bash
-cd scripts/pareto_front_plots
-conda activate evolver
-python plot_fronts.py
+python paper/manuscript/scripts/pareto_front_plots/plot_fronts.py
 ```
 
 ## LaTeX inclusion

@@ -2,6 +2,11 @@
 
 Use the smallest test that proves a change while iterating, then run every higher tier required by `/AGENTS.md`. Tests are deterministic, offline, isolated from user directories, and explicit about optional dependencies.
 
+Repository-shape changes also run `python tools/check_repository_hygiene.py`.
+The checker examines tracked content only; generated test output belongs in
+`tmp_path` or an ignored artifact directory. See
+[Repository hygiene](repository_hygiene.md).
+
 ## Test placement
 
 - `tests/foundation/`: problems, evaluation, kernels, indicators, resources, and base contracts.

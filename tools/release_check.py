@@ -14,6 +14,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from check_repository_hygiene import distribution_violations
 from release_artifacts import (
     copy_distributions,
     create_runtime_environment,
@@ -43,6 +44,7 @@ CHECK_NAMES = (
     "license-metadata",
     "tag-state",
     "source-path-and-secret-scan",
+    "repository-hygiene",
     "pre-release-remnants",
     "stable-api-cli-schema-fixtures",
     "strict-typing",
@@ -59,6 +61,7 @@ CHECK_NAMES = (
     "documentation",
     "website-documentation",
     "distribution-build",
+    "distribution-hygiene",
     "twine-and-wheel-content",
     "wheel-content-policy",
     "distribution-inspection",
@@ -170,6 +173,7 @@ class ReleaseChecker:
         self.check("license-metadata", lambda: license_evidence(ROOT))
         self.check("tag-state", lambda: tag_evidence(ROOT, self.version, self.args.tag_state))
         self.check("source-path-and-secret-scan", lambda: scan_files(tracked_files(ROOT), root=ROOT))
+        self.command("repository-hygiene", [sys.executable, "tools/check_repository_hygiene.py"])
         self.command("pre-release-remnants", [sys.executable, "tools/check_pre_release_remnants.py"])
         self.command(
             "stable-api-cli-schema-fixtures",
@@ -216,6 +220,7 @@ class ReleaseChecker:
         )
         self.check("distribution-build", self._prepare_distributions)
         wheel = self._wheel()
+        self.check("distribution-hygiene", self._distribution_hygiene)
         artifact_arguments = [str(path) for path in distributions(self.dist)]
         self.command("twine-and-wheel-content", [sys.executable, "-m", "twine", "check", *artifact_arguments])
         self.command(
@@ -279,6 +284,14 @@ class ReleaseChecker:
 
     def _wheel(self) -> Path:
         return distributions(self.dist)[0]
+
+    def _distribution_hygiene(self) -> dict[str, Any]:
+        archives = list(distributions(self.dist))
+        violations = distribution_violations(archives)
+        if violations:
+            details = [f"{item.path}: {item.message}" for item in violations]
+            raise AssertionError(f"Forbidden distribution content: {details}")
+        return {"archives": [path.name for path in archives], "violations": 0}
 
     def _runtime_checks(self, wheel: Path) -> None:
         temporary = tempfile.TemporaryDirectory(prefix="vamos-release-runtime-")

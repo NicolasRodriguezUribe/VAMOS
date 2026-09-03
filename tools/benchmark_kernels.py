@@ -282,7 +282,11 @@ def main() -> int:
     parser.add_argument("--smoke", action="store_true", help="Run reduced benchmark sizes suitable for CI smoke checks.")
     parser.add_argument("--repeat", type=int, default=None, help="Override benchmark repeat count.")
     parser.add_argument("--warmup", type=int, default=None, help="Override warmup count.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing output report.")
     args = parser.parse_args()
+
+    if args.output.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing benchmark output: {args.output}. Pass --overwrite to replace it.")
 
     repeat = int(args.repeat if args.repeat is not None else (3 if args.smoke else 7))
     warmup = int(args.warmup if args.warmup is not None else (1 if args.smoke else 2))

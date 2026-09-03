@@ -4,11 +4,12 @@ Generate memory footprint bar chart comparing VAMOS vs pymoo vs jMetalPy.
 Usage: python paper/26_plot_memory_comparison.py
 
 Reads:  experiments/memory_benchmark.csv
-Writes: paper/manuscript/figures/memory_comparison.png
+Writes: paper/generated/figures/memory_comparison.png
 """
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ import pandas as pd
 
 ROOT_DIR = Path(__file__).parent.parent
 DATA_DIR = ROOT_DIR / "experiments"
-FIG_DIR = Path(__file__).parent / "manuscript" / "figures"
+FIG_DIR = Path(__file__).parent / "generated" / "figures"
 
 INPUT_CSV = DATA_DIR / "memory_benchmark.csv"
 OUTPUT_PNG = FIG_DIR / "memory_comparison.png"
@@ -29,7 +30,17 @@ PROBLEM_ORDER = ["zdt1", "dtlz2", "wfg4"]
 PROBLEM_LABELS = {"zdt1": "ZDT1", "dtlz2": "DTLZ2", "wfg4": "WFG4"}
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate the manuscript memory comparison figure.")
+    parser.add_argument("--output", type=Path, default=OUTPUT_PNG)
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing generated figure.")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+    if args.output.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing figure: {args.output}. Pass --overwrite to replace it.")
     df = pd.read_csv(INPUT_CSV)
 
     # Normalise VAMOS backend name
@@ -68,10 +79,10 @@ def main() -> None:
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
-    FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUTPUT_PNG, dpi=300, bbox_inches="tight")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(args.output, dpi=300, bbox_inches="tight")
     plt.close(fig)
-    print(f"Saved {OUTPUT_PNG}")
+    print(f"Saved {args.output}")
 
 
 if __name__ == "__main__":

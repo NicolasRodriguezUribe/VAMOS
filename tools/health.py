@@ -30,6 +30,9 @@ def main() -> int:
 
     python = sys.executable
     commands: list[tuple[str, list[str]]] = [
+        # CI and the release checker run this exact no-argument command.
+        ("Repository hygiene", [python, "tools/check_repository_hygiene.py"]),
+        ("Repository hygiene checker tests", [python, "-m", "pytest", "-q", "tests/test_check_repository_hygiene.py"]),
         ("Unsupported pre-1.0 remnant audit", [python, "tools/check_pre_release_remnants.py"]),
         ("Unsupported pre-1.0 remnant checker tests", [python, "-m", "pytest", "-q", "tests/test_check_pre_release_remnants.py"]),
         # CI runs this checker with the same script and no arguments. See /AGENTS.md.
@@ -45,7 +48,6 @@ def main() -> int:
         ("Logging policy", [python, "-m", "pytest", "-q", "tests/test_logging_policy.py"]),
         ("No prints in library", [python, "-m", "pytest", "-q", "tests/test_no_prints_in_library.py"]),
         ("No deprecation shims", [python, "-m", "pytest", "-q", "tests/test_no_deprecation_shims.py"]),
-        ("Report retention policy", [python, "-m", "pytest", "-q", "tests/architecture/test_report_retention_policy.py"]),
         ("Ruff lint gate", [python, "-m", "pytest", "-q", "tests/architecture/test_ruff_gate.py"]),
         ("Ruff format gate", [python, "-m", "pytest", "-q", "tests/architecture/test_ruff_format_gate.py"]),
         ("Strict typecheck", [python, "tools/typecheck.py", "--scope", "strict"]),

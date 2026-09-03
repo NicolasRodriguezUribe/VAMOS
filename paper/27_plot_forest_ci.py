@@ -7,8 +7,8 @@ equivalence margin band and a vertical dashed line at 0.
 Usage: python paper/27_plot_forest_ci.py
        python paper/27_plot_forest_ci.py --algo nsgaii
 
-Reads:  experiments/ci_details_{algo}.csv
-Writes: paper/manuscript/figures/forest_ci_{algo}.png
+Reads:  paper/generated/data/ci_details_{algo}.csv
+Writes: paper/generated/figures/forest_ci_{algo}.png
 """
 
 from __future__ import annotations
@@ -22,8 +22,8 @@ import numpy as np
 import pandas as pd
 
 ROOT_DIR = Path(__file__).parent.parent
-DATA_DIR = ROOT_DIR / "experiments"
-FIG_DIR = Path(__file__).parent / "manuscript" / "figures"
+DATA_DIR = Path(__file__).parent / "generated" / "data"
+FIG_DIR = Path(__file__).parent / "generated" / "figures"
 
 ALGO_SPECS = {
     "nsgaii": {"display": "NSGA-II", "csv": "ci_details_nsgaii.csv"},
@@ -47,6 +47,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate forest plots for HV equivalence CI.")
     parser.add_argument("--algo", action="append", choices=sorted(ALGO_SPECS.keys()),
                         help="Algorithm(s) to plot. Default: all.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace existing generated figures.")
     return parser.parse_args()
 
 
@@ -150,6 +151,10 @@ def plot_forest(algo_key: str, spec: dict) -> None:
 def main() -> None:
     args = _parse_args()
     algos = args.algo or list(ALGO_SPECS.keys())
+    collisions = [FIG_DIR / f"forest_ci_{algo_key}.png" for algo_key in algos if (FIG_DIR / f"forest_ci_{algo_key}.png").exists()]
+    if collisions and not args.overwrite:
+        names = ", ".join(str(path) for path in collisions)
+        raise FileExistsError(f"Refusing to overwrite existing figure(s): {names}. Pass --overwrite to replace them.")
     for algo_key in algos:
         print(f"Plotting {algo_key}...")
         plot_forest(algo_key, ALGO_SPECS[algo_key])

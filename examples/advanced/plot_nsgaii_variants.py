@@ -79,11 +79,14 @@ def _extract_front(result, variant_name: str) -> np.ndarray:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Plot NSGA-II variant fronts on DTLZ2.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Where to save the PNG figure.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing output figure.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = _parse_args()
+    if args.output.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing figure: {args.output}. Pass --overwrite to replace it.")
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.1)

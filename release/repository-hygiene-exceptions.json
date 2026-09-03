@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "exceptions": [
+    {
+      "path": "docs/assets/vamos1-long.png",
+      "category": "large_documentation_asset",
+      "owner": "docs",
+      "reason": "Referenced long-form VAMOS branding asset used by maintained documentation.",
+      "size": 7985337,
+      "review_condition": "Re-review if the documentation reference is removed or a lossless smaller source becomes available."
+    },
+    {
+      "path": "docs/assets/vamos2.png",
+      "category": "large_documentation_asset",
+      "owner": "docs",
+      "reason": "Referenced VAMOS documentation asset with no equivalent smaller source.",
+      "size": 7646888,
+      "review_condition": "Re-review if the documentation reference is removed or the asset is replaced."
+    },
+    {
+      "path": "paper/manuscript/figures/ACCESSIBILITY.png",
+      "category": "large_publication_source",
+      "owner": "paper",
+      "reason": "Irreplaceable publication figure; no deterministic source generator is present in the repository.",
+      "size": 7123303,
+      "review_condition": "Re-review when editable source or a deterministic generator is added, or the manuscript permanently drops the figure."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/cec2009_uf8.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The named CEC2009 problem requires a stable resource path even though this frozen front is byte-identical to related problem fronts.",
+      "size": 386325,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/cec2009_uf9.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The named CEC2009 problem requires a stable resource path even though this frozen front is byte-identical to related problem fronts.",
+      "size": 386325,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/cec2009_uf10.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The named CEC2009 problem requires a stable resource path even though this frozen front is byte-identical to related problem fronts.",
+      "size": 386325,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/wfg4.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The WFG problem name is a public resource lookup key; distinct stable paths are required despite equal sampled fronts.",
+      "size": 260000,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/wfg5.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The WFG problem name is a public resource lookup key; distinct stable paths are required despite equal sampled fronts.",
+      "size": 260000,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/wfg6.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The WFG problem name is a public resource lookup key; distinct stable paths are required despite equal sampled fronts.",
+      "size": 260000,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/wfg7.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The WFG problem name is a public resource lookup key; distinct stable paths are required despite equal sampled fronts.",
+      "size": 260000,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/wfg8.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The WFG problem name is a public resource lookup key; distinct stable paths are required despite equal sampled fronts.",
+      "size": 260000,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    },
+    {
+      "path": "src/vamos/resources/reference_fronts/wfg9.csv",
+      "category": "semantic_duplicate_package_resource",
+      "owner": "src/vamos/resources",
+      "reason": "The WFG problem name is a public resource lookup key; distinct stable paths are required despite equal sampled fronts.",
+      "size": 260000,
+      "review_condition": "Re-review when the reference-front catalog or resolver semantics change."
+    }
+  ]
+}

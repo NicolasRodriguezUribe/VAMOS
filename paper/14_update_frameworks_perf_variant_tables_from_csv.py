@@ -10,6 +10,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import pandas as pd
@@ -18,6 +19,7 @@ import pandas as pd
 ROOT_DIR = Path(__file__).parent.parent
 DATA_DIR = ROOT_DIR / "experiments"
 MANUSCRIPT_DIR = Path(__file__).parent / "manuscript"
+GENERATED_TABLE_DIR = Path(__file__).parent / "generated" / "tables"
 MAIN_TEX = MANUSCRIPT_DIR / "main.tex"
 
 
@@ -28,7 +30,7 @@ ALGO_SPECS = [
     ("moead", "MOEA/D", DATA_DIR / "benchmark_paper_moead.csv"),
 ]
 
-MERGED_OUTPUT = MANUSCRIPT_DIR / "frameworks_perf_variants.tex"
+MERGED_OUTPUT = GENERATED_TABLE_DIR / "frameworks_perf_variants.tex"
 MERGED_LABEL = "tab:frameworks_perf_variants"
 MERGED_CAPTION = "Median runtime (seconds) by problem family for algorithm variants"
 MAIN_TABLE_CAPTION = "Median runtime (seconds) by problem family for NSGA-II variants, SMS-EMOA, and MOEA/D."
@@ -263,7 +265,16 @@ def _load_family_table(csv_path: Path) -> pd.DataFrame:
     return family
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Regenerate the manuscript framework-variant table.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing generated table.")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+    if MERGED_OUTPUT.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing table: {MERGED_OUTPUT}. Pass --overwrite to replace it.")
     try:
         generator = Path(__file__).resolve().relative_to(ROOT_DIR).as_posix()
     except Exception:
@@ -287,6 +298,7 @@ def main() -> None:
         caption=MERGED_CAPTION,
         generator=generator,
     )
+    MERGED_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     MERGED_OUTPUT.write_text(latex, encoding="utf-8")
     print(f"Updated: {MERGED_OUTPUT}")
 

@@ -4,8 +4,8 @@ Generate reproducible accessibility-proxy tables for the VAMOS manuscript.
 The script reads canonical onboarding snippets from
 ``paper/accessibility_proxy_snippets.json`` and writes two LaTeX artifacts:
 
-* ``paper/manuscript/accessibility_proxies.tex`` for the main paper
-* ``paper/manuscript/accessibility_proxy_details.tex`` for the supplementary
+* ``paper/generated/tables/accessibility_proxies.tex`` for the main paper
+* ``paper/generated/tables/accessibility_proxy_details.tex`` for the supplementary
 
 The compact table reports values as ``LOC (imports)``, where LOC counts
 non-empty, non-comment lines in each canonical snippet.
@@ -24,9 +24,10 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 PAPER_DIR = ROOT_DIR / "paper"
 MANUSCRIPT_DIR = PAPER_DIR / "manuscript"
+GENERATED_TABLE_DIR = PAPER_DIR / "generated" / "tables"
 DEFAULT_DATASET = PAPER_DIR / "accessibility_proxy_snippets.json"
-DEFAULT_MAIN_TABLE = MANUSCRIPT_DIR / "accessibility_proxies.tex"
-DEFAULT_DETAILS_TABLE = MANUSCRIPT_DIR / "accessibility_proxy_details.tex"
+DEFAULT_MAIN_TABLE = GENERATED_TABLE_DIR / "accessibility_proxies.tex"
+DEFAULT_DETAILS_TABLE = GENERATED_TABLE_DIR / "accessibility_proxy_details.tex"
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Compile paper/manuscript/supplementary.tex after writing tables.",
     )
+    parser.add_argument("--overwrite", action="store_true", help="Replace existing generated table files.")
     return parser.parse_args()
 
 
@@ -236,6 +238,7 @@ def make_detail_table(metrics: list[SnippetMetrics], task_labels: dict[str, str]
 
 
 def write_text(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
 
@@ -246,6 +249,10 @@ def compile_tex(filename: str) -> None:
 
 def main() -> None:
     args = parse_args()
+    collisions = [path for path in (args.main_out, args.details_out) if path.exists()]
+    if collisions and not args.overwrite:
+        names = ", ".join(str(path) for path in collisions)
+        raise FileExistsError(f"Refusing to overwrite existing table(s): {names}. Pass --overwrite to replace them.")
     task_labels, task_order, metrics = load_metrics(args.dataset)
 
     write_text(args.main_out, make_main_table(metrics, task_labels, task_order))

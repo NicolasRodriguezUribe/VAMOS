@@ -14,5 +14,5 @@
 - [ ] Tests pass locally (`pytest -q`).
 
 ## Reports/retention
-- [ ] New audit outputs (if any) are under `reports/<audit>_artifacts/`.
-- [ ] `final_audit_latest.md` is updated only when a new audit report is added.
+- [ ] Raw audit/Goal evidence is external or a CI artifact; only durable conclusions are added to maintained docs.
+- [ ] Generated output follows `docs/dev/repository_hygiene.md` and `python tools/check_repository_hygiene.py` passes.

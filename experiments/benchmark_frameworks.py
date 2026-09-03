@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import time
 from dataclasses import dataclass
-from typing import Any
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -309,8 +309,14 @@ def main():
     parser.add_argument("--evals", type=int, default=100000)
     parser.add_argument("--seeds", type=int, default=30)
     parser.add_argument("--frameworks", nargs="+", default=["vamos-numba", "pymoo", "jmetalpy", "pygmo"])
-    parser.add_argument("--output", type=str, default="benchmark_results.csv")
+    parser.add_argument("--output", type=Path, default=Path("artifacts/experiments/benchmark_results.csv"))
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing output CSV.")
     args = parser.parse_args()
+
+    output = args.output.expanduser().resolve()
+    if output.exists() and not args.overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing benchmark output: {output}. Pass --overwrite to replace it.")
+    output.parent.mkdir(parents=True, exist_ok=True)
 
     seeds = list(range(args.seeds))
 
@@ -322,8 +328,8 @@ def main():
     df = run_benchmarks(args.problems, args.evals, seeds, args.frameworks)
 
     # Save raw results
-    df.to_csv(args.output, index=False)
-    print(f"\nResults saved to {args.output}")
+    df.to_csv(output, index=False)
+    print(f"\nResults saved to {output}")
 
     # Print summary
     print("\n" + "=" * 50)

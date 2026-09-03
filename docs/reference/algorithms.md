@@ -58,8 +58,8 @@ Probability shorthand
 Comparative benchmarking
 ------------------------
 
-- Kernel-focused benchmarks: `python tools/benchmark_kernels.py --smoke --output reports/performance/kernel_smoke.json`
-- VAMOS vs pymoo seeded comparisons: `python tools/benchmark_compare_pymoo.py --output reports/performance/pymoo_comparison.json --markdown reports/performance/pymoo_comparison.md`
+- Kernel-focused benchmarks: `python tools/benchmark_kernels.py --smoke --output artifacts/performance/kernel_smoke.json`
+- VAMOS vs pymoo seeded comparisons: `python tools/benchmark_compare_pymoo.py --output artifacts/performance/pymoo_comparison.json --markdown artifacts/performance/pymoo_comparison.md`
 
 Live visualization
 ------------------

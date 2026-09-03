@@ -17,14 +17,15 @@ Writes:
   - paper/manuscript/scripts/pareto_front_plots/data/FUN.NSGAII.ZDT4.steady_state.csv
   - paper/manuscript/scripts/pareto_front_plots/data/FUN.NSGAII.DTLZ2.csv
   - paper/manuscript/scripts/pareto_front_plots/data/FUN.NSGAII.DTLZ2.archive.csv
-  - paper/manuscript/figures/front_zdt4_standard.png
-  - paper/manuscript/figures/front_zdt4_steady_state.png
-  - paper/manuscript/figures/front_dtlz2_standard.png
-  - paper/manuscript/figures/front_dtlz2_archive.png
+  - paper/generated/figures/front_zdt4_standard.png
+  - paper/generated/figures/front_zdt4_steady_state.png
+  - paper/generated/figures/front_dtlz2_standard.png
+  - paper/generated/figures/front_dtlz2_archive.png
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -41,7 +42,7 @@ from vamos.engine.algorithm.components.subset_selection import select_top_k_fart
 # Paths
 # ---------------------------------------------------------------------------
 DATA_DIR = Path(__file__).parent / "manuscript" / "scripts" / "pareto_front_plots" / "data"
-FIG_DIR = Path(__file__).parent / "manuscript" / "figures"
+FIG_DIR = Path(__file__).parent / "generated" / "figures"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -240,8 +241,20 @@ def plot_3d(ref: np.ndarray, obt: np.ndarray, title: str, out_path: Path) -> Non
 # Main
 # ---------------------------------------------------------------------------
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run and plot the manuscript Pareto-front variants.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace existing generated CSV/PNG outputs.")
+    return parser.parse_args()
+
+
 def main() -> None:
     import matplotlib
+    args = _parse_args()
+    outputs = [DATA_DIR / exp["csv_name"] for exp in EXPERIMENTS] + [FIG_DIR / exp["fig_name"] for exp in EXPERIMENTS]
+    collisions = [path for path in outputs if path.exists()]
+    if collisions and not args.overwrite:
+        names = ", ".join(str(path) for path in collisions)
+        raise FileExistsError(f"Refusing to overwrite existing Pareto output(s): {names}. Pass --overwrite to replace them.")
     matplotlib.use("Agg")
     _setup_style()
 

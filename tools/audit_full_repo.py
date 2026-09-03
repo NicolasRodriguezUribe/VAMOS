@@ -11,9 +11,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src" / "vamos"
 TESTS_ROOT = REPO_ROOT / "tests"
-REPORTS_ROOT = REPO_ROOT / "reports"
-ARTIFACTS_ROOT = REPORTS_ROOT / "final_audit_07_artifacts"
-DEFAULT_REPORT_PATH = REPORTS_ROOT / "final_audit_07_full_architecture_and_runtime.md"
+ARTIFACTS_ROOT = REPO_ROOT / "artifacts" / "audit" / "architecture"
+DEFAULT_REPORT_PATH = ARTIFACTS_ROOT / "architecture-and-runtime.md"
 
 FACADE_PATHS = [
     SRC_ROOT / "__init__.py",
@@ -186,13 +185,16 @@ def main() -> None:
     parser.add_argument("--artifacts-dir", default=str(ARTIFACTS_ROOT))
     parser.add_argument("--report-path", default=str(DEFAULT_REPORT_PATH))
     parser.add_argument("--no-report", action="store_true", help="Skip writing the markdown report.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing report/artifact directory.")
     args = parser.parse_args()
 
     artifacts_root = _resolve_path(args.artifacts_dir, REPO_ROOT)
     report_path = _resolve_path(args.report_path, REPO_ROOT)
 
-    REPORTS_ROOT.mkdir(exist_ok=True)
+    if not args.overwrite and (report_path.exists() or (artifacts_root.exists() and any(artifacts_root.iterdir()))):
+        raise FileExistsError("Refusing to overwrite existing audit output. Pass --overwrite to replace it.")
     artifacts_root.mkdir(parents=True, exist_ok=True)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
 
     src_files = list(_iter_py_files(SRC_ROOT))
 
@@ -447,7 +449,7 @@ def main() -> None:
         f"- Modules analyzed: {len(module_map)}",
         f"- Import edges (internal): {len(internal_edges)}",
         f"- Strongly connected components (cycles): {len(sccs)}",
-        "- Top fan-in/fan-out hotspots: see `reports/final_audit_07_artifacts/hotspots.md`",
+        "- Top fan-in/fan-out hotspots: see `artifacts/audit/architecture/hotspots.md`",
         "",
         "## C) Architecture contract enforcement gaps",
         "Shared package checks (suspicious internal imports):",
@@ -470,7 +472,7 @@ def main() -> None:
         [
             "",
             "## D) Public API/facade review",
-            "- Facade surfaces and symbol origins: `reports/final_audit_07_artifacts/facade_surface.json`",
+            "- Facade surfaces and symbol origins: `artifacts/audit/architecture/facade_surface.json`",
             f"- Re-export chains >2 hops: {len(reexport_chains)}",
             "",
             "## E) Runtime side-effects audit",

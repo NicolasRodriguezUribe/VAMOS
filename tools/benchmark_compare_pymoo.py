@@ -69,14 +69,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--smoke", action="store_true", help="Use reduced budgets suitable for quick validation.")
     parser.add_argument(
         "--output",
-        default="reports/performance/pymoo_comparison.json",
+        default="artifacts/performance/pymoo_comparison.json",
         help="Path to the JSON report.",
     )
     parser.add_argument(
         "--markdown",
-        default="reports/performance/pymoo_comparison.md",
+        default="artifacts/performance/pymoo_comparison.md",
         help="Optional Markdown summary path.",
     )
+    parser.add_argument("--overwrite", action="store_true", help="Replace existing output files.")
     return parser
 
 
@@ -379,16 +380,20 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     output_path = Path(args.output).expanduser().resolve()
+    markdown_path = Path(args.markdown).expanduser().resolve() if args.markdown else None
+    collisions = [path for path in (output_path, markdown_path) if path is not None and path.exists()]
+    if collisions and not args.overwrite:
+        names = ", ".join(str(path) for path in collisions)
+        raise FileExistsError(f"Refusing to overwrite existing benchmark output(s): {names}. Pass --overwrite to replace them.")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-    if args.markdown:
-        markdown_path = Path(args.markdown).expanduser().resolve()
+    if markdown_path is not None:
         _write_text(markdown_path, _markdown_report(payload))
 
     print(f"Wrote JSON report to {output_path}")
-    if args.markdown:
-        print(f"Wrote Markdown report to {Path(args.markdown).expanduser().resolve()}")
+    if markdown_path is not None:
+        print(f"Wrote Markdown report to {markdown_path}")
     return 0
 
 

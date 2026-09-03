@@ -5,11 +5,12 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 
 ## Canonical Decisions (ADRs)
 - Read before any architectural change: `docs/dev/adr/index.md`.
-- Mandatory ADRs: layering/facades, import-time purity, optional deps, no shims, health gates/retention.
+- Mandatory ADRs: layering/facades, import-time purity, optional deps, no shims, health gates and repository hygiene.
 
 ## Health Gates (run locally)
 - `python tools/health.py` (local fast-fail suite, including strict and full development typing)
 - `python tools/health.py --continue-on-failure` (run the full gate list without fast-fail)
+- `python tools/check_repository_hygiene.py` (tracked-file root, output, duplicate, size, archive and notebook policy)
 - `python tools/check_agent_docs.py` (the same command and arguments used by CI)
 - `python tools/typecheck.py --scope strict` (zero diagnostics in the protected scope)
 - `python tools/typecheck.py --scope full` (exact structured no-regression baseline and clean changed modules)
@@ -25,7 +26,7 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - `pytest -q tests/architecture/test_dependency_policy.py`
 - `pytest -q tests/architecture/test_no_facade_imports.py`
 - `pytest -q tests/architecture/test_experiment_import_cycles.py`
-- `pytest -q tests/architecture/test_report_retention_policy.py`
+- `pytest -q tests/test_check_repository_hygiene.py`
 - `pytest -q tests/test_no_deprecation_shims.py`
 - `pytest -q tests/test_no_prints_in_library.py`
 - `pytest -q tests/test_optional_deps_policy.py`
@@ -61,14 +62,13 @@ The canonical environment, path inventory, diagnostic fingerprint schema, baseli
 - Move initialization into functions or CLI entrypoints; use lazy factories for registries.
 - Avoid top-level env reads or dynamic import calls; perform them inside runtime functions.
 
-## Report Retention
-- Keep at most 5 `reports/final_audit_*.md` files in `reports/`; move older ones to `reports/archive/`.
-- Keep at most 5 `reports/final_audit_*_artifacts/` directories in `reports/`.
-- `final_audit_latest.md` at repo root must match the newest report under `reports/`.
-- No other `final_audit_*.md` files are allowed at repo root.
-- Keep `reports/` markdown size under 15 MB (excluding `reports/archive/`).
-- Keep `reports/archive/` capped at 20 files; prune older audits when needed.
-- Raw outputs (mypy/ruff/build logs) must live under `reports/<audit>_artifacts/`.
+## Repository hygiene and audit evidence
+
+- The canonical contract is [Repository hygiene](repository_hygiene.md).
+- Raw audits, Goal handoffs and validation logs live outside the product tree or in CI artifact storage.
+- Durable public conclusions are maintained documentation, not copied audit transcripts or root aliases.
+- Generated performance reports use ignored `artifacts/performance/` locally and CI artifact upload remotely.
+- The machine policy and exact exception manifest live under `release/`.
 
 ## No Monoliths Policy
 - File size thresholds: core <= 450 LOC, CLI/UI <= 350 LOC.

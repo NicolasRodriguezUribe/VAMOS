@@ -111,7 +111,7 @@ vamos study create study.json --output studies/comparison-01
 vamos study run studies/comparison-01
 vamos study inspect studies/comparison-01 --json
 vamos study summarize studies/comparison-01
-vamos study summarize studies/comparison-01 --format csv --output reports/tasks.csv
+vamos study summarize studies/comparison-01 --format csv --output artifacts/studies/tasks.csv
 ```
 
 Planning is read-only: it creates no study, runs no task, and does not reserve

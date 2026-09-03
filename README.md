@@ -291,7 +291,7 @@ Reminder: plain dict configs are intentionally not accepted (use `GenericAlgorit
 For comparative evidence against pymoo on fixed seeded cases, run:
 
 ```bash
-python tools/benchmark_compare_pymoo.py --output reports/performance/pymoo_comparison.json --markdown reports/performance/pymoo_comparison.md
+python tools/benchmark_compare_pymoo.py --output artifacts/performance/pymoo_comparison.json --markdown artifacts/performance/pymoo_comparison.md
 ```
 
 ## Notes

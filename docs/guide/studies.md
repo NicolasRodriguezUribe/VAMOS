@@ -56,7 +56,7 @@ vamos study plan study.json --output studies/example --json
 vamos study create study.json --output studies/example --json
 vamos study run studies/example --json
 vamos study inspect studies/example --json
-vamos study summarize studies/example --format csv --output reports/example.csv --json
+vamos study summarize studies/example --format csv --output artifacts/studies/example.csv --json
 ```
 
 JSON mode writes one `vamos.study-command-result` document to stdout;
