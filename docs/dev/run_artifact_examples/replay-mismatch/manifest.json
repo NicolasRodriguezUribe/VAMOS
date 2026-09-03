@@ -60,7 +60,7 @@
   ],
   "document_type": "vamos.run-manifest",
   "integrity": {
-    "manifest_sha256": "6a9b889427037100fc867ab15d876cff09b857e6a211231227fe71e4ba8dc265"
+    "manifest_sha256": "5ecb4e3fc4b08a95c70477aa8fa3158e62657903e60516c06f4de4ead26c9adf"
   },
   "lineage": {
     "comparison": {
@@ -150,7 +150,7 @@
     "execution_kind": "replay",
     "replay_plan_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "root_run_id": "11111111-1111-4111-8111-111111111111",
-    "source_manifest_sha256": "b8cf57ab9ab181a6128d30c34ea87eb707e2e38d87d46253fd3c89ba621e6d0e",
+    "source_manifest_sha256": "92b0f8b6ab703d2ba04ea34b4340092471ded3da7b00b1c816639ce9789260ff",
     "source_run_id": "11111111-1111-4111-8111-111111111111"
   },
   "name": "Completed replay mismatch example",
@@ -184,7 +184,7 @@
     "source": {
       "diff_sha256": null,
       "dirty": false,
-      "git_sha": "d8f950dcd9ca43f9f679194d579ffb9a85e2d5f0",
+      "git_sha": "69b72a13b5d88e4a4da8d455e4e89e0f2b961f13",
       "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     },
     "timestamps": {

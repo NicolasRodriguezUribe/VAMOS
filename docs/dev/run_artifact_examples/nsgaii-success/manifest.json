@@ -60,7 +60,7 @@
   ],
   "document_type": "vamos.run-manifest",
   "integrity": {
-    "manifest_sha256": "b8cf57ab9ab181a6128d30c34ea87eb707e2e38d87d46253fd3c89ba621e6d0e"
+    "manifest_sha256": "92b0f8b6ab703d2ba04ea34b4340092471ded3da7b00b1c816639ce9789260ff"
   },
   "labels": {
     "purpose": "contract-example"
@@ -96,7 +96,7 @@
     "source": {
       "diff_sha256": null,
       "dirty": false,
-      "git_sha": "d8f950dcd9ca43f9f679194d579ffb9a85e2d5f0",
+      "git_sha": "69b72a13b5d88e4a4da8d455e4e89e0f2b961f13",
       "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     },
     "timestamps": {

@@ -7,7 +7,7 @@ databases, backups, derived statistics, plots and LaTeX remain external or
 ignored.
 
 The frozen source commit for this retained set is
-`dce9f5b04b3aa6826d1cf8e79c13ac0a3bd590f2`. Regeneration is publication-scale
+`55e1b52de82d6bb9e0f2b43c7847925404607085`. Regeneration is publication-scale
 work and is not part of routine CI.
 
 | Files | Generation command | Schema | Expected use | Size budget |
