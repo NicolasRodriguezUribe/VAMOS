@@ -32,6 +32,8 @@ def main() -> int:
     commands: list[tuple[str, list[str]]] = [
         # CI and the release checker run this exact no-argument command.
         ("Repository hygiene", [python, "tools/check_repository_hygiene.py"]),
+        ("Canonical repository identity", [python, "tools/check_repository_identity.py"]),
+        ("Repository identity tests", [python, "-m", "pytest", "-q", "tests/test_check_repository_identity.py"]),
         ("Repository hygiene checker tests", [python, "-m", "pytest", "-q", "tests/test_check_repository_hygiene.py"]),
         ("Unsupported pre-1.0 remnant audit", [python, "tools/check_pre_release_remnants.py"]),
         ("Unsupported pre-1.0 remnant checker tests", [python, "-m", "pytest", "-q", "tests/test_check_pre_release_remnants.py"]),

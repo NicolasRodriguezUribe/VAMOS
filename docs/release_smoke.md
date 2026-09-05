@@ -1,5 +1,65 @@
 # Release verification
 
+## Canonical repository and publisher identity
+
+Release work originates from [vamos-optimization/VAMOS](https://github.com/vamos-optimization/VAMOS).
+The [repository governance policy](project/repository-governance.md) defines the
+personal mirror and the one-way synchronization of canonical history.
+Only the organization repository may recover publication input, request OIDC
+publishing credentials, or create official releases. The `upload_pypi.yml`
+repository guard rejects mirrors and forks before artifact recovery; every
+subsequent publication job depends on that guard.
+
+After the fresh official freeze, a maintainer must configure these Trusted
+Publisher identities through the TestPyPI and PyPI account interfaces:
+
+| Registry | Project | Owner | Repository | Workflow | Environment |
+| --- | --- | --- | --- | --- | --- |
+| TestPyPI | vamos-optimization | vamos-optimization | VAMOS | upload_pypi.yml | testpypi |
+| PyPI | vamos-optimization | vamos-optimization | VAMOS | upload_pypi.yml | pypi |
+
+Do not authorize the personal mirror or introduce API tokens. Create the
+`testpypi` and `pypi` GitHub environments in the organization repository, restrict
+deployment to `v1.0.0`, and require production approval where supported.
+Registration and publication belong to the subsequent release Goal.
+
+Before the public release, enable **Private vulnerability reporting** under
+the canonical repository's **Settings > Advanced Security**, so the security
+policy's private reporting link is available. See GitHub's
+[repository reporting setup](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configure-for-a-repository).
+
+## Fresh official 1.0.0 freeze
+
+The artifact freeze made under the personal-repository identity is superseded.
+Its wheel, sdist, checksums, SBOM, provenance, artifact manifest, release-check
+report, and frozen Actions artifact are historical validation evidence only.
+Do not reuse those artifacts or rerun the superseded workflow run. Validation
+artifacts from the repository cutover are also not the authoritative freeze.
+
+The next Goal is **Re-freeze and Publish the Official VAMOS 1.0.0 Release**,
+using the final merged organization `main` commit, also mirrored unchanged to
+the personal repository. Verify the actual publication date first:
+`CITATION.cff` currently carries a provisional pre-public `date-released` of
+`2026-09-04`, which must be verified during that Goal. Keep version `1.0.0`.
+Build new distributions and regenerate all evidence from the final source
+commit with `repository = vamos-optimization/VAMOS` in provenance. Run full
+local and hosted release validation before configuring publishers, creating
+the annotated tag, and publishing the identical validated bytes to TestPyPI,
+then PyPI, then the organization GitHub Release.
+
+## Organization Pages
+
+In the organization repository, open **Settings > Pages > Build and deployment**
+and set **Source** to **GitHub Actions**. The guarded `docs.yml` workflow builds
+both documentation sites strictly and deploys documentation only to
+`https://vamos-optimization.github.io/VAMOS/`. It runs on the official tag or a
+manual workflow dispatch. The root redirects to `latest/`; versioned reference
+docs live under `1.0.0/`, and the multilingual website lives under `website/`.
+The personal mirror must not deploy canonical Pages. Confirm the deployment
+and canonical organization URLs during the final release Goal.
+
+## Canonical validation
+
 `tools/release_check.py` is the canonical, fail-closed VAMOS release gate. It
 validates the source tree, stable contracts, typing policy, full test suite,
 both documentation sites, distributions, installed wheel, dependencies, and
@@ -68,7 +128,12 @@ tag.
 environment with no repository import path. Its full mode exercises public
 imports, optimization, byte-exact replay, durable study execution, controlled
 failure/resume/retry, relocation, and human and JSON CLI contracts while
-blocking network access:
+blocking network access.
+
+The release checker clears the checkout's `PYTHONPATH` for wheel installation,
+dependency inventory, and smoke execution. This prevents source-tree metadata
+from making pip treat an uninstalled wheel as already installed. Run the full
+smoke with:
 
 ```bash
 python tools/release_smoke.py --version 1.0.0 --mode full

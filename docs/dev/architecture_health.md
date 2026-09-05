@@ -11,6 +11,7 @@ These rules are guardrails for long-term maintainability in a research-oriented 
 - `python tools/health.py` (local fast-fail suite, including strict and full development typing)
 - `python tools/health.py --continue-on-failure` (run the full gate list without fast-fail)
 - `python tools/check_repository_hygiene.py` (tracked-file root, output, duplicate, size, archive and notebook policy)
+- `python tools/check_repository_identity.py` (canonical metadata, classified mirror references, and publication guards)
 - `python tools/check_agent_docs.py` (the same command and arguments used by CI)
 - `python tools/typecheck.py --scope strict` (zero diagnostics in the protected scope)
 - `python tools/typecheck.py --scope full` (exact structured no-regression baseline and clean changed modules)

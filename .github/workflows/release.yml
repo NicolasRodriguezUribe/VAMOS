@@ -18,7 +18,10 @@ env:
 
 jobs:
   build-distributions:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'release/final-1.0.0'
+    if: >-
+      github.repository == 'vamos-optimization/VAMOS' &&
+      (github.event_name == 'workflow_dispatch' || github.head_ref == 'release/final-1.0.0' ||
+      github.head_ref == 'chore/official-repository-cutover-1.0.0')
     name: Build frozen distributions
     runs-on: ubuntu-latest
     steps:
@@ -197,6 +200,8 @@ jobs:
           cd frozen
           sha256sum --check SHA256SUMS
           test "$(jq -r .source_commit artifact-manifest.json)" = "$VAMOS_RELEASE_COMMIT"
+          test "$(jq -r .repository artifact-manifest.json)" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .repository build-provenance.json)" = "$GITHUB_REPOSITORY"
           test "$(jq -r .status release-check-report.json)" = "passed"
 
       - name: Upload immutable publication input

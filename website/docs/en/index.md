@@ -9,7 +9,7 @@
   </div>
   <div class="vamos-hero__actions">
     <a href="getting-started/" class="vamos-btn vamos-btn--primary">Get Started</a>
-    <a href="https://github.com/NicolasRodriguezUribe/VAMOS" class="vamos-btn vamos-btn--outline">GitHub</a>
+    <a href="https://github.com/vamos-optimization/VAMOS" class="vamos-btn vamos-btn--outline">GitHub</a>
   </div>
 </div>
 

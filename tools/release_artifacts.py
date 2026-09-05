@@ -110,15 +110,18 @@ def create_runtime_environment(root: Path, wheel: Path, constraints: Path, *, ex
     venv.EnvBuilder(with_pip=True).create(root)
     python = environment_python(root)
     requirement = f"{wheel.resolve()}[{extras}]" if extras else str(wheel.resolve())
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
     installed = subprocess.run(
         [str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-cache-dir", "-c", str(constraints), requirement],
         capture_output=True,
+        env=environment,
         text=True,
         check=False,
     )
     if installed.returncode != 0:
         raise RuntimeError(installed.stderr.strip() or installed.stdout.strip())
-    checked = subprocess.run([str(python), "-m", "pip", "check"], capture_output=True, text=True, check=False)
+    checked = subprocess.run([str(python), "-m", "pip", "check"], capture_output=True, env=environment, text=True, check=False)
     if checked.returncode != 0:
         raise RuntimeError(checked.stderr.strip() or checked.stdout.strip())
     return root, python
@@ -129,6 +132,8 @@ def environment_python(root: Path) -> Path:
 
 
 def write_runtime_lock(python: Path, output: Path) -> dict[str, Any]:
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
     code = (
         "import importlib.metadata as m, json; "
         "skip={'pip','setuptools','wheel','vamos-optimization'}; "
@@ -136,7 +141,7 @@ def write_runtime_lock(python: Path, output: Path) -> dict[str, Any]:
         "if d.metadata.get('Name','').lower() not in skip); "
         "print(json.dumps(items))"
     )
-    completed = subprocess.run([str(python), "-c", code], capture_output=True, text=True, check=True)
+    completed = subprocess.run([str(python), "-c", code], capture_output=True, env=environment, text=True, check=True)
     items = json.loads(completed.stdout)
     output.write_text("".join(f"{name}=={version}\n" for name, version in items), encoding="utf-8", newline="\n")
     return {"requirements": len(items), "path": output.name}
@@ -231,6 +236,7 @@ def write_release_manifests(output: Path, dist: Path, sbom: Path, version: str, 
         json.dumps(
             {
                 "document_type": "vamos.build-provenance",
+                "repository": "vamos-optimization/VAMOS",
                 "schema_version": "1.0.0",
                 "project": "vamos-optimization",
                 "version": version,
@@ -259,6 +265,7 @@ def write_release_manifests(output: Path, dist: Path, sbom: Path, version: str, 
         json.dumps(
             {
                 "document_type": "vamos.release-artifact-manifest",
+                "repository": "vamos-optimization/VAMOS",
                 "schema_version": "1.0.0",
                 "project": "vamos-optimization",
                 "version": version,

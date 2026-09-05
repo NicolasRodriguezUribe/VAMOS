@@ -48,10 +48,10 @@ dependencies = [
 readme = { file = "README.md", content-type = "text/markdown" }
 
 [project.urls]
-Homepage = "https://github.com/NicolasRodriguezUribe/VAMOS"
-Repository = "https://github.com/NicolasRodriguezUribe/VAMOS"
-Issues = "https://github.com/NicolasRodriguezUribe/VAMOS/issues"
-Documentation = "https://nicolasrodriguezuribe.github.io/VAMOS/"
+Homepage = "https://github.com/vamos-optimization/VAMOS"
+Repository = "https://github.com/vamos-optimization/VAMOS"
+Issues = "https://github.com/vamos-optimization/VAMOS/issues"
+Documentation = "https://vamos-optimization.github.io/VAMOS/"
 
 [project.optional-dependencies]
 # Simplified core groups (preferred)
