@@ -4,6 +4,10 @@
 
 ![VAMOS Banner](docs/assets/vamos1.png)
 
+Official repository: [vamos-optimization/VAMOS](https://github.com/vamos-optimization/VAMOS).
+Issues, pull requests, releases, and development are coordinated there. See
+[repository governance](docs/project/repository-governance.md).
+
 VAMOS bridges the gap between simple research scripts and large-scale optimization studies. It provides a unified API for running state-of-the-art algorithms across diverse problems, backed by vectorized kernels with NumPy as the exact reference path and optional Numba acceleration for core kernels.
 
 VAMOS 1.0.0 is the first official public release and compatibility baseline.
@@ -366,7 +370,7 @@ If you use VAMOS in published work, cite it directly:
   author = {Rodriguez Uribe, Nicolas and Herr{\'a}n, Alberto and Nebro, Antonio J. and Del Ser, Javier and Colmenar, J. Manuel},
   year = {2026},
   version = {1.0.0},
-  url = {https://github.com/NicolasRodriguezUribe/VAMOS}
+  url = {https://github.com/vamos-optimization/VAMOS}
 }
 ```
 

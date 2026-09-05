@@ -2,6 +2,9 @@
 
 Thank you for considering a contribution! This project is organized to make adding new components straightforward.
 
+Open issues and pull requests in the [official repository](https://github.com/vamos-optimization/VAMOS).
+See [repository governance](docs/project/repository-governance.md) for source and mirror ownership.
+
 Repository-wide contributor and agent rules, including validation tiers and Git discipline, live in `AGENTS.md`. Nested `AGENTS.md` files add only local subtree rules.
 
 ## Adding a new problem

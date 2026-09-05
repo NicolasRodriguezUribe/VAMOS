@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -15,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import release_policy  # noqa: E402
-from release_artifacts import inspect_distributions, write_release_manifests  # noqa: E402
+from release_artifacts import create_runtime_environment, inspect_distributions, write_release_manifests, write_runtime_lock  # noqa: E402
 from release_policy import document_evidence, license_evidence, scan_files, version_evidence  # noqa: E402
 
 
@@ -384,3 +385,46 @@ def test_distribution_inspection_checks_metadata_content_and_manifests(tmp_path:
     assert evidence["metadata"]["license_expression"] == "MIT"
     assert (tmp_path / manifests["checksums"]).read_text(encoding="utf-8").count("  ") == 3
     assert json.loads((tmp_path / manifests["manifest"]).read_text(encoding="utf-8"))["source_commit"] == "a" * 40
+    for name in ("manifest", "provenance"):
+        payload = json.loads((tmp_path / manifests[name]).read_text(encoding="utf-8"))
+        assert payload["repository"] == "vamos-optimization/VAMOS"
+        assert payload["source_commit"] == "a" * 40
+
+
+def test_clean_wheel_install_and_lock_ignore_checkout_metadata(monkeypatch, tmp_path: Path) -> None:
+    shadow = tmp_path / "checkout"
+    metadata_dir = shadow / "vamos_optimization-1.0.0.dist-info"
+    metadata_dir.mkdir(parents=True)
+    metadata = "Metadata-Version: 2.1\nName: vamos-optimization\nVersion: 1.0.0\n"
+    (metadata_dir / "METADATA").write_text(metadata, encoding="utf-8")
+    unrelated = shadow / "checkout_only-1.0.0.dist-info"
+    unrelated.mkdir()
+    (unrelated / "METADATA").write_text("Metadata-Version: 2.1\nName: checkout-only\nVersion: 1.0.0\n", encoding="utf-8")
+    monkeypatch.setenv("PYTHONPATH", str(shadow))
+    monkeypatch.setenv("PIP_NO_INDEX", "1")
+    wheel = tmp_path / "vamos_optimization-1.0.0-py3-none-any.whl"
+    dist_info = "vamos_optimization-1.0.0.dist-info"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr("vamos/__init__.py", '__version__ = "1.0.0"\n')
+        archive.writestr(f"{dist_info}/METADATA", metadata)
+        archive.writestr(f"{dist_info}/WHEEL", "Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n")
+        archive.writestr(f"{dist_info}/RECORD", "")
+    constraints = tmp_path / "constraints.txt"
+    constraints.write_text("", encoding="utf-8")
+
+    _, python = create_runtime_environment(tmp_path / "venv", wheel, constraints, extras="")
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    installed = subprocess.run(
+        [str(python), "-c", "import vamos; print(vamos.__file__)"],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "site-packages" in installed.stdout
+    assert str(shadow) not in installed.stdout
+    lock = tmp_path / "runtime-lock.txt"
+    write_runtime_lock(python, lock)
+    assert "checkout-only" not in lock.read_text(encoding="utf-8")

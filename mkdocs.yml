@@ -1,7 +1,8 @@
 site_name: VAMOS Docs
+site_url: https://vamos-optimization.github.io/VAMOS/
 site_description: Vectorized Architecture for Multiobjective Optimization Studies
-repo_url: https://github.com/NicolasRodriguezUribe/VAMOS
-repo_name: NicolasRodriguezUribe/VAMOS
+repo_url: https://github.com/vamos-optimization/VAMOS
+repo_name: vamos-optimization/VAMOS
 theme:
   name: material
   palette: 
@@ -39,6 +40,7 @@ plugins:
 nav:
   - Home: index.md
   - Project:
+    - Repository Governance: project/repository-governance.md
     - VAMOS 1.0.0 Release Notes: project/release-notes-1.0.0.md
     - Stability and Versioning: project/stability-and-versioning.md
     - Known Limitations: project/known-limitations.md

@@ -14,6 +14,7 @@ env:
 
 jobs:
   recover-frozen-artifacts:
+    if: github.repository == 'vamos-optimization/VAMOS'
     name: Recover exact validated bytes
     runs-on: ubuntu-latest
     outputs:
@@ -29,6 +30,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          test "$GITHUB_REPOSITORY" = "vamos-optimization/VAMOS"
           test "$(git cat-file -t "refs/tags/$GITHUB_REF_NAME")" = "tag"
           test "$(git rev-list -n 1 "$GITHUB_REF_NAME")" = "$GITHUB_SHA"
           test "$GITHUB_REF_NAME" = "v$VAMOS_RELEASE_VERSION"
@@ -49,6 +51,9 @@ jobs:
           cd frozen
           sha256sum --check SHA256SUMS
           test "$(jq -r .source_commit artifact-manifest.json)" = "$GITHUB_SHA"
+          test "$(jq -r .repository artifact-manifest.json)" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .repository build-provenance.json)" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .source_commit build-provenance.json)" = "$GITHUB_SHA"
           test "$(jq -r .status release-check-report.json)" = "passed"
 
       - name: Preserve bytes for publishing jobs

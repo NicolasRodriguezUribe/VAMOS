@@ -39,6 +39,7 @@ from release_policy import (
 ROOT = Path(__file__).resolve().parents[1]
 CHECK_NAMES = (
     "repository-identity",
+    "canonical-repository-identity",
     "version-consistency",
     "release-documents",
     "license-metadata",
@@ -168,6 +169,7 @@ class ReleaseChecker:
 
     def run(self) -> dict[str, Any]:
         self.check("repository-identity", self._identity)
+        self.command("canonical-repository-identity", [sys.executable, "tools/check_repository_identity.py"])
         self.check("version-consistency", lambda: version_evidence(ROOT, self.version))
         self.check("release-documents", lambda: document_evidence(ROOT, self.version))
         self.check("license-metadata", lambda: license_evidence(ROOT))
