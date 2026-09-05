@@ -95,7 +95,8 @@ def test_actual_job_and_shell_guards_accept_only_the_organization(repository: st
     if sys.platform == "win32":
         git = shutil.which("git")
         assert git is not None
-        bash = str(Path(git).resolve().parents[1] / "bin" / "bash.exe")
+        candidates = (parent / relative for parent in Path(git).resolve().parents for relative in ("bin/bash.exe", "usr/bin/bash.exe"))
+        bash = next((str(candidate) for candidate in candidates if candidate.is_file()), None)
     assert bash is not None, "The release workflow shell is required for publication safety validation."
     environment = os.environ.copy()
     environment["GITHUB_REPOSITORY"] = repository
