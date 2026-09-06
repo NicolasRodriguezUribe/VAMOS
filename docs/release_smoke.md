@@ -21,7 +21,7 @@ Publisher identities through the TestPyPI and PyPI account interfaces:
 Do not authorize the personal mirror or introduce API tokens. Create the
 `testpypi` and `pypi` GitHub environments in the organization repository, restrict
 deployment to `v1.0.0`, and require production approval where supported.
-Registration and publication belong to the subsequent release Goal.
+Confirm both publisher registrations before creating the official release tag.
 
 Before the public release, enable **Private vulnerability reporting** under
 the canonical repository's **Settings > Advanced Security**, so the security
@@ -36,16 +36,19 @@ report, and frozen Actions artifact are historical validation evidence only.
 Do not reuse those artifacts or rerun the superseded workflow run. Validation
 artifacts from the repository cutover are also not the authoritative freeze.
 
-The next Goal is **Re-freeze and Publish the Official VAMOS 1.0.0 Release**,
-using the final merged organization `main` commit, also mirrored unchanged to
-the personal repository. Verify the actual publication date first:
-`CITATION.cff` currently carries a provisional pre-public `date-released` of
-`2026-09-04`, which must be verified during that Goal. Keep version `1.0.0`.
+Use the final merged organization `main` commit as the immutable release source.
+The release date in `CITATION.cff`, the changelog, release notes, and version
+consistency test is synchronized to `2026-09-06`. Verify that this remains the
+actual publication date before tagging or uploading. If publication moves to
+another date, update those surfaces through a reviewed commit and create a new
+freeze from the resulting canonical `main` commit. Keep version `1.0.0`.
 Build new distributions and regenerate all evidence from the final source
 commit with `repository = vamos-optimization/VAMOS` in provenance. Run full
 local and hosted release validation before configuring publishers, creating
 the annotated tag, and publishing the identical validated bytes to TestPyPI,
 then PyPI, then the organization GitHub Release.
+After publication and public verification succeed, fast-forward the personal
+mirror to canonical `main` and copy the existing official annotated tag.
 
 ## Organization Pages
 

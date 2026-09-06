@@ -1,6 +1,6 @@
 # VAMOS 1.0.0 release notes
 
-Released 2026-09-04.
+Released 2026-09-06.
 
 VAMOS 1.0.0 is the first official public release and the first compatibility
 baseline. Earlier version strings, tags, and artifacts were internal
