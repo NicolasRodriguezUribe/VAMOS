@@ -7,6 +7,11 @@ study surface from experimental features such as Studio, provider integrations,
 and tuning. See [Stability and versioning](project/stability-and-versioning.md)
 before depending on an API as a 1.x compatibility commitment.
 
+For citation metadata, see [CITATION.cff](https://github.com/vamos-optimization/VAMOS/blob/main/CITATION.cff).
+Read the [security policy](https://github.com/vamos-optimization/VAMOS/blob/main/SECURITY.md)
+and use [private vulnerability reporting](https://github.com/vamos-optimization/VAMOS/security/advisories/new)
+to report a security issue.
+
 - Algorithms: NSGA-II/III, MOEA/D, SMS-EMOA, SPEA2, IBEA, SMPSO, AGE-MOEA, RVEA with continuous, permutation, binary, integer, and mixed encodings.
 - Backends: NumPy (default exact reference), Numba for accelerated core kernels, and MooCore for indicator acceleration.
 - Problems: ZDT, DTLZ, WFG, LZ09, CEC2009 UF/CF, TSP/TSPLIB, binary, integer, mixed, and real-data examples.

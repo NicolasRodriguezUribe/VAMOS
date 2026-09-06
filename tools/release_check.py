@@ -179,7 +179,7 @@ class ReleaseChecker:
         self.command("pre-release-remnants", [sys.executable, "tools/check_pre_release_remnants.py"])
         self.command(
             "stable-api-cli-schema-fixtures",
-            [sys.executable, "-m", "pytest", "-q", "tests/compatibility/test_v1_0_0_snapshots.py"],
+            [sys.executable, "-m", "pytest", "-q", "tests/compatibility"],
         )
         typing_python = str(self.typing_python)
         self.command("strict-typing", [typing_python, "tools/typecheck.py", "--scope", "strict"])

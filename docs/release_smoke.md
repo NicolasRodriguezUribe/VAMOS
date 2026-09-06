@@ -61,6 +61,12 @@ docs live under `1.0.0/`, and the multilingual website lives under `website/`.
 The personal mirror must not deploy canonical Pages. Confirm the deployment
 and canonical organization URLs during the final release Goal.
 
+`tools/build_release_docs.py --version 1.0.0 --output <new-directory>` builds
+the complete deployment layout. It applies the version and website prefixes
+to their canonical URLs, keeps `latest/` as an alias of the versioned docs,
+and refuses an existing output directory. The documentation smoke tests verify
+that every emitted canonical URL resolves to a file in that deployment layout.
+
 ## Canonical validation
 
 `tools/release_check.py` is the canonical, fail-closed VAMOS release gate. It
@@ -107,6 +113,12 @@ directories are append-never: the checker refuses to overwrite a non-empty
 directory.
 
 ## Frozen distributions
+
+The compatibility gate runs all tests under `tests/compatibility/`, including
+the permanent structural snapshots and the 1.0.0 run/study artifact corpus.
+Those checks load, verify, inspect, and summarize the committed canonical bytes
+and compare public study JSON command results without regenerating fixtures.
+Fixture maintenance is documented in `tests/compatibility/v1_0_0/README.md`.
 
 The candidate workflow builds one wheel and one sdist exactly once. Every
 downstream platform downloads those same bytes. When validating an existing
